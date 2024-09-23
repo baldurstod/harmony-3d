@@ -1,9 +1,7 @@
-import { quat, vec3 } from 'gl-matrix';
-
-import { Entity } from '../entities/entity';
-import { JSONLoader } from '../loaders/jsonloader'
-import { World } from '../objects/world';
 import { BackGround } from '../backgrounds/background';
+import { registerEntity } from '../entities/entities';
+import { Entity } from '../entities/entity';
+import { World } from '../objects/world';
 import { Environment } from './environments/environment';
 
 export class Scene extends Entity {
@@ -57,15 +55,11 @@ export class Scene extends Entity {
 		return new Scene({ name: json.name });
 	}
 
-	get entityName() {
+	static getEntityName() {
 		return 'Scene';
 	}
 
-	static get entityName() {
-		return 'Scene';
-	}
-
-	is(s: string) {
+	is(s: string): boolean {
 		if (s == 'Scene') {
 			return true;
 		} else {
@@ -73,4 +67,4 @@ export class Scene extends Entity {
 		}
 	}
 }
-JSONLoader.registerEntity(Scene);
+registerEntity(Scene);
