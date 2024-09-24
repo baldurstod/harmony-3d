@@ -631,17 +631,6 @@ export class Entity {
 		return this._parent?.getParentModel();
 	}
 
-	getChildsList(type, list = new Set()) {
-		throw 'Error : use getChildList instead';
-		if (this instanceof type) {
-			list.add(this);
-		}
-		for (let child of this.#children) {
-			child.getChildsList(type, list);
-		}
-		return list;
-	}
-
 	getChildList(type) {
 		let ws = new WeakSet();
 		let childs: Set<Entity> = new Set();
