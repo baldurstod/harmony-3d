@@ -31,7 +31,7 @@ export class ColorBackground extends BackGround {
 	dispose() {
 	}
 
-	is(s: string) {
+	is(s: string): boolean {
 		if (s == 'ColorBackground') {
 			return true;
 		} else {
