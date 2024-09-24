@@ -307,9 +307,10 @@ export class Entity {
 			this._parent = parent;
 		}
 		this.propagate();
+		this.parentChanged(parent);
 	}
 
-	parentChanged(parent?: Entity) { }
+	parentChanged(parent: Entity | null) { }
 
 	*getParentIterator() {
 		const ws = new WeakSet();
