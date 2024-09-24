@@ -1,4 +1,4 @@
-import { mat3, mat4, quat, vec3 } from 'gl-matrix';
+import { mat3, mat4, quat, vec3, vec4 } from 'gl-matrix';
 
 import { EntityObserver } from './entityobserver';
 import { pickList } from './picklist';
@@ -471,46 +471,46 @@ export class Entity {
 	toString() {
 		return this.#name !== undefined ? this.#name : '';
 	}
-	translate(v) {
+	translate(v: vec3) {
 		vec3.add(tempVec3_1, this._position, v);
 		this.position = tempVec3_1;
 	}
-	translateOnAxis(axis, distance) {
+	translateOnAxis(axis: vec3, distance: number) {
 		vec3.transformQuat(tempVec3_1, axis, this._quaternion);
 		vec3.scaleAndAdd(tempVec3_1, this._position, tempVec3_1, distance);
 		this.position = tempVec3_1;
 		return this;
 	}
-	translateX(distance) {//TODO: optimize inline
+	translateX(distance: number) {//TODO: optimize inline
 		return this.translateOnAxis(X_VECTOR, distance);
 	}
-	translateY(distance) {
+	translateY(distance: number) {
 		return this.translateOnAxis(Y_VECTOR, distance);
 	}
-	translateZ(distance) {
+	translateZ(distance: number) {
 		return this.translateOnAxis(Z_VECTOR, distance);
 	}
-	rotateX(rad) {
+	rotateX(rad: number) {
 		quat.rotateX(this._quaternion, this._quaternion, rad);
 	}
-	rotateY(rad) {
+	rotateY(rad: number) {
 		quat.rotateY(this._quaternion, this._quaternion, rad);
 	}
-	rotateZ(rad) {
+	rotateZ(rad: number) {
 		quat.rotateZ(this._quaternion, this._quaternion, rad);
 	}
 
-	rotateGlobalX(rad) {
+	rotateGlobalX(rad: number) {
 		quat.rotateX(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
 	}
 
-	rotateGlobalY(rad) {
+	rotateGlobalY(rad: number) {
 		quat.rotateY(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
 	}
 
-	rotateGlobalZ(rad) {
+	rotateGlobalZ(rad: number) {
 		quat.rotateZ(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
 	}
@@ -522,7 +522,7 @@ export class Entity {
 	 *
 	 * @return {void}.
 	 */
-	lookAt(target, upVector = undefined) {
+	lookAt(target: vec3, upVector = undefined): void {
 		let parent = this._parent;
 		mat4.lookAt(tempMat4, this._position, target, upVector ?? _upVector);
 		mat4.getRotation(tempQuat, tempMat4);
@@ -558,7 +558,7 @@ export class Entity {
 		return meshList;
 	}
 
-	showOutline(show, color) {
+	showOutline(show: boolean, color?: vec4) {
 		if (show) {
 			this.drawOutline = true;
 			this.materialsParams.drawOutline = true;
@@ -571,7 +571,7 @@ export class Entity {
 		}
 	}
 
-	getAllChilds(includeSelf) {
+	getAllChilds(includeSelf: boolean) {
 		let ws = new WeakSet();
 		let childs = new Set();
 		let objectStack: Entity[] = [];
@@ -631,7 +631,7 @@ export class Entity {
 		return this._parent?.getParentModel();
 	}
 
-	getChildList(type: typeof Entity) {
+	getChildList(type?: string) {
 		let ws = new WeakSet();
 		let childs: Set<Entity> = new Set();
 		let objectStack: Entity[] = [];
@@ -644,7 +644,7 @@ export class Entity {
 					ws.add(child);
 				}
 			}
-			if (type === undefined || currentEntity instanceof type) {
+			if (type === undefined || currentEntity.is(type)) {
 				childs.add(currentEntity);
 			}
 			currentEntity = objectStack.shift();
