@@ -298,7 +298,7 @@ export class Entity {
 
 	do(action: string, params?: any) { }
 
-	setParent(parent: Entity | null) {
+	#setParent(parent: Entity | null) {
 		EntityObserver.parentChanged(this, this._parent, parent);
 		if (this._parent != null) {
 			this._parent.removeChild(this);
@@ -331,7 +331,7 @@ export class Entity {
 
 	remove() {
 		if (this._parent != null) {
-			this.setParent(null);
+			this.#setParent(null);
 		}
 	}
 
@@ -436,7 +436,7 @@ export class Entity {
 
 		this.#children.add(child);
 		EntityObserver.childAdded(this, child);
-		child.setParent(this);
+		child.#setParent(this);
 		return child;
 	}
 
@@ -444,7 +444,7 @@ export class Entity {
 		childs.forEach(child => this.addChild(child));
 	}
 
-	isParent(parent) {
+	isParent(parent: Entity) {
 		let _parent = this._parent;
 		if (_parent) {
 			if (_parent === parent) {
@@ -456,10 +456,10 @@ export class Entity {
 		return false;
 	}
 
-	removeChild(child) {
+	removeChild(child: Entity) {
 		if (this.#children.has(child)) {
 			this.#children.delete(child);
-			child.setParent();
+			child.#setParent(null);
 			EntityObserver.childRemoved(this, child);
 		} else {
 			if (VERBOSE) {
@@ -631,7 +631,7 @@ export class Entity {
 		return this._parent?.getParentModel();
 	}
 
-	getChildList(type) {
+	getChildList(type: typeof Entity) {
 		let ws = new WeakSet();
 		let childs: Set<Entity> = new Set();
 		let objectStack: Entity[] = [];
@@ -652,7 +652,7 @@ export class Entity {
 		return childs;
 	}
 
-	forEach(callback) {
+	forEach(callback: (ent: Entity) => void) {
 		callback(this);
 		for (let child of this.#children) {
 			child.forEach(callback);
