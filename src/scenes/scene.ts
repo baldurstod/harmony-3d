@@ -1,4 +1,5 @@
 import { BackGround } from '../backgrounds/background';
+import { Camera } from '../cameras/camera';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
 import { World } from '../objects/world';
@@ -10,6 +11,7 @@ export class Scene extends Entity {
 	background?: BackGround;
 	layers = new Set();
 	environment?: Environment;
+	activeCamera?: Camera;
 	constructor(parameters?: any) {
 		super(parameters);
 		this.#layers[Symbol.iterator] = function* () {
