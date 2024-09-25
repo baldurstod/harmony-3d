@@ -392,8 +392,8 @@ export class Entity {
 	}
 
 	get root() {
-		let currentEntity = this;
-		let parent;
+		let currentEntity: Entity = this;
+		let parent: Entity | null;
 		while (currentEntity) {
 			parent = currentEntity._parent;
 			if (parent) {
