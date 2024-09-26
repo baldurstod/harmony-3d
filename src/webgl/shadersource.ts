@@ -7,9 +7,14 @@ export enum ShaderType {
 	Fragment = GL_FRAGMENT_SHADER,
 }
 
-const HEADER_PER_TYPE = {};
-HEADER_PER_TYPE[ShaderType.Vertex] = '#include header_vertex';
-HEADER_PER_TYPE[ShaderType.Fragment] = '#include header_fragment';
+function getHeader(type: ShaderType): string {
+	switch (type) {
+		case ShaderType.Vertex:
+			return '#include header_vertex';
+		case ShaderType.Fragment:
+			return '#include header_fragment';
+	}
+}
 
 const PRAGMA_REGEX = /#pragma (\w+)/;
 
@@ -17,15 +22,14 @@ export class WebGLShaderSource {
 	static isWebGL2: boolean;
 	#includes = new Set<string>();
 	#type: ShaderType;
-	#source: string;
-	#version: string;
-	#extensions: string;
-	#sizeOfSourceRow: number[];
+	#source: string = '';
+	#extensions: string = '';
+	#sizeOfSourceRow: number[] = [];
 	#sourceRowToInclude: any = {};
-	#compileSource: string;
-	#isErroneous: boolean;
-	#error: string;
-	#lineDelta: number;
+	#compileSource: string = '';
+	#isErroneous: boolean = false;
+	#error: string = '';
+	#lineDelta: number = 0;
 	constructor(type: ShaderType, source: string) {
 		if (DEBUG && type === undefined) {
 			throw 'error : type must be defined in WebGLShaderSource';
@@ -36,7 +40,6 @@ export class WebGLShaderSource {
 
 	setSource(source: string) {
 		this.#source = source;
-		this.#version = '';
 		this.#extensions = '';
 		this.#sizeOfSourceRow = [];
 		this.#sourceRowToInclude = {};
@@ -44,7 +47,7 @@ export class WebGLShaderSource {
 		let allIncludes = new Set();
 
 		let sourceLineArray = source.split('\n');
-		sourceLineArray.unshift(HEADER_PER_TYPE[this.#type] ?? '');
+		sourceLineArray.unshift(getHeader(this.#type) ?? '');
 		let compileRow = 1;
 		//TODOv3: use regexp to do a better job
 		let outArray: string[] = [];
@@ -135,7 +138,7 @@ export class WebGLShaderSource {
 	}
 
 	getCompileSource(includeCode = '') {
-		function getDefineValue(defineName, includeCode = '') {
+		function getDefineValue(defineName: string, includeCode: string = '') {
 			let sourceLineArray = includeCode.split('\n');
 			const definePattern = /\s*#define\s+(\S+)\s+(\S+)/;
 			for (let i = 0, l = sourceLineArray.length; i < l; ++i) {
@@ -150,7 +153,7 @@ export class WebGLShaderSource {
 			}
 			return defineName;
 		}
-		function unrollLoops(source, includeCode = '') {
+		function unrollLoops(source: string, includeCode: string = '') {
 			let nextUnroll = Infinity;
 			let unrollSubstring;
 			const forPattern = /for\s*\(\s*int\s+(\S+)\s*=\s*(\S+)\s*;\s*(\S+)\s*<\s*(\S+)\s*;\s*(\S+)\s*\+\+\s*\)\s*{/g;
@@ -217,7 +220,7 @@ export class WebGLShaderSource {
 		return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
 	}
 
-	getCompileSourceLineNumber(includeCode) {
+	getCompileSourceLineNumber(includeCode: string) {
 		let source = this.getCompileSource(includeCode);
 		let sourceLineArray = source.split('\n');
 		for (let i = sourceLineArray.length - 1; i >= 0; i--) {
@@ -239,7 +242,7 @@ export class WebGLShaderSource {
 		const errorArray: any[] = [];
 		const splitRegex = /(ERROR|WARNING) *: *(\d*):(\d*): */;
 
-		function consumeLine(arr) {
+		function consumeLine(arr: string[]) {
 			let line;
 			while ((line = arr.shift()) !== undefined) {
 				if (line === '') {
@@ -254,7 +257,7 @@ export class WebGLShaderSource {
 		while (arr.length) {
 			let errorType = consumeLine(arr);
 			let errorCol = consumeLine(arr);
-			let errorRow = consumeLine(arr);
+			let errorRow = Number(consumeLine(arr));
 			let errorText = consumeLine(arr);
 			if (errorType && errorCol && errorRow && errorText) {
 				let row = Math.max(errorRow - this.#lineDelta, 0);
@@ -272,7 +275,7 @@ export class WebGLShaderSource {
 		const annotations: any[] = [];
 
 		let sourceLineArray = this.#source.split('\n');
-		sourceLineArray.unshift(HEADER_PER_TYPE[this.#type] ?? '');
+		sourceLineArray.unshift(getHeader(this.#type) ?? '');
 
 		for (let i = sourceLineArray.length - 1; i >= 0; i--) {
 			let line = sourceLineArray[i];
@@ -287,7 +290,7 @@ export class WebGLShaderSource {
 		return annotations;
 	}
 
-	compileRowToSourceRow(row) {
+	compileRowToSourceRow(row: number) {
 		let totalSoFar = 0;
 		for (let i = 0; i < this.#sizeOfSourceRow.length; i++) {
 			totalSoFar += this.#sizeOfSourceRow[i];
