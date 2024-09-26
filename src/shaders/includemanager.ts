@@ -1,5 +1,5 @@
 import { Includes } from './includes';
-import { ShaderEventTarget } from './shadereventtarget.js';
+import { ShaderEventTarget } from './shadereventtarget';
 
 const includeSources = new Map<string, string>();
 const customIncludeSources = new Map<string, string>();
