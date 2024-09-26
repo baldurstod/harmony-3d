@@ -5,7 +5,7 @@ import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
 import { GraphicsEvents } from './graphicsevents';
 import { MAX_HARDWARE_BONES, RECORDER_DEFAULT_FILENAME, RECORDER_MIME_TYPE } from '../constants';
 import { pickList } from '../entities/picklist';
-import { GL_COLOR_BUFFER_BIT, GL_CULL_FACE, GL_DEPTH_BUFFER_BIT, GL_STENCIL_BUFFER_BIT, GL_FRAMEBUFFER, GL_UNSIGNED_BYTE, GL_RGBA } from '../webgl/webglconstants';
+import { GL_COLOR_BUFFER_BIT, GL_CULL_FACE, GL_DEPTH_BUFFER_BIT, GL_STENCIL_BUFFER_BIT, GL_FRAMEBUFFER, GL_UNSIGNED_BYTE, GL_RGBA } from '../webgl/constants';
 import { GL_SCISSOR_TEST } from '../webgl/constants';
 import { WebGLContextParameters } from '../webgl/webglcontextparameters';
 import { WebGLRenderingState } from '../webgl/webglrenderingstate';
