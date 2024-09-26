@@ -3,7 +3,7 @@ import { vec4 } from 'gl-matrix';
 import { GL_FRAMEBUFFER, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_DEPTH_COMPONENT16, GL_DEPTH_ATTACHMENT } from '../webgl/constants';
 import { TextureManager } from './texturemanager';
 import { Graphics } from '../graphics/graphics';
-import { WebGLFramebuffer } from '../webgl/webglframebuffer';
+import { Framebuffer } from '../webgl/framebuffer';
 import { WebGLRenderbuffer } from '../webgl/webglrenderbuffer';
 import { FrameBufferTarget, TextureFormat, TextureType } from './constants';
 import { AnyTexture } from '../types';
@@ -12,7 +12,7 @@ export class RenderTarget {
 	#width: number;
 	#height: number;
 	#target: FrameBufferTarget = GL_FRAMEBUFFER;
-	#frameBuffer = new WebGLFramebuffer(this.#target);
+	#frameBuffer = new Framebuffer(this.#target);
 	#depthRenderbuffer: WebGLRenderbuffer;
 	#texture: AnyTexture;
 	#scissor = vec4.create();
