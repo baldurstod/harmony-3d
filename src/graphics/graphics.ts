@@ -559,6 +559,10 @@ export class Graphics {
 		return renderBuffer;
 	}
 
+	static deleteRenderbuffer(renderBuffer: WebGLRenderbuffer) {
+		this.glContext.deleteRenderbuffer(renderBuffer);
+	}
+
 	static setFramebuffer(framebuffer) {
 		framebuffer.bind();
 		//this.glContext.bindFramebuffer(_gl.FRAMEBUFFER, framebuffer);

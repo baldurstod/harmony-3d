@@ -4,7 +4,7 @@ import { GL_FRAMEBUFFER, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_T
 import { TextureManager } from './texturemanager';
 import { Graphics } from '../graphics/graphics';
 import { Framebuffer } from '../webgl/framebuffer';
-import { WebGLRenderbuffer } from '../webgl/webglrenderbuffer';
+import { Renderbuffer } from '../webgl/renderbuffer';
 import { FrameBufferTarget, TextureFormat, TextureType } from './constants';
 import { AnyTexture } from '../types';
 
@@ -13,7 +13,7 @@ export class RenderTarget {
 	#height: number;
 	#target: FrameBufferTarget = GL_FRAMEBUFFER;
 	#frameBuffer = new Framebuffer(this.#target);
-	#depthRenderbuffer: WebGLRenderbuffer;
+	#depthRenderbuffer: Renderbuffer;
 	#texture: AnyTexture;
 	#scissor = vec4.create();
 	#viewport = vec4.create();
@@ -57,7 +57,7 @@ export class RenderTarget {
 
 	#createDepthBuffer(width: number, height: number) {
 		if (this.#depthBuffer && !this.#depthRenderbuffer) {//TODOv3 DEPTH_STENCIL
-			this.#depthRenderbuffer = new WebGLRenderbuffer(GL_DEPTH_COMPONENT16, width, height);
+			this.#depthRenderbuffer = new Renderbuffer(GL_DEPTH_COMPONENT16, width, height);
 			this.#frameBuffer.addRenderbuffer(GL_DEPTH_ATTACHMENT, this.#depthRenderbuffer);
 		}
 	}
