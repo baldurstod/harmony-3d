@@ -8,7 +8,7 @@ import { pickList } from '../entities/picklist';
 import { GL_COLOR_BUFFER_BIT, GL_CULL_FACE, GL_DEPTH_BUFFER_BIT, GL_STENCIL_BUFFER_BIT, GL_FRAMEBUFFER, GL_UNSIGNED_BYTE, GL_RGBA } from '../webgl/constants';
 import { GL_SCISSOR_TEST } from '../webgl/constants';
 import { WebGLRenderingState } from '../webgl/renderingstate';
-import { WebGLShaderSource } from '../webgl/webglshadersource';
+import { WebGLShaderSource } from '../webgl/shadersource';
 import { WebGLStats } from '../utils/webglstats';
 import { setTextureFactoryContext } from '../textures/texturefactory';
 import { ForwardRenderer } from '../renderers/forwardrenderer';
@@ -189,9 +189,8 @@ export class Graphics {
 	}
 
 	static render(scene: Scene, camera: Camera, delta: number) {
-		let t0: number = 0;
 		if (MEASURE_PERFORMANCE) {
-			t0 = performance.now();
+			WebGLStats.beginRender();
 		}
 		this.renderBackground();//TODOv3 put in rendering pipeline
 		this.#forwardRenderer.render(scene, camera, delta);
@@ -204,7 +203,7 @@ export class Graphics {
 		if (MEASURE_PERFORMANCE) {
 			var t1 = performance.now();
 			if (USE_STATS) {
-				WebGLStats.renderTime += t1 - t0;
+				WebGLStats.endRender();
 			}
 		}
 	}
