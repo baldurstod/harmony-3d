@@ -1,6 +1,6 @@
 import { GL_VERTEX_SHADER, GL_FRAGMENT_SHADER } from './constants';
 import { DEBUG } from '../buildoptions';
-import { getIncludeSource } from '../shaders/managers/includemanager';
+import { getIncludeSource } from '../shaders/includemanager';
 
 export enum ShaderType {
 	Vertex = GL_VERTEX_SHADER,
@@ -91,7 +91,7 @@ export class WebGLShaderSource {
 		return this.#source;
 	}
 
-	getInclude(includeName, compileRow = 0, recursion = new Set(), allIncludes = new Set()) {
+	getInclude(includeName: string, compileRow = 0, recursion = new Set(), allIncludes = new Set()): string[] | undefined | null {
 		this.#includes.add(includeName);
 		if (recursion.has(includeName)) {
 			console.error('Include recursion in ' + includeName);
@@ -111,7 +111,7 @@ export class WebGLShaderSource {
 			if (line.trim().startsWith('#include')) {
 				let includeName = line.replace('#include', '').trim();
 				let include = this.getInclude(includeName, compileRow + i, recursion, allIncludes);
-				if (include !== undefined) {
+				if (include) {
 					this.#sourceRowToInclude[compileRow] = [includeName, include.length];
 					outArray.push(...include);
 					compileRow += include.length;
@@ -132,7 +132,6 @@ export class WebGLShaderSource {
 		}
 		allIncludes.add(includeName);
 		return outArray;
-		return includeLineArray.join('\n').trim();
 	}
 
 	getCompileSource(includeCode = '') {
@@ -279,7 +278,7 @@ export class WebGLShaderSource {
 			let line = sourceLineArray[i];
 			if (line.trim().startsWith('#include')) {
 				let include = this.getInclude(line.replace('#include', '').trim());
-				if (include !== undefined) {
+				if (include) {
 					include.shift();//Remove the first empty line
 					annotations.push({ type: 'info', column: 0, row: Math.max(i - 1, 0), text: include.join('\n') });
 				}
@@ -311,5 +310,9 @@ export class WebGLShaderSource {
 
 	containsInclude(includeName: string) {
 		return this.#includes.has(includeName);
+	}
+
+	getType() {
+		return this.#type;
 	}
 }

@@ -4,4 +4,5 @@ export * from './graphics/export';
 export * from './loaders/export';
 export * from './math/export';
 export * from './scenes/export';
+export * from './shaders/export';
 export * from './utils/export';
