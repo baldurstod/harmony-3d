@@ -1,4 +1,4 @@
-import { mat4, vec2, vec4 } from 'gl-matrix';
+import { vec2, vec4 } from 'gl-matrix';
 import { SaveFile } from 'harmony-browser-utils';
 import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
 
