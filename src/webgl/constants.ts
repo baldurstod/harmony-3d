@@ -254,13 +254,23 @@ export const GL_RGB10_A2 = 0x8059;
 export const GL_RGBA12 = 0x805A;
 export const GL_RGBA16 = 0x805B;
 export const GL_RGBA32UI = 0x8D70;
+export const GL_RGBA16UI = 0x8D76;
+export const GL_RGB16UI = 0x8D77;
+export const GL_RGBA8UI = 0x8D7C;
+export const GL_RGBA32I = 0x8D82;
+export const GL_RGB32I = 0x8D83;
+export const GL_RGBA16I = 0x8D88;
+export const GL_RGB16I = 0x8D89;
+export const GL_RGBA8I = 0x8D8E;
+export const GL_RGB10_A2UI = 0x906F;
+
 export const GL_VERTEX_ARRAY = 0x8074;
 
 export const GL_DEPTH_COMPONENT = 0x1902;
 export const GL_DEPTH_COMPONENT16 = 0x81A5;
 export const GL_DEPTH_COMPONENT24 = 0x81A6;
 export const GL_DEPTH_COMPONENT32 = 0x81A7;
-export const DEPTH_STENCIL = 0x84F9;
+export const GL_DEPTH_COMPONENT32F = 0x8CAC;
 
 export const FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING = 0x8210;
 
@@ -268,6 +278,19 @@ export const GL_SRGB = 0x8C40;
 export const GL_SRGB8 = 0x8C41;
 export const GL_SRGB_ALPHA = 0x8C42;
 export const GL_SRGB8_ALPHA8 = 0x8C43;
+export const GL_RG8 = 0x822B;
+export const GL_R8I = 0x8231;
+export const GL_R8UI = 0x8232;
+export const GL_R16I = 0x8233;
+export const GL_R16UI = 0x8234;
+export const GL_R32I = 0x8235;
+export const GL_R32UI = 0x8236;
+export const GL_RG8I = 0x8237;
+export const GL_RG8UI = 0x8238;
+export const GL_RG16I = 0x8239;
+export const GL_RG16UI = 0x823A;
+export const GL_RG32I = 0x823B;
+export const GL_RG32UI = 0x823C;
 
 // drawBuffers
 export const GL_MAX_COLOR_ATTACHMENTS = 0x8CDF;
@@ -306,10 +329,13 @@ export const GL_COLOR_ATTACHMENT31 = 0x8CFF;
 export const GL_DEPTH_ATTACHMENT = 0x8D00;
 export const GL_STENCIL_ATTACHMENT = 0x8D20;
 
-// bindFramebuffer
+//Framebuffers and renderbuffers
 export const GL_FRAMEBUFFER = 0x8D40;
 export const GL_RENDERBUFFER = 0x8D41;
 export const GL_READ_FRAMEBUFFER = 0x8CA8;
 export const GL_DRAW_FRAMEBUFFER = 0x8CA9;
-
-//export const GL_ = GL_RENDERING_CONTEXT.;
+export const GL_RGB565 = 0x8D62;
+export const GL_STENCIL_INDEX8 = 0x8D48;
+export const GL_DEPTH_STENCIL = 0x84F9;
+export const GL_DEPTH24_STENCIL8 = 0x88F0;
+export const GL_DEPTH32F_STENCIL8 = 0x8CAD;
