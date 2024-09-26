@@ -8,7 +8,7 @@ import { WebGLAnyRenderingContext } from '../types';
 export class WebGLRenderingState {
 	static #viewport = vec4.create();
 	static #scissor = vec4.create();
-	static #enabledCapabilities = {};
+	static #enabledCapabilities: boolean[] = [];
 	// clear values
 	static #clearColor = vec4.create();
 	static #clearDepth = 1.0;
@@ -16,7 +16,7 @@ export class WebGLRenderingState {
 	// Masking
 	static #colorMask = vec4.create();
 	static #depthMask = true;
-	static #stencilMask = true;
+	static #stencilMask: GLuint;
 	// Depth
 	static #depthFunc: GLenum = GL_LESS;
 
@@ -40,7 +40,7 @@ export class WebGLRenderingState {
 
 	static #lineWidth: GLfloat = 1;
 
-	static #program = undefined;
+	static #program: WebGLProgram;
 	static #graphics: typeof Graphics;
 	static #glContext: WebGLAnyRenderingContext;
 
@@ -69,21 +69,21 @@ export class WebGLRenderingState {
 		return vec4.copy(out, this.#clearColor);
 	}
 
-	static clearDepth(clearDepth) {
+	static clearDepth(clearDepth: GLclampf) {
 		if (clearDepth !== this.#clearDepth) {
 			this.#glContext.clearDepth(clearDepth);
 			this.#clearDepth = clearDepth;
 		}
 	}
 
-	static clearStencil(clearStencil) {
+	static clearStencil(clearStencil: GLint) {
 		if (clearStencil !== this.#clearStencil) {
 			this.#glContext.clearStencil(clearStencil);
 			this.#clearStencil = clearStencil;
 		}
 	}
 
-	static clear(color, depth, stencil) {
+	static clear(color: boolean, depth: boolean, stencil: boolean) {
 		let bits = 0;
 		if (color) bits |= GL_COLOR_BUFFER_BIT;
 		if (depth) bits |= GL_DEPTH_BUFFER_BIT;
@@ -105,7 +105,7 @@ export class WebGLRenderingState {
 		}
 	}
 
-	static stencilMask(stencilMask) {
+	static stencilMask(stencilMask: GLuint) {
 		if (stencilMask !== this.#stencilMask) {
 			this.#glContext.stencilMask(stencilMask);
 			this.#stencilMask = stencilMask;
@@ -133,67 +133,32 @@ export class WebGLRenderingState {
 		}
 	}
 
-	static enable(cap) {
+	static enable(cap: GLenum) {
 		if (this.#enabledCapabilities[cap] !== true) {
 			this.#glContext.enable(cap);
 			this.#enabledCapabilities[cap] = true;
 		}
 	}
 
-	static disable(cap) {
+	static disable(cap: GLenum) {
 		if (this.#enabledCapabilities[cap] !== false) {
 			this.#glContext.disable(cap);
 			this.#enabledCapabilities[cap] = false;
 		}
 	}
 
-	static isEnabled(cap) {
+	static isEnabled(cap: GLenum) {
 		return this.#enabledCapabilities[cap] ?? this.#glContext.isEnabled(cap);
 	}
 
-	static set material(material) {//TODO
-		return;
-		/*
-		material.side === DoubleSide
-			? disable(gl.CULL_FACE)
-			: enable(gl.CULL_FACE);
-
-		var flipSided = (material.side === BackSide);
-		if (frontFaceCW) flipSided = !flipSided;
-
-		setFlipSided(flipSided);
-
-		(material.blending === NormalBlending && material.transparent === false)
-			? setBlending(NoBlending)
-			: setBlending(material.blending, material.blendEquation, material.blendSrc, material.blendDst, material.blendEquationAlpha, material.blendSrcAlpha, material.blendDstAlpha, material.premultipliedAlpha);
-
-		depthBuffer.setFunc(material.depthFunc);
-		depthBuffer.setTest(material.depthTest);
-		depthBuffer.setMask(material.depthWrite);
-		colorBuffer.setMask(material.colorWrite);
-
-		var stencilWrite = material.stencilWrite;
-		stencilBuffer.setTest(stencilWrite);
-		if (stencilWrite) {
-
-			stencilBuffer.setMask(material.stencilWriteMask);
-			stencilBuffer.setFunc(material.stencilFunc, material.stencilRef, material.stencilFuncMask);
-			stencilBuffer.setOp(material.stencilFail, material.stencilZFail, material.stencilZPass);
-
-		}
-
-		setPolygonOffset(material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits);
-		*/
-	}
-
-	static useProgram(program) {
+	static useProgram(program: WebGLProgram) {
 		if (this.#program !== program) {
 			this.#glContext.useProgram(program);
 			this.#program = program;
 		}
 	}
 
-	static enableVertexAttribArray(index, divisor = 0) {
+	static enableVertexAttribArray(index: GLuint, divisor = 0) {
 		if (this.#enabledVertexAttribArray[index] === 0) {
 			this.#glContext.enableVertexAttribArray(index);
 			this.#enabledVertexAttribArray[index] = 1;
@@ -275,7 +240,7 @@ export class WebGLRenderingState {
 		}
 	}
 
-	static polygonOffset(enable, factor, units) {
+	static polygonOffset(enable: boolean, factor: GLfloat, units: GLfloat) {
 		if (enable) {
 			this.enable(GL_POLYGON_OFFSET_FILL);
 			if (this.#polygonOffsetFactor !== factor && this.#polygonOffsetUnits !== units) {
