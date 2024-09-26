@@ -1,6 +1,5 @@
 import { Entity } from '../entities/entity';
 
-
 export enum GraphicsEvent {
 	MouseMove = 'mousemove',
 	MouseDown = 'mousedown',
@@ -32,15 +31,15 @@ export const GraphicsEvents = new (function () {
 			this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
 		}
 
-		mouseMove(x: number, y: number, pickedEntity: Entity, mouseEvent: MouseEvent) {
+		mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
 			this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
 		}
 
-		mouseDown(x: number, y: number, pickedEntity: Entity, mouseEvent: MouseEvent) {
+		mouseDown(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
 			this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
 		}
 
-		mouseUp(x: number, y: number, pickedEntity: Entity, mouseEvent: MouseEvent) {
+		mouseUp(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
 			this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
 		}
 	}
