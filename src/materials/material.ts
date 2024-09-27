@@ -1,12 +1,12 @@
 import { vec2, vec4 } from 'gl-matrix';
 
-import { JSONLoader } from '../loaders/jsonloader'
 import { GL_LESS, GL_ONE, GL_ZERO, GL_DEPTH_TEST, GL_BLEND, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR } from '../webgl/constants';
 import { GL_FRONT, GL_BACK, GL_FRONT_AND_BACK } from '../webgl/constants';
 import { TESTING } from '../buildoptions';
 import { MateriaParameter } from './materialparameter';
 import { Texture } from '../textures/texture';
 import { BlendingMode, RenderFace } from './constants';
+import { registerEntity } from '../entities/entities';
 
 export const MATERIAL_BLENDING_NONE = 0;
 export const MATERIAL_BLENDING_NORMAL = 1;
@@ -465,4 +465,4 @@ export class Material {
 		return this.entityName;
 	}
 }
-JSONLoader.registerEntity(Material);
+registerEntity(Material);
