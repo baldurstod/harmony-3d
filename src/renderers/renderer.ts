@@ -42,7 +42,7 @@ export class Renderer {
 	}
 
 	getProgram(mesh: Mesh, material: Material) {
-		let program = undefined;
+		let program: Program;
 
 		let includeCode = this.#graphics.getIncludeCode();
 		includeCode += this.#globalIncludeCode;
@@ -59,7 +59,7 @@ export class Renderer {
 			this.#materialsProgram.set(includeCode, program);
 		}
 
-		if (program.valid === false) {
+		if (!program.isValid()) {
 			let includeCode = this.#graphics.getIncludeCode();
 			includeCode += this.#globalIncludeCode;
 			includeCode += getDefinesAsString(mesh);
@@ -246,8 +246,8 @@ export class Renderer {
 			this.unsetLights();
 		}
 		let program = this.getProgram(object, material);
-		if (program.valid) {
-			WebGLRenderingState.useProgram(program.program);
+		if (program.isValid()) {
+			WebGLRenderingState.useProgram(program.getProgram());
 			this.applyMaterial(program, material);
 			if (renderLights) {
 				material.beforeRender(camera);

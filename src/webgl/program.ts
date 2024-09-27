@@ -1,5 +1,5 @@
 import { GL_VERTEX_SHADER, GL_FRAGMENT_SHADER } from './constants';
-import { WebGLUniform } from './webgluniform';
+import { Uniform } from './uniform';
 import { ShaderManager } from '../managers/shadermanager';
 import { DEBUG, ENABLE_GET_ERROR } from '../buildoptions';
 import { WebGLAnyRenderingContext } from '../types';
@@ -12,8 +12,8 @@ export class Program {
 	#vertexShaderName: string
 	#fragmentShaderName: string
 	#valid: boolean = false;
-	#attributes = new Map<string, GLint>();
-	#uniforms = new Map<string, WebGLUniform>();
+	attributes = new Map<string, GLint>();
+	uniforms = new Map<string, Uniform>();
 	#linkError:string = '';
 	constructor(glContext: WebGLAnyRenderingContext, vertexShaderName: string, fragmentShaderName: string) {
 		this.#glContext = glContext;
@@ -26,12 +26,6 @@ export class Program {
 		glContext.attachShader(this.#program, this.#fs);
 	}
 
-	get attributes() {
-		throw 'error';
-	}
-	get uniforms() {
-		throw 'error';
-	}
 	get program() {
 		throw 'error';
 	}
@@ -43,7 +37,7 @@ export class Program {
 	}
 
 	setUniformValue(name: string, value: any) {
-		let uniform = this.#uniforms.get(name);
+		let uniform = this.uniforms.get(name);
 		if (uniform !== undefined) {
 			uniform.setValue(this.#glContext, value);
 			if (ENABLE_GET_ERROR && DEBUG) {
@@ -85,9 +79,17 @@ export class Program {
 		this.#valid = false;
 	}
 
+	isValid(): boolean {
+		return this.#valid;
+	}
+
+	getProgram(): WebGLProgram {
+		return this.#program;
+	}
+
 	#initProgram() {
-		this.#attributes.clear();
-		this.#uniforms.clear();
+		this.attributes.clear();
+		this.uniforms.clear();
 		const activeAttributes = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_ATTRIBUTES);
 		for (let i = 0; i < activeAttributes; i++) {
 			let attribInfo = this.#glContext.getActiveAttrib(this.#program, i);
@@ -105,22 +107,22 @@ export class Program {
 		}
 
 		let samplerId = 0;
-		for (let [uniformName, uniform] of this.#uniforms) {
-			if (uniform.isTextureSampler) {
-				uniform.textureUnit = samplerId;//setValue(this.#glContext, samplerId);
-				samplerId += uniform.size;
+		for (let [uniformName, uniform] of this.uniforms) {
+			if (uniform.isTextureSampler()) {
+				uniform.setTextureUnit(samplerId);//setValue(this.#glContext, samplerId);
+				samplerId += uniform.getSize();
 			}
 		}
 	}
 
 	#setProgramAttribute(attributeName: string) {
 		const attributeLocation = this.#glContext.getAttribLocation(this.#program, attributeName);
-		this.#attributes.set(attributeName, attributeLocation);//TODO: set in attributes ?
+		this.attributes.set(attributeName, attributeLocation);//TODO: set in attributes ?
 	}
 
 	#setProgramUniform(uniformInfo) {
 		const uniformLocation = this.#glContext.getUniformLocation(this.#program, uniformInfo.name);
-		this.#uniforms.set(uniformInfo.name, new WebGLUniform(uniformInfo, uniformLocation));
+		this.uniforms.set(uniformInfo.name, new Uniform(uniformInfo, uniformLocation));
 	}
 
 	#compileShader(shader, shaderName, shaderSource, includeCode) {
