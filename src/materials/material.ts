@@ -464,5 +464,14 @@ export class Material {
 	static getEntityName(): string {
 		return this.entityName;
 	}
+
+	get shaderSource(): string {
+		// TODO: remove this
+		throw 'get shaderSource() must be overridden';
+	}
+
+	getShaderSource(): string {
+		return this.shaderSource;
+	}
 }
 registerEntity(Material);
