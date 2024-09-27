@@ -1,8 +1,8 @@
 import { mat3, mat4, vec3 } from 'gl-matrix';
 
-import { CameraProjection } from '../cameras/camera';
+import { Camera, CameraProjection } from '../cameras/camera';
 import { GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER, GL_UNSIGNED_INT } from '../webgl/constants';
-import { WebGLProgram } from '../webgl/webglprogram';
+import { Program } from '../webgl/program';
 import { WebGLStats } from '../utils/webglstats';
 import { GL_LINES } from '../webgl/constants';
 import { DEBUG, ENABLE_GET_ERROR, USE_STATS } from '../buildoptions';
@@ -10,8 +10,9 @@ import { ToneMapping } from '../textures/constants';
 import { WebGLRenderingState } from '../webgl/renderingstate';
 import { Graphics } from '../graphics/graphics';
 import { WebGLAnyRenderingContext } from '../types';
-import { StaticMesh } from '../objects/mesh';
+import { Mesh } from '../objects/mesh';
 import { Material } from '../materials/material';
+import { Scene } from '../scenes/scene';
 
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
@@ -33,14 +34,14 @@ export class Renderer {
 	#toneMappingExposure = 1.;
 	#graphics: typeof Graphics;
 	#glContext: WebGLAnyRenderingContext;
-	#materialsProgram = new Map<string, WebGLProgram>();
+	#materialsProgram = new Map<string, Program>();
 	#globalIncludeCode = '';
 	constructor(graphics: typeof Graphics) {
 		this.#graphics = graphics;
 		this.#glContext = graphics.glContext;
 	}
 
-	getProgram(mesh: StaticMesh, material: Material) {
+	getProgram(mesh: Mesh, material: Material) {
 		let program = undefined;
 
 		let includeCode = this.#graphics.getIncludeCode();
@@ -54,7 +55,7 @@ export class Renderer {
 		} else {
 			const shaderSource = material.getShaderSource();
 
-			program = new WebGLProgram(this.#glContext, shaderSource + '.vs', shaderSource + '.fs');
+			program = new Program(this.#glContext, shaderSource + '.vs', shaderSource + '.fs');
 			this.#materialsProgram.set(includeCode, program);
 		}
 
@@ -341,7 +342,7 @@ export class Renderer {
 		renderList.finish();
 	}
 
-	_renderRenderList(renderList, camera, renderLights, lightPos) {
+	_renderRenderList(renderList, camera, renderLights, lightPos?) {
 		for (let child of renderList.opaqueList) {
 			this.renderObject(renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
 		}
@@ -353,7 +354,7 @@ export class Renderer {
 		}
 	}
 
-	render(scene, camera) {
+	render(scene: Scene, camera: Camera, delta: number) {
 	}
 
 	clear(color, depth, stencil) {
