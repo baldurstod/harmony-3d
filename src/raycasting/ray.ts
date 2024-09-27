@@ -1,6 +1,6 @@
 import { mat4, vec3 } from 'gl-matrix';
 
-import { Intersection } from './intersection.js';
+import { Intersection } from './intersection';
 
 const EPSILON = 1e-7;
 
