@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { createElement, toggle, hide, show } from 'harmony-ui';
 import 'harmony-ui/dist/define/harmony-color-picker';
-import { FileSelector } from './fileselector/fileselector.js';
+import { FileSelector } from './fileselector/fileselector';
 
 const DATALIST_ID = 'interaction-datalist';
 
@@ -214,11 +214,11 @@ export class Interaction {
 		//this.#htmlFileSelector.style.display = 'none';
 		//this.hide();
 		//return value;
-		let fileSelector: FileSelector = document.createElement('file-selector');//TODO: create only once
+		let fileSelector: FileSelector = document.createElement('file-selector') as FileSelector;//TODO: create only once
 		htmlContainer.append(fileSelector);
 		fileSelector.fileList = fileList;
-		fileSelector.addEventListener('fileSelected', (event) => {
-			let file = event.detail.file;
+		fileSelector.addEventListener('fileSelected', event => {
+			let file = (event as CustomEvent).detail.file;
 			callback(file.root, file.path + file.name);
 		});
 	}
