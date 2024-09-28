@@ -17,7 +17,7 @@ export class ColorBackground extends BackGround {
 
 	render(renderer: Renderer, camera: Camera) {
 		renderer.clearColor(this.#color);
-		renderer.clear(true);
+		renderer.clear(true, false, false);
 	}
 
 	setColor(color: vec4) {
