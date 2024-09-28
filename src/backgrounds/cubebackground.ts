@@ -28,7 +28,7 @@ export class CubeBackground extends BackGround {
 
 	render(renderer: Renderer, camera: Camera) {
 		this.#box.setPosition(camera.getPosition(tempVec3))
-		renderer.render(this.#box, camera);
+		renderer.render(this.#box, camera, 0);
 	}
 
 	setTexture(texture: Texture) {
