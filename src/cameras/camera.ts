@@ -7,10 +7,6 @@ import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { EntityObserver } from '../entities/entityobserver';
 import { registerEntity } from '../entities/entities';
 
-export const PERSPECTIVE_CAMERA = 0;
-export const ORTHOGRAPHIC_CAMERA = 1;
-export const MIXED_CAMERA = 2;
-
 export enum CameraProjection {
 	Perspective = 0,
 	Orthographic,
@@ -27,7 +23,7 @@ const proj2 = mat4.create();
 const DEFAULT_NEAR_PLANE = 1;
 const DEFAULT_FAR_PLANE = 1000;
 const DEFAULT_ORTHO_ZOOM = 1;
-const DEFAULT_PROJECTION = PERSPECTIVE_CAMERA;
+const DEFAULT_PROJECTION = CameraProjection.Perspective;
 const DEFAULT_PROJECTION_MIX = 0;
 const DEFAULT_VERTICAL_FOV = 60;
 const DEFAULT_ASPECT_RATIO = 1;
@@ -45,7 +41,7 @@ export class Camera extends Entity {
 	#nearPlane: number;
 	#farPlane: number;
 	#orthoZoom: number;
-	#projectionType: CameraProjection;
+	#projection: CameraProjection;
 	#projectionMix: number;// 0: full perspective 1: full ortho
 	#left: number;
 	#right: number;
@@ -70,7 +66,7 @@ export class Camera extends Entity {
 		this.farPlane = params.farPlane ?? params.far ?? DEFAULT_FAR_PLANE;
 		this.orthoZoom = params.orthoZoom ?? DEFAULT_ORTHO_ZOOM;
 		this.projectionMix = params.projectionMix ?? DEFAULT_PROJECTION_MIX;
-		this.projectionType = params.projectionType ?? params.projection ?? DEFAULT_PROJECTION;
+		this.setProjection(params.projection ?? DEFAULT_PROJECTION);
 		this.verticalFov = params.verticalFov ?? params.fov ?? DEFAULT_VERTICAL_FOV;
 		this.aspectRatio = params.aspectRatio ?? params.aspect ?? DEFAULT_ASPECT_RATIO;
 		this.upVector = params.upVector ?? DEFAULT_UP_VECTOR;
@@ -90,12 +86,13 @@ export class Camera extends Entity {
 	}
 
 	#computeProjectionMatrix() {
-		if (this.#projectionType == PERSPECTIVE_CAMERA) {
+		if (this.#projection == CameraProjection.Perspective) {
 			mat4.perspective(this.#projectionMatrix, this.#verticalFov, this.#aspectRatio, this.#nearPlane, this.#farPlane);
-		} else if (this.#projectionType == ORTHOGRAPHIC_CAMERA) {
+		} else if (this.#projection == CameraProjection.Orthographic) {
 			let ortho = this.#orthoZoom;
 			mat4.ortho(this.#projectionMatrix, this.#left / ortho, this.#right / ortho, this.#bottom / ortho, this.#top / ortho, this.#nearPlane, this.#farPlane);
 		} else {
+			// Mixed perspective / ortho
 			let invOrtho = 1 / this.#orthoZoom;
 			mat4.perspective(proj1, this.#verticalFov, this.#aspectRatio, this.#nearPlane, this.#farPlane);
 			mat4.ortho(proj2, this.#left * invOrtho, this.#right * invOrtho, this.#bottom * invOrtho, this.#top * invOrtho, this.#nearPlane, this.#farPlane);
@@ -108,17 +105,17 @@ export class Camera extends Entity {
 	reset() {
 	}
 
-	set projectionType(projectionType) {
-		this.#projectionType = projectionType;
+	setProjection(projection: CameraProjection) {
+		this.#projection = projection;
 		this.#dirtyProjectionMatrix = true;
-		this.isPerspective = projectionType == PERSPECTIVE_CAMERA;
-		this.isOrthographic = projectionType == ORTHOGRAPHIC_CAMERA;
+		this.isPerspective = projection == CameraProjection.Perspective;
+		this.isOrthographic = projection == CameraProjection.Orthographic;
 
-		EntityObserver.propertyChanged(this, 'projectiontype', this.#projectionType);
+		EntityObserver.propertyChanged(this, 'projectiontype', this.#projection);
 	}
 
-	get projectionType() {
-		return this.#projectionType;
+	get projection() {
+		return this.#projection;
 	}
 
 	setProjectionMix(projectionMix) {
@@ -128,11 +125,11 @@ export class Camera extends Entity {
 	set projectionMix(projectionMix) {
 		this.#projectionMix = projectionMix;
 		if (projectionMix == 0) {
-			this.projectionType = PERSPECTIVE_CAMERA;
+			this.setProjection(CameraProjection.Perspective);
 		} else if (projectionMix == 1) {
-			this.projectionType = ORTHOGRAPHIC_CAMERA;
+			this.setProjection(CameraProjection.Orthographic);
 		} else {
-			this.projectionType = MIXED_CAMERA;
+			this.setProjection(CameraProjection.Mixed);
 		}
 		EntityObserver.propertyChanged(this, 'projectionmix', this.#projectionMix);
 	}
@@ -340,8 +337,8 @@ export class Camera extends Entity {
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			camera1: null,
-			cameraPerspective: { i18n: '#perspective_camera', selected: this.isPerspective, f: () => this.projectionType = PERSPECTIVE_CAMERA },
-			cameraOrthographic: { i18n: '#orthographic_camera', selected: this.isOrthographic, f: () => this.projectionType = ORTHOGRAPHIC_CAMERA },
+			cameraPerspective: { i18n: '#perspective_camera', selected: this.isPerspective, f: () => this.setProjection(CameraProjection.Perspective) },
+			cameraOrthographic: { i18n: '#orthographic_camera', selected: this.isOrthographic, f: () => this.setProjection(CameraProjection.Orthographic) },
 			cameraNearPlane: { i18n: '#near_plane', f: () => { let nearPlane = prompt('Near plane', String(this.nearPlane)); if (nearPlane !== null) { this.nearPlane = Number(nearPlane); } } },
 			cameraFarPlane: { i18n: '#far_plane', f: () => { let farPlane = prompt('Far plane', String(this.farPlane)); if (farPlane !== null) { this.farPlane = Number(farPlane); } } },
 			cameraOrthoZoom: { i18n: '#zoom', f: () => { let zoom = prompt('Zoom', String(this.orthoZoom)); if (zoom !== null) { this.orthoZoom = Number(zoom); } } },
@@ -359,7 +356,7 @@ export class Camera extends Entity {
 		this.nearPlane = source.nearPlane;
 		this.farPlane = source.farPlane;
 		this.orthoZoom = source.orthoZoom;
-		this.projectionType = source.projectionType;
+		this.setProjection(source.projection);
 		this.projectionMix = source.projectionMix;
 		this.verticalFov = source.verticalFov;
 		this.aspectRatio = source.aspectRatio;
@@ -382,8 +379,8 @@ export class Camera extends Entity {
 		if (this.orthoZoom != DEFAULT_ORTHO_ZOOM) {
 			json.orthoZoom = this.orthoZoom;
 		}
-		if (this.projectionType != DEFAULT_PROJECTION) {
-			json.projectionType = this.projectionType;
+		if (this.projection != DEFAULT_PROJECTION) {
+			json.projection = this.projection;
 		}
 		if (this.#projectionMix != DEFAULT_PROJECTION_MIX) {
 			json.projectionMix = this.#projectionMix;
