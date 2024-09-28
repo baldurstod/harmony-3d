@@ -228,7 +228,7 @@ export class Mesh extends Entity {
 					intersectionNormal[2] = worldMatrix[2] * x + worldMatrix[6] * y + worldMatrix[10] * z;
 
 					vec3.transformMat4(intersectionPoint, intersectionPoint, worldMatrix);
-					intersections.push(ray.createIntersection(intersectionPoint, intersectionNormal, uv, this));
+					intersections.push(ray.createIntersection(intersectionPoint, intersectionNormal, uv, this, 0));
 				}
 			}
 		} else {
@@ -268,7 +268,7 @@ export class Mesh extends Entity {
 					intersectionNormal[2] = worldMatrix[2] * x + worldMatrix[6] * y + worldMatrix[10] * z;
 
 					vec3.transformMat4(intersectionPoint, intersectionPoint, worldMatrix);
-					intersections.push(ray.createIntersection(intersectionPoint, intersectionNormal, uv, this));
+					intersections.push(ray.createIntersection(intersectionPoint, intersectionNormal, uv, this, 0));
 				}
 			}
 		}
