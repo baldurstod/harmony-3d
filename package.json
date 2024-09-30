@@ -2,7 +2,7 @@
 	"name": "harmony-3d",
 	"version": "0.0.1",
 	"description": "3D viewer",
-	"main": "./src/index.js",
+	"main": "./src/index",
 	"type": "module",
 	"dependencies": {
 		"@derschmale/io-rgbe": "github:baldurstod/io-rgbe",
