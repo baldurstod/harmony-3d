@@ -2,6 +2,7 @@ import { BoxBufferGeometry } from './geometries/boxbuffergeometry';
 import { JSONLoader } from '../loaders/jsonloader';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
+import { registerEntity } from '../entities/entities';
 
 export class Box extends Mesh {
 	#widthSegments: number;
@@ -69,4 +70,4 @@ export class Box extends Mesh {
 		return 'Box';
 	}
 }
-JSONLoader.registerEntity(Box);
+registerEntity(Box);
