@@ -79,6 +79,7 @@ export class Graphics {
 	static ANGLE_instanced_arrays: any;
 	static OES_texture_float_linear: any;
 	static #mediaRecorder: MediaRecorder;
+	static dragging = false;
 
 	static {
 		this.setShaderPrecision(ShaderPrecision.Medium);
