@@ -168,7 +168,7 @@ export class Renderer {
 
 				if (spotLight.castShadow) {
 					shadow = spotLight.shadow;
-					spotShadowMap.push(shadow.renderTarget.texture);
+					spotShadowMap.push(shadow.renderTarget.getTexture());
 					spotShadowMatrix.push(shadow.shadowMatrix);
 					program.setUniformValue('uSpotLightShadows[' + spotLightId + '].mapSize', shadow.textureSize);
 					program.setUniformValue('uSpotLightShadows[' + spotLightId + '].enabled', true);
