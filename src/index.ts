@@ -3,6 +3,7 @@ export * from './cameras/export';
 export * from './entities/export';
 export * from './geometry/export';
 export * from './graphics/export';
+export * from './lights/export';
 export * from './loaders/export';
 export * from './materials/export';
 export * from './managers/export';
