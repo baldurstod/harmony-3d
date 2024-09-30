@@ -48,7 +48,7 @@ export class Renderer {
 		includeCode += this.#globalIncludeCode;
 		includeCode += getDefinesAsString(mesh);
 		includeCode += getDefinesAsString(material);
-		includeCode += material.shaderSource;
+		includeCode += material.getShaderSource();
 
 		if (this.#materialsProgram.has(includeCode)) {
 			program = this.#materialsProgram.get(includeCode);

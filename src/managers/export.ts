@@ -1,0 +1,1 @@
+export { ShaderManager } from './shadermanager';

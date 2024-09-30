@@ -25,7 +25,7 @@ export class WebGLShaderSource {
 	#source: string = '';
 	#extensions: string = '';
 	#sizeOfSourceRow: number[] = [];
-	#sourceRowToInclude: any = {};
+	#sourceRowToInclude = new Map<number, any>();
 	#compileSource: string = '';
 	#isErroneous: boolean = false;
 	#error: string = '';
@@ -42,7 +42,7 @@ export class WebGLShaderSource {
 		this.#source = source;
 		this.#extensions = '';
 		this.#sizeOfSourceRow = [];
-		this.#sourceRowToInclude = {};
+		this.#sourceRowToInclude.clear();
 		this.#includes.clear();
 		let allIncludes = new Set();
 
@@ -63,7 +63,7 @@ export class WebGLShaderSource {
 				let includeName = line.replace('#include', '').trim();
 				let include = this.getInclude(includeName, compileRow, new Set(), allIncludes);
 				if (include) {
-					this.#sourceRowToInclude[compileRow] = [includeName, include.length];
+					this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
 					outArray.push(...include);
 					compileRow += include.length;
 					actualSize = include.length;
@@ -115,7 +115,7 @@ export class WebGLShaderSource {
 				let includeName = line.replace('#include', '').trim();
 				let include = this.getInclude(includeName, compileRow + i, recursion, allIncludes);
 				if (include) {
-					this.#sourceRowToInclude[compileRow] = [includeName, include.length];
+					this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
 					outArray.push(...include);
 					compileRow += include.length;
 				}
@@ -317,5 +317,9 @@ export class WebGLShaderSource {
 
 	getType() {
 		return this.#type;
+	}
+
+	getSourceRowToInclude() {
+		return new Map(this.#sourceRowToInclude);
 	}
 }
