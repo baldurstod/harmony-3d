@@ -6,4 +6,5 @@ export * from './materials/export';
 export * from './math/export';
 export * from './scenes/export';
 export * from './shaders/export';
+export * from './textures/export';
 export * from './utils/export';
