@@ -692,4 +692,8 @@ export class Graphics {
 	static getCanvas() {
 		return this.#canvas;
 	}
+
+	static getForwardRenderer() {
+		return this.#forwardRenderer;
+	}
 }
