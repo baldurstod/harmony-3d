@@ -168,7 +168,7 @@ export class BufferAttribute {
 }
 
 export class Uint8BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset, length) {
+	constructor(array: typeof TypedArrayProto, itemSize: number, offset?, length?) {
 		super(null, itemSize);
 		this.setSource(array);
 		this.array = new Uint8Array(array);
@@ -176,7 +176,7 @@ export class Uint8BufferAttribute extends BufferAttribute {//fixme
 }
 
 export class Uint16BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset, length) {
+	constructor(array: typeof TypedArrayProto, itemSize: number, offset?, length?) {
 		super(null, itemSize);
 		this.setSource(array);
 		this.array = new Uint16Array(array);
@@ -184,7 +184,7 @@ export class Uint16BufferAttribute extends BufferAttribute {//fixme
 }
 
 export class Uint32BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset, length) {
+	constructor(array: typeof TypedArrayProto, itemSize: number, offset?, length?) {
 		super(null, itemSize);
 		this.setSource(array);
 		this.array = new Uint32Array(array);
@@ -192,7 +192,7 @@ export class Uint32BufferAttribute extends BufferAttribute {//fixme
 }
 
 export class Float32BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset, length) {
+	constructor(array: typeof TypedArrayProto, itemSize: number, offset?, length?) {
 		super(null, itemSize);
 		this.setSource(array);
 		this.array = new Float32Array(array);
