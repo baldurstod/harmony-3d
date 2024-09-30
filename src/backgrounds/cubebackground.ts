@@ -7,11 +7,13 @@ import { ShaderMaterial } from '../materials/shadermaterial';
 import { Texture } from '../textures/texture';
 import { TextureMapping } from '../textures/constants';
 import { BackGround } from './background';
+import { Scene } from '../scenes/scene';
 
 const tempVec3 = vec3.create();
 
 export class CubeBackground extends BackGround {
 	#box = new Box();
+	#scene = new Scene();
 	#material = new ShaderMaterial({ shaderSource: 'skybox' });
 	constructor(params: any = {}) {
 		super();
@@ -20,6 +22,7 @@ export class CubeBackground extends BackGround {
 		this.#material.renderFace(RenderFace.Back);
 		this.#material.renderLights = false;
 		this.#box.material = this.#material;
+		this.#scene.addChild(this.#box);
 
 		if (params.texture) {
 			this.setTexture(params.texture);
@@ -28,7 +31,7 @@ export class CubeBackground extends BackGround {
 
 	render(renderer: Renderer, camera: Camera) {
 		this.#box.setPosition(camera.getPosition(tempVec3))
-		renderer.render(this.#box, camera, 0);
+		renderer.render(this.#scene, camera, 0);
 	}
 
 	setTexture(texture: Texture) {
