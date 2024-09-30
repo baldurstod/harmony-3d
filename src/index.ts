@@ -1,5 +1,6 @@
 export * from './backgrounds/export';
 export * from './cameras/export';
+export * from './controls/export';
 export * from './entities/export';
 export * from './geometry/export';
 export * from './graphics/export';
