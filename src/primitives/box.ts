@@ -3,6 +3,7 @@ import { JSONLoader } from '../loaders/jsonloader';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
 import { registerEntity } from '../entities/entities';
+import { Material } from '../materials/material';
 
 export class Box extends Mesh {
 	#widthSegments: number;
@@ -11,18 +12,16 @@ export class Box extends Mesh {
 	#width: number;
 	#height: number;
 	#depth: number;
-	constructor({ width = 1, height = undefined, depth = undefined, material = new MeshBasicMaterial(), widthSegments = 1, heightSegments = 1, depthSegments = 1 } = {}) {
-		super(new BoxBufferGeometry(), material);
-		this.#width = width ?? 1;
-		this.#height = height ?? this.#width;
-		this.#depth = depth ?? this.#width;
-		this.#widthSegments = widthSegments ?? 1;
-		this.#heightSegments = heightSegments ?? 1;
-		this.#depthSegments = depthSegments ?? 1;
-		this.setMaterial(material ?? new MeshBasicMaterial());
-
-		this.setGeometry(new BoxBufferGeometry());
+	constructor(params: any = {}) {
+		super(new BoxBufferGeometry(), params.material ?? new MeshBasicMaterial());
+		this.#width = params.width ?? 1;
+		this.#height = params.height ?? this.#width;
+		this.#depth = params.depth ?? this.#width;
+		this.#widthSegments = params.widthSegments ?? 1;
+		this.#heightSegments = params.heightSegments ?? 1;
+		this.#depthSegments = params.depthSegments ?? 1;
 		this.updateGeometry();
+		super.setParameters(params);
 	}
 
 	updateGeometry() {
@@ -53,7 +52,7 @@ export class Box extends Mesh {
 
 	static async constructFromJSON(json, entities, loadedPromise) {
 		let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
-		return new Box({ width: json.width, height: json.height, depth: json.depth, material: material, widthSegments: json.widthSegments, heightSegments: json.heightSegments, depthSegments: json.depthSegments });
+		return new Box({ width: json.width, height: json.height, depth: json.depth, material: (material as Material), widthSegments: json.widthSegments, heightSegments: json.heightSegments, depthSegments: json.depthSegments });
 	}
 
 	/*dispose() {
