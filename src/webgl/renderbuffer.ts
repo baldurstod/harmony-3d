@@ -33,6 +33,10 @@ export class Renderbuffer {
 		renderbufferStorage(Graphics.glContext, this.#renderbuffer, this.#internalFormat, width, height);
 	}
 
+	getRenderbuffer() {
+		return this.#renderbuffer;
+	}
+
 	/*TODOv3 removeme
 		_renderbufferStorage(width, height) {
 			glContext.bindRenderbuffer(GL_RENDERBUFFER, this.renderbuffer);

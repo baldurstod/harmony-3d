@@ -59,7 +59,7 @@ export class Framebuffer {
 				case ATTACHMENT_TYPE_RENDER_BUFFER:
 					//Graphics.glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
 					//Graphics.renderbufferStorage(GL_RENDERBUFFER, GL_RGBA4, 256, 256);
-					Graphics.glContext.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.renderbuffer);
+					Graphics.glContext.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
 					if (ENABLE_GET_ERROR && DEBUG) {
 						Graphics.getGLError('framebufferRenderbuffer');
 					}
