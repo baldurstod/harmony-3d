@@ -50,7 +50,7 @@ export class Framebuffer {
 		this.#dirty = true;
 	}
 
-	_setupAttachments() {
+	#setupAttachments() {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			Graphics.cleanupGLError();
 		}
@@ -90,11 +90,11 @@ export class Framebuffer {
 			Graphics.getGLError('bindFramebuffer');
 		}
 		/*console.error(Graphics.getError());
-		this._setupAttachments();//TODOv3
+		this.#setupAttachments();//TODOv3
 		console.error(Graphics.getError());
 		return;*/
 		if (this.#dirty) {
-			this._setupAttachments();
+			this.#setupAttachments();
 		}
 	}
 
