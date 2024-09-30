@@ -68,7 +68,7 @@ export class Light extends Entity {
 			color: { i18n: '#color', f: () => { let color = prompt('Color', this.color.join(' ')); if (color !== null) { this.color = stringToVec3(color); } } },
 			intensity: { i18n: '#intensity', f: () => { let intensity = prompt('Intensity', this.intensity); if (intensity !== null) { this.intensity = intensity; } } },
 		}, this.shadow ? {
-			texture_size: { i18n: '#texture_size', f: () => { let textureSize = prompt('Texture size', this.shadow.textureSize[0]); if (textureSize !== null) { this.shadowTextureSize = Number.parseFloat(textureSize); } } }
+			texture_size: { i18n: '#texture_size', f: () => { let textureSize = prompt('Texture size', String(this.shadow.textureSize[0])); if (textureSize !== null) { this.shadowTextureSize = Number.parseFloat(textureSize); } } }
 		} : null);
 	}
 
