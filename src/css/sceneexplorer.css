@@ -1,0 +1,150 @@
+:host {
+	background-color: var(--theme-scene-explorer-bg-color);
+	width: 100%;
+	height: 100%;
+	overflow: auto;
+	/*padding: 5px;*/
+	/*box-sizing: border-box;*/
+	display: flex;
+	flex-direction: column;
+	font-size: 1.5em;
+}
+
+.scene-explorer-contextmenu {
+	position: absolute;
+	height: 50px;
+	width: 50px;
+	background-color: turquoise;
+}
+
+.scene-explorer-scene {
+	flex: 1;
+	overflow: auto;
+}
+
+.scene-explorer-file-selector {
+	flex: 1;
+	overflow: auto;
+	display: flex;
+}
+
+.scene-explorer-properties {
+	background-color: orange;
+	display: flex;
+	flex-wrap: wrap;
+
+}
+
+.scene-explorer-properties>div,
+.scene-explorer-properties>label {
+	width: 50%;
+}
+
+.scene-explorer-properties>.scene-explorer-entity-title {
+	width: 100%;
+}
+
+.scene-explorer-selector {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	background-color: bisque;
+	margin: 10px;
+}
+
+
+scene-explorer-entity {
+	flex-direction: column;
+}
+
+.scene-explorer-entity-header {
+	cursor: pointer;
+	display: flex;
+}
+
+scene-explorer-entity.selected>.scene-explorer-entity-header {
+	background-color: var(--theme-scene-explorer-entity-selected-bg-color);
+}
+
+.scene-explorer-entity-buttons {
+	display: flex;
+}
+
+.scene-explorer-entity-buttons>div {
+	width: 20px;
+	height: 20px;
+	cursor: pointer;
+}
+
+.scene-explorer-entity-button-properties {
+	background-color: blue;
+}
+
+.scene-explorer-entity-button-childs {
+	background-color: green;
+}
+
+.scene-explorer-entity-visible {
+	cursor: pointer;
+}
+
+.scene-explorer-entity-childs {
+	background-color: teal;
+	/*padding: 5px;*/
+	padding-left: 20px;
+}
+
+.file-explorer-file {
+	cursor: pointer;
+}
+
+.file-explorer-file-header:hover {
+	font-weight: bold;
+}
+
+.file-explorer-childs {
+	padding-left: 20px;
+}
+
+file-selector {
+	display: flex;
+	flex-direction: column;
+	overflow: auto;
+	width: 100%;
+}
+
+.file-selector-header {
+	flex: 0;
+}
+
+.file-selector-content {
+	flex: 1;
+	overflow: auto;
+}
+
+file-selector-directory {
+	display: block;
+	cursor: pointer;
+}
+
+file-selector-file {
+	display: block;
+	cursor: pointer;
+}
+
+file-selector-tile {
+	display: block;
+	overflow: hidden;
+	width: 100%;
+	cursor: pointer;
+}
+
+.file-selector-directory-header:hover,
+file-selector-file:hover,
+file-selector-tile:hover {
+	background-color: var(--theme-file-selector-item-hover-bg-color);
+}
+
+.file-selector-directory-content {
+	padding-left: 20px;
+}
