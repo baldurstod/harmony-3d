@@ -111,7 +111,7 @@ export class Camera extends Entity {
 		this.isPerspective = projection == CameraProjection.Perspective;
 		this.isOrthographic = projection == CameraProjection.Orthographic;
 
-		EntityObserver.propertyChanged(this, 'projectiontype', this.#projection);
+		EntityObserver.propertyChanged(this, 'projection', this.#projection);
 	}
 
 	get projection() {
