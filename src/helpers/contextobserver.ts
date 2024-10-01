@@ -14,16 +14,22 @@ function resizeCamera(context, camera) {
 }
 
 
-export class ContextObserver {
-	static #observed = new Map();
-	static #listeners = new Map();
+class ContextObserverClass {
+	#observed = new Map();
+	#listeners = new Map();
+	static #instance: ContextObserverClass;
+	constructor() {
+		if (ContextObserverClass.#instance) {
+			return ContextObserverClass.#instance;
+		}
+	}
 
-	static handleEvent(event) {
+	handleEvent(event) {
 		const subject = event.target;
 		const dependents = this.#observed.get(subject);
 		if (dependents) {
 			for (let dependent of dependents) {
-				ContextObserver.#processEvent(subject, dependent, event);
+				ContextObserverClass.#processEvent(subject, dependent, event);
 			}
 		}
 	}
@@ -44,7 +50,7 @@ export class ContextObserver {
 		}
 	}
 
-	static #addObserver(subject, dependent) {
+	#addObserver(subject, dependent) {
 		if (!this.#observed.has(subject)) {
 			this.#observed.set(subject, new Set());
 		}
@@ -53,7 +59,7 @@ export class ContextObserver {
 		this.#observed.get(subject).add(dependent);
 	}
 
-	static #removeObserver(subject, dependent) {
+	#removeObserver(subject, dependent) {
 		if (this.#observed.has(subject)) {
 			this.#observed.get(subject).delete(dependent);
 			this.#removeListeners(subject, dependent);
@@ -61,7 +67,7 @@ export class ContextObserver {
 
 	}
 
-	static #createListeners(subject, dependent) {
+	#createListeners(subject, dependent) {
 		switch (true) {
 			case dependent.is('Camera'):
 			case dependent instanceof FirstPersonControl://TODO do it for any CameraControl?
@@ -74,7 +80,7 @@ export class ContextObserver {
 		}
 	}
 
-	static #removeListeners(subject, dependent) {
+	#removeListeners(subject, dependent) {
 		const size = this.#observed.get(subject).size;
 		if (size == 0) {
 			const types = this.#listeners.get(subject);
@@ -85,7 +91,7 @@ export class ContextObserver {
 		}
 	}
 
-	static #addListener(target, type) {
+	#addListener(target, type) {
 		if (!this.#listeners.has(target)) {
 			this.#listeners.set(target, new Set());
 		}
@@ -98,7 +104,7 @@ export class ContextObserver {
 		}
 	}
 
-	static #removeListener(target, type) {
+	#removeListener(target, type) {
 		const targetSet = this.#listeners.get(target);
 
 		if (targetSet && targetSet.has(type)) {
@@ -107,7 +113,7 @@ export class ContextObserver {
 		}
 	}
 
-	static observe(subject, dependent) {
+	observe(subject, dependent) {
 		this.#addObserver(subject, dependent);
 
 		switch (true) {
@@ -117,7 +123,9 @@ export class ContextObserver {
 		}
 	}
 
-	static unobserve(subject, dependent) {
+	unobserve(subject, dependent) {
 		this.#removeObserver(subject, dependent);
 	}
 }
+
+export const ContextObserver = new ContextObserverClass();
