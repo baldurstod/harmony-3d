@@ -12,6 +12,7 @@ export * from './managers/export';
 export * from './math/export';
 export * from './misc/export';
 export * from './objects/export';
+export * from './primitives/export';
 export * from './raycasting/export';
 export * from './scenes/export';
 export * from './shaders/export';
