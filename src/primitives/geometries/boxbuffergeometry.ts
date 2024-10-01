@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute.js'
-import { BufferGeometry } from '../../geometry/buffergeometry.js';
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { BufferGeometry } from '../../geometry/buffergeometry';
 
 export class BoxBufferGeometry extends BufferGeometry {
 	#indices: number[];
