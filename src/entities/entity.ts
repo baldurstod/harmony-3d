@@ -60,6 +60,7 @@ export class Entity {
 	lockRot = false;
 	lockScale = false;
 	drawOutline = false;
+	static editMaterial: (entity: Entity) => void;
 
 	constructor(params?: any) {
 		this.setParameters(params);
