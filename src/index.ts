@@ -10,6 +10,7 @@ export * from './loaders/export';
 export * from './materials/export';
 export * from './managers/export';
 export * from './math/export';
+export * from './misc/export';
 export * from './objects/export';
 export * from './raycasting/export';
 export * from './scenes/export';
