@@ -15,7 +15,7 @@ export class ShaderManager {
 		ShaderEventTarget.dispatchEvent(new CustomEvent('shaderadded'));
 	}
 
-	static getShaderSource(type, name, invalidCustomShaders = false) {
+	static getShaderSource(type, name, invalidCustomShaders = false): WebGLShaderSource {
 		if (this.#shaderList.get(name) === undefined) {
 			let source = Shaders[name];
 			if (source) {
