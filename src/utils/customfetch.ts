@@ -1,4 +1,4 @@
-type FetchFunction = (resource: NodeJS.fetch.RequestInfo, options?: RequestInit) => Promise<Response>;
+type FetchFunction = (resource: string | URL | Request, options?: RequestInit) => Promise<Response>;
 
 let fetchFunction: FetchFunction = null;
 
@@ -6,7 +6,7 @@ export function setFetchFunction(func: FetchFunction) {
 	fetchFunction = func;
 }
 
-export async function customFetch(resource: NodeJS.fetch.RequestInfo, options?: RequestInit) {
+export async function customFetch(resource: string | URL | Request, options?: RequestInit) {
 	try {
 		if (fetchFunction) {
 			return await fetchFunction(resource, options);
