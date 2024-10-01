@@ -3,7 +3,7 @@ import { Entity } from '../entities/entity';
 
 // It is just a basic entity
 export class Target extends Entity {
-	constructor(params: any) {
+	constructor(params?: any) {
 		super(params);
 	}
 

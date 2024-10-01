@@ -385,7 +385,7 @@ export class Graphics {
 		WebGLRenderingState.clearColor(clearColor);
 	}
 
-	static getClearColor(clearColor) {
+	static getClearColor(clearColor?: vec4) {
 		return WebGLRenderingState.getClearColor(clearColor);
 	}
 
