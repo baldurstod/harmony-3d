@@ -3,6 +3,9 @@ import { Includes } from '../../../shaders/includes';
 import compute_fragment_diffuse from './compute_fragment_diffuse.glsl';
 Includes['compute_fragment_diffuse'] = compute_fragment_diffuse;
 
+import compute_fragment_normal_world_space from './compute_fragment_normal_world_space.glsl';
+Includes['compute_fragment_normal_world_space'] = compute_fragment_normal_world_space;
+
 import compute_pbr from './compute_pbr.glsl';
 Includes['compute_pbr'] = compute_pbr;
 
