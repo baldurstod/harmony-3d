@@ -1,5 +1,8 @@
 import { Includes } from '../../../../shaders/includes';
 
+import compute_vertex_log_depth from './compute_vertex_log_depth.glsl';
+Includes['compute_vertex_log_depth'] = compute_vertex_log_depth;
+
 import compute_vertex_projection from './compute_vertex_projection.glsl';
 Includes['compute_vertex_projection'] = compute_vertex_projection;
 
