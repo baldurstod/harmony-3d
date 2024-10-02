@@ -1,5 +1,5 @@
 import { BoxBufferGeometry } from './geometries/boxbuffergeometry';
-import { JSONLoader } from '../loaders/jsonloader';
+import { JSONLoader } from '../importers/jsonloader';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
 import { registerEntity } from '../entities/entities';

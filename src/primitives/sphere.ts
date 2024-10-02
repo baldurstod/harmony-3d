@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 
 import { SphereBufferGeometry } from './geometries/spherebuffergeometry';
-import { JSONLoader } from '../loaders/jsonloader';
+import { JSONLoader } from '../importers/jsonloader';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
 import { PI, TAU } from '../math/constants';

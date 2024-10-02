@@ -4,7 +4,7 @@ import { EntityObserver } from './entityobserver';
 import { pickList } from './picklist';
 
 import { DEBUG, VERBOSE } from '../buildoptions';
-import { JSONLoader } from '../loaders/jsonloader';
+import { JSONLoader } from '../importers/jsonloader';
 import { BoundingBox } from '../math/boundingbox';
 import { DEG_TO_RAD } from '../math/constants';
 import { generateRandomUUID } from '../math/functions';
