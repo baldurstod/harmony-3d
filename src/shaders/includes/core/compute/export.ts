@@ -9,6 +9,9 @@ Includes['compute_fragment_color_map'] = compute_fragment_color_map;
 import compute_fragment_normal from './compute_fragment_normal.glsl';
 Includes['compute_fragment_normal'] = compute_fragment_normal;
 
+import compute_lights_setup_vars from './compute_lights_setup_vars.glsl';
+Includes['compute_lights_setup_vars'] = compute_lights_setup_vars;
+
 import compute_vertex_log_depth from './compute_vertex_log_depth.glsl';
 Includes['compute_vertex_log_depth'] = compute_vertex_log_depth;
 
