@@ -1,5 +1,8 @@
 import { Includes } from '../../../../shaders/includes';
 
+import compute_fragment_color_map from './compute_fragment_color_map.glsl';
+Includes['compute_fragment_color_map'] = compute_fragment_color_map;
+
 import compute_vertex_log_depth from './compute_vertex_log_depth.glsl';
 Includes['compute_vertex_log_depth'] = compute_vertex_log_depth;
 
