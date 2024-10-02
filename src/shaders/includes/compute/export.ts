@@ -3,6 +3,9 @@ import { Includes } from '../../../shaders/includes';
 import compute_fragment_diffuse from './compute_fragment_diffuse.glsl';
 Includes['compute_fragment_diffuse'] = compute_fragment_diffuse;
 
+import compute_pbr from './compute_pbr.glsl';
+Includes['compute_pbr'] = compute_pbr;
+
 import compute_silhouette_color from './compute_silhouette_color.glsl';
 Includes['compute_silhouette_color'] = compute_silhouette_color;
 
