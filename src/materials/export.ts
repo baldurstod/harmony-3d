@@ -6,3 +6,4 @@ export { MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_NONE
 export { MateriaParameter, MateriaParameterType } from './materialparameter';
 export { MeshBasicMaterial } from './meshbasicmaterial';
 export { MeshFlatMaterial } from './meshflatmaterial';
+export { ShaderMaterial } from './shadermaterial';
