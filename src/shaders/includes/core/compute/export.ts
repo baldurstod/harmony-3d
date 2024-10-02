@@ -12,6 +12,9 @@ Includes['compute_fragment_lights'] = compute_fragment_lights;
 import compute_fragment_normal from './compute_fragment_normal.glsl';
 Includes['compute_fragment_normal'] = compute_fragment_normal;
 
+import compute_fragment_render_mode from './compute_fragment_render_mode.glsl';
+Includes['compute_fragment_render_mode'] = compute_fragment_render_mode;
+
 import compute_lights_setup_vars from './compute_lights_setup_vars.glsl';
 Includes['compute_lights_setup_vars'] = compute_lights_setup_vars;
 
