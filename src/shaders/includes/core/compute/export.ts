@@ -1,5 +1,8 @@
 import { Includes } from '../../../../shaders/includes';
 
+import compute_fragment_alpha_test from './compute_fragment_alpha_test.glsl';
+Includes['compute_fragment_alpha_test'] = compute_fragment_alpha_test;
+
 import compute_fragment_color_map from './compute_fragment_color_map.glsl';
 Includes['compute_fragment_color_map'] = compute_fragment_color_map;
 
