@@ -6,6 +6,9 @@ Includes['declare_fragment_color_map'] = declare_fragment_color_map;
 import declare_fragment_diffuse from './declare_fragment_diffuse.glsl';
 Includes['declare_fragment_diffuse'] = declare_fragment_diffuse;
 
+import declare_fragment_ibl from './declare_fragment_ibl.glsl';
+Includes['declare_fragment_ibl'] = declare_fragment_ibl;
+
 import declare_fragment_standard from './declare_fragment_standard.glsl';
 Includes['declare_fragment_standard'] = declare_fragment_standard;
 
