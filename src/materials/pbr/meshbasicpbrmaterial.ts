@@ -1,6 +1,6 @@
 import { DEFAULT_COLOR, Material } from '../material'
-import { JSONLoader } from '../../loaders/jsonloader'
 import { MateriaParameterType } from '../materialparameter';
+import { registerEntity } from '../../entities/entities';
 
 export class MeshBasicPbrMaterial extends Material {
 	constructor(params: any = {}) {
@@ -93,4 +93,4 @@ export class MeshBasicPbrMaterial extends Material {
 	}
 }
 Material.materialList['MeshBasicPbr'] = MeshBasicPbrMaterial;
-JSONLoader.registerEntity(MeshBasicPbrMaterial);
+registerEntity(MeshBasicPbrMaterial);
