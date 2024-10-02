@@ -9,6 +9,9 @@ Includes['compute_vertex_shadow_mapping'] = compute_vertex_shadow_mapping;
 import compute_vertex_skinning from './compute_vertex_skinning.glsl';
 Includes['compute_vertex_skinning'] = compute_vertex_skinning;
 
+import compute_vertex_standard from './compute_vertex_standard.glsl';
+Includes['compute_vertex_standard'] = compute_vertex_standard;
+
 import compute_vertex_uv from './compute_vertex_uv.glsl';
 Includes['compute_vertex_uv'] = compute_vertex_uv;
 
