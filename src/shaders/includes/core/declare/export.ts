@@ -1,5 +1,8 @@
 import { Includes } from '../../../../shaders/includes';
 
+import declare_fragment_alpha_test from './declare_fragment_alpha_test.glsl';
+Includes['declare_fragment_alpha_test'] = declare_fragment_alpha_test;
+
 import declare_log_depth from './declare_log_depth.glsl';
 Includes['declare_log_depth'] = declare_log_depth;
 
