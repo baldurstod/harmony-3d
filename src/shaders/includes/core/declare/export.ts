@@ -3,6 +3,9 @@ import { Includes } from '../../../../shaders/includes';
 import declare_matrix_uniforms from './declare_matrix_uniforms.glsl';
 Includes['declare_matrix_uniforms'] = declare_matrix_uniforms;
 
+import declare_shadow_mapping from './declare_shadow_mapping.glsl';
+Includes['declare_shadow_mapping'] = declare_shadow_mapping;
+
 import declare_vertex_skinning from './declare_vertex_skinning.glsl';
 Includes['declare_vertex_skinning'] = declare_vertex_skinning;
 
