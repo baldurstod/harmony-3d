@@ -1,5 +1,8 @@
 import { Includes } from '../../../../shaders/includes';
 
+import compute_vertex_projection from './compute_vertex_projection.glsl';
+Includes['compute_vertex_projection'] = compute_vertex_projection;
+
 import compute_vertex_skinning from './compute_vertex_skinning.glsl';
 Includes['compute_vertex_skinning'] = compute_vertex_skinning;
 
