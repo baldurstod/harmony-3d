@@ -1,5 +1,8 @@
 import { Includes } from '../../../../shaders/includes';
 
+import declare_log_depth from './declare_log_depth.glsl';
+Includes['declare_log_depth'] = declare_log_depth;
+
 import declare_matrix_uniforms from './declare_matrix_uniforms.glsl';
 Includes['declare_matrix_uniforms'] = declare_matrix_uniforms;
 
