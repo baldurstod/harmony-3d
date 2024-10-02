@@ -6,6 +6,9 @@ Includes['compute_fragment_alpha_test'] = compute_fragment_alpha_test;
 import compute_fragment_color_map from './compute_fragment_color_map.glsl';
 Includes['compute_fragment_color_map'] = compute_fragment_color_map;
 
+import compute_fragment_lights from './compute_fragment_lights.glsl';
+Includes['compute_fragment_lights'] = compute_fragment_lights;
+
 import compute_fragment_normal from './compute_fragment_normal.glsl';
 Includes['compute_fragment_normal'] = compute_fragment_normal;
 
