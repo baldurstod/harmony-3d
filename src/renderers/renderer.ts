@@ -360,11 +360,11 @@ export class Renderer {
 	clear(color, depth, stencil) {
 		WebGLRenderingState.clear(color, depth, stencil);
 	}
-/*
-	get vpMatrix() {
-		return mat4.mul(mat4.create(), this.currentCamera.projectionMatrix, this.viewMatrix);
-	}
-		*/
+	/*
+		get vpMatrix() {
+			return mat4.mul(mat4.create(), this.currentCamera.projectionMatrix, this.viewMatrix);
+		}
+			*/
 
 	/**
 	 * Invalidate all shader (force recompile)
