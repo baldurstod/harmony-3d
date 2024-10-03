@@ -1,5 +1,5 @@
-import { Camera } from '../cameras/camera.js';
-import { Graphics } from '../graphics/graphics.js';
+import { Camera } from '../cameras/camera';
+import { Graphics } from '../graphics/graphics';
 
 export class CameraControl {
 	#camera: Camera;

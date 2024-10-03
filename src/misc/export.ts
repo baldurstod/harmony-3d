@@ -1,2 +1,2 @@
-export * from './repositories.js';
-export * from './repository.js';
+export * from './repositories';
+export * from './repository';

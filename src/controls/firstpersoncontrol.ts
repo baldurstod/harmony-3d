@@ -1,10 +1,10 @@
 import { quat, vec2, vec3 } from 'gl-matrix';
 
-import { CameraControl } from './cameracontrol.js'
-import { Spherical } from './spherical.js'
-import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants.js';
-import { clamp } from '../math/functions.js';
-import { Camera } from '../cameras/camera.js';
+import { CameraControl } from './cameracontrol'
+import { Spherical } from './spherical'
+import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
+import { clamp } from '../math/functions';
+import { Camera } from '../cameras/camera';
 
 const xUnitVec3 = vec3.fromValues(1, 0, 0);
 const yUnitVec3 = vec3.fromValues(0, 1, 0);

@@ -1,1 +1,1 @@
-export { MeshBasicPbrMaterial } from './meshbasicpbrmaterial.js';
+export { MeshBasicPbrMaterial } from './meshbasicpbrmaterial';

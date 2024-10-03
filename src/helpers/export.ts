@@ -1,1 +1,1 @@
-export { ContextObserver } from './contextobserver.js';
+export { ContextObserver } from './contextobserver';

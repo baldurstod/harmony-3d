@@ -1,7 +1,7 @@
 import { createElement } from 'harmony-ui';
 
-import { TextureFactoryEventTarget } from '../textures/texturefactory.js';
-import { USE_STATS } from '../buildoptions.js';
+import { TextureFactoryEventTarget } from '../textures/texturefactory';
+import { USE_STATS } from '../buildoptions';
 import { GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES } from '../webgl/constants';
 
 export class WebGLStats {

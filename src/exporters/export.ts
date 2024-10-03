@@ -1,1 +1,1 @@
-export { exportToBinaryFBX } from './exportfbx.js';
+export { exportToBinaryFBX } from './exportfbx';

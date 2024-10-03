@@ -1,7 +1,7 @@
 
-export * from './compute/export.js'
-export * from './core/export.js'
-export * from './declare/export.js'
+export * from './compute/export'
+export * from './core/export'
+export * from './declare/export'
 export * from './functions/export'
 export * from './textures/export'
 export * from './varying/export'

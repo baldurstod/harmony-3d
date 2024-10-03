@@ -1,8 +1,8 @@
 import { vec2, vec3 } from 'gl-matrix';
 
-import { BufferGeometry } from '../geometry/buffergeometry.js';
-import { Float32BufferAttribute, Uint32BufferAttribute } from '../geometry/bufferattribute.js';
-import { ShapeUtils } from '../misc/shapeutils.js';
+import { BufferGeometry } from '../geometry/buffergeometry';
+import { Float32BufferAttribute, Uint32BufferAttribute } from '../geometry/bufferattribute';
+import { ShapeUtils } from '../misc/shapeutils';
 
 class ExtrudeGeometry extends BufferGeometry {
 	parameters: object;

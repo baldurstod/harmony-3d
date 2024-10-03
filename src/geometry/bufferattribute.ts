@@ -1,5 +1,5 @@
 import { GL_ARRAY_BUFFER, GL_STATIC_DRAW, GL_BYTE, GL_SHORT, GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_FLOAT, GL_HALF_FLOAT, GL_UNSIGNED_INT, GL_INT, GL_DYNAMIC_DRAW, GL_STREAM_DRAW, GL_STATIC_READ, GL_DYNAMIC_READ, GL_STREAM_READ, GL_STATIC_COPY, GL_DYNAMIC_COPY, GL_STREAM_COPY } from '../webgl/constants';
-import { VERBOSE } from '../buildoptions.js';
+import { VERBOSE } from '../buildoptions';
 
 const TypedArrayProto = Object.getPrototypeOf(Int8Array);// we can't use TypedArray directly
 

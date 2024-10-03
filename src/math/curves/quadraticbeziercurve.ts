@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 
-import { Curve, DEFAULT_POINT } from './curve.js';
+import { Curve, DEFAULT_POINT } from './curve';
 
 export class QuadraticBezierCurve extends Curve {
 	p0 = vec3.create();

@@ -7,8 +7,8 @@ import { ContextObserver } from '../helpers/contextobserver';
 import { Plane } from '../primitives/plane';
 import { Scene } from '../scenes/scene';
 import { RenderTarget } from '../textures/rendertarget';
-import { Material } from '../materials/material.js';
-import { Renderer } from '../renderers/renderer.js';
+import { Material } from '../materials/material';
+import { Renderer } from '../renderers/renderer';
 
 const DEFAULT_SIZE = 256;
 

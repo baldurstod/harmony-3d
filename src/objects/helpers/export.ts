@@ -1,4 +1,4 @@
 
-export { CameraFrustum } from './camerafrustum.js';
-export { Grid } from './grid.js';
+export { CameraFrustum } from './camerafrustum';
+export { Grid } from './grid';
 export { Manipulator } from './manipulator';

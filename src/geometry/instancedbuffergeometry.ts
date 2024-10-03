@@ -1,4 +1,4 @@
-import { BufferGeometry } from './buffergeometry.js';
+import { BufferGeometry } from './buffergeometry';
 
 export class InstancedBufferGeometry extends BufferGeometry {
 	instanceCount: number;
