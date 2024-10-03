@@ -60,6 +60,7 @@ export class Entity {
 	lockRot = false;
 	lockScale = false;
 	drawOutline = false;
+	locked: boolean = false;
 	static editMaterial: (entity: Entity) => void;
 
 	constructor(params?: any) {
@@ -189,13 +190,23 @@ export class Entity {
 		return `${this._position[0].toFixed(2)} ${this._position[1].toFixed(2)} ${this._position[2].toFixed(2)}`;
 	}
 
-	set quaternion(quaternion) {
+	setQuaternion(quaternion: quat) {
 		quat.normalize(this._quaternion, quaternion);
 		EntityObserver.propertyChanged(this, 'quaternion', this._quaternion);
 	}
 
+	getQuaternion(quaternion: quat = quat.create()) {
+		return quat.copy(quaternion, this._quaternion);
+	}
+
+	set quaternion(quaternion: quat) {
+		// TODO: deprecate
+		this.setQuaternion(quaternion);
+	}
+
 	get quaternion() {
-		return quat.clone(this._quaternion);
+		// TODO: deprecate
+		return this.getQuaternion();
 	}
 
 	get quaternionAsString() {
