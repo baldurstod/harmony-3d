@@ -417,7 +417,7 @@ export class Entity {
 		return currentEntity;
 	}
 
-	addChild(child) {
+	addChild(child: Entity) {
 		if (!child) {
 			return
 		}
@@ -1019,7 +1019,7 @@ export class Entity {
 		});
 
 		if (entity) {
-			this.addChild(entity);
+			this.addChild(entity as Entity);
 			return entity;
 		}
 	}
