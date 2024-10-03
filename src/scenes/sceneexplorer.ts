@@ -16,7 +16,7 @@ import { AmbientLight } from '../lights/ambientlight';
 import { PointLight } from '../lights/pointlight';
 import { SpotLight } from '../lights/spotlight';
 import { MaterialEditor } from '../materials/materialeditor';
-import { StaticDecal } from '../objects/staticdecal';
+import { Decal } from '../objects/decal';
 import { Group } from '../objects/group';
 import { Target } from '../objects/target';
 import { Text3D } from '../objects/text3d';
@@ -376,7 +376,7 @@ Entity.addSubMenu = [
 				{ i18n: '#group', f: (entity) => entity.addChild(new Group()) },
 				{ i18n: '#target', f: (entity) => entity.addChild(new Target()) },
 				{ i18n: '#keeponlylastchild', f: (entity) => entity.addChild(new KeepOnlyLastChild()) },
-				{ i18n: '#decal', f: (entity) => entity.addChild(new StaticDecal()) },
+				{ i18n: '#decal', f: (entity) => entity.addChild(new Decal()) },
 			]
 	},
 	{
