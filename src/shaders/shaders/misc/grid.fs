@@ -1,4 +1,5 @@
 export default `
+#include declare_fragment_standard
 #include declare_fragment_diffuse
 #include declare_fragment_color_map
 
