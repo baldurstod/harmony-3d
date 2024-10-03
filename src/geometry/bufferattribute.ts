@@ -27,6 +27,7 @@ export class BufferAttribute {
 	count: number;
 	_buffer: WebGLBuffer;
 	#source: any;
+	divisor: number;
 	constructor(array: typeof TypedArrayProto, itemSize: number) {
 		this.itemSize = itemSize;
 		if (isNaN(this.itemSize)) {
