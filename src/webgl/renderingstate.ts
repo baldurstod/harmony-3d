@@ -158,7 +158,7 @@ export class WebGLRenderingState {
 		}
 	}
 
-	static enableVertexAttribArray(index: GLuint, divisor = 0) {
+	static enableVertexAttribArray(index: GLuint, divisor: GLuint = 0) {
 		if (this.#enabledVertexAttribArray[index] === 0) {
 			this.#glContext.enableVertexAttribArray(index);
 			this.#enabledVertexAttribArray[index] = 1;
