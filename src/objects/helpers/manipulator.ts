@@ -107,10 +107,10 @@ export class Manipulator extends Entity {
 	camera: Camera;
 	size = 1;
 	#axis: number;
-	#startPosition: vec3;
-	#startQuaternion: quat;
-	#startLocalQuaternion: quat;
-	#startDragQuaternion: quat;
+	#startPosition: vec3 = vec3.create();
+	#startQuaternion: quat = quat.create();
+	#startLocalQuaternion: quat = quat.create();
+	#startDragQuaternion: quat = quat.create();
 	#translationManipulator: Entity;
 	#rotationManipulator: Entity;
 	#scaleManipulator: Entity;
