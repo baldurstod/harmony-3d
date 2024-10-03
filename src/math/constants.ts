@@ -1,5 +1,6 @@
 export const PI = Math.PI;
 export const TAU = Math.PI * 2.0;
+export const TWO_PI = TAU;
 export const HALF_PI = Math.PI * 0.5;
 
 export const DEG_TO_RAD = Math.PI / 180;
