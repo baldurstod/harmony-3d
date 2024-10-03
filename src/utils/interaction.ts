@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { createElement, toggle, hide, show } from 'harmony-ui';
 import 'harmony-ui/dist/define/harmony-color-picker';
 import { FileSelector } from './fileselector/fileselector';
+export { FileSelector } from './fileselector/fileselector';
 
 const DATALIST_ID = 'interaction-datalist';
 
