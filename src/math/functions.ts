@@ -1,5 +1,5 @@
 import { quat, vec3 } from 'gl-matrix';
-import { DEG_TO_RAD, RAD_TO_DEG } from './constants.js';
+import { DEG_TO_RAD, RAD_TO_DEG } from './constants';
 
 export function degToRad(deg: number): number {
 	return deg * DEG_TO_RAD;

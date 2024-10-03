@@ -1,4 +1,4 @@
-import { EPSILON, RAD_TO_DEG } from './constants.js'
+import { EPSILON, RAD_TO_DEG } from './constants'
 
 export function quatToEuler(out, q) {
 	const test = q[0] * q[3] - q[1] * q[2];
