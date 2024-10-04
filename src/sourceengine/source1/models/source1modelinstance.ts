@@ -326,16 +326,16 @@ export class Source1ModelInstance extends Entity {
 						} else {
 							mesh = new Mesh(geometry, defaultMaterial);
 						}
-						mesh.name = geometry.name;
+						mesh.name = geometry.properties.get('name');
 						mesh.sourceModelMesh = modelMesh.mesh;
 						if (geometry.hasAttribute('aVertexTangent')) {
 							mesh.setDefine('USE_VERTEX_TANGENT');
 						}
 						//mesh.visible = defaul;
-						mesh.materialId = geometry.materialId;
-						mesh.materialType = geometry.materialType;//TODOv3 : setup a better material param
-						mesh.materialParam = geometry.materialParam;//TODOv3 : setup a better material param
-						mesh.eyeballArray = geometry.eyeballArray;//TODOv3 : setup a better material param
+						mesh.materialId = geometry.properties.get('materialId');
+						mesh.materialType = geometry.properties.get('materialType');//TODOv3 : setup a better material param
+						mesh.materialParam = geometry.properties.get('materialParam');//TODOv3 : setup a better material param
+						mesh.eyeballArray = geometry.properties.get('eyeballArray');//TODOv3 : setup a better material param
 						mesh.materialsParams = this.materialsParams;
 						newModel.push(mesh);
 						//this.addChild(mesh);
