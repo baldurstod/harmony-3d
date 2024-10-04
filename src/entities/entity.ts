@@ -930,9 +930,6 @@ export class Entity {
 		}
 	}
 
-	getAttachement() {
-	}
-
 	setAttribute(attributeName, attributeValue) {
 		this.#attributes.set(attributeName, attributeValue);
 		this.propagate();
