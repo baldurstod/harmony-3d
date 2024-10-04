@@ -63,6 +63,7 @@ export class Entity {
 	locked: boolean = false;
 	static editMaterial: (entity: Entity) => void;
 	properties = new Map<string, any>();
+	loadedPromise: Promise<any>;
 
 	constructor(params?: any) {
 		this.setParameters(params);
