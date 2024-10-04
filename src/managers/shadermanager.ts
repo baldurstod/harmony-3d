@@ -73,7 +73,7 @@ export class ShaderManager {
 					for (let [startLine, [includeName2, includeLength]] of sourceRowToInclude) {
 						//let [includeName2, includeLength] = shaderSource.sourceRowToInclude[startLine];
 						if (startLine <= error.row && (startLine + includeLength) > error.row && includeName == includeName2) {
-							errorArray.push({type:error.type, column:error.column, row:error.row - startLine, text:error.text});
+							errorArray.push({ type: error.type, column: error.column, row: error.row - startLine, text: error.text });
 						}
 					}
 				}
