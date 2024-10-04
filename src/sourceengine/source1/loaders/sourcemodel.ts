@@ -57,7 +57,7 @@ export class SourceModel {
 	}
 
 	createInstance(isDynamic, preventInit) {
-		return new Source1ModelInstance(this, isDynamic, preventInit);
+		return new Source1ModelInstance({ sourceModel: this, isDynamic: isDynamic, preventInit: preventInit });
 	}
 
 	getBodyNumber(bodygroups) {
