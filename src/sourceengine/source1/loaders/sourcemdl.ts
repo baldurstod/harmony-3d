@@ -5,6 +5,7 @@ import { FlexController } from '../models/flexcontroller.js';
 import { getLoader } from '../../../loaders/loaderfactory.js';
 import { RemapValClamped } from '../../../math/functions';
 import { MdlStudioSeqDesc } from './mdlstudioseqdesc.js';
+import { SourceEngineMDLLoader } from './sourceenginemdlloader.js';
 
 /**
  * MDL Model
@@ -715,6 +716,10 @@ export class MdlStudioModelGroup {//removeme
 
 export class MdlTexture {//removeme
 	name;
+	originalName;
 }
 export class MdlBodyPart {//removeme
+	name;
+	base;
+	models;
 }

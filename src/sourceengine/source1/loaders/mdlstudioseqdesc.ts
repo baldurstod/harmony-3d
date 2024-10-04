@@ -27,6 +27,40 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 	name: string;
 	flags: number;
 	activity;
+	id;
+	startOffset;
+	actweight;
+	numevents;
+	eventindex;
+	bbmin;
+	bbmax;
+	numblends;
+	animindexindex;
+	movementindex;
+
+
+	paramparent;
+	fadeintime;
+	fadeouttime;
+	localentrynode;
+	localexitnode;
+	nodeflags;
+	entryphase;
+	exitphase;
+	lastframe;
+	nextseq;
+	pose;
+	numikrules;
+	numautolayers;
+	autolayerindex;
+	weightlistindex;
+	numiklocks;
+	iklockindex;
+	keyvalueindex;
+	keyvaluesize;
+	cycleposeindex;
+	activityName;
+	keyvalueText;
 
 	pBoneweight(boneIndex) {
 		return this.weightlist[boneIndex];
@@ -163,7 +197,20 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 	}
 }
 
-export class MdlStudioAutoLayer { };
+export class MdlStudioAutoLayer {
+	iSequence;
+	iPose;
+	flags;
+	start;
+	peak;
+	tail;
+	end;
+};
+
 export class MdlStudioEvent {
 	cycle: number;
+	event;
+	type;
+	options;
+	name;
 };
