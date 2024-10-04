@@ -467,7 +467,7 @@ export class Source1ModelInstance extends Entity {
 			//let id = 0;
 			for (let bodyPartModel of bodyPart.children) {
 				//let bodyPartModel = bodyPart.children.get(id);
-				bodyPartModel.visible = (bodyPartModel.modelId == modelId) ? undefined : false;
+				bodyPartModel.visible = (bodyPartModel.properties.get('modelId') == modelId) ? undefined : false;
 				//++id;
 			}
 		}
