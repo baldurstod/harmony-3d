@@ -62,6 +62,7 @@ export class Entity {
 	drawOutline = false;
 	locked: boolean = false;
 	static editMaterial: (entity: Entity) => void;
+	properties = new Map<string, any>();
 
 	constructor(params?: any) {
 		this.setParameters(params);
