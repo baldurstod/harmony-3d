@@ -1,16 +1,16 @@
 import { mat4, quat } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
 
-import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader.js';
-import { SourceMDL, MdlStudioModelGroup, MdlTexture, MdlBodyPart } from './sourcemdl.js';
-import { MdlStudioAutoLayer, MdlStudioEvent, MdlStudioSeqDesc } from './mdlstudioseqdesc.js';
-import { MdlStudioAnim, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWROT2 } from './mdlstudioanim.js';
-import { MdlBone } from './mdlbone.js';
-import { DEBUG, LOG, TESTING } from '../../../buildoptions.js';
-import { registerLoader } from '../../../loaders/loaderfactory.js';
+import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
+import { SourceMDL, MdlStudioModelGroup, MdlTexture, MdlBodyPart } from './sourcemdl';
+import { MdlStudioAutoLayer, MdlStudioEvent, MdlStudioSeqDesc } from './mdlstudioseqdesc';
+import { MdlStudioAnim, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWROT2 } from './mdlstudioanim';
+import { MdlBone } from './mdlbone';
+import { DEBUG, LOG, TESTING } from '../../../buildoptions';
+import { registerLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
-import { StringStrip } from '../utils/utils.js';
-import { MAX_NUM_LODS } from './constants.js';
+import { StringStrip } from '../utils/utils';
+import { MAX_NUM_LODS } from './constants';
 
 const BODYPART_STRUCT_SIZE = 16;
 const MODEL_VERTEX_DATA_STRUCT_SIZE = 8;// Size in bytes of mstudio_modelvertexdata_t
