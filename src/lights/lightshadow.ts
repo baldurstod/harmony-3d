@@ -8,7 +8,6 @@ let tempMat4 = mat4.create();
 
 export class LightShadow {
 	#textureSize: vec2 = vec2.create();
-	range: number = 0;
 	light: Light;
 	camera: Camera;
 	shadowMatrix: mat4 = mat4.create();
@@ -27,6 +26,9 @@ export class LightShadow {
 		this.viewPortsLength = 1;
 		this.renderTarget = new RenderTarget({ width: this.#textureSize[0], height: this.#textureSize[0], });
 		this.renderTarget.resize(this.#textureSize[0], this.#textureSize[1]);
+	}
+
+	set range(range: number) {
 	}
 
 	set textureSize(textureSize: number) {
