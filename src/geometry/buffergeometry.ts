@@ -8,6 +8,7 @@ export class BufferGeometry {
 	attributes = new Map<string, BufferAttribute>();
 	dirty: boolean = true;
 	count: number = 0;
+	properties = new Map<string, any>();
 
 	getAttribute(name: string) {
 		return this.attributes.get(name);
