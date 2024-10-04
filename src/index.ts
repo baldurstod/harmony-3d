@@ -17,6 +17,7 @@ export * from './primitives/export';
 export * from './raycasting/export';
 export * from './scenes/export';
 export * from './shaders/export';
+export * from './sourceengine/export';
 export * from './textures/export';
 export * from './utils/export';
 export * from './webgl/export';
