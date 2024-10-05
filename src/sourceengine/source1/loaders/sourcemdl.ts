@@ -1,11 +1,11 @@
 import { vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
 
-import { FlexController } from '../models/flexcontroller.js';
-import { getLoader } from '../../../loaders/loaderfactory.js';
+import { FlexController } from '../models/flexcontroller';
+import { getLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
-import { MdlStudioSeqDesc } from './mdlstudioseqdesc.js';
-import { SourceEngineMDLLoader } from './sourceenginemdlloader.js';
+import { MdlStudioSeqDesc } from './mdlstudioseqdesc';
+import { SourceEngineMDLLoader } from './sourceenginemdlloader';
 
 /**
  * MDL Model
