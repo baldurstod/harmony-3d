@@ -9,12 +9,12 @@ export class BoundingBox {
 	max = vec3.create();
 	empty = true;
 
-	setPoints(points: number[]) {
+	setPoints(points: number[] | Float32Array) {
 		this.reset();
 		this.addPoints(points);
 	}
 
-	addPoints(pointArray: number[]) {
+	addPoints(pointArray: number[] | Float32Array) {
 		vec3.set(tempMin, +Infinity, +Infinity, +Infinity);
 		vec3.set(tempMax, -Infinity, -Infinity, -Infinity);
 
