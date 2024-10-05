@@ -1,3 +1,4 @@
+import { quat } from 'gl-matrix';
 import { EPSILON, RAD_TO_DEG } from './constants'
 
 export function quatToEuler(out, q) {
@@ -42,4 +43,21 @@ export function quatToEulerDeg(out, q) {
 	out[1] = RAD_TO_DEG * out[1];
 	out[2] = RAD_TO_DEG * out[2];
 	return out;
+}
+
+
+export function QuaternionIdentityBlend(p: quat, t: number, qt: quat): void {
+	let sclp: number;
+
+	sclp = 1.0 - t;
+
+	qt[0] = p[0] * sclp;
+	qt[1] = p[1] * sclp;
+	qt[2] = p[2] * sclp;
+	if (qt[3] < 0.0) {
+		qt[3] = p[3] * sclp - t;
+	} else {
+		qt[3] = p[3] * sclp + t;
+	}
+	quat.normalize(qt, qt);
 }
