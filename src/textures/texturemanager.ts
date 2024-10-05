@@ -20,13 +20,13 @@ export class TextureManager {
 		deleteTexture(texture.texture);
 	}
 
-	static createFlatTexture(color = [255, 0, 255], needCubeMap) {
+	static createFlatTexture(color = [255, 0, 255], needCubeMap: boolean = false) {
 		let texture = this.createTexture();
 		fillFlatTexture(texture, color, needCubeMap);
 		return texture;
 	}
 
-	static createCheckerTexture(color = [255, 0, 255], width, height, needCubeMap) {
+	static createCheckerTexture(color = [255, 0, 255], width: number = 64, height: number = 64, needCubeMap: boolean = false) {
 		let texture = this.createTexture();
 		fillCheckerTexture(texture, color, width, height, needCubeMap);
 		return texture;
