@@ -1,8 +1,8 @@
-import { Sound } from './sound.js';
-import { KvReader } from '../loaders/kvreader.js';
-import { AudioMixer } from '../../../audio/audiomixer.js';
-import { Repositories } from '../../../misc/repositories.js';
-import { customFetch } from '../../../utils/customfetch.js';
+import { Sound } from './sound';
+import { KvReader } from '../loaders/kvreader';
+import { AudioMixer } from '../../../audio/audiomixer';
+import { Repositories } from '../../../misc/repositories';
+import { customFetch } from '../../../utils/customfetch';
 
 export class Source1SoundManager {
 	static #mute = false;
