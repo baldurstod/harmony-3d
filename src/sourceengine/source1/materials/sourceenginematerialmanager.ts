@@ -16,7 +16,7 @@ export class SourceEngineMaterialManager {
 	static #materialList2 = new Set();
 	static #materialListPerRepository = {};
 
-	static getMaterial(repositoryName, fileName, searchPaths): Promise<Material> {
+	static getMaterial(repositoryName, fileName, searchPaths?): Promise<Material> {
 		fileName = cleanSource1MaterialName(fileName);
 		if (searchPaths) {
 			let promises = [];
