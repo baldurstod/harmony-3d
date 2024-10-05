@@ -1,7 +1,7 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 
-import { MdlBone, BONE_USED_BY_ANYTHING } from './mdlbone.js';
-import { CalcPose, Studio_Duration } from '../animations/calcanimations.js';
+import { MdlBone, BONE_USED_BY_ANYTHING } from './mdlbone';
+import { CalcPose, Studio_Duration } from '../animations/calcanimations';
 import { quatFromEulerRad } from '../../../math/functions';
 
 export class SourceAnimation {
