@@ -108,7 +108,7 @@ export class Interaction {
 		return promise;
 	}
 
-	static async getString(list, defaultValue?) {
+	static async getString(list, defaultValue?): Promise<string> {
 		this.show();
 		this.#htmlInput.style.display = '';
 		this.#htmlInput.value = defaultValue ? defaultValue : '';
@@ -139,7 +139,7 @@ export class Interaction {
 		let promiseResolve;
 		let promiseReject;
 
-		let promise = new Promise((resolve, reject) => {
+		let promise = new Promise<string>((resolve, reject) => {
 			promiseResolve = resolve;
 			promiseReject = reject;
 		});
