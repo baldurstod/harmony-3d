@@ -28,6 +28,7 @@ export class Texture {
 	name = '';
 	#colorSpace: ColorSpace;
 	isRenderTargetTexture = false;
+	properties = new Map<string, any>();
 	constructor(textureParams: any = {}) {
 		//this.target = GL_TEXTURE_2D;//TODOv3 target bound to texture ?
 		this.image = textureParams.image;

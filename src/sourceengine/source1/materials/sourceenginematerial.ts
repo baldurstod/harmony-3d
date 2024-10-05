@@ -378,9 +378,16 @@ export class SourceEngineMaterial extends Material {
 	}
 
 	getTexCoords(flCreationTime, flCurTime, flAgeScale, nSequence) {
-		let texture = this.uniforms['colorMap'];
-		if (texture && texture.vtf && texture.vtf.sheet) {
-			const sheet = texture.vtf.sheet;//SETextureControler.getAnimSheet('materials/' + this.baseTexture);
+		const texture = this.uniforms['colorMap'];
+		if (!texture) {
+			return;
+		}
+
+		const vtf = texture.properties.get('vtf');
+		const sheet = vtf?.sheet;
+
+		if (sheet) {
+			//SETextureControler.getAnimSheet('materials/' + this.baseTexture);
 			if (sheet) {
 				let group = sheet.sequences[nSequence]
 				if (!group) { // In case sequence # is outside VTF range
@@ -409,8 +416,15 @@ export class SourceEngineMaterial extends Material {
 	}
 
 	getFrameSpan(sequence) {
-		let texture = this.uniforms['colorMap'];
-		if (texture && texture.vtf && texture.vtf.sheet) {
+		const texture = this.uniforms['colorMap'];
+		if (!texture) {
+			return;
+		}
+
+		const vtf = texture.properties.get('vtf');
+		const sheet = vtf?.sheet;
+
+		if (sheet) {
 			const sheet = texture.vtf.sheet;//SETextureControler.getAnimSheet('materials/' + this.baseTexture);
 			if (sheet) {
 				let group = sheet.sequences[sequence];
