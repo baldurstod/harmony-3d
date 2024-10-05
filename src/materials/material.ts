@@ -58,6 +58,7 @@ export class Material {
 	cullMode: any;
 	#colorMode: any;
 	colorMap?: Texture;
+	properties = new Map<string, any>();
 
 	static materialList = {};
 	constructor(parameters: any = {}) {
