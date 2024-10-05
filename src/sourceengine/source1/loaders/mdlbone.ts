@@ -44,6 +44,9 @@ export const BONE_USED_BY_VERTEX_LOD0 = 0x00000400;
 export const BONE_USED_BY_VERTEX_LOD1 = 0x00000800;
 export const BONE_FIXED_ALIGNMENT = 0x00100000;
 
+export const BONE_HAS_SAVEFRAME_POS = 0x00200000;// Vector48
+export const BONE_HAS_SAVEFRAME_ROT = 0x00400000;// Quaternion64
+
 const tempMat4 = mat4.create();
 const tempVec3 = vec3.create();
 const tempQuat = quat.create();
