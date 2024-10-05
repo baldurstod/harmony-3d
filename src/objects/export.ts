@@ -1,4 +1,5 @@
 export * from './helpers/export';
+export { Bone } from './bone';
 export { Decal } from './decal';
 export { Group } from './group';
 export { SkeletalMesh } from './skeletalmesh';
