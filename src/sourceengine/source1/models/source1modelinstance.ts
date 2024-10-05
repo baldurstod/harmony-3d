@@ -38,7 +38,7 @@ export class Source1ModelInstance extends Entity {
 	sourceModel;
 	bodyParts = {};
 	sequences = {};
-	meshes = new Set<SkeletalMesh>();
+	meshes = new Set<Mesh | SkeletalMesh>();
 	frame = 0;
 	anim = new SourceAnimation();//TODO: removeme
 	animationSpeed = 1.0;
@@ -216,8 +216,8 @@ export class Source1ModelInstance extends Entity {
 			this.#skeleton.setBonesMatrix();
 		}
 		for (let mesh of this.meshes) {
-			if (mesh.skeleton) {
-				mesh.skeleton.setBonesMatrix();
+			if ((mesh as SkeletalMesh).skeleton) {
+				(mesh as SkeletalMesh).skeleton.setBonesMatrix();
 			}
 		}
 	}
@@ -277,10 +277,10 @@ export class Source1ModelInstance extends Entity {
 
 	async #updateMaterials() {
 		for (let mesh of this.meshes) {
-			let material;
+			let material: Material;
 			let materialName;
 			if (!material) {
-				materialName = this.sourceModel.mdl.getMaterialName(this.#skin, mesh.materialId);
+				materialName = this.sourceModel.mdl.getMaterialName(this.#skin, mesh.properties.get('materialId'));
 				material = await SourceEngineMaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
 			}
 			if (this.#materialOverride) {
@@ -290,11 +290,11 @@ export class Source1ModelInstance extends Entity {
 				this.#materialsUsed.add(material);
 				material.addUser(this);
 				mesh.setMaterial(material);
-				mesh.materialName = materialName;
-				material.materialType = mesh.materialType;//TODOv3 : setup a better material param
-				material.materialParam = mesh.materialParam;//TODOv3 : setup a better material param
-				material.eyeballArray = mesh.eyeballArray;//TODOv3 : setup a better material param
-				material.skeleton = mesh.skeleton;//TODOv3 : setup a better material param
+				mesh.properties.set('materialName', materialName);
+				material.properties.set('materialType', mesh.properties.get('materialType'));//TODOv3 : setup a better material param
+				material.properties.set('materialParam', mesh.properties.get('materialParam'));//TODOv3 : setup a better material param
+				material.properties.set('eyeballArray', mesh.properties.get('eyeballArray'));//TODOv3 : setup a better material param
+				material.properties.set('skeleton', (mesh as SkeletalMesh).skeleton);//TODOv3 : setup a better material param
 			}
 		}
 	}
@@ -320,22 +320,22 @@ export class Source1ModelInstance extends Entity {
 					let newModel = [];
 					for (let modelMesh of model) {
 						let geometry = modelMesh.geometry;
-						let mesh;
+						let mesh: Mesh | SkeletalMesh;
 						if (this.#skeleton) {
 							mesh = new SkeletalMesh(geometry.clone(), defaultMaterial, this.#skeleton);
 						} else {
 							mesh = new Mesh(geometry, defaultMaterial);
 						}
 						mesh.name = geometry.properties.get('name');
-						mesh.sourceModelMesh = modelMesh.mesh;
+						mesh.properties.set('sourceModelMesh', modelMesh.mesh);
 						if (geometry.hasAttribute('aVertexTangent')) {
 							mesh.setDefine('USE_VERTEX_TANGENT');
 						}
 						//mesh.visible = defaul;
-						mesh.materialId = geometry.properties.get('materialId');
-						mesh.materialType = geometry.properties.get('materialType');//TODOv3 : setup a better material param
-						mesh.materialParam = geometry.properties.get('materialParam');//TODOv3 : setup a better material param
-						mesh.eyeballArray = geometry.properties.get('eyeballArray');//TODOv3 : setup a better material param
+						mesh.properties.set('materialId', geometry.properties.get('materialId'));
+						mesh.properties.set('materialType', geometry.properties.get('materialType'));
+						mesh.properties.set('materialParam', geometry.properties.get('materialParam'));
+						mesh.properties.set('eyeballArray', geometry.properties.get('eyeballArray'));
 						mesh.materialsParams = this.materialsParams;
 						newModel.push(mesh);
 						//this.addChild(mesh);
@@ -628,7 +628,8 @@ export class Source1ModelInstance extends Entity {
 				let attribute = mesh.geometry.getAttribute('aVertexPosition');
 				let newAttribute = attribute.clone();
 				mesh.geometry.setAttribute('aVertexPosition', newAttribute);
-				this.#updateArray(newAttribute._array, mesh.sourceModelMesh.flexes, mesh.sourceModelMesh.vertexoffset);
+				const sourceModelMesh = mesh.properties.get('sourceModelMesh');
+				this.#updateArray(newAttribute._array, sourceModelMesh.flexes, sourceModelMesh.vertexoffset);
 			}
 		}
 	}
