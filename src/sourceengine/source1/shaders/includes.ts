@@ -1,5 +1,8 @@
 import { Includes } from '../../../shaders/includes';
 
+import source1_blend_pixel_fog_const from './includes/source1_blend_pixel_fog_const.glsl';
+Includes['source1_blend_pixel_fog_const'] = source1_blend_pixel_fog_const;
+
 import source1_blend_tint from './includes/source1_blend_tint.glsl';
 Includes['source1_blend_tint'] = source1_blend_tint;
 
