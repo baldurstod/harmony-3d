@@ -3,6 +3,9 @@ import { Includes } from '../../../shaders/includes';
 import declare_fragment_color_map from './declare_fragment_color_map.glsl';
 Includes['declare_fragment_color_map'] = declare_fragment_color_map;
 
+import declare_fragment_cube_map from './declare_fragment_cube_map.glsl';
+Includes['declare_fragment_cube_map'] = declare_fragment_cube_map;
+
 import declare_fragment_detail_map from './declare_fragment_detail_map.glsl';
 Includes['declare_fragment_detail_map'] = declare_fragment_detail_map;
 
