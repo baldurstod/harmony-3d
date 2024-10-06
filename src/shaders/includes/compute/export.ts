@@ -9,6 +9,9 @@ Includes['compute_fragment_detail_map'] = compute_fragment_detail_map;
 import compute_fragment_diffuse from './compute_fragment_diffuse.glsl';
 Includes['compute_fragment_diffuse'] = compute_fragment_diffuse;
 
+import compute_fragment_normal_map from './compute_fragment_normal_map.glsl';
+Includes['compute_fragment_normal_map'] = compute_fragment_normal_map;
+
 import compute_fragment_normal_world_space from './compute_fragment_normal_world_space.glsl';
 Includes['compute_fragment_normal_world_space'] = compute_fragment_normal_world_space;
 
