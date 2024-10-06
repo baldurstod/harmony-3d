@@ -14,3 +14,6 @@ Includes['compute_silhouette_color'] = compute_silhouette_color;
 
 import compute_vertex_color from './compute_vertex_color.glsl';
 Includes['compute_vertex_color'] = compute_vertex_color;
+
+import compute_vertex_detail_uv from './compute_vertex_detail_uv.glsl';
+Includes['compute_vertex_detail_uv'] = compute_vertex_detail_uv;
