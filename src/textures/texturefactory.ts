@@ -106,7 +106,7 @@ export function fillCheckerTexture(texture: Texture, color = [255, 0, 255], widt
 	return texture;
 }
 
-export function fillNoiseTexture(texture: Texture, width = 64, height = 64, needCubeMap: boolean) {//TODO: do a proper noise
+export function fillNoiseTexture(texture: Texture, width = 64, height = 64, needCubeMap: boolean = false) {//TODO: do a proper noise
 	if (texture) {
 		let byteArray = new Uint8Array(width * height * 3);
 		let pixelIndex = 0;

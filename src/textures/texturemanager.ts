@@ -32,7 +32,7 @@ export class TextureManager {
 		return texture;
 	}
 
-	static createNoiseTexture(width, height, needCubeMap) {
+	static createNoiseTexture(width, height, needCubeMap: boolean = false) {
 		let texture = this.createTexture();
 		fillNoiseTexture(texture, width, height, needCubeMap);
 		return texture;
