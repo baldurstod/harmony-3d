@@ -4,7 +4,6 @@ import { SourceEngineMaterial } from './sourceenginematerial';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { TextureManager } from '../../../textures/texturemanager';
 import { Source1TextureManager } from '../textures/source1texturemanager';
-import { DO_I_NEED_TO_FIX_SOMETHING } from '../../../buildoptions';
 
 let tempVec3 = vec3.create();
 
@@ -50,9 +49,6 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 					this.uniforms['u#eyeOrigin'] = this.#eyeOrigin;
 				}
 			}
-		}
-		if (DO_I_NEED_TO_FIX_SOMETHING) {
-			throw "InitParams_Eyes_Refract";//m_nParallaxStrength
 		}
 	}
 
