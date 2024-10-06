@@ -11,9 +11,9 @@ const tempQuat = quat.create();
 export class SpotLight extends Light {
 	isSpotLight = true;
 	#innerAngle: number;
-	#innerAngleCos: number;
+	innerAngleCos: number;
 	#outerAngle: number;
-	#outerAngleCos: number;
+	outerAngleCos: number;
 	constructor(parameters = {}) {
 		super(parameters);
 		this.angle = DEFAULT_ANGLE;
@@ -38,7 +38,7 @@ export class SpotLight extends Light {
 
 	set angle(angle) {
 		this.#outerAngle = angle;
-		this.#outerAngleCos = Math.cos(angle);
+		this.outerAngleCos = Math.cos(angle);
 		if (this.shadow) {
 			(this.shadow as SpotLightShadow).angle = angle;
 		}
@@ -50,7 +50,7 @@ export class SpotLight extends Light {
 
 	set innerAngle(innerAngle) {
 		this.#innerAngle = innerAngle;
-		this.#innerAngleCos = Math.cos(innerAngle);
+		this.innerAngleCos = Math.cos(innerAngle);
 	}
 
 	get innerAngle() {

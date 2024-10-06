@@ -151,8 +151,8 @@ export class Renderer {
 				program.setUniformValue('uSpotLights[' + spotLightId + '].position', lightPositionCameraSpace);
 				program.setUniformValue('uSpotLights[' + spotLightId + '].color', vec3.scale(colorIntensity, spotLight.color, spotLight.intensity));
 				program.setUniformValue('uSpotLights[' + spotLightId + '].range', spotLight.range);
-				program.setUniformValue('uSpotLights[' + spotLightId + '].innerAngleCos', spotLight._innerAngleCos);
-				program.setUniformValue('uSpotLights[' + spotLightId + '].outerAngleCos', spotLight._outerAngleCos);
+				program.setUniformValue('uSpotLights[' + spotLightId + '].innerAngleCos', spotLight.innerAngleCos);
+				program.setUniformValue('uSpotLights[' + spotLightId + '].outerAngleCos', spotLight.outerAngleCos);
 				//program.setUniformValue('uSpotLights[' + spotLightId + '].direction', spotLight.getDirection(tempVec3));
 				//program.setUniformValue('uSpotLights[' + spotLightId + '].direction', [0, 0, -1]);
 
