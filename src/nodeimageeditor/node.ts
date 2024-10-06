@@ -78,7 +78,7 @@ export class Node extends EventTarget {
 		throw 'This function must be overriden';
 	}
 
-	addParam(paramName, paramType, defaultValue, length) {
+	addParam(paramName, paramType, defaultValue, length?: number | undefined) {
 		let param = { name: paramName, type: paramType, value: defaultValue, length: length };
 		this.params.set(paramName, param);
 		this.#dispatchEvent('paramadded', param);
