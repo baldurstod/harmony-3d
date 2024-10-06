@@ -29,15 +29,14 @@ export class RenderTarget {
 			this.#texture = params.texture;
 		} else {
 			this.#texture = TextureManager.createTexture({ internalFormat: params.internalFormat, format: params.format, type: params.type }/*{minFilter:GL_LINEAR, wrapS:GL_CLAMP_TO_EDGE, wrapT:GL_CLAMP_TO_EDGE}*/);
-			this.#texture.addUser(this);
 		}
+		this.#texture.addUser(this);
 		this.#texture.minFilter = GL_LINEAR;
 		this.#texture.wrapS = GL_CLAMP_TO_EDGE;
 		this.#texture.wrapT = GL_CLAMP_TO_EDGE;
 		this.#texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);//TODOv3: remove
 
-		vec4.set(this.#scissor, 0, 0, width, height);
-		vec4.set(this.#viewport, 0, 0, width, height);
+		this.setViewport(0, 0, width, height);
 
 		this.#depthBuffer = params.depthBuffer ?? true;
 		this.#stencilBuffer = params.stencilBuffer ?? false;
