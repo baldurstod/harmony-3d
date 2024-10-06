@@ -15,6 +15,9 @@ Includes['source1_declare_selfillum'] = source1_declare_selfillum;
 import source1_declare_sheen from './includes/source1_declare_sheen.glsl';
 Includes['source1_declare_sheen'] = source1_declare_sheen;
 
+import source1_final_output_const from './includes/source1_final_output_const.glsl';
+Includes['source1_final_output_const'] = source1_final_output_const;
+
 import source1_fragment_common from './includes/source1_fragment_common.glsl';
 Includes['source1_fragment_common'] = source1_fragment_common;
 
