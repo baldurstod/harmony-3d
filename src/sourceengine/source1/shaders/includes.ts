@@ -1,5 +1,8 @@
 import { Includes } from '../../../shaders/includes';
 
+import source1_blend_tint from './includes/source1_blend_tint.glsl';
+Includes['source1_blend_tint'] = source1_blend_tint;
+
 import source1_declare_phong from './includes/source1_declare_phong.glsl';
 Includes['source1_declare_phong'] = source1_declare_phong;
 
