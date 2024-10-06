@@ -1,5 +1,8 @@
 import { Includes } from '../../../shaders/includes';
 
+import compute_fragment_cube_map from './compute_fragment_cube_map.glsl';
+Includes['compute_fragment_cube_map'] = compute_fragment_cube_map;
+
 import compute_fragment_diffuse from './compute_fragment_diffuse.glsl';
 Includes['compute_fragment_diffuse'] = compute_fragment_diffuse;
 
