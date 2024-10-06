@@ -6,6 +6,9 @@ Includes['source1_declare_phong'] = source1_declare_phong;
 import source1_declare_selfillum from './includes/source1_declare_selfillum.glsl';
 Includes['source1_declare_selfillum'] = source1_declare_selfillum;
 
+import source1_declare_sheen from './includes/source1_declare_sheen.glsl';
+Includes['source1_declare_sheen'] = source1_declare_sheen;
+
 import source1_fragment_common from './includes/source1_fragment_common.glsl';
 Includes['source1_fragment_common'] = source1_fragment_common;
 
