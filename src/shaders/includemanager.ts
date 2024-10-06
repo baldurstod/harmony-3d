@@ -12,6 +12,9 @@ export function addIncludeSource(name: string, source: string = '') {
 export function getIncludeSource(name: string) {
 	if (!includeSources.has(name)) {
 		addIncludeSource(name, Includes[name]);
+		if (!customIncludeSources.has(name) && Includes[name] === undefined) {
+			console.error('unknown include ' + name);
+		}
 	}
 	return customIncludeSources.get(name) ?? includeSources.get(name);
 }
