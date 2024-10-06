@@ -15,6 +15,9 @@ Includes['declare_fragment_ibl'] = declare_fragment_ibl;
 import declare_fragment_normal_map from './declare_fragment_normal_map.glsl';
 Includes['declare_fragment_normal_map'] = declare_fragment_normal_map;
 
+import declare_fragment_phong_exponent_map from './declare_fragment_phong_exponent_map.glsl';
+Includes['declare_fragment_phong_exponent_map'] = declare_fragment_phong_exponent_map;
+
 import declare_fragment_standard from './declare_fragment_standard.glsl';
 Includes['declare_fragment_standard'] = declare_fragment_standard;
 
