@@ -17,3 +17,6 @@ Includes['declare_fragment_tone_mapping'] = declare_fragment_tone_mapping;
 
 import declare_fragment_uniforms from './declare_fragment_uniforms.glsl';
 Includes['declare_fragment_uniforms'] = declare_fragment_uniforms;
+
+import declare_vertex_detail_uv from './declare_vertex_detail_uv.glsl';
+Includes['declare_vertex_detail_uv'] = declare_vertex_detail_uv;
