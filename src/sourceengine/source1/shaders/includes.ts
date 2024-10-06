@@ -9,6 +9,9 @@ Includes['source1_colormap_alpha'] = source1_colormap_alpha;
 import source1_compute_selfillum from './includes/source1_compute_selfillum.glsl';
 Includes['source1_compute_selfillum'] = source1_compute_selfillum;
 
+import source1_compute_sheen from './includes/source1_compute_sheen.glsl';
+Includes['source1_compute_sheen'] = source1_compute_sheen;
+
 import source1_declare_phong from './includes/source1_declare_phong.glsl';
 Includes['source1_declare_phong'] = source1_declare_phong;
 
