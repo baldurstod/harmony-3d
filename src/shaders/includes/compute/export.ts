@@ -15,6 +15,9 @@ Includes['compute_fragment_normal_map'] = compute_fragment_normal_map;
 import compute_fragment_normal_world_space from './compute_fragment_normal_world_space.glsl';
 Includes['compute_fragment_normal_world_space'] = compute_fragment_normal_world_space;
 
+import compute_fragment_phong_exponent_map from './compute_fragment_phong_exponent_map.glsl';
+Includes['compute_fragment_phong_exponent_map'] = compute_fragment_phong_exponent_map;
+
 import compute_pbr from './compute_pbr.glsl';
 Includes['compute_pbr'] = compute_pbr;
 
