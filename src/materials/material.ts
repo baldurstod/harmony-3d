@@ -28,6 +28,7 @@ export const DEFAULT_CULLING_MODE = MATERIAL_CULLING_BACK;
 
 export class Material {
 	id: string;
+	name: string;
 	#renderFace = RenderFace.Front;
 	#renderLights = true;
 	#color = vec4.create();
