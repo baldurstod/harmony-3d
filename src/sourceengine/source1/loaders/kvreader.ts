@@ -233,11 +233,10 @@ export class KvReader {
 					}
 					if (this.valuesStack.length >= 2) {
 						this.newLine();
-						/*
-						if (!this.multipleValuesOnSameLine) {//TODOV2
-							this.inComment = true;
-						}
-						*/
+
+						//if (!this.multipleValuesOnSameLine) {//TODOV2
+						this.inComment = true;
+						//}
 					}
 					break;
 				case '\r':
