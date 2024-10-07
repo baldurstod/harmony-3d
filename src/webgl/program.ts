@@ -14,7 +14,7 @@ export class Program {
 	#valid: boolean = false;
 	attributes = new Map<string, GLint>();
 	uniforms = new Map<string, Uniform>();
-	#linkError:string = '';
+	#linkError: string = '';
 	constructor(glContext: WebGLAnyRenderingContext, vertexShaderName: string, fragmentShaderName: string) {
 		this.#glContext = glContext;
 		this.#program = glContext.createProgram();
@@ -75,6 +75,7 @@ export class Program {
 			}
 		}
 	}
+
 	invalidate() {
 		this.#valid = false;
 	}
