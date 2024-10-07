@@ -12,4 +12,5 @@ export { CustomSteamImageOnModel } from './customsteamimageonmodel';
 export { Divide } from './divide';
 export { Equals } from './equals';
 export { HeartbeatScale } from './heartbeatscale';
+export { IntProxy } from './intproxy';
 export { WeaponSkin } from './weaponskin';
