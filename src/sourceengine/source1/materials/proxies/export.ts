@@ -4,4 +4,5 @@ export { AnimatedTextureProxy } from './animatedtexture';
 export { AnimatedWeaponSheen } from './animatedweaponsheen';
 export { BenefactorLevel } from './benefactorlevel';
 export { BuildingInvis } from './buildinginvis';
+export { BuildingRescueLevel } from './buildingrescuelevel';
 export { WeaponSkin } from './weaponskin';
