@@ -13,4 +13,5 @@ export { Divide } from './divide';
 export { Equals } from './equals';
 export { HeartbeatScale } from './heartbeatscale';
 export { IntProxy } from './intproxy';
+export { Invis } from './invis';
 export { WeaponSkin } from './weaponskin';
