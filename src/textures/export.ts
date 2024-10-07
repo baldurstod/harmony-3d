@@ -1,7 +1,10 @@
 export * from './constants';
 export { CubeTexture } from './cubetexture';
+export { Detex } from './detex';
 export { RemGenerator } from './remgenerator';
 export { RenderTarget } from './rendertarget';
+export { ShadowMap } from './shadowmap';
 export { Texture } from './texture';
+export * from './textureconstants';
 export * from './texturefactory';
 export { TextureManager } from './texturemanager';
