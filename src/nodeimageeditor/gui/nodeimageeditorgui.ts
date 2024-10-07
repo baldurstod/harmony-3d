@@ -2,7 +2,7 @@ import { createElement, shadowRootStyle, I18n } from 'harmony-ui';
 import { NodeGui, DELAY_BEFORE_REFRESH } from './nodegui';
 import { NodeImageEditor } from '../nodeimageeditor';
 
-import nodeImageEditorCSS from '../css/nodeimageeditor.css';
+import nodeImageEditorCSS from '../../css/nodeimageeditor.css';
 import { Node } from '../node';
 
 const WIDTH = 300;

@@ -13,6 +13,7 @@ export * from './managers/export';
 export * from './materials/export';
 export * from './math/export';
 export * from './misc/export';
+export * from './nodeimageeditor/export';
 export * from './objects/export';
 export * from './primitives/export';
 export * from './raycasting/export';
