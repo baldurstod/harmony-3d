@@ -6,4 +6,5 @@ export { BenefactorLevel } from './benefactorlevel';
 export { BuildingInvis } from './buildinginvis';
 export { BuildingRescueLevel } from './buildingrescuelevel';
 export { BurnLevel } from './burnlevel';
+export { Clamp } from './clamp';
 export { WeaponSkin } from './weaponskin';
