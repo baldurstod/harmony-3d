@@ -5,4 +5,5 @@ export { AnimatedWeaponSheen } from './animatedweaponsheen';
 export { BenefactorLevel } from './benefactorlevel';
 export { BuildingInvis } from './buildinginvis';
 export { BuildingRescueLevel } from './buildingrescuelevel';
+export { BurnLevel } from './burnlevel';
 export { WeaponSkin } from './weaponskin';
