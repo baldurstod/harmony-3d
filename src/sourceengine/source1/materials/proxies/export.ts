@@ -7,4 +7,5 @@ export { BuildingInvis } from './buildinginvis';
 export { BuildingRescueLevel } from './buildingrescuelevel';
 export { BurnLevel } from './burnlevel';
 export { Clamp } from './clamp';
+export { CommunityWeapon } from './communityweapon';
 export { WeaponSkin } from './weaponskin';
