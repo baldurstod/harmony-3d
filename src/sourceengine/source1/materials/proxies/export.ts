@@ -9,4 +9,5 @@ export { BurnLevel } from './burnlevel';
 export { Clamp } from './clamp';
 export { CommunityWeapon } from './communityweapon';
 export { CustomSteamImageOnModel } from './customsteamimageonmodel';
+export { Divide } from './divide';
 export { WeaponSkin } from './weaponskin';
