@@ -17,13 +17,13 @@ export class Clamp extends Proxy {
 
 	execute(variables) {
 		const v1 = variables.get(this.getData('srcvar1'));
-		if ((v1===null) || (v1=== undefined)) {
+		if ((v1 === null) || (v1 === undefined)) {
 			variables.set(this.#resultvar, null);
 			return;
 		}
 
-		if (typeof v1=='number') {
-				super.setResult(variables, Math.min(Math.max(v1, this.#minVal), this.#maxVal));
+		if (typeof v1 == 'number') {
+			super.setResult(variables, Math.min(Math.max(v1, this.#minVal), this.#maxVal));
 		} else {//array
 			let clampedArray = [];
 			for (let i in v1) {

@@ -1,9 +1,10 @@
+import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
 const minValue = 5.0;
 const maxValue = 1.0;
 
-export class BenefactorLevel {
+export class BenefactorLevel extends Proxy {
 	#datas;
 	#resultVar;
 	setParams(datas) {

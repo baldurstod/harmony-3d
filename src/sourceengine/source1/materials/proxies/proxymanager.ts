@@ -1,3 +1,5 @@
+import { Proxy } from './proxy';
+
 /**
  * Proxy manager
  */
@@ -16,7 +18,7 @@ export class ProxyManager {
 		return new proxy();
 	}
 
-	static registerProxy(proxyName, proxyClass) {
+	static registerProxy(proxyName, proxyClass: typeof Proxy) {
 		if (!proxyClass) { return; }
 		const name = proxyName.toLowerCase();
 
