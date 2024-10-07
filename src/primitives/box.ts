@@ -20,21 +20,21 @@ export class Box extends Mesh {
 		this.#widthSegments = params.widthSegments ?? 1;
 		this.#heightSegments = params.heightSegments ?? 1;
 		this.#depthSegments = params.depthSegments ?? 1;
-		this.updateGeometry();
+		this.#updateGeometry();
 		super.setParameters(params);
 	}
 
-	updateGeometry() {
+	#updateGeometry() {
 		(this.geometry as BoxBufferGeometry).updateGeometry(this.#width, this.#height, this.#depth, this.#widthSegments, this.#heightSegments, this.#depthSegments);
 	}
 
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			Box_1: null,
-			width: { i18n: '#width', f: () => { let width = prompt('Width', String(this.#width)); if (width) { this.#width = Number(width); this.updateGeometry(); } } },
-			height: { i18n: '#height', f: () => { let height = prompt('Height', String(this.#height)); if (height) { this.#height = Number(height); this.updateGeometry(); } } },
-			depth: { i18n: '#depth', f: () => { let depth = prompt('Depth', String(this.#depth)); if (depth) { this.#depth = Number(depth); this.updateGeometry(); } } },
-			cube: { i18n: '#cube', f: () => { let size: string | number = prompt('Cube size', '0'); if (size) { size = Number(size); this.#width = size; this.#height = size; this.#depth = size; this.updateGeometry(); } } },
+			width: { i18n: '#width', f: () => { let width = prompt('Width', String(this.#width)); if (width) { this.#width = Number(width); this.#updateGeometry(); } } },
+			height: { i18n: '#height', f: () => { let height = prompt('Height', String(this.#height)); if (height) { this.#height = Number(height); this.#updateGeometry(); } } },
+			depth: { i18n: '#depth', f: () => { let depth = prompt('Depth', String(this.#depth)); if (depth) { this.#depth = Number(depth); this.#updateGeometry(); } } },
+			cube: { i18n: '#cube', f: () => { let size: string | number = prompt('Cube size', '0'); if (size) { size = Number(size); this.#width = size; this.#height = size; this.#depth = size; this.#updateGeometry(); } } },
 		});
 	}
 
@@ -67,6 +67,28 @@ export class Box extends Mesh {
 
 	static get entityName() {
 		return 'Box';
+	}
+
+	setSize(width: number, height: number, depth: number) {
+		this.#width = width;
+		this.#height = height;
+		this.#depth = depth;
+		this.#updateGeometry();
+	}
+
+	setwidth(width: number) {
+		this.#width = width;
+		this.#updateGeometry();
+	}
+
+	setHeight(height: number) {
+		this.#height = height;
+		this.#updateGeometry();
+	}
+
+	setDepth(depth: number) {
+		this.#depth = depth;
+		this.#updateGeometry();
 	}
 }
 registerEntity(Box);
