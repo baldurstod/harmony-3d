@@ -11,4 +11,5 @@ export { CommunityWeapon } from './communityweapon';
 export { CustomSteamImageOnModel } from './customsteamimageonmodel';
 export { Divide } from './divide';
 export { Equals } from './equals';
+export { HeartbeatScale } from './heartbeatscale';
 export { WeaponSkin } from './weaponskin';
