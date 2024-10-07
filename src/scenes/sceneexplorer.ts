@@ -6,7 +6,7 @@ import { SceneExplorerEvents } from './sceneexplorerevents';
 import { Camera } from '../cameras/camera';
 import { RotationControl } from '../controls/rotationcontrol';
 import { TranslationControl } from '../controls/translationcontrol';
-import { SceneExplorerEntity } from '../js/customelements/sceneexplorerentity';
+import { SceneExplorerEntity } from './sceneexplorerentity';
 import { Entity } from '../entities/entity';
 import { KeepOnlyLastChild } from '../entities/keeponlylastchild';
 import { EntityObserver, PROPERTY_CHANGED } from '../entities/entityobserver';
@@ -20,7 +20,7 @@ import { Decal } from '../objects/decal';
 import { Group } from '../objects/group';
 import { Target } from '../objects/target';
 import { Text3D } from '../objects/text3d';
-import { HelperFactory } from '../objects/helpers/helperfactory';
+import { getHelper } from '../objects/helpers/helperfactory';
 import { HitboxHelper } from '../objects/helpers/hitboxhelper';
 import { Manipulator } from '../objects/helpers/manipulator';
 import { SkeletonHelper } from '../objects/helpers/skeletonhelper';
@@ -284,10 +284,6 @@ export class SceneExplorer {
 		}
 	}
 
-	static #updateEntityTitle(entity) {
-		SceneExplorerEntity.updateEntity(entity);
-	}
-
 	static #createEntityElement(entity, createExpanded = false) {
 		let htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
 
@@ -413,7 +409,7 @@ Entity.addSubMenu = [
 				},
 			]
 	},
-	{ i18n: '#helper', f: (entity) => { let helper = HelperFactory.getHelper(entity); if (helper) { entity.addChild(helper); }; } },
+	{ i18n: '#helper', f: (entity) => { let helper = getHelper(entity); if (helper) { entity.addChild(helper); }; } },
 	{ i18n: '#wireframe', f: (entity) => entity.addChild(new WireframeHelper()) },
 	{ i18n: '#wireframe2', f: (entity) => entity.addChild(new Wireframe()) },
 	{ i18n: '#hitboxes', f: (entity) => entity.addChild(new HitboxHelper()) },
