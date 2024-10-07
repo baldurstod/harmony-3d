@@ -10,4 +10,5 @@ export { Clamp } from './clamp';
 export { CommunityWeapon } from './communityweapon';
 export { CustomSteamImageOnModel } from './customsteamimageonmodel';
 export { Divide } from './divide';
+export { Equals } from './equals';
 export { WeaponSkin } from './weaponskin';
