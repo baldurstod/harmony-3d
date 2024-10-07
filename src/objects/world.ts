@@ -26,4 +26,4 @@ export class World extends Entity {
 		}
 	}
 }
-registerEntity(Scene);
+registerEntity(World);
