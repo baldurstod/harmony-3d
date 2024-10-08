@@ -30,4 +30,5 @@ export { TextureTransform } from './texturetransform';
 export { UniformNoiseProxy } from './uniformnoiseproxy';
 export { WaterLod } from './waterlod';
 export { WeaponInvis } from './weaponinvis';
+export { WeaponLabelText } from './weaponlabeltext';
 export { WeaponSkin } from './weaponskin';
