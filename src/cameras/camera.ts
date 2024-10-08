@@ -106,12 +106,15 @@ export class Camera extends Entity {
 	}
 
 	setProjection(projection: CameraProjection) {
+		const oldValue = this.#projection;
 		this.#projection = projection;
 		this.#dirtyProjectionMatrix = true;
 		this.isPerspective = projection == CameraProjection.Perspective;
 		this.isOrthographic = projection == CameraProjection.Orthographic;
 
-		EntityObserver.propertyChanged(this, 'projection', this.#projection);
+		if (oldValue != projection) {
+			EntityObserver.propertyChanged(this, 'projection', oldValue, this.#projection);
+		}
 	}
 
 	get projection() {
@@ -123,6 +126,7 @@ export class Camera extends Entity {
 	}
 
 	set projectionMix(projectionMix) {
+		const oldValue = this.#projectionMix;
 		this.#projectionMix = projectionMix;
 		if (projectionMix == 0) {
 			this.setProjection(CameraProjection.Perspective);
@@ -131,7 +135,9 @@ export class Camera extends Entity {
 		} else {
 			this.setProjection(CameraProjection.Mixed);
 		}
-		EntityObserver.propertyChanged(this, 'projectionmix', this.#projectionMix);
+		if (oldValue != projectionMix) {
+			EntityObserver.propertyChanged(this, 'projectionmix', oldValue, this.#projectionMix);
+		}
 	}
 
 	get projectionMix() {
@@ -139,9 +145,12 @@ export class Camera extends Entity {
 	}
 
 	set nearPlane(nearPlane) {
+		const oldValue = this.#nearPlane;
 		this.#nearPlane = Number(nearPlane);
 		this.#dirtyProjectionMatrix = true;
-		EntityObserver.propertyChanged(this, 'nearplane', this.#nearPlane);
+		if (oldValue != nearPlane) {
+			EntityObserver.propertyChanged(this, 'nearplane', oldValue, this.#nearPlane);
+		}
 	}
 
 	get nearPlane() {
@@ -149,9 +158,12 @@ export class Camera extends Entity {
 	}
 
 	set farPlane(farPlane) {
+		const oldValue = this.#farPlane;
 		this.#farPlane = Number(farPlane);
 		this.#dirtyProjectionMatrix = true;
-		EntityObserver.propertyChanged(this, 'farplane', this.#farPlane);
+		if (oldValue != farPlane) {
+			EntityObserver.propertyChanged(this, 'farplane', oldValue, this.#farPlane);
+		}
 	}
 
 	get farPlane() {
@@ -159,9 +171,12 @@ export class Camera extends Entity {
 	}
 
 	set orthoZoom(orthoZoom) {
+		const oldValue = this.#orthoZoom;
 		this.#orthoZoom = Number(orthoZoom);
 		this.#dirtyProjectionMatrix = true;
-		EntityObserver.propertyChanged(this, 'orthozoom', this.#orthoZoom);
+		if (oldValue != orthoZoom) {
+			EntityObserver.propertyChanged(this, 'orthozoom', oldValue, this.#orthoZoom);
+		}
 	}
 
 	get orthoZoom() {
@@ -169,10 +184,13 @@ export class Camera extends Entity {
 	}
 
 	set verticalFov(verticalFov) {
+		const oldValue = this.#verticalFov;
 		this.#verticalFov = verticalFov * DEG_TO_RAD;
 		this.#tanHalfVerticalFov = Math.tan(this.#verticalFov * 0.5);
 		this.#dirtyProjectionMatrix = true;
-		EntityObserver.propertyChanged(this, 'verticalfov', this.#verticalFov);
+		if (oldValue != this.#verticalFov) {
+			EntityObserver.propertyChanged(this, 'verticalfov', oldValue, this.#verticalFov);
+		}
 	}
 
 	get verticalFov() {
@@ -184,9 +202,12 @@ export class Camera extends Entity {
 	}
 
 	set aspectRatio(aspectRatio) {
+		const oldValue = this.#aspectRatio;
 		this.#aspectRatio = Number(aspectRatio);
 		this.#dirtyProjectionMatrix = true;
-		EntityObserver.propertyChanged(this, 'aspectratio', this.#aspectRatio);
+		if (oldValue != this.#aspectRatio) {
+			EntityObserver.propertyChanged(this, 'aspectratio', oldValue, this.#aspectRatio);
+		}
 	}
 
 	get aspectRatio() {
@@ -203,9 +224,12 @@ export class Camera extends Entity {
 
 
 	set left(left) {
+		const oldValue = this.#left;
 		this.#left = Number(left);
 		this.#dirtyProjectionMatrix = true;
-		EntityObserver.propertyChanged(this, 'left', this.#left);
+		if (oldValue != this.#left) {
+			EntityObserver.propertyChanged(this, 'left', oldValue, this.#left);
+		}
 	}
 
 	get left() {
@@ -213,9 +237,12 @@ export class Camera extends Entity {
 	}
 
 	set right(right) {
+		const oldValue = this.#right;
 		this.#right = Number(right);
 		this.#dirtyProjectionMatrix = true;
-		EntityObserver.propertyChanged(this, 'right', this.#right);
+		if (oldValue != this.#right) {
+			EntityObserver.propertyChanged(this, 'right', oldValue, this.#right);
+		}
 	}
 
 	get right() {
@@ -223,9 +250,12 @@ export class Camera extends Entity {
 	}
 
 	set top(top) {
+		const oldValue = this.#top;
 		this.#top = Number(top);
 		this.#dirtyProjectionMatrix = true;
-		EntityObserver.propertyChanged(this, 'top', this.#top);
+		if (oldValue != this.#top) {
+			EntityObserver.propertyChanged(this, 'top', oldValue, this.#top);
+		}
 	}
 
 	get top() {
@@ -233,9 +263,12 @@ export class Camera extends Entity {
 	}
 
 	set bottom(bottom) {
+		const oldValue = this.#bottom;
 		this.#bottom = Number(bottom);
 		this.#dirtyProjectionMatrix = true;
-		EntityObserver.propertyChanged(this, 'bottom', this.#bottom);
+		if (oldValue != this.#bottom) {
+			EntityObserver.propertyChanged(this, 'bottom', oldValue, this.#bottom);
+		}
 	}
 
 	get bottom() {

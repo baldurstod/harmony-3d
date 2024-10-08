@@ -21,6 +21,7 @@ const tempVec3_3 = vec3.create();
 const tempVec3_4 = vec3.create();
 const tempQuat = quat.create();
 const tempQuat2 = quat.create();
+const tempQuat3 = quat.create();
 const tempMat4 = mat4.create();
 const _upVector = vec3.fromValues(0, 0, 1);
 
@@ -105,8 +106,11 @@ export class Entity {
 	}
 
 	set name(name) {
+		const oldValue = this.#name;
 		this.#name = name;
-		EntityObserver.propertyChanged(this, 'name', name);
+		if (oldValue != name) {
+			EntityObserver.propertyChanged(this, 'name', oldValue, name);
+		}
 	}
 
 	get name() {
@@ -114,8 +118,11 @@ export class Entity {
 	}
 
 	setPosition(position: vec3) {
+		const oldValue = vec3.copy(tempVec3_4, this._position);
 		vec3.copy(this._position, position);
-		EntityObserver.propertyChanged(this, 'position', this._position);
+		if (!vec3.exactEquals(oldValue, position)) {
+			EntityObserver.propertyChanged(this, 'position', oldValue, position);
+		}
 	}
 
 	getPosition(position: vec3 = vec3.create()) {
@@ -193,8 +200,11 @@ export class Entity {
 	}
 
 	setQuaternion(quaternion: quat) {
+		const oldValue = quat.copy(tempQuat3, this._quaternion);
 		quat.normalize(this._quaternion, quaternion);
-		EntityObserver.propertyChanged(this, 'quaternion', this._quaternion);
+		if (!quat.exactEquals(oldValue, this._quaternion)) {
+			EntityObserver.propertyChanged(this, 'quaternion', oldValue, this._quaternion);
+		}
 	}
 
 	getQuaternion(quaternion: quat = quat.create()) {
@@ -242,8 +252,11 @@ export class Entity {
 	}
 
 	setVisible(visible) {
+		const oldValue = this.#visible;
 		this.#visible = visible;
-		EntityObserver.propertyChanged(this, 'visible', visible);
+		if (oldValue != visible) {
+		EntityObserver.propertyChanged(this, 'visible', oldValue, visible);
+		}
 	}
 
 	set visible(visible) {
@@ -267,6 +280,7 @@ export class Entity {
 	}
 
 	toggleVisibility() {
+		const oldValue = this.#visible;
 		if (this.#visible === undefined) {
 			if (this.visible) {
 				this.setVisible(false);
@@ -294,12 +308,17 @@ export class Entity {
 				this.setVisible(undefined);
 			}
 		}
-		EntityObserver.propertyChanged(this, 'visible', this.#visible);
+		if (oldValue != this.#visible) {
+			EntityObserver.propertyChanged(this, 'visible', oldValue, this.#visible);
+		}
 	}
 
 	setPlaying(playing) {
+		const oldValue = this.#playing;
 		this.#playing = playing;
-		EntityObserver.propertyChanged(this, 'playing', playing);
+		if (oldValue != playing) {
+			EntityObserver.propertyChanged(this, 'playing', oldValue, playing);
+		}
 	}
 
 	isPlaying() {

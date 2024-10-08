@@ -23,8 +23,8 @@ class EntityObserverClass extends EventTarget {
 		this.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
 	}
 
-	propertyChanged(entity: Entity, propertyName: string, propertyValue: any) {
-		this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { entity: entity, name: propertyName, value: propertyValue } }));
+	propertyChanged(entity: Entity, propertyName: string, oldValue: any, newValue: any) {
+		this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
 	}
 }
 
