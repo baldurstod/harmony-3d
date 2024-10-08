@@ -35,7 +35,7 @@ class VTFResource {
 
 export class VTFFile {
 	#flags = 0;
-	#width ;
+	#width;
 	#height;
 	#frames;
 	#imageFormat;
@@ -121,6 +121,10 @@ export class VTFFile {
 
 	get resources() {
 		return this.#resources;
+	}
+
+	getMipMaps() {
+		return this.#mipMaps;
 	}
 
 	setImageData(imageData, frame = 0, face = 0, slice = 0, mipmap = 0) {
@@ -225,7 +229,7 @@ export class VTFWriter {
 
 	static _writeHighResImage(writer, vtffile, resource, dataOffset) {
 		writer.seek(dataOffset);
-		writer.setBytes(vtffile._mipMaps[0][0][0][0]);
+		writer.setBytes(vtffile.getMipMaps()[0][0][0][0]);
 	}
 
 	static get majorVersion() {
