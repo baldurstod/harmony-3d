@@ -27,4 +27,5 @@ export { StatTrakIllum } from './stattrakillum';
 export { StickybombGlowColor } from './stickybombglowcolor';
 export { TextureScroll } from './texturescroll';
 export { TextureTransform } from './texturetransform';
+export { UniformNoiseProxy } from './uniformnoiseproxy';
 export { WeaponSkin } from './weaponskin';
