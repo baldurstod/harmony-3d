@@ -28,4 +28,5 @@ export { StickybombGlowColor } from './stickybombglowcolor';
 export { TextureScroll } from './texturescroll';
 export { TextureTransform } from './texturetransform';
 export { UniformNoiseProxy } from './uniformnoiseproxy';
+export { WaterLod } from './waterlod';
 export { WeaponSkin } from './weaponskin';
