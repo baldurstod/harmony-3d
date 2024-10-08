@@ -8,4 +8,5 @@ export { SpriteMaterial } from './spritematerial';
 export { UnlitGenericMaterial } from './unlitgenericmaterial';
 export { UnlitTwoTextureMaterial } from './unlittwotexturematerial';
 export { VertexLitGenericMaterial } from './vertexlitgenericmaterial';
+export { WaterMaterial } from './watermaterial';
 export { SourceEngineMaterialManager } from './sourceenginematerialmanager';
