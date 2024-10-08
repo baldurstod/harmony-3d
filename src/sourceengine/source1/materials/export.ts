@@ -6,5 +6,6 @@ export { LightMappedGenericMaterial } from './lightmappedgenericmaterial';
 export { SpriteCardMaterial } from './spritecardmaterial';
 export { SpriteMaterial } from './spritematerial';
 export { UnlitGenericMaterial } from './unlitgenericmaterial';
+export { UnlitTwoTextureMaterial } from './unlittwotexturematerial';
 export { VertexLitGenericMaterial } from './vertexlitgenericmaterial';
 export { SourceEngineMaterialManager } from './sourceenginematerialmanager';
