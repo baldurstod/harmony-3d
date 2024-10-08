@@ -12,8 +12,6 @@ class KvAttribute {
 	}
 }
 class KvElement {
-	type;
-
 	addElement(name, value) {
 		if (!name) {
 			return;
@@ -28,7 +26,7 @@ class KvElement {
 	}
 	toString(linePrefix) {
 		linePrefix = linePrefix || '';
-		let s = [linePrefix, '"', this.type, '"\n', linePrefix, '{\n'];
+		let s = [linePrefix, '"'/*, this.type, '"\n'*/, linePrefix, '{\n'];
 
 		for (let i in this) {
 			s.push(this.toString(linePrefix + '\t'));
