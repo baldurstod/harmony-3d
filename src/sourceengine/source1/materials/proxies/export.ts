@@ -32,3 +32,4 @@ export { WaterLod } from './waterlod';
 export { WeaponInvis } from './weaponinvis';
 export { WeaponLabelText } from './weaponlabeltext';
 export { WeaponSkin } from './weaponskin';
+export { YellowLevel } from './yellowlevel';
