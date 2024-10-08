@@ -4,5 +4,6 @@ export { CustomWeaponMaterial } from './customweaponmaterial';
 export { EyeRefractMaterial } from './eyerefractmaterial';
 export { LightMappedGenericMaterial } from './lightmappedgenericmaterial';
 export { SpriteCardMaterial } from './spritecardmaterial';
+export { SpriteMaterial } from './spritematerial';
 export { VertexLitGenericMaterial } from './vertexlitgenericmaterial';
 export { SourceEngineMaterialManager } from './sourceenginematerialmanager';
