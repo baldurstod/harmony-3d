@@ -9,4 +9,5 @@ export { UnlitGenericMaterial } from './unlitgenericmaterial';
 export { UnlitTwoTextureMaterial } from './unlittwotexturematerial';
 export { VertexLitGenericMaterial } from './vertexlitgenericmaterial';
 export { WaterMaterial } from './watermaterial';
+export { WeaponDecalMaterial } from './weapondecalmaterial';
 export { SourceEngineMaterialManager } from './sourceenginematerialmanager';
