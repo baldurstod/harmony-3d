@@ -21,4 +21,5 @@ export { ModelGlowColor } from './modelglowcolor';
 export { Multiply as Source1Multiply } from './multiply';
 export { SelectFirstIfNonZero } from './selectfirstifnonzero';
 export { Sine } from './sine';
+export { SpyInvis } from './spyinvis';
 export { WeaponSkin } from './weaponskin';
