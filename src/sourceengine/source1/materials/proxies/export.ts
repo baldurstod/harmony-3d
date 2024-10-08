@@ -16,4 +16,5 @@ export { IntProxy } from './intproxy';
 export { Invis } from './invis';
 export { ItemTintColor } from './itemtintcolor';
 export { LessOrEqualProxy } from './lessorequalproxy';
+export { LinearRamp } from './linearramp';
 export { WeaponSkin } from './weaponskin';
