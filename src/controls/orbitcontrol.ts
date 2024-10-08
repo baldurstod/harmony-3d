@@ -15,6 +15,7 @@ import { GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
 
 const zUnitVec3 = vec3.fromValues(0, 0, 1);
 const tempVec3 = vec3.create();
+const tempVec3_2 = vec3.create();
 const spherical = new Spherical();
 
 
@@ -225,10 +226,12 @@ export class OrbitControl extends CameraControl {
 		// move target to panned location
 
 		if (this.#enableDamping === true) {
-			vec3.scaleAndAdd(this.#target._position, this.#target._position, this.#panOffset, this.#dampingFactor)
+			vec3.scaleAndAdd(tempVec3_2, this.#target._position, this.#panOffset, this.#dampingFactor);
+			this.#target.setPosition(tempVec3_2);
 		} else {
 			//this.target.add(this.#panOffset);
-			vec3.add(this.#target._position, this.#target._position, this.#panOffset);
+			vec3.add(tempVec3_2, this.#target._position, this.#panOffset);
+			this.#target.setPosition(tempVec3_2);
 		}
 		spherical.toCartesian(tempVec3);
 
@@ -237,7 +240,8 @@ export class OrbitControl extends CameraControl {
 		vec3.transformQuat(tempVec3, tempVec3, this.#quatInverse);
 
 		//position.copy(this.target).add(offset);
-		vec3.add(position, this.#target.getWorldPosition(), tempVec3);
+		vec3.add(tempVec3, this.#target.getWorldPosition(), tempVec3);
+		this.camera.setPosition(tempVec3);
 
 		this.camera.lookAt(this.#target.getWorldPosition(), this.#upVector);//TODO: optimize
 
