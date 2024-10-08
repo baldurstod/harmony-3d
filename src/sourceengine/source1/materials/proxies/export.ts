@@ -25,4 +25,5 @@ export { SpyInvis } from './spyinvis';
 export { StatTrakDigit } from './stattrakdigit';
 export { StatTrakIllum } from './stattrakillum';
 export { StickybombGlowColor } from './stickybombglowcolor';
+export { TextureScroll } from './texturescroll';
 export { WeaponSkin } from './weaponskin';
