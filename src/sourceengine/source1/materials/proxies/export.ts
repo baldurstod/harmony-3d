@@ -20,4 +20,5 @@ export { LinearRamp } from './linearramp';
 export { ModelGlowColor } from './modelglowcolor';
 export { Multiply as Source1Multiply } from './multiply';
 export { SelectFirstIfNonZero } from './selectfirstifnonzero';
+export { Sine } from './sine';
 export { WeaponSkin } from './weaponskin';
