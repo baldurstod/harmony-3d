@@ -19,4 +19,5 @@ export { LessOrEqualProxy } from './lessorequalproxy';
 export { LinearRamp } from './linearramp';
 export { ModelGlowColor } from './modelglowcolor';
 export { Multiply as Source1Multiply } from './multiply';
+export { SelectFirstIfNonZero } from './selectfirstifnonzero';
 export { WeaponSkin } from './weaponskin';
