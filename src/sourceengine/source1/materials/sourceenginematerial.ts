@@ -425,7 +425,7 @@ export class SourceEngineMaterial extends Material {
 		const sheet = vtf?.sheet;
 
 		if (sheet) {
-			const sheet = texture.vtf.sheet;//SETextureControler.getAnimSheet('materials/' + this.baseTexture);
+			//const sheet = texture.vtf.sheet;//SETextureControler.getAnimSheet('materials/' + this.baseTexture);
 			if (sheet) {
 				let group = sheet.sequences[sequence];
 				if (!group) {
