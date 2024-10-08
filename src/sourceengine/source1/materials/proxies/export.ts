@@ -17,4 +17,5 @@ export { Invis } from './invis';
 export { ItemTintColor } from './itemtintcolor';
 export { LessOrEqualProxy } from './lessorequalproxy';
 export { LinearRamp } from './linearramp';
+export { ModelGlowColor } from './modelglowcolor';
 export { WeaponSkin } from './weaponskin';
