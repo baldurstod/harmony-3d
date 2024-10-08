@@ -26,4 +26,5 @@ export { StatTrakDigit } from './stattrakdigit';
 export { StatTrakIllum } from './stattrakillum';
 export { StickybombGlowColor } from './stickybombglowcolor';
 export { TextureScroll } from './texturescroll';
+export { TextureTransform } from './texturetransform';
 export { WeaponSkin } from './weaponskin';
