@@ -5,5 +5,6 @@ export { EyeRefractMaterial } from './eyerefractmaterial';
 export { LightMappedGenericMaterial } from './lightmappedgenericmaterial';
 export { SpriteCardMaterial } from './spritecardmaterial';
 export { SpriteMaterial } from './spritematerial';
+export { UnlitGenericMaterial } from './unlitgenericmaterial';
 export { VertexLitGenericMaterial } from './vertexlitgenericmaterial';
 export { SourceEngineMaterialManager } from './sourceenginematerialmanager';
