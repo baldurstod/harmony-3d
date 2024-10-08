@@ -23,4 +23,5 @@ export { SelectFirstIfNonZero } from './selectfirstifnonzero';
 export { Sine } from './sine';
 export { SpyInvis } from './spyinvis';
 export { StatTrakDigit } from './stattrakdigit';
+export { StatTrakIllum } from './stattrakillum';
 export { WeaponSkin } from './weaponskin';
