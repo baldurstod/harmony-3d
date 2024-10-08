@@ -29,4 +29,5 @@ export { TextureScroll } from './texturescroll';
 export { TextureTransform } from './texturetransform';
 export { UniformNoiseProxy } from './uniformnoiseproxy';
 export { WaterLod } from './waterlod';
+export { WeaponInvis } from './weaponinvis';
 export { WeaponSkin } from './weaponskin';
