@@ -15,4 +15,5 @@ export { HeartbeatScale } from './heartbeatscale';
 export { IntProxy } from './intproxy';
 export { Invis } from './invis';
 export { ItemTintColor } from './itemtintcolor';
+export { LessOrEqualProxy } from './lessorequalproxy';
 export { WeaponSkin } from './weaponskin';
