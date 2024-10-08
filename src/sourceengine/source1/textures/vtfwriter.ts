@@ -48,7 +48,7 @@ export class VTFFile {
 	#highResImageFormat = 0;//todo
 	#resources = [];
 	#highResResource = new VTFResource(HIGH_RES_IMAGE);
-	constructor(width = 512, height = 512, imageFormat, frames = 1, faces = 1, slices = 1) {
+	constructor(width = 512, height = 512, imageFormat = 0/*TODO*/, frames = 1, faces = 1, slices = 1) {
 		this.#width = width;
 		this.#height = height;
 		this.#imageFormat = imageFormat;
