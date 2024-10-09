@@ -1,6 +1,6 @@
 import { getLoader } from '../../../loaders/loaderfactory';
-import { Material } from '../../../materials/material';
 import { customFetch } from '../../../utils/customfetch';
+import { SourceEngineMaterial } from './sourceenginematerial';
 
 function cleanSource1MaterialName(name) {
 	name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '').replace(/^materials\//g, '');
@@ -16,14 +16,14 @@ export class SourceEngineMaterialManager {
 	static #materialList2 = new Set();
 	static #materialListPerRepository = {};
 
-	static getMaterial(repositoryName, fileName, searchPaths?): Promise<Material> {
+	static getMaterial(repositoryName, fileName, searchPaths?): Promise<SourceEngineMaterial> {
 		fileName = cleanSource1MaterialName(fileName);
 		if (searchPaths) {
 			let promises = [];
 			for (let searchPath of searchPaths) {
 				promises.push(this.#getMaterial(repositoryName, 'materials/' + searchPath + fileName));
 			}
-			let promise = new Promise<Material>((resolve, reject) => {
+			let promise = new Promise<SourceEngineMaterial>((resolve, reject) => {
 				Promise.allSettled(promises).then(
 					(promises) => {
 						for (let promise of promises) {
@@ -45,10 +45,10 @@ export class SourceEngineMaterialManager {
 		}
 	}
 
-	static #getMaterial(repositoryName, fileName): Promise<Material> {
+	static #getMaterial(repositoryName, fileName): Promise<SourceEngineMaterial> {
 		let material = this.#materialList.get(fileName);
 		if (material instanceof Promise) {
-			let promise = new Promise<Material>((resolve, reject) => {
+			let promise = new Promise<SourceEngineMaterial>((resolve, reject) => {
 				material.then((material) => {
 					let newMaterial = material.clone();
 					this.#materialList2.add(newMaterial);
@@ -68,7 +68,7 @@ export class SourceEngineMaterialManager {
 				resolve(newMaterial);
 			});
 		} else {
-			let promise = new Promise<Material>((resolve, reject) => {
+			let promise = new Promise<SourceEngineMaterial>((resolve, reject) => {
 				let vmtLoader = getLoader('SourceEngineVMTLoader');
 				vmtLoader.load(repositoryName, fileName).then(
 					(material) => {
@@ -87,7 +87,7 @@ export class SourceEngineMaterialManager {
 	}
 
 	static async copyMaterial(repositoryName, sourcePath, destPath, searchPaths) {
-		let material: Material = await this.getMaterial(repositoryName, sourcePath, searchPaths);
+		let material: SourceEngineMaterial = await this.getMaterial(repositoryName, sourcePath, searchPaths);
 		this.#materialList.set(destPath, material.clone());
 	}
 
