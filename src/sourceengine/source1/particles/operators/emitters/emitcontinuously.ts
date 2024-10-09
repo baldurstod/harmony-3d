@@ -1,6 +1,6 @@
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator.js';
-import { PARAM_TYPE_FLOAT } from '../../constants.js';
+import { SourceEngineParticleOperator } from '../operator';
+import { PARAM_TYPE_FLOAT } from '../../constants';
 
 export class EmitContinuously extends SourceEngineParticleOperator {
 	static functionName = 'emit continuously';

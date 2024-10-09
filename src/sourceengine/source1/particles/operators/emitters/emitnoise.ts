@@ -1,6 +1,6 @@
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator.js';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants.js';
+import { SourceEngineParticleOperator } from '../operator';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
 export class EmitNoise extends SourceEngineParticleOperator {
 	static functionName = 'emit noise';
 	remainder = 0;
