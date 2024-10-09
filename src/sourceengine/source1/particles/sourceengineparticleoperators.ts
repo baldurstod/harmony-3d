@@ -21,7 +21,7 @@ export class SourceEngineParticleOperators {
 		return this.#functionsType[type] ?? [];
 	}
 
-	static registerOperator(name, className) {
+	static registerOperator(name, className?) {
 		if (className) {
 			this.#register('Operators', name, className);
 		} else {
