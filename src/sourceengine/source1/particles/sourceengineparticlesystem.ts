@@ -15,6 +15,7 @@ import { MAX_FLOATS } from '../../common/particles/randomfloats';
 import { SourcePCF } from '../loaders/sourcepcf';
 import { Material } from '../../../materials/material';
 import { registerEntity } from '../../../entities/entities';
+import { SourceEngineMaterial } from '../materials/sourceenginematerial';
 
 export const MAX_PARTICLE_CONTROL_POINTS = 64;
 const RESET_DELAY = 0;
@@ -79,7 +80,7 @@ export class SourceEngineParticleSystem extends Entity {
 	parentSystem = undefined;
 	firstStep: boolean = false;
 	pcf: SourcePCF;
-	material: Material;
+	material: SourceEngineMaterial;
 	materialName: string;
 	maxParticles: number;
 	resetDelay: number;
