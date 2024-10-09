@@ -37,6 +37,7 @@ export class ControlPoint extends Entity {
 
 	parentModel = null;
 	lastComputed = -1;
+	attachementProp;
 
 	getWorldTransformation(mat = mat4.create()) {
 		this.getWorldQuaternion(tempQuat);
