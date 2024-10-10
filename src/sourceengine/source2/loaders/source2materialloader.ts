@@ -1,7 +1,7 @@
-import { Source2FileLoader } from './source2fileloader.js';
-import { VERBOSE } from '../../../buildoptions.js';
-import { Source2File } from './source2file.js';
-import { Source2Material } from '../materials/source2material.js';
+import { Source2FileLoader } from './source2fileloader';
+import { VERBOSE } from '../../../buildoptions';
+import { Source2File } from './source2file';
+import { Source2Material } from '../materials/source2material';
 
 
 export class Source2MaterialLoader {
