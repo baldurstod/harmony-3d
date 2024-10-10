@@ -62,11 +62,11 @@ export class Material {
 	properties = new Map<string, any>();
 
 	static materialList = {};
-	constructor(parameters: any = {}) {
+	constructor(params: any = {}) {
 		this.defines = {};//TODOv3: put defines in meshes too ?
 
-		this.parameters = parameters;
-		this.depthTest = true;
+		this.parameters = params;
+		this.depthTest = params.depthTest ?? true;
 		this.depthFunc = GL_LESS;
 		this.depthMask = true;
 
@@ -80,16 +80,16 @@ export class Material {
 		this.modeAlpha = GL_FUNC_ADD;
 
 		//this.culling = parameters.culling ?? DEFAULT_CULLING_MODE;
-		if (parameters.culling) {
+		if (params.culling) {
 			throw 'handle me';
 		}
 
 		this.colorMode = MATERIAL_COLOR_NONE;
 		this.color = DEFAULT_COLOR;
 
-		this.polygonOffset = parameters.polygonOffset ?? false;
-		this.polygonOffsetFactor = parameters.polygonpolygonOffsetFactorOffset ?? -5;
-		this.polygonOffsetUnits = parameters.polygonOffsetUnits ?? -5;
+		this.polygonOffset = params.polygonOffset ?? false;
+		this.polygonOffsetFactor = params.polygonpolygonOffsetFactorOffset ?? -5;
+		this.polygonOffsetUnits = params.polygonOffsetUnits ?? -5;
 
 		this._dirtyProgram = true;//TODOv3 use another method
 	}
