@@ -1,5 +1,5 @@
 import { Entity } from '../entities/entity';
-import '../styles/materialeditor.css';
+import '../css/materialeditor.css';
 import { Material } from './material';
 
 function getUniformsHtml(uniforms) {
