@@ -5,7 +5,7 @@ export class Repository {
 	#base: string;
 	#fallbackRepository: string;
 	#fetchFunction;
-	constructor(name, base, fallbackRepository, fetchFunction) {
+	constructor(name, base, fallbackRepository?, fetchFunction?) {
 		this.#name = name;
 		this.#base = base;
 		if (fallbackRepository) {
