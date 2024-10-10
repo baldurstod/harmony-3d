@@ -2,7 +2,7 @@ import { vec2 } from 'gl-matrix';
 
 import { Graphics } from '../../../../../graphics/graphics';
 import { Mesh } from '../../../../../objects/mesh';
-import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/beambuffergeometry';
+import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geometries/beambuffergeometry';
 import { TextureManager } from '../../../../../textures/texturemanager';
 import { Source1ParticleControler } from '../../source1particlecontroler';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
