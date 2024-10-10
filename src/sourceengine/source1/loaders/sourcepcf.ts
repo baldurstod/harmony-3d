@@ -29,7 +29,7 @@ export class SourcePCF {
 
 		const attributes = element.attributes;
 
-		const ps = new SourceEngineParticleSystem(this.repository, { name: systemName });
+		const ps = new SourceEngineParticleSystem({ repository: this.repository, name: systemName });
 		ps.pcf = this;	// Store PCF to load children
 		ps.repository = this.repository;
 
