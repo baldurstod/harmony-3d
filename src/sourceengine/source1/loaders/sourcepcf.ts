@@ -10,6 +10,7 @@ export class SourcePCF {
 	elementsDict = [];
 	systems = {};
 	systems2 = {};
+	binaryVersion;
 	constructor(repository: string) {
 		this.repository = repository;
 	}
