@@ -1,6 +1,6 @@
 import { BinaryReader, TWO_POW_10, TWO_POW_MINUS_14, getCharCodes } from 'harmony-binary-reader';
 
-import { BinaryAsyncRangeRequest } from './ajax.js';
+import { BinaryAsyncRangeRequest } from './ajax';
 
 export class RemoteBinaryReader {
 	byteOffset = 0;
