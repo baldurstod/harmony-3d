@@ -1,8 +1,8 @@
 import { vec4 } from 'gl-matrix';
 
-import { Pass } from './pass';
-import { ShaderMaterial } from '../materials/shadermaterial';
-import { FullScreenQuad } from '../primitives/fullscreenquad';
+import { Pass } from '../pass';
+import { ShaderMaterial } from '../../materials/shadermaterial';
+import { FullScreenQuad } from '../../primitives/fullscreenquad';
 
 export class GrainPass extends Pass {
 	#intensity;

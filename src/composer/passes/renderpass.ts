@@ -1,6 +1,6 @@
-import { Camera } from '../cameras/camera';
-import { Scene } from '../scenes/scene';
-import { Pass } from './pass';
+import { Camera } from '../../cameras/camera';
+import { Scene } from '../../scenes/scene';
+import { Pass } from '../pass';
 
 export class RenderPass extends Pass {
 	scene: Scene;

@@ -1,6 +1,6 @@
 import { vec4 } from 'gl-matrix';
 
-import { Pass } from './pass';
+import { Pass } from '../pass';
 
 export class ClearPass extends Pass {
 	swapBuffers = false;

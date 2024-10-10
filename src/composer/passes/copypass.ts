@@ -1,7 +1,7 @@
-import { Pass } from './pass';
-import { ShaderMaterial } from '../materials/shadermaterial';
-import { FullScreenQuad } from '../primitives/fullscreenquad';
-import { Camera } from '../cameras/camera';
+import { Pass } from '../pass';
+import { ShaderMaterial } from '../../materials/shadermaterial';
+import { FullScreenQuad } from '../../primitives/fullscreenquad';
+import { Camera } from '../../cameras/camera';
 
 export class CopyPass extends Pass {
 	constructor(camera: Camera) {//TODO: camera is not really needed

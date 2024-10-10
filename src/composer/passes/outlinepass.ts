@@ -1,12 +1,12 @@
 import { vec2, vec4 } from 'gl-matrix';
 
-import { Pass } from './pass';
-import { MATERIAL_BLENDING_ADDITIVE } from '../materials/material';
-import { ShaderMaterial } from '../materials/shadermaterial';
-import { FullScreenQuad } from '../primitives/fullscreenquad';
-import { RenderTarget } from '../textures/rendertarget';
-import { Scene } from '../scenes/scene';
-import { Camera } from '../cameras/camera';
+import { Pass } from '../pass';
+import { MATERIAL_BLENDING_ADDITIVE } from '../../materials/material';
+import { ShaderMaterial } from '../../materials/shadermaterial';
+import { FullScreenQuad } from '../../primitives/fullscreenquad';
+import { RenderTarget } from '../../textures/rendertarget';
+import { Scene } from '../../scenes/scene';
+import { Camera } from '../../cameras/camera';
 
 const CLEAR_COLOR = vec4.fromValues(0, 0, 0, 0);
 
