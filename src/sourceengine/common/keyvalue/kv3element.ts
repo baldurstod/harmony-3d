@@ -49,6 +49,7 @@ export class SourceKv3String {
 }
 
 export class SourceKv3Value {
+	value;
 	type;
 	constructor(type) {
 		this.type = type;
