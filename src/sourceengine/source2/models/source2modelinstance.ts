@@ -259,11 +259,11 @@ export class Source2ModelInstance extends Entity {
 				if (model) {
 					let newModel = [];
 					for (let geometry of model) {
-						let mesh;
+						let mesh: Mesh;
 						if (this.#skeleton) {
 							mesh = new SkeletalMesh(geometry, defaultMaterial, this.#skeleton);
 							mesh.name = bodyPartName;
-							mesh.bonesPerVertex = 4;
+							(mesh as SkeletalMesh).bonesPerVertex = 4;
 						} else {
 							mesh = new Mesh(geometry, defaultMaterial);
 						}
@@ -271,7 +271,7 @@ export class Source2ModelInstance extends Entity {
 							mesh.setDefine('USE_VERTEX_TANGENT');
 						}
 						mesh.visible = undefined;
-						mesh.materialPath = geometry.materialPath;
+						mesh.properties.set('materialPath', geometry.properties.get('materialPath'));
 						newModel.push(mesh);
 						this.addChild(mesh);
 						this.meshes.add(mesh);
