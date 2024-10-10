@@ -1,3 +1,4 @@
+export  * from './geometries/beambuffergeometry';
 export { Box } from './box';
 export { Circle } from './circle';
 export { Cone } from './cone';
