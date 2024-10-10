@@ -1,6 +1,7 @@
 export * from './audio/export';
 export * from './backgrounds/export';
 export * from './cameras/export';
+export * from './composer/export';
 export * from './controls/export';
 export * from './entities/export';
 export * from './exporters/export';
