@@ -1,0 +1,4 @@
+
+scene-explorer-entity.dragged-over>.scene-explorer-entity-header{
+	background-color: var(--theme-scene-explorer-entity-drag-bg-color);
+}
