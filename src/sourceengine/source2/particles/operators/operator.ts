@@ -44,7 +44,7 @@ export class Operator {//TODOv3: rename this class ?
 	opFadeOscillatePeriod = 0;
 	normalizePerLiving = false;
 	disableOperator = false;
-	controlPointNumber: number;
+	controlPointNumber: number = 0;
 	fieldInput = -1;
 	fieldOutput = -1;
 	scaleCp: number;
@@ -215,7 +215,7 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 
-	getParamVectorValue(paramName, particle, outVec = vec4.create()) {
+	getParamVectorValue(paramName, particle?, outVec = vec4.create()) {
 		let parameter = this.#parameters[paramName];
 		if (parameter) {
 			let type = parameter.m_nType;
