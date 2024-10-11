@@ -364,8 +364,8 @@ class Decoder {
 	#isRepG1Decoders = [];
 	#isRepG2Decoders = [];
 	#isRep0LongDecoders = [];
-	#posSlotDecoder = [];
-	#posDecoders = [new BitTreeDecoder(6), new BitTreeDecoder(6), new BitTreeDecoder(6), new BitTreeDecoder(6)];
+	#posSlotDecoder = [new BitTreeDecoder(6), new BitTreeDecoder(6), new BitTreeDecoder(6), new BitTreeDecoder(6)];
+	#posDecoders = [];
 	#posAlignDecoder = new BitTreeDecoder(4);
 	#lenDecoder = new LenDecoder();
 	#repLenDecoder = new LenDecoder();
