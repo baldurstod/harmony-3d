@@ -242,7 +242,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 
 	dispose() {
 		this.mesh?.dispose();
-		this.texture.removeUser(this);
+		this.texture?.removeUser(this);
 	}
 }
 SourceEngineParticleOperators.registerOperator(RenderAnimatedSprites);
