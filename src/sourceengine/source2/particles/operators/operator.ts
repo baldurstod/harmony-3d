@@ -81,12 +81,12 @@ export class Operator {//TODOv3: rename this class ?
 		return this.#parameters[paramName];
 	}
 
-	getParamScalarValue(paramName, particle) {
+	getParamScalarValue(paramName, particle?) {
 		let parameter = this.#parameters[paramName];
-		return this._getParamScalarValue(parameter, particle);
+		return this.#getParamScalarValue(parameter, particle);
 	}
 
-	_getParamScalarValue(parameter, particle) {
+	#getParamScalarValue(parameter, particle) {
 		if (parameter) {
 			let inputValue;
 			let type = parameter.m_nType;
@@ -143,7 +143,7 @@ export class Operator {//TODOv3: rename this class ?
 							parameter.m_flOutput1 ?? 1
 						);
 					default:
-						console.error('_getParamScalarValue unknown type', parameter);
+						console.error('#getParamScalarValue unknown type', parameter);
 						throw 'Code me'
 				}
 			} else {
@@ -234,9 +234,9 @@ export class Operator {//TODOv3: rename this class ?
 						return this._getParamVectorValueFloatInterpGradient(parameter, particle, outVec);
 						break;
 					case 'PVEC_TYPE_FLOAT_COMPONENTS':
-						outVec[0] = this._getParamScalarValue(parameter.m_FloatComponentX, particle);
-						outVec[1] = this._getParamScalarValue(parameter.m_FloatComponentY, particle);
-						outVec[2] = this._getParamScalarValue(parameter.m_FloatComponentZ, particle);
+						outVec[0] = this.#getParamScalarValue(parameter.m_FloatComponentX, particle);
+						outVec[1] = this.#getParamScalarValue(parameter.m_FloatComponentY, particle);
+						outVec[2] = this.#getParamScalarValue(parameter.m_FloatComponentZ, particle);
 						break;
 					case 'PVEC_TYPE_RANDOM_UNIFORM_OFFSET':
 						vec3RandomBox(outVec as vec3, parameter.m_vRandomMin, parameter.m_vRandomMax);
@@ -266,7 +266,7 @@ export class Operator {//TODOv3: rename this class ?
 	_getParamVectorValueFloatInterpGradient(parameter, particle, outVec) {
 		let interpInput0 = parameter.m_flInterpInput0;
 		let interpInput1 = parameter.m_flInterpInput1;
-		let inputValue = this._getParamScalarValue(parameter.m_FloatInterp, particle);
+		let inputValue = this.#getParamScalarValue(parameter.m_FloatInterp, particle);
 
 		inputValue = RemapValClamped(inputValue, interpInput0, interpInput1, 0.0, 1.0);
 
