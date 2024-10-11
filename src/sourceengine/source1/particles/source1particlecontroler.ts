@@ -13,10 +13,11 @@ export class Source1ParticleControler {
 	static #pcfList = {};
 	static #systemNameToPcf = {};
 	static #sourceEngineParticleSystem;
+	static fixedTime?: number;
 
 	static {
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: CustomEvent) => {
-			this.stepSystems(event.detail.delta);//TODOv3: imporve this
+			this.stepSystems(this.fixedTime ?? event.detail.delta);//TODOv3: imporve this
 		});
 	}
 
