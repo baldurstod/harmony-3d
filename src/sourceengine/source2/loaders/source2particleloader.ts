@@ -2,7 +2,7 @@ import { vec4 } from 'gl-matrix';
 import { Source2FileLoader } from './source2fileloader';
 import { Source2ParticleManager } from '../particles/source2particlemanager';
 import { Source2ParticleSystem } from '../particles/source2particlesystem';
-import { Source2ParticleOperators } from '../particles/operators/source2particleoperators';
+import { GetSource2ParticleOperator } from '../particles/operators/source2particleoperators';
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { LOG, DEBUG, VERBOSE, TESTING } from '../../../buildoptions';
 
@@ -73,7 +73,7 @@ function _initOperators(system, systemArray, kv3Array) {
 		if (properties) {
 			for (let property of properties) {
 				if (property._class) {
-					let operatorClass = Source2ParticleOperators[property._class];
+					let operatorClass = GetSource2ParticleOperator(property._class);
 					if (operatorClass) {
 						let operator = new operatorClass(system);
 						if (operator.isPreEmission()) {
