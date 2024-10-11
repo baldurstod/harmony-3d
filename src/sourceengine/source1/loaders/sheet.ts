@@ -27,14 +27,14 @@ export class SheetSequenceSample_t {
 
 
 export function GetInterpolationData(pKnotPositions, pKnotValues,
-						nNumValuesinList,
-						nInterpolationRange,
-						flPositionToInterpolateAt,
-						bWrap) {
+	nNumValuesinList,
+	nInterpolationRange,
+	flPositionToInterpolateAt,
+	bWrap) {
 	// first, find the bracketting knots by looking for the first knot >= our index
 	let result = Object.create(null);
 	let idx;
-	for(idx = 0; idx < nNumValuesinList; idx++) {
+	for (idx = 0; idx < nNumValuesinList; idx++) {
 		if (pKnotPositions[idx] >= flPositionToInterpolateAt) {
 			break;
 		}
@@ -43,12 +43,12 @@ export function GetInterpolationData(pKnotPositions, pKnotValues,
 	let flOffsetFromStartOfGap, flSizeOfGap;
 	if (idx == 0) {
 		if (bWrap) {
-			nKnot1 = nNumValuesinList - 1;
+			nKnot1 = Math.max(nNumValuesinList - 1, 0);
 			nKnot2 = 0;
 			flSizeOfGap =
-				(pKnotPositions[nKnot2] + (nInterpolationRange-pKnotPositions[nKnot1]));
+				(pKnotPositions[nKnot2] + (nInterpolationRange - pKnotPositions[nKnot1]));
 			flOffsetFromStartOfGap =
-				flPositionToInterpolateAt + (nInterpolationRange-pKnotPositions[nKnot1]);
+				flPositionToInterpolateAt + (nInterpolationRange - pKnotPositions[nKnot1]);
 		} else {
 			result.pValueA = result.pValueB = pKnotValues[0];
 			result.pInterpolationValue = 1.0;
@@ -56,25 +56,25 @@ export function GetInterpolationData(pKnotPositions, pKnotValues,
 		}
 	} else if (idx == nNumValuesinList) {						// ran out of values
 		if (bWrap) {
-			nKnot1 = nNumValuesinList -1;
+			nKnot1 = nNumValuesinList - 1;
 			nKnot2 = 0;
 			flSizeOfGap = (pKnotPositions[nKnot2] +
-						(nInterpolationRange-pKnotPositions[nKnot1]));
+				(nInterpolationRange - pKnotPositions[nKnot1]));
 			flOffsetFromStartOfGap = flPositionToInterpolateAt - pKnotPositions[nKnot1];
 		} else {
-			result.pValueA = result.pValueB = pKnotValues[nNumValuesinList-1];
+			result.pValueA = result.pValueB = pKnotValues[nNumValuesinList - 1];
 			result.pInterpolationValue = 1.0;
 			return result;
 		}
 	} else {
-		nKnot1 = idx-1;
+		nKnot1 = idx - 1;
 		nKnot2 = idx;
-		flSizeOfGap = pKnotPositions[nKnot2]-pKnotPositions[nKnot1];
-		flOffsetFromStartOfGap = flPositionToInterpolateAt-pKnotPositions[nKnot1];
+		flSizeOfGap = pKnotPositions[nKnot2] - pKnotPositions[nKnot1];
+		flOffsetFromStartOfGap = flPositionToInterpolateAt - pKnotPositions[nKnot1];
 	}
 
 	function FLerp(f1, f2, i1, i2, x) {
-		return f1+(f2-f1)*(x-i1)/(i2-i1);
+		return f1 + (f2 - f1) * (x - i1) / (i2 - i1);
 	}
 
 
