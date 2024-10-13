@@ -255,7 +255,7 @@ export class Entity {
 		const oldValue = this.#visible;
 		this.#visible = visible;
 		if (oldValue != visible) {
-		EntityObserver.propertyChanged(this, 'visible', oldValue, visible);
+			EntityObserver.propertyChanged(this, 'visible', oldValue, visible);
 		}
 	}
 
@@ -569,8 +569,8 @@ export class Entity {
 		this.quaternion = tempQuat;
 	}
 
-	getMeshList() {
-		let meshList = new Set();
+	getMeshList(): Set<Entity> {
+		let meshList = new Set<Entity>();
 		const treated = new WeakSet();
 
 		let currentEntity: Entity | undefined = this;
