@@ -149,7 +149,7 @@ export const Source2ParticleLoader = new (function () {
 			return promise;
 		}
 
-		async getSystem(repository, vpcf, snapshotModifiers) {
+		async getSystem(repository, vpcf, snapshotModifiers?) {
 			if (TESTING && LOG) {
 				console.debug(vpcf);
 			}

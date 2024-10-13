@@ -28,7 +28,7 @@ class Source2ParticleManagerClass {
 		return vpcf;
 	}
 
-	async getSystem(repository, vpcfPath, snapshotModifiers) {
+	async getSystem(repository, vpcfPath, snapshotModifiers?) {
 		vpcfPath = vpcfPath.replace(/.vpcf_c/, '').replace(/.vpcf/, '');
 		vpcfPath = vpcfPath + '.vpcf_c';
 		let vpcf = await this.#getVpcf(repository, vpcfPath);

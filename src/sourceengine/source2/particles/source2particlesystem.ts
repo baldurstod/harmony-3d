@@ -63,7 +63,7 @@ export class Source2ParticleSystem extends Entity {
 		this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: 5, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '' };
 	}
 
-	async init(snapshotModifiers) {
+	async init(snapshotModifiers?) {
 		await this.#initSnapshot(snapshotModifiers);
 
 		for (let child of this.childSystems) {
@@ -75,7 +75,7 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	async #initSnapshot(snapshotModifiers) {
+	async #initSnapshot(snapshotModifiers?) {
 		//TODO : we should add a snapshotmanager to avoid loading the same file multiple time
 		let snapshotFile = this.baseProperties.snapshot;
 		if (snapshotModifiers && snapshotModifiers[snapshotFile]) {
