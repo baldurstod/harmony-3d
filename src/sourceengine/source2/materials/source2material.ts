@@ -4,6 +4,7 @@ import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL } from '
 import { Source2TextureManager } from '../textures/source2texturemanager';
 import { DEBUG } from '../../../buildoptions.js';
 import { RenderFace } from '../../../materials/constants';
+import { Source2File } from '../loaders/source2file';
 
 const UNIFORMS = new Map([
 	['g_vColorTint', 'g_vColorTint'],
@@ -63,9 +64,9 @@ const TEXTURE_UNIFORMS = new Set([
 const DEFAULT_ALPHA_TEST_REFERENCE = 0.7;
 
 export class Source2Material extends Material {
-	#source2File;
+	#source2File?: Source2File;
 	repository: string;
-	constructor(repository: string, source2File) {
+	constructor(repository: string, source2File?: Source2File) {
 		super();
 		this.repository = repository;
 		this.#source2File = source2File;
