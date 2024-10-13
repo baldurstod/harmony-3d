@@ -1,3 +1,4 @@
+export * from './algorithm/export';
 export * from './audio/export';
 export * from './backgrounds/export';
 export * from './cameras/export';
