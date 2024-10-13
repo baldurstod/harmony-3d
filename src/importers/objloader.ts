@@ -31,9 +31,9 @@ function readFace(line) {
 		if (v) {
 			let v2 = v.split('/');
 			//faceVertex.push(v2[0] ?? 0, v2[1] ?? 0, v2[2] ?? 0);
-			face.v.push(v2[0] - 1 ?? 0);
-			face.t.push(v2[1] - 1 ?? 0);
-			face.n.push(v2[2] - 1 ?? 0);
+			face.v.push((v2[0] ?? 1) - 1);
+			face.t.push((v2[1] ?? 1) - 1);
+			face.n.push((v2[2] ?? 1) - 1);
 		} else {
 			//			faceVertex.push(0, 0, 0);
 			face.v.push(0);
