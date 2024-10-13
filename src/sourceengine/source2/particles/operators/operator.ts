@@ -9,7 +9,7 @@ import { TESTING } from '../../../../buildoptions';
 import { Source2ParticleSystem } from '../source2particlesystem';
 import { Source2Material } from '../../materials/source2material';
 import { Mesh } from '../../../../objects/mesh';
-import { Source2SpriteCard } from '../../export';
+import { Source2SpriteCard } from '../../materials/source2spritecard';
 
 const COLOR_SCALE = 1 / 255;
 
