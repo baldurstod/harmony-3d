@@ -34,7 +34,7 @@ export class Mesh extends Entity {
 	isRenderable = true;
 	uniforms = {};
 	defines = Object.create(null);
-	constructor(geometry: BufferGeometry, material: Material) {
+	constructor(geometry?: BufferGeometry, material?: Material) {
 		super();
 		this.setGeometry(geometry);
 		this.setMaterial(material);
@@ -48,7 +48,7 @@ export class Mesh extends Entity {
 		return this.getMaterial();
 	}
 
-	setGeometry(geometry) {
+	setGeometry(geometry?: BufferGeometry) {
 		if (this.#geometry == geometry) {
 			return;
 		}
@@ -65,7 +65,7 @@ export class Mesh extends Entity {
 		return this.#geometry;
 	}
 
-	setMaterial(material) {
+	setMaterial(material?: Material) {
 		if (this.#material != material) {
 			if (this.#material) {
 				this.#material.removeUser(this);
