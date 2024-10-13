@@ -6,5 +6,7 @@ export { Cylinder } from './cylinder';
 export { FullScreenQuad } from './fullscreenquad';
 export { Line } from './line';
 export { LineSegments } from './linesegments';
+export { Metaball } from './metaball';
+export { Metaballs } from './metaballs';
 export { Plane } from './plane';
 export { Sphere } from './sphere';
