@@ -10,6 +10,7 @@ import { GL_TEXTURE_2D, GL_UNSIGNED_BYTE, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREM
 import { DEBUG, ENABLE_S3TC, TESTING } from '../../../buildoptions';
 import { TEXTURE_CLEANUP_DELAY } from '../../../constants';
 import { Texture } from '../../../textures/texture';
+import { Source2SpriteSheet } from './source2spritesheet';
 
 class Source2TextureManagerClass extends EventTarget {//TODO: keep event target ?
 	#texturesList = new Map<string, AnimatedTexture>();
@@ -39,7 +40,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		return texture ? texture.getFrame(frame) : this.#defaultTexture;//TODOv3
 	}
 
-	async getTextureSheet(repository, path) {
+	async getTextureSheet(repository: string, path: string): Promise<Source2SpriteSheet | undefined> {
 		let texture = await this.#getTexture(repository, path);
 		return texture?.properties.get('vtex')?.getBlockByType('DATA')?.spriteSheet;
 	}
