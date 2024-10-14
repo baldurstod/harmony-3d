@@ -1,5 +1,6 @@
 
 export { Source2Material } from './source2material';
+export { Source2Crystal } from './crystal';
 
 
 export { Source2GlobalLitSimple } from './source2globallitsimple';

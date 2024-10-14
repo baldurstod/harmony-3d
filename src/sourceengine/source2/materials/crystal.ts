@@ -1,0 +1,16 @@
+import { Source2Material } from './source2material.js';
+import { Source2MaterialLoader } from '../loaders/source2materialloader';
+import { MATERIAL_BLENDING_ADDITIVE } from '../../../materials/material';
+
+export class Source2Crystal extends Source2Material{
+	setupUniformsOnce() {
+		super.setupUniformsOnce()
+		this.setBlending(MATERIAL_BLENDING_ADDITIVE);
+		this.setDefine('IS_TRANSLUCENT');
+	}
+
+	getShaderSource() {
+		return 'source2_crystal';
+	}
+}
+Source2MaterialLoader.registerMaterial('crystal.vfx', Source2Crystal);

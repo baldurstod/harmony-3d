@@ -1,5 +1,6 @@
 
 export * from './dota2/export';
+export * from './varying/export';
 
 import { Includes } from '../../../../shaders/includes';
 
