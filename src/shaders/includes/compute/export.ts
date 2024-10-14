@@ -9,6 +9,15 @@ Includes['compute_fragment_detail_map'] = compute_fragment_detail_map;
 import compute_fragment_diffuse from './compute_fragment_diffuse.glsl';
 Includes['compute_fragment_diffuse'] = compute_fragment_diffuse;
 
+import compute_fragment_mask_map from './compute_fragment_mask_map.glsl';
+Includes['compute_fragment_mask_map'] = compute_fragment_mask_map;
+
+import compute_fragment_mask1_map from './compute_fragment_mask1_map.glsl';
+Includes['compute_fragment_mask1_map'] = compute_fragment_mask1_map;
+
+import compute_fragment_mask2_map from './compute_fragment_mask2_map.glsl';
+Includes['compute_fragment_mask2_map'] = compute_fragment_mask2_map;
+
 import compute_fragment_normal_map from './compute_fragment_normal_map.glsl';
 Includes['compute_fragment_normal_map'] = compute_fragment_normal_map;
 
