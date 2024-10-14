@@ -20,6 +20,3 @@ Includes['source2_fragment_declare_detail_map'] = source2_fragment_declare_detai
 
 import source2_fragment_declare_separate_alpha_transform from './source2_fragment_declare_separate_alpha_transform.glsl';
 Includes['source2_fragment_declare_separate_alpha_transform'] = source2_fragment_declare_separate_alpha_transform;
-
-import source2_varying_global_lit_simple from './source2_varying_global_lit_simple.glsl';
-Includes['source2_varying_global_lit_simple'] = source2_varying_global_lit_simple;
