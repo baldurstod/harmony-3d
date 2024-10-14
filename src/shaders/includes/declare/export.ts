@@ -15,6 +15,9 @@ Includes['declare_fragment_diffuse'] = declare_fragment_diffuse;
 import declare_fragment_ibl from './declare_fragment_ibl.glsl';
 Includes['declare_fragment_ibl'] = declare_fragment_ibl;
 
+import declare_fragment_mask_map from './declare_fragment_mask_map.glsl';
+Includes['declare_fragment_mask_map'] = declare_fragment_mask_map;
+
 import declare_fragment_normal_map from './declare_fragment_normal_map.glsl';
 Includes['declare_fragment_normal_map'] = declare_fragment_normal_map;
 
