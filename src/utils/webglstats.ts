@@ -95,4 +95,8 @@ export class WebGLStats {
 	static get htmlElement() {
 		return this.#htmlElement;
 	}
+
+	static getFps() {
+		return this.#fps;
+	}
 }
