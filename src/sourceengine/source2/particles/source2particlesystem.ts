@@ -467,7 +467,7 @@ export class Source2ParticleSystem extends Entity {
 							if (attachmentName) {
 								let attachementInstance = model?.getAttachement(attachmentName);
 								if (driver.m_entityName == 'parent') {
-									attachementInstance = model?.parent?.getAttachement(attachmentName) ?? attachementInstance;
+									attachementInstance = model?.parent?.getAttachement?.(attachmentName) ?? attachementInstance;
 								}
 
 								if (attachementInstance) {
