@@ -7,8 +7,8 @@ export class ShaderManager {
 	static #displayCompileError = false;
 	static #htmlCompileError;
 	static #htmlCompileErrorContent;
-	static #shaderList = new Map();
-	static #customShaderList = new Map();
+	static #shaderList = new Map<string, WebGLShaderSource>();
+	static #customShaderList = new Map<string, WebGLShaderSource>();
 
 	static addSource(type, name, source) {
 		this.#shaderList.set(name, new WebGLShaderSource(type, source));
@@ -26,14 +26,14 @@ export class ShaderManager {
 		}
 		const customSource = this.#customShaderList.get(name);
 		const source = this.#shaderList.get(name);
-		return customSource && (customSource.isValid() || invalidCustomShaders) ? customSource : source;
+		return customSource && (customSource.isValid() ?? invalidCustomShaders) ? customSource : source;
 	}
 
 	static setCustomSource(type, name, source) {
 		if (source == '') {
 			this.#customShaderList.delete(name);
 		} else {
-			const customSource = this.#customShaderList.get(name) || new WebGLShaderSource(type, '');
+			const customSource = this.#customShaderList.get(name) ?? new WebGLShaderSource(type, '');
 			customSource.setSource(source);
 			this.#customShaderList.set(name, customSource);
 		}
