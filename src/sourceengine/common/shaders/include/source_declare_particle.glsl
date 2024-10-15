@@ -2,7 +2,7 @@ export default `
 #pragma once
 
 #include mat4_from_quat
-#include function_rotation_matrix
+#include rotation_matrix
 
 #ifdef HARDWARE_PARTICLES
 	uniform sampler2D uParticles;
