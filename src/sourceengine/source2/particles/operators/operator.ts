@@ -215,7 +215,7 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 
-	getParamVectorValue(paramName, particle?, outVec = vec4.create()) {
+	getParamVectorValue(paramName, particle?, outVec: vec3 | vec4 = vec4.create()) {
 		let parameter = this.#parameters[paramName];
 		if (parameter) {
 			let type = parameter.m_nType;
