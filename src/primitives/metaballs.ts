@@ -1,5 +1,5 @@
 import { Metaball } from './metaball';
-import { MetaballsBufferGeometry } from './metaballsbuffergeometry';
+import { MetaballsBufferGeometry } from './geometries/metaballsbuffergeometry';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
 

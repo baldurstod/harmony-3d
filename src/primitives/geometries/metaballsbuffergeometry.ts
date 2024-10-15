@@ -1,8 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { Polygonise, GRIDCELL } from '../algorithm/marchingcubes';
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute'
-import { BufferGeometry } from '../geometry/buffergeometry';
-import { Metaball } from './metaball';
+import { Polygonise, GRIDCELL } from '../../algorithm/marchingcubes';
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { BufferGeometry } from '../../geometry/buffergeometry';
+import { Metaball } from './../metaball';
 
 let a = vec3.create();
 let b = vec3.create();
