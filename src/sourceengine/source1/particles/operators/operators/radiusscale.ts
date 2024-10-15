@@ -41,7 +41,7 @@ export class RadiusScale extends SourceEngineParticleOperator {
 		fl4GoodMask = AndSIMD(fl4GoodMask, CmpGeSIMD(fl4LifeTime, start_time));
 		fl4GoodMask = AndSIMD(fl4GoodMask, CmpLtSIMD(fl4LifeTime, end_time));
 
-		fl4GoodMask = (fl4LifeDuration > 0) && (fl4LifeTime >= start_time) && (fl4LifeTime < end_time) ? 1 : 0;
+		fl4GoodMask = (fl4LifeDuration > 0) && (fl4LifeTime >= start_time) && (fl4LifeTime < end_time);
 		if (fl4GoodMask/* IsAnyNegative(fl4GoodMask) */) {
 			let fl4FadeWindow = MulSIMD(SubSIMD(fl4LifeTime, start_time), fl4OOTimeWidth);
 			if (easeInAndOut) {
