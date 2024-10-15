@@ -22,7 +22,6 @@ export class Sphere extends Mesh {
 	thetaStart: number;
 	thetaLength: number;
 	isSphere = true;
-	//constructor({ radius = 1, segments = 8, rings = 8, phiStart = 0, phiLength = TWO_PI, thetaStart = 0, thetaLength = Math.PI, material = new MeshBasicMaterial() } = {}) {
 	constructor(params: any = {}) {
 		super(new SphereBufferGeometry(), params.material ?? new MeshBasicMaterial());
 		this.radius = params.radius ?? 1;
