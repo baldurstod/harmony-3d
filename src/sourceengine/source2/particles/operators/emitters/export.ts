@@ -1,4 +1,4 @@
- import { ContinuousEmitter } from './continuousemitter';
- import { InstantaneousEmitter } from './instantaneousemitter';
- import { MaintainEmitter } from './maintainemitter';
- import { NoiseEmitter } from './noiseemitter';
+ export { ContinuousEmitter } from './continuousemitter';
+ export { InstantaneousEmitter } from './instantaneousemitter';
+ export { MaintainEmitter } from './maintainemitter';
+ export { NoiseEmitter } from './noiseemitter';
