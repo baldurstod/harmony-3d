@@ -10,3 +10,4 @@ export { Metaball } from './metaball';
 export { Metaballs } from './metaballs';
 export { Plane } from './plane';
 export { Sphere } from './sphere';
+export { Triangles } from './triangles';
