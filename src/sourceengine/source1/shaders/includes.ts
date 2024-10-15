@@ -12,6 +12,9 @@ Includes['source1_blend_tint'] = source1_blend_tint;
 import source1_colormap_alpha from './includes/source1_colormap_alpha.glsl';
 Includes['source1_colormap_alpha'] = source1_colormap_alpha;
 
+import source1_compute_particle_position from './includes/source1_compute_particle_position.glsl';
+Includes['source1_compute_particle_position'] = source1_compute_particle_position;
+
 import source1_compute_selfillum from './includes/source1_compute_selfillum.glsl';
 Includes['source1_compute_selfillum'] = source1_compute_selfillum;
 
