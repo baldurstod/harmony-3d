@@ -105,7 +105,7 @@ export class Node extends EventTarget {
 		}
 	}
 
-	setParam(paramName, paramValue, paramIndex) {
+	setParam(paramName, paramValue, paramIndex?) {
 		let p = this.params.get(paramName);
 		if (p) {
 			if (paramIndex != undefined) {
