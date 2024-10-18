@@ -1,6 +1,6 @@
 import { mat3, vec2, vec4 } from 'gl-matrix';
-import { IO_TYPE_COLOR, IO_TYPE_FLOAT, IO_TYPE_TEXTURE_2D, IO_TYPE_VEC2 } from '../inputoutput';
-import { Node, NODE_PARAM_TYPE_FLOAT, NODE_PARAM_TYPE_RADIAN, NODE_PARAM_TYPE_STRING } from '../node';
+import { IO_TYPE_TEXTURE_2D } from '../inputoutput';
+import { Node } from '../node';
 import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
 import { RenderTarget } from '../../textures/rendertarget';
 import { GL_UNSIGNED_BYTE, GL_RGBA } from '../../webgl/constants';
@@ -8,6 +8,7 @@ import { registerOperation } from '../operations';
 import { Graphics } from '../../graphics/graphics';
 import { NodeImageEditor } from '../nodeimageeditor';
 import { Texture } from '../../textures/texture';
+import { NodeParam, NodeParamType } from '../nodeparam';
 
 const tempVec2 = vec2.create();
 
@@ -33,15 +34,15 @@ export class TextureLookup extends Node {
 		this.params.scaleU = 1.0;
 		this.params.scaleV = 1.0;*/
 
-		this.addParam('adjust black', NODE_PARAM_TYPE_FLOAT, 0.0);
-		this.addParam('adjust white', NODE_PARAM_TYPE_FLOAT, 1.0);
-		this.addParam('adjust gamma', NODE_PARAM_TYPE_FLOAT, 1.0);
-		this.addParam('rotation', NODE_PARAM_TYPE_RADIAN, 0.0);
-		this.addParam('translate u', NODE_PARAM_TYPE_FLOAT, 0.0);
-		this.addParam('translate v', NODE_PARAM_TYPE_FLOAT, 0.0);
-		this.addParam('scale u', NODE_PARAM_TYPE_FLOAT, 1.0);
-		this.addParam('scale v', NODE_PARAM_TYPE_FLOAT, 1.0);
-		this.addParam('path', NODE_PARAM_TYPE_STRING, '');
+		this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));
+		this.addParam(new NodeParam('adjust white', NodeParamType.Float, 1.0));
+		this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
+		this.addParam(new NodeParam('rotation', NodeParamType.Radian, 0.0));
+		this.addParam(new NodeParam('translate u', NodeParamType.Float, 0.0));
+		this.addParam(new NodeParam('translate v', NodeParamType.Float, 0.0));
+		this.addParam(new NodeParam('scale u', NodeParamType.Float, 1.0));
+		this.addParam(new NodeParam('scale v', NodeParamType.Float, 1.0));
+		this.addParam(new NodeParam('path', NodeParamType.String, ''));
 	}
 
 	async operate() {

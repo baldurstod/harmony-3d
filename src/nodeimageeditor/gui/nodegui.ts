@@ -2,13 +2,14 @@ import { vec2 } from 'gl-matrix';
 import { createElement, hide } from 'harmony-ui';
 
 import { Graphics } from '../../graphics/graphics';
-import { NODE_PARAM_TYPE_FLOAT, NODE_PARAM_TYPE_RADIAN, NODE_PARAM_TYPE_DEGREE, NODE_PARAM_TYPE_VEC2, NODE_PARAM_TYPE_STICKER_ADJUST, Node } from '../node';
+import { Node } from '../node';
 import { ApplySticker } from '../operations/applysticker';
 import { TextureLookup } from '../operations/texturelookup';
 import { TextureManager } from '../../textures/texturemanager';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
 import { GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE } from '../../webgl/constants';
 import { NodeImageEditorGui } from './nodeimageeditorgui';
+import { NodeParam, NodeParamType } from '../nodeparam';
 
 export const DELAY_BEFORE_REFRESH = 100;
 const FLOAT_VALUE_DECIMALS = 3;
@@ -215,8 +216,8 @@ export class NodeGui {
 
 	#refreshHtml() {
 		this.#htmlParams.innerHTML = '';
-		for (let [paramName, param] of this.#node.params) {
-			if (param.length) {
+		for (let [_, param] of this.#node.params) {
+			if (param.length && param.length > 1) {
 				for (let i = 0; i < param.length; ++i) {
 					this.#htmlParams.append(this.#createParamHtml(param, i));
 				}
@@ -226,7 +227,7 @@ export class NodeGui {
 		}
 	}
 
-	#createParamHtml(param, index?: number) {
+	#createParamHtml(param: NodeParam, index?: number) {
 		let paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
 		let nameHtml = createElement('div', { parent: paramHtml });
 		let valueHtml = createElement('input', {
@@ -244,17 +245,17 @@ export class NodeGui {
 			value = param.value;
 		}
 		switch (param.type) {
-			case NODE_PARAM_TYPE_FLOAT:
-			case NODE_PARAM_TYPE_DEGREE:
+			case NodeParamType.Float:
+			case NodeParamType.Degree:
 				value = Number(value).toFixed(FLOAT_VALUE_DECIMALS);
 				break;
-			case NODE_PARAM_TYPE_RADIAN:
+			case NodeParamType.Radian:
 				value = Number(value * RAD_TO_DEG).toFixed(FLOAT_VALUE_DECIMALS);
 				break;
-			case NODE_PARAM_TYPE_VEC2:
+			case NodeParamType.Vec2:
 				value = `${Number(value[0]).toFixed(FLOAT_VALUE_DECIMALS)} ${Number(value[1]).toFixed(FLOAT_VALUE_DECIMALS)}`;
 				break;
-			case NODE_PARAM_TYPE_STICKER_ADJUST:
+			case NodeParamType.StickerAdjust:
 				//value = `${Number(param.value[0]).toFixed(FLOAT_VALUE_DECIMALS)} ${Number(param.value[1]).toFixed(FLOAT_VALUE_DECIMALS)}`;
 				hide(valueHtml);
 
@@ -282,18 +283,18 @@ export class NodeGui {
 		return paramHtml;
 	}
 
-	#setParamValue(param, stringValue: string, index) {
+	#setParamValue(param: NodeParam, stringValue: string, index) {
 		let node = this.#node;
 		let value: any;
 		switch (param.type) {
-			case NODE_PARAM_TYPE_FLOAT:
-			case NODE_PARAM_TYPE_DEGREE:
+			case NodeParamType.Float:
+			case NodeParamType.Degree:
 				value = Number(Number(stringValue).toFixed(FLOAT_VALUE_DECIMALS));
 				break;
-			case NODE_PARAM_TYPE_RADIAN:
+			case NodeParamType.Radian:
 				value = Number(stringValue) * DEG_TO_RAD;
 				break;
-			case NODE_PARAM_TYPE_VEC2:
+			case NodeParamType.Vec2:
 				let arr = stringValue.split(' ');
 				value = vec2.fromValues(Number(arr[0]), Number(arr[1]));
 				break;

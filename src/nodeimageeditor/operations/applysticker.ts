@@ -1,12 +1,13 @@
 import { mat3, vec2, vec4 } from 'gl-matrix';
 import { IO_TYPE_TEXTURE_2D, } from '../inputoutput';
-import { Node, NODE_PARAM_TYPE_FLOAT, NODE_PARAM_TYPE_VEC2, NODE_PARAM_TYPE_STICKER_ADJUST } from '../node';
+import { Node } from '../node';
 import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
 import { RenderTarget } from '../../textures/rendertarget';
 import { registerOperation } from '../operations';
 import { Graphics } from '../../graphics/graphics';
 import { Texture } from '../../textures/texture';
 import { NodeImageEditor } from '../nodeimageeditor';
+import { NodeParam, NodeParamType } from '../nodeparam';
 
 const tempVec2 = vec2.create();
 const texTransform = mat3.create();
@@ -30,15 +31,15 @@ export class ApplySticker extends Node {
 		this.material.addUser(this);
 		this.#textureSize = params.textureSize;
 
-		this.addParam('adjust black', NODE_PARAM_TYPE_FLOAT, 0.0);
-		this.addParam('adjust white', NODE_PARAM_TYPE_FLOAT, 1.0);
-		this.addParam('adjust gamma', NODE_PARAM_TYPE_FLOAT, 1.0);
+		this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));
+		this.addParam(new NodeParam('adjust white', NodeParamType.Float, 1.0));
+		this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
 
-		this.addParam('bottom left', NODE_PARAM_TYPE_VEC2, vec2.create());
-		this.addParam('top left', NODE_PARAM_TYPE_VEC2, vec2.create());
-		this.addParam('top right', NODE_PARAM_TYPE_VEC2, vec2.create());
+		this.addParam(new NodeParam('bottom left', NodeParamType.Vec2, vec2.create()));
+		this.addParam(new NodeParam('top left', NodeParamType.Vec2, vec2.create()));
+		this.addParam(new NodeParam('top right', NodeParamType.Vec2, vec2.create()));
 
-		this.addParam('sticker', NODE_PARAM_TYPE_STICKER_ADJUST, vec2.create());
+		this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
 	}
 
 	async operate() {

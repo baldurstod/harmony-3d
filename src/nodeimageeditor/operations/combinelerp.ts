@@ -1,5 +1,5 @@
 import { IO_TYPE_TEXTURE_2D } from '../inputoutput';
-import { Node, NODE_PARAM_TYPE_FLOAT } from '../node';
+import { Node } from '../node';
 import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
 import { DEBUG } from '../../buildoptions';
 import { RenderTarget } from '../../textures/rendertarget';
@@ -7,6 +7,7 @@ import { GL_UNSIGNED_BYTE, GL_RGBA } from '../../webgl/constants';
 import { registerOperation } from '../operations';
 import { Graphics } from '../../graphics/graphics';
 import { NodeImageEditor } from '../nodeimageeditor';
+import { NodeParam, NodeParamType } from '../nodeparam';
 
 export class CombineLerp extends Node {
 	#renderTarget?: RenderTarget;
@@ -22,9 +23,9 @@ export class CombineLerp extends Node {
 		this.material.addUser(this);
 		this.#textureSize = params.textureSize;
 
-		this.addParam('adjust black', NODE_PARAM_TYPE_FLOAT, 0.0);
-		this.addParam('adjust white', NODE_PARAM_TYPE_FLOAT, 1.0);
-		this.addParam('adjust gamma', NODE_PARAM_TYPE_FLOAT, 1.0);
+		this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));
+		this.addParam(new NodeParam('adjust white', NodeParamType.Float, 1.0));
+		this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
 	}
 
 	async operate() {
