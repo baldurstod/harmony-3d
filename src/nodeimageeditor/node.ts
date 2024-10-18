@@ -84,7 +84,11 @@ export class Node extends EventTarget {
 		this.#dispatchEvent('paramadded', param);
 	}
 
-	getParam(paramName) {
+	getParam(paramName: string) {
+		return this.params.get(paramName);
+	}
+
+	getValue(paramName: string) {
 		let p = this.params.get(paramName);
 		if (p) {
 			return p.value;
@@ -202,10 +206,6 @@ export class Node extends EventTarget {
 	}
 
 	getType() {
-		throw 'This function must be overriden';
-	}
-
-	getValue() {
 		throw 'This function must be overriden';
 	}
 

@@ -47,12 +47,12 @@ export class TextureLookup extends Node {
 
 	async operate() {
 		this.material.setTexture('uInput', this.inputTexture);
-		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getParam('adjust black'), this.getParam('adjust white'), this.getParam('adjust gamma'), 0.0);
+		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
 
 		let texTransform = mat3.create();
-		mat3.rotate(texTransform, texTransform, this.getParam('rotation'));
-		mat3.scale(texTransform, texTransform, vec2.set(tempVec2, this.getParam('scale u'), this.getParam('scale v')));
-		mat3.translate(texTransform, texTransform, vec2.set(tempVec2, this.getParam('translate u'), this.getParam('translate v')));
+		mat3.rotate(texTransform, texTransform, this.getValue('rotation'));
+		mat3.scale(texTransform, texTransform, vec2.set(tempVec2, this.getValue('scale u'), this.getValue('scale v')));
+		mat3.translate(texTransform, texTransform, vec2.set(tempVec2, this.getValue('translate u'), this.getValue('translate v')));
 		this.material.uniforms['uTransformTexCoord0'] = texTransform;
 
 		//console.error(this.params, this.testing);
@@ -86,7 +86,7 @@ export class TextureLookup extends Node {
 				ret.push(await input.toString(tabs1));
 			}
 		}
-		ret.push(tabs1 + `black : ${this.getParam('adjust black')}, white : ${this.getParam('adjust white')}, gamma : ${this.getParam('adjust gamma')}`);
+		ret.push(tabs1 + `black : ${this.getValue('adjust black')}, white : ${this.getValue('adjust white')}, gamma : ${this.getValue('adjust gamma')}`);
 		return ret.join('\n');
 	}
 

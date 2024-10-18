@@ -47,10 +47,10 @@ export class ApplySticker extends Node {
 		this.material.setTexture('uSticker', this.inputTexture);
 		this.material.setTexture('uStickerSpecular', await this.getInput('specular').value);
 		this.material.setTexture('uInput', await this.getInput('input').value);
-		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getParam('adjust black'), this.getParam('adjust white'), this.getParam('adjust gamma'), 0.0);
+		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
 
 		let texTransform = mat3.create();
-		ComputeTextureMatrixFromRectangle(texTransform, this.getParam('bottom left'), this.getParam('top left'), this.getParam('top right'));
+		ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left'), this.getValue('top left'), this.getValue('top right'));
 		this.material.uniforms['uTransformTexCoord0'] = texTransform;
 
 		/*texTransform = mat3.identity(texTransform);
