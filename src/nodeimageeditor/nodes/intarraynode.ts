@@ -1,7 +1,7 @@
 import { ParametersNode } from './parametersnode';
 import { IO_TYPE_ARRAY_INT } from '../inputoutput';
-import { NODE_PARAM_TYPE_INT } from '../node';
 import { registerOperation } from '../operations';
+import { NodeParam, NodeParamType } from '../nodeparam';
 
 export class IntArrayNode extends ParametersNode {
 	#length;
@@ -14,7 +14,7 @@ export class IntArrayNode extends ParametersNode {
 			this.#array.push(0);
 		}
 
-		this.addParam('value', NODE_PARAM_TYPE_INT, this.#array, this.#length);
+		this.addParam(new NodeParam('value', NodeParamType.Int, this.#array, this.#length));
 	}
 
 	async operate() {

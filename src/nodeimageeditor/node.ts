@@ -14,6 +14,7 @@ import { GL_UNSIGNED_BYTE, GL_RGBA } from '../webgl/constants';
 import { NodeImageEditor } from './nodeimageeditor';
 import { Graphics } from '../graphics/graphics';
 import { Material } from '../materials/material';
+import { NodeParam } from './nodeparam';
 
 enum DrawState {
 	Invalid = 0,
@@ -37,7 +38,7 @@ export class Node extends EventTarget {
 	editor: NodeImageEditor;
 	inputs = new Map();
 	outputs = new Map();
-	params = new Map();
+	params = new Map<string, NodeParam>();
 	previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
 	#previewSize = PREVIEW_PICTURE_SIZE;
 	#previewRenderTarget?: RenderTarget;
@@ -78,9 +79,8 @@ export class Node extends EventTarget {
 		throw 'This function must be overriden';
 	}
 
-	addParam(paramName, paramType, defaultValue, length?: number | undefined) {
-		let param = { name: paramName, type: paramType, value: defaultValue, length: length };
-		this.params.set(paramName, param);
+	addParam(param: NodeParam) {
+		this.params.set(param.name, param);
 		this.#dispatchEvent('paramadded', param);
 	}
 
