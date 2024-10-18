@@ -28,10 +28,10 @@ export class NodeImageEditor extends EventTarget {
 
 	}
 
-	addNode(operationName: string, params: any = {}) {
+	addNode(operationName: string, params: any = {}): Node {
 		params.textureSize = params.textureSize ?? this.textureSize;
 		if (!operationName) {
-			return false;
+			return null;
 		}
 		let node = getOperation(operationName, this, params);
 		if (node) {
