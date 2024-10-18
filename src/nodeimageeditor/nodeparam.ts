@@ -13,13 +13,14 @@ export enum NodeParamType {
 export class NodeParam {
 	name: string;
 	type: NodeParamType;
+	defaultValue: any;
 	value: any;
 	length?: number;
 
-	constructor(name: string, type: NodeParamType, value: any, length?: number) {
+	constructor(name: string, type: NodeParamType, defaultValue: any, length?: number) {
 		this.name = name;
 		this.type = type;
-		this.value = value;
+		this.defaultValue = defaultValue;
 		this.length = length;
 	}
 }
