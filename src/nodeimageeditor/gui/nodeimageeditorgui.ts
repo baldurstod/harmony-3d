@@ -59,7 +59,7 @@ export class NodeImageEditorGui {
 			parent: this.#shadowRoot,
 		});
 		let htmlNodeFilter = createElement('input', { class: 'node-image-editor-node-filter' });
-		htmlNodeFilter.addEventListener('input', event => { this.#filter.node = event.target.value; this.#refreshFilter() });
+		htmlNodeFilter.addEventListener('input', (event: InputEvent) => { this.#filter.node = (event.target as HTMLInputElement).value; this.#refreshFilter() });
 		htmlHeader.append(htmlNodeFilter);
 
 		this.#htmlNodes = createElement('div', {
@@ -103,8 +103,7 @@ export class NodeImageEditorGui {
 			this.#htmlNodes.append(nodeGui.html);
 		}
 		//TODO: remove old nodes from this.#nodesGui
-		this.#organizeNodes();
-		this.#drawLinks();
+		this.#refreshFilter();
 	}
 
 	#organizeNodes() {
