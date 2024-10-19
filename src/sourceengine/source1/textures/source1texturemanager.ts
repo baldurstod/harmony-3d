@@ -85,7 +85,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 				return null;
 			}
 		}
-		return this.#texturesList.get(fullPath).getFrame(frame) ?? defaultTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);//TODOv3
+		return this.#texturesList.get(fullPath)?.getFrame(frame) ?? defaultTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);//TODOv3
 	}
 
 	getInternalTextureName() {
