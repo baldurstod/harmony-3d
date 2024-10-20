@@ -1,6 +1,5 @@
 import { vec2 } from 'gl-matrix';
-import { createElement, hide } from 'harmony-ui';
-
+import { createElement, hide, HTMLHarmony2dManipulatorElement } from 'harmony-ui';
 import { Graphics } from '../../graphics/graphics';
 import { Node } from '../node';
 import { ApplySticker } from '../operations/applysticker';
@@ -10,6 +9,7 @@ import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
 import { GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE } from '../../webgl/constants';
 import { NodeImageEditorGui } from './nodeimageeditorgui';
 import { NodeParam, NodeParamType } from '../nodeparam';
+import 'harmony-ui/dist/define/harmony-2d-manipulator';
 
 export const DELAY_BEFORE_REFRESH = 100;
 const FLOAT_VALUE_DECIMALS = 3;
@@ -259,22 +259,29 @@ export class NodeGui {
 				//value = `${Number(param.value[0]).toFixed(FLOAT_VALUE_DECIMALS)} ${Number(param.value[1]).toFixed(FLOAT_VALUE_DECIMALS)}`;
 				hide(valueHtml);
 
-				this.#htmlRectSelector = createElement('div', {
+				this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {
 					class: 'node-image-editor-sticker-selector',
 					parent: this.#htmlPreview,
-					style: 'top:0px;width:10%;height:10%;',
-					childs: [
-						createElement('div', {
-							class: 'handle-move',
-							draggable: true,
-							events: {
-								dragstart: event => { this.#drag = 'move'; this.#dragStartClientX = event.offsetX; this.#dragStartClientY = event.offsetY; },
-								dragend: (event) => this.#drag = null,
+					events: {
+						//dragstart: event => { this.#drag = 'move'; this.#dragStartClientX = event.offsetX; this.#dragStartClientY = event.offsetY; },
+						//dragend: (event) => this.#drag = null,
+						updateend: (event: CustomEvent) => {
+
+							const parameters = { 'top left': 0, 'bottom left': 1, 'top right': 3};
+
+							const manipulator = event.target as HTMLHarmony2dManipulatorElement;
+							for (let name in parameters) {
+								const param = this.#node.getParam(name);
+								if (param) {
+									const rect = this.#htmlPreview.getBoundingClientRect();
+									const corner = manipulator.getCorner(parameters[name]);
+									this.#setParamValue(param, `${corner.x / rect.width} ${corner.y / rect.width}`);
+								}
 							}
-						}),
-					]
+						},
+					}
 				});
-				hide(this.#htmlRectSelector);
+				//hide(this.#htmlRectSelector);
 
 				break;
 		}
@@ -283,7 +290,7 @@ export class NodeGui {
 		return paramHtml;
 	}
 
-	#setParamValue(param: NodeParam, stringValue: string, index) {
+	#setParamValue(param: NodeParam, stringValue: string, index?: number) {
 		let node = this.#node;
 		let value: any;
 		switch (param.type) {

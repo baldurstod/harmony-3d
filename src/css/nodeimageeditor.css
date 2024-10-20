@@ -67,9 +67,11 @@
 
 .node-image-editor-sticker-selector {
 	position: absolute;
-	z-index: 1000;
-	border: dashed;
-	pointer-events: none;
+	top: 0;
+	width: 100%;
+	height: 100%;
+	--harmony-2d-manipulator-bg-color: rgba(0, 0, 0, 0);
+	--harmony-2d-manipulator-border: 1px dashed white;
 }
 
 .node-image-editor-sticker-selector>div {
