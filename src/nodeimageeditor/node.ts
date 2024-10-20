@@ -75,7 +75,7 @@ export class Node extends EventTarget {
 		return this.outputs.get(outputId);
 	}
 
-	async operate() {
+	async operate(context: any = {}) {
 		throw 'This function must be overriden';
 	}
 
@@ -152,13 +152,13 @@ export class Node extends EventTarget {
 
 	async validate() {
 		if (this.#redrawState == DrawState.Invalid) {
-			await this.operate();
+			await this.operate({ previewSize: PREVIEW_PICTURE_SIZE });
 			this.#redrawState = DrawState.Valid
 		}
 	}
 
-	async redraw() {
-		await this.operate();
+	async redraw(context: any = {}) {
+		await this.operate(context);
 		this.#redrawState = DrawState.Valid;
 	}
 
@@ -274,8 +274,8 @@ export class Node extends EventTarget {
 		this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
 	}
 
-	protected updatePreview() {
-		let previewSize = this.#previewSize;
+	protected updatePreview(context: any = {}) {
+		let previewSize = context.previewSize ?? this.#previewSize;
 		let renderTarget2 = this.#previewRenderTarget ?? new RenderTarget({ width: previewSize, height: previewSize, depthBuffer: false, stencilBuffer: false });
 		if (this.#previewRenderTarget) {
 			renderTarget2.resize(previewSize, previewSize);
@@ -304,9 +304,7 @@ export class Node extends EventTarget {
 	}
 
 	async savePicture() {
-		this.#previewSize = 2048;
-		await this.redraw();
-		this.#previewSize = null;
+		await this.redraw({ previewSize: 2048 });
 
 		let image = this.previewPic;
 
@@ -320,11 +318,9 @@ export class Node extends EventTarget {
 	}
 
 	async saveVTF() {
-		this.#previewSize = 2048;
-		let vtfFile = new VTFFile(this.#previewSize, this.#previewSize);
+		let vtfFile = new VTFFile(2048, 2048);
 		vtfFile.setFlag(TEXTUREFLAGS_EIGHTBITALPHA | TEXTUREFLAGS_NOMIP);
-		await this.redraw();
-		this.#previewSize = null;
+		await this.redraw({ previewSize: 2048 });
 
 		vtfFile.setImageData(this.#pixelArray);
 		VTFWriter.writeAndSave(vtfFile, 'texture.vtf');

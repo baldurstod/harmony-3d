@@ -28,7 +28,7 @@ export class CombineLerp extends Node {
 		this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
 	}
 
-	async operate() {
+	async operate(context: any = {}) {
 		if (false && DEBUG) {
 			console.log('CombineLerp operate');
 		}
@@ -47,7 +47,7 @@ export class CombineLerp extends Node {
 		Graphics.popRenderTarget();
 
 
-		this.updatePreview();
+		this.updatePreview(context);
 
 		this.getOutput('output')._value = this.#renderTarget.getTexture();
 		this.getOutput('output')._pixelArray = pixelArray;

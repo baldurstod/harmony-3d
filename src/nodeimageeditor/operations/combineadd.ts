@@ -26,7 +26,7 @@ export class CombineAdd extends Node {
 	}
 
 
-	async operate() {
+	async operate(context: any = {}) {
 		if (DEBUG) {
 			console.error('CombineAdd operate');
 		}
@@ -62,7 +62,7 @@ export class CombineAdd extends Node {
 		Graphics.popRenderTarget();
 
 
-		this.updatePreview();
+		this.updatePreview(context);
 
 		this.getOutput('output')._value = this.#renderTarget.getTexture();
 		this.getOutput('output')._pixelArray = pixelArray;

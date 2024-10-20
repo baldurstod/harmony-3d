@@ -28,7 +28,7 @@ export class DrawCircle extends Node {
 		this.#textureSize = params.textureSize;
 	}
 
-	async operate() {
+	async operate(context: any = {}) {
 		let center = await this.getInput('center').value;
 		let radius = await this.getInput('radius').value;
 		let borderColor = await this.getInput('bordercolor').value;

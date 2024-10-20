@@ -25,7 +25,7 @@ export class Select extends Node {
 		this.#textureSize = params.textureSize;
 	}
 
-	async operate() {
+	async operate(context: any = {}) {
 		if (false && DEBUG) {
 			console.log('Select operate');
 		}
@@ -42,7 +42,7 @@ export class Select extends Node {
 		Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		Graphics.popRenderTarget();
 
-		this.updatePreview();
+		this.updatePreview(context);
 
 		this.getOutput('output')._value = this.#renderTarget.getTexture();
 		this.getOutput('output')._pixelArray = pixelArray;

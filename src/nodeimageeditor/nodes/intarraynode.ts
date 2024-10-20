@@ -17,7 +17,7 @@ export class IntArrayNode extends ParametersNode {
 		this.addParam(new NodeParam('value', NodeParamType.Int, this.#array, this.#length));
 	}
 
-	async operate() {
+	async operate(context: any = {}) {
 		this.getOutput('output')._value = this.#array;
 	}
 

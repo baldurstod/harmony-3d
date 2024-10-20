@@ -25,7 +25,7 @@ export class Multiply extends Node {
 		this.#textureSize = params.textureSize;
 	}
 
-	async operate() {
+	async operate(context: any = {}) {
 		if (false && DEBUG) {
 			console.log('Multiply operate');
 		}
@@ -55,7 +55,7 @@ export class Multiply extends Node {
 		//Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		Graphics.popRenderTarget();
 
-		this.updatePreview();
+		this.updatePreview(context);
 
 
 

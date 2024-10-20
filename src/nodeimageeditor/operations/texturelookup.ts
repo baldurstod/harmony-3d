@@ -45,7 +45,7 @@ export class TextureLookup extends Node {
 		this.addParam(new NodeParam('path', NodeParamType.String, ''));
 	}
 
-	async operate() {
+	async operate(context: any = {}) {
 		this.material.setTexture('uInput', this.inputTexture);
 		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
 
@@ -67,7 +67,7 @@ export class TextureLookup extends Node {
 		Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		Graphics.popRenderTarget();
 
-		this.updatePreview();
+		this.updatePreview(context);
 
 		this.getOutput('output')._value = this.#renderTarget.getTexture();
 		this.getOutput('output')._pixelArray = pixelArray;

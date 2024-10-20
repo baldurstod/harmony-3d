@@ -42,7 +42,7 @@ export class ApplySticker extends Node {
 		this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
 	}
 
-	async operate() {
+	async operate(context: any = {}) {
 		let params = this.params;
 		this.material.setTexture('uSticker', this.inputTexture);
 		this.material.setTexture('uStickerSpecular', await this.getInput('specular').value);
@@ -87,7 +87,7 @@ export class ApplySticker extends Node {
 
 		Graphics.popRenderTarget();
 
-		this.updatePreview();
+		this.updatePreview(context);
 		this.getOutput('output')._value = this.#renderTarget.getTexture();
 		//this.getOutput('output')._pixelArray = pixelArray;
 	}
