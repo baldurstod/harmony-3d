@@ -57,6 +57,14 @@
 	flex: 1;
 }
 
+.node-image-editor-node-buttons {
+	display: flex;
+}
+
+.node-image-editor-node-buttons>div {
+	cursor: pointer;
+}
+
 .node-image-editor-node-preview {
 	position: relative;
 	/*height: 32px;

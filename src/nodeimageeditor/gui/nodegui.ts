@@ -10,6 +10,7 @@ import { GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE } from '../../webgl/constant
 import { NodeImageEditorGui } from './nodeimageeditorgui';
 import { NodeParam, NodeParamType } from '../nodeparam';
 import 'harmony-ui/dist/define/harmony-2d-manipulator';
+import { zoomInSVG, zoomOutSVG } from 'harmony-svg';
 
 export const DELAY_BEFORE_REFRESH = 100;
 const FLOAT_VALUE_DECIMALS = 3;
@@ -149,15 +150,63 @@ export class NodeGui {
 
 				break;
 			default:
-
 		}
+	}
 
+	#increasePreviewSize() {
+		if (this.#node) {
+			this.#node.previewSize *= 2;
+			this.#node.updatePreview();
+		}
+	}
+
+	#decreasePreviewSize() {
+		if (this.#node) {
+			this.#node.previewSize /= 2;
+			this.#node.updatePreview();
+		}
 	}
 
 	#initHtml() {
-		this.#html = createElement('div', { class: 'node-image-editor-node' });
+		let htmlInputs: HTMLElement;
+		let htmlOutputs: HTMLElement;
+		this.#html = createElement('div', {
+			class: 'node-image-editor-node',
+			childs: [
+				createElement('div', {
+					class: 'node-image-editor-node-header',
+					childs: [
+						createElement('div', { class: 'node-image-editor-node-title', innerText: this.#node.title }),
+						createElement('div', {
+							class: 'node-image-editor-node-buttons',
+							childs: [
+								createElement('div', {
+									innerHTML: zoomOutSVG,
+									events: {
+										click: () => this.#decreasePreviewSize(),
+									}
+								}),
+								createElement('div', {
+									innerHTML: zoomInSVG,
+									events: {
+										click: () => this.#increasePreviewSize(),
+									}
+								}),
+							]
+						}),
+					],
+				}),
+				createElement('div', {
+					class: 'node-image-editor-node-content',
+					childs: [
+						htmlInputs = createElement('div', { class: 'node-image-editor-node-ios' }),
+						this.#htmlParams = createElement('div', { class: 'node-image-editor-node-params' }),
+						htmlOutputs = createElement('div', { class: 'node-image-editor-node-ios' }),
+					],
+				}),
+			]
+		});
 
-		const htmlTitle = createElement('div', { class: 'node-image-editor-node-title', innerHTML: this.#node.title });
 
 		this.#htmlPreview = createElement('div', {
 			class: 'node-image-editor-node-preview',
@@ -167,14 +216,6 @@ export class NodeGui {
 			}
 		});
 
-		const htmlContent = createElement('div', { class: 'node-image-editor-node-content' });
-		this.#htmlParams = createElement('div', { class: 'node-image-editor-node-params' });
-
-		const htmlInputs = createElement('div', { class: 'node-image-editor-node-ios' });
-		const htmlOutputs = createElement('div', { class: 'node-image-editor-node-ios' });
-
-		htmlContent.append(htmlInputs, this.#htmlParams, htmlOutputs);
-		this.#html.append(htmlTitle, htmlContent);
 		if (this.#node.hasPreview) {
 			this.#html.append(this.#htmlPreview);
 		}
@@ -267,7 +308,7 @@ export class NodeGui {
 						//dragend: (event) => this.#drag = null,
 						updateend: (event: CustomEvent) => {
 
-							const parameters = { 'top left': 0, 'bottom left': 1, 'top right': 3};
+							const parameters = { 'top left': 0, 'bottom left': 1, 'top right': 3 };
 
 							const manipulator = event.target as HTMLHarmony2dManipulatorElement;
 							for (let name in parameters) {

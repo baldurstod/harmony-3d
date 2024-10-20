@@ -40,7 +40,7 @@ export class Node extends EventTarget {
 	outputs = new Map();
 	params = new Map<string, NodeParam>();
 	previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
-	#previewSize = PREVIEW_PICTURE_SIZE;
+	previewSize: number = PREVIEW_PICTURE_SIZE;
 	#previewRenderTarget?: RenderTarget;
 	autoRedraw = false;
 	#redrawState: DrawState = DrawState.Invalid;
@@ -152,7 +152,7 @@ export class Node extends EventTarget {
 
 	async validate() {
 		if (this.#redrawState == DrawState.Invalid) {
-			await this.operate({ previewSize: PREVIEW_PICTURE_SIZE });
+			await this.operate();
 			this.#redrawState = DrawState.Valid
 		}
 	}
@@ -274,8 +274,8 @@ export class Node extends EventTarget {
 		this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
 	}
 
-	protected updatePreview(context: any = {}) {
-		let previewSize = context.previewSize ?? this.#previewSize;
+	updatePreview(context: any = {}) {
+		let previewSize = context.previewSize ?? this.previewSize;
 		let renderTarget2 = this.#previewRenderTarget ?? new RenderTarget({ width: previewSize, height: previewSize, depthBuffer: false, stencilBuffer: false });
 		if (this.#previewRenderTarget) {
 			renderTarget2.resize(previewSize, previewSize);
