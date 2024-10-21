@@ -71,10 +71,12 @@
 	width: 32px;*/
 	background-color: #000000FF;
 	display: inline-block;
+	width: min-content;
 }
 
 .node-image-editor-sticker-selector {
 	position: absolute;
+	pointer-events: none;
 	top: 0;
 	width: 100%;
 	height: 100%;
