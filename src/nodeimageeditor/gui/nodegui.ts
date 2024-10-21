@@ -297,19 +297,14 @@ export class NodeGui {
 				value = `${Number(value[0]).toFixed(FLOAT_VALUE_DECIMALS)} ${Number(value[1]).toFixed(FLOAT_VALUE_DECIMALS)}`;
 				break;
 			case NodeParamType.StickerAdjust:
-				//value = `${Number(param.value[0]).toFixed(FLOAT_VALUE_DECIMALS)} ${Number(param.value[1]).toFixed(FLOAT_VALUE_DECIMALS)}`;
 				hide(valueHtml);
 
 				this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {
 					class: 'node-image-editor-sticker-selector',
 					parent: this.#htmlPreview,
 					events: {
-						//dragstart: event => { this.#drag = 'move'; this.#dragStartClientX = event.offsetX; this.#dragStartClientY = event.offsetY; },
-						//dragend: (event) => this.#drag = null,
 						updateend: (event: CustomEvent) => {
-
-							const parameters = { 'top left': 0, 'bottom left': 1, 'top right': 3 };
-
+							const parameters = { 'top left': 0, 'bottom left': 2, 'top right': 1 };
 							const manipulator = event.target as HTMLHarmony2dManipulatorElement;
 							for (let name in parameters) {
 								const param = this.#node.getParam(name);
@@ -322,8 +317,6 @@ export class NodeGui {
 						},
 					}
 				});
-				//hide(this.#htmlRectSelector);
-
 				break;
 		}
 		valueHtml.value = value;
