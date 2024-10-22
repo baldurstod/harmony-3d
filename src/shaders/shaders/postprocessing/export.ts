@@ -9,3 +9,8 @@ import crosshatch_fs from './crosshatch.fs';
 import crosshatch_vs from './crosshatch.vs';
 Shaders['crosshatch.fs'] = crosshatch_fs;
 Shaders['crosshatch.vs'] = crosshatch_vs;
+
+import grain_fs from './grain.fs';
+import grain_vs from './grain.vs';
+Shaders['grain.fs'] = grain_fs;
+Shaders['grain.vs'] = grain_vs;
