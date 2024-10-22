@@ -27,6 +27,9 @@ Includes['compute_fragment_normal'] = compute_fragment_normal;
 import compute_fragment_render_mode from './compute_fragment_render_mode.glsl';
 Includes['compute_fragment_render_mode'] = compute_fragment_render_mode;
 
+import compute_fragment_self_illum_mask_map from './compute_fragment_self_illum_mask_map.glsl';
+Includes['compute_fragment_self_illum_mask_map'] = compute_fragment_self_illum_mask_map;
+
 import compute_fragment_standard from './compute_fragment_standard.glsl';
 Includes['compute_fragment_standard'] = compute_fragment_standard;
 
