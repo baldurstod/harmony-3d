@@ -15,6 +15,9 @@ Includes['declare_fragment_exponent_map'] = declare_fragment_exponent_map;
 import declare_fragment_light_warp from './declare_fragment_light_warp.glsl';
 Includes['declare_fragment_light_warp'] = declare_fragment_light_warp;
 
+import declare_fragment_self_illum_mask_map from './declare_fragment_self_illum_mask_map.glsl';
+Includes['declare_fragment_self_illum_mask_map'] = declare_fragment_self_illum_mask_map;
+
 import declare_lights from './declare_lights.glsl';
 Includes['declare_lights'] = declare_lights;
 
