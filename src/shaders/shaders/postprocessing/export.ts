@@ -14,3 +14,8 @@ import grain_fs from './grain.fs';
 import grain_vs from './grain.vs';
 Shaders['grain.fs'] = grain_fs;
 Shaders['grain.vs'] = grain_vs;
+
+import oldmovie_fs from './oldmovie.fs';
+import oldmovie_vs from './oldmovie.vs';
+Shaders['oldmovie.fs'] = oldmovie_fs;
+Shaders['oldmovie.vs'] = oldmovie_vs;
