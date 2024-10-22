@@ -149,6 +149,7 @@ export class FileSelectorDirectory extends HTMLElement {
 						let child;
 						if (fileChilds) {
 							child = document.createElement('file-selector-directory');
+							child.#parentDirectory = this;
 						} else {
 							child = document.createElement('file-selector-file');
 							//child.file = file;
@@ -156,7 +157,6 @@ export class FileSelectorDirectory extends HTMLElement {
 						child.selector = this.#selector;
 						child.setFile(file);
 						this.#content.append(child);
-						child.#parentDirectory = this;
 						this.#childs.push(child);
 						if (fileChilds && l) {
 							child.expand();
