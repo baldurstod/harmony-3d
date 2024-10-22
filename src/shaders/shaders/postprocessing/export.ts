@@ -34,3 +34,8 @@ import saturate_fs from './saturate.fs';
 import saturate_vs from './saturate.vs';
 Shaders['saturate.fs'] = saturate_fs;
 Shaders['saturate.vs'] = saturate_vs;
+
+import sketch_fs from './sketch.fs';
+import sketch_vs from './sketch.vs';
+Shaders['sketch.fs'] = sketch_fs;
+Shaders['sketch.vs'] = sketch_vs;
