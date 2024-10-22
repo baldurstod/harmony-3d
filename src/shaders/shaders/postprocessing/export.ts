@@ -29,3 +29,8 @@ import pixelate_fs from './pixelate.fs';
 import pixelate_vs from './pixelate.vs';
 Shaders['pixelate.fs'] = pixelate_fs;
 Shaders['pixelate.vs'] = pixelate_vs;
+
+import saturate_fs from './saturate.fs';
+import saturate_vs from './saturate.vs';
+Shaders['saturate.fs'] = saturate_fs;
+Shaders['saturate.vs'] = saturate_vs;
