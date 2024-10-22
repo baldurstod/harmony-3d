@@ -54,5 +54,8 @@ Includes['compute_vertex_standard'] = compute_vertex_standard;
 import compute_vertex_uv from './compute_vertex_uv.glsl';
 Includes['compute_vertex_uv'] = compute_vertex_uv;
 
+import compute_vertex_uv2 from './compute_vertex_uv2.glsl';
+Includes['compute_vertex_uv2'] = compute_vertex_uv2;
+
 import compute_vertex from './compute_vertex.glsl';
 Includes['compute_vertex'] = compute_vertex;
