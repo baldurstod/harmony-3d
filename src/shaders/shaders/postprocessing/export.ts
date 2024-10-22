@@ -19,3 +19,8 @@ import oldmovie_fs from './oldmovie.fs';
 import oldmovie_vs from './oldmovie.vs';
 Shaders['oldmovie.fs'] = oldmovie_fs;
 Shaders['oldmovie.vs'] = oldmovie_vs;
+
+import palette_fs from './palette.fs';
+import palette_vs from './palette.vs';
+Shaders['palette.fs'] = palette_fs;
+Shaders['palette.vs'] = palette_vs;
