@@ -24,3 +24,8 @@ import palette_fs from './palette.fs';
 import palette_vs from './palette.vs';
 Shaders['palette.fs'] = palette_fs;
 Shaders['palette.vs'] = palette_vs;
+
+import pixelate_fs from './pixelate.fs';
+import pixelate_vs from './pixelate.vs';
+Shaders['pixelate.fs'] = pixelate_fs;
+Shaders['pixelate.vs'] = pixelate_vs;
