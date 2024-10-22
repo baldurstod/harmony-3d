@@ -9,6 +9,9 @@ Includes['declare_fragment_alpha_test'] = declare_fragment_alpha_test;
 import declare_fragment_ao_map from './declare_fragment_ao_map.glsl';
 Includes['declare_fragment_ao_map'] = declare_fragment_ao_map;
 
+import declare_fragment_exponent_map from './declare_fragment_exponent_map.glsl';
+Includes['declare_fragment_exponent_map'] = declare_fragment_exponent_map;
+
 import declare_fragment_light_warp from './declare_fragment_light_warp.glsl';
 Includes['declare_fragment_light_warp'] = declare_fragment_light_warp;
 
