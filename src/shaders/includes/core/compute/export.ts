@@ -12,6 +12,9 @@ Includes['compute_fragment_color_map'] = compute_fragment_color_map;
 import compute_fragment_depth from './compute_fragment_depth.glsl';
 Includes['compute_fragment_depth'] = compute_fragment_depth;
 
+import compute_fragment_exponent_map from './compute_fragment_exponent_map.glsl';
+Includes['compute_fragment_exponent_map'] = compute_fragment_exponent_map;
+
 import compute_fragment_lights from './compute_fragment_lights.glsl';
 Includes['compute_fragment_lights'] = compute_fragment_lights;
 
