@@ -1,14 +1,16 @@
-.node-image-editor {
+:host {
 	background-color: #000000FF;
 	width: 100%;
 	height: 100%;
-	overflow: auto;
+	display: flex;
+	flex-direction: column;
 }
 
 .node-image-editor-nodes {
-	width: 100%;
+	overflow: auto;
 	position: relative;
 	display: flex;
+	overflow: auto;
 }
 
 .node-image-editor-nodes-column {
