@@ -60,5 +60,8 @@ Includes['source1_varying_spritecard'] = source1_varying_spritecard;
 import source1_varying_unlit_generic from './source1_varying_unlit_generic.glsl';
 Includes['source1_varying_unlit_generic'] = source1_varying_unlit_generic;
 
+import source1_varying_unlittwotexture from './source1_varying_unlittwotexture.glsl';
+Includes['source1_varying_unlittwotexture'] = source1_varying_unlittwotexture;
+
 import source1_varying_vertexlit_generic from './source1_varying_vertexlit_generic.glsl';
 Includes['source1_varying_vertexlit_generic'] = source1_varying_vertexlit_generic;

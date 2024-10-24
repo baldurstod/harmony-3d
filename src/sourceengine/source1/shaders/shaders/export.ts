@@ -40,6 +40,11 @@ import source1_unlitgeneric_vs from './source1_unlitgeneric.vs';
 Shaders['source1_unlitgeneric.fs'] = source1_unlitgeneric_fs;
 Shaders['source1_unlitgeneric.vs'] = source1_unlitgeneric_vs;
 
+import source1_unlittwotexture_fs from './source1_unlittwotexture.fs';
+import source1_unlittwotexture_vs from './source1_unlittwotexture.vs';
+Shaders['source1_unlittwotexture.fs'] = source1_unlittwotexture_fs;
+Shaders['source1_unlittwotexture.vs'] = source1_unlittwotexture_vs;
+
 import source1_vertexlitgeneric_fs from './source1_vertexlitgeneric.fs';
 import source1_vertexlitgeneric_vs from './source1_vertexlitgeneric.vs';
 Shaders['source1_vertexlitgeneric.fs'] = source1_vertexlitgeneric_fs;
