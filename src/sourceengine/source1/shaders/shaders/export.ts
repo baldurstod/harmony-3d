@@ -1,5 +1,10 @@
 import { Shaders } from '../../../../shaders/shaders';
 
+import source1_character_fs from './source1_character.fs';
+import source1_character_vs from './source1_character.vs';
+Shaders['source1_character.fs'] = source1_character_fs;
+Shaders['source1_character.vs'] = source1_character_vs;
+
 import source1_refract_fs from './source1_refract.fs';
 import source1_refract_vs from './source1_refract.vs';
 Shaders['source1_refract.fs'] = source1_refract_fs;
