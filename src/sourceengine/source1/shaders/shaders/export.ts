@@ -54,3 +54,8 @@ import source1_water_fs from './source1_water.fs';
 import source1_water_vs from './source1_water.vs';
 Shaders['source1_water.fs'] = source1_water_fs;
 Shaders['source1_water.vs'] = source1_water_vs;
+
+import source1_weapondecal_fs from './source1_weapondecal.fs';
+import source1_weapondecal_vs from './source1_weapondecal.vs';
+Shaders['source1_weapondecal.fs'] = source1_weapondecal_fs;
+Shaders['source1_weapondecal.vs'] = source1_weapondecal_vs;
