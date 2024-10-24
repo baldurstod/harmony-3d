@@ -25,6 +25,11 @@ import source1_refract_vs from './source1_refract.vs';
 Shaders['source1_refract.fs'] = source1_refract_fs;
 Shaders['source1_refract.vs'] = source1_refract_vs;
 
+import source1_sprite_fs from './source1_sprite.fs';
+import source1_sprite_vs from './source1_sprite.vs';
+Shaders['source1_sprite.fs'] = source1_sprite_fs;
+Shaders['source1_sprite.vs'] = source1_sprite_vs;
+
 import source1_vertexlitgeneric_fs from './source1_vertexlitgeneric.fs';
 import source1_vertexlitgeneric_vs from './source1_vertexlitgeneric.vs';
 Shaders['source1_vertexlitgeneric.fs'] = source1_vertexlitgeneric_fs;

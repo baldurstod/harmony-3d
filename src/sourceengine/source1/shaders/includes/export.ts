@@ -51,5 +51,8 @@ Includes['source1_varying_eyerefract'] = source1_varying_eyerefract;
 import source1_varying_refract from './source1_varying_refract.glsl';
 Includes['source1_varying_refract'] = source1_varying_refract;
 
+import source1_varying_sprite from './source1_varying_sprite.glsl';
+Includes['source1_varying_sprite'] = source1_varying_sprite;
+
 import source1_varying_vertexlit_generic from './source1_varying_vertexlit_generic.glsl';
 Includes['source1_varying_vertexlit_generic'] = source1_varying_vertexlit_generic;
