@@ -49,3 +49,8 @@ import source1_vertexlitgeneric_fs from './source1_vertexlitgeneric.fs';
 import source1_vertexlitgeneric_vs from './source1_vertexlitgeneric.vs';
 Shaders['source1_vertexlitgeneric.fs'] = source1_vertexlitgeneric_fs;
 Shaders['source1_vertexlitgeneric.vs'] = source1_vertexlitgeneric_vs;
+
+import source1_water_fs from './source1_water.fs';
+import source1_water_vs from './source1_water.vs';
+Shaders['source1_water.fs'] = source1_water_fs;
+Shaders['source1_water.vs'] = source1_water_vs;
