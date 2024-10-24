@@ -10,6 +10,11 @@ import source1_customweapon_vs from './source1_customweapon.vs';
 Shaders['source1_customweapon.fs'] = source1_customweapon_fs;
 Shaders['source1_customweapon.vs'] = source1_customweapon_vs;
 
+import source1_eyerefract_fs from './source1_eyerefract.fs';
+import source1_eyerefract_vs from './source1_eyerefract.vs';
+Shaders['source1_eyerefract.fs'] = source1_eyerefract_fs;
+Shaders['source1_eyerefract.vs'] = source1_eyerefract_vs;
+
 import source1_refract_fs from './source1_refract.fs';
 import source1_refract_vs from './source1_refract.vs';
 Shaders['source1_refract.fs'] = source1_refract_fs;

@@ -45,6 +45,9 @@ Includes['source1_varying_character'] = source1_varying_character;
 import source1_varying_customweapon from './source1_varying_customweapon.glsl';
 Includes['source1_varying_customweapon'] = source1_varying_customweapon;
 
+import source1_varying_eyerefract from './source1_varying_eyerefract.glsl';
+Includes['source1_varying_eyerefract'] = source1_varying_eyerefract;
+
 import source1_varying_refract from './source1_varying_refract.glsl';
 Includes['source1_varying_refract'] = source1_varying_refract;
 
