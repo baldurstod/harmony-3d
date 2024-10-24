@@ -68,3 +68,6 @@ Includes['source1_varying_vertexlit_generic'] = source1_varying_vertexlit_generi
 
 import source1_varying_weapondecal from './source1_varying_weapondecal.glsl';
 Includes['source1_varying_weapondecal'] = source1_varying_weapondecal;
+
+import source1_varying_worldvertextransition from './source1_varying_worldvertextransition.glsl';
+Includes['source1_varying_worldvertextransition'] = source1_varying_worldvertextransition;

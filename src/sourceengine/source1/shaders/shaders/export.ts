@@ -59,3 +59,8 @@ import source1_weapondecal_fs from './source1_weapondecal.fs';
 import source1_weapondecal_vs from './source1_weapondecal.vs';
 Shaders['source1_weapondecal.fs'] = source1_weapondecal_fs;
 Shaders['source1_weapondecal.vs'] = source1_weapondecal_vs;
+
+import source1_worldvertextransition_fs from './source1_worldvertextransition.fs';
+import source1_worldvertextransition_vs from './source1_worldvertextransition.vs';
+Shaders['source1_worldvertextransition.fs'] = source1_worldvertextransition_fs;
+Shaders['source1_worldvertextransition.vs'] = source1_worldvertextransition_vs;
