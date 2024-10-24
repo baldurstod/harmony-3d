@@ -5,8 +5,6 @@ export const AnimManager = new (function () {
 	let seqGroupList = {};
 	let animList = Object.create(null);
 	class AnimManager {
-		constructor() {
-		}
 
 		getAnimGroup(source2Model, repository, animGroupName) {
 			var animGroup = animGroupList[animGroupName];
