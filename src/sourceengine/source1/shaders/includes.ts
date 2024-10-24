@@ -3,9 +3,6 @@ import { Includes } from '../../../shaders/includes';
 import source1_blend_pixel_fog_const from './includes/source1_blend_pixel_fog_const.glsl';
 Includes['source1_blend_pixel_fog_const'] = source1_blend_pixel_fog_const;
 
-import source1_declare_particle_position from './includes/source1_declare_particle_position.glsl';
-Includes['source1_declare_particle_position'] = source1_declare_particle_position;
-
 import source1_blend_tint from './includes/source1_blend_tint.glsl';
 Includes['source1_blend_tint'] = source1_blend_tint;
 
@@ -23,6 +20,9 @@ Includes['source1_compute_sheen'] = source1_compute_sheen;
 
 import source1_declare_gamma_functions from './includes/source1_declare_gamma_functions.glsl';
 Includes['source1_declare_gamma_functions'] = source1_declare_gamma_functions;
+
+import source1_declare_particle_position from './includes/source1_declare_particle_position.glsl';
+Includes['source1_declare_particle_position'] = source1_declare_particle_position;
 
 import source1_declare_phong from './includes/source1_declare_phong.glsl';
 Includes['source1_declare_phong'] = source1_declare_phong;

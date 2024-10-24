@@ -1,2 +1,1 @@
-export const Shaders = {
-}
+export const Shaders = {}
