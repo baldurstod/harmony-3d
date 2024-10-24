@@ -15,6 +15,11 @@ import source1_eyerefract_vs from './source1_eyerefract.vs';
 Shaders['source1_eyerefract.fs'] = source1_eyerefract_fs;
 Shaders['source1_eyerefract.vs'] = source1_eyerefract_vs;
 
+import source1_lightmappedgeneric_fs from './source1_lightmappedgeneric.fs';
+import source1_lightmappedgeneric_vs from './source1_lightmappedgeneric.vs';
+Shaders['source1_lightmappedgeneric.fs'] = source1_lightmappedgeneric_fs;
+Shaders['source1_lightmappedgeneric.vs'] = source1_lightmappedgeneric_vs;
+
 import source1_refract_fs from './source1_refract.fs';
 import source1_refract_vs from './source1_refract.vs';
 Shaders['source1_refract.fs'] = source1_refract_fs;
