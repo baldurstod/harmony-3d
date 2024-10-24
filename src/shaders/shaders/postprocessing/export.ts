@@ -10,6 +10,11 @@ import crosshatch_vs from './crosshatch.vs';
 Shaders['crosshatch.fs'] = crosshatch_fs;
 Shaders['crosshatch.vs'] = crosshatch_vs;
 
+import edgedetection_fs from './edgedetection.fs';
+import edgedetection_vs from './edgedetection.vs';
+Shaders['edgedetection.fs'] = edgedetection_fs;
+Shaders['edgedetection.vs'] = edgedetection_vs;
+
 import grain_fs from './grain.fs';
 import grain_vs from './grain.vs';
 Shaders['grain.fs'] = grain_fs;
