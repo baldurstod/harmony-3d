@@ -30,6 +30,11 @@ import source1_sprite_vs from './source1_sprite.vs';
 Shaders['source1_sprite.fs'] = source1_sprite_fs;
 Shaders['source1_sprite.vs'] = source1_sprite_vs;
 
+import source1_spritecard_fs from './source1_spritecard.fs';
+import source1_spritecard_vs from './source1_spritecard.vs';
+Shaders['source1_spritecard.fs'] = source1_spritecard_fs;
+Shaders['source1_spritecard.vs'] = source1_spritecard_vs;
+
 import source1_vertexlitgeneric_fs from './source1_vertexlitgeneric.fs';
 import source1_vertexlitgeneric_vs from './source1_vertexlitgeneric.vs';
 Shaders['source1_vertexlitgeneric.fs'] = source1_vertexlitgeneric_fs;
