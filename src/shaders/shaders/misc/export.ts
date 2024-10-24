@@ -1,5 +1,10 @@
 import { Shaders } from '../../shaders';
 
+import fullscreenquad_fs from './fullscreenquad.fs';
+import fullscreenquad_vs from './fullscreenquad.vs';
+Shaders['fullscreenquad.fs'] = fullscreenquad_fs;
+Shaders['fullscreenquad.vs'] = fullscreenquad_vs;
+
 import grid_fs from './grid.fs';
 import grid_vs from './grid.vs';
 Shaders['grid.fs'] = grid_fs;
