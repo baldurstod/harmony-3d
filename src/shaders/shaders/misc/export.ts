@@ -15,6 +15,11 @@ import line_vs from './line.vs';
 Shaders['line.fs'] = line_fs;
 Shaders['line.vs'] = line_vs;
 
+import shadertoy_fs from './shadertoy.fs';
+import shadertoy_vs from './shadertoy.vs';
+Shaders['shadertoy.fs'] = shadertoy_fs;
+Shaders['shadertoy.vs'] = shadertoy_vs;
+
 import skybox_fs from './skybox.fs';
 import skybox_vs from './skybox.vs';
 Shaders['skybox.fs'] = skybox_fs;
