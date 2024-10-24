@@ -1,5 +1,5 @@
-import { ProxyManager } from './proxymanager.js';
-import { Proxy } from './proxy.js';
+import { ProxyManager } from './proxymanager';
+import { Proxy } from './proxy';
 /**
  * StatTrakDigit Proxy
  */

@@ -1,9 +1,9 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 
 import { Entity } from '../entities/entity';
-import { Graphics } from '../graphics/graphics.js';
+import { Graphics } from '../graphics/graphics';
 
-import { DEBUG } from '../buildoptions.js';
+import { DEBUG } from '../buildoptions';
 import { registerEntity } from '../entities/entities';
 
 const tempWorldMat = mat4.create();

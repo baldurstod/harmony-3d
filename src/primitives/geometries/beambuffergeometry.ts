@@ -1,7 +1,6 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
-
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute.js'
-import { BufferGeometry } from '../../geometry/buffergeometry.js';
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { BufferGeometry } from '../../geometry/buffergeometry';
 
 const DEFAULT_SEGMENT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 

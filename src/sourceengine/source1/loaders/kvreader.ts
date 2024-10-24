@@ -1,4 +1,4 @@
-import { ERROR } from '../../../buildoptions.js';
+import { ERROR } from '../../../buildoptions';
 
 class KvAttribute {
 	name: string;

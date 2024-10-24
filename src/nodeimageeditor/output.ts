@@ -1,4 +1,4 @@
-import { InputOutput, IO_TYPE_TEXTURE_2D } from './inputoutput.js';
+import { InputOutput, IO_TYPE_TEXTURE_2D } from './inputoutput';
 
 export class Output extends InputOutput {
 	successors = new Set<InputOutput>();

@@ -1,24 +1,23 @@
 import { quat, vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
 
-import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader.js';
-import { SourceEngineVMTLoader } from './sourceenginevmtloader.js';
-import { KvReader } from './kvreader.js';
-import { SourceBSP } from './sourcebsp.js';
+import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
+import { SourceEngineVMTLoader } from './sourceenginevmtloader';
+import { KvReader } from './kvreader';
+import { SourceBSP } from './sourcebsp';
 import {
 	SourceBSPLump, SourceBSPLumpPlane, SourceBSPLumpTexData, SourceBSPLumpNode, SourceBSPLumpTexInfo,
 	SourceBSPLumpFace, SourceBSPLumpColorRGBExp32, SourceBSPLumpLeaf, SourceBSPLumpEdge, SourceBSPLumpModel, SourceBSPLumpBrush, SourceBSPLumpBrushSide,
 	SourceBSPLumpGameLump, SourceBSPLumpPropStaticDirectory, SourceBSPLumpOverlay, SourceBSPLumpDispInfo, SourceBSPLumpDispNeighbor, SourceBSPLumpDispSubNeighbor,
 	SourceBSPLumpDispVertex, SourceBSPLumpPropStatic
-} from './sourcebsplump.js';
+} from './sourcebsplump';
 import {
 	LUMP_ENTITIES, LUMP_PLANES, LUMP_TEXDATA, LUMP_VERTEXES, LUMP_VISIBILITY, LUMP_NODES, LUMP_TEXINFO, LUMP_FACES, LUMP_LIGHTING, LUMP_OCCLUSION, LUMP_LEAFS, LUMP_FACEIDS, LUMP_EDGES, LUMP_SURFEDGES, LUMP_MODELS, LUMP_WORLDLIGHTS, LUMP_LEAFFACES, LUMP_LEAFBRUSHES, LUMP_BRUSHES, LUMP_BRUSHSIDES, LUMP_AREAS, LUMP_AREAPORTALS, LUMP_UNUSED0, LUMP_UNUSED1, LUMP_UNUSED2, LUMP_UNUSED3, LUMP_DISPINFO,
 	LUMP_ORIGINALFACES, LUMP_PHYSDISP, LUMP_PHYSCOLLIDE, LUMP_VERTNORMALS, LUMP_VERTNORMALINDICES, LUMP_DISP_LIGHTMAP_ALPHAS, LUMP_DISP_VERTS, LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS, LUMP_GAME_LUMP, LUMP_LEAFWATERDATA, LUMP_PRIMITIVES, LUMP_PRIMVERTS, LUMP_PRIMINDICES, LUMP_PAKFILE, LUMP_CLIPPORTALVERTS, LUMP_CUBEMAPS, LUMP_TEXDATA_STRING_DATA, LUMP_TEXDATA_STRING_TABLE, LUMP_OVERLAYS, LUMP_LEAFMINDISTTOWATER, LUMP_FACE_MACRO_TEXTURE_INFO, LUMP_DISP_TRIS, LUMP_PHYSCOLLIDESURFACE, LUMP_WATEROVERLAYS, LUMP_LEAF_AMBIENT_INDEX_HDR, LUMP_LEAF_AMBIENT_INDEX, LUMP_LIGHTING_HDR, LUMP_WORLDLIGHTS_HDR, LUMP_LEAF_AMBIENT_LIGHTING_HDR, LUMP_LEAF_AMBIENT_LIGHTING, LUMP_XZIPPAKFILE, LUMP_FACES_HDR, LUMP_MAP_FLAGS, LUMP_OVERLAY_FADES
-} from './sourcebsplump.js';
-import { DecompressLZMA, StringStrip } from '../utils/utils.js';
-import { LOG, WARN } from '../../../buildoptions.js';
+} from './sourcebsplump';
+import { DecompressLZMA, StringStrip } from '../utils/utils';
+import { LOG, WARN } from '../../../buildoptions';
 import { DEG_TO_RAD } from '../../../math/constants';
-import { AngleQuaternion } from '../maps/mapentity.js';
 
 const BSP_HEADER_LUMPS_COUNT = 64;
 const BYTES_PER_LUMP_HEADER = 16;

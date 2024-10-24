@@ -1,4 +1,4 @@
- export { RenderAnimatedSprites } from './renderanimatedsprites.js';
- export { RenderRope } from './renderrope.js';
- export { RenderScreenVelocityRotate } from './renderscreenvelocityrotate.js';
- export { RenderSpriteTrail } from './renderspritetrail.js';
+ export { RenderAnimatedSprites } from './renderanimatedsprites';
+ export { RenderRope } from './renderrope';
+ export { RenderScreenVelocityRotate } from './renderscreenvelocityrotate';
+ export { RenderSpriteTrail } from './renderspritetrail';

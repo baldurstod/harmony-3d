@@ -1,7 +1,6 @@
 import { mat4, vec2 } from 'gl-matrix';
-
-import { ProxyManager } from './proxymanager.js';
-import { Proxy } from './proxy.js';
+import { ProxyManager } from './proxymanager';
+import { Proxy } from './proxy';
 import { DEG_TO_RAD } from '../../../../math/constants';
 
 export class TextureTransform extends Proxy {

@@ -1,8 +1,7 @@
 import { vec3 } from 'gl-matrix';
-
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator.js';
-import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants.js';
+import { SourceEngineParticleOperator } from '../operator';
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { clamp } from '../../../../../math/functions';
 
 const a = vec3.create();

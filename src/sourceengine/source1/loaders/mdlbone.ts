@@ -1,6 +1,5 @@
 import { mat4, quat, vec3, vec4 } from 'gl-matrix';
-
-import { DEBUG } from '../../../buildoptions.js';
+import { DEBUG } from '../../../buildoptions';
 /*
 
 #define BONE_CALCULATE_MASK			0x1F

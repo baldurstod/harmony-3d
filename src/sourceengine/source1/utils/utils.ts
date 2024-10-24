@@ -1,4 +1,4 @@
-import { LZMA } from './lzma.js';
+import { LZMA } from './lzma';
 
 export function StringStrip(s) {
 	return s.replace(/^[\s\0]+/, '').replace(/[\s\0]+$/, '')

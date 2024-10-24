@@ -1,8 +1,7 @@
 import { vec3 } from 'gl-matrix';
-
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator.js';
-import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants.js';
+import { SourceEngineParticleOperator } from '../operator';
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { FLT_EPSILON } from '../../../../../math/constants';
 
 let tempVec3 = vec3.create();

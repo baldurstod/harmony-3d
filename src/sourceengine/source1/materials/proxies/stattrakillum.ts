@@ -1,8 +1,6 @@
 import { vec3 } from 'gl-matrix';
-
-import { ProxyManager } from './proxymanager.js';
-import { Proxy } from './proxy.js';
-
+import { ProxyManager } from './proxymanager';
+import { Proxy } from './proxy';
 import { lerp } from '../../../../math/functions';
 
 export class StatTrakIllum extends Proxy {

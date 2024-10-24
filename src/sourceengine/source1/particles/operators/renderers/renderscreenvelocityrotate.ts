@@ -1,6 +1,6 @@
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator.js';
-import { PARAM_TYPE_FLOAT } from '../../constants.js';
+import { SourceEngineParticleOperator } from '../operator';
+import { PARAM_TYPE_FLOAT } from '../../constants';
 import { DEG_TO_RAD } from '../../../../../math/constants';
 
 // Note: this operator doesn't render anything, it simply orientate the particle for other renderers

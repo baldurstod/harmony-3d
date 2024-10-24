@@ -1,8 +1,7 @@
 import { mat4 } from 'gl-matrix';
-
-import { ProxyManager } from './proxymanager.js';
-import { Proxy } from './proxy.js';
-import { MatrixBuildTranslation } from './texturetransform.js';
+import { ProxyManager } from './proxymanager';
+import { Proxy } from './proxy';
+import { MatrixBuildTranslation } from './texturetransform';
 
 const RESULT_VAR = '$basetexturetransform';
 

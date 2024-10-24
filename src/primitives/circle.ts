@@ -1,7 +1,7 @@
-import { JSONLoader } from '../importers/jsonloader.js';
-import { LineSegments } from './linesegments.js';
+import { JSONLoader } from '../importers/jsonloader';
+import { LineSegments } from './linesegments';
 import { TWO_PI } from '../math/constants';
-import { registerEntity } from '../entities/entities.js';
+import { registerEntity } from '../entities/entities';
 
 export class Circle extends LineSegments {
 	#radius: number;

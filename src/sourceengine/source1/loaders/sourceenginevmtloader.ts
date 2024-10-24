@@ -1,10 +1,9 @@
-import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager.js';
-import { registerLoader } from '../../../loaders/loaderfactory.js';
-import { KvReader } from './kvreader.js';
-
-import { DEBUG } from '../../../buildoptions.js';
-import { customFetch } from '../../../utils/customfetch.js';
-import { Repositories } from '../../../misc/repositories.js';
+import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
+import { registerLoader } from '../../../loaders/loaderfactory';
+import { KvReader } from './kvreader';
+import { DEBUG } from '../../../buildoptions';
+import { customFetch } from '../../../utils/customfetch';
+import { Repositories } from '../../../misc/repositories';
 
 class SourceEngineVMTLoaderClass {
 	#materials = new Map();

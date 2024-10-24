@@ -1,8 +1,7 @@
 import { quat, vec3 } from 'gl-matrix';
-
-import { Light } from './light.js';
-import { SpotLightShadow } from './spotlightshadow.js';
-import { registerEntity } from '../entities/entities.js';
+import { Light } from './light';
+import { SpotLightShadow } from './spotlightshadow';
+import { registerEntity } from '../entities/entities';
 
 const DEFAULT_ANGLE = Math.PI / 4.0;
 const Z_VECTOR = vec3.fromValues(0, 0, 1);
