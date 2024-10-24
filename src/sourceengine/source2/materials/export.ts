@@ -1,4 +1,5 @@
 export { Source2Crystal } from './crystal';
+export { Source2EnvironmentBlend } from './environment_blend';
 export { Source2GlobalLitSimple } from './source2globallitsimple';
 export { Source2Hero } from './source2hero';
 export { Source2HeroFluid } from './source2herofluid';
