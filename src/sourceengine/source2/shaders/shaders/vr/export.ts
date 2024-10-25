@@ -14,3 +14,9 @@ import source2_vr_eyeball_fs from './source2_vr_eyeball.fs';
 import source2_vr_eyeball_vs from './source2_vr_eyeball.vs';
 Shaders['source2_vr_eyeball.fs'] = source2_vr_eyeball_fs;
 Shaders['source2_vr_eyeball.vs'] = source2_vr_eyeball_vs;
+
+import source2_vr_glass_fs from './source2_vr_glass.fs';
+import source2_vr_glass_vs from './source2_vr_glass.vs';
+Shaders['source2_vr_glass.fs'] = source2_vr_glass_fs;
+Shaders['source2_vr_glass.vs'] = source2_vr_glass_vs;
+
