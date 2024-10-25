@@ -18,6 +18,11 @@ import source2_global_lit_simple_vs from './source2_global_lit_simple.vs';
 Shaders['source2_global_lit_simple.fs'] = source2_global_lit_simple_fs;
 Shaders['source2_global_lit_simple.vs'] = source2_global_lit_simple_vs;
 
+import source2_pbr_fs from './source2_pbr.fs';
+import source2_pbr_vs from './source2_pbr.vs';
+Shaders['source2_pbr.fs'] = source2_pbr_fs;
+Shaders['source2_pbr.vs'] = source2_pbr_vs;
+
 
 import source2_spritecard_fs from './source2_spritecard.fs';
 import source2_spritecard_vs from './source2_spritecard.vs';
