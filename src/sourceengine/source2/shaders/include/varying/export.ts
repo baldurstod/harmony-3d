@@ -9,6 +9,8 @@ Includes['source2_varying_global_lit_simple'] = source2_varying_global_lit_simpl
 import source2_varying_pbr from './source2_varying_pbr.glsl';
 Includes['source2_varying_pbr'] = source2_varying_pbr;
 
+import source2_varying_spring_meteor from './source2_varying_spring_meteor.glsl';
+Includes['source2_varying_spring_meteor'] = source2_varying_spring_meteor;
 
 import source2_varying_spritecard from './source2_varying_spritecard.glsl';
 Includes['source2_varying_spritecard'] = source2_varying_spritecard;
