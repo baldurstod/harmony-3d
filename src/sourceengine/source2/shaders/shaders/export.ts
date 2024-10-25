@@ -32,3 +32,8 @@ import source2_spritecard_fs from './source2_spritecard.fs';
 import source2_spritecard_vs from './source2_spritecard.vs';
 Shaders['source2_spritecard.fs'] = source2_spritecard_fs;
 Shaders['source2_spritecard.vs'] = source2_spritecard_vs;
+
+import source2_ui_fs from './source2_ui.fs';
+import source2_ui_vs from './source2_ui.vs';
+Shaders['source2_ui.fs'] = source2_ui_fs;
+Shaders['source2_ui.vs'] = source2_ui_vs;

@@ -9,3 +9,6 @@ Includes['source2_varying_global_lit_simple'] = source2_varying_global_lit_simpl
 
 import source2_varying_spritecard from './source2_varying_spritecard.glsl';
 Includes['source2_varying_spritecard'] = source2_varying_spritecard;
+
+import source2_varying_ui from './source2_varying_ui.glsl';
+Includes['source2_varying_ui'] = source2_varying_ui;
