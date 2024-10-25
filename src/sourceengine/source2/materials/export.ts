@@ -12,3 +12,4 @@ export { Source2Material } from './source2material';
 export { Source2MaterialManager } from './source2materialmanager';
 export { Source2SpringMeteor } from './source2springmeteor';
 export { Source2SpriteCard } from './source2spritecard';
+export { Source2UI } from './source2ui';
