@@ -40,3 +40,7 @@ import source2_vr_skin_vs from './source2_vr_skin.vs';
 Shaders['source2_vr_skin.fs'] = source2_vr_skin_fs;
 Shaders['source2_vr_skin.vs'] = source2_vr_skin_vs;
 
+import source2_vr_xen_foliage_fs from './source2_vr_xen_foliage.fs';
+import source2_vr_xen_foliage_vs from './source2_vr_xen_foliage.vs';
+Shaders['source2_vr_xen_foliage.fs'] = source2_vr_xen_foliage_fs;
+Shaders['source2_vr_xen_foliage.vs'] = source2_vr_xen_foliage_vs;
