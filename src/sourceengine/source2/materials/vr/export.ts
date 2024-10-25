@@ -4,3 +4,4 @@ export { Source2VrEyeball } from './source2vreyeball';
 export { Source2VrGlass } from './source2vrglass';
 export { Source2VrMonitor } from './source2vrmonitor';
 export { Source2VrSimple } from './source2vrsimple';
+export { Source2VrSimple3LayerParallax } from './source2vrsimple3layerparallax';
