@@ -13,7 +13,7 @@ export class NodeImageEditorGui {
 	#htmlElement;
 	#shadowRoot;
 	#imageEditorChanged: () => void;
-	#refreshTimeout: NodeJS.Timeout;
+	#refreshTimeout: number;
 	#nodesGui = new Map<Node, NodeGui>();
 	#nodeImageEditor: NodeImageEditor;
 	#htmlNodes: HTMLElement;

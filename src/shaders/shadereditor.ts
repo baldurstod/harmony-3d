@@ -21,7 +21,7 @@ export class ShaderEditor extends HTMLElement {
 	#shaderEditor;
 	#htmlShaderNameSelect: HTMLSelectElement;
 	#htmlShaderRenderMode: HTMLSelectElement;
-	#recompileTimeout: NodeJS.Timeout;
+	#recompileTimeout: number;
 	#editorShaderName: string;
 	#editorIncludeName: string;
 	#shaderType: ShaderType;

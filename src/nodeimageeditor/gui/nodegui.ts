@@ -102,7 +102,7 @@ export class NodeGui {
 	#drag: string;
 	#htmlParams;
 	_ioGui = new Map();
-	#refreshTimeout: NodeJS.Timeout;
+	#refreshTimeout: number;
 	#nodeChanged: () => void;
 	#node: Node;
 	#nodeImageEditorGui: NodeImageEditorGui;
