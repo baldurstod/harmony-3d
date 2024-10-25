@@ -8,6 +8,11 @@ import source2_crystal_vs from './source2_crystal.vs';
 Shaders['source2_crystal.fs'] = source2_crystal_fs;
 Shaders['source2_crystal.vs'] = source2_crystal_vs;
 
+import source2_error_fs from './source2_error.fs';
+import source2_error_vs from './source2_error.vs';
+Shaders['source2_error.fs'] = source2_error_fs;
+Shaders['source2_error.vs'] = source2_error_vs;
+
 import source2_global_lit_simple_fs from './source2_global_lit_simple.fs';
 import source2_global_lit_simple_vs from './source2_global_lit_simple.vs';
 Shaders['source2_global_lit_simple.fs'] = source2_global_lit_simple_fs;
