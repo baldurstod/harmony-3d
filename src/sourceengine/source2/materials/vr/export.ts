@@ -6,3 +6,4 @@ export { Source2VrMonitor } from './source2vrmonitor';
 export { Source2VrSimple } from './source2vrsimple';
 export { Source2VrSimple3LayerParallax } from './source2vrsimple3layerparallax';
 export { Source2VrSkin } from './source2vrskin';
+export { Source2VrXenFoliage } from './source2vrxenfoliage';
