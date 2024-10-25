@@ -1,6 +1,6 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators.js';
-import { Operator } from '../operator.js';
-import { SimpleSplineRemapValWithDeltasClamped } from '../../../../common/math/sse.js';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Operator } from '../operator';
+import { SimpleSplineRemapValWithDeltasClamped } from '../../../../common/math/sse';
 
 export class FadeInSimple extends Operator {
 	fadeInTime = 0.25;

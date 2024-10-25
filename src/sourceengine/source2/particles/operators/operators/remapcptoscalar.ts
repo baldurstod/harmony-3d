@@ -1,6 +1,6 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators.js';
-import { Operator } from '../operator.js';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields.js';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Operator } from '../operator';
+import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { RemapValClamped, lerp } from '../../../../../math/functions';
 
 export class RemapCPtoScalar extends Operator {
