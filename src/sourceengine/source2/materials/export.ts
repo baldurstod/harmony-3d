@@ -1,3 +1,4 @@
+export * from './cs2/export';
 export { Source2Crystal } from './crystal';
 export { Source2EnvironmentBlend } from './environment_blend';
 export { Source2GlobalLitSimple } from './source2globallitsimple';
