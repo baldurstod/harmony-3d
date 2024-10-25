@@ -6,4 +6,5 @@ export { Source2CsgoEnvironment } from './environment';
 export { Source2CsgoFoliage } from './foliage';
 export { Source2CsgoGlass } from './glass';
 export { Source2CsgoSimple } from './simple';
+export { Source2CsgoStaticOverlay } from './static_overlay';
 export { Source2CsgoWeaponStattrak } from './weapon_stattrak';
