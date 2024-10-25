@@ -5,4 +5,5 @@ export { Source2CsgoEnvironmentBlend } from './environment_blend';
 export { Source2CsgoEnvironment } from './environment';
 export { Source2CsgoFoliage } from './foliage';
 export { Source2CsgoGlass } from './glass';
+export { Source2CsgoSimple } from './simple';
 export { Source2CsgoWeaponStattrak } from './weapon_stattrak';
