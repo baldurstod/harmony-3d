@@ -25,6 +25,11 @@ import source2_vr_simple_2way_blend_vs from './source2_vr_simple_2way_blend.vs';
 Shaders['source2_vr_simple_2way_blend.fs'] = source2_vr_simple_2way_blend_fs;
 Shaders['source2_vr_simple_2way_blend.vs'] = source2_vr_simple_2way_blend_vs;
 
+import source2_vr_simple_3layer_parallax_fs from './source2_vr_simple_3layer_parallax.fs';
+import source2_vr_simple_3layer_parallax_vs from './source2_vr_simple_3layer_parallax.vs';
+Shaders['source2_vr_simple_3layer_parallax.fs'] = source2_vr_simple_3layer_parallax_fs;
+Shaders['source2_vr_simple_3layer_parallax.vs'] = source2_vr_simple_3layer_parallax_vs;
+
 import source2_vr_simple_fs from './source2_vr_simple.fs';
 import source2_vr_simple_vs from './source2_vr_simple.vs';
 Shaders['source2_vr_simple.fs'] = source2_vr_simple_fs;
