@@ -28,7 +28,7 @@ export class SourceEnginePCFLoader extends SourceBinaryLoader {
 			return null;
 		}
 		startOffset += 5;
-		pcf.binaryVersion = str.substring(BINARY_FORMAT_POS, BINARY_FORMAT_POS + 1) * 1;
+		pcf.binaryVersion = Number(str.substring(BINARY_FORMAT_POS, BINARY_FORMAT_POS + 1));
 		if (pcf.binaryVersion !== 2 && pcf.binaryVersion !== 5) {
 			console.log('Binary version unknown. Loading of file may be unaccurate.');
 		}

@@ -202,7 +202,7 @@ export class SourceEngineMaterial extends Material {
 			this.setDefine('IS_TRANSLUCENT');
 			//TODOv3: adjust opacity accordinly
 			if (TESTING) {
-				console.assert(0, '$alpha');
+				console.assert(false, '$alpha');
 			}
 			translucent = true;
 		}
