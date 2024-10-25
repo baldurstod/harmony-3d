@@ -1,4 +1,4 @@
-import { Source2Material } from './source2material.js';
+import { Source2Material } from './source2material';
 import { Source2MaterialLoader } from '../loaders/source2materialloader';
 import { MATERIAL_BLENDING_ADDITIVE } from '../../../materials/material';
 

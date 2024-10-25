@@ -1,9 +1,9 @@
 import { BinaryReader } from 'harmony-binary-reader';
 
-import { decodeLz4 } from '../../../utils/lz4.js';
-import { Kv3Element, SourceKv3String, SourceKv3Value } from '../../common/keyvalue/kv3element.js';
-import { Kv3File } from '../../common/keyvalue/kv3file.js';
-import { TESTING } from '../../../buildoptions.js';
+import { decodeLz4 } from '../../../utils/lz4';
+import { Kv3Element, SourceKv3String, SourceKv3Value } from '../../common/keyvalue/kv3element';
+import { Kv3File } from '../../common/keyvalue/kv3file';
+import { TESTING } from '../../../buildoptions';
 
 const DATA_TYPE_NULL = 0x01;
 const DATA_TYPE_BOOL = 0x02;

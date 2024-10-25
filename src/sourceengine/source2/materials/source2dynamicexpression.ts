@@ -1,8 +1,7 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { murmurhash2_32_gc } from 'murmurhash-es6';
-
 import { clamp, pow2 } from '../../../math/functions';
-import { WARN } from '../../../buildoptions.js';
+import { WARN } from '../../../buildoptions';
 
 /**
  * DynamicExpression

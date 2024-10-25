@@ -2,7 +2,7 @@ import { vec4 } from 'gl-matrix';
 import { executeDynamicExpression } from './source2dynamicexpression';
 import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL } from '../../../materials/material';
 import { Source2TextureManager } from '../textures/source2texturemanager';
-import { DEBUG } from '../../../buildoptions.js';
+import { DEBUG } from '../../../buildoptions';
 import { RenderFace } from '../../../materials/constants';
 import { Source2File } from '../loaders/source2file';
 
