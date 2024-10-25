@@ -20,3 +20,8 @@ import source2_vr_glass_vs from './source2_vr_glass.vs';
 Shaders['source2_vr_glass.fs'] = source2_vr_glass_fs;
 Shaders['source2_vr_glass.vs'] = source2_vr_glass_vs;
 
+import source2_vr_simple_fs from './source2_vr_simple.fs';
+import source2_vr_simple_vs from './source2_vr_simple.vs';
+Shaders['source2_vr_simple.fs'] = source2_vr_simple_fs;
+Shaders['source2_vr_simple.vs'] = source2_vr_simple_vs;
+
