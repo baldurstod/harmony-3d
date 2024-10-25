@@ -23,6 +23,10 @@ import source2_pbr_vs from './source2_pbr.vs';
 Shaders['source2_pbr.fs'] = source2_pbr_fs;
 Shaders['source2_pbr.vs'] = source2_pbr_vs;
 
+import source2_spring_meteor_fs from './source2_spring_meteor.fs';
+import source2_spring_meteor_vs from './source2_spring_meteor.vs';
+Shaders['source2_spring_meteor.fs'] = source2_spring_meteor_fs;
+Shaders['source2_spring_meteor.vs'] = source2_spring_meteor_vs;
 
 import source2_spritecard_fs from './source2_spritecard.fs';
 import source2_spritecard_vs from './source2_spritecard.vs';
