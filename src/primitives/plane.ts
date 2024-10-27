@@ -63,11 +63,7 @@ export class Plane extends Mesh {
 		return new Plane({ width: json.width, height: json.height, material: material, widthSegments: json.widthSegments, heightSegments: json.heightSegments });
 	}
 
-	get entityName() {
-		return 'Plane';
-	}
-
-	static get entityName() {
+	static getEntityName() {
 		return 'Plane';
 	}
 }

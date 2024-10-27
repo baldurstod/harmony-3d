@@ -109,11 +109,7 @@ export class ControlPoint extends Entity {
 		return new ControlPoint();
 	}
 
-	get entityName() {
-		return 'ControlPoint';
-	}
-
-	static get entityName() {
+	static getEntityName() {
 		return 'ControlPoint';
 	}
 }

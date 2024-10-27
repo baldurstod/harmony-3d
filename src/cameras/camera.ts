@@ -446,11 +446,7 @@ export class Camera extends Entity {
 		return new Camera(json);
 	}
 
-	get entityName() {
-		return 'Camera';
-	}
-
-	static get entityName() {
+	static getEntityName() {
 		return 'Camera';
 	}
 

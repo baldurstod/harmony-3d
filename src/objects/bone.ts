@@ -313,11 +313,7 @@ export class Bone extends Entity {
 		this.boneId = json.boneid;
 	}
 
-	get entityName() {
-		return 'Bone';
-	}
-
-	static get entityName() {
+	static getEntityName() {
 		return 'Bone';
 	}
 }

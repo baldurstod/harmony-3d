@@ -5,7 +5,7 @@ const entities = new Map<string, typeof Entity | typeof Material>();
 
 export function registerEntity(ent: typeof Entity | typeof Material) {
 	if (entities.has(ent.getEntityName().toLowerCase())) {
-		console.error(`${ent} is already registered`);
+		console.error(`${ent.getEntityName().toLowerCase()} is already registered`);
 	}
 	entities.set(ent.getEntityName().toLowerCase(), ent);
 }

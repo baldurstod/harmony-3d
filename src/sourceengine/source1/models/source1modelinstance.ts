@@ -780,11 +780,7 @@ export class Source1ModelInstance extends Entity {
 		}
 	}
 
-	get entityName() {
-		return 'Source1Model';
-	}
-
-	static get entityName() {
+	static getEntityName() {
 		return 'Source1Model';
 	}
 

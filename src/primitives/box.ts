@@ -61,11 +61,7 @@ export class Box extends Mesh {
 		this.material.dispose();
 	}*/
 
-	get entityName() {
-		return 'Box';
-	}
-
-	static get entityName() {
+	static getEntityName() {
 		return 'Box';
 	}
 

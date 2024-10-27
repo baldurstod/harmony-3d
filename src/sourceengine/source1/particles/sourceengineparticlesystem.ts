@@ -993,11 +993,7 @@ export class SourceEngineParticleSystem extends Entity {
 		return entity;
 	}
 
-	get entityName() {
-		return 'Source1ParticleSystem';
-	}
-
-	static get entityName() {
+	static getEntityName() {
 		return 'Source1ParticleSystem';
 	}
 }
