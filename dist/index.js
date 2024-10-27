@@ -1261,6 +1261,9 @@ class BoxBufferGeometry extends BufferGeometry {
 
 const entities = new Map();
 function registerEntity(ent) {
+    if (entities.has(ent.getEntityName().toLowerCase())) {
+        console.error(`${ent} is already registered`);
+    }
     entities.set(ent.getEntityName().toLowerCase(), ent);
 }
 function getEntity(name) {
