@@ -7,7 +7,7 @@ export default [
 	{
 		input: './src/index.ts',
 		output: {
-			file: './dist/index.js',
+			file: './dist/dts/index.js',
 			format: 'esm',
 		},
 		plugins: [
