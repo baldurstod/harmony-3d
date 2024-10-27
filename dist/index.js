@@ -1262,7 +1262,7 @@ class BoxBufferGeometry extends BufferGeometry {
 const entities = new Map();
 function registerEntity(ent) {
     if (entities.has(ent.getEntityName().toLowerCase())) {
-        console.error(`${ent} is already registered`);
+        console.error(`${ent.getEntityName().toLowerCase()} is already registered`);
     }
     entities.set(ent.getEntityName().toLowerCase(), ent);
 }
@@ -4314,10 +4314,7 @@ class Box extends Mesh {
         this.geometry.dispose();
         this.material.dispose();
     }*/
-    get entityName() {
-        return 'Box';
-    }
-    static get entityName() {
+    static getEntityName() {
         return 'Box';
     }
     setSize(width, height, depth) {
@@ -5401,10 +5398,7 @@ class Camera extends Entity {
     static async constructFromJSON(json) {
         return new Camera(json);
     }
-    get entityName() {
-        return 'Camera';
-    }
-    static get entityName() {
+    static getEntityName() {
         return 'Camera';
     }
     is(s) {
@@ -9959,10 +9953,7 @@ class Plane extends Mesh {
         let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
         return new Plane({ width: json.width, height: json.height, material: material, widthSegments: json.widthSegments, heightSegments: json.heightSegments });
     }
-    get entityName() {
-        return 'Plane';
-    }
-    static get entityName() {
+    static getEntityName() {
         return 'Plane';
     }
 }
@@ -10114,10 +10105,7 @@ class Sphere extends Mesh {
         let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
         return new Sphere({ radius: json.radius, material: material, segments: json.segments, rings: json.rings, phiStart: json.phistart, phiLength: json.philength, thetaStart: json.thetastart, thetaLength: json.thetalength });
     }
-    get entityName() {
-        return 'Sphere';
-    }
-    static get entityName() {
+    static getEntityName() {
         return 'Sphere';
     }
 }
@@ -16618,10 +16606,7 @@ class Bone extends Entity {
         quat.copy(this.#refQuaternion, json.refquaternion ?? quat.create());
         this.boneId = json.boneid;
     }
-    get entityName() {
-        return 'Bone';
-    }
-    static get entityName() {
+    static getEntityName() {
         return 'Bone';
     }
 }
@@ -33879,10 +33864,7 @@ class Source1ModelInstance extends Entity {
             mesh.dispose();
         }
     }
-    get entityName() {
-        return 'Source1Model';
-    }
-    static get entityName() {
+    static getEntityName() {
         return 'Source1Model';
     }
     is(s) {
@@ -36106,10 +36088,7 @@ class ControlPoint extends Entity {
     static async constructFromJSON(json) {
         return new ControlPoint();
     }
-    get entityName() {
-        return 'ControlPoint';
-    }
-    static get entityName() {
+    static getEntityName() {
         return 'ControlPoint';
     }
 }
@@ -36943,10 +36922,7 @@ class SourceEngineParticleSystem extends Entity {
         }
         return entity;
     }
-    get entityName() {
-        return 'Source1ParticleSystem';
-    }
-    static get entityName() {
+    static getEntityName() {
         return 'Source1ParticleSystem';
     }
 }

@@ -294,8 +294,7 @@ export declare class Bone extends Entity {
     toJSON(): any;
     static constructFromJSON(json: any): Promise<Bone>;
     fromJSON(json: any): void;
-    get entityName(): string;
-    static get entityName(): string;
+    static getEntityName(): string;
 }
 
 export declare class BoundingBox {
@@ -432,8 +431,7 @@ export declare class Box extends Mesh {
     };
     toJSON(): any;
     static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Box>;
-    get entityName(): string;
-    static get entityName(): string;
+    static getEntityName(): string;
     setSize(width: number, height: number, depth: number): void;
     setwidth(width: number): void;
     setHeight(height: number): void;
@@ -689,8 +687,7 @@ export declare class Camera extends Entity {
     copy(source: any): void;
     toJSON(): any;
     static constructFromJSON(json: any): Promise<Camera>;
-    get entityName(): string;
-    static get entityName(): string;
+    static getEntityName(): string;
     is(s: string): boolean;
 }
 
@@ -1050,8 +1047,7 @@ declare class ControlPoint extends Entity {
     resetDelta(): void;
     deltaPosFrom(other: any, out?: vec3): vec3;
     static constructFromJSON(json: any): Promise<ControlPoint>;
-    get entityName(): string;
-    static get entityName(): string;
+    static getEntityName(): string;
 }
 
 export declare class CopyPass extends Pass {
@@ -4531,8 +4527,7 @@ export declare class Entity {
         };
         toJSON(): any;
         static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Plane>;
-        get entityName(): string;
-        static get entityName(): string;
+        static getEntityName(): string;
     }
 
     export declare class PlaneCull extends Operator {
@@ -6266,8 +6261,7 @@ export declare class Entity {
         static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Source1ModelInstance>;
         fromJSON(json: any): void;
         dispose(): void;
-        get entityName(): string;
-        static get entityName(): string;
+        static getEntityName(): string;
         is(s: any): boolean;
     }
 
@@ -7744,8 +7738,7 @@ export declare class Entity {
         };
         toJSON(): any;
         static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<any>;
-        get entityName(): string;
-        static get entityName(): string;
+        static getEntityName(): string;
     }
 
     export declare class SourceEnginePCFLoader extends SourceBinaryLoader {
@@ -8110,8 +8103,7 @@ export declare class Entity {
         raycast(raycaster: any, intersections: any): void;
         toJSON(): any;
         static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Sphere>;
-        get entityName(): string;
-        static get entityName(): string;
+        static getEntityName(): string;
     }
 
     export declare class Spin extends Operator {
