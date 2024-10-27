@@ -1,13 +1,17 @@
+import fs from 'fs';
+import child_process from 'child_process';
 import image from '@rollup/plugin-image';
 import css from 'rollup-plugin-import-css';
 import typescript from '@rollup/plugin-typescript';
 import wasm from '@rollup/plugin-wasm';
 
+const TEMP_BUILD = './dist/dts/index.js';
+
 export default [
 	{
 		input: './src/index.ts',
 		output: {
-			file: './dist/dts/index.js',
+			file: TEMP_BUILD,
 			format: 'esm',
 		},
 		plugins: [
@@ -25,6 +29,12 @@ export default [
 				targetPlatform: 'node'
 			}),
 			*/
+			{
+				name: 'postbuild-commands',
+				closeBundle: async () => {
+					await postBuildCommands()
+				}
+			},
 		],
 		external: [
 			'gl-matrix',
@@ -43,3 +53,13 @@ export default [
 		],
 	},
 ];
+
+
+async function postBuildCommands() {
+	fs.copyFile(TEMP_BUILD, './dist/index.js', err => { if (err) throw err });
+	return new Promise(resolve => child_process.exec(
+		'api-extractor run --local --verbose --typescript-compiler-folder ./node_modules/typescript ',
+		() => resolve("done"),
+	));
+
+}
