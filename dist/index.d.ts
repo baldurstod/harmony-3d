@@ -6358,7 +6358,10 @@ export declare class Entity {
         getTexture(repository: any, path: any, frame: any, needCubeMap?: boolean, srgb?: boolean): any;
         getTextureAsync(repository: any, path: any, frame: any, needCubeMap: any, defaultTexture: any, srgb?: boolean): Promise<any>;
         getInternalTextureName(): string;
-        addInternalTexture(texture?: Texture): (string | Texture)[];
+        addInternalTexture(texture?: Texture): {
+            name: string;
+            texture: Texture;
+        };
         setTexture(path: any, texture: any): void;
         removeTexture(path: any): void;
     }

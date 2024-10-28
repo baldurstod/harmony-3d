@@ -97,7 +97,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		let textureName = this.getInternalTextureName();
 		texture = texture ?? TextureManager.createTexture();//TODOv3: add params + create animated texture
 		this.setTexture(textureName, texture);
-		return [textureName, texture];
+		return { name: textureName, texture: texture };
 	}
 
 	setTexture(path, texture) {
