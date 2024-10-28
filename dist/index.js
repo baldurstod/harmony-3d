@@ -1712,7 +1712,7 @@ class Material {
     }
     toJSON() {
         let json = {
-            constructor: this.entityName,
+            constructor: this.constructor.getEntityName(),
         };
         //TODO
         json.parameters = this.parameters;
@@ -1763,14 +1763,8 @@ class Material {
             }
         }
     }
-    get entityName() {
-        return 'Material';
-    }
-    static get entityName() {
-        return 'Material';
-    }
     static getEntityName() {
-        return this.entityName;
+        return 'Material';
     }
     get shaderSource() {
         // TODO: remove this
@@ -4236,7 +4230,7 @@ class Mesh extends Entity {
             }
         }
     }
-    get entityName() {
+    static getEntityName() {
         return 'Static mesh';
     }
     is(s) {
@@ -11729,15 +11723,8 @@ class Light extends Entity {
     static set defaultTextureSize(textureSize) {
         defaultTextureSize = textureSize;
     }
-    get entityName() {
-        return 'Light';
-    }
-    static get entityName() {
-        return 'Light';
-    }
     static getEntityName() {
-        // TODO: remove next line, remove get entityName(), static get entityName() from this class and every decendant
-        return this.entityName;
+        return 'Light';
     }
     is(s) {
         return s == 'Light';
@@ -11864,10 +11851,7 @@ class SpotLight extends Light {
                 } } },
         });
     }
-    get entityName() {
-        return 'SpotLight';
-    }
-    static get entityName() {
+    static getEntityName() {
         return 'SpotLight';
     }
 }
@@ -13273,10 +13257,7 @@ class MeshBasicPbrMaterial extends Material {
     fromJSON(json) {
         super.fromJSON(json);
     }
-    get entityName() {
-        return 'MeshBasicPbrMaterial';
-    }
-    static get entityName() {
+    static getEntityName() {
         return 'MeshBasicPbrMaterial';
     }
 }
@@ -17290,7 +17271,7 @@ class SkeletalMesh extends Mesh {
             }
         }
     }
-    get entityName() {
+    static getEntityName() {
         return 'Skeletal mesh';
     }
 }
@@ -18084,10 +18065,7 @@ class Wireframe extends Entity {
     is(s) {
         return s == 'Wireframe';
     }
-    get entityName() {
-        return this.getEntityName();
-    }
-    getEntityName() {
+    static getEntityName() {
         return 'Wireframe';
     }
 }
@@ -18800,10 +18778,7 @@ class WireframeHelper extends Entity {
             wireframeAttribute.dirty = true;
         }
     }
-    get entityName() {
-        return this.getEntityName();
-    }
-    getEntityName() {
+    static getEntityName() {
         return 'Wireframe helper';
     }
 }
@@ -24971,7 +24946,7 @@ class Source2ModelInstance extends Entity {
             mesh.dispose();
         }
     }
-    get entityName() {
+    static getEntityName() {
         return 'Source 2 model';
     }
 }
@@ -26732,7 +26707,7 @@ class SceneExplorer {
     static #updateEntityElement(entity) {
         if (entity) {
             //this.#updateEntityTitle(entity);
-            this.#htmlName.innerText = entity.name ?? entity.entityName;
+            this.#htmlName.innerText = entity.name ?? entity.constructor.getEntityName();
             this.#htmlId.innerText = entity.id;
             this.#htmlPos.innerText = FormatArray(entity.position);
             this.#htmlQuat.innerText = FormatArray(entity.quaternion);
@@ -38768,7 +38743,7 @@ class SourceBSP extends World {
         }
         return null;
     }
-    get entityName() {
+    static getEntityName() {
         return 'BSP Map';
     }
 }
@@ -51840,7 +51815,7 @@ class Source2ParticleSystem extends Entity {
             reset: { i18n: '#reset', f: () => this.reset() },
         });
     }
-    get entityName() {
+    static getEntityName() {
         return 'Source 2 particle system';
     }
 }

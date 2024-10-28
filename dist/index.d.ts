@@ -3129,8 +3129,6 @@ export declare class Entity {
         static constructFromJSON(json: any): Promise<Light>;
         fromJSON(json: any): void;
         static set defaultTextureSize(textureSize: any);
-        get entityName(): string;
-        static get entityName(): string;
         static getEntityName(): string;
         is(s: string): boolean;
     }
@@ -3386,8 +3384,6 @@ export declare class Entity {
         removeUser(user: any): void;
         hasNoUser(): boolean;
         dispose(): void;
-        get entityName(): string;
-        static get entityName(): string;
         static getEntityName(): string;
         get shaderSource(): string;
         getShaderSource(): string;
@@ -3648,7 +3644,7 @@ export declare class Entity {
             };
         };
         raycast(raycaster: any, intersections: any): void;
-        get entityName(): string;
+        static getEntityName(): string;
         is(s: string): boolean;
     }
 
@@ -3692,8 +3688,7 @@ export declare class Entity {
         toJSON(): any;
         static constructFromJSON(json: any): Promise<MeshBasicPbrMaterial>;
         fromJSON(json: any): void;
-        get entityName(): string;
-        static get entityName(): string;
+        static getEntityName(): string;
     }
 
     export declare class MeshFlatMaterial extends Material {
@@ -6022,7 +6017,7 @@ export declare class Entity {
         toString(): string;
         prepareRayCasting(): void;
         raycast(raycaster: any, intersections: any): void;
-        get entityName(): string;
+        static getEntityName(): string;
     }
 
     export declare class Skeleton extends Entity {
@@ -6842,7 +6837,7 @@ export declare class Entity {
         getAttachement(name: any): any;
         static set animSpeed(speed: any);
         dispose(): void;
-        get entityName(): string;
+        static getEntityName(): string;
     }
 
     export declare class Source2ModelLoader {
@@ -7092,7 +7087,7 @@ export declare class Entity {
                 f: () => void;
             };
         };
-        get entityName(): string;
+        static getEntityName(): string;
     }
 
     export declare class Source2Pbr extends Source2Material {
@@ -7309,7 +7304,7 @@ export declare class Entity {
         addEntity(entity: any): void;
         addConnection(connection: any): void;
         getOBBSize(modelIndex: any): vec3;
-        get entityName(): string;
+        static getEntityName(): string;
     }
 
     export declare class SourceEngineBSPLoader extends SourceBinaryLoader {
@@ -8247,8 +8242,7 @@ export declare class Entity {
                 f: () => void;
             };
         };
-        get entityName(): string;
-        static get entityName(): string;
+        static getEntityName(): string;
     }
 
     export declare class SpotLightHelper extends Mesh {
@@ -8972,8 +8966,7 @@ export declare class Entity {
         parentChanged(parent: Entity | null): void;
         dispose(): void;
         is(s: string): boolean;
-        get entityName(): string;
-        getEntityName(): string;
+        static getEntityName(): string;
     }
 
     export declare class World extends Entity {
