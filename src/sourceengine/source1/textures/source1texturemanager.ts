@@ -5,6 +5,7 @@ import { TextureManager } from '../../../textures/texturemanager';
 
 import { TESTING } from '../../../buildoptions';
 import { TEXTURE_CLEANUP_DELAY } from '../../../constants';
+import { Texture } from '../../../textures/texture';
 
 let internalTextureId = 0;
 class Source1TextureManagerClass extends EventTarget {//TODO: keep event target ?
@@ -92,9 +93,9 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		return 'source1texturemanager_' + (++internalTextureId);
 	}
 
-	addInternalTexture(texture) {
+	addInternalTexture(texture?: Texture) {
 		let textureName = this.getInternalTextureName();
-		texture = texture || TextureManager.createTexture();//TODOv3: add params + create animated texture
+		texture = texture ?? TextureManager.createTexture();//TODOv3: add params + create animated texture
 		this.setTexture(textureName, texture);
 		return [textureName, texture];
 	}

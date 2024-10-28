@@ -41987,7 +41987,7 @@ class Source1TextureManagerClass extends EventTarget {
     }
     addInternalTexture(texture) {
         let textureName = this.getInternalTextureName();
-        texture = texture || TextureManager.createTexture(); //TODOv3: add params + create animated texture
+        texture = texture ?? TextureManager.createTexture(); //TODOv3: add params + create animated texture
         this.setTexture(textureName, texture);
         return [textureName, texture];
     }
