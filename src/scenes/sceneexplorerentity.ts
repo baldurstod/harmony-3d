@@ -4,6 +4,7 @@ import { pauseSVG, playSVG, restartSVG, visibilityOffSVG, visibilityOnSVG } from
 import { EntityObserver, CHILD_ADDED, CHILD_REMOVED, PROPERTY_CHANGED, ENTITY_DELETED } from '../entities/entityobserver';
 
 import '../css/sceneexplorerentity.css';
+import { Entity } from '../entities/entity';
 
 export class SceneExplorerEntity extends HTMLElement {
 	#doOnce;
@@ -200,7 +201,8 @@ export class SceneExplorerEntity extends HTMLElement {
 	#update() {
 		const entity = this.#entity;
 		if (entity) {
-			this.#htmlTitle.innerText = entity.name ? `${entity.name} (${entity.entityName})` : entity.entityName;
+			const className = (entity.constructor as typeof Entity).getEntityName();
+			this.#htmlTitle.innerText = entity.name ? `${entity.name} (${className})` : className;
 		}
 	}
 

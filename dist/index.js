@@ -18600,7 +18600,8 @@ class SceneExplorerEntity extends HTMLElement {
     #update() {
         const entity = this.#entity;
         if (entity) {
-            this.#htmlTitle.innerText = entity.name ? `${entity.name} (${entity.entityName})` : entity.entityName;
+            const className = entity.constructor.getEntityName();
+            this.#htmlTitle.innerText = entity.name ? `${entity.name} (${className})` : className;
         }
     }
     static #updateEntityVisibility(entity) {
