@@ -274,7 +274,7 @@ export class Mesh extends Entity {
 		}
 	}
 
-	get entityName() {
+	static getEntityName() {
 		return 'Static mesh';
 	}
 

@@ -66,11 +66,8 @@ export class WireframeHelper extends Entity {
 		}
 	}
 
-	get entityName() {
-		return this.getEntityName();
-	}
 
-	getEntityName() {
+	static getEntityName() {
 		return 'Wireframe helper';
 	}
 }

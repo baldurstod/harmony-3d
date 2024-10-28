@@ -315,7 +315,7 @@ export class SceneExplorer {
 	static #updateEntityElement(entity) {
 		if (entity) {
 			//this.#updateEntityTitle(entity);
-			this.#htmlName.innerText = entity.name ?? entity.entityName;
+			this.#htmlName.innerText = entity.name ?? (entity.constructor as typeof Entity).getEntityName();
 			this.#htmlId.innerText = entity.id;
 			this.#htmlPos.innerText = FormatArray(entity.position);
 			this.#htmlQuat.innerText = FormatArray(entity.quaternion);

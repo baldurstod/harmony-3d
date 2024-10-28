@@ -90,11 +90,7 @@ export class Wireframe extends Entity {
 		return s == 'Wireframe';
 	}
 
-	get entityName() {
-		return this.getEntityName();
-	}
-
-	getEntityName() {
+	static getEntityName() {
 		return 'Wireframe';
 	}
 }

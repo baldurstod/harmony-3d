@@ -528,7 +528,7 @@ export class Source2ParticleSystem extends Entity {
 		});
 	}
 
-	get entityName() {
+	static getEntityName() {
 		return 'Source 2 particle system';
 	}
 }

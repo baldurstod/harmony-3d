@@ -590,7 +590,7 @@ export class SourceBSP extends World {
 		return null;
 	}
 
-	get entityName() {
+	static getEntityName() {
 		return 'BSP Map';
 	}
 }

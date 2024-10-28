@@ -496,7 +496,7 @@ export class SkeletalMesh extends Mesh {
 		}
 	}
 
-	get entityName() {
+	static getEntityName() {
 		return 'Skeletal mesh';
 	}
 }

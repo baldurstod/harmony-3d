@@ -391,7 +391,7 @@ export class Material {
 
 	toJSON() {
 		let json: any = {
-			constructor: this.entityName,
+			constructor: (this.constructor as typeof Material).getEntityName(),
 		};
 		//TODO
 		json.parameters = this.parameters;
@@ -455,16 +455,8 @@ export class Material {
 		}
 	}
 
-	get entityName() {
-		return 'Material';
-	}
-
-	static get entityName() {
-		return 'Material';
-	}
-
 	static getEntityName(): string {
-		return this.entityName;
+		return 'Material';
 	}
 
 	get shaderSource(): string {

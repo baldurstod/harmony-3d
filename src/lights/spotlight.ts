@@ -68,11 +68,7 @@ export class SpotLight extends Light {
 		});
 	}
 
-	get entityName() {
-		return 'SpotLight';
-	}
-
-	static get entityName() {
+	static getEntityName() {
 		return 'SpotLight';
 	}
 }

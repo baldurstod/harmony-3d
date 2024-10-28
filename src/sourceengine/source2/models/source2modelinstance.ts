@@ -408,7 +408,7 @@ export class Source2ModelInstance extends Entity {
 		}
 	}
 
-	get entityName() {
+	static getEntityName() {
 		return 'Source 2 model';
 	}
 }

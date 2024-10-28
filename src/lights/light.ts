@@ -95,17 +95,7 @@ export class Light extends Entity {
 		defaultTextureSize = textureSize;
 	}
 
-	get entityName() {
-		return 'Light';
-	}
-
-	static get entityName() {
-		return 'Light';
-	}
-
 	static getEntityName() {
-		// TODO: remove next line, remove get entityName(), static get entityName() from this class and every decendant
-		return this.entityName;
 		return 'Light';
 	}
 
