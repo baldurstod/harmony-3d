@@ -480,7 +480,7 @@ export class Source1ModelInstance extends Entity {
 		return 'Source1ModelInstance ' + super.toString();
 	}
 
-	attachSystem(system, attachementName = '', cpIndex = 0, offset) {
+	attachSystem(system, attachementName = '', cpIndex = 0, offset?: vec3) {
 		this.addChild(system);
 
 		let attachement = this.getAttachement(attachementName);

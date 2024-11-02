@@ -6108,7 +6108,7 @@ export declare class Entity {
         setBodyPartIdModel(bodyPartId: any, modelId: any): void;
         setBodyPartModel(bodyPartName: any, modelId: any): void;
         toString(): string;
-        attachSystem(system: any, attachementName: string, cpIndex: number, offset: any): void;
+        attachSystem(system: any, attachementName?: string, cpIndex?: number, offset?: vec3): void;
         attachSystemToBone(system: any, boneName: any, offset: any): void;
         getAttachement(attachementName: any): any;
         getBoneByName(boneName: any): any;
