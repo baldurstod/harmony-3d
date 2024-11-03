@@ -2,10 +2,10 @@ import { Camera } from '../cameras/camera';
 import { Graphics } from '../graphics/graphics';
 
 export class CameraControl {
-	#camera: Camera;
+	#camera?: Camera;
 	#enabled = true;
-	#htmlElement: HTMLElement;
-	constructor(camera: Camera, htmlElement: HTMLElement) {
+	#htmlElement?: HTMLElement;
+	constructor(camera?: Camera, htmlElement?: HTMLElement) {
 		this.#camera = camera;
 		this.#htmlElement = htmlElement;
 	}

@@ -693,7 +693,7 @@ export declare class Camera extends Entity {
 
 declare class CameraControl {
     #private;
-    constructor(camera: Camera, htmlElement: HTMLElement);
+    constructor(camera?: Camera, htmlElement?: HTMLElement);
     get htmlElement(): HTMLElement;
     set enabled(enabled: boolean);
     get enabled(): boolean;
@@ -4252,7 +4252,7 @@ export declare class Entity {
 
     export declare class OrbitControl extends CameraControl {
         #private;
-        constructor(camera: any, htmlElement: any);
+        constructor(camera?: Camera, htmlElement?: HTMLElement);
         set target(target: Target);
         get target(): Target;
         setTargetPosition(position: any): void;

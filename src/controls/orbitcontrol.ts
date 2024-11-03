@@ -5,6 +5,7 @@ import { Spherical } from './spherical';
 import { Target } from '../objects/target';
 import { TESTING } from '../buildoptions';
 import { GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
+import { Camera } from '../cameras/camera';
 
 // This set of controls performs orbiting, dollying(zooming), and panning.
 // Unlike TrackballControls, it maintains the 'up' direction object.up(+Y by default).
@@ -103,7 +104,7 @@ export class OrbitControl extends CameraControl {
 	#dollyEnd = vec2.create();
 	#dollyDelta = vec2.create();
 
-	constructor(camera, htmlElement) {
+	constructor(camera?: Camera, htmlElement?: HTMLElement) {
 		super(camera, htmlElement);
 
 		//TODO end
