@@ -5894,6 +5894,7 @@ const GraphicsEvents = new (function () {
                 return GraphicsEvents.#instance;
             }
             super();
+            GraphicsEvents.#instance = this;
         }
         tick(delta, time) {
             this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time } }));
@@ -26520,6 +26521,7 @@ class SceneExplorer {
         if (SceneExplorer.#instance) {
             return SceneExplorer.#instance;
         }
+        SceneExplorer.#instance = this;
         initEntitySubmenu();
         SceneExplorerEntity.explorer = this;
         this.#initHtml();

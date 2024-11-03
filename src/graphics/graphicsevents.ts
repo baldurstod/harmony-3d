@@ -17,6 +17,7 @@ export const GraphicsEvents = new (function () {
 				return GraphicsEvents.#instance;
 			}
 			super();
+			GraphicsEvents.#instance = this;
 		}
 
 		tick(delta: number, time: number) {

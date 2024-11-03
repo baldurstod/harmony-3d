@@ -96,6 +96,7 @@ export class SceneExplorer {
 		if (SceneExplorer.#instance) {
 			return SceneExplorer.#instance;
 		}
+		SceneExplorer.#instance = this;
 		initEntitySubmenu();
 		SceneExplorerEntity.explorer = this;
 		this.#initHtml();
