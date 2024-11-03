@@ -26488,34 +26488,39 @@ const ENTITIES = [
     'Source2ModelInstance',
 ];
 class SceneExplorer {
-    static #scene;
-    static #selectedEntity;
-    static #manipulator;
-    static #skeletonHelper;
-    static #htmlProperties;
-    static #htmlElement;
-    static #htmlHeader;
-    static htmlFileSelector;
-    static #htmlNameFilter;
-    static htmlContextMenu;
-    static #htmlTypeFilter;
-    static #shadowRoot;
-    static #htmlName;
-    static #htmlId;
-    static #htmlPos;
-    static #htmlQuat;
-    static #htmlScale;
-    static #htmlWorldPos;
-    static #htmlWorldQuat;
-    static #htmlWorldScale;
-    static #htmlVisible;
-    static #htmlScene;
-    static #filterName = '';
-    static #filterType = '';
-    static #isVisible = false;
-    static #selectedHtml;
-    static selectedEntity;
-    static {
+    static #instance;
+    #scene;
+    #selectedEntity;
+    #manipulator;
+    #skeletonHelper;
+    #htmlProperties;
+    #htmlElement;
+    #htmlHeader;
+    htmlFileSelector;
+    #htmlNameFilter;
+    htmlContextMenu;
+    #htmlTypeFilter;
+    #shadowRoot;
+    #htmlName;
+    #htmlId;
+    #htmlPos;
+    #htmlQuat;
+    #htmlScale;
+    #htmlWorldPos;
+    #htmlWorldQuat;
+    #htmlWorldScale;
+    #htmlVisible;
+    #htmlScene;
+    #filterName = '';
+    #filterType = '';
+    #isVisible = false;
+    #selectedHtml;
+    selectedEntity;
+    constructor() {
+        if (SceneExplorer.#instance) {
+            return SceneExplorer.#instance;
+        }
+        initEntitySubmenu();
         SceneExplorerEntity.explorer = this;
         this.#initHtml();
         this.#manipulator = new Manipulator({ visible: false });
@@ -26532,24 +26537,24 @@ class SceneExplorer {
         EntityObserver.addEventListener(PROPERTY_CHANGED, (event) => this.#handlePropertyChanged(event.detail));
         SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone));
     }
-    static set scene(scene) {
+    set scene(scene) {
         this.#scene = scene;
         this.#selectedEntity = scene;
         this.applyFilter();
     }
-    static get scene() {
+    get scene() {
         return this.#scene;
     }
-    static #refreshScene() {
+    #refreshScene() {
         if (this.#scene) {
             this.#htmlScene.innerHTML = '';
             this.#htmlScene.append(this.#createEntityElement(this.#scene, true));
         }
     }
-    static get htmlElement() {
+    get htmlElement() {
         return this.#htmlElement;
     }
-    static #initHtml() {
+    #initHtml() {
         this.#htmlElement = createElement('scene-explorer', { attributes: { tabindex: 1, }, });
         this.#shadowRoot = this.#htmlElement.attachShadow({ mode: 'closed' });
         I18n.observeElement(this.#shadowRoot);
@@ -26568,7 +26573,7 @@ class SceneExplorer {
         ShortcutHandler.addContext('scene-explorer,scene-explorer-files', this.htmlFileSelector);
         ShortcutHandler.addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
     }
-    static #initHtmlHeader() {
+    #initHtmlHeader() {
         this.#htmlNameFilter = createElement('input');
         this.#htmlHeader.append(this.#htmlNameFilter);
         this.#htmlTypeFilter = createElement('select');
@@ -26611,13 +26616,13 @@ class SceneExplorer {
         htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
         this.#populateTypeFilter();
     }
-    static #populateTypeFilter() {
+    #populateTypeFilter() {
         for (let type of ENTITIES) {
             let option = createElement('option', { innerHTML: type, value: type });
             this.#htmlTypeFilter.append(option);
         }
     }
-    static applyFilter() {
+    applyFilter() {
         if (this.#isVisible) {
             if (this.#filterName == '' && this.#filterType == '') {
                 this.#refreshScene();
@@ -26635,10 +26640,10 @@ class SceneExplorer {
             }
         }
     }
-    static #matchFilter(entity, name, type) {
+    #matchFilter(entity, name, type) {
         return (name ? entity.name && entity.name.toLowerCase().includes(name) : true) && (type ? entity['is' + type] : true);
     }
-    static #initHtmlProperties() {
+    #initHtmlProperties() {
         this.#htmlName = createElement('div', { class: 'scene-explorer-entity-title' });
         const htmlIdLabel = createElement('label', { i18n: '#id' });
         this.#htmlId = createElement('div', { class: 'scene-explorer-entity-id' });
@@ -26665,7 +26670,7 @@ class SceneExplorer {
         //this.htmlVisible.addEventListener('input', () => {if (this._currentEntity) this._currentEntity.toggleVisibility()});
         this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale, htmlVisibleLabel, this.#htmlVisible);
     }
-    static #updateHtml() {
+    #updateHtml() {
         if (this.#isVisible) {
             this.#updateEntityElement(this.#selectedEntity);
             /*for (let [element, entity] of this._activeEntities) {
@@ -26681,14 +26686,14 @@ class SceneExplorer {
             }
         }
     }
-    static #createEntityElement(entity, createExpanded = false) {
+    #createEntityElement(entity, createExpanded = false) {
         let htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
         if (createExpanded) {
             htmlEntityElement.expand();
         }
         return htmlEntityElement;
     }
-    static #selectEntity(entity, htmlEntityElement) {
+    #selectEntity(entity, htmlEntityElement) {
         this.#selectedEntity = entity;
         entity.addChild(this.#manipulator);
         if (this.#selectedHtml) {
@@ -26697,7 +26702,7 @@ class SceneExplorer {
         htmlEntityElement.classList.add('selected');
         this.#selectedHtml = htmlEntityElement;
     }
-    static selectEntity(entity) {
+    selectEntity(entity) {
         this.#selectedEntity = entity;
         entity.addChild(this.#manipulator);
         entity.addChild(this.#skeletonHelper);
@@ -26705,7 +26710,7 @@ class SceneExplorer {
             this.#updateEntityElement(entity);
         }
     }
-    static #updateEntityElement(entity) {
+    #updateEntityElement(entity) {
         if (entity) {
             //this.#updateEntityTitle(entity);
             this.#htmlName.innerText = entity.name ?? entity.constructor.getEntityName();
@@ -26725,11 +26730,11 @@ class SceneExplorer {
             }
         }
     }
-    static getEntityHtml(entity) {
+    getEntityHtml(entity) {
         throw 'remove me';
         //return this._entitiesHtml.get(entity);
     }
-    static #handlePropertyChanged(detail) {
+    #handlePropertyChanged(detail) {
         if (this.#isVisible && detail.entity == this.#selectedEntity) {
             this.#updateEntityElement(this.#selectedEntity);
         }
@@ -26742,126 +26747,128 @@ class SceneExplorer {
         }*/
     }
 }
-Entity.addSubMenu = [
-    {
-        i18n: '#primitives', submenu: [
-            { i18n: '#box', f: (entity) => entity.addChild(new Box()) },
-            { i18n: '#cone', f: (entity) => entity.addChild(new Cone()) },
-            { i18n: '#cylinder', f: (entity) => entity.addChild(new Cylinder()) },
-            { i18n: '#fullscreenquad', f: (entity) => entity.addChild(new FullScreenQuad()) },
-            { i18n: '#metaballs', f: (entity) => entity.addChild(new Metaballs()) },
-            { i18n: '#plane', f: (entity) => entity.addChild(new Plane({ width: 1000, height: 1000 })) },
-            { i18n: '#sphere', f: (entity) => entity.addChild(new Sphere()) },
-            { i18n: '#text', f: (entity) => entity.addChild(new Text3D()) },
-        ]
-    },
-    {
-        i18n: '#entities', submenu: [
-            { i18n: '#group', f: (entity) => entity.addChild(new Group()) },
-            { i18n: '#target', f: (entity) => entity.addChild(new Target()) },
-            { i18n: '#keeponlylastchild', f: (entity) => entity.addChild(new KeepOnlyLastChild()) },
-            { i18n: '#decal', f: (entity) => entity.addChild(new Decal()) },
-        ]
-    },
-    {
-        i18n: '#lights', submenu: [
-            { i18n: '#ambient_light', f: (entity) => entity.addChild(new AmbientLight()) },
-            { i18n: '#point_light', f: (entity) => entity.addChild(new PointLight()) },
-            { i18n: '#spot_light', f: (entity) => entity.addChild(new SpotLight()) },
-        ]
-    },
-    { i18n: '#camera', f: (entity) => ContextObserver.observe(GraphicsEvents, entity.addChild(new Camera())) },
-    {
-        i18n: '#control', submenu: [
-            {
-                i18n: '#rotation_control', f: (entity) => {
-                    let control = new RotationControl();
-                    let parent = entity.parent;
-                    if (parent) {
-                        parent.addChild(control);
-                    }
-                    control.addChild(entity);
-                }
-            },
-            {
-                i18n: '#translation_control', f: (entity) => {
-                    let control = new TranslationControl();
-                    let parent = entity.parent;
-                    if (parent) {
-                        parent.addChild(control);
-                    }
-                    control.addChild(entity);
-                }
-            },
-        ]
-    },
-    { i18n: '#helper', f: (entity) => { let helper = getHelper(entity); if (helper) {
-            entity.addChild(helper);
-        } } },
-    { i18n: '#wireframe', f: (entity) => entity.addChild(new WireframeHelper()) },
-    { i18n: '#wireframe2', f: (entity) => entity.addChild(new Wireframe()) },
-    { i18n: '#hitboxes', f: (entity) => entity.addChild(new HitboxHelper()) },
-    {
-        i18n: '#source1', submenu: [
-            {
-                i18n: '#model', f: async (entity) => {
-                    show(SceneExplorer.htmlFileSelector);
-                    Interaction.selectFile(SceneExplorer.htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
-                        console.error(modelName);
-                        //let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
-                        let instance = await Source1ModelManager.createInstance(repository, modelName, true);
-                        (SceneExplorer.selectedEntity ?? entity).addChild(instance);
-                        let seq = instance.sourceModel.mdl.getSequenceById(0);
-                        if (seq) {
-                            instance.playSequence(seq.name);
+function initEntitySubmenu() {
+    Entity.addSubMenu = [
+        {
+            i18n: '#primitives', submenu: [
+                { i18n: '#box', f: (entity) => entity.addChild(new Box()) },
+                { i18n: '#cone', f: (entity) => entity.addChild(new Cone()) },
+                { i18n: '#cylinder', f: (entity) => entity.addChild(new Cylinder()) },
+                { i18n: '#fullscreenquad', f: (entity) => entity.addChild(new FullScreenQuad()) },
+                { i18n: '#metaballs', f: (entity) => entity.addChild(new Metaballs()) },
+                { i18n: '#plane', f: (entity) => entity.addChild(new Plane({ width: 1000, height: 1000 })) },
+                { i18n: '#sphere', f: (entity) => entity.addChild(new Sphere()) },
+                { i18n: '#text', f: (entity) => entity.addChild(new Text3D()) },
+            ]
+        },
+        {
+            i18n: '#entities', submenu: [
+                { i18n: '#group', f: (entity) => entity.addChild(new Group()) },
+                { i18n: '#target', f: (entity) => entity.addChild(new Target()) },
+                { i18n: '#keeponlylastchild', f: (entity) => entity.addChild(new KeepOnlyLastChild()) },
+                { i18n: '#decal', f: (entity) => entity.addChild(new Decal()) },
+            ]
+        },
+        {
+            i18n: '#lights', submenu: [
+                { i18n: '#ambient_light', f: (entity) => entity.addChild(new AmbientLight()) },
+                { i18n: '#point_light', f: (entity) => entity.addChild(new PointLight()) },
+                { i18n: '#spot_light', f: (entity) => entity.addChild(new SpotLight()) },
+            ]
+        },
+        { i18n: '#camera', f: (entity) => ContextObserver.observe(GraphicsEvents, entity.addChild(new Camera())) },
+        {
+            i18n: '#control', submenu: [
+                {
+                    i18n: '#rotation_control', f: (entity) => {
+                        let control = new RotationControl();
+                        let parent = entity.parent;
+                        if (parent) {
+                            parent.addChild(control);
                         }
-                    });
-                }
-            },
-            {
-                i18n: '#particle_system', f: async (entity) => {
-                    show(SceneExplorer.htmlFileSelector);
-                    Interaction.selectFile(SceneExplorer.htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
-                        let systemName = systemPath.split('/');
-                        let sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
-                        sys.start();
-                        (SceneExplorer.selectedEntity ?? entity).addChild(sys);
-                    });
-                }
-            },
-        ]
-    },
-    {
-        i18n: '#source2', submenu: [
-            {
-                i18n: '#model', f: async (entity) => {
-                    show(SceneExplorer.htmlFileSelector);
-                    Interaction.selectFile(SceneExplorer.htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
-                        console.error(modelName);
-                        let instance = await Source2ModelManager.createInstance(repository, modelName, true);
-                        (SceneExplorer.selectedEntity ?? entity).addChild(instance);
-                        /*let seq = instance.sourceModel.mdl.getSequenceById(0);
-                        if (seq) {
-                            instance.playSequence(seq.name);
-                        }*/
-                    });
-                }
-            },
-            {
-                i18n: '#particle_system', f: async (entity) => {
-                    show(SceneExplorer.htmlFileSelector);
-                    Interaction.selectFile(SceneExplorer.htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
-                        let systemName = systemPath.split('/');
-                        let sys = await Source2ParticleManager.getSystem(repository, systemPath);
-                        sys.name = systemName[systemName.length - 1];
-                        sys.start();
-                        (SceneExplorer.selectedEntity ?? entity).addChild(sys);
-                    });
-                }
-            },
-        ]
-    },
-];
+                        control.addChild(entity);
+                    }
+                },
+                {
+                    i18n: '#translation_control', f: (entity) => {
+                        let control = new TranslationControl();
+                        let parent = entity.parent;
+                        if (parent) {
+                            parent.addChild(control);
+                        }
+                        control.addChild(entity);
+                    }
+                },
+            ]
+        },
+        { i18n: '#helper', f: (entity) => { let helper = getHelper(entity); if (helper) {
+                entity.addChild(helper);
+            } } },
+        { i18n: '#wireframe', f: (entity) => entity.addChild(new WireframeHelper()) },
+        { i18n: '#wireframe2', f: (entity) => entity.addChild(new Wireframe()) },
+        { i18n: '#hitboxes', f: (entity) => entity.addChild(new HitboxHelper()) },
+        {
+            i18n: '#source1', submenu: [
+                {
+                    i18n: '#model', f: async (entity) => {
+                        show(new SceneExplorer().htmlFileSelector);
+                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
+                            console.error(modelName);
+                            //let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
+                            let instance = await Source1ModelManager.createInstance(repository, modelName, true);
+                            (new SceneExplorer().selectedEntity ?? entity).addChild(instance);
+                            let seq = instance.sourceModel.mdl.getSequenceById(0);
+                            if (seq) {
+                                instance.playSequence(seq.name);
+                            }
+                        });
+                    }
+                },
+                {
+                    i18n: '#particle_system', f: async (entity) => {
+                        show(new SceneExplorer().htmlFileSelector);
+                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
+                            let systemName = systemPath.split('/');
+                            let sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
+                            sys.start();
+                            (new SceneExplorer().selectedEntity ?? entity).addChild(sys);
+                        });
+                    }
+                },
+            ]
+        },
+        {
+            i18n: '#source2', submenu: [
+                {
+                    i18n: '#model', f: async (entity) => {
+                        show(new SceneExplorer().htmlFileSelector);
+                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
+                            console.error(modelName);
+                            let instance = await Source2ModelManager.createInstance(repository, modelName, true);
+                            (new SceneExplorer().selectedEntity ?? entity).addChild(instance);
+                            /*let seq = instance.sourceModel.mdl.getSequenceById(0);
+                            if (seq) {
+                                instance.playSequence(seq.name);
+                            }*/
+                        });
+                    }
+                },
+                {
+                    i18n: '#particle_system', f: async (entity) => {
+                        show(new SceneExplorer().htmlFileSelector);
+                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
+                            let systemName = systemPath.split('/');
+                            let sys = await Source2ParticleManager.getSystem(repository, systemPath);
+                            sys.name = systemName[systemName.length - 1];
+                            sys.start();
+                            (new SceneExplorer().selectedEntity ?? entity).addChild(sys);
+                        });
+                    }
+                },
+            ]
+        },
+    ];
+}
 Entity.editMaterial = function (entity) {
     MaterialEditor.editEntity(entity);
     /*

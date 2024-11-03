@@ -5729,15 +5729,16 @@ export declare class Entity {
 
     export declare class SceneExplorer {
         #private;
-        static htmlFileSelector: HTMLElement;
-        static htmlContextMenu: HTMLElement;
-        static selectedEntity: Entity;
-        static set scene(scene: any);
-        static get scene(): any;
-        static get htmlElement(): any;
-        static applyFilter(): void;
-        static selectEntity(entity: any): void;
-        static getEntityHtml(entity: any): void;
+        htmlFileSelector: HTMLElement;
+        htmlContextMenu: HTMLElement;
+        selectedEntity: Entity;
+        constructor();
+        set scene(scene: any);
+        get scene(): any;
+        get htmlElement(): any;
+        applyFilter(): void;
+        selectEntity(entity: any): void;
+        getEntityHtml(entity: any): void;
     }
 
     export declare class Select extends Node_2 {
