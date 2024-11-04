@@ -14850,6 +14850,18 @@ class NodeImageEditorGui {
             adoptStyle: nodeImageEditorCSS,
         });
         I18n.observeElement(this.#shadowRoot);
+        createElement('div', {
+            class: 'node-image-editor-header',
+            parent: this.#shadowRoot,
+            childs: [
+                createElement('input', {
+                    class: 'node-image-editor-node-filter',
+                    events: {
+                        input: (event) => { this.#filter.node = event.target.value; this.#refreshFilter(); },
+                    }
+                }),
+            ]
+        });
         this.#htmlNodes = createElement('div', {
             class: 'node-image-editor-nodes',
             parent: this.#shadowRoot,
@@ -14860,6 +14872,8 @@ class NodeImageEditorGui {
             parent: this.#htmlNodes,
         });
         this.#context = this.#canvas.getContext('2d');
+        this.#initResizeObserver();
+        this.#setCanvasSize();
     }
     set nodeImageEditor(nodeImageEditor) {
         console.warn('set nodeImageEditor is deprecated, use setNodeImageEditor instead');
@@ -14877,20 +14891,6 @@ class NodeImageEditorGui {
     }
     get htmlElement() {
         return this.#shadowRoot.host;
-    }
-    #initHtml() {
-        //this.#shadowRoot = this.#htmlElement.attachShadow({ mode: 'closed' });
-        //shadowRootStyle(this.#shadowRoot, nodeImageEditorCSS);
-        //I18n.observeElement(this.#shadowRoot);
-        let htmlHeader = createElement('div', {
-            class: 'node-image-editor-header',
-            parent: this.#shadowRoot,
-        });
-        let htmlNodeFilter = createElement('input', { class: 'node-image-editor-node-filter' });
-        htmlNodeFilter.addEventListener('input', (event) => { this.#filter.node = event.target.value; this.#refreshFilter(); });
-        htmlHeader.append(htmlNodeFilter);
-        this.#initResizeObserver();
-        this.#setCanvasSize();
     }
     #setCanvasSize() {
         this.#canvas.height = this.#htmlNodes.scrollHeight;
