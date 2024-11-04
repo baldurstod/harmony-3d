@@ -4062,8 +4062,8 @@ export declare class Entity {
         #private;
         constructor(nodeImageEditor?: NodeImageEditor);
         set nodeImageEditor(nodeImageEditor: NodeImageEditor);
-        setNodeImageEditor(nodeImageEditor: NodeImageEditor): void;
-        get htmlElement(): any;
+        setNodeImageEditor(nodeImageEditor?: NodeImageEditor): void;
+        get htmlElement(): HTMLElement;
     }
 
     export declare class NodeImageEditorMaterial extends Material {
@@ -8994,12 +8994,12 @@ export declare class Entity {
     }
 
     export declare const Zstd: {
-        "__#131@#webAssembly": any;
-        "__#131@#HEAPU8": Uint8Array;
+        "__#149@#webAssembly": any;
+        "__#149@#HEAPU8": Uint8Array;
         decompress(compressedDatas: any): Promise<Uint8Array>;
         decompress_ZSTD(compressedDatas: any, uncompressedDatas: any): Promise<any>;
         getWebAssembly(): Promise<any>;
-        "__#131@#initHeap"(): void;
+        "__#149@#initHeap"(): void;
     };
 
     export { }

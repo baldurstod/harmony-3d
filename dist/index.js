@@ -1,5 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { createElement, hide, display, show, toggle, shadowRootStyle, I18n } from 'harmony-ui';
+import { createElement, hide, display, show, toggle, I18n, shadowRootStyle } from 'harmony-ui';
 import 'harmony-ui/dist/define/harmony-color-picker';
 import { SaveFile } from 'harmony-browser-utils';
 import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
@@ -14831,10 +14831,9 @@ var nodeImageEditorCSS = ":host {\n\tbackground-color: #000000FF;\n\twidth: 100%
 
 class NodeImageEditorGui {
     #filter = {};
-    #htmlElement;
     #shadowRoot;
     #imageEditorChanged;
-    #refreshTimeout;
+    #refreshTimeout = 0;
     #nodesGui = new Map();
     #nodeImageEditor;
     #htmlNodes;
@@ -14845,8 +14844,22 @@ class NodeImageEditorGui {
             clearTimeout(this.#refreshTimeout);
             this.#refreshTimeout = setTimeout(() => this.#refreshHtml(), DELAY_BEFORE_REFRESH);
         };
-        this.nodeImageEditor = nodeImageEditor;
-        this.#initHtml();
+        this.setNodeImageEditor(nodeImageEditor);
+        this.#shadowRoot = createElement('node-image-editor', {
+            attachShadow: { mode: 'closed' },
+            adoptStyle: nodeImageEditorCSS,
+        });
+        I18n.observeElement(this.#shadowRoot);
+        this.#htmlNodes = createElement('div', {
+            class: 'node-image-editor-nodes',
+            parent: this.#shadowRoot,
+        });
+        this.#canvas = createElement('canvas', {
+            class: 'node-image-editor-canvas',
+            style: 'z-index:1000;position:absolute;',
+            parent: this.#htmlNodes,
+        });
+        this.#context = this.#canvas.getContext('2d');
     }
     set nodeImageEditor(nodeImageEditor) {
         console.warn('set nodeImageEditor is deprecated, use setNodeImageEditor instead');
@@ -14860,16 +14873,15 @@ class NodeImageEditorGui {
             this.#nodeImageEditor.removeEventListener('*', this.#imageEditorChanged);
         }
         this.#nodeImageEditor = nodeImageEditor;
-        this.#nodeImageEditor.addEventListener('*', this.#imageEditorChanged);
+        this.#nodeImageEditor?.addEventListener('*', this.#imageEditorChanged);
     }
     get htmlElement() {
-        return this.#htmlElement;
+        return this.#shadowRoot.parentElement;
     }
     #initHtml() {
-        this.#htmlElement = createElement('node-image-editor');
-        this.#shadowRoot = this.#htmlElement.attachShadow({ mode: 'closed' });
-        shadowRootStyle(this.#shadowRoot, nodeImageEditorCSS);
-        I18n.observeElement(this.#shadowRoot);
+        //this.#shadowRoot = this.#htmlElement.attachShadow({ mode: 'closed' });
+        //shadowRootStyle(this.#shadowRoot, nodeImageEditorCSS);
+        //I18n.observeElement(this.#shadowRoot);
         let htmlHeader = createElement('div', {
             class: 'node-image-editor-header',
             parent: this.#shadowRoot,
@@ -14877,13 +14889,6 @@ class NodeImageEditorGui {
         let htmlNodeFilter = createElement('input', { class: 'node-image-editor-node-filter' });
         htmlNodeFilter.addEventListener('input', (event) => { this.#filter.node = event.target.value; this.#refreshFilter(); });
         htmlHeader.append(htmlNodeFilter);
-        this.#htmlNodes = createElement('div', {
-            class: 'node-image-editor-nodes',
-            parent: this.#shadowRoot,
-        });
-        this.#canvas = createElement('canvas', { class: 'node-image-editor-canvas', style: 'z-index:1000;position:absolute;' });
-        this.#context = this.#canvas.getContext('2d');
-        this.#htmlNodes.append(this.#canvas);
         this.#initResizeObserver();
         this.#setCanvasSize();
     }
@@ -14899,18 +14904,20 @@ class NodeImageEditorGui {
             });
         };
         const resizeObserver = new ResizeObserver(callback);
-        resizeObserver.observe(this.#canvas.parentElement);
+        resizeObserver.observe(this.#htmlNodes);
     }
     #refreshHtml() {
-        this.#htmlNodes.innerHTML = '';
+        this.#htmlNodes.innerText = '';
         this.#htmlNodes.append(this.#canvas);
-        for (let node of this.#nodeImageEditor.getNodes()) {
-            let nodeGui = this.#nodesGui.get(node);
-            if (!nodeGui) {
-                nodeGui = new NodeGui(this, node);
-                this.#nodesGui.set(node, nodeGui);
+        if (this.#nodeImageEditor) {
+            for (let node of this.#nodeImageEditor.getNodes()) {
+                let nodeGui = this.#nodesGui.get(node);
+                if (!nodeGui) {
+                    nodeGui = new NodeGui(this, node);
+                    this.#nodesGui.set(node, nodeGui);
+                }
+                this.#htmlNodes.append(nodeGui.html);
             }
-            this.#htmlNodes.append(nodeGui.html);
         }
         //TODO: remove old nodes from this.#nodesGui
         this.#refreshFilter();
@@ -14919,16 +14926,20 @@ class NodeImageEditorGui {
         this.#htmlNodes.innerHTML = '';
         this.#htmlNodes.append(this.#canvas);
         let nodes = new Map();
-        for (let node of this.#nodeImageEditor.getNodes()) {
-            let nodeGui = this.#nodesGui.get(node);
-            let l = node.successorsLength();
-            //nodeGui.html.style.right = l * WIDTH + 'px';
-            let s = nodes.get(l);
-            if (!s) {
-                s = [];
-                nodes.set(l, s);
+        if (this.#nodeImageEditor) {
+            for (let node of this.#nodeImageEditor.getNodes()) {
+                let nodeGui = this.#nodesGui.get(node);
+                let l = node.successorsLength();
+                //nodeGui.html.style.right = l * WIDTH + 'px';
+                let s = nodes.get(l);
+                if (!s) {
+                    s = [];
+                    nodes.set(l, s);
+                }
+                if (nodeGui) {
+                    s.push(nodeGui);
+                }
             }
-            s.push(nodeGui);
         }
         nodes[Symbol.iterator] = function* () {
             yield* [...this.entries()].sort((a, b) => {
@@ -14956,11 +14967,11 @@ class NodeImageEditorGui {
             let p1Weight = 1;
             let p2Weight = 1;
             if (p1BoundingRect.height == 0 || p1BoundingRect.width == 0) {
-                p1BoundingRect = p1.parentNode.parentNode.parentNode.getBoundingClientRect();
+                p1BoundingRect = p1?.parentNode?.parentNode?.parentNode?.getBoundingClientRect();
                 p1Weight = 2;
             }
             if (p2BoundingRect.height == 0 || p2BoundingRect.width == 0) {
-                p2BoundingRect = p2.parentNode.parentNode.parentNode.getBoundingClientRect();
+                p2BoundingRect = p2?.parentNode?.parentNode?.parentNode?.getBoundingClientRect();
                 p2Weight = 0;
             }
             let panelBoundingRect = this.#canvas.getBoundingClientRect();
@@ -14988,25 +14999,31 @@ class NodeImageEditorGui {
     }
     #drawLinks() {
         this.#context.clearRect(0, 0, this.#canvas.clientWidth, this.#canvas.clientHeight);
-        for (let node of this.#nodeImageEditor.getNodes()) {
-            let nodeGui = this.#nodesGui.get(node);
-            let inputs = node.inputs;
-            for (let input of inputs.values()) {
-                if (input.predecessor) {
-                    let nodeGui2 = this.#nodesGui.get(input.predecessor.node);
-                    if (nodeGui && nodeGui2) {
-                        let inputGui = nodeGui._ioGui.get(input);
-                        let outputGui = nodeGui2._ioGui.get(input.predecessor);
-                        this.#drawLink(outputGui, inputGui);
+        if (this.#nodeImageEditor) {
+            for (let node of this.#nodeImageEditor.getNodes()) {
+                let nodeGui = this.#nodesGui.get(node);
+                let inputs = node.inputs;
+                for (let input of inputs.values()) {
+                    if (input.predecessor) {
+                        let nodeGui2 = this.#nodesGui.get(input.predecessor.node);
+                        if (nodeGui && nodeGui2) {
+                            let inputGui = nodeGui._ioGui.get(input);
+                            let outputGui = nodeGui2._ioGui.get(input.predecessor);
+                            this.#drawLink(outputGui, inputGui);
+                        }
                     }
                 }
             }
         }
     }
     #refreshFilter() {
-        for (let node of this.#nodeImageEditor.getNodes()) {
-            let nodeGui = this.#nodesGui.get(node);
-            this.#matchFilter(nodeGui);
+        if (this.#nodeImageEditor) {
+            for (let node of this.#nodeImageEditor.getNodes()) {
+                let nodeGui = this.#nodesGui.get(node);
+                if (nodeGui) {
+                    this.#matchFilter(nodeGui);
+                }
+            }
         }
         this.#organizeNodes();
         this.#drawLinks();

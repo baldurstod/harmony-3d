@@ -10,12 +10,11 @@ const HEIGHT = 300;
 
 export class NodeImageEditorGui {
 	#filter: any = {};
-	#htmlElement;
-	#shadowRoot;
+	#shadowRoot: ShadowRoot;
 	#imageEditorChanged: () => void;
-	#refreshTimeout: number;
+	#refreshTimeout: number = 0;
 	#nodesGui = new Map<Node, NodeGui>();
-	#nodeImageEditor: NodeImageEditor;
+	#nodeImageEditor: NodeImageEditor | undefined;
 	#htmlNodes: HTMLElement;
 	#canvas: HTMLCanvasElement;
 	#context: CanvasRenderingContext2D;
@@ -25,8 +24,25 @@ export class NodeImageEditorGui {
 			this.#refreshTimeout = setTimeout(() => this.#refreshHtml(), DELAY_BEFORE_REFRESH);
 		}
 
-		this.nodeImageEditor = nodeImageEditor;
-		this.#initHtml();
+		this.setNodeImageEditor(nodeImageEditor);
+		this.#shadowRoot = createElement('node-image-editor', {
+			attachShadow: { mode: 'closed' },
+			adoptStyle: nodeImageEditorCSS,
+		}) as ShadowRoot;
+		I18n.observeElement(this.#shadowRoot);
+
+		this.#htmlNodes = createElement('div', {
+			class: 'node-image-editor-nodes',
+			parent: this.#shadowRoot,
+		}) as HTMLElement;
+
+		this.#canvas = createElement('canvas', {
+			class: 'node-image-editor-canvas',
+			style: 'z-index:1000;position:absolute;',
+			parent: this.#htmlNodes,
+		}) as HTMLCanvasElement;
+		this.#context = this.#canvas.getContext('2d') as CanvasRenderingContext2D;
+
 	}
 
 	set nodeImageEditor(nodeImageEditor: NodeImageEditor) {
@@ -34,7 +50,7 @@ export class NodeImageEditorGui {
 		this.setNodeImageEditor(nodeImageEditor);
 	}
 
-	setNodeImageEditor(nodeImageEditor: NodeImageEditor) {
+	setNodeImageEditor(nodeImageEditor?: NodeImageEditor) {
 		if (this.#nodeImageEditor == nodeImageEditor) {
 			return;
 		}
@@ -43,36 +59,26 @@ export class NodeImageEditorGui {
 		}
 
 		this.#nodeImageEditor = nodeImageEditor;
-		this.#nodeImageEditor.addEventListener('*', this.#imageEditorChanged);
+		this.#nodeImageEditor?.addEventListener('*', this.#imageEditorChanged);
 	}
 
 	get htmlElement() {
-		return this.#htmlElement;
+		return this.#shadowRoot.parentElement;
 	}
 
 	#initHtml() {
-		this.#htmlElement = createElement('node-image-editor');
-		this.#shadowRoot = this.#htmlElement.attachShadow({ mode: 'closed' });
-		shadowRootStyle(this.#shadowRoot, nodeImageEditorCSS);
-		I18n.observeElement(this.#shadowRoot);
+		//this.#shadowRoot = this.#htmlElement.attachShadow({ mode: 'closed' });
+		//shadowRootStyle(this.#shadowRoot, nodeImageEditorCSS);
+		//I18n.observeElement(this.#shadowRoot);
 
 		let htmlHeader = createElement('div', {
 			class: 'node-image-editor-header',
 			parent: this.#shadowRoot,
 		});
 		let htmlNodeFilter = createElement('input', { class: 'node-image-editor-node-filter' });
-		htmlNodeFilter.addEventListener('input', (event: InputEvent) => { this.#filter.node = (event.target as HTMLInputElement).value; this.#refreshFilter() });
+		htmlNodeFilter.addEventListener('input', (event: Event) => { this.#filter.node = (event.target as HTMLInputElement).value; this.#refreshFilter() });
 		htmlHeader.append(htmlNodeFilter);
 
-		this.#htmlNodes = createElement('div', {
-			class: 'node-image-editor-nodes',
-			parent: this.#shadowRoot,
-		});
-
-		this.#canvas = createElement('canvas', { class: 'node-image-editor-canvas', style: 'z-index:1000;position:absolute;' });
-		this.#context = this.#canvas.getContext('2d');
-
-		this.#htmlNodes.append(this.#canvas);
 		this.#initResizeObserver();
 		this.#setCanvasSize();
 	}
@@ -84,25 +90,27 @@ export class NodeImageEditorGui {
 	}
 
 	#initResizeObserver() {
-		const callback = (entries, observer) => {
+		const callback: ResizeObserverCallback = (entries, observer) => {
 			entries.forEach(entry => {
 				this.#setCanvasSize();
 			});
 		};
 		const resizeObserver = new ResizeObserver(callback);
-		resizeObserver.observe(this.#canvas.parentElement);
+		resizeObserver.observe(this.#htmlNodes);
 	}
 
 	#refreshHtml() {
-		this.#htmlNodes.innerHTML = '';
+		this.#htmlNodes.innerText = '';
 		this.#htmlNodes.append(this.#canvas);
-		for (let node of this.#nodeImageEditor.getNodes()) {
-			let nodeGui = this.#nodesGui.get(node);
-			if (!nodeGui) {
-				nodeGui = new NodeGui(this, node);
-				this.#nodesGui.set(node, nodeGui);
+		if (this.#nodeImageEditor) {
+			for (let node of this.#nodeImageEditor.getNodes()) {
+				let nodeGui = this.#nodesGui.get(node);
+				if (!nodeGui) {
+					nodeGui = new NodeGui(this, node);
+					this.#nodesGui.set(node, nodeGui);
+				}
+				this.#htmlNodes.append(nodeGui.html);
 			}
-			this.#htmlNodes.append(nodeGui.html);
 		}
 		//TODO: remove old nodes from this.#nodesGui
 		this.#refreshFilter();
@@ -111,22 +119,25 @@ export class NodeImageEditorGui {
 	#organizeNodes() {
 		this.#htmlNodes.innerHTML = '';
 		this.#htmlNodes.append(this.#canvas);
-		let nodes = new Map();
+		let nodes = new Map<number, Array<NodeGui>>();
 		let maxHeight = 0;
-		for (let node of this.#nodeImageEditor.getNodes()) {
-			let nodeGui = this.#nodesGui.get(node);
+		if (this.#nodeImageEditor) {
+			for (let node of this.#nodeImageEditor.getNodes()) {
+				let nodeGui = this.#nodesGui.get(node);
 
-			let l = node.successorsLength();
-			//nodeGui.html.style.right = l * WIDTH + 'px';
+				let l = node.successorsLength();
+				//nodeGui.html.style.right = l * WIDTH + 'px';
 
-			let s = nodes.get(l);
-			if (!s) {
-				s = [];
-				nodes.set(l, s);
+				let s = nodes.get(l);
+				if (!s) {
+					s = [];
+					nodes.set(l, s);
+				}
+				if (nodeGui) {
+					s.push(nodeGui);
+				}
 			}
-			s.push(nodeGui);
 		}
-
 
 		nodes[Symbol.iterator] = function* () {
 			yield* [...this.entries()].sort(
@@ -150,7 +161,7 @@ export class NodeImageEditorGui {
 		//this.#htmlNodes.style.height = maxHeight + 'px';;
 	}
 
-	#drawLink(p1, p2) {
+	#drawLink(p1: HTMLElement, p2: HTMLElement) {
 		if (p1 && p2) {
 			let context = this.#context;
 			let p1BoundingRect = p1.getBoundingClientRect();
@@ -158,11 +169,11 @@ export class NodeImageEditorGui {
 			let p1Weight = 1;
 			let p2Weight = 1;
 			if (p1BoundingRect.height == 0 || p1BoundingRect.width == 0) {
-				p1BoundingRect = p1.parentNode.parentNode.parentNode.getBoundingClientRect();
+				p1BoundingRect = (p1?.parentNode?.parentNode?.parentNode as HTMLElement)?.getBoundingClientRect();
 				p1Weight = 2;
 			}
 			if (p2BoundingRect.height == 0 || p2BoundingRect.width == 0) {
-				p2BoundingRect = p2.parentNode.parentNode.parentNode.getBoundingClientRect();
+				p2BoundingRect = (p2?.parentNode?.parentNode?.parentNode as HTMLElement)?.getBoundingClientRect();
 				p2Weight = 0;
 			}
 
@@ -196,17 +207,19 @@ export class NodeImageEditorGui {
 	#drawLinks() {
 		this.#context.clearRect(0, 0, this.#canvas.clientWidth, this.#canvas.clientHeight)
 
-		for (let node of this.#nodeImageEditor.getNodes()) {
-			let nodeGui = this.#nodesGui.get(node);
-			let inputs = node.inputs;
-			for (let input of inputs.values()) {
-				if (input.predecessor) {
-					let nodeGui2 = this.#nodesGui.get(input.predecessor.node);
-					if (nodeGui && nodeGui2) {
-						let inputGui = nodeGui._ioGui.get(input);
-						let outputGui = nodeGui2._ioGui.get(input.predecessor);
+		if (this.#nodeImageEditor) {
+			for (let node of this.#nodeImageEditor.getNodes()) {
+				let nodeGui = this.#nodesGui.get(node);
+				let inputs = node.inputs;
+				for (let input of inputs.values()) {
+					if (input.predecessor) {
+						let nodeGui2 = this.#nodesGui.get(input.predecessor.node);
+						if (nodeGui && nodeGui2) {
+							let inputGui = nodeGui._ioGui.get(input);
+							let outputGui = nodeGui2._ioGui.get(input.predecessor);
 
-						this.#drawLink(outputGui, inputGui);
+							this.#drawLink(outputGui, inputGui);
+						}
 					}
 				}
 			}
@@ -214,15 +227,19 @@ export class NodeImageEditorGui {
 	}
 
 	#refreshFilter() {
-		for (let node of this.#nodeImageEditor.getNodes()) {
-			let nodeGui = this.#nodesGui.get(node);
-			this.#matchFilter(nodeGui);
+		if (this.#nodeImageEditor) {
+			for (let node of this.#nodeImageEditor.getNodes()) {
+				let nodeGui = this.#nodesGui.get(node);
+				if (nodeGui) {
+					this.#matchFilter(nodeGui);
+				}
+			}
 		}
 		this.#organizeNodes();
 		this.#drawLinks();
 	}
 
-	#matchFilter(nodeGUI) {
+	#matchFilter(nodeGUI: NodeGui) {
 		let expanded = true;
 		if (this.#filter.node) {
 			if (!nodeGUI.node.title.includes(this.#filter.node)) {
