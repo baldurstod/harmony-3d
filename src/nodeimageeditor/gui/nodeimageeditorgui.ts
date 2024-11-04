@@ -19,7 +19,7 @@ export class NodeImageEditorGui {
 	#htmlNodes: HTMLElement;
 	#canvas: HTMLCanvasElement;
 	#context: CanvasRenderingContext2D;
-	constructor(nodeImageEditor: NodeImageEditor) {
+	constructor(nodeImageEditor?: NodeImageEditor) {
 		this.#imageEditorChanged = () => {
 			clearTimeout(this.#refreshTimeout);
 			this.#refreshTimeout = setTimeout(() => this.#refreshHtml(), DELAY_BEFORE_REFRESH);

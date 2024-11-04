@@ -4060,7 +4060,7 @@ export declare class Entity {
 
     export declare class NodeImageEditorGui {
         #private;
-        constructor(nodeImageEditor: NodeImageEditor);
+        constructor(nodeImageEditor?: NodeImageEditor);
         set nodeImageEditor(nodeImageEditor: NodeImageEditor);
         setNodeImageEditor(nodeImageEditor: NodeImageEditor): void;
         get htmlElement(): any;
