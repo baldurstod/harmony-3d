@@ -14876,7 +14876,7 @@ class NodeImageEditorGui {
         this.#nodeImageEditor?.addEventListener('*', this.#imageEditorChanged);
     }
     get htmlElement() {
-        return this.#shadowRoot.parentElement;
+        return this.#shadowRoot.host;
     }
     #initHtml() {
         //this.#shadowRoot = this.#htmlElement.attachShadow({ mode: 'closed' });

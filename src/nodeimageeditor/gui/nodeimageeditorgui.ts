@@ -63,7 +63,7 @@ export class NodeImageEditorGui {
 	}
 
 	get htmlElement() {
-		return this.#shadowRoot.parentElement;
+		return this.#shadowRoot.host;
 	}
 
 	#initHtml() {
