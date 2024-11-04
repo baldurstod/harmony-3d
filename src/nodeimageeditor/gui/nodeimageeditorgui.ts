@@ -30,9 +30,11 @@ export class NodeImageEditorGui {
 	}
 
 	set nodeImageEditor(nodeImageEditor: NodeImageEditor) {
-		if (!(nodeImageEditor instanceof NodeImageEditor)) {
-			throw 'Provide a NodeImageEditor instance';
-		}
+		console.warn('set nodeImageEditor is deprecated, use setNodeImageEditor instead');
+		this.setNodeImageEditor(nodeImageEditor);
+	}
+
+	setNodeImageEditor(nodeImageEditor: NodeImageEditor) {
 		if (this.#nodeImageEditor == nodeImageEditor) {
 			return;
 		}

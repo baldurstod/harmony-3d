@@ -14827,80 +14827,6 @@ class NodeGui {
     }
 }
 
-const DEFAULT_TEXTURE_SIZE = 512;
-class NodeImageEditor extends EventTarget {
-    #variables = new Map();
-    #scene = new Scene();
-    #nodes = new Set();
-    #camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
-    #fullScreenQuadMesh = new FullScreenQuad();
-    textureSize = DEFAULT_TEXTURE_SIZE;
-    constructor() {
-        super();
-        this.#scene.addChild(this.#fullScreenQuadMesh);
-    }
-    render(material) {
-        this.#fullScreenQuadMesh.setMaterial(material);
-        Graphics.render(this.#scene, this.#camera, 0);
-    }
-    addNode(operationName, params = {}) {
-        params.textureSize = params.textureSize ?? this.textureSize;
-        if (!operationName) {
-            return null;
-        }
-        let node = getOperation(operationName, this, params);
-        if (node) {
-            this.textureSize = params.textureSize;
-        }
-        this.#nodes.add(node);
-        this.#dispatchEvent('nodeadded', node);
-        return node;
-    }
-    /*addNewNode(operationName, params = Object.create(null)) {
-        let node = this._createNode(operationName, params);
-        this.addNode(node);
-        return node;
-    }*/
-    #dispatchEvent(eventName, eventDetail) {
-        this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-        this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
-    }
-    /*addNode(node) {
-        if (node instanceof Node && node.editor == this) {
-            this.#nodes.add(node);
-            this.#dispatchEvent('nodeadded', node);
-        }
-    }*/
-    removeNode(node) {
-        if (node instanceof Node && node.editor == this) {
-            this.#nodes.delete(node);
-            //TODO :remove all inputs / output
-            this.#dispatchEvent('noderemoved', node);
-        }
-    }
-    removeAllNodes() {
-        this.#nodes.forEach((node) => node.dispose());
-        this.#nodes.clear();
-        this.#dispatchEvent('allnodesremoved', this);
-        //TODO :remove all inputs / output
-    }
-    getVariable(name) {
-        return this.#variables.get(name);
-    }
-    setVariable(name, value) {
-        return this.#variables.set(name, value);
-    }
-    deleteVariable(name) {
-        return this.#variables.delete(name);
-    }
-    clearVariables() {
-        return this.#variables.clear();
-    }
-    getNodes() {
-        return new Set(this.#nodes);
-    }
-}
-
 var nodeImageEditorCSS = ":host {\n\tbackground-color: #000000FF;\n\twidth: 100%;\n\theight: 100%;\n\tdisplay: flex;\n\tflex-direction: column;\n}\n\n.node-image-editor-nodes {\n\toverflow: auto;\n\tposition: relative;\n\tdisplay: flex;\n\toverflow: auto;\n}\n\n.node-image-editor-nodes-column {\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-left: 50px;\n\tmargin-right: 50px;\n}\n\n.node-image-editor-canvas {\n\tpointer-events: none;\n}\n\n.node-image-editor-node {\n\tbackground-color: var(--main-bg-color-bright);\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-top: 50px;\n\tmargin-bottom: 50px;\n\tpadding: 5px;\n}\n\n.node-image-editor-node.collapsed {\n\twidth: auto;\n\tmargin-top: 1rem;\n\tmargin-bottom: 1rem;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-content {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-preview {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed button {\n\tdisplay: none;\n}\n\n.node-image-editor-node-header {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-title {\n\tflex: 1;\n}\n\n.node-image-editor-node-buttons {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-buttons>div {\n\tcursor: pointer;\n}\n\n.node-image-editor-node-preview {\n\tposition: relative;\n\t/*height: 32px;\n\twidth: 32px;*/\n\tbackground-color: #000000FF;\n\tdisplay: inline-block;\n\twidth: min-content;\n}\n\n.node-image-editor-sticker-selector {\n\tposition: absolute;\n\tpointer-events: none;\n\ttop: 0;\n\twidth: 100%;\n\theight: 100%;\n\t--harmony-2d-manipulator-bg-color: rgba(0, 0, 0, 0);\n\t--harmony-2d-manipulator-border: 1px dashed white;\n}\n\n.node-image-editor-sticker-selector>div {\n\tposition: absolute;\n\twidth: 0.4rem;\n\theight: 0.4rem;\n\tbackground-color: black;\n\tpointer-events: all;\n}\n\n.node-image-editor-sticker-selector>.handle-move {\n\tcursor: move;\n\ttop: calc(50% - 0.2rem);\n\tleft: calc(50% - 0.2rem);\n}\n\n.node-image-editor-sticker-selector>.handle-resize {\n\tcursor: nesw-resize;\n\ttop: -0.2rem;\n\tright: 0.2rem;\n}\n\n.node-image-editor-sticker-selector>.handle-rotate {\n\tcursor: grab;\n\ttop: -0.2rem;\n\tleft: -0.2rem;\n}\n\n.node-image-editor-node-content {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-ios {\n\theight: 100%;\n\tflex: 0;\n}\n\n.node-image-editor-node-io {\n\twidth: 10px;\n\theight: 10px;\n\tbackground-color: green;\n}\n\n.node-image-editor-node-params {\n\tflex: 1;\n\toverflow: hidden;\n\tpadding: 5px;\n}\n\n.node-image-editor-node-param {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-param>div {\n\tflex: 1;\n\t/*overflow: auto;*/\n}\n\n.node-image-editor-node-param>input {\n\theight: 1.5rem;\n\tbox-sizing: border-box;\n\tvertical-align: middle;\n}\n\n.node-image-editor-node-change-image {\n\topacity: 0%;\n\tposition: absolute;\n\ttop: 0px;\n\tleft: 0px;\n\theight: 100%;\n\twidth: 100%;\n\t/*background-image: url('./img/icons/image_search.svg');*/\n\toverflow: hidden;\n\tbackground-size: 100%;\n\tbackground-repeat: no-repeat;\n\tbackground-position: center;\n\tbackground-color: white;\n\tborder-radius: 4px;\n\tcursor: pointer;\n}\n\n.node-image-editor-node input[type=\"file\"] {\n\topacity: 0;\n\twidth: 100%;\n\theight: 100%;\n}\n";
 
 class NodeImageEditorGui {
@@ -14923,9 +14849,10 @@ class NodeImageEditorGui {
         this.#initHtml();
     }
     set nodeImageEditor(nodeImageEditor) {
-        if (!(nodeImageEditor instanceof NodeImageEditor)) {
-            throw 'Provide a NodeImageEditor instance';
-        }
+        console.warn('set nodeImageEditor is deprecated, use setNodeImageEditor instead');
+        this.setNodeImageEditor(nodeImageEditor);
+    }
+    setNodeImageEditor(nodeImageEditor) {
         if (this.#nodeImageEditor == nodeImageEditor) {
             return;
         }
@@ -15805,6 +15732,80 @@ var imageeditor_vs = `
 
 Shaders['imageeditor.fs'] = imageeditor_fs;
 Shaders['imageeditor.vs'] = imageeditor_vs;
+
+const DEFAULT_TEXTURE_SIZE = 512;
+class NodeImageEditor extends EventTarget {
+    #variables = new Map();
+    #scene = new Scene();
+    #nodes = new Set();
+    #camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
+    #fullScreenQuadMesh = new FullScreenQuad();
+    textureSize = DEFAULT_TEXTURE_SIZE;
+    constructor() {
+        super();
+        this.#scene.addChild(this.#fullScreenQuadMesh);
+    }
+    render(material) {
+        this.#fullScreenQuadMesh.setMaterial(material);
+        Graphics.render(this.#scene, this.#camera, 0);
+    }
+    addNode(operationName, params = {}) {
+        params.textureSize = params.textureSize ?? this.textureSize;
+        if (!operationName) {
+            return null;
+        }
+        let node = getOperation(operationName, this, params);
+        if (node) {
+            this.textureSize = params.textureSize;
+        }
+        this.#nodes.add(node);
+        this.#dispatchEvent('nodeadded', node);
+        return node;
+    }
+    /*addNewNode(operationName, params = Object.create(null)) {
+        let node = this._createNode(operationName, params);
+        this.addNode(node);
+        return node;
+    }*/
+    #dispatchEvent(eventName, eventDetail) {
+        this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
+        this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+    }
+    /*addNode(node) {
+        if (node instanceof Node && node.editor == this) {
+            this.#nodes.add(node);
+            this.#dispatchEvent('nodeadded', node);
+        }
+    }*/
+    removeNode(node) {
+        if (node instanceof Node && node.editor == this) {
+            this.#nodes.delete(node);
+            //TODO :remove all inputs / output
+            this.#dispatchEvent('noderemoved', node);
+        }
+    }
+    removeAllNodes() {
+        this.#nodes.forEach((node) => node.dispose());
+        this.#nodes.clear();
+        this.#dispatchEvent('allnodesremoved', this);
+        //TODO :remove all inputs / output
+    }
+    getVariable(name) {
+        return this.#variables.get(name);
+    }
+    setVariable(name, value) {
+        return this.#variables.set(name, value);
+    }
+    deleteVariable(name) {
+        return this.#variables.delete(name);
+    }
+    clearVariables() {
+        return this.#variables.clear();
+    }
+    getNodes() {
+        return new Set(this.#nodes);
+    }
+}
 
 const tempVec3$q = vec3.create();
 class BoundingBoxHelper extends Box {
