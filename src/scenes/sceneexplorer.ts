@@ -1,7 +1,6 @@
 import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
 import { createElement, hide, show, toggle, shadowRootStyle, I18n } from 'harmony-ui';
-import 'harmony-ui/dist/define/harmony-context-menu';
-
+import { defineharmonycontextmenu } from 'harmony-ui/dist/define/defines';
 import { SceneExplorerEvents } from './sceneexplorerevents';
 import { Camera } from '../cameras/camera';
 import { RotationControl } from '../controls/rotationcontrol';
@@ -152,6 +151,7 @@ export class SceneExplorer {
 
 		this.#htmlProperties = createElement('div', { class: 'scene-explorer-properties', hidden: 1, attributes: { tabindex: 1, }, });
 		this.#shadowRoot.append(this.#htmlHeader, this.#htmlScene, this.htmlFileSelector, this.#htmlProperties);
+		defineharmonycontextmenu();
 		this.htmlContextMenu = createElement('harmony-context-menu');
 
 		this.#initHtmlHeader();

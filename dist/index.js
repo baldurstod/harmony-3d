@@ -1,14 +1,12 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
 import { createElement, hide, display, show, toggle, I18n, shadowRootStyle } from 'harmony-ui';
-import 'harmony-ui/dist/define/harmony-color-picker';
+import { defineharmonycolorpicker, defineharmony2dmanipulator, defineharmonycontextmenu } from 'harmony-ui/dist/define/defines';
 import { SaveFile } from 'harmony-browser-utils';
 import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
-import 'harmony-ui/dist/define/harmony-2d-manipulator';
 import { zoomOutSVG, zoomInSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
-import 'harmony-ui/dist/define/harmony-context-menu';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { murmurhash2_32_gc } from 'murmurhash-es6';
 
@@ -3823,6 +3821,7 @@ class Interaction {
             });
 
         this.#htmlColorPicker.hide();*/
+        defineharmonycolorpicker();
         this.#htmlColorPicker = createElement('harmony-color-picker', {
             parent: this.#htmlElement,
             hidden: true,
@@ -14774,6 +14773,7 @@ class NodeGui {
                 value = `${Number(value[0]).toFixed(FLOAT_VALUE_DECIMALS)} ${Number(value[1]).toFixed(FLOAT_VALUE_DECIMALS)}`;
                 break;
             case NodeParamType.StickerAdjust:
+                defineharmony2dmanipulator();
                 hide(valueHtml);
                 this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {
                     class: 'node-image-editor-sticker-selector',
@@ -26585,6 +26585,7 @@ class SceneExplorer {
         hide(this.htmlFileSelector);
         this.#htmlProperties = createElement('div', { class: 'scene-explorer-properties', hidden: 1, attributes: { tabindex: 1, }, });
         this.#shadowRoot.append(this.#htmlHeader, this.#htmlScene, this.htmlFileSelector, this.#htmlProperties);
+        defineharmonycontextmenu();
         this.htmlContextMenu = createElement('harmony-context-menu');
         this.#initHtmlHeader();
         this.#initHtmlProperties();

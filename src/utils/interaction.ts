@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { createElement, toggle, hide, show } from 'harmony-ui';
-import 'harmony-ui/dist/define/harmony-color-picker';
+import { defineharmonycolorpicker } from 'harmony-ui/dist/define/defines';
 import { FileSelector } from './fileselector/fileselector';
 export { FileSelector } from './fileselector/fileselector';
 
@@ -26,6 +26,7 @@ export class Interaction {
 			});
 
 		this.#htmlColorPicker.hide();*/
+		defineharmonycolorpicker();
 		this.#htmlColorPicker = createElement('harmony-color-picker', {
 			parent: this.#htmlElement,
 			hidden: true,
