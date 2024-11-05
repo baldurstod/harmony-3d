@@ -1,5 +1,5 @@
 import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
-import { createElement, hide, show, toggle, shadowRootStyle, I18n } from 'harmony-ui';
+import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot } from 'harmony-ui';
 import { defineharmonycontextmenu } from 'harmony-ui/dist/define/defines';
 import { SceneExplorerEvents } from './sceneexplorerevents';
 import { Camera } from '../cameras/camera';
@@ -69,13 +69,12 @@ export class SceneExplorer {
 	#manipulator;
 	#skeletonHelper;
 	#htmlProperties;
-	#htmlElement;
 	#htmlHeader: HTMLElement;
 	htmlFileSelector: HTMLElement;
 	#htmlNameFilter: HTMLElement;
 	htmlContextMenu: HTMLElement;
 	#htmlTypeFilter: HTMLElement;
-	#shadowRoot;
+	#shadowRoot: ShadowRoot;
 	#htmlName;
 	#htmlId;
 	#htmlPos;
@@ -110,7 +109,7 @@ export class SceneExplorer {
 			if (this.#isVisible && (this.#isVisible != isVisible)) {
 				this.applyFilter();
 			}
-		}).observe(this.#htmlElement);
+		}).observe(this.#shadowRoot.host);
 
 
 		EntityObserver.addEventListener(PROPERTY_CHANGED, (event: CustomEvent) => this.#handlePropertyChanged(event.detail));
@@ -135,14 +134,15 @@ export class SceneExplorer {
 	}
 
 	get htmlElement() {
-		return this.#htmlElement;
+		return this.#shadowRoot.host;
 	}
 
 	#initHtml() {
-		this.#htmlElement = createElement('scene-explorer', { attributes: { tabindex: 1, }, });
-		this.#shadowRoot = this.#htmlElement.attachShadow({ mode: 'closed' });
+		this.#shadowRoot = createShadowRoot('scene-explorer', {
+			attributes: { tabindex: 1, },
+			adoptStyle: sceneExplorerCSS,
+		});
 		I18n.observeElement(this.#shadowRoot);
-		shadowRootStyle(this.#shadowRoot, sceneExplorerCSS);
 
 		this.#htmlHeader = createElement('div', { class: 'scene-explorer-header' });
 		this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: 1, }, });
@@ -197,7 +197,7 @@ export class SceneExplorer {
 
 
 		let propertiesId = 'display_properties';
-		let htmlDisplayProperties = createElement('input');
+		let htmlDisplayProperties = createElement('input') as HTMLInputElement;
 		htmlDisplayProperties.type = 'checkbox';
 		htmlDisplayProperties.id = propertiesId;
 		htmlDisplayProperties.checked = false;
@@ -210,7 +210,7 @@ export class SceneExplorer {
 
 		this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = (event.target as HTMLInputElement).value.toLowerCase(); this.applyFilter(); });
 		this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = (event.target as HTMLInputElement).value; this.applyFilter(); });
-		htmlDisplayManipulator.addEventListener('change', (event) => this.#manipulator.visible = event.target.checked);
+		htmlDisplayManipulator.addEventListener('change', (event) => this.#manipulator.visible = (event.target as HTMLInputElement).checked);
 		htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
 
 		this.#populateTypeFilter();

@@ -1,4 +1,4 @@
-import { createElement, shadowRootStyle, I18n } from 'harmony-ui';
+import { createElement, shadowRootStyle, I18n, createShadowRoot } from 'harmony-ui';
 import { NodeGui, DELAY_BEFORE_REFRESH } from './nodegui';
 import { NodeImageEditor } from '../nodeimageeditor';
 
@@ -25,10 +25,9 @@ export class NodeImageEditorGui {
 		}
 
 		this.setNodeImageEditor(nodeImageEditor);
-		this.#shadowRoot = createElement('node-image-editor', {
-			attachShadow: { mode: 'closed' },
+		this.#shadowRoot = createShadowRoot('node-image-editor', {
 			adoptStyle: nodeImageEditorCSS,
-		}) as ShadowRoot;
+		});
 		I18n.observeElement(this.#shadowRoot);
 
 		createElement('div', {
