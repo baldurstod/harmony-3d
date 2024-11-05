@@ -24,7 +24,7 @@ export class NodeImageEditor extends EventTarget {
 
 	render(material: Material) {
 		this.#fullScreenQuadMesh.setMaterial(material);
-		Graphics.render(this.#scene, this.#camera, 0);
+		new Graphics().render(this.#scene, this.#camera, 0);
 
 	}
 

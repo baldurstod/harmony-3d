@@ -1956,7 +1956,7 @@ export declare class Entity {
 
     declare class ForwardRenderer extends Renderer {
         #private;
-        constructor(graphics: typeof Graphics);
+        constructor(graphics: Graphics);
         applyMaterial(program: Program, material: Material): void;
         render(scene: Scene, camera: Camera, delta: number): void;
         set scissorTest(scissorTest: any);
@@ -2556,83 +2556,84 @@ export declare class Entity {
 
     export declare class Graphics {
         #private;
-        static isWebGL: boolean;
-        static isWebGL2: boolean;
-        static autoClear: boolean;
-        static autoClearColor: boolean;
-        static autoClearDepth: boolean;
-        static autoClearStencil: boolean;
-        static speed: number;
-        static currentTick: number;
-        static glContext: WebGLAnyRenderingContext;
-        static ANGLE_instanced_arrays: any;
-        static OES_texture_float_linear: any;
-        static dragging: boolean;
-        static initCanvas(contextAttributes?: any): typeof Graphics;
-        static pickEntity(x: number, y: number): Entity;
-        static mouseDown(event: any): void;
-        static mouseMove(event: any): void;
-        static mouseUp(event: any): void;
-        static getDefinesAsString(material: Material): string;
-        static render(scene: Scene, camera: Camera, delta: number): void;
-        static renderBackground(): void;
-        static clear(color: any, depth: any, stencil: any): void;
-        static _tick(): void;
-        static set shaderPrecision(shaderPrecision: ShaderPrecision);
-        static setShaderPrecision(shaderPrecision: ShaderPrecision): void;
-        static setShaderQuality(shaderQuality: ShaderQuality): void;
-        static setShaderDebugMode(shaderDebugMode: ShaderDebugMode): void;
-        static setIncludeCode(key: string, code: string): void;
-        static removeIncludeCode(key: string): void;
-        static getIncludeCode(): string;
+        isWebGL: boolean;
+        isWebGL2: boolean;
+        autoClear: boolean;
+        autoClearColor: boolean;
+        autoClearDepth: boolean;
+        autoClearStencil: boolean;
+        speed: number;
+        currentTick: number;
+        glContext: WebGLAnyRenderingContext;
+        ANGLE_instanced_arrays: any;
+        OES_texture_float_linear: any;
+        dragging: boolean;
+        constructor();
+        initCanvas(contextAttributes?: any): this;
+        pickEntity(x: number, y: number): Entity;
+        mouseDown(event: any): void;
+        mouseMove(event: any): void;
+        mouseUp(event: any): void;
+        getDefinesAsString(material: Material): string;
+        render(scene: Scene, camera: Camera, delta: number): void;
+        renderBackground(): void;
+        clear(color: any, depth: any, stencil: any): void;
+        _tick(): void;
+        set shaderPrecision(shaderPrecision: ShaderPrecision);
+        setShaderPrecision(shaderPrecision: ShaderPrecision): void;
+        setShaderQuality(shaderQuality: ShaderQuality): void;
+        setShaderDebugMode(shaderDebugMode: ShaderDebugMode): void;
+        setIncludeCode(key: string, code: string): void;
+        removeIncludeCode(key: string): void;
+        getIncludeCode(): string;
         /**
          * Invalidate all shader (force recompile)
          */
-        static invalidateShaders(): void;
-        static clearColor(clearColor: any): void;
-        static getClearColor(clearColor?: vec4): vec4;
-        static clearDepth(clearDepth: any): void;
-        static clearStencil(clearStencil: any): void;
-        static set autoResize(autoResize: boolean);
-        static get autoResize(): boolean;
-        static getExtension(name: any): any;
-        static set pixelRatio(pixelRatio: number);
-        static get pixelRatio(): number;
-        static setSize(width: any, height: any): number[];
-        static getSize(ret?: vec2): vec2;
-        static _updateSize(): void;
-        static set viewport(viewport: vec4);
-        static get viewport(): vec4;
-        static set scissor(scissor: any);
-        static set scissorTest(scissorTest: any);
-        static checkCanvasSize(): void;
-        static play(): void;
-        static pause(): void;
-        static isRunning(): boolean;
-        static createFramebuffer(): WebGLFramebuffer;
-        static deleteFramebuffer(frameBuffer: any): void;
-        static createRenderbuffer(): WebGLRenderbuffer;
-        static deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void;
-        static setFramebuffer(framebuffer: any): void;
-        static pushRenderTarget(renderTarget: RenderTarget): void;
-        static popRenderTarget(): RenderTarget;
-        static savePicture(scene: any, camera: any, filename: any, width: any, height: any): void;
-        static savePictureAsFile(filename: string): Promise<File>;
-        static toBlob(): Promise<Blob>;
-        static _savePicture(filename: any): void;
-        static startRecording(frameRate: number, bitsPerSecond: any): void;
-        static stopRecording(fileName?: string): void;
-        static get ready(): Promise<void>;
-        static isReady(): Promise<void>;
-        static getParameter(parameterName: any): any;
-        static cleanupGLError(): void;
-        static getGLError(reason: any): void;
-        static useLogDepth(use: any): void;
-        static getTime(): number;
-        static getWidth(): number;
-        static getHeight(): number;
-        static getCanvas(): HTMLCanvasElement;
-        static getForwardRenderer(): ForwardRenderer;
+        invalidateShaders(): void;
+        clearColor(clearColor: any): void;
+        getClearColor(clearColor?: vec4): vec4;
+        clearDepth(clearDepth: any): void;
+        clearStencil(clearStencil: any): void;
+        set autoResize(autoResize: boolean);
+        get autoResize(): boolean;
+        getExtension(name: any): any;
+        set pixelRatio(pixelRatio: number);
+        get pixelRatio(): number;
+        setSize(width: any, height: any): number[];
+        getSize(ret?: vec2): vec2;
+        _updateSize(): void;
+        set viewport(viewport: vec4);
+        get viewport(): vec4;
+        set scissor(scissor: any);
+        set scissorTest(scissorTest: any);
+        checkCanvasSize(): void;
+        play(): void;
+        pause(): void;
+        isRunning(): boolean;
+        createFramebuffer(): WebGLFramebuffer;
+        deleteFramebuffer(frameBuffer: any): void;
+        createRenderbuffer(): WebGLRenderbuffer;
+        deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void;
+        setFramebuffer(framebuffer: any): void;
+        pushRenderTarget(renderTarget: RenderTarget): void;
+        popRenderTarget(): RenderTarget;
+        savePicture(scene: any, camera: any, filename: any, width: any, height: any): void;
+        savePictureAsFile(filename: string): Promise<File>;
+        toBlob(): Promise<Blob>;
+        _savePicture(filename: any): void;
+        startRecording(frameRate: number, bitsPerSecond: any): void;
+        stopRecording(fileName?: string): void;
+        get ready(): Promise<void>;
+        isReady(): Promise<void>;
+        getParameter(parameterName: any): any;
+        cleanupGLError(): void;
+        getGLError(reason: any): void;
+        useLogDepth(use: any): void;
+        getTime(): number;
+        getWidth(): number;
+        getHeight(): number;
+        getCanvas(): HTMLCanvasElement;
+        getForwardRenderer(): ForwardRenderer;
     }
 
     export declare enum GraphicsEvent {
@@ -5330,7 +5331,7 @@ export declare class Entity {
 
     declare class Renderer {
         #private;
-        constructor(graphics: typeof Graphics);
+        constructor(graphics: Graphics);
         getProgram(mesh: Mesh, material: Material): Program;
         applyMaterial(program: any, material: any): void;
         setupLights(renderList: any, camera: any, program: any, viewMatrix: any): void;
@@ -5989,7 +5990,7 @@ export declare class Entity {
 
     export declare class ShadowMap {
         #private;
-        constructor(graphics: typeof Graphics);
+        constructor(graphics: Graphics);
         render(renderer: any, renderList: any, camera: any): void;
     }
 
@@ -8903,7 +8904,7 @@ export declare class Entity {
 
     export declare class WebGLRenderingState {
         #private;
-        static setGraphics(graphics: typeof Graphics): void;
+        static setGraphics(graphics: Graphics): void;
         static clearColor(clearColor: vec4): void;
         static getClearColor(out?: vec4): vec4;
         static clearDepth(clearDepth: GLclampf): void;

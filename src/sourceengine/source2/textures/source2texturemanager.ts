@@ -22,13 +22,13 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 	constructor() {
 		super();
 
-		Graphics.ready.then(() => {
+		new Graphics().ready.then(() => {
 			this.#defaultTexture = TextureManager.createCheckerTexture([127, 190, 255]);
 			this.#defaultTexture.addUser(this);
 			//this._missingTexture = TextureManager.createCheckerTexture();
-			this.WEBGL_compressed_texture_s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
-			this.EXT_texture_compression_bptc = Graphics.getExtension('EXT_texture_compression_bptc');
-			this.EXT_texture_compression_rgtc = Graphics.getExtension('EXT_texture_compression_rgtc');
+			this.WEBGL_compressed_texture_s3tc = new Graphics().getExtension('WEBGL_compressed_texture_s3tc');
+			this.EXT_texture_compression_bptc = new Graphics().getExtension('EXT_texture_compression_bptc');
+			this.EXT_texture_compression_rgtc = new Graphics().getExtension('EXT_texture_compression_rgtc');
 		});
 
 		setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
@@ -94,12 +94,12 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 					this.fillTexture(texture, vtexFile.getWidth(), vtexFile.getHeight(), imageData[0]);
 				}*/
 			}
-			//Graphics.glContext.bindTexture(GL_TEXTURE_2D, null);
+			//new Graphics().glContext.bindTexture(GL_TEXTURE_2D, null);
 		}
 	}
 
 	#initCubeTexture(texture, imageFormat, width, height, imageData) {
-		const glContext = Graphics.glContext;
+		const glContext = new Graphics().glContext;
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 		switch (true) {
 			case (imageFormat & TEXTURE_FORMAT_UNCOMPRESSED) == TEXTURE_FORMAT_UNCOMPRESSED:
@@ -139,13 +139,13 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	#initFlatTexture(texture, imageFormat, width, height, imageData) {
-		const glContext = Graphics.glContext;
+		const glContext = new Graphics().glContext;
 		if (TESTING) {
-			Graphics.cleanupGLError();
+			new Graphics().cleanupGLError();
 		}
 		glContext.bindTexture(GL_TEXTURE_2D, texture);
 		if (TESTING) {
-			Graphics.getGLError('bindTexture in fill source2 fillTexture');
+			new Graphics().getGLError('bindTexture in fill source2 fillTexture');
 		}
 		switch (true) {
 			case (imageFormat & TEXTURE_FORMAT_UNCOMPRESSED) == TEXTURE_FORMAT_UNCOMPRESSED:
@@ -172,7 +172,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	fillTexture(texture, imageFormat, width, height, datas, target) {
-		const gl = Graphics.glContext;
+		const gl = new Graphics().glContext;
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 
 		switch (imageFormat) {
@@ -192,7 +192,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	fillTextureDxt(texture, imageFormat, width, height, datas, target) {
-		var gl = Graphics.glContext;
+		var gl = new Graphics().glContext;
 		var s3tc = this.WEBGL_compressed_texture_s3tc;//gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
 
 		gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
@@ -235,7 +235,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 	#fillTextureBptc(texture, width, height, imageFormat, datas) {
-		var gl = Graphics.glContext;
+		var gl = new Graphics().glContext;
 		var bptc = this.EXT_texture_compression_bptc;
 
 		gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
@@ -258,9 +258,9 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		}
 
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		Graphics.getGLError('texParameteri');
+		new Graphics().getGLError('texParameteri');
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		Graphics.getGLError('texParameteri');
+		new Graphics().getGLError('texParameteri');
 		//gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		//gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -268,7 +268,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 	#fillTextureRgtc(texture, width, height, imageFormat, datas) {
-		var gl = Graphics.glContext;
+		var gl = new Graphics().glContext;
 		var rgtc = this.EXT_texture_compression_rgtc;
 
 		gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);

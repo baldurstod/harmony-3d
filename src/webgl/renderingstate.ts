@@ -41,14 +41,14 @@ export class WebGLRenderingState {
 	static #lineWidth: GLfloat = 1;
 
 	static #program: WebGLProgram;
-	static #graphics: typeof Graphics;
+	static #graphics: Graphics;
 	static #glContext: WebGLAnyRenderingContext;
 
 	static #enabledVertexAttribArray: Uint8Array;
 	static #usedVertexAttribArray: Uint8Array;
 	static #vertexAttribDivisor: Uint8Array;
 
-	static setGraphics(graphics: typeof Graphics) {
+	static setGraphics(graphics: Graphics) {
 		this.#graphics = graphics;
 		this.#glContext = graphics.glContext;
 

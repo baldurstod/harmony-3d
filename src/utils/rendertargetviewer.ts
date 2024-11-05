@@ -65,8 +65,8 @@ export class RenderTargetViewer {
 
 	refreshPlane() {
 		vec3.set(this.#plane._position,
-			(this.#size[0] - Graphics.getWidth()) * 0.5 + this.#position[0],
-			(Graphics.getHeight() - this.#size[1]) * 0.5 - this.#position[1],
+			(this.#size[0] - new Graphics().getWidth()) * 0.5 + this.#position[0],
+			(new Graphics().getHeight() - this.#size[1]) * 0.5 - this.#position[1],
 			0);
 
 		this.#plane.setSize(this.#size[0], this.#size[1]);

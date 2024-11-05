@@ -24,13 +24,13 @@ export async function exportToBinaryFBX(entity) {
 
 export async function entityToFBXScene(fbxManager, entity) {
 	const fbxScene = fbxManager.createObject('FBXScene', 'Scene');
-	let playing = Graphics.isRunning();
-	Graphics.pause();
+	let playing = new Graphics().isRunning();
+	new Graphics().pause();
 
 	await createFBXSceneEntity(fbxScene, entity);
 
 	if (playing) {
-		Graphics.play();
+		new Graphics().play();
 	}
 	return fbxScene;
 }
@@ -511,24 +511,24 @@ async function renderMaterial(material, materialsParams) {
 		scene.addChild(fullScreenQuadMesh);
 	}
 
-	let [previousWidth, previousHeight] = Graphics.setSize(1024, 1024);//TODOv3: constant
-	let previousClearColor = Graphics.getClearColor();
-	Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
-	Graphics.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-	Graphics.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-	Graphics.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+	let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024);//TODOv3: constant
+	let previousClearColor = new Graphics().getClearColor();
+	new Graphics().clearColor(vec4.fromValues(0, 0, 0, 0));
+	new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
+	new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
+	new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
 
 	fullScreenQuadMesh.material = material;
 	fullScreenQuadMesh.materialsParams = materialsParams;
-	Graphics.render(scene, camera, 0);
+	new Graphics().render(scene, camera, 0);
 
-	let imgContent = await Graphics.toBlob();
+	let imgContent = await new Graphics().toBlob();
 
-	Graphics.setIncludeCode('EXPORT_TEXTURES', '');
-	Graphics.setIncludeCode('SKIP_PROJECTION', '');
-	Graphics.setIncludeCode('SKIP_LIGHTING', '');
-	Graphics.setSize(previousWidth, previousHeight);
-	Graphics.clearColor(previousClearColor);
+	new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
+	new Graphics().setIncludeCode('SKIP_PROJECTION', '');
+	new Graphics().setIncludeCode('SKIP_LIGHTING', '');
+	new Graphics().setSize(previousWidth, previousHeight);
+	new Graphics().clearColor(previousClearColor);
 
 	return imgContent.arrayBuffer();
 }

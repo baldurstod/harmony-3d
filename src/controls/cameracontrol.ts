@@ -20,7 +20,7 @@ export class CameraControl {
 	}
 
 	get enabled(): boolean {
-		return this.#enabled && !Graphics.dragging;
+		return this.#enabled && !new Graphics().dragging;
 	}
 
 	set camera(camera: Camera) {

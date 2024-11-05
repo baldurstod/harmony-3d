@@ -150,7 +150,7 @@ export class Manipulator extends Entity {
 				} else {
 					this.startScale(detail.x, detail.y);
 				}
-				Graphics.dragging = true;
+				new Graphics().dragging = true;
 				this.#setAxisSelected(true);
 			}
 		});
@@ -171,7 +171,7 @@ export class Manipulator extends Entity {
 		});
 		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (pickEvent: CustomEvent) => {
 			if (this.#entityAxis.has(pickEvent.detail.entity)) {
-				Graphics.dragging = false;
+				new Graphics().dragging = false;
 				this.#setAxisSelected(false);
 			}
 		});
@@ -553,8 +553,8 @@ export class Manipulator extends Entity {
 			let invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
 
 			// transform the screen coordinates to normalized coordinates
-			this.#cursorPos[0] = (x / Graphics.getWidth()) * 2.0 - 1.0;
-			this.#cursorPos[1] = 1.0 - (y / Graphics.getHeight()) * 2.0;
+			this.#cursorPos[0] = (x / new Graphics().getWidth()) * 2.0 - 1.0;
+			this.#cursorPos[1] = 1.0 - (y / new Graphics().getHeight()) * 2.0;
 
 			this.#near[0] = this.#far[0] = this.#cursorPos[0];
 			this.#near[1] = this.#far[1] = this.#cursorPos[1];
@@ -641,8 +641,8 @@ export class Manipulator extends Entity {
 			let invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
 			let invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
 
-			this.#cursorPos[0] = (x / Graphics.getWidth()) * 2.0 - 1.0;
-			this.#cursorPos[1] = 1.0 - (y / Graphics.getHeight()) * 2.0;
+			this.#cursorPos[0] = (x / new Graphics().getWidth()) * 2.0 - 1.0;
+			this.#cursorPos[1] = 1.0 - (y / new Graphics().getHeight()) * 2.0;
 
 			this.#near[0] = this.#far[0] = this.#cursorPos[0];
 			this.#near[1] = this.#far[1] = this.#cursorPos[1];
@@ -723,7 +723,7 @@ export class Manipulator extends Entity {
 		this.#rotationManipulator.visible = false;
 		this.#scaleManipulator.visible = false;
 		this.#setAxisSelected(false);
-		Graphics.dragging = false;
+		new Graphics().dragging = false;
 
 		this.#mode = mode;
 		switch (mode) {

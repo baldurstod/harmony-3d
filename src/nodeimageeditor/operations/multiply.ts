@@ -48,12 +48,12 @@ export class Multiply extends Node {
 			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')._value });
 		}
 
-		Graphics.pushRenderTarget(this.#renderTarget);
+		new Graphics().pushRenderTarget(this.#renderTarget);
 		this.editor.render(this.material);
 
 		//let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-		//Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-		Graphics.popRenderTarget();
+		//new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+		new Graphics().popRenderTarget();
 
 		this.updatePreview(context);
 

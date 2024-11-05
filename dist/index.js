@@ -7091,43 +7091,48 @@ var ShaderDebugMode;
     ShaderDebugMode[ShaderDebugMode["None"] = 0] = "None";
 })(ShaderDebugMode || (ShaderDebugMode = {}));
 class Graphics {
-    static #pixelRatio = /*window.devicePixelRatio ?? */ 1.0;
-    static #viewport = vec4.create();
-    static #scissor = vec4.create();
-    static #extensions = new Map();
-    static #autoResize = false;
-    static isWebGL = false;
-    static isWebGL2 = false;
-    static autoClear = true;
-    static autoClearColor = false;
-    static autoClearDepth = true;
-    static autoClearStencil = true;
-    static #includeCode = new Map();
-    static #globalIncludeCode = '';
-    static speed = 1.0;
-    static #timeOrigin = performance.now();
-    static #time = 0;
-    static #running = false;
-    static #lastTick = performance.now();
-    static currentTick = 0;
-    static #renderBuffers = new Set();
-    static #renderTargetStack = [];
-    static #readyPromise;
-    static #readyPromiseResolve;
-    static #canvas;
-    static #width;
-    static #height;
-    static #offscreenCanvas;
-    static #forwardRenderer;
-    static glContext;
-    static #bipmapContext;
-    static #pickedEntity;
-    static #animationFrame;
-    static ANGLE_instanced_arrays;
-    static OES_texture_float_linear;
-    static #mediaRecorder;
-    static dragging = false;
-    static {
+    static #instance;
+    #pixelRatio = /*window.devicePixelRatio ?? */ 1.0;
+    #viewport = vec4.create();
+    #scissor = vec4.create();
+    #extensions = new Map();
+    #autoResize = false;
+    isWebGL = false;
+    isWebGL2 = false;
+    autoClear = true;
+    autoClearColor = false;
+    autoClearDepth = true;
+    autoClearStencil = true;
+    #includeCode = new Map();
+    #globalIncludeCode = '';
+    speed = 1.0;
+    #timeOrigin = performance.now();
+    #time = 0;
+    #running = false;
+    #lastTick = performance.now();
+    currentTick = 0;
+    #renderBuffers = new Set();
+    #renderTargetStack = [];
+    #readyPromise;
+    #readyPromiseResolve;
+    #canvas;
+    #width;
+    #height;
+    #offscreenCanvas;
+    #forwardRenderer;
+    glContext;
+    #bipmapContext;
+    #pickedEntity;
+    #animationFrame;
+    ANGLE_instanced_arrays;
+    OES_texture_float_linear;
+    #mediaRecorder;
+    dragging = false;
+    constructor() {
+        if (Graphics.#instance) {
+            return Graphics.#instance;
+        }
+        Graphics.#instance = this;
         this.setShaderPrecision(ShaderPrecision.Medium);
         this.setShaderQuality(ShaderQuality.Medium);
         this.setShaderDebugMode(ShaderDebugMode.None);
@@ -7136,7 +7141,7 @@ class Graphics {
             this.#readyPromiseResolve = resolve;
         });
     }
-    static initCanvas(contextAttributes = {}) {
+    initCanvas(contextAttributes = {}) {
         this.#canvas = contextAttributes.canvas ?? document.createElement('canvas');
         this.#canvas.setAttribute('tabindex', '1');
         ShortcutHandler.addContext('3dview', this.#canvas);
@@ -7144,7 +7149,7 @@ class Graphics {
         this.#height = this.#canvas.height;
         this.#initContext(contextAttributes);
         this.#initObserver();
-        WebGLRenderingState.setGraphics(Graphics);
+        WebGLRenderingState.setGraphics(this);
         // init state
         WebGLRenderingState.enable(GL_CULL_FACE);
         // init state end
@@ -7160,7 +7165,7 @@ class Graphics {
         this.#readyPromiseResolve(true);
         return this;
     }
-    static pickEntity(x, y) {
+    pickEntity(x, y) {
         this.setIncludeCode('pickingMode', '#define PICKING_MODE');
         GraphicsEvents.tick(0, performance.now());
         this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
@@ -7170,7 +7175,7 @@ class Graphics {
         let pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
         return pickList.get(pickedEntityIndex) ?? null;
     }
-    static mouseDown(event) {
+    mouseDown(event) {
         this.#canvas.focus();
         let x = event.offsetX;
         let y = event.offsetY;
@@ -7181,18 +7186,18 @@ class Graphics {
         }
         GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
     }
-    static mouseMove(event) {
+    mouseMove(event) {
         let x = event.offsetX;
         let y = event.offsetY;
         GraphicsEvents.mouseMove(x, y, this.#pickedEntity, event);
     }
-    static mouseUp(event) {
+    mouseUp(event) {
         let x = event.offsetX;
         let y = event.offsetY;
         GraphicsEvents.mouseUp(x, y, this.#pickedEntity, event);
         this.#pickedEntity = null;
     }
-    static getDefinesAsString(material) {
+    getDefinesAsString(material) {
         let defines = [];
         for (let [name, value] of Object.entries(material.defines)) {
             if (value === false) {
@@ -7204,16 +7209,16 @@ class Graphics {
         }
         return defines.join('\n') + '\n';
     }
-    static render(scene, camera, delta) {
+    render(scene, camera, delta) {
         this.renderBackground(); //TODOv3 put in rendering pipeline
         this.#forwardRenderer.render(scene, camera, delta);
     }
-    static renderBackground() {
+    renderBackground() {
         if (this.autoClear) {
             this.clear(this.autoClearColor, this.autoClearDepth, this.autoClearStencil);
         }
     }
-    static clear(color, depth, stencil) {
+    clear(color, depth, stencil) {
         let bits = 0;
         if (color)
             bits |= GL_COLOR_BUFFER_BIT;
@@ -7227,7 +7232,7 @@ class Graphics {
         WebGLRenderingState.stencilMask(Number.MAX_SAFE_INTEGER);
         this.glContext?.clear(bits);
     }
-    static _tick() {
+    _tick() {
         cancelAnimationFrame(this.#animationFrame);
         {
             this.#animationFrame = requestAnimationFrame(() => this._tick());
@@ -7241,7 +7246,7 @@ class Graphics {
         }
         this.#lastTick = tick;
     }
-    static #initContext(contextAttributes) {
+    #initContext(contextAttributes) {
         const canvas = this.#canvas;
         if (!canvas) {
             return;
@@ -7298,10 +7303,10 @@ class Graphics {
             setTextureFactoryContext(this.glContext);
         }
     }
-    static set shaderPrecision(shaderPrecision) {
+    set shaderPrecision(shaderPrecision) {
         this.setShaderPrecision(shaderPrecision);
     }
-    static setShaderPrecision(shaderPrecision) {
+    setShaderPrecision(shaderPrecision) {
         switch (shaderPrecision) {
             case ShaderPrecision.Low:
                 this.setIncludeCode('SHADER_PRECISION', '#define LOW_PRECISION');
@@ -7314,33 +7319,33 @@ class Graphics {
                 break;
         }
     }
-    static setShaderQuality(shaderQuality) {
+    setShaderQuality(shaderQuality) {
         this.setIncludeCode('SHADER_QUALITY', `#define SHADER_QUALITY ${shaderQuality}`);
     }
-    static setShaderDebugMode(shaderDebugMode) {
+    setShaderDebugMode(shaderDebugMode) {
         this.setIncludeCode('SHADER_DEBUG_MODE', `#define SHADER_DEBUG_MODE ${shaderDebugMode}`);
     }
-    static setIncludeCode(key, code) {
+    setIncludeCode(key, code) {
         this.#includeCode.set(key, code);
         this.#refreshIncludeCode();
     }
-    static removeIncludeCode(key) {
+    removeIncludeCode(key) {
         this.#includeCode.delete(key);
         this.#refreshIncludeCode();
     }
-    static #refreshIncludeCode() {
+    #refreshIncludeCode() {
         this.#globalIncludeCode = '';
         for (let code of this.#includeCode.values()) {
             this.#globalIncludeCode += code + '\n';
         }
     }
-    static getIncludeCode() {
+    getIncludeCode() {
         return this.#globalIncludeCode;
     }
     /**
      * Invalidate all shader (force recompile)
      */
-    static invalidateShaders() {
+    invalidateShaders() {
         if (this.#forwardRenderer) {
             this.#forwardRenderer.invalidateShaders();
         }
@@ -7348,28 +7353,28 @@ class Graphics {
             shader.invalidate();
         }*/
     }
-    static clearColor(clearColor) {
+    clearColor(clearColor) {
         WebGLRenderingState.clearColor(clearColor);
     }
-    static getClearColor(clearColor) {
+    getClearColor(clearColor) {
         return WebGLRenderingState.getClearColor(clearColor);
     }
-    static clearDepth(clearDepth) {
+    clearDepth(clearDepth) {
         WebGLRenderingState.clearDepth(clearDepth);
     }
-    static clearStencil(clearStencil) {
+    clearStencil(clearStencil) {
         WebGLRenderingState.clearStencil(clearStencil);
     }
-    static set autoResize(autoResize) {
+    set autoResize(autoResize) {
         this.#autoResize = autoResize;
         if (autoResize) {
             this.checkCanvasSize();
         }
     }
-    static get autoResize() {
+    get autoResize() {
         return this.#autoResize;
     }
-    static getExtension(name) {
+    getExtension(name) {
         if (this.glContext) {
             if (this.#extensions.has(name)) {
                 return this.#extensions.get(name);
@@ -7382,14 +7387,14 @@ class Graphics {
         }
         return null;
     }
-    static set pixelRatio(pixelRatio) {
+    set pixelRatio(pixelRatio) {
         this.#pixelRatio = pixelRatio;
         this._updateSize();
     }
-    static get pixelRatio() {
+    get pixelRatio() {
         return this.#pixelRatio;
     }
-    static setSize(width, height) {
+    setSize(width, height) {
         width = Math.max(width, 1);
         height = Math.max(height, 1);
         let previousWidth = this.#width;
@@ -7404,28 +7409,28 @@ class Graphics {
         GraphicsEvents.resize(width, height);
         return [previousWidth, previousHeight];
     }
-    static getSize(ret = vec2.create()) {
+    getSize(ret = vec2.create()) {
         ret[0] = this.#width;
         ret[1] = this.#height;
         return ret;
     }
-    static _updateSize() {
+    _updateSize() {
         this.#canvas.width = this.#width * this.#pixelRatio;
         this.#canvas.height = this.#height * this.#pixelRatio;
         this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
     }
-    static set viewport(viewport) {
+    set viewport(viewport) {
         vec4.copy(this.#viewport, viewport);
         WebGLRenderingState.viewport(viewport);
     }
-    static get viewport() {
+    get viewport() {
         return vec4.clone(this.#viewport);
     }
-    static set scissor(scissor) {
+    set scissor(scissor) {
         vec4.copy(this.#scissor, scissor);
         WebGLRenderingState.scissor(scissor);
     }
-    static set scissorTest(scissorTest) {
+    set scissorTest(scissorTest) {
         if (scissorTest) {
             WebGLRenderingState.enable(GL_SCISSOR_TEST);
         }
@@ -7433,7 +7438,7 @@ class Graphics {
             WebGLRenderingState.disable(GL_SCISSOR_TEST);
         }
     }
-    static checkCanvasSize() {
+    checkCanvasSize() {
         if (!this.#autoResize) {
             return;
         }
@@ -7448,7 +7453,7 @@ class Graphics {
             this.setSize(width, height);
         }
     }
-    static #initObserver() {
+    #initObserver() {
         const callback = (entries, observer) => {
             entries.forEach(entry => {
                 this.checkCanvasSize();
@@ -7459,49 +7464,49 @@ class Graphics {
             resizeObserver.observe(this.#canvas.parentElement);
         }
     }
-    static play() {
+    play() {
         this.#running = true;
         this._tick();
     }
-    static pause() {
+    pause() {
         this.#running = false;
     }
-    static isRunning() {
+    isRunning() {
         return this.#running;
     }
-    static createFramebuffer() {
+    createFramebuffer() {
         let frameBuffer = this.glContext.createFramebuffer();
         //this.frameBuffers.add(frameBuffer);
         return frameBuffer;
     }
-    static deleteFramebuffer(frameBuffer) {
+    deleteFramebuffer(frameBuffer) {
         this.glContext.deleteFramebuffer(frameBuffer);
     }
-    static createRenderbuffer() {
+    createRenderbuffer() {
         let renderBuffer = this.glContext.createRenderbuffer();
         if (renderBuffer) {
             this.#renderBuffers.add(renderBuffer);
         }
         return renderBuffer;
     }
-    static deleteRenderbuffer(renderBuffer) {
+    deleteRenderbuffer(renderBuffer) {
         this.glContext.deleteRenderbuffer(renderBuffer);
     }
-    static setFramebuffer(framebuffer) {
+    setFramebuffer(framebuffer) {
         framebuffer.bind();
         //this.glContext.bindFramebuffer(_gl.FRAMEBUFFER, framebuffer);
     }
-    static pushRenderTarget(renderTarget) {
+    pushRenderTarget(renderTarget) {
         this.#renderTargetStack.push(renderTarget);
         this.#setRenderTarget(renderTarget);
     }
-    static popRenderTarget() {
+    popRenderTarget() {
         this.#renderTargetStack.pop();
         const renderTarget = this.#renderTargetStack[this.#renderTargetStack.length - 1];
         this.#setRenderTarget(renderTarget);
         return renderTarget;
     }
-    static #setRenderTarget(renderTarget) {
+    #setRenderTarget(renderTarget) {
         if (renderTarget == undefined) {
             this.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
             this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
@@ -7510,7 +7515,7 @@ class Graphics {
             renderTarget.bind();
         }
     }
-    static savePicture(scene, camera, filename, width, height) {
+    savePicture(scene, camera, filename, width, height) {
         let previousWidth = this.#width;
         let previousHeight = this.#height;
         let previousAutoResize = this.autoResize;
@@ -7525,10 +7530,10 @@ class Graphics {
             this.setSize(previousWidth, previousHeight);
         }
     }
-    static async savePictureAsFile(filename) {
+    async savePictureAsFile(filename) {
         return new File([await this.toBlob()], filename);
     }
-    static async toBlob() {
+    async toBlob() {
         let promiseResolve;
         const promise = new Promise((resolve) => {
             promiseResolve = resolve;
@@ -7539,19 +7544,19 @@ class Graphics {
         this.#canvas.toBlob(callback);
         return promise;
     }
-    static _savePicture(filename) {
+    _savePicture(filename) {
         const callback = function (blob) {
             //SaveFile(filename, blob);
             SaveFile(new File([blob], filename));
         };
         this.#canvas.toBlob(callback);
     }
-    static startRecording(frameRate = 60, bitsPerSecond) {
+    startRecording(frameRate = 60, bitsPerSecond) {
         const stream = this.#canvas.captureStream(frameRate);
         this.#mediaRecorder = new MediaRecorder(stream, { mimeType: RECORDER_MIME_TYPE, bitsPerSecond: bitsPerSecond });
         this.#mediaRecorder.start();
     }
-    static stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
+    stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
         this.#mediaRecorder.ondataavailable = (event) => {
             const blob = new Blob([event.data], { 'type': RECORDER_MIME_TYPE });
             SaveFile(new File([blob], fileName));
@@ -7560,40 +7565,40 @@ class Graphics {
         //Stop the canvas stream
         this.#mediaRecorder.stream.getVideoTracks()[0].stop();
     }
-    static get ready() {
+    get ready() {
         return this.#readyPromise;
     }
-    static async isReady() {
+    async isReady() {
         await this.#readyPromise;
     }
-    static getParameter(parameterName) {
+    getParameter(parameterName) {
         return this.glContext?.getParameter(parameterName);
     }
-    static cleanupGLError() {
+    cleanupGLError() {
         this.glContext.getError(); //empty the error
     }
-    static getGLError(reason) {
+    getGLError(reason) {
         let glError = this.glContext.getError();
         if (glError) {
             console.error(`GL Error in ${reason} : `, glError);
         }
     }
-    static useLogDepth(use) {
+    useLogDepth(use) {
         this.setIncludeCode('LOG_DEPTH', use ? '#define USE_LOG_DEPTH' : '');
     }
-    static getTime() {
+    getTime() {
         return this.#time;
     }
-    static getWidth() {
+    getWidth() {
         return this.#width;
     }
-    static getHeight() {
+    getHeight() {
         return this.#height;
     }
-    static getCanvas() {
+    getCanvas() {
         return this.#canvas;
     }
-    static getForwardRenderer() {
+    getForwardRenderer() {
         return this.#forwardRenderer;
     }
 }
@@ -7609,7 +7614,7 @@ class Framebuffer {
     #dirty = true;
     constructor(target) {
         this.#target = target;
-        this.#frameBuffer = Graphics.createFramebuffer();
+        this.#frameBuffer = new Graphics().createFramebuffer();
     }
     /*
         createRenderTarget(colorFormat, colorType, depth, stencil) {
@@ -7622,11 +7627,11 @@ class Framebuffer {
         _createTexture(internalFormat, width, height, format, type) {
             let texture = TextureManager.createTexture();
     
-            Graphics.glContext.bindTexture(GL_TEXTURE_2D, texture);
-            Graphics.glContext.texImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
-            Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            new Graphics().glContext.bindTexture(GL_TEXTURE_2D, texture);
+            new Graphics().glContext.texImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
+            new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
             return texture;
         }
     */
@@ -7642,35 +7647,35 @@ class Framebuffer {
         for (let [attachmentPoint, attachmentParams] of this.#attachments) {
             switch (attachmentParams.type) {
                 case ATTACHMENT_TYPE_RENDER_BUFFER:
-                    //Graphics.glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
-                    //Graphics.renderbufferStorage(GL_RENDERBUFFER, GL_RGBA4, 256, 256);
-                    Graphics.glContext.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
-                    //Graphics.bindRenderbuffer(GL_RENDERBUFFER, null);
+                    //new Graphics().glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
+                    //new Graphics().renderbufferStorage(GL_RENDERBUFFER, GL_RGBA4, 256, 256);
+                    new Graphics().glContext.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
+                    //new Graphics().bindRenderbuffer(GL_RENDERBUFFER, null);
                     break;
                 case ATTACHMENT_TYPE_TEXTURE2D:
-                    //console.error(Graphics.getError());
+                    //console.error(new Graphics().getError());
                     let webGLTexture = attachmentParams.texture.texture;
-                    Graphics.glContext.bindTexture(attachmentParams.target, null);
-                    Graphics.glContext.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
+                    new Graphics().glContext.bindTexture(attachmentParams.target, null);
+                    new Graphics().glContext.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
                     break;
             }
         }
         this.#dirty = false;
-        //console.error(Graphics.checkFramebufferStatus(this.#target));
+        //console.error(new Graphics().checkFramebufferStatus(this.#target));
         //TODO: checkFramebufferStatus
     }
     bind() {
-        Graphics.glContext.bindFramebuffer(this.#target, this.#frameBuffer);
-        /*console.error(Graphics.getError());
+        new Graphics().glContext.bindFramebuffer(this.#target, this.#frameBuffer);
+        /*console.error(new Graphics().getError());
         this.#setupAttachments();//TODOv3
-        console.error(Graphics.getError());
+        console.error(new Graphics().getError());
         return;*/
         if (this.#dirty) {
             this.#setupAttachments();
         }
     }
     dispose() {
-        Graphics.deleteFramebuffer(this.#frameBuffer);
+        new Graphics().deleteFramebuffer(this.#frameBuffer);
         for (let [attachmentPoint, attachment] of this.#attachments) {
             switch (attachment.type) {
                 case ATTACHMENT_TYPE_RENDER_BUFFER:
@@ -7693,14 +7698,14 @@ class Renderbuffer {
     #renderbuffer;
     #internalFormat;
     constructor(internalFormat, width, height) {
-        this.#renderbuffer = Graphics.createRenderbuffer();
+        this.#renderbuffer = new Graphics().createRenderbuffer();
         this.#internalFormat = internalFormat;
         //this._renderbufferStorage(width, height);
-        renderbufferStorage(Graphics.glContext, this.#renderbuffer, this.#internalFormat, width, height);
+        renderbufferStorage(new Graphics().glContext, this.#renderbuffer, this.#internalFormat, width, height);
     }
     resize(width, height) {
         //this._renderbufferStorage(width, height);
-        renderbufferStorage(Graphics.glContext, this.#renderbuffer, this.#internalFormat, width, height);
+        renderbufferStorage(new Graphics().glContext, this.#renderbuffer, this.#internalFormat, width, height);
     }
     getRenderbuffer() {
         return this.#renderbuffer;
@@ -7712,7 +7717,7 @@ class Renderbuffer {
             glContext.bindRenderbuffer(GL_RENDERBUFFER, null);
         }*/
     dispose() {
-        Graphics.deleteRenderbuffer(this.#renderbuffer);
+        new Graphics().deleteRenderbuffer(this.#renderbuffer);
     }
 }
 
@@ -7742,7 +7747,7 @@ class RenderTarget {
         this.#texture.minFilter = GL_LINEAR;
         this.#texture.wrapS = GL_CLAMP_TO_EDGE;
         this.#texture.wrapT = GL_CLAMP_TO_EDGE;
-        this.#texture.setParameters(Graphics.glContext, GL_TEXTURE_2D); //TODOv3: remove
+        this.#texture.setParameters(new Graphics().glContext, GL_TEXTURE_2D); //TODOv3: remove
         this.setViewport(0, 0, width, height);
         this.#depthBuffer = params.depthBuffer ?? true;
         this.#stencilBuffer = params.stencilBuffer ?? false;
@@ -7782,15 +7787,15 @@ class RenderTarget {
     }
     bind() {
         this.#frameBuffer.bind();
-        Graphics.viewport = this.#viewport;
+        new Graphics().viewport = this.#viewport;
     }
     unbind() {
-        Graphics.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
+        new Graphics().glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
     }
     resize(width, height) {
         this.#width = width;
         this.#height = height;
-        this.#texture.texImage2D(Graphics.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
+        this.#texture.texImage2D(new Graphics().glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
         //TODOv3: stencil / depth buffer
         if (this.#depthRenderbuffer) {
             this.#depthRenderbuffer.resize(width, height);
@@ -8047,7 +8052,7 @@ class Composer {
     writeBuffer;
     constructor(renderTarget) {
         if (!renderTarget) {
-            let rendererSize = Graphics.getSize();
+            let rendererSize = new Graphics().getSize();
             renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
         }
         this.#setRenderTarget(renderTarget);
@@ -8055,7 +8060,7 @@ class Composer {
     render(delta) {
         let pass;
         let swapBuffer;
-        Graphics.getSize(tempVec2$3);
+        new Graphics().getSize(tempVec2$3);
         this.setSize(tempVec2$3[0], tempVec2$3[1]);
         let lastPass = -1;
         for (let i = this.passes.length - 1; i > 0; --i) {
@@ -8080,11 +8085,11 @@ class Composer {
     savePicture(filename, width, height) {
         this.setSize(width, height);
         this.render(0);
-        Graphics._savePicture(filename);
+        new Graphics()._savePicture(filename);
     }
     addPass(pass) {
         this.passes.push(pass);
-        Graphics.getSize(tempVec2$3);
+        new Graphics().getSize(tempVec2$3);
         pass.setSize(tempVec2$3[0], tempVec2$3[1]);
     }
     #setRenderTarget(renderTarget) {
@@ -8122,7 +8127,7 @@ class CameraControl {
         this.handleEnabled();
     }
     get enabled() {
-        return this.#enabled && !Graphics.dragging;
+        return this.#enabled && !new Graphics().dragging;
     }
     set camera(camera) {
         this.#camera = camera;
@@ -10220,7 +10225,7 @@ class Manipulator extends Entity {
                 else {
                     this.startScale(detail.x, detail.y);
                 }
-                Graphics.dragging = true;
+                new Graphics().dragging = true;
                 this.#setAxisSelected(true);
             }
         });
@@ -10243,7 +10248,7 @@ class Manipulator extends Entity {
         });
         GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (pickEvent) => {
             if (this.#entityAxis.has(pickEvent.detail.entity)) {
-                Graphics.dragging = false;
+                new Graphics().dragging = false;
                 this.#setAxisSelected(false);
             }
         });
@@ -10588,8 +10593,8 @@ class Manipulator extends Entity {
             let invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
             let invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
             // transform the screen coordinates to normalized coordinates
-            this.#cursorPos[0] = (x / Graphics.getWidth()) * 2.0 - 1.0;
-            this.#cursorPos[1] = 1.0 - (y / Graphics.getHeight()) * 2.0;
+            this.#cursorPos[0] = (x / new Graphics().getWidth()) * 2.0 - 1.0;
+            this.#cursorPos[1] = 1.0 - (y / new Graphics().getHeight()) * 2.0;
             this.#near[0] = this.#far[0] = this.#cursorPos[0];
             this.#near[1] = this.#far[1] = this.#cursorPos[1];
             this.#near[2] = -1.0;
@@ -10659,8 +10664,8 @@ class Manipulator extends Entity {
             camera.aspectRatio;
             let invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
             let invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
-            this.#cursorPos[0] = (x / Graphics.getWidth()) * 2.0 - 1.0;
-            this.#cursorPos[1] = 1.0 - (y / Graphics.getHeight()) * 2.0;
+            this.#cursorPos[0] = (x / new Graphics().getWidth()) * 2.0 - 1.0;
+            this.#cursorPos[1] = 1.0 - (y / new Graphics().getHeight()) * 2.0;
             this.#near[0] = this.#far[0] = this.#cursorPos[0];
             this.#near[1] = this.#far[1] = this.#cursorPos[1];
             this.#near[2] = -1.0;
@@ -10730,7 +10735,7 @@ class Manipulator extends Entity {
         this.#rotationManipulator.visible = false;
         this.#scaleManipulator.visible = false;
         this.#setAxisSelected(false);
-        Graphics.dragging = false;
+        new Graphics().dragging = false;
         this.#mode = mode;
         switch (mode) {
             case 0:
@@ -10904,11 +10909,11 @@ async function exportToBinaryFBX(entity) {
 }
 async function entityToFBXScene(fbxManager, entity) {
     const fbxScene = fbxManager.createObject('FBXScene', 'Scene');
-    let playing = Graphics.isRunning();
-    Graphics.pause();
+    let playing = new Graphics().isRunning();
+    new Graphics().pause();
     await createFBXSceneEntity(fbxScene, entity);
     if (playing) {
-        Graphics.play();
+        new Graphics().play();
     }
     return fbxScene;
 }
@@ -11287,21 +11292,21 @@ async function renderMaterial(material, materialsParams) {
         fullScreenQuadMesh = new FullScreenQuad();
         scene.addChild(fullScreenQuadMesh);
     }
-    let [previousWidth, previousHeight] = Graphics.setSize(1024, 1024); //TODOv3: constant
-    let previousClearColor = Graphics.getClearColor();
-    Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
-    Graphics.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-    Graphics.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-    Graphics.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+    let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024); //TODOv3: constant
+    let previousClearColor = new Graphics().getClearColor();
+    new Graphics().clearColor(vec4.fromValues(0, 0, 0, 0));
+    new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
+    new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
+    new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
     fullScreenQuadMesh.material = material;
     fullScreenQuadMesh.materialsParams = materialsParams;
-    Graphics.render(scene, camera, 0);
-    let imgContent = await Graphics.toBlob();
-    Graphics.setIncludeCode('EXPORT_TEXTURES', '');
-    Graphics.setIncludeCode('SKIP_PROJECTION', '');
-    Graphics.setIncludeCode('SKIP_LIGHTING', '');
-    Graphics.setSize(previousWidth, previousHeight);
-    Graphics.clearColor(previousClearColor);
+    new Graphics().render(scene, camera, 0);
+    let imgContent = await new Graphics().toBlob();
+    new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
+    new Graphics().setIncludeCode('SKIP_PROJECTION', '');
+    new Graphics().setIncludeCode('SKIP_LIGHTING', '');
+    new Graphics().setSize(previousWidth, previousHeight);
+    new Graphics().clearColor(previousClearColor);
     return imgContent.arrayBuffer();
 }
 
@@ -11335,7 +11340,7 @@ class ContextObserverClass {
     static #processEvent(subject, dependent, event) {
         switch (true) {
             case dependent.is('Camera'):
-                resizeCamera(Graphics, dependent);
+                resizeCamera(new Graphics(), dependent);
                 break;
             case dependent instanceof FirstPersonControl: //TODO do it for any CameraControl?
             case dependent instanceof OrbitControl:
@@ -11401,7 +11406,7 @@ class ContextObserverClass {
         this.#addObserver(subject, dependent);
         switch (true) {
             case dependent.is('Camera'):
-                resizeCamera(Graphics, dependent);
+                resizeCamera(new Graphics(), dependent);
                 break;
         }
     }
@@ -11452,7 +11457,7 @@ class RgbeImporter {
             internalFormat: TextureFormat.Rgb_32F,
             flipY: true,
         };
-        if (Graphics.OES_texture_float_linear) {
+        if (new Graphics().OES_texture_float_linear) {
             params.magFilter = GL_LINEAR;
             params.minFilter = GL_LINEAR;
         }
@@ -14223,10 +14228,10 @@ class Node extends EventTarget {
             renderTarget2.resize(previewSize, previewSize);
         }
         this.#previewRenderTarget = renderTarget2;
-        Graphics.pushRenderTarget(renderTarget2);
+        new Graphics().pushRenderTarget(renderTarget2);
         this.editor.render(this.material);
         let pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
-        Graphics.glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        new Graphics().glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         this.#pixelArray = new Uint8ClampedArray(pixelArray);
         //set alpha to 1
         for (let i = 3; i < pixelArray.length; i += 4) {
@@ -14239,7 +14244,7 @@ class Node extends EventTarget {
         catch (e) { }
         this.previewPic.width = previewSize;
         this.previewPic.height = previewSize;
-        Graphics.popRenderTarget();
+        new Graphics().popRenderTarget();
     }
     async savePicture() {
         await this.redraw({ previewSize: 2048 });
@@ -14392,12 +14397,12 @@ class ApplySticker extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')._value });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         /*let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();*/
-        Graphics.popRenderTarget();
+        new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        new Graphics().popRenderTarget();*/
+        new Graphics().popRenderTarget();
         this.updatePreview(context);
         this.getOutput('output')._value = this.#renderTarget.getTexture();
         //this.getOutput('output')._pixelArray = pixelArray;
@@ -14491,11 +14496,11 @@ class TextureLookup extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        new Graphics().popRenderTarget();
         this.updatePreview(context);
         this.getOutput('output')._value = this.#renderTarget.getTexture();
         this.getOutput('output')._pixelArray = pixelArray;
@@ -14543,7 +14548,7 @@ function dropFiles(evt, node) {
                     texture.wrapS = GL_CLAMP_TO_EDGE;
                     texture.wrapT = GL_CLAMP_TO_EDGE;
                 }
-                texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
+                texture.setParameters(new Graphics().glContext, GL_TEXTURE_2D);
                 const image = new Image();
                 image.onload = () => {
                     TextureManager.fillTextureWithImage(texture, image);
@@ -14575,7 +14580,7 @@ function dropFilesSpecular(evt, node) {
                     texture.wrapS = GL_CLAMP_TO_EDGE;
                     texture.wrapT = GL_CLAMP_TO_EDGE;
                 }
-                texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
+                texture.setParameters(new Graphics().glContext, GL_TEXTURE_2D);
                 const image = new Image();
                 image.onload = () => {
                     TextureManager.fillTextureWithImage(texture, image);
@@ -15255,11 +15260,11 @@ class DrawCircle extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        new Graphics().popRenderTarget();
         this.getOutput('output')._value = this.#renderTarget.getTexture();
         this.getOutput('output')._pixelArray = pixelArray;
     }
@@ -15313,11 +15318,11 @@ class CombineAdd extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        new Graphics().popRenderTarget();
         this.updatePreview(context);
         this.getOutput('output')._value = this.#renderTarget.getTexture();
         this.getOutput('output')._pixelArray = pixelArray;
@@ -15361,11 +15366,11 @@ class CombineLerp extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        new Graphics().popRenderTarget();
         this.updatePreview(context);
         this.getOutput('output')._value = this.#renderTarget.getTexture();
         this.getOutput('output')._pixelArray = pixelArray;
@@ -15417,11 +15422,11 @@ class Multiply$1 extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')._value });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         //let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        //Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        //new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        new Graphics().popRenderTarget();
         this.updatePreview(context);
         this.getOutput('output')._value = this.#renderTarget.getTexture();
     }
@@ -15461,11 +15466,11 @@ class Select extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        new Graphics().popRenderTarget();
         this.updatePreview(context);
         this.getOutput('output')._value = this.#renderTarget.getTexture();
         this.getOutput('output')._pixelArray = pixelArray;
@@ -15764,7 +15769,7 @@ class NodeImageEditor extends EventTarget {
     }
     render(material) {
         this.#fullScreenQuadMesh.setMaterial(material);
-        Graphics.render(this.#scene, this.#camera, 0);
+        new Graphics().render(this.#scene, this.#camera, 0);
     }
     addNode(operationName, params = {}) {
         params.textureSize = params.textureSize ?? this.textureSize;
@@ -16293,8 +16298,8 @@ class SkeletonHelper extends Entity {
         if (!this.visible) {
             return;
         }
-        let normalizedX = (event.detail.x / Graphics.getWidth()) * 2 - 1;
-        let normalizedY = 1 - (event.detail.y / Graphics.getHeight()) * 2;
+        let normalizedX = (event.detail.x / new Graphics().getWidth()) * 2 - 1;
+        let normalizedY = 1 - (event.detail.y / new Graphics().getHeight()) * 2;
         const scene = this.root;
         if (!scene.is('Scene')) {
             return;
@@ -16570,7 +16575,7 @@ class Bone extends Entity {
             }
         }
         this.dirty = false;
-        this.lastComputed = Graphics.currentTick;
+        this.lastComputed = new Graphics().currentTick;
     }
     set boneId(boneId) {
         this.#boneId = boneId;
@@ -17332,16 +17337,16 @@ class Skeleton extends Entity {
     }
     createBoneMatrixTexture() {
         this.#texture = TextureManager.createTexture();
-        const gl = Graphics.glContext; //TODO
+        const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture); //TODOv3: pass param to texture and remove this
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateBoneMatrixTexture() {
-        const gl = Graphics.glContext; //TODO
+        const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics.isWebGL2) {
+        if (new Graphics().isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
@@ -30199,10 +30204,10 @@ class ShaderEditor extends HTMLElement {
         this.#htmlShaderRenderMode.addEventListener('input', (event) => {
             let n = Number(event.target.value);
             if (Number.isNaN(n)) {
-                Graphics.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE');
+                new Graphics().setIncludeCode('RENDER_MODE', '#undef RENDER_MODE');
             }
             else {
-                Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
+                new Graphics().setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
             }
         });
         let htmlCustomShaderButtons = createElement('div');
@@ -30329,7 +30334,7 @@ class ShaderEditor extends HTMLElement {
         else {
             setCustomIncludeSource(this.#editorIncludeName, customSource);
             ShaderManager.resetShadersSource();
-            Graphics.invalidateShaders();
+            new Graphics().invalidateShaders();
         }
         if (customSource == '') {
             if (this.#editMode == EDIT_MODE_SHADER) {
@@ -30341,7 +30346,7 @@ class ShaderEditor extends HTMLElement {
         }
         else {
             if (this.#editMode == EDIT_MODE_SHADER) {
-                Graphics.invalidateShaders();
+                new Graphics().invalidateShaders();
                 setTimeout(() => this.setAnnotations(this.#editorShaderName), this.#annotationsDelay);
             }
             else {
@@ -36063,8 +36068,8 @@ class ControlPoint extends Entity {
         return this.#parentControlPoint;
     }
     step() {
-        if (this.lastComputed < Graphics.currentTick) {
-            this.lastComputed = Graphics.currentTick;
+        if (this.lastComputed < new Graphics().currentTick) {
+            this.lastComputed = new Graphics().currentTick;
             vec3.copy(this.prevWorldPosition, this.currentWorldPosition);
             quat.copy(this.prevWorldQuaternion, this.currentWorldQuaternion);
             mat4.copy(this.prevWorldTransformation, this.currentWorldTransformation);
@@ -41951,7 +41956,7 @@ class Source1TextureManagerClass extends EventTarget {
     fallbackRepository;
     constructor() {
         super();
-        Graphics.ready.then(() => {
+        new Graphics().ready.then(() => {
             this.#defaultTexture = TextureManager.createCheckerTexture([127, 190, 255]);
             this.#defaultTextureCube = TextureManager.createCheckerTexture([127, 190, 255], undefined, undefined, true);
             this.#defaultTexture.addUser(this);
@@ -42043,13 +42048,13 @@ function vtfToTexture(vtf, animatedTexture, srgb) {
     const alphaBits = vtf.getAlphaBits();
     animatedTexture.vtf = vtf;
     animatedTexture.setAlphaBits(alphaBits);
-    let glContext = Graphics.glContext;
+    let glContext = new Graphics().glContext;
     for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
         let texture = TextureManager.createTexture(); //TODOv3: add params
         texture.properties.set('vtf', vtf);
         texture.setAlphaBits(alphaBits);
         const currentMipMap = vtf.mipmapCount; //TODOv3: choose mipmap
-        vtf.fillTexture(Graphics, glContext, texture, currentMipMap, frameIndex, srgb);
+        vtf.fillTexture(new Graphics(), glContext, texture, currentMipMap, frameIndex, srgb);
         animatedTexture.addFrame(frameIndex, texture);
     }
 }
@@ -46889,7 +46894,7 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
         this.geometry.attributes.get('aTextureCoord').dirty = true;
     }
     set maxParticles(maxParticles) {
-        this.#maxParticles = Graphics.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+        this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
         this.#createParticlesArray();
         this.#initBuffers();
     }
@@ -46955,16 +46960,16 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
     #createParticlesTexture() {
         this.texture = TextureManager.createTexture();
         this.texture.addUser(this);
-        const gl = Graphics.glContext; //TODO
+        const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics.glContext;
+        const gl = new Graphics().glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
-        if (Graphics.isWebGL2) {
+        if (new Graphics().isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
         else {
@@ -47104,16 +47109,16 @@ class RenderRope extends SourceEngineParticleOperator {
     #createParticlesTexture() {
         this.texture = TextureManager.createTexture();
         this.texture.addUser(this);
-        const gl = Graphics.glContext; //TODO
+        const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics.glContext;
+        const gl = new Graphics().glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
-        if (Graphics.isWebGL2) {
+        if (new Graphics().isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
         else {
@@ -47213,7 +47218,7 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
     updateParticles(particleSystem, particleList, elapsedTime) {
         const rate = this.getParameter('animation rate') ?? 30;
         this.geometry.count = particleList.length * 6;
-        let maxParticles = Graphics.isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+        let maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
         this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.visible = Source1ParticleControler.visible;
@@ -47243,7 +47248,7 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
         this.geometry.attributes.get('aTextureCoord').dirty = true;
     }
     initRenderer(particleSystem) {
-        let maxParticles = Graphics.isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+        let maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
         this.createParticlesArray(maxParticles);
         this.#createParticlesTexture();
         const vertices = [];
@@ -47284,16 +47289,16 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
     #createParticlesTexture() {
         this.texture = TextureManager.createTexture();
         this.texture.addUser(this);
-        const gl = Graphics.glContext; //TODO
+        const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture(maxParticles, pixels) {
-        const gl = Graphics.glContext;
+        const gl = new Graphics().glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
-        if (Graphics.isWebGL2) {
+        if (new Graphics().isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, maxParticles, 0, GL_RGBA, GL_FLOAT, pixels);
         }
         else {
@@ -52728,13 +52733,13 @@ class Source2TextureManagerClass extends EventTarget {
     EXT_texture_compression_rgtc;
     constructor() {
         super();
-        Graphics.ready.then(() => {
+        new Graphics().ready.then(() => {
             this.#defaultTexture = TextureManager.createCheckerTexture([127, 190, 255]);
             this.#defaultTexture.addUser(this);
             //this._missingTexture = TextureManager.createCheckerTexture();
-            this.WEBGL_compressed_texture_s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
-            this.EXT_texture_compression_bptc = Graphics.getExtension('EXT_texture_compression_bptc');
-            this.EXT_texture_compression_rgtc = Graphics.getExtension('EXT_texture_compression_rgtc');
+            this.WEBGL_compressed_texture_s3tc = new Graphics().getExtension('WEBGL_compressed_texture_s3tc');
+            this.EXT_texture_compression_bptc = new Graphics().getExtension('EXT_texture_compression_bptc');
+            this.EXT_texture_compression_rgtc = new Graphics().getExtension('EXT_texture_compression_rgtc');
         });
         setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
     }
@@ -52792,11 +52797,11 @@ class Source2TextureManagerClass extends EventTarget {
                     this.fillTexture(texture, vtexFile.getWidth(), vtexFile.getHeight(), imageData[0]);
                 }*/
             }
-            //Graphics.glContext.bindTexture(GL_TEXTURE_2D, null);
+            //new Graphics().glContext.bindTexture(GL_TEXTURE_2D, null);
         }
     }
     #initCubeTexture(texture, imageFormat, width, height, imageData) {
-        const glContext = Graphics.glContext;
+        const glContext = new Graphics().glContext;
         glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
         switch (true) {
             case (imageFormat & TEXTURE_FORMAT_UNCOMPRESSED) == TEXTURE_FORMAT_UNCOMPRESSED:
@@ -52827,7 +52832,7 @@ class Source2TextureManagerClass extends EventTarget {
         glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
     }
     #initFlatTexture(texture, imageFormat, width, height, imageData) {
-        const glContext = Graphics.glContext;
+        const glContext = new Graphics().glContext;
         glContext.bindTexture(GL_TEXTURE_2D, texture);
         switch (true) {
             case (imageFormat & TEXTURE_FORMAT_UNCOMPRESSED) == TEXTURE_FORMAT_UNCOMPRESSED:
@@ -52849,7 +52854,7 @@ class Source2TextureManagerClass extends EventTarget {
         glContext.bindTexture(GL_TEXTURE_2D, null);
     }
     fillTexture(texture, imageFormat, width, height, datas, target) {
-        const gl = Graphics.glContext;
+        const gl = new Graphics().glContext;
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
         switch (imageFormat) {
             case TEXTURE_FORMAT_UNCOMPRESSED_RGBA:
@@ -52863,7 +52868,7 @@ class Source2TextureManagerClass extends EventTarget {
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     fillTextureDxt(texture, imageFormat, width, height, datas, target) {
-        var gl = Graphics.glContext;
+        var gl = new Graphics().glContext;
         var s3tc = this.WEBGL_compressed_texture_s3tc; //gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         if (s3tc) {
@@ -52913,7 +52918,7 @@ class Source2TextureManagerClass extends EventTarget {
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     #fillTextureBptc(texture, width, height, imageFormat, datas) {
-        var gl = Graphics.glContext;
+        var gl = new Graphics().glContext;
         var bptc = this.EXT_texture_compression_bptc;
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         gl.bindTexture(GL_TEXTURE_2D, texture);
@@ -52932,16 +52937,16 @@ class Source2TextureManagerClass extends EventTarget {
             });
         }
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        Graphics.getGLError('texParameteri');
+        new Graphics().getGLError('texParameteri');
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        Graphics.getGLError('texParameteri');
+        new Graphics().getGLError('texParameteri');
         //gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         //gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         //gl.bindTexture(GL_TEXTURE_2D, null);
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     #fillTextureRgtc(texture, width, height, imageFormat, datas) {
-        var gl = Graphics.glContext;
+        var gl = new Graphics().glContext;
         var rgtc = this.EXT_texture_compression_rgtc;
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         gl.bindTexture(GL_TEXTURE_2D, texture);
@@ -59622,16 +59627,16 @@ class RenderRopes extends Operator {
     }
     createParticlesTexture() {
         this.texture = TextureManager.createTexture();
-        const gl = Graphics.glContext; //TODO
+        const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics.glContext;
+        const gl = new Graphics().glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
-        if (Graphics.isWebGL2) {
+        if (new Graphics().isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
         else {
@@ -59815,7 +59820,7 @@ class RenderSprites extends RenderBase {
         this.geometry.attributes.get('aTextureCoord2').dirty = true;
     }
     set maxParticles(maxParticles) {
-        this.#maxParticles = Graphics.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+        this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
         this._createParticlesArray();
         this._initBuffers();
     }
@@ -59856,16 +59861,16 @@ class RenderSprites extends RenderBase {
     }
     createParticlesTexture() {
         this.texture = TextureManager.createTexture();
-        const gl = Graphics.glContext; //TODO
+        const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics.glContext;
+        const gl = new Graphics().glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
-        if (Graphics.isWebGL2) {
+        if (new Graphics().isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
         else {
@@ -60024,7 +60029,7 @@ class RenderTrails extends Operator {
         }
     }
     set maxParticles(maxParticles) {
-        this.#maxParticles = Graphics.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+        this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
         this._createParticlesArray();
         this._initBuffers();
     }
@@ -60065,16 +60070,16 @@ class RenderTrails extends Operator {
     }
     createParticlesTexture() {
         this.texture = TextureManager.createTexture();
-        const gl = Graphics.glContext; //TODO
+        const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics.glContext;
+        const gl = new Graphics().glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
-        if (Graphics.isWebGL2) {
+        if (new Graphics().isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
         else {
@@ -62328,7 +62333,7 @@ class RemGenerator {
     }
     #cleanup(outputTarget) {
         //this.#renderer.setRenderTarget(_oldTarget, _oldActiveCubeFace, _oldActiveMipmapLevel);
-        //Graphics.pushRenderTarget();
+        //new Graphics().pushRenderTarget();
         outputTarget.setScissorTest(false);
         //outputTarget.setViewport(0, 0, outputTarget.width, outputTarget.height);
     }
@@ -62394,11 +62399,11 @@ class RemGenerator {
         const upSign = [1, -1, 1, 1, 1, 1];
         const forwardSign = [1, 1, 1, -1, -1, -1];
         const renderer = this.#renderer;
-        const originalAutoClear = Graphics.autoClear;
+        const originalAutoClear = new Graphics().autoClear;
         const toneMapping = renderer.getToneMapping();
-        Graphics.getClearColor(clearColor);
+        new Graphics().getClearColor(clearColor);
         renderer.setToneMapping(ToneMapping.None);
-        Graphics.autoClear = false;
+        new Graphics().autoClear = false;
         const backgroundMaterial = new MeshBasicMaterial({
             name: 'PMREM.Background',
             //side: BackSide,
@@ -62443,14 +62448,14 @@ class RemGenerator {
             }
             const size = this.#cubeSize;
             cubeUVRenderTarget.setViewport(col * size, i > 2 ? size : 0, size, size);
-            Graphics.pushRenderTarget(cubeUVRenderTarget);
+            new Graphics().pushRenderTarget(cubeUVRenderTarget);
             renderer.render(scene, cubeCamera, 0);
-            Graphics.popRenderTarget();
+            new Graphics().popRenderTarget();
         }
         backgroundBox.dispose();
         //renderer.toneMapping = toneMapping;
         renderer.setToneMapping(toneMapping);
-        Graphics.autoClear = originalAutoClear;
+        new Graphics().autoClear = originalAutoClear;
         scene.background = background;
     }
     #textureToCubeUV(texture, cubeUVRenderTarget) {
@@ -62475,20 +62480,20 @@ class RemGenerator {
         uniforms['envMap'] = texture;
         const size = this.#cubeSize;
         cubeUVRenderTarget.setViewport(0, 0, 3 * size, 2 * size);
-        Graphics.pushRenderTarget(cubeUVRenderTarget);
+        new Graphics().pushRenderTarget(cubeUVRenderTarget);
         renderer.render(scene, flatCamera, 0);
-        Graphics.popRenderTarget();
+        new Graphics().popRenderTarget();
     }
     #applyPMREM(cubeUVRenderTarget) {
         this.#renderer;
-        const autoClear = Graphics.autoClear;
-        Graphics.autoClear = false;
+        const autoClear = new Graphics().autoClear;
+        new Graphics().autoClear = false;
         for (let i = 1; i < this.#lodPlanes.length; i++) {
             const sigma = Math.sqrt(this.#sigmas[i] * this.#sigmas[i] - this.#sigmas[i - 1] * this.#sigmas[i - 1]);
             const poleAxis = axisDirections[(i - 1) % axisDirections.length];
             this.#blur(cubeUVRenderTarget, i - 1, i, sigma, poleAxis);
         }
-        Graphics.autoClear = autoClear;
+        new Graphics().autoClear = autoClear;
     }
     /**
      * This is a two-pass Gaussian blur for a cubemap. Normally this is done
@@ -62550,9 +62555,9 @@ class RemGenerator {
         const x = 3 * outputSize * (lodOut > this.#lodMax - LOD_MIN ? lodOut - this.#lodMax + LOD_MIN : 0);
         const y = 4 * (this.#cubeSize - outputSize);
         targetOut.setViewport(x, y, 3 * outputSize, 2 * outputSize);
-        Graphics.pushRenderTarget(targetOut);
+        new Graphics().pushRenderTarget(targetOut);
         renderer.render(scene, flatCamera, 0);
-        Graphics.popRenderTarget();
+        new Graphics().popRenderTarget();
     }
 }
 function createPlanes(lodMax) {
@@ -62972,12 +62977,12 @@ class ObjExporter {
         this.scene.addChild(this.#fullScreenQuadMesh);
     }
     static async #renderMeshes(files, meshes) {
-        let [previousWidth, previousHeight] = Graphics.setSize(1024, 1024); //TODOv3: constant
-        Graphics.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-        Graphics.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-        Graphics.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
-        let previousClearColor = Graphics.getClearColor();
-        Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
+        let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024); //TODOv3: constant
+        new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
+        new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
+        new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+        let previousClearColor = new Graphics().getClearColor();
+        new Graphics().clearColor(vec4.fromValues(0, 0, 0, 0));
         let meshId = 0;
         let promises = [];
         for (let mesh of meshes) {
@@ -62989,20 +62994,20 @@ class ObjExporter {
             }
             this.#fullScreenQuadMesh.material = mesh.material;
             this.#fullScreenQuadMesh.materialsParams = mesh.materialsParams;
-            Graphics.render(this.scene, this.camera, 0);
-            //let file = await Graphics.savePictureAsFile(`mat_${meshId}.png`);
-            /*				let file = await Graphics.savePictureAsFile(`mat_${meshId}.png`);
+            new Graphics().render(this.scene, this.camera, 0);
+            //let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
+            /*				let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
                         files.add(file);*/
-            let promise = Graphics.savePictureAsFile(`mat_${meshId}.png`);
+            let promise = new Graphics().savePictureAsFile(`mat_${meshId}.png`);
             promise.then((file) => files.add(file));
             promises.push(promise);
             ++meshId;
         }
-        Graphics.setIncludeCode('EXPORT_TEXTURES', '');
-        Graphics.setIncludeCode('SKIP_PROJECTION', '');
-        Graphics.setIncludeCode('SKIP_LIGHTING', '');
-        Graphics.setSize(previousWidth, previousHeight);
-        Graphics.clearColor(previousClearColor);
+        new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
+        new Graphics().setIncludeCode('SKIP_PROJECTION', '');
+        new Graphics().setIncludeCode('SKIP_LIGHTING', '');
+        new Graphics().setSize(previousWidth, previousHeight);
+        new Graphics().clearColor(previousClearColor);
         await Promise.all(promises);
     }
     static #addLine(line) {
@@ -63152,7 +63157,7 @@ class RenderTargetViewer {
         this.refreshPlane();
     }
     refreshPlane() {
-        vec3.set(this.#plane._position, (this.#size[0] - Graphics.getWidth()) * 0.5 + this.#position[0], (Graphics.getHeight() - this.#size[1]) * 0.5 - this.#position[1], 0);
+        vec3.set(this.#plane._position, (this.#size[0] - new Graphics().getWidth()) * 0.5 + this.#position[0], (new Graphics().getHeight() - this.#size[1]) * 0.5 - this.#position[1], 0);
         this.#plane.setSize(this.#size[0], this.#size[1]);
     }
     render(renderer) {

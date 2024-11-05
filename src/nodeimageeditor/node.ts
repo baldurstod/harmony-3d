@@ -281,11 +281,11 @@ export class Node extends EventTarget {
 			renderTarget2.resize(previewSize, previewSize);
 		}
 		this.#previewRenderTarget = renderTarget2;
-		Graphics.pushRenderTarget(renderTarget2);
+		new Graphics().pushRenderTarget(renderTarget2);
 		this.editor.render(this.material);
 
 		let pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
-		Graphics.glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+		new Graphics().glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		this.#pixelArray = new Uint8ClampedArray(pixelArray);
 
 		//set alpha to 1
@@ -300,7 +300,7 @@ export class Node extends EventTarget {
 		this.previewPic.width = previewSize;
 		this.previewPic.height = previewSize;
 
-		Graphics.popRenderTarget();
+		new Graphics().popRenderTarget();
 	}
 
 	async savePicture() {

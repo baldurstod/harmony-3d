@@ -163,8 +163,8 @@ export class SkeletonHelper extends Entity {
 			return;
 		}
 
-		let normalizedX = (event.detail.x / Graphics.getWidth()) * 2 - 1;
-		let normalizedY = 1 - (event.detail.y / Graphics.getHeight()) * 2;
+		let normalizedX = (event.detail.x / new Graphics().getWidth()) * 2 - 1;
+		let normalizedY = 1 - (event.detail.y / new Graphics().getHeight()) * 2;
 
 		const scene = this.root;
 		if (!scene.is('Scene')) {

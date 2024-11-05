@@ -15,7 +15,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 	fallbackRepository: string;
 	constructor() {
 		super();
-		Graphics.ready.then(() => {
+		new Graphics().ready.then(() => {
 			this.#defaultTexture = TextureManager.createCheckerTexture([127, 190, 255]);
 			this.#defaultTextureCube = TextureManager.createCheckerTexture([127, 190, 255], undefined, undefined, true);
 			this.#defaultTexture.addUser(this);
@@ -127,13 +127,13 @@ export function vtfToTexture(vtf, animatedTexture, srgb) {
 	const alphaBits = vtf.getAlphaBits();
 	animatedTexture.vtf = vtf;
 	animatedTexture.setAlphaBits(alphaBits);
-	let glContext = Graphics.glContext;
+	let glContext = new Graphics().glContext;
 	for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
 		let texture = TextureManager.createTexture();//TODOv3: add params
 		texture.properties.set('vtf', vtf);
 		texture.setAlphaBits(alphaBits);
 		const currentMipMap = vtf.mipmapCount;//TODOv3: choose mipmap
-		vtf.fillTexture(Graphics, glContext, texture, currentMipMap, frameIndex, srgb);
+		vtf.fillTexture(new Graphics(), glContext, texture, currentMipMap, frameIndex, srgb);
 		animatedTexture.addFrame(frameIndex, texture);
 	}
 }

@@ -153,7 +153,7 @@ export class RenderRopes extends Operator {
 
 	createParticlesTexture() {
 		this.texture = TextureManager.createTexture();
-		const gl = Graphics.glContext;//TODO
+		const gl = new Graphics().glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -161,10 +161,10 @@ export class RenderRopes extends Operator {
 	}
 
 	updateParticlesTexture() {
-		const gl = Graphics.glContext;
+		const gl = new Graphics().glContext;
 
 		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
-		if (Graphics.isWebGL2) {
+		if (new Graphics().isWebGL2) {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
 		} else {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);

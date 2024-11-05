@@ -56,9 +56,9 @@ export class ShaderEditor extends HTMLElement {
 		this.#htmlShaderRenderMode.addEventListener('input', (event) => {
 			let n = Number((event.target as HTMLInputElement).value);
 			if (Number.isNaN(n)) {
-				Graphics.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE')
+				new Graphics().setIncludeCode('RENDER_MODE', '#undef RENDER_MODE')
 			} else {
-				Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
+				new Graphics().setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
 			}
 		});
 
@@ -204,7 +204,7 @@ export class ShaderEditor extends HTMLElement {
 		} else {
 			setCustomIncludeSource(this.#editorIncludeName, customSource);
 			ShaderManager.resetShadersSource();
-			Graphics.invalidateShaders();
+			new Graphics().invalidateShaders();
 		}
 
 		if (customSource == '') {
@@ -215,7 +215,7 @@ export class ShaderEditor extends HTMLElement {
 			}
 		} else {
 			if (this.#editMode == EDIT_MODE_SHADER) {
-				Graphics.invalidateShaders();
+				new Graphics().invalidateShaders();
 				setTimeout(() => this.setAnnotations(this.#editorShaderName), this.#annotationsDelay);
 			} else {
 				setTimeout(() => this.#shaderEditor.getSession().setAnnotations(ShaderManager.getIncludeAnnotations(this.#editorIncludeName)), this.#annotationsDelay);

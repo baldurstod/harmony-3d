@@ -13,7 +13,7 @@ import { Program } from '../webgl/program';
 export class ForwardRenderer extends Renderer {
 	#shadowMap: ShadowMap;
 	#frame: number = 0;
-	constructor(graphics: typeof Graphics) {
+	constructor(graphics: Graphics) {
 		super(graphics);
 		this.#shadowMap = new ShadowMap(graphics);
 	}

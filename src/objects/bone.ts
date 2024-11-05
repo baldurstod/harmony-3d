@@ -269,7 +269,7 @@ export class Bone extends Entity {
 		}
 
 		this.dirty = false;
-		this.lastComputed = Graphics.currentTick;
+		this.lastComputed = new Graphics().currentTick;
 	}
 
 	set boneId(boneId) {

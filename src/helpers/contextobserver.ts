@@ -37,7 +37,7 @@ class ContextObserverClass {
 	static #processEvent(subject, dependent, event) {
 		switch (true) {
 			case dependent.is('Camera'):
-				resizeCamera(Graphics, dependent);
+				resizeCamera(new Graphics(), dependent);
 				break;
 			case dependent instanceof FirstPersonControl://TODO do it for any CameraControl?
 			case dependent instanceof OrbitControl:
@@ -118,7 +118,7 @@ class ContextObserverClass {
 
 		switch (true) {
 			case dependent.is('Camera'):
-				resizeCamera(Graphics, dependent);
+				resizeCamera(new Graphics(), dependent);
 				break;
 		}
 	}

@@ -34,7 +34,7 @@ export class RgbeImporter {
 			flipY: true,
 		};
 
-		if (Graphics.OES_texture_float_linear) {
+		if (new Graphics().OES_texture_float_linear) {
 			params.magFilter = GL_LINEAR;
 			params.minFilter = GL_LINEAR;
 		} else {

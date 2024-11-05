@@ -34,7 +34,7 @@ export class RenderTarget {
 		this.#texture.minFilter = GL_LINEAR;
 		this.#texture.wrapS = GL_CLAMP_TO_EDGE;
 		this.#texture.wrapT = GL_CLAMP_TO_EDGE;
-		this.#texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);//TODOv3: remove
+		this.#texture.setParameters(new Graphics().glContext, GL_TEXTURE_2D);//TODOv3: remove
 
 		this.setViewport(0, 0, width, height);
 
@@ -88,17 +88,17 @@ export class RenderTarget {
 
 	bind() {
 		this.#frameBuffer.bind();
-		Graphics.viewport = this.#viewport;
+		new Graphics().viewport = this.#viewport;
 	}
 
 	unbind() {
-		Graphics.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
+		new Graphics().glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
 	}
 
 	resize(width: number, height: number) {
 		this.#width = width;
 		this.#height = height;
-		this.#texture.texImage2D(Graphics.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
+		this.#texture.texImage2D(new Graphics().glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
 		//TODOv3: stencil / depth buffer
 		if (this.#depthRenderbuffer) {
 			this.#depthRenderbuffer.resize(width, height);

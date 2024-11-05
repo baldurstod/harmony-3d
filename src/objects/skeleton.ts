@@ -53,7 +53,7 @@ export class Skeleton extends Entity {
 
 	createBoneMatrixTexture() {
 		this.#texture = TextureManager.createTexture();
-		const gl = Graphics.glContext;//TODO
+		const gl = new Graphics().glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);//TODOv3: pass param to texture and remove this
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -61,9 +61,9 @@ export class Skeleton extends Entity {
 	}
 
 	updateBoneMatrixTexture() {//removeme
-		const gl = Graphics.glContext;//TODO
+		const gl = new Graphics().glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-		if (Graphics.isWebGL2) {
+		if (new Graphics().isWebGL2) {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
 		} else {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 4, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);

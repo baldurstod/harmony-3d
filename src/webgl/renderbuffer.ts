@@ -5,15 +5,15 @@ import { RenderBufferInternalFormat } from '../textures/constants';
 
 function renderbufferStorage(glContext, renderbuffer, internalFormat, width, height) {
 	if (ENABLE_GET_ERROR && DEBUG) {
-		Graphics.cleanupGLError();
+		new Graphics().cleanupGLError();
 	}
 	glContext.bindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
 	if (ENABLE_GET_ERROR && DEBUG) {
-		Graphics.getGLError('bindRenderbuffer');
+		new Graphics().getGLError('bindRenderbuffer');
 	}
 	glContext.renderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height);
 	if (ENABLE_GET_ERROR && DEBUG) {
-		Graphics.getGLError('renderbufferStorage');
+		new Graphics().getGLError('renderbufferStorage');
 	}
 	glContext.bindRenderbuffer(GL_RENDERBUFFER, null);
 }
@@ -22,15 +22,15 @@ export class Renderbuffer {
 	#renderbuffer: WebGLRenderbuffer;
 	#internalFormat: RenderBufferInternalFormat;
 	constructor(internalFormat: RenderBufferInternalFormat, width: number, height: number) {
-		this.#renderbuffer = Graphics.createRenderbuffer();
+		this.#renderbuffer = new Graphics().createRenderbuffer();
 		this.#internalFormat = internalFormat;
 		//this._renderbufferStorage(width, height);
-		renderbufferStorage(Graphics.glContext, this.#renderbuffer, this.#internalFormat, width, height);
+		renderbufferStorage(new Graphics().glContext, this.#renderbuffer, this.#internalFormat, width, height);
 	}
 
 	resize(width: number, height: number) {
 		//this._renderbufferStorage(width, height);
-		renderbufferStorage(Graphics.glContext, this.#renderbuffer, this.#internalFormat, width, height);
+		renderbufferStorage(new Graphics().glContext, this.#renderbuffer, this.#internalFormat, width, height);
 	}
 
 	getRenderbuffer() {
@@ -45,7 +45,7 @@ export class Renderbuffer {
 		}*/
 
 	dispose() {
-		Graphics.deleteRenderbuffer(this.#renderbuffer);
+		new Graphics().deleteRenderbuffer(this.#renderbuffer);
 	}
 
 }

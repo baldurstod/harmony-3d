@@ -12,9 +12,9 @@ const lightPos = vec3.create();
 const viewPort = vec4.create();
 
 export class ShadowMap {
-	#graphics: typeof Graphics;
+	#graphics: Graphics;
 	#glContext: WebGLAnyRenderingContext;
-	constructor(graphics: typeof Graphics) {
+	constructor(graphics: Graphics) {
 		this.#graphics = graphics;
 		this.#glContext = this.#graphics.glContext;
 	}
