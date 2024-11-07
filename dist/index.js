@@ -1,5 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { createElement, hide, display, show, toggle, I18n, shadowRootStyle } from 'harmony-ui';
+import { createElement, hide, display, show, toggle, createShadowRoot, I18n } from 'harmony-ui';
 import { defineharmonycolorpicker, defineharmony2dmanipulator, defineharmonycontextmenu } from 'harmony-ui/dist/define/defines';
 import { SaveFile } from 'harmony-browser-utils';
 import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
@@ -14850,8 +14850,7 @@ class NodeImageEditorGui {
             this.#refreshTimeout = setTimeout(() => this.#refreshHtml(), DELAY_BEFORE_REFRESH);
         };
         this.setNodeImageEditor(nodeImageEditor);
-        this.#shadowRoot = createElement('node-image-editor', {
-            attachShadow: { mode: 'closed' },
+        this.#shadowRoot = createShadowRoot('node-image-editor', {
             adoptStyle: nodeImageEditorCSS,
         });
         I18n.observeElement(this.#shadowRoot);
@@ -26518,7 +26517,6 @@ class SceneExplorer {
     #manipulator;
     #skeletonHelper;
     #htmlProperties;
-    #htmlElement;
     #htmlHeader;
     htmlFileSelector;
     #htmlNameFilter;
@@ -26558,7 +26556,7 @@ class SceneExplorer {
             if (this.#isVisible && (this.#isVisible != isVisible)) {
                 this.applyFilter();
             }
-        }).observe(this.#htmlElement);
+        }).observe(this.#shadowRoot.host);
         EntityObserver.addEventListener(PROPERTY_CHANGED, (event) => this.#handlePropertyChanged(event.detail));
         SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone));
     }
@@ -26577,13 +26575,14 @@ class SceneExplorer {
         }
     }
     get htmlElement() {
-        return this.#htmlElement;
+        return this.#shadowRoot.host;
     }
     #initHtml() {
-        this.#htmlElement = createElement('scene-explorer', { attributes: { tabindex: 1, }, });
-        this.#shadowRoot = this.#htmlElement.attachShadow({ mode: 'closed' });
+        this.#shadowRoot = createShadowRoot('scene-explorer', {
+            attributes: { tabindex: 1, },
+            adoptStyle: sceneExplorerCSS,
+        });
         I18n.observeElement(this.#shadowRoot);
-        shadowRootStyle(this.#shadowRoot, sceneExplorerCSS);
         this.#htmlHeader = createElement('div', { class: 'scene-explorer-header' });
         this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: 1, }, });
         this.htmlFileSelector = createElement('div', { class: 'scene-explorer-file-selector', attributes: { tabindex: 1, }, });

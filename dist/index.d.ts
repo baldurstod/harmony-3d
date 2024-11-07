@@ -5737,7 +5737,7 @@ export declare class Entity {
         constructor();
         set scene(scene: any);
         get scene(): any;
-        get htmlElement(): any;
+        get htmlElement(): Element;
         applyFilter(): void;
         selectEntity(entity: any): void;
         getEntityHtml(entity: any): void;
