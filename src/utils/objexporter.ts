@@ -64,7 +64,7 @@ export class ObjExporter {
 	}
 
 	static async exportMeshes({ meshes = new Set<Entity>(), exportTexture = false, singleMesh = false, digits = 4, subdivisions = 0, mergeTolerance = 0.0001 } = {}) {
-		let files = new Set();
+		let files = new Set<File>();
 		const loopSubdivision = new LoopSubdivision();
 
 		if (exportTexture && subdivisions == 0) {
