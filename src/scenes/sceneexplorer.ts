@@ -1,4 +1,4 @@
-import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
+import { ShortcutHandler } from 'harmony-browser-utils';
 import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot } from 'harmony-ui';
 import { defineharmonycontextmenu } from 'harmony-ui/dist/define/defines';
 import { SceneExplorerEvents } from './sceneexplorerevents';

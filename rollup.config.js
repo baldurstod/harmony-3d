@@ -43,7 +43,7 @@ export default [
 			'harmony-svg',
 			'harmony-ui',
 			'harmony-ui/dist/define/defines',
-			'harmony-browser-utils/src/shortcuthandler',
+			'harmony-browser-utils',
 			'harmony-fbx',
 			'murmurhash-es6',
 			'meshoptimizer',

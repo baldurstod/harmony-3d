@@ -8995,12 +8995,12 @@ export declare class Entity {
     }
 
     export declare const Zstd: {
-        "__#149@#webAssembly": any;
-        "__#149@#HEAPU8": Uint8Array;
+        "__#153@#webAssembly": any;
+        "__#153@#HEAPU8": Uint8Array;
         decompress(compressedDatas: any): Promise<Uint8Array>;
         decompress_ZSTD(compressedDatas: any, uncompressedDatas: any): Promise<any>;
         getWebAssembly(): Promise<any>;
-        "__#149@#initHeap"(): void;
+        "__#153@#initHeap"(): void;
     };
 
     export { }

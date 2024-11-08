@@ -1,6 +1,6 @@
 import { vec2, vec4 } from 'gl-matrix';
 import { SaveFile } from 'harmony-browser-utils';
-import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
+import { ShortcutHandler } from 'harmony-browser-utils';
 
 import { GraphicsEvents } from './graphicsevents';
 import { MAX_HARDWARE_BONES, RECORDER_DEFAULT_FILENAME, RECORDER_MIME_TYPE } from '../constants';

@@ -1,5 +1,5 @@
 import { mat4, quat, vec2, vec3 } from 'gl-matrix';
-import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
+import { ShortcutHandler } from 'harmony-browser-utils';
 
 import { Entity } from '../../entities/entity';
 import { Graphics } from '../../graphics/graphics';

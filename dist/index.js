@@ -1,8 +1,7 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
 import { createElement, hide, display, show, toggle, createShadowRoot, I18n } from 'harmony-ui';
 import { defineharmonycolorpicker, defineharmony2dmanipulator, defineharmonycontextmenu } from 'harmony-ui/dist/define/defines';
-import { SaveFile } from 'harmony-browser-utils';
-import { ShortcutHandler } from 'harmony-browser-utils/src/shortcuthandler';
+import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
