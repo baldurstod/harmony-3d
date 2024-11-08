@@ -62966,15 +62966,20 @@ function getCommonVertexShader() {
 }
 
 class ObjExporter {
-    static #lines;
-    static #startIndex;
-    static #fullScreenQuadMesh = new FullScreenQuad();
-    static scene = new Scene();
-    static camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
-    static {
+    static #instance;
+    #lines;
+    #startIndex;
+    #fullScreenQuadMesh = new FullScreenQuad();
+    scene = new Scene();
+    camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
+    constructor() {
+        if (ObjExporter.#instance) {
+            return ObjExporter.#instance;
+        }
+        ObjExporter.#instance = this;
         this.scene.addChild(this.#fullScreenQuadMesh);
     }
-    static async #renderMeshes(files, meshes) {
+    async #renderMeshes(files, meshes) {
         let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024); //TODOv3: constant
         new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
         new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
@@ -63008,10 +63013,10 @@ class ObjExporter {
         new Graphics().clearColor(previousClearColor);
         await Promise.all(promises);
     }
-    static #addLine(line) {
+    #addLine(line) {
         this.#lines.push(line + '\n');
     }
-    static async exportMeshes({ meshes = new Set(), exportTexture = false, singleMesh = false, digits = 4, subdivisions = 0, mergeTolerance = 0.0001 } = {}) {
+    async exportMeshes({ meshes = new Set(), exportTexture = false, singleMesh = false, digits = 4, subdivisions = 0, mergeTolerance = 0.0001 } = {}) {
         let files = new Set();
         const loopSubdivision = new LoopSubdivision();
         if (exportTexture && subdivisions == 0) {
@@ -63059,7 +63064,7 @@ class ObjExporter {
         }
         return files;
     }
-    static async #exportMesh(indices, vertices, normals, uvs, digits) {
+    async #exportMesh(indices, vertices, normals, uvs, digits) {
         let attributes = [
             { name: 'v', stride: 3, arr: vertices },
             { name: 'vn', stride: 3, arr: normals },

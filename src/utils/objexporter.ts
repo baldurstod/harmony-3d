@@ -6,21 +6,25 @@ import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Scene } from '../scenes/scene';
 import { LoopSubdivision } from '../meshes/loopsubdivision';
 import { Entity } from '../entities/entity';
-import { Source2Particle } from '../sourceengine/source2/particles/source2particle';
 import { Source2ParticleSystem } from '../sourceengine/export';
 import { Mesh } from '../objects/mesh';
 
 export class ObjExporter {
-	static #lines;
-	static #startIndex;
-	static #fullScreenQuadMesh = new FullScreenQuad();
-	static scene = new Scene();
-	static camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
-	static {
+	static #instance: ObjExporter;
+	#lines;
+	#startIndex;
+	#fullScreenQuadMesh = new FullScreenQuad();
+	scene = new Scene();
+	camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
+	constructor() {
+		if (ObjExporter.#instance) {
+			return ObjExporter.#instance;
+		}
+		ObjExporter.#instance = this;
 		this.scene.addChild(this.#fullScreenQuadMesh);
 	}
 
-	static async #renderMeshes(files, meshes) {
+	async #renderMeshes(files, meshes) {
 		let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024);//TODOv3: constant
 		new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
 		new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
@@ -59,11 +63,11 @@ export class ObjExporter {
 		await Promise.all(promises);
 	}
 
-	static #addLine(line) {
+	#addLine(line) {
 		this.#lines.push(line + '\n');
 	}
 
-	static async exportMeshes({ meshes = new Set<Entity>(), exportTexture = false, singleMesh = false, digits = 4, subdivisions = 0, mergeTolerance = 0.0001 } = {}) {
+	async exportMeshes({ meshes = new Set<Entity>(), exportTexture = false, singleMesh = false, digits = 4, subdivisions = 0, mergeTolerance = 0.0001 } = {}) {
 		let files = new Set<File>();
 		const loopSubdivision = new LoopSubdivision();
 
@@ -118,7 +122,7 @@ export class ObjExporter {
 		return files;
 	}
 
-	static async #exportMesh(indices, vertices, normals, uvs, digits) {
+	async #exportMesh(indices, vertices, normals, uvs, digits) {
 		let attributes = [
 			{ name: 'v', stride: 3, arr: vertices },
 			{ name: 'vn', stride: 3, arr: normals },

@@ -4159,9 +4159,10 @@ export declare class Entity {
 
     export declare class ObjExporter {
         #private;
-        static scene: Scene;
-        static camera: Camera;
-        static exportMeshes({ meshes, exportTexture, singleMesh, digits, subdivisions, mergeTolerance }?: {
+        scene: Scene;
+        camera: Camera;
+        constructor();
+        exportMeshes({ meshes, exportTexture, singleMesh, digits, subdivisions, mergeTolerance }?: {
             meshes?: Set<Entity>;
             exportTexture?: boolean;
             singleMesh?: boolean;
