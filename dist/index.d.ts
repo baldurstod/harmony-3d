@@ -4168,7 +4168,7 @@ export declare class Entity {
             digits?: number;
             subdivisions?: number;
             mergeTolerance?: number;
-        }): Promise<Set<unknown>>;
+        }): Promise<Set<File>>;
     }
 
     export declare class OBJImporter {

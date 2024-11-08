@@ -3765,7 +3765,7 @@ class FileSelector extends HTMLElement {
                 for (let rootFile of this.#fileList.files) {
                     let fileList = this.#getFileList(rootFile);
                     for (let file of fileList) {
-                        let tile = createElement('file-selector-tile', { parent: this.#content });
+                        const tile = createElement('file-selector-tile', { parent: this.#content });
                         tile.selector = this;
                         tile.setFile(file);
                         this.#htmlTiles.push(tile);
@@ -3779,7 +3779,7 @@ class FileSelector extends HTMLElement {
                 let expandDirectory = this.#fileList.files.length == 1;
                 for (let rootFile of this.#fileList.files) {
                     this.#getFileList(rootFile); //Just add path
-                    let root = createElement('file-selector-directory', { parent: this.#content });
+                    const root = createElement('file-selector-directory', { parent: this.#content });
                     root.selector = this;
                     root.setFile(rootFile);
                     this.#htmlDirectories.push(root);
@@ -7143,7 +7143,7 @@ class Graphics {
     initCanvas(contextAttributes = {}) {
         this.#canvas = contextAttributes.canvas ?? document.createElement('canvas');
         this.#canvas.setAttribute('tabindex', '1');
-        ShortcutHandler.addContext('3dview', this.#canvas);
+        new ShortcutHandler().addContext('3dview', this.#canvas);
         this.#width = this.#canvas.width;
         this.#height = this.#canvas.height;
         this.#initContext(contextAttributes);
@@ -10251,15 +10251,15 @@ class Manipulator extends Entity {
                 this.#setAxisSelected(false);
             }
         });
-        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_INCREASE, event => this.size *= 1.1);
-        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_DECREASE, event => this.size *= 0.9);
-        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TRANSLATION, event => this.mode = 0);
-        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_ROTATION, event => this.mode = 1);
-        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_SCALE, event => this.mode = 2);
-        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_AXIS_ORIENTATION, event => this.#axisOrientation = (++this.#axisOrientation) % 2);
-        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_X, event => this.enableX = !this.enableX);
-        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Y, event => this.enableY = !this.enableY);
-        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, event => this.enableZ = !this.enableZ);
+        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_INCREASE, event => this.size *= 1.1);
+        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_DECREASE, event => this.size *= 0.9);
+        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TRANSLATION, event => this.mode = 0);
+        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_ROTATION, event => this.mode = 1);
+        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_SCALE, event => this.mode = 2);
+        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_AXIS_ORIENTATION, event => this.#axisOrientation = (++this.#axisOrientation) % 2);
+        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_X, event => this.enableX = !this.enableX);
+        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Y, event => this.enableY = !this.enableY);
+        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, event => this.enableZ = !this.enableZ);
     }
     resize(camera) {
         if (!this.visible) {
@@ -10823,7 +10823,7 @@ class Manipulator extends Entity {
     }
 }
 //Set default shortcuts
-ShortcutHandler.setShortcuts('3dview,scene-explorer', new Map([
+new ShortcutHandler().setShortcuts('3dview,scene-explorer', new Map([
     [MANIPULATOR_SHORTCUT_INCREASE, 'PLUS'],
     [MANIPULATOR_SHORTCUT_DECREASE, '-'],
     [MANIPULATOR_SHORTCUT_TRANSLATION, 'ALT+T'],
@@ -26593,9 +26593,9 @@ class SceneExplorer {
         this.#initHtmlHeader();
         this.#initHtmlProperties();
         this.applyFilter();
-        ShortcutHandler.addContext('scene-explorer,scene-explorer-nodes', this.#htmlScene);
-        ShortcutHandler.addContext('scene-explorer,scene-explorer-files', this.htmlFileSelector);
-        ShortcutHandler.addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
+        new ShortcutHandler().addContext('scene-explorer,scene-explorer-nodes', this.#htmlScene);
+        new ShortcutHandler().addContext('scene-explorer,scene-explorer-files', this.htmlFileSelector);
+        new ShortcutHandler().addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
     }
     #initHtmlHeader() {
         this.#htmlNameFilter = createElement('input');
