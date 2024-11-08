@@ -157,9 +157,9 @@ export class SceneExplorer {
 		this.#initHtmlHeader();
 		this.#initHtmlProperties();
 		this.applyFilter();
-		ShortcutHandler.addContext('scene-explorer,scene-explorer-nodes', this.#htmlScene);
-		ShortcutHandler.addContext('scene-explorer,scene-explorer-files', this.htmlFileSelector);
-		ShortcutHandler.addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
+		new ShortcutHandler().addContext('scene-explorer,scene-explorer-nodes', this.#htmlScene);
+		new ShortcutHandler().addContext('scene-explorer,scene-explorer-files', this.htmlFileSelector);
+		new ShortcutHandler().addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
 	}
 
 	#initHtmlHeader() {

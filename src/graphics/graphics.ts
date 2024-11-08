@@ -113,7 +113,7 @@ export class Graphics {
 	initCanvas(contextAttributes: any = {}) {
 		this.#canvas = contextAttributes.canvas ?? document.createElement('canvas');
 		this.#canvas.setAttribute('tabindex', '1');
-		ShortcutHandler.addContext('3dview', this.#canvas);
+		new ShortcutHandler().addContext('3dview', this.#canvas);
 
 		this.#width = this.#canvas.width;
 		this.#height = this.#canvas.height;
