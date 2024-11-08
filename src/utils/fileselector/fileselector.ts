@@ -1,4 +1,6 @@
 import { createElement } from 'harmony-ui';
+import { FileSelectorTile } from './fileselectortile';
+import { FileSelectorDirectory } from './fileselectordirectory';
 
 export { FileSelectorDirectory } from './fileselectordirectory';
 export { FileSelectorFile } from './fileselectorfile';
@@ -154,7 +156,7 @@ export class FileSelector extends HTMLElement {
 				for (let rootFile of this.#fileList.files) {
 					let fileList = this.#getFileList(rootFile);
 					for (let file of fileList) {
-						let tile = createElement('file-selector-tile', {parent: this.#content});
+						const tile = createElement('file-selector-tile', {parent: this.#content}) as FileSelectorTile;
 						tile.selector = this;
 						tile.setFile(file);
 						this.#htmlTiles.push(tile);
@@ -167,7 +169,7 @@ export class FileSelector extends HTMLElement {
 				let expandDirectory = this.#fileList.files.length == 1;
 				for (let rootFile of this.#fileList.files) {
 					this.#getFileList(rootFile);//Just add path
-					let root = createElement('file-selector-directory', {parent: this.#content});
+					const root = createElement('file-selector-directory', {parent: this.#content}) as FileSelectorDirectory;
 					root.selector = this;
 					root.setFile(rootFile);
 					this.#htmlDirectories.push(root);
