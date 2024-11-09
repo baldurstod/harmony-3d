@@ -7262,7 +7262,6 @@ export declare class Entity {
     declare class SourceBinaryLoader {
         repository: string;
         load(repositoryName: string, fileName: string): Promise<Source2File | any>;
-        load2(repositoryName: any, fileName: any): Promise<any>;
         parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP;
     }
 

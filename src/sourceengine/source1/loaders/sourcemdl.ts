@@ -145,7 +145,7 @@ export class SourceMDL {
 		if (modelGroup) {
 			let p = new Promise(async resolve => {
 				let mdlLoader = getLoader('SourceEngineMDLLoader');
-				let mdl = await (new mdlLoader().load2(this.repository, modelGroup.name));
+				let mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
 				if (mdl) {
 					this.externalMdlsV2[externalId] = mdl;
 					resolve(mdl);

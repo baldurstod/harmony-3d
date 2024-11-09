@@ -18907,23 +18907,39 @@ class SourceBinaryLoader {
     repository;
     async load(repositoryName, fileName) {
         this.repository = repositoryName;
+        /*
         const repository = new Repositories().getRepository(repositoryName);
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in SourceBinaryLoader.load`);
             return null;
         }
+            */
         let promise = new Promise(resolve => {
-            customFetch(new URL(fileName, repository.base)).then(async (response) => {
-                if (response?.ok) {
-                    resolve(this.parse(repositoryName, fileName, await response.arrayBuffer()));
+            const p = new Repositories().getFile(repositoryName, fileName);
+            p.then((arrayBuffer) => {
+                if (arrayBuffer) {
+                    resolve(this.parse(repositoryName, fileName, arrayBuffer));
                 }
                 else {
                     resolve(null);
                 }
-            }, (error) => { console.error(error); resolve(null); });
+            });
+            /*
+            customFetch(new URL(fileName, repository.base)).then(
+                async response => {
+                    if (response?.ok) {
+                        resolve(this.parse(repositoryName, fileName, await response.arrayBuffer()));
+                    } else {
+                        resolve(null);
+                    }
+                },
+                (error) => { console.error(error); resolve(null); }
+            );
+            */
         });
         return promise;
     }
+    /*
     async load2(repositoryName, fileName) {
         this.repository = repositoryName;
         const repository = new Repositories().getRepository(repositoryName);
@@ -18931,12 +18947,15 @@ class SourceBinaryLoader {
             console.error(`Unknown repository ${repositoryName} in SourceBinaryLoader.load2`);
             return null;
         }
+
         const response = await customFetch(new URL(fileName, repository.base));
+
         if (response.ok) {
             return this.parse(repositoryName, fileName, await response.arrayBuffer());
         }
         return null;
     }
+    */
     parse(repository, fileName, arrayBuffer) {
         throw 'override me';
     }
@@ -32642,7 +32661,7 @@ class SourceMDL {
         if (modelGroup) {
             let p = new Promise(async (resolve) => {
                 let mdlLoader = getLoader('SourceEngineMDLLoader');
-                let mdl = await (new mdlLoader().load2(this.repository, modelGroup.name));
+                let mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
                 if (mdl) {
                     this.externalMdlsV2[externalId] = mdl;
                     resolve(mdl);
