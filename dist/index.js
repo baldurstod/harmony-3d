@@ -31786,7 +31786,7 @@ class Choreographies {
                 }
             }
         }
-        this.#reader.releaseLock();
+        //this.#reader.releaseLock();
     }
     async #parseSceneData(repository, sceneCRC) {
         //await this.#reader.getLock();
@@ -31823,7 +31823,7 @@ class Choreographies {
                 }
             }
         }
-        this.#reader.releaseLock();
+        //this.#reader.releaseLock();
         return choreography;
     }
     async #loadChoreography(repository, fileContent) {

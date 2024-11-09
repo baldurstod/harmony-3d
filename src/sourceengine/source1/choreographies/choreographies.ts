@@ -108,7 +108,7 @@ export class Choreographies {
 				}
 			}
 		}
-		this.#reader.releaseLock();
+		//this.#reader.releaseLock();
 	}
 
 	async #parseSceneData(repository, sceneCRC) {
@@ -146,7 +146,7 @@ export class Choreographies {
 				}
 			}
 		}
-		this.#reader.releaseLock();
+		//this.#reader.releaseLock();
 		return choreography;
 	}
 
