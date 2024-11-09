@@ -1,5 +1,4 @@
 import { BinaryReader } from 'harmony-binary-reader';
-
 import { Actor } from './actor';
 import { Channel } from './channel';
 import { Choreography } from './choreography';
@@ -25,17 +24,33 @@ export class Choreographies {
 	scenesOffset: number;
 	sceneEntries;
 
-	async loadFile(repositoryName, fileName) {
-		const repository = new Repositories().getRepository(repositoryName);
+	async loadFile(repositoryName: string, fileName: string) {
+		//const repository = new Repositories().getRepository(repositoryName);
 		this.#repository = repositoryName;
-
+		/*
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in Choreographies.loadFile`);
 			return null;
 		}
+			*/
+
+		const arrayBuffer = await new Repositories().getFile(repositoryName, fileName);
+		if (!arrayBuffer) {
+			return null;
+		}
+		/*
+		p.then((arrayBuffer) => {
+			if (arrayBuffer) {
+				resolve(this.parse(repositoryName, fileName, arrayBuffer));
+			} else {
+				resolve(null);
+			}
+		});
+		*/
 
 
-		this.#reader = new RemoteBinaryReader(new URL(fileName, repository.base), undefined, CHOREOGRAPHIES_CHUNK_SIZE);
+		//this.#reader = new RemoteBinaryReader(new URL(fileName, repository.base), undefined, CHOREOGRAPHIES_CHUNK_SIZE);
+		this.#reader = new BinaryReader(arrayBuffer, undefined, undefined, true);
 		await this.#parseHeader();
 	}
 
