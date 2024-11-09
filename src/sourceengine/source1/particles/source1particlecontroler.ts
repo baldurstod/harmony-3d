@@ -1,6 +1,7 @@
 import { GraphicsEvents, GraphicsEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../misc/repositories';
+import { WebRepository } from '../../../misc/webrepository';
 import { customFetch } from '../../../utils/customfetch';
 import { SourcePCF } from '../loaders/sourcepcf';
 
@@ -147,7 +148,7 @@ export class Source1ParticleControler {
 	 * TODO
 	 */
 	static async #loadManifest(repositoryName) {//TODO: async
-		const repository = new Repositories().getRepository(repositoryName);
+		const repository = new Repositories().getRepository(repositoryName) as WebRepository;
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
 			return null;

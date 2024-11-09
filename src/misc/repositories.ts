@@ -31,4 +31,13 @@ export class Repositories {
 
 		return repo?.getFile(filepath);
 	}
+
+	async getFileAsText(repositoryName: string, filepath: string): Promise<string | null> {
+		const repo = this.#repositories[repositoryName];
+		if (!repo) {
+			return null;
+		}
+
+		return repo?.getFileAsText(filepath);
+	}
 }

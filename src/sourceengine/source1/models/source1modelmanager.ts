@@ -1,5 +1,6 @@
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../misc/repositories';
+import { WebRepository } from '../../../misc/webrepository';
 import { customFetch } from '../../../utils/customfetch';
 import { SourceModel } from '../loaders/sourcemodel';
 
@@ -64,7 +65,7 @@ export class Source1ModelManager {
 		const repoList = [];
 		for (const [repositoryName, repo] of this.#modelListPerRepository) {
 			if (repo === null) {
-				const repository = new Repositories().getRepository(repositoryName);
+				const repository = new Repositories().getRepository(repositoryName) as WebRepository;
 				if (!repository) {
 					continue;
 				}

@@ -18,7 +18,7 @@ export class ZipRepository implements Repository {
 		return new ArrayBuffer(10);
 	}
 
-	async getFileAsText(fileName: string): Promise<String> {
+	async getFileAsText(fileName: string): Promise<string> {
 		return '';
 	}
 }

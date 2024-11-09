@@ -7,17 +7,20 @@ import { Repositories } from '../../../misc/repositories';
 
 class SourceEngineVMTLoaderClass {
 	#materials = new Map();
-	#extraMaterials = new Map();
+	#extraMaterials = new Map<string, string>();
 
 	load(repositoryName, fileName) {
 		//let fullPathName = repository + fileName;
+		/*
 		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in SourceEngineVMTLoader.load`);
 			return null;
 		}
+			*/
 
 		let promise = new Promise((resolve, reject) => {
+			/*
 			const requestCallback = async response => {
 				if (response.ok) {
 					this.parse(resolve, repositoryName, fileName, await response.text());
@@ -34,8 +37,19 @@ class SourceEngineVMTLoaderClass {
 				}
 				///() =>
 			}
-			let req = customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
-
+				*/
+			//let req = customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
+			const text = new Repositories().getFileAsText(repositoryName, fileName);
+			if (text) {
+				this.parse(resolve, repositoryName, fileName, text);
+			} else {
+				const fileContent = this.#extraMaterials.get(fileName);
+				if (fileContent) {
+					this.parse(resolve, repositoryName, fileName, fileContent);
+				} else {
+					reject();
+				}
+			}
 		});
 		return promise;
 	}
@@ -68,7 +82,7 @@ class SourceEngineVMTLoaderClass {
 				let include = vmt['include'];
 				let insert = vmt['insert'];
 
-				let patchResolve = function(material) {
+				let patchResolve = function (material) {
 					for (let insertIndex in insert) {
 						material.variables.set(insertIndex, insert[insertIndex]);
 						material.parameters[insertIndex] = insert[insertIndex];
@@ -77,14 +91,14 @@ class SourceEngineVMTLoaderClass {
 					resolve(material);
 				};
 
-				let patchReject = function() {
+				let patchReject = function () {
 					//TODOv3: handle error
 					let rejectionCount = 0;
-					let patchResolve2 = function(material) {
+					let patchResolve2 = function (material) {
 						rejectionCount = Infinity;
 						patchResolve(material);
 					};
-					let patchReject2 = function(fileName) {
+					let patchReject2 = function (fileName) {
 						if (rejectionCount == 0) {
 							reject(fileName);
 						}

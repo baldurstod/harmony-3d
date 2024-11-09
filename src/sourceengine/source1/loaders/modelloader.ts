@@ -8,7 +8,6 @@ import { getLoader, registerLoader } from '../../../loaders/loaderfactory';
 
 export class ModelLoader {
 	load(repositoryName, fileName) {
-		//const repository = new Repositories().getRepository(repositoryName).base;
 		let promise = new Promise((resolve, reject) => {
 			fileName = fileName.toLowerCase().replace(/.mdl$/, '');
 			let vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');

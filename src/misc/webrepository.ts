@@ -23,7 +23,7 @@ export class WebRepository implements Repository {
 		return response.arrayBuffer();
 	}
 
-	async getFileAsText(fileName: string): Promise<String> {
+	async getFileAsText(fileName: string): Promise<string> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
 		return response.text();
