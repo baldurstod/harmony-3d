@@ -2,7 +2,7 @@ import { Repository } from './repository';
 
 export class Repositories {
 	static #instance: Repositories;
-	#repositories = {};
+	#repositories: { [key: string]: Repository } = {};
 
 	constructor() {
 		if (Repositories.#instance) {
@@ -21,5 +21,14 @@ export class Repositories {
 
 	getRepositoryList() {
 		return Object.keys(this.#repositories);
+	}
+
+	async getFile(repositoryName: string, filepath: string): Promise<ArrayBuffer | null> {
+		const repo = this.#repositories[repositoryName];
+		if (!repo) {
+			return null;
+		}
+
+		return repo?.getFile(filepath);
 	}
 }

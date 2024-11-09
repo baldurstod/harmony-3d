@@ -5526,16 +5526,14 @@ export declare class Entity {
         #private;
         constructor();
         addRepository(repo: Repository): void;
-        getRepository(name: string): any;
+        getRepository(name: string): Repository;
         getRepositoryList(): string[];
+        getFile(repositoryName: string, filepath: string): Promise<ArrayBuffer | null>;
     }
 
-    export declare class Repository {
-        #private;
-        constructor(name: any, base: any, fallbackRepository?: any, fetchFunction?: any);
-        get name(): string;
-        get base(): string;
-        getFile(fileName: any): Promise<any>;
+    declare interface Repository {
+        name: string;
+        getFile: (filepath: string) => Promise<ArrayBuffer | null>;
     }
 
     export declare class RgbeImporter {
@@ -8966,6 +8964,14 @@ export declare class Entity {
         static getFps(): number;
     }
 
+    export declare class WebRepository implements Repository {
+        #private;
+        constructor(name: string, base: string);
+        get name(): string;
+        get base(): string;
+        getFile(fileName: string): Promise<ArrayBuffer>;
+    }
+
     export declare class Wireframe extends Entity {
         #private;
         enumerable: boolean;
@@ -8996,13 +9002,20 @@ export declare class Entity {
         execute(variables: any, proxyParams: any): void;
     }
 
+    export declare class ZipRepository implements Repository {
+        #private;
+        constructor(name: string, zip: File);
+        get name(): string;
+        getFile(fileName: string): Promise<ArrayBuffer>;
+    }
+
     export declare const Zstd: {
-        "__#153@#webAssembly": any;
-        "__#153@#HEAPU8": Uint8Array;
+        "__#154@#webAssembly": any;
+        "__#154@#HEAPU8": Uint8Array;
         decompress(compressedDatas: any): Promise<Uint8Array>;
         decompress_ZSTD(compressedDatas: any, uncompressedDatas: any): Promise<any>;
         getWebAssembly(): Promise<any>;
-        "__#153@#initHeap"(): void;
+        "__#154@#initHeap"(): void;
     };
 
     export { }
