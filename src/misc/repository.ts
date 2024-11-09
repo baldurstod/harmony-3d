@@ -3,17 +3,9 @@ import { customFetch } from '../utils/customfetch';
 export class Repository {
 	#name: string;
 	#base: string;
-	#fallbackRepository: string;
-	#fetchFunction;
-	constructor(name, base, fallbackRepository?, fetchFunction?) {
+	constructor(name: string, base: string) {
 		this.#name = name;
 		this.#base = base;
-		if (fallbackRepository) {
-			this.#fallbackRepository = fallbackRepository;
-		}
-		if (fetchFunction) {
-			this.#fetchFunction = fetchFunction;
-		}
 	}
 
 	get name() {
@@ -24,12 +16,8 @@ export class Repository {
 		return this.#base;
 	}
 
-	async getFile(fileName) {
-		if (this.#fetchFunction) {
-			return this.#fetchFunction(fileName);
-		} else {
-			const url = new URL(fileName, this.#base);
-			return customFetch(url);
-		}
+	async getFile(fileName: string) {
+		const url = new URL(fileName, this.#base);
+		return customFetch(url);
 	}
 }
