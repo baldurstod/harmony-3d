@@ -88,7 +88,7 @@ export class Choreographies {
 	}
 
 	async #parseSceneEntries() {
-		await this.#reader.getLock();
+		//await this.#reader.getLock();
 		if (this.scenesOffset && this.scenesCount) {
 			const size = this.scenesCount * 16;
 
@@ -112,7 +112,7 @@ export class Choreographies {
 	}
 
 	async #parseSceneData(repository, sceneCRC) {
-		await this.#reader.getLock();
+		//await this.#reader.getLock();
 		let choreography = null;
 
 		const sceneEntry = this.sceneEntries[sceneCRC];
