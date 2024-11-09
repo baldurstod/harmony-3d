@@ -17,4 +17,8 @@ export class ZipRepository implements Repository {
 		//return customFetch(url);
 		return new ArrayBuffer(10);
 	}
+
+	async getFileAsText(fileName: string): Promise<String> {
+		return '';
+	}
 }
