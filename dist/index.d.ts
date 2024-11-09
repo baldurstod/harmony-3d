@@ -5531,7 +5531,7 @@ export declare class Entity {
         getFile(repositoryName: string, filepath: string): Promise<ArrayBuffer | null>;
     }
 
-    declare interface Repository {
+    export declare interface Repository {
         name: string;
         getFile: (filepath: string) => Promise<ArrayBuffer | null>;
     }
