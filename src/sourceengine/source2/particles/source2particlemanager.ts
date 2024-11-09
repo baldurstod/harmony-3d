@@ -82,7 +82,7 @@ class Source2ParticleManagerClass {
 	}
 
 	async #loadManifest(repositoryName) {
-		const repository = Repositories.getRepository(repositoryName);
+		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
 			return;

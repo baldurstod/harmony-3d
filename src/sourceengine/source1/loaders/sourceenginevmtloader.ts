@@ -11,7 +11,7 @@ class SourceEngineVMTLoaderClass {
 
 	load(repositoryName, fileName) {
 		//let fullPathName = repository + fileName;
-		const repository = Repositories.getRepository(repositoryName);
+		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in SourceEngineVMTLoader.load`);
 			return null;

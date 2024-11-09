@@ -26,7 +26,7 @@ export class Choreographies {
 	sceneEntries;
 
 	async loadFile(repositoryName, fileName) {
-		const repository = Repositories.getRepository(repositoryName);
+		const repository = new Repositories().getRepository(repositoryName);
 		this.#repository = repositoryName;
 
 		if (!repository) {

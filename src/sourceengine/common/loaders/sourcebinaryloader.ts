@@ -12,7 +12,7 @@ export class SourceBinaryLoader {
 	repository: string;
 	async load(repositoryName: string, fileName: string): Promise<Source2File | any> {
 		this.repository = repositoryName;
-		const repository = Repositories.getRepository(repositoryName);
+		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in SourceBinaryLoader.load`);
 			return null;
@@ -35,7 +35,7 @@ export class SourceBinaryLoader {
 
 	async load2(repositoryName, fileName) {
 		this.repository = repositoryName;
-		const repository = Repositories.getRepository(repositoryName);
+		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in SourceBinaryLoader.load2`);
 			return null;

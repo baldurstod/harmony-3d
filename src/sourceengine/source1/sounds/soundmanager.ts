@@ -35,7 +35,7 @@ export class Source1SoundManager {
 			//audio = null;//removeme
 			if (!audio) {
 
-				const repository = Repositories.getRepository(sound.getRepository());
+				const repository = new Repositories().getRepository(sound.getRepository());
 				if (!repository) {
 					console.error(`Unknown repository ${sound.repositoryName} in Source1SoundManager.playSound`);
 					return null;
@@ -85,7 +85,7 @@ export class Source1SoundManager {
 	}
 
 	static async #fetchManifest(repositoryName, manifestPath) {
-		const repository = Repositories.getRepository(repositoryName);
+		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in Source1SoundManager.#fetchManifests`);
 			return null;
@@ -170,7 +170,7 @@ export class Source1SoundManager {
 			};
 
 
-		const repository = Repositories.getRepository(repositoryName);
+		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in Source1SoundManager.loadManifest`);
 			return null;

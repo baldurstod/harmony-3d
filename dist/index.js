@@ -13498,14 +13498,21 @@ class LoopSubdivision {
 }
 
 class Repositories {
-    static #repositories = {};
-    static addRepository(repo) {
+    static #instance;
+    #repositories = {};
+    constructor() {
+        if (Repositories.#instance) {
+            return Repositories.#instance;
+        }
+        Repositories.#instance = this;
+    }
+    addRepository(repo) {
         this.#repositories[repo.name] = repo;
     }
-    static getRepository(name) {
+    getRepository(name) {
         return this.#repositories[name];
     }
-    static getRepositoryList() {
+    getRepositoryList() {
         return Object.keys(this.#repositories);
     }
 }
@@ -18867,7 +18874,7 @@ class Source1ModelManager {
         const repoList = [];
         for (const [repositoryName, repo] of this.#modelListPerRepository) {
             if (repo === null) {
-                const repository = Repositories.getRepository(repositoryName);
+                const repository = new Repositories().getRepository(repositoryName);
                 if (!repository) {
                     continue;
                 }
@@ -18888,7 +18895,7 @@ class SourceBinaryLoader {
     repository;
     async load(repositoryName, fileName) {
         this.repository = repositoryName;
-        const repository = Repositories.getRepository(repositoryName);
+        const repository = new Repositories().getRepository(repositoryName);
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in SourceBinaryLoader.load`);
             return null;
@@ -18907,7 +18914,7 @@ class SourceBinaryLoader {
     }
     async load2(repositoryName, fileName) {
         this.repository = repositoryName;
-        const repository = Repositories.getRepository(repositoryName);
+        const repository = new Repositories().getRepository(repositoryName);
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in SourceBinaryLoader.load2`);
             return null;
@@ -21918,7 +21925,7 @@ class Source1ParticleControler {
      * TODO
      */
     static async #loadManifest(repositoryName) {
-        const repository = Repositories.getRepository(repositoryName);
+        const repository = new Repositories().getRepository(repositoryName);
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
             return null;
@@ -22431,7 +22438,7 @@ class Source1SoundManager {
             let audio = this.#audioList[wave];
             //audio = null;//removeme
             if (!audio) {
-                const repository = Repositories.getRepository(sound.getRepository());
+                const repository = new Repositories().getRepository(sound.getRepository());
                 if (!repository) {
                     console.error(`Unknown repository ${sound.repositoryName} in Source1SoundManager.playSound`);
                     return null;
@@ -22474,7 +22481,7 @@ class Source1SoundManager {
         promiseResolve(true);
     }
     static async #fetchManifest(repositoryName, manifestPath) {
-        const repository = Repositories.getRepository(repositoryName);
+        const repository = new Repositories().getRepository(repositoryName);
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in Source1SoundManager.#fetchManifests`);
             return null;
@@ -22554,7 +22561,7 @@ class Source1SoundManager {
                 };
     
     
-            const repository = Repositories.getRepository(repositoryName);
+            const repository = new Repositories().getRepository(repositoryName);
             if (!repository) {
                 console.error(`Unknown repository ${repositoryName} in Source1SoundManager.loadManifest`);
                 return null;
@@ -26157,7 +26164,7 @@ class Source2ModelLoader {
         if (promise) {
             return promise;
         }
-        //const repository = Repositories.getRepository(repositoryName).base;
+        //const repository = new Repositories().getRepository(repositoryName).base;
         promise = new Promise((resolve, reject) => {
             let vmdlPromise = new Source2FileLoader().load(repositoryName, fileName + '.vmdl_c');
             vmdlPromise.then(async (source2File) => {
@@ -26392,7 +26399,7 @@ class Source2ModelManager {
         for (let repositoryName in modelListPerRepository) {
             let repo = modelListPerRepository[repositoryName];
             if (repo === null) {
-                const repository = Repositories.getRepository(repositoryName);
+                const repository = new Repositories().getRepository(repositoryName);
                 if (!repository) {
                     continue;
                 }
@@ -26473,7 +26480,7 @@ class Source2ParticleManagerClass {
         }
     }
     async #loadManifest(repositoryName) {
-        const repository = Repositories.getRepository(repositoryName);
+        const repository = new Repositories().getRepository(repositoryName);
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
             return;
@@ -32059,7 +32066,7 @@ class Choreographies {
     scenesOffset;
     sceneEntries;
     async loadFile(repositoryName, fileName) {
-        const repository = Repositories.getRepository(repositoryName);
+        const repository = new Repositories().getRepository(repositoryName);
         this.#repository = repositoryName;
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in Choreographies.loadFile`);
@@ -34332,7 +34339,7 @@ class SourceEngineVVDLoader extends SourceBinaryLoader {
 
 class ModelLoader {
     load(repositoryName, fileName) {
-        //const repository = Repositories.getRepository(repositoryName).base;
+        //const repository = new Repositories().getRepository(repositoryName).base;
         let promise = new Promise((resolve, reject) => {
             fileName = fileName.toLowerCase().replace(/.mdl$/, '');
             let vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
@@ -35403,7 +35410,7 @@ class SourceEngineVMTLoaderClass {
     #extraMaterials = new Map();
     load(repositoryName, fileName) {
         //let fullPathName = repository + fileName;
-        const repository = Repositories.getRepository(repositoryName);
+        const repository = new Repositories().getRepository(repositoryName);
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in SourceEngineVMTLoader.load`);
             return null;

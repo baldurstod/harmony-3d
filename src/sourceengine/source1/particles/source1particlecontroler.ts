@@ -147,7 +147,7 @@ export class Source1ParticleControler {
 	 * TODO
 	 */
 	static async #loadManifest(repositoryName) {//TODO: async
-		const repository = Repositories.getRepository(repositoryName);
+		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
 			return null;

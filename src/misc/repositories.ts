@@ -1,17 +1,25 @@
 import { Repository } from './repository';
 
 export class Repositories {
-	static #repositories = {};
+	static #instance: Repositories;
+	#repositories = {};
 
-	static addRepository(repo: Repository) {
+	constructor() {
+		if (Repositories.#instance) {
+			return Repositories.#instance;
+		}
+		Repositories.#instance = this;
+	}
+
+	addRepository(repo: Repository) {
 		this.#repositories[repo.name] = repo;
 	}
 
-	static getRepository(name: string) {
+	getRepository(name: string) {
 		return this.#repositories[name];
 	}
 
-	static getRepositoryList() {
+	getRepositoryList() {
 		return Object.keys(this.#repositories);
 	}
 }

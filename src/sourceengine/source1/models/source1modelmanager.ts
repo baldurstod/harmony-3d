@@ -64,7 +64,7 @@ export class Source1ModelManager {
 		const repoList = [];
 		for (const [repositoryName, repo] of this.#modelListPerRepository) {
 			if (repo === null) {
-				const repository = Repositories.getRepository(repositoryName);
+				const repository = new Repositories().getRepository(repositoryName);
 				if (!repository) {
 					continue;
 				}

@@ -83,7 +83,7 @@ export class Source2ModelManager {
 			let repo = modelListPerRepository[repositoryName];
 			if (repo === null) {
 
-				const repository = Repositories.getRepository(repositoryName);
+				const repository = new Repositories().getRepository(repositoryName);
 				if (!repository) {
 					continue;
 				}

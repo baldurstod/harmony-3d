@@ -5524,9 +5524,10 @@ export declare class Entity {
 
     export declare class Repositories {
         #private;
-        static addRepository(repo: Repository): void;
-        static getRepository(name: string): any;
-        static getRepositoryList(): string[];
+        constructor();
+        addRepository(repo: Repository): void;
+        getRepository(name: string): any;
+        getRepositoryList(): string[];
     }
 
     export declare class Repository {
