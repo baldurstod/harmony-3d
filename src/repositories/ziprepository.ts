@@ -15,14 +15,14 @@ export class ZipRepository implements Repository {
 	async getFile(fileName: string): Promise<RepositoryArrayBufferResponse> {
 		//const url = new URL(fileName, this.#base);
 		//return customFetch(url);
-		return { file: new ArrayBuffer(10) };
+		return { buffer: new ArrayBuffer(10) };
 	}
 
 	async getFileAsText(fileName: string): Promise<RepositoryStringResponse> {
-		return { file: '' };
+		return { string: '' };
 	}
 
 	async getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse> {
-		return { file: null };
+		return { blob: null };
 	}
 }

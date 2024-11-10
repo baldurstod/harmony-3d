@@ -1,11 +1,10 @@
 export enum RepositoryError {
-	Ok = 0,
-	FileNotFound,
+	FileNotFound = 0,
 }
 
-export type RepositoryArrayBufferResponse = { file: ArrayBuffer | null, error?: RepositoryError };
-export type RepositoryStringResponse = { file: string | null, error?: RepositoryError };
-export type RepositoryBlobResponse = { file: Blob | null, error?: RepositoryError };
+export type RepositoryArrayBufferResponse = { buffer: ArrayBuffer | null, error?: RepositoryError };
+export type RepositoryStringResponse = { string: string | null, error?: RepositoryError };
+export type RepositoryBlobResponse = { blob: Blob | null, error?: RepositoryError };
 
 export interface Repository {
 	name: string;

@@ -5541,22 +5541,21 @@ export declare class Entity {
     }
 
     export declare type RepositoryArrayBufferResponse = {
-        file: ArrayBuffer | null;
+        buffer: ArrayBuffer | null;
         error?: RepositoryError;
     };
 
     export declare type RepositoryBlobResponse = {
-        file: Blob | null;
+        blob: Blob | null;
         error?: RepositoryError;
     };
 
     export declare enum RepositoryError {
-        Ok = 0,
-        FileNotFound = 1
+        FileNotFound = 0
     }
 
     export declare type RepositoryStringResponse = {
-        file: string | null;
+        string: string | null;
         error?: RepositoryError;
     };
 
@@ -6371,7 +6370,7 @@ export declare class Entity {
         /**
          * Load soundManifest
          */
-        static loadManifest(repositoryName: any, fileName: any): void;
+        static loadManifest(repositoryName: string, fileName: string): void;
         static mute(): void;
         static unmute(): void;
     }

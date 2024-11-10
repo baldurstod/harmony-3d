@@ -18431,8 +18431,7 @@ class Repositories {
 
 var RepositoryError;
 (function (RepositoryError) {
-    RepositoryError[RepositoryError["Ok"] = 0] = "Ok";
-    RepositoryError[RepositoryError["FileNotFound"] = 1] = "FileNotFound";
+    RepositoryError[RepositoryError["FileNotFound"] = 0] = "FileNotFound";
 })(RepositoryError || (RepositoryError = {}));
 
 class WebRepository {
@@ -18451,17 +18450,17 @@ class WebRepository {
     async getFile(fileName) {
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
-        return { file: await response.arrayBuffer() };
+        return { buffer: await response.arrayBuffer() };
     }
     async getFileAsText(fileName) {
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
-        return { file: await response.text() };
+        return { string: await response.text() };
     }
     async getFileAsBlob(fileName) {
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
-        return { file: new Blob([new Uint8Array(await response.arrayBuffer())]) };
+        return { blob: new Blob([new Uint8Array(await response.arrayBuffer())]) };
     }
 }
 
@@ -18478,13 +18477,13 @@ class ZipRepository {
     async getFile(fileName) {
         //const url = new URL(fileName, this.#base);
         //return customFetch(url);
-        return { file: new ArrayBuffer(10) };
+        return { buffer: new ArrayBuffer(10) };
     }
     async getFileAsText(fileName) {
-        return { file: '' };
+        return { string: '' };
     }
     async getFileAsBlob(fileName) {
-        return { file: null };
+        return { blob: null };
     }
 }
 
@@ -18945,9 +18944,9 @@ class SourceBinaryLoader {
         this.repository = repositoryName;
         let promise = new Promise(resolve => {
             const p = new Repositories().getFile(repositoryName, fileName);
-            p.then((arrayBuffer) => {
-                if (arrayBuffer) {
-                    resolve(this.parse(repositoryName, fileName, arrayBuffer));
+            p.then((response) => {
+                if (!response.error) {
+                    resolve(this.parse(repositoryName, fileName, response.buffer));
                 }
                 else {
                     resolve(null);
@@ -22477,11 +22476,14 @@ class Source1SoundManager {
                 }
                     */
                 //const soundUrl = //sound.repository + '/sound/' + wave;//TODO: constant
-                audio = new Audio(URL.createObjectURL(await new Repositories().getFileAsBlob(sound.getRepository(), '/sound/' + wave)) /*new URL('/sound/' + wave, repository.base).toString()*/);
-                this.#audioList[wave] = audio;
-                audio.volume = 0.1;
-                //audio.play();
-                AudioMixer.playAudio('master', audio); //TODO: change master per actual channel
+                const response = await new Repositories().getFileAsBlob(sound.getRepository(), '/sound/' + wave);
+                if (!response.error) {
+                    audio = new Audio(URL.createObjectURL(response.blob) /*new URL('/sound/' + wave, repository.base).toString()*/);
+                    this.#audioList[wave] = audio;
+                    audio.volume = 0.1;
+                    //audio.play();
+                    AudioMixer.playAudio('master', audio); //TODO: change master per actual channel
+                }
             }
             else {
                 AudioMixer.playAudio('master', audio);
@@ -22514,14 +22516,19 @@ class Source1SoundManager {
         promiseResolve(true);
     }
     static async #fetchManifest(repositoryName, manifestPath) {
+        /*
         const repository = new Repositories().getRepository(repositoryName);
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in Source1SoundManager.#fetchManifests`);
             return null;
         }
+            */
         //try {
-        const response = await customFetch(new URL(manifestPath, repository.base));
-        this.#loadManifest(repositoryName, await response.text());
+        //const response = await customFetch(new URL(manifestPath, repository.base));
+        const response = await new Repositories().getFileAsText(repositoryName, manifestPath);
+        if (!response.error) {
+            this.#loadManifest(repositoryName, await response.string);
+        }
         /*} catch(e) {
             console.error(`Error while fetching ${repositoryName} ${manifestPath} in Source1SoundManager.#fetchManifests`, e);
             return null;
@@ -31754,8 +31761,8 @@ class Choreographies {
             return null;
         }
             */
-        const arrayBuffer = await new Repositories().getFile(repositoryName, fileName);
-        if (!arrayBuffer) {
+        const respone = await new Repositories().getFile(repositoryName, fileName);
+        if (respone.error) {
             return null;
         }
         /*
@@ -31768,7 +31775,7 @@ class Choreographies {
         });
         */
         //this.#reader = new RemoteBinaryReader(new URL(fileName, repository.base), undefined, CHOREOGRAPHIES_CHUNK_SIZE);
-        this.#reader = new BinaryReader(arrayBuffer, undefined, undefined, true);
+        this.#reader = new BinaryReader(respone.buffer, undefined, undefined, true);
         await this.#parseHeader();
     }
     async #parseHeader() {
@@ -35132,9 +35139,9 @@ class SourceEngineVMTLoaderClass {
             }
                 */
             //let req = customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
-            const text = await new Repositories().getFileAsText(repositoryName, fileName);
-            if (text) {
-                this.parse(resolve, repositoryName, fileName, text);
+            const response = await new Repositories().getFileAsText(repositoryName, fileName);
+            if (!response.error) {
+                this.parse(resolve, repositoryName, fileName, response.string);
             }
             else {
                 const fileContent = this.#extraMaterials.get(fileName);

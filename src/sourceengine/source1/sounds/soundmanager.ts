@@ -43,11 +43,15 @@ export class Source1SoundManager {
 					*/
 
 				//const soundUrl = //sound.repository + '/sound/' + wave;//TODO: constant
-				audio = new Audio(URL.createObjectURL(await new Repositories().getFileAsBlob(sound.getRepository(), '/sound/' + wave))/*new URL('/sound/' + wave, repository.base).toString()*/);
-				this.#audioList[wave] = audio;
-				audio.volume = 0.1;
-				//audio.play();
-				AudioMixer.playAudio('master', audio);//TODO: change master per actual channel
+				const response = await new Repositories().getFileAsBlob(sound.getRepository(), '/sound/' + wave);
+
+				if (!response.error) {
+					audio = new Audio(URL.createObjectURL(response.blob)/*new URL('/sound/' + wave, repository.base).toString()*/);
+					this.#audioList[wave] = audio;
+					audio.volume = 0.1;
+					//audio.play();
+					AudioMixer.playAudio('master', audio);//TODO: change master per actual channel
+				}
 			} else {
 				AudioMixer.playAudio('master', audio);
 			}
@@ -85,16 +89,22 @@ export class Source1SoundManager {
 		promiseResolve(true);
 	}
 
-	static async #fetchManifest(repositoryName, manifestPath) {
+	static async #fetchManifest(repositoryName: string, manifestPath: string) {
+		/*
 		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in Source1SoundManager.#fetchManifests`);
 			return null;
 		}
+			*/
 
 		//try {
-		const response = await customFetch(new URL(manifestPath, repository.base));
-		this.#loadManifest(repositoryName, await response.text());
+		//const response = await customFetch(new URL(manifestPath, repository.base));
+
+		const response = await new Repositories().getFileAsText(repositoryName, manifestPath);
+		if (!response.error) {
+			this.#loadManifest(repositoryName, await response.string);
+		}
 
 		/*} catch(e) {
 			console.error(`Error while fetching ${repositoryName} ${manifestPath} in Source1SoundManager.#fetchManifests`, e);
@@ -102,7 +112,7 @@ export class Source1SoundManager {
 		}*/
 	}
 
-	static #loadManifest(repositoryName, manifestTxt) {
+	static #loadManifest(repositoryName: string, manifestTxt: string) {
 		const sounds = this.#soundsPerRepository[repositoryName];
 
 		const kv = new KvReader();
@@ -181,7 +191,7 @@ export class Source1SoundManager {
 		}
 		*/
 
-	static loadManifest(repositoryName, fileName) {
+	static loadManifest(repositoryName: string, fileName: string) {
 		let manifests = this.#manifestsPerRepository[repositoryName];
 
 		if (!manifests) {

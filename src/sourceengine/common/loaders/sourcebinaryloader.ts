@@ -14,9 +14,9 @@ export class SourceBinaryLoader {
 
 		let promise = new Promise<Source2File | any>(resolve => {
 			const p = new Repositories().getFile(repositoryName, fileName);
-			p.then((arrayBuffer) => {
-				if (arrayBuffer) {
-					resolve(this.parse(repositoryName, fileName, arrayBuffer));
+			p.then((response) => {
+				if (!response.error) {
+					resolve(this.parse(repositoryName, fileName, response.buffer));
 				} else {
 					resolve(null);
 				}

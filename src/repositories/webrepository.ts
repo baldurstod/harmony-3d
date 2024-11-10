@@ -20,18 +20,18 @@ export class WebRepository implements Repository {
 	async getFile(fileName: string): Promise<RepositoryArrayBufferResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
-		return { file: await response.arrayBuffer() };
+		return { buffer: await response.arrayBuffer() };
 	}
 
 	async getFileAsText(fileName: string): Promise<RepositoryStringResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
-		return { file: await response.text() };
+		return { string: await response.text() };
 	}
 
 	async getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
-		return { file: new Blob([new Uint8Array(await response.arrayBuffer())]) };
+		return { blob: new Blob([new Uint8Array(await response.arrayBuffer())]) };
 	}
 }

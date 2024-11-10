@@ -38,9 +38,9 @@ class SourceEngineVMTLoaderClass {
 			}
 				*/
 			//let req = customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
-			const text = await new Repositories().getFileAsText(repositoryName, fileName);
-			if (text) {
-				this.parse(resolve, repositoryName, fileName, text);
+			const response = await new Repositories().getFileAsText(repositoryName, fileName);
+			if (!response.error) {
+				this.parse(resolve, repositoryName, fileName, response.string);
 			} else {
 				const fileContent = this.#extraMaterials.get(fileName);
 				if (fileContent) {

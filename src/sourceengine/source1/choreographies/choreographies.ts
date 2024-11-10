@@ -33,8 +33,8 @@ export class Choreographies {
 		}
 			*/
 
-		const arrayBuffer = await new Repositories().getFile(repositoryName, fileName);
-		if (!arrayBuffer) {
+		const respone = await new Repositories().getFile(repositoryName, fileName);
+		if (respone.error) {
 			return null;
 		}
 		/*
@@ -49,7 +49,7 @@ export class Choreographies {
 
 
 		//this.#reader = new RemoteBinaryReader(new URL(fileName, repository.base), undefined, CHOREOGRAPHIES_CHUNK_SIZE);
-		this.#reader = new BinaryReader(arrayBuffer, undefined, undefined, true);
+		this.#reader = new BinaryReader(respone.buffer, undefined, undefined, true);
 		await this.#parseHeader();
 	}
 
