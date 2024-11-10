@@ -1,5 +1,5 @@
 import { customFetch } from '../utils/customfetch';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryJsonResponse, RepositoryStringResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryStringResponse } from './repository';
 
 export class WebRepository implements Repository {
 	#name: string;
@@ -71,5 +71,13 @@ export class WebRepository implements Repository {
 			}
 			return { error: error };
 		}
+	}
+
+	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
+		return { error: RepositoryError.NotSupported };
+	}
+
+	async overrideFile(filepath: string, file: File): Promise<RepositoryError> {
+		return RepositoryError.NotSupported;
 	}
 }
