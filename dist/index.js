@@ -13522,6 +13522,20 @@ class Repositories {
         }
         return repo?.getFile(filepath);
     }
+    async getFileAsText(repositoryName, filepath) {
+        const repo = this.#repositories[repositoryName];
+        if (!repo) {
+            return null;
+        }
+        return repo?.getFileAsText(filepath);
+    }
+    async getFileAsBlob(repositoryName, filepath) {
+        const repo = this.#repositories[repositoryName];
+        if (!repo) {
+            return null;
+        }
+        return repo?.getFileAsBlob(filepath);
+    }
 }
 
 class WebRepository {
@@ -13547,6 +13561,11 @@ class WebRepository {
         const response = await customFetch(url);
         return response.text();
     }
+    async getFileAsBlob(fileName) {
+        const url = new URL(fileName, this.#base);
+        const response = await customFetch(url);
+        return new Blob([new Uint8Array(await response.arrayBuffer())]);
+    }
 }
 
 class ZipRepository {
@@ -13566,6 +13585,9 @@ class ZipRepository {
     }
     async getFileAsText(fileName) {
         return '';
+    }
+    async getFileAsBlob(fileName) {
+        return null;
     }
 }
 
@@ -22441,13 +22463,15 @@ class Source1SoundManager {
             let audio = this.#audioList[wave];
             //audio = null;//removeme
             if (!audio) {
+                /*
                 const repository = new Repositories().getRepository(sound.getRepository());
                 if (!repository) {
                     console.error(`Unknown repository ${sound.repositoryName} in Source1SoundManager.playSound`);
                     return null;
                 }
-                //sound.repository + '/sound/' + wave;//TODO: constant
-                 audio = new Audio(new URL('/sound/' + wave, repository.base).toString());
+                    */
+                //const soundUrl = //sound.repository + '/sound/' + wave;//TODO: constant
+                audio = new Audio(URL.createObjectURL(await new Repositories().getFileAsBlob(sound.getRepository(), '/sound/' + wave)) /*new URL('/sound/' + wave, repository.base).toString()*/);
                 this.#audioList[wave] = audio;
                 audio.volume = 0.1;
                 //audio.play();
@@ -22525,7 +22549,7 @@ class Source1SoundManager {
      * Load soundManifest
      */
     /*
-    
+
         static loadManifest(repositoryName, fileName) {
             const callback =
                 async (response) => {
@@ -22562,14 +22586,14 @@ class Source1SoundManager {
                 function(value) {
                     //TODO: ????
                 };
-    
-    
+
+
             const repository = new Repositories().getRepository(repositoryName);
             if (!repository) {
                 console.error(`Unknown repository ${repositoryName} in Source1SoundManager.loadManifest`);
                 return null;
             }
-    
+
             customFetch(new URL(fileName, repository.base)).then(callback, ajaxReject);
         }
         */
@@ -34005,7 +34029,6 @@ class SourceEngineVVDLoader extends SourceBinaryLoader {
 
 class ModelLoader {
     load(repositoryName, fileName) {
-        //const repository = new Repositories().getRepository(repositoryName).base;
         let promise = new Promise((resolve, reject) => {
             fileName = fileName.toLowerCase().replace(/.mdl$/, '');
             let vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
@@ -35076,31 +35099,46 @@ class SourceEngineVMTLoaderClass {
     #extraMaterials = new Map();
     load(repositoryName, fileName) {
         //let fullPathName = repository + fileName;
+        /*
         const repository = new Repositories().getRepository(repositoryName);
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in SourceEngineVMTLoader.load`);
             return null;
         }
+            */
         let promise = new Promise((resolve, reject) => {
-            const requestCallback = async (response) => {
+            /*
+            const requestCallback = async response => {
                 if (response.ok) {
                     this.parse(resolve, repositoryName, fileName, await response.text());
-                }
-                else {
+                } else {
                     reject();
                 }
-            };
+            }
             const requestReject = () => {
                 let fileContent = this.#extraMaterials.get(fileName);
+                if (fileContent) {
+                    this.parse(resolve, repositoryName, fileName, fileContent);
+                } else {
+                    reject();
+                }
+                ///() =>
+            }
+                */
+            //let req = customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
+            const text = new Repositories().getFileAsText(repositoryName, fileName);
+            if (text) {
+                this.parse(resolve, repositoryName, fileName, text);
+            }
+            else {
+                const fileContent = this.#extraMaterials.get(fileName);
                 if (fileContent) {
                     this.parse(resolve, repositoryName, fileName, fileContent);
                 }
                 else {
                     reject();
                 }
-                ///() =>
-            };
-            customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
+            }
         });
         return promise;
     }

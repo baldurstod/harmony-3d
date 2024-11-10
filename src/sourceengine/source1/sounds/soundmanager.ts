@@ -34,15 +34,16 @@ export class Source1SoundManager {
 			let audio = this.#audioList[wave];
 			//audio = null;//removeme
 			if (!audio) {
-
+				/*
 				const repository = new Repositories().getRepository(sound.getRepository());
 				if (!repository) {
 					console.error(`Unknown repository ${sound.repositoryName} in Source1SoundManager.playSound`);
 					return null;
 				}
+					*/
 
-				const soundUrl = //sound.repository + '/sound/' + wave;//TODO: constant
-				audio = new Audio(new URL('/sound/' + wave, repository.base).toString());
+				//const soundUrl = //sound.repository + '/sound/' + wave;//TODO: constant
+				audio = new Audio(URL.createObjectURL(await new Repositories().getFileAsBlob(sound.getRepository(), '/sound/' + wave))/*new URL('/sound/' + wave, repository.base).toString()*/);
 				this.#audioList[wave] = audio;
 				audio.volume = 0.1;
 				//audio.play();
@@ -92,8 +93,8 @@ export class Source1SoundManager {
 		}
 
 		//try {
-			const response = await customFetch(new URL(manifestPath, repository.base));
-			this.#loadManifest(repositoryName, await response.text());
+		const response = await customFetch(new URL(manifestPath, repository.base));
+		this.#loadManifest(repositoryName, await response.text());
 
 		/*} catch(e) {
 			console.error(`Error while fetching ${repositoryName} ${manifestPath} in Source1SoundManager.#fetchManifests`, e);
@@ -114,7 +115,7 @@ export class Source1SoundManager {
 			let wave;
 			if (sound.rndwave) {
 				wave = [];
-				Object.keys(sound.rndwave).forEach(function(element) {
+				Object.keys(sound.rndwave).forEach(function (element) {
 					wave.push(sound.rndwave[element]);
 				});
 			} else {
@@ -130,55 +131,55 @@ export class Source1SoundManager {
 	/**
 	 * Load soundManifest
 	 */
-/*
+	/*
 
-	static loadManifest(repositoryName, fileName) {
-		const callback =
-			async (response) => {
-				if (!response.ok) {
-					return;
-				}
-				let arg1 = await response.text();
-				if (arg1) {
-					const kv = new KvReader();
-					kv.readText(arg1);
-					const list = kv.rootElements//['Demoman.Death'];
-					const keyArray = Object.keys(list);
-					for (let i = 0; i < keyArray.length; ++i) {
-						const soundKey = keyArray[i];
-						const sound = list[soundKey];
-						let wave;
-						if (sound.rndwave) {
-							wave = [];
-							Object.keys(sound.rndwave).forEach(function(element) {
-								wave.push(sound.rndwave[element]);
-							});
-						} else {
-							wave = sound.wave;
-						}
-						//const wave = sound.rndwave ? sound.rndwave : sound.wave;
-						this.#soundList[soundKey] = new Sound(wave);
-						this.#soundList[soundKey].repositoryName = repositoryName;
-						this.#soundList[soundKey].channel = sound.channel;
+		static loadManifest(repositoryName, fileName) {
+			const callback =
+				async (response) => {
+					if (!response.ok) {
+						return;
 					}
+					let arg1 = await response.text();
+					if (arg1) {
+						const kv = new KvReader();
+						kv.readText(arg1);
+						const list = kv.rootElements//['Demoman.Death'];
+						const keyArray = Object.keys(list);
+						for (let i = 0; i < keyArray.length; ++i) {
+							const soundKey = keyArray[i];
+							const sound = list[soundKey];
+							let wave;
+							if (sound.rndwave) {
+								wave = [];
+								Object.keys(sound.rndwave).forEach(function(element) {
+									wave.push(sound.rndwave[element]);
+								});
+							} else {
+								wave = sound.wave;
+							}
+							//const wave = sound.rndwave ? sound.rndwave : sound.wave;
+							this.#soundList[soundKey] = new Sound(wave);
+							this.#soundList[soundKey].repositoryName = repositoryName;
+							this.#soundList[soundKey].channel = sound.channel;
+						}
+					}
+					this.#initialisationPhase = 2;//TODO: per file
 				}
-				this.#initialisationPhase = 2;//TODO: per file
+			const ajaxReject =
+				function(value) {
+					//TODO: ????
+				};
+
+
+			const repository = new Repositories().getRepository(repositoryName);
+			if (!repository) {
+				console.error(`Unknown repository ${repositoryName} in Source1SoundManager.loadManifest`);
+				return null;
 			}
-		const ajaxReject =
-			function(value) {
-				//TODO: ????
-			};
 
-
-		const repository = new Repositories().getRepository(repositoryName);
-		if (!repository) {
-			console.error(`Unknown repository ${repositoryName} in Source1SoundManager.loadManifest`);
-			return null;
+			customFetch(new URL(fileName, repository.base)).then(callback, ajaxReject);
 		}
-
-		customFetch(new URL(fileName, repository.base)).then(callback, ajaxReject);
-	}
-	*/
+		*/
 
 	static loadManifest(repositoryName, fileName) {
 		let manifests = this.#manifestsPerRepository[repositoryName];
