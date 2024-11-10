@@ -1,12 +1,12 @@
 type FetchFunction = (resource: string | URL | Request, options?: RequestInit) => Promise<Response>;
 
-let fetchFunction: FetchFunction = null;
+let fetchFunction: FetchFunction | null = null;
 
 export function setFetchFunction(func: FetchFunction) {
 	fetchFunction = func;
 }
 
-export async function customFetch(resource: string | URL | Request, options?: RequestInit) {
+export async function customFetch(resource: string | URL | Request, options?: RequestInit): Promise<Response> {
 	try {
 		if (fetchFunction) {
 			return await fetchFunction(resource, options);
@@ -15,6 +15,6 @@ export async function customFetch(resource: string | URL | Request, options?: Re
 		}
 	} catch (e) {
 		console.error('Error during custom fetch: ', e);
-		return null;
+		return new Response(null, { status: 400 });
 	}
 }
