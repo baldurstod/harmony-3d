@@ -19,7 +19,7 @@ class SourceEngineVMTLoaderClass {
 		}
 			*/
 
-		let promise = new Promise((resolve, reject) => {
+		let promise = new Promise(async (resolve, reject) => {
 			/*
 			const requestCallback = async response => {
 				if (response.ok) {
@@ -39,7 +39,7 @@ class SourceEngineVMTLoaderClass {
 			}
 				*/
 			//let req = customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
-			const text = new Repositories().getFileAsText(repositoryName, fileName);
+			const text = await new Repositories().getFileAsText(repositoryName, fileName);
 			if (text) {
 				this.parse(resolve, repositoryName, fileName, text);
 			} else {

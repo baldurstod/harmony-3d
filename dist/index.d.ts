@@ -5529,12 +5529,15 @@ export declare class Entity {
         getRepository(name: string): Repository;
         getRepositoryList(): string[];
         getFile(repositoryName: string, filepath: string): Promise<ArrayBuffer | null>;
+        getFileAsText(repositoryName: string, filepath: string): Promise<string | null>;
+        getFileAsBlob(repositoryName: string, filepath: string): Promise<Blob | null>;
     }
 
     export declare interface Repository {
         name: string;
         getFile: (filepath: string) => Promise<ArrayBuffer | null>;
-        getFileAsText: (filepath: string) => Promise<String | null>;
+        getFileAsText: (filepath: string) => Promise<string | null>;
+        getFileAsBlob: (filepath: string) => Promise<Blob | null>;
     }
 
     export declare class RgbeImporter {
@@ -8970,7 +8973,8 @@ export declare class Entity {
         get name(): string;
         get base(): string;
         getFile(fileName: string): Promise<ArrayBuffer>;
-        getFileAsText(fileName: string): Promise<String>;
+        getFileAsText(fileName: string): Promise<string>;
+        getFileAsBlob(fileName: string): Promise<Blob>;
     }
 
     export declare class Wireframe extends Entity {
@@ -9008,7 +9012,8 @@ export declare class Entity {
         constructor(name: string, zip: File);
         get name(): string;
         getFile(fileName: string): Promise<ArrayBuffer>;
-        getFileAsText(fileName: string): Promise<String>;
+        getFileAsText(fileName: string): Promise<string>;
+        getFileAsBlob(fileName: string): Promise<Blob>;
     }
 
     export declare const Zstd: {
