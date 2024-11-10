@@ -1,5 +1,4 @@
-import { Repositories } from '../../../misc/repositories';
-import { customFetch } from '../../../utils/customfetch';
+import { Repositories } from '../../../repositories/repositories';
 import { SourceBSP } from '../../source1/loaders/sourcebsp';
 import { SourceMDL } from '../../source1/loaders/sourcemdl';
 import { SourcePCF } from '../../source1/loaders/sourcepcf';

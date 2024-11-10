@@ -2,8 +2,7 @@ import { SourceEngineMaterialManager } from '../materials/sourceenginematerialma
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { KvReader } from './kvreader';
 import { DEBUG } from '../../../buildoptions';
-import { customFetch } from '../../../utils/customfetch';
-import { Repositories } from '../../../misc/repositories';
+import { Repositories } from '../../../repositories/repositories';
 
 class SourceEngineVMTLoaderClass {
 	#materials = new Map();

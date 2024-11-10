@@ -1,7 +1,7 @@
 import { GraphicsEvents, GraphicsEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
-import { Repositories } from '../../../misc/repositories';
-import { WebRepository } from '../../../misc/webrepository';
+import { Repositories } from '../../../repositories/repositories';
+import { WebRepository } from '../../../repositories/webrepository';
 import { customFetch } from '../../../utils/customfetch';
 import { SourcePCF } from '../loaders/sourcepcf';
 

@@ -1,7 +1,7 @@
 import { Sound } from './sound';
 import { KvReader } from '../loaders/kvreader';
 import { AudioMixer } from '../../../audio/audiomixer';
-import { Repositories } from '../../../misc/repositories';
+import { Repositories } from '../../../repositories/repositories';
 import { customFetch } from '../../../utils/customfetch';
 
 export class Source1SoundManager {

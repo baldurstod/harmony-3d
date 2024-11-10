@@ -5,8 +5,7 @@ import { Choreography } from './choreography';
 import { CurveData } from './curvedata';
 import { Event, EventType } from './event';
 import { DecompressLZMA } from '../utils/utils';
-import { Repositories } from '../../../misc/repositories';
-import { RemoteBinaryReader } from '../../../utils/remotebinaryreader';
+import { Repositories } from '../../../repositories/repositories';
 import { DEBUG } from '../../../buildoptions';
 
 const CHOREOGRAPHIES_CHUNK_SIZE = 200000;

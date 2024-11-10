@@ -1,6 +1,6 @@
 import { GraphicsEvents, GraphicsEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
-import { Repositories } from '../../../misc/repositories';
+import { Repositories } from '../../../repositories/repositories';
 import { customFetch } from '../../../utils/customfetch';
 import { Source2ParticleSystem } from './source2particlesystem';
 

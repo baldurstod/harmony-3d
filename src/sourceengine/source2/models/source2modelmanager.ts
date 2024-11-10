@@ -1,4 +1,4 @@
-import { Repositories } from '../../../misc/repositories';
+import { Repositories } from '../../../repositories/repositories';
 import { customFetch } from '../../../utils/customfetch';
 import { Source2ModelLoader } from '../loaders/source2modelloader'
 

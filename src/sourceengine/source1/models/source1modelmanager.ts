@@ -1,6 +1,6 @@
 import { getLoader } from '../../../loaders/loaderfactory';
-import { Repositories } from '../../../misc/repositories';
-import { WebRepository } from '../../../misc/webrepository';
+import { Repositories } from '../../../repositories/repositories';
+import { WebRepository } from '../../../repositories/webrepository';
 import { customFetch } from '../../../utils/customfetch';
 import { SourceModel } from '../loaders/sourcemodel';
 
