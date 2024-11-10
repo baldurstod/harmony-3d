@@ -48,6 +48,7 @@ export default [
 			'murmurhash-es6',
 			'meshoptimizer',
 			'@derschmale/io-rgbe',
+			'@zip.js/zip.js',
 		],
 	},
 ];
