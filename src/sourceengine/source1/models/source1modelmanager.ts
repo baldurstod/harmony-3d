@@ -65,6 +65,7 @@ export class Source1ModelManager {
 		const repoList = [];
 		for (const [repositoryName, repo] of this.#modelListPerRepository) {
 			if (repo === null) {
+				/*
 				const repository = new Repositories().getRepository(repositoryName) as WebRepository;
 				if (!repository) {
 					continue;
@@ -72,8 +73,12 @@ export class Source1ModelManager {
 
 				let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
 				const j = await response.json();
-				this.#modelListPerRepository.set(repositoryName, j);
-				repoList.push({ name: repositoryName, files: [j] });
+				*/
+				const response = await new Repositories().getFileAsJson(repositoryName, 'models_manifest.json');
+				if (!response.error) {
+					this.#modelListPerRepository.set(repositoryName, response.json);
+					repoList.push({ name: repositoryName, files: [response.json] });
+				}
 			} else {
 				repoList.push({ name: repositoryName, files: [repo] });
 			}

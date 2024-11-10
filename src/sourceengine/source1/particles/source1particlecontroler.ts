@@ -147,19 +147,42 @@ export class Source1ParticleControler {
 	/**
 	 * TODO
 	 */
-	static async #loadManifest(repositoryName) {//TODO: async
+	static async #loadManifest(repositoryName: string) {
+		/*
 		const repository = new Repositories().getRepository(repositoryName) as WebRepository;
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
 			return null;
 		}
+			*/
 
-		this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise((resolve, reject) => {
-			let manifestUrl = new URL('particles/manifest.json', repository.base);//todo variable
+		this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
+			//let manifestUrl = new URL('particles/manifest.json', repository.base);//todo variable
 
 			let systemNameToPcfRepo = {};
 			this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
 
+
+			const response = await new Repositories().getFileAsJson(repositoryName, 'particles/manifest.json');//TODO const
+			if (response.error) {
+				reject(false);
+			}
+
+			const json: any/*TODO: change type*/ = response.json;
+
+			if (json && json.files) {
+				for (let file of json.files) {
+					let pcfName = file.name;
+					for (let definition of file.particlesystemdefinitions) {
+						systemNameToPcfRepo[definition] = pcfName;
+					}
+				}
+				resolve(true);
+			} else {
+				reject(false);
+			}
+
+			/*
 			customFetch(new Request(manifestUrl)).then((response) => {
 				response.ok && response.json().then((json) => {
 					if (json && json.files) {
@@ -179,13 +202,13 @@ export class Source1ParticleControler {
 							} else {
 								systemNameToPcfRepo[line] = pcfName;
 							}
-						}*/
+						}* /
 						resolve(true);
 					} else {
 						reject(false);
 					}
 				})
-			});
+			});*/
 		});
 		return this.#loadManifestPromises[repositoryName];
 	}

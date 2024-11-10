@@ -5531,6 +5531,7 @@ export declare class Entity {
         getFile(repositoryName: string, filepath: string): Promise<RepositoryArrayBufferResponse>;
         getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryStringResponse>;
         getFileAsBlob(repositoryName: string, filepath: string): Promise<RepositoryBlobResponse>;
+        getFileAsJson(repositoryName: string, filepath: string): Promise<RepositoryJsonResponse>;
     }
 
     export declare interface Repository {
@@ -5538,6 +5539,7 @@ export declare class Entity {
         getFile: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
         getFileAsText: (filepath: string) => Promise<RepositoryStringResponse>;
         getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;
+        getFileAsJson: (filepath: string) => Promise<RepositoryJsonResponse>;
     }
 
     export declare type RepositoryArrayBufferResponse = {
@@ -5554,6 +5556,11 @@ export declare class Entity {
         FileNotFound = 1,
         UnknownError = 2
     }
+
+    export declare type RepositoryJsonResponse = {
+        json?: JSON | null;
+        error?: RepositoryError;
+    };
 
     export declare type RepositoryStringResponse = {
         string?: string | null;
@@ -8995,6 +9002,7 @@ export declare class Entity {
         getFile(fileName: string): Promise<RepositoryArrayBufferResponse>;
         getFileAsText(fileName: string): Promise<RepositoryStringResponse>;
         getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
+        getFileAsJson(fileName: string): Promise<RepositoryJsonResponse>;
     }
 
     export declare class Wireframe extends Entity {
@@ -9034,6 +9042,7 @@ export declare class Entity {
         getFile(fileName: string): Promise<RepositoryArrayBufferResponse>;
         getFileAsText(fileName: string): Promise<RepositoryStringResponse>;
         getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
+        getFileAsJson(fileName: string): Promise<RepositoryJsonResponse>;
     }
 
     export declare const Zstd: {

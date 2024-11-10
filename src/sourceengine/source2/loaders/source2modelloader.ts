@@ -35,7 +35,6 @@ export class Source2ModelLoader {
 			return promise;
 		}
 
-		//const repository = new Repositories().getRepository(repositoryName).base;
 		promise = new Promise((resolve, reject) => {
 			let vmdlPromise = new Source2FileLoader().load(repositoryName, fileName + '.vmdl_c');
 			vmdlPromise.then(

@@ -82,18 +82,25 @@ export class Source2ModelManager {
 		for (let repositoryName in modelListPerRepository) {
 			let repo = modelListPerRepository[repositoryName];
 			if (repo === null) {
-
+				/*
 				const repository = new Repositories().getRepository(repositoryName);
 				if (!repository) {
 					continue;
 				}
+					*/
 
-				let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
-				repo = await response.json();
-				this.#modelListPerRepository[repositoryName] = repo;
+				//let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
+				//repo = await response.json();
+				const response = await new Repositories().getFileAsJson(repositoryName, 'models_manifest.json');//todo variable
+				if (!response.error) {
+					this.#modelListPerRepository[repositoryName] = response.json;
+					repo = response.json;
+				}
 			}
 
-			repoList.push({ name: repositoryName, files: [repo] });
+			if (repo) {
+				repoList.push({ name: repositoryName, files: [repo] });
+			}
 		}
 		return { files: repoList };
 	}

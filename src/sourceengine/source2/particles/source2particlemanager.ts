@@ -82,21 +82,24 @@ class Source2ParticleManagerClass {
 	}
 
 	async #loadManifest(repositoryName) {
+		/*
 		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
 			console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
 			return;
 		}
+			*/
 
-		const manifestUrl = new URL('particles_manifest.json', repository.base);//todo variable
+		//const manifestUrl = new URL('particles_manifest.json', repository.base);//todo variable
+		const response = await new Repositories().getFileAsJson(repositoryName, 'particles_manifest.json');//TODO const
 
-		const response = await customFetch(new Request(manifestUrl));
+		//const response = await customFetch(new Request(manifestUrl));
 
-		if (!response.ok) {
+		if (response.error) {
 			return;
 		}
 
-		const json = await response.json();
+		const json: any = response.json;
 		if (json && json.files) {
 			this.#fileList[repositoryName] = json.files;
 		}

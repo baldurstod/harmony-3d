@@ -18427,6 +18427,13 @@ class Repositories {
         }
         return repo?.getFileAsBlob(filepath);
     }
+    async getFileAsJson(repositoryName, filepath) {
+        const repo = this.#repositories[repositoryName];
+        if (!repo) {
+            return null;
+        }
+        return repo?.getFileAsJson(filepath);
+    }
 }
 
 var RepositoryError;
@@ -18490,6 +18497,20 @@ class WebRepository {
             return { error: error };
         }
     }
+    async getFileAsJson(fileName) {
+        const url = new URL(fileName, this.#base);
+        const response = await customFetch(url);
+        if (response.ok) {
+            return { json: await response.json() };
+        }
+        else {
+            let error = RepositoryError.UnknownError;
+            if (response.status == 404) {
+                error = RepositoryError.FileNotFound;
+            }
+            return { error: error };
+        }
+    }
 }
 
 class ZipRepository {
@@ -18512,6 +18533,9 @@ class ZipRepository {
     }
     async getFileAsBlob(fileName) {
         return { blob: null };
+    }
+    async getFileAsJson(fileName) {
+        return { json: null };
     }
 }
 
@@ -18949,14 +18973,20 @@ class Source1ModelManager {
         const repoList = [];
         for (const [repositoryName, repo] of this.#modelListPerRepository) {
             if (repo === null) {
-                const repository = new Repositories().getRepository(repositoryName);
+                /*
+                const repository = new Repositories().getRepository(repositoryName) as WebRepository;
                 if (!repository) {
                     continue;
                 }
-                let response = await customFetch(new URL('models_manifest.json', repository.base)); //todo variable
+
+                let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
                 const j = await response.json();
-                this.#modelListPerRepository.set(repositoryName, j);
-                repoList.push({ name: repositoryName, files: [j] });
+                */
+                const response = await new Repositories().getFileAsJson(repositoryName, 'models_manifest.json');
+                if (!response.error) {
+                    this.#modelListPerRepository.set(repositoryName, response.json);
+                    repoList.push({ name: repositoryName, files: [response.json] });
+                }
             }
             else {
                 repoList.push({ name: repositoryName, files: [repo] });
@@ -21983,15 +22013,35 @@ class Source1ParticleControler {
      * TODO
      */
     static async #loadManifest(repositoryName) {
-        const repository = new Repositories().getRepository(repositoryName);
+        /*
+        const repository = new Repositories().getRepository(repositoryName) as WebRepository;
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
             return null;
         }
-        this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise((resolve, reject) => {
-            let manifestUrl = new URL('particles/manifest.json', repository.base); //todo variable
+            */
+        this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
+            //let manifestUrl = new URL('particles/manifest.json', repository.base);//todo variable
             let systemNameToPcfRepo = {};
             this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
+            const response = await new Repositories().getFileAsJson(repositoryName, 'particles/manifest.json'); //TODO const
+            if (response.error) {
+                reject(false);
+            }
+            const json /*TODO: change type*/ = response.json;
+            if (json && json.files) {
+                for (let file of json.files) {
+                    let pcfName = file.name;
+                    for (let definition of file.particlesystemdefinitions) {
+                        systemNameToPcfRepo[definition] = pcfName;
+                    }
+                }
+                resolve(true);
+            }
+            else {
+                reject(false);
+            }
+            /*
             customFetch(new Request(manifestUrl)).then((response) => {
                 response.ok && response.json().then((json) => {
                     if (json && json.files) {
@@ -22001,6 +22051,7 @@ class Source1ParticleControler {
                                 systemNameToPcfRepo[definition] = pcfName;
                             }
                         }
+
                         /*let lines = text.split('\n');
                         let line;
                         let pcfName = null;
@@ -22010,14 +22061,13 @@ class Source1ParticleControler {
                             } else {
                                 systemNameToPcfRepo[line] = pcfName;
                             }
-                        }*/
+                        }* /
                         resolve(true);
-                    }
-                    else {
+                    } else {
                         reject(false);
                     }
-                });
-            });
+                })
+            });*/
         });
         return this.#loadManifestPromises[repositoryName];
     }
@@ -22496,14 +22546,6 @@ class Source1SoundManager {
             let audio = this.#audioList[wave];
             //audio = null;//removeme
             if (!audio) {
-                /*
-                const repository = new Repositories().getRepository(sound.getRepository());
-                if (!repository) {
-                    console.error(`Unknown repository ${sound.repositoryName} in Source1SoundManager.playSound`);
-                    return null;
-                }
-                    */
-                //const soundUrl = //sound.repository + '/sound/' + wave;//TODO: constant
                 const response = await new Repositories().getFileAsBlob(sound.getRepository(), '/sound/' + wave);
                 if (!response.error) {
                     audio = new Audio(URL.createObjectURL(response.blob) /*new URL('/sound/' + wave, repository.base).toString()*/);
@@ -22544,23 +22586,10 @@ class Source1SoundManager {
         promiseResolve(true);
     }
     static async #fetchManifest(repositoryName, manifestPath) {
-        /*
-        const repository = new Repositories().getRepository(repositoryName);
-        if (!repository) {
-            console.error(`Unknown repository ${repositoryName} in Source1SoundManager.#fetchManifests`);
-            return null;
-        }
-            */
-        //try {
-        //const response = await customFetch(new URL(manifestPath, repository.base));
         const response = await new Repositories().getFileAsText(repositoryName, manifestPath);
         if (!response.error) {
-            this.#loadManifest(repositoryName, await response.string);
+            this.#loadManifest(repositoryName, response.string);
         }
-        /*} catch(e) {
-            console.error(`Error while fetching ${repositoryName} ${manifestPath} in Source1SoundManager.#fetchManifests`, e);
-            return null;
-        }*/
     }
     static #loadManifest(repositoryName, manifestTxt) {
         const sounds = this.#soundsPerRepository[repositoryName];
@@ -26232,7 +26261,6 @@ class Source2ModelLoader {
         if (promise) {
             return promise;
         }
-        //const repository = new Repositories().getRepository(repositoryName).base;
         promise = new Promise((resolve, reject) => {
             let vmdlPromise = new Source2FileLoader().load(repositoryName, fileName + '.vmdl_c');
             vmdlPromise.then(async (source2File) => {
@@ -26467,15 +26495,23 @@ class Source2ModelManager {
         for (let repositoryName in modelListPerRepository) {
             let repo = modelListPerRepository[repositoryName];
             if (repo === null) {
+                /*
                 const repository = new Repositories().getRepository(repositoryName);
                 if (!repository) {
                     continue;
                 }
-                let response = await customFetch(new URL('models_manifest.json', repository.base)); //todo variable
-                repo = await response.json();
-                this.#modelListPerRepository[repositoryName] = repo;
+                    */
+                //let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
+                //repo = await response.json();
+                const response = await new Repositories().getFileAsJson(repositoryName, 'models_manifest.json'); //todo variable
+                if (!response.error) {
+                    this.#modelListPerRepository[repositoryName] = response.json;
+                    repo = response.json;
+                }
             }
-            repoList.push({ name: repositoryName, files: [repo] });
+            if (repo) {
+                repoList.push({ name: repositoryName, files: [repo] });
+            }
         }
         return { files: repoList };
     }
@@ -26548,17 +26584,20 @@ class Source2ParticleManagerClass {
         }
     }
     async #loadManifest(repositoryName) {
+        /*
         const repository = new Repositories().getRepository(repositoryName);
         if (!repository) {
             console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
             return;
         }
-        const manifestUrl = new URL('particles_manifest.json', repository.base); //todo variable
-        const response = await customFetch(new Request(manifestUrl));
-        if (!response.ok) {
+            */
+        //const manifestUrl = new URL('particles_manifest.json', repository.base);//todo variable
+        const response = await new Repositories().getFileAsJson(repositoryName, 'particles_manifest.json'); //TODO const
+        //const response = await customFetch(new Request(manifestUrl));
+        if (response.error) {
             return;
         }
-        const json = await response.json();
+        const json = response.json;
         if (json && json.files) {
             this.#fileList[repositoryName] = json.files;
         }
