@@ -1,8 +1,6 @@
 import { GraphicsEvents, GraphicsEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
-import { WebRepository } from '../../../repositories/webrepository';
-import { customFetch } from '../../../utils/customfetch';
 import { SourcePCF } from '../loaders/sourcepcf';
 
 export class Source1ParticleControler {
@@ -148,17 +146,7 @@ export class Source1ParticleControler {
 	 * TODO
 	 */
 	static async #loadManifest(repositoryName: string) {
-		/*
-		const repository = new Repositories().getRepository(repositoryName) as WebRepository;
-		if (!repository) {
-			console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
-			return null;
-		}
-			*/
-
 		this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
-			//let manifestUrl = new URL('particles/manifest.json', repository.base);//todo variable
-
 			let systemNameToPcfRepo = {};
 			this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
 
@@ -181,34 +169,6 @@ export class Source1ParticleControler {
 			} else {
 				reject(false);
 			}
-
-			/*
-			customFetch(new Request(manifestUrl)).then((response) => {
-				response.ok && response.json().then((json) => {
-					if (json && json.files) {
-						for (let file of json.files) {
-							let pcfName = file.name;
-							for (let definition of file.particlesystemdefinitions) {
-								systemNameToPcfRepo[definition] = pcfName;
-							}
-						}
-
-						/*let lines = text.split('\n');
-						let line;
-						let pcfName = null;
-						while (line = lines.shift()) {
-							if (line.indexOf('#') == 0) { // pcf
-								pcfName = line.substring(1);
-							} else {
-								systemNameToPcfRepo[line] = pcfName;
-							}
-						}* /
-						resolve(true);
-					} else {
-						reject(false);
-					}
-				})
-			});*/
 		});
 		return this.#loadManifestPromises[repositoryName];
 	}

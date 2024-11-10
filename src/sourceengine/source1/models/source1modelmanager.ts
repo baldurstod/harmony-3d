@@ -1,7 +1,5 @@
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
-import { WebRepository } from '../../../repositories/webrepository';
-import { customFetch } from '../../../utils/customfetch';
 import { SourceModel } from '../loaders/sourcemodel';
 
 export class Source1ModelManager {
@@ -50,14 +48,8 @@ export class Source1ModelManager {
 	}
 
 	static loadManifest(repositoryName) {
-		//const modelList = this.#modelListPerRepository[repositoryName];
-
 		if (!this.#modelListPerRepository.has(repositoryName)) {
 			this.#modelListPerRepository.set(repositoryName, null);
-			/*let manifestUrl = repository + 'models_manifest.json';//todo variable
-			let response = await customFetch(manifestUrl);
-			let manifestJson = await response.json();
-			this.#modelListPerRepository[repository] = manifestJson;*/
 		}
 	}
 
@@ -65,15 +57,6 @@ export class Source1ModelManager {
 		const repoList = [];
 		for (const [repositoryName, repo] of this.#modelListPerRepository) {
 			if (repo === null) {
-				/*
-				const repository = new Repositories().getRepository(repositoryName) as WebRepository;
-				if (!repository) {
-					continue;
-				}
-
-				let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
-				const j = await response.json();
-				*/
 				const response = await new Repositories().getFileAsJson(repositoryName, 'models_manifest.json');
 				if (!response.error) {
 					this.#modelListPerRepository.set(repositoryName, response.json);
