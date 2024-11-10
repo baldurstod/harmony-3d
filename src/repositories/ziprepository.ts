@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryStringResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryJsonResponse, RepositoryStringResponse } from './repository';
 
 export class ZipRepository implements Repository {
 	#name: string;
@@ -24,5 +24,9 @@ export class ZipRepository implements Repository {
 
 	async getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse> {
 		return { blob: null };
+	}
+
+	async getFileAsJson(fileName: string): Promise<RepositoryJsonResponse> {
+		return { json: null };
 	}
 }

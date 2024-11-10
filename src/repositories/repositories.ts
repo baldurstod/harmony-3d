@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryStringResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryJsonResponse, RepositoryStringResponse } from './repository';
 
 export class Repositories {
 	static #instance: Repositories;
@@ -48,5 +48,14 @@ export class Repositories {
 		}
 
 		return repo?.getFileAsBlob(filepath);
+	}
+
+	async getFileAsJson(repositoryName: string, filepath: string): Promise<RepositoryJsonResponse> {
+		const repo = this.#repositories[repositoryName];
+		if (!repo) {
+			return null;
+		}
+
+		return repo?.getFileAsJson(filepath);
 	}
 }
