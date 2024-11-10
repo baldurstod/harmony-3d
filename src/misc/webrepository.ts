@@ -28,4 +28,10 @@ export class WebRepository implements Repository {
 		const response = await customFetch(url);
 		return response.text();
 	}
+
+	async getFileAsBlob(fileName: string): Promise<Blob> {
+		const url = new URL(fileName, this.#base);
+		const response = await customFetch(url);
+		return new Blob([new Uint8Array(await response.arrayBuffer())]);
+	}
 }

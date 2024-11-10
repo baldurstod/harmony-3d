@@ -40,4 +40,13 @@ export class Repositories {
 
 		return repo?.getFileAsText(filepath);
 	}
+
+	async getFileAsBlob(repositoryName: string, filepath: string): Promise<Blob | null> {
+		const repo = this.#repositories[repositoryName];
+		if (!repo) {
+			return null;
+		}
+
+		return repo?.getFileAsBlob(filepath);
+	}
 }

@@ -21,4 +21,8 @@ export class ZipRepository implements Repository {
 	async getFileAsText(fileName: string): Promise<string> {
 		return '';
 	}
+
+	async getFileAsBlob(fileName: string): Promise<Blob> {
+		return null;
+	}
 }
