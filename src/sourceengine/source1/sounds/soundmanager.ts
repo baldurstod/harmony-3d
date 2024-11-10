@@ -34,15 +34,6 @@ export class Source1SoundManager {
 			let audio = this.#audioList[wave];
 			//audio = null;//removeme
 			if (!audio) {
-				/*
-				const repository = new Repositories().getRepository(sound.getRepository());
-				if (!repository) {
-					console.error(`Unknown repository ${sound.repositoryName} in Source1SoundManager.playSound`);
-					return null;
-				}
-					*/
-
-				//const soundUrl = //sound.repository + '/sound/' + wave;//TODO: constant
 				const response = await new Repositories().getFileAsBlob(sound.getRepository(), '/sound/' + wave);
 
 				if (!response.error) {
@@ -90,26 +81,10 @@ export class Source1SoundManager {
 	}
 
 	static async #fetchManifest(repositoryName: string, manifestPath: string) {
-		/*
-		const repository = new Repositories().getRepository(repositoryName);
-		if (!repository) {
-			console.error(`Unknown repository ${repositoryName} in Source1SoundManager.#fetchManifests`);
-			return null;
-		}
-			*/
-
-		//try {
-		//const response = await customFetch(new URL(manifestPath, repository.base));
-
 		const response = await new Repositories().getFileAsText(repositoryName, manifestPath);
 		if (!response.error) {
-			this.#loadManifest(repositoryName, await response.string);
+			this.#loadManifest(repositoryName, response.string);
 		}
-
-		/*} catch(e) {
-			console.error(`Error while fetching ${repositoryName} ${manifestPath} in Source1SoundManager.#fetchManifests`, e);
-			return null;
-		}*/
 	}
 
 	static #loadManifest(repositoryName: string, manifestTxt: string) {
