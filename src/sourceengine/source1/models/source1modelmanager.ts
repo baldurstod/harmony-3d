@@ -6,7 +6,7 @@ export class Source1ModelManager {
 	static #modelListPerRepository: Map<string, any> = new Map();
 	static #modelsPerRepository: Map<string, Map<string, SourceModel>> = new Map();
 
-	static async #createModel(repositoryName, fileName) {
+	static async #createModel(repositoryName: string, fileName: string) {
 		let model = this.#getModel(repositoryName, fileName);
 		if (model) {
 			return model;
@@ -15,20 +15,20 @@ export class Source1ModelManager {
 		const modelLoader = getLoader('ModelLoader');
 		model = await new modelLoader().load(repositoryName, fileName);
 		if (model) {
-			this.#modelsPerRepository.get(repositoryName).set(fileName, model);
+			this.#modelsPerRepository.get(repositoryName)?.set(fileName, model);
 		}
 
 		return model;
 	}
 
-	static #getModel(repositoryName, fileName) {
+	static #getModel(repositoryName: string, fileName: string) {
 		if (!this.#modelsPerRepository.has(repositoryName)) {
 			this.#modelsPerRepository.set(repositoryName, new Map<string, SourceModel>());
 		}
-		return this.#modelsPerRepository.get(repositoryName).get(fileName);
+		return this.#modelsPerRepository.get(repositoryName)?.get(fileName);
 	}
 
-	static async createInstance(repository, fileName, dynamic, preventInit = false) {
+	static async createInstance(repository: string, fileName: string, dynamic: boolean, preventInit = false) {
 		if (!repository) {
 			//try to get repository from filename
 			for (const [repo] of this.#modelListPerRepository) {
@@ -47,7 +47,7 @@ export class Source1ModelManager {
 		return null;
 	}
 
-	static loadManifest(repositoryName) {
+	static loadManifest(repositoryName: string) {
 		if (!this.#modelListPerRepository.has(repositoryName)) {
 			this.#modelListPerRepository.set(repositoryName, null);
 		}
