@@ -8,12 +8,11 @@ export type RepositoryArrayBufferResponse = { buffer?: ArrayBuffer | null, error
 export type RepositoryStringResponse = { string?: string | null, error?: RepositoryError };
 export type RepositoryBlobResponse = { blob?: Blob | null, error?: RepositoryError };
 export type RepositoryJsonResponse = { json?: JSON | null, error?: RepositoryError };
-export type RepositoryFileListResponse = { root?: RepositoryDirectory, error?: RepositoryError };
+export type RepositoryFileListResponse = { root?: RepositoryEntry, error?: RepositoryError };
 
 export type RepositoryFilter = { extension?: string };
 
-export type RepositoryDirectory = { name: string, childs: Array<RepositoryDirectory | RepositoryFile> };
-export type RepositoryFile = { name: string };
+export type RepositoryEntry = { name: string, childs?: Array<RepositoryEntry>, directory?: boolean };
 
 export interface Repository {
 	name: string;
