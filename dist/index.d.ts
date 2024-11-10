@@ -5528,17 +5528,37 @@ export declare class Entity {
         addRepository(repo: Repository): void;
         getRepository(name: string): Repository;
         getRepositoryList(): string[];
-        getFile(repositoryName: string, filepath: string): Promise<ArrayBuffer | null>;
-        getFileAsText(repositoryName: string, filepath: string): Promise<string | null>;
-        getFileAsBlob(repositoryName: string, filepath: string): Promise<Blob | null>;
+        getFile(repositoryName: string, filepath: string): Promise<RepositoryArrayBufferResponse>;
+        getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryStringResponse>;
+        getFileAsBlob(repositoryName: string, filepath: string): Promise<RepositoryBlobResponse>;
     }
 
     export declare interface Repository {
         name: string;
-        getFile: (filepath: string) => Promise<ArrayBuffer | null>;
-        getFileAsText: (filepath: string) => Promise<string | null>;
-        getFileAsBlob: (filepath: string) => Promise<Blob | null>;
+        getFile: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
+        getFileAsText: (filepath: string) => Promise<RepositoryStringResponse>;
+        getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;
     }
+
+    export declare type RepositoryArrayBufferResponse = {
+        file: ArrayBuffer | null;
+        error?: RepositoryError;
+    };
+
+    export declare type RepositoryBlobResponse = {
+        file: Blob | null;
+        error?: RepositoryError;
+    };
+
+    export declare enum RepositoryError {
+        Ok = 0,
+        FileNotFound = 1
+    }
+
+    export declare type RepositoryStringResponse = {
+        file: string | null;
+        error?: RepositoryError;
+    };
 
     export declare class RgbeImporter {
         #private;
@@ -8972,9 +8992,9 @@ export declare class Entity {
         constructor(name: string, base: string);
         get name(): string;
         get base(): string;
-        getFile(fileName: string): Promise<ArrayBuffer>;
-        getFileAsText(fileName: string): Promise<string>;
-        getFileAsBlob(fileName: string): Promise<Blob>;
+        getFile(fileName: string): Promise<RepositoryArrayBufferResponse>;
+        getFileAsText(fileName: string): Promise<RepositoryStringResponse>;
+        getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
     }
 
     export declare class Wireframe extends Entity {
@@ -9011,9 +9031,9 @@ export declare class Entity {
         #private;
         constructor(name: string, zip: File);
         get name(): string;
-        getFile(fileName: string): Promise<ArrayBuffer>;
-        getFileAsText(fileName: string): Promise<string>;
-        getFileAsBlob(fileName: string): Promise<Blob>;
+        getFile(fileName: string): Promise<RepositoryArrayBufferResponse>;
+        getFileAsText(fileName: string): Promise<RepositoryStringResponse>;
+        getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
     }
 
     export declare const Zstd: {

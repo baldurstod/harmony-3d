@@ -1,4 +1,4 @@
-import { Repository } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryStringResponse } from './repository';
 
 export class ZipRepository implements Repository {
 	#name: string;
@@ -12,17 +12,17 @@ export class ZipRepository implements Repository {
 		return this.#name;
 	}
 
-	async getFile(fileName: string): Promise<ArrayBuffer> {
+	async getFile(fileName: string): Promise<RepositoryArrayBufferResponse> {
 		//const url = new URL(fileName, this.#base);
 		//return customFetch(url);
-		return new ArrayBuffer(10);
+		return { file: new ArrayBuffer(10) };
 	}
 
-	async getFileAsText(fileName: string): Promise<string> {
-		return '';
+	async getFileAsText(fileName: string): Promise<RepositoryStringResponse> {
+		return { file: '' };
 	}
 
-	async getFileAsBlob(fileName: string): Promise<Blob> {
-		return null;
+	async getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse> {
+		return { file: null };
 	}
 }

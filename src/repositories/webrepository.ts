@@ -1,5 +1,5 @@
 import { customFetch } from '../utils/customfetch';
-import { Repository } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryStringResponse } from './repository';
 
 export class WebRepository implements Repository {
 	#name: string;
@@ -17,21 +17,21 @@ export class WebRepository implements Repository {
 		return this.#base;
 	}
 
-	async getFile(fileName: string): Promise<ArrayBuffer> {
+	async getFile(fileName: string): Promise<RepositoryArrayBufferResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
-		return response.arrayBuffer();
+		return { file: await response.arrayBuffer() };
 	}
 
-	async getFileAsText(fileName: string): Promise<string> {
+	async getFileAsText(fileName: string): Promise<RepositoryStringResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
-		return response.text();
+		return { file: await response.text() };
 	}
 
-	async getFileAsBlob(fileName: string): Promise<Blob> {
+	async getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
-		return new Blob([new Uint8Array(await response.arrayBuffer())]);
+		return { file: new Blob([new Uint8Array(await response.arrayBuffer())]) };
 	}
 }
