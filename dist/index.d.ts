@@ -5541,21 +5541,22 @@ export declare class Entity {
     }
 
     export declare type RepositoryArrayBufferResponse = {
-        buffer: ArrayBuffer | null;
+        buffer?: ArrayBuffer | null;
         error?: RepositoryError;
     };
 
     export declare type RepositoryBlobResponse = {
-        blob: Blob | null;
+        blob?: Blob | null;
         error?: RepositoryError;
     };
 
     export declare enum RepositoryError {
-        FileNotFound = 0
+        FileNotFound = 1,
+        UnknownError = 2
     }
 
     export declare type RepositoryStringResponse = {
-        string: string | null;
+        string?: string | null;
         error?: RepositoryError;
     };
 

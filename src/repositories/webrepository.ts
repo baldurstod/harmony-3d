@@ -1,5 +1,5 @@
 import { customFetch } from '../utils/customfetch';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryStringResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryStringResponse } from './repository';
 
 export class WebRepository implements Repository {
 	#name: string;
@@ -20,18 +20,42 @@ export class WebRepository implements Repository {
 	async getFile(fileName: string): Promise<RepositoryArrayBufferResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
-		return { buffer: await response.arrayBuffer() };
+		if (response.ok) {
+			return { buffer: await response.arrayBuffer() };
+		} else {
+			let error: RepositoryError = RepositoryError.UnknownError;
+			if (response.status == 404) {
+				error = RepositoryError.FileNotFound
+			}
+			return { error: error };
+		}
 	}
 
 	async getFileAsText(fileName: string): Promise<RepositoryStringResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
-		return { string: await response.text() };
+		if (response.ok) {
+			return { string: await response.text() };
+		} else {
+			let error: RepositoryError = RepositoryError.UnknownError;
+			if (response.status == 404) {
+				error = RepositoryError.FileNotFound
+			}
+			return { error: error };
+		}
 	}
 
 	async getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
-		return { blob: new Blob([new Uint8Array(await response.arrayBuffer())]) };
+		if (response.ok) {
+			return { blob: new Blob([new Uint8Array(await response.arrayBuffer())]) };
+		} else {
+			let error: RepositoryError = RepositoryError.UnknownError;
+			if (response.status == 404) {
+				error = RepositoryError.FileNotFound
+			}
+			return { error: error };
+		}
 	}
 }

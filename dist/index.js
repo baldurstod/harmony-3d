@@ -18431,7 +18431,8 @@ class Repositories {
 
 var RepositoryError;
 (function (RepositoryError) {
-    RepositoryError[RepositoryError["FileNotFound"] = 0] = "FileNotFound";
+    RepositoryError[RepositoryError["FileNotFound"] = 1] = "FileNotFound";
+    RepositoryError[RepositoryError["UnknownError"] = 2] = "UnknownError";
 })(RepositoryError || (RepositoryError = {}));
 
 class WebRepository {
@@ -18450,17 +18451,44 @@ class WebRepository {
     async getFile(fileName) {
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
-        return { buffer: await response.arrayBuffer() };
+        if (response.ok) {
+            return { buffer: await response.arrayBuffer() };
+        }
+        else {
+            let error = RepositoryError.UnknownError;
+            if (response.status == 404) {
+                error = RepositoryError.FileNotFound;
+            }
+            return { error: error };
+        }
     }
     async getFileAsText(fileName) {
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
-        return { string: await response.text() };
+        if (response.ok) {
+            return { string: await response.text() };
+        }
+        else {
+            let error = RepositoryError.UnknownError;
+            if (response.status == 404) {
+                error = RepositoryError.FileNotFound;
+            }
+            return { error: error };
+        }
     }
     async getFileAsBlob(fileName) {
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
-        return { blob: new Blob([new Uint8Array(await response.arrayBuffer())]) };
+        if (response.ok) {
+            return { blob: new Blob([new Uint8Array(await response.arrayBuffer())]) };
+        }
+        else {
+            let error = RepositoryError.UnknownError;
+            if (response.status == 404) {
+                error = RepositoryError.FileNotFound;
+            }
+            return { error: error };
+        }
     }
 }
 
