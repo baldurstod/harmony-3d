@@ -5540,6 +5540,8 @@ export declare class Entity {
         getFileAsText: (filepath: string) => Promise<RepositoryStringResponse>;
         getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;
         getFileAsJson: (filepath: string) => Promise<RepositoryJsonResponse>;
+        getFileList: (filter?: RepositoryFilter) => Promise<RepositoryFileListResponse>;
+        overrideFile: (filepath: string, file: File) => Promise<RepositoryError | null>;
     }
 
     export declare type RepositoryArrayBufferResponse = {
@@ -5552,10 +5554,26 @@ export declare class Entity {
         error?: RepositoryError;
     };
 
+    export declare type RepositoryEntry = {
+        name: string;
+        childs?: Array<RepositoryEntry>;
+        directory?: boolean;
+    };
+
     export declare enum RepositoryError {
         FileNotFound = 1,
-        UnknownError = 2
+        UnknownError = 2,
+        NotSupported = 3
     }
+
+    export declare type RepositoryFileListResponse = {
+        root?: RepositoryEntry;
+        error?: RepositoryError;
+    };
+
+    export declare type RepositoryFilter = {
+        extension?: string;
+    };
 
     export declare type RepositoryJsonResponse = {
         json?: JSON | null;
@@ -6296,8 +6314,8 @@ export declare class Entity {
 
     export declare class Source1ModelManager {
         #private;
-        static createInstance(repository: any, fileName: any, dynamic: any, preventInit?: boolean): Promise<Source1ModelInstance>;
-        static loadManifest(repositoryName: any): void;
+        static createInstance(repository: string, fileName: string, dynamic: boolean, preventInit?: boolean): Promise<Source1ModelInstance>;
+        static loadManifest(repositoryName: string): void;
         static getModelList(): Promise<{
             files: any[];
         }>;
@@ -6319,7 +6337,7 @@ export declare class Entity {
         static speed: number;
         static visible: boolean;
         static fixedTime?: number;
-        static setParticleConstructor(ps: any): void;
+        static setParticleConstructor(ps: SourceEngineParticleSystem): void;
         /**
          * Reset all active systems
          */
@@ -6328,12 +6346,12 @@ export declare class Entity {
          * Step systems
          * @param {Number} elapsedTime Step time
          */
-        static stepSystems(elapsedTime: any): void;
+        static stepSystems(elapsedTime: number): void;
         /**
          * Add system TODO
          * @param {Number} elapsedTime Step time
          */
-        static addSystem(repository: any, name: any): any;
+        static addSystem(repository: string, name: string): any;
         /**
          * Add system TODO
          * @param {Number} elapsedTime Step time
@@ -7596,9 +7614,9 @@ export declare class Entity {
         operatorRandomSampleOffset: number;
         parentSystem: any;
         firstStep: boolean;
-        pcf: SourcePCF;
-        material: SourceEngineMaterial;
-        materialName: string;
+        pcf?: SourcePCF;
+        material?: SourceEngineMaterial;
+        materialName?: string;
         maxParticles: number;
         resetDelay: number;
         snapshot: any;
@@ -9003,6 +9021,8 @@ export declare class Entity {
         getFileAsText(fileName: string): Promise<RepositoryStringResponse>;
         getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
         getFileAsJson(fileName: string): Promise<RepositoryJsonResponse>;
+        getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+        overrideFile(filepath: string, file: File): Promise<RepositoryError>;
     }
 
     export declare class Wireframe extends Entity {
@@ -9039,19 +9059,22 @@ export declare class Entity {
         #private;
         constructor(name: string, zip: File);
         get name(): string;
-        getFile(fileName: string): Promise<RepositoryArrayBufferResponse>;
-        getFileAsText(fileName: string): Promise<RepositoryStringResponse>;
+        getFile(filename: string): Promise<RepositoryArrayBufferResponse>;
+        getFileAsText(filename: string): Promise<RepositoryStringResponse>;
         getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
-        getFileAsJson(fileName: string): Promise<RepositoryJsonResponse>;
+        getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
+        getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+        overrideFile(filename: string, file: File): Promise<RepositoryError | null>;
+        generateModelManifest(name?: string): Promise<boolean>;
     }
 
     export declare const Zstd: {
-        "__#154@#webAssembly": any;
-        "__#154@#HEAPU8": Uint8Array;
+        "__#155@#webAssembly": any;
+        "__#155@#HEAPU8": Uint8Array;
         decompress(compressedDatas: any): Promise<Uint8Array>;
         decompress_ZSTD(compressedDatas: any, uncompressedDatas: any): Promise<any>;
         getWebAssembly(): Promise<any>;
-        "__#154@#initHeap"(): void;
+        "__#155@#initHeap"(): void;
     };
 
     export { }

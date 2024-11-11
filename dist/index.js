@@ -6,6 +6,7 @@ import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } fr
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
 import { zoomOutSVG, zoomInSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
+import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { murmurhash2_32_gc } from 'murmurhash-es6';
 
@@ -11430,7 +11431,7 @@ async function customFetch(resource, options) {
     }
     catch (e) {
         console.error('Error during custom fetch: ', e);
-        return null;
+        return new Response(null, { status: 400 });
     }
 }
 
@@ -18440,6 +18441,7 @@ var RepositoryError;
 (function (RepositoryError) {
     RepositoryError[RepositoryError["FileNotFound"] = 1] = "FileNotFound";
     RepositoryError[RepositoryError["UnknownError"] = 2] = "UnknownError";
+    RepositoryError[RepositoryError["NotSupported"] = 3] = "NotSupported";
 })(RepositoryError || (RepositoryError = {}));
 
 class WebRepository {
@@ -18511,33 +18513,145 @@ class WebRepository {
             return { error: error };
         }
     }
+    async getFileList(filter) {
+        return { error: RepositoryError.NotSupported };
+    }
+    async overrideFile(filepath, file) {
+        return RepositoryError.NotSupported;
+    }
 }
 
+var _a$3;
 class ZipRepository {
     #name;
     #zip;
+    #reader;
+    #initialized = false;
+    #zipEntries = new Map();
+    #overrides = new Map();
+    #initPromiseResolve;
+    #init = new Promise(resolve => this.#initPromiseResolve = resolve);
     constructor(name, zip) {
         this.#name = name;
         this.#zip = zip;
+        this.#reader = new ZipReader(new BlobReader(zip));
+        this.#initEntries();
+    }
+    async #initEntries() {
+        const entries = await this.#reader.getEntries();
+        for (const entry of entries) {
+            if (!entry.getData || entry.directory) {
+                continue;
+            }
+            const blob = await entry.getData(new BlobWriter());
+            const filename = entry.filename.toLowerCase().replaceAll('\\', '/');
+            this.#zipEntries.set(filename, new File([blob], filename));
+        }
+        console.log(this.#zipEntries);
+        this.#initPromiseResolve?.(true);
     }
     get name() {
         return this.#name;
     }
-    async getFile(fileName) {
+    async #getFile(filename) {
+        if (this.#overrides.has(filename)) {
+            return this.#overrides.get(filename);
+        }
+        return this.#zipEntries.get(filename);
+    }
+    async getFile(filename) {
         //const url = new URL(fileName, this.#base);
         //return customFetch(url);
-        return { buffer: new ArrayBuffer(10) };
+        //return { buffer: new ArrayBuffer(10) };
+        const file = await this.#getFile(filename);
+        if (!file) {
+            return { error: RepositoryError.FileNotFound };
+        }
+        return { buffer: await file.arrayBuffer() };
     }
-    async getFileAsText(fileName) {
-        return { string: '' };
+    async getFileAsText(filename) {
+        const file = await this.#getFile(filename);
+        if (!file) {
+            return { error: RepositoryError.FileNotFound };
+        }
+        return { string: await file.text() };
     }
     async getFileAsBlob(fileName) {
-        return { blob: null };
+        throw 'code me';
     }
-    async getFileAsJson(fileName) {
-        return { json: null };
+    async getFileAsJson(filename) {
+        const file = await this.#getFile(filename);
+        if (!file) {
+            return { error: RepositoryError.FileNotFound };
+        }
+        return { json: JSON.parse(await file.text()) };
+    }
+    async getFileList(filter) {
+        return { error: RepositoryError.NotSupported };
+    }
+    async overrideFile(filename, file) {
+        this.#overrides.set(filename, file);
+        return null;
+    }
+    async generateModelManifest(name = 'models_manifest.json') {
+        await this.#init;
+        const root = new Entry('', true);
+        for (const [filename, _] of this.#zipEntries) {
+            root.addEntry(filename);
+        }
+        console.info(root);
+        const models = root.getChild('models');
+        if (!models) {
+            return false;
+        }
+        const json = models.toJSON();
+        console.info(JSON.stringify(json));
+        this.overrideFile(name, new File([JSON.stringify(json)], name));
+        return true;
     }
 }
+class Entry {
+    #name;
+    #childs = new Map;
+    #isDirectory;
+    constructor(name, isDirectory) {
+        this.#name = name;
+        this.#isDirectory = isDirectory;
+    }
+    addEntry(filename) {
+        const splittedPath = filename.split(/[\/\\]+/);
+        let current = this;
+        let len = splittedPath.length - 1;
+        for (const [i, p] of splittedPath.entries()) {
+            if (!current.#childs.has(p)) {
+                current = current.#addFile(p, i != len);
+            }
+            else {
+                current = current.#childs.get(p);
+            }
+        }
+    }
+    #addFile(name, isDirectory) {
+        const e = new _a$3(name, isDirectory);
+        this.#childs.set(name, e);
+        return e;
+    }
+    getChild(name) {
+        return this.#childs.get(name);
+    }
+    toJSON() {
+        const json /*TODO:improve type*/ = { name: this.#name };
+        if (this.#isDirectory) {
+            const files = [];
+            for (const [_, child] of this.#childs) {
+                files.push(child.toJSON());
+            }
+            json.files = files;
+        }
+        return json;
+    }
+}
+_a$3 = Entry;
 
 class Environment {
     constructor() {
@@ -18931,7 +19045,7 @@ class Source1ModelManager {
         const modelLoader = getLoader('ModelLoader');
         model = await new modelLoader().load(repositoryName, fileName);
         if (model) {
-            this.#modelsPerRepository.get(repositoryName).set(fileName, model);
+            this.#modelsPerRepository.get(repositoryName)?.set(fileName, model);
         }
         return model;
     }
@@ -18939,7 +19053,7 @@ class Source1ModelManager {
         if (!this.#modelsPerRepository.has(repositoryName)) {
             this.#modelsPerRepository.set(repositoryName, new Map());
         }
-        return this.#modelsPerRepository.get(repositoryName).get(fileName);
+        return this.#modelsPerRepository.get(repositoryName)?.get(fileName);
     }
     static async createInstance(repository, fileName, dynamic, preventInit = false) {
         if (!repository) {
@@ -18960,28 +19074,14 @@ class Source1ModelManager {
         return null;
     }
     static loadManifest(repositoryName) {
-        //const modelList = this.#modelListPerRepository[repositoryName];
         if (!this.#modelListPerRepository.has(repositoryName)) {
             this.#modelListPerRepository.set(repositoryName, null);
-            /*let manifestUrl = repository + 'models_manifest.json';//todo variable
-            let response = await customFetch(manifestUrl);
-            let manifestJson = await response.json();
-            this.#modelListPerRepository[repository] = manifestJson;*/
         }
     }
     static async getModelList() {
         const repoList = [];
         for (const [repositoryName, repo] of this.#modelListPerRepository) {
             if (repo === null) {
-                /*
-                const repository = new Repositories().getRepository(repositoryName) as WebRepository;
-                if (!repository) {
-                    continue;
-                }
-
-                let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
-                const j = await response.json();
-                */
                 const response = await new Repositories().getFileAsJson(repositoryName, 'models_manifest.json');
                 if (!response.error) {
                     this.#modelListPerRepository.set(repositoryName, response.json);
@@ -22013,15 +22113,7 @@ class Source1ParticleControler {
      * TODO
      */
     static async #loadManifest(repositoryName) {
-        /*
-        const repository = new Repositories().getRepository(repositoryName) as WebRepository;
-        if (!repository) {
-            console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
-            return null;
-        }
-            */
         this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
-            //let manifestUrl = new URL('particles/manifest.json', repository.base);//todo variable
             let systemNameToPcfRepo = {};
             this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
             const response = await new Repositories().getFileAsJson(repositoryName, 'particles/manifest.json'); //TODO const
@@ -22041,33 +22133,6 @@ class Source1ParticleControler {
             else {
                 reject(false);
             }
-            /*
-            customFetch(new Request(manifestUrl)).then((response) => {
-                response.ok && response.json().then((json) => {
-                    if (json && json.files) {
-                        for (let file of json.files) {
-                            let pcfName = file.name;
-                            for (let definition of file.particlesystemdefinitions) {
-                                systemNameToPcfRepo[definition] = pcfName;
-                            }
-                        }
-
-                        /*let lines = text.split('\n');
-                        let line;
-                        let pcfName = null;
-                        while (line = lines.shift()) {
-                            if (line.indexOf('#') == 0) { // pcf
-                                pcfName = line.substring(1);
-                            } else {
-                                systemNameToPcfRepo[line] = pcfName;
-                            }
-                        }* /
-                        resolve(true);
-                    } else {
-                        reject(false);
-                    }
-                })
-            });*/
         });
         return this.#loadManifestPromises[repositoryName];
     }
@@ -35951,8 +36016,8 @@ class SourceEngineParticleSystem extends Entity {
     pcf;
     material;
     materialName;
-    maxParticles;
-    resetDelay;
+    maxParticles = 0;
+    resetDelay = 0;
     snapshot;
     attachementProp;
     attachementName;
