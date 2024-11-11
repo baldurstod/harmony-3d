@@ -23,7 +23,7 @@ export interface Repository {
 	getFileList: (filter?: RepositoryFilter) => Promise<RepositoryFileListResponse>;
 }
 
-class RepositoryEntry {
+export class RepositoryEntry {
 	#name: string;
 	#childs = new Map<string, RepositoryEntry>;
 	#isDirectory: boolean;
