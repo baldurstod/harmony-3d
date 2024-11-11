@@ -1,16 +1,14 @@
 import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class OverrideRepository implements Repository {
-	#name: string;
 	#base: Repository;
 	#overrides = new Map<string, File>();
-	constructor(name: string, base: Repository) {
-		this.#name = name;
+	constructor(base: Repository) {
 		this.#base = base;
 	}
 
 	get name() {
-		return this.#name;
+		return this.#base.name;
 	}
 	/*
 		async #getFile(filename: string): Promise<File | undefined> {
