@@ -26,7 +26,7 @@ export class ZipRepository implements Repository {
 			}
 
 			const blob = await entry.getData(new BlobWriter());
-			const filename = entry.filename.toLowerCase();
+			const filename = entry.filename.toLowerCase().replaceAll('\\', '/');
 			this.#zipEntries.set(filename, new File([blob], filename));
 		}
 
