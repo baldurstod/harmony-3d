@@ -76,8 +76,4 @@ export class WebRepository implements Repository {
 	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
 		return { error: RepositoryError.NotSupported };
 	}
-
-	async overrideFile(filepath: string, file: File): Promise<RepositoryError> {
-		return RepositoryError.NotSupported;
-	}
 }

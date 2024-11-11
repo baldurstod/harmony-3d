@@ -1,3 +1,4 @@
+export * from './overriderepository';
 export * from './repositories';
 export * from './repository';
 export * from './webrepository';

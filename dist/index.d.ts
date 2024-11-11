@@ -4328,6 +4328,18 @@ export declare class Entity {
         dispose(): void;
     }
 
+    export declare class OverrideRepository implements Repository {
+        #private;
+        constructor(name: string, base: Repository);
+        get name(): string;
+        getFile(filename: string): Promise<RepositoryArrayBufferResponse>;
+        getFileAsText(filename: string): Promise<RepositoryTextResponse>;
+        getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
+        getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
+        getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+        overrideFile(filename: string, file: File): Promise<RepositoryError | null>;
+    }
+
     export declare class PalettePass extends Pass {
         constructor(camera: any);
         render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
@@ -5529,7 +5541,7 @@ export declare class Entity {
         getRepository(name: string): Repository;
         getRepositoryList(): string[];
         getFile(repositoryName: string, filepath: string): Promise<RepositoryArrayBufferResponse>;
-        getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryStringResponse>;
+        getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryTextResponse>;
         getFileAsBlob(repositoryName: string, filepath: string): Promise<RepositoryBlobResponse>;
         getFileAsJson(repositoryName: string, filepath: string): Promise<RepositoryJsonResponse>;
     }
@@ -5537,11 +5549,10 @@ export declare class Entity {
     export declare interface Repository {
         name: string;
         getFile: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
-        getFileAsText: (filepath: string) => Promise<RepositoryStringResponse>;
+        getFileAsText: (filepath: string) => Promise<RepositoryTextResponse>;
         getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;
         getFileAsJson: (filepath: string) => Promise<RepositoryJsonResponse>;
         getFileList: (filter?: RepositoryFilter) => Promise<RepositoryFileListResponse>;
-        overrideFile: (filepath: string, file: File) => Promise<RepositoryError | null>;
     }
 
     export declare type RepositoryArrayBufferResponse = {
@@ -5580,8 +5591,8 @@ export declare class Entity {
         error?: RepositoryError;
     };
 
-    export declare type RepositoryStringResponse = {
-        string?: string | null;
+    export declare type RepositoryTextResponse = {
+        text?: string | null;
         error?: RepositoryError;
     };
 
@@ -9018,11 +9029,10 @@ export declare class Entity {
         get name(): string;
         get base(): string;
         getFile(fileName: string): Promise<RepositoryArrayBufferResponse>;
-        getFileAsText(fileName: string): Promise<RepositoryStringResponse>;
+        getFileAsText(fileName: string): Promise<RepositoryTextResponse>;
         getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
         getFileAsJson(fileName: string): Promise<RepositoryJsonResponse>;
         getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
-        overrideFile(filepath: string, file: File): Promise<RepositoryError>;
     }
 
     export declare class Wireframe extends Entity {
@@ -9060,12 +9070,10 @@ export declare class Entity {
         constructor(name: string, zip: File);
         get name(): string;
         getFile(filename: string): Promise<RepositoryArrayBufferResponse>;
-        getFileAsText(filename: string): Promise<RepositoryStringResponse>;
-        getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
+        getFileAsText(filename: string): Promise<RepositoryTextResponse>;
+        getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
         getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
         getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
-        overrideFile(filename: string, file: File): Promise<RepositoryError | null>;
-        generateModelManifest(name?: string): Promise<boolean>;
     }
 
     export declare const Zstd: {

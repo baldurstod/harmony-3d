@@ -21,5 +21,4 @@ export interface Repository {
 	getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;
 	getFileAsJson: (filepath: string) => Promise<RepositoryJsonResponse>;
 	getFileList: (filter?: RepositoryFilter) => Promise<RepositoryFileListResponse>;
-	overrideFile: (filepath: string, file: File) => Promise<RepositoryError | null>;
 }
