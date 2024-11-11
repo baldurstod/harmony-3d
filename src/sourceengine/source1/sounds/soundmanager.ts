@@ -83,7 +83,7 @@ export class Source1SoundManager {
 	static async #fetchManifest(repositoryName: string, manifestPath: string) {
 		const response = await new Repositories().getFileAsText(repositoryName, manifestPath);
 		if (!response.error) {
-			this.#loadManifest(repositoryName, response.string);
+			this.#loadManifest(repositoryName, response.text);
 		}
 	}
 

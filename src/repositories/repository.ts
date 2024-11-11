@@ -5,7 +5,7 @@ export enum RepositoryError {
 }
 
 export type RepositoryArrayBufferResponse = { buffer?: ArrayBuffer | null, error?: RepositoryError };
-export type RepositoryStringResponse = { string?: string | null, error?: RepositoryError };
+export type RepositoryTextResponse = { text?: string | null, error?: RepositoryError };
 export type RepositoryBlobResponse = { blob?: Blob | null, error?: RepositoryError };
 export type RepositoryJsonResponse = { json?: JSON | null, error?: RepositoryError };
 export type RepositoryFileListResponse = { root?: RepositoryEntry, error?: RepositoryError };
@@ -17,7 +17,7 @@ export type RepositoryEntry = { name: string, childs?: Array<RepositoryEntry>, d
 export interface Repository {
 	name: string;
 	getFile: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
-	getFileAsText: (filepath: string) => Promise<RepositoryStringResponse>;
+	getFileAsText: (filepath: string) => Promise<RepositoryTextResponse>;
 	getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;
 	getFileAsJson: (filepath: string) => Promise<RepositoryJsonResponse>;
 	getFileList: (filter?: RepositoryFilter) => Promise<RepositoryFileListResponse>;

@@ -1,11 +1,10 @@
 import { BlobReader, BlobWriter, ZipReader, ZipReaderGetEntriesOptions } from '@zip.js/zip.js';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryStringResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class ZipRepository implements Repository {
 	#name: string;
 	#zip: File;
 	#reader: ZipReader<BlobReader>;
-	#initialized = false;
 	#zipEntries = new Map<string, File>();
 	#overrides = new Map<string, File>();
 	#initPromiseResolve?: (value: boolean) => void;
@@ -56,12 +55,12 @@ export class ZipRepository implements Repository {
 		return { buffer: await file.arrayBuffer() };
 	}
 
-	async getFileAsText(filename: string): Promise<RepositoryStringResponse> {
+	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
 		const file = await this.#getFile(filename);
 		if (!file) {
 			return { error: RepositoryError.FileNotFound };
 		}
-		return { string: await file.text() };
+		return { text: await file.text() };
 	}
 
 	async getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse> {

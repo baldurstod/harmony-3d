@@ -40,7 +40,7 @@ class SourceEngineVMTLoaderClass {
 			//let req = customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
 			const response = await new Repositories().getFileAsText(repositoryName, fileName);
 			if (!response.error) {
-				this.parse(resolve, repositoryName, fileName, response.string);
+				this.parse(resolve, repositoryName, fileName, response.text);
 			} else {
 				const fileContent = this.#extraMaterials.get(fileName);
 				if (fileContent) {

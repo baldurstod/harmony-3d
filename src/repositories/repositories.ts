@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryJsonResponse, RepositoryStringResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class Repositories {
 	static #instance: Repositories;
@@ -32,7 +32,7 @@ export class Repositories {
 		return repo?.getFile(filepath);
 	}
 
-	async getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryStringResponse> {
+	async getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryTextResponse> {
 		const repo = this.#repositories[repositoryName];
 		if (!repo) {
 			return null;

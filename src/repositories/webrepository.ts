@@ -1,5 +1,5 @@
 import { customFetch } from '../utils/customfetch';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryStringResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class WebRepository implements Repository {
 	#name: string;
@@ -31,11 +31,11 @@ export class WebRepository implements Repository {
 		}
 	}
 
-	async getFileAsText(fileName: string): Promise<RepositoryStringResponse> {
+	async getFileAsText(fileName: string): Promise<RepositoryTextResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
 		if (response.ok) {
-			return { string: await response.text() };
+			return { text: await response.text() };
 		} else {
 			let error: RepositoryError = RepositoryError.UnknownError;
 			if (response.status == 404) {
