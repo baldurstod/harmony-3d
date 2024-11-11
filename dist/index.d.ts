@@ -3244,6 +3244,18 @@ export declare class Entity {
         doOperate(particles: any, elapsedTime: any): void;
     }
 
+    export declare class ManifestRepository implements Repository {
+        #private;
+        constructor(base: Repository);
+        get name(): string;
+        getFile(filename: string): Promise<RepositoryArrayBufferResponse>;
+        getFileAsText(filename: string): Promise<RepositoryTextResponse>;
+        getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
+        getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
+        getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+        generateModelManifest(name?: string, filter?: RepositoryFilter): Promise<RepositoryError | null>;
+    }
+
     export declare class Manipulator extends Entity {
         #private;
         enumerable: boolean;
@@ -4330,7 +4342,7 @@ export declare class Entity {
 
     export declare class OverrideRepository implements Repository {
         #private;
-        constructor(name: string, base: Repository);
+        constructor(base: Repository);
         get name(): string;
         getFile(filename: string): Promise<RepositoryArrayBufferResponse>;
         getFileAsText(filename: string): Promise<RepositoryTextResponse>;
@@ -5565,11 +5577,13 @@ export declare class Entity {
         error?: RepositoryError;
     };
 
-    export declare type RepositoryEntry = {
-        name: string;
-        childs?: Array<RepositoryEntry>;
-        directory?: boolean;
-    };
+    export declare class RepositoryEntry {
+        #private;
+        constructor(name: string, isDirectory: boolean);
+        addEntry(filename: string): void;
+        getChild(name: string): RepositoryEntry | undefined;
+        toJSON(): any;
+    }
 
     export declare enum RepositoryError {
         FileNotFound = 1,
@@ -9077,12 +9091,12 @@ export declare class Entity {
     }
 
     export declare const Zstd: {
-        "__#155@#webAssembly": any;
-        "__#155@#HEAPU8": Uint8Array;
+        "__#157@#webAssembly": any;
+        "__#157@#HEAPU8": Uint8Array;
         decompress(compressedDatas: any): Promise<Uint8Array>;
         decompress_ZSTD(compressedDatas: any, uncompressedDatas: any): Promise<any>;
         getWebAssembly(): Promise<any>;
-        "__#155@#initHeap"(): void;
+        "__#157@#initHeap"(): void;
     };
 
     export { }

@@ -1,3 +1,4 @@
+export * from './manifestrepository';
 export * from './overriderepository';
 export * from './repositories';
 export * from './repository';
