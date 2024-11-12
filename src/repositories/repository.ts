@@ -33,7 +33,7 @@ export class RepositoryEntry {
 		this.#isDirectory = isDirectory;
 	}
 
-	addEntry(filename: string) {
+	addEntry(filename: string): void {
 		const splittedPath = filename.split(/[\/\\]+/);
 		let current: RepositoryEntry = this;
 		let len = splittedPath.length - 1;
@@ -57,7 +57,11 @@ export class RepositoryEntry {
 		return this.#childs.get(name);
 	}
 
-	toJSON() {
+	isDirectory(): boolean {
+		return this.#isDirectory;
+	}
+
+	toJSON(): JSON {
 		const json: any/*TODO:improve type*/ = { name: this.#name };
 		if (this.#isDirectory) {
 			const files: Array<any/*TODO:improve type*/> = [];

@@ -18558,6 +18558,9 @@ class RepositoryEntry {
     getChild(name) {
         return this.#childs.get(name);
     }
+    isDirectory() {
+        return this.#isDirectory;
+    }
     toJSON() {
         const json /*TODO:improve type*/ = { name: this.#name };
         if (this.#isDirectory) {

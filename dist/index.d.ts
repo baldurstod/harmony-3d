@@ -5582,7 +5582,8 @@ export declare class Entity {
         constructor(name: string, isDirectory: boolean);
         addEntry(filename: string): void;
         getChild(name: string): RepositoryEntry | undefined;
-        toJSON(): any;
+        isDirectory(): boolean;
+        toJSON(): JSON;
     }
 
     export declare enum RepositoryError {
