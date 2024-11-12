@@ -79,7 +79,6 @@ export class RepositoryEntry {
 				if (filter && current.#matchFilter(filter)) {
 					childs.add(current);
 				}
-				stack.push(current);
 				for (const [_, child] of current.#childs) {
 					stack.push(child);
 				}
@@ -90,15 +89,15 @@ export class RepositoryEntry {
 	}
 
 	#matchFilter(filter: RepositoryFilter): boolean {
-		if (filter.directories && !this.#isDirectory) {
+		if (filter.directories !== undefined && filter.directories != this.#isDirectory) {
 			return false;
 		}
-		if (filter.files && this.#isDirectory) {
+
+		if (filter.files !== undefined && filter.files == this.#isDirectory) {
 			return false;
 		}
 
 		const { name, extension } = splitFilename(this.#name);
-
 
 		if (filter.extension && !this.#isDirectory && !match(extension, filter.extension)) {
 			return false;
