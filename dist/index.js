@@ -18533,6 +18533,7 @@ class RepositoryEntry {
     #name;
     #childs = new Map;
     #isDirectory;
+    #parent;
     constructor(name, isDirectory) {
         this.#name = name;
         this.#isDirectory = isDirectory;
@@ -18552,11 +18553,15 @@ class RepositoryEntry {
     }
     #addFile(name, isDirectory) {
         const e = new _a$3(name, isDirectory);
+        e.#parent = this;
         this.#childs.set(name, e);
         return e;
     }
     getName() {
         return this.#name;
+    }
+    getParent() {
+        return this.#parent;
     }
     getChild(name) {
         return this.#childs.get(name);

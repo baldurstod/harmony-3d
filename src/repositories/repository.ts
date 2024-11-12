@@ -12,8 +12,6 @@ export type RepositoryFileListResponse = { root?: RepositoryEntry, error?: Repos
 
 export type RepositoryFilter = { extension?: string };
 
-//export type RepositoryEntry = { name: string, childs?: Array<RepositoryEntry>, directory?: boolean };
-
 export interface Repository {
 	name: string;
 	getFile: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
@@ -27,6 +25,7 @@ export class RepositoryEntry {
 	#name: string;
 	#childs = new Map<string, RepositoryEntry>;
 	#isDirectory: boolean;
+	#parent?: RepositoryEntry;
 
 	constructor(name: string, isDirectory: boolean) {
 		this.#name = name;
@@ -49,12 +48,17 @@ export class RepositoryEntry {
 
 	#addFile(name: string, isDirectory: boolean) {
 		const e = new RepositoryEntry(name, isDirectory);
+		e.#parent = this;
 		this.#childs.set(name, e);
 		return e;
 	}
 
 	getName(): string {
 		return this.#name;
+	}
+
+	getParent(): RepositoryEntry | undefined {
+		return this.#parent;
 	}
 
 	getChild(name: string): RepositoryEntry | undefined {

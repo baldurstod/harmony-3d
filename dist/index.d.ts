@@ -5582,6 +5582,7 @@ export declare class Entity {
         constructor(name: string, isDirectory: boolean);
         addEntry(filename: string): void;
         getName(): string;
+        getParent(): RepositoryEntry | undefined;
         getChild(name: string): RepositoryEntry | undefined;
         getChilds(): Set<RepositoryEntry>;
         isDirectory(): boolean;
