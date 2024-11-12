@@ -18555,8 +18555,14 @@ class RepositoryEntry {
         this.#childs.set(name, e);
         return e;
     }
+    getName() {
+        return this.#name;
+    }
     getChild(name) {
         return this.#childs.get(name);
+    }
+    getChilds(name) {
+        return new Set(this.#childs.values());
     }
     isDirectory() {
         return this.#isDirectory;

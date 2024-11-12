@@ -53,8 +53,16 @@ export class RepositoryEntry {
 		return e;
 	}
 
+	getName(): string {
+		return this.#name;
+	}
+
 	getChild(name: string): RepositoryEntry | undefined {
 		return this.#childs.get(name);
+	}
+
+	getChilds(name: string): Set<RepositoryEntry> {
+		return new Set(this.#childs.values());
 	}
 
 	isDirectory(): boolean {

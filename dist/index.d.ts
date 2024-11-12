@@ -5581,7 +5581,9 @@ export declare class Entity {
         #private;
         constructor(name: string, isDirectory: boolean);
         addEntry(filename: string): void;
+        getName(): string;
         getChild(name: string): RepositoryEntry | undefined;
+        getChilds(name: string): Set<RepositoryEntry>;
         isDirectory(): boolean;
         toJSON(): JSON;
     }
