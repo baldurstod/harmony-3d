@@ -61,7 +61,7 @@ export class RepositoryEntry {
 		return this.#childs.get(name);
 	}
 
-	getChilds(name: string): Set<RepositoryEntry> {
+	getChilds(): Set<RepositoryEntry> {
 		return new Set(this.#childs.values());
 	}
 

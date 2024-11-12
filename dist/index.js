@@ -18561,7 +18561,7 @@ class RepositoryEntry {
     getChild(name) {
         return this.#childs.get(name);
     }
-    getChilds(name) {
+    getChilds() {
         return new Set(this.#childs.values());
     }
     isDirectory() {

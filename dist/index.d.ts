@@ -5583,7 +5583,7 @@ export declare class Entity {
         addEntry(filename: string): void;
         getName(): string;
         getChild(name: string): RepositoryEntry | undefined;
-        getChilds(name: string): Set<RepositoryEntry>;
+        getChilds(): Set<RepositoryEntry>;
         isDirectory(): boolean;
         toJSON(): JSON;
     }
