@@ -38,7 +38,6 @@ export class ManifestRepository implements Repository {
 		}
 
 		const json = response.root.toJSON();
-		console.info(JSON.stringify(json));
 
 		this.#base.overrideFile(name, new File([JSON.stringify(json)], name));
 

@@ -18469,7 +18469,6 @@ class ManifestRepository {
             return response.error;
         }
         const json = response.root.toJSON();
-        console.info(JSON.stringify(json));
         this.#base.overrideFile(name, new File([JSON.stringify(json)], name));
         return null;
     }
@@ -18670,7 +18669,6 @@ class ZipRepository {
             const filename = entry.filename.toLowerCase().replaceAll('\\', '/');
             this.#zipEntries.set(filename, new File([blob], filename));
         }
-        console.log(this.#zipEntries);
         this.#initPromiseResolve?.(true);
     }
     get name() {
