@@ -5585,7 +5585,7 @@ export declare class Entity {
         getParent(): RepositoryEntry | undefined;
         getChild(name: string): RepositoryEntry | undefined;
         getChilds(): Set<RepositoryEntry>;
-        getAllChilds(): Set<RepositoryEntry>;
+        getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry>;
         isDirectory(): boolean;
         toJSON(): JSON;
     }
@@ -5602,7 +5602,10 @@ export declare class Entity {
     };
 
     export declare type RepositoryFilter = {
-        extension?: string;
+        name?: string | RegExp;
+        extension?: string | RegExp;
+        directories?: boolean;
+        files?: boolean;
     };
 
     export declare type RepositoryJsonResponse = {

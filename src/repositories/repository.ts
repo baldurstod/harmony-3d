@@ -10,7 +10,7 @@ export type RepositoryBlobResponse = { blob?: Blob | null, error?: RepositoryErr
 export type RepositoryJsonResponse = { json?: JSON | null, error?: RepositoryError };
 export type RepositoryFileListResponse = { root?: RepositoryEntry, error?: RepositoryError };
 
-export type RepositoryFilter = { extension?: string };
+export type RepositoryFilter = { name?: string | RegExp, extension?: string | RegExp, directories?: boolean, files?: boolean };
 
 export interface Repository {
 	name: string;
@@ -69,14 +69,16 @@ export class RepositoryEntry {
 		return new Set(this.#childs.values());
 	}
 
-	getAllChilds(): Set<RepositoryEntry> {
+	getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry> {
 		const childs = new Set<RepositoryEntry>();
 		let current: RepositoryEntry;
 		const stack: Array<RepositoryEntry> = [this];
 		do {
 			current = stack.pop();
 			if (!childs.has(current) && current) {
-				childs.add(current);
+				if (filter && current.#matchFilter(filter)) {
+					childs.add(current);
+				}
 				stack.push(current);
 				for (const [_, child] of current.#childs) {
 					stack.push(child);
@@ -85,6 +87,28 @@ export class RepositoryEntry {
 		} while (current);
 
 		return childs;
+	}
+
+	#matchFilter(filter: RepositoryFilter): boolean {
+		if (filter.directories && !this.#isDirectory) {
+			return false;
+		}
+		if (filter.files && this.#isDirectory) {
+			return false;
+		}
+
+		const { name, extension } = splitFilename(this.#name);
+
+
+		if (filter.extension && !this.#isDirectory && !match(extension, filter.extension)) {
+			return false;
+		}
+
+		if (filter.name && !match(name, filter.name)) {
+			return false;
+		}
+
+		return true;
 	}
 
 	isDirectory(): boolean {
@@ -101,5 +125,24 @@ export class RepositoryEntry {
 			json.files = files;
 		}
 		return json;
+	}
+}
+
+function splitFilename(filename: string): { name: string, extension: string } {
+	const pos = filename.lastIndexOf(".");
+	if (pos < 1) {
+		// No dot found or dot in first position
+		return { name: filename, extension: '' };
+	}
+
+	return { name: filename.substring(0, pos), extension: filename.substring(pos + 1) };
+}
+
+function match(name: string, filter: string | RegExp): boolean {
+	if (typeof filter == 'string') {
+		return filter == name;
+	} else {
+		//regex
+		return (filter as RegExp).exec(name) != null;
 	}
 }

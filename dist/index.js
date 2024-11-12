@@ -18569,14 +18569,16 @@ class RepositoryEntry {
     getChilds() {
         return new Set(this.#childs.values());
     }
-    getAllChilds() {
+    getAllChilds(filter) {
         const childs = new Set();
         let current;
         const stack = [this];
         do {
             current = stack.pop();
             if (!childs.has(current) && current) {
-                childs.add(current);
+                if (filter && current.#matchFilter(filter)) {
+                    childs.add(current);
+                }
                 stack.push(current);
                 for (const [_, child] of current.#childs) {
                     stack.push(child);
@@ -18584,6 +18586,22 @@ class RepositoryEntry {
             }
         } while (current);
         return childs;
+    }
+    #matchFilter(filter) {
+        if (filter.directories && !this.#isDirectory) {
+            return false;
+        }
+        if (filter.files && this.#isDirectory) {
+            return false;
+        }
+        const { name, extension } = splitFilename(this.#name);
+        if (filter.extension && !this.#isDirectory && !match(extension, filter.extension)) {
+            return false;
+        }
+        if (filter.name && !match(name, filter.name)) {
+            return false;
+        }
+        return true;
     }
     isDirectory() {
         return this.#isDirectory;
@@ -18601,6 +18619,23 @@ class RepositoryEntry {
     }
 }
 _a$3 = RepositoryEntry;
+function splitFilename(filename) {
+    const pos = filename.lastIndexOf(".");
+    if (pos < 1) {
+        // No dot found or dot in first position
+        return { name: filename, extension: '' };
+    }
+    return { name: filename.substring(0, pos), extension: filename.substring(pos + 1) };
+}
+function match(name, filter) {
+    if (typeof filter == 'string') {
+        return filter == name;
+    }
+    else {
+        //regex
+        return filter.exec(name) != null;
+    }
+}
 
 class WebRepository {
     #name;
