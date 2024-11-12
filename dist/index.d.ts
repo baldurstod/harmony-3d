@@ -5585,6 +5585,7 @@ export declare class Entity {
         getParent(): RepositoryEntry | undefined;
         getChild(name: string): RepositoryEntry | undefined;
         getChilds(): Set<RepositoryEntry>;
+        getAllChilds(): Set<RepositoryEntry>;
         isDirectory(): boolean;
         toJSON(): JSON;
     }
@@ -6308,7 +6309,7 @@ export declare class Entity {
             animate: {
                 i18n: string;
                 selected: boolean;
-                f: () => 0 | 1;
+                f: () => 1 | 0;
             };
             frame: {
                 i18n: string;
@@ -6909,7 +6910,7 @@ export declare class Entity {
             animate: {
                 i18n: string;
                 selected: boolean;
-                f: () => 0 | 1;
+                f: () => 1 | 0;
             };
             frame: {
                 i18n: string;

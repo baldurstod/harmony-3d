@@ -18569,6 +18569,22 @@ class RepositoryEntry {
     getChilds() {
         return new Set(this.#childs.values());
     }
+    getAllChilds() {
+        const childs = new Set();
+        let current;
+        const stack = [this];
+        do {
+            current = stack.pop();
+            if (!childs.has(current) && current) {
+                childs.add(current);
+                stack.push(current);
+                for (const [_, child] of current.#childs) {
+                    stack.push(child);
+                }
+            }
+        } while (current);
+        return childs;
+    }
     isDirectory() {
         return this.#isDirectory;
     }

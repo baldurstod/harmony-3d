@@ -69,6 +69,24 @@ export class RepositoryEntry {
 		return new Set(this.#childs.values());
 	}
 
+	getAllChilds(): Set<RepositoryEntry> {
+		const childs = new Set<RepositoryEntry>();
+		let current: RepositoryEntry;
+		const stack: Array<RepositoryEntry> = [this];
+		do {
+			current = stack.pop();
+			if (!childs.has(current) && current) {
+				childs.add(current);
+				stack.push(current);
+				for (const [_, child] of current.#childs) {
+					stack.push(child);
+				}
+			}
+		} while (current);
+
+		return childs;
+	}
+
 	isDirectory(): boolean {
 		return this.#isDirectory;
 	}
