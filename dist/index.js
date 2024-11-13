@@ -18530,11 +18530,13 @@ var RepositoryError;
     RepositoryError[RepositoryError["NotSupported"] = 3] = "NotSupported";
 })(RepositoryError || (RepositoryError = {}));
 class RepositoryEntry {
+    #repository;
     #name;
     #childs = new Map;
     #isDirectory;
     #parent;
-    constructor(name, isDirectory) {
+    constructor(repository, name, isDirectory) {
+        this.#repository = repository;
         this.#name = name;
         this.#isDirectory = isDirectory;
     }
@@ -18552,7 +18554,7 @@ class RepositoryEntry {
         }
     }
     #addFile(name, isDirectory) {
-        const e = new _a$3(name, isDirectory);
+        const e = new _a$3(this.#repository, name, isDirectory);
         e.#parent = this;
         this.#childs.set(name, e);
         return e;
@@ -18560,8 +18562,22 @@ class RepositoryEntry {
     getName() {
         return this.#name;
     }
+    getFullName() {
+        let name = '';
+        if (this.#parent) {
+            name = this.#parent.getFullName();
+        }
+        name += this.#name;
+        if (this.#isDirectory && this.#parent) {
+            name += '/';
+        }
+        return name;
+    }
     getParent() {
         return this.#parent;
+    }
+    getRepository() {
+        return this.#repository;
     }
     getChild(name) {
         return this.#childs.get(name);
@@ -18771,7 +18787,7 @@ class ZipRepository {
     }
     async getFileList(filter) {
         await this.#initPromise;
-        const root = new RepositoryEntry('', true);
+        const root = new RepositoryEntry(this, '', true);
         for (const [filename, _] of this.#zipEntries) {
             root.addEntry(filename);
         }

@@ -22,12 +22,14 @@ export interface Repository {
 }
 
 export class RepositoryEntry {
+	#repository: Repository;
 	#name: string;
 	#childs = new Map<string, RepositoryEntry>;
 	#isDirectory: boolean;
 	#parent?: RepositoryEntry;
 
-	constructor(name: string, isDirectory: boolean) {
+	constructor(repository: Repository, name: string, isDirectory: boolean) {
+		this.#repository = repository;
 		this.#name = name;
 		this.#isDirectory = isDirectory;
 	}
@@ -47,7 +49,7 @@ export class RepositoryEntry {
 	}
 
 	#addFile(name: string, isDirectory: boolean) {
-		const e = new RepositoryEntry(name, isDirectory);
+		const e = new RepositoryEntry(this.#repository, name, isDirectory);
 		e.#parent = this;
 		this.#childs.set(name, e);
 		return e;
@@ -71,6 +73,10 @@ export class RepositoryEntry {
 
 	getParent(): RepositoryEntry | undefined {
 		return this.#parent;
+	}
+
+	getRepository(): Repository {
+		return this.#repository;
 	}
 
 	getChild(name: string): RepositoryEntry | undefined {

@@ -5579,10 +5579,12 @@ export declare class Entity {
 
     export declare class RepositoryEntry {
         #private;
-        constructor(name: string, isDirectory: boolean);
+        constructor(repository: Repository, name: string, isDirectory: boolean);
         addEntry(filename: string): void;
         getName(): string;
+        getFullName(): string;
         getParent(): RepositoryEntry | undefined;
+        getRepository(): Repository;
         getChild(name: string): RepositoryEntry | undefined;
         getChilds(): Set<RepositoryEntry>;
         getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry>;
