@@ -57,6 +57,18 @@ export class RepositoryEntry {
 		return this.#name;
 	}
 
+	getFullName(): string {
+		let name = '';
+		if (this.#parent) {
+			name = this.#parent.getFullName();
+		}
+		name += this.#name;
+		if (this.#isDirectory && this.#parent) {
+			name += '/';
+		}
+		return name;
+	}
+
 	getParent(): RepositoryEntry | undefined {
 		return this.#parent;
 	}
