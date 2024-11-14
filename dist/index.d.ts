@@ -6314,7 +6314,7 @@ export declare class Entity {
             animate: {
                 i18n: string;
                 selected: boolean;
-                f: () => 1 | 0;
+                f: () => 0 | 1;
             };
             frame: {
                 i18n: string;
@@ -6915,7 +6915,7 @@ export declare class Entity {
             animate: {
                 i18n: string;
                 selected: boolean;
-                f: () => 1 | 0;
+                f: () => 0 | 1;
             };
             frame: {
                 i18n: string;

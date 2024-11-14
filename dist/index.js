@@ -18756,6 +18756,7 @@ class ZipRepository {
     }
     async getFile(filename) {
         await this.#initPromise;
+        filename = filename.toLowerCase().replaceAll('\\', '/');
         //const url = new URL(fileName, this.#base);
         //return customFetch(url);
         //return { buffer: new ArrayBuffer(10) };
@@ -18767,6 +18768,7 @@ class ZipRepository {
     }
     async getFileAsText(filename) {
         await this.#initPromise;
+        filename = filename.toLowerCase().replaceAll('\\', '/');
         const file = this.#zipEntries.get(filename);
         if (!file) {
             return { error: RepositoryError.FileNotFound };
@@ -18775,10 +18777,12 @@ class ZipRepository {
     }
     async getFileAsBlob(filename) {
         await this.#initPromise;
+        filename = filename.toLowerCase().replaceAll('\\', '/');
         throw 'code me';
     }
     async getFileAsJson(filename) {
         await this.#initPromise;
+        filename = filename.toLowerCase().replaceAll('\\', '/');
         const file = this.#zipEntries.get(filename);
         if (!file) {
             return { error: RepositoryError.FileNotFound };

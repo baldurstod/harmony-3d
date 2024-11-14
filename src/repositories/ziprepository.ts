@@ -36,6 +36,7 @@ export class ZipRepository implements Repository {
 
 	async getFile(filename: string): Promise<RepositoryArrayBufferResponse> {
 		await this.#initPromise;
+		filename = filename.toLowerCase().replaceAll('\\', '/');
 		//const url = new URL(fileName, this.#base);
 		//return customFetch(url);
 		//return { buffer: new ArrayBuffer(10) };
@@ -48,6 +49,7 @@ export class ZipRepository implements Repository {
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
 		await this.#initPromise;
+		filename = filename.toLowerCase().replaceAll('\\', '/');
 		const file = this.#zipEntries.get(filename);
 		if (!file) {
 			return { error: RepositoryError.FileNotFound };
@@ -57,12 +59,14 @@ export class ZipRepository implements Repository {
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
 		await this.#initPromise;
+		filename = filename.toLowerCase().replaceAll('\\', '/');
 		throw 'code me';
 		return { blob: null };
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
 		await this.#initPromise;
+		filename = filename.toLowerCase().replaceAll('\\', '/');
 		const file = this.#zipEntries.get(filename);
 		if (!file) {
 			return { error: RepositoryError.FileNotFound };
