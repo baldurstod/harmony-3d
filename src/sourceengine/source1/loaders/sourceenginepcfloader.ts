@@ -222,7 +222,7 @@ class CDmxElement {
 	guid;
 	guid2;
 }
-class CDmxAttribute {
+export class CDmxAttribute {
 	typeName;
 	type;
 	value;

@@ -10,6 +10,7 @@ import { SourceEngineParticleSystem } from './sourceengineparticlesystem';
  */
 export class SourceEngineParticle {
 	currentTime = 0;
+	previousElapsedTime = 0;
 	name: string;
 	id;
 	isAlive = false;

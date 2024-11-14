@@ -8,23 +8,23 @@ import { Color, WHITE } from './color';
 import { DEFAULT_MAX_PARTICLES, HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
 import { ControlPoint } from '../../common/particles/controlpoint';
 import { ERROR, WARN, LOG } from '../../../buildoptions';
-import { JSONLoader } from '../../../importers/jsonloader';
 import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
 import { BoundingBox } from '../../../math/boundingbox';
 import { MAX_FLOATS } from '../../common/particles/randomfloats';
 import { SourcePCF } from '../loaders/sourcepcf';
-import { Material } from '../../../materials/material';
 import { registerEntity } from '../../../entities/entities';
 import { SourceEngineMaterial } from '../materials/sourceenginematerial';
+import { SourceEngineParticleOperator } from './operators/operator';
+import { CDmxAttribute } from '../loaders/sourceenginepcfloader';
 
 export const MAX_PARTICLE_CONTROL_POINTS = 64;
 const RESET_DELAY = 0;
 let systemNumber = 0;
 
 export class ParamType {
-	param;
-	type;
-	constructor(param, type) {
+	param: string;
+	type: string;
+	constructor(param: string, type: string) {
 		this.param = param;
 		this.type = type;
 	}
@@ -35,16 +35,16 @@ export class SourceEngineParticleSystem extends Entity {
 	repository: string;
 	#autoKill;
 	#sequenceNumber = 0;
-	#materialPromiseResolve;
-	#materialPromise;
+	#materialPromiseResolve?: (value: SourceEngineMaterial) => void;
+	#materialPromise?: Promise<SourceEngineMaterial>;
 	#renderers = new Map();
 	#particleCount = 0;
 	#randomSeed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 	#maximumTimeStep = 0.1;
 	animable = true;
 	resetable = true;
-	paramList = [];
-	parameters = {};
+	paramList: Array<ParamType> = [];
+	parameters: { [key: string]: { type?: string, value?: string } } = {};
 	minimumTickRate = 0;
 	maximumTickRate = 1;
 	// particle to emit when the system starts
@@ -67,26 +67,24 @@ export class SourceEngineParticleSystem extends Entity {
 	currentOrientation = quat.create();
 	prevOrientation = quat.create();
 
-	emitters = {};//new Array();//todo transform to map
-	initializers = {};// = new Array();//todo transform to map
-	operators = {};//new Array();//todo transform to map
+	emitters: { [key: string]: SourceEngineParticleOperator } = {};//new Array();//todo transform to map
+	initializers: { [key: string]: SourceEngineParticleOperator } = {};// = new Array();//todo transform to map
+	operators: { [key: string]: SourceEngineParticleOperator } = {};//new Array();//todo transform to map
 	forces = new Map();//new Array();//todo transform to map
-	constraints = {};//new Array();//todo transform to map
+	constraints: { [key: string]: SourceEngineParticleOperator } = {};//new Array();//todo transform to map
 	controlPoints: Array<ControlPoint> = [];
 
-	childrenSystems = new Array();//todo transform to map
-	tempChildren = {};//new Array();//todo transform to map
+	childrenSystems: Array<SourceEngineParticleSystem> = [];//todo transform to map
+	tempChildren: { [key: string]: string } = {};//new Array();//todo transform to map
 	operatorRandomSampleOffset = 0;
-	parentSystem = undefined;
+	parentSystem?: SourceEngineParticleSystem;
 	firstStep: boolean = false;
-	pcf: SourcePCF;
-	material: SourceEngineMaterial;
-	materialName: string;
-	maxParticles: number;
-	resetDelay: number;
-	snapshot;
-	attachementProp;
-	attachementName;
+	pcf?: SourcePCF;
+	material?: SourceEngineMaterial;
+	materialName?: string;
+	maxParticles: number = 0;
+	resetDelay: number = 0;
+	snapshot: any/*TODO: better type*/;
 
 	static #speed = 1.0;
 	static #simulationSteps = 1;
@@ -164,7 +162,7 @@ export class SourceEngineParticleSystem extends Entity {
 		}
 	}
 
-	do(action, params) {
+	do(action: string, params: any) {
 		switch (action) {
 			case 'reset':
 				this.reset();
@@ -212,7 +210,7 @@ export class SourceEngineParticleSystem extends Entity {
 
 	updateChilds() {
 		for (let i in this.tempChildren) {
-			const ps = this.pcf.getSystem(this.tempChildren[i]);
+			const ps = this.pcf?.getSystem(this.tempChildren[i]);
 
 			if (ps) {
 				this.addChildSystem(ps);
@@ -223,7 +221,7 @@ export class SourceEngineParticleSystem extends Entity {
 		}
 	}
 
-	step(elapsedTime) {
+	step(elapsedTime: number) {
 		if (!this.isPlaying()) {
 			elapsedTime = 0.0000001;
 		}
@@ -232,7 +230,7 @@ export class SourceEngineParticleSystem extends Entity {
 		}
 	}
 
-	#step(elapsedTime) {
+	#step(elapsedTime: number) {
 		if (!this.isRunning || SourceEngineParticleSystem.#speed == 0) {
 			return
 		};
@@ -274,7 +272,7 @@ export class SourceEngineParticleSystem extends Entity {
 		this.#stepChildren(elapsedTime);
 	}
 
-	#emitInitialParticles(elapsedTime) {
+	#emitInitialParticles(elapsedTime: number) {
 		for (let i = 0; i < this.initialParticles; ++i) {
 			this.createParticle(0, elapsedTime);
 		}
@@ -379,7 +377,7 @@ export class SourceEngineParticleSystem extends Entity {
 		}
 	}
 
-	stepConstraints(particle) {
+	stepConstraints(particle: SourceEngineParticle) {
 		//TODOv3: multiple passes
 		for (let j in this.constraints) {
 			const constraint = this.constraints[j];
@@ -387,20 +385,20 @@ export class SourceEngineParticleSystem extends Entity {
 		}
 	}
 
-	#stepRenderers(elapsedTime) {
+	#stepRenderers(elapsedTime: number) {
 		for (const [_, renderer] of this.#renderers) {
 			renderer.updateParticles(this, this.livingParticles, elapsedTime);
 		}
 	}
 
-	#stepChildren(elapsedTime) {
+	#stepChildren(elapsedTime: number) {
 		for (let j in this.childrenSystems) {//TODOv3
 			const child = this.childrenSystems[j];
 			child.#step(elapsedTime);
 		}
 	}
 
-	createParticle(creationTime, elapsedTime) {//TODOv3
+	createParticle(creationTime: number, elapsedTime: number) {//TODOv3
 		if (this.livingParticles.length < this.maxParticles) {
 			// first try to get one from the pool
 			if (this.poolParticles.length > 0) {
@@ -425,7 +423,7 @@ export class SourceEngineParticleSystem extends Entity {
 		return null;
 	}
 
-	#startParticle(particle, elapsedTime) {
+	#startParticle(particle: SourceEngineParticle, elapsedTime: number) {
 		this.resetDelay = 0;
 
 		this.livingParticles.push(particle);
@@ -448,9 +446,9 @@ export class SourceEngineParticleSystem extends Entity {
 		}
 	}
 
-	#preInitParticle(particle) {
+	#preInitParticle(particle: SourceEngineParticle) {
 		const radius = this.getParameter('radius') || 1;
-		const color = this.getParameter('color') || WHITE;
+		const color = this.getParameter('color') as Color ?? WHITE;
 
 		particle.setInitialRadius(radius);
 		particle.setInitialSequence(this.#sequenceNumber);
@@ -460,7 +458,7 @@ export class SourceEngineParticleSystem extends Entity {
 		//particle.creationTime = this.currentTime;
 	}
 
-	#initControlPoint(particle) {
+	#initControlPoint(particle: SourceEngineParticle) {
 		this.getWorldPosition(particle.cpPosition);
 	}
 
@@ -475,21 +473,13 @@ export class SourceEngineParticleSystem extends Entity {
 				continue;
 			}
 			cp.step();
-			if (i == 0) {
-				if (cp.attachementProp) {
-					const atta = cp.attachementProp//.getAttachement(cp.attachementName);
-					if (atta) {
-						this.setOrientation(atta.getWorldQuat());
-					}
-				}
-			}
 		}
 		if (this.parentSystem) {
 			this.setOrientation(this.parentSystem.getWorldQuaternion());
 
 		}
 	}
-	setParam(element) {
+	setParam(element: CDmxAttribute) {
 		if (!element) { return null; }
 
 		const parameter = element.typeName;
@@ -499,12 +489,12 @@ export class SourceEngineParticleSystem extends Entity {
 		return this.setParameter(parameter, type, value);
 	}
 
-	addParam(param, type, value) {
+	addParam(param: string, type: string, value: any) {
 		this.paramList.push(new ParamType(param, type));
 		this.setParameter(param, type, value);
 	}
 
-	setParameter(parameter, type, value) {
+	setParameter(parameter: string, type: string/*TODO: create an enum*/, value: any) {
 		if (parameter == '') return;
 		if (this.parameters[parameter] === undefined) {
 			this.parameters[parameter] = {};
@@ -515,7 +505,7 @@ export class SourceEngineParticleSystem extends Entity {
 		return this;
 	}
 
-	propertyChanged(name) {
+	propertyChanged(name: string) {
 		const value = this.getParameter(name);
 		switch (name) {
 			case 'material':
@@ -557,7 +547,7 @@ export class SourceEngineParticleSystem extends Entity {
 	}
 
 
-	getParameter(parameterName) {
+	getParameter(parameterName: string): any {
 		const parameter = this.parameters[parameterName];
 		if (parameter === undefined) {
 			return null;
@@ -566,22 +556,26 @@ export class SourceEngineParticleSystem extends Entity {
 		return parameter.value;
 	}
 
-	setMaxParticles(max) {
+	setMaxParticles(max: number) {
 		this.maxParticles = Math.max(Math.min(max, HARD_MAX_PARTICLES), 1);
 	}
-	setRadius(radius) {
+	setRadius(radius: number) {
 		this.radius = radius;
 	}
-	setInitialParticles(initial) {
+
+	setInitialParticles(initial: number) {
 		this.initialParticles = initial;
 	}
-	setMinimumTickRate(minimum) {
+
+	setMinimumTickRate(minimum: number) {
 		this.minimumTickRate = minimum;
 	}
-	setMaximumTickRate(maximum) {
+
+	setMaximumTickRate(maximum: number) {
 		this.maximumTickRate = maximum;
 	}
-	setMaterialName(materialName) {
+
+	setMaterialName(materialName: string) {
 		if (!materialName || materialName === '') {
 			return;
 		}
@@ -605,7 +599,7 @@ export class SourceEngineParticleSystem extends Entity {
 		return this.#materialPromise;
 	}
 
-	setSnapshot(snapshot) {
+	setSnapshot(snapshot: any/*TODO: better type*/) {
 		if (!snapshot || snapshot === '') {
 			return;
 		}
@@ -615,7 +609,7 @@ export class SourceEngineParticleSystem extends Entity {
 		}
 	}
 
-	addSub(type, object, id) {
+	addSub(type: string, object: SourceEngineParticleOperator, id: string) {
 		switch (type) {
 			case 'operator':
 			case 'operators':
@@ -641,9 +635,6 @@ export class SourceEngineParticleSystem extends Entity {
 			case 'renderers':
 				this.addRenderer(object, id);
 				break;
-			case 'controlpoint':
-				this.addControlPoint(object, id);
-				break;
 			default:
 				if (WARN) { console.warn('Unknown sub type ' + type); }
 				break;
@@ -651,64 +642,51 @@ export class SourceEngineParticleSystem extends Entity {
 	}
 
 
-	addEmitter(emitter, id) {
+	addEmitter(emitter: SourceEngineParticleOperator, id: string) {
 		this.emitters[id] = emitter;
 		emitter.setParticleSystem(this);
 	}
 
-	addInitializer(initializer, id) {
+	addInitializer(initializer: SourceEngineParticleOperator, id: string) {
 		this.initializers[id] = initializer;
 		initializer.setParticleSystem(this);
 	}
 
-	addOperator(operator, id) {
+	addOperator(operator: SourceEngineParticleOperator, id: string) {
 		this.operators[id] = operator;
 		operator.setParticleSystem(this);
 	}
 
-	removeOperator(id) {//TODOv3 improve
+	removeOperator(id: string) {//TODOv3 improve
 		delete this.emitters[id];
 		delete this.initializers[id];
 		delete this.operators[id];
 		this.forces.delete(id);
 		delete this.constraints[id];
 		this.#renderers.delete(id);
-		delete this.childrenSystems[id];
-		this.removeChild(id);
+		//delete this.childrenSystems[id];
+		//this.removeChild(id);
 	}
 
 
-	addForce(force, id) {
+	addForce(force: SourceEngineParticleOperator, id: string) {
 		this.forces.set(id, force);
 		force.setParticleSystem(this);
 	}
 
-	addConstraint(constraint, id) {
+	addConstraint(constraint: SourceEngineParticleOperator, id: string) {
 		this.constraints[id] = constraint;
 		constraint.setParticleSystem(this);
 	}
 
-	addRenderer(renderer, id) {
+	addRenderer(renderer: SourceEngineParticleOperator, id: string) {
 		this.#renderers.set(id, renderer);
 		renderer.setParticleSystem(this);
 
 		this.#getMaterial().then((material) => renderer.initRenderer(this));
 	}
 
-	addControlPoint(controlPoint, id) {
-		//	this.controlPoints.push(controlPoint);
-		this.controlPoints[id] = controlPoint;
-		if (id == 0) {
-			return;
-		}
-
-		let firstCP = this.getControlPoint(0);
-		if (firstCP) {
-			controlPoint.setParent(firstCP);
-		}
-	}
-
-	getControlPoint(controlPointId) {
+	getControlPoint(controlPointId: number): ControlPoint | null {
 		if (controlPointId < 0 || controlPointId >= MAX_PARTICLE_CONTROL_POINTS) {
 			return null;
 		}
@@ -724,13 +702,13 @@ export class SourceEngineParticleSystem extends Entity {
 		return controlPoint;
 	}
 
-	getOwnControlPoint(controlPointId) {
+	getOwnControlPoint(controlPointId: number) {
 		return this.controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
 	}
 
-	#createControlPoint(controlPointId) {
+	#createControlPoint(controlPointId: number) {
 		let controlPoint = new ControlPoint();
-		controlPoint.name = controlPointId;
+		controlPoint.name = String(controlPointId);
 		if (controlPointId == 0) {
 			this.addChild(controlPoint);
 		} else {
@@ -755,10 +733,11 @@ export class SourceEngineParticleSystem extends Entity {
 		return controlPoint;
 	}
 
-	addTempChild(name, id) {
+	addTempChild(name: string, id: string) {
 		this.tempChildren[id] = name;
 	}
-	addChildSystem(particleSystem) {
+
+	addChildSystem(particleSystem: SourceEngineParticleSystem) {
 		this.childrenSystems.push(particleSystem);
 		particleSystem.setParent(this);
 		this.addChild(particleSystem);
@@ -776,16 +755,17 @@ export class SourceEngineParticleSystem extends Entity {
 
 		//particleSystem.setSkyBox(this.skybox);TODOv3
 	}
-	setParent(parentSystem) {
+
+	setParent(parentSystem: SourceEngineParticleSystem) {
 		return this.parentSystem = parentSystem;
 	}
-
 
 	/**
 	 * Orient all particles relative to control point #0.
 	 */
 	setCpOrientation() {
 		return;//TODOV3
+		/*
 		const cp = this.getControlPoint(0);
 		if (cp) {
 			const orientation = cp.getWorldQuaternion();
@@ -794,18 +774,18 @@ export class SourceEngineParticleSystem extends Entity {
 				quat.copy(particle.cpOrientation, orientation);
 				quat.copy(particle.cpOrientation, this.getWorldQuaternion());
 			}
-		}
+		}*/
 	}
 	/**
 	 * Set control point orientation
 	 * @param (Object quat) orientation New orientation
 	 */
-	setOrientation(orientation) {
+	setOrientation(orientation: quat) {
 		quat.copy(this.prevOrientation, this.currentOrientation);
 		quat.copy(this.currentOrientation, orientation);
 	}
 
-	setChildControlPointPosition(first, last, position) {
+	setChildControlPointPosition(first: number, last: number, position: vec3) {
 		for (let i = 0; i < this.childrenSystems.length; ++i) {
 			const child = this.childrenSystems[i];
 
@@ -821,7 +801,7 @@ export class SourceEngineParticleSystem extends Entity {
 		}
 	}
 
-	getParticle(index) {
+	getParticle(index?: number) {
 		if (index == undefined) {
 			index = Math.floor(Math.random() * this.livingParticles.length);
 		}
@@ -835,7 +815,7 @@ export class SourceEngineParticleSystem extends Entity {
 	}
 
 
-	getControlPointPosition(cpId) {
+	getControlPointPosition(cpId: number) {
 		const cp = this.getControlPoint(cpId);
 		if (cp) {
 			return cp.getWorldPosition();
@@ -843,14 +823,14 @@ export class SourceEngineParticleSystem extends Entity {
 		return vec3.create();
 	}
 
-	setControlPointPosition(cpId, position) {
+	setControlPointPosition(cpId: number, position: vec3) {
 		const cp = this.getOwnControlPoint(cpId);
 		if (cp) {
 			cp.position = position;
 		}
 	}
 
-	setControlPointParent(controlPointId, parentControlPointId) {
+	setControlPointParent(controlPointId: number, parentControlPointId: number) {
 		const controlPoint = this.getControlPoint(controlPointId);
 
 		let parentSystem = this.parentSystem;
@@ -869,22 +849,6 @@ export class SourceEngineParticleSystem extends Entity {
 		/*for (let child of this.childrenSystems) {
 			child.setControlPointParent(controlPointId, parentControlPointId);
 		}*/
-	}
-
-	setAttachementBone_removeme(attachementProp, attachementName, cpIndex, offset) {
-		cpIndex = cpIndex || 0;
-		this.attachementProp = attachementProp;
-		this.attachementName = attachementName;
-
-		// Set the attachement to the first control point
-		const cp = this.getControlPoint(cpIndex);
-		if (cp) {
-			cp.setAttachement(attachementProp, attachementName, offset);
-		}
-
-		if (this.isRunning) {
-			this.reset();
-		}
 	}
 
 	getWorldQuaternion(q = quat.create()) {
@@ -934,11 +898,11 @@ export class SourceEngineParticleSystem extends Entity {
 		}
 	}
 
-	static setSpeed(speed) {
+	static setSpeed(speed: number) {
 		SourceEngineParticleSystem.#speed = speed;
 	}
 
-	static setSimulationSteps(simulationSteps) {
+	static setSimulationSteps(simulationSteps: number) {
 		simulationSteps = Math.round(simulationSteps);
 		if (simulationSteps > 0 && simulationSteps <= 10) {
 			SourceEngineParticleSystem.#simulationSteps = simulationSteps;
@@ -962,13 +926,13 @@ export class SourceEngineParticleSystem extends Entity {
 			json.isrunning = false;
 		}
 
-		let jControlPoint = [];
+		let jControlPoint: Array<string> = [];
 		this.controlPoints.forEach((element, index) => jControlPoint[index] = element.id);
 		json.controlpoints = jControlPoint;
 		return json;
 	}
 
-	static async constructFromJSON(json, entities, loadedPromise) {
+	static async constructFromJSON(json: any/*TODO: better type*/, entities: Map<string, Entity>, loadedPromise: Promise<void>) {
 		let entity = await Source1ParticleControler.createSystem(json.repository, json.name);
 		if (entity) {
 			loadedPromise.then(() => {
@@ -977,7 +941,7 @@ export class SourceEngineParticleSystem extends Entity {
 				let jControlPoint = json.controlpoints;
 				if (jControlPoint) {
 					for (let i = 0; i < jControlPoint.length; ++i) {
-						let cpEntity = entities.get(jControlPoint[i]);
+						let cpEntity = entities.get(jControlPoint[i]) as ControlPoint;
 						if (cpEntity) {
 							entity.controlPoints[i] = cpEntity;
 						}

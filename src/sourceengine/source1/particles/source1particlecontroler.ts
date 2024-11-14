@@ -2,25 +2,26 @@ import { GraphicsEvents, GraphicsEvent } from '../../../graphics/graphicsevents'
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
 import { SourcePCF } from '../loaders/sourcepcf';
+import { SourceEngineParticleSystem } from './sourceengineparticlesystem';
 
 export class Source1ParticleControler {
-	static #loadManifestPromises = {};
+	static #loadManifestPromises: { [key: string]: Promise<boolean> } = {};
 	static speed = 1.0;
-	static visible: boolean = true;
-	static #systemList = {};//TODOv3: make map
+	static visible?: boolean = true;
+	static #systemList: { [key: string]: SourceEngineParticleSystem } = {};//TODOv3: make map
 	static #activeSystemList = new Map();
-	static #pcfList = {};
-	static #systemNameToPcf = {};
-	static #sourceEngineParticleSystem;
+	static #pcfList: { [key: string]: SourcePCF } = {};
+	static #systemNameToPcf: { [key: string]: { [key: string]: string } | null } = {};
+	static #sourceEngineParticleSystem: typeof SourceEngineParticleSystem;
 	static fixedTime?: number;
 
 	static {
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: CustomEvent) => {
-			this.stepSystems(this.fixedTime ?? event.detail.delta);//TODOv3: imporve this
+		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => {
+			this.stepSystems(this.fixedTime ?? (event as CustomEvent).detail.delta);//TODOv3: imporve this
 		});
 	}
 
-	static setParticleConstructor(ps) {
+	static setParticleConstructor(ps: typeof SourceEngineParticleSystem) {
 		this.#sourceEngineParticleSystem = ps;
 	}
 
@@ -36,7 +37,7 @@ export class Source1ParticleControler {
 	 * Step systems
 	 * @param {Number} elapsedTime Step time
 	 */
-	static stepSystems(elapsedTime) {
+	static stepSystems(elapsedTime: number) {
 		if (elapsedTime) {
 			elapsedTime *= this.speed;
 			elapsedTime = Math.min(elapsedTime, 0.1);
@@ -52,7 +53,7 @@ export class Source1ParticleControler {
 	 * Add system TODO
 	 * @param {Number} elapsedTime Step time
 	 */
-	static addSystem2(system) {
+	static addSystem2(system: SourceEngineParticleSystem) {
 		this.#systemList[system.id] = system;
 	}
 
@@ -60,7 +61,7 @@ export class Source1ParticleControler {
 	 * Create system
 	 * @param {Number} elapsedTime Step time
 	 */
-	static async createSystem(repository, systemName) {//TODOv2
+	static async createSystem(repository: string, systemName: string) {//TODOv2
 		if (!repository) {
 			//try to get repository from filename
 			for (let repo in this.#systemNameToPcf) {
@@ -87,7 +88,7 @@ export class Source1ParticleControler {
 	 * Create system
 	 * @param {Number} elapsedTime Step time
 	 */
-	static async #createSystem(repositoryName, system) {
+	static async #createSystem(repositoryName: string, system: SourceEngineParticleSystem) {
 		let pcfName = await this.#getPcfBySystemName(repositoryName, system.name);
 		if (pcfName) {
 			let pcf = await this.#getPcf(repositoryName, 'particles/' + pcfName);
@@ -97,7 +98,7 @@ export class Source1ParticleControler {
 		}
 	}
 
-	static async #getPcfBySystemName(repository, systemName) {
+	static async #getPcfBySystemName(repository: string, systemName: string) {
 		await this.#loadManifest(repository);
 		let systemNameToPcfRepo = this.#systemNameToPcf[repository];
 
@@ -123,7 +124,7 @@ export class Source1ParticleControler {
 					return promise;*/
 	}
 
-	static async loadManifest(repository) {
+	static async loadManifest(repository: string) {
 		if (this.#systemNameToPcf[repository] === undefined) {
 			this.#systemNameToPcf[repository] = null;
 		}
@@ -134,7 +135,7 @@ export class Source1ParticleControler {
 	 */
 	static async #loadManifest(repositoryName: string) {
 		this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
-			let systemNameToPcfRepo = {};
+			let systemNameToPcfRepo: { [key: string]: string } = {};
 			this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
 
 
@@ -181,7 +182,7 @@ export class Source1ParticleControler {
 	/**
 	 * Set a system active
 	 */
-	static setActive(system) {
+	static setActive(system: SourceEngineParticleSystem) {
 		if (!system) {
 			return;
 		}
@@ -191,7 +192,7 @@ export class Source1ParticleControler {
 	/**
 	 * Set a system inactive
 	 */
-	static setInactive(system) {
+	static setInactive(system: SourceEngineParticleSystem) {
 		if (!system) {
 			return;
 		}
@@ -203,11 +204,11 @@ export class Source1ParticleControler {
 	 * @param {String} name Name of the pcf
 	 * @return {Object SourcePCF} Pcf
 	 */
-	static async #getPcf(repositoryName, pcfName): Promise<SourcePCF> {
+	static async #getPcf(repositoryName: string, pcfName: string): Promise<SourcePCF> {
 		let promise = new Promise<SourcePCF>((resolve, reject) => {
 			let pcf = this.#pcfList[pcfName];
 			if (!pcf) {
-				let callback1 = (pcf) => {
+				let callback1 = (pcf: SourcePCF) => {
 					if (pcf) {
 						this.#pcfList[pcfName] = pcf;
 						pcf.repositoryName = repositoryName;
@@ -227,24 +228,24 @@ export class Source1ParticleControler {
 	 * @param {String} name Name of the pcf
 	 * @return {Object SourcePCF} Pcf or null
 	 */
-	static async #loadPcf(repositoryName, pcfName) {
+	static async #loadPcf(repositoryName: string, pcfName: string): Promise<SourcePCF> {
 		//TODO: return an empty system if not found?
-		let promise = new Promise((resolve, reject) => {//TODO: process reject
+		let promise = new Promise<SourcePCF>((resolve, reject) => {//TODO: process reject
 			let pcfLoader = getLoader('SourceEnginePCFLoader');
 			new pcfLoader().load(repositoryName, pcfName).then(
-				pcf => resolve(pcf)
+				(pcf: SourcePCF) => resolve(pcf)
 			);//TODOv3: handle reject
 		});
 		return promise;
 	}
 
-	static setSpeed(s) {
+	static setSpeed(s: number) {
 		this.speed = s;
 	}
 
 	static async getSystemList() {
 		let repoList = [];
-		let pcfs = {};
+		let pcfs: { [key: string]: Array<{ name: string }> } = {};
 		for (let repoName in this.#systemNameToPcf) {
 			await this.#loadManifest(repoName);
 			let repo = this.#systemNameToPcf[repoName];
@@ -265,7 +266,7 @@ export class Source1ParticleControler {
 		return { files: repoList };
 	}
 
-	static set renderSystems(renderSystems) {
+	static set renderSystems(renderSystems: boolean) {
 		this.visible = renderSystems ? undefined : false;
 	}
 }

@@ -14,7 +14,7 @@ let mat = mat4.create();
 
 export class ControlPoint extends Entity {
 	isControlPoint = true;
-	#parentControlPoint = null;
+	#parentControlPoint?: ControlPoint;
 
 	currentWorldPosition = vec3.create();
 	prevWorldPosition = vec3.create();
@@ -37,7 +37,6 @@ export class ControlPoint extends Entity {
 
 	parentModel = null;
 	lastComputed = -1;
-	attachementProp;
 
 	getWorldTransformation(mat = mat4.create()) {
 		this.getWorldQuaternion(tempQuat);
@@ -46,7 +45,7 @@ export class ControlPoint extends Entity {
 	}
 
 	getWorldQuaternion(q = quat.create()) {
-		if (this.#parentControlPoint !== null) {
+		if (this.#parentControlPoint) {
 			this.#parentControlPoint.getWorldQuaternion(q);
 			quat.mul(q, q, this._quaternion);
 		} else {
@@ -55,7 +54,7 @@ export class ControlPoint extends Entity {
 		return q;
 	}
 
-	parentChanged(parent = null) {
+	parentChanged(parent: Entity | null) {
 		let parentModel = this.getParentModel();
 		this.forEach(entity => {
 			if ((entity as ControlPoint).isControlPoint) {
@@ -101,11 +100,11 @@ export class ControlPoint extends Entity {
 		mat4.mul(this.deltaWorldTransformation, this.currentWorldTransformation, mat);
 	}
 
-	deltaPosFrom(other, out = vec3.create()) {
+	deltaPosFrom(other: ControlPoint, out = vec3.create()) {
 		return vec3.sub(out, other.currentWorldPosition, this.currentWorldPosition);
 	}
 
-	static async constructFromJSON(json) {
+	static async constructFromJSON(json: JSON) {
 		return new ControlPoint();
 	}
 

@@ -22176,18 +22176,6 @@ class Source1ParticleControler {
      * Add system TODO
      * @param {Number} elapsedTime Step time
      */
-    static addSystem(repository, name) {
-        let ps = new this.#sourceEngineParticleSystem({ repository: repository, name: name });
-        if (ps) {
-            this.#systemList[ps.id] = ps;
-            this.#updateOrCreatePS(ps);
-        }
-        return ps;
-    }
-    /**
-     * Add system TODO
-     * @param {Number} elapsedTime Step time
-     */
     static addSystem2(system) {
         this.#systemList[system.id] = system;
     }
@@ -22315,16 +22303,6 @@ class Source1ParticleControler {
             return;
         }
         this.#activeSystemList.delete(system.id);
-    }
-    /**
-     * Update or create system
-     */
-    static #updateOrCreatePS(system) {
-        let p = this.#systemList[system.id];
-        if (p == null) {
-            p = this.addSystem(system, ''); //TODOv3
-            throw 'fix me';
-        }
     }
     /**
      * Get a pcf from cache or load it

@@ -11,6 +11,7 @@ export class SourcePCF {
 	systems = {};
 	systems2 = {};
 	binaryVersion;
+	repositoryName: string;
 	constructor(repository: string) {
 		this.repository = repository;
 	}

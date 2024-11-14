@@ -59,6 +59,8 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		this.applyConstraint(particle);
 	}
 
+	doEmit(elapsedTime: number) { }
+
 	doInit(particle: SourceEngineParticle, elapsedTime: number) { }
 
 	doOperate(particle: SourceEngineParticle, elapsedTime: number) { }
@@ -68,6 +70,8 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 	applyConstraint(particle: SourceEngineParticle) { }
 
 	doRender(particle: SourceEngineParticle[], elapsedTime: number, material: Material) { }
+
+	initRenderer(particleSystem: SourceEngineParticleSystem) { }
 
 	emitParticle(creationTime, elapsedTime) {
 		if (!this.particleSystem) {
@@ -256,27 +260,27 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 
 		this.setParameter(param, type, value);
 	}
-/*
-	toString() {
-		const s = '';
-		s = '"DmeParticleOperator"\n{\n';
+	/*
+		toString() {
+			const s = '';
+			s = '"DmeParticleOperator"\n{\n';
 
-		for (let i in this.#parameters) {
-			const parameter = this.#parameters[i];
-			if (parameter) {
-				if (parameter.type == 'string') {
-					s += '"' + i + '" "' + parameter.type + '" "' + escapeValue(parameter.value) + '"\n'
+			for (let i in this.#parameters) {
+				const parameter = this.#parameters[i];
+				if (parameter) {
+					if (parameter.type == 'string') {
+						s += '"' + i + '" "' + parameter.type + '" "' + escapeValue(parameter.value) + '"\n'
+					} else {
+						s += '"' + i + '" "' + parameter.type + '" "' + parameter.value + '"\n'
+					}
 				} else {
-					s += '"' + i + '" "' + parameter.type + '" "' + parameter.value + '"\n'
+					if (ERROR) { console.error('parameter is null'); }
 				}
-			} else {
-				if (ERROR) { console.error('parameter is null'); }
 			}
+			s += '}';
+			return s;
 		}
-		s += '}';
-		return s;
-	}
-*/
+	*/
 
 	getInputValue(inputField, particle) {
 		let input: any = 0;
