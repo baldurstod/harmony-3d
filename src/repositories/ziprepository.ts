@@ -24,7 +24,7 @@ export class ZipRepository implements Repository {
 			}
 
 			const blob = await entry.getData(new BlobWriter());
-			const filename = entry.filename.toLowerCase().replaceAll('\\', '/');
+			const filename = cleanupFilename(entry.filename);
 			this.#zipEntries.set(filename, new File([blob], filename));
 		}
 		this.#initPromiseResolve?.(true);
@@ -36,11 +36,7 @@ export class ZipRepository implements Repository {
 
 	async getFile(filename: string): Promise<RepositoryArrayBufferResponse> {
 		await this.#initPromise;
-		filename = filename.toLowerCase().replaceAll('\\', '/');
-		//const url = new URL(fileName, this.#base);
-		//return customFetch(url);
-		//return { buffer: new ArrayBuffer(10) };
-		const file = this.#zipEntries.get(filename);
+		const file = this.#zipEntries.get(cleanupFilename(filename));
 		if (!file) {
 			return { error: RepositoryError.FileNotFound };
 		}
@@ -49,8 +45,7 @@ export class ZipRepository implements Repository {
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
 		await this.#initPromise;
-		filename = filename.toLowerCase().replaceAll('\\', '/');
-		const file = this.#zipEntries.get(filename);
+		const file = this.#zipEntries.get(cleanupFilename(filename));
 		if (!file) {
 			return { error: RepositoryError.FileNotFound };
 		}
@@ -59,15 +54,14 @@ export class ZipRepository implements Repository {
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
 		await this.#initPromise;
-		filename = filename.toLowerCase().replaceAll('\\', '/');
+		cleanupFilename(filename);
 		throw 'code me';
 		return { blob: null };
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
 		await this.#initPromise;
-		filename = filename.toLowerCase().replaceAll('\\', '/');
-		const file = this.#zipEntries.get(filename);
+		const file = this.#zipEntries.get(cleanupFilename(filename));
 		if (!file) {
 			return { error: RepositoryError.FileNotFound };
 		}
@@ -82,4 +76,11 @@ export class ZipRepository implements Repository {
 		}
 		return { root: root };
 	}
+}
+
+function cleanupFilename(filename: string): string {
+	filename = filename.toLowerCase().replaceAll('\\', '/');
+	const arr = filename.split('/');
+
+	return arr.filter((path) => path != '').join('/');
 }
