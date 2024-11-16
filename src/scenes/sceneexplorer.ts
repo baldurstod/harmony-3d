@@ -41,6 +41,7 @@ import { Interaction } from '../utils/interaction';
 
 import sceneExplorerCSS from '../css/sceneexplorer.css';
 import { Wireframe } from '../objects/wireframe';
+import { Scene } from './scene';
 
 function FormatArray(array) {
 	let arr = [];
@@ -116,7 +117,11 @@ export class SceneExplorer {
 		SceneExplorerEvents.addEventListener('bonepicked', (event: CustomEvent) => this.selectEntity(event.detail.bone));
 	}
 
-	set scene(scene) {
+	set scene(scene) {//TODO: deprecate
+		this.setScene(scene);
+	}
+
+	setScene(scene: Scene) {
 		this.#scene = scene;
 		this.#selectedEntity = scene;
 		this.applyFilter();

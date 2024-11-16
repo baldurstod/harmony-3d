@@ -22337,7 +22337,7 @@ class Source1ParticleControler {
         //TODO: return an empty system if not found?
         let promise = new Promise((resolve, reject) => {
             let pcfLoader = getLoader('SourceEnginePCFLoader');
-            new pcfLoader().load(repositoryName, pcfName).then(pcf => resolve(pcf)); //TODOv3: handle reject
+            new pcfLoader().load(repositoryName, pcfName).then((pcf) => resolve(pcf)); //TODOv3: handle reject
         });
         return promise;
     }
@@ -26863,6 +26863,9 @@ class SceneExplorer {
         SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone));
     }
     set scene(scene) {
+        this.setScene(scene);
+    }
+    setScene(scene) {
         this.#scene = scene;
         this.#selectedEntity = scene;
         this.applyFilter();
@@ -35573,6 +35576,7 @@ const WHITE = new Color(255, 255, 255, 255);
  */
 class SourceEngineParticle {
     currentTime = 0;
+    previousElapsedTime = 0;
     name;
     id;
     isAlive = false;
@@ -35997,7 +36001,7 @@ const tempQuat$5 = quat.create();
 let mat$2 = mat4.create();
 class ControlPoint extends Entity {
     isControlPoint = true;
-    #parentControlPoint = null;
+    #parentControlPoint;
     currentWorldPosition = vec3.create();
     prevWorldPosition = vec3.create();
     deltaWorldPosition = vec3.create();
@@ -36015,14 +36019,13 @@ class ControlPoint extends Entity {
     rVector = vec3.create();
     parentModel = null;
     lastComputed = -1;
-    attachementProp;
     getWorldTransformation(mat = mat4.create()) {
         this.getWorldQuaternion(tempQuat$5);
         this.getWorldPosition(tempVec3$l);
         return mat4.fromRotationTranslation(mat, tempQuat$5, tempVec3$l);
     }
     getWorldQuaternion(q = quat.create()) {
-        if (this.#parentControlPoint !== null) {
+        if (this.#parentControlPoint) {
             this.#parentControlPoint.getWorldQuaternion(q);
             quat.mul(q, q, this._quaternion);
         }
@@ -36031,7 +36034,7 @@ class ControlPoint extends Entity {
         }
         return q;
     }
-    parentChanged(parent = null) {
+    parentChanged(parent) {
         let parentModel = this.getParentModel();
         this.forEach(entity => {
             if (entity.isControlPoint) {
@@ -36132,10 +36135,10 @@ class SourceEngineParticleSystem extends Entity {
     forces = new Map(); //new Array();//todo transform to map
     constraints = {}; //new Array();//todo transform to map
     controlPoints = [];
-    childrenSystems = new Array(); //todo transform to map
+    childrenSystems = []; //todo transform to map
     tempChildren = {}; //new Array();//todo transform to map
     operatorRandomSampleOffset = 0;
-    parentSystem = undefined;
+    parentSystem;
     firstStep = false;
     pcf;
     material;
@@ -36143,8 +36146,6 @@ class SourceEngineParticleSystem extends Entity {
     maxParticles = 0;
     resetDelay = 0;
     snapshot;
-    attachementProp;
-    attachementName;
     static #speed = 1.0;
     static #simulationSteps = 1;
     //constructor(repository, parameters, id) {
@@ -36250,7 +36251,7 @@ class SourceEngineParticleSystem extends Entity {
     }
     updateChilds() {
         for (let i in this.tempChildren) {
-            const ps = this.pcf.getSystem(this.tempChildren[i]);
+            const ps = this.pcf?.getSystem(this.tempChildren[i]);
             if (ps) {
                 this.addChildSystem(ps);
                 delete this.tempChildren[i];
@@ -36459,7 +36460,7 @@ class SourceEngineParticleSystem extends Entity {
     }
     #preInitParticle(particle) {
         const radius = this.getParameter('radius') || 1;
-        const color = this.getParameter('color') || WHITE;
+        const color = this.getParameter('color') ?? WHITE;
         particle.setInitialRadius(radius);
         particle.setInitialSequence(this.#sequenceNumber);
         particle.color.setColorAlpha(color); //TODO: remove alpha
@@ -36480,14 +36481,6 @@ class SourceEngineParticleSystem extends Entity {
                 continue;
             }
             cp.step();
-            if (i == 0) {
-                if (cp.attachementProp) {
-                    const atta = cp.attachementProp; //.getAttachement(cp.attachementName);
-                    if (atta) {
-                        this.setOrientation(atta.getWorldQuat());
-                    }
-                }
-            }
         }
         if (this.parentSystem) {
             this.setOrientation(this.parentSystem.getWorldQuaternion());
@@ -36506,7 +36499,7 @@ class SourceEngineParticleSystem extends Entity {
         this.paramList.push(new ParamType(param, type));
         this.setParameter(param, type, value);
     }
-    setParameter(parameter, type, value) {
+    setParameter(parameter, type /*TODO: create an enum*/, value) {
         if (parameter == '')
             return;
         if (this.parameters[parameter] === undefined) {
@@ -36595,7 +36588,7 @@ class SourceEngineParticleSystem extends Entity {
         });
         return this.#materialPromise;
     }
-    setSnapshot(snapshot) {
+    setSnapshot(snapshot /*TODO: better type*/) {
         if (!snapshot || snapshot === '') {
             return;
         }
@@ -36630,9 +36623,6 @@ class SourceEngineParticleSystem extends Entity {
             case 'renderers':
                 this.addRenderer(object, id);
                 break;
-            case 'controlpoint':
-                this.addControlPoint(object, id);
-                break;
         }
     }
     addEmitter(emitter, id) {
@@ -36654,8 +36644,8 @@ class SourceEngineParticleSystem extends Entity {
         this.forces.delete(id);
         delete this.constraints[id];
         this.#renderers.delete(id);
-        delete this.childrenSystems[id];
-        this.removeChild(id);
+        //delete this.childrenSystems[id];
+        //this.removeChild(id);
     }
     addForce(force, id) {
         this.forces.set(id, force);
@@ -36669,17 +36659,6 @@ class SourceEngineParticleSystem extends Entity {
         this.#renderers.set(id, renderer);
         renderer.setParticleSystem(this);
         this.#getMaterial().then((material) => renderer.initRenderer(this));
-    }
-    addControlPoint(controlPoint, id) {
-        //	this.controlPoints.push(controlPoint);
-        this.controlPoints[id] = controlPoint;
-        if (id == 0) {
-            return;
-        }
-        let firstCP = this.getControlPoint(0);
-        if (firstCP) {
-            controlPoint.setParent(firstCP);
-        }
     }
     getControlPoint(controlPointId) {
         if (controlPointId < 0 || controlPointId >= MAX_PARTICLE_CONTROL_POINTS) {
@@ -36700,7 +36679,7 @@ class SourceEngineParticleSystem extends Entity {
     }
     #createControlPoint(controlPointId) {
         let controlPoint = new ControlPoint();
-        controlPoint.name = controlPointId;
+        controlPoint.name = String(controlPointId);
         if (controlPointId == 0) {
             this.addChild(controlPoint);
         }
@@ -36748,6 +36727,16 @@ class SourceEngineParticleSystem extends Entity {
      */
     setCpOrientation() {
         return; //TODOV3
+        /*
+        const cp = this.getControlPoint(0);
+        if (cp) {
+            const orientation = cp.getWorldQuaternion();
+            for (let i = 0; i < this.livingParticles.length; ++i) {
+                const particle = this.livingParticles[i];
+                quat.copy(particle.cpOrientation, orientation);
+                quat.copy(particle.cpOrientation, this.getWorldQuaternion());
+            }
+        }*/
     }
     /**
      * Set control point orientation
@@ -36806,19 +36795,6 @@ class SourceEngineParticleSystem extends Entity {
         /*for (let child of this.childrenSystems) {
             child.setControlPointParent(controlPointId, parentControlPointId);
         }*/
-    }
-    setAttachementBone_removeme(attachementProp, attachementName, cpIndex, offset) {
-        cpIndex = cpIndex || 0;
-        this.attachementProp = attachementProp;
-        this.attachementName = attachementName;
-        // Set the attachement to the first control point
-        const cp = this.getControlPoint(cpIndex);
-        if (cp) {
-            cp.setAttachement(attachementProp, attachementName, offset);
-        }
-        if (this.isRunning) {
-            this.reset();
-        }
     }
     getWorldQuaternion(q = quat.create()) {
         quat.copy(q, this._quaternion);
@@ -36888,7 +36864,7 @@ class SourceEngineParticleSystem extends Entity {
         json.controlpoints = jControlPoint;
         return json;
     }
-    static async constructFromJSON(json, entities, loadedPromise) {
+    static async constructFromJSON(json /*TODO: better type*/, entities, loadedPromise) {
         let entity = await Source1ParticleControler.createSystem(json.repository, json.name);
         if (entity) {
             loadedPromise.then(() => {
@@ -36953,6 +36929,7 @@ class SourcePCF {
     systems = {};
     systems2 = {};
     binaryVersion;
+    repositoryName;
     constructor(repository) {
         this.repository = repository;
     }
@@ -43670,11 +43647,13 @@ class SourceEngineParticleOperator {
         }
         this.applyConstraint(particle);
     }
+    doEmit(elapsedTime) { }
     doInit(particle, elapsedTime) { }
     doOperate(particle, elapsedTime) { }
     doForce(particle, elapsedTime, accumulatedForces, strength) { }
     applyConstraint(particle) { }
     doRender(particle, elapsedTime, material) { }
+    initRenderer(particleSystem) { }
     emitParticle(creationTime, elapsedTime) {
         if (!this.particleSystem) {
             return;
@@ -43810,7 +43789,7 @@ class SourceEngineParticleOperator {
         toString() {
             const s = '';
             s = '"DmeParticleOperator"\n{\n';
-    
+
             for (let i in this.#parameters) {
                 const parameter = this.#parameters[i];
                 if (parameter) {
