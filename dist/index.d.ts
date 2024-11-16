@@ -7346,7 +7346,7 @@ export declare class Entity {
 
     declare class SourceBinaryLoader {
         repository: string;
-        load(repositoryName: string, fileName: string): Promise<Source2File | any>;
+        load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL>;
         parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP;
     }
 
@@ -7944,6 +7944,7 @@ export declare class Entity {
 
     export declare class SourceEngineVTXLoader extends SourceBinaryLoader {
         #private;
+        constructor(mdlVersion: number);
         parse(repository: any, fileName: any, arrayBuffer: any): SourceVTX;
     }
 

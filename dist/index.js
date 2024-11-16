@@ -34018,6 +34018,11 @@ function MdlStripHeader() {
     this.indexes = [];
 }
 class SourceEngineVTXLoader extends SourceBinaryLoader {
+    #mdlVersion;
+    constructor(mdlVersion) {
+        super();
+        this.#mdlVersion = mdlVersion;
+    }
     parse(repository, fileName, arrayBuffer) {
         let vtx = new SourceVTX();
         let reader = new BinaryReader(arrayBuffer);
@@ -34103,8 +34108,9 @@ class SourceEngineVTXLoader extends SourceBinaryLoader {
         const baseOffset = reader.tell();
         mesh.numStripGroups = reader.getInt32();
         const stripGroupHeaderOffset = reader.getInt32();
+        const headerSize = STRIP_GROUP_HEADER_SIZE + Number(this.#mdlVersion >= 49) * 8;
         for (let i = 0; i < mesh.numStripGroups; ++i) {
-            reader.seek(baseOffset + stripGroupHeaderOffset + i * STRIP_GROUP_HEADER_SIZE);
+            reader.seek(baseOffset + stripGroupHeaderOffset + i * headerSize);
             mesh.stripGroups.push(this.#parseStripGroupHeader(reader, vtx));
             /*const stripGroup = this.readStripGroupHeader();
             if (stripGroup) {
@@ -34301,13 +34307,14 @@ class SourceEngineVVDLoader extends SourceBinaryLoader {
 
 class ModelLoader {
     load(repositoryName, fileName) {
-        let promise = new Promise((resolve, reject) => {
+        let promise = new Promise(async (resolve) => {
             fileName = fileName.toLowerCase().replace(/.mdl$/, '');
-            let vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
-            let vtxPromise = new SourceEngineVTXLoader().load(repositoryName, fileName + '.dx90.vtx');
+            // First load mdl. We need the mdl version to load the vtx
             let mdlLoader = getLoader('SourceEngineMDLLoader');
-            let mdlPromise = new mdlLoader().load(repositoryName, fileName + '.mdl');
-            Promise.all([mdlPromise, vvdPromise, vtxPromise]).then((values) => this.#fileLoaded(resolve, repositoryName, fileName, values[0], values[1], values[2]));
+            const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
+            let vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
+            let vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
+            Promise.all([vvdPromise, vtxPromise]).then((values) => this.#fileLoaded(resolve, repositoryName, fileName, mdl, values[0], values[1]));
         });
         return promise;
     }

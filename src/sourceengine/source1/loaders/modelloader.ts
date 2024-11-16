@@ -5,18 +5,22 @@ import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../geometry
 import { BufferGeometry } from '../../../geometry/buffergeometry';
 import { VERBOSE } from '../../../buildoptions';
 import { getLoader, registerLoader } from '../../../loaders/loaderfactory';
+import { SourceEngineMDLLoader } from './sourceenginemdlloader';
+import { SourceMDL } from './sourcemdl';
 
 export class ModelLoader {
 	load(repositoryName, fileName) {
-		let promise = new Promise((resolve, reject) => {
+		let promise = new Promise(async (resolve) => {
 			fileName = fileName.toLowerCase().replace(/.mdl$/, '');
+
+			// First load mdl. We need the mdl version to load the vtx
+			let mdlLoader = getLoader('SourceEngineMDLLoader') as typeof SourceEngineMDLLoader;
+			const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl')as SourceMDL;
+
 			let vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
-			let vtxPromise = new SourceEngineVTXLoader().load(repositoryName, fileName + '.dx90.vtx');
+			let vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
 
-			let mdlLoader = getLoader('SourceEngineMDLLoader');
-			let mdlPromise = new mdlLoader().load(repositoryName, fileName + '.mdl');
-
-			Promise.all([mdlPromise, vvdPromise, vtxPromise]).then((values) => this.#fileLoaded(resolve, repositoryName, fileName, values[0], values[1], values[2]));
+			Promise.all([vvdPromise, vtxPromise]).then((values) => this.#fileLoaded(resolve, repositoryName, fileName, mdl, values[0], values[1]));
 
 		});
 		return promise;

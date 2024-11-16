@@ -40,6 +40,12 @@ function MdlStripHeader() {
 }
 
 export class SourceEngineVTXLoader extends SourceBinaryLoader {
+	#mdlVersion: number;
+	constructor(mdlVersion: number) {
+		super();
+		this.#mdlVersion = mdlVersion;
+	}
+
 	parse(repository, fileName, arrayBuffer) {
 		let vtx = new SourceVTX()
 		let reader = new BinaryReader(arrayBuffer);
@@ -51,12 +57,12 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 	#parseHeader(reader, vtx) {
 		reader.seek(0);
 		vtx.version = reader.getInt32();
-		vtx.vertCacheSize	= reader.getInt32();
-		vtx.maxBonesPerStrip	= reader.getUint16();
-		vtx.maxBonesPerFace	= reader.getUint16();
-		vtx.maxBonesPerVert	= reader.getInt32();
-		vtx.checkSum	= reader.getInt32();
-		vtx.numLODs	= reader.getInt32();
+		vtx.vertCacheSize = reader.getInt32();
+		vtx.maxBonesPerStrip = reader.getUint16();
+		vtx.maxBonesPerFace = reader.getUint16();
+		vtx.maxBonesPerVert = reader.getInt32();
+		vtx.checkSum = reader.getInt32();
+		vtx.numLODs = reader.getInt32();
 		vtx.materialReplacementListOffset = reader.getInt32();
 
 		vtx.numBodyParts = reader.getInt32();
@@ -142,9 +148,10 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 
 		mesh.numStripGroups = reader.getInt32();
 		const stripGroupHeaderOffset = reader.getInt32();
+		const headerSize = STRIP_GROUP_HEADER_SIZE + Number(this.#mdlVersion >= 49) * 8
 
 		for (let i = 0; i < mesh.numStripGroups; ++i) {
-			reader.seek(baseOffset + stripGroupHeaderOffset + i * STRIP_GROUP_HEADER_SIZE);
+			reader.seek(baseOffset + stripGroupHeaderOffset + i * headerSize);
 			mesh.stripGroups.push(this.#parseStripGroupHeader(reader, vtx));
 			/*const stripGroup = this.readStripGroupHeader();
 			if (stripGroup) {
