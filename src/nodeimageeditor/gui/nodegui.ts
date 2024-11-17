@@ -270,12 +270,12 @@ export class NodeGui {
 	#createParamHtml(param: NodeParam, index?: number) {
 		let paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
 		let nameHtml = createElement('div', { parent: paramHtml });
-		let valueHtml = createElement('input', {
+		let valueHtml: HTMLInputElement = createElement('input', {
 			parent: paramHtml,
 			events: {
 				change: (event) => this.#setParamValue(param, event.target.value, index)
 			}
-		});
+		}) as HTMLInputElement;
 
 		nameHtml.innerHTML = param.name;
 		let value;
