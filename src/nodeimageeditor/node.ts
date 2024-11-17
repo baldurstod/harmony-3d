@@ -308,7 +308,7 @@ export class Node extends EventTarget {
 
 		let image = this.previewPic;
 
-		const canvas = createElement('canvas', { width: image.width, height: image.height });
+		const canvas = createElement('canvas', { width: image.width, height: image.height }) as HTMLCanvasElement;
 		const ctx = canvas.getContext('2d');
 		ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
 		canvas.toBlob((blob) => SaveFile(new File([blob], 'texture.png')));//toDataURL

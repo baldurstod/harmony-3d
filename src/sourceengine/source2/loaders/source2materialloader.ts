@@ -12,7 +12,7 @@ export class Source2MaterialLoader {
 			fileName = fileName.replace(/.vmat_c$/, '');
 			let vmatPromise = new Source2FileLoader().load(repository, fileName + '.vmat_c');
 			vmatPromise.then(
-				(source2File) => {
+				(source2File: Source2File) => {
 					let material = this.#loadMaterial(repository, source2File);
 					if (VERBOSE) {
 						console.log(source2File);

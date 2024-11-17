@@ -30692,8 +30692,8 @@ function loadScripts(array, callback) {
     const loader = function (src, handler) {
         const script = createElement('script');
         script.src = src;
-        script.onload = script.onreadystatechange = function () {
-            script.onreadystatechange = script.onload = null;
+        script.onload = () => {
+            script.onload = null;
             handler();
         };
         const head = document.getElementsByTagName('head')[0];
