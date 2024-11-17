@@ -20,7 +20,7 @@ export class ShaderEditor extends HTMLElement {
 	#shadowRoot;
 	#shaderEditor;
 	#htmlShaderNameSelect: HTMLSelectElement;
-	#htmlShaderRenderMode: HTMLSelectElement;
+	#htmlShaderRenderMode: HTMLInputElement;
 	#recompileTimeout: number;
 	#editorShaderName: string;
 	#editorIncludeName: string;
@@ -39,7 +39,7 @@ export class ShaderEditor extends HTMLElement {
 		this.#initialized = true;
 
 		this.style.cssText = 'display: flex;flex-direction: column;height: 100%;width: 100%;';
-		this.#htmlShaderNameSelect = createElement('select');
+		this.#htmlShaderNameSelect = createElement('select') as HTMLSelectElement;
 		this.#htmlShaderNameSelect.addEventListener('input', (event) => {
 			let selectedOption = (event.target as HTMLSelectElement).selectedOptions[0];
 			if (selectedOption) {
@@ -52,7 +52,7 @@ export class ShaderEditor extends HTMLElement {
 			}
 		});
 
-		this.#htmlShaderRenderMode = createElement('input');
+		this.#htmlShaderRenderMode = createElement('input') as HTMLInputElement;
 		this.#htmlShaderRenderMode.addEventListener('input', (event) => {
 			let n = Number((event.target as HTMLInputElement).value);
 			if (Number.isNaN(n)) {
@@ -129,7 +129,7 @@ export class ShaderEditor extends HTMLElement {
 				innerHTML: shaderName,
 				'data-shader': true,
 				parent: shaderGroup
-			});
+			}) as HTMLOptionElement;
 
 			if (this.#editMode == EDIT_MODE_SHADER && this.editorShaderName == shaderName) {
 				option.selected = true;
@@ -145,7 +145,7 @@ export class ShaderEditor extends HTMLElement {
 				innerHTML: includeName,
 				'data-include': true,
 				parent: includeGroup
-			});
+			}) as HTMLOptionElement;
 
 			if (this.#editMode == EDIT_MODE_INCLUDE && this.editorIncludeName == includeName) {
 				option.selected = true;
@@ -265,10 +265,10 @@ if (window.customElements) {
 
 function loadScripts(array, callback) {
 	const loader = function (src, handler) {
-		const script = createElement('script');
+		const script = createElement('script') as HTMLScriptElement;
 		script.src = src;
-		script.onload = script.onreadystatechange = function () {
-			script.onreadystatechange = script.onload = null;
+		script.onload = () => {
+			script.onload = null;
 			handler();
 		}
 		const head = document.getElementsByTagName('head')[0];

@@ -1,7 +1,7 @@
 import { createElement } from 'harmony-ui';
 
 export function imageDataToImage(imagedata, image = new Image()) {
-	var canvas = createElement('canvas', {width: imagedata.width, height: imagedata.height});
+	var canvas = createElement('canvas', {width: imagedata.width, height: imagedata.height}) as HTMLCanvasElement;
 	var ctx = canvas.getContext('2d');
 	canvas.width = imagedata.width;
 	canvas.height = imagedata.height;

@@ -834,7 +834,7 @@ function loadDataVtexImageData(reader, block, compressedMips) {
 					for (let i = 0, strLen = str.length; i < strLen; i ++) {
 						bufView[i] = str.charCodeAt(i);
 					}*/
-					SaveFile('vtex' + str.length, str);
+					//SaveFile('vtex' + str.length, str);
 				}
 			}
 		}
