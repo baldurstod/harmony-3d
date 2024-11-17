@@ -9,11 +9,11 @@ import { FrameBufferTarget, TextureFormat, TextureType } from './constants';
 import { AnyTexture } from '../types';
 
 export class RenderTarget {
-	#width: number;
-	#height: number;
+	#width: number = 0;
+	#height: number = 0;
 	#target: FrameBufferTarget = GL_FRAMEBUFFER;
 	#frameBuffer = new Framebuffer(this.#target);
-	#depthRenderbuffer: Renderbuffer;
+	#depthRenderbuffer?: Renderbuffer;
 	#texture: AnyTexture;
 	#scissor = vec4.create();
 	#viewport = vec4.create();
