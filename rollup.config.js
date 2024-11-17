@@ -42,7 +42,6 @@ export default [
 			'harmony-browser-utils',
 			'harmony-svg',
 			'harmony-ui',
-			'harmony-ui/dist/define/defines',
 			'harmony-browser-utils',
 			'harmony-fbx',
 			'murmurhash-es6',

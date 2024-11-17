@@ -1,5 +1,5 @@
 import { vec2 } from 'gl-matrix';
-import { createElement, hide, HTMLHarmony2dManipulatorElement } from 'harmony-ui';
+import { createElement, defineHarmony2dManipulator, hide, HTMLHarmony2dManipulatorElement } from 'harmony-ui';
 import { Graphics } from '../../graphics/graphics';
 import { Node } from '../node';
 import { ApplySticker } from '../operations/applysticker';
@@ -9,7 +9,6 @@ import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
 import { GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE } from '../../webgl/constants';
 import { NodeImageEditorGui } from './nodeimageeditorgui';
 import { NodeParam, NodeParamType } from '../nodeparam';
-import { defineharmony2dmanipulator } from 'harmony-ui/dist/define/defines';
 import { zoomInSVG, zoomOutSVG } from 'harmony-svg';
 
 export const DELAY_BEFORE_REFRESH = 100;
@@ -297,7 +296,7 @@ export class NodeGui {
 				value = `${Number(value[0]).toFixed(FLOAT_VALUE_DECIMALS)} ${Number(value[1]).toFixed(FLOAT_VALUE_DECIMALS)}`;
 				break;
 			case NodeParamType.StickerAdjust:
-				defineharmony2dmanipulator();
+				defineHarmony2dManipulator();
 				hide(valueHtml);
 
 				this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {

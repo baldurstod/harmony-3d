@@ -1,6 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { createElement, hide, display, show, toggle, createShadowRoot, I18n } from 'harmony-ui';
-import { defineharmonycolorpicker, defineharmony2dmanipulator, defineharmonycontextmenu } from 'harmony-ui/dist/define/defines';
+import { createElement, hide, display, show, defineHarmonyColorPicker, toggle, defineHarmony2dManipulator, createShadowRoot, I18n, defineHarmonyContextMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
@@ -3821,7 +3820,7 @@ class Interaction {
             });
 
         this.#htmlColorPicker.hide();*/
-        defineharmonycolorpicker();
+        defineHarmonyColorPicker();
         this.#htmlColorPicker = createElement('harmony-color-picker', {
             parent: this.#htmlElement,
             hidden: true,
@@ -14733,7 +14732,7 @@ class NodeGui {
                 value = `${Number(value[0]).toFixed(FLOAT_VALUE_DECIMALS)} ${Number(value[1]).toFixed(FLOAT_VALUE_DECIMALS)}`;
                 break;
             case NodeParamType.StickerAdjust:
-                defineharmony2dmanipulator();
+                defineHarmony2dManipulator();
                 hide(valueHtml);
                 this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {
                     class: 'node-image-editor-sticker-selector',
@@ -26893,7 +26892,7 @@ class SceneExplorer {
         hide(this.htmlFileSelector);
         this.#htmlProperties = createElement('div', { class: 'scene-explorer-properties', hidden: 1, attributes: { tabindex: 1, }, });
         this.#shadowRoot.append(this.#htmlHeader, this.#htmlScene, this.htmlFileSelector, this.#htmlProperties);
-        defineharmonycontextmenu();
+        defineHarmonyContextMenu();
         this.htmlContextMenu = createElement('harmony-context-menu');
         this.#initHtmlHeader();
         this.#initHtmlProperties();
