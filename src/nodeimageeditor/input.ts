@@ -1,11 +1,12 @@
-import { InputOutput } from './inputoutput';
+import { InputOutput, InputOutputType } from './inputoutput';
+import { Node } from './node';
 import { Output } from './output';
 
-const isUndefined = (element) => element == undefined;
+//const isUndefined = (element) => element == undefined;
 
 export class Input extends InputOutput {
-	predecessor?: Output;
-	constructor(node, id, type, size = 1) {
+	#predecessor?: Output;
+	constructor(node: Node, id: string, type: InputOutputType, size = 1) {
 		super(node, id, type, size);
 	}
 
@@ -14,7 +15,7 @@ export class Input extends InputOutput {
 		this._value = value;
 		this.node.invalidate();
 	}
-
+	/*
 	setArrayValue(value, index) {
 		if (index == undefined) {
 			index = this._value.findIndex(isUndefined)
@@ -26,77 +27,77 @@ export class Input extends InputOutput {
 		//TODOv3 check type / index
 		this._value[index] = value;
 		this.node.invalidate();
-	}
+	}*/
 
 	get value() {
-		if (this.predecessor) {
-			return this.predecessor.value;
+		if (this.#predecessor) {
+			return this.#predecessor.value;
 		}
 		return Promise.resolve(this._value);
 	}
 
-	setPredecessor(predecessor) {
+	setPredecessor(predecessor: Output) {
 		if (predecessor) {
 			predecessor.addSuccessor(this);
 		}
 
-		if (this.predecessor && !predecessor) {
-			this.predecessor.removeSuccessor(this);
+		if (this.#predecessor && !predecessor) {
+			this.#predecessor.removeSuccessor(this);
 		}
 
-		this.predecessor = predecessor;
+		this.#predecessor = predecessor;
 		this.node.invalidate();
 	}
 
 	getPredecessor() {
-		return this.predecessor;
+		return this.#predecessor;
 	}
 
 	/* TODO:remove
 	draw(glContext) {
-		if (this.predecessor) {
-			this.predecessor.draw(glContext);
+		if (this.#predecessor) {
+			this.#predecessor.draw(glContext);
 		}
 	}
 
 	getInputTexture(defaultWhite) {
-		if (this.predecessor) {
-			return this.predecessor.outputTexture;
+		if (this.#predecessor) {
+			return this.#predecessor.outputTexture;
 		}
 	}
 	*/
 
 	hasPredecessor() {
-		return this.predecessor ? true : false;
+		return this.#predecessor ? true : false;
 	}
 
 	getType() {
-		if (this.predecessor) {
-			return this.predecessor.getType();
+		if (this.#predecessor) {
+			return this.#predecessor.getType();
 		}
 		return null;
 	}
 
 	getValue() {
-		if (this.predecessor) {
-			return this.predecessor.getValue();
+		if (this.#predecessor) {
+			return this.#predecessor.getValue();
 		}
 		return null;
 	}
 
-	isValid(startingPoint) {
-		if (this.predecessor) {
-			return this.predecessor.isValid(startingPoint);
+	isValid(startingPoint: Node): boolean {
+		if (this.#predecessor) {
+			return this.#predecessor.isValid(startingPoint);
 		}
 		return true;//TODO: check input mandatory
 	}
 
-	async toString(tabs = '') {
+	async toString(tabs = ''): Promise<string> {
 		let ret = [];
 		let tabs1 = tabs + '\t';
 		ret.push(tabs + 'id : ' + this.id);
-		if (this.predecessor) {
-			ret.push(await this.predecessor.toString(tabs1));
+		if (this.#predecessor) {
+			ret.push(await this.#predecessor.toString(tabs1));
 		} else {
 			console.error('no predecessor : ', this);
 		}

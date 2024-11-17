@@ -13546,9 +13546,9 @@ class InputOutput {
     }
 }
 
-const isUndefined = (element) => element == undefined;
+//const isUndefined = (element) => element == undefined;
 class Input extends InputOutput {
-    predecessor;
+    #predecessor;
     constructor(node, id, type, size = 1) {
         super(node, id, type, size);
     }
@@ -13557,20 +13557,22 @@ class Input extends InputOutput {
         this._value = value;
         this.node.invalidate();
     }
+    /*
     setArrayValue(value, index) {
         if (index == undefined) {
-            index = this._value.findIndex(isUndefined);
+            index = this._value.findIndex(isUndefined)
             if (index == -1) {
                 return;
             }
         }
+
         //TODOv3 check type / index
         this._value[index] = value;
         this.node.invalidate();
-    }
+    }*/
     get value() {
-        if (this.predecessor) {
-            return this.predecessor.value;
+        if (this.#predecessor) {
+            return this.#predecessor.value;
         }
         return Promise.resolve(this._value);
     }
@@ -13578,46 +13580,46 @@ class Input extends InputOutput {
         if (predecessor) {
             predecessor.addSuccessor(this);
         }
-        if (this.predecessor && !predecessor) {
-            this.predecessor.removeSuccessor(this);
+        if (this.#predecessor && !predecessor) {
+            this.#predecessor.removeSuccessor(this);
         }
-        this.predecessor = predecessor;
+        this.#predecessor = predecessor;
         this.node.invalidate();
     }
     getPredecessor() {
-        return this.predecessor;
+        return this.#predecessor;
     }
     /* TODO:remove
     draw(glContext) {
-        if (this.predecessor) {
-            this.predecessor.draw(glContext);
+        if (this.#predecessor) {
+            this.#predecessor.draw(glContext);
         }
     }
 
     getInputTexture(defaultWhite) {
-        if (this.predecessor) {
-            return this.predecessor.outputTexture;
+        if (this.#predecessor) {
+            return this.#predecessor.outputTexture;
         }
     }
     */
     hasPredecessor() {
-        return this.predecessor ? true : false;
+        return this.#predecessor ? true : false;
     }
     getType() {
-        if (this.predecessor) {
-            return this.predecessor.getType();
+        if (this.#predecessor) {
+            return this.#predecessor.getType();
         }
         return null;
     }
     getValue() {
-        if (this.predecessor) {
-            return this.predecessor.getValue();
+        if (this.#predecessor) {
+            return this.#predecessor.getValue();
         }
         return null;
     }
     isValid(startingPoint) {
-        if (this.predecessor) {
-            return this.predecessor.isValid(startingPoint);
+        if (this.#predecessor) {
+            return this.#predecessor.isValid(startingPoint);
         }
         return true; //TODO: check input mandatory
     }
@@ -13625,8 +13627,8 @@ class Input extends InputOutput {
         let ret = [];
         let tabs1 = tabs + '\t';
         ret.push(tabs + 'id : ' + this.id);
-        if (this.predecessor) {
-            ret.push(await this.predecessor.toString(tabs1));
+        if (this.#predecessor) {
+            ret.push(await this.#predecessor.toString(tabs1));
         }
         else {
             console.error('no predecessor : ', this);
@@ -14225,7 +14227,7 @@ class Node extends EventTarget {
         let tabs1 = tabs + '\t';
         ret.push(tabs + this.constructor.name);
         for (let input of this.inputs.values()) {
-            if (input.predecessor) {
+            if (input.getPredecessor()) {
                 ret.push(await input.toString(tabs1));
             }
         }
@@ -14369,7 +14371,7 @@ class ApplySticker extends Node {
         let tabs1 = tabs + '\t';
         ret.push(tabs + this.constructor.name);
         for (let input of this.inputs.values()) {
-            if (input.predecessor) {
+            if (input.getPredecessor()) {
                 ret.push(await input.toString(tabs1));
             }
         }
@@ -14467,7 +14469,7 @@ class TextureLookup extends Node {
         let tabs1 = tabs + '\t';
         ret.push(tabs + this.constructor.name);
         for (let input of this.inputs.values()) {
-            if (input.predecessor) {
+            if (input.getPredecessor()) {
                 ret.push(await input.toString(tabs1));
             }
         }
@@ -14962,11 +14964,15 @@ class NodeImageEditorGui {
                 let nodeGui = this.#nodesGui.get(node);
                 let inputs = node.inputs;
                 for (let input of inputs.values()) {
-                    if (input.predecessor) {
-                        let nodeGui2 = this.#nodesGui.get(input.predecessor.node);
+                    if (input.getPredecessor()) {
+                        const predecessorNode = input.getPredecessor()?.node;
+                        if (!predecessorNode) {
+                            continue;
+                        }
+                        let nodeGui2 = this.#nodesGui.get(predecessorNode);
                         if (nodeGui && nodeGui2) {
                             let inputGui = nodeGui._ioGui.get(input);
-                            let outputGui = nodeGui2._ioGui.get(input.predecessor);
+                            let outputGui = nodeGui2._ioGui.get(input.getPredecessor());
                             this.#drawLink(outputGui, inputGui);
                         }
                     }
@@ -15436,7 +15442,7 @@ class Select extends Node {
         let tabs1 = tabs + '\t';
         ret.push(tabs + this.constructor.name);
         for (let input of this.inputs.values()) {
-            if (input.predecessor) {
+            if (input.getPredecessor()) {
                 ret.push(await input.toString(tabs1));
             }
         }

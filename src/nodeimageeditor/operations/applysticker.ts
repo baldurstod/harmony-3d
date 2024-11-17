@@ -101,7 +101,7 @@ export class ApplySticker extends Node {
 		let tabs1 = tabs + '\t';
 		ret.push(tabs + this.constructor.name);
 		for (let input of this.inputs.values()) {
-			if (input.predecessor) {
+			if (input.getPredecessor()) {
 				ret.push(await input.toString(tabs1));
 			}
 		}

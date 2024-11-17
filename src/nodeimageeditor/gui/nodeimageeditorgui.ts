@@ -136,7 +136,7 @@ export class NodeImageEditorGui {
 			}
 		}
 
-		nodes[Symbol.iterator] = function* () {
+		nodes[Symbol.iterator] = function* (): MapIterator<[number, Array<NodeGui>]> {
 			yield* [...this.entries()].sort(
 				(a, b) => {
 					return a[0] < b[0] ? -1 : 1;
@@ -209,11 +209,15 @@ export class NodeImageEditorGui {
 				let nodeGui = this.#nodesGui.get(node);
 				let inputs = node.inputs;
 				for (let input of inputs.values()) {
-					if (input.predecessor) {
-						let nodeGui2 = this.#nodesGui.get(input.predecessor.node);
+					if (input.getPredecessor()) {
+						const predecessorNode = input.getPredecessor()?.node;
+						if (!predecessorNode) {
+							continue;
+						}
+						let nodeGui2 = this.#nodesGui.get(predecessorNode);
 						if (nodeGui && nodeGui2) {
 							let inputGui = nodeGui._ioGui.get(input);
-							let outputGui = nodeGui2._ioGui.get(input.predecessor);
+							let outputGui = nodeGui2._ioGui.get(input.getPredecessor());
 
 							this.#drawLink(outputGui, inputGui);
 						}
