@@ -1,8 +1,9 @@
-import { InputOutput, IO_TYPE_TEXTURE_2D } from './inputoutput';
+import { InputOutput, InputOutputType, IO_TYPE_TEXTURE_2D } from './inputoutput';
+import { Node } from './node';
 
 export class Output extends InputOutput {
-	successors = new Set<InputOutput>();
-	_pixelArray?: Uint8Array;
+	#successors = new Set<InputOutput>();
+	#pixelArray?: Uint8Array;
 
 	get value() {
 		return this.getValue();
@@ -22,33 +23,38 @@ export class Output extends InputOutput {
 	}
 
 	get pixelArray() {
-		let valuePromise = new Promise(async (resolve, reject) => {
+		return this.getPixelArray();
+	}
+
+	getPixelArray(): Promise<Uint8Array | null> {
+		let valuePromise = new Promise<Uint8Array | null>(async (resolve, reject) => {
 			await this.node.validate();
-			if (this.type == IO_TYPE_TEXTURE_2D) {
-				resolve(this._pixelArray);
+			if (this.type == InputOutputType.Texture2D) {
+				resolve(this.#pixelArray ?? null);
 			} else {
-				resolve(this._pixelArray);
+				//TODO: this should resolve to something else
+				resolve(this.#pixelArray ?? null);
 			}
 		}
 		);
 		return valuePromise;
 	}
 
-	addSuccessor(successor) {
-		this.successors.add(successor);
+	addSuccessor(successor: InputOutput) {
+		this.#successors.add(successor);
 	}
 
-	removeSuccessor(successor) {
-		this.successors.delete(successor);
+	removeSuccessor(successor: InputOutput) {
+		this.#successors.delete(successor);
 	}
 
 	hasSuccessor() {
-		return this.successors.size > 0;
+		return this.#successors.size > 0;
 	}
 
 	successorsLength() {
 		let max = 0;
-		for (let successor of this.successors) {
+		for (let successor of this.#successors) {
 			let l = successor.node.successorsLength() + 1;
 			if (l > max) {
 				max = l;
@@ -58,7 +64,7 @@ export class Output extends InputOutput {
 	}
 
 	invalidate() {
-		for (let successor of this.successors) {
+		for (let successor of this.#successors) {
 			successor.node.invalidate();
 		}
 	}
@@ -78,15 +84,11 @@ export class Output extends InputOutput {
 		return null;
 	}
 
-	isValid(startingPoint) {
+	isValid(startingPoint: Node) {
 		if (this.node) {
 			return this.node.isValid(startingPoint);
 		}
 		return false;
-	}
-
-	getPixelArray() {
-
 	}
 
 	async toString(tabs = '') {
@@ -94,6 +96,6 @@ export class Output extends InputOutput {
 	}
 
 	dispose() {
-		delete this._pixelArray;
+		this.#pixelArray = undefined;
 	}
 }
