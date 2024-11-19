@@ -318,6 +318,9 @@ export class Node extends EventTarget {
 	}
 
 	async saveVTF() {
+		if (!this.#pixelArray) {
+			return;
+		}
 		let vtfFile = new VTFFile(2048, 2048);
 		vtfFile.setFlag(TEXTUREFLAGS_EIGHTBITALPHA | TEXTUREFLAGS_NOMIP);
 		await this.redraw({ previewSize: 2048 });
