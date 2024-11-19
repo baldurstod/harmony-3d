@@ -37,4 +37,7 @@ export class CameraControl {
 
 	handleEnabled() {
 	}
+
+	update(delta: number) {
+	}
 }

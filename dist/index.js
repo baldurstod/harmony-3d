@@ -8137,6 +8137,8 @@ class CameraControl {
     }
     handleEnabled() {
     }
+    update(delta) {
+    }
 }
 
 let EPSILON = 0.000001;

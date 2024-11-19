@@ -701,6 +701,7 @@ export declare class CameraControl {
     get camera(): Camera;
     setupCamera(): void;
     handleEnabled(): void;
+    update(delta: number): void;
 }
 
 export declare class CameraFrustum extends Mesh {
