@@ -877,7 +877,7 @@ export declare class Composer {
     renderTarget2: RenderTarget;
     readBuffer: RenderTarget;
     writeBuffer: RenderTarget;
-    constructor(renderTarget: any);
+    constructor(renderTarget?: RenderTarget);
     render(delta: any): void;
     savePicture(filename: any, width: any, height: any): void;
     addPass(pass: any): void;

@@ -15,7 +15,7 @@ export class Composer {
 	renderTarget2: RenderTarget;
 	readBuffer: RenderTarget;
 	writeBuffer: RenderTarget;
-	constructor(renderTarget) {
+	constructor(renderTarget?: RenderTarget) {
 		if (!renderTarget) {
 			let rendererSize = new Graphics().getSize();
 			renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
