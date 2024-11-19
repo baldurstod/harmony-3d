@@ -89,11 +89,11 @@ export class RepositoryEntry {
 
 	getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry> {
 		const childs = new Set<RepositoryEntry>();
-		let current: RepositoryEntry;
+		let current: RepositoryEntry | undefined;
 		const stack: Array<RepositoryEntry> = [this];
 		do {
 			current = stack.pop();
-			if (!childs.has(current) && current) {
+			if (current && !childs.has(current)) {
 				if (filter && current.#matchFilter(filter)) {
 					childs.add(current);
 				}
