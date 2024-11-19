@@ -1936,7 +1936,7 @@ export declare class Entity {
         removeAllControllers(): void;
     }
 
-    export declare function flipPixelArray(pixelArray: any, width: any, height: any): void;
+    export declare function flipPixelArray(pixelArray: Uint8Array, width: number, height: number): void;
 
     export declare class Float32BufferAttribute extends BufferAttribute {
         constructor(array: typeof TypedArrayProto, itemSize: number, offset?: any, length?: any);
@@ -2808,7 +2808,7 @@ export declare class Entity {
         static getEntityName(): string;
     }
 
-    export declare function imageDataToImage(imagedata: any, image?: HTMLImageElement): HTMLImageElement;
+    export declare function imageDataToImage(imagedata: ImageData, image?: HTMLImageElement): HTMLImageElement;
 
     export declare const Includes: {};
 
@@ -4356,19 +4356,18 @@ export declare class Entity {
     }
 
     declare class Output extends InputOutput {
-        successors: Set<InputOutput>;
-        _pixelArray?: Uint8Array;
+        #private;
         get value(): Promise<unknown>;
         getValue(): Promise<unknown>;
-        get pixelArray(): Promise<unknown>;
-        addSuccessor(successor: any): void;
-        removeSuccessor(successor: any): void;
+        get pixelArray(): Promise<Uint8Array | null>;
+        getPixelArray(): Promise<Uint8Array | null>;
+        addSuccessor(successor: InputOutput): void;
+        removeSuccessor(successor: InputOutput): void;
         hasSuccessor(): boolean;
         successorsLength(): number;
         invalidate(): void;
         getType(): void | null;
-        isValid(startingPoint: any): any;
-        getPixelArray(): void;
+        isValid(startingPoint: Node_2): any;
         toString(tabs?: string): Promise<string>;
         dispose(): void;
     }
@@ -4812,7 +4811,7 @@ export declare class Entity {
         doInit(particle: any, elapsedTime: any): void;
     }
 
-    export declare function pow2(n: number): any;
+    export declare function pow2(n: number): number;
 
     export declare class Program {
         #private;
@@ -9273,12 +9272,12 @@ export declare class Entity {
     }
 
     export declare const Zstd: {
-        "__#162@#webAssembly": null;
-        "__#162@#HEAPU8": Uint8Array;
+        "__#164@#webAssembly": null;
+        "__#164@#HEAPU8": Uint8Array;
         decompress(compressedDatas: any): Promise<Uint8Array | null>;
         decompress_ZSTD(compressedDatas: any, uncompressedDatas: any): Promise<any>;
         getWebAssembly(): Promise<null>;
-        "__#162@#initHeap"(): void;
+        "__#164@#initHeap"(): void;
     };
 
     export { }

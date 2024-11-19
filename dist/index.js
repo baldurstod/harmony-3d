@@ -1927,7 +1927,7 @@ function clamp(val, min, max) {
     return Math.min(Math.max(min, val), max);
 }
 function pow2(n) {
-    return (n >= 0 && n < 31) ? (1 << n) : (pow2[n] || (pow2[n] = (2 ** n)));
+    return (n >= 0 && n < 31) ? (1 << n) : Math.pow(n, 2);
 }
 function RemapValClamped(val, A, B, C, D) {
     if (A == B) {
@@ -7721,8 +7721,8 @@ class Renderbuffer {
 }
 
 class RenderTarget {
-    #width;
-    #height;
+    #width = 0;
+    #height = 0;
     #target = GL_FRAMEBUFFER;
     #frameBuffer = new Framebuffer(this.#target);
     #depthRenderbuffer;
@@ -13638,8 +13638,8 @@ class Input extends InputOutput {
 }
 
 class Output extends InputOutput {
-    successors = new Set();
-    _pixelArray;
+    #successors = new Set();
+    #pixelArray;
     get value() {
         return this.getValue();
     }
@@ -13656,29 +13656,33 @@ class Output extends InputOutput {
         return valuePromise;
     }
     get pixelArray() {
+        return this.getPixelArray();
+    }
+    getPixelArray() {
         let valuePromise = new Promise(async (resolve, reject) => {
             await this.node.validate();
-            if (this.type == IO_TYPE_TEXTURE_2D) {
-                resolve(this._pixelArray);
+            if (this.type == InputOutputType.Texture2D) {
+                resolve(this.#pixelArray ?? null);
             }
             else {
-                resolve(this._pixelArray);
+                //TODO: this should resolve to something else
+                resolve(this.#pixelArray ?? null);
             }
         });
         return valuePromise;
     }
     addSuccessor(successor) {
-        this.successors.add(successor);
+        this.#successors.add(successor);
     }
     removeSuccessor(successor) {
-        this.successors.delete(successor);
+        this.#successors.delete(successor);
     }
     hasSuccessor() {
-        return this.successors.size > 0;
+        return this.#successors.size > 0;
     }
     successorsLength() {
         let max = 0;
-        for (let successor of this.successors) {
+        for (let successor of this.#successors) {
             let l = successor.node.successorsLength() + 1;
             if (l > max) {
                 max = l;
@@ -13687,7 +13691,7 @@ class Output extends InputOutput {
         return max;
     }
     invalidate() {
-        for (let successor of this.successors) {
+        for (let successor of this.#successors) {
             successor.node.invalidate();
         }
     }
@@ -13710,13 +13714,11 @@ class Output extends InputOutput {
         }
         return false;
     }
-    getPixelArray() {
-    }
     async toString(tabs = '') {
         return await this.node.toString(tabs);
     }
     dispose() {
-        delete this._pixelArray;
+        this.#pixelArray = undefined;
     }
 }
 
@@ -13748,7 +13750,7 @@ class VTFResource {
     #type;
     #flag;
     #data;
-    #length;
+    #length = 0;
     constructor(type, flag = 0) {
         this.#type = type;
         this.#flag = flag;
@@ -13768,6 +13770,9 @@ class VTFResource {
     }
     get length() {
         return this.#length;
+    }
+    get flag() {
+        return this.#flag;
     }
 }
 class VTFFile {
@@ -13859,11 +13864,11 @@ class VTFWriter {
     }
     static write(vtffile) {
         //TODO: check vtffile
-        let writer = new BinaryReader(new Uint8Array(this._computeLength(vtffile)));
-        this._writeHeader(writer, vtffile);
+        let writer = new BinaryReader(new Uint8Array(this.#computeLength(vtffile)));
+        this.#writeHeader(writer, vtffile);
         return writer.buffer;
     }
-    static _computeLength(vtffile) {
+    static #computeLength(vtffile) {
         let result = 80 + vtffile.numResources * 8;
         let resArray = vtffile.resources;
         for (let i in resArray) {
@@ -13874,7 +13879,7 @@ class VTFWriter {
         }
         return result;
     }
-    static _writeHeader(writer, vtffile) {
+    static #writeHeader(writer, vtffile) {
         let fixedHeaderLength = 80;
         writer.seek(0);
         writer.setUint32(0x00465456); //VTF\0
@@ -13918,22 +13923,22 @@ class VTFWriter {
             }
             else {
                 writer.setUint32(dataOffset);
-                this._writeResource(writer, vtffile, resource, dataOffset);
+                this.#writeResource(writer, vtffile, resource, dataOffset);
                 dataOffset += resource.length;
             }
             resHeaderOffset += 8;
         }
     }
-    static _writeResource(writer, vtffile, resource, dataOffset) {
+    static #writeResource(writer, vtffile, resource, dataOffset) {
         switch (resource.type) {
             case LOW_RES_IMAGE:
                 break;
             case HIGH_RES_IMAGE:
-                this._writeHighResImage(writer, vtffile, resource, dataOffset);
+                this.#writeHighResImage(writer, vtffile, resource, dataOffset);
                 break;
         }
     }
-    static _writeHighResImage(writer, vtffile, resource, dataOffset) {
+    static #writeHighResImage(writer, vtffile, resource, dataOffset) {
         writer.seek(dataOffset);
         writer.setBytes(vtffile.getMipMaps()[0][0][0][0]);
     }
@@ -14214,6 +14219,9 @@ class Node extends EventTarget {
         this.previewPic.height = PREVIEW_PICTURE_SIZE;
     }
     async saveVTF() {
+        if (!this.#pixelArray) {
+            return;
+        }
         let vtfFile = new VTFFile(2048, 2048);
         vtfFile.setFlag(TEXTUREFLAGS_EIGHTBITALPHA | TEXTUREFLAGS_NOMIP);
         await this.redraw({ previewSize: 2048 });
