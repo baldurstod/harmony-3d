@@ -1,21 +1,19 @@
 import { ShaderEventTarget } from '../shaders/shadereventtarget';
 
-import { WebGLShaderSource } from '../webgl/shadersource';
+import { ShaderType, WebGLShaderSource } from '../webgl/shadersource';
 import { Shaders } from '../shaders/shaders';
 
 export class ShaderManager {
 	static #displayCompileError = false;
-	static #htmlCompileError;
-	static #htmlCompileErrorContent;
 	static #shaderList = new Map<string, WebGLShaderSource>();
 	static #customShaderList = new Map<string, WebGLShaderSource>();
 
-	static addSource(type, name, source) {
+	static addSource(type: ShaderType, name: string, source: string) {
 		this.#shaderList.set(name, new WebGLShaderSource(type, source));
 		ShaderEventTarget.dispatchEvent(new CustomEvent('shaderadded'));
 	}
 
-	static getShaderSource(type, name, invalidCustomShaders = false): WebGLShaderSource {
+	static getShaderSource(type: ShaderType, name: string, invalidCustomShaders = false): WebGLShaderSource | undefined {
 		if (this.#shaderList.get(name) === undefined) {
 			let source = Shaders[name];
 			if (source) {
@@ -29,7 +27,7 @@ export class ShaderManager {
 		return customSource && (customSource.isValid() ?? invalidCustomShaders) ? customSource : source;
 	}
 
-	static setCustomSource(type, name, source) {
+	static setCustomSource(type: ShaderType, name: string, source: string) {
 		if (source == '') {
 			this.#customShaderList.delete(name);
 		} else {
@@ -39,7 +37,7 @@ export class ShaderManager {
 		}
 	}
 
-	static getCustomSourceAnnotations(name) {
+	static getCustomSourceAnnotations(name: string) {
 		const customSource = this.#customShaderList.get(name);
 		if (customSource) {
 			return customSource.getCompileError().concat(customSource.getIncludeAnnotations());
@@ -47,7 +45,7 @@ export class ShaderManager {
 		return null;
 	}
 
-	static getIncludeAnnotations(includeName) {
+	static getIncludeAnnotations(includeName: string) {
 		let annotations;
 		for (let [shaderName, shaderSource] of this.#shaderList) {
 			annotations = this.#getIncludeAnnotations(includeName, shaderName, shaderSource);
@@ -63,7 +61,7 @@ export class ShaderManager {
 		}
 	}
 
-	static #getIncludeAnnotations(includeName, shaderName, shaderSource) {
+	static #getIncludeAnnotations(includeName: string, shaderName: string, shaderSource: WebGLShaderSource) {
 		let errorArray = [];
 		if (shaderSource.isErroneous()) {
 			if (shaderSource.containsInclude(includeName)) {
@@ -103,7 +101,7 @@ export class ShaderManager {
 		return this.#displayCompileError;
 	}
 
-	static setCompileError(shaderName, shaderInfoLog) {
+	static setCompileError(shaderName: string, shaderInfoLog: string) {
 		return;
 	}
 }
