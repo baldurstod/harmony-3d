@@ -1,1 +1,1 @@
-export const Shaders = {}
+export const Shaders: { [key: string]: string } = {}
