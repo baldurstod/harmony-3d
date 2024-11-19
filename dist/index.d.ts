@@ -3574,6 +3574,19 @@ export declare class Entity {
         originalName: any;
     }
 
+    export declare class MergeRepository implements Repository {
+        #private;
+        constructor(base: Repository);
+        get name(): string;
+        getFile(filename: string): Promise<RepositoryArrayBufferResponse>;
+        getFileAsText(filename: string): Promise<RepositoryTextResponse>;
+        getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
+        getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
+        getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+        pushRepository(repo: Repository): Promise<void>;
+        unshiftRepository(repo: Repository): Promise<void>;
+    }
+
     export declare class Mesh extends Entity {
         #private;
         renderMode: number;
@@ -6062,11 +6075,11 @@ export declare class Entity {
 
     export declare class ShaderManager {
         #private;
-        static addSource(type: any, name: any, source: any): void;
-        static getShaderSource(type: any, name: any, invalidCustomShaders?: boolean): WebGLShaderSource;
-        static setCustomSource(type: any, name: any, source: any): void;
-        static getCustomSourceAnnotations(name: any): any[] | null;
-        static getIncludeAnnotations(includeName: any): {
+        static addSource(type: ShaderType, name: string, source: string): void;
+        static getShaderSource(type: ShaderType, name: string, invalidCustomShaders?: boolean): WebGLShaderSource | undefined;
+        static setCustomSource(type: ShaderType, name: string, source: string): void;
+        static getCustomSourceAnnotations(name: string): any[] | null;
+        static getIncludeAnnotations(includeName: string): {
             type: any;
             column: any;
             row: number;
@@ -6076,7 +6089,7 @@ export declare class Entity {
         static resetShadersSource(): void;
         static set displayCompileError(displayCompileError: boolean);
         static get displayCompileError(): boolean;
-        static setCompileError(shaderName: any, shaderInfoLog: any): void;
+        static setCompileError(shaderName: string, shaderInfoLog: string): void;
     }
 
     export declare class ShaderMaterial extends Material {
@@ -6098,7 +6111,9 @@ export declare class Entity {
         High = 2
     }
 
-    export declare const Shaders: {};
+    export declare const Shaders: {
+        [key: string]: string;
+    };
 
     export declare class ShaderToyMaterial extends Material {
         constructor(params?: any);
@@ -9006,7 +9021,7 @@ export declare class Entity {
         #private;
         setValue: (context: WebGLAnyRenderingContext, value: any) => void;
         constructor(activeInfo: WebGLActiveInfo, uniformLocation: WebGLUniformLocation);
-        setTextureUnit(textureUnit: any): void;
+        setTextureUnit(textureUnit: number): void;
         isTextureSampler(): boolean;
         getSize(): number;
     }
@@ -9272,12 +9287,12 @@ export declare class Entity {
     }
 
     export declare const Zstd: {
-        "__#164@#webAssembly": null;
-        "__#164@#HEAPU8": Uint8Array;
+        "__#165@#webAssembly": null;
+        "__#165@#HEAPU8": Uint8Array;
         decompress(compressedDatas: any): Promise<Uint8Array | null>;
         decompress_ZSTD(compressedDatas: any, uncompressedDatas: any): Promise<any>;
         getWebAssembly(): Promise<null>;
-        "__#164@#initHeap"(): void;
+        "__#165@#initHeap"(): void;
     };
 
     export { }
