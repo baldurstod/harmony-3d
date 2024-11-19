@@ -52,7 +52,7 @@ export class Composer {
 				this.writeBuffer = swapBuffer;
 			}
 
-			pass.render(Graphics, this.readBuffer, this.writeBuffer, i == lastPass, delta);
+			pass.render(new Graphics(), this.readBuffer, this.writeBuffer, i == lastPass, delta);
 
 		}
 	}

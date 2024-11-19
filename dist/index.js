@@ -8076,7 +8076,7 @@ class Composer {
                 this.readBuffer = this.writeBuffer;
                 this.writeBuffer = swapBuffer;
             }
-            pass.render(Graphics, this.readBuffer, this.writeBuffer, i == lastPass, delta);
+            pass.render(new Graphics(), this.readBuffer, this.writeBuffer, i == lastPass, delta);
         }
     }
     savePicture(filename, width, height) {
