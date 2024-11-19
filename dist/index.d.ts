@@ -178,8 +178,8 @@ export declare class Bone extends Entity {
     get refQuaternion(): vec4;
     set scale(scale: vec3);
     get scale(): vec3;
-    set parent(parent: Entity | null);
-    get parent(): Entity | null;
+    set parent(parent: Entity);
+    get parent(): Entity;
     set skeleton(skeleton: any);
     get skeleton(): any;
     set parentSkeletonBone(parentSkeletonBone: any);
@@ -226,7 +226,7 @@ export declare class Bone extends Entity {
             i18n: string;
             submenu: any;
         };
-        entitynull_1: null;
+        entitynull_1: any;
         position: {
             i18n: string;
             f: () => void;
@@ -239,7 +239,7 @@ export declare class Bone extends Entity {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_2: null;
+        entitynull_2: any;
         quaternion: {
             i18n: string;
             f: () => void;
@@ -255,7 +255,7 @@ export declare class Bone extends Entity {
             i18n: string;
             f: () => quat;
         };
-        entitynull_3: null;
+        entitynull_3: any;
         scale: {
             i18n: string;
             f: () => void;
@@ -264,7 +264,7 @@ export declare class Bone extends Entity {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_4: null;
+        entitynull_4: any;
         wireframe: {
             i18n: string;
             selected: any;
@@ -285,10 +285,10 @@ export declare class Bone extends Entity {
             submenu: {};
         };
     } & {
-        Bone_1: null;
+        Bone_1: any;
         unlock: {
             i18n: string;
-            f: (entity: any) => undefined;
+            f: (entity: any) => any;
         };
     };
     toJSON(): any;
@@ -352,7 +352,7 @@ export declare class Box extends Mesh {
             i18n: string;
             submenu: any;
         };
-        entitynull_1: null;
+        entitynull_1: any;
         position: {
             i18n: string;
             f: () => void;
@@ -365,7 +365,7 @@ export declare class Box extends Mesh {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_2: null;
+        entitynull_2: any;
         quaternion: {
             i18n: string;
             f: () => void;
@@ -381,7 +381,7 @@ export declare class Box extends Mesh {
             i18n: string;
             f: () => quat;
         };
-        entitynull_3: null;
+        entitynull_3: any;
         scale: {
             i18n: string;
             f: () => void;
@@ -390,7 +390,7 @@ export declare class Box extends Mesh {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_4: null;
+        entitynull_4: any;
         wireframe: {
             i18n: string;
             selected: any;
@@ -411,7 +411,7 @@ export declare class Box extends Mesh {
             submenu: {};
         };
     } & {
-        Box_1: null;
+        Box_1: any;
         width: {
             i18n: string;
             f: () => void;
@@ -447,7 +447,7 @@ export declare class BufferAttribute {
     _buffer: WebGLBuffer;
     divisor: number;
     constructor(array: typeof TypedArrayProto, itemSize: number);
-    get type(): number;
+    get type(): any;
     set usage(usage: BufferUsage);
     set target(target: any);
     set array(array: any);
@@ -465,7 +465,7 @@ export declare class BufferGeometry {
     dirty: boolean;
     count: number;
     properties: Map<string, any>;
-    getAttribute(name: string): BufferAttribute | undefined;
+    getAttribute(name: string): BufferAttribute;
     setAttribute(name: string, attribute: BufferAttribute): void;
     hasAttribute(name: string): boolean;
     deleteAttribute(name: string): void;
@@ -592,7 +592,7 @@ export declare class Camera extends Entity {
             i18n: string;
             submenu: any;
         };
-        entitynull_1: null;
+        entitynull_1: any;
         position: {
             i18n: string;
             f: () => void;
@@ -605,7 +605,7 @@ export declare class Camera extends Entity {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_2: null;
+        entitynull_2: any;
         quaternion: {
             i18n: string;
             f: () => void;
@@ -621,7 +621,7 @@ export declare class Camera extends Entity {
             i18n: string;
             f: () => quat;
         };
-        entitynull_3: null;
+        entitynull_3: any;
         scale: {
             i18n: string;
             f: () => void;
@@ -630,7 +630,7 @@ export declare class Camera extends Entity {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_4: null;
+        entitynull_4: any;
         wireframe: {
             i18n: string;
             selected: any;
@@ -651,7 +651,7 @@ export declare class Camera extends Entity {
             submenu: {};
         };
     } & {
-        camera1: null;
+        camera1: any;
         cameraPerspective: {
             i18n: string;
             selected: boolean;
@@ -691,10 +691,10 @@ export declare class Camera extends Entity {
     is(s: string): boolean;
 }
 
-declare class CameraControl {
+export declare class CameraControl {
     #private;
     constructor(camera?: Camera, htmlElement?: HTMLElement);
-    get htmlElement(): HTMLElement | undefined;
+    get htmlElement(): HTMLElement;
     set enabled(enabled: boolean);
     get enabled(): boolean;
     set camera(camera: Camera);
@@ -829,7 +829,7 @@ export declare class ColorInterpolate extends Operator {
     fadeStartTime: number;
     fadeEndTime: number;
     easeInAndOut: boolean;
-    fieldOutput: null;
+    fieldOutput: any;
     invTime: number;
     constructor(system: any);
     _update(): void;
@@ -916,7 +916,7 @@ export declare class Cone extends Mesh {
             i18n: string;
             submenu: any;
         };
-        entitynull_1: null;
+        entitynull_1: any;
         position: {
             i18n: string;
             f: () => void;
@@ -929,7 +929,7 @@ export declare class Cone extends Mesh {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_2: null;
+        entitynull_2: any;
         quaternion: {
             i18n: string;
             f: () => void;
@@ -945,7 +945,7 @@ export declare class Cone extends Mesh {
             i18n: string;
             f: () => quat;
         };
-        entitynull_3: null;
+        entitynull_3: any;
         scale: {
             i18n: string;
             f: () => void;
@@ -954,7 +954,7 @@ export declare class Cone extends Mesh {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_4: null;
+        entitynull_4: any;
         wireframe: {
             i18n: string;
             selected: any;
@@ -975,7 +975,7 @@ export declare class Cone extends Mesh {
             submenu: {};
         };
     } & {
-        Cone_1: null;
+        Cone_1: any;
         radius: {
             i18n: string;
             f: () => void;
@@ -1041,13 +1041,13 @@ declare class ControlPoint extends Entity {
     fVector: vec3;
     uVector: vec3;
     rVector: vec3;
-    parentModel: null;
+    parentModel: any;
     lastComputed: number;
     getWorldTransformation(mat?: mat4): mat4;
     getWorldQuaternion(q?: quat): quat;
     parentChanged(parent: Entity | null): void;
-    set parentControlPoint(parentControlPoint: ControlPoint | undefined);
-    get parentControlPoint(): ControlPoint | undefined;
+    set parentControlPoint(parentControlPoint: ControlPoint);
+    get parentControlPoint(): ControlPoint;
     step(): void;
     resetDelta(): void;
     deltaPosFrom(other: ControlPoint, out?: vec3): vec3;
@@ -1111,7 +1111,7 @@ export declare class CreateSequentialPath extends Operator {
     doInit(particle: any, elapsedTime: any): void;
 }
 
-export declare function createTexture(): WebGLTexture | null;
+export declare function createTexture(): WebGLTexture;
 
 export declare class CreateWithinBox extends Operator {
     vecMin: vec3;
@@ -1186,11 +1186,11 @@ export declare class CubicBezierCurve extends Curve {
 }
 
 declare class Curve {
-    controlPoints: never[];
+    controlPoints: any[];
     arcLength: number;
     getPosition(t: any, out?: vec3): vec3;
     getArcLength(divisions?: number): number;
-    getPoints(divisions?: number): ([number, number, number] | Float32Array)[];
+    getPoints(divisions?: number): any[];
     getAppropriateDivision(division: any): any;
 }
 
@@ -1254,7 +1254,7 @@ export declare class Cylinder extends Mesh {
             i18n: string;
             submenu: any;
         };
-        entitynull_1: null;
+        entitynull_1: any;
         position: {
             i18n: string;
             f: () => void;
@@ -1267,7 +1267,7 @@ export declare class Cylinder extends Mesh {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_2: null;
+        entitynull_2: any;
         quaternion: {
             i18n: string;
             f: () => void;
@@ -1283,7 +1283,7 @@ export declare class Cylinder extends Mesh {
             i18n: string;
             f: () => quat;
         };
-        entitynull_3: null;
+        entitynull_3: any;
         scale: {
             i18n: string;
             f: () => void;
@@ -1292,7 +1292,7 @@ export declare class Cylinder extends Mesh {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_4: null;
+        entitynull_4: any;
         wireframe: {
             i18n: string;
             selected: any;
@@ -1313,7 +1313,7 @@ export declare class Cylinder extends Mesh {
             submenu: {};
         };
     } & {
-        Cylinder_1: null;
+        Cylinder_1: any;
         radius: {
             i18n: string;
             f: () => void;
@@ -1381,7 +1381,7 @@ export declare class Decal extends Mesh {
             i18n: string;
             submenu: any;
         };
-        entitynull_1: null;
+        entitynull_1: any;
         position: {
             i18n: string;
             f: () => void;
@@ -1394,7 +1394,7 @@ export declare class Decal extends Mesh {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_2: null;
+        entitynull_2: any;
         quaternion: {
             i18n: string;
             f: () => void;
@@ -1410,7 +1410,7 @@ export declare class Decal extends Mesh {
             i18n: string;
             f: () => quat;
         };
-        entitynull_3: null;
+        entitynull_3: any;
         scale: {
             i18n: string;
             f: () => void;
@@ -1419,7 +1419,7 @@ export declare class Decal extends Mesh {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_4: null;
+        entitynull_4: any;
         wireframe: {
             i18n: string;
             selected: any;
@@ -1440,7 +1440,7 @@ export declare class Decal extends Mesh {
             submenu: {};
         };
     } & {
-        StaticDecal_1: null;
+        StaticDecal_1: any;
         size: {
             i18n: string;
             f: () => void;
@@ -1482,7 +1482,7 @@ export declare class DistanceBetweenCPs extends Operator {
     losScale: number;
     collisionGroupName: string;
     los: boolean;
-    setMethod: null;
+    setMethod: any;
     _paramChanged(paramName: any, value: any): void;
     doOperate(particle: any, elapsedTime: any): void;
 }
@@ -1506,7 +1506,7 @@ export declare class DistanceToCP extends Operator {
     collisionGroupName: string;
     maxTraceLength: number;
     losScale: number;
-    setMethod: null;
+    setMethod: any;
     activeRange: boolean;
     additive: boolean;
     scaleInitialRange: boolean;
@@ -1628,7 +1628,7 @@ export declare class Entity {
     togglePlaying(): void;
     do(action: string, params?: any): void;
     parentChanged(parent: Entity | null): void;
-    getParentIterator(): Generator<Entity, null | undefined, unknown>;
+    getParentIterator(): Generator<Entity, any, unknown>;
     remove(): void;
     removeThis(): void;
     removeChildren(): void;
@@ -1638,7 +1638,7 @@ export declare class Entity {
     set parent(parent: Entity | null);
     get parent(): Entity | null;
     get root(): Entity;
-    addChild(child: Entity): Entity | undefined;
+    addChild(child: Entity): Entity;
     addChilds(...childs: any[]): void;
     isParent(parent: Entity): any;
     removeChild(child: Entity): void;
@@ -1661,7 +1661,7 @@ export declare class Entity {
          *
          * @return {void}.
          */
-     lookAt(target: vec3, upVector?: undefined): void;
+     lookAt(target: vec3, upVector?: any): void;
      getMeshList(): Set<Entity>;
      showOutline(show: boolean, color?: vec4): void;
      getAllChilds(includeSelf: boolean): Set<unknown>;
@@ -1714,7 +1714,7 @@ export declare class Entity {
              i18n: string;
              submenu: any;
          };
-         entitynull_1: null;
+         entitynull_1: any;
          position: {
              i18n: string;
              f: () => void;
@@ -1727,7 +1727,7 @@ export declare class Entity {
              i18n: string;
              f: () => vec3;
          };
-         entitynull_2: null;
+         entitynull_2: any;
          quaternion: {
              i18n: string;
              f: () => void;
@@ -1743,7 +1743,7 @@ export declare class Entity {
              i18n: string;
              f: () => quat;
          };
-         entitynull_3: null;
+         entitynull_3: any;
          scale: {
              i18n: string;
              f: () => void;
@@ -1752,7 +1752,7 @@ export declare class Entity {
              i18n: string;
              f: () => vec3;
          };
-         entitynull_4: null;
+         entitynull_4: any;
          wireframe: {
              i18n: string;
              selected: any;
@@ -1788,7 +1788,7 @@ export declare class Entity {
      copy(source: any): void;
      toJSON(): any;
      static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Entity>;
-     createChild(entityName: any, parameters: any): Promise<Entity | Material | undefined>;
+     createChild(entityName: any, parameters: any): Promise<Entity | Material>;
      fromJSON(json: any): void;
      static getEntityName(): string;
      is(s: string): boolean;
@@ -1894,9 +1894,9 @@ export declare class Entity {
 
     export declare function FileNameFromPath(path: string): string;
 
-    export declare function fillCheckerTexture(texture: Texture, color: number[] | undefined, width: number | undefined, height: number | undefined, needCubeMap: boolean): Texture;
+    export declare function fillCheckerTexture(texture: Texture, color: number[], width: number, height: number, needCubeMap: boolean): Texture;
 
-    export declare function fillFlatTexture(texture: Texture, color: number[] | undefined, needCubeMap: boolean): Texture;
+    export declare function fillFlatTexture(texture: Texture, color: number[], needCubeMap: boolean): Texture;
 
     export declare function fillNoiseTexture(texture: Texture, width?: number, height?: number, needCubeMap?: boolean): Texture;
 
@@ -1990,11 +1990,11 @@ export declare class Entity {
 
     export declare function generateRandomUUID(): string;
 
-    export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | undefined;
+    export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
 
     export declare function getIncludeList(): MapIterator<string>;
 
-    export declare function getIncludeSource(name: string): string | undefined;
+    export declare function getIncludeSource(name: string): string;
 
     export declare function getRandomInt(max: any): number;
 
@@ -2575,7 +2575,7 @@ export declare class Entity {
         dragging: boolean;
         constructor();
         initCanvas(contextAttributes?: any): this;
-        pickEntity(x: number, y: number): Entity | null;
+        pickEntity(x: number, y: number): Entity;
         mouseDown(event: any): void;
         mouseMove(event: any): void;
         mouseUp(event: any): void;
@@ -2615,9 +2615,9 @@ export declare class Entity {
         play(): void;
         pause(): void;
         isRunning(): boolean;
-        createFramebuffer(): WebGLFramebuffer | null;
+        createFramebuffer(): WebGLFramebuffer;
         deleteFramebuffer(frameBuffer: any): void;
-        createRenderbuffer(): WebGLRenderbuffer | null;
+        createRenderbuffer(): WebGLRenderbuffer;
         deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void;
         setFramebuffer(framebuffer: any): void;
         pushRenderTarget(renderTarget: RenderTarget): void;
@@ -2626,7 +2626,7 @@ export declare class Entity {
         savePictureAsFile(filename: string): Promise<File>;
         toBlob(): Promise<Blob>;
         _savePicture(filename: any): void;
-        startRecording(frameRate: number | undefined, bitsPerSecond: any): void;
+        startRecording(frameRate: number, bitsPerSecond: any): void;
         stopRecording(fileName?: string): void;
         get ready(): Promise<void>;
         isReady(): Promise<void>;
@@ -2694,7 +2694,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -2707,7 +2707,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -2723,7 +2723,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -2732,7 +2732,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -2753,7 +2753,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Grid_1: null;
+            Grid_1: any;
             size: {
                 i18n: string;
                 f: () => void;
@@ -2791,14 +2791,6 @@ export declare class Entity {
         execute(variables: any, proxyParams: any, time: any): void;
     }
 
-    declare class Hitbox {
-        name: string;
-        boundingBoxMin: vec3;
-        boundingBoxMax: vec3;
-        parent: Entity;
-        constructor(name: string, boundingBoxMin: vec3, boundingBoxMax: vec3, parent: Entity);
-    }
-
     export declare class HitboxHelper extends Entity {
         #private;
         constructor();
@@ -2823,7 +2815,7 @@ export declare class Entity {
     }
 
     export declare class InitFloat extends Operator {
-        setMethod: null;
+        setMethod: any;
         constructor(system: any);
         _paramChanged(paramName: any, value: any): void;
         doInit(particle: any, elapsedTime: any): void;
@@ -2875,7 +2867,7 @@ export declare class Entity {
     }
 
     export declare class InitVec extends Operator {
-        setMethod: null;
+        setMethod: any;
         scaleInitialRange: boolean;
         fieldOutput: number;
         _paramChanged(paramName: any, value: any): void;
@@ -2888,10 +2880,10 @@ export declare class Entity {
         set value(value: any);
         get value(): any;
         setPredecessor(predecessor: Output): void;
-        getPredecessor(): Output | undefined;
+        getPredecessor(): Output;
         hasPredecessor(): boolean;
-        getType(): void | null;
-        getValue(): Promise<unknown> | null;
+        getType(): void;
+        getValue(): Promise<unknown>;
         isValid(startingPoint: Node_2): boolean;
         toString(tabs?: string): Promise<string>;
     }
@@ -2987,13 +2979,13 @@ export declare class Entity {
     }
 
     export declare class JSONLoader {
-        static fromJSON(rootEntity: object): Promise<Entity | Material | undefined>;
-        static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | undefined>;
+        static fromJSON(rootEntity: object): Promise<Entity | Material>;
+        static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material>;
         static registerEntity(ent: typeof Entity | typeof Material): void;
     }
 
     export declare class KeepOnlyLastChild extends Entity {
-        addChild(child: Entity): Entity | undefined;
+        addChild(child: Entity): Entity;
         static getEntityName(): string;
     }
 
@@ -3027,8 +3019,8 @@ export declare class Entity {
         shadow: LightShadow;
         isLight: boolean;
         constructor(parameters?: any);
-        set color(color: vec3);
-        get color(): vec3;
+        set color(color: any);
+        get color(): any;
         set intensity(intensity: any);
         get intensity(): any;
         set range(range: any);
@@ -3064,7 +3056,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -3077,7 +3069,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -3093,7 +3085,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -3102,7 +3094,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -3123,7 +3115,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Light_1: null;
+            Light_1: any;
             color: {
                 i18n: string;
                 f: () => void;
@@ -3307,7 +3299,7 @@ export declare class Entity {
     declare class MapEntity extends Entity {
         static incrementalId: number;
         classname: string;
-        outputs: never[];
+        outputs: any[];
         m_vecVelocity: vec3;
         m_flMoveDoneTime: number;
         m_flLocalTime: number;
@@ -3326,7 +3318,7 @@ export declare class Entity {
         set map(map: any);
         get map(): any;
         move(delta: any): void;
-        getAbsOrigin(): null;
+        getAbsOrigin(): any;
         getLocalOrigin(): vec3;
         getLocalVelocity(): vec3;
         update(map: any, delta: any): void;
@@ -3468,27 +3460,6 @@ export declare class Entity {
         models: any;
     }
 
-    declare class MdlStudioAnim {
-        animValuePtrRot: any;
-        animValuePtrPos: any;
-        rawpos: any;
-        rawrot: any;
-        rawrot2: any;
-        flags: any;
-        bone: any;
-        nextOffset: any;
-        getRotValue(): any;
-        getPosValue(): any;
-        getQuaternion48(): any;
-        getQuaternion64(): any;
-        /**
-         * TODO
-         */
-        getRot(rot: any, mdl: any, bone: any, frame: any): any;
-        getPos(pos: any, mdl: any, bone: any, frame: any): any;
-        readValue(mdl: any, frame: any, offset: any, boneid: any, memberid: any): any;
-    }
-
     declare class MdlStudioAutoLayer {
         iSequence: any;
         iPose: any;
@@ -3513,12 +3484,12 @@ export declare class Entity {
     }
 
     declare class MdlStudioSeqDesc {
-        paramindex: never[];
-        paramstart: never[];
-        paramend: never[];
-        blend: never[];
-        weightlist: never[];
-        groupsize: never[];
+        paramindex: any[];
+        paramstart: any[];
+        paramend: any[];
+        blend: any[];
+        weightlist: any[];
+        groupsize: any[];
         mdl: any;
         previousTime: number;
         currentTime: number;
@@ -3560,12 +3531,12 @@ export declare class Entity {
         cycleposeindex: any;
         activityName: any;
         keyvalueText: any;
-        pBoneweight(boneIndex: any): never;
-        getBlend(x: any, y: any): never;
+        pBoneweight(boneIndex: any): any;
+        getBlend(x: any, y: any): any;
         poseKey(iParam: any, iAnim: any): any;
         getAutoLayer(autoLayerIndex: any): MdlStudioAutoLayer;
         get length(): number;
-        play(dynamicProp: any): null | undefined;
+        play(dynamicProp: any): any;
         processEvent(event: any, dynamicProp: any): void;
     }
 
@@ -3606,8 +3577,8 @@ export declare class Entity {
         setDefine(define: string, value?: string | number): void;
         removeDefine(define: string): void;
         exportObj(): {
-            f: never[];
-            v: never[];
+            f: any[];
+            v: any[];
         };
         dispose(): void;
         toString(): string;
@@ -3643,7 +3614,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -3656,7 +3627,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -3672,7 +3643,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -3681,7 +3652,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -3708,14 +3679,14 @@ export declare class Entity {
     }
 
     export declare class MeshBasicMaterial extends Material {
-        map: null;
-        lightMap: null;
+        map: any;
+        lightMap: any;
         lightMapIntensity: number;
-        aoMap: null;
+        aoMap: any;
         aoMapIntensity: number;
-        specularMap: null;
-        alphaMap: null;
-        envMap: null;
+        specularMap: any;
+        alphaMap: any;
+        envMap: any;
         combine: number;
         reflectivity: number;
         refractionRatio: number;
@@ -3756,14 +3727,14 @@ export declare class Entity {
     }
 
     export declare class MeshPhongMaterial extends Material {
-        map: null;
-        lightMap: null;
+        map: any;
+        lightMap: any;
         lightMapIntensity: number;
-        aoMap: null;
+        aoMap: any;
         aoMapIntensity: number;
-        specularMap: null;
-        alphaMap: null;
-        envMap: null;
+        specularMap: any;
+        alphaMap: any;
+        envMap: any;
         combine: number;
         reflectivity: number;
         refractionRatio: number;
@@ -3812,7 +3783,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -3825,7 +3796,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -3841,7 +3812,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -3850,7 +3821,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -3871,7 +3842,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Metaball_1: null;
+            Metaball_1: any;
             radius: {
                 i18n: string;
                 f: () => void;
@@ -3915,7 +3886,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -3928,7 +3899,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -3944,7 +3915,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -3953,7 +3924,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -3974,7 +3945,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Metaballs_1: null;
+            Metaballs_1: any;
             add_ball: {
                 i18n: string;
                 f: () => void;
@@ -4070,11 +4041,11 @@ export declare class Entity {
         constructor(editor: NodeImageEditor, params?: any);
         addInput(inputId: any, inputType: any, size?: number): Input;
         addOutput(outputId: any, outputType: any): Output;
-        getInput(inputId: any): Input | undefined;
+        getInput(inputId: any): Input;
         getOutput(outputId: any): any;
         operate(context?: any): Promise<void>;
         addParam(param: NodeParam): void;
-        getParam(paramName: string): NodeParam | undefined;
+        getParam(paramName: string): NodeParam;
         getValue(paramName: string): any;
         setParams(params?: any): void;
         setParam(paramName: any, paramValue: any, paramIndex?: any): void;
@@ -4221,12 +4192,12 @@ export declare class Entity {
         camera: Camera;
         constructor();
         exportMeshes({ meshes, exportTexture, singleMesh, digits, subdivisions, mergeTolerance }?: {
-            meshes?: Set<Entity> | undefined;
-            exportTexture?: boolean | undefined;
-            singleMesh?: boolean | undefined;
-            digits?: number | undefined;
-            subdivisions?: number | undefined;
-            mergeTolerance?: number | undefined;
+            meshes?: Set<Entity>;
+            exportTexture?: boolean;
+            singleMesh?: boolean;
+            digits?: number;
+            subdivisions?: number;
+            mergeTolerance?: number;
         }): Promise<Set<File>>;
     }
 
@@ -4283,7 +4254,7 @@ export declare class Entity {
         operateParticle(particle: any, elapsedTime: any): void;
         forceParticle(particle: any, elapsedTime: any, accumulatedForces: any): void;
         constraintParticle(particle: any): void;
-        emitParticle(creationTime: any, elapsedTime: any): Source2Particle | undefined;
+        emitParticle(creationTime: any, elapsedTime: any): any;
         renderParticle(particleList: any, elapsedTime: any, material: any): void;
         checkIfOperatorShouldRun(): boolean;
         fadeInOut(): number;
@@ -4326,7 +4297,7 @@ export declare class Entity {
         set dampingFactor(dampingFactor: number);
         get dampingFactor(): number;
         setupCamera(): void;
-        update(delta?: number): boolean | undefined;
+        update(delta?: number): boolean;
         set autoRotateSpeed(speed: any);
         get zoomScale(): number;
         handleMouseMovePan(event: any): void;
@@ -4372,14 +4343,14 @@ export declare class Entity {
         #private;
         get value(): Promise<unknown>;
         getValue(): Promise<unknown>;
-        get pixelArray(): Promise<Uint8Array | null>;
+        get pixelArray(): Promise<Uint8Array>;
         getPixelArray(): Promise<Uint8Array | null>;
         addSuccessor(successor: InputOutput): void;
         removeSuccessor(successor: InputOutput): void;
         hasSuccessor(): boolean;
         successorsLength(): number;
         invalidate(): void;
-        getType(): void | null;
+        getType(): void;
         isValid(startingPoint: Node_2): any;
         toString(tabs?: string): Promise<string>;
         dispose(): void;
@@ -4444,7 +4415,7 @@ export declare class Entity {
         lineTo(p1: any): void;
         quadraticCurveTo(p1: any, p2: any): void;
         cubicCurveTo(p1: any, p2: any, p3: any): void;
-        getPoints(divisions?: number): ([number, number, number] | Float32Array)[];
+        getPoints(divisions?: number): any[];
         fromSvgPath(path: any): void;
     }
 
@@ -4456,7 +4427,7 @@ export declare class Entity {
         outputMax: number;
         startCP: number;
         endCP: number;
-        setMethod: null;
+        setMethod: any;
         activeRange: boolean;
         radialCheck: boolean;
         scaleInitialRange: boolean;
@@ -4468,8 +4439,8 @@ export declare class Entity {
 
     export declare class PinParticleToCP extends Operator {
         offsetLocal: boolean;
-        particleSelection: null;
-        pinBreakType: null;
+        particleSelection: any;
+        pinBreakType: any;
         breakControlPointNumber: number;
         breakControlPointNumber2: number;
         _paramChanged(paramName: any, value: any): void;
@@ -4519,7 +4490,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -4532,7 +4503,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -4548,7 +4519,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -4557,7 +4528,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -4578,7 +4549,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Plane_1: null;
+            Plane_1: any;
             width: {
                 i18n: string;
                 f: () => void;
@@ -4646,7 +4617,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -4659,7 +4630,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -4675,7 +4646,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -4684,7 +4655,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -4705,7 +4676,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Light_1: null;
+            Light_1: any;
             color: {
                 i18n: string;
                 f: () => void;
@@ -4734,7 +4705,7 @@ export declare class Entity {
         constructor();
     }
 
-    export declare function Polygonise(/*GRIDCELL */ grid: any, /*double */ isolevel: any, /*TRIANGLE **/ triangles: any): number;
+    export declare function Polygonise(/*GRIDCELL */ grid: any, /*double */ isolevel: any, /*TRIANGLE **/ triangles: any): any;
 
     export declare class PositionAlongPathRandom extends SourceEngineParticleOperator {
         static functionName: string;
@@ -4835,7 +4806,7 @@ export declare class Entity {
         get vs(): void;
         get fs(): void;
         setUniformValue(name: string, value: any): void;
-        validate(includeCode: any): false | undefined;
+        validate(includeCode: any): boolean;
         invalidate(): void;
         isValid(): boolean;
         getProgram(): WebGLProgram;
@@ -4974,7 +4945,7 @@ export declare class Entity {
         tintMax: vec3;
         updateThreshold: number;
         tintCP: number;
-        tintBlendMode: null;
+        tintBlendMode: any;
         lightAmplification: number;
         tintPerc: number;
         _paramChanged(paramName: any, value: any): void;
@@ -5097,7 +5068,7 @@ export declare class Entity {
         positionAt(distance: number, position: vec3): void;
         intersectTriangle(v0: vec3, v1: vec3, v2: vec3, intersectionPoint: vec3): boolean;
         intersectSphere(position: any, radius: any, scale: any, intersectionPoint1: any, intersectionPoint2: any): boolean;
-        distanceSqToSegment(v0: any, v1: any, optionalPointOnRay: any, optionalPointOnSegment: any): number;
+        distanceSqToSegment(v0: any, v1: any, optionalPointOnRay: any, optionalPointOnSegment: any): any;
         createIntersection(position: any, normal: any, uv: any, entity: any, distanceFromRay: any): Intersection;
     }
 
@@ -5162,7 +5133,7 @@ export declare class Entity {
         startTime: number;
         endTime: number;
         interpRate: number;
-        setMethod: null;
+        setMethod: any;
         scaleInitialRange: any;
         _paramChanged(paramName: any, value: any): void;
         doOperate(particle: any, elapsedTime: any, strength: any): void;
@@ -5176,7 +5147,7 @@ export declare class Entity {
         outputMax: vec3;
         startTime: number;
         endTime: number;
-        setMethod: null;
+        setMethod: any;
         offset: boolean;
         accelerate: boolean;
         localSpaceCP: number;
@@ -5219,7 +5190,7 @@ export declare class Entity {
         scaleControlPointField: number;
         outputMin: number;
         outputMax: number;
-        setMethod: null;
+        setMethod: any;
         activeRange: boolean;
         invert: boolean;
         wrap: boolean;
@@ -5287,7 +5258,7 @@ export declare class Entity {
         url: URL;
         littleEndian: boolean;
         chunkSize: number;
-        loadedChunks: never[];
+        loadedChunks: any[];
         constructor(url: URL, littleEndian?: boolean, chunkSize?: number);
         getLock(): Promise<void>;
         releaseLock(): void;
@@ -5299,7 +5270,7 @@ export declare class Entity {
         skip(byteLength?: number): void;
         getString(byteLength: any, byteOffset?: number): Promise<string>;
         getNullString(byteOffset?: number): Promise<string>;
-        setString(byteOffset: number | undefined, string: any): void;
+        setString(byteOffset: number, string: any): void;
         getBytes(byteLength: any, byteOffset?: number): Promise<Uint8Array>;
         getInt8(byteOffset?: number): Promise<number>;
         getUint8(byteOffset?: number): Promise<number>;
@@ -5338,7 +5309,7 @@ export declare class Entity {
     }
 
     export declare class RenderBlobs extends Operator {
-        balls: never[];
+        balls: any[];
         metaballs: Metaballs;
         constructor(system: any);
         _paramChanged(paramName: any, value: any): void;
@@ -5407,7 +5378,7 @@ export declare class Entity {
         setupLights(renderList: any, camera: any, program: any, viewMatrix: any): void;
         setLights(pointLights: any, spotLights: any, pointLightShadows: any, spotLightShadows: any): void;
         unsetLights(): void;
-        renderObject(renderList: any, object: any, camera: any, geometry: any, material: any, renderLights: boolean | undefined, lightPos: any): void;
+        renderObject(renderList: any, object: any, camera: any, geometry: any, material: any, renderLights: boolean, lightPos: any): void;
         _prepareRenderList(renderList: any, scene: any, camera: any, delta: any): void;
         _renderRenderList(renderList: any, camera: any, renderLights: any, lightPos?: any): void;
         render(scene: Scene, camera: Camera, delta: number): void;
@@ -5555,7 +5526,7 @@ export declare class Entity {
         set material(material: void);
         setRenderTarget(renderTarget: RenderTarget): void;
         setMaterial(material: Material): void;
-        getMaterial(): Material | undefined;
+        getMaterial(): Material;
         get material(): void;
         setPosition(x: number, y: number): void;
         setSize(x: number, y: number): void;
@@ -5668,8 +5639,8 @@ export declare class Entity {
     export declare class RgbeImporter {
         #private;
         constructor(context: WebGLAnyRenderingContext);
-        fetch(url: string): Promise<Texture | "error while fetching resource" | null>;
-        import(reader: BinaryReader): Texture | null;
+        fetch(url: string): Promise<Texture | "error while fetching resource">;
+        import(reader: BinaryReader): Texture;
     }
 
     export declare class RingWave extends Operator {
@@ -5722,7 +5693,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -5735,7 +5706,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -5751,7 +5722,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -5760,7 +5731,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -5781,7 +5752,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            RotationControl_1: null;
+            RotationControl_1: any;
             rotation_axis: {
                 i18n: string;
                 f: () => void;
@@ -5851,7 +5822,7 @@ export declare class Entity {
         addLayer(layer: any, index: any): any;
         removeLayer(layer: any): void;
         setWorld(world: World): void;
-        getWorld(): World | undefined;
+        getWorld(): World;
         toString(): string;
         static constructFromJSON(json: any): Promise<Scene>;
         static getEntityName(): string;
@@ -6078,13 +6049,8 @@ export declare class Entity {
         static addSource(type: ShaderType, name: string, source: string): void;
         static getShaderSource(type: ShaderType, name: string, invalidCustomShaders?: boolean): WebGLShaderSource | undefined;
         static setCustomSource(type: ShaderType, name: string, source: string): void;
-        static getCustomSourceAnnotations(name: string): any[] | null;
-        static getIncludeAnnotations(includeName: string): {
-            type: any;
-            column: any;
-            row: number;
-            text: any;
-        }[] | undefined;
+        static getCustomSourceAnnotations(name: string): any[];
+        static getIncludeAnnotations(includeName: string): any;
         static get shaderList(): MapIterator<string>;
         static resetShadersSource(): void;
         static set displayCompileError(displayCompileError: boolean);
@@ -6149,8 +6115,8 @@ export declare class Entity {
         set bonesPerVertex(bonesPerVertex: number);
         get bonesPerVertex(): number;
         exportObj(): {
-            f: never[];
-            v: never[];
+            f: any[];
+            v: any[];
         };
         getRandomPointOnModel(vec: any, initialVec: any, bones: any): {};
         getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
@@ -6163,7 +6129,7 @@ export declare class Entity {
     export declare class Skeleton extends Entity {
         #private;
         isSkeleton: boolean;
-        _bones: never[];
+        _bones: any[];
         _dirty: boolean;
         constructor(parameters: any);
         dirty(): void;
@@ -6179,10 +6145,10 @@ export declare class Entity {
         addBone(boneId: any, boneName: any): any;
         setParentSkeleton(skeleton: any): Promise<void>;
         getBoneByName(boneName: any): any;
-        getBoneById(boneId: any): never;
+        getBoneById(boneId: any): any;
         toString(): string;
         getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
-        get bones(): never[];
+        get bones(): any[];
         toJSON(): any;
         static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Skeleton>;
         dispose(): void;
@@ -6227,7 +6193,7 @@ export declare class Entity {
         constructor(params?: any);
         get skeleton(): any;
         set skeleton(skeleton: any);
-        addChild(child: any): Entity | undefined;
+        addChild(child: any): Entity;
         removeChild(child: any): void;
         set skin(skin: number);
         get skin(): number;
@@ -6282,7 +6248,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -6295,7 +6261,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -6311,7 +6277,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -6320,7 +6286,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -6341,7 +6307,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Source1ModelInstance_1: null;
+            Source1ModelInstance_1: any;
             skin: {
                 i18n: string;
                 submenu: any[];
@@ -6352,7 +6318,7 @@ export declare class Entity {
             };
             reset_tint: {
                 i18n: string;
-                f: (entity: any) => undefined;
+                f: (entity: any) => any;
                 disabled: boolean;
             };
             animation: {
@@ -6363,7 +6329,7 @@ export declare class Entity {
                 i18n: string;
                 f: (entity: any) => Promise<void>;
             };
-            Source1ModelInstance_2: null;
+            Source1ModelInstance_2: any;
             animate: {
                 i18n: string;
                 selected: boolean;
@@ -6373,7 +6339,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => void;
             };
-            Source1ModelInstance_3: null;
+            Source1ModelInstance_3: any;
             copy_filename: {
                 i18n: string;
                 f: () => Promise<void>;
@@ -6389,11 +6355,11 @@ export declare class Entity {
         setFlexes(flexes?: {}): void;
         resetFlexParameters(): void;
         playDefaultAnim(): Promise<void>;
-        getHitboxes(): Hitbox[];
+        getHitboxes(): any[];
         replaceMaterial(material: any, recursive?: boolean): void;
         resetMaterial(recursive?: boolean): void;
         toJSON(): any;
-        static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Source1ModelInstance | null>;
+        static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Source1ModelInstance>;
         fromJSON(json: any): void;
         dispose(): void;
         static getEntityName(): string;
@@ -6402,13 +6368,10 @@ export declare class Entity {
 
     export declare class Source1ModelManager {
         #private;
-        static createInstance(repository: string, fileName: string, dynamic: boolean, preventInit?: boolean): Promise<Source1ModelInstance | null>;
+        static createInstance(repository: string, fileName: string, dynamic: boolean, preventInit?: boolean): Promise<Source1ModelInstance>;
         static loadManifest(repositoryName: string): void;
         static getModelList(): Promise<{
-            files: {
-                name: string;
-                files: any[];
-            }[];
+            files: any[];
         }>;
     }
 
@@ -6467,15 +6430,7 @@ export declare class Entity {
         static setInactive(system: SourceEngineParticleSystem): void;
         static setSpeed(s: number): void;
         static getSystemList(): Promise<{
-            files: {
-                name: string;
-                files: {
-                    name: string;
-                    files: {
-                        name: string;
-                    }[];
-                }[];
-            }[];
+            files: any[];
         }>;
         static set renderSystems(renderSystems: boolean);
     }
@@ -6537,9 +6492,9 @@ export declare class Entity {
     declare class Source2Animations {
         #private;
         addAnimations(animations: any): void;
-        getAnimations(): never[];
-        getAnimation(activityName: any, activityModifiers?: Set<unknown>): undefined;
-        getBestAnimation(activityName: any, activityModifiers: any): undefined;
+        getAnimations(): any[];
+        getAnimation(activityName: any, activityModifiers?: Set<unknown>): any;
+        getBestAnimation(activityName: any, activityModifiers: any): any;
     }
 
     declare class Source2AnimGroup {
@@ -6562,8 +6517,8 @@ export declare class Entity {
         getDecodeKey(): any;
         get source2Model(): any;
         getAnimationByName(animName: any): any;
-        set _changemyname(_changemyname: never[]);
-        get _changemyname(): never[];
+        set _changemyname(_changemyname: any[]);
+        get _changemyname(): any[];
     }
 
     export declare const Source2AnimLoader: {
@@ -6665,17 +6620,17 @@ export declare class Entity {
         getVertexCount(bufferId: any): any;
         getIndices(bufferId: any): any;
         getVertices(bufferId: any): any;
-        getNormals(bufferId: any): number[] | null;
+        getNormals(bufferId: any): any[];
         getCoords(bufferId: any): any;
         getBoneIndices(bufferId: any): any;
         getBoneWeight(bufferId: any): any;
-        getPositionArray(bufferId: any): any[] | null;
-        getNormalArray(bufferId: any): number[] | null;
-        getCoordArray(bufferId: any): any[] | null;
-        getBoneIndiceArray(bufferId: any): any[] | null;
-        getBoneWeightArray(bufferId: any): number[] | null;
-        getTangentArray(bufferId: any): any[] | null;
-        getBinormalArray(bufferId: any): any[] | null;
+        getPositionArray(bufferId: any): any[];
+        getNormalArray(bufferId: any): any[];
+        getCoordArray(bufferId: any): any[];
+        getBoneIndiceArray(bufferId: any): any[];
+        getBoneWeightArray(bufferId: any): any[];
+        getTangentArray(bufferId: any): any[];
+        getBinormalArray(bufferId: any): any[];
         getWidth(): any;
         getHeight(): any;
         getDxtLevel(): 0 | 1 | 5;
@@ -6688,7 +6643,7 @@ export declare class Entity {
         getExternalFile(fileIndex: any): any;
         getKeyValue(path: any): any;
         get imageFormat(): any;
-        get displayName(): string | undefined;
+        get displayName(): string;
         getRemappingTable(meshIndex: any): any;
         remapBuffer(buffer: any, remappingTable: any): Float32Array;
     }
@@ -6708,7 +6663,7 @@ export declare class Entity {
         getKeyValue(path: any): any;
         getIndices(bufferId: any): any;
         getVertices(bufferId: any): any;
-        getNormalsTangents(bufferId: any): number[][];
+        getNormalsTangents(bufferId: any): any[][];
         getCoords(bufferId: any): any;
         getNormal(bufferId: any): any;
         getTangent(bufferId: any): any;
@@ -6748,7 +6703,7 @@ export declare class Entity {
         outputMax: number;
         startTime: number;
         endTime: number;
-        setMethod: null;
+        setMethod: any;
         remapBias: number;
         scaleInitialRange: any;
         fieldOutput: number;
@@ -6769,7 +6724,7 @@ export declare class Entity {
         prevPosScale: number;
         rigid: boolean;
         useBones: boolean;
-        rotationSetType: null;
+        rotationSetType: any;
         rigidRotationLock: boolean;
         _paramChanged(paramName: any, value: any): void;
         doOperate(particle: any, elapsedTime: any): void;
@@ -6813,10 +6768,10 @@ export declare class Entity {
         requiredLod: number;
         drawBodyPart: {};
         currentSkin: number;
-        currentSheen: null;
-        animLayers: never[];
+        currentSheen: any;
+        animLayers: any[];
         animGroups: Set<Source2AnimGroup>;
-        materialRepository: null;
+        materialRepository: any;
         dirty: boolean;
         geometries: Set<unknown>;
         bodyParts: Map<any, any>;
@@ -6833,7 +6788,7 @@ export declare class Entity {
         loadAnimGroups(): Promise<void>;
         getIncludeModels(): any;
         addIncludeModel(includeModel: any): void;
-        getAnim(activityName: any, activityModifiers: any): undefined;
+        getAnim(activityName: any, activityModifiers: any): any;
         getAnimation(name: any): any;
         getAnimationsByActivity(activityName: any, animations?: Source2Animations): Source2Animations;
         getAnimations(): Promise<Set<unknown>>;
@@ -6858,19 +6813,19 @@ export declare class Entity {
         animationSpeed: number;
         sourceModel: Source2Model;
         constructor(sourceModel: any, isDynamic: any);
-        get skeleton(): Skeleton | undefined;
+        get skeleton(): any;
         set position(position: vec3);
         get position(): vec3;
-        addChild(child: any): Entity | undefined;
+        addChild(child: any): Entity;
         removeChild(child: any): void;
         set skin(skin: number);
         get skin(): number;
         setLOD(lod: any): void;
         setMeshesLOD(lod: any): void;
         setPoseParameter(paramName: any, paramValue: any): void;
-        playSequence(activity: any, activityModifiers?: never[]): void;
+        playSequence(activity: any, activityModifiers?: any[]): void;
         playAnimation(name: any): void;
-        setActivityModifiers(activityModifiers?: never[]): void;
+        setActivityModifiers(activityModifiers?: any[]): void;
         update(scene: any, camera: any, delta: any): void;
         setBodyGroup(bodyPartName: any, bodyPartModelId: any): void;
         buildContextMenu(): {
@@ -6902,7 +6857,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -6915,7 +6870,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -6931,7 +6886,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -6940,7 +6895,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -6961,7 +6916,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Source2ModelInstance_1: null;
+            Source2ModelInstance_1: any;
             skin: {
                 i18n: string;
                 submenu: any[];
@@ -6970,7 +6925,7 @@ export declare class Entity {
                 i18n: string;
                 f: (entity: any) => Promise<void>;
             };
-            Source2ModelInstance_2: null;
+            Source2ModelInstance_2: any;
             animate: {
                 i18n: string;
                 selected: boolean;
@@ -7004,10 +6959,7 @@ export declare class Entity {
         static createInstance(repository: any, fileName: any, dynamic: any): Promise<any>;
         static loadManifest(repositoryName: any): Promise<void>;
         static getModelList(): Promise<{
-            files: {
-                name: string;
-                files: any[];
-            }[];
+            files: any[];
         }>;
     }
 
@@ -7054,101 +7006,6 @@ export declare class Entity {
         doOperate(particle: any, elapsedTime: any): void;
     }
 
-    declare class Source2Particle {
-        id: any;
-        isAlive: boolean;
-        position: vec3;
-        quaternion: quat;
-        prevPosition: vec3;
-        velocity: vec3;
-        color: vec4;
-        initialColor: vec4;
-        normal: vec3;
-        scratchVec: vec3;
-        scratch: number;
-        hitboxOffsetPosition: vec3;
-        glowRGB: vec3;
-        uMin: number;
-        uMax: number;
-        vMin: number;
-        vMax: number;
-        cTime: number;
-        context: Map<any, any>;
-        system: any;
-        currentTime: any;
-        timeToLive: any;
-        initialTimeToLive: any;
-        proportionOfLife: any;
-        trail: any;
-        modelName: any;
-        u: any;
-        v: any;
-        radius: any;
-        initialRadius: any;
-        rotationRoll: any;
-        initialRoll: any;
-        rotationSpeedRoll: any;
-        rotationYaw: any;
-        startAlpha: any;
-        alpha: any;
-        glowAlpha: any;
-        sequence: any;
-        initialSequence: any;
-        sequence2: any;
-        frame: any;
-        PositionFromParentParticles: any;
-        posLockedToCP: any;
-        rotLockedToCP: any;
-        trailLength: any;
-        MovementRigidAttachToCP: any;
-        static consoleAlphaAlternate: any;
-        static consolePitch: any;
-        constructor(id: any, system: any);
-        step(elapsedTime: any): void;
-        start(): void;
-        die(): void;
-        reset(id: any): void;
-        setInitialField(field: any, value: any, mulInitial: any): void;
-        setField(field: number | undefined, value: any, mulInitial?: boolean, setInitial?: boolean, additive?: boolean): void;
-        /**
-         * TODO
-         */
-        getField(field?: number, initial?: boolean): any;
-        /**
-         * TODO
-         */
-        setInitialSequence(sequence: any): void;
-        /**
-         * TODO
-         */
-        setInitialRadius(radius: any): void;
-        /**
-         * TODO
-         */
-        setInitialTTL(timeToLive: any): void;
-        /**
-         * TODO
-         */
-        setInitialColor(color: any): void;
-        /**
-         * Set particle initial rotation roll.
-         * @param {Number} roll Initial rotation roll.
-         */
-        setInitialRoll(roll: any): void;
-        /**
-         * Get particle world position
-         * @param {vec3|null} The receiving vector. Created if null.
-         * @return {vec3} The world position.
-         */
-        getWorldPos(worldPos: any): any;
-        /**
-         * Get particle world position
-         * @param {vec3|null} The receiving vector. Created if null.
-         * @return {vec3} The world position.
-         */
-        getLocalPos(worldPos: any): any;
-    }
-
     export declare const Source2ParticleLoader: {
         load(repository: any, fileName: any): Promise<unknown>;
         getSystem(repository: any, vpcf: any, snapshotModifiers?: any): Promise<Source2ParticleSystem>;
@@ -7168,10 +7025,7 @@ export declare class Entity {
         setInactive(system: Source2ParticleSystem): void;
         set renderSystems(renderSystems: any);
         getSystemList(): Promise<{
-            files: {
-                name: string;
-                files: any;
-            }[];
+            files: any[];
         }>;
         loadManifests(...repositories: any[]): Promise<void>;
     }
@@ -7187,30 +7041,23 @@ export declare class Entity {
         speed: number;
         isRunning: boolean;
         startAfterDelay: number;
-        preEmissionOperators: never[];
-        emitters: never[];
-        initializers: never[];
-        operators: never[];
-        forces: never[];
-        constraints: never[];
-        renderers: never[];
-        controlPoints: never[];
-        childSystems: never[];
-        livingParticles: never[];
-        poolParticles: never[];
+        preEmissionOperators: any[];
+        emitters: any[];
+        initializers: any[];
+        operators: any[];
+        forces: any[];
+        constraints: any[];
+        renderers: any[];
+        controlPoints: any[];
+        childSystems: any[];
+        livingParticles: any[];
+        poolParticles: any[];
         minBounds: vec3;
         maxBounds: vec3;
         particleCount: number;
         initialParticles: number;
         disabled: boolean;
-        baseProperties: {
-            color: vec4;
-            radius: number;
-            lifespan: number;
-            sequenceNumber: number;
-            snapshotControlPoint: number;
-            snapshot: string;
-        };
+        baseProperties: any;
         firstStep: boolean;
         currentTime: number;
         elapsedTime: number;
@@ -7229,22 +7076,22 @@ export declare class Entity {
         reset(): void;
         step(elapsedTime: any): void;
         stepControlPoint(): void;
-        createParticle(creationTime: any, elapsedTime: any): Source2Particle | undefined;
+        createParticle(creationTime: any, elapsedTime: any): any;
         getWorldPosition(vec?: vec3): vec3;
         getWorldQuaternion(q?: quat): quat;
         getControlPoint(controlPointId: any): any;
-        getControlPointForScale(controlPointId: any): never;
-        getOwnControlPoint(controlPointId: any): never;
+        getControlPointForScale(controlPointId: any): any;
+        getOwnControlPoint(controlPointId: any): any;
         getControlPointPosition(cpId: any): any;
         setControlPointPosition(cpId: any, position: any): void;
         setMaxParticles(max: any): void;
         stepConstraints(particle: any): void;
         getBounds(minBounds: any, maxBounds: any): void;
         getBoundsCenter(center: any): void;
-        parentChanged(parent?: null): void;
+        parentChanged(parent?: any): void;
         setParentModel(model: any): void;
         getParentModel(): any;
-        getParticle(index: any): never;
+        getParticle(index: any): any;
         dispose(): void;
         buildContextMenu(): {
             visibility: {
@@ -7275,7 +7122,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -7288,7 +7135,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -7304,7 +7151,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -7313,7 +7160,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -7334,7 +7181,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Source2ParticleSystem_1: null;
+            Source2ParticleSystem_1: any;
             startStop: {
                 i18n: string;
                 f: () => void;
@@ -7360,7 +7207,7 @@ export declare class Entity {
 
     declare class Source2SeqGroup {
         #private;
-        sequences: never[];
+        sequences: any[];
         file: any;
         m_localS1SeqDescArray: any;
         animArray: any;
@@ -7395,7 +7242,7 @@ export declare class Entity {
     }
 
     export declare const Source2SnapshotLoader: {
-        load(repository: any, fileName: any): Promise<Source2Snapshot | null>;
+        load(repository: any, fileName: any): Promise<Source2Snapshot>;
         loadSnapshot(snapFile: any): Source2Snapshot;
     };
 
@@ -7519,9 +7366,9 @@ export declare class Entity {
     declare class SourceBSP extends World {
         #private;
         repository: string;
-        bspFileVersion: null;
-        lumps: never[];
-        mapRevision: null;
+        bspFileVersion: any;
+        lumps: any[];
+        mapRevision: any;
         loaded: boolean;
         bufferInitialized: boolean;
         staticGeometry: {};
@@ -7529,17 +7376,17 @@ export declare class Entity {
         skyboxGeometry: {};
         overlayVerticesByTexture: {};
         mainLightMap: any;
-        lightMapTexture: null;
-        skyCamera: null;
-        skyName: null;
-        entities: never[];
-        connections: never[];
+        lightMapTexture: any;
+        skyCamera: any;
+        skyName: any;
+        entities: any[];
+        connections: any[];
         mapSpawn: boolean;
-        lastLeaf: undefined;
+        lastLeaf: any;
         bspTree: SourceEngineBspTree;
         frameCount: number;
         mustParseHeader: boolean;
-        funcBrushesRemoveMe: never[];
+        funcBrushesRemoveMe: any[];
         partialLoading: boolean;
         eventTarget: EventTarget;
         staticProps: Group;
@@ -7559,7 +7406,7 @@ export declare class Entity {
         initGeometry(): void;
         addEntity(entity: any): void;
         addConnection(connection: any): void;
-        getOBBSize(modelIndex: any): vec3 | null;
+        getOBBSize(modelIndex: any): vec3;
         static getEntityName(): string;
     }
 
@@ -7574,14 +7421,14 @@ export declare class Entity {
      */
     declare class SourceEngineBspTree {
         map: SourceBSP;
-        visibilityClusters: undefined;
+        visibilityClusters: any;
         clustersCount: number;
         countRemoveMe: number;
-        leavesRemoveme: never[];
+        leavesRemoveme: any[];
         constructor(map: SourceBSP);
         set clusters(clusters: any);
-        getLeafId(pos: any): number | undefined;
-        isLeafVisible(fromLeafId: any, toLeafId: any): boolean;
+        getLeafId(pos: any): number;
+        isLeafVisible(fromLeafId: any, toLeafId: any): any;
         isVisLeaf(leafId: any): boolean;
         addPropToLeaf(leafId: any, propId: any): void;
     }
@@ -7627,17 +7474,14 @@ export declare class Entity {
         static copyMaterial(repositoryName: any, sourcePath: any, destPath: any, searchPaths: any): Promise<void>;
         static addRepository(repositoryPath: any): void;
         static getMaterialList(): Promise<{
-            files: {
-                name: any;
-                files: any[];
-            }[];
+            files: any[];
         }>;
     }
 
     export declare class SourceEngineMDLLoader extends SourceBinaryLoader {
         #private;
         parse(repository: any, fileName: any, arrayBuffer: any): SourceMDL;
-        _parseAnimSection(reader: any, animDesc: any, frameIndex: any): MdlStudioAnim[] | null;
+        _parseAnimSection(reader: any, animDesc: any, frameIndex: any): any[];
     }
 
     /**
@@ -7684,8 +7528,8 @@ export declare class Entity {
         posLockedToCP: boolean;
         rotLockedToCP: boolean;
         trailLength: number;
-        initialCPPosition: null;
-        initialCPQuaternion: null;
+        initialCPPosition: any;
+        initialCPQuaternion: any;
         renderScreenVelocityRotate: boolean;
         constructor(id: any, system: any);
         step(elapsedTime: any): void;
@@ -7693,7 +7537,7 @@ export declare class Entity {
         die(): void;
         reset(): void;
         setInitialField(field: any, value: any, mulInitial: any): void;
-        setField(field: number | undefined, value: any, mulInitial?: boolean, setInitial?: boolean): void;
+        setField(field: number, value: any, mulInitial?: boolean, setInitial?: boolean): void;
         /**
          * TODO
          */
@@ -7811,7 +7655,7 @@ export declare class Entity {
         speed: number;
         isRunning: boolean;
         radius: number;
-        attachementBone: null;
+        attachementBone: any;
         livingParticles: any[];
         poolParticles: any[];
         currentOrientation: quat;
@@ -7859,9 +7703,9 @@ export declare class Entity {
         createParticle(creationTime: number, elapsedTime: number): any;
         getWorldPosition(vec?: vec3): vec3;
         stepControlPoint(): void;
-        setParam(element: CDmxAttribute): this | null | undefined;
+        setParam(element: CDmxAttribute): this;
         addParam(param: string, type: string, value: any): void;
-        setParameter(parameter: string, type: string, value: any): this | undefined;
+        setParameter(parameter: string, type: string, value: any): this;
         propertyChanged(name: string): void;
         getParameter(parameterName: string): any;
         setMaxParticles(max: number): void;
@@ -7900,8 +7744,8 @@ export declare class Entity {
         setControlPointParent(controlPointId: number, parentControlPointId: number): void;
         getWorldQuaternion(q?: quat): quat;
         getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
-        set autoKill(autoKill: boolean);
-        get autoKill(): boolean;
+        set autoKill(autoKill: any);
+        get autoKill(): any;
         dispose(): void;
         getBounds(min?: vec3, max?: vec3): void;
         static setSpeed(speed: number): void;
@@ -7935,7 +7779,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -7948,7 +7792,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -7964,7 +7808,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -7973,7 +7817,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -7994,7 +7838,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            SourceEngineParticleSystem_1: null;
+            SourceEngineParticleSystem_1: any;
             startStop: {
                 i18n: string;
                 f: () => void;
@@ -8011,7 +7855,7 @@ export declare class Entity {
 
     export declare class SourceEnginePCFLoader extends SourceBinaryLoader {
         #private;
-        parse(repositoryName: any, fileName: any, arrayBuffer: any): SourcePCF | null;
+        parse(repositoryName: any, fileName: any, arrayBuffer: any): SourcePCF;
         getString(pcf: any, index: any): any;
         getElement(pcf: any, index: any): any;
     }
@@ -8032,21 +7876,21 @@ export declare class Entity {
         fileName: string;
         versionMaj: number;
         versionMin: number;
-        width: null;
-        height: null;
-        flags: null;
-        frames: null;
+        width: any;
+        height: any;
+        flags: any;
+        frames: any;
         faceCount: number;
-        firstFrame: null;
-        reflectivity: null;
-        bumpmapScale: null;
-        highResImageFormat: null;
-        mipmapCount: null;
-        lowResImageFormat: null;
-        lowResImageWidth: null;
-        lowResImageHeight: null;
-        depth: null;
-        resEntries: never[];
+        firstFrame: any;
+        reflectivity: any;
+        bumpmapScale: any;
+        highResImageFormat: any;
+        mipmapCount: any;
+        lowResImageFormat: any;
+        lowResImageWidth: any;
+        lowResImageHeight: any;
+        depth: any;
+        resEntries: any[];
         currentFrame: number;
         filled: boolean;
         numResources: any;
@@ -8081,7 +7925,7 @@ export declare class Entity {
         /**
          * TODO
          */
-        getResource(type: any): null;
+        getResource(type: any): any;
         /**
          * TODO
          */
@@ -8125,7 +7969,7 @@ export declare class Entity {
     declare class SourceMDL {
         #private;
         repository: string;
-        readonly externalMdlsV2: never[];
+        readonly externalMdlsV2: any[];
         readonly attachementNames: {};
         readonly flexController: FlexController;
         readonly skinReferences: Array<Array<any>>;
@@ -8135,54 +7979,54 @@ export declare class Entity {
         readonly bodyParts: Array<MdlBodyPart>;
         readonly sequences: Array<MdlStudioSeqDesc>;
         readonly texturesDir: string[];
-        readonly flexRules: never[];
-        readonly flexControllers: never[];
+        readonly flexRules: any[];
+        readonly flexControllers: any[];
         boneCount: number;
-        readonly bones: never[];
+        readonly bones: any[];
         readonly boneNames: string[];
         numflexdesc: number;
-        readonly attachements: never[];
-        readonly animDesc: never[];
+        readonly attachements: any[];
+        readonly animDesc: any[];
         loader: SourceEngineMDLLoader;
         reader: BinaryReader;
-        readonly poseParameters: never[];
+        readonly poseParameters: any[];
         constructor(repository: string);
-        getMaterialName(skinId: any, materialId: any, materialOverride?: never[]): any;
-        getSkinList(): number[];
+        getMaterialName(skinId: any, materialId: any, materialOverride?: any[]): any;
+        getSkinList(): any[];
         getBodyPart(bodyPartId: any): MdlBodyPart;
         getBodyParts(): MdlBodyPart[];
         getSequence(sequenceName: any): Promise<any>;
         getModelGroup(modelGroupId: any): MdlStudioModelGroup;
         getModelGroups(): MdlStudioModelGroup[];
         getExternalMdlCount(): number;
-        getExternalMdl(externalId: any): Promise<unknown>;
+        getExternalMdl(externalId: any): Promise<any>;
         getTextureDir(): string[];
         getDimensions(out?: vec3): vec3;
         getBBoxMin(out?: vec3): vec3;
         getBBoxMax(out?: vec3): vec3;
         getAnimList(): Promise<any[]>;
-        getFlexRules(): never[];
-        getFlexControllers(): never[];
+        getFlexRules(): any[];
+        getFlexControllers(): any[];
         runFlexesRules(flexesWeight: any, g_flexdescweight: any): void;
         addExternalMdl(mdlName: any): void;
         getBoneCount(): number;
-        getBones(): never[];
-        getBone(boneIndex: number): null;
-        getBoneByName(boneName: string): null;
+        getBones(): any[];
+        getBone(boneIndex: number): any;
+        getBoneByName(boneName: string): any;
         getBoneId(boneName: string): any;
-        getAttachments(): never[];
+        getAttachments(): any[];
         getAttachementsNames(out: any): any;
-        getAttachementById(attachementId: any): null;
+        getAttachementById(attachementId: any): any;
         getAttachement(attachementName: any): any;
         getSequenceById(sequenceId: any): MdlStudioSeqDesc;
         getSequencesList(): any[];
         getSequencesList2(): any[];
-        getSequences(): string[];
-        getSequences2(): string[];
-        getAnimDescription(animIndex: any): never;
+        getSequences(): any[];
+        getSequences2(): any[];
+        getAnimDescription(animIndex: any): any;
         getAnimFrame(dynamicProp: any, animDesc: any, frameIndex: any): any;
-        getLocalPoseParameter(poseIndex: any): never;
-        getPoseParameters(): never[];
+        getLocalPoseParameter(poseIndex: any): any;
+        getPoseParameters(): any[];
         getAllPoseParameters(): any;
         boneFlags(boneIndex: number): any;
     }
@@ -8197,9 +8041,9 @@ export declare class Entity {
         requiredLod: number;
         drawBodyPart: {};
         currentSkin: number;
-        currentSheen: null;
-        animLayers: never[];
-        materialRepository: null;
+        currentSheen: any;
+        animLayers: any[];
+        materialRepository: any;
         dirty: boolean;
         bodyParts: Map<string, SourceModelMesh[][]>;
         constructor(repository: any, fileName: any, mdl: any, vvd: any, vtx: any);
@@ -8224,8 +8068,8 @@ export declare class Entity {
 
     declare class SourcePCF {
         repository: string;
-        stringDict: never[];
-        elementsDict: never[];
+        stringDict: any[];
+        elementsDict: any[];
         systems: {};
         systems2: {};
         binaryVersion: any;
@@ -8233,7 +8077,7 @@ export declare class Entity {
         constructor(repository: string);
         getSystemElement(systemName: any): any;
         addSystem(element: any): void;
-        getSystem(systemName: any): SourceEngineParticleSystem | null;
+        getSystem(systemName: any): SourceEngineParticleSystem;
         initSystem(system: any): any;
         addOperators(system: any, list: any, listType: any): void;
         addAttributes(operator: any, list: any): void;
@@ -8243,8 +8087,8 @@ export declare class Entity {
      * VTX Model
      */
     declare class SourceVTX {
-        bodyparts: never[];
-        getBodyparts(): never[];
+        bodyparts: any[];
+        getBodyparts(): any[];
     }
 
     /**
@@ -8297,7 +8141,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -8310,7 +8154,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -8326,7 +8170,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -8335,7 +8179,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -8356,7 +8200,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Sphere_1: null;
+            Sphere_1: any;
             radius: {
                 i18n: string;
                 f: () => void;
@@ -8430,7 +8274,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -8443,7 +8287,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -8459,7 +8303,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -8468,7 +8312,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -8489,7 +8333,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Light_1: null;
+            Light_1: any;
             color: {
                 i18n: string;
                 f: () => void;
@@ -8524,7 +8368,7 @@ export declare class Entity {
         #private;
         constructor();
         update(): void;
-        parentChanged(parent?: null): void;
+        parentChanged(parent?: any): void;
     }
 
     export declare class SpriteCardMaterial extends SourceEngineMaterial {
@@ -8621,7 +8465,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -8634,7 +8478,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -8650,7 +8494,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -8659,7 +8503,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -8680,7 +8524,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            Text3D_1: null;
+            Text3D_1: any;
             text: {
                 i18n: string;
                 f: () => void;
@@ -8910,7 +8754,7 @@ export declare class Entity {
                 i18n: string;
                 submenu: any;
             };
-            entitynull_1: null;
+            entitynull_1: any;
             position: {
                 i18n: string;
                 f: () => void;
@@ -8923,7 +8767,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_2: null;
+            entitynull_2: any;
             quaternion: {
                 i18n: string;
                 f: () => void;
@@ -8939,7 +8783,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => quat;
             };
-            entitynull_3: null;
+            entitynull_3: any;
             scale: {
                 i18n: string;
                 f: () => void;
@@ -8948,7 +8792,7 @@ export declare class Entity {
                 i18n: string;
                 f: () => vec3;
             };
-            entitynull_4: null;
+            entitynull_4: any;
             wireframe: {
                 i18n: string;
                 selected: any;
@@ -8969,7 +8813,7 @@ export declare class Entity {
                 submenu: {};
             };
         } & {
-            TranslationControl_1: null;
+            TranslationControl_1: any;
             speed: {
                 i18n: string;
                 f: () => void;
@@ -9287,11 +9131,11 @@ export declare class Entity {
     }
 
     export declare const Zstd: {
-        "__#165@#webAssembly": null;
+        "__#165@#webAssembly": any;
         "__#165@#HEAPU8": Uint8Array;
-        decompress(compressedDatas: any): Promise<Uint8Array | null>;
+        decompress(compressedDatas: any): Promise<Uint8Array>;
         decompress_ZSTD(compressedDatas: any, uncompressedDatas: any): Promise<any>;
-        getWebAssembly(): Promise<null>;
+        getWebAssembly(): Promise<any>;
         "__#165@#initHeap"(): void;
     };
 
