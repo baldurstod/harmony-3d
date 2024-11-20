@@ -1937,7 +1937,7 @@ export declare class Entity {
         removeAllControllers(): void;
     }
 
-    export declare function flipPixelArray(pixelArray: Uint8Array, width: number, height: number): void;
+    export declare function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number): void;
 
     export declare class Float32BufferAttribute extends BufferAttribute {
         constructor(array: typeof TypedArrayProto, itemSize: number, offset?: any, length?: any);

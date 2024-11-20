@@ -11,7 +11,7 @@ export function imageDataToImage(imagedata: ImageData, image = new Image()) {
 	return image;
 }
 
-export function flipPixelArray(pixelArray: Uint8Array, width: number, height: number) {
+export function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number) {
 	let rowLength = width * 4
 	let tempRow = new Uint8ClampedArray(rowLength);
 	let halfHeight = height * 0.5;
