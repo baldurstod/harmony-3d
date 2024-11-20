@@ -3548,7 +3548,7 @@ export declare class Entity {
 
     export declare class MergeRepository implements Repository {
         #private;
-        constructor(base: Repository);
+        constructor(name: string, ...repositories: Array<Repository>);
         get name(): string;
         getFile(filename: string): Promise<RepositoryArrayBufferResponse>;
         getFileAsText(filename: string): Promise<RepositoryTextResponse>;
@@ -5607,6 +5607,7 @@ export declare class Entity {
         getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry>;
         isDirectory(): boolean;
         toJSON(): JSON;
+        merge(other: RepositoryEntry): void;
     }
 
     export declare enum RepositoryError {

@@ -1,14 +1,15 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class MergeRepository implements Repository {
-	#base: Repository;
+	#name: string;
 	#repositories: Array<Repository> = [];
-	constructor(base: Repository) {
-		this.#base = base;
+	constructor(name: string, ...repositories: Array<Repository>) {
+		this.#name = name;
+		this.#repositories = [...repositories];
 	}
 
 	get name() {
-		return this.#base.name;
+		return this.#name;
 	}
 
 	async getFile(filename: string): Promise<RepositoryArrayBufferResponse> {
@@ -52,8 +53,14 @@ export class MergeRepository implements Repository {
 	}
 
 	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
-		//TODO:
-		return { error: RepositoryError.NotSupported };
+		const root = new RepositoryEntry(this, '', true);
+		for (const repository of this.#repositories) {
+			const response = await repository.getFileList(filter);
+			if (!response.error) {
+				root.merge(response.root);
+			}
+		}
+		return { root: root };
 	}
 
 	async pushRepository(repo: Repository) {

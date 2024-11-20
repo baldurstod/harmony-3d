@@ -18597,6 +18597,19 @@ class RepositoryEntry {
         }
         return json;
     }
+    merge(other) {
+        if (this.#isDirectory != other.#isDirectory || this.#name != other.#name) {
+            return;
+        }
+        for (const [name, entry] of other.#childs) {
+            if (this.#childs.has(name)) {
+                this.#childs.get(name).merge(entry);
+            }
+            else {
+                this.#childs.set(name, entry);
+            }
+        }
+    }
 }
 _a$3 = RepositoryEntry;
 function splitFilename(filename) {
@@ -18618,13 +18631,14 @@ function match(name, filter) {
 }
 
 class MergeRepository {
-    #base;
+    #name;
     #repositories = [];
-    constructor(base) {
-        this.#base = base;
+    constructor(name, ...repositories) {
+        this.#name = name;
+        this.#repositories = [...repositories];
     }
     get name() {
-        return this.#base.name;
+        return this.#name;
     }
     async getFile(filename) {
         for (const repository of this.#repositories) {
@@ -18663,8 +18677,14 @@ class MergeRepository {
         return { error: RepositoryError.FileNotFound };
     }
     async getFileList(filter) {
-        //TODO:
-        return { error: RepositoryError.NotSupported };
+        const root = new RepositoryEntry(this, '', true);
+        for (const repository of this.#repositories) {
+            const response = await repository.getFileList(filter);
+            if (!response.error) {
+                root.merge(response.root);
+            }
+        }
+        return { root: root };
     }
     async pushRepository(repo) {
         this.#repositories.push(repo);
