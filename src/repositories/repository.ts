@@ -143,6 +143,20 @@ export class RepositoryEntry {
 		}
 		return json;
 	}
+
+	merge(other: RepositoryEntry) {
+		if (this.#isDirectory != other.#isDirectory || this.#name != other.#name) {
+			return;
+		}
+
+		for (const [name, entry] of other.#childs) {
+			if (this.#childs.has(name)) {
+				this.#childs.get(name).merge(entry);
+			} else {
+				this.#childs.set(name, entry);
+			}
+		}
+	}
 }
 
 function splitFilename(filename: string): { name: string, extension: string } {
