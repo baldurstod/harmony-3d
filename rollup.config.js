@@ -44,6 +44,7 @@ export default [
 			'harmony-ui',
 			'harmony-browser-utils',
 			'harmony-fbx',
+			'harmony-vpk',
 			'murmurhash-es6',
 			'meshoptimizer',
 			'@derschmale/io-rgbe',

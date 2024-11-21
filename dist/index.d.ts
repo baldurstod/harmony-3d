@@ -8960,6 +8960,17 @@ export declare class Entity {
         get shaderSource(): string;
     }
 
+    export declare class VpkRepository implements Repository {
+        #private;
+        constructor(name: string, files: Array<File>);
+        get name(): string;
+        getFile(filename: string): Promise<RepositoryArrayBufferResponse>;
+        getFileAsText(filename: string): Promise<RepositoryTextResponse>;
+        getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
+        getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
+        getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+    }
+
     export declare class WaterLod extends Proxy_2 {
     }
 
@@ -9133,12 +9144,12 @@ export declare class Entity {
     }
 
     export declare const Zstd: {
-        "__#165@#webAssembly": any;
-        "__#165@#HEAPU8": Uint8Array;
+        "__#167@#webAssembly": any;
+        "__#167@#HEAPU8": Uint8Array;
         decompress(compressedDatas: any): Promise<Uint8Array>;
         decompress_ZSTD(compressedDatas: any, uncompressedDatas: any): Promise<any>;
         getWebAssembly(): Promise<any>;
-        "__#165@#initHeap"(): void;
+        "__#167@#initHeap"(): void;
     };
 
     export { }
