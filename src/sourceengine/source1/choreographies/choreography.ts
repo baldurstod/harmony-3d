@@ -1,3 +1,5 @@
+import { EPSILON } from "../../../math/constants";
+
 export class Choreography {
 	#repository;
 	actors2 = [];
@@ -99,7 +101,7 @@ export class Choreography {
 	 * Step
 	 */
 	loop(startTime) {
-		this.previousTime = -0.5;
+		this.previousTime = startTime - EPSILON;
 		this.currentTime = startTime;
 		this.shouldLoop = true;
 	}

@@ -31144,7 +31144,7 @@ class Choreography {
      * Step
      */
     loop(startTime) {
-        this.previousTime = -0.5;
+        this.previousTime = startTime - EPSILON$2;
         this.currentTime = startTime;
         this.shouldLoop = true;
     }
@@ -31450,6 +31450,10 @@ class Event {
      * Step
      */
     step(previousTime, currentTime) {
+        let actor = this.getActor();
+        if (actor) {
+            actor.frame = currentTime;
+        }
         //TODOv2
         if (previousTime < this.startTime && currentTime >= this.startTime) {
             //console.info(frame2, currentTime, this.type, this.param1, this.param2, this.param3);
@@ -31458,11 +31462,10 @@ class Event {
                     Source1SoundManager.playSound(this.#repository, this.param1);
                     break;
                 case EventType.Sequence:
-                    let actor = this.getActor();
                     //mainCharacter.characterModel.playSequence(this.param1);//TODOv2
                     if (actor) {
                         actor.playSequence(this.param1); //TODOv2
-                        actor.frame = currentTime;
+                        //actor.frame = currentTime;
                         /*if (actor.characterModel) {
                             actor.playSequence(this.param1);//TODOv2
                         }
