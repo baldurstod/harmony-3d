@@ -40160,7 +40160,12 @@ class Proxy {
                 if (result && result.length == 3) {
                     const v = variables.get(result[1].toLowerCase());
                     if (v) {
-                        v[result[2]] = value;
+                        if (typeof value == 'number') {
+                            v[result[2]] = value;
+                        }
+                        else { //array
+                            v[result[2]] = value[result[2]];
+                        }
                     }
                 }
             }

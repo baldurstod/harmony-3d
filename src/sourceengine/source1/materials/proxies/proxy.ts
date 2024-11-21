@@ -20,7 +20,7 @@
  * Source engine material interface
  */
 export class Proxy {
-	datas:any = null;
+	datas: any = null;
 
 	/**
 	 * TODO
@@ -62,7 +62,12 @@ export class Proxy {
 				if (result && result.length == 3) {
 					const v = variables.get(result[1].toLowerCase());
 					if (v) {
-						v[result[2]] = value;
+
+						if (typeof value == 'number') {
+							v[result[2]] = value;
+						} else {//array
+							v[result[2]] = value[result[2]];
+						}
 					}
 				}
 			} else {
