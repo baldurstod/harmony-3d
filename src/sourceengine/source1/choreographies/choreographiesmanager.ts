@@ -8,7 +8,7 @@ export class ChoreographiesManager {
 	#playbackSpeed = 1.0;
 	#playing = true;
 	#choreographies = new Set<Choreography>();
-	#sceneImage;
+	#sceneImage?: Choreographies;
 
 	constructor() {
 		if (ChoreographiesManager.#instance) {
@@ -39,6 +39,13 @@ export class ChoreographiesManager {
 				setTimeout(function() {playChoreo(choreoName, actors, onStop)}, 100);
 			}*/
 		}
+	}
+
+	async getChoreography(choreoName: string): Promise<Choreography | null> {
+		if (this.#sceneImage) {
+			return await this.#sceneImage.getChoreography(choreoName);
+		}
+		return null;
 	}
 
 	step(elapsed) {
