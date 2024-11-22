@@ -2,6 +2,7 @@ export enum TimelinePropertyType {
 	Unknown = 0,
 	Int,
 	Float,
+	Time,
 	String,
 	Bool,
 	Color,
