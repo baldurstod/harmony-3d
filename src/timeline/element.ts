@@ -31,6 +31,14 @@ export class TimelineElement {
 		this.addProperty('name', TimelinePropertyType.String, name);
 	}
 
+	setName(name: string) {
+		this.setPropertyValue('name', name);
+	}
+
+	getName(): string {
+		return this.getPropertyValue('name');
+	}
+
 	addProperty(name: string, type: TimelinePropertyType, value: any): TimelineProperty {
 		const property = new TimelineProperty(name, type, value);
 
