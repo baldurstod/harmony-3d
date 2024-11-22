@@ -1,10 +1,15 @@
-import { EPSILON } from "../../../math/constants";
+import { EPSILON } from '../../../math/constants';
+import { TimelineElement } from '../../../timeline/element';
+import { TimelineGroup } from '../../../timeline/group';
+import { Timeline } from '../../../timeline/timeline';
+import { Actor } from './actor';
+import { Event } from './event';
 
 export class Choreography {
 	#repository;
 	actors2 = [];
-	events = [];
-	actors = [];
+	#events: Array<Event> = [];
+	#actors: Array<Actor> = [];
 	previousTime = -1;
 	currentTime = 0;
 	animsSpeed = 1;
@@ -24,7 +29,7 @@ export class Choreography {
 	 * @param {Object ChoreographyEvent} event The event to add
 	 */
 	addEvent(event) {
-		this.events.push(event);
+		this.#events.push(event);
 		event.setChoreography(this);
 	}
 
@@ -33,7 +38,7 @@ export class Choreography {
 	 * @param {Object ChoreographyActor} actor The actor to add
 	 */
 	addActor(actor) {
-		this.actors.push(actor);
+		this.#actors.push(actor);
 		actor.setChoreography(this);
 	}
 
@@ -42,11 +47,11 @@ export class Choreography {
 	 */
 	toString(indent = '') {
 		let arr = [];
-		for (let i = 0; i < this.events.length; ++i) {
-			arr.push(this.events[i].toString(indent));
+		for (let i = 0; i < this.#events.length; ++i) {
+			arr.push(this.#events[i].toString(indent));
 		}
-		for (let i = 0; i < this.actors.length; ++i) {
-			arr.push(this.actors[i].toString(indent));
+		for (let i = 0; i < this.#actors.length; ++i) {
+			arr.push(this.#actors[i].toString(indent));
 		}
 		return arr.join('\n');
 	}
@@ -61,11 +66,11 @@ export class Choreography {
 				this.currentTime = currentTime;
 			}
 
-			for (let i = 0; i < this.events.length; ++i) {
-				this.events[i].step(this.previousTime, this.currentTime);
+			for (let i = 0; i < this.#events.length; ++i) {
+				this.#events[i].step(this.previousTime, this.currentTime);
 			}
-			for (let i = 0; i < this.actors.length; ++i) {
-				this.actors[i].step(this.previousTime, this.currentTime);
+			for (let i = 0; i < this.#actors.length; ++i) {
+				this.#actors[i].step(this.previousTime, this.currentTime);
 			}
 			if (this.shouldLoop) {
 				this.shouldLoop = false;
@@ -113,4 +118,25 @@ export class Choreography {
 		this.actors2 = actors;
 	}
 
+	toTimelineElement(): TimelineElement {
+		const timeline = new Timeline();
+		const events = timeline.addchild(new TimelineGroup('Events')) as TimelineGroup;
+		const actors = timeline.addchild(new TimelineGroup('Actors')) as TimelineGroup;
+
+		for (const event of this.#events) {
+			events.addchild(event.toTimelineElement());
+		}
+		for (const actor of this.#actors) {
+			events.addchild(actor.toTimelineElement());
+		}
+		/*
+		for (let i = 0; i < this.#actors.length; ++i) {
+			arr.push(this.#actors[i].toString(indent));
+		}
+			*/
+
+
+
+		return timeline;
+	}
 }

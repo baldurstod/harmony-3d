@@ -2,6 +2,10 @@ import { FlexAnimationTrack } from './flexanimationtrack';
 import { Source1SoundManager } from '../sounds/soundmanager';
 import { Choreography } from './choreography';
 import { Channel } from './channel';
+import { TimelineElement } from '../../../timeline/element';
+import { Timeline } from '../../../timeline/timeline';
+import { TimelineGroup } from '../../../timeline/group';
+import { TimelineClip } from '../../../timeline/clip';
 
 
 export class Event {
@@ -284,6 +288,11 @@ export class Event {
 				return actor.getCharacter();
 			}
 		}
+	}
+
+	toTimelineElement(): TimelineElement {
+		const clip = new TimelineClip(this.name, this.startTime, this.endTime);
+		return clip;
 	}
 }
 

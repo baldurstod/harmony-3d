@@ -1,8 +1,11 @@
+import { TimelineElement } from '../../../timeline/element';
+import { TimelineGroup } from '../../../timeline/group';
+import { Channel } from './channel';
 import { Choreography } from './choreography';
 
 export class Actor {
 	name: string;
-	channels = [];
+	channels: Array<Channel> = [];
 	choreography: Choreography;
 	active = false;
 
@@ -10,12 +13,12 @@ export class Actor {
 		this.name = name;
 	}
 
-	addChannel(channel) {
+	addChannel(channel: Channel) {
 		this.channels.push(channel);
 		channel.setActor(this);
 	}
 
-	setChoreography(choreography) {
+	setChoreography(choreography: Choreography) {
 		this.choreography = choreography;
 	}
 
@@ -23,11 +26,11 @@ export class Actor {
 		return this.choreography.actors2[0];//fixme: variable
 	}
 
-	setActive(active) {
+	setActive(active: boolean) {
 		this.active = active;
 	}
 
-	toString(indent) {
+	toString(indent: string) {
 		indent = indent || '';
 		const subindent = indent + '\t';
 		let arr = [indent + 'Actor ' + this.name];
@@ -37,10 +40,20 @@ export class Actor {
 		return arr.join('\n');
 	}
 
-	step(previousTime, currentTime) {
+	step(previousTime: number, currentTime: number) {
 		//TODOv2
 		for (let i = 0; i < this.channels.length; ++i) {
 			this.channels[i].step(previousTime, currentTime);
 		}
+	}
+
+	toTimelineElement(): TimelineElement {
+		const group = new TimelineGroup(this.name);
+
+		for (const channel of this.channels) {
+			group.addchild(channel.toTimelineElement());
+		}
+
+		return group;
 	}
 }

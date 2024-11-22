@@ -1,8 +1,11 @@
+import { TimelineElement } from '../../../timeline/element';
+import { TimelineGroup } from '../../../timeline/group';
 import { Actor } from './actor';
+import { Event } from './event';
 
 export class Channel {
 	active = false;
-	events = [];
+	events: Array<Event> = [];
 	name: string;
 	actor: Actor;
 	constructor(name: string) {
@@ -13,7 +16,7 @@ export class Channel {
 	 * Add an event
 	 * @param {Object ChoreographyEvent} event The event to add
 	 */
-	addEvent(event) {
+	addEvent(event: Event) {
 		this.events.push(event);
 		event.setChannel(this);
 	}
@@ -66,4 +69,18 @@ export class Channel {
 		}
 	}
 
+	toTimelineElement(): TimelineElement {
+		const group = new TimelineGroup(this.name);
+
+		if (this.actor) {
+			group.addchild(this.actor.toTimelineElement());
+
+		}
+
+		for (const event of this.events) {
+			group.addchild(event.toTimelineElement());
+		}
+
+		return group;
+	}
 }
