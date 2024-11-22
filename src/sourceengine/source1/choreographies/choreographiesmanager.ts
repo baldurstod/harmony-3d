@@ -4,12 +4,20 @@ import { Choreography } from './choreography';
 
 
 export class ChoreographiesManager {
-	static #playbackSpeed = 1.0;
-	static #playing = true;
-	static #choreographies = new Set<Choreography>();
-	static #sceneImage;
+	static #instance: ChoreographiesManager;
+	#playbackSpeed = 1.0;
+	#playing = true;
+	#choreographies = new Set<Choreography>();
+	#sceneImage;
 
-	static async init(repositoryName, fileName) {
+	constructor() {
+		if (ChoreographiesManager.#instance) {
+			return ChoreographiesManager.#instance;
+		}
+		ChoreographiesManager.#instance = this;
+	}
+
+	async init(repositoryName, fileName) {
 		if (!this.#sceneImage) {
 			this.#sceneImage = new Choreographies();
 			await this.#sceneImage.loadFile(repositoryName, fileName);
@@ -19,7 +27,7 @@ export class ChoreographiesManager {
 		}
 	}
 
-	static async playChoreography(choreoName, actors, onStop) {
+	async playChoreography(choreoName, actors, onStop) {
 		if (this.#sceneImage) {
 			const choreography = await this.#sceneImage.getChoreography(choreoName);
 			if (choreography) {
@@ -33,7 +41,7 @@ export class ChoreographiesManager {
 		}
 	}
 
-	static step(elapsed) {
+	step(elapsed) {
 		if (!this.#playing) {
 			return;
 		}
@@ -45,28 +53,28 @@ export class ChoreographiesManager {
 		}
 	}
 
-	static reset() {
+	reset() {
 		for (let choreography of this.#choreographies) {
 			choreography.reset();
 		}
 	}
 
-	static stopAll() {
+	stopAll() {
 		for (let choreography of this.#choreographies) {
 			choreography.stop();
 			this.#choreographies.delete(choreography);
 		}
 	}
 
-	static play() {
+	play() {
 		this.#playing = true;
 	}
 
-	static pause() {
+	pause() {
 		this.#playing = false;
 	}
 
-	static set playbackSpeed(playbackSpeed) {
+	set playbackSpeed(playbackSpeed) {
 		this.#playbackSpeed = playbackSpeed;
 	}
 }

@@ -739,14 +739,15 @@ export declare const CHILD_REMOVED = "childremoved";
 
 export declare class ChoreographiesManager {
     #private;
-    static init(repositoryName: any, fileName: any): Promise<void>;
-    static playChoreography(choreoName: any, actors: any, onStop: any): Promise<void>;
-    static step(elapsed: any): void;
-    static reset(): void;
-    static stopAll(): void;
-    static play(): void;
-    static pause(): void;
-    static set playbackSpeed(playbackSpeed: any);
+    constructor();
+    init(repositoryName: any, fileName: any): Promise<void>;
+    playChoreography(choreoName: any, actors: any, onStop: any): Promise<void>;
+    step(elapsed: any): void;
+    reset(): void;
+    stopAll(): void;
+    play(): void;
+    pause(): void;
+    set playbackSpeed(playbackSpeed: any);
 }
 
 export declare class Circle extends LineSegments {
@@ -8709,6 +8710,62 @@ export declare class Entity {
         UnsignedInt_10F_11F_11F = 35899,
         UnsignedInt_5_9_9_9 = 35902,
         UnsignedFloat_32_UnsignedInt_24_8 = 36269
+    }
+
+    export declare class Timeline extends TimelineElement {
+        #private;
+        type: TimelineElementType.Timeline;
+        name: string;
+        constructor(name?: string);
+        setParent(element: TimelineElement): void;
+        getRoot(): TimelineGroup;
+        addchild(child: TimelineElement): void;
+        getChilds(): TimelineElement[];
+    }
+
+    export declare class TimelineChannel extends TimelineElement {
+        type: TimelineElementType.Channel;
+        constructor(name?: string);
+    }
+
+    export declare class TimelineElement {
+        #private;
+        type: TimelineElementType;
+        constructor(name: string);
+        addProperty(name: string, type: TimelinePropertyType, value: any): TimelineProperty;
+        setPropertyValue(name: string, value: any): void;
+        getPropertyValue(name: string): any;
+    }
+
+    export declare enum TimelineElementType {
+        None = 0,
+        Timeline = 1,
+        Group = 2,
+        Channel = 3,
+        Marker = 4
+    }
+
+    export declare class TimelineGroup extends TimelineElement {
+        #private;
+        type: TimelineElementType.Group;
+        addchild(child: TimelineElement): void;
+        getChilds(): TimelineElement[];
+    }
+
+    declare class TimelineProperty {
+        #private;
+        constructor(name: string, type: TimelinePropertyType, value: any);
+        setValue(value: any): void;
+        getValue(): any;
+    }
+
+    declare enum TimelinePropertyType {
+        Unknown = 0,
+        Int = 1,
+        Float = 2,
+        String = 3,
+        Bool = 4,
+        Color = 5
     }
 
     export declare enum ToneMapping {
