@@ -72,11 +72,6 @@ export class Channel {
 	toTimelineElement(): TimelineElement {
 		const group = new TimelineGroup(this.name);
 
-		if (this.actor) {
-			group.addchild(this.actor.toTimelineElement());
-
-		}
-
 		for (const event of this.events) {
 			group.addchild(event.toTimelineElement());
 		}
