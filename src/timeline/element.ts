@@ -11,9 +11,19 @@ export interface TimelineElement {
 import { TimelineObserver } from './observer';
 import { TimelineProperty, TimelinePropertyType } from './property';
 
+export enum TimelineElementType {
+	None = 0,
+	Timeline,
+	Group,
+	Channel,
+	Clip,
+	Marker,
+}
+
 export class TimelineElement {
 	#parent?: TimelineElement;
 	#properties = new Map<string, TimelineProperty>();
+	type: TimelineElementType = TimelineElementType.None;
 	/*#name: string;
 	startTime: number = 0;
 	endTime: number = Infinity;*/
@@ -41,7 +51,7 @@ export class TimelineElement {
 	}
 
 	getPropertyValue(name: string): any {
-		return this.#properties.get(name).getValue();
+		return this.#properties.get(name)?.getValue();
 	}
 
 	/*

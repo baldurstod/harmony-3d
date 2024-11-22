@@ -1,5 +1,10 @@
-import { TimelineElement } from './element';
+import { TimelineElement, TimelineElementType } from './element';
 
 export class TimelineChannel extends TimelineElement {
-	isChannel: true = true;
+	type: TimelineElementType.Channel = TimelineElementType.Channel;
+
+	constructor(name: string = 'Channel') {
+		super(name);
+
+	}
 }

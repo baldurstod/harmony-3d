@@ -1,10 +1,15 @@
-import { TimelineElement } from './element';
+import { TimelineElement, TimelineElementType } from './element';
 
 export class TimelineGroup extends TimelineElement {
-	isGroup: true = true;
+	type: TimelineElementType.Group = TimelineElementType.Group;
 	#childs: Array<TimelineElement> = [];
 
 	addchild(child: TimelineElement) {
 		this.#childs.push(child);
+		return child;
+	}
+
+	getChilds() {
+		return [...this.#childs];
 	}
 }
