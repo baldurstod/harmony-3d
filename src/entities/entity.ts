@@ -504,48 +504,62 @@ export class Entity {
 	toString() {
 		return this.#name !== undefined ? this.#name : '';
 	}
+
 	translate(v: vec3) {
 		vec3.add(tempVec3_1, this._position, v);
 		this.position = tempVec3_1;
 	}
+
 	translateOnAxis(axis: vec3, distance: number) {
 		vec3.transformQuat(tempVec3_1, axis, this._quaternion);
 		vec3.scaleAndAdd(tempVec3_1, this._position, tempVec3_1, distance);
 		this.position = tempVec3_1;
 		return this;
 	}
+
 	translateX(distance: number) {//TODO: optimize inline
 		return this.translateOnAxis(X_VECTOR, distance);
 	}
+
 	translateY(distance: number) {
 		return this.translateOnAxis(Y_VECTOR, distance);
 	}
+
 	translateZ(distance: number) {
 		return this.translateOnAxis(Z_VECTOR, distance);
 	}
+
 	rotateX(rad: number) {
 		quat.rotateX(this._quaternion, this._quaternion, rad);
+		this.locked = true;
 	}
+
 	rotateY(rad: number) {
 		quat.rotateY(this._quaternion, this._quaternion, rad);
+		this.locked = true;
 	}
+
 	rotateZ(rad: number) {
 		quat.rotateZ(this._quaternion, this._quaternion, rad);
+		this.locked = true;
 	}
 
 	rotateGlobalX(rad: number) {
 		quat.rotateX(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
+		this.locked = true;
 	}
 
 	rotateGlobalY(rad: number) {
 		quat.rotateY(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
+		this.locked = true;
 	}
 
 	rotateGlobalZ(rad: number) {
 		quat.rotateZ(tempQuat, IDENTITY_QUAT, rad);
 		quat.mul(this._quaternion, tempQuat, this._quaternion);
+		this.locked = true;
 	}
 
 	/**

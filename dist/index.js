@@ -2557,24 +2557,30 @@ class Entity {
     }
     rotateX(rad) {
         quat.rotateX(this._quaternion, this._quaternion, rad);
+        this.locked = true;
     }
     rotateY(rad) {
         quat.rotateY(this._quaternion, this._quaternion, rad);
+        this.locked = true;
     }
     rotateZ(rad) {
         quat.rotateZ(this._quaternion, this._quaternion, rad);
+        this.locked = true;
     }
     rotateGlobalX(rad) {
         quat.rotateX(tempQuat$d, IDENTITY_QUAT$1, rad);
         quat.mul(this._quaternion, tempQuat$d, this._quaternion);
+        this.locked = true;
     }
     rotateGlobalY(rad) {
         quat.rotateY(tempQuat$d, IDENTITY_QUAT$1, rad);
         quat.mul(this._quaternion, tempQuat$d, this._quaternion);
+        this.locked = true;
     }
     rotateGlobalZ(rad) {
         quat.rotateZ(tempQuat$d, IDENTITY_QUAT$1, rad);
         quat.mul(this._quaternion, tempQuat$d, this._quaternion);
+        this.locked = true;
     }
     /**
      * Makes this object look at the specified location.
