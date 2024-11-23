@@ -290,7 +290,7 @@ export class Event {
 		}
 	}
 
-	toTimelineElement(): TimelineElement {
+	toTimelineElement(): TimelineClip {
 		const clip = new TimelineClip(this.name, this.startTime, this.endTime);
 		return clip;
 	}
