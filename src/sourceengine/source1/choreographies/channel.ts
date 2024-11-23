@@ -1,3 +1,4 @@
+import { TimelineChannel } from '../../../timeline/channel';
 import { TimelineElement } from '../../../timeline/element';
 import { TimelineGroup } from '../../../timeline/group';
 import { Actor } from './actor';
@@ -70,12 +71,12 @@ export class Channel {
 	}
 
 	toTimelineElement(): TimelineElement {
-		const group = new TimelineGroup(this.name);
+		const channel = new TimelineChannel(this.name);
 
 		for (const event of this.events) {
-			group.addchild(event.toTimelineElement());
+			channel.addClip(event.toTimelineElement());
 		}
 
-		return group;
+		return channel;
 	}
 }
