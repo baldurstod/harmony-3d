@@ -26,4 +26,8 @@ export class TimelineClip extends TimelineElement {
 	getEndTime(): number {
 		return this.getPropertyValue('end');
 	}
+
+	getLength(): number {
+		return this.getPropertyValue('end') - this.getPropertyValue('start');
+	}
 }
