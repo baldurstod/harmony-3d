@@ -14,7 +14,7 @@ export class TimelineChannel extends TimelineElement {
 		return clip;
 	}
 
-	getChilds() {
+	getClips() {
 		return [...this.#clips];
 	}
 }

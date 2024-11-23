@@ -120,14 +120,14 @@ export class Choreography {
 
 	toTimelineElement(): TimelineElement {
 		const timeline = new Timeline();
-		const events = timeline.addchild(new TimelineGroup('Events')) as TimelineGroup;
-		const actors = timeline.addchild(new TimelineGroup('Actors')) as TimelineGroup;
+		const events = timeline.addChild(new TimelineGroup('Events')) as TimelineGroup;
+		const actors = timeline.addChild(new TimelineGroup('Actors')) as TimelineGroup;
 
 		for (const event of this.#events) {
-			events.addchild(event.toTimelineElement());
+			events.addChild(event.toTimelineElement());
 		}
 		for (const actor of this.#actors) {
-			events.addchild(actor.toTimelineElement());
+			events.addChild(actor.toTimelineElement());
 		}
 		/*
 		for (let i = 0; i < this.#actors.length; ++i) {

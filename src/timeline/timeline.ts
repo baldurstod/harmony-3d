@@ -19,8 +19,8 @@ export class Timeline extends TimelineElement {
 		return this.#root;
 	}
 
-	addchild(child: TimelineElement) {
-		return this.#root.addchild(child);
+	addChild(child: TimelineElement) {
+		return this.#root.addChild(child);
 	}
 
 	getChilds() {

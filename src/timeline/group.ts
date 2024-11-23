@@ -4,7 +4,7 @@ export class TimelineGroup extends TimelineElement {
 	type: TimelineElementType.Group = TimelineElementType.Group;
 	#childs: Array<TimelineElement> = [];
 
-	addchild(child: TimelineElement) {
+	addChild(child: TimelineElement) {
 		this.#childs.push(child);
 		return child;
 	}

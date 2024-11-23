@@ -51,7 +51,7 @@ export class Actor {
 		const actor = new TimelineGroup(this.name);
 
 		for (const channel of this.channels) {
-			actor.addchild(channel.toTimelineElement());
+			actor.addChild(channel.toTimelineElement());
 		}
 
 		return actor;
