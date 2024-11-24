@@ -38,6 +38,7 @@ export class ApplySticker extends Node {
 		this.addParam(new NodeParam('bottom left', NodeParamType.Vec2, vec2.create()));
 		this.addParam(new NodeParam('top left', NodeParamType.Vec2, vec2.create()));
 		this.addParam(new NodeParam('top right', NodeParamType.Vec2, vec2.create()));
+		this.addParam(new NodeParam('path', NodeParamType.String, ''));
 
 		this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
 	}
