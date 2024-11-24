@@ -66,6 +66,12 @@ export const MANIPULATOR_SHORTCUT_TOGGLE_X = 'engine.shortcuts.manipulator.toggl
 export const MANIPULATOR_SHORTCUT_TOGGLE_Y = 'engine.shortcuts.manipulator.toggle.y';
 export const MANIPULATOR_SHORTCUT_TOGGLE_Z = 'engine.shortcuts.manipulator.toggle.z';
 
+export enum ManipulatorMode {
+	Translation = 0,
+	Rotation,
+	Scale
+}
+
 export class Manipulator extends Entity {
 	#entityAxis = new Map();
 	#xMaterial;
@@ -102,7 +108,7 @@ export class Manipulator extends Entity {
 	#startDragPosition = vec3.create();
 	#startScalePosition = vec3.create();
 	#parentStartScale = vec3.create();
-	#mode;
+	#mode: ManipulatorMode = ManipulatorMode.Translation;
 	enumerable = false;
 	camera: Camera;
 	size = 1;
@@ -128,7 +134,7 @@ export class Manipulator extends Entity {
 		this.#initRotationManipulator();
 		this.#initScaleManipulator();
 
-		this.mode = 0;
+		this.setMode(0);
 
 		this.enableX = true;
 		this.enableY = true;
@@ -242,7 +248,6 @@ export class Manipulator extends Entity {
 	}
 
 	#initMaterials() {
-		this.#xMaterial = new MeshBasicMaterial();
 		this.#xMaterial.setMeshColor(X_COLOR);
 		this.#xMaterial.setDefine('ALWAYS_ON_TOP');
 		this.#yMaterial = new MeshBasicMaterial();
@@ -718,7 +723,12 @@ export class Manipulator extends Entity {
 		this.camera = camera;
 	}
 
-	set mode(mode) {
+	set mode(mode: ManipulatorMode) {
+		console.warn('deprecated, use setMode()');
+		this.setMode(mode);
+	}
+
+	setMode(mode: ManipulatorMode) {
 		this.#translationManipulator.visible = false;
 		this.#rotationManipulator.visible = false;
 		this.#scaleManipulator.visible = false;
