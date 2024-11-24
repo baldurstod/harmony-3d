@@ -4,7 +4,7 @@ import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
-import { zoomOutSVG, zoomInSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG, dragPanSVG, rotateSVG, panZoomSVG } from 'harmony-svg';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
 import { MeshoptDecoder } from 'meshoptimizer';
@@ -10122,15 +10122,15 @@ const PLANE_LENGTH = ARROW_LENGTH / 3;
 const HALF_PLANE_LENGTH = PLANE_LENGTH / 2;
 const TIP_LENGTH = 1;
 const RADIUS = 5;
-const X_COLOR = [1, 0, 0, 1];
-const Y_COLOR = [0, 1, 0, 1];
-const Z_COLOR = [0, 0, 1, 1];
-const XY_COLOR = [1, 1, 0, 0.2];
-const XZ_COLOR = [1, 0, 1, 0.2];
-const YZ_COLOR = [0, 1, 1, 0.2];
-const GREY_COLOR = [0.2, 0.2, 0.2, 1];
-const SCREEN_COLOR = [1.0, 0.0, 1.0, 1];
-const SELECTED_COLOR = [1, 1, 0, 1];
+const X_COLOR = vec4.fromValues(1, 0, 0, 1);
+const Y_COLOR = vec4.fromValues(0, 1, 0, 1);
+const Z_COLOR = vec4.fromValues(0, 0, 1, 1);
+const XY_COLOR = vec4.fromValues(1, 1, 0, 0.2);
+const XZ_COLOR = vec4.fromValues(1, 0, 1, 0.2);
+const YZ_COLOR = vec4.fromValues(0, 1, 1, 0.2);
+const GREY_COLOR = vec4.fromValues(0.2, 0.2, 0.2, 1);
+const SCREEN_COLOR = vec4.fromValues(1.0, 0.0, 1.0, 1);
+const SELECTED_COLOR = vec4.fromValues(1, 1, 0, 1);
 const ORIENTATION_WORLD = 0;
 const xUnitVec3 = vec3.fromValues(1, 0, 0);
 const yUnitVec3 = vec3.fromValues(0, 1, 0);
@@ -10151,35 +10151,41 @@ const MANIPULATOR_SHORTCUT_AXIS_ORIENTATION = 'engine.shortcuts.manipulator.axis
 const MANIPULATOR_SHORTCUT_TOGGLE_X = 'engine.shortcuts.manipulator.toggle.x';
 const MANIPULATOR_SHORTCUT_TOGGLE_Y = 'engine.shortcuts.manipulator.toggle.y';
 const MANIPULATOR_SHORTCUT_TOGGLE_Z = 'engine.shortcuts.manipulator.toggle.z';
+var ManipulatorMode;
+(function (ManipulatorMode) {
+    ManipulatorMode[ManipulatorMode["Translation"] = 0] = "Translation";
+    ManipulatorMode[ManipulatorMode["Rotation"] = 1] = "Rotation";
+    ManipulatorMode[ManipulatorMode["Scale"] = 2] = "Scale";
+})(ManipulatorMode || (ManipulatorMode = {}));
 class Manipulator extends Entity {
     #entityAxis = new Map();
-    #xMaterial;
-    #yMaterial;
-    #zMaterial;
-    #xyMaterial;
-    #xzMaterial;
-    #yzMaterial;
-    #xyzMaterial;
-    #xLineMaterial;
-    #yLineMaterial;
-    #zLineMaterial;
-    #xyzLineMaterial;
-    #viewLineMaterial;
-    #xyzSphere;
-    #xArrow;
-    #yArrow;
-    #zArrow;
-    #xyPlane;
-    #xzPlane;
-    #yzPlane;
-    #xCircle;
-    #yCircle;
-    #zCircle;
-    #viewCircle;
-    #circle;
-    #xScale;
-    #yScale;
-    #zScale;
+    #xMaterial = new MeshBasicMaterial();
+    #yMaterial = new MeshBasicMaterial();
+    #zMaterial = new MeshBasicMaterial();
+    #xyMaterial = new MeshBasicMaterial();
+    #xzMaterial = new MeshBasicMaterial();
+    #yzMaterial = new MeshBasicMaterial();
+    #xyzMaterial = new MeshBasicMaterial();
+    #xLineMaterial = new LineMaterial();
+    #yLineMaterial = new LineMaterial();
+    #zLineMaterial = new LineMaterial();
+    #xyzLineMaterial = new LineMaterial();
+    #viewLineMaterial = new LineMaterial();
+    #xyzSphere = new Sphere({ radius: ARROW_RADIUS * 6.0, material: this.#xyzMaterial, segments: 32, rings: 32, name: 'Manipulator XYZ sphere' });
+    #xArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#xMaterial, name: 'Manipulator X arrow' });
+    #yArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial, name: 'Manipulator Y arrow' });
+    #zArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#zMaterial, name: 'Manipulator Z arrow' });
+    #xyPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#xyMaterial, name: 'Manipulator XY' });
+    #xzPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#xzMaterial, name: 'Manipulator XZ' });
+    #yzPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#yzMaterial, name: 'Manipulator YZ' });
+    #xCircle = new Circle({ radius: RADIUS, material: this.#xLineMaterial, segments: 32, startAngle: -HALF_PI, endAngle: HALF_PI, name: 'Manipulator rotate X' });
+    #yCircle = new Circle({ radius: RADIUS, material: this.#yLineMaterial, segments: 32, startAngle: -PI, endAngle: 0, name: 'Manipulator rotate Y' });
+    #zCircle = new Circle({ radius: RADIUS, material: this.#zLineMaterial, segments: 32, startAngle: -HALF_PI, endAngle: HALF_PI, name: 'Manipulator rotate Z' });
+    #viewCircle = new Circle({ radius: RADIUS * 1.25, material: this.#xyzLineMaterial, name: 'Manipulator rotate XYZ' });
+    #circle = new Circle({ radius: RADIUS, material: this.#viewLineMaterial, name: 'Manipulator rotate view' });
+    #xScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#xMaterial });
+    #yScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial });
+    #zScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#zMaterial });
     #cursorPos = vec2.create();
     #axisOrientation = ORIENTATION_WORLD;
     #near = vec3.create();
@@ -10187,18 +10193,18 @@ class Manipulator extends Entity {
     #startDragPosition = vec3.create();
     #startScalePosition = vec3.create();
     #parentStartScale = vec3.create();
-    #mode;
+    #mode = ManipulatorMode.Translation;
     enumerable = false;
     camera;
     size = 1;
-    #axis;
+    #axis = 0;
     #startPosition = vec3.create();
     #startQuaternion = quat.create();
     #startLocalQuaternion = quat.create();
-    #startDragQuaternion = quat.create();
-    #translationManipulator;
-    #rotationManipulator;
-    #scaleManipulator;
+    #startDragVector = vec3.create();
+    #translationManipulator = new Entity({ name: 'Translation manipulator' });
+    #rotationManipulator = new Entity({ name: 'Rotation manipulator' });
+    #scaleManipulator = new Entity({ name: 'Scale manipulator' });
     #enableX = false;
     #enableY = false;
     #enableZ = false;
@@ -10212,7 +10218,7 @@ class Manipulator extends Entity {
         this.#initTranslationManipulator();
         this.#initRotationManipulator();
         this.#initScaleManipulator();
-        this.mode = 0;
+        this.setMode(0);
         this.enableX = true;
         this.enableY = true;
         this.enableZ = true;
@@ -10319,59 +10325,43 @@ class Manipulator extends Entity {
         }
     }
     #initMaterials() {
-        this.#xMaterial = new MeshBasicMaterial();
         this.#xMaterial.setMeshColor(X_COLOR);
         this.#xMaterial.setDefine('ALWAYS_ON_TOP');
-        this.#yMaterial = new MeshBasicMaterial();
         this.#yMaterial.setMeshColor(Y_COLOR);
         this.#yMaterial.setDefine('ALWAYS_ON_TOP');
-        this.#zMaterial = new MeshBasicMaterial();
         this.#zMaterial.setMeshColor(Z_COLOR);
         this.#zMaterial.setDefine('ALWAYS_ON_TOP');
-        this.#xyMaterial = new MeshBasicMaterial();
         this.#xyMaterial.setMeshColor(XY_COLOR);
         this.#xyMaterial.setDefine('ALWAYS_ON_TOP');
         this.#xyMaterial.renderFace(RenderFace.Both);
         this.#xyMaterial.setBlending(MATERIAL_BLENDING_NORMAL);
-        this.#xzMaterial = new MeshBasicMaterial();
         this.#xzMaterial.setMeshColor(XZ_COLOR);
         this.#xzMaterial.setDefine('ALWAYS_ON_TOP');
         this.#xzMaterial.renderFace(RenderFace.Both);
         this.#xzMaterial.setBlending(MATERIAL_BLENDING_NORMAL);
-        this.#yzMaterial = new MeshBasicMaterial();
         this.#yzMaterial.setMeshColor(YZ_COLOR);
         this.#yzMaterial.setDefine('ALWAYS_ON_TOP');
         this.#yzMaterial.renderFace(RenderFace.Both);
         this.#yzMaterial.setBlending(MATERIAL_BLENDING_NORMAL);
-        this.#xyzMaterial = new MeshBasicMaterial();
         this.#xyzMaterial.setDefine('ALWAYS_ON_TOP');
-        this.#xLineMaterial = new LineMaterial();
         this.#xLineMaterial.setMeshColor(X_COLOR);
         this.#xLineMaterial.setDefine('ALWAYS_ON_TOP');
-        this.#yLineMaterial = new LineMaterial();
         this.#yLineMaterial.setMeshColor(Y_COLOR);
         this.#yLineMaterial.setDefine('ALWAYS_ON_TOP');
-        this.#zLineMaterial = new LineMaterial();
         this.#zLineMaterial.setMeshColor(Z_COLOR);
         this.#zLineMaterial.setDefine('ALWAYS_ON_TOP');
-        this.#xyzLineMaterial = new LineMaterial();
         this.#xyzLineMaterial.setMeshColor(SCREEN_COLOR);
         this.#xyzLineMaterial.setDefine('ALWAYS_ON_TOP');
-        this.#viewLineMaterial = new LineMaterial();
         this.#viewLineMaterial.setMeshColor(GREY_COLOR);
         this.#viewLineMaterial.setDefine('ALWAYS_ON_TOP');
         this.#viewLineMaterial.lineWidth = 2;
     }
     #initTranslationManipulator() {
-        this.#translationManipulator = this.addChild(new Entity({ name: 'Translation manipulator' }));
-        this.#xyzSphere = new Sphere({ radius: ARROW_RADIUS * 6.0, material: this.#xyzMaterial, segments: 32, rings: 32, name: 'Manipulator XYZ sphere' });
-        this.#xArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#xMaterial, name: 'Manipulator X arrow' });
+        this.addChild(this.#translationManipulator);
         this.#xArrow.rotateY(HALF_PI);
         this.#xArrow.translateZ(ARROW_LENGTH / 2);
-        this.#yArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial, name: 'Manipulator Y arrow' });
         this.#yArrow.rotateX(-HALF_PI);
         this.#yArrow.translateZ(ARROW_LENGTH / 2);
-        this.#zArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#zMaterial, name: 'Manipulator Z arrow' });
         this.#zArrow.translateZ(ARROW_LENGTH / 2);
         let xTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#xMaterial, name: 'Manipulator X tip' });
         xTip.translateZ(ARROW_LENGTH / 2);
@@ -10379,12 +10369,9 @@ class Manipulator extends Entity {
         yTip.translateZ(ARROW_LENGTH / 2);
         let zTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#zMaterial, name: 'Manipulator Z tip' });
         zTip.translateZ(ARROW_LENGTH / 2);
-        this.#xyPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#xyMaterial, name: 'Manipulator XY' });
         this.#xyPlane.translateOnAxis([1, 1, 0], HALF_PLANE_LENGTH);
-        this.#xzPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#xzMaterial, name: 'Manipulator XZ' });
         this.#xzPlane.translateOnAxis([1, 0, 1], HALF_PLANE_LENGTH);
         this.#xzPlane.rotateX(HALF_PI);
-        this.#yzPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#yzMaterial, name: 'Manipulator YZ' });
         this.#yzPlane.translateOnAxis([0, 1, 1], HALF_PLANE_LENGTH);
         this.#yzPlane.rotateY(HALF_PI);
         this.#translationManipulator.addChild(this.#xyzSphere);
@@ -10409,12 +10396,7 @@ class Manipulator extends Entity {
         this.#entityAxis.set(this.#yzPlane, 6);
     }
     #initRotationManipulator() {
-        this.#rotationManipulator = this.addChild(new Entity({ name: 'Rotation manipulator' }));
-        this.#xCircle = new Circle({ radius: RADIUS, material: this.#xLineMaterial, segments: 32, startAngle: -HALF_PI, endAngle: HALF_PI, name: 'Manipulator rotate X' });
-        this.#yCircle = new Circle({ radius: RADIUS, material: this.#yLineMaterial, segments: 32, startAngle: -PI, endAngle: 0, name: 'Manipulator rotate Y' });
-        this.#zCircle = new Circle({ radius: RADIUS, material: this.#zLineMaterial, segments: 32, startAngle: -HALF_PI, endAngle: HALF_PI, name: 'Manipulator rotate Z' });
-        this.#viewCircle = new Circle({ radius: RADIUS * 1.25, material: this.#xyzLineMaterial, name: 'Manipulator rotate XYZ' });
-        this.#circle = new Circle({ radius: RADIUS, material: this.#viewLineMaterial, name: 'Manipulator rotate view' });
+        this.addChild(this.#rotationManipulator);
         this.#rotationManipulator.addChild(this.#xCircle);
         this.#rotationManipulator.addChild(this.#yCircle);
         this.#rotationManipulator.addChild(this.#zCircle);
@@ -10426,15 +10408,12 @@ class Manipulator extends Entity {
         this.#entityAxis.set(this.#viewCircle, 17);
     }
     #initScaleManipulator() {
-        this.#scaleManipulator = this.addChild(new Entity({ name: 'Scale manipulator' }));
+        this.addChild(this.#scaleManipulator);
         //let _xyzSphere = new Sphere(ARROW_RADIUS * 6.0, this.#xyzMaterial, 32, 32);
-        this.#xScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#xMaterial });
         this.#xScale.rotateY(HALF_PI);
         this.#xScale.translateZ(ARROW_LENGTH / 2);
-        this.#yScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial });
         this.#yScale.rotateX(-HALF_PI);
         this.#yScale.translateZ(ARROW_LENGTH / 2);
-        this.#zScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#zMaterial });
         this.#zScale.translateZ(ARROW_LENGTH / 2);
         let xScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#xMaterial });
         xScaleTip.translateZ(ARROW_LENGTH / 2);
@@ -10486,7 +10465,7 @@ class Manipulator extends Entity {
             this.getWorldQuaternion(this.#startQuaternion);
             this.getQuaternion(this.#startLocalQuaternion);
         }
-        this.#startDragQuaternion = this.#computeQuaternion(x, y);
+        this.#startDragVector = this.#computeQuaternion(x, y);
     }
     startScale(x, y) {
         let startScalePosition = this.#startScalePosition;
@@ -10547,7 +10526,7 @@ class Manipulator extends Entity {
     }
     #rotationMoveHandler(x, y) {
         let v3 = this.#computeQuaternion(x, y);
-        quat.rotationTo(translationManipulatorTempQuat, this.#startDragQuaternion, v3);
+        quat.rotationTo(translationManipulatorTempQuat, this.#startDragVector, v3);
         quat.mul(translationManipulatorTempQuat, this.#startLocalQuaternion, translationManipulatorTempQuat);
         if (this._parent) {
             this._parent.quaternion = translationManipulatorTempQuat;
@@ -10559,6 +10538,9 @@ class Manipulator extends Entity {
     }
     #scaleMoveHandler(x, y) {
         let v3 = this.#computeTranslationPosition(tempVec3$r, x, y);
+        if (!v3) {
+            return;
+        }
         //vec3.sub(v3, v3, this.#startScalePosition);
         vec3.div(v3, v3, this.scale);
         vec3.div(v3, v3, this.#startScalePosition);
@@ -10685,7 +10667,7 @@ class Manipulator extends Entity {
                     return vec3.create(); //TODO: optimize
                 }
                 let t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
-                return vec3.scaleAndAdd(vec3.create(), linePoint, lineDirection, t);
+                return vec3.scaleAndAdd(vec3.create(), linePoint, lineDirection, t); //TODO: optimize pass vec3 as param
             }
             let v4;
             let planeNormal = vec3.create();
@@ -10737,6 +10719,10 @@ class Manipulator extends Entity {
         this.camera = camera;
     }
     set mode(mode) {
+        console.warn('deprecated, use setMode()');
+        this.setMode(mode);
+    }
+    setMode(mode) {
         this.#translationManipulator.visible = false;
         this.#rotationManipulator.visible = false;
         this.#scaleManipulator.visible = false;
@@ -10814,7 +10800,10 @@ class Manipulator extends Entity {
         return this.#enableZ;
     }
     #setupAxis() {
-        let camera = this.camera;
+        const camera = this.camera;
+        if (!camera) {
+            return;
+        }
         this.getWorldQuaternion(translationManipulatorTempQuat);
         quat.invert(translationManipulatorTempQuat, translationManipulatorTempQuat);
         camera.getWorldPosition(tempVec3$r);
@@ -26958,7 +26947,7 @@ class Source2ParticleManagerClass {
 }
 const Source2ParticleManager = new Source2ParticleManagerClass();
 
-var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n";
+var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator{\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\tcursor: pointer;\n}\n";
 
 function FormatArray(array) {
     let arr = [];
@@ -27072,13 +27061,58 @@ class SceneExplorer {
         this.#htmlHeader.append(this.#htmlNameFilter);
         this.#htmlTypeFilter = createElement('select');
         this.#htmlHeader.append(this.#htmlTypeFilter);
-        let manipulatorId = 'display_manipulator';
         const skeletonId = 'display_skeleton';
-        let htmlDisplayManipulator = createElement('input', { type: 'checkbox', id: manipulatorId });
-        let htmlDisplayManipulatorSpan = createElement('span');
-        let htmlDisplayManipulatorLabel = createElement('label', { i18n: '#display_manipulator', htmlFor: manipulatorId });
-        this.#htmlHeader.append(htmlDisplayManipulatorSpan);
-        htmlDisplayManipulatorSpan.append(htmlDisplayManipulator, htmlDisplayManipulatorLabel);
+        let htmlManipulator;
+        createElement('span', {
+            class: 'manipulator',
+            parent: this.#htmlHeader,
+            childs: [
+                createElement('label', {
+                    childs: [
+                        htmlManipulator = createElement('input', {
+                            type: 'checkbox',
+                            events: {
+                                change: (event) => this.#manipulator.visible = event.target.checked,
+                            },
+                        }),
+                        createElement('span', { i18n: '#display_manipulator', }),
+                    ],
+                }),
+                createElement('span', {
+                    class: 'manipulator-button',
+                    innerHTML: dragPanSVG,
+                    events: {
+                        click: () => {
+                            this.#manipulator.setMode(ManipulatorMode.Translation);
+                            htmlManipulator.checked = true;
+                            this.#manipulator.visible = true;
+                        },
+                    }
+                }),
+                createElement('span', {
+                    class: 'manipulator-button',
+                    innerHTML: rotateSVG,
+                    events: {
+                        click: () => {
+                            this.#manipulator.setMode(ManipulatorMode.Rotation);
+                            htmlManipulator.checked = true;
+                            this.#manipulator.visible = true;
+                        },
+                    }
+                }),
+                createElement('span', {
+                    class: 'manipulator-button',
+                    innerHTML: panZoomSVG,
+                    events: {
+                        click: () => {
+                            this.#manipulator.setMode(ManipulatorMode.Scale);
+                            htmlManipulator.checked = true;
+                            this.#manipulator.visible = true;
+                        },
+                    }
+                }),
+            ],
+        });
         createElement('span', {
             parent: this.#htmlHeader,
             childs: [
@@ -27106,7 +27140,6 @@ class SceneExplorer {
         htmlDisplayPropertiesSpan.append(htmlDisplayProperties, htmlDisplayPropertiesLabel);
         this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = event.target.value.toLowerCase(); this.applyFilter(); });
         this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = event.target.value; this.applyFilter(); });
-        htmlDisplayManipulator.addEventListener('change', (event) => this.#manipulator.visible = event.target.checked);
         htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
         this.#populateTypeFilter();
     }

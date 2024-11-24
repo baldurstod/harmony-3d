@@ -174,39 +174,53 @@ export class SceneExplorer {
 		this.#htmlHeader.append(this.#htmlTypeFilter);
 		const skeletonId = 'display_skeleton';
 
+		let htmlManipulator: HTMLInputElement;
 		createElement('span', {
+			class: 'manipulator',
 			parent: this.#htmlHeader,
 			childs: [
 				createElement('label', {
 					childs: [
-						createElement('input', {
+						htmlManipulator = createElement('input', {
 							type: 'checkbox',
 							events: {
 								change: (event: Event) => this.#manipulator.visible = (event.target as HTMLInputElement).checked,
 							},
-						}),
+						}) as HTMLInputElement,
 						createElement('span', { i18n: '#display_manipulator', }),
 					],
 				}),
-				createElement('button', {
+				createElement('span', {
 					class: 'manipulator-button',
 					innerHTML: dragPanSVG,
 					events: {
-						click: () => this.#manipulator.setMode(ManipulatorMode.Translation),
+						click: () => {
+							this.#manipulator.setMode(ManipulatorMode.Translation);
+							htmlManipulator.checked = true;
+							this.#manipulator.visible = true;
+						},
 					}
 				}),
-				createElement('button', {
+				createElement('span', {
 					class: 'manipulator-button',
 					innerHTML: rotateSVG,
 					events: {
-						click: () => this.#manipulator.setMode(ManipulatorMode.Rotation),
+						click: () => {
+							this.#manipulator.setMode(ManipulatorMode.Rotation);
+							htmlManipulator.checked = true;
+							this.#manipulator.visible = true;
+						},
 					}
 				}),
-				createElement('button', {
+				createElement('span', {
 					class: 'manipulator-button',
 					innerHTML: panZoomSVG,
 					events: {
-						click: () => this.#manipulator.setMode(ManipulatorMode.Scale),
+						click: () => {
+							this.#manipulator.setMode(ManipulatorMode.Scale);
+							htmlManipulator.checked = true;
+							this.#manipulator.visible = true;
+						},
 					}
 				}),
 			],

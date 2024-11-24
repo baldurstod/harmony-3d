@@ -3314,16 +3314,17 @@ declare class Choreography {
          export declare class Manipulator extends Entity {
              #private;
              enumerable: boolean;
-             camera: Camera;
+             camera?: Camera;
              size: number;
              constructor(params?: any);
-             resize(camera: any): void;
-             startTranslate(x: any, y: any): void;
-             startRotate(x: any, y: any): void;
-             startScale(x: any, y: any): void;
-             setCamera(camera: any): void;
-             set mode(mode: any);
-             set axisOrientation(axisOrientation: any);
+             resize(camera?: Camera): void;
+             startTranslate(x: number, y: number): void;
+             startRotate(x: number, y: number): void;
+             startScale(x: number, y: number): void;
+             setCamera(camera: Camera): void;
+             set mode(mode: ManipulatorMode);
+             setMode(mode: ManipulatorMode): void;
+             set axisOrientation(axisOrientation: number);
              getWorldQuaternion(q?: quat): quat;
              getWorldScale(vec?: vec3): vec3;
              set enableX(enableX: boolean);
@@ -3332,6 +3333,12 @@ declare class Choreography {
              get enableY(): boolean;
              set enableZ(enableZ: boolean);
              get enableZ(): boolean;
+         }
+
+         declare enum ManipulatorMode {
+             Translation = 0,
+             Rotation = 1,
+             Scale = 2
          }
 
          /**
