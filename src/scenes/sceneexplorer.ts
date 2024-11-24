@@ -20,7 +20,7 @@ import { Target } from '../objects/target';
 import { Text3D } from '../objects/text3d';
 import { getHelper } from '../objects/helpers/helperfactory';
 import { HitboxHelper } from '../objects/helpers/hitboxhelper';
-import { Manipulator } from '../objects/helpers/manipulator';
+import { Manipulator, ManipulatorMode } from '../objects/helpers/manipulator';
 import { SkeletonHelper } from '../objects/helpers/skeletonhelper';
 import { WireframeHelper } from '../objects/helpers/wireframehelper';
 import { Box } from '../primitives/box';
@@ -41,6 +41,7 @@ import { Interaction } from '../utils/interaction';
 import sceneExplorerCSS from '../css/sceneexplorer.css';
 import { Wireframe } from '../objects/wireframe';
 import { Scene } from './scene';
+import { dragPanSVG, panZoomSVG, rotateSVG } from 'harmony-svg';
 
 function FormatArray(array) {
 	let arr = [];
@@ -171,15 +172,45 @@ export class SceneExplorer {
 		this.#htmlHeader.append(this.#htmlNameFilter);
 		this.#htmlTypeFilter = createElement('select');
 		this.#htmlHeader.append(this.#htmlTypeFilter);
-		let manipulatorId = 'display_manipulator';
 		const skeletonId = 'display_skeleton';
-		let htmlDisplayManipulator = createElement('input', { type: 'checkbox', id: manipulatorId });
 
-		let htmlDisplayManipulatorSpan = createElement('span');
-		let htmlDisplayManipulatorLabel = createElement('label', { i18n: '#display_manipulator', htmlFor: manipulatorId });
-
-		this.#htmlHeader.append(htmlDisplayManipulatorSpan);
-		htmlDisplayManipulatorSpan.append(htmlDisplayManipulator, htmlDisplayManipulatorLabel);
+		createElement('span', {
+			parent: this.#htmlHeader,
+			childs: [
+				createElement('label', {
+					childs: [
+						createElement('input', {
+							type: 'checkbox',
+							events: {
+								change: (event: Event) => this.#manipulator.visible = (event.target as HTMLInputElement).checked,
+							},
+						}),
+						createElement('span', { i18n: '#display_manipulator', }),
+					],
+				}),
+				createElement('button', {
+					class: 'manipulator-button',
+					innerHTML: dragPanSVG,
+					events: {
+						click: () => this.#manipulator.setMode(ManipulatorMode.Translation),
+					}
+				}),
+				createElement('button', {
+					class: 'manipulator-button',
+					innerHTML: rotateSVG,
+					events: {
+						click: () => this.#manipulator.setMode(ManipulatorMode.Rotation),
+					}
+				}),
+				createElement('button', {
+					class: 'manipulator-button',
+					innerHTML: panZoomSVG,
+					events: {
+						click: () => this.#manipulator.setMode(ManipulatorMode.Scale),
+					}
+				}),
+			],
+		});
 
 
 		createElement('span', {
@@ -214,7 +245,6 @@ export class SceneExplorer {
 
 		this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = (event.target as HTMLInputElement).value.toLowerCase(); this.applyFilter(); });
 		this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = (event.target as HTMLInputElement).value; this.applyFilter(); });
-		htmlDisplayManipulator.addEventListener('change', (event) => this.#manipulator.visible = (event.target as HTMLInputElement).checked);
 		htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
 
 		this.#populateTypeFilter();
