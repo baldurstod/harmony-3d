@@ -1,4 +1,4 @@
-import { mat4, quat, vec2, vec3 } from 'gl-matrix';
+import { mat4, quat, vec2, vec3, vec4 } from 'gl-matrix';
 import { ShortcutHandler } from 'harmony-browser-utils';
 
 import { Entity } from '../../entities/entity';
@@ -25,19 +25,19 @@ const HALF_PLANE_LENGTH = PLANE_LENGTH / 2;
 const TIP_LENGTH = 1;
 const RADIUS = 5;
 
-const X_COLOR = [1, 0, 0, 1];
-const Y_COLOR = [0, 1, 0, 1];
-const Z_COLOR = [0, 0, 1, 1];
+const X_COLOR = vec4.fromValues(1, 0, 0, 1);
+const Y_COLOR = vec4.fromValues(0, 1, 0, 1);
+const Z_COLOR = vec4.fromValues(0, 0, 1, 1);
 
-const XY_COLOR = [1, 1, 0, 0.2];
-const XZ_COLOR = [1, 0, 1, 0.2];
-const YZ_COLOR = [0, 1, 1, 0.2];
+const XY_COLOR = vec4.fromValues(1, 1, 0, 0.2);
+const XZ_COLOR = vec4.fromValues(1, 0, 1, 0.2);
+const YZ_COLOR = vec4.fromValues(0, 1, 1, 0.2);
 
-const GREY_COLOR = [0.2, 0.2, 0.2, 1];
+const GREY_COLOR = vec4.fromValues(0.2, 0.2, 0.2, 1);
 
-const SCREEN_COLOR = [1.0, 0.0, 1.0, 1];
+const SCREEN_COLOR = vec4.fromValues(1.0, 0.0, 1.0, 1);
 
-const SELECTED_COLOR = [1, 1, 0, 1];
+const SELECTED_COLOR = vec4.fromValues(1, 1, 0, 1);
 
 const ORIENTATION_WORLD = 0;
 const ORIENTATION_OBJECT = 1;
@@ -74,33 +74,33 @@ export enum ManipulatorMode {
 
 export class Manipulator extends Entity {
 	#entityAxis = new Map();
-	#xMaterial;
-	#yMaterial;
-	#zMaterial;
-	#xyMaterial;
-	#xzMaterial;
-	#yzMaterial;
-	#xyzMaterial;
-	#xLineMaterial;
-	#yLineMaterial;
-	#zLineMaterial;
-	#xyzLineMaterial;
-	#viewLineMaterial;
-	#xyzSphere;
-	#xArrow;
-	#yArrow;
-	#zArrow;
-	#xyPlane;
-	#xzPlane;
-	#yzPlane;
-	#xCircle;
-	#yCircle;
-	#zCircle;
-	#viewCircle;
-	#circle;
-	#xScale;
-	#yScale;
-	#zScale;
+	#xMaterial = new MeshBasicMaterial();
+	#yMaterial = new MeshBasicMaterial();
+	#zMaterial = new MeshBasicMaterial();
+	#xyMaterial = new MeshBasicMaterial();
+	#xzMaterial = new MeshBasicMaterial();
+	#yzMaterial = new MeshBasicMaterial();
+	#xyzMaterial = new MeshBasicMaterial();
+	#xLineMaterial = new LineMaterial();
+	#yLineMaterial = new LineMaterial();
+	#zLineMaterial = new LineMaterial();
+	#xyzLineMaterial = new LineMaterial();
+	#viewLineMaterial = new LineMaterial();
+	#xyzSphere = new Sphere({ radius: ARROW_RADIUS * 6.0, material: this.#xyzMaterial, segments: 32, rings: 32, name: 'Manipulator XYZ sphere' });
+	#xArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#xMaterial, name: 'Manipulator X arrow' });
+	#yArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial, name: 'Manipulator Y arrow' });
+	#zArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#zMaterial, name: 'Manipulator Z arrow' });
+	#xyPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#xyMaterial, name: 'Manipulator XY' });
+	#xzPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#xzMaterial, name: 'Manipulator XZ' });
+	#yzPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#yzMaterial, name: 'Manipulator YZ' });
+	#xCircle = new Circle({ radius: RADIUS, material: this.#xLineMaterial, segments: 32, startAngle: -HALF_PI, endAngle: HALF_PI, name: 'Manipulator rotate X' });
+	#yCircle = new Circle({ radius: RADIUS, material: this.#yLineMaterial, segments: 32, startAngle: -PI, endAngle: 0, name: 'Manipulator rotate Y' });
+	#zCircle = new Circle({ radius: RADIUS, material: this.#zLineMaterial, segments: 32, startAngle: -HALF_PI, endAngle: HALF_PI, name: 'Manipulator rotate Z' });
+	#viewCircle = new Circle({ radius: RADIUS * 1.25, material: this.#xyzLineMaterial, name: 'Manipulator rotate XYZ' });
+	#circle = new Circle({ radius: RADIUS, material: this.#viewLineMaterial, name: 'Manipulator rotate view' });
+	#xScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#xMaterial });
+	#yScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial });
+	#zScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#zMaterial });
 	#cursorPos = vec2.create();
 	#axisOrientation = ORIENTATION_WORLD;
 	#near = vec3.create();
@@ -110,16 +110,16 @@ export class Manipulator extends Entity {
 	#parentStartScale = vec3.create();
 	#mode: ManipulatorMode = ManipulatorMode.Translation;
 	enumerable = false;
-	camera: Camera;
+	camera?: Camera;
 	size = 1;
-	#axis: number;
+	#axis: number = 0;
 	#startPosition: vec3 = vec3.create();
 	#startQuaternion: quat = quat.create();
 	#startLocalQuaternion: quat = quat.create();
-	#startDragQuaternion: quat = quat.create();
-	#translationManipulator: Entity;
-	#rotationManipulator: Entity;
-	#scaleManipulator: Entity;
+	#startDragVector?: vec3 = vec3.create();
+	#translationManipulator = new Entity({ name: 'Translation manipulator' });
+	#rotationManipulator = new Entity({ name: 'Rotation manipulator' });
+	#scaleManipulator = new Entity({ name: 'Scale manipulator' });
 	#enableX: boolean = false;
 	#enableY: boolean = false;
 	#enableZ: boolean = false;
@@ -145,8 +145,8 @@ export class Manipulator extends Entity {
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.resize((this.root as Scene)?.activeCamera));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Pick, (pickEvent: CustomEvent) => {
-			let detail = pickEvent.detail;
+		GraphicsEvents.addEventListener(GraphicsEvent.Pick, (pickEvent: Event) => {
+			let detail = (pickEvent as CustomEvent).detail;
 			if (this.#entityAxis.has(detail.entity)) {
 				this.#axis = this.#entityAxis.get(detail.entity);
 				if (this.#axis < 10) {
@@ -160,8 +160,8 @@ export class Manipulator extends Entity {
 				this.#setAxisSelected(true);
 			}
 		});
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (pickEvent: CustomEvent) => {
-			let detail = pickEvent.detail;
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (pickEvent: Event) => {
+			let detail = (pickEvent as CustomEvent).detail;
 			if (!detail.entity?.visible) {
 				return;
 			}
@@ -175,8 +175,8 @@ export class Manipulator extends Entity {
 				}
 			}
 		});
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (pickEvent: CustomEvent) => {
-			if (this.#entityAxis.has(pickEvent.detail.entity)) {
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (pickEvent: Event) => {
+			if (this.#entityAxis.has((pickEvent as CustomEvent).detail.entity)) {
 				new Graphics().dragging = false;
 				this.#setAxisSelected(false);
 			}
@@ -193,7 +193,7 @@ export class Manipulator extends Entity {
 		new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, event => this.enableZ = !this.enableZ);
 	}
 
-	resize(camera) {
+	resize(camera?: Camera) {
 		if (!this.visible) {
 			return;
 		}
@@ -216,7 +216,7 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#setAxisSelected(selected) {
+	#setAxisSelected(selected: boolean) {
 		switch (this.#axis % 10) {
 			case 1:
 				this.#xMaterial.setMeshColor(selected ? SELECTED_COLOR : X_COLOR);
@@ -250,60 +250,45 @@ export class Manipulator extends Entity {
 	#initMaterials() {
 		this.#xMaterial.setMeshColor(X_COLOR);
 		this.#xMaterial.setDefine('ALWAYS_ON_TOP');
-		this.#yMaterial = new MeshBasicMaterial();
 		this.#yMaterial.setMeshColor(Y_COLOR);
 		this.#yMaterial.setDefine('ALWAYS_ON_TOP');
-		this.#zMaterial = new MeshBasicMaterial();
 		this.#zMaterial.setMeshColor(Z_COLOR);
 		this.#zMaterial.setDefine('ALWAYS_ON_TOP');
 
-		this.#xyMaterial = new MeshBasicMaterial();
 		this.#xyMaterial.setMeshColor(XY_COLOR);
 		this.#xyMaterial.setDefine('ALWAYS_ON_TOP');
 		this.#xyMaterial.renderFace(RenderFace.Both);
 		this.#xyMaterial.setBlending(MATERIAL_BLENDING_NORMAL);
-		this.#xzMaterial = new MeshBasicMaterial();
 		this.#xzMaterial.setMeshColor(XZ_COLOR);
 		this.#xzMaterial.setDefine('ALWAYS_ON_TOP');
 		this.#xzMaterial.renderFace(RenderFace.Both);
 		this.#xzMaterial.setBlending(MATERIAL_BLENDING_NORMAL);
-		this.#yzMaterial = new MeshBasicMaterial();
 		this.#yzMaterial.setMeshColor(YZ_COLOR);
 		this.#yzMaterial.setDefine('ALWAYS_ON_TOP');
 		this.#yzMaterial.renderFace(RenderFace.Both);
 		this.#yzMaterial.setBlending(MATERIAL_BLENDING_NORMAL);
-		this.#xyzMaterial = new MeshBasicMaterial();
 		this.#xyzMaterial.setDefine('ALWAYS_ON_TOP');
 
-		this.#xLineMaterial = new LineMaterial();
 		this.#xLineMaterial.setMeshColor(X_COLOR);
 		this.#xLineMaterial.setDefine('ALWAYS_ON_TOP');
-		this.#yLineMaterial = new LineMaterial();
 		this.#yLineMaterial.setMeshColor(Y_COLOR);
 		this.#yLineMaterial.setDefine('ALWAYS_ON_TOP');
-		this.#zLineMaterial = new LineMaterial();
 		this.#zLineMaterial.setMeshColor(Z_COLOR);
 		this.#zLineMaterial.setDefine('ALWAYS_ON_TOP');
-		this.#xyzLineMaterial = new LineMaterial();
 		this.#xyzLineMaterial.setMeshColor(SCREEN_COLOR);
 		this.#xyzLineMaterial.setDefine('ALWAYS_ON_TOP');
-		this.#viewLineMaterial = new LineMaterial();
 		this.#viewLineMaterial.setMeshColor(GREY_COLOR);
 		this.#viewLineMaterial.setDefine('ALWAYS_ON_TOP');
 		this.#viewLineMaterial.lineWidth = 2;
 	}
 
 	#initTranslationManipulator() {
-		this.#translationManipulator = this.addChild(new Entity({ name: 'Translation manipulator' }));
-		this.#xyzSphere = new Sphere({ radius: ARROW_RADIUS * 6.0, material: this.#xyzMaterial, segments: 32, rings: 32, name: 'Manipulator XYZ sphere' });
+		this.addChild(this.#translationManipulator);
 
-		this.#xArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#xMaterial, name: 'Manipulator X arrow' });
 		this.#xArrow.rotateY(HALF_PI);
 		this.#xArrow.translateZ(ARROW_LENGTH / 2);
-		this.#yArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial, name: 'Manipulator Y arrow' });
 		this.#yArrow.rotateX(-HALF_PI);
 		this.#yArrow.translateZ(ARROW_LENGTH / 2);
-		this.#zArrow = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#zMaterial, name: 'Manipulator Z arrow' });
 		this.#zArrow.translateZ(ARROW_LENGTH / 2);
 
 		let xTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#xMaterial, name: 'Manipulator X tip' });
@@ -313,12 +298,9 @@ export class Manipulator extends Entity {
 		let zTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#zMaterial, name: 'Manipulator Z tip' });
 		zTip.translateZ(ARROW_LENGTH / 2);
 
-		this.#xyPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#xyMaterial, name: 'Manipulator XY' });
 		this.#xyPlane.translateOnAxis([1, 1, 0], HALF_PLANE_LENGTH);
-		this.#xzPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#xzMaterial, name: 'Manipulator XZ' });
 		this.#xzPlane.translateOnAxis([1, 0, 1], HALF_PLANE_LENGTH);
 		this.#xzPlane.rotateX(HALF_PI);
-		this.#yzPlane = new Plane({ width: PLANE_LENGTH, height: PLANE_LENGTH, material: this.#yzMaterial, name: 'Manipulator YZ' });
 		this.#yzPlane.translateOnAxis([0, 1, 1], HALF_PLANE_LENGTH);
 		this.#yzPlane.rotateY(HALF_PI);
 
@@ -348,13 +330,7 @@ export class Manipulator extends Entity {
 	}
 
 	#initRotationManipulator() {
-		this.#rotationManipulator = this.addChild(new Entity({ name: 'Rotation manipulator' }));
-
-		this.#xCircle = new Circle({ radius: RADIUS, material: this.#xLineMaterial, segments: 32, startAngle: -HALF_PI, endAngle: HALF_PI, name: 'Manipulator rotate X' });
-		this.#yCircle = new Circle({ radius: RADIUS, material: this.#yLineMaterial, segments: 32, startAngle: -PI, endAngle: 0, name: 'Manipulator rotate Y' });
-		this.#zCircle = new Circle({ radius: RADIUS, material: this.#zLineMaterial, segments: 32, startAngle: -HALF_PI, endAngle: HALF_PI, name: 'Manipulator rotate Z' });
-		this.#viewCircle = new Circle({ radius: RADIUS * 1.25, material: this.#xyzLineMaterial, name: 'Manipulator rotate XYZ' });
-		this.#circle = new Circle({ radius: RADIUS, material: this.#viewLineMaterial, name: 'Manipulator rotate view' });
+		this.addChild(this.#rotationManipulator);
 
 		this.#rotationManipulator.addChild(this.#xCircle);
 		this.#rotationManipulator.addChild(this.#yCircle);
@@ -369,16 +345,13 @@ export class Manipulator extends Entity {
 	}
 
 	#initScaleManipulator() {
-		this.#scaleManipulator = this.addChild(new Entity({ name: 'Scale manipulator' }));
+		this.addChild(this.#scaleManipulator);
 		//let _xyzSphere = new Sphere(ARROW_RADIUS * 6.0, this.#xyzMaterial, 32, 32);
 
-		this.#xScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#xMaterial });
 		this.#xScale.rotateY(HALF_PI);
 		this.#xScale.translateZ(ARROW_LENGTH / 2);
-		this.#yScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial });
 		this.#yScale.rotateX(-HALF_PI);
 		this.#yScale.translateZ(ARROW_LENGTH / 2);
-		this.#zScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#zMaterial });
 		this.#zScale.translateZ(ARROW_LENGTH / 2);
 
 		let xScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#xMaterial });
@@ -419,7 +392,7 @@ export class Manipulator extends Entity {
 		this.#entityAxis.set(zScaleTip, 23);
 	}
 
-	startTranslate(x, y) {
+	startTranslate(x: number, y: number) {
 		if (this._parent) {
 			this._parent.getWorldPosition(this.#startPosition);
 		} else {
@@ -428,7 +401,7 @@ export class Manipulator extends Entity {
 		this.#computeTranslationPosition(this.#startDragPosition, x, y);
 	}
 
-	startRotate(x, y) {
+	startRotate(x: number, y: number) {
 		if (this._parent) {
 			this._parent.getWorldQuaternion(this.#startQuaternion);
 			this._parent.getQuaternion(this.#startLocalQuaternion);
@@ -436,10 +409,10 @@ export class Manipulator extends Entity {
 			this.getWorldQuaternion(this.#startQuaternion);
 			this.getQuaternion(this.#startLocalQuaternion);
 		}
-		this.#startDragQuaternion = this.#computeQuaternion(x, y);
+		this.#startDragVector = this.#computeQuaternion(x, y);
 	}
 
-	startScale(x, y) {
+	startScale(x: number, y: number) {
 		let startScalePosition = this.#startScalePosition;
 		if (this._parent) {
 			this._parent.getWorldPosition(this.#startPosition);
@@ -454,7 +427,7 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#translationMoveHandler(x, y) {
+	#translationMoveHandler(x: number, y: number) {
 		this.#computeTranslationPosition(tempVec3, x, y);
 
 		vec3.sub(tempVec3, tempVec3, this.#startDragPosition);
@@ -498,9 +471,9 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#rotationMoveHandler(x, y) {//TODO: rename this func
+	#rotationMoveHandler(x: number, y: number) {//TODO: rename this func
 		let v3 = this.#computeQuaternion(x, y);
-		quat.rotationTo(translationManipulatorTempQuat, this.#startDragQuaternion, v3);
+		quat.rotationTo(translationManipulatorTempQuat, this.#startDragVector, v3);
 		quat.mul(translationManipulatorTempQuat, this.#startLocalQuaternion, translationManipulatorTempQuat);
 		if (this._parent) {
 			this._parent.quaternion = translationManipulatorTempQuat;
@@ -510,8 +483,11 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#scaleMoveHandler(x, y) {
+	#scaleMoveHandler(x: number, y: number) {
 		let v3 = this.#computeTranslationPosition(tempVec3, x, y);
+		if (!v3) {
+			return;
+		}
 
 		//vec3.sub(v3, v3, this.#startScalePosition);
 		vec3.div(v3, v3, this.scale);
@@ -545,7 +521,7 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#computeTranslationPosition(out, x, y) {
+	#computeTranslationPosition(out: vec3, x: number, y: number) {
 		let camera = this.camera;
 		if (camera) {
 			let projectionMatrix = camera.projectionMatrix;
@@ -572,7 +548,7 @@ export class Manipulator extends Entity {
 			vec3.transformMat4(this.#near, this.#near, invViewMatrix);
 			vec3.transformMat4(this.#far, this.#far, invViewMatrix);
 
-			function lineIntersection(out, planePoint, planeNormal, linePoint, lineDirection) {
+			function lineIntersection(out: vec3, planePoint: vec3, planeNormal: vec3, linePoint: vec3, lineDirection: vec3) {
 				if (vec3.dot(planeNormal, lineDirection) == 0) {
 					return vec3.create();//TODO: optimize
 				}
@@ -634,7 +610,7 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#computeQuaternion(x, y) {
+	#computeQuaternion(x: number, y: number) {
 		let camera = this.camera;
 		if (camera) {
 			let projectionMatrix = camera.projectionMatrix;
@@ -660,13 +636,13 @@ export class Manipulator extends Entity {
 			vec3.transformMat4(this.#near, this.#near, invViewMatrix);
 			vec3.transformMat4(this.#far, this.#far, invViewMatrix);
 
-			function lineIntersection(planePoint, planeNormal, linePoint, lineDirection) {
+			function lineIntersection(planePoint: vec3, planeNormal: vec3, linePoint: vec3, lineDirection: vec3) {
 				if (vec3.dot(planeNormal, lineDirection) == 0) {
 					return vec3.create();//TODO: optimize
 				}
 
 				let t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
-				return vec3.scaleAndAdd(vec3.create(), linePoint, lineDirection, t);
+				return vec3.scaleAndAdd(vec3.create(), linePoint, lineDirection, t);//TODO: optimize pass vec3 as param
 			}
 
 			let angle;
@@ -719,7 +695,7 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	setCamera(camera) {
+	setCamera(camera: Camera) {
 		this.camera = camera;
 	}
 
@@ -753,7 +729,7 @@ export class Manipulator extends Entity {
 		this.#setAxisSelected(false);
 	}
 
-	set axisOrientation(axisOrientation) {
+	set axisOrientation(axisOrientation: number) {
 		this.#axisOrientation = axisOrientation;
 	}
 
@@ -819,7 +795,11 @@ export class Manipulator extends Entity {
 	}
 
 	#setupAxis() {
-		let camera = this.camera;
+		const camera = this.camera;
+
+		if (!camera) {
+			return;
+		}
 
 		this.getWorldQuaternion(translationManipulatorTempQuat);
 		quat.invert(translationManipulatorTempQuat, translationManipulatorTempQuat);
