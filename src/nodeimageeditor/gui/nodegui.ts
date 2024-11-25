@@ -98,7 +98,7 @@ export class NodeGui {
 	#expanded = true;
 	#html: HTMLElement;
 	#htmlPreview: HTMLElement;
-	#htmlRectSelector: HTMLElement;
+	#htmlRectSelector: HTMLHarmony2dManipulatorElement;
 	#drag: string;
 	#htmlParams;
 	_ioGui = new Map();
@@ -253,6 +253,17 @@ export class NodeGui {
 			htmlLoadStickerSpecular.addEventListener('click', () => inputImage.click());
 		}
 		this.#refreshHtml();
+		this.#initResizeObserver();
+	}
+
+	#initResizeObserver() {
+		const callback: ResizeObserverCallback = (entries, observer) => {
+			entries.forEach(entry => {
+				this.#updateManipulator();
+			});
+		};
+		const resizeObserver = new ResizeObserver(callback);
+		resizeObserver.observe(this.#htmlPreview);
 	}
 
 	#refreshHtml() {
@@ -292,7 +303,7 @@ export class NodeGui {
 		});
 
 		nameHtml.innerHTML = param.name;
-		let value;
+		let value: any;
 		if (index != undefined) {
 			value = param.value[index];
 		} else {
@@ -325,12 +336,13 @@ export class NodeGui {
 								if (param) {
 									const rect = this.#htmlPreview.getBoundingClientRect();
 									const corner = manipulator.getCorner(parameters[name]);
-									this.#setParamValue(param, `${corner.x / rect.width} ${corner.y / rect.width}`);
+									this.#setParamValue(param, `${corner.x / rect.width} ${corner.y / rect.width}`, undefined, false);
 								}
 							}
 						},
 					}
-				});
+				}) as HTMLHarmony2dManipulatorElement;
+				this.#updateManipulator();
 				break;
 		}
 		valueHtml.value = value;
@@ -338,7 +350,35 @@ export class NodeGui {
 		return paramHtml;
 	}
 
-	#setParamValue(param: NodeParam, stringValue: string, index?: number) {
+	#updateManipulator() {
+		const rect = this.#htmlPreview.getBoundingClientRect();
+		const tl = this.#node.getValue('top left') as vec2;
+		const bl = this.#node.getValue('bottom left') as vec2;
+		const tr = this.#node.getValue('top right') as vec2;
+
+		if (!tl || !bl || !tr) {
+			return;
+		}
+
+		const center = vec2.create();
+		center[0] = (tl[0] + tr[0]) * 0.5 * rect.width;
+		center[1] = (tl[1] + bl[1]) * 0.5 * rect.height;
+
+		const width = (tr[0] - tl[0]) * rect.width;
+		const height = (bl[1] - tl[1]) * rect.height;
+
+		this.#htmlRectSelector.set({
+			left: center[0] - width * 0.5,
+			top: center[1] - height * 0.5,
+			width: width,
+			height: height,
+		});
+
+		console.info(tl, bl, tr);
+
+	}
+
+	#setParamValue(param: NodeParam, stringValue: string, index?: number, updateManipulator = true) {
 		let node = this.#node;
 		let value: any;
 		switch (param.type) {
@@ -355,6 +395,10 @@ export class NodeGui {
 				break;
 			default:
 				value = Number(stringValue);
+		}
+
+		if (updateManipulator && (param.name == 'top left' || param.name == 'bottom left' || param.name == 'top right')) {
+			this.#updateManipulator();
 		}
 
 		node.setParam(param.name, value, index);
