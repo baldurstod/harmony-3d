@@ -4,6 +4,7 @@
 	height: 100%;
 	display: flex;
 	flex-direction: column;
+	user-select: none;
 }
 
 .node-image-editor-nodes {
@@ -169,4 +170,46 @@
 	opacity: 0;
 	width: 100%;
 	height: 100%;
+}
+
+.copy-button {
+	width: 2rem;
+	height: 2rem;
+	display: inline-block;
+	cursor: pointer;
+}
+
+input {
+	/*transition: background-color 1s;*/
+	background-color: #FFF;
+
+	/* only animation-duration here is required, rest are optional (also animation-name but it will be set on hover)*/
+	animation-duration: 1.5s;
+	/* same as transition duration */
+	animation-timing-function: linear;
+	/* kind of same as transition timing */
+	animation-delay: 0ms;
+	/* same as transition delay */
+	animation-iteration-count: 1;
+	/* set to 2 to make it run twice, or Infinite to run forever!*/
+	animation-direction: normal;
+	/* can be set to "alternate" to run animation, then run it backwards.*/
+	animation-fill-mode: none;
+	/* can be used to retain keyframe styling after animation, with "forwards" */
+	animation-play-state: running;
+	/* can be set dynamically to pause mid animation*/
+
+}
+
+.flash {
+	animation-name: copyAnimation;
+}
+
+@keyframes copyAnimation {
+	0% {
+		background-color: #ffdf5d;
+	}
+	100% {
+		background-color: #FFF;
+	}
 }

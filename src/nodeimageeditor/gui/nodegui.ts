@@ -9,7 +9,8 @@ import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
 import { GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE } from '../../webgl/constants';
 import { NodeImageEditorGui } from './nodeimageeditorgui';
 import { NodeParam, NodeParamType } from '../nodeparam';
-import { zoomInSVG, zoomOutSVG } from 'harmony-svg';
+import { contentCopySVG, zoomInSVG, zoomOutSVG } from 'harmony-svg';
+import { setTimeoutPromise } from 'harmony-utils';
 
 export const DELAY_BEFORE_REFRESH = 100;
 const FLOAT_VALUE_DECIMALS = 3;
@@ -276,6 +277,19 @@ export class NodeGui {
 				change: (event) => this.#setParamValue(param, event.target.value, index)
 			}
 		}) as HTMLInputElement;
+		createElement('span', {
+			class: 'copy-button',
+			parent: paramHtml,
+			innerHTML: contentCopySVG,
+			events: {
+				click: async () => {
+					await navigator.clipboard.writeText(valueHtml.value);
+					valueHtml.classList.add('flash');
+					await setTimeoutPromise(1500);
+					valueHtml.classList.remove('flash');
+				},
+			}
+		});
 
 		nameHtml.innerHTML = param.name;
 		let value;

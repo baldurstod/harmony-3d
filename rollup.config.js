@@ -42,6 +42,7 @@ export default [
 			'harmony-browser-utils',
 			'harmony-svg',
 			'harmony-ui',
+			'harmony-utils',
 			'harmony-browser-utils',
 			'harmony-fbx',
 			'harmony-vpk',
