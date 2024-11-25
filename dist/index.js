@@ -14611,12 +14611,14 @@ class NodeGui {
         if (this.#node) {
             this.#node.previewSize *= 2;
             this.#node.updatePreview();
+            this.#nodeImageEditorGui.refresh();
         }
     }
     #decreasePreviewSize() {
         if (this.#node) {
             this.#node.previewSize /= 2;
             this.#node.updatePreview();
+            this.#nodeImageEditorGui.refresh();
         }
     }
     #initHtml() {
@@ -14809,7 +14811,6 @@ class NodeGui {
         const width = vec2.len(AC) * rect.width;
         const height = vec2.len(AD) * rect.height;
         const angle = Math.atan2(AC[1], AC[0]);
-        console.info(angle, AC);
         this.#htmlRectSelector.set({
             rotation: angle,
             left: center[0] - width * 0.5,
@@ -15051,6 +15052,9 @@ class NodeImageEditorGui {
                 }
             }
         }
+        this.refresh();
+    }
+    refresh() {
         this.#organizeNodes();
         this.#drawLinks();
     }

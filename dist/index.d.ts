@@ -4152,6 +4152,7 @@ declare class Choreography {
              set nodeImageEditor(nodeImageEditor: NodeImageEditor);
              setNodeImageEditor(nodeImageEditor?: NodeImageEditor): void;
              get htmlElement(): Element;
+             refresh(): void;
          }
 
          export declare class NodeImageEditorMaterial extends Material {

@@ -157,6 +157,7 @@ export class NodeGui {
 		if (this.#node) {
 			this.#node.previewSize *= 2;
 			this.#node.updatePreview();
+			this.#nodeImageEditorGui.refresh();
 		}
 	}
 
@@ -164,6 +165,7 @@ export class NodeGui {
 		if (this.#node) {
 			this.#node.previewSize /= 2;
 			this.#node.updatePreview();
+			this.#nodeImageEditorGui.refresh();
 		}
 	}
 
@@ -375,7 +377,6 @@ export class NodeGui {
 		const height = vec2.len(AD) * rect.height;
 
 		const angle = Math.atan2(AC[1], AC[0]);
-		console.info(angle, AC);
 
 		this.#htmlRectSelector.set({
 			rotation: angle,

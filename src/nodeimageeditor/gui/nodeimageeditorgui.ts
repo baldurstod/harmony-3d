@@ -236,6 +236,10 @@ export class NodeImageEditorGui {
 				}
 			}
 		}
+		this.refresh();
+	}
+
+	refresh() {
 		this.#organizeNodes();
 		this.#drawLinks();
 	}
