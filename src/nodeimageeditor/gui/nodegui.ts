@@ -352,30 +352,38 @@ export class NodeGui {
 
 	#updateManipulator() {
 		const rect = this.#htmlPreview.getBoundingClientRect();
-		const tl = this.#node.getValue('top left') as vec2;
-		const bl = this.#node.getValue('bottom left') as vec2;
-		const tr = this.#node.getValue('top right') as vec2;
+		const A = this.#node.getValue('top left') as vec2;
+		const D = this.#node.getValue('bottom left') as vec2;
+		const C = this.#node.getValue('top right') as vec2;
 
-		if (!tl || !bl || !tr) {
+		if (!A || !D || !C) {
 			return;
 		}
+		const AC = vec2.sub(vec2.create(), C, A);
+		const AD = vec2.sub(vec2.create(), D, A);
+		const B = vec2.add(vec2.create(), AC, D);
 
-		const center = vec2.create();
-		center[0] = (tl[0] + tr[0]) * 0.5 * rect.width;
-		center[1] = (tl[1] + bl[1]) * 0.5 * rect.height;
+		const a1 = B[0] - A[0];
+		const a2 = B[1] - A[1];
+		const c1 = D[0] - C[0];
+		const c2 = D[1] - C[1];
 
-		const width = (tr[0] - tl[0]) * rect.width;
-		const height = (bl[1] - tl[1]) * rect.height;
+		const t = (a2 * C[0] - a2 * A[0] - a1 * C[1] + a1 * A[1]) / (-a2 * c1 + a1 * c2);
+
+		const center = vec2.fromValues((C[0] + c1 * t) * rect.width, (C[1] + c2 * t) * rect.height);
+		const width = vec2.len(AC) * rect.width;
+		const height = vec2.len(AD) * rect.height;
+
+		const angle = Math.atan2(AC[1], AC[0]);
+		console.info(angle, AC);
 
 		this.#htmlRectSelector.set({
+			rotation: angle,
 			left: center[0] - width * 0.5,
 			top: center[1] - height * 0.5,
 			width: width,
 			height: height,
 		});
-
-		console.info(tl, bl, tr);
-
 	}
 
 	#setParamValue(param: NodeParam, stringValue: string, index?: number, updateManipulator = true) {
