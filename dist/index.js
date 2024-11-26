@@ -7,7 +7,7 @@ import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reade
 import { zoomOutSVG, zoomInSVG, contentCopySVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG, dragPanSVG, rotateSVG, panZoomSVG } from 'harmony-svg';
 import { setTimeoutPromise } from 'harmony-utils';
 import { Vpk } from 'harmony-vpk';
-import JSZip from 'jszip';
+import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
 import { MeshoptDecoder } from 'meshoptimizer';
 import { murmurhash2_32_gc } from 'murmurhash-es6';
 
@@ -18953,47 +18953,31 @@ class WebRepository {
     }
 }
 
-//import { BlobReader, BlobWriter, ZipReader, ZipReaderGetEntriesOptions } from '@zip.js/zip.js';
 class ZipRepository {
     #name;
     #zip;
-    #reader = new JSZip(); //ZipReader<BlobReader>;
+    #reader;
     #zipEntries = new Map();
     #initPromiseResolve;
     #initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
-    constructor(name, zipFile) {
+    constructor(name, zip) {
         this.#name = name;
-        this.#zip = zipFile;
-        //this.#reader = new ZipReader(new BlobReader(zip));
-        (async () => {
-            const zip = await this.#reader.loadAsync(await zipFile.arrayBuffer());
-            console.info(zip);
-            /*const error = await this.#vpk.setFiles(files);
-
-            if (error) {
-                this.#initPromiseResolve?.(false);
-            } else {
-                this.#initPromiseResolve?.(true);
-        }*/
-            this.#initPromiseResolve?.(true);
-        })();
-        //this.#initEntries();
+        this.#zip = zip;
+        this.#reader = new ZipReader(new BlobReader(zip));
+        this.#initEntries();
     }
-    /*
     async #initEntries() {
         const entries = await this.#reader.getEntries();
         for (const entry of entries) {
             if (!entry.getData || entry.directory) {
                 continue;
             }
-
             const blob = await entry.getData(new BlobWriter());
             const filename = cleanupFilename(entry.filename);
             this.#zipEntries.set(filename, new File([blob], filename));
         }
         this.#initPromiseResolve?.(true);
     }
-        */
     get name() {
         return this.#name;
     }

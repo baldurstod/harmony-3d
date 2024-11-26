@@ -49,7 +49,7 @@ export default [
 			'murmurhash-es6',
 			'meshoptimizer',
 			'@derschmale/io-rgbe',
-			'jszip',
+			'@zip.js/zip.js',
 		],
 	},
 ];

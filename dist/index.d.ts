@@ -2041,7 +2041,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): SpotLightHelper | PointLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -6395,7 +6395,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -6991,7 +6991,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -9267,7 +9267,7 @@ declare class Choreography {
 
          export declare class ZipRepository implements Repository {
              #private;
-             constructor(name: string, zipFile: File);
+             constructor(name: string, zip: File);
              get name(): string;
              getFile(filename: string): Promise<RepositoryArrayBufferResponse>;
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
