@@ -1,21 +1,36 @@
-import { BlobReader, BlobWriter, ZipReader, ZipReaderGetEntriesOptions } from '@zip.js/zip.js';
+//import { BlobReader, BlobWriter, ZipReader, ZipReaderGetEntriesOptions } from '@zip.js/zip.js';
 import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import JSZip from 'jszip';
 
 export class ZipRepository implements Repository {
 	#name: string;
 	#zip: File;
-	#reader: ZipReader<BlobReader>;
+	#reader = new JSZip();//ZipReader<BlobReader>;
 	#zipEntries = new Map<string, File>();
 	#initPromiseResolve?: (value: boolean) => void;
 	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
-	constructor(name: string, zip: File) {
+	constructor(name: string, zipFile: File) {
 		this.#name = name;
-		this.#zip = zip;
-		this.#reader = new ZipReader(new BlobReader(zip));
+		this.#zip = zipFile;
+		//this.#reader = new ZipReader(new BlobReader(zip));
 
-		this.#initEntries();
+		(async () => {
+			const zip = await this.#reader.loadAsync(await zipFile.arrayBuffer());
+			console.info(zip);
+			/*const error = await this.#vpk.setFiles(files);
+
+			if (error) {
+				this.#initPromiseResolve?.(false);
+			} else {
+				this.#initPromiseResolve?.(true);
+		}*/
+			this.#initPromiseResolve?.(true);
+		})();
+
+		//this.#initEntries();
 	}
 
+	/*
 	async #initEntries() {
 		const entries = await this.#reader.getEntries();
 		for (const entry of entries) {
@@ -29,6 +44,7 @@ export class ZipRepository implements Repository {
 		}
 		this.#initPromiseResolve?.(true);
 	}
+		*/
 
 	get name() {
 		return this.#name;
