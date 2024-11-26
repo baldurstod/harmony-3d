@@ -9,12 +9,13 @@ const WIDTH = 300;
 const HEIGHT = 300;
 
 export class NodeImageEditorGui {
-	#filter: any = {};
+	#filter: { node?: string } = {};
 	#shadowRoot: ShadowRoot;
 	#imageEditorChanged: () => void;
 	#refreshTimeout: number = 0;
 	#nodesGui = new Map<Node, NodeGui>();
 	#nodeImageEditor: NodeImageEditor | undefined;
+	#htmlNodeFilter: HTMLInputElement;
 	#htmlNodes: HTMLElement;
 	#canvas: HTMLCanvasElement;
 	#context: CanvasRenderingContext2D;
@@ -34,12 +35,12 @@ export class NodeImageEditorGui {
 			class: 'node-image-editor-header',
 			parent: this.#shadowRoot,
 			childs: [
-				createElement('input', {
+				this.#htmlNodeFilter = createElement('input', {
 					class: 'node-image-editor-node-filter',
 					events: {
 						input: (event: Event) => { this.#filter.node = (event.target as HTMLInputElement).value; this.#refreshFilter() },
 					}
-				}),
+				}) as HTMLInputElement,
 			]
 		});
 
@@ -254,5 +255,15 @@ export class NodeImageEditorGui {
 			}
 		}
 		nodeGUI.expanded = expanded;
+	}
+
+	setNodeFilter(nodeName: string): void {
+		this.#htmlNodeFilter.value = nodeName;
+		this.#filter.node = nodeName;
+		this.#refreshFilter();
+	}
+
+	getNodeFilter(): string {
+		return this.#filter.node ?? '';
 	}
 }

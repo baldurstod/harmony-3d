@@ -2041,7 +2041,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): Grid | PointLightHelper | SpotLightHelper | CameraFrustum;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -4153,6 +4153,8 @@ declare class Choreography {
              setNodeImageEditor(nodeImageEditor?: NodeImageEditor): void;
              get htmlElement(): Element;
              refresh(): void;
+             setNodeFilter(nodeName: string): void;
+             getNodeFilter(): string;
          }
 
          export declare class NodeImageEditorMaterial extends Material {
@@ -6393,7 +6395,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -6989,7 +6991,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
