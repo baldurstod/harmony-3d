@@ -2041,7 +2041,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): SpotLightHelper | PointLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -2646,7 +2646,7 @@ declare class Choreography {
               * Invalidate all shader (force recompile)
               */
              invalidateShaders(): void;
-             clearColor(clearColor: any): void;
+             clearColor(clearColor: vec4): void;
              getClearColor(clearColor?: vec4): vec4;
              clearDepth(clearDepth: any): void;
              clearStencil(clearStencil: any): void;
@@ -6395,7 +6395,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -6991,7 +6991,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;

@@ -386,7 +386,7 @@ export class Graphics {
 		}*/
 	}
 
-	clearColor(clearColor) {
+	clearColor(clearColor: vec4) {
 		WebGLRenderingState.clearColor(clearColor);
 	}
 
