@@ -144,7 +144,7 @@ export class Graphics {
 		return this;
 	}
 
-	 pickEntity(x: number, y: number) {
+	pickEntity(x: number, y: number) {
 		this.setIncludeCode('pickingMode', '#define PICKING_MODE');
 		GraphicsEvents.tick(0, performance.now());
 		this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
@@ -157,7 +157,7 @@ export class Graphics {
 		return pickList.get(pickedEntityIndex) ?? null;
 	}
 
-	 mouseDown(event) {
+	mouseDown(event) {
 		this.#canvas.focus();
 		let x = event.offsetX;
 		let y = event.offsetY;
@@ -169,20 +169,20 @@ export class Graphics {
 		GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
 	}
 
-	 mouseMove(event) {
+	mouseMove(event) {
 		let x = event.offsetX;
 		let y = event.offsetY;
 		GraphicsEvents.mouseMove(x, y, this.#pickedEntity, event);
 	}
 
-	 mouseUp(event) {
+	mouseUp(event) {
 		let x = event.offsetX;
 		let y = event.offsetY;
 		GraphicsEvents.mouseUp(x, y, this.#pickedEntity, event);
 		this.#pickedEntity = null;
 	}
 
-	 getDefinesAsString(material: Material) {//TODOv3 rename var material
+	getDefinesAsString(material: Material) {//TODOv3 rename var material
 		let defines: string[] = [];
 		for (let [name, value] of Object.entries(material.defines)) {
 			if (value === false) {
@@ -194,7 +194,7 @@ export class Graphics {
 		return defines.join('\n') + '\n';
 	}
 
-	 render(scene: Scene, camera: Camera, delta: number) {
+	render(scene: Scene, camera: Camera, delta: number) {
 		if (MEASURE_PERFORMANCE) {
 			WebGLStats.beginRender();
 		}
@@ -214,13 +214,13 @@ export class Graphics {
 		}
 	}
 
-	 renderBackground() {
+	renderBackground() {
 		if (this.autoClear) {
 			this.clear(this.autoClearColor, this.autoClearDepth, this.autoClearStencil);
 		}
 	}
 
-	 clear(color, depth, stencil) {
+	clear(color, depth, stencil) {
 		let bits = 0;
 		if (color) bits |= GL_COLOR_BUFFER_BIT;
 		if (depth) bits |= GL_DEPTH_BUFFER_BIT;
@@ -234,7 +234,7 @@ export class Graphics {
 		this.glContext?.clear(bits);
 	}
 
-	 _tick() {
+	_tick() {
 		cancelAnimationFrame(this.#animationFrame);
 		let queueTask;
 		if (FULL_PATATE && TESTING) {
@@ -357,26 +357,26 @@ export class Graphics {
 		this.#refreshIncludeCode();
 	}
 
-	 removeIncludeCode(key: string) {
+	removeIncludeCode(key: string) {
 		this.#includeCode.delete(key);
 		this.#refreshIncludeCode();
 	}
 
-	 #refreshIncludeCode() {
+	#refreshIncludeCode() {
 		this.#globalIncludeCode = '';
 		for (let code of this.#includeCode.values()) {
 			this.#globalIncludeCode += code + '\n';
 		}
 	}
 
-	 getIncludeCode() {
+	getIncludeCode() {
 		return this.#globalIncludeCode;
 	}
 
 	/**
 	 * Invalidate all shader (force recompile)
 	 */
-	 invalidateShaders() {
+	invalidateShaders() {
 		if (this.#forwardRenderer) {
 			this.#forwardRenderer.invalidateShaders();
 		}
@@ -386,34 +386,34 @@ export class Graphics {
 		}*/
 	}
 
-	 clearColor(clearColor) {
+	clearColor(clearColor) {
 		WebGLRenderingState.clearColor(clearColor);
 	}
 
-	 getClearColor(clearColor?: vec4) {
+	getClearColor(clearColor?: vec4) {
 		return WebGLRenderingState.getClearColor(clearColor);
 	}
 
-	 clearDepth(clearDepth) {
+	clearDepth(clearDepth) {
 		WebGLRenderingState.clearDepth(clearDepth);
 	}
 
-	 clearStencil(clearStencil) {
+	clearStencil(clearStencil) {
 		WebGLRenderingState.clearStencil(clearStencil);
 	}
 
-	 set autoResize(autoResize) {
+	set autoResize(autoResize) {
 		this.#autoResize = autoResize;
 		if (autoResize) {
 			this.checkCanvasSize();
 		}
 	}
 
-	 get autoResize() {
+	get autoResize() {
 		return this.#autoResize;
 	}
 
-	 getExtension(name) {
+	getExtension(name) {
 		if (this.glContext) {
 			if (this.#extensions.has(name)) {
 				return this.#extensions.get(name);
@@ -426,16 +426,16 @@ export class Graphics {
 		return null;
 	}
 
-	 set pixelRatio(pixelRatio) {
+	set pixelRatio(pixelRatio) {
 		this.#pixelRatio = pixelRatio;
 		this._updateSize();
 	}
 
-	 get pixelRatio() {
+	get pixelRatio() {
 		return this.#pixelRatio;
 	}
 
-	 setSize(width, height) {
+	setSize(width, height) {
 		width = Math.max(width, 1);
 		height = Math.max(height, 1);
 		let previousWidth = this.#width;
@@ -451,13 +451,13 @@ export class Graphics {
 		return [previousWidth, previousHeight];
 	}
 
-	 getSize(ret = vec2.create()) {
+	getSize(ret = vec2.create()) {
 		ret[0] = this.#width;
 		ret[1] = this.#height;
 		return ret;
 	}
 
-	 _updateSize() {
+	_updateSize() {
 		this.#canvas.width = this.#width * this.#pixelRatio;
 		this.#canvas.height = this.#height * this.#pixelRatio;
 		if (USE_OFF_SCREEN_CANVAS) {
@@ -468,21 +468,21 @@ export class Graphics {
 		this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
 	}
 
-	 set viewport(viewport) {
+	set viewport(viewport) {
 		vec4.copy(this.#viewport, viewport);
 		WebGLRenderingState.viewport(viewport);
 	}
 
-	 get viewport() {
+	get viewport() {
 		return vec4.clone(this.#viewport);
 	}
 
-	 set scissor(scissor) {
+	set scissor(scissor) {
 		vec4.copy(this.#scissor, scissor);
 		WebGLRenderingState.scissor(scissor);
 	}
 
-	 set scissorTest(scissorTest) {
+	set scissorTest(scissorTest) {
 		if (scissorTest) {
 			WebGLRenderingState.enable(GL_SCISSOR_TEST);
 		} else {
@@ -490,7 +490,7 @@ export class Graphics {
 		}
 	}
 
-	 checkCanvasSize() {
+	checkCanvasSize() {
 		if (!this.#autoResize) {
 			return;
 		}
@@ -510,7 +510,7 @@ export class Graphics {
 		}
 	}
 
-	 #initObserver() {
+	#initObserver() {
 		const callback = (entries, observer) => {
 			entries.forEach(entry => {
 				this.checkCanvasSize();
@@ -522,20 +522,20 @@ export class Graphics {
 		}
 	}
 
-	 play() {
+	play() {
 		this.#running = true;
 		this._tick();
 	}
 
-	 pause() {
+	pause() {
 		this.#running = false;
 	}
 
-	 isRunning() {
+	isRunning() {
 		return this.#running;
 	}
 
-	 createFramebuffer() {
+	createFramebuffer() {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
@@ -547,11 +547,11 @@ export class Graphics {
 		return frameBuffer;
 	}
 
-	 deleteFramebuffer(frameBuffer) {
+	deleteFramebuffer(frameBuffer) {
 		this.glContext.deleteFramebuffer(frameBuffer);
 	}
 
-	 createRenderbuffer() {
+	createRenderbuffer() {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
@@ -565,28 +565,28 @@ export class Graphics {
 		return renderBuffer;
 	}
 
-	 deleteRenderbuffer(renderBuffer: WebGLRenderbuffer) {
+	deleteRenderbuffer(renderBuffer: WebGLRenderbuffer) {
 		this.glContext.deleteRenderbuffer(renderBuffer);
 	}
 
-	 setFramebuffer(framebuffer) {
+	setFramebuffer(framebuffer) {
 		framebuffer.bind();
 		//this.glContext.bindFramebuffer(_gl.FRAMEBUFFER, framebuffer);
 	}
 
-	 pushRenderTarget(renderTarget: RenderTarget) {
+	pushRenderTarget(renderTarget: RenderTarget) {
 		this.#renderTargetStack.push(renderTarget);
 		this.#setRenderTarget(renderTarget);
 	}
 
-	 popRenderTarget(): RenderTarget {
+	popRenderTarget(): RenderTarget {
 		this.#renderTargetStack.pop();
 		const renderTarget = this.#renderTargetStack[this.#renderTargetStack.length - 1];
 		this.#setRenderTarget(renderTarget);
 		return renderTarget;
 	}
 
-	 #setRenderTarget(renderTarget?: RenderTarget) {
+	#setRenderTarget(renderTarget?: RenderTarget) {
 		if (renderTarget == undefined) {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.cleanupGLError();
@@ -601,7 +601,7 @@ export class Graphics {
 		}
 	}
 
-	 savePicture(scene, camera, filename, width, height) {
+	savePicture(scene, camera, filename, width, height) {
 		let previousWidth = this.#width;
 		let previousHeight = this.#height;
 		let previousAutoResize = this.autoResize;
@@ -616,11 +616,11 @@ export class Graphics {
 		}
 	}
 
-	 async savePictureAsFile(filename: string) {
+	async savePictureAsFile(filename: string) {
 		return new File([await this.toBlob()], filename)
 	}
 
-	 async toBlob(): Promise<Blob> {
+	async toBlob(): Promise<Blob> {
 		let promiseResolve: (value: Blob) => void;
 		const promise = new Promise<Blob>((resolve) => {
 			promiseResolve = resolve;
@@ -632,7 +632,7 @@ export class Graphics {
 		return promise;
 	}
 
-	 _savePicture(filename) {
+	_savePicture(filename) {
 		const callback = function (blob) {
 			//SaveFile(filename, blob);
 			SaveFile(new File([blob], filename));
@@ -640,13 +640,13 @@ export class Graphics {
 		this.#canvas.toBlob(callback);
 	}
 
-	 startRecording(frameRate = 60, bitsPerSecond) {
+	startRecording(frameRate = 60, bitsPerSecond) {
 		const stream = this.#canvas.captureStream(frameRate);
 		this.#mediaRecorder = new MediaRecorder(stream, { mimeType: RECORDER_MIME_TYPE, bitsPerSecond: bitsPerSecond });
 		this.#mediaRecorder.start();
 	}
 
-	 stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
+	stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
 		this.#mediaRecorder.ondataavailable = (event) => {
 			const blob = new Blob([event.data], { 'type': RECORDER_MIME_TYPE });
 			SaveFile(new File([blob], fileName));
@@ -656,50 +656,50 @@ export class Graphics {
 		this.#mediaRecorder.stream.getVideoTracks()[0].stop();
 	}
 
-	 get ready() {
+	get ready() {
 		return this.#readyPromise;
 	}
 
-	 async isReady() {
+	async isReady() {
 		await this.#readyPromise;
 	}
 
-	 getParameter(parameterName) {
+	getParameter(parameterName) {
 		return this.glContext?.getParameter(parameterName);
 	}
 
-	 cleanupGLError() {
+	cleanupGLError() {
 		this.glContext.getError();//empty the error
 	}
 
-	 getGLError(reason) {
+	getGLError(reason) {
 		let glError = this.glContext.getError();
 		if (glError) {
 			console.error(`GL Error in ${reason} : `, glError);
 		}
 	}
 
-	 useLogDepth(use) {
+	useLogDepth(use) {
 		this.setIncludeCode('LOG_DEPTH', use ? '#define USE_LOG_DEPTH' : '');
 	}
 
-	 getTime() {
+	getTime() {
 		return this.#time;
 	}
 
-	 getWidth() {
+	getWidth() {
 		return this.#width;
 	}
 
-	 getHeight() {
+	getHeight() {
 		return this.#height;
 	}
 
-	 getCanvas() {
+	getCanvas() {
 		return this.#canvas;
 	}
 
-	 getForwardRenderer() {
+	getForwardRenderer() {
 		return this.#forwardRenderer;
 	}
 }
