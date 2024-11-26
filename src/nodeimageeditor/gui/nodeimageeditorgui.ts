@@ -81,6 +81,8 @@ export class NodeImageEditorGui {
 	}
 
 	#setCanvasSize() {
+		this.#canvas.height = 0;
+		this.#canvas.width = 0;
 		this.#canvas.height = this.#htmlNodes.scrollHeight;
 		this.#canvas.width = this.#htmlNodes.scrollWidth;
 		this.#drawLinks();

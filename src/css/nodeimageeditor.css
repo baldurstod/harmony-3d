@@ -12,6 +12,7 @@
 	position: relative;
 	display: flex;
 	overflow: auto;
+	flex: 1;
 }
 
 .node-image-editor-nodes-column {
