@@ -27,7 +27,7 @@ export class ChoreographiesManager {
 		}
 	}
 
-	async playChoreography(choreoName, actors, onStop) {
+	async playChoreography(choreoName, actors, onStop?) {
 		if (this.#sceneImage) {
 			const choreography = await this.#sceneImage.getChoreography(choreoName);
 			if (choreography) {

@@ -741,7 +741,7 @@ export declare class ChoreographiesManager {
     #private;
     constructor();
     init(repositoryName: any, fileName: any): Promise<void>;
-    playChoreography(choreoName: any, actors: any, onStop: any): Promise<void>;
+    playChoreography(choreoName: any, actors: any, onStop?: any): Promise<void>;
     getChoreography(choreoName: string): Promise<Choreography | null>;
     step(elapsed: any): void;
     reset(): void;
