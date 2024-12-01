@@ -12,7 +12,7 @@ export class MaterialManager {
 				throw 'Missing material class';
 			}
 		}
-		this.#materials.set(materialName, {materialClass:materialClass, manager:manager});
+		this.#materials.set(materialName, { materialClass: materialClass, manager: manager });
 	}
 
 	static getMaterial(materialName, callback) {
