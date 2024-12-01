@@ -28,7 +28,7 @@ export class CameraControl {
 		this.setupCamera();
 	}
 
-	get camera(): Camera {
+	get camera(): Camera | undefined {
 		return this.#camera;
 	}
 
