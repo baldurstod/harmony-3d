@@ -119,7 +119,7 @@ export class Interaction {
 		return promise;
 	}
 
-	getString(list: Set<string> | Array<string> | Map<string, string>, defaultValue?: string): Promise<string> {
+	getString(list: Set<string> | Array<string> | Map<string, string> | MapIterator<string>, defaultValue?: string): Promise<string> {
 		this.show();
 		show(this.#htmlInput);
 		(this.#htmlInput as HTMLInputElement).value = defaultValue ? defaultValue : '';
@@ -133,7 +133,7 @@ export class Interaction {
 					animOption.innerHTML = value[0];
 					animOption.value = value[1];
 				} else {
-					animOption.innerHTML = value;
+					animOption.innerHTML = value as string;
 				}
 			}
 		}
