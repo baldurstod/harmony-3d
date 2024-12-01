@@ -101,44 +101,44 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 			this.setDefine('USE_HOLO_SPECTRUM_MAP');//TODOv3: set this automaticaly
 		}
 
-/*
+		/*
 
-			if( bAOTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );		// [sRGB] Ambient Occlusion
-			}
-			if( bWearTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );		// Scratches
-			}
-			if( bExpTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );		// Exponent
-			}
-			if ( bBaseTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER3, true );		// [sRGB] Base
-			}
-			if( bMasksTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER4, true );		// Masks
-			}
-			if( bGrungeTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER5, true );		// [sRGB] Grunge
-			}
-			if( bSurfaceTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER6, true );		// Obj-space normal and cavity
-			}
-			if( bPosTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER7, true );		// High-precision Position
-			}
-			if( bPaintTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER8, true );		// Paint
-			}	*/
+					if( bAOTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );		// [sRGB] Ambient Occlusion
+					}
+					if( bWearTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );		// Scratches
+					}
+					if( bExpTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );		// Exponent
+					}
+					if ( bBaseTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER3, true );		// [sRGB] Base
+					}
+					if( bMasksTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER4, true );		// Masks
+					}
+					if( bGrungeTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER5, true );		// [sRGB] Grunge
+					}
+					if( bSurfaceTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER6, true );		// Obj-space normal and cavity
+					}
+					if( bPosTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER7, true );		// High-precision Position
+					}
+					if( bPaintTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER8, true );		// Paint
+					}	*/
 
 
 		this.uniforms['uColorTint'] = variables.get('$colortint');
@@ -153,7 +153,7 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 		let wearRemapMid = variables.get('$wearremapmid');
 		let flX = wearProgress;
 		let flP = variables.get('$wearremapmid');
-		let flRemappedWear = 2.0 * ( 1.0 - flX ) * flX * flP + ( flX * flX );
+		let flRemappedWear = 2.0 * (1.0 - flX) * flX * flP + (flX * flX);
 
 		//remap wear to custom min/max bounds
 		flRemappedWear *= (variables.get('$wearremapmax') - variables.get('$wearremapmin'));
@@ -202,9 +202,9 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 	setPatternTexCoordTransform(scale, translation, rotation) {
 		let transformMatrix = this.getTexCoordTransform(scale, translation, rotation);
 		this.uniforms['g_patternTexCoordTransform[0]'] = new Float32Array([
-																			transformMatrix[0], transformMatrix[4], transformMatrix[8], transformMatrix[12],
-																			transformMatrix[1], transformMatrix[5], transformMatrix[9], transformMatrix[13]
-																			]);
+			transformMatrix[0], transformMatrix[4], transformMatrix[8], transformMatrix[12],
+			transformMatrix[1], transformMatrix[5], transformMatrix[9], transformMatrix[13]
+		]);
 	}
 
 	getTexCoordTransform(scale, translation, rotation) {
@@ -255,22 +255,22 @@ SourceEngineVMTLoader.registerMaterial('weapondecal', WeaponDecalMaterial);
 const WEAPON_DECAL_DEFAULT_PARAMETERS = {
 	//$basetexture : [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/stickers/default/sticker_default"],
 	//$aotexture : [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/stickers/default/ao_default"],
-	$grungetexture : [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/shared/sticker_paper"],
-	$weartexture : [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/shared/paint_wear"],
-	$decalstyle : [SHADER_PARAM_TYPE_INTEGER, 0],
-	$colortint : [SHADER_PARAM_TYPE_COLOR, [255, 255, 255]],
-	$colortint2 : [SHADER_PARAM_TYPE_COLOR, [0, 0, 0]],
-	$colortint3 : [SHADER_PARAM_TYPE_COLOR, [0, 0, 0]],
-	$colortint4 : [SHADER_PARAM_TYPE_COLOR, [0, 0, 0]],
-	$unwearstrength : [SHADER_PARAM_TYPE_FLOAT, 0.2],
+	$grungetexture: [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/shared/sticker_paper"],
+	$weartexture: [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/shared/paint_wear"],
+	$decalstyle: [SHADER_PARAM_TYPE_INTEGER, 0],
+	$colortint: [SHADER_PARAM_TYPE_COLOR, [255, 255, 255]],
+	$colortint2: [SHADER_PARAM_TYPE_COLOR, [0, 0, 0]],
+	$colortint3: [SHADER_PARAM_TYPE_COLOR, [0, 0, 0]],
+	$colortint4: [SHADER_PARAM_TYPE_COLOR, [0, 0, 0]],
+	$unwearstrength: [SHADER_PARAM_TYPE_FLOAT, 0.2],
 
-	$wearremapmin : [SHADER_PARAM_TYPE_FLOAT, 0.8],
-	$wearremapmid : [SHADER_PARAM_TYPE_FLOAT, 0.75],
-	$wearremapmax : [SHADER_PARAM_TYPE_FLOAT, 1.],
+	$wearremapmin: [SHADER_PARAM_TYPE_FLOAT, 0.8],
+	$wearremapmid: [SHADER_PARAM_TYPE_FLOAT, 0.75],
+	$wearremapmax: [SHADER_PARAM_TYPE_FLOAT, 1.],
 
-	$wearwidthmin : [SHADER_PARAM_TYPE_FLOAT, 0.06],
-	$wearwidthmax : [SHADER_PARAM_TYPE_FLOAT, 0.12],
+	$wearwidthmin: [SHADER_PARAM_TYPE_FLOAT, 0.06],
+	$wearwidthmax: [SHADER_PARAM_TYPE_FLOAT, 0.12],
 
-	$wearbias : [SHADER_PARAM_TYPE_FLOAT, 0.0],
-	$desatbasetint : [SHADER_PARAM_TYPE_FLOAT, 0.0],
+	$wearbias: [SHADER_PARAM_TYPE_FLOAT, 0.0],
+	$desatbasetint: [SHADER_PARAM_TYPE_FLOAT, 0.0],
 }

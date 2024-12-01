@@ -9,7 +9,7 @@ import { Source1TextureManager } from '../textures/source1texturemanager';
 const IDENTITY_MATRIX = mat4.create();
 const USE_FRAME2 = true;
 
-export class UnlitTwoTextureMaterial extends SourceEngineMaterial{
+export class UnlitTwoTextureMaterial extends SourceEngineMaterial {
 	constructor(repository, fileName, parameters = Object.create(null)) {//fixme
 		super(repository, fileName, parameters);
 		if (parameters['$texture2']) {
