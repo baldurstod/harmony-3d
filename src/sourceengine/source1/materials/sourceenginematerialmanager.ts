@@ -101,7 +101,7 @@ export class SourceEngineMaterialManager {
 		show(SceneExplorer.htmlFileSelector);
 
 
-		Interaction.selectFile(SceneExplorer.htmlFileSelector, await this.getMaterialList(), async (repository, materialName) => {
+		new Interaction().selectFile(SceneExplorer.htmlFileSelector, await this.getMaterialList(), async (repository, materialName) => {
 			console.error(materialName);
 			let material = await this.getMaterial(repository, materialName.replace(/^materials\//g, ''));
 			console.error(material);

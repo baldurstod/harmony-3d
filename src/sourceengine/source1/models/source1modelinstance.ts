@@ -553,10 +553,10 @@ export class Source1ModelInstance extends Entity {
 		return Object.assign(super.buildContextMenu(), {
 			Source1ModelInstance_1: null,
 			skin: { i18n: '#skin', submenu: skinMenu },
-			tint: { i18n: '#tint', f: async (entity) => Interaction.getRGB(0, 0, undefined, (tint) => { entity.tint = tint; }, (tint = entity.tint) => { entity.tint = tint; }) },
+			tint: { i18n: '#tint', f: async (entity) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.tint = tint; }, (tint = entity.tint) => { entity.tint = tint; }) },
 			reset_tint: { i18n: '#reset_tint', f: (entity) => entity.tint = undefined, disabled: this.#tint === undefined },
-			animation: { i18n: '#animation', f: async (entity) => { let animation = await Interaction.getString(await entity.sourceModel.mdl.getAnimList()); if (animation) { entity.playSequence(animation); } } },
-			overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { let material = await Interaction.getString(Object.keys(Material.materialList)); if (material) { entity.material = new Material.materialList[material]; } } },
+			animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(await entity.sourceModel.mdl.getAnimList()); if (animation) { entity.playSequence(animation); } } },
+			overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { let material = await new Interaction().getString(Object.keys(Material.materialList)); if (material) { entity.material = new Material.materialList[material]; } } },
 			Source1ModelInstance_2: null,
 			animate: { i18n: '#animate', selected: this.animationSpeed != 0.0, f: () => this.animationSpeed == 0 ? this.animationSpeed = 1 : this.animationSpeed = 0 },
 			frame: { i18n: '#frame', f: () => { let frame = prompt('Frame', String(this.frame)); if (frame) { this.animationSpeed = 0; this.frame = Number(frame); } } },

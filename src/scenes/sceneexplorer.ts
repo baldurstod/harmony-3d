@@ -474,7 +474,7 @@ function initEntitySubmenu() {
 					{
 						i18n: '#model', f: async (entity) => {
 							show(new SceneExplorer().htmlFileSelector);
-							Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
+							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
 								console.error(modelName);
 								//let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
 								let instance = await Source1ModelManager.createInstance(repository, modelName, true);
@@ -489,7 +489,7 @@ function initEntitySubmenu() {
 					{
 						i18n: '#particle_system', f: async (entity) => {
 							show(new SceneExplorer().htmlFileSelector);
-							Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
+							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
 								let systemName = systemPath.split('/');
 								let sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
 								sys.start();
@@ -505,7 +505,7 @@ function initEntitySubmenu() {
 					{
 						i18n: '#model', f: async (entity) => {
 							show(new SceneExplorer().htmlFileSelector);
-							Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
+							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
 								console.error(modelName);
 								let instance = await Source2ModelManager.createInstance(repository, modelName, true);
 								(new SceneExplorer().selectedEntity ?? entity).addChild(instance);
@@ -519,7 +519,7 @@ function initEntitySubmenu() {
 					{
 						i18n: '#particle_system', f: async (entity) => {
 							show(new SceneExplorer().htmlFileSelector);
-							Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
+							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
 								let systemName = systemPath.split('/');
 								let sys = await Source2ParticleManager.getSystem(repository, systemPath);
 								sys.name = systemName[systemName.length - 1];

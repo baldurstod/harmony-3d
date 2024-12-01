@@ -368,7 +368,7 @@ export class Source2ModelInstance extends Entity {
 		return Object.assign(super.buildContextMenu(), {
 			Source2ModelInstance_1: null,
 			skin: { i18n: '#skin', submenu: skinMenu },
-			animation: { i18n: '#animation', f: async (entity) => { let animation = await Interaction.getString(await entity.sourceModel.getAnimations()); if (animation) { entity.playAnimation(animation); } } },
+			animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(await entity.sourceModel.getAnimations()); if (animation) { entity.playAnimation(animation); } } },
 			Source2ModelInstance_2: null,
 			animate: { i18n: '#animate', selected: this.animationSpeed != 0.0, f: () => this.animationSpeed == 0 ? this.animationSpeed = 1 : this.animationSpeed = 0 },
 			frame: { i18n: '#frame', f: () => { let frame = prompt('Frame', String(this.mainAnimFrame)); if (frame) { this.animationSpeed = 0; this.mainAnimFrame = Number(frame); } } },

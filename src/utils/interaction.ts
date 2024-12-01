@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 import { createElement, toggle, hide, show, defineHarmonyColorPicker } from 'harmony-ui';
 import { FileSelector } from './fileselector/fileselector';
 export { FileSelector } from './fileselector/fileselector';
@@ -6,31 +6,40 @@ export { FileSelector } from './fileselector/fileselector';
 const DATALIST_ID = 'interaction-datalist';
 
 export class Interaction {
-	static #htmlColorPicker: HTMLElement;
-	static #htmlElement: HTMLElement;
-	static #htmlInput: HTMLInputElement;
-	static #htmlInputDataList: HTMLDataListElement;
-	static #htmlFileSelector: HTMLElement;
-	static #htmlColorPickeronDone: (color: any) => void;
-	static #htmlColorPickeronChange: (color: any) => void;
-	static #htmlColorPickerCancel: () => void;
-	static {
-		this.#htmlElement = document.createElement('div');
-		this.#htmlElement.style.cssText = 'position:absolute;width: 400px;z-index: 10000;top: 0px;left:0px;';
+	static #instance: Interaction;
+	#htmlColorPicker?: HTMLElement;
+	#htmlElement?: HTMLElement;
+	#htmlInput?: HTMLInputElement;
+	#htmlInputDataList?: HTMLDataListElement;
+	#htmlFileSelector?: HTMLElement;
+	//#htmlColorPickeronDone?: (color: any) => void;
+	#htmlColorPickeronChange?: (color: any) => void;
+	#htmlColorPickerCancel?: () => void;
 
-		/*this.#htmlColorPicker = new Picker(
-			{
-				parent: this.#htmlElement,
-				popup:false
-			});
+	constructor() {
+		if (Interaction.#instance) {
+			return Interaction.#instance;
+		}
+		Interaction.#instance = this;
+	}
 
-		this.#htmlColorPicker.hide();*/
+	#initHtml() {
+		if (this.#htmlElement) {
+			return;
+		}
+
+		this.#htmlElement = createElement('div', {
+			parent: document.body,
+			hidden: true,
+			style: 'position:absolute;width: 400px;z-index: 10000;top: 0px;left:0px;',//TODO: adopt style
+		});
+
 		defineHarmonyColorPicker();
 		this.#htmlColorPicker = createElement('harmony-color-picker', {
 			parent: this.#htmlElement,
 			hidden: true,
 			events: {
-				change: event => {
+				change: (event: CustomEvent) => {
 					if (this.#htmlColorPickeronChange) {
 						this.#htmlColorPickeronChange(event.detail);
 					}
@@ -43,58 +52,60 @@ export class Interaction {
 					hide(this.#htmlColorPicker)
 				},
 			},
-
 		});
-		document.body.append(this.#htmlElement);
 
-		this.#htmlInput = document.createElement('input');
-		this.#htmlInput.style.cssText = 'pointer-events: all;';
-		this.#htmlInput.setAttribute('list', DATALIST_ID);
-		this.#htmlInputDataList = document.createElement('datalist');
-		this.#htmlInputDataList.id = DATALIST_ID;
 
-		this.#htmlElement.append(this.#htmlInput, this.#htmlInputDataList, this.#htmlColorPicker);
-		this.#htmlInput.style.display = 'none';
+		this.#htmlInput = createElement('input', {
+			style: 'pointer-events: all;',
+			list: DATALIST_ID,
+			parent: this.#htmlElement,
+			hidden: true,
+		}) as HTMLInputElement;
 
-		this.#htmlFileSelector = document.createElement('div');
-		this.#htmlFileSelector.style.cssText = 'pointer-events: all;width: 100%;overflow: auto;height: 100%;';
-		//this.#htmlElement.append(this.#htmlFileSelector);
-		//this.#htmlFileSelector.style.display = 'none';
-		this.hide();
+		this.#htmlInputDataList = createElement('datalist', {
+			id: DATALIST_ID,
+			parent: this.#htmlElement,
+		}) as HTMLDataListElement;
+
+
+		this.#htmlFileSelector = createElement('div', {
+			style: 'pointer-events: all;width: 100%;overflow: auto;height: 100%;',
+		});
 	}
 
-	static show() {
-		this.#htmlElement.style.display = '';
-		this.#htmlInput.style.display = 'none';
+	show() {
+		this.#initHtml();
+		show(this.#htmlElement);
+		hide(this.#htmlInput);
 		hide(this.#htmlColorPicker);
 	}
 
-	static hide() {
-		this.#htmlElement.style.display = 'none';
+	hide() {
+		hide(this.#htmlElement);
 	}
 
-	static async getRGB(x, y, defaultValue, onChange, onCancel) {
+	async getColor(x: number, y: number, defaultValue?: vec4, onChange?: (color: vec4) => void, onCancel?: () => void) {
 		this.show();
 		//this.#htmlColorPicker.setOptions({alpha:false});
 		show(this.#htmlColorPicker);
 
-		let promiseResolve;
-		let promiseReject;
+		let promiseResolve: (value: vec4) => void;
 
-		let promise = new Promise((resolve, reject) => {
+		let promise = new Promise<vec4>((resolve, reject) => {
 			promiseResolve = resolve;
-			promiseReject = reject;
 		});
+		/*
 		this.#htmlColorPickeronDone = (color) => {
 			let rgba = color.rgba;
-			let c = vec3.fromValues(rgba[0] / 255, rgba[1] / 255, rgba[2] / 255);
+			let c = vec4.fromValues(rgba[0] / 255, rgba[1] / 255, rgba[2] / 255, 1.0);
 			//console.error(color, color.rgba);
 			promiseResolve(c);
 			this.hide();
 		};
+		*/
 		this.#htmlColorPickeronChange = (color) => {
 			let rgba = color.rgba;
-			let c = vec3.fromValues(rgba[0], rgba[1], rgba[2]);
+			let c = vec4.fromValues(rgba[0], rgba[1], rgba[2], rgba[3]);
 			if (onChange) {
 				onChange(c);
 			}
@@ -108,16 +119,16 @@ export class Interaction {
 		return promise;
 	}
 
-	static async getString(list, defaultValue?): Promise<string> {
+	getString(list: Set<string> | Array<string> | Map<string, string>, defaultValue?: string): Promise<string> {
 		this.show();
-		this.#htmlInput.style.display = '';
-		this.#htmlInput.value = defaultValue ? defaultValue : '';
+		show(this.#htmlInput);
+		(this.#htmlInput as HTMLInputElement).value = defaultValue ? defaultValue : '';
 		if (list) {
 			let isMap = list.constructor.name == 'Map';
-			this.#htmlInputDataList.innerHTML = '';
+			(this.#htmlInputDataList as HTMLDataListElement).innerHTML = '';
 			for (let value of list) {
 				let animOption = document.createElement('option');
-				this.#htmlInputDataList.append(animOption);
+				(this.#htmlInputDataList as HTMLDataListElement).append(animOption);
 				if (isMap) {
 					animOption.innerHTML = value[0];
 					animOption.value = value[1];
@@ -127,26 +138,25 @@ export class Interaction {
 			}
 		}
 
-		this.#htmlInput.onchange = (event) => {
-			for (let option of this.#htmlInputDataList.options) {
+		let promiseResolve: (value: string) => void;
+		(this.#htmlInput as HTMLInputElement).onchange = (event) => {
+			for (let option of (this.#htmlInputDataList as HTMLDataListElement).options) {
 				if (option.value == (event.target as HTMLInputElement).value) {
 					promiseResolve(option.value);
 				}
 			}
-			this.#htmlInput.style.display = 'none';
+			hide(this.#htmlInput);
 		}
 
-		let promiseResolve;
-		let promiseReject;
 
-		let promise = new Promise<string>((resolve, reject) => {
+		let promise = new Promise<string>(resolve => {
 			promiseResolve = resolve;
-			promiseReject = reject;
 		});
 		return promise;
 	}
 
-	static async _expandFile(parent, files, callback, repository = '', path = '') {
+	/*
+	async #expandFile(parent, files, callback, repository = '', path = '') {
 		parent.replaceChildren();
 
 		files.sort(
@@ -182,9 +192,9 @@ export class Interaction {
 								let f1 = document.createElement('div');
 								f1.className = 'file-explorer-childs';
 								if (repository == '') {
-									this._expandFile(f1, file.files, callback, file.name);
+									this.#expandFile(f1, file.files, callback, file.name);
 								} else {
-									this._expandFile(f1, file.files, callback, repository, path + file.name + '/');
+									this.#expandFile(f1, file.files, callback, repository, path + file.name + '/');
 								}
 								//f1.style.display = 'none';
 								f.addEventListener('click', (event) => {
@@ -202,12 +212,14 @@ export class Interaction {
 			}
 		}
 	}
+		*/
 
-	static async selectFile(htmlContainer, fileList, callback) {
+	async selectFile(htmlContainer: HTMLElement, fileList: { files: { name: string; files: any[]; }[] }, callback: (repository: string, modelName: string) => void) {
+		this.#initHtml();
 		//htmlContainer.append(this.#htmlFileSelector);
 		//this.show();
 		//this.#htmlFileSelector.style.display = '';
-		this.#htmlFileSelector.innerHTML = '';
+		(this.#htmlFileSelector as HTMLElement).innerText = '';
 		htmlContainer.innerHTML = '';
 
 		//let value = await
@@ -224,7 +236,7 @@ export class Interaction {
 		});
 	}
 
-	static get htmlElement() {
+	get htmlElement() {
 		return this.#htmlElement;
 	}
 }

@@ -101,7 +101,7 @@ export class Text3D extends Mesh {
 							fontList2.set(font.join(' '), font);
 						}
 					}
-					let font = await Interaction.getString(fontList2);
+					let font = await new Interaction().getString(fontList2);
 					if (font) {
 						this.#font = font[0];
 						this.#style = font[1];
