@@ -50,8 +50,8 @@ export class FirstPersonControl extends CameraControl {
 	#click = false;
 	#q = quat.create();
 	#quatInverse = quat.create();
-	#clickOffsetX:number;
-	#clickOffsetY:number;
+	#clickOffsetX: number;
+	#clickOffsetY: number;
 	constructor(camera: Camera, htmlElement: HTMLElement) {
 		super(camera, htmlElement);
 
@@ -98,7 +98,7 @@ export class FirstPersonControl extends CameraControl {
 			return;
 		}
 		//if (this.htmlElement !== document) {
-			//this.htmlElement.focus();
+		//this.htmlElement.focus();
 		//}
 
 		//event.preventDefault();
