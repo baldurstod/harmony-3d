@@ -3,6 +3,8 @@ import { Graphics } from '../graphics/graphics';
 import { TextureManager } from '../textures/texturemanager';
 import { DEBUG, ENABLE_GET_ERROR } from '../buildoptions';
 import { FrameBufferTarget } from '../textures/constants';
+import { Renderbuffer } from './renderbuffer';
+import { Texture } from '../textures/texture';
 
 const ATTACHMENT_TYPE_RENDER_BUFFER = 0;
 const ATTACHMENT_TYPE_TEXTURE2D = 1;
@@ -18,9 +20,9 @@ export class Framebuffer {
 	#dirty: boolean = true;
 	constructor(target: FrameBufferTarget) {
 		this.#target = target;
-		this.#frameBuffer = new Graphics().createFramebuffer();
+		this.#frameBuffer = new Graphics().createFramebuffer() as WebGLFramebuffer;
 	}
-/*
+	/*
 	createRenderTarget(colorFormat, colorType, depth, stencil) {
 		this.#frameBuffer.addTexture2D(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this._createTexture());
 		this.frameBufferTexture = TextureManager.createTexture();
@@ -40,12 +42,12 @@ export class Framebuffer {
 	}
 */
 
-	addRenderbuffer(attachmentPoint, renderbuffer) {
+	addRenderbuffer(attachmentPoint: number, renderbuffer: Renderbuffer) {
 		this.#attachments.set(attachmentPoint, { renderbuffer: renderbuffer, type: ATTACHMENT_TYPE_RENDER_BUFFER });
 		this.#dirty = true;
 	}
 
-	addTexture2D(attachmentPoint, textureTarget, texture) {
+	addTexture2D(attachmentPoint: number, textureTarget: GLenum, texture: Texture) {
 		this.#attachments.set(attachmentPoint, { target: textureTarget, texture: texture, type: ATTACHMENT_TYPE_TEXTURE2D });
 		this.#dirty = true;
 	}
