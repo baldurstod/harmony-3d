@@ -1,5 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { createElement, hide, display, show, defineHarmonyColorPicker, defineHarmony2dManipulator, createShadowRoot, I18n, toggle, defineHarmonyContextMenu } from 'harmony-ui';
+import { createElement, hide, display, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, toggle, defineHarmonyContextMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
@@ -3808,11 +3808,13 @@ if (customElements) {
     customElements.define('file-selector', FileSelector);
 }
 
+var interactionCSS = ":host {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tz-index: 10000;\n\ttop: 0px;\n\tleft: 0px;\n\tpointer-events: none;\n}\n";
+
 const DATALIST_ID = 'interaction-datalist';
 class Interaction {
     static #instance;
     #htmlColorPicker;
-    #htmlElement;
+    #shadowRoot;
     #htmlInput;
     #htmlInputDataList;
     #htmlFileSelector;
@@ -3826,17 +3828,17 @@ class Interaction {
         Interaction.#instance = this;
     }
     #initHtml() {
-        if (this.#htmlElement) {
+        if (this.#shadowRoot) {
             return;
         }
-        this.#htmlElement = createElement('div', {
+        this.#shadowRoot = createShadowRoot('div', {
             parent: document.body,
             hidden: true,
-            style: 'position:absolute;width: 400px;z-index: 10000;top: 0px;left:0px;', //TODO: adopt style
+            adoptStyle: interactionCSS
         });
         defineHarmonyColorPicker();
         this.#htmlColorPicker = createElement('harmony-color-picker', {
-            parent: this.#htmlElement,
+            parent: this.#shadowRoot,
             hidden: true,
             events: {
                 change: (event) => {
@@ -3856,12 +3858,12 @@ class Interaction {
         this.#htmlInput = createElement('input', {
             style: 'pointer-events: all;',
             list: DATALIST_ID,
-            parent: this.#htmlElement,
+            parent: this.#shadowRoot,
             hidden: true,
         });
         this.#htmlInputDataList = createElement('datalist', {
             id: DATALIST_ID,
-            parent: this.#htmlElement,
+            parent: this.#shadowRoot,
         });
         this.#htmlFileSelector = createElement('div', {
             style: 'pointer-events: all;width: 100%;overflow: auto;height: 100%;',
@@ -3869,12 +3871,12 @@ class Interaction {
     }
     show() {
         this.#initHtml();
-        show(this.#htmlElement);
+        show(this.#shadowRoot.host);
         hide(this.#htmlInput);
         hide(this.#htmlColorPicker);
     }
     hide() {
-        hide(this.#htmlElement);
+        hide(this.#shadowRoot.host);
     }
     async getColor(x, y, defaultValue, onChange, onCancel) {
         this.show();
@@ -3905,7 +3907,7 @@ class Interaction {
         };
         return promise;
     }
-    getString(list, defaultValue) {
+    getString(x, y, list, defaultValue) {
         this.show();
         show(this.#htmlInput);
         this.#htmlInput.value = defaultValue ? defaultValue : '';
@@ -4017,7 +4019,7 @@ class Interaction {
         });
     }
     get htmlElement() {
-        return this.#htmlElement;
+        return this.#shadowRoot.host;
     }
 }
 
@@ -4164,7 +4166,7 @@ class Mesh extends Entity {
             Mesh_1: null,
             set_material: {
                 i18n: '#set_material', f: async (entity) => {
-                    let materialName = await new Interaction().getString(MaterialManager.getMaterialList());
+                    let materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList());
                     if (materialName) {
                         await MaterialManager.getMaterial(materialName, (material) => { if (material) {
                             this.setMaterial(material);
@@ -6528,7 +6530,9 @@ class Program {
     }
     #setProgramUniform(uniformInfo) {
         const uniformLocation = this.#glContext.getUniformLocation(this.#program, uniformInfo.name);
-        this.uniforms.set(uniformInfo.name, new Uniform(uniformInfo, uniformLocation));
+        if (uniformLocation) {
+            this.uniforms.set(uniformInfo.name, new Uniform(uniformInfo, uniformLocation));
+        }
     }
     #compileShader(shader, shaderName, shaderSource, includeCode) {
         if (!shaderSource || !shaderSource.isValid()) {
@@ -7635,24 +7639,24 @@ class Framebuffer {
         this.#frameBuffer = new Graphics().createFramebuffer();
     }
     /*
-        createRenderTarget(colorFormat, colorType, depth, stencil) {
-            this.#frameBuffer.addTexture2D(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this._createTexture());
-            this.frameBufferTexture = TextureManager.createTexture();
-    
-            this.bind();
-        }
-    
-        _createTexture(internalFormat, width, height, format, type) {
-            let texture = TextureManager.createTexture();
-    
-            new Graphics().glContext.bindTexture(GL_TEXTURE_2D, texture);
-            new Graphics().glContext.texImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
-            new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-            new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-            new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-            return texture;
-        }
-    */
+    createRenderTarget(colorFormat, colorType, depth, stencil) {
+        this.#frameBuffer.addTexture2D(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this._createTexture());
+        this.frameBufferTexture = TextureManager.createTexture();
+
+        this.bind();
+    }
+
+    _createTexture(internalFormat, width, height, format, type) {
+        let texture = TextureManager.createTexture();
+
+        new Graphics().glContext.bindTexture(GL_TEXTURE_2D, texture);
+        new Graphics().glContext.texImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
+        new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        return texture;
+    }
+*/
     addRenderbuffer(attachmentPoint, renderbuffer) {
         this.#attachments.set(attachmentPoint, { renderbuffer: renderbuffer, type: ATTACHMENT_TYPE_RENDER_BUFFER });
         this.#dirty = true;
@@ -18053,7 +18057,7 @@ class Text3D extends Mesh {
                             fontList2.set(font.join(' '), font);
                         }
                     }
-                    let font = await new Interaction().getString(fontList2);
+                    let font = await new Interaction().getString(0, 0, fontList2);
                     if (font) {
                         this.#font = font[0];
                         this.#style = font[1];
@@ -25462,7 +25466,7 @@ class Source2ModelInstance extends Entity {
         return Object.assign(super.buildContextMenu(), {
             Source2ModelInstance_1: null,
             skin: { i18n: '#skin', submenu: skinMenu },
-            animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(await entity.sourceModel.getAnimations()); if (animation) {
+            animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(0, 0, await entity.sourceModel.getAnimations()); if (animation) {
                     entity.playAnimation(animation);
                 } } },
             Source2ModelInstance_2: null,
@@ -34156,10 +34160,10 @@ class Source1ModelInstance extends Entity {
             skin: { i18n: '#skin', submenu: skinMenu },
             tint: { i18n: '#tint', f: async (entity) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.tint = tint; }, (tint = entity.tint) => { entity.tint = tint; }) },
             reset_tint: { i18n: '#reset_tint', f: (entity) => entity.tint = undefined, disabled: this.#tint === undefined },
-            animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(await entity.sourceModel.mdl.getAnimList()); if (animation) {
+            animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) {
                     entity.playSequence(animation);
                 } } },
-            overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { let material = await new Interaction().getString(Object.keys(Material.materialList)); if (material) {
+            overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { let material = await new Interaction().getString(0, 0, Object.keys(Material.materialList)); if (material) {
                     entity.material = new Material.materialList[material];
                 } } },
             Source1ModelInstance_2: null,

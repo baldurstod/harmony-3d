@@ -175,7 +175,7 @@ export class Mesh extends Entity {
 			Mesh_1: null,
 			set_material: {
 				i18n: '#set_material', f: async (entity) => {
-					let materialName = await new Interaction().getString(MaterialManager.getMaterialList()); if (materialName) {
+					let materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList()); if (materialName) {
 						let material = await MaterialManager.getMaterial(materialName, (material) => { if (material) { this.setMaterial(material); } });
 					}
 				}

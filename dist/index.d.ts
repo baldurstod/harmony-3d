@@ -2021,8 +2021,8 @@ declare class Choreography {
          export declare class Framebuffer {
              #private;
              constructor(target: FrameBufferTarget);
-             addRenderbuffer(attachmentPoint: any, renderbuffer: any): void;
-             addTexture2D(attachmentPoint: any, textureTarget: any, texture: any): void;
+             addRenderbuffer(attachmentPoint: number, renderbuffer: Renderbuffer): void;
+             addTexture2D(attachmentPoint: number, textureTarget: GLenum, texture: Texture): void;
              bind(): void;
              dispose(): void;
          }
@@ -2041,7 +2041,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -4867,7 +4867,7 @@ declare class Choreography {
              get vs(): void;
              get fs(): void;
              setUniformValue(name: string, value: any): void;
-             validate(includeCode: any): boolean;
+             validate(includeCode: string): boolean;
              invalidate(): void;
              isValid(): boolean;
              getProgram(): WebGLProgram;
@@ -6395,7 +6395,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -6991,7 +6991,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;

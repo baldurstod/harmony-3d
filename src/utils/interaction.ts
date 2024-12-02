@@ -1,14 +1,15 @@
 import { vec3, vec4 } from 'gl-matrix';
-import { createElement, toggle, hide, show, defineHarmonyColorPicker } from 'harmony-ui';
+import { createElement, toggle, hide, show, defineHarmonyColorPicker, createShadowRoot } from 'harmony-ui';
 import { FileSelector } from './fileselector/fileselector';
 export { FileSelector } from './fileselector/fileselector';
+import interactionCSS from '../css/interaction.css';
 
 const DATALIST_ID = 'interaction-datalist';
 
 export class Interaction {
 	static #instance: Interaction;
 	#htmlColorPicker?: HTMLElement;
-	#htmlElement?: HTMLElement;
+	#shadowRoot?: ShadowRoot;
 	#htmlInput?: HTMLInputElement;
 	#htmlInputDataList?: HTMLDataListElement;
 	#htmlFileSelector?: HTMLElement;
@@ -24,19 +25,19 @@ export class Interaction {
 	}
 
 	#initHtml() {
-		if (this.#htmlElement) {
+		if (this.#shadowRoot) {
 			return;
 		}
 
-		this.#htmlElement = createElement('div', {
+		this.#shadowRoot = createShadowRoot('div', {
 			parent: document.body,
 			hidden: true,
-			style: 'position:absolute;width: 400px;z-index: 10000;top: 0px;left:0px;',//TODO: adopt style
+			adoptStyle: interactionCSS
 		});
 
 		defineHarmonyColorPicker();
 		this.#htmlColorPicker = createElement('harmony-color-picker', {
-			parent: this.#htmlElement,
+			parent: this.#shadowRoot,
 			hidden: true,
 			events: {
 				change: (event: CustomEvent) => {
@@ -58,13 +59,13 @@ export class Interaction {
 		this.#htmlInput = createElement('input', {
 			style: 'pointer-events: all;',
 			list: DATALIST_ID,
-			parent: this.#htmlElement,
+			parent: this.#shadowRoot,
 			hidden: true,
 		}) as HTMLInputElement;
 
 		this.#htmlInputDataList = createElement('datalist', {
 			id: DATALIST_ID,
-			parent: this.#htmlElement,
+			parent: this.#shadowRoot,
 		}) as HTMLDataListElement;
 
 
@@ -75,13 +76,13 @@ export class Interaction {
 
 	show() {
 		this.#initHtml();
-		show(this.#htmlElement);
+		show(this.#shadowRoot.host as HTMLElement);
 		hide(this.#htmlInput);
 		hide(this.#htmlColorPicker);
 	}
 
 	hide() {
-		hide(this.#htmlElement);
+		hide(this.#shadowRoot.host as HTMLElement);
 	}
 
 	async getColor(x: number, y: number, defaultValue?: vec4, onChange?: (color: vec4) => void, onCancel?: () => void) {
@@ -119,7 +120,7 @@ export class Interaction {
 		return promise;
 	}
 
-	getString(list: Set<string> | Array<string> | Map<string, string> | MapIterator<string>, defaultValue?: string): Promise<string> {
+	getString(x: number, y: number, list: Set<string> | Array<string> | Map<string, string> | MapIterator<string>, defaultValue?: string): Promise<string> {
 		this.show();
 		show(this.#htmlInput);
 		(this.#htmlInput as HTMLInputElement).value = defaultValue ? defaultValue : '';
@@ -237,6 +238,6 @@ export class Interaction {
 	}
 
 	get htmlElement() {
-		return this.#htmlElement;
+		return this.#shadowRoot.host as HTMLElement;
 	}
 }
