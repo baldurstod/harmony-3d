@@ -9,10 +9,10 @@ import { MaterialManager } from '../../../materials/materialmanager';
 
 export class VertexLitGenericMaterial extends SourceEngineMaterial {
 	diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-	constructor(repository, fileName, parameters = Object.create(null)) {//fixme
-		parameters.useSrgb = false;
-		super(repository, fileName, parameters);
-		this.setValues(parameters);
+	constructor(params: any = {}) {
+		params.useSrgb = false;
+		super(params/*repository, fileName, parameters*/);
+		this.setValues(params);
 
 
 		//this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
@@ -20,7 +20,7 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 		float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
 		float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
 		float fVertexAlpha = bHasVertexAlpha ? 1 : 0;*/
-		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1 ,0);//TODOv3
+		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
 		this.uniforms['g_DiffuseModulation'] = this.diffuseModulation;
 
 		const btbba = this.variables.get('$blendtintbybasealpha');
@@ -82,8 +82,8 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 		}
 
 
-//uniform vec4 g_vPackedConst6;
-//uniform vec4 g_vPackedConst7;
+		//uniform vec4 g_vPackedConst6;
+		//uniform vec4 g_vPackedConst7;
 
 
 		//TODOv3: only do this if a variable is changed
@@ -91,7 +91,7 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new VertexLitGenericMaterial(this.repository, this.fileName, this.parameters);
+		return new VertexLitGenericMaterial(/*this.repository, this.fileName, */this.parameters);
 	}
 
 	get shaderSource() {

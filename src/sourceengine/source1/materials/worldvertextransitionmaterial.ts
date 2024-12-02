@@ -3,8 +3,8 @@ import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { Source1TextureManager } from '../textures/source1texturemanager';
 
 export class WorldVertexTransitionMaterial extends SourceEngineMaterial {
-	constructor(repository, fileName, parameters = Object.create(null)) {//fixme
-		super(repository, fileName, parameters);
+	constructor(params: any = {}) {
+		super(params);
 	}
 
 	afterProcessProxies(proxyParams) {
@@ -21,7 +21,7 @@ export class WorldVertexTransitionMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new WorldVertexTransitionMaterial(this.repository, this.fileName, this.parameters);
+		return new WorldVertexTransitionMaterial(this.parameters);
 	}
 
 	getShaderSource() {

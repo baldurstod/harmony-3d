@@ -9,9 +9,9 @@ const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
 //TODO: deprecate
 export class CustomWeaponMaterial extends SourceEngineMaterial {
 	diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-	constructor(repository, fileName, parameters = Object.create(null)) {//fixme
-		super(repository, fileName, parameters);
-		this.setValues(parameters);
+	constructor(params: any = {}) {
+		super(params);
+		this.setValues(params);
 
 
 		//this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
@@ -19,7 +19,7 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 		float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
 		float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
 		float fVertexAlpha = bHasVertexAlpha ? 1 : 0;*/
-		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1 ,0);//TODOv3
+		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
 		this.uniforms['g_PreviewPhongBoosts'] = vec4.fromValues(1, 1, 1, 1);
 		this.uniforms['g_DiffuseModulation'] = this.diffuseModulation;
 
@@ -101,44 +101,44 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 			this.setDefine('USE_POS_MAP');//TODOv3: set this automaticaly
 		}
 
-/*
+		/*
 
-			if( bAOTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );		// [sRGB] Ambient Occlusion
-			}
-			if( bWearTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );		// Scratches
-			}
-			if( bExpTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );		// Exponent
-			}
-			if ( bBaseTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER3, true );		// [sRGB] Base
-			}
-			if( bMasksTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER4, true );		// Masks
-			}
-			if( bGrungeTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER5, true );		// [sRGB] Grunge
-			}
-			if( bSurfaceTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER6, true );		// Obj-space normal and cavity
-			}
-			if( bPosTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER7, true );		// High-precision Position
-			}
-			if( bPaintTexture )
-			{
-				pShaderShadow->EnableTexture( SHADER_SAMPLER8, true );		// Paint
-			}	*/
+					if( bAOTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );		// [sRGB] Ambient Occlusion
+					}
+					if( bWearTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER1, true );		// Scratches
+					}
+					if( bExpTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER2, true );		// Exponent
+					}
+					if ( bBaseTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER3, true );		// [sRGB] Base
+					}
+					if( bMasksTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER4, true );		// Masks
+					}
+					if( bGrungeTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER5, true );		// [sRGB] Grunge
+					}
+					if( bSurfaceTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER6, true );		// Obj-space normal and cavity
+					}
+					if( bPosTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER7, true );		// High-precision Position
+					}
+					if( bPaintTexture )
+					{
+						pShaderShadow->EnableTexture( SHADER_SAMPLER8, true );		// Paint
+					}	*/
 
 
 		if (proxyParams['SheenTintColor']) {
@@ -158,8 +158,8 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 		}
 
 
-//uniform vec4 g_vPackedConst6;
-//uniform vec4 g_vPackedConst7;
+		//uniform vec4 g_vPackedConst6;
+		//uniform vec4 g_vPackedConst7;
 
 
 		//TODOv3: only do this if a variable is changed
@@ -193,59 +193,59 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 	set color3(color) {
 		this.setColorUniform('uCamoColor3', color);
 	}
-/*
-	setUniformTransform(uniformName, scale, translation, rotation) {
-		let transformMatrix = this.getTexCoordTransform(scale, translation, rotation);
-		this.uniforms[uniformName] = new Float32Array([
-														transformMatrix[0], transformMatrix[4], transformMatrix[8], transformMatrix[12],
-														transformMatrix[1], transformMatrix[5], transformMatrix[9], transformMatrix[13]
-														]);
-	}
+	/*
+		setUniformTransform(uniformName, scale, translation, rotation) {
+			let transformMatrix = this.getTexCoordTransform(scale, translation, rotation);
+			this.uniforms[uniformName] = new Float32Array([
+															transformMatrix[0], transformMatrix[4], transformMatrix[8], transformMatrix[12],
+															transformMatrix[1], transformMatrix[5], transformMatrix[9], transformMatrix[13]
+															]);
+		}
 
-	setPatternTexCoordTransform(scale, translation, rotation) {
-		this.setUniformTransform('g_patternTexCoordTransform[0]', scale, translation, rotation);
-	}
+		setPatternTexCoordTransform(scale, translation, rotation) {
+			this.setUniformTransform('g_patternTexCoordTransform[0]', scale, translation, rotation);
+		}
 
-	setWearTexCoordTransform(scale, translation, rotation) {
-		this.setUniformTransform('g_wearTexCoordTransform[0]', scale, translation, rotation);
-	}
+		setWearTexCoordTransform(scale, translation, rotation) {
+			this.setUniformTransform('g_wearTexCoordTransform[0]', scale, translation, rotation);
+		}
 
-	setGrungeTexCoordTransform(scale, translation, rotation) {
-		this.setUniformTransform('g_grungeTexCoordTransform[0]', scale, translation, rotation);
-	}
-*/
+		setGrungeTexCoordTransform(scale, translation, rotation) {
+			this.setUniformTransform('g_grungeTexCoordTransform[0]', scale, translation, rotation);
+		}
+	*/
 
 	setPatternScale(scale) {
 		this.uniforms['g_PreviewPhongBoosts'][2] = scale;
 	}
 
-/*
+	/*
 
-	"name": "aa_vertigo",
-	"desc": "#PaintKit_aa_vertigo",
-	"rarity": "mythical",
-	"pattern": "vertigo",
-	"wear_default": "0.150000",
-	"style": "6",
-	"color0": "102 92 85",
-	"color1": "16 16 16",
-	"color2": "16 16 16",
-	"color3": "16 16 16",
-	"pattern_scale": "1.400000",
-	"pattern_offset_x_start": "0.040000",
-	"pattern_offset_x_end": "0.140000",
-	"pattern_offset_y_start": "-0.440000",
-	"pattern_offset_y_end": "-0.180000",
-	"pattern_rotate_start": "7",
-	"pattern_rotate_end": "25",
-	"wear_remap_min": "0.000000",
-	"wear_remap_max": "0.080000",
-	"phongexponent": "32",
-	"phongalbedoboost": "80"
-	*/
+		"name": "aa_vertigo",
+		"desc": "#PaintKit_aa_vertigo",
+		"rarity": "mythical",
+		"pattern": "vertigo",
+		"wear_default": "0.150000",
+		"style": "6",
+		"color0": "102 92 85",
+		"color1": "16 16 16",
+		"color2": "16 16 16",
+		"color3": "16 16 16",
+		"pattern_scale": "1.400000",
+		"pattern_offset_x_start": "0.040000",
+		"pattern_offset_x_end": "0.140000",
+		"pattern_offset_y_start": "-0.440000",
+		"pattern_offset_y_end": "-0.180000",
+		"pattern_rotate_start": "7",
+		"pattern_rotate_end": "25",
+		"wear_remap_min": "0.000000",
+		"wear_remap_max": "0.080000",
+		"phongexponent": "32",
+		"phongalbedoboost": "80"
+		*/
 
 	clone() {
-		return new CustomWeaponMaterial(this.repository, this.fileName, this.parameters);
+		return new CustomWeaponMaterial(this.parameters);
 	}
 
 

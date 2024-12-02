@@ -698,7 +698,7 @@ export declare class CameraControl {
     set enabled(enabled: boolean);
     get enabled(): boolean;
     set camera(camera: Camera);
-    get camera(): Camera;
+    get camera(): Camera | undefined;
     setupCamera(): void;
     handleEnabled(): void;
     update(delta: number): void;
@@ -727,7 +727,7 @@ export declare function ceilPowerOfTwo(n: number): number;
 
 export declare class CharacterMaterial extends SourceEngineMaterial {
     diffuseModulation: vec4;
-    constructor(repository: any, fileName: any, parameters?: any);
+    constructor(params?: any);
     afterProcessProxies(proxyParams: any): void;
     clone(): CharacterMaterial;
     get shaderSource(): string;
@@ -1260,7 +1260,7 @@ declare class Choreography {
 
      export declare class CustomWeaponMaterial extends SourceEngineMaterial {
          diffuseModulation: vec4;
-         constructor(repository: any, fileName: any, parameters?: any);
+         constructor(params?: any);
          afterProcessProxies(proxyParams: any): void;
          set style(style: any);
          setColorUniform(uniformName: any, value: any): void;
@@ -1876,7 +1876,7 @@ declare class Choreography {
 
          export declare class EyeRefractMaterial extends SourceEngineMaterial {
              #private;
-             constructor(repository: any, fileName: any, parameters?: any);
+             constructor(params?: any);
              afterProcessProxies(): void;
              beforeRender(camera: any): void;
              clone(): EyeRefractMaterial;
@@ -3190,7 +3190,7 @@ declare class Choreography {
          }
 
          export declare class LightMappedGenericMaterial extends SourceEngineMaterial {
-             constructor(repository: any, fileName: any, parameters?: any);
+             constructor(params?: any);
              clone(): LightMappedGenericMaterial;
              getShaderSource(): string;
          }
@@ -6376,7 +6376,7 @@ declare class Choreography {
                  };
                  tint: {
                      i18n: string;
-                     f: (entity: any) => Promise<unknown>;
+                     f: (entity: any) => Promise<vec4>;
                  };
                  reset_tint: {
                      i18n: string;
@@ -7506,7 +7506,7 @@ declare class Choreography {
              frameX: number;
              frameY: number;
              sequenceLength: number;
-             constructor(repository: any, fileName: any, parameters?: any);
+             constructor(params?: any);
              setNumFrames(frames: any, frameX: any, frameY: any, sequenceLength: any): void;
              getTexCoords(flCreationTime: any, flCurTime: any, flAgeScale: any, nSequence: any): any;
              getFrameSpan(sequence: any): any;
@@ -8434,13 +8434,13 @@ declare class Choreography {
          }
 
          export declare class SpriteCardMaterial extends SourceEngineMaterial {
-             constructor(repository: any, fileName: any, parameters?: any);
+             constructor(params?: any);
              clone(): SpriteCardMaterial;
              get shaderSource(): string;
          }
 
          export declare class SpriteMaterial extends SourceEngineMaterial {
-             constructor(repository: string, fileName: string, parameters?: any);
+             constructor(params?: any);
              clone(): SpriteMaterial;
              get shaderSource(): string;
          }
@@ -9011,13 +9011,13 @@ declare class Choreography {
 
          export declare class UnlitGenericMaterial extends SourceEngineMaterial {
              diffuseModulation: vec4;
-             constructor(repository: any, fileName: any, parameters?: any);
+             constructor(params?: any);
              clone(): UnlitGenericMaterial;
              get shaderSource(): string;
          }
 
          export declare class UnlitTwoTextureMaterial extends SourceEngineMaterial {
-             constructor(repository: any, fileName: any, parameters?: any);
+             constructor(params?: any);
              clone(): UnlitTwoTextureMaterial;
              get shaderSource(): string;
              afterProcessProxies(): void;
@@ -9087,7 +9087,7 @@ declare class Choreography {
 
          export declare class VertexLitGenericMaterial extends SourceEngineMaterial {
              diffuseModulation: vec4;
-             constructor(repository: any, fileName: any, parameters?: any);
+             constructor(params?: any);
              afterProcessProxies(proxyParams: any): void;
              clone(): VertexLitGenericMaterial;
              get shaderSource(): string;
@@ -9108,13 +9108,13 @@ declare class Choreography {
          }
 
          export declare class WaterMaterial extends SourceEngineMaterial {
-             constructor(repository: any, fileName: any, parameters?: any);
+             constructor(params?: any);
              clone(): WaterMaterial;
              getShaderSource(): string;
          }
 
          export declare class WeaponDecalMaterial extends SourceEngineMaterial {
-             constructor(repository: any, fileName: any, parameters?: any);
+             constructor(params?: any);
              afterProcessProxies(proxyParams: any): void;
              set style(style: any);
              setColorUniform(uniformName: any, value: any): void;
@@ -9253,7 +9253,7 @@ declare class Choreography {
          }
 
          export declare class WorldVertexTransitionMaterial extends SourceEngineMaterial {
-             constructor(repository: any, fileName: any, parameters?: any);
+             constructor(params?: any);
              afterProcessProxies(proxyParams: any): void;
              clone(): WorldVertexTransitionMaterial;
              getShaderSource(): string;

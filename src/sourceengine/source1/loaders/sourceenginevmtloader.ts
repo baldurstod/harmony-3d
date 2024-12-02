@@ -108,7 +108,9 @@ class SourceEngineVMTLoaderClass {
 			} else {
 				let materialClass = this.#materials.get(shaderName);
 				if (materialClass !== undefined) {
-					material = new materialClass(repositoryName, fileName, vmt);
+					vmt.repository = repositoryName;
+					vmt.filename = fileName;
+					material = new materialClass(/*repositoryName, fileName, */vmt);
 				} else {
 					console.error('Unknown material : ' + shaderName);
 				}

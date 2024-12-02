@@ -18,25 +18,25 @@ enum RenderMode {
 }
 
 export class SpriteMaterial extends SourceEngineMaterial {
-	constructor(repository: string, fileName: string, parameters: any = {}) {
-		super(repository, fileName, parameters);
+	constructor(params: any = {}) {
+		super(params);
 
 		// Disable back face culling
 		this.renderFace(RenderFace.Both);
 		this.colorMask[3] = 0.0;
 		this.setDefine('IS_TRANSLUCENT');
 
-		if ( /*bAdditive2ndTexture || bAddOverBlend || */parameters['$addself'] !== undefined) {
+		if ( /*bAdditive2ndTexture || bAddOverBlend || */params['$addself'] !== undefined) {
 			this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		} else {
-			if (parameters['$additive'] == 1) {
+			if (params['$additive'] == 1) {
 				this.setTransparency(GL_SRC_ALPHA, GL_ONE);
 			} else {
 				this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			}
 		}
 
-		switch (Number(parameters['$spriterendermode'])) {
+		switch (Number(params['$spriterendermode'])) {
 			//TODO: add other modes
 			case RenderMode.TransAdd:
 				this.setTransparency(GL_SRC_ALPHA, GL_ONE);
@@ -47,7 +47,7 @@ export class SpriteMaterial extends SourceEngineMaterial {
 
 		// this material always has blending
 		//this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		if (parameters['$additive'] == 1) {
+		if (params['$additive'] == 1) {
 			//this.setTransparency(GL_SRC_ALPHA, GL_ONE);
 		}
 
@@ -57,8 +57,8 @@ export class SpriteMaterial extends SourceEngineMaterial {
 			this.setDefine('ALPHA_TEST');
 			this.uniforms['uAlphaTestReference'] = Number.parseFloat(parameters['$alphatestreference'] || 0.5);
 		}*/
-		if (parameters['$addself'] !== undefined) {
-			this.uniforms['uAddSelf'] = Number.parseFloat(parameters['$addself']);
+		if (params['$addself'] !== undefined) {
+			this.uniforms['uAddSelf'] = Number.parseFloat(params['$addself']);
 			this.setDefine('ADD_SELF');
 			//this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		}
@@ -74,7 +74,7 @@ export class SpriteMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new SpriteMaterial(this.repository, this.fileName, this.parameters);
+		return new SpriteMaterial(this.parameters);
 	}
 
 	get shaderSource() {

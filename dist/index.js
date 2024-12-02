@@ -1,5 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { createElement, hide, display, show, defineHarmonyColorPicker, toggle, defineHarmony2dManipulator, createShadowRoot, I18n, defineHarmonyContextMenu } from 'harmony-ui';
+import { createElement, hide, display, show, defineHarmonyColorPicker, defineHarmony2dManipulator, createShadowRoot, I18n, toggle, defineHarmonyContextMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
@@ -3102,7 +3102,7 @@ registerEntity(Entity);
 
 class MaterialManager {
     static #materials = new Map();
-    static registerMaterial(materialName, materialClass, manager) {
+    static registerMaterial(materialName, materialClass, manager /*TODO: better type*/) {
         this.#materials.set(materialName, { materialClass: materialClass, manager: manager });
     }
     static getMaterial(materialName, callback) {
@@ -3810,30 +3810,36 @@ if (customElements) {
 
 const DATALIST_ID = 'interaction-datalist';
 class Interaction {
-    static #htmlColorPicker;
-    static #htmlElement;
-    static #htmlInput;
-    static #htmlInputDataList;
-    static #htmlFileSelector;
-    static #htmlColorPickeronDone;
-    static #htmlColorPickeronChange;
-    static #htmlColorPickerCancel;
-    static {
-        this.#htmlElement = document.createElement('div');
-        this.#htmlElement.style.cssText = 'position:absolute;width: 400px;z-index: 10000;top: 0px;left:0px;';
-        /*this.#htmlColorPicker = new Picker(
-            {
-                parent: this.#htmlElement,
-                popup:false
-            });
-
-        this.#htmlColorPicker.hide();*/
+    static #instance;
+    #htmlColorPicker;
+    #htmlElement;
+    #htmlInput;
+    #htmlInputDataList;
+    #htmlFileSelector;
+    //#htmlColorPickeronDone?: (color: any) => void;
+    #htmlColorPickeronChange;
+    #htmlColorPickerCancel;
+    constructor() {
+        if (Interaction.#instance) {
+            return Interaction.#instance;
+        }
+        Interaction.#instance = this;
+    }
+    #initHtml() {
+        if (this.#htmlElement) {
+            return;
+        }
+        this.#htmlElement = createElement('div', {
+            parent: document.body,
+            hidden: true,
+            style: 'position:absolute;width: 400px;z-index: 10000;top: 0px;left:0px;', //TODO: adopt style
+        });
         defineHarmonyColorPicker();
         this.#htmlColorPicker = createElement('harmony-color-picker', {
             parent: this.#htmlElement,
             hidden: true,
             events: {
-                change: event => {
+                change: (event) => {
                     if (this.#htmlColorPickeronChange) {
                         this.#htmlColorPickeronChange(event.detail);
                     }
@@ -3847,46 +3853,47 @@ class Interaction {
                 },
             },
         });
-        document.body.append(this.#htmlElement);
-        this.#htmlInput = document.createElement('input');
-        this.#htmlInput.style.cssText = 'pointer-events: all;';
-        this.#htmlInput.setAttribute('list', DATALIST_ID);
-        this.#htmlInputDataList = document.createElement('datalist');
-        this.#htmlInputDataList.id = DATALIST_ID;
-        this.#htmlElement.append(this.#htmlInput, this.#htmlInputDataList, this.#htmlColorPicker);
-        this.#htmlInput.style.display = 'none';
-        this.#htmlFileSelector = document.createElement('div');
-        this.#htmlFileSelector.style.cssText = 'pointer-events: all;width: 100%;overflow: auto;height: 100%;';
-        //this.#htmlElement.append(this.#htmlFileSelector);
-        //this.#htmlFileSelector.style.display = 'none';
-        this.hide();
+        this.#htmlInput = createElement('input', {
+            style: 'pointer-events: all;',
+            list: DATALIST_ID,
+            parent: this.#htmlElement,
+            hidden: true,
+        });
+        this.#htmlInputDataList = createElement('datalist', {
+            id: DATALIST_ID,
+            parent: this.#htmlElement,
+        });
+        this.#htmlFileSelector = createElement('div', {
+            style: 'pointer-events: all;width: 100%;overflow: auto;height: 100%;',
+        });
     }
-    static show() {
-        this.#htmlElement.style.display = '';
-        this.#htmlInput.style.display = 'none';
+    show() {
+        this.#initHtml();
+        show(this.#htmlElement);
+        hide(this.#htmlInput);
         hide(this.#htmlColorPicker);
     }
-    static hide() {
-        this.#htmlElement.style.display = 'none';
+    hide() {
+        hide(this.#htmlElement);
     }
-    static async getRGB(x, y, defaultValue, onChange, onCancel) {
+    async getColor(x, y, defaultValue, onChange, onCancel) {
         this.show();
         //this.#htmlColorPicker.setOptions({alpha:false});
         show(this.#htmlColorPicker);
-        let promiseResolve;
         let promise = new Promise((resolve, reject) => {
-            promiseResolve = resolve;
         });
+        /*
         this.#htmlColorPickeronDone = (color) => {
             let rgba = color.rgba;
-            let c = vec3.fromValues(rgba[0] / 255, rgba[1] / 255, rgba[2] / 255);
+            let c = vec4.fromValues(rgba[0] / 255, rgba[1] / 255, rgba[2] / 255, 1.0);
             //console.error(color, color.rgba);
             promiseResolve(c);
             this.hide();
         };
+        */
         this.#htmlColorPickeronChange = (color) => {
             let rgba = color.rgba;
-            let c = vec3.fromValues(rgba[0], rgba[1], rgba[2]);
+            let c = vec4.fromValues(rgba[0], rgba[1], rgba[2], rgba[3]);
             if (onChange) {
                 onChange(c);
             }
@@ -3898,9 +3905,9 @@ class Interaction {
         };
         return promise;
     }
-    static async getString(list, defaultValue) {
+    getString(list, defaultValue) {
         this.show();
-        this.#htmlInput.style.display = '';
+        show(this.#htmlInput);
         this.#htmlInput.value = defaultValue ? defaultValue : '';
         if (list) {
             let isMap = list.constructor.name == 'Map';
@@ -3917,35 +3924,39 @@ class Interaction {
                 }
             }
         }
+        let promiseResolve;
         this.#htmlInput.onchange = (event) => {
             for (let option of this.#htmlInputDataList.options) {
                 if (option.value == event.target.value) {
                     promiseResolve(option.value);
                 }
             }
-            this.#htmlInput.style.display = 'none';
+            hide(this.#htmlInput);
         };
-        let promiseResolve;
-        let promise = new Promise((resolve, reject) => {
+        let promise = new Promise(resolve => {
             promiseResolve = resolve;
         });
         return promise;
     }
-    static async _expandFile(parent, files, callback, repository = '', path = '') {
+    /*
+    async #expandFile(parent, files, callback, repository = '', path = '') {
         parent.replaceChildren();
-        files.sort((a, b) => {
-            if (a.files) {
-                if (!b.files) {
-                    return -1;
+
+        files.sort(
+            (a, b) => {
+                if (a.files) {
+                    if (!b.files) {
+                        return -1;
+                    }
+                } else {
+                    if (b.files) {
+                        return 1;
+                    }
                 }
+                return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
             }
-            else {
-                if (b.files) {
-                    return 1;
-                }
-            }
-            return a.name.toLowerCase() < b.name.toLowerCase() ? -1 : 1;
-        });
+        );
+
         for (let file of files) {
             let f = document.createElement('div');
             f.className = 'file-explorer-file';
@@ -3955,6 +3966,7 @@ class Interaction {
                 fheader.className = 'file-explorer-file-header';
                 fheader.append(file.name);
                 f.append(fheader);
+
                 fheader.addEventListener('click', (event) => {
                     if (event.target == fheader) {
                         if (file.files) {
@@ -3963,10 +3975,9 @@ class Interaction {
                                 let f1 = document.createElement('div');
                                 f1.className = 'file-explorer-childs';
                                 if (repository == '') {
-                                    this._expandFile(f1, file.files, callback, file.name);
-                                }
-                                else {
-                                    this._expandFile(f1, file.files, callback, repository, path + file.name + '/');
+                                    this.#expandFile(f1, file.files, callback, file.name);
+                                } else {
+                                    this.#expandFile(f1, file.files, callback, repository, path + file.name + '/');
                                 }
                                 //f1.style.display = 'none';
                                 f.addEventListener('click', (event) => {
@@ -3984,11 +3995,13 @@ class Interaction {
             }
         }
     }
-    static async selectFile(htmlContainer, fileList, callback) {
+        */
+    async selectFile(htmlContainer, fileList, callback) {
+        this.#initHtml();
         //htmlContainer.append(this.#htmlFileSelector);
         //this.show();
         //this.#htmlFileSelector.style.display = '';
-        this.#htmlFileSelector.innerHTML = '';
+        this.#htmlFileSelector.innerText = '';
         htmlContainer.innerHTML = '';
         //let value = await
         //this._expandFile(this.#htmlFileSelector, fileList.files, callback);
@@ -4003,7 +4016,7 @@ class Interaction {
             callback(file.root, file.path + file.name);
         });
     }
-    static get htmlElement() {
+    get htmlElement() {
         return this.#htmlElement;
     }
 }
@@ -4151,7 +4164,7 @@ class Mesh extends Entity {
             Mesh_1: null,
             set_material: {
                 i18n: '#set_material', f: async (entity) => {
-                    let materialName = await Interaction.getString(MaterialManager.getMaterialList());
+                    let materialName = await new Interaction().getString(MaterialManager.getMaterialList());
                     if (materialName) {
                         await MaterialManager.getMaterial(materialName, (material) => { if (material) {
                             this.setMaterial(material);
@@ -18040,7 +18053,7 @@ class Text3D extends Mesh {
                             fontList2.set(font.join(' '), font);
                         }
                     }
-                    let font = await Interaction.getString(fontList2);
+                    let font = await new Interaction().getString(fontList2);
                     if (font) {
                         this.#font = font[0];
                         this.#style = font[1];
@@ -25449,7 +25462,7 @@ class Source2ModelInstance extends Entity {
         return Object.assign(super.buildContextMenu(), {
             Source2ModelInstance_1: null,
             skin: { i18n: '#skin', submenu: skinMenu },
-            animation: { i18n: '#animation', f: async (entity) => { let animation = await Interaction.getString(await entity.sourceModel.getAnimations()); if (animation) {
+            animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(await entity.sourceModel.getAnimations()); if (animation) {
                     entity.playAnimation(animation);
                 } } },
             Source2ModelInstance_2: null,
@@ -27412,7 +27425,7 @@ function initEntitySubmenu() {
                 {
                     i18n: '#model', f: async (entity) => {
                         show(new SceneExplorer().htmlFileSelector);
-                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
+                        new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
                             console.error(modelName);
                             //let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
                             let instance = await Source1ModelManager.createInstance(repository, modelName, true);
@@ -27427,7 +27440,7 @@ function initEntitySubmenu() {
                 {
                     i18n: '#particle_system', f: async (entity) => {
                         show(new SceneExplorer().htmlFileSelector);
-                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
+                        new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
                             let systemName = systemPath.split('/');
                             let sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
                             sys.start();
@@ -27442,7 +27455,7 @@ function initEntitySubmenu() {
                 {
                     i18n: '#model', f: async (entity) => {
                         show(new SceneExplorer().htmlFileSelector);
-                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
+                        new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
                             console.error(modelName);
                             let instance = await Source2ModelManager.createInstance(repository, modelName, true);
                             (new SceneExplorer().selectedEntity ?? entity).addChild(instance);
@@ -27456,7 +27469,7 @@ function initEntitySubmenu() {
                 {
                     i18n: '#particle_system', f: async (entity) => {
                         show(new SceneExplorer().htmlFileSelector);
-                        Interaction.selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
+                        new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
                             let systemName = systemPath.split('/');
                             let sys = await Source2ParticleManager.getSystem(repository, systemPath);
                             sys.name = systemName[systemName.length - 1];
@@ -33644,7 +33657,7 @@ class SourceEngineMaterialManager {
         show(SceneExplorer.htmlFileSelector);
 
 
-        Interaction.selectFile(SceneExplorer.htmlFileSelector, await this.getMaterialList(), async (repository, materialName) => {
+        new Interaction().selectFile(SceneExplorer.htmlFileSelector, await this.getMaterialList(), async (repository, materialName) => {
             console.error(materialName);
             let material = await this.getMaterial(repository, materialName.replace(/^materials\//g, ''));
             console.error(material);
@@ -34141,12 +34154,12 @@ class Source1ModelInstance extends Entity {
         return Object.assign(super.buildContextMenu(), {
             Source1ModelInstance_1: null,
             skin: { i18n: '#skin', submenu: skinMenu },
-            tint: { i18n: '#tint', f: async (entity) => Interaction.getRGB(0, 0, undefined, (tint) => { entity.tint = tint; }, (tint = entity.tint) => { entity.tint = tint; }) },
+            tint: { i18n: '#tint', f: async (entity) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.tint = tint; }, (tint = entity.tint) => { entity.tint = tint; }) },
             reset_tint: { i18n: '#reset_tint', f: (entity) => entity.tint = undefined, disabled: this.#tint === undefined },
-            animation: { i18n: '#animation', f: async (entity) => { let animation = await Interaction.getString(await entity.sourceModel.mdl.getAnimList()); if (animation) {
+            animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(await entity.sourceModel.mdl.getAnimList()); if (animation) {
                     entity.playSequence(animation);
                 } } },
-            overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { let material = await Interaction.getString(Object.keys(Material.materialList)); if (material) {
+            overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { let material = await new Interaction().getString(Object.keys(Material.materialList)); if (material) {
                     entity.material = new Material.materialList[material];
                 } } },
             Source1ModelInstance_2: null,
@@ -35961,7 +35974,9 @@ class SourceEngineVMTLoaderClass {
             else {
                 let materialClass = this.#materials.get(shaderName);
                 if (materialClass !== undefined) {
-                    material = new materialClass(repositoryName, fileName, vmt);
+                    vmt.repository = repositoryName;
+                    vmt.filename = fileName;
+                    material = new materialClass(/*repositoryName, fileName, */ vmt);
                 }
                 else {
                     console.error('Unknown material : ' + shaderName);
@@ -42621,17 +42636,17 @@ class SourceEngineMaterial extends Material {
     frameX;
     frameY;
     sequenceLength;
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        super(parameters);
-        this.repository = repository;
-        this.fileName = fileName;
-        this.proxyParams = Object.create(null);
+    constructor(params = {} /*repository, fileName, parameters = Object.create(null)*/) {
+        super(params);
+        this.repository = params.repository;
+        this.fileName = params.filename;
+        this.proxyParams = {};
         this.proxies = [];
         this.variables = new Map();
         this.#initUniforms();
         let variables = this.variables;
-        initDefaultParameters(VMT_PARAMETERS, parameters, variables);
-        initDefaultParameters(this.getDefaultParameters(), parameters, variables);
+        initDefaultParameters(VMT_PARAMETERS, params, variables);
+        initDefaultParameters(this.getDefaultParameters(), params, variables);
         let readParameters = (parameters) => {
             for (let parameterName in parameters) {
                 const value = parameters[parameterName];
@@ -42671,42 +42686,42 @@ class SourceEngineMaterial extends Material {
                 }
             }
         };
-        readParameters(parameters);
-        if (parameters['>=dx90']) {
-            readParameters(parameters['>=dx90']);
+        readParameters(params);
+        if (params['>=dx90']) {
+            readParameters(params['>=dx90']);
         }
         let baseTexture = variables.get('$basetexture');
         if (baseTexture) {
-            this.setColorMap(Source1TextureManager.getTexture(this.repository, baseTexture, parameters['$frame'] || 0, false, parameters.useSrgb ?? true));
+            this.setColorMap(Source1TextureManager.getTexture(this.repository, baseTexture, params['$frame'] || 0, false, params.useSrgb ?? true));
         }
         else {
             this.setColorMap(getDefaultTexture());
         }
-        if (parameters['$bumpmap']) {
-            this.setNormalMap(Source1TextureManager.getTexture(this.repository, parameters['$bumpmap'], 0, false, false));
+        if (params['$bumpmap']) {
+            this.setNormalMap(Source1TextureManager.getTexture(this.repository, params['$bumpmap'], 0, false, false));
         }
         else {
             this.setNormalMap(null);
         }
         let translucent = false;
-        if (parameters['$alpha']) {
+        if (params['$alpha']) {
             this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             this.setDefine('IS_TRANSLUCENT');
             translucent = true;
         }
-        if (parameters['$vertexalpha'] == 1) {
+        if (params['$vertexalpha'] == 1) {
             this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             this.setDefine('IS_TRANSLUCENT');
             translucent = true;
             //TODOv3 activate proper define in shader
             //also add vertexcolor
         }
-        if (parameters['$translucent'] == 1) {
+        if (params['$translucent'] == 1) {
             this.setBlending(MATERIAL_BLENDING_NORMAL);
             this.setDefine('IS_TRANSLUCENT');
             translucent = true;
         }
-        if (parameters['$additive'] == 1) {
+        if (params['$additive'] == 1) {
             if (translucent) {
                 this.setBlending(MATERIAL_BLENDING_ADDITIVE);
             }
@@ -42715,14 +42730,14 @@ class SourceEngineMaterial extends Material {
             }
             this.setDefine('IS_ADDITIVE');
         }
-        if (parameters['$alphatest'] == 1) {
+        if (params['$alphatest'] == 1) {
             this.alphaTest = true;
-            this.alphaTestReference = Number.parseFloat(parameters['$alphatestreference'] ?? 0.5);
+            this.alphaTestReference = Number.parseFloat(params['$alphatestreference'] ?? 0.5);
         }
-        if (parameters['$vertexalpha'] == 1) {
+        if (params['$vertexalpha'] == 1) {
             this.setDefine('VERTEX_ALPHA');
         }
-        if (parameters['$vertexcolor'] == 1) {
+        if (params['$vertexcolor'] == 1) {
             this.setDefine('VERTEX_COLOR');
         }
         let envmaptint = variables.get('$envmaptint');
@@ -42736,32 +42751,32 @@ class SourceEngineMaterial extends Material {
             this.setDefine('USE_NORMAL_ALPHA_AS_ENVMAP_MASK');
         }
         this.uniforms['uTextureTransform'] = IDENTITY_MAT4$3;
-        if (parameters['$basetexturetransform']) {
-            let textureTransform = GetTextureTransform(parameters['$basetexturetransform']);
+        if (params['$basetexturetransform']) {
+            let textureTransform = GetTextureTransform(params['$basetexturetransform']);
             if (textureTransform) {
                 this.variables.set('$basetexturetransform', textureTransform);
                 this.uniforms['uTextureTransform'] = textureTransform;
             }
         }
-        if (parameters['$nocull'] == 1) {
+        if (params['$nocull'] == 1) {
             this.renderFace(RenderFace.Both);
         }
-        let lightWarpTexture = parameters['$lightwarptexture'];
+        let lightWarpTexture = params['$lightwarptexture'];
         this.setTexture('lightWarpMap', lightWarpTexture ? Source1TextureManager.getTexture(this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
-        if (parameters['$phong'] == 1) {
+        if (params['$phong'] == 1) {
             this.setDefine('USE_PHONG_SHADING');
             // The $phongexponenttexture is overrided by $phongexponent
-            let phongExponentTexture = parameters['$phongexponenttexture'];
+            let phongExponentTexture = params['$phongexponenttexture'];
             this.setTexture('phongExponentMap', phongExponentTexture ? Source1TextureManager.getTexture(this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
             if (phongExponentTexture) {
                 this.uniforms['uPhongExponentFactor'] = variables.get('$phongexponentfactor');
             }
             this.uniforms['uPhongExponent'] = variables.get('$phongexponent');
-            this.uniforms['uPhongBoost'] = parameters['$phongboost'] ?? 0;
-            if (parameters['$basemapalphaphongmask'] == 1) {
+            this.uniforms['uPhongBoost'] = params['$phongboost'] ?? 0;
+            if (params['$basemapalphaphongmask'] == 1) {
                 this.setDefine('USE_COLOR_ALPHA_AS_PHONG_MASK');
             }
-            if (parameters['$phongalbedotint'] == 1) {
+            if (params['$phongalbedotint'] == 1) {
                 this.setDefine('USE_PHONG_ALBEDO_TINT');
             }
             /*VertexLitGeneric
@@ -42821,7 +42836,7 @@ class SourceEngineMaterial extends Material {
         else {
             this.removeDefine('USE_SSBUMP');
         }
-        const proxies = parameters['proxies'];
+        const proxies = params['proxies'];
         if (proxies) {
             this.initProxies(proxies);
         }
@@ -43189,9 +43204,9 @@ static const char* s_pShaderStateString[] =
 //TODO: deprecate
 class CharacterMaterial extends SourceEngineMaterial {
     diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        super(repository, fileName, parameters);
-        this.setValues(parameters);
+    constructor(params = {}) {
+        super(params);
+        this.setValues(params);
         let variables = this.variables;
         //"$masks1"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks1
         //"$masks2"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks2
@@ -43272,7 +43287,7 @@ class CharacterMaterial extends SourceEngineMaterial {
         this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.diffuseModulation);
     }
     clone() {
-        return new CharacterMaterial(this.repository, this.fileName, this.parameters);
+        return new CharacterMaterial(this.parameters);
     }
     get shaderSource() {
         return 'source1_character'; //TODO: setup proper shader
@@ -43284,9 +43299,9 @@ const DEFAULT_WEAR_PROGRESS = 0.0; //0.45;
 //TODO: deprecate
 class CustomWeaponMaterial extends SourceEngineMaterial {
     diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        super(repository, fileName, parameters);
-        this.setValues(parameters);
+    constructor(params = {}) {
+        super(params);
+        this.setValues(params);
         //this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
         /*float fPixelFogType = pShaderAPI->GetPixelFogCombo() == 1 ? 1 : 0;
         float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
@@ -43360,7 +43375,7 @@ class CustomWeaponMaterial extends SourceEngineMaterial {
             this.setDefine('USE_POS_MAP'); //TODOv3: set this automaticaly
         }
         /*
-        
+
                     if( bAOTexture )
                     {
                         pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );		// [sRGB] Ambient Occlusion
@@ -43448,15 +43463,15 @@ class CustomWeaponMaterial extends SourceEngineMaterial {
                                                             transformMatrix[1], transformMatrix[5], transformMatrix[9], transformMatrix[13]
                                                             ]);
         }
-    
+
         setPatternTexCoordTransform(scale, translation, rotation) {
             this.setUniformTransform('g_patternTexCoordTransform[0]', scale, translation, rotation);
         }
-    
+
         setWearTexCoordTransform(scale, translation, rotation) {
             this.setUniformTransform('g_wearTexCoordTransform[0]', scale, translation, rotation);
         }
-    
+
         setGrungeTexCoordTransform(scale, translation, rotation) {
             this.setUniformTransform('g_grungeTexCoordTransform[0]', scale, translation, rotation);
         }
@@ -43465,7 +43480,7 @@ class CustomWeaponMaterial extends SourceEngineMaterial {
         this.uniforms['g_PreviewPhongBoosts'][2] = scale;
     }
     /*
-    
+
         "name": "aa_vertigo",
         "desc": "#PaintKit_aa_vertigo",
         "rarity": "mythical",
@@ -43489,7 +43504,7 @@ class CustomWeaponMaterial extends SourceEngineMaterial {
         "phongalbedoboost": "80"
         */
     clone() {
-        return new CustomWeaponMaterial(this.repository, this.fileName, this.parameters);
+        return new CustomWeaponMaterial(this.parameters);
     }
     get shaderSource() {
         return 'source1_customweapon';
@@ -43505,13 +43520,13 @@ class EyeRefractMaterial extends SourceEngineMaterial {
     #eyeRight = vec3.create();
     #irisProjectionU = vec4.create();
     #irisProjectionV = vec4.create();
-    constructor(repository, fileName, parameters = {}) {
-        parameters.useSrgb = false;
-        super(repository, fileName, parameters);
-        this.setValues(parameters);
+    constructor(params = {}) {
+        params.useSrgb = false;
+        super(params);
+        this.setValues(params);
         //this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
-        if (parameters['$iris']) {
-            this.setColorMap(Source1TextureManager.getTexture(this.repository, parameters['$iris'], parameters['$frame'] || 0));
+        if (params['$iris']) {
+            this.setColorMap(Source1TextureManager.getTexture(this.repository, params['$iris'], params['$frame'] || 0));
         }
         else {
             this.setColorMap(TextureManager.createCheckerTexture());
@@ -43569,7 +43584,7 @@ class EyeRefractMaterial extends SourceEngineMaterial {
         }
     }
     clone() {
-        return new EyeRefractMaterial(this.repository, this.fileName, this.parameters);
+        return new EyeRefractMaterial(this.parameters);
     }
     get shaderSource() {
         return 'source1_eyerefract';
@@ -43578,12 +43593,12 @@ class EyeRefractMaterial extends SourceEngineMaterial {
 SourceEngineVMTLoader.registerMaterial('eyerefract', EyeRefractMaterial);
 
 class LightMappedGenericMaterial extends SourceEngineMaterial {
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        super(repository, fileName, parameters);
-        this.setValues(parameters);
+    constructor(params = {}) {
+        super(params);
+        this.setValues(params);
     }
     clone() {
-        return new LightMappedGenericMaterial(this.repository, this.fileName, this.parameters);
+        return new LightMappedGenericMaterial(this.parameters);
     }
     getShaderSource() {
         return 'source1_lightmappedgeneric';
@@ -43593,7 +43608,7 @@ SourceEngineVMTLoader.registerMaterial('lightmappedgeneric', LightMappedGenericM
 
 class RefractMaterial extends SourceEngineMaterial {
     clone() {
-        return new RefractMaterial(this.repository, this.fileName, this.parameters);
+        return new RefractMaterial(this.parameters);
     }
     getShaderSource() {
         return 'source1_refract';
@@ -43602,22 +43617,22 @@ class RefractMaterial extends SourceEngineMaterial {
 SourceEngineVMTLoader.registerMaterial('refract', RefractMaterial);
 
 class SpriteCardMaterial extends SourceEngineMaterial {
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        if (parameters['$color']) {
-            parameters.useSrgb = false;
+    constructor(params = {}) {
+        if (params['$color']) {
+            params.useSrgb = false;
         }
-        super(repository, fileName, parameters);
+        super(params);
         // Disable back face culling
         this.renderFace(RenderFace.Both);
         this.colorMask[3] = 0.0;
         this.setDefine('IS_TRANSLUCENT');
         this.setDefine('IS_SPRITE_CARD_MATERIAL');
         this.setDefine('USE_PARTICLE_YAW', '0'); //This material never yaw
-        if ( /*bAdditive2ndTexture || bAddOverBlend || */parameters['$addself'] !== undefined) {
+        if ( /*bAdditive2ndTexture || bAddOverBlend || */params['$addself'] !== undefined) {
             this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         }
         else {
-            if (parameters['$additive'] == 1) {
+            if (params['$additive'] == 1) {
                 this.setTransparency(GL_SRC_ALPHA, GL_ONE);
             }
             else {
@@ -43626,15 +43641,15 @@ class SpriteCardMaterial extends SourceEngineMaterial {
         }
         // this material always has blending
         //this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        if (parameters['$additive'] == 1) ;
+        if (params['$additive'] == 1) ;
         /*if (parameters['$addself']) {
             this.setDefine('ALPHA_TEST', false);
         } else {
             this.setDefine('ALPHA_TEST');
             this.uniforms['uAlphaTestReference'] = Number.parseFloat(parameters['$alphatestreference'] || 0.5);
         }*/
-        if (parameters['$addself'] !== undefined) {
-            this.uniforms['uAddSelf'] = Number.parseFloat(parameters['$addself']);
+        if (params['$addself'] !== undefined) {
+            this.uniforms['uAddSelf'] = Number.parseFloat(params['$addself']);
             this.setDefine('ADD_SELF');
             //this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         }
@@ -43645,7 +43660,7 @@ class SpriteCardMaterial extends SourceEngineMaterial {
         this.modeAlpha = GL_MAX;
     }
     clone() {
-        return new SpriteCardMaterial(this.repository, this.fileName, this.parameters);
+        return new SpriteCardMaterial(this.parameters);
     }
     get shaderSource() {
         return 'source1_spritecard';
@@ -43668,24 +43683,24 @@ var RenderMode;
     RenderMode[RenderMode["None"] = 10] = "None";
 })(RenderMode || (RenderMode = {}));
 class SpriteMaterial extends SourceEngineMaterial {
-    constructor(repository, fileName, parameters = {}) {
-        super(repository, fileName, parameters);
+    constructor(params = {}) {
+        super(params);
         // Disable back face culling
         this.renderFace(RenderFace.Both);
         this.colorMask[3] = 0.0;
         this.setDefine('IS_TRANSLUCENT');
-        if ( /*bAdditive2ndTexture || bAddOverBlend || */parameters['$addself'] !== undefined) {
+        if ( /*bAdditive2ndTexture || bAddOverBlend || */params['$addself'] !== undefined) {
             this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         }
         else {
-            if (parameters['$additive'] == 1) {
+            if (params['$additive'] == 1) {
                 this.setTransparency(GL_SRC_ALPHA, GL_ONE);
             }
             else {
                 this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             }
         }
-        switch (Number(parameters['$spriterendermode'])) {
+        switch (Number(params['$spriterendermode'])) {
             //TODO: add other modes
             case RenderMode.TransAdd:
                 this.setTransparency(GL_SRC_ALPHA, GL_ONE);
@@ -43693,15 +43708,15 @@ class SpriteMaterial extends SourceEngineMaterial {
         }
         // this material always has blending
         //this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-        if (parameters['$additive'] == 1) ;
+        if (params['$additive'] == 1) ;
         /*if (parameters['$addself']) {
             this.setDefine('ALPHA_TEST', false);
         } else {
             this.setDefine('ALPHA_TEST');
             this.uniforms['uAlphaTestReference'] = Number.parseFloat(parameters['$alphatestreference'] || 0.5);
         }*/
-        if (parameters['$addself'] !== undefined) {
-            this.uniforms['uAddSelf'] = Number.parseFloat(parameters['$addself']);
+        if (params['$addself'] !== undefined) {
+            this.uniforms['uAddSelf'] = Number.parseFloat(params['$addself']);
             this.setDefine('ADD_SELF');
             //this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         }
@@ -43712,7 +43727,7 @@ class SpriteMaterial extends SourceEngineMaterial {
         this.modeAlpha = GL_MAX;
     }
     clone() {
-        return new SpriteMaterial(this.repository, this.fileName, this.parameters);
+        return new SpriteMaterial(this.parameters);
     }
     get shaderSource() {
         return 'source1_sprite';
@@ -43722,19 +43737,19 @@ SourceEngineVMTLoader.registerMaterial('sprite', SpriteMaterial);
 
 class UnlitGenericMaterial extends SourceEngineMaterial {
     diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        super(repository, fileName, parameters);
-        this.setValues(parameters);
+    constructor(params = {}) {
+        super(params);
+        this.setValues(params);
         this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0); //TODOv3
         this.uniforms['g_DiffuseModulation'] = this.diffuseModulation;
-        if (parameters['$additive'] == 1) {
+        if (params['$additive'] == 1) {
             this.setTransparency(GL_SRC_ALPHA, GL_ONE);
             //this.setBlending('additive');
         }
         this.modeAlpha = GL_MAX;
     }
     clone() {
-        return new UnlitGenericMaterial(this.repository, this.fileName, this.parameters);
+        return new UnlitGenericMaterial(this.parameters);
     }
     get shaderSource() {
         //Note: this is vertexlitgeneric without lighting
@@ -43745,16 +43760,16 @@ SourceEngineVMTLoader.registerMaterial('unlitgeneric', UnlitGenericMaterial);
 
 const IDENTITY_MATRIX = mat4.create();
 class UnlitTwoTextureMaterial extends SourceEngineMaterial {
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        super(repository, fileName, parameters);
-        if (parameters['$texture2']) {
-            this.setColor2Map(Source1TextureManager.getTexture(this.repository, parameters['$texture2'], parameters['$frame2'] || 0));
+    constructor(params = {}) {
+        super(params);
+        if (params['$texture2']) {
+            this.setColor2Map(Source1TextureManager.getTexture(this.repository, params['$texture2'], params['$frame2'] || 0));
         }
         else {
             this.setColor2Map(TextureManager.createCheckerTexture());
         }
         this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        if (parameters['$additive'] == 1) {
+        if (params['$additive'] == 1) {
             this.setTransparency(GL_SRC_ALPHA, GL_ONE);
             //this.setBlending('additive');
         }
@@ -43765,7 +43780,7 @@ class UnlitTwoTextureMaterial extends SourceEngineMaterial {
         this.setDefine('USE_TEXTURE2_TRANSFORM');
     }
     clone() {
-        return new UnlitTwoTextureMaterial(this.repository, this.fileName, this.parameters);
+        return new UnlitTwoTextureMaterial(this.parameters);
     }
     get shaderSource() {
         return 'source1_unlittwotexture';
@@ -43788,10 +43803,10 @@ SourceEngineVMTLoader.registerMaterial('unlittwotexture', UnlitTwoTextureMateria
 
 class VertexLitGenericMaterial extends SourceEngineMaterial {
     diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        parameters.useSrgb = false;
-        super(repository, fileName, parameters);
-        this.setValues(parameters);
+    constructor(params = {}) {
+        params.useSrgb = false;
+        super(params /*repository, fileName, parameters*/);
+        this.setValues(params);
         //this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
         /*float fPixelFogType = pShaderAPI->GetPixelFogCombo() == 1 ? 1 : 0;
         float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
@@ -43855,7 +43870,7 @@ class VertexLitGenericMaterial extends SourceEngineMaterial {
         this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.diffuseModulation);
     }
     clone() {
-        return new VertexLitGenericMaterial(this.repository, this.fileName, this.parameters);
+        return new VertexLitGenericMaterial(/*this.repository, this.fileName, */ this.parameters);
     }
     get shaderSource() {
         return 'source1_vertexlitgeneric';
@@ -43865,16 +43880,16 @@ SourceEngineVMTLoader.registerMaterial('vertexlitgeneric', VertexLitGenericMater
 MaterialManager.registerMaterial('VertexLitGeneric', VertexLitGenericMaterial, SourceEngineMaterialManager);
 
 class WaterMaterial extends SourceEngineMaterial {
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        super(repository, fileName, parameters);
+    constructor(params = {}) {
+        super(params);
         // Disable back face culling
         this.renderFace(RenderFace.Both);
-        this.setValues(parameters);
+        this.setValues(params);
         this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         this.setDefine('IS_TRANSLUCENT');
     }
     clone() {
-        return new WaterMaterial(this.repository, this.fileName, this.parameters);
+        return new WaterMaterial(this.parameters);
     }
     getShaderSource() {
         return 'source1_water';
@@ -43884,9 +43899,9 @@ SourceEngineVMTLoader.registerMaterial('water', WaterMaterial);
 
 //TODO: deprecate
 class WeaponDecalMaterial extends SourceEngineMaterial {
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        super(repository, fileName, parameters);
-        this.setValues(parameters);
+    constructor(params = {}) {
+        super(params);
+        this.setValues(params);
         let variables = this.variables;
         this.setDefine('MIRROR', variables.get('$mirrorhorizontal') ?? 0);
         this.setDefine('DESATBASETINT', variables.get('$desatbasetint') ? '1' : '0');
@@ -43955,7 +43970,7 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
             this.setDefine('USE_HOLO_SPECTRUM_MAP'); //TODOv3: set this automaticaly
         }
         /*
-        
+
                     if( bAOTexture )
                     {
                         pShaderShadow->EnableTexture( SHADER_SAMPLER0, true );		// [sRGB] Ambient Occlusion
@@ -44072,7 +44087,7 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
         return WEAPON_DECAL_DEFAULT_PARAMETERS;
     }
     clone() {
-        return new WeaponDecalMaterial(this.repository, this.fileName, this.parameters);
+        return new WeaponDecalMaterial(this.parameters);
     }
     get shaderSource() {
         return 'source1_weapondecal';
@@ -44100,8 +44115,8 @@ const WEAPON_DECAL_DEFAULT_PARAMETERS = {
 };
 
 class WorldVertexTransitionMaterial extends SourceEngineMaterial {
-    constructor(repository, fileName, parameters = Object.create(null)) {
-        super(repository, fileName, parameters);
+    constructor(params = {}) {
+        super(params);
     }
     afterProcessProxies(proxyParams) {
         this.variables;
@@ -44114,7 +44129,7 @@ class WorldVertexTransitionMaterial extends SourceEngineMaterial {
         }
     }
     clone() {
-        return new WorldVertexTransitionMaterial(this.repository, this.fileName, this.parameters);
+        return new WorldVertexTransitionMaterial(this.parameters);
     }
     getShaderSource() {
         return 'source1_worldvertextransition';

@@ -3,7 +3,7 @@ import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 
 export class RefractMaterial extends SourceEngineMaterial {
 	clone() {
-		return new RefractMaterial(this.repository, this.fileName, this.parameters);
+		return new RefractMaterial(this.parameters);
 	}
 
 	getShaderSource() {

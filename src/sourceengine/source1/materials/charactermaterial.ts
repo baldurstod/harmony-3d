@@ -7,15 +7,15 @@ import { Source1TextureManager } from '../textures/source1texturemanager';
 //TODO: deprecate
 export class CharacterMaterial extends SourceEngineMaterial {
 	diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-	constructor(repository, fileName, parameters = Object.create(null)) {//fixme
-		super(repository, fileName, parameters);
-		this.setValues(parameters);
+	constructor(params: any = {}) {//fixme
+		super(params);
+		this.setValues(params);
 		let variables = this.variables;
 
 
 
-	//"$masks1"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks1
-	//"$masks2"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks2
+		//"$masks1"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks1
+		//"$masks2"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks2
 		let masks1Texture = variables.get('$masks1');
 		if (masks1Texture) {
 			this.uniforms['mask1Map'] = Source1TextureManager.getTexture(this.repository, masks1Texture, 0);
@@ -39,7 +39,7 @@ export class CharacterMaterial extends SourceEngineMaterial {
 		float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
 		float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
 		float fVertexAlpha = bHasVertexAlpha ? 1 : 0;*/
-		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1 ,0);//TODOv3
+		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
 		this.uniforms['g_DiffuseModulation'] = this.diffuseModulation;
 
 		const btbba = this.variables.get('$blendtintbybasealpha');
@@ -99,8 +99,8 @@ export class CharacterMaterial extends SourceEngineMaterial {
 		}
 
 
-//uniform vec4 g_vPackedConst6;
-//uniform vec4 g_vPackedConst7;
+		//uniform vec4 g_vPackedConst6;
+		//uniform vec4 g_vPackedConst7;
 
 
 		//TODOv3: only do this if a variable is changed
@@ -108,7 +108,7 @@ export class CharacterMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new CharacterMaterial(this.repository, this.fileName, this.parameters);
+		return new CharacterMaterial(this.parameters);
 	}
 
 	get shaderSource() {

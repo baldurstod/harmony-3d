@@ -14,15 +14,15 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 	#eyeRight = vec3.create();
 	#irisProjectionU = vec4.create();
 	#irisProjectionV = vec4.create();
-	constructor(repository, fileName, parameters: any = {}) {//fixme
-		parameters.useSrgb = false;
-		super(repository, fileName, parameters);
-		this.setValues(parameters);
+	constructor(params: any = {}) {
+		params.useSrgb = false;
+		super(params);
+		this.setValues(params);
 
 		//this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
 
-		if (parameters['$iris']) {
-			this.setColorMap(Source1TextureManager.getTexture(this.repository, parameters['$iris'], parameters['$frame'] || 0));
+		if (params['$iris']) {
+			this.setColorMap(Source1TextureManager.getTexture(this.repository, params['$iris'], params['$frame'] || 0));
 		} else {
 			this.setColorMap(TextureManager.createCheckerTexture());
 		}
@@ -90,7 +90,7 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new EyeRefractMaterial(this.repository, this.fileName, this.parameters);
+		return new EyeRefractMaterial(this.parameters);
 	}
 
 	get shaderSource() {

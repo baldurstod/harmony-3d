@@ -15,9 +15,9 @@ const DEFAULT_GRUNGE_TEXTURE = 'models/weapons/customization/shared/sticker_pape
 const DEFAULT_WEAR_TEXTURE = 'models/weapons/customization/shared/paint_wear';
 //TODO: deprecate
 export class WeaponDecalMaterial extends SourceEngineMaterial {
-	constructor(repository, fileName, parameters = Object.create(null)) {//fixme
-		super(repository, fileName, parameters);
-		this.setValues(parameters);
+	constructor(params: any = {}) {
+		super(params);
+		this.setValues(params);
 		let variables = this.variables;
 
 		this.setDefine('MIRROR', variables.get('$mirrorhorizontal') ?? 0);
@@ -242,7 +242,7 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new WeaponDecalMaterial(this.repository, this.fileName, this.parameters);
+		return new WeaponDecalMaterial(this.parameters);
 	}
 
 	get shaderSource() {

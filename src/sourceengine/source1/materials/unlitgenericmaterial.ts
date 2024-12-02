@@ -6,14 +6,14 @@ import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 
 export class UnlitGenericMaterial extends SourceEngineMaterial {
 	diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-	constructor(repository, fileName, parameters = Object.create(null)) {//fixme
-		super(repository, fileName, parameters);
-		this.setValues(parameters);
+	constructor(params: any = {}) {
+		super(params);
+		this.setValues(params);
 
 		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
 		this.uniforms['g_DiffuseModulation'] = this.diffuseModulation;
 
-		if (parameters['$additive'] == 1) {
+		if (params['$additive'] == 1) {
 			this.setTransparency(GL_SRC_ALPHA, GL_ONE);
 			//this.setBlending('additive');
 		}
@@ -22,7 +22,7 @@ export class UnlitGenericMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new UnlitGenericMaterial(this.repository, this.fileName, this.parameters);
+		return new UnlitGenericMaterial(this.parameters);
 	}
 
 	get shaderSource() {

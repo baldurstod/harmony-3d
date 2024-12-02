@@ -123,11 +123,11 @@ export class SourceEngineMaterial extends Material {
 	frameY: number;
 	sequenceLength: number;
 
-	constructor(repository, fileName, parameters = Object.create(null)) {
-		super(parameters);
-		this.repository = repository;
-		this.fileName = fileName;
-		this.proxyParams = Object.create(null);
+	constructor(params: any = {}/*repository, fileName, parameters = Object.create(null)*/) {
+		super(params);
+		this.repository = params.repository;
+		this.fileName = params.filename;
+		this.proxyParams = {};
 		if (DEBUG) {
 			//this.proxyParams.StatTrakNumber = 192837;//TODOv3 removeme
 			//this.proxyParams.WeaponLabelText = 'AVCDEFGHIJKLMONPQRSTU';//TODOv3 removeme
@@ -141,8 +141,8 @@ export class SourceEngineMaterial extends Material {
 		this.#initUniforms();
 
 		let variables = this.variables;
-		initDefaultParameters(VMT_PARAMETERS, parameters, variables);
-		initDefaultParameters(this.getDefaultParameters(), parameters, variables);
+		initDefaultParameters(VMT_PARAMETERS, params, variables);
+		initDefaultParameters(this.getDefaultParameters(), params, variables);
 
 		let readParameters = (parameters) => {
 			for (let parameterName in parameters) {
@@ -178,26 +178,26 @@ export class SourceEngineMaterial extends Material {
 				}
 			}
 		}
-		readParameters(parameters);
-		if (parameters['>=dx90']) {
-			readParameters(parameters['>=dx90']);
+		readParameters(params);
+		if (params['>=dx90']) {
+			readParameters(params['>=dx90']);
 		}
 
 		let baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
-			this.setColorMap(Source1TextureManager.getTexture(this.repository, baseTexture, parameters['$frame'] || 0, false, parameters.useSrgb ?? true));
+			this.setColorMap(Source1TextureManager.getTexture(this.repository, baseTexture, params['$frame'] || 0, false, params.useSrgb ?? true));
 		} else {
 			this.setColorMap(getDefaultTexture());
 		}
 
-		if (parameters['$bumpmap']) {
-			this.setNormalMap(Source1TextureManager.getTexture(this.repository, parameters['$bumpmap'], 0, false, false));
+		if (params['$bumpmap']) {
+			this.setNormalMap(Source1TextureManager.getTexture(this.repository, params['$bumpmap'], 0, false, false));
 		} else {
 			this.setNormalMap(null);
 		}
 
 		let translucent = false;
-		if (parameters['$alpha']) {
+		if (params['$alpha']) {
 			this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			this.setDefine('IS_TRANSLUCENT');
 			//TODOv3: adjust opacity accordinly
@@ -206,19 +206,19 @@ export class SourceEngineMaterial extends Material {
 			}
 			translucent = true;
 		}
-		if (parameters['$vertexalpha'] == 1) {
+		if (params['$vertexalpha'] == 1) {
 			this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			this.setDefine('IS_TRANSLUCENT');
 			translucent = true;
 			//TODOv3 activate proper define in shader
 			//also add vertexcolor
 		}
-		if (parameters['$translucent'] == 1) {
+		if (params['$translucent'] == 1) {
 			this.setBlending(MATERIAL_BLENDING_NORMAL);
 			this.setDefine('IS_TRANSLUCENT');
 			translucent = true;
 		}
-		if (parameters['$additive'] == 1) {
+		if (params['$additive'] == 1) {
 			if (translucent) {
 				this.setBlending(MATERIAL_BLENDING_ADDITIVE);
 			} else {
@@ -226,14 +226,14 @@ export class SourceEngineMaterial extends Material {
 			}
 			this.setDefine('IS_ADDITIVE');
 		}
-		if (parameters['$alphatest'] == 1) {
+		if (params['$alphatest'] == 1) {
 			this.alphaTest = true;
-			this.alphaTestReference = Number.parseFloat(parameters['$alphatestreference'] ?? 0.5);
+			this.alphaTestReference = Number.parseFloat(params['$alphatestreference'] ?? 0.5);
 		}
-		if (parameters['$vertexalpha'] == 1) {
+		if (params['$vertexalpha'] == 1) {
 			this.setDefine('VERTEX_ALPHA');
 		}
-		if (parameters['$vertexcolor'] == 1) {
+		if (params['$vertexcolor'] == 1) {
 			this.setDefine('VERTEX_COLOR');
 		}
 
@@ -249,38 +249,38 @@ export class SourceEngineMaterial extends Material {
 		}
 
 		this.uniforms['uTextureTransform'] = IDENTITY_MAT4;
-		if (parameters['$basetexturetransform']) {
-			let textureTransform = GetTextureTransform(parameters['$basetexturetransform']);
+		if (params['$basetexturetransform']) {
+			let textureTransform = GetTextureTransform(params['$basetexturetransform']);
 			if (textureTransform) {
 				this.variables.set('$basetexturetransform', textureTransform);
 				this.uniforms['uTextureTransform'] = textureTransform;
 			}
 		}
 
-		if (parameters['$nocull'] == 1) {
+		if (params['$nocull'] == 1) {
 			this.renderFace(RenderFace.Both);
 		}
 
-		let lightWarpTexture = parameters['$lightwarptexture'];
+		let lightWarpTexture = params['$lightwarptexture'];
 		this.setTexture('lightWarpMap', lightWarpTexture ? Source1TextureManager.getTexture(this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
 
-		if (parameters['$phong'] == 1) {
+		if (params['$phong'] == 1) {
 			this.setDefine('USE_PHONG_SHADING');
 
 			// The $phongexponenttexture is overrided by $phongexponent
-			let phongExponentTexture = parameters['$phongexponenttexture'];
+			let phongExponentTexture = params['$phongexponenttexture'];
 			this.setTexture('phongExponentMap', phongExponentTexture ? Source1TextureManager.getTexture(this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
 			if (phongExponentTexture) {
 				this.uniforms['uPhongExponentFactor'] = variables.get('$phongexponentfactor');
 			}
 
 			this.uniforms['uPhongExponent'] = variables.get('$phongexponent');
-			this.uniforms['uPhongBoost'] = parameters['$phongboost'] ?? 0;
+			this.uniforms['uPhongBoost'] = params['$phongboost'] ?? 0;
 
-			if (parameters['$basemapalphaphongmask'] == 1) {
+			if (params['$basemapalphaphongmask'] == 1) {
 				this.setDefine('USE_COLOR_ALPHA_AS_PHONG_MASK');
 			}
-			if (parameters['$phongalbedotint'] == 1) {
+			if (params['$phongalbedotint'] == 1) {
 				this.setDefine('USE_PHONG_ALBEDO_TINT');
 			}
 
@@ -355,7 +355,7 @@ export class SourceEngineMaterial extends Material {
 		}
 
 
-		const proxies = parameters['proxies'];
+		const proxies = params['proxies'];
 		if (proxies) {
 			this.initProxies(proxies);
 		}

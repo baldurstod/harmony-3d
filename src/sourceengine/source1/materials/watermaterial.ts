@@ -4,19 +4,19 @@ import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { RenderFace } from '../../../materials/constants';
 
 export class WaterMaterial extends SourceEngineMaterial {
-	constructor(repository, fileName, parameters = Object.create(null)) {//fixme
-		super(repository, fileName, parameters);
+	constructor(params: any = {}) {
+		super(params);
 
 		// Disable back face culling
 		this.renderFace(RenderFace.Both);
 
-		this.setValues(parameters);
+		this.setValues(params);
 		this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		this.setDefine('IS_TRANSLUCENT');
 	}
 
 	clone() {
-		return new WaterMaterial(this.repository, this.fileName, this.parameters);
+		return new WaterMaterial(this.parameters);
 	}
 
 	getShaderSource() {
