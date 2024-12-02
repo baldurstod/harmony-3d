@@ -3,6 +3,7 @@ import { Uniform } from './uniform';
 import { ShaderManager } from '../managers/shadermanager';
 import { DEBUG, ENABLE_GET_ERROR } from '../buildoptions';
 import { WebGLAnyRenderingContext } from '../types';
+import { WebGLShaderSource } from './shadersource';
 
 export class Program {
 	#glContext: WebGLAnyRenderingContext
@@ -14,12 +15,13 @@ export class Program {
 	#valid: boolean = false;
 	attributes = new Map<string, GLint>();
 	uniforms = new Map<string, Uniform>();
-	#linkError: string = '';
+	#linkError: string | null = '';
+
 	constructor(glContext: WebGLAnyRenderingContext, vertexShaderName: string, fragmentShaderName: string) {
 		this.#glContext = glContext;
-		this.#program = glContext.createProgram();
-		this.#vs = glContext.createShader(GL_VERTEX_SHADER);
-		this.#fs = glContext.createShader(GL_FRAGMENT_SHADER);
+		this.#program = glContext.createProgram() as WebGLProgram;
+		this.#vs = glContext.createShader(GL_VERTEX_SHADER) as WebGLShader;
+		this.#fs = glContext.createShader(GL_FRAGMENT_SHADER) as WebGLShader;
 		this.#vertexShaderName = vertexShaderName;
 		this.#fragmentShaderName = fragmentShaderName;
 		glContext.attachShader(this.#program, this.#vs);
@@ -49,7 +51,7 @@ export class Program {
 		}
 	}
 
-	validate(includeCode) {//TODO: remove include code
+	validate(includeCode: string) {//TODO: remove include code
 		const vertexShaderScript = ShaderManager.getShaderSource(GL_VERTEX_SHADER, this.#vertexShaderName);
 		const fragmentShaderScript = ShaderManager.getShaderSource(GL_FRAGMENT_SHADER, this.#fragmentShaderName);
 
@@ -121,12 +123,14 @@ export class Program {
 		this.attributes.set(attributeName, attributeLocation);//TODO: set in attributes ?
 	}
 
-	#setProgramUniform(uniformInfo) {
+	#setProgramUniform(uniformInfo: WebGLActiveInfo) {
 		const uniformLocation = this.#glContext.getUniformLocation(this.#program, uniformInfo.name);
-		this.uniforms.set(uniformInfo.name, new Uniform(uniformInfo, uniformLocation));
+		if (uniformLocation) {
+			this.uniforms.set(uniformInfo.name, new Uniform(uniformInfo, uniformLocation));
+		}
 	}
 
-	#compileShader(shader, shaderName, shaderSource, includeCode) {
+	#compileShader(shader: WebGLShader, shaderName: string, shaderSource: WebGLShaderSource, includeCode: string) {
 		if (!shaderSource || !shaderSource.isValid()) {
 			return null;
 		}
@@ -140,9 +144,9 @@ export class Program {
 			let m = 'Compile error in ' + shaderName + '. Reason : ' + shaderInfoLog;
 			console.warn(m, shaderSource.getCompileSourceLineNumber(includeCode), m);
 
-			ShaderManager.setCompileError(shaderName, shaderInfoLog);
+			ShaderManager.setCompileError(shaderName, shaderInfoLog as string);
 
-			shaderSource.setCompileError(this.#glContext.getShaderInfoLog(shader), includeCode);
+			shaderSource.setCompileError(this.#glContext.getShaderInfoLog(shader) as string, includeCode);
 			return false;
 		}
 		return true;
