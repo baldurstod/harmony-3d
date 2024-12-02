@@ -35,6 +35,7 @@ export class Source1ModelInstance extends Entity {
 	#attachements = {};
 	#materialsUsed = new Set<Material>();
 	animable = true;
+	hasAnimations = true;
 	sourceModel;
 	bodyParts = {};
 	sequences = {};
