@@ -5,10 +5,11 @@ import { EntityObserver, CHILD_ADDED, CHILD_REMOVED, PROPERTY_CHANGED, ENTITY_DE
 
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
+import { SceneExplorer } from './sceneexplorer';
 
 export class SceneExplorerEntity extends HTMLElement {
 	#doOnce;
-	#entity;
+	#entity?: Entity;
 	#htmlHeader;
 	#htmlChilds;
 	#htmlTitle;
@@ -17,15 +18,15 @@ export class SceneExplorerEntity extends HTMLElement {
 	#htmlReset;
 
 	static #entitiesHTML = new Map();
-	static #selectedEntity;
-	static #explorer;
-	static #draggedEntity;
+	static #selectedEntity?: SceneExplorerEntity;
+	static #explorer?: SceneExplorer;
+	static #draggedEntity?: Entity;
 
 	static {
-		EntityObserver.addEventListener(CHILD_ADDED, (event: CustomEvent) => SceneExplorerEntity.#expandEntityChilds(event.detail.parent));
-		EntityObserver.addEventListener(CHILD_REMOVED, (event: CustomEvent) => SceneExplorerEntity.#expandEntityChilds(event.detail.parent));
-		EntityObserver.addEventListener(PROPERTY_CHANGED, (event: CustomEvent) => SceneExplorerEntity.#handlePropertyChanged(event.detail));
-		EntityObserver.addEventListener(ENTITY_DELETED, (event: CustomEvent) => SceneExplorerEntity.#handleEntityDeleted(event.detail));
+		EntityObserver.addEventListener(CHILD_ADDED, (event: Event) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent).detail.parent));
+		EntityObserver.addEventListener(CHILD_REMOVED, (event: Event) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent).detail.parent));
+		EntityObserver.addEventListener(PROPERTY_CHANGED, (event: Event) => SceneExplorerEntity.#handlePropertyChanged((event as CustomEvent).detail));
+		EntityObserver.addEventListener(ENTITY_DELETED, (event: Event) => SceneExplorerEntity.#handleEntityDeleted((event as CustomEvent).detail));
 	}
 
 	constructor() {
@@ -87,7 +88,9 @@ export class SceneExplorerEntity extends HTMLElement {
 			this.append(this.#htmlHeader, this.#htmlChilds);
 			this.addEventListener('contextmenu', event => this.#contextMenuHandler(event));
 			this.addEventListener('dragstart', event => {
-				event.dataTransfer.effectAllowed = 'link';
+				if (event.dataTransfer) {
+					event.dataTransfer.effectAllowed = 'link';
+				}
 				SceneExplorerEntity.#draggedEntity = this.#entity;
 				event.stopPropagation();
 			});
@@ -105,17 +108,24 @@ export class SceneExplorerEntity extends HTMLElement {
 				const draggedEntity = SceneExplorerEntity.#draggedEntity;
 				if (draggedEntity) {
 					this.classList.remove('dragged-over');
-					this.#entity.addChild(draggedEntity);
+					this.#entity?.addChild(draggedEntity);
 					event.stopPropagation();
 				}
 			});
-			this.addEventListener('dragend', event => {
-				SceneExplorerEntity.#draggedEntity = null;
+			this.addEventListener('dragend', () => {
+				SceneExplorerEntity.#draggedEntity = undefined;
 			});
 		}
 	}
 
-	set entity(entity) {
+	set entity(entity: Entity) {
+		//TODO: deprecate
+		console.warn('deprecated, use setEntity instaed');
+		this.setEntity(entity);
+
+	}
+
+	setEntity(entity: Entity) {
 		this.#entity = entity;
 		this.#update();
 		this.#updateVisibility();
@@ -124,20 +134,22 @@ export class SceneExplorerEntity extends HTMLElement {
 		display(this.#htmlReset, entity?.resetable);
 	}
 
-	static set explorer(explorer) {
+	static setExplorer(explorer: SceneExplorer) {
 		SceneExplorerEntity.#explorer = explorer;
 	}
 
+	/*
 	static get selectedEntity() {
 		return SceneExplorerEntity.#selectedEntity.#entity;
 	}
+	*/
 
 	select() {
 		this.classList.add('selected');
 		const selectedEntity = SceneExplorerEntity.#selectedEntity;
 		if (selectedEntity != this) {
 			selectedEntity?.unselect();
-			SceneExplorerEntity.#explorer.selectEntity(this.#entity);
+			SceneExplorerEntity.#explorer?.selectEntity(this.#entity);
 		}
 
 		SceneExplorerEntity.#selectedEntity = this;
@@ -147,7 +159,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		this.classList.remove('selected');
 	}
 
-	static getEntityElement(entity) {
+	static getEntityElement(entity: Entity) {
 		if (entity.hideInExplorer) {
 			return null;
 		}
@@ -162,7 +174,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		return entityElement;
 	}
 
-	static #handlePropertyChanged(detail) {
+	static #handlePropertyChanged(detail: any) {
 		const entity = detail.entity;
 		SceneExplorerEntity.#updateEntity(entity);
 		let entityElement;
@@ -179,19 +191,19 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	static #handleEntityDeleted(detail) {
+	static #handleEntityDeleted(detail: any) {
 		SceneExplorerEntity.#entitiesHTML.delete(detail.entity);
 		//console.log('deleted entity', detail.entity);
 	}
 
-	static #updateEntity(entity) {
+	static #updateEntity(entity: any) {
 		let entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (entityElement) {
 			entityElement.#update();
 		}
 	}
 
-	static #expandEntityChilds(entity) {
+	static #expandEntityChilds(entity: Entity) {
 		let entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (entityElement) {
 			entityElement.#expandChilds();
@@ -206,7 +218,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	static #updateEntityVisibility(entity) {
+	static #updateEntityVisibility(entity: Entity) {
 		const entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (entityElement) {
 			entityElement.#updateVisibility();
@@ -221,7 +233,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	static #updateEntityPlaying(entity) {
+	static #updateEntityPlaying(entity: Entity) {
 		const entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (entityElement) {
 			entityElement.#updatePlaying();
@@ -264,9 +276,9 @@ export class SceneExplorerEntity extends HTMLElement {
 		this.select();
 	}
 
-	#contextMenuHandler(event, entity?, htmlEntityElement?) {
-		if (!event.shiftKey) {
-			SceneExplorerEntity.#explorer.htmlContextMenu.show(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
+	#contextMenuHandler(event: MouseEvent) {
+		if (!event.shiftKey && this.#entity) {
+			SceneExplorerEntity.#explorer?.htmlContextMenu.show(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
 			event.preventDefault();
 			event.stopPropagation();
 		}

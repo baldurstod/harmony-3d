@@ -1,5 +1,5 @@
 import { ShortcutHandler } from 'harmony-browser-utils';
-import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot, defineHarmonyContextMenu } from 'harmony-ui';
+import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot, defineHarmonyContextMenu, HTMLHarmonyContextMenuElement } from 'harmony-ui';
 import { SceneExplorerEvents } from './sceneexplorerevents';
 import { Camera } from '../cameras/camera';
 import { RotationControl } from '../controls/rotationcontrol';
@@ -73,7 +73,7 @@ export class SceneExplorer {
 	#htmlHeader: HTMLElement;
 	htmlFileSelector: HTMLElement;
 	#htmlNameFilter: HTMLElement;
-	htmlContextMenu: HTMLElement;
+	htmlContextMenu: HTMLHarmonyContextMenuElement;
 	#htmlTypeFilter: HTMLElement;
 	#shadowRoot: ShadowRoot;
 	#htmlName;
@@ -97,7 +97,7 @@ export class SceneExplorer {
 		}
 		SceneExplorer.#instance = this;
 		initEntitySubmenu();
-		SceneExplorerEntity.explorer = this;
+		SceneExplorerEntity.setExplorer(this);
 		this.#initHtml();
 		this.#manipulator = new Manipulator({ visible: false });
 		this.#skeletonHelper = new SkeletonHelper({ visible: false });
