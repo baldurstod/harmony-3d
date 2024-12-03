@@ -76,13 +76,13 @@ export class Interaction {
 
 	show() {
 		this.#initHtml();
-		show(this.#shadowRoot.host as HTMLElement);
+		show(this.#shadowRoot?.host as HTMLElement);
 		hide(this.#htmlInput);
 		hide(this.#htmlColorPicker);
 	}
 
 	hide() {
-		hide(this.#shadowRoot.host as HTMLElement);
+		hide(this.#shadowRoot?.host as HTMLElement);
 	}
 
 	async getColor(x: number, y: number, defaultValue?: vec4, onChange?: (color: vec4) => void, onCancel?: () => void) {
@@ -238,6 +238,6 @@ export class Interaction {
 	}
 
 	get htmlElement() {
-		return this.#shadowRoot.host as HTMLElement;
+		return this.#shadowRoot?.host as HTMLElement;
 	}
 }
