@@ -196,10 +196,10 @@ export class SceneExplorerEntity extends HTMLElement {
 			return null;
 		}
 
-		let entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
+		let entityElement: SceneExplorerEntity = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (!entityElement) {
-			entityElement = createElement('scene-explorer-entity');
-			entityElement.entity = entity;
+			entityElement = createElement('scene-explorer-entity') as SceneExplorerEntity;
+			entityElement.setEntity(entity);
 			SceneExplorerEntity.#entitiesHTML.set(entity, entityElement);
 		}
 
