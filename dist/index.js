@@ -1,10 +1,10 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { createElement, hide, display, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, toggle, defineHarmonyContextMenu } from 'harmony-ui';
+import { createElement, hide, display, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, toggle, isVisible, defineHarmonyContextMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
-import { zoomOutSVG, zoomInSVG, contentCopySVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG, dragPanSVG, rotateSVG, panZoomSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, contentCopySVG, runSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG, dragPanSVG, rotateSVG, panZoomSVG } from 'harmony-svg';
 import { setTimeoutPromise } from 'harmony-utils';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
@@ -2143,6 +2143,7 @@ class Entity {
     enumerable = true;
     animable = false;
     resetable = false;
+    hasAnimations = false;
     _position = vec3.create();
     _quaternion = quat.create();
     _scale = vec3.clone(UNITY_VEC3);
@@ -3913,7 +3914,7 @@ class Interaction {
         this.#htmlInput.value = defaultValue ? defaultValue : '';
         if (list) {
             let isMap = list.constructor.name == 'Map';
-            this.#htmlInputDataList.innerHTML = '';
+            this.#htmlInputDataList.innerText = '';
             for (let value of list) {
                 let animOption = document.createElement('option');
                 this.#htmlInputDataList.append(animOption);
@@ -4004,7 +4005,7 @@ class Interaction {
         //this.show();
         //this.#htmlFileSelector.style.display = '';
         this.#htmlFileSelector.innerText = '';
-        htmlContainer.innerHTML = '';
+        htmlContainer.innerText = '';
         //let value = await
         //this._expandFile(this.#htmlFileSelector, fileList.files, callback);
         //this.#htmlFileSelector.style.display = 'none';
@@ -4771,13 +4772,13 @@ class ShaderManager {
     }
 }
 
-let id = 0;
+let id$1 = 0;
 class ShaderMaterial extends Material {
     #shaderSource;
     constructor(params = {}) {
         super(params);
         this.shaderSource = params.shaderSource;
-        const name = `shadermaterial_${++id}`;
+        const name = `shadermaterial_${++id$1}`;
         if (params.vertex) {
             ShaderManager.addSource(GL_VERTEX_SHADER, name + '.vs', params.vertex);
             this.shaderSource = name;
@@ -14728,7 +14729,7 @@ class NodeGui {
         resizeObserver.observe(this.#htmlPreview);
     }
     #refreshHtml() {
-        this.#htmlParams.innerHTML = '';
+        this.#htmlParams.innerText = '';
         for (let [_, param] of this.#node.params) {
             if (param.length && param.length > 1) {
                 for (let i = 0; i < param.length; ++i) {
@@ -14966,7 +14967,7 @@ class NodeImageEditorGui {
         this.#refreshFilter();
     }
     #organizeNodes() {
-        this.#htmlNodes.innerHTML = '';
+        this.#htmlNodes.innerText = '';
         this.#htmlNodes.append(this.#canvas);
         let nodes = new Map();
         if (this.#nodeImageEditor) {
@@ -18689,7 +18690,7 @@ class RepositoryEntry {
         }
         for (const [name, entry] of other.#childs) {
             if (this.#childs.has(name)) {
-                this.#childs.get(name).merge(entry);
+                this.#childs.get(name)?.merge(entry);
             }
             else {
                 this.#childs.set(name, entry);
@@ -19055,14 +19056,23 @@ class CubeEnvironment extends Environment {
 }
 
 var _a$2;
+const MAX_ANIMATIONS = 1;
+let id = 0;
+function getDataListId() {
+    return `animations-datalist${++id}`;
+}
 class SceneExplorerEntity extends HTMLElement {
     #doOnce;
     #entity;
     #htmlHeader;
+    #htmlContent;
+    #htmlAnimations;
+    #htmlInputDataList;
     #htmlChilds;
     #htmlTitle;
     #htmlVisible;
     #htmlPlaying;
+    #htmlAnimationsButton;
     #htmlReset;
     static #entitiesHTML = new Map();
     static #selectedEntity;
@@ -19106,6 +19116,14 @@ class SceneExplorerEntity extends HTMLElement {
                                 },
                             }
                         }),
+                        this.#htmlAnimationsButton = createElement('div', {
+                            hidden: true,
+                            class: 'scene-explorer-entity-button-animations',
+                            innerHTML: runSVG,
+                            events: {
+                                click: () => this.#toggleAnimations(),
+                            }
+                        }),
                         this.#htmlReset = createElement('div', {
                             hidden: true,
                             class: 'scene-explorer-entity-button-reset',
@@ -19120,6 +19138,10 @@ class SceneExplorerEntity extends HTMLElement {
                 }),
             ]
         });
+        this.#htmlContent = createElement('div', {
+            class: 'scene-explorer-entity-content',
+            hidden: true,
+        });
         this.#htmlChilds = createElement('div', {
             class: 'scene-explorer-entity-childs',
             hidden: true,
@@ -19129,10 +19151,12 @@ class SceneExplorerEntity extends HTMLElement {
         if (this.#doOnce) {
             this.#doOnce = false;
             this.draggable = true;
-            this.append(this.#htmlHeader, this.#htmlChilds);
+            this.append(this.#htmlHeader, this.#htmlContent, this.#htmlChilds);
             this.addEventListener('contextmenu', event => this.#contextMenuHandler(event));
             this.addEventListener('dragstart', event => {
-                event.dataTransfer.effectAllowed = 'link';
+                if (event.dataTransfer) {
+                    event.dataTransfer.effectAllowed = 'link';
+                }
                 _a$2.#draggedEntity = this.#entity;
                 event.stopPropagation();
             });
@@ -19150,35 +19174,43 @@ class SceneExplorerEntity extends HTMLElement {
                 const draggedEntity = _a$2.#draggedEntity;
                 if (draggedEntity) {
                     this.classList.remove('dragged-over');
-                    this.#entity.addChild(draggedEntity);
+                    this.#entity?.addChild(draggedEntity);
                     event.stopPropagation();
                 }
             });
-            this.addEventListener('dragend', event => {
-                _a$2.#draggedEntity = null;
+            this.addEventListener('dragend', () => {
+                _a$2.#draggedEntity = undefined;
             });
         }
     }
     set entity(entity) {
+        //TODO: deprecate
+        console.warn('deprecated, use setEntity instaed');
+        this.setEntity(entity);
+    }
+    setEntity(entity) {
         this.#entity = entity;
         this.#update();
         this.#updateVisibility();
         this.#updatePlaying();
         display(this.#htmlPlaying, entity?.animable);
+        display(this.#htmlAnimationsButton, entity?.hasAnimations);
         display(this.#htmlReset, entity?.resetable);
     }
-    static set explorer(explorer) {
+    static setExplorer(explorer) {
         _a$2.#explorer = explorer;
     }
+    /*
     static get selectedEntity() {
-        return _a$2.#selectedEntity.#entity;
+        return SceneExplorerEntity.#selectedEntity.#entity;
     }
+    */
     select() {
         this.classList.add('selected');
         const selectedEntity = _a$2.#selectedEntity;
         if (selectedEntity != this) {
             selectedEntity?.unselect();
-            _a$2.#explorer.selectEntity(this.#entity);
+            _a$2.#explorer?.selectEntity(this.#entity);
         }
         _a$2.#selectedEntity = this;
     }
@@ -19286,12 +19318,70 @@ class SceneExplorerEntity extends HTMLElement {
         this.#expandChilds();
         this.select();
     }
-    #contextMenuHandler(event, entity, htmlEntityElement) {
-        if (!event.shiftKey) {
-            _a$2.#explorer.htmlContextMenu.show(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
+    #contextMenuHandler(event) {
+        if (!event.shiftKey && this.#entity) {
+            _a$2.#explorer?.htmlContextMenu.show(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
             event.preventDefault();
             event.stopPropagation();
         }
+    }
+    async #toggleAnimations() {
+        if (!this.#entity) {
+            return;
+        }
+        if (this.#htmlAnimations && isVisible(this.#htmlAnimations)) {
+            hide(this.#htmlAnimations);
+            return;
+        }
+        this.#initAnimations();
+        //SceneExplorerEntity.#explorer?.showAnimations(this.#entity);
+        const animList = await this.#entity.getAnimations?.();
+        if (!animList) {
+            return;
+        }
+        this.#htmlInputDataList.innerText = '';
+        for (let value of animList) {
+            createElement('option', {
+                innerText: value,
+                parent: this.#htmlInputDataList,
+            });
+        }
+        show(this.#htmlAnimations);
+        show(this.#htmlContent);
+    }
+    #initAnimations() {
+        if (this.#htmlAnimations) {
+            return;
+        }
+        this.#htmlAnimations = createElement('div', {
+            class: 'animations',
+            parent: this.#htmlContent,
+        });
+        const dataListId = getDataListId();
+        for (let i = 0; i < MAX_ANIMATIONS; i++) {
+            createElement('div', {
+                class: 'animation',
+                parent: this.#htmlAnimations,
+                childs: [
+                    createElement('input', {
+                        list: dataListId,
+                        events: {
+                            change: (event) => this.#setAnimName(i, event.target.value)
+                        }
+                    }),
+                ],
+            });
+        }
+        this.#htmlInputDataList = createElement('datalist', {
+            id: dataListId,
+            parent: this.#htmlAnimations,
+        });
+    }
+    #setAnimName(id, name) {
+        if (!this.#entity) {
+            return;
+        }
+        this.#entity.playSequence(name);
     }
 }
 _a$2 = SceneExplorerEntity;
@@ -19337,7 +19427,7 @@ class MaterialEditor {
     }
     static refreshHtml() {
         if (this.#htmlElement) {
-            this.#htmlElement.innerHTML = '';
+            this.#htmlElement.innerText = '';
             let material = this.#material;
             if (material) {
                 let fileName = material.name;
@@ -27089,7 +27179,7 @@ class SceneExplorer {
         }
         SceneExplorer.#instance = this;
         initEntitySubmenu();
-        SceneExplorerEntity.explorer = this;
+        SceneExplorerEntity.setExplorer(this);
         this.#initHtml();
         this.#manipulator = new Manipulator({ visible: false });
         this.#skeletonHelper = new SkeletonHelper({ visible: false });
@@ -27118,7 +27208,7 @@ class SceneExplorer {
     }
     #refreshScene() {
         if (this.#scene) {
-            this.#htmlScene.innerHTML = '';
+            this.#htmlScene.innerText = '';
             this.#htmlScene.append(this.#createEntityElement(this.#scene, true));
         }
     }
@@ -27135,8 +27225,15 @@ class SceneExplorer {
         this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: 1, }, });
         this.htmlFileSelector = createElement('div', { class: 'scene-explorer-file-selector', attributes: { tabindex: 1, }, });
         hide(this.htmlFileSelector);
-        this.#htmlProperties = createElement('div', { class: 'scene-explorer-properties', hidden: 1, attributes: { tabindex: 1, }, });
-        this.#shadowRoot.append(this.#htmlHeader, this.#htmlScene, this.htmlFileSelector, this.#htmlProperties);
+        this.#shadowRoot.append(this.#htmlHeader, this.#htmlScene, this.htmlFileSelector);
+        this.#htmlProperties = createElement('div', {
+            class: 'scene-explorer-properties',
+            parent: this.#shadowRoot,
+            hidden: 1,
+            attributes: {
+                tabindex: 1,
+            },
+        });
         defineHarmonyContextMenu();
         this.htmlContextMenu = createElement('harmony-context-menu');
         this.#initHtmlHeader();
@@ -27247,7 +27344,7 @@ class SceneExplorer {
             else {
                 if (this.#scene) {
                     let allEntities = this.#scene.getChildList();
-                    this.#htmlScene.innerHTML = '';
+                    this.#htmlScene.innerText = '';
                     for (let entity of allEntities) {
                         if (this.#matchFilter(entity, this.#filterName, this.#filterType)) {
                             this.#htmlScene.append(this.#createEntityElement(entity));
@@ -30849,7 +30946,7 @@ class ShaderEditor extends HTMLElement {
         if (!this.#shaderEditor) {
             return;
         }
-        this.#htmlShaderNameSelect.innerHTML = '';
+        this.#htmlShaderNameSelect.innerText = '';
         let shaderGroup = createElement('optgroup', { 'i18n-label': '#shader_editor_shaders', parent: this.#htmlShaderNameSelect });
         const shaderList = [...ShaderManager.shaderList].sort();
         for (let shaderName of shaderList) {
@@ -33709,6 +33806,7 @@ class Source1ModelInstance extends Entity {
     #attachements = {};
     #materialsUsed = new Set();
     animable = true;
+    hasAnimations = true;
     sourceModel;
     bodyParts = {};
     sequences = {};
@@ -34314,6 +34412,9 @@ class Source1ModelInstance extends Entity {
     resetMaterial(recursive = true) {
         super.resetMaterial(recursive);
         this.#updateMaterials();
+    }
+    getAnimations() {
+        return this.sourceModel.mdl.getAnimList();
     }
     toJSON() {
         let json = super.toJSON();

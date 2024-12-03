@@ -30,14 +30,11 @@ import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Metaballs } from '../primitives/metaballs';
 import { Plane } from '../primitives/plane';
 import { Sphere } from '../primitives/sphere';
-
 import { Source1ModelManager } from '../sourceengine/source1/models/source1modelmanager';
 import { Source2ModelManager } from '../sourceengine/source2/models/source2modelmanager';
 import { Source1ParticleControler } from '../sourceengine/source1/particles/source1particlecontroler';
 import { Source2ParticleManager } from '../sourceengine/source2/particles/source2particlemanager';
-
 import { Interaction } from '../utils/interaction';
-
 import sceneExplorerCSS from '../css/sceneexplorer.css';
 import { Wireframe } from '../objects/wireframe';
 import { Scene } from './scene';
@@ -69,7 +66,7 @@ export class SceneExplorer {
 	#selectedEntity: Entity;
 	#manipulator;
 	#skeletonHelper;
-	#htmlProperties;
+	#htmlProperties?: HTMLElement;
 	#htmlHeader: HTMLElement;
 	htmlFileSelector: HTMLElement;
 	#htmlNameFilter: HTMLElement;
@@ -133,7 +130,7 @@ export class SceneExplorer {
 
 	#refreshScene() {
 		if (this.#scene) {
-			this.#htmlScene.innerHTML = '';
+			this.#htmlScene.innerText = '';
 			this.#htmlScene.append(this.#createEntityElement(this.#scene, true));
 		}
 	}
@@ -153,11 +150,19 @@ export class SceneExplorer {
 		this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: 1, }, });
 		this.htmlFileSelector = createElement('div', { class: 'scene-explorer-file-selector', attributes: { tabindex: 1, }, });
 		hide(this.htmlFileSelector);
+		this.#shadowRoot.append(this.#htmlHeader, this.#htmlScene, this.htmlFileSelector);
 
-		this.#htmlProperties = createElement('div', { class: 'scene-explorer-properties', hidden: 1, attributes: { tabindex: 1, }, });
-		this.#shadowRoot.append(this.#htmlHeader, this.#htmlScene, this.htmlFileSelector, this.#htmlProperties);
+		this.#htmlProperties = createElement('div', {
+			class: 'scene-explorer-properties',
+			parent: this.#shadowRoot,
+			hidden: 1,
+			attributes: {
+				tabindex: 1,
+			},
+		});
+
 		defineHarmonyContextMenu();
-		this.htmlContextMenu = createElement('harmony-context-menu');
+		this.htmlContextMenu = createElement('harmony-context-menu') as HTMLHarmonyContextMenuElement;
 
 		this.#initHtmlHeader();
 		this.#initHtmlProperties();
@@ -278,7 +283,7 @@ export class SceneExplorer {
 			} else {
 				if (this.#scene) {
 					let allEntities = this.#scene.getChildList();
-					this.#htmlScene.innerHTML = '';
+					this.#htmlScene.innerText = '';
 					for (let entity of allEntities) {
 						if (this.#matchFilter(entity, this.#filterName, this.#filterType)) {
 							this.#htmlScene.append(this.#createEntityElement(entity));

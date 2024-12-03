@@ -1,20 +1,32 @@
-import { createElement, display, show, toggle } from 'harmony-ui';
-import { pauseSVG, playSVG, restartSVG, visibilityOffSVG, visibilityOnSVG } from 'harmony-svg';
+import { createElement, display, hide, isVisible, show, toggle } from 'harmony-ui';
+import { pauseSVG, playSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG } from 'harmony-svg';
 
 import { EntityObserver, CHILD_ADDED, CHILD_REMOVED, PROPERTY_CHANGED, ENTITY_DELETED } from '../entities/entityobserver';
 
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
 import { SceneExplorer } from './sceneexplorer';
+import { Animated } from '../entities/animated';
+
+const MAX_ANIMATIONS = 1;
+
+let id = 0;
+function getDataListId() {
+	return `animations-datalist${++id}`;
+}
 
 export class SceneExplorerEntity extends HTMLElement {
 	#doOnce;
 	#entity?: Entity;
 	#htmlHeader;
+	#htmlContent: HTMLElement;
+	#htmlAnimations?: HTMLElement;
+	#htmlInputDataList?: HTMLDataListElement;
 	#htmlChilds;
 	#htmlTitle;
 	#htmlVisible;
 	#htmlPlaying;
+	#htmlAnimationsButton;
 	#htmlReset;
 
 	static #entitiesHTML = new Map();
@@ -61,6 +73,14 @@ export class SceneExplorerEntity extends HTMLElement {
 								},
 							}
 						}),
+						this.#htmlAnimationsButton = createElement('div', {
+							hidden: true,
+							class: 'scene-explorer-entity-button-animations',
+							innerHTML: runSVG,
+							events: {
+								click: () => this.#toggleAnimations(),
+							}
+						}),
 						this.#htmlReset = createElement('div', {
 							hidden: true,
 							class: 'scene-explorer-entity-button-reset',
@@ -75,6 +95,10 @@ export class SceneExplorerEntity extends HTMLElement {
 				}),
 			]
 		});
+		this.#htmlContent = createElement('div', {
+			class: 'scene-explorer-entity-content',
+			hidden: true,
+		});
 		this.#htmlChilds = createElement('div', {
 			class: 'scene-explorer-entity-childs',
 			hidden: true,
@@ -85,7 +109,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		if (this.#doOnce) {
 			this.#doOnce = false;
 			this.draggable = true;
-			this.append(this.#htmlHeader, this.#htmlChilds);
+			this.append(this.#htmlHeader, this.#htmlContent, this.#htmlChilds);
 			this.addEventListener('contextmenu', event => this.#contextMenuHandler(event));
 			this.addEventListener('dragstart', event => {
 				if (event.dataTransfer) {
@@ -131,6 +155,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		this.#updateVisibility();
 		this.#updatePlaying();
 		display(this.#htmlPlaying, entity?.animable);
+		display(this.#htmlAnimationsButton, entity?.hasAnimations);
 		display(this.#htmlReset, entity?.resetable);
 	}
 
@@ -282,6 +307,78 @@ export class SceneExplorerEntity extends HTMLElement {
 			event.preventDefault();
 			event.stopPropagation();
 		}
+	}
+
+	async #toggleAnimations() {
+		if (!this.#entity) {
+			return;
+		}
+
+		if (this.#htmlAnimations && isVisible(this.#htmlAnimations)) {
+			hide(this.#htmlAnimations);
+			return;
+		}
+
+		this.#initAnimations();
+		//SceneExplorerEntity.#explorer?.showAnimations(this.#entity);
+
+		const animList = await (this.#entity as unknown as Animated).getAnimations?.();
+		if (!animList) {
+			return;
+		}
+
+		(this.#htmlInputDataList as HTMLDataListElement).innerText = '';
+		for (let value of animList) {
+			createElement('option', {
+				innerText: value as string,
+				parent: this.#htmlInputDataList,
+			});
+		}
+
+		show(this.#htmlAnimations);
+		show(this.#htmlContent);
+	}
+
+	#initAnimations() {
+		if (this.#htmlAnimations) {
+			return;
+		}
+
+		this.#htmlAnimations = createElement('div', {
+			class: 'animations',
+			parent: this.#htmlContent,
+		});
+
+
+		const dataListId = getDataListId();
+
+		for (let i = 0; i < MAX_ANIMATIONS; i++) {
+			createElement('div', {
+				class: 'animation',
+				parent: this.#htmlAnimations,
+				childs: [
+					createElement('input', {
+						list: dataListId,
+						events: {
+							change: (event: Event) => this.#setAnimName(i, (event.target as HTMLInputElement).value)
+						}
+					}),
+				],
+			});
+		}
+
+		this.#htmlInputDataList = createElement('datalist', {
+			id: dataListId,
+			parent: this.#htmlAnimations,
+		}) as HTMLDataListElement;
+	}
+
+	#setAnimName(id: number, name: string) {
+		if (!this.#entity) {
+			return;
+		}
+
+		(this.#entity as unknown as Animated).playSequence(name);
 	}
 }
 

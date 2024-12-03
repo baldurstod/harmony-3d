@@ -1,4 +1,5 @@
 import { BinaryReader } from 'harmony-binary-reader';
+import { HTMLHarmonyContextMenuElement } from 'harmony-ui';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import { quat } from 'gl-matrix';
@@ -58,6 +59,11 @@ export declare class AmbientLight extends Light {
     static constructFromJSON(json: any): Promise<AmbientLight>;
     static getEntityName(): string;
     is(s: string): boolean;
+}
+
+declare interface Animated {
+    getAnimations: () => Promise<Set<string>>;
+    playSequence: (name: string) => void;
 }
 
 export declare class AnimatedTextureProxy extends Proxy_2 {
@@ -1628,6 +1634,7 @@ declare class Choreography {
          enumerable: boolean;
          animable: boolean;
          resetable: boolean;
+         hasAnimations: boolean;
          _position: vec3;
          _quaternion: quat;
          _scale: vec3;
@@ -2041,7 +2048,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | Grid | CameraFrustum;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -5894,7 +5901,7 @@ declare class Choreography {
          export declare class SceneExplorer {
              #private;
              htmlFileSelector: HTMLElement;
-             htmlContextMenu: HTMLElement;
+             htmlContextMenu: HTMLHarmonyContextMenuElement;
              selectedEntity: Entity;
              constructor();
              set scene(scene: any);
@@ -6239,10 +6246,11 @@ declare class Choreography {
              doOperate(particle: any, elapsedTime: any): void;
          }
 
-         export declare class Source1ModelInstance extends Entity {
+         export declare class Source1ModelInstance extends Entity implements Animated {
              #private;
              isSource1ModelInstance: boolean;
              animable: boolean;
+             hasAnimations: boolean;
              sourceModel: any;
              bodyParts: {};
              sequences: {};
@@ -6395,7 +6403,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -6420,8 +6428,9 @@ declare class Choreography {
              getHitboxes(): any[];
              replaceMaterial(material: any, recursive?: boolean): void;
              resetMaterial(recursive?: boolean): void;
+             getAnimations(): any;
              toJSON(): any;
-             static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Source1ModelInstance>;
+             static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Entity>;
              fromJSON(json: any): void;
              dispose(): void;
              static getEntityName(): string;
@@ -6991,7 +7000,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
