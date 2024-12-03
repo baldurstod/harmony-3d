@@ -6,13 +6,14 @@ import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Scene } from '../scenes/scene';
 import { LoopSubdivision } from '../meshes/loopsubdivision';
 import { Entity } from '../entities/entity';
-import { Source2ParticleSystem } from '../sourceengine/export';
+import { Source2ParticleSystem, SourceEngineParticleSystem } from '../sourceengine/export';
 import { Mesh } from '../objects/mesh';
+import { SourceEngineParticle } from '../sourceengine/source1/particles/particle';
 
 export class ObjExporter {
 	static #instance: ObjExporter;
-	#lines;
-	#startIndex;
+	#lines: Array<string> = [];
+	#startIndex = 1;
 	#fullScreenQuadMesh = new FullScreenQuad();
 	scene = new Scene();
 	camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
@@ -24,7 +25,7 @@ export class ObjExporter {
 		this.scene.addChild(this.#fullScreenQuadMesh);
 	}
 
-	async #renderMeshes(files, meshes) {
+	async #renderMeshes(files: Set<File>, meshes: Set<Entity>) {
 		let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024);//TODOv3: constant
 		new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
 		new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
@@ -39,10 +40,10 @@ export class ObjExporter {
 			if (!mesh.is('Mesh')) {
 				continue;
 			}
-			if (mesh.parent.isParticleSystem) {
+			if ((mesh.parent as null | SourceEngineParticleSystem | Source2ParticleSystem)?.isParticleSystem) {
 				continue;
 			}
-			this.#fullScreenQuadMesh.material = mesh.material;
+			this.#fullScreenQuadMesh.material = (mesh as Mesh).material;
 			this.#fullScreenQuadMesh.materialsParams = mesh.materialsParams;
 			new Graphics().render(this.scene, this.camera, 0);
 
@@ -63,7 +64,7 @@ export class ObjExporter {
 		await Promise.all(promises);
 	}
 
-	#addLine(line) {
+	#addLine(line: string) {
 		this.#lines.push(line + '\n');
 	}
 
@@ -87,10 +88,10 @@ export class ObjExporter {
 			if ((mesh as Mesh).exportObj) {
 				let m = (mesh as Mesh).exportObj();
 
-				let faces;
-				let vertices;
-				let normals;
-				let uvs;
+				let faces: Uint8Array | Uint32Array;
+				let vertices: Float32Array;
+				let normals: Float32Array | undefined;
+				let uvs: Float32Array | undefined;
 				if (subdivisions > 0) {
 					const result = await loopSubdivision.subdivide(m.f, m.v, subdivisions, mergeTolerance);
 					faces = result.indices;
@@ -110,7 +111,7 @@ export class ObjExporter {
 				mtlLines.push(`map_Kd mat_${objectId}.png\n`);
 				this.#addLine(`usemtl mat_${objectId}.png`);
 
-				this.#exportMesh(faces, vertices, normals, uvs, digits);
+				this.#exportMesh(digits, faces, vertices, normals, uvs);
 
 				++objectId;
 			}
@@ -122,7 +123,7 @@ export class ObjExporter {
 		return files;
 	}
 
-	async #exportMesh(indices, vertices, normals, uvs, digits) {
+	async #exportMesh(digits: number, indices: Uint8Array | Uint32Array, vertices: Float32Array, normals?: Float32Array, uvs?: Float32Array) {
 		let attributes = [
 			{ name: 'v', stride: 3, arr: vertices },
 			{ name: 'vn', stride: 3, arr: normals },
