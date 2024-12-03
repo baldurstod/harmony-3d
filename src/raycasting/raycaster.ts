@@ -1,6 +1,8 @@
 import { vec3 } from 'gl-matrix';
-
 import { Ray } from './ray';
+import { Entity } from '../entities/entity';
+import { Intersection } from './intersection';
+import { Camera } from '../cameras/camera';
 
 const a = vec3.create();
 const b = vec3.create();
@@ -15,16 +17,16 @@ export class Raycaster {
 		this.far = far;
 	}
 
-	castRay(origin, direction, entities, recursive) {
+	castRay(origin: vec3, direction: vec3, entities: Array<Entity> | Set<Entity>, recursive: boolean) {
 		this.ray.set(origin, direction);
-		let intersections = [];
+		let intersections: Array<Intersection> = [];
 		for (let entity of entities) {
 			this.intersectEntity(entity, intersections, recursive);
 		}
 		return intersections;
 	}
 
-	castCameraRay(camera, normalizedX, normalizedY, entities, recursive) {
+	castCameraRay(camera: Camera, normalizedX: number, normalizedY: number, entities: Array<Entity> | Set<Entity>, recursive: boolean) {
 		let projectionMatrixInverse = camera.projectionMatrixInverse;
 		let nearP = vec3.set(a, normalizedX, normalizedY, -1);
 		let farP = vec3.set(b, normalizedX, normalizedY, 1);
@@ -41,7 +43,7 @@ export class Raycaster {
 		return this.castRay(camera.position, rayDirection, entities, recursive);
 	}
 
-	intersectEntity(entity, intersections, recursive) {
+	intersectEntity(entity: Entity, intersections: Array<Intersection>, recursive: boolean) {
 		if (!entity.visible) {
 			return;
 		}
