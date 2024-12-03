@@ -1,8 +1,6 @@
 import { mat3, mat4, quat, vec3, vec4 } from 'gl-matrix';
-
 import { EntityObserver } from './entityobserver';
 import { pickList } from './picklist';
-
 import { DEBUG, VERBOSE } from '../buildoptions';
 import { JSONLoader } from '../importers/jsonloader';
 import { BoundingBox } from '../math/boundingbox';
@@ -10,6 +8,12 @@ import { DEG_TO_RAD } from '../math/constants';
 import { generateRandomUUID } from '../math/functions';
 import { stringToVec3, stringToQuat } from '../utils/utils';
 import { registerEntity } from './entities';
+import { Scene } from '../scenes/scene';
+import { Camera } from '../cameras/camera';
+import { Intersection } from '../raycasting/intersection';
+import { Raycaster } from '../raycasting/raycaster';
+import { Material } from '../materials/material';
+import { JSONObject } from '../types';
 
 const X_VECTOR = vec3.fromValues(1, 0, 0);
 const Y_VECTOR = vec3.fromValues(0, 1, 0);
@@ -34,17 +38,17 @@ export const UNITY_VEC3 = vec3.fromValues(1, 1, 1);
 export class Entity {
 	static addSubMenu: any;
 	id = generateRandomUUID();
-	#wireframe;
+	#wireframe?: number = 0;
 	#hideInExplorer = false;
 	#serializable = true;
-	#castShadow;
-	#receiveShadow;
-	#visible: boolean;
+	#castShadow?: boolean;
+	#receiveShadow?: boolean;
+	#visible?: boolean;
 	#playing = true;
 	#worldMatrix = mat4.create();
-	#name: string;
+	#name: string = '';
 	#children: Set<Entity> = new Set();
-	#attributes = new Map();
+	#attributes = new Map<string, any>();
 	#pickingColor?: vec3;
 	enumerable = true;
 	animable = false;
@@ -65,7 +69,7 @@ export class Entity {
 	locked: boolean = false;
 	static editMaterial: (entity: Entity) => void;
 	properties = new Map<string, any>();
-	loadedPromise: Promise<any>;
+	loadedPromise?: Promise<any>;
 
 	constructor(params?: any) {
 		this.setParameters(params);
@@ -153,7 +157,7 @@ export class Entity {
 		return vec;
 	}
 
-	setWorldPosition(position) {
+	setWorldPosition(position: vec3) {
 		if (this._parent) {
 			this._parent.getWorldPosition(tempVec3_1);
 			this._parent.getWorldQuaternion(tempQuat);
@@ -176,7 +180,7 @@ export class Entity {
 		return q;
 	}
 
-	setWorldQuaternion(quaternion) {
+	setWorldQuaternion(quaternion: quat) {
 		if (this._parent) {
 			this._parent.getWorldQuaternion(tempQuat);
 			quat.invert(tempQuat, tempQuat);
@@ -245,14 +249,14 @@ export class Entity {
 		return this.#worldMatrix;
 	}
 
-	render(canvas) {
+	render(canvas: HTMLCanvasElement) {
 	}
 
 	get transparent() {
 		return false;
 	}
 
-	setVisible(visible) {
+	setVisible(visible: boolean | undefined) {
 		const oldValue = this.#visible;
 		this.#visible = visible;
 		if (oldValue != visible) {
@@ -264,7 +268,7 @@ export class Entity {
 		this.setVisible(visible);
 	}
 
-	isVisible() {
+	isVisible(): boolean {
 		if (this.#visible === undefined) {
 			return this._parent?.isVisible() ?? true;
 		} else {
@@ -314,7 +318,7 @@ export class Entity {
 		}
 	}
 
-	setPlaying(playing) {
+	setPlaying(playing: boolean) {
 		const oldValue = this.#playing;
 		this.#playing = playing;
 		if (oldValue != playing) {
@@ -474,11 +478,11 @@ export class Entity {
 		return child;
 	}
 
-	addChilds(...childs) {
+	addChilds(...childs: Array<Entity>) {
 		childs.forEach(child => this.addChild(child));
 	}
 
-	isParent(parent: Entity) {
+	isParent(parent: Entity): boolean {
 		let _parent = this._parent;
 		if (_parent) {
 			if (_parent === parent) {
@@ -675,7 +679,7 @@ export class Entity {
 		return boundingBox;
 	}
 
-	getParentModel() {
+	getParentModel(): undefined | Entity {
 		return this._parent?.getParentModel();
 	}
 
@@ -707,7 +711,7 @@ export class Entity {
 		}
 	}
 
-	forEachVisible(callback) {
+	forEachVisible(callback: (ent: Entity) => void) {
 		if (this.#visible) {
 			callback(this);
 			for (let child of this.#children) {
@@ -716,7 +720,7 @@ export class Entity {
 		}
 	}
 
-	forEachParent(callback) {
+	forEachParent(callback: (ent: Entity) => void) {
 		let parent = this._parent;
 		if (parent) {
 			callback(parent);
@@ -730,18 +734,18 @@ export class Entity {
 		this.#pickingColor = vec3.fromValues(((pickingId >> 16) & 0xFF) / 255.0, ((pickingId >> 8) & 0xFF) / 255.0, ((pickingId >> 0) & 0xFF) / 255.0);
 	}
 
-	get pickingColor() {
+	get pickingColor(): vec3 | undefined {
 		return this.#pickingColor ?? this._parent?.pickingColor;
 	}
 
-	update(scene, camera, delta) {
+	update(scene: Scene, camera: Camera, delta: number) {
 	}
 
-	set castShadow(castShadow) {
+	set castShadow(castShadow: boolean | undefined) {
 		this.#castShadow = castShadow;
 	}
 
-	get castShadow() {
+	get castShadow(): boolean {
 		if (this.#castShadow === undefined) {
 			return this._parent ? this._parent.castShadow : true;
 		} else {
@@ -771,11 +775,11 @@ export class Entity {
 		}
 	}
 
-	set receiveShadow(receiveShadow) {
+	set receiveShadow(receiveShadow: boolean | undefined) {
 		this.#receiveShadow = receiveShadow;
 	}
 
-	get receiveShadow() {
+	get receiveShadow(): boolean {
 		if (this.#receiveShadow === undefined) {
 			return this._parent ? this._parent.receiveShadow : true;
 		} else {
@@ -885,10 +889,10 @@ export class Entity {
 		return menu;
 	}
 
-	raycast(raycaster, intersections) {
+	raycast(raycaster: Raycaster, intersections: Array<Intersection>) {
 	}
 
-	setWireframe(wireframe, recursive = true) {
+	setWireframe(wireframe: number, recursive = true) {
 		this.wireframe = wireframe;
 		if (recursive) {
 			for (let child of this.#children) {
@@ -897,11 +901,11 @@ export class Entity {
 		}
 	}
 
-	set wireframe(wireframe) {
+	set wireframe(wireframe: number | undefined) {
 		this.#wireframe = wireframe;
 	}
 
-	get wireframe() {
+	get wireframe(): number {
 		return this.#wireframe ?? this._parent?.wireframe ?? 0;
 	}
 
@@ -949,7 +953,7 @@ export class Entity {
 		EntityObserver.entityDeleted(this);
 	}
 
-	replaceMaterial(material, recursive = true) {
+	replaceMaterial(material: Material, recursive = true) {
 		if (recursive) {
 			for (let child of this.#children) {
 				child.replaceMaterial(material, recursive);
@@ -965,12 +969,12 @@ export class Entity {
 		}
 	}
 
-	setAttribute(attributeName, attributeValue) {
+	setAttribute(attributeName: string, attributeValue: any) {
 		this.#attributes.set(attributeName, attributeValue);
 		this.propagate();
 	}
 
-	getAttribute(attributeName, inherited = true) {
+	getAttribute(attributeName: string, inherited = true): any {
 		if (this.#attributes.has(attributeName)) {
 			return this.#attributes.get(attributeName);
 		}
@@ -986,7 +990,7 @@ export class Entity {
 		}
 	}
 
-	copy(source) {
+	copy(source: Entity) {
 		//TODO: should we copy world pos / quat ?
 		vec3.copy(this._position, source._position);
 		quat.copy(this._quaternion, source._quaternion);
@@ -1039,13 +1043,13 @@ export class Entity {
 		return json;
 	}
 
-	static async constructFromJSON(json, entities, loadedPromise) {
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
 		let entity = new Entity({ name: json.name });
 		entity.fromJSON(json);
 		return entity;
 	}
 
-	async createChild(entityName, parameters) {
+	async createChild(entityName: string, parameters: any) {
 		const entity = await JSONLoader.fromJSON({
 			constructor: entityName,
 			...parameters,
@@ -1057,24 +1061,24 @@ export class Entity {
 		}
 	}
 
-	fromJSON(json) {
-		this.id = json.id ?? generateRandomUUID();
-		this.#name = json.name;
-		this.#visible = json.visible;
+	fromJSON(json: JSONObject) {
+		this.id = json.id as string ?? generateRandomUUID();
+		this.#name = json.name as string;
+		this.#visible = json.visible as boolean;
 		if (json.position) {
-			this.position = json.position;
+			this.position = json.position as vec3;
 		}
 		if (json.quaternion) {
-			this.quaternion = json.quaternion;
+			this.quaternion = json.quaternion as quat;
 		}
 		if (json.scale) {
-			this.scale = json.scale;
+			this.scale = json.scale as vec3;
 		}
-		this.castShadow = json.castshadow;
-		this.receiveShadow = json.receiveshadow;
+		this.castShadow = json.castshadow as boolean;
+		this.receiveShadow = json.receiveshadow as boolean;
 		this.materialsParams = json.materialsparams;
-		this.#hideInExplorer = json.hideinexplorer ?? false;
-		this.wireframe = json.wireframe;
+		this.#hideInExplorer = json.hideinexplorer as boolean ?? false;
+		this.wireframe = json.wireframe as number;
 	}
 
 	static getEntityName() {
