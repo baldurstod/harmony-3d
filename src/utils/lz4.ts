@@ -12,19 +12,19 @@ export function decodeLz4(reader, decompressBlobArray, compressedSize, uncompres
 		do {
 			a = reader.getUint8();
 			readBytes += a;
-		} while(a == 0xFF)
+		} while (a == 0xFF)
 	}
 	let decodeLen = decodeMask & 0xF;
 
 	//let buffer = new Uint8Array(reader.buffer);
-decodeLoop:
+	decodeLoop:
 	while (true) {
 		//console.error(readBytes);
 		let offset = reader.tell();
 		if (offset >= lastOffset) {
 			//break decodeLoop;
 		}
-		while(readBytes--) {
+		while (readBytes--) {
 			decompressBlobArray[outputIndex++] = reader.getUint8(offset++);//buffer[offset++];offset++
 			++decodedeBytes;
 		}
@@ -39,7 +39,7 @@ decodeLoop:
 			do {
 				a = reader.getUint8();
 				decodeLen += a;
-			} while(a == 0xFF)
+			} while (a == 0xFF)
 		}
 
 		let decodeMask = reader.getUint8();
@@ -51,7 +51,7 @@ decodeLoop:
 			do {
 				a = reader.getUint8();
 				readBytes += a;
-			} while(a == 0xFF)
+			} while (a == 0xFF)
 		}
 		for (let k = 0; k < decodeLen + 4; k++) {
 			decompressBlobArray[outputIndex] = decompressBlobArray[outputIndex - decodeOffset];
