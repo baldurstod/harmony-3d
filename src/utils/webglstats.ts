@@ -22,8 +22,8 @@ export class WebGLStats {
 		this.#reset();
 
 		if (USE_STATS) {
-			TextureFactoryEventTarget.addEventListener('textureCreated', (event: CustomEvent) => this.#textures = event.detail.count);
-			TextureFactoryEventTarget.addEventListener('textureDeleted', (event: CustomEvent) => this.#textures = event.detail.count);
+			TextureFactoryEventTarget.addEventListener('textureCreated', (event: Event) => this.#textures = (event as CustomEvent).detail.count);
+			TextureFactoryEventTarget.addEventListener('textureDeleted', (event: Event) => this.#textures = (event as CustomEvent).detail.count);
 		}
 	}
 
@@ -68,7 +68,7 @@ export class WebGLStats {
 	}
 
 	static drawElements(mode: GLenum, count: number) {
-		this.#primitivePerMode.set(mode, count + this.#primitivePerMode.get(mode));
+		this.#primitivePerMode.set(mode, count + (this.#primitivePerMode.get(mode) ?? 0));
 		++this.#drawElements;
 	}
 
