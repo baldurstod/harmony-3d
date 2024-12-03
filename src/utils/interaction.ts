@@ -126,7 +126,7 @@ export class Interaction {
 		(this.#htmlInput as HTMLInputElement).value = defaultValue ? defaultValue : '';
 		if (list) {
 			let isMap = list.constructor.name == 'Map';
-			(this.#htmlInputDataList as HTMLDataListElement).innerHTML = '';
+			(this.#htmlInputDataList as HTMLDataListElement).innerText = '';
 			for (let value of list) {
 				let animOption = document.createElement('option');
 				(this.#htmlInputDataList as HTMLDataListElement).append(animOption);
@@ -221,7 +221,7 @@ export class Interaction {
 		//this.show();
 		//this.#htmlFileSelector.style.display = '';
 		(this.#htmlFileSelector as HTMLElement).innerText = '';
-		htmlContainer.innerHTML = '';
+		htmlContainer.innerText = '';
 
 		//let value = await
 		//this._expandFile(this.#htmlFileSelector, fileList.files, callback);

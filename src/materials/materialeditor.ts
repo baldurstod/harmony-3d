@@ -50,7 +50,7 @@ export class MaterialEditor {
 
 	static refreshHtml() {
 		if (this.#htmlElement) {
-			this.#htmlElement.innerHTML = '';
+			this.#htmlElement.innerText = '';
 			let material = this.#material;
 			if (material) {
 

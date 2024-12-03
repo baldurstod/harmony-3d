@@ -117,7 +117,7 @@ export class ShaderEditor extends HTMLElement {
 		if (!this.#shaderEditor) {
 			return;
 		}
-		this.#htmlShaderNameSelect.innerHTML = '';
+		this.#htmlShaderNameSelect.innerText = '';
 
 		let shaderGroup = createElement('optgroup', { 'i18n-label': '#shader_editor_shaders', parent: this.#htmlShaderNameSelect });
 

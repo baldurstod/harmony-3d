@@ -269,7 +269,7 @@ export class NodeGui {
 	}
 
 	#refreshHtml() {
-		this.#htmlParams.innerHTML = '';
+		this.#htmlParams.innerText = '';
 		for (let [_, param] of this.#node.params) {
 			if (param.length && param.length > 1) {
 				for (let i = 0; i < param.length; ++i) {

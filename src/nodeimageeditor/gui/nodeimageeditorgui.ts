@@ -117,7 +117,7 @@ export class NodeImageEditorGui {
 	}
 
 	#organizeNodes() {
-		this.#htmlNodes.innerHTML = '';
+		this.#htmlNodes.innerText = '';
 		this.#htmlNodes.append(this.#canvas);
 		let nodes = new Map<number, Array<NodeGui>>();
 		let maxHeight = 0;
