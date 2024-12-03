@@ -1,5 +1,5 @@
-import { createElement, display, hide, isVisible, show, toggle } from 'harmony-ui';
-import { pauseSVG, playSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG } from 'harmony-svg';
+import { createElement, display, hide, HTMLHarmonyToggleButtonElement, isVisible, show, toggle } from 'harmony-ui';
+import { pauseSVG, playSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
 
 import { EntityObserver, CHILD_ADDED, CHILD_REMOVED, PROPERTY_CHANGED, ENTITY_DELETED } from '../entities/entityobserver';
 
@@ -26,7 +26,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	#htmlTitle;
 	#htmlVisible;
 	#htmlPlaying;
-	#htmlAnimationsButton;
+	#htmlAnimationsButton?: HTMLHarmonyToggleButtonElement;
 	#htmlReset;
 
 	static #entitiesHTML = new Map();
@@ -73,14 +73,21 @@ export class SceneExplorerEntity extends HTMLElement {
 								},
 							}
 						}),
-						this.#htmlAnimationsButton = createElement('div', {
+						this.#htmlAnimationsButton = createElement('harmony-toggle-button', {
 							hidden: true,
 							class: 'scene-explorer-entity-button-animations',
-							innerHTML: runSVG,
+							childs: [
+								createElement('off', {
+									innerHTML: runSVG,
+								}),
+								createElement('on', {
+									innerHTML: walkSVG,
+								}),
+							],
 							events: {
-								click: () => this.#toggleAnimations(),
+								change: (event: Event) => this.#displayAnimations((event.target as HTMLHarmonyToggleButtonElement).state),
 							}
-						}),
+						}) as HTMLHarmonyToggleButtonElement,
 						this.#htmlReset = createElement('div', {
 							hidden: true,
 							class: 'scene-explorer-entity-button-reset',
@@ -309,12 +316,12 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
-	async #toggleAnimations() {
+	async #displayAnimations(display: boolean) {
 		if (!this.#entity) {
 			return;
 		}
 
-		if (this.#htmlAnimations && isVisible(this.#htmlAnimations)) {
+		if (this.#htmlAnimations && !display) {
 			hide(this.#htmlAnimations);
 			return;
 		}

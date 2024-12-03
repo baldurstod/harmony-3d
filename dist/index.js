@@ -1,10 +1,10 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { createElement, hide, display, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, toggle, isVisible, defineHarmonyContextMenu } from 'harmony-ui';
+import { createElement, hide, display, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, toggle, defineHarmonyContextMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
-import { zoomOutSVG, zoomInSVG, contentCopySVG, runSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG, dragPanSVG, rotateSVG, panZoomSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, contentCopySVG, runSVG, walkSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG, dragPanSVG, rotateSVG, panZoomSVG } from 'harmony-svg';
 import { setTimeoutPromise } from 'harmony-utils';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
@@ -19116,12 +19116,19 @@ class SceneExplorerEntity extends HTMLElement {
                                 },
                             }
                         }),
-                        this.#htmlAnimationsButton = createElement('div', {
+                        this.#htmlAnimationsButton = createElement('harmony-toggle-button', {
                             hidden: true,
                             class: 'scene-explorer-entity-button-animations',
-                            innerHTML: runSVG,
+                            childs: [
+                                createElement('off', {
+                                    innerHTML: runSVG,
+                                }),
+                                createElement('on', {
+                                    innerHTML: walkSVG,
+                                }),
+                            ],
                             events: {
-                                click: () => this.#toggleAnimations(),
+                                change: (event) => this.#displayAnimations(event.target.state),
                             }
                         }),
                         this.#htmlReset = createElement('div', {
@@ -19325,11 +19332,11 @@ class SceneExplorerEntity extends HTMLElement {
             event.stopPropagation();
         }
     }
-    async #toggleAnimations() {
+    async #displayAnimations(display) {
         if (!this.#entity) {
             return;
         }
-        if (this.#htmlAnimations && isVisible(this.#htmlAnimations)) {
+        if (this.#htmlAnimations && !display) {
             hide(this.#htmlAnimations);
             return;
         }
