@@ -873,7 +873,7 @@ export class Entity {
 			},
 			reset_scale: { i18n: '#reset_scale', f: () => this.scale = UNITY_VEC3 },
 			entitynull_4: null,
-			wireframe: { i18n: '#wireframe', selected: this.wireframe, f: () => this.toggleWireframe() },
+			wireframe: { i18n: '#wireframe', selected: this.wireframe > 0, f: () => this.toggleWireframe() },
 			cast_shadows: { i18n: '#cast_shadows', selected: this.castShadow, f: () => this.toggleCastShadow() },
 			receive_shadows: { i18n: '#receive_shadows', selected: this.receiveShadow, f: () => this.toggleReceiveShadow() },
 			material: { i18n: '#material', submenu: {} },
