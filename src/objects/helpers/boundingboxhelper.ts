@@ -9,7 +9,7 @@ export class BoundingBoxHelper extends Box {
 	boundingBox = new BoundingBox();
 	constructor(params: any = {}) {
 		super(params);
-		this.wireframe = true;
+		this.wireframe = 0;
 	}
 
 	update() {

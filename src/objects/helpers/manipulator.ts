@@ -125,7 +125,7 @@ export class Manipulator extends Entity {
 	#enableZ: boolean = false;
 	constructor(params?: any) {
 		super(params);
-		this.wireframe = false;
+		this.wireframe = 0;
 		this.hideInExplorer = true;
 		this.castShadow = false;
 		this.serializable = false;
