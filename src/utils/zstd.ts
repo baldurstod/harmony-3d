@@ -2,11 +2,18 @@ import zstd from './zstd.wasm';
 
 export const Zstd = new (function () {
 	class Zstd {
-		#webAssembly = null;
-		#HEAPU8: Uint8Array;
+		#webAssembly?: any/*TODO: improve type*/;
+		#HEAPU8?: Uint8Array;
 
-		async decompress(compressedDatas) {
+		async decompress(compressedDatas: Uint8Array) {
+			if (!this.#HEAPU8) {
+				return null;
+			}
+
 			const wa = await this.getWebAssembly();
+			if (!wa) {
+				return null;
+			}
 			const api = wa.instance.exports;
 
 			let srcSize = compressedDatas.length;
@@ -28,7 +35,11 @@ export const Zstd = new (function () {
 			return null;
 		}
 
-		async decompress_ZSTD(compressedDatas, uncompressedDatas) {
+		async decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array) {
+			if (!this.#HEAPU8) {
+				return null;
+			}
+
 			const wa = await this.getWebAssembly();
 			const api = wa.instance.exports;
 
@@ -57,14 +68,14 @@ export const Zstd = new (function () {
 			}
 
 			const env = {
-				'abortStackOverflow': _ => { throw new Error('overflow'); },
-				'emscripten_notify_memory_growth': _ => { this.#initHeap(); },
+				'abortStackOverflow': (_: any) => { throw new Error('overflow'); },
+				'emscripten_notify_memory_growth': (_: any) => { this.#initHeap(); },
 				'table': new WebAssembly.Table({ initial: 0, maximum: 0, element: 'anyfunc' }),
 				'tableBase': 0,
 				'memoryBase': 1024,
 				'STACKTOP': 0,
 			};
-			this.#webAssembly = await (zstd as unknown as (any) => any)({ env });//await WebAssembly.instantiateStreaming(fetch('zstd.wasm'), {env});
+			this.#webAssembly = await (zstd as unknown as (_: any) => any)({ env });//await WebAssembly.instantiateStreaming(fetch('zstd.wasm'), {env});
 			this.#initHeap();
 			return this.#webAssembly;
 		}
