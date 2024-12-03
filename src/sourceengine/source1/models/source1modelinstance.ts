@@ -18,12 +18,13 @@ import { Interaction } from '../../../utils/interaction';
 import { vec3RandomBox } from '../../../math/functions';
 import { getRandomInt } from '../../../utils/random';
 import { registerEntity } from '../../../entities/entities';
+import { Animated } from '../../../entities/animated';
 
 let animSpeed = 1.0;
 
 const defaultMaterial = new MeshBasicMaterial();
 
-export class Source1ModelInstance extends Entity {
+export class Source1ModelInstance extends Entity implements Animated {
 	isSource1ModelInstance = true;
 	#poseParameters = {};
 	#flexParameters = {};
@@ -729,6 +730,10 @@ export class Source1ModelInstance extends Entity {
 		this.#updateMaterials();
 	}
 
+	getAnimations() {
+		return this.sourceModel.mdl.getAnimList();
+	}
+
 	toJSON() {
 		let json = super.toJSON();
 		json.skin = this.skin;
@@ -741,7 +746,7 @@ export class Source1ModelInstance extends Entity {
 		return json;
 	}
 
-	static async constructFromJSON(json, entities, loadedPromise) {
+	static async constructFromJSON(json, entities, loadedPromise): Promise<Entity> {
 		let entity = await Source1ModelManager.createInstance(json.repository, json.filename, false/*dynamic*/, true);
 		loadedPromise.then(() => {
 			if (json.dynamic) {
