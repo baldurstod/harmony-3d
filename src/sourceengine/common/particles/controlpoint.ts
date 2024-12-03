@@ -1,8 +1,8 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-
 import { Entity } from '../../../entities/entity';
 import { Graphics } from '../../../graphics/graphics';
 import { registerEntity } from '../../../entities/entities';
+import { JSONObject } from '../../../types';
 
 const identityVec3 = vec3.create();//TODO: use IDENTITY_VEC3
 const identityQuat = quat.create();
@@ -104,7 +104,7 @@ export class ControlPoint extends Entity {
 		return vec3.sub(out, other.currentWorldPosition, this.currentWorldPosition);
 	}
 
-	static async constructFromJSON(json: JSON) {
+	static async constructFromJSON(json: JSONObject) {
 		return new ControlPoint();
 	}
 
