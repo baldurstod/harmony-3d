@@ -6,12 +6,11 @@ export const Zstd = new (function () {
 		#HEAPU8?: Uint8Array;
 
 		async decompress(compressedDatas: Uint8Array) {
-			if (!this.#HEAPU8) {
-				return null;
-			}
-
 			const wa = await this.getWebAssembly();
 			if (!wa) {
+				return null;
+			}
+			if (!this.#HEAPU8) {
 				return null;
 			}
 			const api = wa.instance.exports;

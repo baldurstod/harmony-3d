@@ -21033,11 +21033,11 @@ const Zstd = new (function () {
         #webAssembly;
         #HEAPU8;
         async decompress(compressedDatas) {
-            if (!this.#HEAPU8) {
-                return null;
-            }
             const wa = await this.getWebAssembly();
             if (!wa) {
+                return null;
+            }
+            if (!this.#HEAPU8) {
                 return null;
             }
             const api = wa.instance.exports;
