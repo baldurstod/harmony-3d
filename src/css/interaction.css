@@ -7,3 +7,11 @@
 	left: 0px;
 	pointer-events: none;
 }
+
+harmony-color-picker{
+	pointer-events: all;
+}
+
+input{
+	pointer-events: all;
+}
