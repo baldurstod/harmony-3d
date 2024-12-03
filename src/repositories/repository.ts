@@ -151,7 +151,7 @@ export class RepositoryEntry {
 
 		for (const [name, entry] of other.#childs) {
 			if (this.#childs.has(name)) {
-				this.#childs.get(name).merge(entry);
+				this.#childs.get(name)?.merge(entry);
 			} else {
 				this.#childs.set(name, entry);
 			}
