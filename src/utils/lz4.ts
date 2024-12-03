@@ -1,4 +1,6 @@
-export function decodeLz4(reader, decompressBlobArray, compressedSize, uncompressedSize, outputIndex = 0) {
+import { BinaryReader } from 'harmony-binary-reader';
+
+export function decodeLz4(reader: BinaryReader, decompressBlobArray: Uint8Array, compressedSize: number, uncompressedSize: number, outputIndex = 0) {
 	let mask = null;
 	let lastOffset = reader.tell() + compressedSize;
 
