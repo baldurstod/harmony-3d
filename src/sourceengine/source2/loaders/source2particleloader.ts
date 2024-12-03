@@ -44,24 +44,21 @@ function _initProperties(system, systemDefinition) {
 				system.baseProperties.rotationSpeedRoll = value;
 				break;
 			default:
-				if(TESTING) {
-					switch (key) {
-						case 'm_Initializers':
-						case 'm_Operators':
-						case 'm_Renderers':
-						case 'm_Emitters':
-						case 'm_Children':
-						case 'm_ForceGenerators':
-						case 'm_Constraints':
-						case 'm_PreEmissionOperators':
-						case '_class':
-							break;
-						default:
+				switch (key) {
+					case 'm_Initializers':
+					case 'm_Operators':
+					case 'm_Renderers':
+					case 'm_Emitters':
+					case 'm_Children':
+					case 'm_ForceGenerators':
+					case 'm_Constraints':
+					case 'm_PreEmissionOperators':
+					case '_class':
+						break;
+					default:
+						if (TESTING) {
 							console.warn('CParticleSystemDefinition : unknown parameter : ' + key, value);
-					}
-
-				} else {
-					console.warn('CParticleSystemDefinition : unknown parameter : ' + key, value);
+						}
 				}
 		}
 	}
