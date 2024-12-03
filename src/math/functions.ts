@@ -12,7 +12,7 @@ export function clamp(val: number, min: number, max: number): number {
 }
 
 export function pow2(n: number): number {
-	return (n >= 0 && n < 31) ? (1 << n) : Math.pow(n, 2);
+	return (n >= 0 && n < 31) ? (1 << n) : Math.pow(2, n);
 }
 
 export function RemapValClamped(val: number, A: number, B: number, C: number, D: number): number {

@@ -1929,7 +1929,7 @@ function clamp(val, min, max) {
     return Math.min(Math.max(min, val), max);
 }
 function pow2(n) {
-    return (n >= 0 && n < 31) ? (1 << n) : Math.pow(n, 2);
+    return (n >= 0 && n < 31) ? (1 << n) : Math.pow(2, n);
 }
 function RemapValClamped(val, A, B, C, D) {
     if (A == B) {
