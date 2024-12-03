@@ -46,7 +46,7 @@ export class SkeletalMesh extends Mesh {
 	}
 
 	exportObj() {
-		let ret = { f: [], v: [] };
+		let ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
 		let skeletonBones = this.skeleton._bones;
 		let attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
 		let geometry = this.geometry;
