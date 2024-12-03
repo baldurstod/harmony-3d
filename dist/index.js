@@ -53392,7 +53392,7 @@ class Source2TextureManagerClass extends EventTarget {
         this.#texturesList.set(path, texture);
     }
     #initTexture(texture, vtexFile) {
-        if (!texture) {
+        if (!texture || !vtexFile) {
             return;
         }
         var imageData = vtexFile.blocks.DATA.imageData;

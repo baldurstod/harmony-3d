@@ -78,7 +78,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	#initTexture(texture, vtexFile) {
-		if (!texture) {
+		if (!texture || !vtexFile) {
 			return;
 		}
 		var imageData = vtexFile.blocks.DATA.imageData;
