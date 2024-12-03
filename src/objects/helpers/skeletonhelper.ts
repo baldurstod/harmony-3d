@@ -121,7 +121,7 @@ export class SkeletonHelper extends Entity {
 	}
 
 	get wireframe() {
-		return false;
+		return 0;
 	}
 
 	#initListeners() {
