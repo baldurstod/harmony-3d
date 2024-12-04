@@ -152,7 +152,6 @@ export class Source2ModelInstance extends Entity implements Animated {
 		}
 	}
 
-
 	playAnimation(name) {
 		this.#animName = name;
 	}

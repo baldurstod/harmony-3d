@@ -386,7 +386,7 @@ export class SceneExplorerEntity extends HTMLElement {
 			return;
 		}
 
-		(this.#entity as unknown as Animated).playSequence(name);
+		(this.#entity as unknown as Animated).playAnimation(name);
 	}
 }
 

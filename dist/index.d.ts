@@ -65,6 +65,7 @@ declare interface Animated {
     hasAnimations: true;
     getAnimations: () => Promise<Set<string>>;
     playSequence: (name: string) => void;
+    playAnimation: (name: string) => void;
 }
 
 export declare class AnimatedTextureProxy extends Proxy_2 {
@@ -6244,6 +6245,7 @@ declare class Choreography {
              set sheen(sheen: any);
              set tint(tint: any);
              setPoseParameter(paramName: any, paramValue: any): void;
+             playAnimation(name: string): void;
              playSequence(sequenceName: any): void;
              addAnimation(animationName: any, weight?: number): Promise<void>;
              update(scene: any, camera: any, delta: any): void;

@@ -19389,7 +19389,7 @@ class SceneExplorerEntity extends HTMLElement {
         if (!this.#entity) {
             return;
         }
-        this.#entity.playSequence(name);
+        this.#entity.playAnimation(name);
     }
 }
 _a$2 = SceneExplorerEntity;
@@ -33953,6 +33953,9 @@ class Source1ModelInstance extends Entity {
     }
     setPoseParameter(paramName, paramValue) {
         this.#poseParameters[paramName] = paramValue;
+    }
+    playAnimation(name) {
+        this.playSequence(name);
     }
     playSequence(sequenceName) {
         sequenceName = sequenceName.toLowerCase();

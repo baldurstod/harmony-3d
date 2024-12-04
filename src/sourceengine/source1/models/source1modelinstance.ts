@@ -191,6 +191,10 @@ export class Source1ModelInstance extends Entity implements Animated {
 		this.#poseParameters[paramName] = paramValue;
 	}
 
+	playAnimation(name: string) {
+		this.playSequence(name);
+	}
+
 	playSequence(sequenceName) { //TODO
 		sequenceName = sequenceName.toLowerCase();
 		let existingSequence = this.sequences[sequenceName];
