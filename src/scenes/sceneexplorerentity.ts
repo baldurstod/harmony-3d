@@ -1,4 +1,4 @@
-import { createElement, display, hide, HTMLHarmonyToggleButtonElement, isVisible, show, toggle } from 'harmony-ui';
+import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, isVisible, show, toggle } from 'harmony-ui';
 import { pauseSVG, playSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
 
 import { EntityObserver, CHILD_ADDED, CHILD_REMOVED, PROPERTY_CHANGED, ENTITY_DELETED } from '../entities/entityobserver';
@@ -44,6 +44,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	constructor() {
 		super();
 		this.#doOnce = true;
+		defineHarmonyToggleButton();
 		this.#htmlHeader = createElement('div', {
 			class: 'scene-explorer-entity-header',
 			childs: [
