@@ -162,7 +162,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		this.#updateVisibility();
 		this.#updatePlaying();
 		display(this.#htmlPlaying, entity?.animable);
-		display(this.#htmlAnimationsButton, entity?.hasAnimations);
+		display(this.#htmlAnimationsButton, (entity as unknown as Animated)?.hasAnimations);
 		display(this.#htmlReset, entity?.resetable);
 	}
 

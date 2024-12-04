@@ -53,7 +53,6 @@ export class Entity {
 	enumerable = true;
 	animable = false;
 	resetable = false;
-	hasAnimations = false;
 	_position = vec3.create();
 	_quaternion = quat.create();
 	_scale = vec3.clone(UNITY_VEC3);

@@ -36,7 +36,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	#attachements = {};
 	#materialsUsed = new Set<Material>();
 	animable = true;
-	hasAnimations = true;
+	hasAnimations: true = true;
 	sourceModel;
 	bodyParts = {};
 	sequences = {};
