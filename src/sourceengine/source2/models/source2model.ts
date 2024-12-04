@@ -280,7 +280,7 @@ export class Source2Model {
 	}
 
 	async getAnimations() {
-		let animations = new Set();
+		let animations = new Set<string>();
 		for (let animGroup of this.animGroups) {
 			if (animGroup.localAnimArray) {
 				for (var localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {

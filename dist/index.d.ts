@@ -62,6 +62,7 @@ export declare class AmbientLight extends Light {
 }
 
 declare interface Animated {
+    hasAnimations: true;
     getAnimations: () => Promise<Set<string>>;
     playSequence: (name: string) => void;
 }
@@ -1634,7 +1635,6 @@ declare class Choreography {
          enumerable: boolean;
          animable: boolean;
          resetable: boolean;
-         hasAnimations: boolean;
          _position: vec3;
          _quaternion: quat;
          _scale: vec3;
@@ -6223,7 +6223,7 @@ declare class Choreography {
              #private;
              isSource1ModelInstance: boolean;
              animable: boolean;
-             hasAnimations: boolean;
+             hasAnimations: true;
              sourceModel: any;
              bodyParts: {};
              sequences: {};
@@ -6835,12 +6835,12 @@ declare class Choreography {
              getAnim(activityName: any, activityModifiers: any): any;
              getAnimation(name: any): any;
              getAnimationsByActivity(activityName: any, animations?: Source2Animations): Source2Animations;
-             getAnimations(): Promise<Set<unknown>>;
+             getAnimations(): Promise<Set<string>>;
              _addAttachements(attachements: any): void;
              getAnimationByName(animName: any): any;
          }
 
-         export declare class Source2ModelInstance extends Entity {
+         export declare class Source2ModelInstance extends Entity implements Animated {
              #private;
              isSource2ModelInstance: boolean;
              animable: boolean;
@@ -6856,6 +6856,7 @@ declare class Choreography {
              mainAnimFrame: number;
              animationSpeed: number;
              sourceModel: Source2Model;
+             hasAnimations: true;
              constructor(sourceModel: any, isDynamic: any);
              get skeleton(): any;
              set position(position: vec3);
@@ -6872,6 +6873,7 @@ declare class Choreography {
              setActivityModifiers(activityModifiers?: any[]): void;
              update(scene: any, camera: any, delta: any): void;
              setBodyGroup(bodyPartName: any, bodyPartModelId: any): void;
+             getAnimations(): Promise<Set<string>>;
              buildContextMenu(): {
                  visibility: {
                      i18n: string;

@@ -1,5 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { createElement, hide, display, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, toggle, defineHarmonyContextMenu } from 'harmony-ui';
+import { createElement, hide, display, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, defineHarmonyToggleButton, toggle, defineHarmonyContextMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
@@ -2143,7 +2143,6 @@ class Entity {
     enumerable = true;
     animable = false;
     resetable = false;
-    hasAnimations = false;
     _position = vec3.create();
     _quaternion = quat.create();
     _scale = vec3.clone(UNITY_VEC3);
@@ -19088,6 +19087,7 @@ class SceneExplorerEntity extends HTMLElement {
     constructor() {
         super();
         this.#doOnce = true;
+        defineHarmonyToggleButton();
         this.#htmlHeader = createElement('div', {
             class: 'scene-explorer-entity-header',
             childs: [
@@ -25278,10 +25278,9 @@ class Source2ModelInstance extends Entity {
     mainAnimFrame = 0;
     animationSpeed = 1.0;
     sourceModel;
-    static {
-        defaultMaterial$2.addUser(Source2ModelInstance);
-    }
+    hasAnimations = true;
     constructor(sourceModel, isDynamic) {
+        defaultMaterial$2.addUser(Source2ModelInstance);
         super();
         this.sourceModel = sourceModel;
         this.name = sourceModel?.vmdl?.displayName;
@@ -25560,6 +25559,9 @@ class Source2ModelInstance extends Entity {
                 }
             }
         }
+    }
+    getAnimations() {
+        return this.sourceModel.getAnimations();
     }
     buildContextMenu() {
         let skins = this.sourceModel.getSkinList();
@@ -52512,10 +52514,6 @@ function _initProperties(system, systemDefinition) {
             case 'm_flConstantRotationSpeed':
                 system.baseProperties.rotationSpeedRoll = value;
                 break;
-            default:
-                {
-                    console.warn('CParticleSystemDefinition : unknown parameter : ' + key, value);
-                }
         }
     }
 }

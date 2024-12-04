@@ -12,6 +12,7 @@ import { SourceAnimation } from '../../source1/loaders/sourceanimation';
 import { Interaction } from '../../../utils/interaction';
 import { Source2Model } from './source2model';
 import { Material } from '../../../materials/material';
+import { Animated } from '../../../entities/animated';
 
 
 const identityVec3 = vec3.create();
@@ -24,7 +25,7 @@ let animSpeed = 1.0;
 
 const defaultMaterial = new MeshBasicMaterial();
 
-export class Source2ModelInstance extends Entity {
+export class Source2ModelInstance extends Entity implements Animated {
 	isSource2ModelInstance = true;
 	#skeleton;
 	#skin = 0;
@@ -43,12 +44,10 @@ export class Source2ModelInstance extends Entity {
 	mainAnimFrame = 0;
 	animationSpeed = 1.0;
 	sourceModel: Source2Model;
-
-	static {
-		defaultMaterial.addUser(Source2ModelInstance);
-	}
+	hasAnimations: true = true;
 
 	constructor(sourceModel, isDynamic) {
+		defaultMaterial.addUser(Source2ModelInstance);
 		super();
 		this.sourceModel = sourceModel;
 		this.name = sourceModel?.vmdl?.displayName;
@@ -354,6 +353,10 @@ export class Source2ModelInstance extends Entity {
 				}
 			}
 		}
+	}
+
+	getAnimations() {
+		return this.sourceModel.getAnimations();
 	}
 
 	buildContextMenu() {
