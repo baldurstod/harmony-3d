@@ -19158,7 +19158,7 @@ class SceneExplorerEntity extends HTMLElement {
     connectedCallback() {
         if (this.#doOnce) {
             this.#doOnce = false;
-            this.draggable = true;
+            this.#htmlHeader.draggable = true;
             this.append(this.#htmlHeader, this.#htmlContent, this.#htmlChilds);
             this.addEventListener('contextmenu', event => this.#contextMenuHandler(event));
             this.addEventListener('dragstart', event => {
