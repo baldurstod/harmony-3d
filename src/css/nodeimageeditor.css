@@ -76,6 +76,7 @@
 	background-color: #000000FF;
 	display: inline-block;
 	width: min-content;
+	display: flex;
 }
 
 .node-image-editor-sticker-selector {
