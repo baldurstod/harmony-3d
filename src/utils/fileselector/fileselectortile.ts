@@ -1,13 +1,14 @@
 import { display } from 'harmony-ui';
+import { FileSelectorFile } from './file';
+import { FileSelector } from './fileselector';
 
 export class HTMLFileSelectorTileElement extends HTMLElement {
-	#visible;
-	#file;
-	#selector;
+	#visible: boolean = true;
+	#selector?: FileSelector;
+	#file?: FileSelectorFile;
 
 	constructor() {
 		super();
-		this.#visible = true;
 		this.addEventListener('click', (event) => {
 			if (this.#selector) {
 				this.#selector.fileSelected(this.#file);
@@ -19,12 +20,12 @@ export class HTMLFileSelectorTileElement extends HTMLElement {
 		return this.#file;
 	}
 
-	setFile(file) {
+	setFile(file: FileSelectorFile) {
 		this.#file = file;
 		this.#updateHtml();
 	}
 
-	set selector(selector) {
+	set selector(selector: FileSelector) {
 		this.#selector = selector;
 	}
 
@@ -32,7 +33,7 @@ export class HTMLFileSelectorTileElement extends HTMLElement {
 		this.#updateHtml();
 	}
 
-	set visible(visible) {
+	set visible(visible: boolean) {
 		this.#visible = visible;
 		display(this, visible);
 		if (visible) {
