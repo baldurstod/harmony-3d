@@ -1,6 +1,6 @@
 import { display } from 'harmony-ui';
 
-export class FileSelectorTile extends HTMLElement {
+export class HTMLFileSelectorTileElement extends HTMLElement {
 	#visible;
 	#file;
 	#selector;
@@ -47,6 +47,10 @@ export class FileSelectorTile extends HTMLElement {
 	}
 }
 
-if (customElements) {
-	customElements.define('file-selector-tile', FileSelectorTile);
+let definedTile = false;
+export function defineFileSelectorTile() {
+	if (window.customElements && !definedTile) {
+		customElements.define('file-selector-tile', HTMLFileSelectorTileElement);
+		definedTile = true;
+	}
 }

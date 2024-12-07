@@ -1,9 +1,8 @@
 import { createElement } from 'harmony-ui';
-import { FileSelectorTile } from './fileselectortile';
 import { FileSelectorDirectory } from './fileselectordirectory';
+import { defineFileSelectorTile, HTMLFileSelectorTileElement } from './fileselectortile';
 
 export { FileSelectorDirectory } from './fileselectordirectory';
-export { FileSelectorTile } from './fileselectortile';
 
 const FILTER_NAME_DELAY = 200;
 
@@ -147,6 +146,8 @@ export class FileSelector extends HTMLElement {
 		if (this.#initialized) {
 			return;
 		}
+
+		defineFileSelectorTile();
 		this.#content.replaceChildren();
 		this.#htmlTiles = [];
 		this.#htmlDirectories = [];
@@ -155,7 +156,7 @@ export class FileSelector extends HTMLElement {
 				for (let rootFile of this.#fileList.files) {
 					let fileList = this.#getFileList(rootFile);
 					for (let file of fileList) {
-						const tile = createElement('file-selector-tile', {parent: this.#content}) as FileSelectorTile;
+						const tile = createElement('file-selector-tile', {parent: this.#content}) as HTMLFileSelectorTileElement;
 						tile.selector = this;
 						tile.setFile(file);
 						this.#htmlTiles.push(tile);
