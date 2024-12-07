@@ -10,7 +10,7 @@ export class HTMLFileSelectorTileElement extends HTMLElement {
 	constructor() {
 		super();
 		this.addEventListener('click', (event) => {
-			if (this.#selector) {
+			if (this.#selector && this.#file) {
 				this.#selector.fileSelected(this.#file);
 			}
 		});

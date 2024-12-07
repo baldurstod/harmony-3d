@@ -1,1 +1,1 @@
-export type FileSelectorFile = { name: string, path: string, childs: Array<File> };
+export type FileSelectorFile = { name: string, path: string, root: string, files: Array<FileSelectorFile> };
