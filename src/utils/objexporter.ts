@@ -8,7 +8,6 @@ import { LoopSubdivision } from '../meshes/loopsubdivision';
 import { Entity } from '../entities/entity';
 import { Source2ParticleSystem, SourceEngineParticleSystem } from '../sourceengine/export';
 import { Mesh } from '../objects/mesh';
-import { SourceEngineParticle } from '../sourceengine/source1/particles/particle';
 
 export class ObjExporter {
 	static #instance: ObjExporter;
@@ -88,8 +87,8 @@ export class ObjExporter {
 			if ((mesh as Mesh).exportObj) {
 				let m = (mesh as Mesh).exportObj();
 
-				let faces: Uint8Array | Uint32Array;
-				let vertices: Float32Array;
+				let faces: Uint8Array | Uint32Array | undefined;
+				let vertices: Float32Array | undefined;
 				let normals: Float32Array | undefined;
 				let uvs: Float32Array | undefined;
 				if (subdivisions > 0) {
@@ -111,7 +110,9 @@ export class ObjExporter {
 				mtlLines.push(`map_Kd mat_${objectId}.png\n`);
 				this.#addLine(`usemtl mat_${objectId}.png`);
 
-				this.#exportMesh(digits, faces, vertices, normals, uvs);
+				if (faces && vertices) {
+					this.#exportMesh(digits, faces, vertices, normals, uvs);
+				}
 
 				++objectId;
 			}
