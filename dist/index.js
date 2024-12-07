@@ -1,5 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { createElement, hide, display, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, defineHarmonyToggleButton, toggle, defineHarmonyContextMenu } from 'harmony-ui';
+import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, defineHarmonyToggleButton, toggle, defineHarmonyContextMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
@@ -3376,6 +3376,105 @@ class Ray {
     }
 }
 
+class HTMLFileSelectorTileElement extends HTMLElement {
+    #visible = true;
+    #selector;
+    #file;
+    constructor() {
+        super();
+        this.addEventListener('click', (event) => {
+            if (this.#selector && this.#file) {
+                this.#selector.fileSelected(this.#file);
+            }
+        });
+    }
+    get file() {
+        return this.#file;
+    }
+    setFile(file) {
+        this.#file = file;
+        this.#updateHtml();
+    }
+    set selector(selector) {
+        this.#selector = selector;
+    }
+    connectedCallback() {
+        this.#updateHtml();
+    }
+    set visible(visible) {
+        this.#visible = visible;
+        display(this, visible);
+        if (visible) {
+            this.#updateHtml();
+        }
+    }
+    #updateHtml() {
+        if (this.#visible && this.#file) {
+            this.innerHTML = this.#file.name;
+        }
+    }
+}
+let definedTile = false;
+function defineFileSelectorTile() {
+    if (window.customElements && !definedTile) {
+        customElements.define('file-selector-tile', HTMLFileSelectorTileElement);
+        definedTile = true;
+    }
+}
+
+class HTMLFileSelectorFileElement extends HTMLElement {
+    #selector;
+    #file;
+    constructor() {
+        super();
+        this.addEventListener('click', (event) => {
+            if (this.#selector && this.#file) {
+                this.#selector.fileSelected(this.#file);
+            }
+        });
+    }
+    setFile(file) {
+        this.#file = file;
+        this.#updateHtml();
+    }
+    set selector(selector) {
+        this.#selector = selector;
+    }
+    connectedCallback() {
+        this.#updateHtml();
+    }
+    set visible(visible) {
+        display(this, visible);
+        if (visible) {
+            this.#updateHtml();
+        }
+    }
+    #updateHtml() {
+        if (this.#file) {
+            this.innerHTML = this.#file.name;
+        }
+    }
+    refreshFilter() {
+        if (!this.#selector || !this.#file) {
+            return false;
+        }
+        let filterName = this.#selector.filter.name;
+        let visible = this.#file.name.toLowerCase().includes(filterName) || this.#file.path.toLowerCase().includes(filterName);
+        this.visible = visible;
+        return visible;
+    }
+    get file() {
+        return this.#file;
+    }
+}
+let definedFile = false;
+function defineFileSelectorFile() {
+    if (window.customElements && !definedFile) {
+        customElements.define('file-selector-file', HTMLFileSelectorFileElement);
+        definedFile = true;
+    }
+}
+
 class FileSelectorDirectory extends HTMLElement {
     #initialized = false;
     #expanded = false;
@@ -3393,18 +3492,18 @@ class FileSelectorDirectory extends HTMLElement {
         this.#header = createElement('div', {
             class: 'file-selector-directory-header',
             events: {
-                click: (event) => {
+                click: () => {
                     this.#expanded = !this.#expanded;
                     this.#updateHtml();
                     if (this.#expanded && this.#parentDirectory) {
-                        this.#parentDirectory.childExpanded(this);
+                        this.#parentDirectory.#childExpanded(this);
                     }
                 }
             },
         });
         this.#content = createElement('div', { class: 'file-selector-directory-content' });
     }
-    childExpanded(child) {
+    #childExpanded(child) {
         for (let enumeratedChild of this.#content.children) {
             if (enumeratedChild.tagName == 'FILE-SELECTOR-DIRECTORY' && enumeratedChild != child) {
                 enumeratedChild.collapse();
@@ -3447,9 +3546,11 @@ class FileSelectorDirectory extends HTMLElement {
             let bIsDir = b.tagName == 'FILE-SELECTOR-DIRECTORY';
             if (aIsDir) {
                 if (bIsDir) {
-                    let aname = a.file.name;
-                    let bname = b.file.name;
-                    return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
+                    let aname = a.file?.name;
+                    let bname = b.file?.name;
+                    if (aname && bname) {
+                        return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
+                    }
                 }
                 else {
                     return -this.#sortingDirection;
@@ -3460,11 +3561,14 @@ class FileSelectorDirectory extends HTMLElement {
                     return this.#sortingDirection;
                 }
                 else {
-                    let aname = a.file.name;
-                    let bname = b.file.name;
-                    return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
+                    let aname = a.file?.name;
+                    let bname = b.file?.name;
+                    if (aname && bname) {
+                        return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
+                    }
                 }
             }
+            return 0;
         });
         for (let child of this.#childs) {
             this.#content.append(child);
@@ -3478,7 +3582,9 @@ class FileSelectorDirectory extends HTMLElement {
             }
         }
         else {
-            visible = this.#matchFilter(this.#file);
+            if (this.#file) {
+                visible = this.#matchFilter(this.#file);
+            }
         }
         this.#visible = visible;
         display(this, visible);
@@ -3493,12 +3599,13 @@ class FileSelectorDirectory extends HTMLElement {
             }
         }
         else {
-            let filterName = this.#selector.filter.name;
+            let filterName = this.#selector?.filter.name ?? '';
             return file.name.toLowerCase().includes(filterName) || file.path.toLowerCase().includes(filterName);
         }
         return false;
     }
     #updateHtml() {
+        defineFileSelectorFile();
         if (this.#file && !this.#initialized) {
             this.#name = this.#file.name.replace(/\/$/g, ''); //remove trailing /
             if (this.#expanded) {
@@ -3518,7 +3625,9 @@ class FileSelectorDirectory extends HTMLElement {
                             child = document.createElement('file-selector-file');
                             //child.file = file;
                         }
-                        child.selector = this.#selector;
+                        if (this.#selector) {
+                            child.selector = this.#selector;
+                        }
                         child.setFile(file);
                         this.#content.append(child);
                         this.#childs.push(child);
@@ -3547,98 +3656,6 @@ if (customElements) {
     customElements.define('file-selector-directory', FileSelectorDirectory);
 }
 
-class FileSelectorFile extends HTMLElement {
-    #selector;
-    #file;
-    constructor() {
-        super();
-        this.addEventListener('click', (event) => {
-            if (this.#selector) {
-                this.#selector.fileSelected(this.#file);
-            }
-        });
-    }
-    setFile(file) {
-        this.#file = file;
-        this.#updateHtml();
-    }
-    set selector(selector) {
-        this.#selector = selector;
-    }
-    connectedCallback() {
-        this.#updateHtml();
-    }
-    set visible(visible) {
-        display(this, visible);
-        if (visible) {
-            this.#updateHtml();
-        }
-    }
-    #updateHtml() {
-        if (this.#file) {
-            this.innerHTML = this.#file.name;
-        }
-    }
-    refreshFilter() {
-        if (!this.#selector || !this.#file) {
-            return false;
-        }
-        let filterName = this.#selector.filter.name;
-        let visible = this.#file.name.toLowerCase().includes(filterName) || this.#file.path.toLowerCase().includes(filterName);
-        this.visible = visible;
-        return visible;
-    }
-    get file() {
-        return this.#file;
-    }
-}
-if (customElements) {
-    customElements.define('file-selector-file', FileSelectorFile);
-}
-
-class FileSelectorTile extends HTMLElement {
-    #visible;
-    #file;
-    #selector;
-    constructor() {
-        super();
-        this.#visible = true;
-        this.addEventListener('click', (event) => {
-            if (this.#selector) {
-                this.#selector.fileSelected(this.#file);
-            }
-        });
-    }
-    get file() {
-        return this.#file;
-    }
-    setFile(file) {
-        this.#file = file;
-        this.#updateHtml();
-    }
-    set selector(selector) {
-        this.#selector = selector;
-    }
-    connectedCallback() {
-        this.#updateHtml();
-    }
-    set visible(visible) {
-        this.#visible = visible;
-        display(this, visible);
-        if (visible) {
-            this.#updateHtml();
-        }
-    }
-    #updateHtml() {
-        if (this.#visible && this.#file) {
-            this.innerHTML = this.#file.name;
-        }
-    }
-}
-if (customElements) {
-    customElements.define('file-selector-tile', FileSelectorTile);
-}
-
 const FILTER_NAME_DELAY = 200;
 class FileSelector extends HTMLElement {
     #fileList;
@@ -3653,9 +3670,6 @@ class FileSelector extends HTMLElement {
     #initialized = false;
     constructor() {
         super();
-        this.#initHtml();
-    }
-    #initHtml() {
         this.#header = createElement('div', { class: 'file-selector-header' });
         this.#content = createElement('div', { class: 'file-selector-content' });
         let htmlDisplayPropertiesSpan = createElement('span', { parent: this.#header });
@@ -3710,8 +3724,8 @@ class FileSelector extends HTMLElement {
             if (current) {
                 if (current.files) {
                     for (let file of current.files) {
-                        let path2 = current.path.replace(/\/$/g, ''); //remove trailing /
-                        let name2 = current.name.replace(/\/$/g, ''); //remove trailing /
+                        let path2 = current.path?.replace(/\/$/g, ''); //remove trailing /
+                        let name2 = current.name?.replace(/\/$/g, ''); //remove trailing /
                         if (current == root) {
                             file.path = '/';
                         }
@@ -3746,9 +3760,12 @@ class FileSelector extends HTMLElement {
     #sortItems() {
         if (this.#tileView) {
             this.#htmlTiles.sort((a, b) => {
-                let aname = a.file.name;
-                let bname = b.file.name;
-                return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
+                let aname = a.file?.name;
+                let bname = b.file?.name;
+                if (aname && bname) {
+                    return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
+                }
+                return 0;
             });
             for (let tile of this.#htmlTiles) {
                 this.#content.append(tile);
@@ -3756,8 +3773,11 @@ class FileSelector extends HTMLElement {
         }
     }
     #matchFilter(file) {
+        if (!file) {
+            return false;
+        }
         let ret = false;
-        if (file.name.toLowerCase().includes(this.#filter.name)) {
+        if (file.name?.toLowerCase().includes(this.#filter.name)) {
             ret = true;
         }
         return ret;
@@ -3766,6 +3786,7 @@ class FileSelector extends HTMLElement {
         if (this.#initialized) {
             return;
         }
+        defineFileSelectorTile();
         this.#content.replaceChildren();
         this.#htmlTiles = [];
         this.#htmlDirectories = [];
@@ -63669,7 +63690,9 @@ class ObjExporter {
                 mtlLines.push(`newmtl mat_${objectId}.png\n`);
                 mtlLines.push(`map_Kd mat_${objectId}.png\n`);
                 this.#addLine(`usemtl mat_${objectId}.png`);
-                this.#exportMesh(digits, faces, vertices, normals, uvs);
+                if (faces && vertices) {
+                    this.#exportMesh(digits, faces, vertices, normals, uvs);
+                }
                 ++objectId;
             }
         }
