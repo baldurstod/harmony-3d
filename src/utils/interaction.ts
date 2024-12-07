@@ -3,6 +3,7 @@ import { createElement, toggle, hide, show, defineHarmonyColorPicker, createShad
 import { FileSelector } from './fileselector/fileselector';
 export { FileSelector } from './fileselector/fileselector';
 import interactionCSS from '../css/interaction.css';
+import { FileSelectorFile } from './fileselector/file';
 
 const DATALIST_ID = 'interaction-datalist';
 
@@ -215,7 +216,7 @@ export class Interaction {
 	}
 		*/
 
-	async selectFile(htmlContainer: HTMLElement, fileList: { files: { name: string; files: any[]; }[] }, callback: (repository: string, modelName: string) => void) {
+	async selectFile(htmlContainer: HTMLElement, fileList: FileSelectorFile, callback: (repository: string, modelName: string) => void) {
 		this.#initHtml();
 		//htmlContainer.append(this.#htmlFileSelector);
 		//this.show();
