@@ -3,7 +3,6 @@ import { FileSelectorTile } from './fileselectortile';
 import { FileSelectorDirectory } from './fileselectordirectory';
 
 export { FileSelectorDirectory } from './fileselectordirectory';
-export { FileSelectorFile } from './fileselectorfile';
 export { FileSelectorTile } from './fileselectortile';
 
 const FILTER_NAME_DELAY = 200;

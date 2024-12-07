@@ -3,7 +3,7 @@ import { FileSelector } from './fileselector';
 
 export type File/*TODO: rename this type*/ = { name: string, path: string, childs: Array<File> };
 
-export class FileSelectorFile extends HTMLElement {
+export class HTMLFileSelectorFileElement extends HTMLElement {
 	#selector?: FileSelector;
 	#file?: File;
 	constructor() {
@@ -57,6 +57,10 @@ export class FileSelectorFile extends HTMLElement {
 	}
 }
 
-if (customElements) {
-	customElements.define('file-selector-file', FileSelectorFile);
+let definedFile = false;
+export function defineFileSelectorFile() {
+	if (window.customElements && !definedFile) {
+		customElements.define('file-selector-file', HTMLFileSelectorFileElement);
+		definedFile = true;
+	}
 }

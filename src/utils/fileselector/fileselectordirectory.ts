@@ -1,4 +1,5 @@
 import { createElement, display, hide, show } from 'harmony-ui';
+import { defineFileSelectorFile } from './fileselectorfile';
 
 export class FileSelectorDirectory extends HTMLElement {
 	#initialized = false;
@@ -134,6 +135,7 @@ export class FileSelectorDirectory extends HTMLElement {
 	}
 
 	#updateHtml() {
+		defineFileSelectorFile();
 		if (this.#file && !this.#initialized) {
 			this.#name = this.#file.name.replace(/\/$/g, '');//remove trailing /
 			if (this.#expanded) {
