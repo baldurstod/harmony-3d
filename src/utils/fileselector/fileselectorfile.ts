@@ -1,11 +1,10 @@
 import { display } from 'harmony-ui';
 import { FileSelector } from './fileselector';
-
-export type File/*TODO: rename this type*/ = { name: string, path: string, childs: Array<File> };
+import { FileSelectorFile } from './file';
 
 export class HTMLFileSelectorFileElement extends HTMLElement {
 	#selector?: FileSelector;
-	#file?: File;
+	#file?: FileSelectorFile;
 	constructor() {
 		super();
 		this.addEventListener('click', (event) => {
@@ -15,7 +14,7 @@ export class HTMLFileSelectorFileElement extends HTMLElement {
 		});
 	}
 
-	setFile(file: File) {
+	setFile(file: FileSelectorFile) {
 		this.#file = file;
 		this.#updateHtml();
 	}
