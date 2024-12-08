@@ -1,4 +1,5 @@
 export { ModelLoader } from './modelloader';
+export { SourceBSP } from './sourcebsp';
 export { SourceEngineMDLLoader } from './sourceenginemdlloader';
 export { SourceEngineVTXLoader } from './sourceenginevtxloader';
 export { SourceEngineVVDLoader } from './sourceenginevvdloader';

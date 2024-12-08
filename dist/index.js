@@ -35088,6 +35088,1519 @@ class ModelLoader {
 }
 registerLoader('ModelLoader', ModelLoader);
 
+/**
+ * Light Map
+ */
+let lightMapNodeId = 0;
+/**
+ * TODO
+ */
+const SELightMapNode = function (x, y, width, height) {
+    this.y = y;
+    this.x = x;
+    this.height = height;
+    this.width = width;
+    this.content = null;
+    this.filled = false;
+    this.id = ++lightMapNodeId;
+};
+/**
+ * TODO
+ */
+SELightMapNode.prototype.setContent = function (content) {
+    if (this.sub1)
+        return false;
+    this.content = content;
+};
+/**
+ * TODO
+ */
+SELightMapNode.prototype.split = function (x, y) {
+    if (this.content)
+        return false;
+    if (this.filled)
+        return false;
+    if (y >= this.height)
+        return false;
+    if (x >= this.width)
+        return false;
+    if (y != 0 && x != 0)
+        return false;
+    if (y == 0) { /* splitting vertically */
+        this.sub1 = new SELightMapNode(this.x, this.y, x, this.height);
+        this.sub2 = new SELightMapNode(this.x + x, this.y, this.width - x, this.height);
+    }
+    else { /* splitting horizontally */
+        this.sub1 = new SELightMapNode(this.x, this.y, this.width, y);
+        this.sub2 = new SELightMapNode(this.x, this.y + y, this.width, this.height - y);
+    }
+};
+/**
+ * TODO
+ */
+SELightMapNode.prototype.allocate = function (width, height) {
+    if (this.filled)
+        return false;
+    if (this.content)
+        return false;
+    if (height == 0)
+        return false;
+    if (width == 0)
+        return false;
+    if (height > this.height)
+        return false;
+    if (width > this.width)
+        return false;
+    let node;
+    if (this.sub1) {
+        node = this.sub1.allocate(width, height);
+        if (node) {
+            this.checkFull();
+            return node;
+        }
+    }
+    if (this.sub2) {
+        node = this.sub2.allocate(width, height);
+        if (node) {
+            this.checkFull();
+            return node;
+        }
+        return false;
+    }
+    if (height == this.height && width == this.width) {
+        this.filled = true;
+        return this;
+    }
+    if ((height / this.height) > (width / this.width)) {
+        this.split(width, 0);
+    }
+    else {
+        this.split(0, height);
+    }
+    if (this.sub1) {
+        node = this.sub1.allocate(width, height);
+        if (node) {
+            this.checkFull();
+            return node;
+        }
+    }
+    if (this.sub2) {
+        node = this.sub2.allocate(width, height);
+        this.checkFull();
+        if (node) {
+            this.checkFull();
+            return node;
+        }
+    }
+    return null;
+};
+/**
+ * TODO
+ */
+SELightMapNode.prototype.toString = function () {
+    return this.id;
+};
+/**
+ * TODO
+ */
+SELightMapNode.prototype.checkFull = function () {
+    if (this.sub1.filled && this.sub2.filled) {
+        this.filled = true;
+    }
+};
+/**
+ * TODO
+ */
+SELightMapNode.prototype.getAllocatedSize = function () {
+    let total = 0;
+    if (this.sub1) {
+        total += this.sub1.getAllocatedSize();
+        total += this.sub2.getAllocatedSize();
+        return total;
+    }
+    if (this.filled) {
+        return this.height * this.width;
+    }
+    return 0;
+};
+
+/**
+ * BSP lump
+ * @param {Number} type The lump type
+ */
+class SEBaseBspLump {
+    map;
+    initialized = false;
+    mapOffset;
+    mapLength;
+    lumpOffset;
+    lumpLen;
+    lumpDataPromise = null;
+    reader;
+    lzmaReader;
+    mapLen;
+    lumpVersion;
+    lumpData;
+    lumpType;
+    constructor(map, reader, offset, length) {
+        this.map = map;
+        //this.reader = reader;//TODOv3 remove reader
+        this.mapOffset = offset;
+        this.mapLength = length;
+        this.lumpOffset = offset;
+        this.lumpLen = length;
+    }
+    init() {
+        throw 'remove me';
+        /*
+        if (this.reader.getString(4, this.lumpOffset) == 'LZMA') {
+            const uncompressedSize = this.reader.getUint32();
+            const compressedSize = this.reader.getUint32();
+            const properties = this.reader.getBytes(5);
+            const compressedDatas = this.reader.getBytes(this.lumpLen - 17);
+
+            this.lzmaReader = new jDataView(SourceEngine.Choreographies._decompress(properties, compressedDatas, uncompressedSize), undefined, undefined, true);
+
+            this.lumpOffset = 0;
+            this.lumpLen = uncompressedSize;
+        } else {
+            //lumpData.str = this.reader.getString(lump.getLumpLen(), startOffset);
+        }
+        this.initialized = true;
+        */
+    }
+    /**
+     * Set lump offset
+     * @param {Number} newLumpOffset The lump offset
+     */
+    /*setLumpOffset(newLumpOffset) {
+        this.lumpOffset = newLumpOffset;
+    }*/
+    /**
+     * Get lump offset
+     * @return {Number} The lump offset
+     */
+    getLumpOffset() {
+        return this.lumpOffset;
+    }
+    getMapOffset() {
+        return this.mapOffset;
+    }
+    /**
+     * Set lump len
+     * @param {Number} newLumpLen The lump len
+     */
+    /*setLumpLen(newLumpLen) {
+        this.lumpLen = newLumpLen;
+    }*/
+    /**
+     * Get lump len
+     * @return {Number} The lump len
+     */
+    getLumpLen() {
+        return this.lumpLen;
+    }
+    getMapLen() {
+        return this.mapLen;
+    }
+    /**
+     * Set lump Version
+     * @param {Number} newLumpVersion The lump Version
+     */
+    setLumpVersion(newLumpVersion) {
+        this.lumpVersion = newLumpVersion;
+    }
+    /**
+     * Get lump Version
+     * @return {Number} The lump Version
+     */
+    getLumpVersion() {
+        return this.lumpVersion;
+    }
+    /**
+     * Set lump Data
+     * @param {Object} newLumpData The lump data
+     */
+    setLumpData(newLumpData) {
+        this.lumpData = newLumpData;
+    }
+    /**
+     * Get lump data
+     * @return {Object} The lump data
+     */
+    getLumpData() {
+        const datas = this.lumpData;
+        if (!datas) {
+            this.initDatas();
+        }
+        return this.lumpData;
+    }
+    getReader() {
+        if (!this.initialized) {
+            this.init();
+        }
+        if (this.lzmaReader) {
+            this.lzmaReader.seek(0);
+            return this.lzmaReader;
+        }
+        else {
+            this.reader.seek(this.lumpOffset);
+            return this.reader;
+        }
+    }
+    initDatas() {
+    }
+}
+/**
+ * BSP lump
+ * @param {Number} type The lump type
+ */
+class SourceBSPLump extends SEBaseBspLump {
+    constructor(map, type, reader, offset, length) {
+        super(map, reader, offset, length);
+        this.lumpType = type;
+    }
+}
+const LUMP_ENTITIES = 0;
+const LUMP_PLANES = 1;
+const LUMP_TEXDATA = 2;
+const LUMP_VERTEXES = 3;
+const LUMP_VISIBILITY = 4;
+const LUMP_NODES = 5;
+const LUMP_TEXINFO = 6;
+const LUMP_FACES = 7;
+const LUMP_LIGHTING = 8;
+const LUMP_LEAFS = 10;
+const LUMP_EDGES = 12;
+const LUMP_SURFEDGES = 13;
+const LUMP_MODELS = 14;
+const LUMP_LEAFFACES = 16;
+const LUMP_LEAFBRUSHES = 17;
+const LUMP_BRUSHES = 18;
+const LUMP_BRUSHSIDES = 19;
+const LUMP_DISPINFO = 26;
+const LUMP_ORIGINALFACES = 27;
+const LUMP_DISP_VERTS = 33; // CDispVerts
+//		 For each lightmap sample
+//				 byte for index
+//				 if 255; then index = next byte + 255
+//				 3 bytes for barycentric coordinates
+// The game lump is a method of adding game-specific lumps
+// FIXME: Eventually; all lumps could use the game lump system
+const LUMP_GAME_LUMP = 35;
+// A pak file can be embedded in a .bsp now; and the file system will search the pak
+//	file first for any referenced names; before deferring to the game directory
+//	file system/pak files and finally the base directory file system/pak files.
+const LUMP_PAKFILE = 40;
+const LUMP_TEXDATA_STRING_DATA = 43;
+const LUMP_TEXDATA_STRING_TABLE = 44;
+const LUMP_OVERLAYS = 45;
+const LUMP_DISP_TRIS = 48;
+// optional lumps for HDR
+const LUMP_LIGHTING_HDR = 53;
+const LUMP_FACES_HDR = 58; // HDR maps may have different face data.
+const SourceBSPLumpPlane = function () {
+    this.normal = null; // normal vector
+    this.dist = null; // distance from origin
+    this.type = null; // plane axis identifier
+};
+const SourceBSPLumpEdge = function () {
+    // f: first index s: second index
+    this.f = null; // better than store as an array of 2 ?
+    this.s = null;
+};
+const SourceBSPLumpFace = function () {
+    this.planenum = null;
+    this.side = null;
+    this.onNode = null;
+    this.firstedge = null;
+    this.numedges = null;
+    this.texinfo = null;
+    this.dispinfo = null;
+    this.surfaceFogVolumeID = null;
+    this.styles = [];
+    this.lightofs = null;
+    this.area = null;
+    this.LightmapTextureMinsInLuxels = null;
+    this.LightmapTextureSizeInLuxels = null;
+    this.origFace = null;
+    this.numPrims = null;
+    this.firstPrimID = null;
+    this.smoothingGroups = null;
+};
+/*
+unsigned short	planenum;		// the plane number
+byte		side;			// faces opposite to the node's plane direction
+byte		onNode;			// 1 of on node, 0 if in leaf
+int		firstedge;		// index into surfedges
+short		numedges;		// number of surfedges
+short		texinfo;		// texture info
+short		dispinfo;		// displacement info
+short		surfaceFogVolumeID;	// ?
+byte		styles[4];		// switchable lighting info
+int		lightofs;		// offset into lightmap lump
+float		area;			// face area in units^2
+int		LightmapTextureMinsInLuxels[2];	// texture lighting info
+int		LightmapTextureSizeInLuxels[2];	// texture lighting info
+int		origFace;		// original face this was split from
+unsigned short	numPrims;		// primitives
+unsigned short	firstPrimID;
+unsigned int	smoothingGroups;	// lightmap smoothing group
+*/
+const SourceBSPLumpTexData = function () {
+    this.reflectivity = null; // RGB reflectivity
+    this.nameStringTableID = null; // index into TexdataStringTable
+    this.width = null;
+    this.height = null; // source image
+    this.view_width = null;
+    this.view_height = null;
+};
+/*
+const SourceBSPLumpGameLump = function() {
+    this.id = null;		// gamelump ID
+    this.flags = null;		// flags
+    this.version = null;	// gamelump version
+    this.fileofs = null;	// offset to this gamelump
+    this.filelen = null;	// length
+}*/
+/**
+ * BSP lump
+ * @param {Number} type The lump type
+ */
+class SourceBSPLumpGameLump extends SEBaseBspLump {
+    id;
+    flags;
+    version;
+    constructor(map, reader) {
+        super(map, reader); //TODOv3
+        /*this.lumpOffset = this.mapReader.getInt32();
+        this.lumpLen = this.mapReader.getInt32();
+        this.lumpVersion = this.mapReader.getInt32();
+        this.fourCC = this.mapReader.getInt32();
+        this.lumpData = null;*/
+        //lump.setLumpOffset(this.reader.getInt32());
+        //lump.setLumpLen(this.reader.getInt32());
+        //lump.setLumpVersion(this.reader.getInt32());
+        //this.reader.getInt32() // TODO: replace by lump fourCC
+        //this.init();
+    }
+}
+const SourceBSPLumpPropStaticDirectory = function () {
+    this.name = [];
+    this.leaf = [];
+    this.props = [];
+};
+const SourceBSPLumpPropStatic = function () {
+    this.position = null;
+    this.angles = vec3.create();
+    this.propType = null;
+    this.firstLeaf = null;
+    this.leafCount = null;
+    this.solid = null;
+    this.flags = null;
+    this.skin = null;
+    this.fadeMinDist = null;
+    this.fadeMaxDist = null;
+    this.lightingOrigin = null;
+    this.forcedFadeScale = null;
+    this.minDXLevel = null;
+    this.maxDXLevel = null;
+    this.minCPULevel = null;
+    this.maxCPULevel = null;
+    this.minGPULevel = null;
+    this.maxGPULevel = null;
+    this.diffuseModulation = null;
+    this.disableX360 = null;
+    /*// v4
+    Vector		Origin;		 // origin
+    QAngle		Angles;		 // orientation (pitch roll yaw)
+    unsigned short	PropType;	 // index into model name dictionary
+    unsigned short	FirstLeaf;	 // index into leaf array
+    unsigned short	LeafCount;
+    unsigned char	Solid;		 // solidity type
+    unsigned char	Flags;
+    int		Skin;		 // model skin numbers
+    float		FadeMinDist;
+    float		FadeMaxDist;
+    Vector		LightingOrigin;	// for lighting
+    // since v5
+    float		ForcedFadeScale; // fade distance scale
+    // v6 and v7 only
+    unsigned short	MinDXLevel;			// minimum DirectX version to be visible
+    unsigned short	MaxDXLevel;			// maximum DirectX version to be visible
+    // since v8
+    unsigned char	 MinCPULevel;
+    unsigned char	 MaxCPULevel;
+    unsigned char	 MinGPULevel;
+    unsigned char	 MaxGPULevel;
+    // since v7
+    color32				 DiffuseModulation; // per instance color and alpha modulation
+    // since v10
+    float					 unknown;
+    // since v9
+    bool						DisableX360;		 // if true, don't show on XBox 360
+    */
+};
+const SourceBSPLumpTexInfo = function () {
+    this.textureVecs = []; // [s/t][xyz offset]
+    this.lightmapVecs = []; // [s/t][xyz offset] - length is in units of texels/area
+    this.flags; // miptex flags	overrides
+    this.texdata;
+};
+const SourceBSPLumpDispInfo = function () {
+    /*Vector			startPosition;		// start position used for orientation
+    int			DispVertStart;		// Index into LUMP_DISP_VERTS.
+    int			DispTriStart;		// Index into LUMP_DISP_TRIS.
+    int			power;			// power - indicates size of surface (2^power	1)
+    int			minTess;		// minimum tesselation allowed
+    float			smoothingAngle;		// lighting smoothing angle
+    int			contents;		// surface contents
+    unsigned short		MapFace;		// Which map face this displacement comes from.
+    int			LightmapAlphaStart;	// Index into ddisplightmapalpha.
+    int			LightmapSamplePositionStart;	// Index into LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS.
+    CDispNeighbor		EdgeNeighbors[4];	// Indexed by NEIGHBOREDGE_ defines.
+    CDispCornerNeighbors	CornerNeighbors[4];	// Indexed by CORNER_ defines.
+    unsigned int		AllowedVerts[10];	// active verticies*/
+};
+const SourceBSPLumpDispNeighbor = function () {
+    //CDispSubNeighbor	m_SubNeighbors[2];
+    this.subNeighbors = [];
+};
+const SourceBSPLumpDispSubNeighbor = function () {
+    /*	unsigned short		m_iNeighbor;		// This indexes into ddispinfos.
+                                                // 0xFFFF if there is no neighbor here.
+
+        unsigned char		m_NeighborOrientation;		// (CCW) rotation of the neighbor wrt this displacement.
+
+        // These use the NeighborSpan type.
+        unsigned char		m_Span;						// Where the neighbor fits onto this side of our displacement.
+        unsigned char		m_NeighborSpan;				// Where we fit onto our neighbor.								 */
+};
+/*TODO
+const SourceBSPLumpDispSubNeighbor
+{
+};*/
+const SourceBSPLumpDispVertex = function () {
+    /*	Vector	vec;	// Vector field defining displacement volume.
+        float	dist;	// Displacement distances.
+        float	alpha;	// 'per vertex' alpha values.*/
+};
+const SourceBSPLumpColorRGBExp32 = function () {
+    /*	Vector	vec;	// Vector field defining displacement volume.
+        float	dist;	// Displacement distances.
+        float	alpha;	// 'per vertex' alpha values.*/
+};
+const SourceBSPLumpBrush = function () {
+    this.firstside = null;
+    this.numsides = null;
+    this.contents = null;
+};
+const SourceBSPLumpBrushSide = function () {
+    this.planenum = null;
+    this.texinfo = null;
+    this.dispinfo = null;
+    this.bevel = null;
+};
+const SourceBSPLumpModel = function () {
+    this.mins = null;
+    this.maxs = null;
+    this.position = null;
+    this.headnode = null;
+    this.firstface = null;
+    this.numfaces = null;
+};
+/*const SourceBSPLumpLeaf = function() {
+/*
+
+    DECLARE_BYTESWAP_DATADESC();
+    int				contents;			// OR of all brushes (not needed?)
+
+    short			cluster;
+
+    BEGIN_BITFIELD(bf);
+    short			area:9;
+    short			flags:7;			// Per leaf flags.
+    END_BITFIELD();
+
+    short			mins[3];			// for frustum culling
+    short			maxs[3];
+
+    unsigned short	firstleafface;
+    unsigned short	numleaffaces;
+
+    unsigned short	firstleafbrush;
+    unsigned short	numleafbrushes;
+    * /
+    this.contents = null;
+    this.cluster = null;
+    this.areaflags = null;
+    this.mins = null;
+    this.maxs = null;
+    this.firstleafface = null;
+    this.numleaffaces = null;
+    this.firstleafbrush = null;
+    this.numleafbrushes = null;
+    this.leafWaterDataID = null;
+}*/
+class SourceBSPLumpLeaf {
+    contents = null;
+    cluster = null;
+    areaflags = null;
+    mins = null;
+    maxs = null;
+    firstleafface = null;
+    numleaffaces = null;
+    firstleafbrush = null;
+    numleafbrushes = null;
+    leafWaterDataID = null;
+    contains(position) {
+        const mins = this.mins;
+        const maxs = this.maxs;
+        if (mins[0] <= position[0]
+            && mins[1] <= position[1]
+            && mins[2] <= position[2]
+            && maxs[0] >= position[0]
+            && maxs[1] >= position[1]
+            && maxs[2] >= position[2]) {
+            return true;
+        }
+        return false;
+    }
+}
+/*const SourceBSPLumpNode = function() {
+/*
+int			planenum;
+int			children[2];	// negative numbers are -(leafs+1), not nodes
+short		mins[3];		// for frustom culling
+short		maxs[3];
+unsigned short	firstface;
+unsigned short	numfaces;	// counting both sides
+short			area;		// If all leaves below this node are in the same area, then
+                            // this is the area index. If not, this is -1.
+    * /
+    this.planenum = null;
+    this.children = null;
+    this.mins = null;
+    this.maxs = null;
+    this.firstface = null;
+    this.numfaces = null;
+    this.area = null;
+}*/
+class SourceBSPLumpNode {
+    planenum = null;
+    children = null;
+    mins = null;
+    maxs = null;
+    firstface = null;
+    numfaces = null;
+    area = null;
+    contains(position) {
+        const mins = this.mins;
+        const maxs = this.maxs;
+        if (mins[0] <= position[0]
+            && mins[1] <= position[1]
+            && mins[2] <= position[2]
+            && maxs[0] >= position[0]
+            && maxs[1] >= position[1]
+            && maxs[2] >= position[2]) {
+            return true;
+        }
+        return false;
+    }
+}
+class SourceBSPLumpOverlay {
+    id;
+    texInfo;
+    FaceCountAndRenderOrder;
+    faces;
+    U;
+    V;
+    UVPoint0;
+    UVPoint1;
+    UVPoint2;
+    UVPoint3;
+    Origin;
+    BasisNormal;
+}
+
+/**
+ * BSP Tree
+ */
+class SourceEngineBspTree {
+    map;
+    visibilityClusters = undefined;
+    clustersCount = 0;
+    countRemoveMe = 0;
+    leavesRemoveme = [];
+    constructor(map) {
+        this.map = map;
+    }
+    set clusters(clusters) {
+        if (clusters) {
+            this.visibilityClusters = clusters.clusterVis;
+            this.clustersCount = clusters.clusterCount;
+            this.countRemoveMe++;
+            if (this.countRemoveMe > 5000) {
+                this.countRemoveMe = 0;
+                console.error('Fix me');
+            }
+        }
+    }
+    getLeafId(pos) {
+        //TODO: optimize
+        const map = this.map;
+        const lumpModels = map.getLumpData(LUMP_MODELS);
+        const lumpPlanes = map.getLumpData(LUMP_PLANES);
+        const lumpNodes = map.getLumpData(LUMP_NODES);
+        const lumpLeafs = map.getLumpData(LUMP_LEAFS);
+        const lumpLeafFaces = map.getLumpData(LUMP_LEAFFACES);
+        const lumpVisibility = map.getLumpData(LUMP_VISIBILITY);
+        if (lumpModels && lumpPlanes && lumpNodes && lumpLeafs && lumpLeafFaces && lumpVisibility) {
+            let model = lumpModels[0];
+            let index = model.headnode;
+            let node = null;
+            let plane = null;
+            vec3.create();
+            let dist = 0;
+            while (index >= 0) {
+                node = lumpNodes[index];
+                plane = lumpPlanes[node.planenum];
+                //normal[0] = plane.normal.x; normal[1] = plane.normal.y; normal[2] = plane.normal.z; // TODO: Not this.
+                //dist = vec3.dot(normal, pos) - plane.dist;
+                dist = vec3.dot(plane.normal, pos) - plane.dist;
+                if (dist >= 0) {
+                    index = node.children[0];
+                }
+                else {
+                    index = node.children[1];
+                }
+            }
+            return -(index + 1);
+        }
+        else {
+            return undefined;
+        }
+    }
+    isLeafVisible(fromLeafId, toLeafId) {
+        if (fromLeafId == toLeafId) {
+            return true;
+        } // Leaves are always visible from themselves
+        let lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
+        if (lumpLeafs && this.visibilityClusters) {
+            let fromLeaf = lumpLeafs[fromLeafId];
+            let toLeaf = lumpLeafs[toLeafId];
+            if (fromLeaf.cluster == -1 || toLeaf.cluster != -1) {
+                return false;
+            }
+            return this.visibilityClusters[(fromLeaf.cluster * this.clustersCount) + toLeaf.cluster];
+        }
+        return false;
+    }
+    isVisLeaf(leafId) {
+        let lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
+        if (lumpLeafs) {
+            let lumpLeaf = lumpLeafs[leafId];
+            if (lumpLeaf) {
+                return lumpLeaf.cluster != -1;
+            }
+        }
+        return true;
+    }
+    addPropToLeaf(leafId, propId) {
+        const leaf = this.leavesRemoveme[leafId] || [];
+        this.leavesRemoveme[leafId] = leaf;
+        leaf.push(propId);
+    }
+}
+
+function ParseVector(str) {
+    const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
+    const result = regex.exec(str);
+    if (result) {
+        return vec3.fromValues(Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
+    }
+    return null;
+}
+function ParseVector2(out, str) {
+    const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
+    const result = regex.exec(str);
+    if (result) {
+        return vec3.set(out, Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
+    }
+    return null;
+}
+function parseLightColorIntensity(value, light, intensityMultiplier = 1) {
+    let colorValue = vec3.create();
+    let arrayValue = value.split(' ');
+    colorValue[0] = Math.pow(arrayValue[0] / 255.0, 2.2);
+    colorValue[1] = Math.pow(arrayValue[1] / 255.0, 2.2);
+    colorValue[2] = Math.pow(arrayValue[2] / 255.0, 2.2);
+    light.color = colorValue;
+    light.intensity = arrayValue[3] / 255.0 * intensityMultiplier;
+}
+function AngleQuaternion(angles, outQuat) {
+    const sy = Math.sin(angles[1] * 0.5);
+    const cy = Math.cos(angles[1] * 0.5);
+    const sp = Math.sin(angles[0] * 0.5);
+    const cp = Math.cos(angles[0] * 0.5);
+    const sr = Math.sin(angles[2] * 0.5);
+    const cr = Math.cos(angles[2] * 0.5);
+    /*SinCos(DEG2RAD(angles[1]) * 0.5f, &sy, &cy);
+    SinCos(DEG2RAD(angles[0]) * 0.5f, &sp, &cp);
+    SinCos(DEG2RAD(angles[2]) * 0.5f, &sr, &cr);*/
+    // NJS: for some reason VC6 wasn't recognizing the common subexpressions:
+    const srXcp = sr * cp, crXsp = cr * sp;
+    outQuat[0] = srXcp * cy - crXsp * sy; // X
+    outQuat[1] = crXsp * cy + srXcp * sy; // Y
+    const crXcp = cr * cp, srXsp = sr * sp;
+    outQuat[2] = crXcp * sy - srXsp * cy; // Z
+    outQuat[3] = crXcp * cy + srXsp * sy; // W (real component)
+    return outQuat;
+}
+//angles[PITCH, YAW, ROLL]
+function AngleVectors(angles, forward) {
+    const sy = Math.sin(angles[1]);
+    const cy = Math.cos(angles[1]);
+    const sp = Math.sin(angles[0]);
+    const cp = Math.cos(angles[0]);
+    forward[0] = cp * cy;
+    forward[1] = cp * sy;
+    forward[2] = -sp;
+}
+function ParseAngles(str) {
+    const angles = ParseVector(str);
+    if (angles) {
+        return vec3.scale(angles, angles, Math.PI / 180);
+    }
+    return null;
+}
+function ParseAngles2(out, str) {
+    if (ParseVector2(out, str)) {
+        return vec3.scale(out, out, Math.PI / 180);
+    }
+    return null;
+}
+/**
+ * Map entity
+ */
+class MapEntity extends Entity {
+    static incrementalId = 0;
+    classname;
+    outputs = [];
+    m_vecVelocity = vec3.create();
+    m_flMoveDoneTime = -1;
+    m_flLocalTime = 0;
+    f = 0;
+    keys = new Map();
+    targetName;
+    parentName;
+    m;
+    constructor(classname) {
+        super({ name: classname });
+        this.classname = classname;
+        this.id = String(++MapEntity.incrementalId);
+        //this.children = Object.create(null);
+    }
+    setKeyValues(kvElement) {
+        if (kvElement) {
+            if (kvElement.spawnflags) {
+                this.f = kvElement.spawnflags * 1;
+            }
+            let entityParams = Object.keys(kvElement);
+            for (let i = 0, l = entityParams.length; i < l; i++) {
+                let key = entityParams[i];
+                this.setKeyValue(key, kvElement[key]);
+            }
+        }
+    }
+    setKeyValue(key, value) {
+        if (key) {
+            this.keys.set(key, value);
+            if (key.indexOf('on') == 0) {
+                this.addOutput(key.replace(/#\d+$/, ''), value);
+            }
+            switch (key) {
+                case 'targetname':
+                    this.targetName = value;
+                    break;
+                case 'origin':
+                    this._position = ParseVector(value);
+                    break;
+                case 'angles':
+                    AngleQuaternion(ParseAngles(value), this._quaternion);
+                    break;
+                case 'parentname':
+                    this.parentName = value;
+                    break;
+            }
+        }
+    }
+    getValue(key) {
+        return this.keys.get(key);
+    }
+    addOutput(outputName, outputValue) {
+        let output = new MapEntityConnection(outputName);
+        this.m.addConnection(output);
+        this.outputs.push(output);
+        output.fromString(outputValue);
+        //console.log(output.outputName, output.getTargetName(), output.getTargetInput(), output.getTargetParameter(), output.getDelay(), output.getFireOnlyOnce());
+    }
+    setInput(input, parameter) {
+    }
+    getFlag(position) {
+        return (this.f >> position) & 1;
+    }
+    set map(map) {
+        this.m = map;
+    }
+    get map() {
+        return this.m;
+    }
+    move(delta) {
+        this.position = vec3.add(vec3.create(), this._position, delta); //todo remove me
+    }
+    /*set position(o) {
+        if (o) {
+            let oo = this._position;
+            if ((o[0] != oo[0]) || (o[1] != oo[1]) || (o[2] != oo[2])) {
+                this._position = o;
+                let delta = vec3.sub(vec3.create(), this._position, o);
+                for (let i in this.children) {
+                    let child = this.children[i];
+                    child.move(delta, /*initiator || * /this);
+                }
+            }
+        }
+    }*/
+    /*
+    get position() {
+        return super.position;
+    }
+        */
+    getAbsOrigin() {
+        return null;
+    }
+    getLocalOrigin() {
+        return this._position;
+    }
+    getLocalVelocity() {
+        return this.m_vecVelocity;
+    }
+    update(map, delta) {
+        this.m_flLocalTime += delta;
+        if (this.parentName) {
+            let parent = map.getEntityByTargetName(this.parentName);
+            if (parent) {
+                this.setParent(parent);
+                delete this.parentName;
+            }
+        }
+        this.position = vec3.scaleAndAdd(vec3.create(), this.getLocalOrigin(), this.getLocalVelocity(), delta); //TODO removeme : optimize
+    }
+    setParent(parent) {
+        //void CBaseEntity::SetParent(CBaseEntity *pParentEntity, int iAttachment)
+        let oldParent = this.parent;
+        this.parent = parent;
+        if (parent == this) {
+            this.parent = null;
+        }
+        if (oldParent) {
+            oldParent.removeChild(this);
+        }
+        if (this.parent) {
+            this.parent.addChild(this);
+        }
+    }
+    /*addChild(child) {
+        if (child) {
+            this.children[child.id] = child;
+        }
+    }
+
+    removeChild(child) {
+        if (child) {
+            delete this.children[child.id];
+        }
+    }*/
+    setLocalVelocity(vecVelocity) {
+        vec3.copy(this.m_vecVelocity, vecVelocity);
+    }
+    setMoveDoneTime(delay) {
+        if (delay >= 0) {
+            this.m_flMoveDoneTime = this.getLocalTime() + delay;
+        }
+        else {
+            this.m_flMoveDoneTime = -1;
+        }
+    }
+    getLocalTime() {
+        return this.m_flLocalTime;
+    }
+    fireOutput(outputName) {
+        let outputs = this.outputs;
+        let result = [];
+        for (let i = 0, l = outputs.length; i < l; i++) {
+            let output = outputs[i];
+            if (outputName == output.outputName) {
+                //result.push(connection);
+                output.fire(this.m);
+            }
+        }
+        return result;
+    }
+    toString() {
+        return this.classname;
+    }
+}
+MapEntity.incrementalId = 0;
+/**
+ * Entity connection
+ */
+class MapEntityConnection {
+    //'OnMapSpawn' 'tonemap_global,SetAutoExposureMax,.8,0,-1'
+    n;
+    p;
+    constructor(name) {
+        this.n = name;
+        this.p = null;
+    }
+    fromString(stringDatas) {
+        let parameters = stringDatas.split(',');
+        if (parameters && parameters.length == 5) {
+            this.p = parameters;
+        }
+    }
+    get outputName() {
+        return this.n;
+    }
+    getTargetName() {
+        let parameters = this.p;
+        if (parameters) {
+            return parameters[0];
+        }
+    }
+    getTargetInput() {
+        let parameters = this.p;
+        if (parameters) {
+            return parameters[1];
+        }
+    }
+    getTargetParameter() {
+        let parameters = this.p;
+        if (parameters) {
+            return parameters[2];
+        }
+    }
+    getDelay() {
+        let parameters = this.p;
+        if (parameters) {
+            return parameters[3];
+        }
+    }
+    getFireOnlyOnce() {
+        let parameters = this.p;
+        if (parameters) {
+            return parameters[4];
+        }
+    }
+    fire(map) {
+        let parameters = this.p;
+        if (parameters) {
+            map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
+        }
+    }
+}
+
+/**
+ * Map entities
+ */
+const MapEntities = function () {
+};
+MapEntities.entities = Object.create(null);
+MapEntities.registerEntity = function (className, entityClass) {
+    this.entities[className] = entityClass;
+};
+MapEntities.createEntity = function (map, className) {
+    const entityClass = this.entities[className];
+    if (!entityClass) {
+        return null;
+    }
+    const entity = new entityClass(className);
+    entity.map = map;
+    return entity;
+};
+
+const DISPLACEMENT_DELTA = 1.0; // max distance from start position
+const LIGTH_MAP_TEXTURE_SIZE = 1024;
+class SourceBSP extends World {
+    repository;
+    bspFileVersion = null;
+    lumps = [];
+    mapRevision = null;
+    loaded = false;
+    bufferInitialized = false;
+    staticGeometry = {};
+    skyBoxStaticGeometry = {};
+    skyboxGeometry = {};
+    overlayVerticesByTexture = {};
+    mainLightMap = new SELightMapNode(0, 0, LIGTH_MAP_TEXTURE_SIZE, LIGTH_MAP_TEXTURE_SIZE);
+    lightMapTexture = null;
+    skyCamera = null;
+    skyName = null;
+    entities = [];
+    connections = [];
+    mapSpawn = true;
+    lastLeaf = undefined;
+    bspTree;
+    frameCount = 0;
+    mustParseHeader = true;
+    funcBrushesRemoveMe = [];
+    partialLoading = false;
+    eventTarget = new EventTarget(); //TODOv3
+    staticProps = new Group({ name: 'Static props' });
+    dynamicProps = new Group({ name: 'Dynamic props' });
+    mapFaces = new Group({ name: 'World geometry' });
+    characterSpawn;
+    #geometries;
+    loader;
+    constructor(params) {
+        super(params);
+        this.repository = params.repository;
+        //this.staticProps = [];
+        this.bspTree = new SourceEngineBspTree(this);
+        //this.loadFile(root, fileName);
+        //BspMap.defaultMaterial = BspMap.defaultMaterial ||	SourceEngine.Materials.MaterialManager._loadMaterial('', SourceEngine.Settings.Materials.defaultLightMappedMaterial).then(function(material){BspMap.defaultMaterial = material;});TODOv3
+        this.addChild(this.staticProps);
+        this.addChild(this.dynamicProps);
+        this.addChild(this.mapFaces);
+    }
+    initMap() {
+        this.initGeometry();
+        this._createEntities();
+        this._createStaticProps();
+    }
+    _createEntities() {
+        const lumpEntities = this.getLumpData(LUMP_ENTITIES);
+        if (lumpEntities) {
+            this.createDynamicEntities(lumpEntities.kv);
+            /*new Promise((resolve, reject) => {
+                this.createDynamicEntities(entities.kv);
+                this.eventTarget.dispatchEvent(new CustomEvent('entitiescreated'));//TODOv3
+                resolve();
+            });*/
+        }
+    }
+    _createStaticProps() {
+        const lumpGameDatas = this.getLumpData(LUMP_GAME_LUMP);
+        if (lumpGameDatas && lumpGameDatas.prps && lumpGameDatas.prps.lumpData) {
+            let propsStatic = lumpGameDatas.prps.lumpData;
+            let propNames = propsStatic.name;
+            let props = propsStatic.props;
+            const tempQuaternion = quat.create();
+            for (let prop of props) {
+                Source1ModelManager.createInstance(this.repository, propNames[prop.propType], true).then((model) => {
+                    this.staticProps.addChild(model);
+                    model.position = prop.position;
+                    model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
+                    model.skin = prop.skin;
+                });
+            }
+        }
+    }
+    createDynamicEntities(kv) {
+        const list = Object.keys(kv.rootElements);
+        for (let i = 0; i < list.length; ++i) {
+            let entity = kv.rootElements[list[i]];
+            if (entity.classname) {
+                let e = MapEntities.createEntity(this, entity.classname);
+                if (e) {
+                    e.setKeyValues(entity);
+                    this.addEntity(e);
+                }
+                else {
+                    console.error('Unknown classname : %s', entity.classname);
+                }
+                if (entity.classname == 'sky_camera') {
+                    this.skyCamera = e;
+                    //this.renderBuffer = false;
+                }
+                if (entity.classname == 'worldspawn' && entity.skyname) {
+                    //console.log(entity.skyname);
+                    this.skyName = entity.skyname;
+                }
+                if (entity.classname == 'info_player_teamspawn') {
+                    if (!this.characterSpawn) {
+                        this.characterSpawn = vec3.scale(vec3.create(), entity.origin.split(' '), 1);
+                    }
+                }
+            }
+        }
+    }
+    addLump(lump) {
+        this.lumps.push(lump);
+    }
+    getLumpData(lumpType) {
+        const lump = this.lumps[lumpType];
+        if (lump) {
+            return lump.getLumpData();
+        }
+        return null;
+    }
+    initFaceGeometry(face, position) {
+        if (face.initialized) { //TODOv3
+            return;
+        }
+        face.initialized = true;
+        this.getLumpData(LUMP_FACES);
+        const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
+        const lumpTexData = this.getLumpData(LUMP_TEXDATA);
+        const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
+        const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
+        const lumpEdges = this.getLumpData(LUMP_EDGES);
+        const lumpVertices = this.getLumpData(LUMP_VERTEXES);
+        let texInfo = lumpTexInfo[face.texinfo];
+        let texData = lumpTexData[texInfo.texdata];
+        let texName = lumpTexDataStringData[texData.nameStringTableID];
+        //console.log(face);
+        let buffer = this.#geometries[texName];
+        if (!buffer) {
+            buffer = {
+                lastIndice: 0,
+                vertices: [], indices: [], coords: [], alphas: [],
+                triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: lumpTexInfo.textureVecs, height: lumpTexData.height, width: lumpTexData.width
+            }; //TODOv3
+            this.#geometries[texName] = buffer;
+        }
+        let textureVecsU = texInfo.textureVecs[0];
+        let textureVecsV = texInfo.textureVecs[1];
+        const firstEdge = face.firstedge;
+        const lastEdge = firstEdge + face.numedges;
+        let firstIndice = buffer.lastIndice;
+        for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
+            const surfedge = lumpSurfEdges[surfEdgeIndex];
+            const edge = lumpEdges[Math.abs(surfedge)]; //TODOv3 ? why abs
+            let vertice1, vertice2;
+            if (surfedge <= 0) {
+                vertice1 = lumpVertices[edge.f];
+                vertice2 = lumpVertices[edge.s];
+            }
+            else {
+                vertice2 = lumpVertices[edge.f];
+                vertice1 = lumpVertices[edge.s];
+            }
+            if (vertice1 && vertice2) {
+                if (position) {
+                    buffer.vertices.push(vertice1[0] + position[0]); //TODOv3: optimize
+                    buffer.vertices.push(vertice1[1] + position[1]);
+                    buffer.vertices.push(vertice1[2] + position[2]);
+                    buffer.vertices.push(vertice2[0] + position[0]);
+                    buffer.vertices.push(vertice2[1] + position[1]);
+                    buffer.vertices.push(vertice2[2] + position[2]);
+                }
+                else {
+                    buffer.vertices.push(vertice1[0]); //TODOv3: optimize
+                    buffer.vertices.push(vertice1[1]);
+                    buffer.vertices.push(vertice1[2]);
+                    buffer.vertices.push(vertice2[0]);
+                    buffer.vertices.push(vertice2[1]);
+                    buffer.vertices.push(vertice2[2]);
+                }
+                buffer.coords.push((vertice1[0] * textureVecsU[0] + vertice1[1] * textureVecsU[1] + vertice1[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
+                buffer.coords.push((vertice1[0] * textureVecsV[0] + vertice1[1] * textureVecsV[1] + vertice1[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
+                buffer.coords.push((vertice2[0] * textureVecsU[0] + vertice2[1] * textureVecsU[1] + vertice2[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
+                buffer.coords.push((vertice2[0] * textureVecsV[0] + vertice2[1] * textureVecsV[1] + vertice2[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
+                buffer.indices.push(firstIndice); //TODOv3: optimize
+                buffer.indices.push(buffer.lastIndice++); //TODOv3: optimize
+                buffer.indices.push(buffer.lastIndice++); //TODOv3: optimize
+            }
+        }
+    }
+    initDispGeometry(dispInfo, face) {
+        if (face.initialized) { //TODOv3
+            return;
+        }
+        face.initialized = true;
+        this.getLumpData(LUMP_FACES);
+        const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
+        const lumpTexData = this.getLumpData(LUMP_TEXDATA);
+        const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
+        const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
+        const lumpEdges = this.getLumpData(LUMP_EDGES);
+        const lumpVertices = this.getLumpData(LUMP_VERTEXES);
+        let texInfo = lumpTexInfo[face.texinfo];
+        let texData = lumpTexData[texInfo.texdata];
+        let texName = lumpTexDataStringData[texData.nameStringTableID];
+        //console.log(face);
+        let buffer = this.#geometries[texName];
+        if (!buffer) {
+            buffer = {
+                lastIndice: 0,
+                vertices: [], indices: [], coords: [], alphas: [],
+                triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: lumpTexInfo.textureVecs, height: lumpTexData.height, width: lumpTexData.width
+            }; //TODOv3
+            this.#geometries[texName] = buffer;
+        }
+        let textureVecsU = texInfo.textureVecs[0];
+        let textureVecsV = texInfo.textureVecs[1];
+        const firstEdge = face.firstedge;
+        const lastEdge = firstEdge + face.numedges;
+        const origVertices = [];
+        for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
+            const surfedge = lumpSurfEdges[surfEdgeIndex];
+            const edge = lumpEdges[Math.abs(surfedge)]; //TODOv3 ? why abs
+            let vertice1;
+            if (surfedge <= 0) {
+                vertice1 = lumpVertices[edge.f];
+                lumpVertices[edge.s];
+            }
+            else {
+                lumpVertices[edge.f];
+                vertice1 = lumpVertices[edge.s];
+            }
+            if (vertice1) {
+                origVertices.push(vertice1);
+            }
+        }
+        for (let testremoveme = 0; testremoveme < 4; testremoveme++) {
+            const vvremoveme = origVertices[0];
+            if (Math.abs(vvremoveme[0] - dispInfo.startPosition[0]) < DISPLACEMENT_DELTA
+                && Math.abs(vvremoveme[1] - dispInfo.startPosition[1]) < DISPLACEMENT_DELTA
+                && Math.abs(vvremoveme[2] - dispInfo.startPosition[2]) < DISPLACEMENT_DELTA) {
+                break;
+            }
+            origVertices.push(origVertices.shift());
+        }
+        const verticesPerSide = Math.pow(2, dispInfo.power) + 1;
+        const tesselateVertices = [];
+        /* create tesslate array */
+        for (let i = 0; i < verticesPerSide; ++i) {
+            const row = [];
+            tesselateVertices.push(row);
+            for (let j = 0; j < verticesPerSide; ++j) {
+                row[j] = null;
+            }
+        }
+        tesselateVertices[0][0] = vec4.clone(origVertices[0]);
+        tesselateVertices[0][verticesPerSide - 1] = vec4.clone(origVertices[3]);
+        tesselateVertices[verticesPerSide - 1][verticesPerSide - 1] = vec4.clone(origVertices[2]);
+        tesselateVertices[verticesPerSide - 1][0] = vec4.clone(origVertices[1]);
+        let subdiv = Math.pow(2, dispInfo.power);
+        for (let level = 0; level < dispInfo.power; ++level) {
+            const squares = Math.pow(2, level);
+            let subdiv2 = subdiv / 2;
+            for (let i = 0; i < squares; ++i) {
+                for (let j = 0; j < squares; ++j) {
+                    const iMin = subdiv * i;
+                    const iMax = iMin + subdiv;
+                    const jMin = subdiv * j;
+                    const jMax = jMin + subdiv;
+                    const v1 = tesselateVertices[iMin][jMin];
+                    const v2 = tesselateVertices[iMax][jMin];
+                    const v3 = tesselateVertices[iMin][jMax];
+                    const v4 = tesselateVertices[iMax][jMax];
+                    const iMid = iMin + subdiv2;
+                    const jMid = jMin + subdiv2;
+                    if (v1 && v2 && v3 && v4) {
+                        const s1 = Vec3Middle(vec4.create(), v1, v2);
+                        const s2 = Vec3Middle(vec4.create(), v3, v4);
+                        const s3 = Vec3Middle(vec4.create(), v1, v3);
+                        const s4 = Vec3Middle(vec4.create(), v2, v4);
+                        const s5 = Vec3Middle(vec4.create(), s3, s4);
+                        tesselateVertices[iMid][jMin] = s1;
+                        tesselateVertices[iMid][jMax] = s2;
+                        tesselateVertices[iMin][jMid] = s3;
+                        tesselateVertices[iMax][jMid] = s4;
+                        tesselateVertices[iMid][jMid] = s5;
+                    }
+                }
+            }
+            subdiv = subdiv2;
+        }
+        /* displace vertices */
+        const lumpDispVerts = this.lumps[LUMP_DISP_VERTS].getLumpData();
+        let vertexIndex = dispInfo.dispVertStart;
+        for (let i = 0; i < verticesPerSide; ++i) {
+            for (let j = 0; j < verticesPerSide; ++j) {
+                const dispVert = lumpDispVerts[vertexIndex];
+                if (dispVert) {
+                    const v = tesselateVertices[i][j];
+                    if (dispVert.dist > 0) {
+                        vec3.scaleAndAdd(v, v, dispVert.vec, dispVert.dist);
+                    }
+                    v[3] = dispVert.alpha;
+                }
+                ++vertexIndex;
+            }
+        }
+        subdiv = Math.pow(2, dispInfo.power);
+        for (let i = 0; i < subdiv; ++i) {
+            for (let j = 0; j < subdiv; ++j) {
+                let firstIndice = buffer.lastIndice;
+                const v1 = tesselateVertices[i][j];
+                const v2 = tesselateVertices[i + 1][j];
+                const v3 = tesselateVertices[i + 1][j + 1];
+                const v4 = tesselateVertices[i][j + 1];
+                if (v1 && v2 && v3 && v4) {
+                    buffer.vertices.push(v1[0], v1[1], v1[2]); //TODOv3: optimize
+                    buffer.vertices.push(v2[0], v2[1], v2[2]); //TODOv3: optimize
+                    buffer.vertices.push(v3[0], v3[1], v3[2]); //TODOv3: optimize
+                    buffer.vertices.push(v4[0], v4[1], v4[2]); //TODOv3: optimize
+                    buffer.alphas.push(v1[3] / 255.0, v2[3] / 255.0, v3[3] / 255.0, v4[3] / 255.0);
+                    buffer.coords.push((v1[0] * textureVecsU[0] + v1[1] * textureVecsU[1] + v1[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
+                    buffer.coords.push((v1[0] * textureVecsV[0] + v1[1] * textureVecsV[1] + v1[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
+                    buffer.coords.push((v2[0] * textureVecsU[0] + v2[1] * textureVecsU[1] + v2[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
+                    buffer.coords.push((v2[0] * textureVecsV[0] + v2[1] * textureVecsV[1] + v2[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
+                    buffer.coords.push((v3[0] * textureVecsU[0] + v3[1] * textureVecsU[1] + v3[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
+                    buffer.coords.push((v3[0] * textureVecsV[0] + v3[1] * textureVecsV[1] + v3[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
+                    buffer.coords.push((v4[0] * textureVecsU[0] + v4[1] * textureVecsU[1] + v4[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
+                    buffer.coords.push((v4[0] * textureVecsV[0] + v4[1] * textureVecsV[1] + v4[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
+                    { //TODOv3
+                        buffer.indices.push(firstIndice); //TODOv3: optimize
+                        buffer.indices.push(firstIndice + 2);
+                        buffer.indices.push(firstIndice + 1);
+                        buffer.indices.push(firstIndice + 3);
+                        buffer.indices.push(firstIndice + 2);
+                        buffer.indices.push(firstIndice);
+                    }
+                    buffer.lastIndice += 4;
+                }
+            }
+        }
+    }
+    initGeometry() {
+        this.#geometries = {};
+        const lumpFaces = this.getLumpData(LUMP_FACES);
+        const lumpLeafs = this.getLumpData(LUMP_LEAFS);
+        const lumpLeafFaces = this.getLumpData(LUMP_LEAFFACES);
+        //const lumpNodes = this.getLumpData(LUMP_NODES);
+        const lumpTexLighting = this.getLumpData(LUMP_LIGHTING);
+        const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
+        const lumpTexData = this.getLumpData(LUMP_TEXDATA);
+        const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
+        const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
+        const lumpEdges = this.getLumpData(LUMP_EDGES);
+        const lumpVertices = this.getLumpData(LUMP_VERTEXES);
+        const lumpModels = this.getLumpData(LUMP_MODELS);
+        const lumpDispInfos = this.getLumpData(LUMP_DISPINFO);
+        if (lumpFaces && lumpLeafs && lumpLeafFaces && /*lumpNodes && */ lumpTexLighting && lumpTexInfo && lumpTexData && lumpTexDataStringData && lumpSurfEdges && lumpEdges && lumpVertices) {
+            if (lumpModels) {
+                for (let i = 0; i < this.funcBrushesRemoveMe.length; ++i) {
+                    const funcBrushesRemove = this.funcBrushesRemoveMe[i];
+                    const modelIndex = funcBrushesRemove.model;
+                    const model = lumpModels[modelIndex];
+                    if (model) {
+                        const firstFace = model.firstface;
+                        const lastFace = firstFace + model.numfaces;
+                        for (let j = firstFace; j < lastFace; ++j) {
+                            const face = lumpFaces[j];
+                            //this.renderLeafFace(renderContext, face, funcBrushesRemove.position, 0/*leafId TODO*/);
+                            this.initFaceGeometry(face, funcBrushesRemove.origin);
+                        }
+                    }
+                }
+            }
+            /* Init displacement buffer */
+            if (lumpDispInfos) {
+                for (let i = 0; i < lumpDispInfos.length; ++i) { //TODO
+                    let dispInfo = lumpDispInfos[i];
+                    let face = lumpFaces[dispInfo.mapFace];
+                    if (face) {
+                        this.initDispGeometry(dispInfo, face);
+                    }
+                }
+            }
+            for (let leafIndex = 0, l = lumpLeafs.length; leafIndex < l; ++leafIndex) {
+                const leaf = lumpLeafs[leafIndex];
+                const firstFace = leaf.firstleafface;
+                const lastFace = leaf.firstleafface + leaf.numleaffaces;
+                for (let faceIndex = firstFace; faceIndex < lastFace; ++faceIndex) {
+                    let face = lumpFaces[lumpLeafFaces[faceIndex]];
+                    this.initFaceGeometry(face);
+                }
+            }
+        }
+        for (let textureName in this.#geometries) {
+            let geometry = this.#geometries[textureName];
+            if (textureName.toLowerCase().substring(0, 5) == 'tools') { //TODOV3
+                continue;
+                //continue;
+            }
+            let bufferGeometry = new BufferGeometry();
+            let vertexPosition = new Float32BufferAttribute(geometry.vertices, 3);
+            let vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1);
+            let textureCoord = new Float32BufferAttribute(geometry.coords, 2);
+            bufferGeometry.setIndex(new Uint16BufferAttribute(geometry.indices, 1));
+            bufferGeometry.setAttribute('aVertexPosition', vertexPosition);
+            bufferGeometry.setAttribute('aVertexAlpha', vertexAlpha);
+            bufferGeometry.setAttribute('aTextureCoord', textureCoord);
+            bufferGeometry.count = geometry.indices.length;
+            let staticMesh = new Mesh(bufferGeometry, null);
+            staticMesh.name = textureName;
+            SourceEngineMaterialManager.getMaterial(this.repository, textureName).then((material) => staticMesh.setMaterial(material)).catch(() => console.error('unable to find material ' + textureName));
+            this.mapFaces.addChild(staticMesh);
+        }
+    }
+    addEntity(entity) {
+        if (entity) {
+            this.entities.push(entity);
+        }
+    }
+    addConnection(connection) {
+        if (connection) {
+            this.connections.push(connection);
+        }
+    }
+    getOBBSize(modelIndex) {
+        let lumpModels = this.getLumpData(LUMP_MODELS);
+        let lumpFaces = this.getLumpData(LUMP_FACES);
+        let lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
+        let lumpEdges = this.getLumpData(LUMP_EDGES);
+        let lumpVertices = this.getLumpData(LUMP_VERTEXES);
+        if (lumpModels && lumpFaces && lumpSurfEdges && lumpEdges && lumpVertices) {
+            let model = lumpModels[modelIndex];
+            if (model) {
+                if (model.numfaces == 0) {
+                    return vec3.create();
+                }
+                function compare(v) {
+                    for (let i = 0; i < 3; i++) {
+                        if (v[i] < min[i]) {
+                            min[i] = v[i];
+                        }
+                        if (v[i] > max[i]) {
+                            max[i] = v[i];
+                        }
+                    }
+                }
+                let min = vec3.fromValues(Infinity, Infinity, Infinity);
+                let max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
+                let firstFace = model.firstface;
+                let lastFace = firstFace + model.numfaces;
+                for (let j = firstFace; j < lastFace; j++) {
+                    let face = lumpFaces[j];
+                    if (face) {
+                        let firstEdge = face.firstedge;
+                        let lastEdge = firstEdge + face.numedges;
+                        for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; surfEdgeIndex++) {
+                            let surfedge = lumpSurfEdges[surfEdgeIndex];
+                            let edge = lumpEdges[Math.abs(surfedge)];
+                            let vertice1 = lumpVertices[edge.f];
+                            let vertice2 = lumpVertices[edge.s];
+                            compare(vertice1);
+                            compare(vertice2);
+                        }
+                    }
+                }
+                return vec3.sub(vec3.create(), max, min);
+            }
+        }
+        return null;
+    }
+    static getEntityName() {
+        return 'BSP Map';
+    }
+}
+
 const BODYPART_STRUCT_SIZE = 16;
 const MODEL_VERTEX_DATA_STRUCT_SIZE = 8; // Size in bytes of mstudio_modelvertexdata_t
 const MODEL_STRUCT_SIZE = 140 + MODEL_VERTEX_DATA_STRUCT_SIZE; // Size in bytes of mstudio_modelvertexdata_t
@@ -37898,1519 +39411,6 @@ class CDmxAttribute {
     typeName;
     type;
     value;
-}
-
-/**
- * Light Map
- */
-let lightMapNodeId = 0;
-/**
- * TODO
- */
-const SELightMapNode = function (x, y, width, height) {
-    this.y = y;
-    this.x = x;
-    this.height = height;
-    this.width = width;
-    this.content = null;
-    this.filled = false;
-    this.id = ++lightMapNodeId;
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.setContent = function (content) {
-    if (this.sub1)
-        return false;
-    this.content = content;
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.split = function (x, y) {
-    if (this.content)
-        return false;
-    if (this.filled)
-        return false;
-    if (y >= this.height)
-        return false;
-    if (x >= this.width)
-        return false;
-    if (y != 0 && x != 0)
-        return false;
-    if (y == 0) { /* splitting vertically */
-        this.sub1 = new SELightMapNode(this.x, this.y, x, this.height);
-        this.sub2 = new SELightMapNode(this.x + x, this.y, this.width - x, this.height);
-    }
-    else { /* splitting horizontally */
-        this.sub1 = new SELightMapNode(this.x, this.y, this.width, y);
-        this.sub2 = new SELightMapNode(this.x, this.y + y, this.width, this.height - y);
-    }
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.allocate = function (width, height) {
-    if (this.filled)
-        return false;
-    if (this.content)
-        return false;
-    if (height == 0)
-        return false;
-    if (width == 0)
-        return false;
-    if (height > this.height)
-        return false;
-    if (width > this.width)
-        return false;
-    let node;
-    if (this.sub1) {
-        node = this.sub1.allocate(width, height);
-        if (node) {
-            this.checkFull();
-            return node;
-        }
-    }
-    if (this.sub2) {
-        node = this.sub2.allocate(width, height);
-        if (node) {
-            this.checkFull();
-            return node;
-        }
-        return false;
-    }
-    if (height == this.height && width == this.width) {
-        this.filled = true;
-        return this;
-    }
-    if ((height / this.height) > (width / this.width)) {
-        this.split(width, 0);
-    }
-    else {
-        this.split(0, height);
-    }
-    if (this.sub1) {
-        node = this.sub1.allocate(width, height);
-        if (node) {
-            this.checkFull();
-            return node;
-        }
-    }
-    if (this.sub2) {
-        node = this.sub2.allocate(width, height);
-        this.checkFull();
-        if (node) {
-            this.checkFull();
-            return node;
-        }
-    }
-    return null;
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.toString = function () {
-    return this.id;
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.checkFull = function () {
-    if (this.sub1.filled && this.sub2.filled) {
-        this.filled = true;
-    }
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.getAllocatedSize = function () {
-    let total = 0;
-    if (this.sub1) {
-        total += this.sub1.getAllocatedSize();
-        total += this.sub2.getAllocatedSize();
-        return total;
-    }
-    if (this.filled) {
-        return this.height * this.width;
-    }
-    return 0;
-};
-
-/**
- * BSP lump
- * @param {Number} type The lump type
- */
-class SEBaseBspLump {
-    map;
-    initialized = false;
-    mapOffset;
-    mapLength;
-    lumpOffset;
-    lumpLen;
-    lumpDataPromise = null;
-    reader;
-    lzmaReader;
-    mapLen;
-    lumpVersion;
-    lumpData;
-    lumpType;
-    constructor(map, reader, offset, length) {
-        this.map = map;
-        //this.reader = reader;//TODOv3 remove reader
-        this.mapOffset = offset;
-        this.mapLength = length;
-        this.lumpOffset = offset;
-        this.lumpLen = length;
-    }
-    init() {
-        throw 'remove me';
-        /*
-        if (this.reader.getString(4, this.lumpOffset) == 'LZMA') {
-            const uncompressedSize = this.reader.getUint32();
-            const compressedSize = this.reader.getUint32();
-            const properties = this.reader.getBytes(5);
-            const compressedDatas = this.reader.getBytes(this.lumpLen - 17);
-
-            this.lzmaReader = new jDataView(SourceEngine.Choreographies._decompress(properties, compressedDatas, uncompressedSize), undefined, undefined, true);
-
-            this.lumpOffset = 0;
-            this.lumpLen = uncompressedSize;
-        } else {
-            //lumpData.str = this.reader.getString(lump.getLumpLen(), startOffset);
-        }
-        this.initialized = true;
-        */
-    }
-    /**
-     * Set lump offset
-     * @param {Number} newLumpOffset The lump offset
-     */
-    /*setLumpOffset(newLumpOffset) {
-        this.lumpOffset = newLumpOffset;
-    }*/
-    /**
-     * Get lump offset
-     * @return {Number} The lump offset
-     */
-    getLumpOffset() {
-        return this.lumpOffset;
-    }
-    getMapOffset() {
-        return this.mapOffset;
-    }
-    /**
-     * Set lump len
-     * @param {Number} newLumpLen The lump len
-     */
-    /*setLumpLen(newLumpLen) {
-        this.lumpLen = newLumpLen;
-    }*/
-    /**
-     * Get lump len
-     * @return {Number} The lump len
-     */
-    getLumpLen() {
-        return this.lumpLen;
-    }
-    getMapLen() {
-        return this.mapLen;
-    }
-    /**
-     * Set lump Version
-     * @param {Number} newLumpVersion The lump Version
-     */
-    setLumpVersion(newLumpVersion) {
-        this.lumpVersion = newLumpVersion;
-    }
-    /**
-     * Get lump Version
-     * @return {Number} The lump Version
-     */
-    getLumpVersion() {
-        return this.lumpVersion;
-    }
-    /**
-     * Set lump Data
-     * @param {Object} newLumpData The lump data
-     */
-    setLumpData(newLumpData) {
-        this.lumpData = newLumpData;
-    }
-    /**
-     * Get lump data
-     * @return {Object} The lump data
-     */
-    getLumpData() {
-        const datas = this.lumpData;
-        if (!datas) {
-            this.initDatas();
-        }
-        return this.lumpData;
-    }
-    getReader() {
-        if (!this.initialized) {
-            this.init();
-        }
-        if (this.lzmaReader) {
-            this.lzmaReader.seek(0);
-            return this.lzmaReader;
-        }
-        else {
-            this.reader.seek(this.lumpOffset);
-            return this.reader;
-        }
-    }
-    initDatas() {
-    }
-}
-/**
- * BSP lump
- * @param {Number} type The lump type
- */
-class SourceBSPLump extends SEBaseBspLump {
-    constructor(map, type, reader, offset, length) {
-        super(map, reader, offset, length);
-        this.lumpType = type;
-    }
-}
-const LUMP_ENTITIES = 0;
-const LUMP_PLANES = 1;
-const LUMP_TEXDATA = 2;
-const LUMP_VERTEXES = 3;
-const LUMP_VISIBILITY = 4;
-const LUMP_NODES = 5;
-const LUMP_TEXINFO = 6;
-const LUMP_FACES = 7;
-const LUMP_LIGHTING = 8;
-const LUMP_LEAFS = 10;
-const LUMP_EDGES = 12;
-const LUMP_SURFEDGES = 13;
-const LUMP_MODELS = 14;
-const LUMP_LEAFFACES = 16;
-const LUMP_LEAFBRUSHES = 17;
-const LUMP_BRUSHES = 18;
-const LUMP_BRUSHSIDES = 19;
-const LUMP_DISPINFO = 26;
-const LUMP_ORIGINALFACES = 27;
-const LUMP_DISP_VERTS = 33; // CDispVerts
-//		 For each lightmap sample
-//				 byte for index
-//				 if 255; then index = next byte + 255
-//				 3 bytes for barycentric coordinates
-// The game lump is a method of adding game-specific lumps
-// FIXME: Eventually; all lumps could use the game lump system
-const LUMP_GAME_LUMP = 35;
-// A pak file can be embedded in a .bsp now; and the file system will search the pak
-//	file first for any referenced names; before deferring to the game directory
-//	file system/pak files and finally the base directory file system/pak files.
-const LUMP_PAKFILE = 40;
-const LUMP_TEXDATA_STRING_DATA = 43;
-const LUMP_TEXDATA_STRING_TABLE = 44;
-const LUMP_OVERLAYS = 45;
-const LUMP_DISP_TRIS = 48;
-// optional lumps for HDR
-const LUMP_LIGHTING_HDR = 53;
-const LUMP_FACES_HDR = 58; // HDR maps may have different face data.
-const SourceBSPLumpPlane = function () {
-    this.normal = null; // normal vector
-    this.dist = null; // distance from origin
-    this.type = null; // plane axis identifier
-};
-const SourceBSPLumpEdge = function () {
-    // f: first index s: second index
-    this.f = null; // better than store as an array of 2 ?
-    this.s = null;
-};
-const SourceBSPLumpFace = function () {
-    this.planenum = null;
-    this.side = null;
-    this.onNode = null;
-    this.firstedge = null;
-    this.numedges = null;
-    this.texinfo = null;
-    this.dispinfo = null;
-    this.surfaceFogVolumeID = null;
-    this.styles = [];
-    this.lightofs = null;
-    this.area = null;
-    this.LightmapTextureMinsInLuxels = null;
-    this.LightmapTextureSizeInLuxels = null;
-    this.origFace = null;
-    this.numPrims = null;
-    this.firstPrimID = null;
-    this.smoothingGroups = null;
-};
-/*
-unsigned short	planenum;		// the plane number
-byte		side;			// faces opposite to the node's plane direction
-byte		onNode;			// 1 of on node, 0 if in leaf
-int		firstedge;		// index into surfedges
-short		numedges;		// number of surfedges
-short		texinfo;		// texture info
-short		dispinfo;		// displacement info
-short		surfaceFogVolumeID;	// ?
-byte		styles[4];		// switchable lighting info
-int		lightofs;		// offset into lightmap lump
-float		area;			// face area in units^2
-int		LightmapTextureMinsInLuxels[2];	// texture lighting info
-int		LightmapTextureSizeInLuxels[2];	// texture lighting info
-int		origFace;		// original face this was split from
-unsigned short	numPrims;		// primitives
-unsigned short	firstPrimID;
-unsigned int	smoothingGroups;	// lightmap smoothing group
-*/
-const SourceBSPLumpTexData = function () {
-    this.reflectivity = null; // RGB reflectivity
-    this.nameStringTableID = null; // index into TexdataStringTable
-    this.width = null;
-    this.height = null; // source image
-    this.view_width = null;
-    this.view_height = null;
-};
-/*
-const SourceBSPLumpGameLump = function() {
-    this.id = null;		// gamelump ID
-    this.flags = null;		// flags
-    this.version = null;	// gamelump version
-    this.fileofs = null;	// offset to this gamelump
-    this.filelen = null;	// length
-}*/
-/**
- * BSP lump
- * @param {Number} type The lump type
- */
-class SourceBSPLumpGameLump extends SEBaseBspLump {
-    id;
-    flags;
-    version;
-    constructor(map, reader) {
-        super(map, reader); //TODOv3
-        /*this.lumpOffset = this.mapReader.getInt32();
-        this.lumpLen = this.mapReader.getInt32();
-        this.lumpVersion = this.mapReader.getInt32();
-        this.fourCC = this.mapReader.getInt32();
-        this.lumpData = null;*/
-        //lump.setLumpOffset(this.reader.getInt32());
-        //lump.setLumpLen(this.reader.getInt32());
-        //lump.setLumpVersion(this.reader.getInt32());
-        //this.reader.getInt32() // TODO: replace by lump fourCC
-        //this.init();
-    }
-}
-const SourceBSPLumpPropStaticDirectory = function () {
-    this.name = [];
-    this.leaf = [];
-    this.props = [];
-};
-const SourceBSPLumpPropStatic = function () {
-    this.position = null;
-    this.angles = vec3.create();
-    this.propType = null;
-    this.firstLeaf = null;
-    this.leafCount = null;
-    this.solid = null;
-    this.flags = null;
-    this.skin = null;
-    this.fadeMinDist = null;
-    this.fadeMaxDist = null;
-    this.lightingOrigin = null;
-    this.forcedFadeScale = null;
-    this.minDXLevel = null;
-    this.maxDXLevel = null;
-    this.minCPULevel = null;
-    this.maxCPULevel = null;
-    this.minGPULevel = null;
-    this.maxGPULevel = null;
-    this.diffuseModulation = null;
-    this.disableX360 = null;
-    /*// v4
-    Vector		Origin;		 // origin
-    QAngle		Angles;		 // orientation (pitch roll yaw)
-    unsigned short	PropType;	 // index into model name dictionary
-    unsigned short	FirstLeaf;	 // index into leaf array
-    unsigned short	LeafCount;
-    unsigned char	Solid;		 // solidity type
-    unsigned char	Flags;
-    int		Skin;		 // model skin numbers
-    float		FadeMinDist;
-    float		FadeMaxDist;
-    Vector		LightingOrigin;	// for lighting
-    // since v5
-    float		ForcedFadeScale; // fade distance scale
-    // v6 and v7 only
-    unsigned short	MinDXLevel;			// minimum DirectX version to be visible
-    unsigned short	MaxDXLevel;			// maximum DirectX version to be visible
-    // since v8
-    unsigned char	 MinCPULevel;
-    unsigned char	 MaxCPULevel;
-    unsigned char	 MinGPULevel;
-    unsigned char	 MaxGPULevel;
-    // since v7
-    color32				 DiffuseModulation; // per instance color and alpha modulation
-    // since v10
-    float					 unknown;
-    // since v9
-    bool						DisableX360;		 // if true, don't show on XBox 360
-    */
-};
-const SourceBSPLumpTexInfo = function () {
-    this.textureVecs = []; // [s/t][xyz offset]
-    this.lightmapVecs = []; // [s/t][xyz offset] - length is in units of texels/area
-    this.flags; // miptex flags	overrides
-    this.texdata;
-};
-const SourceBSPLumpDispInfo = function () {
-    /*Vector			startPosition;		// start position used for orientation
-    int			DispVertStart;		// Index into LUMP_DISP_VERTS.
-    int			DispTriStart;		// Index into LUMP_DISP_TRIS.
-    int			power;			// power - indicates size of surface (2^power	1)
-    int			minTess;		// minimum tesselation allowed
-    float			smoothingAngle;		// lighting smoothing angle
-    int			contents;		// surface contents
-    unsigned short		MapFace;		// Which map face this displacement comes from.
-    int			LightmapAlphaStart;	// Index into ddisplightmapalpha.
-    int			LightmapSamplePositionStart;	// Index into LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS.
-    CDispNeighbor		EdgeNeighbors[4];	// Indexed by NEIGHBOREDGE_ defines.
-    CDispCornerNeighbors	CornerNeighbors[4];	// Indexed by CORNER_ defines.
-    unsigned int		AllowedVerts[10];	// active verticies*/
-};
-const SourceBSPLumpDispNeighbor = function () {
-    //CDispSubNeighbor	m_SubNeighbors[2];
-    this.subNeighbors = [];
-};
-const SourceBSPLumpDispSubNeighbor = function () {
-    /*	unsigned short		m_iNeighbor;		// This indexes into ddispinfos.
-                                                // 0xFFFF if there is no neighbor here.
-
-        unsigned char		m_NeighborOrientation;		// (CCW) rotation of the neighbor wrt this displacement.
-
-        // These use the NeighborSpan type.
-        unsigned char		m_Span;						// Where the neighbor fits onto this side of our displacement.
-        unsigned char		m_NeighborSpan;				// Where we fit onto our neighbor.								 */
-};
-/*TODO
-const SourceBSPLumpDispSubNeighbor
-{
-};*/
-const SourceBSPLumpDispVertex = function () {
-    /*	Vector	vec;	// Vector field defining displacement volume.
-        float	dist;	// Displacement distances.
-        float	alpha;	// 'per vertex' alpha values.*/
-};
-const SourceBSPLumpColorRGBExp32 = function () {
-    /*	Vector	vec;	// Vector field defining displacement volume.
-        float	dist;	// Displacement distances.
-        float	alpha;	// 'per vertex' alpha values.*/
-};
-const SourceBSPLumpBrush = function () {
-    this.firstside = null;
-    this.numsides = null;
-    this.contents = null;
-};
-const SourceBSPLumpBrushSide = function () {
-    this.planenum = null;
-    this.texinfo = null;
-    this.dispinfo = null;
-    this.bevel = null;
-};
-const SourceBSPLumpModel = function () {
-    this.mins = null;
-    this.maxs = null;
-    this.position = null;
-    this.headnode = null;
-    this.firstface = null;
-    this.numfaces = null;
-};
-/*const SourceBSPLumpLeaf = function() {
-/*
-
-    DECLARE_BYTESWAP_DATADESC();
-    int				contents;			// OR of all brushes (not needed?)
-
-    short			cluster;
-
-    BEGIN_BITFIELD(bf);
-    short			area:9;
-    short			flags:7;			// Per leaf flags.
-    END_BITFIELD();
-
-    short			mins[3];			// for frustum culling
-    short			maxs[3];
-
-    unsigned short	firstleafface;
-    unsigned short	numleaffaces;
-
-    unsigned short	firstleafbrush;
-    unsigned short	numleafbrushes;
-    * /
-    this.contents = null;
-    this.cluster = null;
-    this.areaflags = null;
-    this.mins = null;
-    this.maxs = null;
-    this.firstleafface = null;
-    this.numleaffaces = null;
-    this.firstleafbrush = null;
-    this.numleafbrushes = null;
-    this.leafWaterDataID = null;
-}*/
-class SourceBSPLumpLeaf {
-    contents = null;
-    cluster = null;
-    areaflags = null;
-    mins = null;
-    maxs = null;
-    firstleafface = null;
-    numleaffaces = null;
-    firstleafbrush = null;
-    numleafbrushes = null;
-    leafWaterDataID = null;
-    contains(position) {
-        const mins = this.mins;
-        const maxs = this.maxs;
-        if (mins[0] <= position[0]
-            && mins[1] <= position[1]
-            && mins[2] <= position[2]
-            && maxs[0] >= position[0]
-            && maxs[1] >= position[1]
-            && maxs[2] >= position[2]) {
-            return true;
-        }
-        return false;
-    }
-}
-/*const SourceBSPLumpNode = function() {
-/*
-int			planenum;
-int			children[2];	// negative numbers are -(leafs+1), not nodes
-short		mins[3];		// for frustom culling
-short		maxs[3];
-unsigned short	firstface;
-unsigned short	numfaces;	// counting both sides
-short			area;		// If all leaves below this node are in the same area, then
-                            // this is the area index. If not, this is -1.
-    * /
-    this.planenum = null;
-    this.children = null;
-    this.mins = null;
-    this.maxs = null;
-    this.firstface = null;
-    this.numfaces = null;
-    this.area = null;
-}*/
-class SourceBSPLumpNode {
-    planenum = null;
-    children = null;
-    mins = null;
-    maxs = null;
-    firstface = null;
-    numfaces = null;
-    area = null;
-    contains(position) {
-        const mins = this.mins;
-        const maxs = this.maxs;
-        if (mins[0] <= position[0]
-            && mins[1] <= position[1]
-            && mins[2] <= position[2]
-            && maxs[0] >= position[0]
-            && maxs[1] >= position[1]
-            && maxs[2] >= position[2]) {
-            return true;
-        }
-        return false;
-    }
-}
-class SourceBSPLumpOverlay {
-    id;
-    texInfo;
-    FaceCountAndRenderOrder;
-    faces;
-    U;
-    V;
-    UVPoint0;
-    UVPoint1;
-    UVPoint2;
-    UVPoint3;
-    Origin;
-    BasisNormal;
-}
-
-/**
- * BSP Tree
- */
-class SourceEngineBspTree {
-    map;
-    visibilityClusters = undefined;
-    clustersCount = 0;
-    countRemoveMe = 0;
-    leavesRemoveme = [];
-    constructor(map) {
-        this.map = map;
-    }
-    set clusters(clusters) {
-        if (clusters) {
-            this.visibilityClusters = clusters.clusterVis;
-            this.clustersCount = clusters.clusterCount;
-            this.countRemoveMe++;
-            if (this.countRemoveMe > 5000) {
-                this.countRemoveMe = 0;
-                console.error('Fix me');
-            }
-        }
-    }
-    getLeafId(pos) {
-        //TODO: optimize
-        const map = this.map;
-        const lumpModels = map.getLumpData(LUMP_MODELS);
-        const lumpPlanes = map.getLumpData(LUMP_PLANES);
-        const lumpNodes = map.getLumpData(LUMP_NODES);
-        const lumpLeafs = map.getLumpData(LUMP_LEAFS);
-        const lumpLeafFaces = map.getLumpData(LUMP_LEAFFACES);
-        const lumpVisibility = map.getLumpData(LUMP_VISIBILITY);
-        if (lumpModels && lumpPlanes && lumpNodes && lumpLeafs && lumpLeafFaces && lumpVisibility) {
-            let model = lumpModels[0];
-            let index = model.headnode;
-            let node = null;
-            let plane = null;
-            vec3.create();
-            let dist = 0;
-            while (index >= 0) {
-                node = lumpNodes[index];
-                plane = lumpPlanes[node.planenum];
-                //normal[0] = plane.normal.x; normal[1] = plane.normal.y; normal[2] = plane.normal.z; // TODO: Not this.
-                //dist = vec3.dot(normal, pos) - plane.dist;
-                dist = vec3.dot(plane.normal, pos) - plane.dist;
-                if (dist >= 0) {
-                    index = node.children[0];
-                }
-                else {
-                    index = node.children[1];
-                }
-            }
-            return -(index + 1);
-        }
-        else {
-            return undefined;
-        }
-    }
-    isLeafVisible(fromLeafId, toLeafId) {
-        if (fromLeafId == toLeafId) {
-            return true;
-        } // Leaves are always visible from themselves
-        let lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
-        if (lumpLeafs && this.visibilityClusters) {
-            let fromLeaf = lumpLeafs[fromLeafId];
-            let toLeaf = lumpLeafs[toLeafId];
-            if (fromLeaf.cluster == -1 || toLeaf.cluster != -1) {
-                return false;
-            }
-            return this.visibilityClusters[(fromLeaf.cluster * this.clustersCount) + toLeaf.cluster];
-        }
-        return false;
-    }
-    isVisLeaf(leafId) {
-        let lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
-        if (lumpLeafs) {
-            let lumpLeaf = lumpLeafs[leafId];
-            if (lumpLeaf) {
-                return lumpLeaf.cluster != -1;
-            }
-        }
-        return true;
-    }
-    addPropToLeaf(leafId, propId) {
-        const leaf = this.leavesRemoveme[leafId] || [];
-        this.leavesRemoveme[leafId] = leaf;
-        leaf.push(propId);
-    }
-}
-
-function ParseVector(str) {
-    const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
-    const result = regex.exec(str);
-    if (result) {
-        return vec3.fromValues(Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
-    }
-    return null;
-}
-function ParseVector2(out, str) {
-    const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
-    const result = regex.exec(str);
-    if (result) {
-        return vec3.set(out, Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
-    }
-    return null;
-}
-function parseLightColorIntensity(value, light, intensityMultiplier = 1) {
-    let colorValue = vec3.create();
-    let arrayValue = value.split(' ');
-    colorValue[0] = Math.pow(arrayValue[0] / 255.0, 2.2);
-    colorValue[1] = Math.pow(arrayValue[1] / 255.0, 2.2);
-    colorValue[2] = Math.pow(arrayValue[2] / 255.0, 2.2);
-    light.color = colorValue;
-    light.intensity = arrayValue[3] / 255.0 * intensityMultiplier;
-}
-function AngleQuaternion(angles, outQuat) {
-    const sy = Math.sin(angles[1] * 0.5);
-    const cy = Math.cos(angles[1] * 0.5);
-    const sp = Math.sin(angles[0] * 0.5);
-    const cp = Math.cos(angles[0] * 0.5);
-    const sr = Math.sin(angles[2] * 0.5);
-    const cr = Math.cos(angles[2] * 0.5);
-    /*SinCos(DEG2RAD(angles[1]) * 0.5f, &sy, &cy);
-    SinCos(DEG2RAD(angles[0]) * 0.5f, &sp, &cp);
-    SinCos(DEG2RAD(angles[2]) * 0.5f, &sr, &cr);*/
-    // NJS: for some reason VC6 wasn't recognizing the common subexpressions:
-    const srXcp = sr * cp, crXsp = cr * sp;
-    outQuat[0] = srXcp * cy - crXsp * sy; // X
-    outQuat[1] = crXsp * cy + srXcp * sy; // Y
-    const crXcp = cr * cp, srXsp = sr * sp;
-    outQuat[2] = crXcp * sy - srXsp * cy; // Z
-    outQuat[3] = crXcp * cy + srXsp * sy; // W (real component)
-    return outQuat;
-}
-//angles[PITCH, YAW, ROLL]
-function AngleVectors(angles, forward) {
-    const sy = Math.sin(angles[1]);
-    const cy = Math.cos(angles[1]);
-    const sp = Math.sin(angles[0]);
-    const cp = Math.cos(angles[0]);
-    forward[0] = cp * cy;
-    forward[1] = cp * sy;
-    forward[2] = -sp;
-}
-function ParseAngles(str) {
-    const angles = ParseVector(str);
-    if (angles) {
-        return vec3.scale(angles, angles, Math.PI / 180);
-    }
-    return null;
-}
-function ParseAngles2(out, str) {
-    if (ParseVector2(out, str)) {
-        return vec3.scale(out, out, Math.PI / 180);
-    }
-    return null;
-}
-/**
- * Map entity
- */
-class MapEntity extends Entity {
-    static incrementalId = 0;
-    classname;
-    outputs = [];
-    m_vecVelocity = vec3.create();
-    m_flMoveDoneTime = -1;
-    m_flLocalTime = 0;
-    f = 0;
-    keys = new Map();
-    targetName;
-    parentName;
-    m;
-    constructor(classname) {
-        super({ name: classname });
-        this.classname = classname;
-        this.id = String(++MapEntity.incrementalId);
-        //this.children = Object.create(null);
-    }
-    setKeyValues(kvElement) {
-        if (kvElement) {
-            if (kvElement.spawnflags) {
-                this.f = kvElement.spawnflags * 1;
-            }
-            let entityParams = Object.keys(kvElement);
-            for (let i = 0, l = entityParams.length; i < l; i++) {
-                let key = entityParams[i];
-                this.setKeyValue(key, kvElement[key]);
-            }
-        }
-    }
-    setKeyValue(key, value) {
-        if (key) {
-            this.keys.set(key, value);
-            if (key.indexOf('on') == 0) {
-                this.addOutput(key.replace(/#\d+$/, ''), value);
-            }
-            switch (key) {
-                case 'targetname':
-                    this.targetName = value;
-                    break;
-                case 'origin':
-                    this._position = ParseVector(value);
-                    break;
-                case 'angles':
-                    AngleQuaternion(ParseAngles(value), this._quaternion);
-                    break;
-                case 'parentname':
-                    this.parentName = value;
-                    break;
-            }
-        }
-    }
-    getValue(key) {
-        return this.keys.get(key);
-    }
-    addOutput(outputName, outputValue) {
-        let output = new MapEntityConnection(outputName);
-        this.m.addConnection(output);
-        this.outputs.push(output);
-        output.fromString(outputValue);
-        //console.log(output.outputName, output.getTargetName(), output.getTargetInput(), output.getTargetParameter(), output.getDelay(), output.getFireOnlyOnce());
-    }
-    setInput(input, parameter) {
-    }
-    getFlag(position) {
-        return (this.f >> position) & 1;
-    }
-    set map(map) {
-        this.m = map;
-    }
-    get map() {
-        return this.m;
-    }
-    move(delta) {
-        this.position = vec3.add(vec3.create(), this._position, delta); //todo remove me
-    }
-    /*set position(o) {
-        if (o) {
-            let oo = this._position;
-            if ((o[0] != oo[0]) || (o[1] != oo[1]) || (o[2] != oo[2])) {
-                this._position = o;
-                let delta = vec3.sub(vec3.create(), this._position, o);
-                for (let i in this.children) {
-                    let child = this.children[i];
-                    child.move(delta, /*initiator || * /this);
-                }
-            }
-        }
-    }*/
-    /*
-    get position() {
-        return super.position;
-    }
-        */
-    getAbsOrigin() {
-        return null;
-    }
-    getLocalOrigin() {
-        return this._position;
-    }
-    getLocalVelocity() {
-        return this.m_vecVelocity;
-    }
-    update(map, delta) {
-        this.m_flLocalTime += delta;
-        if (this.parentName) {
-            let parent = map.getEntityByTargetName(this.parentName);
-            if (parent) {
-                this.setParent(parent);
-                delete this.parentName;
-            }
-        }
-        this.position = vec3.scaleAndAdd(vec3.create(), this.getLocalOrigin(), this.getLocalVelocity(), delta); //TODO removeme : optimize
-    }
-    setParent(parent) {
-        //void CBaseEntity::SetParent(CBaseEntity *pParentEntity, int iAttachment)
-        let oldParent = this.parent;
-        this.parent = parent;
-        if (parent == this) {
-            this.parent = null;
-        }
-        if (oldParent) {
-            oldParent.removeChild(this);
-        }
-        if (this.parent) {
-            this.parent.addChild(this);
-        }
-    }
-    /*addChild(child) {
-        if (child) {
-            this.children[child.id] = child;
-        }
-    }
-
-    removeChild(child) {
-        if (child) {
-            delete this.children[child.id];
-        }
-    }*/
-    setLocalVelocity(vecVelocity) {
-        vec3.copy(this.m_vecVelocity, vecVelocity);
-    }
-    setMoveDoneTime(delay) {
-        if (delay >= 0) {
-            this.m_flMoveDoneTime = this.getLocalTime() + delay;
-        }
-        else {
-            this.m_flMoveDoneTime = -1;
-        }
-    }
-    getLocalTime() {
-        return this.m_flLocalTime;
-    }
-    fireOutput(outputName) {
-        let outputs = this.outputs;
-        let result = [];
-        for (let i = 0, l = outputs.length; i < l; i++) {
-            let output = outputs[i];
-            if (outputName == output.outputName) {
-                //result.push(connection);
-                output.fire(this.m);
-            }
-        }
-        return result;
-    }
-    toString() {
-        return this.classname;
-    }
-}
-MapEntity.incrementalId = 0;
-/**
- * Entity connection
- */
-class MapEntityConnection {
-    //'OnMapSpawn' 'tonemap_global,SetAutoExposureMax,.8,0,-1'
-    n;
-    p;
-    constructor(name) {
-        this.n = name;
-        this.p = null;
-    }
-    fromString(stringDatas) {
-        let parameters = stringDatas.split(',');
-        if (parameters && parameters.length == 5) {
-            this.p = parameters;
-        }
-    }
-    get outputName() {
-        return this.n;
-    }
-    getTargetName() {
-        let parameters = this.p;
-        if (parameters) {
-            return parameters[0];
-        }
-    }
-    getTargetInput() {
-        let parameters = this.p;
-        if (parameters) {
-            return parameters[1];
-        }
-    }
-    getTargetParameter() {
-        let parameters = this.p;
-        if (parameters) {
-            return parameters[2];
-        }
-    }
-    getDelay() {
-        let parameters = this.p;
-        if (parameters) {
-            return parameters[3];
-        }
-    }
-    getFireOnlyOnce() {
-        let parameters = this.p;
-        if (parameters) {
-            return parameters[4];
-        }
-    }
-    fire(map) {
-        let parameters = this.p;
-        if (parameters) {
-            map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
-        }
-    }
-}
-
-/**
- * Map entities
- */
-const MapEntities = function () {
-};
-MapEntities.entities = Object.create(null);
-MapEntities.registerEntity = function (className, entityClass) {
-    this.entities[className] = entityClass;
-};
-MapEntities.createEntity = function (map, className) {
-    const entityClass = this.entities[className];
-    if (!entityClass) {
-        return null;
-    }
-    const entity = new entityClass(className);
-    entity.map = map;
-    return entity;
-};
-
-const DISPLACEMENT_DELTA = 1.0; // max distance from start position
-const LIGTH_MAP_TEXTURE_SIZE = 1024;
-class SourceBSP extends World {
-    repository;
-    bspFileVersion = null;
-    lumps = [];
-    mapRevision = null;
-    loaded = false;
-    bufferInitialized = false;
-    staticGeometry = {};
-    skyBoxStaticGeometry = {};
-    skyboxGeometry = {};
-    overlayVerticesByTexture = {};
-    mainLightMap = new SELightMapNode(0, 0, LIGTH_MAP_TEXTURE_SIZE, LIGTH_MAP_TEXTURE_SIZE);
-    lightMapTexture = null;
-    skyCamera = null;
-    skyName = null;
-    entities = [];
-    connections = [];
-    mapSpawn = true;
-    lastLeaf = undefined;
-    bspTree;
-    frameCount = 0;
-    mustParseHeader = true;
-    funcBrushesRemoveMe = [];
-    partialLoading = false;
-    eventTarget = new EventTarget(); //TODOv3
-    staticProps = new Group({ name: 'Static props' });
-    dynamicProps = new Group({ name: 'Dynamic props' });
-    mapFaces = new Group({ name: 'World geometry' });
-    characterSpawn;
-    #geometries;
-    loader;
-    constructor(params) {
-        super(params);
-        this.repository = params.repository;
-        //this.staticProps = [];
-        this.bspTree = new SourceEngineBspTree(this);
-        //this.loadFile(root, fileName);
-        //BspMap.defaultMaterial = BspMap.defaultMaterial ||	SourceEngine.Materials.MaterialManager._loadMaterial('', SourceEngine.Settings.Materials.defaultLightMappedMaterial).then(function(material){BspMap.defaultMaterial = material;});TODOv3
-        this.addChild(this.staticProps);
-        this.addChild(this.dynamicProps);
-        this.addChild(this.mapFaces);
-    }
-    initMap() {
-        this.initGeometry();
-        this._createEntities();
-        this._createStaticProps();
-    }
-    _createEntities() {
-        const lumpEntities = this.getLumpData(LUMP_ENTITIES);
-        if (lumpEntities) {
-            this.createDynamicEntities(lumpEntities.kv);
-            /*new Promise((resolve, reject) => {
-                this.createDynamicEntities(entities.kv);
-                this.eventTarget.dispatchEvent(new CustomEvent('entitiescreated'));//TODOv3
-                resolve();
-            });*/
-        }
-    }
-    _createStaticProps() {
-        const lumpGameDatas = this.getLumpData(LUMP_GAME_LUMP);
-        if (lumpGameDatas && lumpGameDatas.prps && lumpGameDatas.prps.lumpData) {
-            let propsStatic = lumpGameDatas.prps.lumpData;
-            let propNames = propsStatic.name;
-            let props = propsStatic.props;
-            const tempQuaternion = quat.create();
-            for (let prop of props) {
-                Source1ModelManager.createInstance(this.repository, propNames[prop.propType], true).then((model) => {
-                    this.staticProps.addChild(model);
-                    model.position = prop.position;
-                    model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
-                    model.skin = prop.skin;
-                });
-            }
-        }
-    }
-    createDynamicEntities(kv) {
-        const list = Object.keys(kv.rootElements);
-        for (let i = 0; i < list.length; ++i) {
-            let entity = kv.rootElements[list[i]];
-            if (entity.classname) {
-                let e = MapEntities.createEntity(this, entity.classname);
-                if (e) {
-                    e.setKeyValues(entity);
-                    this.addEntity(e);
-                }
-                else {
-                    console.error('Unknown classname : %s', entity.classname);
-                }
-                if (entity.classname == 'sky_camera') {
-                    this.skyCamera = e;
-                    //this.renderBuffer = false;
-                }
-                if (entity.classname == 'worldspawn' && entity.skyname) {
-                    //console.log(entity.skyname);
-                    this.skyName = entity.skyname;
-                }
-                if (entity.classname == 'info_player_teamspawn') {
-                    if (!this.characterSpawn) {
-                        this.characterSpawn = vec3.scale(vec3.create(), entity.origin.split(' '), 1);
-                    }
-                }
-            }
-        }
-    }
-    addLump(lump) {
-        this.lumps.push(lump);
-    }
-    getLumpData(lumpType) {
-        const lump = this.lumps[lumpType];
-        if (lump) {
-            return lump.getLumpData();
-        }
-        return null;
-    }
-    initFaceGeometry(face, position) {
-        if (face.initialized) { //TODOv3
-            return;
-        }
-        face.initialized = true;
-        this.getLumpData(LUMP_FACES);
-        const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
-        const lumpTexData = this.getLumpData(LUMP_TEXDATA);
-        const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
-        const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
-        const lumpEdges = this.getLumpData(LUMP_EDGES);
-        const lumpVertices = this.getLumpData(LUMP_VERTEXES);
-        let texInfo = lumpTexInfo[face.texinfo];
-        let texData = lumpTexData[texInfo.texdata];
-        let texName = lumpTexDataStringData[texData.nameStringTableID];
-        //console.log(face);
-        let buffer = this.#geometries[texName];
-        if (!buffer) {
-            buffer = {
-                lastIndice: 0,
-                vertices: [], indices: [], coords: [], alphas: [],
-                triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: lumpTexInfo.textureVecs, height: lumpTexData.height, width: lumpTexData.width
-            }; //TODOv3
-            this.#geometries[texName] = buffer;
-        }
-        let textureVecsU = texInfo.textureVecs[0];
-        let textureVecsV = texInfo.textureVecs[1];
-        const firstEdge = face.firstedge;
-        const lastEdge = firstEdge + face.numedges;
-        let firstIndice = buffer.lastIndice;
-        for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
-            const surfedge = lumpSurfEdges[surfEdgeIndex];
-            const edge = lumpEdges[Math.abs(surfedge)]; //TODOv3 ? why abs
-            let vertice1, vertice2;
-            if (surfedge <= 0) {
-                vertice1 = lumpVertices[edge.f];
-                vertice2 = lumpVertices[edge.s];
-            }
-            else {
-                vertice2 = lumpVertices[edge.f];
-                vertice1 = lumpVertices[edge.s];
-            }
-            if (vertice1 && vertice2) {
-                if (position) {
-                    buffer.vertices.push(vertice1[0] + position[0]); //TODOv3: optimize
-                    buffer.vertices.push(vertice1[1] + position[1]);
-                    buffer.vertices.push(vertice1[2] + position[2]);
-                    buffer.vertices.push(vertice2[0] + position[0]);
-                    buffer.vertices.push(vertice2[1] + position[1]);
-                    buffer.vertices.push(vertice2[2] + position[2]);
-                }
-                else {
-                    buffer.vertices.push(vertice1[0]); //TODOv3: optimize
-                    buffer.vertices.push(vertice1[1]);
-                    buffer.vertices.push(vertice1[2]);
-                    buffer.vertices.push(vertice2[0]);
-                    buffer.vertices.push(vertice2[1]);
-                    buffer.vertices.push(vertice2[2]);
-                }
-                buffer.coords.push((vertice1[0] * textureVecsU[0] + vertice1[1] * textureVecsU[1] + vertice1[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
-                buffer.coords.push((vertice1[0] * textureVecsV[0] + vertice1[1] * textureVecsV[1] + vertice1[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
-                buffer.coords.push((vertice2[0] * textureVecsU[0] + vertice2[1] * textureVecsU[1] + vertice2[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
-                buffer.coords.push((vertice2[0] * textureVecsV[0] + vertice2[1] * textureVecsV[1] + vertice2[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
-                buffer.indices.push(firstIndice); //TODOv3: optimize
-                buffer.indices.push(buffer.lastIndice++); //TODOv3: optimize
-                buffer.indices.push(buffer.lastIndice++); //TODOv3: optimize
-            }
-        }
-    }
-    initDispGeometry(dispInfo, face) {
-        if (face.initialized) { //TODOv3
-            return;
-        }
-        face.initialized = true;
-        this.getLumpData(LUMP_FACES);
-        const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
-        const lumpTexData = this.getLumpData(LUMP_TEXDATA);
-        const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
-        const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
-        const lumpEdges = this.getLumpData(LUMP_EDGES);
-        const lumpVertices = this.getLumpData(LUMP_VERTEXES);
-        let texInfo = lumpTexInfo[face.texinfo];
-        let texData = lumpTexData[texInfo.texdata];
-        let texName = lumpTexDataStringData[texData.nameStringTableID];
-        //console.log(face);
-        let buffer = this.#geometries[texName];
-        if (!buffer) {
-            buffer = {
-                lastIndice: 0,
-                vertices: [], indices: [], coords: [], alphas: [],
-                triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: lumpTexInfo.textureVecs, height: lumpTexData.height, width: lumpTexData.width
-            }; //TODOv3
-            this.#geometries[texName] = buffer;
-        }
-        let textureVecsU = texInfo.textureVecs[0];
-        let textureVecsV = texInfo.textureVecs[1];
-        const firstEdge = face.firstedge;
-        const lastEdge = firstEdge + face.numedges;
-        const origVertices = [];
-        for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
-            const surfedge = lumpSurfEdges[surfEdgeIndex];
-            const edge = lumpEdges[Math.abs(surfedge)]; //TODOv3 ? why abs
-            let vertice1;
-            if (surfedge <= 0) {
-                vertice1 = lumpVertices[edge.f];
-                lumpVertices[edge.s];
-            }
-            else {
-                lumpVertices[edge.f];
-                vertice1 = lumpVertices[edge.s];
-            }
-            if (vertice1) {
-                origVertices.push(vertice1);
-            }
-        }
-        for (let testremoveme = 0; testremoveme < 4; testremoveme++) {
-            const vvremoveme = origVertices[0];
-            if (Math.abs(vvremoveme[0] - dispInfo.startPosition[0]) < DISPLACEMENT_DELTA
-                && Math.abs(vvremoveme[1] - dispInfo.startPosition[1]) < DISPLACEMENT_DELTA
-                && Math.abs(vvremoveme[2] - dispInfo.startPosition[2]) < DISPLACEMENT_DELTA) {
-                break;
-            }
-            origVertices.push(origVertices.shift());
-        }
-        const verticesPerSide = Math.pow(2, dispInfo.power) + 1;
-        const tesselateVertices = [];
-        /* create tesslate array */
-        for (let i = 0; i < verticesPerSide; ++i) {
-            const row = [];
-            tesselateVertices.push(row);
-            for (let j = 0; j < verticesPerSide; ++j) {
-                row[j] = null;
-            }
-        }
-        tesselateVertices[0][0] = vec4.clone(origVertices[0]);
-        tesselateVertices[0][verticesPerSide - 1] = vec4.clone(origVertices[3]);
-        tesselateVertices[verticesPerSide - 1][verticesPerSide - 1] = vec4.clone(origVertices[2]);
-        tesselateVertices[verticesPerSide - 1][0] = vec4.clone(origVertices[1]);
-        let subdiv = Math.pow(2, dispInfo.power);
-        for (let level = 0; level < dispInfo.power; ++level) {
-            const squares = Math.pow(2, level);
-            let subdiv2 = subdiv / 2;
-            for (let i = 0; i < squares; ++i) {
-                for (let j = 0; j < squares; ++j) {
-                    const iMin = subdiv * i;
-                    const iMax = iMin + subdiv;
-                    const jMin = subdiv * j;
-                    const jMax = jMin + subdiv;
-                    const v1 = tesselateVertices[iMin][jMin];
-                    const v2 = tesselateVertices[iMax][jMin];
-                    const v3 = tesselateVertices[iMin][jMax];
-                    const v4 = tesselateVertices[iMax][jMax];
-                    const iMid = iMin + subdiv2;
-                    const jMid = jMin + subdiv2;
-                    if (v1 && v2 && v3 && v4) {
-                        const s1 = Vec3Middle(vec4.create(), v1, v2);
-                        const s2 = Vec3Middle(vec4.create(), v3, v4);
-                        const s3 = Vec3Middle(vec4.create(), v1, v3);
-                        const s4 = Vec3Middle(vec4.create(), v2, v4);
-                        const s5 = Vec3Middle(vec4.create(), s3, s4);
-                        tesselateVertices[iMid][jMin] = s1;
-                        tesselateVertices[iMid][jMax] = s2;
-                        tesselateVertices[iMin][jMid] = s3;
-                        tesselateVertices[iMax][jMid] = s4;
-                        tesselateVertices[iMid][jMid] = s5;
-                    }
-                }
-            }
-            subdiv = subdiv2;
-        }
-        /* displace vertices */
-        const lumpDispVerts = this.lumps[LUMP_DISP_VERTS].getLumpData();
-        let vertexIndex = dispInfo.dispVertStart;
-        for (let i = 0; i < verticesPerSide; ++i) {
-            for (let j = 0; j < verticesPerSide; ++j) {
-                const dispVert = lumpDispVerts[vertexIndex];
-                if (dispVert) {
-                    const v = tesselateVertices[i][j];
-                    if (dispVert.dist > 0) {
-                        vec3.scaleAndAdd(v, v, dispVert.vec, dispVert.dist);
-                    }
-                    v[3] = dispVert.alpha;
-                }
-                ++vertexIndex;
-            }
-        }
-        subdiv = Math.pow(2, dispInfo.power);
-        for (let i = 0; i < subdiv; ++i) {
-            for (let j = 0; j < subdiv; ++j) {
-                let firstIndice = buffer.lastIndice;
-                const v1 = tesselateVertices[i][j];
-                const v2 = tesselateVertices[i + 1][j];
-                const v3 = tesselateVertices[i + 1][j + 1];
-                const v4 = tesselateVertices[i][j + 1];
-                if (v1 && v2 && v3 && v4) {
-                    buffer.vertices.push(v1[0], v1[1], v1[2]); //TODOv3: optimize
-                    buffer.vertices.push(v2[0], v2[1], v2[2]); //TODOv3: optimize
-                    buffer.vertices.push(v3[0], v3[1], v3[2]); //TODOv3: optimize
-                    buffer.vertices.push(v4[0], v4[1], v4[2]); //TODOv3: optimize
-                    buffer.alphas.push(v1[3] / 255.0, v2[3] / 255.0, v3[3] / 255.0, v4[3] / 255.0);
-                    buffer.coords.push((v1[0] * textureVecsU[0] + v1[1] * textureVecsU[1] + v1[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
-                    buffer.coords.push((v1[0] * textureVecsV[0] + v1[1] * textureVecsV[1] + v1[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
-                    buffer.coords.push((v2[0] * textureVecsU[0] + v2[1] * textureVecsU[1] + v2[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
-                    buffer.coords.push((v2[0] * textureVecsV[0] + v2[1] * textureVecsV[1] + v2[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
-                    buffer.coords.push((v3[0] * textureVecsU[0] + v3[1] * textureVecsU[1] + v3[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
-                    buffer.coords.push((v3[0] * textureVecsV[0] + v3[1] * textureVecsV[1] + v3[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
-                    buffer.coords.push((v4[0] * textureVecsU[0] + v4[1] * textureVecsU[1] + v4[2] * textureVecsU[2] + textureVecsU[3]) / texData.width);
-                    buffer.coords.push((v4[0] * textureVecsV[0] + v4[1] * textureVecsV[1] + v4[2] * textureVecsV[2] + textureVecsV[3]) / texData.height);
-                    { //TODOv3
-                        buffer.indices.push(firstIndice); //TODOv3: optimize
-                        buffer.indices.push(firstIndice + 2);
-                        buffer.indices.push(firstIndice + 1);
-                        buffer.indices.push(firstIndice + 3);
-                        buffer.indices.push(firstIndice + 2);
-                        buffer.indices.push(firstIndice);
-                    }
-                    buffer.lastIndice += 4;
-                }
-            }
-        }
-    }
-    initGeometry() {
-        this.#geometries = {};
-        const lumpFaces = this.getLumpData(LUMP_FACES);
-        const lumpLeafs = this.getLumpData(LUMP_LEAFS);
-        const lumpLeafFaces = this.getLumpData(LUMP_LEAFFACES);
-        //const lumpNodes = this.getLumpData(LUMP_NODES);
-        const lumpTexLighting = this.getLumpData(LUMP_LIGHTING);
-        const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
-        const lumpTexData = this.getLumpData(LUMP_TEXDATA);
-        const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
-        const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
-        const lumpEdges = this.getLumpData(LUMP_EDGES);
-        const lumpVertices = this.getLumpData(LUMP_VERTEXES);
-        const lumpModels = this.getLumpData(LUMP_MODELS);
-        const lumpDispInfos = this.getLumpData(LUMP_DISPINFO);
-        if (lumpFaces && lumpLeafs && lumpLeafFaces && /*lumpNodes && */ lumpTexLighting && lumpTexInfo && lumpTexData && lumpTexDataStringData && lumpSurfEdges && lumpEdges && lumpVertices) {
-            if (lumpModels) {
-                for (let i = 0; i < this.funcBrushesRemoveMe.length; ++i) {
-                    const funcBrushesRemove = this.funcBrushesRemoveMe[i];
-                    const modelIndex = funcBrushesRemove.model;
-                    const model = lumpModels[modelIndex];
-                    if (model) {
-                        const firstFace = model.firstface;
-                        const lastFace = firstFace + model.numfaces;
-                        for (let j = firstFace; j < lastFace; ++j) {
-                            const face = lumpFaces[j];
-                            //this.renderLeafFace(renderContext, face, funcBrushesRemove.position, 0/*leafId TODO*/);
-                            this.initFaceGeometry(face, funcBrushesRemove.origin);
-                        }
-                    }
-                }
-            }
-            /* Init displacement buffer */
-            if (lumpDispInfos) {
-                for (let i = 0; i < lumpDispInfos.length; ++i) { //TODO
-                    let dispInfo = lumpDispInfos[i];
-                    let face = lumpFaces[dispInfo.mapFace];
-                    if (face) {
-                        this.initDispGeometry(dispInfo, face);
-                    }
-                }
-            }
-            for (let leafIndex = 0, l = lumpLeafs.length; leafIndex < l; ++leafIndex) {
-                const leaf = lumpLeafs[leafIndex];
-                const firstFace = leaf.firstleafface;
-                const lastFace = leaf.firstleafface + leaf.numleaffaces;
-                for (let faceIndex = firstFace; faceIndex < lastFace; ++faceIndex) {
-                    let face = lumpFaces[lumpLeafFaces[faceIndex]];
-                    this.initFaceGeometry(face);
-                }
-            }
-        }
-        for (let textureName in this.#geometries) {
-            let geometry = this.#geometries[textureName];
-            if (textureName.toLowerCase().substring(0, 5) == 'tools') { //TODOV3
-                continue;
-                //continue;
-            }
-            let bufferGeometry = new BufferGeometry();
-            let vertexPosition = new Float32BufferAttribute(geometry.vertices, 3);
-            let vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1);
-            let textureCoord = new Float32BufferAttribute(geometry.coords, 2);
-            bufferGeometry.setIndex(new Uint16BufferAttribute(geometry.indices, 1));
-            bufferGeometry.setAttribute('aVertexPosition', vertexPosition);
-            bufferGeometry.setAttribute('aVertexAlpha', vertexAlpha);
-            bufferGeometry.setAttribute('aTextureCoord', textureCoord);
-            bufferGeometry.count = geometry.indices.length;
-            let staticMesh = new Mesh(bufferGeometry, null);
-            staticMesh.name = textureName;
-            SourceEngineMaterialManager.getMaterial(this.repository, textureName).then((material) => staticMesh.setMaterial(material)).catch(() => console.error('unable to find material ' + textureName));
-            this.mapFaces.addChild(staticMesh);
-        }
-    }
-    addEntity(entity) {
-        if (entity) {
-            this.entities.push(entity);
-        }
-    }
-    addConnection(connection) {
-        if (connection) {
-            this.connections.push(connection);
-        }
-    }
-    getOBBSize(modelIndex) {
-        let lumpModels = this.getLumpData(LUMP_MODELS);
-        let lumpFaces = this.getLumpData(LUMP_FACES);
-        let lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
-        let lumpEdges = this.getLumpData(LUMP_EDGES);
-        let lumpVertices = this.getLumpData(LUMP_VERTEXES);
-        if (lumpModels && lumpFaces && lumpSurfEdges && lumpEdges && lumpVertices) {
-            let model = lumpModels[modelIndex];
-            if (model) {
-                if (model.numfaces == 0) {
-                    return vec3.create();
-                }
-                function compare(v) {
-                    for (let i = 0; i < 3; i++) {
-                        if (v[i] < min[i]) {
-                            min[i] = v[i];
-                        }
-                        if (v[i] > max[i]) {
-                            max[i] = v[i];
-                        }
-                    }
-                }
-                let min = vec3.fromValues(Infinity, Infinity, Infinity);
-                let max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
-                let firstFace = model.firstface;
-                let lastFace = firstFace + model.numfaces;
-                for (let j = firstFace; j < lastFace; j++) {
-                    let face = lumpFaces[j];
-                    if (face) {
-                        let firstEdge = face.firstedge;
-                        let lastEdge = firstEdge + face.numedges;
-                        for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; surfEdgeIndex++) {
-                            let surfedge = lumpSurfEdges[surfEdgeIndex];
-                            let edge = lumpEdges[Math.abs(surfedge)];
-                            let vertice1 = lumpVertices[edge.f];
-                            let vertice2 = lumpVertices[edge.s];
-                            compare(vertice1);
-                            compare(vertice2);
-                        }
-                    }
-                }
-                return vec3.sub(vec3.create(), max, min);
-            }
-        }
-        return null;
-    }
-    static getEntityName() {
-        return 'BSP Map';
-    }
 }
 
 const BSP_HEADER_LUMPS_COUNT = 64;
@@ -63809,4 +63809,4 @@ class RenderTargetViewer {
     }
 }
 
-export { Add, AddVectorToVector, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, CopyPass, CreateFromParentParticles, CreateOnModel, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_COLOR_NONE, MATERIAL_COLOR_PER_MESH, MATERIAL_COLOR_PER_VERTEX, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, Polygonise, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, ProxyManager, PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2AnimLoader, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getRandomInt, imageDataToImage, initRandomFloats, isNumeric, lerp, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { Add, AddVectorToVector, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, CopyPass, CreateFromParentParticles, CreateOnModel, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_COLOR_NONE, MATERIAL_COLOR_PER_MESH, MATERIAL_COLOR_PER_VERTEX, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, Polygonise, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, ProxyManager, PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2AnimLoader, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getRandomInt, imageDataToImage, initRandomFloats, isNumeric, lerp, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
