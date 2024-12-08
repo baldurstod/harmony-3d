@@ -7411,7 +7411,7 @@ declare class Choreography {
              parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP;
          }
 
-         declare class SourceBSP extends World {
+         export declare class SourceBSP extends World {
              #private;
              repository: string;
              bspFileVersion: any;
