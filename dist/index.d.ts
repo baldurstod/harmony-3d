@@ -7407,7 +7407,7 @@ declare class Choreography {
 
          declare class SourceBinaryLoader {
              repository: string;
-             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL>;
+             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP>;
              parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP;
          }
 
