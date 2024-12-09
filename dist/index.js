@@ -466,7 +466,10 @@ class AudioGroup {
     playAudio(audio) {
         audio.muted = this.muted;
         audio.currentTime = 0;
-        audio.play();
+        try {
+            audio.play();
+        }
+        catch (e) { }
         this.audioList.add(audio);
     }
 }

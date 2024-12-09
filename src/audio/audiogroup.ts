@@ -1,5 +1,5 @@
 export class AudioGroup {
-	name:string;
+	name: string;
 	muted = false;
 	groups = new Map();
 	audioList = new Set<HTMLMediaElement>();
@@ -40,7 +40,9 @@ export class AudioGroup {
 	playAudio(audio) {
 		audio.muted = this.muted;
 		audio.currentTime = 0;
-		audio.play();
+		try {
+			audio.play();
+		} catch (e) { }
 		this.audioList.add(audio);
 	}
 }
