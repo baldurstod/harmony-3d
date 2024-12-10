@@ -343,11 +343,16 @@ export class SceneExplorer {
 	}
 
 	selectEntity(entity: Entity) {
+		if (this.#selectedEntity == entity) {
+			return;
+		}
 		this.#selectedEntity = entity;
 		entity.addChild(this.#manipulator);
 		entity.addChild(this.#skeletonHelper);
 		if (this.#isVisible) {
 			this.#updateEntityElement(entity);
+			const entityElement = SceneExplorerEntity.getEntityElement(entity);
+			entityElement.select();
 		}
 	}
 
