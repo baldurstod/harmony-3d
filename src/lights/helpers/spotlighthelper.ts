@@ -8,6 +8,7 @@ import { LineBasicMaterial } from '../../materials/linebasicmaterial';
 import { SpotLight } from '../spotlight';
 import { TWO_PI } from '../../math/constants';
 import { GL_LINES } from '../../webgl/constants';
+import { Entity } from '../../entities/entity';
 
 const DIVISIONS = 32;
 const tempVec4: vec4 = vec4.create();
@@ -78,7 +79,7 @@ export class SpotLightHelper extends Mesh {
 		}
 	}
 
-	parentChanged(parent = null) {
+	parentChanged(parent: Entity | null = null) {
 		if (parent instanceof SpotLight) {
 			this.#spotLight = parent;
 		} else {
