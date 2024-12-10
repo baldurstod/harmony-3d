@@ -56,10 +56,10 @@ const axisDirections = [
 // Radiance Environment Map generator
 export class RemGenerator {
 	#renderer: Renderer;
-	#pingPongRenderTarget: RenderTarget;
-	#blurMaterial: Material;
-	#cubemapMaterial: Material;
-	#equirectMaterial: Material;
+	#pingPongRenderTarget?: RenderTarget;
+	#blurMaterial?: Material;
+	#cubemapMaterial?: Material;
+	#equirectMaterial?: Material;
 	#lodMax = 0;
 	#cubeSize = 0;
 	#lodPlanes: BufferGeometry[] = [];
@@ -381,27 +381,20 @@ export class RemGenerator {
 
 		const isCubeTexture = texture.is('CubeTexture')//(texture.mapping === CubeReflectionMapping || texture.mapping === CubeRefractionMapping);
 
+		let material: Material;
 		if (isCubeTexture) {
-
-			if (this.#cubemapMaterial === null) {
-
+			if (!this.#cubemapMaterial) {
 				this.#cubemapMaterial = getCubemapMaterial();
-
 			}
-
 			this.#cubemapMaterial.uniforms.flipEnvMap = (texture.isRenderTargetTexture === false) ? - 1 : 1;
-
+			material = this.#cubemapMaterial;
 		} else {
-
-			if (this.#equirectMaterial === null) {
-
+			if (!this.#equirectMaterial) {
 				this.#equirectMaterial = getEquirectMaterial();
-
 			}
-
+			material = this.#equirectMaterial;
 		}
 
-		const material = isCubeTexture ? this.#cubemapMaterial : this.#equirectMaterial;
 		const mesh = new Mesh(this.#lodPlanes[0], material);
 		const scene = new Scene();
 		scene.addChild(mesh);
@@ -448,12 +441,13 @@ export class RemGenerator {
 	 * accurate at the poles, but still does a decent job.
 	 */
 	#blur(cubeUVRenderTarget: RenderTarget, lodIn: number, lodOut: number, sigma: number, poleAxis?: vec3) {
-
-		const pingPongRenderTarget = this.#pingPongRenderTarget;
+		if (!this.#pingPongRenderTarget) {
+			return;
+		}
 
 		this.#halfBlur(
 			cubeUVRenderTarget,
-			pingPongRenderTarget,
+			this.#pingPongRenderTarget,
 			lodIn,
 			lodOut,
 			sigma,
@@ -461,7 +455,7 @@ export class RemGenerator {
 			poleAxis);
 
 		this.#halfBlur(
-			pingPongRenderTarget,
+			this.#pingPongRenderTarget,
 			cubeUVRenderTarget,
 			lodOut,
 			lodOut,
@@ -472,9 +466,10 @@ export class RemGenerator {
 	}
 
 	#halfBlur(targetIn: RenderTarget, targetOut: RenderTarget, lodIn: number, lodOut: number, sigmaRadians: number, direction: string, poleAxis?: vec3) {
-
 		const renderer = this.#renderer;
-		const blurMaterial = this.#blurMaterial;
+		if (!this.#blurMaterial) {
+			return;
+		}
 
 		if (direction !== 'latitudinal' && direction !== 'longitudinal') {
 
@@ -486,8 +481,8 @@ export class RemGenerator {
 		// Number of standard deviations at which to cut off the discrete approximation.
 		const STANDARD_DEVIATIONS = 3;
 
-		const blurMesh = new Mesh(this.#lodPlanes[lodOut], blurMaterial);
-		const blurUniforms = blurMaterial.uniforms;
+		const blurMesh = new Mesh(this.#lodPlanes[lodOut], this.#blurMaterial);
+		const blurUniforms = this.#blurMaterial.uniforms;
 		const scene = new Scene();
 		scene.addChild(blurMesh);
 
