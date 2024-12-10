@@ -166,45 +166,6 @@ export class Node extends EventTarget {
 		return this.inputs.size;
 	}
 
-	activate() {
-		throw 'fix me';
-		/*
-		NodeImageEditor.setFinalNode(this);
-		if (this.#operation && this.#operation.neededPoints) {
-			NodeImageEditor.setNeededPoints(this.#operation.neededPoints, this.#operation.proportional);
-			if (!this.params.points) {
-				this.params.points = [];
-				for (var i = 0; i < this.#operation.neededPoints; i++) {
-					this.params.points.push(vec2.create());
-				}
-			}
-			NodeImageEditor.setPoints(this.params.points);
-		} else {
-			NodeImageEditor.setNeededPoints(0);
-		}
-			*/
-	}
-
-	remove(simpleWebGl) {
-		throw 'fix me';
-		/*
-		var inputList = this.inputs;
-		for (var inputIndex = 0; inputIndex < inputList.length; inputIndex++) {
-			delete inputList[inputIndex]
-		}
-		if (this.output.outputTexture) {
-			if (!NodeImageEditor.deleteTextureOnce) {
-				simpleWebGl.deleteTexture(this.output.outputTexture);
-				NodeImageEditor.deleteTextureOnce = true;
-			}
-		}
-
-		if (this.#operation && this.#operation.cleanup) {
-			this.#operation.cleanup(simpleWebGl);
-		}
-			*/
-	}
-
 	getType() {
 		throw 'This function must be overriden';
 	}
