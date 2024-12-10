@@ -4,9 +4,12 @@ import { TESTING } from '../buildoptions';
 import { ColorSpace, TextureFormat, TextureMapping, TextureTarget, TextureType } from './constants';
 import { WebGLAnyRenderingContext } from '../types';
 
+
+export type TextureParams = any/*TODO:create a proper type*/;
+
 export class Texture {
 	mapping = TextureMapping.UvMapping;
-	#users = new Set();
+	#users = new Set<any>();
 	#alphaBits = 0;
 	image?: HTMLImageElement;
 	internalFormat: any;
@@ -21,15 +24,15 @@ export class Texture {
 	flipY = false;
 	premultiplyAlpha = false;
 	dirty = true;
-	texture: WebGLTexture;
-	width: number;
-	height: number;
+	texture: WebGLTexture | null = null;
+	width: number = 0;
+	height: number = 0;
 	isTexture = true;
 	name = '';
 	#colorSpace: ColorSpace;
 	isRenderTargetTexture = false;
 	properties = new Map<string, any>();
-	constructor(textureParams: any = {}) {
+	constructor(textureParams: TextureParams = {}) {
 		//this.target = GL_TEXTURE_2D;//TODOv3 target bound to texture ?
 		this.image = textureParams.image;
 
@@ -63,7 +66,7 @@ export class Texture {
 		gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);*/
 	}
 
-	setParameters(glContext, target) {
+	setParameters(glContext: WebGLAnyRenderingContext, target: GLenum) {
 		glContext.bindTexture(target, this.texture);
 		glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, this.flipY);
 		glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, this.premultiplyAlpha);
@@ -82,7 +85,7 @@ export class Texture {
 		this.height = height;
 	}
 
-	generateMipmap(glContext, target) {
+	generateMipmap(glContext: WebGLAnyRenderingContext, target: GLenum) {
 		glContext.bindTexture(target, this.texture);
 		glContext.generateMipmap(target);
 		glContext.bindTexture(target, null);
@@ -113,7 +116,7 @@ export class Texture {
 		this.dirty = true;//removeme ?
 	}
 
-	setAlphaBits(bits) {
+	setAlphaBits(bits: number) {
 		this.#alphaBits = bits;
 	}
 
@@ -133,15 +136,15 @@ export class Texture {
 		return this.height;
 	}
 
-	is(type) {
+	is(type: string) {
 		return type === 'Texture';
 	}
 
-	addUser(user) {
+	addUser(user: any) {
 		this.#users.add(user);
 	}
 
-	removeUser(user) {
+	removeUser(user: any) {
 		this.#users.delete(user);
 		this.dispose();
 	}
@@ -150,7 +153,7 @@ export class Texture {
 		return this.#users.size == 0;
 	}
 
-	hasOnlyUser(user) {
+	hasOnlyUser(user: any) {
 		return (this.#users.size == 1) && (this.#users.has(user));
 	}
 
