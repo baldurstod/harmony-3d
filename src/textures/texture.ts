@@ -136,7 +136,7 @@ export class Texture {
 		return this.height;
 	}
 
-	is(type: string) {
+	is(type: string): boolean {
 		return type === 'Texture';
 	}
 
