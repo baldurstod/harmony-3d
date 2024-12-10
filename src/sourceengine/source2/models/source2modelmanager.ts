@@ -1,5 +1,6 @@
 import { Repositories } from '../../../repositories/repositories';
 import { customFetch } from '../../../utils/customfetch';
+import { FileSelectorFile } from '../../../utils/fileselector/file';
 import { Source2ModelLoader } from '../loaders/source2modelloader'
 
 export class Source2ModelManager {
@@ -76,7 +77,7 @@ export class Source2ModelManager {
 		}
 	}
 
-	static async getModelList() {
+	static async getModelList(): Promise<FileSelectorFile> {
 		const repoList = [];
 		let modelListPerRepository = this.#modelListPerRepository;
 		for (let repositoryName in modelListPerRepository) {
@@ -102,6 +103,6 @@ export class Source2ModelManager {
 				repoList.push({ name: repositoryName, files: [repo] });
 			}
 		}
-		return { files: repoList };
+		return { name: '', path: '', files: repoList };
 	}
 }

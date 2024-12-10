@@ -1,5 +1,6 @@
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
+import { FileSelectorFile } from '../../../utils/fileselector/file';
 import { SourceModel } from '../loaders/sourcemodel';
 
 export class Source1ModelManager {
@@ -53,7 +54,7 @@ export class Source1ModelManager {
 		}
 	}
 
-	static async getModelList() {
+	static async getModelList(): Promise<FileSelectorFile> {
 		const repoList = [];
 		for (const [repositoryName, repo] of this.#modelListPerRepository) {
 			if (repo === null) {
@@ -66,6 +67,6 @@ export class Source1ModelManager {
 				repoList.push({ name: repositoryName, files: [repo] });
 			}
 		}
-		return { files: repoList };
+		return { name: '', path: '', files: repoList };
 	}
 }

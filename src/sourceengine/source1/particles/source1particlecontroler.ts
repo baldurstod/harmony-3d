@@ -1,6 +1,7 @@
 import { GraphicsEvents, GraphicsEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
+import { FileSelectorFile } from '../../../utils/fileselector/file';
 import { SourcePCF } from '../loaders/sourcepcf';
 import { SourceEngineParticleSystem } from './sourceengineparticlesystem';
 
@@ -243,7 +244,7 @@ export class Source1ParticleControler {
 		this.speed = s;
 	}
 
-	static async getSystemList() {
+	static async getSystemList(): Promise<FileSelectorFile> {
 		let repoList = [];
 		let pcfs: { [key: string]: Array<{ name: string }> } = {};
 		for (let repoName in this.#systemNameToPcf) {
@@ -263,7 +264,7 @@ export class Source1ParticleControler {
 			}
 			repoList.push({ name: repoName, files: pcfList });
 		}
-		return { files: repoList };
+		return { name: '', path: '', files: repoList };
 	}
 
 	static set renderSystems(renderSystems: boolean) {

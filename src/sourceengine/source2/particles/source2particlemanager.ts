@@ -2,6 +2,7 @@ import { GraphicsEvents, GraphicsEvent } from '../../../graphics/graphicsevents'
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
 import { customFetch } from '../../../utils/customfetch';
+import { FileSelectorFile } from '../../../utils/fileselector/file';
 import { Source2ParticleSystem } from './source2particlesystem';
 
 class Source2ParticleManagerClass {
@@ -61,7 +62,7 @@ class Source2ParticleManagerClass {
 		this.visible = renderSystems ? undefined : false;
 	}
 
-	async getSystemList() {
+	async getSystemList(): Promise<FileSelectorFile> {
 		const repoList = [];
 		for (let repoName in this.#fileList) {
 			if (this.#fileList[repoName]) {
@@ -72,7 +73,7 @@ class Source2ParticleManagerClass {
 			repoList.push({ name: repoName, files: repo });
 		}
 
-		return { files: repoList };
+		return { name: '', path: '', files: repoList };
 	}
 
 	async loadManifests(...repositories) {
