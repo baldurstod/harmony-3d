@@ -1,5 +1,5 @@
 import { createTexture, deleteTexture, fillFlatTexture, fillTextureWithImage, fillCheckerTexture, fillNoiseTexture } from '../textures/texturefactory';
-import { Texture } from './texture';
+import { Texture, TextureParams } from './texture';
 
 export class TextureManager {
 	static #texturesList = new Map<string, Texture>();
@@ -8,7 +8,7 @@ export class TextureManager {
 		this.#texturesList.set(path, texture);
 	}
 
-	static createTexture(textureParams?) {
+	static createTexture(textureParams?: TextureParams) {
 		let texture = new Texture(textureParams);
 		texture.texture = createTexture();
 		//TODOv3: init texture parameters
@@ -32,19 +32,19 @@ export class TextureManager {
 		return texture;
 	}
 
-	static createNoiseTexture(width, height, needCubeMap: boolean = false) {
+	static createNoiseTexture(width: number, height: number, needCubeMap: boolean = false) {
 		let texture = this.createTexture();
 		fillNoiseTexture(texture, width, height, needCubeMap);
 		return texture;
 	}
 
-	static createTextureFromImage(image, textureParams) {
+	static createTextureFromImage(image: HTMLImageElement, textureParams?: TextureParams) {
 		let texture = this.createTexture(textureParams);
 		fillTextureWithImage(texture, image);
 		return texture;
 	}
 
-	static fillTextureWithImage(texture, image) {
+	static fillTextureWithImage(texture: Texture, image: HTMLImageElement) {
 		return fillTextureWithImage(texture, image);
 	}
 }
