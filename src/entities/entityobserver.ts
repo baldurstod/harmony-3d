@@ -5,6 +5,7 @@ export const CHILD_ADDED = 'childadded';
 export const CHILD_REMOVED = 'childremoved';
 export const ENTITY_DELETED = 'entitydeleted';
 export const PROPERTY_CHANGED = 'propertychanged';
+export const ATTRIBUTE_CHANGED = 'attributechanged';
 
 class EntityObserverClass extends EventTarget {
 	parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null) {
@@ -25,6 +26,10 @@ class EntityObserverClass extends EventTarget {
 
 	propertyChanged(entity: Entity, propertyName: string, oldValue: any, newValue: any) {
 		this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
+	}
+
+	attributeChanged(entity: Entity, attributeName: string, oldValue: any, newValue: any) {
+		this.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
 	}
 }
 

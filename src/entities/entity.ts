@@ -969,7 +969,10 @@ export class Entity {
 	}
 
 	setAttribute(attributeName: string, attributeValue: any) {
+		const oldValue = this.#attributes.get(attributeName);
 		this.#attributes.set(attributeName, attributeValue);
+
+		EntityObserver.attributeChanged(this, attributeName, oldValue, attributeValue);
 		this.propagate();
 	}
 
