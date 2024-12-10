@@ -95,20 +95,6 @@ export class SourceEngineMaterialManager {
 		this.#fileListPerRepository.set(repositoryPath, null);
 	}
 
-	/*async pickMaterial(materialName, materialClass, callback) {
-		//Note: if loaded from a vmt, you are not guaranted to have this exact materialClass
-		console.log(await this.getMaterialList());
-		show(SceneExplorer.htmlFileSelector);
-
-
-		new Interaction().selectFile(SceneExplorer.htmlFileSelector, await this.getMaterialList(), async (repository, materialName) => {
-			console.error(materialName);
-			let material = await this.getMaterial(repository, materialName.replace(/^materials\//g, ''));
-			console.error(material);
-			callback(material);
-		});
-	}*/
-
 	static async getMaterialList() {
 		let repoList = [];
 		for (let [repositoryName, repository] of this.#fileListPerRepository) {
