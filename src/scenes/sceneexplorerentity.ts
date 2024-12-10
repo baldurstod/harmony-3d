@@ -304,7 +304,11 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 
 	#titleClick() {
-		toggle(this.#htmlChilds);
+		if (this == SceneExplorerEntity.#selectedEntity) {
+			toggle(this.#htmlChilds);
+		} else {
+			show(this.#htmlChilds);
+		}
 		this.#expandChilds();
 		this.select();
 	}

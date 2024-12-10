@@ -63,6 +63,10 @@ scene-explorer-entity {
 	display: flex;
 }
 
+scene-explorer-entity>.scene-explorer-entity-header {
+	background-color: teal;
+}
+
 scene-explorer-entity.selected>.scene-explorer-entity-header {
 	background-color: var(--theme-scene-explorer-entity-selected-bg-color);
 }
@@ -150,7 +154,7 @@ file-selector-tile:hover {
 	padding-left: 20px;
 }
 
-.manipulator{
+.manipulator {
 	display: inline-flex;
 }
 
