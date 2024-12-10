@@ -1,5 +1,5 @@
 import { BinaryReader } from 'harmony-binary-reader';
-import { HTMLHarmonyContextMenuElement } from 'harmony-ui';
+import { HarmonyContextMenuItems } from 'harmony-ui';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import { quat } from 'gl-matrix';
@@ -1170,7 +1170,7 @@ declare class Choreography {
          doInit(particle: any, elapsedTime: any): void;
      }
 
-     export declare function createTexture(): WebGLTexture;
+     export declare function createTexture(): WebGLTexture | null;
 
      export declare class CreateWithinBox extends Operator {
          vecMin: vec3;
@@ -1521,7 +1521,7 @@ declare class Choreography {
 
      export declare function degToRad(deg: number): number;
 
-     export declare function deleteTexture(texture: WebGLTexture): void;
+     export declare function deleteTexture(texture: WebGLTexture | null): void;
 
      export declare class Detex {
          #private;
@@ -1952,6 +1952,13 @@ declare class Choreography {
          declare type FetchFunction = (resource: string | URL | Request, options?: RequestInit) => Promise<Response>;
 
          export declare function FileNameFromPath(path: string): string;
+
+         declare type FileSelectorFile = {
+             name: string;
+             path: string;
+             root?: string;
+             files: Array<FileSelectorFile>;
+         };
 
          export declare function fillCheckerTexture(texture: Texture, color: number[], width: number, height: number, needCubeMap: boolean): Texture;
 
@@ -4131,8 +4138,6 @@ declare class Choreography {
              validate(): Promise<void>;
              redraw(context?: any): Promise<void>;
              getInputCount(): number;
-             activate(): void;
-             remove(simpleWebGl: any): void;
              getType(): void;
              ready(): Promise<unknown>;
              isValid(startingPoint?: Node_2): any;
@@ -5873,16 +5878,16 @@ declare class Choreography {
          export declare class SceneExplorer {
              #private;
              htmlFileSelector: HTMLElement;
-             htmlContextMenu: HTMLHarmonyContextMenuElement;
-             selectedEntity: Entity;
              constructor();
-             set scene(scene: any);
+             set scene(scene: Scene);
              setScene(scene: Scene): void;
-             get scene(): any;
+             get scene(): Scene | undefined;
              get htmlElement(): Element;
              applyFilter(): void;
-             selectEntity(entity: any): void;
-             getEntityHtml(entity: any): void;
+             selectEntity(entity: Entity): void;
+             getSelectedEntity(): Entity;
+             getEntityHtml(entity: Entity): void;
+             showContextMenu(contextMenu: HarmonyContextMenuItems, x: number, y: number, entity: Entity): void;
          }
 
          export declare class Select extends Node_2 {
@@ -6416,9 +6421,7 @@ declare class Choreography {
              #private;
              static createInstance(repository: string, fileName: string, dynamic: boolean, preventInit?: boolean): Promise<Source1ModelInstance>;
              static loadManifest(repositoryName: string): void;
-             static getModelList(): Promise<{
-                 files: any[];
-             }>;
+             static getModelList(): Promise<FileSelectorFile>;
          }
 
          /**
@@ -6475,9 +6478,7 @@ declare class Choreography {
               */
              static setInactive(system: SourceEngineParticleSystem): void;
              static setSpeed(s: number): void;
-             static getSystemList(): Promise<{
-                 files: any[];
-             }>;
+             static getSystemList(): Promise<FileSelectorFile>;
              static set renderSystems(renderSystems: boolean);
          }
 
@@ -7006,9 +7007,7 @@ declare class Choreography {
              static instances: Set<unknown>;
              static createInstance(repository: any, fileName: any, dynamic: any): Promise<any>;
              static loadManifest(repositoryName: any): Promise<void>;
-             static getModelList(): Promise<{
-                 files: any[];
-             }>;
+             static getModelList(): Promise<FileSelectorFile>;
          }
 
          export declare class Source2MovementRotateParticleAroundAxis extends Operator {
@@ -7072,9 +7071,7 @@ declare class Choreography {
              setActive(system: Source2ParticleSystem): void;
              setInactive(system: Source2ParticleSystem): void;
              set renderSystems(renderSystems: any);
-             getSystemList(): Promise<{
-                 files: any[];
-             }>;
+             getSystemList(): Promise<FileSelectorFile>;
              loadManifests(...repositories: any[]): Promise<void>;
          }
 
@@ -8416,7 +8413,7 @@ declare class Choreography {
              #private;
              constructor();
              update(): void;
-             parentChanged(parent?: any): void;
+             parentChanged(parent?: Entity | null): void;
          }
 
          export declare class SpriteCardMaterial extends SourceEngineMaterial {
@@ -8609,25 +8606,25 @@ declare class Choreography {
              flipY: boolean;
              premultiplyAlpha: boolean;
              dirty: boolean;
-             texture: WebGLTexture;
+             texture: WebGLTexture | null;
              width: number;
              height: number;
              isTexture: boolean;
              name: string;
              isRenderTargetTexture: boolean;
              properties: Map<string, any>;
-             constructor(textureParams?: any);
-             setParameters(glContext: any, target: any): void;
+             constructor(textureParams?: TextureParams);
+             setParameters(glContext: WebGLAnyRenderingContext, target: GLenum): void;
              texImage2D(glContext: WebGLAnyRenderingContext, target: TextureTarget, width: number, height: number, format: TextureFormat, type: TextureType, pixels?: ArrayBufferView | null, level?: number): void;
-             generateMipmap(glContext: any, target: any): void;
+             generateMipmap(glContext: WebGLAnyRenderingContext, target: GLenum): void;
              clone(): void;
              copy(other: Texture): void;
-             setAlphaBits(bits: any): void;
+             setAlphaBits(bits: number): void;
              getAlphaBits(): number;
              hasAlphaChannel(): boolean;
              getWidth(): number;
              getHeight(): number;
-             is(type: any): boolean;
+             is(type: string): boolean;
              addUser(user: any): void;
              removeUser(user: any): void;
              hasNoUser(): boolean;
@@ -8696,13 +8693,13 @@ declare class Choreography {
          export declare class TextureManager {
              #private;
              static setTexture(path: string, texture: Texture): void;
-             static createTexture(textureParams?: any): Texture;
+             static createTexture(textureParams?: TextureParams): Texture;
              static deleteTexture(texture: Texture): void;
              static createFlatTexture(color?: number[], needCubeMap?: boolean): Texture;
              static createCheckerTexture(color?: number[], width?: number, height?: number, needCubeMap?: boolean): Texture;
-             static createNoiseTexture(width: any, height: any, needCubeMap?: boolean): Texture;
-             static createTextureFromImage(image: any, textureParams: any): Texture;
-             static fillTextureWithImage(texture: any, image: any): void;
+             static createNoiseTexture(width: number, height: number, needCubeMap?: boolean): Texture;
+             static createTextureFromImage(image: HTMLImageElement, textureParams?: TextureParams): Texture;
+             static fillTextureWithImage(texture: Texture, image: HTMLImageElement): void;
          }
 
          export declare enum TextureMapping {
@@ -8710,6 +8707,8 @@ declare class Choreography {
              CubeMapping = 1,
              CubeUvMapping = 2
          }
+
+         declare type TextureParams = any;
 
          export declare class TextureScroll extends Proxy_2 {
              #private;

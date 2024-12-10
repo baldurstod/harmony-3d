@@ -1,5 +1,5 @@
 import { ShortcutHandler } from 'harmony-browser-utils';
-import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot, defineHarmonyContextMenu, HTMLHarmonyContextMenuElement } from 'harmony-ui';
+import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot, defineHarmonyContextMenu, HTMLHarmonyContextMenuElement, HarmonyContextMenuItems } from 'harmony-ui';
 import { SceneExplorerEvents } from './sceneexplorerevents';
 import { Camera } from '../cameras/camera';
 import { RotationControl } from '../controls/rotationcontrol';
@@ -39,9 +39,10 @@ import sceneExplorerCSS from '../css/sceneexplorer.css';
 import { Wireframe } from '../objects/wireframe';
 import { Scene } from './scene';
 import { dragPanSVG, panZoomSVG, rotateSVG } from 'harmony-svg';
+import { vec3 } from 'gl-matrix';
 
-function FormatArray(array) {
-	let arr = [];
+function FormatArray(array: Array<number> | vec3): string {
+	let arr: Array<string> = [];
 	array.forEach((element) =>
 		arr.push(element.toFixed(2))
 	);
@@ -62,40 +63,39 @@ const ENTITIES = [
 
 export class SceneExplorer {
 	static #instance: SceneExplorer;
-	#scene;
-	#selectedEntity: Entity;
-	#manipulator;
-	#skeletonHelper;
-	#htmlProperties?: HTMLElement;
-	#htmlHeader: HTMLElement;
-	htmlFileSelector: HTMLElement;
-	#htmlNameFilter: HTMLElement;
-	htmlContextMenu: HTMLHarmonyContextMenuElement;
-	#htmlTypeFilter: HTMLElement;
-	#shadowRoot: ShadowRoot;
-	#htmlName;
-	#htmlId;
-	#htmlPos;
-	#htmlQuat;
-	#htmlScale;
-	#htmlWorldPos;
-	#htmlWorldQuat;
-	#htmlWorldScale;
-	#htmlVisible;
-	#htmlScene;
+	#scene?: Scene;
+	#selectedEntity?: Entity;
+	#manipulator!: Manipulator;
+	#skeletonHelper!: SkeletonHelper;
+	#htmlProperties!: HTMLElement;
+	#htmlHeader!: HTMLElement;
+	htmlFileSelector!: HTMLElement;
+	#htmlNameFilter!: HTMLInputElement;
+	#htmlContextMenu!: HTMLHarmonyContextMenuElement;
+	#htmlTypeFilter!: HTMLSelectElement;
+	#shadowRoot!: ShadowRoot;
+	#htmlName!: HTMLElement;
+	#htmlId!: HTMLElement;
+	#htmlPos!: HTMLElement;
+	#htmlQuat!: HTMLElement;
+	#htmlScale!: HTMLElement;
+	#htmlWorldPos!: HTMLElement;
+	#htmlWorldQuat!: HTMLElement;
+	#htmlWorldScale!: HTMLElement;
+	#htmlVisible!: HTMLInputElement;
+	#htmlScene!: HTMLElement;
 	#filterName = '';
 	#filterType = '';
 	#isVisible = false;
-	#selectedHtml;
-	selectedEntity: Entity;
+	//selectedEntity?: Entity;
 	constructor() {
 		if (SceneExplorer.#instance) {
 			return SceneExplorer.#instance;
 		}
+		this.#initHtml();
 		SceneExplorer.#instance = this;
 		initEntitySubmenu();
 		SceneExplorerEntity.setExplorer(this);
-		this.#initHtml();
 		this.#manipulator = new Manipulator({ visible: false });
 		this.#skeletonHelper = new SkeletonHelper({ visible: false });
 
@@ -110,28 +110,29 @@ export class SceneExplorer {
 		}).observe(this.#shadowRoot.host);
 
 
-		EntityObserver.addEventListener(PROPERTY_CHANGED, (event: CustomEvent) => this.#handlePropertyChanged(event.detail));
-		SceneExplorerEvents.addEventListener('bonepicked', (event: CustomEvent) => this.selectEntity(event.detail.bone));
+		EntityObserver.addEventListener(PROPERTY_CHANGED, (event: Event) => this.#handlePropertyChanged((event as CustomEvent).detail));
+		SceneExplorerEvents.addEventListener('bonepicked', (event: Event) => this.selectEntity((event as CustomEvent).detail.bone));
 	}
 
-	set scene(scene) {//TODO: deprecate
+	set scene(scene: Scene) {//TODO: deprecate
+		console.warn('deprecated, use setScene instead');
 		this.setScene(scene);
 	}
 
 	setScene(scene: Scene) {
 		this.#scene = scene;
-		this.#selectedEntity = scene;
+		this.selectEntity(scene);
 		this.applyFilter();
 	}
 
-	get scene() {
+	get scene(): Scene | undefined {
 		return this.#scene;
 	}
 
 	#refreshScene() {
 		if (this.#scene) {
 			this.#htmlScene.innerText = '';
-			this.#htmlScene.append(this.#createEntityElement(this.#scene, true));
+			this.#htmlScene.append(this.#createEntityElement(this.#scene, true)!);
 		}
 	}
 
@@ -143,26 +144,27 @@ export class SceneExplorer {
 		this.#shadowRoot = createShadowRoot('scene-explorer', {
 			attributes: { tabindex: 1, },
 			adoptStyle: sceneExplorerCSS,
+			childs: [
+				this.#htmlHeader = createElement('div', { class: 'scene-explorer-header' }),
+				this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: 1, }, }),
+				this.htmlFileSelector = createElement('div', {
+					class: 'scene-explorer-file-selector',
+					hidden: true,
+					attributes: { tabindex: 1, },
+				}),
+				this.#htmlProperties = createElement('div', {
+					class: 'scene-explorer-properties',
+					hidden: 1,
+					attributes: {
+						tabindex: 1,
+					},
+				}),
+			]
 		});
 		I18n.observeElement(this.#shadowRoot);
 
-		this.#htmlHeader = createElement('div', { class: 'scene-explorer-header' });
-		this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: 1, }, });
-		this.htmlFileSelector = createElement('div', { class: 'scene-explorer-file-selector', attributes: { tabindex: 1, }, });
-		hide(this.htmlFileSelector);
-		this.#shadowRoot.append(this.#htmlHeader, this.#htmlScene, this.htmlFileSelector);
-
-		this.#htmlProperties = createElement('div', {
-			class: 'scene-explorer-properties',
-			parent: this.#shadowRoot,
-			hidden: 1,
-			attributes: {
-				tabindex: 1,
-			},
-		});
-
 		defineHarmonyContextMenu();
-		this.htmlContextMenu = createElement('harmony-context-menu') as HTMLHarmonyContextMenuElement;
+		this.#htmlContextMenu = createElement('harmony-context-menu') as HTMLHarmonyContextMenuElement;
 
 		this.#initHtmlHeader();
 		this.#initHtmlProperties();
@@ -173,10 +175,12 @@ export class SceneExplorer {
 	}
 
 	#initHtmlHeader() {
-		this.#htmlNameFilter = createElement('input');
-		this.#htmlHeader.append(this.#htmlNameFilter);
-		this.#htmlTypeFilter = createElement('select');
-		this.#htmlHeader.append(this.#htmlTypeFilter);
+		this.#htmlNameFilter = createElement('input', {
+			parent: this.#htmlHeader,
+		}) as HTMLInputElement;
+		this.#htmlTypeFilter = createElement('select', {
+			parent: this.#htmlHeader,
+		}) as HTMLSelectElement;
 		const skeletonId = 'display_skeleton';
 
 		let htmlManipulator: HTMLInputElement;
@@ -239,7 +243,7 @@ export class SceneExplorer {
 					type: 'checkbox',
 					id: skeletonId,
 					events: {
-						change: (event) => this.#skeletonHelper.visible = event.target.checked
+						change: (event: Event) => this.#skeletonHelper.visible = (event.target as HTMLInputElement).checked
 					}
 				}),
 				createElement('label', {
@@ -286,7 +290,10 @@ export class SceneExplorer {
 					this.#htmlScene.innerText = '';
 					for (let entity of allEntities) {
 						if (this.#matchFilter(entity, this.#filterName, this.#filterType)) {
-							this.#htmlScene.append(this.#createEntityElement(entity));
+							const htmlEntityElement = this.#createEntityElement(entity);
+							if (htmlEntityElement) {
+								this.#htmlScene.append();
+							}
 						}
 					}
 				}
@@ -294,8 +301,8 @@ export class SceneExplorer {
 		}
 	}
 
-	#matchFilter(entity, name, type) {
-		return (name ? entity.name && entity.name.toLowerCase().includes(name) : true) && (type ? entity['is' + type] : true);
+	#matchFilter(entity: Entity, name: string, type: string) {
+		return (name ? entity.name && entity.name.toLowerCase().includes(name) : true) && (type ? entity.is(type) : true);
 	}
 
 	#initHtmlProperties() {
@@ -321,48 +328,21 @@ export class SceneExplorer {
 			events: {
 				input: () => this.#selectedEntity?.toggleVisibility?.()
 			}
-		});
+		}) as HTMLInputElement;
 		//this.htmlVisible.addEventListener('input', () => {if (this._currentEntity) this._currentEntity.toggleVisibility()});
 		this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale, htmlVisibleLabel, this.#htmlVisible);
 	}
 
-	#updateHtml() {
-		if (this.#isVisible) {
-			this.#updateEntityElement(this.#selectedEntity);
-			/*for (let [element, entity] of this._activeEntities) {
-				if (element.getRootNode() != document) {
-					this._activeEntities.delete(element);
-				} else {
-					this.#updateEntityElement(element, entity);
-				}
-			}*/
-			const scene = this.#scene;
-			if (scene) {
-				this.#manipulator.setCamera(scene.activeCamera);
-			}
-		}
-	}
-
-	#createEntityElement(entity, createExpanded = false) {
+	#createEntityElement(entity: Entity, createExpanded = false) {
 		let htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
 
 		if (createExpanded) {
-			htmlEntityElement.expand();
+			htmlEntityElement?.expand();
 		}
 		return htmlEntityElement;
 	}
 
-	#selectEntity(entity, htmlEntityElement) {
-		this.#selectedEntity = entity;
-		entity.addChild(this.#manipulator);
-		if (this.#selectedHtml) {
-			this.#selectedHtml.classList.remove('selected');
-		}
-		htmlEntityElement.classList.add('selected');
-		this.#selectedHtml = htmlEntityElement;
-	}
-
-	selectEntity(entity) {
+	selectEntity(entity: Entity) {
 		this.#selectedEntity = entity;
 		entity.addChild(this.#manipulator);
 		entity.addChild(this.#skeletonHelper);
@@ -371,7 +351,11 @@ export class SceneExplorer {
 		}
 	}
 
-	#updateEntityElement(entity) {
+	getSelectedEntity() {
+		return this.#selectedEntity;
+	}
+
+	#updateEntityElement(entity?: Entity) {
 		if (entity) {
 			//this.#updateEntityTitle(entity);
 			this.#htmlName.innerText = entity.name ?? (entity.constructor as typeof Entity).getEntityName();
@@ -391,12 +375,12 @@ export class SceneExplorer {
 		}
 	}
 
-	getEntityHtml(entity) {
+	getEntityHtml(entity: Entity) {
 		throw 'remove me';
 		//return this._entitiesHtml.get(entity);
 	}
 
-	#handlePropertyChanged(detail) {
+	#handlePropertyChanged(detail: any/*TODO: create a proper type*/) {
 		if (this.#isVisible && detail.entity == this.#selectedEntity) {
 			this.#updateEntityElement(this.#selectedEntity);
 		}
@@ -409,6 +393,10 @@ export class SceneExplorer {
 			}
 		}*/
 	}
+
+	showContextMenu(contextMenu: HarmonyContextMenuItems, x: number, y: number, entity: Entity) {
+		this.#htmlContextMenu.show(contextMenu, x, y, entity);
+	}
 }
 
 function initEntitySubmenu() {
@@ -416,39 +404,39 @@ function initEntitySubmenu() {
 		{
 			i18n: '#primitives', submenu:
 				[
-					{ i18n: '#box', f: (entity) => entity.addChild(new Box()) },
-					{ i18n: '#cone', f: (entity) => entity.addChild(new Cone()) },
-					{ i18n: '#cylinder', f: (entity) => entity.addChild(new Cylinder()) },
-					{ i18n: '#fullscreenquad', f: (entity) => entity.addChild(new FullScreenQuad()) },
-					{ i18n: '#metaballs', f: (entity) => entity.addChild(new Metaballs()) },
-					{ i18n: '#plane', f: (entity) => entity.addChild(new Plane({ width: 1000, height: 1000 })) },
-					{ i18n: '#sphere', f: (entity) => entity.addChild(new Sphere()) },
-					{ i18n: '#text', f: (entity) => entity.addChild(new Text3D()) },
+					{ i18n: '#box', f: (entity: Entity) => entity.addChild(new Box()) },
+					{ i18n: '#cone', f: (entity: Entity) => entity.addChild(new Cone()) },
+					{ i18n: '#cylinder', f: (entity: Entity) => entity.addChild(new Cylinder()) },
+					{ i18n: '#fullscreenquad', f: (entity: Entity) => entity.addChild(new FullScreenQuad()) },
+					{ i18n: '#metaballs', f: (entity: Entity) => entity.addChild(new Metaballs()) },
+					{ i18n: '#plane', f: (entity: Entity) => entity.addChild(new Plane({ width: 1000, height: 1000 })) },
+					{ i18n: '#sphere', f: (entity: Entity) => entity.addChild(new Sphere()) },
+					{ i18n: '#text', f: (entity: Entity) => entity.addChild(new Text3D()) },
 				]
 		},
 		{
 			i18n: '#entities', submenu:
 				[
-					{ i18n: '#group', f: (entity) => entity.addChild(new Group()) },
-					{ i18n: '#target', f: (entity) => entity.addChild(new Target()) },
-					{ i18n: '#keeponlylastchild', f: (entity) => entity.addChild(new KeepOnlyLastChild()) },
-					{ i18n: '#decal', f: (entity) => entity.addChild(new Decal()) },
+					{ i18n: '#group', f: (entity: Entity) => entity.addChild(new Group()) },
+					{ i18n: '#target', f: (entity: Entity) => entity.addChild(new Target()) },
+					{ i18n: '#keeponlylastchild', f: (entity: Entity) => entity.addChild(new KeepOnlyLastChild()) },
+					{ i18n: '#decal', f: (entity: Entity) => entity.addChild(new Decal()) },
 				]
 		},
 		{
 			i18n: '#lights', submenu:
 				[
-					{ i18n: '#ambient_light', f: (entity) => entity.addChild(new AmbientLight()) },
-					{ i18n: '#point_light', f: (entity) => entity.addChild(new PointLight()) },
-					{ i18n: '#spot_light', f: (entity) => entity.addChild(new SpotLight()) },
+					{ i18n: '#ambient_light', f: (entity: Entity) => entity.addChild(new AmbientLight()) },
+					{ i18n: '#point_light', f: (entity: Entity) => entity.addChild(new PointLight()) },
+					{ i18n: '#spot_light', f: (entity: Entity) => entity.addChild(new SpotLight()) },
 				]
 		},
-		{ i18n: '#camera', f: (entity) => ContextObserver.observe(GraphicsEvents, entity.addChild(new Camera())) },
+		{ i18n: '#camera', f: (entity: Entity) => ContextObserver.observe(GraphicsEvents, entity.addChild(new Camera())) },
 		{
 			i18n: '#control', submenu:
 				[
 					{
-						i18n: '#rotation_control', f: (entity) => {
+						i18n: '#rotation_control', f: (entity: Entity) => {
 							let control = new RotationControl();
 							let parent = entity.parent;
 							if (parent) {
@@ -458,7 +446,7 @@ function initEntitySubmenu() {
 						}
 					},
 					{
-						i18n: '#translation_control', f: (entity) => {
+						i18n: '#translation_control', f: (entity: Entity) => {
 							let control = new TranslationControl();
 							let parent = entity.parent;
 							if (parent) {
@@ -469,21 +457,24 @@ function initEntitySubmenu() {
 					},
 				]
 		},
-		{ i18n: '#helper', f: (entity) => { let helper = getHelper(entity); if (helper) { entity.addChild(helper); }; } },
-		{ i18n: '#wireframe', f: (entity) => entity.addChild(new WireframeHelper()) },
-		{ i18n: '#wireframe2', f: (entity) => entity.addChild(new Wireframe()) },
-		{ i18n: '#hitboxes', f: (entity) => entity.addChild(new HitboxHelper()) },
+		{ i18n: '#helper', f: (entity: Entity) => { let helper = getHelper(entity); if (helper) { entity.addChild(helper); }; } },
+		{ i18n: '#wireframe', f: (entity: Entity) => entity.addChild(new WireframeHelper()) },
+		{ i18n: '#wireframe2', f: (entity: Entity) => entity.addChild(new Wireframe()) },
+		{ i18n: '#hitboxes', f: (entity: Entity) => entity.addChild(new HitboxHelper()) },
 		{
 			i18n: '#source1', submenu:
 				[
 					{
-						i18n: '#model', f: async (entity) => {
+						i18n: '#model', f: async (entity: Entity) => {
 							show(new SceneExplorer().htmlFileSelector);
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
 								console.error(modelName);
 								//let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
 								let instance = await Source1ModelManager.createInstance(repository, modelName, true);
-								(new SceneExplorer().selectedEntity ?? entity).addChild(instance);
+								if (!instance) {
+									return;
+								}
+								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
 								let seq = instance.sourceModel.mdl.getSequenceById(0);
 								if (seq) {
 									instance.playSequence(seq.name);
@@ -492,13 +483,13 @@ function initEntitySubmenu() {
 						}
 					},
 					{
-						i18n: '#particle_system', f: async (entity) => {
+						i18n: '#particle_system', f: async (entity: Entity) => {
 							show(new SceneExplorer().htmlFileSelector);
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
 								let systemName = systemPath.split('/');
 								let sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
 								sys.start();
-								(new SceneExplorer().selectedEntity ?? entity).addChild(sys);
+								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);
 							});
 						}
 					},
@@ -508,12 +499,12 @@ function initEntitySubmenu() {
 			i18n: '#source2', submenu:
 				[
 					{
-						i18n: '#model', f: async (entity) => {
+						i18n: '#model', f: async (entity: Entity) => {
 							show(new SceneExplorer().htmlFileSelector);
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
 								console.error(modelName);
 								let instance = await Source2ModelManager.createInstance(repository, modelName, true);
-								(new SceneExplorer().selectedEntity ?? entity).addChild(instance);
+								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
 								/*let seq = instance.sourceModel.mdl.getSequenceById(0);
 								if (seq) {
 									instance.playSequence(seq.name);
@@ -522,14 +513,14 @@ function initEntitySubmenu() {
 						}
 					},
 					{
-						i18n: '#particle_system', f: async (entity) => {
+						i18n: '#particle_system', f: async (entity: Entity) => {
 							show(new SceneExplorer().htmlFileSelector);
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
 								let systemName = systemPath.split('/');
 								let sys = await Source2ParticleManager.getSystem(repository, systemPath);
 								sys.name = systemName[systemName.length - 1];
 								sys.start();
-								(new SceneExplorer().selectedEntity ?? entity).addChild(sys);
+								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);
 							});
 						}
 					},

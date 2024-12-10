@@ -5618,15 +5618,17 @@ function setTextureFactoryContext(c) {
     context = c;
 }
 function createTexture() {
-    let texture = context.createTexture();
+    const texture = context.createTexture();
     textures.add(texture);
     TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureCreated', { detail: { texture: texture, count: textures.size } }));
     return texture;
 }
 function deleteTexture(texture) {
-    context.deleteTexture(texture);
-    textures.delete(texture);
-    TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureDeleted', { detail: { texture: texture, count: textures.size } }));
+    if (texture) {
+        context.deleteTexture(texture);
+        textures.delete(texture);
+        TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureDeleted', { detail: { texture: texture, count: textures.size } }));
+    }
 }
 function fillFlatTexture(texture, color = [255, 255, 255], needCubeMap) {
     let width = 64;
@@ -5773,9 +5775,9 @@ class Texture {
     flipY = false;
     premultiplyAlpha = false;
     dirty = true;
-    texture;
-    width;
-    height;
+    texture = null;
+    width = 0;
+    height = 0;
     isTexture = true;
     name = '';
     #colorSpace;
@@ -14121,43 +14123,6 @@ class Node extends EventTarget {
     getInputCount() {
         return this.inputs.size;
     }
-    activate() {
-        throw 'fix me';
-        /*
-        NodeImageEditor.setFinalNode(this);
-        if (this.#operation && this.#operation.neededPoints) {
-            NodeImageEditor.setNeededPoints(this.#operation.neededPoints, this.#operation.proportional);
-            if (!this.params.points) {
-                this.params.points = [];
-                for (var i = 0; i < this.#operation.neededPoints; i++) {
-                    this.params.points.push(vec2.create());
-                }
-            }
-            NodeImageEditor.setPoints(this.params.points);
-        } else {
-            NodeImageEditor.setNeededPoints(0);
-        }
-            */
-    }
-    remove(simpleWebGl) {
-        throw 'fix me';
-        /*
-        var inputList = this.inputs;
-        for (var inputIndex = 0; inputIndex < inputList.length; inputIndex++) {
-            delete inputList[inputIndex]
-        }
-        if (this.output.outputTexture) {
-            if (!NodeImageEditor.deleteTextureOnce) {
-                simpleWebGl.deleteTexture(this.output.outputTexture);
-                NodeImageEditor.deleteTextureOnce = true;
-            }
-        }
-
-        if (this.#operation && this.#operation.cleanup) {
-            this.#operation.cleanup(simpleWebGl);
-        }
-            */
-    }
     getType() {
         throw 'This function must be overriden';
     }
@@ -19352,7 +19317,7 @@ class SceneExplorerEntity extends HTMLElement {
     }
     #contextMenuHandler(event) {
         if (!event.shiftKey && this.#entity) {
-            _a$2.#explorer?.htmlContextMenu.show(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
+            _a$2.#explorer?.showContextMenu(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
             event.preventDefault();
             event.stopPropagation();
         }
@@ -19603,7 +19568,7 @@ class Source1ModelManager {
                 repoList.push({ name: repositoryName, files: [repo] });
             }
         }
-        return { files: repoList };
+        return { name: '', path: '', files: repoList };
     }
 }
 
@@ -22737,7 +22702,7 @@ class Source1ParticleControler {
             }
             repoList.push({ name: repoName, files: pcfList });
         }
-        return { files: repoList };
+        return { name: '', path: '', files: repoList };
     }
     static set renderSystems(renderSystems) {
         this.visible = renderSystems ? undefined : false;
@@ -27078,7 +27043,7 @@ class Source2ModelManager {
                 repoList.push({ name: repositoryName, files: [repo] });
             }
         }
-        return { files: repoList };
+        return { name: '', path: '', files: repoList };
     }
 }
 
@@ -27141,7 +27106,7 @@ class Source2ParticleManagerClass {
             const repo = this.#fileList[repoName];
             repoList.push({ name: repoName, files: repo });
         }
-        return { files: repoList };
+        return { name: '', path: '', files: repoList };
     }
     async loadManifests(...repositories) {
         for (const repository of repositories) {
@@ -27198,7 +27163,7 @@ class SceneExplorer {
     #htmlHeader;
     htmlFileSelector;
     #htmlNameFilter;
-    htmlContextMenu;
+    #htmlContextMenu;
     #htmlTypeFilter;
     #shadowRoot;
     #htmlName;
@@ -27214,16 +27179,15 @@ class SceneExplorer {
     #filterName = '';
     #filterType = '';
     #isVisible = false;
-    #selectedHtml;
-    selectedEntity;
+    //selectedEntity?: Entity;
     constructor() {
         if (SceneExplorer.#instance) {
             return SceneExplorer.#instance;
         }
+        this.#initHtml();
         SceneExplorer.#instance = this;
         initEntitySubmenu();
         SceneExplorerEntity.setExplorer(this);
-        this.#initHtml();
         this.#manipulator = new Manipulator({ visible: false });
         this.#skeletonHelper = new SkeletonHelper({ visible: false });
         new IntersectionObserver((entries, observer) => {
@@ -27239,11 +27203,12 @@ class SceneExplorer {
         SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone));
     }
     set scene(scene) {
+        console.warn('deprecated, use setScene instead');
         this.setScene(scene);
     }
     setScene(scene) {
         this.#scene = scene;
-        this.#selectedEntity = scene;
+        this.selectEntity(scene);
         this.applyFilter();
     }
     get scene() {
@@ -27262,23 +27227,26 @@ class SceneExplorer {
         this.#shadowRoot = createShadowRoot('scene-explorer', {
             attributes: { tabindex: 1, },
             adoptStyle: sceneExplorerCSS,
+            childs: [
+                this.#htmlHeader = createElement('div', { class: 'scene-explorer-header' }),
+                this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: 1, }, }),
+                this.htmlFileSelector = createElement('div', {
+                    class: 'scene-explorer-file-selector',
+                    hidden: true,
+                    attributes: { tabindex: 1, },
+                }),
+                this.#htmlProperties = createElement('div', {
+                    class: 'scene-explorer-properties',
+                    hidden: 1,
+                    attributes: {
+                        tabindex: 1,
+                    },
+                }),
+            ]
         });
         I18n.observeElement(this.#shadowRoot);
-        this.#htmlHeader = createElement('div', { class: 'scene-explorer-header' });
-        this.#htmlScene = createElement('div', { class: 'scene-explorer-scene', attributes: { tabindex: 1, }, });
-        this.htmlFileSelector = createElement('div', { class: 'scene-explorer-file-selector', attributes: { tabindex: 1, }, });
-        hide(this.htmlFileSelector);
-        this.#shadowRoot.append(this.#htmlHeader, this.#htmlScene, this.htmlFileSelector);
-        this.#htmlProperties = createElement('div', {
-            class: 'scene-explorer-properties',
-            parent: this.#shadowRoot,
-            hidden: 1,
-            attributes: {
-                tabindex: 1,
-            },
-        });
         defineHarmonyContextMenu();
-        this.htmlContextMenu = createElement('harmony-context-menu');
+        this.#htmlContextMenu = createElement('harmony-context-menu');
         this.#initHtmlHeader();
         this.#initHtmlProperties();
         this.applyFilter();
@@ -27287,10 +27255,12 @@ class SceneExplorer {
         new ShortcutHandler().addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
     }
     #initHtmlHeader() {
-        this.#htmlNameFilter = createElement('input');
-        this.#htmlHeader.append(this.#htmlNameFilter);
-        this.#htmlTypeFilter = createElement('select');
-        this.#htmlHeader.append(this.#htmlTypeFilter);
+        this.#htmlNameFilter = createElement('input', {
+            parent: this.#htmlHeader,
+        });
+        this.#htmlTypeFilter = createElement('select', {
+            parent: this.#htmlHeader,
+        });
         const skeletonId = 'display_skeleton';
         let htmlManipulator;
         createElement('span', {
@@ -27390,7 +27360,10 @@ class SceneExplorer {
                     this.#htmlScene.innerText = '';
                     for (let entity of allEntities) {
                         if (this.#matchFilter(entity, this.#filterName, this.#filterType)) {
-                            this.#htmlScene.append(this.#createEntityElement(entity));
+                            const htmlEntityElement = this.#createEntityElement(entity);
+                            if (htmlEntityElement) {
+                                this.#htmlScene.append();
+                            }
                         }
                     }
                 }
@@ -27398,7 +27371,7 @@ class SceneExplorer {
         }
     }
     #matchFilter(entity, name, type) {
-        return (name ? entity.name && entity.name.toLowerCase().includes(name) : true) && (type ? entity['is' + type] : true);
+        return (name ? entity.name && entity.name.toLowerCase().includes(name) : true) && (type ? entity.is(type) : true);
     }
     #initHtmlProperties() {
         this.#htmlName = createElement('div', { class: 'scene-explorer-entity-title' });
@@ -27427,37 +27400,12 @@ class SceneExplorer {
         //this.htmlVisible.addEventListener('input', () => {if (this._currentEntity) this._currentEntity.toggleVisibility()});
         this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale, htmlVisibleLabel, this.#htmlVisible);
     }
-    #updateHtml() {
-        if (this.#isVisible) {
-            this.#updateEntityElement(this.#selectedEntity);
-            /*for (let [element, entity] of this._activeEntities) {
-                if (element.getRootNode() != document) {
-                    this._activeEntities.delete(element);
-                } else {
-                    this.#updateEntityElement(element, entity);
-                }
-            }*/
-            const scene = this.#scene;
-            if (scene) {
-                this.#manipulator.setCamera(scene.activeCamera);
-            }
-        }
-    }
     #createEntityElement(entity, createExpanded = false) {
         let htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
         if (createExpanded) {
-            htmlEntityElement.expand();
+            htmlEntityElement?.expand();
         }
         return htmlEntityElement;
-    }
-    #selectEntity(entity, htmlEntityElement) {
-        this.#selectedEntity = entity;
-        entity.addChild(this.#manipulator);
-        if (this.#selectedHtml) {
-            this.#selectedHtml.classList.remove('selected');
-        }
-        htmlEntityElement.classList.add('selected');
-        this.#selectedHtml = htmlEntityElement;
     }
     selectEntity(entity) {
         this.#selectedEntity = entity;
@@ -27466,6 +27414,9 @@ class SceneExplorer {
         if (this.#isVisible) {
             this.#updateEntityElement(entity);
         }
+    }
+    getSelectedEntity() {
+        return this.#selectedEntity;
     }
     #updateEntityElement(entity) {
         if (entity) {
@@ -27491,7 +27442,7 @@ class SceneExplorer {
         throw 'remove me';
         //return this._entitiesHtml.get(entity);
     }
-    #handlePropertyChanged(detail) {
+    #handlePropertyChanged(detail /*TODO: create a proper type*/) {
         if (this.#isVisible && detail.entity == this.#selectedEntity) {
             this.#updateEntityElement(this.#selectedEntity);
         }
@@ -27502,6 +27453,9 @@ class SceneExplorer {
                 SceneExplorerEntity.#updateEntity(child);
             }
         }*/
+    }
+    showContextMenu(contextMenu, x, y, entity) {
+        this.#htmlContextMenu.show(contextMenu, x, y, entity);
     }
 }
 function initEntitySubmenu() {
@@ -27573,7 +27527,10 @@ function initEntitySubmenu() {
                             console.error(modelName);
                             //let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
                             let instance = await Source1ModelManager.createInstance(repository, modelName, true);
-                            (new SceneExplorer().selectedEntity ?? entity).addChild(instance);
+                            if (!instance) {
+                                return;
+                            }
+                            (new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
                             let seq = instance.sourceModel.mdl.getSequenceById(0);
                             if (seq) {
                                 instance.playSequence(seq.name);
@@ -27588,7 +27545,7 @@ function initEntitySubmenu() {
                             let systemName = systemPath.split('/');
                             let sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
                             sys.start();
-                            (new SceneExplorer().selectedEntity ?? entity).addChild(sys);
+                            (new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);
                         });
                     }
                 },
@@ -27602,7 +27559,7 @@ function initEntitySubmenu() {
                         new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
                             console.error(modelName);
                             let instance = await Source2ModelManager.createInstance(repository, modelName, true);
-                            (new SceneExplorer().selectedEntity ?? entity).addChild(instance);
+                            (new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
                             /*let seq = instance.sourceModel.mdl.getSequenceById(0);
                             if (seq) {
                                 instance.playSequence(seq.name);
@@ -27618,7 +27575,7 @@ function initEntitySubmenu() {
                             let sys = await Source2ParticleManager.getSystem(repository, systemPath);
                             sys.name = systemName[systemName.length - 1];
                             sys.start();
-                            (new SceneExplorer().selectedEntity ?? entity).addChild(sys);
+                            (new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);
                         });
                     }
                 },
@@ -33795,19 +33752,6 @@ class SourceEngineMaterialManager {
     static addRepository(repositoryPath) {
         this.#fileListPerRepository.set(repositoryPath, null);
     }
-    /*async pickMaterial(materialName, materialClass, callback) {
-        //Note: if loaded from a vmt, you are not guaranted to have this exact materialClass
-        console.log(await this.getMaterialList());
-        show(SceneExplorer.htmlFileSelector);
-
-
-        new Interaction().selectFile(SceneExplorer.htmlFileSelector, await this.getMaterialList(), async (repository, materialName) => {
-            console.error(materialName);
-            let material = await this.getMaterial(repository, materialName.replace(/^materials\//g, ''));
-            console.error(material);
-            callback(material);
-        });
-    }*/
     static async getMaterialList() {
         let repoList = [];
         for (let [repositoryName, repository] of this.#fileListPerRepository) {
@@ -63098,18 +63042,20 @@ class RemGenerator {
     #textureToCubeUV(texture, cubeUVRenderTarget) {
         const renderer = this.#renderer;
         const isCubeTexture = texture.is('CubeTexture'); //(texture.mapping === CubeReflectionMapping || texture.mapping === CubeRefractionMapping);
+        let material;
         if (isCubeTexture) {
-            if (this.#cubemapMaterial === null) {
+            if (!this.#cubemapMaterial) {
                 this.#cubemapMaterial = getCubemapMaterial();
             }
             this.#cubemapMaterial.uniforms.flipEnvMap = (texture.isRenderTargetTexture === false) ? -1 : 1;
+            material = this.#cubemapMaterial;
         }
         else {
-            if (this.#equirectMaterial === null) {
+            if (!this.#equirectMaterial) {
                 this.#equirectMaterial = getEquirectMaterial();
             }
+            material = this.#equirectMaterial;
         }
-        const material = isCubeTexture ? this.#cubemapMaterial : this.#equirectMaterial;
         const mesh = new Mesh(this.#lodPlanes[0], material);
         const scene = new Scene();
         scene.addChild(mesh);
@@ -63140,20 +63086,24 @@ class RemGenerator {
      * accurate at the poles, but still does a decent job.
      */
     #blur(cubeUVRenderTarget, lodIn, lodOut, sigma, poleAxis) {
-        const pingPongRenderTarget = this.#pingPongRenderTarget;
-        this.#halfBlur(cubeUVRenderTarget, pingPongRenderTarget, lodIn, lodOut, sigma, 'latitudinal', poleAxis);
-        this.#halfBlur(pingPongRenderTarget, cubeUVRenderTarget, lodOut, lodOut, sigma, 'longitudinal', poleAxis);
+        if (!this.#pingPongRenderTarget) {
+            return;
+        }
+        this.#halfBlur(cubeUVRenderTarget, this.#pingPongRenderTarget, lodIn, lodOut, sigma, 'latitudinal', poleAxis);
+        this.#halfBlur(this.#pingPongRenderTarget, cubeUVRenderTarget, lodOut, lodOut, sigma, 'longitudinal', poleAxis);
     }
     #halfBlur(targetIn, targetOut, lodIn, lodOut, sigmaRadians, direction, poleAxis) {
         const renderer = this.#renderer;
-        const blurMaterial = this.#blurMaterial;
+        if (!this.#blurMaterial) {
+            return;
+        }
         if (direction !== 'latitudinal' && direction !== 'longitudinal') {
             console.error('blur direction must be either latitudinal or longitudinal!');
         }
         // Number of standard deviations at which to cut off the discrete approximation.
         const STANDARD_DEVIATIONS = 3;
-        const blurMesh = new Mesh(this.#lodPlanes[lodOut], blurMaterial);
-        const blurUniforms = blurMaterial.uniforms;
+        const blurMesh = new Mesh(this.#lodPlanes[lodOut], this.#blurMaterial);
+        const blurUniforms = this.#blurMaterial.uniforms;
         const scene = new Scene();
         scene.addChild(blurMesh);
         const pixels = this.#sizeLods[lodIn] - 1;

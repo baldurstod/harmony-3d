@@ -311,7 +311,7 @@ export class SceneExplorerEntity extends HTMLElement {
 
 	#contextMenuHandler(event: MouseEvent) {
 		if (!event.shiftKey && this.#entity) {
-			SceneExplorerEntity.#explorer?.htmlContextMenu.show(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
+			SceneExplorerEntity.#explorer?.showContextMenu(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
 			event.preventDefault();
 			event.stopPropagation();
 		}
