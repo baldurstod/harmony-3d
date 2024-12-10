@@ -1827,6 +1827,7 @@ const CHILD_ADDED = 'childadded';
 const CHILD_REMOVED = 'childremoved';
 const ENTITY_DELETED = 'entitydeleted';
 const PROPERTY_CHANGED$1 = 'propertychanged';
+const ATTRIBUTE_CHANGED = 'attributechanged';
 class EntityObserverClass extends EventTarget {
     parentChanged(child, oldParent, newParent) {
         this.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
@@ -1842,6 +1843,9 @@ class EntityObserverClass extends EventTarget {
     }
     propertyChanged(entity, propertyName, oldValue, newValue) {
         this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED$1, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
+    }
+    attributeChanged(entity, attributeName, oldValue, newValue) {
+        this.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
     }
 }
 const EntityObserver = new EntityObserverClass();
@@ -2994,7 +2998,9 @@ class Entity {
         }
     }
     setAttribute(attributeName, attributeValue) {
+        const oldValue = this.#attributes.get(attributeName);
         this.#attributes.set(attributeName, attributeValue);
+        EntityObserver.attributeChanged(this, attributeName, oldValue, attributeValue);
         this.propagate();
     }
     getAttribute(attributeName, inherited = true) {
@@ -19295,7 +19301,7 @@ class SceneExplorerEntity extends HTMLElement {
     expand() {
         show(this.#htmlChilds);
         this.#expandChilds();
-        this.select();
+        //this.select();
     }
     #expandChilds() {
         this.#htmlChilds.innerText = '';
@@ -19311,7 +19317,12 @@ class SceneExplorerEntity extends HTMLElement {
         }
     }
     #titleClick() {
-        toggle(this.#htmlChilds);
+        if (this == _a$2.#selectedEntity) {
+            toggle(this.#htmlChilds);
+        }
+        else {
+            show(this.#htmlChilds);
+        }
         this.#expandChilds();
         this.select();
     }
@@ -27135,7 +27146,7 @@ class Source2ParticleManagerClass {
 }
 const Source2ParticleManager = new Source2ParticleManagerClass();
 
-var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator{\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\tcursor: pointer;\n}\n";
+var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: teal;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\tcursor: pointer;\n}\n";
 
 function FormatArray(array) {
     let arr = [];
@@ -27197,6 +27208,9 @@ class SceneExplorer {
             }
             if (this.#isVisible && (this.#isVisible != isVisible)) {
                 this.applyFilter();
+                if (this.#selectedEntity) {
+                    SceneExplorerEntity.getEntityElement(this.#selectedEntity).select();
+                }
             }
         }).observe(this.#shadowRoot.host);
         EntityObserver.addEventListener(PROPERTY_CHANGED$1, (event) => this.#handlePropertyChanged(event.detail));
@@ -27408,11 +27422,15 @@ class SceneExplorer {
         return htmlEntityElement;
     }
     selectEntity(entity) {
+        if (this.#selectedEntity == entity) {
+            return;
+        }
         this.#selectedEntity = entity;
         entity.addChild(this.#manipulator);
         entity.addChild(this.#skeletonHelper);
         if (this.#isVisible) {
             this.#updateEntityElement(entity);
+            SceneExplorerEntity.getEntityElement(entity).select();
         }
     }
     getSelectedEntity() {

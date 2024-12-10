@@ -106,6 +106,9 @@ export class SceneExplorer {
 			}
 			if (this.#isVisible && (this.#isVisible != isVisible)) {
 				this.applyFilter();
+				if (this.#selectedEntity) {
+					SceneExplorerEntity.getEntityElement(this.#selectedEntity).select();
+				}
 			}
 		}).observe(this.#shadowRoot.host);
 
@@ -351,8 +354,7 @@ export class SceneExplorer {
 		entity.addChild(this.#skeletonHelper);
 		if (this.#isVisible) {
 			this.#updateEntityElement(entity);
-			const entityElement = SceneExplorerEntity.getEntityElement(entity);
-			entityElement.select();
+			SceneExplorerEntity.getEntityElement(entity).select();
 		}
 	}
 

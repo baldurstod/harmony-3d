@@ -284,7 +284,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	expand() {
 		show(this.#htmlChilds);
 		this.#expandChilds();
-		this.select();
+		//this.select();
 	}
 
 	#expandChilds() {

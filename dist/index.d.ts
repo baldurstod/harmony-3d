@@ -1861,6 +1861,7 @@ declare class Choreography {
              childRemoved(parent: Entity, child: Entity): void;
              entityDeleted(entity: Entity): void;
              propertyChanged(entity: Entity, propertyName: string, oldValue: any, newValue: any): void;
+             attributeChanged(entity: Entity, attributeName: string, oldValue: any, newValue: any): void;
          }
 
          export declare class Environment {
