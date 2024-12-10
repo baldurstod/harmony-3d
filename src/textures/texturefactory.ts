@@ -15,17 +15,19 @@ export function setTextureFactoryContext(c: WebGLAnyRenderingContext) {
 	context = c;
 }
 
-export function createTexture() {
-	let texture = context.createTexture();
+export function createTexture(): WebGLTexture | null {
+	const texture = context.createTexture();
 	textures.add(texture);
 	TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureCreated', { detail: { texture: texture, count: textures.size } }));
 	return texture;
 }
 
-export function deleteTexture(texture: WebGLTexture) {
-	context.deleteTexture(texture);
-	textures.delete(texture);
-	TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureDeleted', { detail: { texture: texture, count: textures.size } }));
+export function deleteTexture(texture: WebGLTexture | null) {
+	if (texture) {
+		context.deleteTexture(texture);
+		textures.delete(texture);
+		TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureDeleted', { detail: { texture: texture, count: textures.size } }));
+	}
 }
 
 export function fillFlatTexture(texture: Texture, color = [255, 255, 255], needCubeMap: boolean) {//TODOv3: mutualize with fillCheckerTexture
