@@ -1207,12 +1207,12 @@ function parseHitBoxSets(reader, mdl) {
 	let hitboxSetCount = mdl.hitboxCount;
 	let hitboxSetOffset = mdl.hitboxOffset;
 	if (hitboxSetCount && hitboxSetOffset) {
-		const hitboxSets = [];
+		mdl.hitboxSets = [];
 		for (let i = 0; i < hitboxSetCount; ++i) {
-			hitboxSets.push(parseHitboxSet(reader, mdl, hitboxSetOffset));
+			mdl.hitboxSets.push(parseHitboxSet(reader, mdl, hitboxSetOffset));
 			hitboxSetOffset += STUDIO_HITBOX_SET_STRUCT_SIZE;
 		}
-		mdl.hitboxSets = hitboxSets;
+		//mdl.hitboxSets = hitboxSets;
 	}
 }
 

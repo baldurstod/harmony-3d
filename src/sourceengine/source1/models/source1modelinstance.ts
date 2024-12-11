@@ -1,5 +1,4 @@
 import { mat3, mat4, quat, vec3 } from 'gl-matrix';
-
 import { MAX_STUDIO_FLEX_DESC } from '../loaders/sourcemdl';
 import { Source1ModelManager } from '../models/source1modelmanager';
 import { AnimationDescription } from '../../../animations/animationdescription';
@@ -19,6 +18,7 @@ import { vec3RandomBox } from '../../../math/functions';
 import { getRandomInt } from '../../../utils/random';
 import { registerEntity } from '../../../entities/entities';
 import { Animated } from '../../../entities/animated';
+import { SourceModel } from '../loaders/sourcemodel';
 
 let animSpeed = 1.0;
 
@@ -37,7 +37,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	#materialsUsed = new Set<Material>();
 	animable = true;
 	hasAnimations: true = true;
-	sourceModel;
+	sourceModel: SourceModel;
 	bodyParts = {};
 	sequences = {};
 	meshes = new Set<Mesh | SkeletalMesh>();
@@ -212,7 +212,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 		if (!this.#animations.setWeight(animationName, weight)) {
 			//let animation = new Animation(animationName);
 			//this.#fillAnimation(animation);
-			this.#animations.add(new AnimationDescription(await this.sourceModel.getAnimation(animationName), weight));
+			this.#animations.add(new AnimationDescription(await this.sourceModel.getAnimation(animationName, this), weight));
 		}
 	}
 
@@ -703,8 +703,8 @@ export class Source1ModelInstance extends Entity implements Animated {
 
 	async playDefaultAnim() {
 		let animList = await this.sourceModel.mdl.getAnimList();
-		if (animList && animList.length > 0) {
-			this.playSequence(animList[0]);
+		if (animList && animList.size > 0) {
+			this.playSequence(animList.keys().next().value);
 		}
 	}
 

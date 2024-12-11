@@ -59,6 +59,7 @@ export class SourceMDL {
 	loader: SourceEngineMDLLoader;
 	reader: BinaryReader;
 	readonly poseParameters = [];
+	hitboxSets = [];
 	constructor(repository: string) {
 		this.repository = repository;
 	}
@@ -187,14 +188,19 @@ export class SourceMDL {
 	}
 
 	async getAnimList() {
-		let animList = [];
-		animList = animList.concat(this.getSequences());
+		const animList = new Set<string>;
+		//animList = animList.concat(this.getSequences());
+		for (const seq of this.getSequences()) {
+			animList.add(seq);
+		}
 
 		const extCount = this.getExternalMdlCount();
 		for (let extIndex = 0; extIndex < extCount; ++extIndex) {
 			const mdl = await this.getExternalMdl(extIndex);
 			if (mdl) {
-				animList = animList.concat(mdl.getSequences());
+				for (const seq of mdl.getSequences()) {
+					animList.add(seq);
+				}
 			}
 		}
 		return animList;
@@ -527,7 +533,7 @@ export class SourceMDL {
 		return this.attachements;
 	}
 
-	getAttachementsNames(out) {
+	getAttachementsNames(out?: Array<string>) {
 		const list = this.getAttachments();
 		if (list) {
 			out = out || [];
@@ -585,7 +591,7 @@ export class SourceMDL {
 
 	getSequences() {
 		const list = this.sequences;
-		let animList = [];
+		let animList: Array<string> = [];
 		for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
 			let seq = list[seqIndex];
 			animList.push(seq.name);

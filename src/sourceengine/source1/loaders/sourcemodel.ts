@@ -1,5 +1,9 @@
 import { Source1ModelInstance } from '../models/source1modelinstance';
 import { FileNameFromPath } from '../../../utils/utils';
+import { CalcPose, StudioFrames } from '../animations/calcanimations';
+import { Animation } from '../../../animations/animation';
+import { SourceMDL } from './sourcemdl';
+import { BONE_USED_BY_ANYTHING } from './mdlbone';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
@@ -7,7 +11,7 @@ export class SourceModel {
 	repository: string;
 	fileName: string;
 	name: string;
-	mdl;
+	mdl: SourceMDL;//TODO: set private ?
 	vvd;
 	vtx;
 	requiredLod: number = 0;
@@ -131,15 +135,17 @@ export class SourceModel {
 		return null;
 	}
 
-	/*
-	async getAnimation(animationName) {
+	async getAnimation(animationName: string, entity: Source1ModelInstance) {
 		const animation = new Animation(animationName);
-		let seq = await this.mdl.getSequence(animationName);
+		const seq = await this.mdl.getSequence(animationName);
 
 		if (seq) {
 			//const t = Studio_Duration(seq.mdl, seq.id, []);
 			const frames = StudioFrames(seq.mdl, seq.id, []);
-			CalcPose(dynamicProp, sequenceMdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, sequences[s].s.id, dynamicProp.frame / t, poseParameters, BONE_USED_BY_ANYTHING, 1.0, dynamicProp.frame / t);
+			const posRemoveMeTemp = [];
+			const quatRemoveMeTemp = [];
+			const poseParameters = {};
+			CalcPose(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, seq.id, 0/*entity.frame / t*/, poseParameters, BONE_USED_BY_ANYTHING, 1.0, 0/*dynamicProp.frame / t*/);
 
 			console.log(frames);
 		}
@@ -147,8 +153,6 @@ export class SourceModel {
 		console.log(seq);
 		return animation;
 	}
-	*/
-
 }
 
 export class SourceModelMesh {
