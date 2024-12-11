@@ -100,7 +100,7 @@ export class SourceMDL {
 		return this.bodyParts;
 	}
 
-	async getSequence(sequenceName) {
+	async getSequence(sequenceName): Promise<MdlStudioSeqDesc> {
 		const list = this.sequences;
 		for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
 			const seq = list[seqIndex];
@@ -112,7 +112,7 @@ export class SourceMDL {
 		// Seek in external Mdl's
 		const extCount = this.getExternalMdlCount();
 		for (let extIndex = 0; extIndex < extCount; ++extIndex) {
-			const mdl = await this.getExternalMdl(extIndex);
+			const mdl: SourceMDL | null = await this.getExternalMdl(extIndex);
 			if (mdl) {
 				const seq = await mdl.getSequence(sequenceName);
 				if (seq) {
@@ -136,14 +136,14 @@ export class SourceMDL {
 		return this.modelGroups.length;
 	}
 
-	async getExternalMdl(externalId) {
+	async getExternalMdl(externalId): Promise<SourceMDL | null> {
 		if (this.externalMdlsV2[externalId] !== undefined) {
 			return this.externalMdlsV2[externalId];
 		}
 
 		const modelGroup = this.modelGroups[externalId];
 		if (modelGroup) {
-			let p = new Promise(async resolve => {
+			let p = new Promise<SourceMDL>(async resolve => {
 				let mdlLoader = getLoader('SourceEngineMDLLoader');
 				let mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
 				if (mdl) {
