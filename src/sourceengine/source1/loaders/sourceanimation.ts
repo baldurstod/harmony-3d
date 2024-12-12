@@ -1,8 +1,8 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-
 import { MdlBone, BONE_USED_BY_ANYTHING } from './mdlbone';
 import { CalcPose, Studio_Duration } from '../animations/calcanimations';
 import { quatFromEulerRad } from '../../../math/functions';
+import { SourceModel } from './sourcemodel';
 
 export class SourceAnimation {
 	position = vec3.create();
@@ -14,7 +14,7 @@ export class SourceAnimation {
 	}
 
 	animate2(dynamicProp, poseParameters, position, orientation, sequences, bonesScale) {
-		const model = dynamicProp.sourceModel;
+		const model: SourceModel = dynamicProp.sourceModel;
 
 		if (!model) { return };
 		const modelBones = model.getBones();
