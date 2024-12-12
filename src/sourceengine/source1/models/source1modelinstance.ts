@@ -31,7 +31,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	#flexesWeight = new Float32Array(MAX_STUDIO_FLEX_DESC);
 	#materialOverride;
 	#animations = new Animations();
-	#skeleton;
+	#skeleton?: Skeleton;
 	#skin = 0;
 	#attachements = {};
 	#materialsUsed = new Set<Material>();
@@ -195,7 +195,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 		this.playSequence(name);
 	}
 
-	playSequence(sequenceName) { //TODO
+	playSequence(sequenceName: string) { //TODO
 		sequenceName = sequenceName.toLowerCase();
 		let existingSequence = this.sequences[sequenceName];
 		this.sequences = Object.create(null);//TODOv2
@@ -228,7 +228,10 @@ export class Source1ModelInstance extends Entity implements Animated {
 		}
 	}
 
-	_playSequences(delta) {//TODO
+	_playSequences(delta: number) {//TODO
+		this.frame += delta;
+		this.#animate();
+		return;
 		this.frame += delta;
 		const now = new Date().getTime();
 
@@ -274,6 +277,75 @@ export class Source1ModelInstance extends Entity implements Animated {
 			}
 		}
 		this.anim.animate2(this, this.#poseParameters, this.position, this.quaternion, this.sequences, this.bonesScale);
+	}
+
+	#animate() {
+		const skeleton = this.#skeleton;
+		if (!skeleton) {
+			return;
+		}
+
+		for (const bone of skeleton._bones) {
+			vec3.zero(bone.tempPosition);
+			quat.identity(bone.tempQuaternion);
+		}
+
+		const position = vec3.create();//TODO:optimize
+		const quaternion = quat.create();
+
+		for (const [_, animationDescription] of this.#animations) {
+			//console.info(animation);
+			const animation = animationDescription.animation;
+			for (const bone of animation.bones) {
+				const skeletonBone = skeleton.getBoneById(bone.id);
+				if (!skeletonBone) {
+					continue;
+				}
+
+				//skeletonBone.poseToBone = bone.refPos;
+
+				const frame = animation.getFrame(this.frame * 30);
+				if (frame) {
+					const positionData = frame.getData('position');
+					if (positionData) {
+						vec3.copy(skeletonBone.tempPosition, positionData.datas[bone.id] as vec3);
+					}
+
+					const rotationData = frame.getData('rotation');
+					if (rotationData) {
+						quat.copy(skeletonBone.tempQuaternion, rotationData.datas[bone.id] as quat);
+					}
+				}
+
+				//skeletonBone.position
+			}
+
+
+			/*
+			let b = dynamicPropBones[boneIndex];
+			if (b) {
+				if (!b.locked) {
+					b.quaternion = quatRemoveMeMe ?? b._initialQuaternion;
+					b.position = posRemoveMeMe ?? b._initialPosition;
+				}
+			} else {
+				b = new MdlBone(dynamicProp.skeleton);
+				dynamicProp.skeleton._bones[boneIndex] = b;
+				b.boneId = bone.boneId;
+				b.name = bone.name;
+				b.quaternion = bone.quaternion;
+				b.position = bone.position;
+				b.parentBone = bone.parentBone;
+				b.parent = dynamicProp.skeleton._bones[b.parentBone];
+				b.poseToBone = bone.poseToBone;
+				b.initPoseToBone = bone.initPoseToBone;
+			}*/
+		}
+
+		for (const bone of skeleton._bones) {
+			bone.position = bone.tempPosition;
+			bone.quaternion = bone.tempQuaternion;
+		}
 	}
 
 	async setMaterialOverride(materialOverride) {

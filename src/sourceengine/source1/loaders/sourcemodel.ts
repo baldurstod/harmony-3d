@@ -7,6 +7,7 @@ import { BONE_USED_BY_ANYTHING } from './mdlbone';
 import { AnimationFrame } from '../../../animations/animationframe';
 import { AnimationFrameDataType } from '../../../animations/animationframedata';
 import { AnimationBone } from '../../../animations/animationbone';
+import { quat, vec3 } from 'gl-matrix';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
@@ -144,15 +145,22 @@ export class SourceModel {
 		const bones = this.mdl.getBones();
 
 		for (const mdlBone of bones) {
-			animation.addBone(new AnimationBone(mdlBone.boneId, mdlBone.name));
+			animation.addBone(new AnimationBone(mdlBone.boneId, mdlBone.name, mdlBone.position, mdlBone.quaternion));
 		}
 
 		if (seq) {
 			//const t = Studio_Duration(seq.mdl, seq.id, []);
 			const frameCount = StudioFrames(seq.mdl, seq.id, []);
-			const posRemoveMeTemp = [];
-			const quatRemoveMeTemp = [];
+			const posRemoveMeTemp: Array<vec3> = [];
+			const quatRemoveMeTemp: Array<quat> = [];
 			const poseParameters = {};
+
+			for (const [boneId, bone] of animation.bones.entries()) {
+				posRemoveMeTemp.push(vec3.clone(bone.refPosition));
+				quatRemoveMeTemp.push(quat.clone(bone.refQuaternion));
+
+			}
+
 			for (let frame = 0; frame < frameCount; frame++) {
 				const animationFrame = new AnimationFrame(frame);
 				const cycle = frame / frameCount
@@ -160,7 +168,7 @@ export class SourceModel {
 				//console.info(posRemoveMeTemp, quatRemoveMeTemp);
 
 				animationFrame.setDatas('position', AnimationFrameDataType.Vec3, posRemoveMeTemp);
-				animationFrame.setDatas('quaternion', AnimationFrameDataType.Quat, quatRemoveMeTemp);
+				animationFrame.setDatas('rotation', AnimationFrameDataType.Quat, quatRemoveMeTemp);
 				animation.addFrame(animationFrame);
 			}
 

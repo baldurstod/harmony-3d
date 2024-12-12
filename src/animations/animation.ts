@@ -3,18 +3,22 @@ import { AnimationFrame } from './animationframe';
 
 export class Animation {
 	#name;
-	#weight: number = 1;
+	weight: number = 1;
 	#frame = 0;
 	#frameCount = 0;
 	#looping: boolean = false;
 	//#sequence;
 	#fps = 30;
 	#frames: Array<AnimationFrame> = [];
-	#bones = Array<AnimationBone>;
+	#bones: Array<AnimationBone> = [];
 	#bonesByName = new Map<string, AnimationBone>;
 
 	constructor(name: string) {
 		this.#name = name;
+	}
+
+	[Symbol.iterator] = () => {
+		return this.#frames.entries();
 	}
 
 	addFrame(animationFrame: AnimationFrame) {
@@ -41,5 +45,14 @@ export class Animation {
 
 	get fps() {
 		return this.#fps;
+	}
+
+	get bones() {
+		return this.#bones;
+	}
+
+	getFrame(id: number): AnimationFrame | undefined {
+		id = Math.round(id) % (this.#frameCount - 1);
+		return this.#frames[id];
 	}
 }

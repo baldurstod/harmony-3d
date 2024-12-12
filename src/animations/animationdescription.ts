@@ -1,8 +1,8 @@
 import { Animation } from './animation';
 
 export class AnimationDescription {
-	#animation;
-	#weight;
+	#animation: Animation;
+	#weight: number;
 	#frame = 0;
 	constructor(animation: Animation, weight: number) {
 		this.#animation = animation;
@@ -23,5 +23,9 @@ export class AnimationDescription {
 
 	get name() {
 		return this.#animation.name;
+	}
+
+	get animation() {
+		return this.#animation;
 	}
 }

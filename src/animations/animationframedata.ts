@@ -1,5 +1,4 @@
 import { quat, vec3 } from 'gl-matrix';
-import { AnimationBone } from './animationbone';
 
 export type AnimationFrameDataTypes = vec3 | quat | number | boolean;
 
@@ -11,18 +10,30 @@ export enum AnimationFrameDataType {
 }
 
 export class AnimationFrameData {
-	#type: AnimationFrameDataType;
-	#datas: Array<AnimationFrameDataTypes> = [];
+	type: AnimationFrameDataType;
+	datas: Array<AnimationFrameDataTypes> = [];
 
 	constructor(type: AnimationFrameDataType, datas?: Array<AnimationFrameDataTypes>) {
-		this.#type = type;
+		this.type = type;
 
-		for (const data of datas) {
-			this.#datas.push(data);
+		if (datas) {
+			for (const data of datas) {
+				switch (type) {
+					case AnimationFrameDataType.Vec3:
+						this.datas.push(vec3.clone(data as vec3));
+						break;
+					case AnimationFrameDataType.Quat:
+						this.datas.push(quat.clone(data as quat));
+						break;
+					default:
+						this.datas.push(data);
+						break;
+				}
+			}
 		}
 	}
 
 	pushData(data: AnimationFrameDataTypes) {
-		this.#datas.push(data);
+		this.datas.push(data);
 	}
 }

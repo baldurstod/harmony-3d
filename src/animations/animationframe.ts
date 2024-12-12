@@ -1,5 +1,3 @@
-import { quat, vec3 } from 'gl-matrix';
-import { AnimationBone } from './animationbone';
 import { AnimationFrameData, AnimationFrameDataType, AnimationFrameDataTypes } from './animationframedata';
 
 export class AnimationFrame {
@@ -16,5 +14,9 @@ export class AnimationFrame {
 	pushData(name: string, data: AnimationFrameDataTypes) {
 		const frameDatas = this.#datas.get(name);
 		frameDatas?.pushData(data);
+	}
+
+	getData(name: string) {
+		return this.#datas.get(name);
 	}
 }
