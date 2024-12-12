@@ -8,7 +8,6 @@ import { Mesh } from '../../../objects/mesh';
 import { Skeleton } from '../../../objects/skeleton';
 import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
-import { SourceAnimation } from '../../source1/loaders/sourceanimation';
 import { Interaction } from '../../../utils/interaction';
 import { Source2Model } from './source2model';
 import { Material } from '../../../materials/material';
@@ -37,7 +36,6 @@ export class Source2ModelInstance extends Entity implements Animated {
 	poseParameters = {};
 	meshes = new Set<Mesh>();
 	attachements = new Map();
-	anim = new SourceAnimation();//TODO: removeme
 	activity = '';
 	activityModifiers = new Set();
 	sequences = {};
