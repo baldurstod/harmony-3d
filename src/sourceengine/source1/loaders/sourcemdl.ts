@@ -6,6 +6,7 @@ import { getLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
 import { MdlStudioSeqDesc } from './mdlstudioseqdesc';
 import { SourceEngineMDLLoader } from './sourceenginemdlloader';
+import { MdlBone } from './mdlbone';
 
 /**
  * MDL Model
@@ -51,7 +52,7 @@ export class SourceMDL {
 	readonly flexRules = [];
 	readonly flexControllers = [];
 	boneCount: number;
-	readonly bones = [];
+	readonly bones: Array<MdlBone> = [];
 	readonly boneNames: string[] = [];
 	numflexdesc = 0;
 	readonly attachements = [];
