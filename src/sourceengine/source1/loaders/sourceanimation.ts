@@ -16,9 +16,9 @@ export class SourceAnimation {
 	animate2(dynamicProp, poseParameters, position, orientation, sequences, bonesScale) {
 		const model = dynamicProp.sourceModel;
 
-		if (!model) {return};
+		if (!model) { return };
 		const modelBones = model.getBones();
-		if (!modelBones) {return};// Ensure the bones are loaded
+		if (!modelBones) { return };// Ensure the bones are loaded
 
 		const parentModel = dynamicProp.parent;
 		const posRemoveMeTemp = [];
@@ -118,7 +118,7 @@ export class SourceAnimation {
 				}
 			}
 		}
-		Object.keys(bonesRemoveMe).forEach(function(boneName) {
+		Object.keys(bonesRemoveMe).forEach(function (boneName) {
 			vec3.scale(bonesRemoveMe[boneName].pos, bonesRemoveMe[boneName].pos, 1 / bonesRemoveMe[boneName].count);
 			vec3.scale(bonesRemoveMe[boneName].rot, bonesRemoveMe[boneName].rot, 1 / bonesRemoveMe[boneName].count);
 			//vec3.scale(bonesRemoveMe[boneName].quat, bonesRemoveMe[boneName].quat, 1 / bonesRemoveMe[boneName].count);
@@ -126,7 +126,7 @@ export class SourceAnimation {
 		});
 
 		let datas;
-		for(let i = 0; i < modelBonesLength; ++i) {
+		for (let i = 0; i < modelBonesLength; ++i) {
 
 			//let pbone = modelBones[i];
 			//quatRemoveMeTemp[i] = quat.copy(quat.create(), pbone.quaternion);//removeme
@@ -141,9 +141,9 @@ export class SourceAnimation {
 
 			const found = false;
 
-			for (let addIndex=0; addIndex<blendLayers.length * 0; addIndex++) {
+			for (let addIndex = 0; addIndex < blendLayers.length * 0; addIndex++) {
 				const layer = blendLayers[addIndex];
-				const trueFrame = (layer.frame===undefined?/*frame*/model.currentFrame:layer.frame);
+				const trueFrame = (layer.frame === undefined ?/*frame*/model.currentFrame : layer.frame);
 
 				if (!datas) {
 					//this.boneRot = vec3.create();
@@ -181,12 +181,12 @@ export class SourceAnimation {
 						}
 						//weight = 1;
 
-						this.position[0]+=pos[0];
-						this.position[1]+=pos[1];
-						this.position[2]+=pos[2];
-						this.boneRot[0] =rot[0];
-						this.boneRot[1] =rot[1];
-						this.boneRot[2] =rot[2];
+						this.position[0] += pos[0];
+						this.position[1] += pos[1];
+						this.position[2] += pos[2];
+						this.boneRot[0] = rot[0];
+						this.boneRot[1] = rot[1];
+						this.boneRot[2] = rot[2];
 					}
 				}
 			}
