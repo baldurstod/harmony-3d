@@ -1,6 +1,10 @@
+import { Animation } from './animation';
+
 export class Animations {
-	#animations = new Map();
-	constructor() {
+	#animations = new Map<string, Animation>();
+
+	[Symbol.iterator] = () => {
+		return this.#animations.entries();
 	}
 
 	add(animation) {
