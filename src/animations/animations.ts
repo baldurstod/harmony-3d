@@ -1,18 +1,18 @@
-import { Animation } from './animation';
+import { AnimationDescription } from './animationdescription';
 
 export class Animations {
-	#animations = new Map<string, Animation>();
+	#animations = new Map<string, AnimationDescription>();
 
 	[Symbol.iterator] = () => {
 		return this.#animations.entries();
 	}
 
-	add(animation) {
+	add(animation: AnimationDescription) {
 		this.#animations.set(animation.name, animation);
 		this.#computeWeights();
 	}
 
-	delete(animation) {
+	remove(animation: AnimationDescription) {
 		this.#animations.delete(animation.name);
 		this.#computeWeights();
 	}
@@ -21,11 +21,11 @@ export class Animations {
 		return this.#animations;
 	}
 
-	get(animationName) {
+	get(animationName: string) {
 		return this.#animations.get(animationName);
 	}
 
-	setWeight(animationName, weight) {
+	setWeight(animationName: string, weight: number) {
 		let animation = this.#animations.get(animationName);
 		if (!animation) {
 			return false;
@@ -37,10 +37,6 @@ export class Animations {
 	}
 
 	#computeWeights() {
-
-	}
-
-	play(delta) {
 
 	}
 }
