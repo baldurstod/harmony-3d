@@ -29,6 +29,8 @@ export class Bone extends Entity {
 	#refQuaternion = quat.create();
 	dirty = true;
 	lastComputed = 0;
+	tempPosition = vec3.create();
+	tempQuaternion = quat.create();
 
 	constructor(params?: any/*TODO: improve type*/) {
 		super(params);
