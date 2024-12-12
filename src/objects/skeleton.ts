@@ -170,6 +170,12 @@ export class Skeleton extends Entity {
 		return this._bones;
 	}
 
+	reset() {
+		for (const bone of this._bones) {
+			bone.reset();
+		}
+	}
+
 	toJSON() {
 		let json = super.toJSON();
 		let jBones = [];

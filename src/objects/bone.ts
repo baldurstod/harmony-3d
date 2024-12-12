@@ -286,6 +286,11 @@ export class Bone extends Entity {
 		//return (this.flags & BONE_ALWAYS_PROCEDURAL) == BONE_ALWAYS_PROCEDURAL;
 	}
 
+	reset() {
+		vec3.zero(this._position);
+		quat.identity(this._quaternion);
+	}
+
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), this.locked ? {
 			Bone_1: null,
