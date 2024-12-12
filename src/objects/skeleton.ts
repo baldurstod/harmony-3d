@@ -9,22 +9,25 @@ import { BoundingBox } from '../math/boundingbox';
 import { MAX_HARDWARE_BONES } from '../constants';
 import { Texture } from '../textures/texture';
 import { registerEntity } from '../entities/entities';
+import { JSONArray, JSONObject } from '../types';
+import { Material } from '../materials/material';
 
 const identityMatrix = mat4.create();
 export class Skeleton extends Entity {
 	isSkeleton = true;
 	#bonesByName = new Map();
 	#rootBone = new Bone({ name: 'root', boneId: 0, skeleton: this });
-	_bones = [];//TODOv3: rename
+	_bones: Array<Bone> = [];//TODOv3: rename set private
 	_dirty = true;
-	#imgData: Float32Array;
-	#texture: Texture;
-	constructor(parameters) {
-		super(parameters);
+	#imgData!: Float32Array;
+	#texture!: Texture;
+
+	constructor(params?: any/*TODO: improve type*/) {
+		super(params);
 		//this.bones = Object.create(null);//TODOv3: rename
 
-		this.createBoneMatrixArray();
-		this.createBoneMatrixTexture();
+		this.#createBoneMatrixArray();
+		this.#createBoneMatrixTexture();
 		this.dirty();
 	}
 
@@ -42,7 +45,7 @@ export class Skeleton extends Entity {
 		return this.#texture;
 	}
 
-	createBoneMatrixArray() {
+	#createBoneMatrixArray() {
 		this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4);
 		mat4.identity(this.#imgData);
 		let index = 0;
@@ -51,7 +54,7 @@ export class Skeleton extends Entity {
 		}
 	}
 
-	createBoneMatrixTexture() {
+	#createBoneMatrixTexture() {
 		this.#texture = TextureManager.createTexture();
 		const gl = new Graphics().glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);//TODOv3: pass param to texture and remove this
@@ -60,7 +63,7 @@ export class Skeleton extends Entity {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	updateBoneMatrixTexture() {//removeme
+	#updateBoneMatrixTexture() {//removeme
 		const gl = new Graphics().glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		if (new Graphics().isWebGL2) {
@@ -91,7 +94,7 @@ export class Skeleton extends Entity {
 			}
 		}
 
-		this.updateBoneMatrixTexture();
+		this.#updateBoneMatrixTexture();
 	}
 
 	set position(position) {
@@ -118,7 +121,7 @@ export class Skeleton extends Entity {
 		}
 	}
 
-	addBone(boneId, boneName) {
+	addBone(boneId: number, boneName: string) {
 		let boneNameLowerCase = boneName.toLowerCase();
 		if (!this.#bonesByName.has(boneNameLowerCase)) {
 			let bone = new Bone({ name: boneName, boneId: boneId });
@@ -134,7 +137,7 @@ export class Skeleton extends Entity {
 		}
 	}
 
-	async setParentSkeleton(skeleton) {
+	async setParentSkeleton(skeleton: Skeleton) {
 		await this.loadedPromise;
 		if (skeleton) {
 			await skeleton.loadedPromise;
@@ -145,11 +148,11 @@ export class Skeleton extends Entity {
 		}
 	}
 
-	getBoneByName(boneName) {
+	getBoneByName(boneName: string) {
 		return this.#bonesByName.get(boneName.toLowerCase());
 	}
 
-	getBoneById(boneId) {
+	getBoneById(boneId: number) {
 		return this._bones[boneId];
 	}
 
@@ -177,15 +180,15 @@ export class Skeleton extends Entity {
 		return json;
 	}
 
-	static async constructFromJSON(json, entities, loadedPromise) {
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
 		let entity = new Skeleton({ name: json.name });
-		let loadedPromiseResolve;
+		let loadedPromiseResolve: (value: any) => void;
 		entity.loadedPromise = new Promise((resolve) => loadedPromiseResolve = resolve);
 		loadedPromise.then(() => {
-			let jBones = json.bones;
+			let jBones = json.bones as Array<string>;
 			if (jBones) {
 				for (let i = 0; i < jBones.length; ++i) {
-					let boneEntity = entities.get(jBones[i]);
+					let boneEntity = entities.get(jBones[i]) as Bone | undefined;
 					if (boneEntity) {
 						entity._bones[i] = boneEntity;
 						entity.#bonesByName.set(boneEntity.name.toLowerCase(), boneEntity);
