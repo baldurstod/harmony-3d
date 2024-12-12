@@ -207,7 +207,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 		this.frame = 0;
 	}
 
-	async addAnimation(animationName, weight = 1) {
+	async addAnimation(animationName: string, weight = 1) {
 		animationName = animationName.toLowerCase();
 		if (!this.#animations.setWeight(animationName, weight)) {
 			//let animation = new Animation(animationName);
