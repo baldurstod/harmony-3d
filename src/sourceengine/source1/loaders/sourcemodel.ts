@@ -4,6 +4,9 @@ import { CalcPose, StudioFrames } from '../animations/calcanimations';
 import { Animation } from '../../../animations/animation';
 import { SourceMDL } from './sourcemdl';
 import { BONE_USED_BY_ANYTHING } from './mdlbone';
+import { AnimationFrame } from '../../../animations/animationframe';
+import { AnimationFrameDataType } from '../../../animations/animationframedata';
+import { AnimationBone } from '../../../animations/animationbone';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
@@ -138,16 +141,30 @@ export class SourceModel {
 	async getAnimation(animationName: string, entity: Source1ModelInstance) {
 		const animation = new Animation(animationName);
 		const seq = await this.mdl.getSequence(animationName);
+		const bones = this.mdl.getBones();
+
+		for (const mdlBone of bones) {
+			animation.addBone(new AnimationBone(mdlBone.boneId, mdlBone.name));
+		}
 
 		if (seq) {
 			//const t = Studio_Duration(seq.mdl, seq.id, []);
-			const frames = StudioFrames(seq.mdl, seq.id, []);
+			const frameCount = StudioFrames(seq.mdl, seq.id, []);
 			const posRemoveMeTemp = [];
 			const quatRemoveMeTemp = [];
 			const poseParameters = {};
-			CalcPose(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, seq.id, 0/*entity.frame / t*/, poseParameters, BONE_USED_BY_ANYTHING, 1.0, 0/*dynamicProp.frame / t*/);
+			for (let frame = 0; frame < frameCount; frame++) {
+				const animationFrame = new AnimationFrame(frame);
+				const cycle = frame / frameCount
+				CalcPose(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, seq.id, cycle/*entity.frame / t*/, poseParameters, BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t*/);
+				//console.info(posRemoveMeTemp, quatRemoveMeTemp);
 
-			console.log(frames);
+				animationFrame.setDatas('position', AnimationFrameDataType.Vec3, posRemoveMeTemp);
+				animationFrame.setDatas('quaternion', AnimationFrameDataType.Quat, quatRemoveMeTemp);
+				animation.addFrame(animationFrame);
+			}
+
+			console.log(frameCount, bones);
 		}
 
 		console.log(seq);
