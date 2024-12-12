@@ -1,10 +1,10 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-
 import { Entity } from '../entities/entity';
 import { Graphics } from '../graphics/graphics';
-
 import { DEBUG } from '../buildoptions';
 import { registerEntity } from '../entities/entities';
+import { Skeleton } from './skeleton';
+import { JSONObject } from '../types';
 
 const tempWorldMat = mat4.create();
 const tempWorldQuat = quat.create();
@@ -23,16 +23,17 @@ export class Bone extends Entity {
 	#worldPos = vec3.create();
 	#worldQuat = quat.create();
 	#worldScale = vec3.fromValues(1, 1, 1);
-	#parentSkeletonBone;
-	#skeleton;
+	#parentSkeletonBone?: Bone;
+	#skeleton: Skeleton;
 	#refPosition = vec3.create();
 	#refQuaternion = quat.create();
 	dirty = true;
 	lastComputed = 0;
-	constructor(parameters) {
-		super(parameters);
-		this.#boneId = parameters.boneId ?? -1;
-		this.#skeleton = parameters.skeleton;
+
+	constructor(params?: any/*TODO: improve type*/) {
+		super(params);
+		this.#boneId = params.boneId ?? -1;
+		this.#skeleton = params.skeleton;
 	}
 
 	set position(position) {
@@ -44,7 +45,7 @@ export class Bone extends Entity {
 		return vec3.clone(this._position);
 	}
 
-	setWorldPosition(position) {
+	setWorldPosition(position: vec3) {
 		super.setWorldPosition(position);
 		this.dirty = true;
 	}
@@ -198,7 +199,7 @@ export class Bone extends Entity {
 		return vec3.copy(vec, this.worldScale);
 	}
 
-	getWorldPosOffset(offset, out = vec3.create()) {
+	getWorldPosOffset(offset: vec3, out = vec3.create()) {
 		if (DEBUG && offset == undefined) {
 			throw 'This function must be called with an offset use .worldPos instead';
 		}
@@ -288,7 +289,7 @@ export class Bone extends Entity {
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), this.locked ? {
 			Bone_1: null,
-			unlock: { i18n: '#unlock', f: (entity) => entity.locked = undefined },
+			unlock: { i18n: '#unlock', f: (entity: Bone) => entity.locked = false },
 		} : null);
 	}
 
@@ -301,11 +302,12 @@ export class Bone extends Entity {
 		return json;
 	}
 
-	static async constructFromJSON(json) {
+	static async constructFromJSON(json: JSONObject) {
 		return new Bone({ name: json.name });
 	}
 
-	fromJSON(json) {
+	fromJSON(json: any) {
+		console.error('warning: deprecate');
 		super.fromJSON(json);
 		mat4.copy(this.#poseToBone, json.posetobone ?? mat4.create());
 		vec3.copy(this.#refPosition, json.refposition ?? vec3.create());

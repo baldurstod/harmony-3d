@@ -21,6 +21,7 @@ export class Skeleton extends Entity {
 	_dirty = true;
 	#imgData!: Float32Array;
 	#texture!: Texture;
+	lastComputed = 0;
 
 	constructor(params?: any/*TODO: improve type*/) {
 		super(params);
