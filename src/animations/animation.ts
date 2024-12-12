@@ -1,3 +1,4 @@
+import { AnimationBone } from './animationbone';
 import { AnimationFrame } from './animationframe';
 
 export class Animation {
@@ -9,6 +10,8 @@ export class Animation {
 	//#sequence;
 	#fps = 30;
 	#frames: Array<AnimationFrame> = [];
+	#bones = Array<AnimationBone>;
+	#bonesByName = new Map<string, AnimationBone>;
 
 	constructor(name: string) {
 		this.#name = name;
@@ -17,6 +20,11 @@ export class Animation {
 	addFrame(animationFrame: AnimationFrame) {
 		this.#frames.push(animationFrame);
 		++this.#frameCount;
+	}
+
+	addBone(bone: AnimationBone) {
+		this.#bones[bone.id] = bone;
+		this.#bonesByName.set(bone.name, bone);
 	}
 
 	get name() {

@@ -1,18 +1,20 @@
 import { quat, vec3 } from 'gl-matrix';
 import { AnimationBone } from './animationbone';
+import { AnimationFrameData, AnimationFrameDataType, AnimationFrameDataTypes } from './animationframedata';
 
 export class AnimationFrame {
 	#frameId: number;
-	#bones = new Map<string, AnimationBone>();
+	#datas = new Map<string, AnimationFrameData>();
 	constructor(frameId: number) {
 		this.#frameId = frameId;
 	}
 
-	setBone(boneId: number, boneName: string, position: vec3, quaternion: quat) {
-		this.#bones.set(boneName, new AnimationBone(boneId, boneName, position, quaternion));
+	setDatas(name: string, type: AnimationFrameDataType, datas: Array<AnimationFrameDataTypes>) {
+		this.#datas.set(name, new AnimationFrameData(type, datas));
 	}
 
-	getBone(boneName: string) {
-		return this.#bones.get(boneName);
+	pushData(name: string, data: AnimationFrameDataTypes) {
+		const frameDatas = this.#datas.get(name);
+		frameDatas?.pushData(data);
 	}
 }
