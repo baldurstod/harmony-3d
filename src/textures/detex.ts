@@ -2,10 +2,10 @@ import detex from './detex.wasm';
 
 
 export class Detex {
-	static #webAssembly;
-	static #HEAPU8;
+	static #webAssembly: any/*TODO: improve type*/;
+	static #HEAPU8: Uint8Array;
 
-	static async decodeBC1(width, height, input, output) {
+	static async decodeBC1(width: number, height: number, input: Uint8Array, output: Uint8Array) {
 		const wa = await this.getWebAssembly();
 		const api = wa.instance.exports;
 		const p = api.create_buffer(width * height * 0.5);
@@ -22,7 +22,7 @@ export class Detex {
 		api.destroy_buffer(resultPointer);
 	}
 
-	static async decodeBC2(width, height, input, output) {
+	static async decodeBC2(width: number, height: number, input: Uint8Array, output: Uint8Array) {
 		const wa = await this.getWebAssembly();
 		const api = wa.instance.exports;
 		const p = api.create_buffer(width * height * 4);
@@ -39,7 +39,7 @@ export class Detex {
 		api.destroy_buffer(resultPointer);
 	}
 
-	static async decodeBC3(width, height, input, output) {
+	static async decodeBC3(width: number, height: number, input: Uint8Array, output: Uint8Array) {
 		const wa = await this.getWebAssembly();
 		const api = wa.instance.exports;
 		const p = api.create_buffer(width * height * 4);
@@ -56,7 +56,7 @@ export class Detex {
 		api.destroy_buffer(resultPointer);
 	}
 
-	static async decodeBC4(width, height, input, output) {
+	static async decodeBC4(width: number, height: number, input: Uint8Array, output: Uint8Array) {
 		const wa = await this.getWebAssembly();
 		const api = wa.instance.exports;
 		const p = api.create_buffer(width * height * 0.5);
@@ -75,7 +75,7 @@ export class Detex {
 		api.destroy_buffer(resultPointer);
 	}
 
-	static async decodeBC7(width, height, input, output) {
+	static async decodeBC7(width: number, height: number, input: Uint8Array, output: Uint8Array) {
 		const wa = await this.getWebAssembly();
 		const api = wa.instance.exports;
 		const p = api.create_buffer(width * height * 4);
@@ -100,14 +100,14 @@ export class Detex {
 		}
 
 		const env = {
-			'abortStackOverflow': _ => { throw new Error('overflow'); },
-			'emscripten_notify_memory_growth': _ => {/*console.error('growth ', this.#webAssembly.instance.exports.memory.buffer.byteLength);*/this.#initHeap(); },
+			'abortStackOverflow': (_: any) => { throw new Error('overflow'); },
+			'emscripten_notify_memory_growth': (_: any) => {/*console.error('growth ', this.#webAssembly.instance.exports.memory.buffer.byteLength);*/this.#initHeap(); },
 			'table': new WebAssembly.Table({ initial: 0, maximum: 0, element: 'anyfunc' }),
 			'tableBase': 0,
 			'memoryBase': 1024,
 			'STACKTOP': 0,
 		};
-		this.#webAssembly = await (detex as unknown as (any) => any)({ env });//WebAssembly.instantiateStreaming(fetch('detex.wasm'), {env});
+		this.#webAssembly = await (detex as unknown as (_: any) => any)({ env });//WebAssembly.instantiateStreaming(fetch('detex.wasm'), {env});
 		this.#initHeap();
 		return this.#webAssembly;
 	}
