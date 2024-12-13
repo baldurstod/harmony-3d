@@ -37,7 +37,7 @@ export class SourceAnimation {
 					const t = Studio_Duration(sequenceMdl, sequences[s].s.id, poseParameters);
 
 					//InitPose(dynamicProp, sequenceMdl, posRemoveMeTemp, quatRemoveMeTemp, BONE_USED_BY_ANYTHING);
-					CalcPose(dynamicProp, sequenceMdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, sequences[s].s.id, dynamicProp.frame / t, poseParameters, BONE_USED_BY_ANYTHING, 1.0, dynamicProp.frame / t);
+					CalcPose(dynamicProp, sequenceMdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, [], sequences[s].s.id, dynamicProp.frame / t, poseParameters, BONE_USED_BY_ANYTHING, 1.0, dynamicProp.frame / t);
 
 					if (sequenceMdl != model.mdl && sequenceMdl.boneNames) {
 						posRemoveMe = [];

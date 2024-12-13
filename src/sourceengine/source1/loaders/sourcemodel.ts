@@ -153,29 +153,33 @@ export class SourceModel {
 			const frameCount = StudioFrames(seq.mdl, seq.id, []);
 			const posRemoveMeTemp: Array<vec3> = [];
 			const quatRemoveMeTemp: Array<quat> = [];
+			const boneFlags: Array<number> = [];
 			const poseParameters = {};
 
 			for (const [boneId, bone] of animation.bones.entries()) {
-				posRemoveMeTemp.push(vec3.clone(bone.refPosition));
-				quatRemoveMeTemp.push(quat.clone(bone.refQuaternion));
+				//posRemoveMeTemp.push(vec3.clone(bone.refPosition));
+				//quatRemoveMeTemp.push(quat.clone(bone.refQuaternion));
+				//posRemoveMeTemp.push(vec3.create());
+				//quatRemoveMeTemp.push(quat.create());
 
 			}
 
 			for (let frame = 0; frame < frameCount; frame++) {
 				const animationFrame = new AnimationFrame(frame);
 				const cycle = frame / frameCount
-				CalcPose(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, seq.id, cycle/*entity.frame / t*/, poseParameters, BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t*/);
+				CalcPose(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, boneFlags, seq.id, cycle/*entity.frame / t*/, poseParameters, BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t*/);
 				//console.info(posRemoveMeTemp, quatRemoveMeTemp);
 
 				animationFrame.setDatas('position', AnimationFrameDataType.Vec3, posRemoveMeTemp);
 				animationFrame.setDatas('rotation', AnimationFrameDataType.Quat, quatRemoveMeTemp);
+				animationFrame.setDatas('flags', AnimationFrameDataType.Number, boneFlags);
 				animation.addFrame(animationFrame);
 			}
 
 			console.log(frameCount, bones);
 		}
 
-		console.log(seq);
+		console.log(seq, animation);
 		return animation;
 	}
 }
