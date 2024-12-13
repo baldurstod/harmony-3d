@@ -485,11 +485,12 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags: Array<number>
 			panim = panims[++animIndex];
 			//} else if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
 		} else if (pweight > 0) {
-			boneflags[i] = animdesc.flags;
 			if (animdesc.flags & STUDIO_DELTA) {
+				boneflags[i] = STUDIO_ANIM_DELTA;
 				q[i] = quat.create();//TODOV2
 				pos[i] = vec3.create();//TODOV2
 			} else {
+				boneflags[i] = 0;
 				quat.copy(q[i], pbone.quaternion);
 				vec3.copy(pos[i], pbone.position);
 			}
