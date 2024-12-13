@@ -19,6 +19,7 @@ import { getRandomInt } from '../../../utils/random';
 import { registerEntity } from '../../../entities/entities';
 import { Animated } from '../../../entities/animated';
 import { SourceModel } from '../loaders/sourcemodel';
+import { STUDIO_ANIM_DELTA } from '../loaders/mdlstudioanim';
 
 let animSpeed = 1.0;
 
@@ -232,6 +233,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 		this.frame += delta;
 		this.#animate();
 		return;
+
 		this.frame += delta;
 		const now = new Date().getTime();
 
@@ -306,14 +308,34 @@ export class Source1ModelInstance extends Entity implements Animated {
 
 				const frame = animation.getFrame(this.frame * 30);
 				if (frame) {
+					const flagData = frame.getData('flags');
+					if (!flagData) {
+						continue;
+					}
+
+					const flag = flagData.datas[bone.id] as number | undefined;
+					if (flag === undefined) {
+						continue;
+					}
+
 					const positionData = frame.getData('position');
 					if (positionData) {
-						vec3.copy(skeletonBone.tempPosition, positionData.datas[bone.id] as vec3);
+						if ((flag & STUDIO_ANIM_DELTA) == STUDIO_ANIM_DELTA) {
+							vec3.add(skeletonBone.tempPosition, skeletonBone.tempPosition, positionData.datas[bone.id] as vec3);
+						} else {
+							vec3.copy(skeletonBone.tempPosition, positionData.datas[bone.id] as vec3);
+
+						}
 					}
 
 					const rotationData = frame.getData('rotation');
 					if (rotationData) {
-						quat.copy(skeletonBone.tempQuaternion, rotationData.datas[bone.id] as quat);
+						if ((flag & STUDIO_ANIM_DELTA) == STUDIO_ANIM_DELTA) {
+							quat.mul(skeletonBone.tempQuaternion, skeletonBone.tempQuaternion, rotationData.datas[bone.id] as quat);
+						} else {
+							quat.copy(skeletonBone.tempQuaternion, rotationData.datas[bone.id] as quat);
+
+						}
 					}
 				}
 
