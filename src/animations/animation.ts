@@ -52,7 +52,7 @@ export class Animation {
 	}
 
 	getFrame(id: number): AnimationFrame | undefined {
-		id = Math.round(id) % (this.#frameCount - 1);
+		id = Math.round(id) % Math.max(this.#frameCount, 1);
 		return this.#frames[id];
 	}
 }
