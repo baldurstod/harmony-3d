@@ -1,5 +1,6 @@
 import { mat4, quat, vec3, vec4 } from 'gl-matrix';
 import { DEBUG } from '../../../buildoptions';
+import { Skeleton } from '../../../objects/skeleton';
 /*
 
 #define BONE_CALCULATE_MASK			0x1F
@@ -60,31 +61,31 @@ export class MdlBone {
 	_worldPos = vec3.create();
 	_worldQuat = quat.create();
 	_worldMat = mat4.create();
-	_parent = null;
+	_parent = null;/*TODO:remove ?*/
 	dirty = true;
 	lastComputed = 0;
-	#skeleton;
-	parentBone;
-	boneId;
-	name: string;
-	lowcasename: string;
-	bonecontroller;
-	rot: vec3;
-	posscale: vec3;
-	rotscale: vec3;
-	qAlignment: vec4;
-	flags: number;
-	proctype: number;
-	procindex: number;
-	physicsbone: number;
-	surfacepropidx: number;
-	contents: number;
+	#skeleton;/*TODO:remove*/
+	parentBone: number = -1;
+	boneId: number = -1;
+	name: string = '';
+	lowcasename: string = '';
+	bonecontroller: Array<number> = [];
+	rot = vec3.create();
+	posscale = vec3.create();
+	rotscale = vec3.create();
+	qAlignment = vec4.create();
+	flags: number = 0;
+	proctype: number = 0;
+	procindex: number = 0;
+	physicsbone: number = 0;
+	surfacepropidx: number = 0;
+	contents: number = 0;
 
-	constructor(skeleton?) {
-		this.#skeleton = skeleton;
+	constructor(skeleton?: Skeleton/*TODO:remove*/) {
+		this.#skeleton = skeleton;/*TODO:remove*/
 	}
 
-	get skeleton() {
+	get skeleton() {/*TODO:remove*/
 		return this.#skeleton;
 	}
 
@@ -106,30 +107,30 @@ export class MdlBone {
 		return this._position;
 	}
 
-	set parent(parent) {
+	set parent(parent) {/*TODO:remove ?*/
 		this._parent = parent;
 		this.dirty = true;
 	}
 
-	get parent() {
+	get parent() {/*TODO:remove ?*/
 		return this._parent;
 	}
 
-	set worldPos(worldPos) {
+	set worldPos(worldPos: vec3) {
 		vec3.copy(this._worldPos, worldPos);
 
 		mat4.fromRotationTranslation(tempMat4, this._worldQuat, this._worldPos);
 		mat4.multiply(this._boneMat, tempMat4, this._poseToBone);
 	}
 
-	set worldQuat(worldQuat) {
+	set worldQuat(worldQuat: quat) {
 		quat.copy(this._worldQuat, worldQuat);
 
 		mat4.fromRotationTranslation(tempMat4, this._worldQuat, this._worldPos);
 		mat4.multiply(this._boneMat, tempMat4, this._poseToBone);
 	}
 
-	getWorldPos(offset, out = vec3.create()) {
+	getWorldPos(offset: vec3, out = vec3.create()) {
 		if (DEBUG && offset == undefined) {
 			throw 'This function must be called with an offset use .worldPos instead';
 		}
@@ -163,14 +164,6 @@ export class MdlBone {
 
 	getWorldQuat() {
 		return this.worldQuat;
-	}
-
-	getDepth() {
-		if (this.parent) {
-			return this.parent.getDepth() + 1;
-		} else {
-			return 0;
-		}
 	}
 
 	/**

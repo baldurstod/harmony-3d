@@ -895,7 +895,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		mdl.boneNames = boneNames;
 	}
 
-	#parseBone(reader, startOffset) {
+	#parseBone(reader: BinaryReader, startOffset: number) {
 		reader.seek(startOffset);
 		const nameOffset = reader.getInt32() + startOffset;
 
@@ -910,16 +910,16 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 
 		bone.position = reader.getVector3();
 		bone.quaternion = reader.getVector4();
-		bone.rot = reader.getVector3();
-		bone.posscale = reader.getVector3();
-		bone.rotscale = reader.getVector3();
+		reader.getVector3(undefined, undefined, bone.rot);
+		reader.getVector3(undefined, undefined, bone.posscale);
+		reader.getVector3(undefined, undefined, bone.rotscale);
 
 		let poseToBone = readMatrix3x4(reader);
 		bone.poseToBone = poseToBone;
 		bone.initPoseToBone = poseToBone;
 		//bone.invPoseToBone = mat4.invert(mat4.create(), bone.poseToBone);
 
-		bone.qAlignment = reader.getVector4();
+		reader.getVector4(undefined, undefined, bone.qAlignment);
 		bone.flags = reader.getInt32();
 		bone.proctype = reader.getInt32();
 		bone.procindex = reader.getInt32();
