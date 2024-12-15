@@ -337,6 +337,8 @@ export class Source1ModelInstance extends Entity implements Animated {
 
 					const flag = flagData.datas[bone.id] as number | undefined;
 					if (flag === undefined) {
+						vec3.copy(skeletonBone.tempPosition, bone.refPosition);
+						quat.copy(skeletonBone.tempQuaternion, bone.refQuaternion);
 						continue;
 					}
 
