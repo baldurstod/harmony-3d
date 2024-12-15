@@ -19,7 +19,7 @@ import { getRandomInt } from '../../../utils/random';
 import { registerEntity } from '../../../entities/entities';
 import { Animated } from '../../../entities/animated';
 import { SourceModel } from '../loaders/sourcemodel';
-import { STUDIO_ANIM_DELTA } from '../loaders/mdlstudioanim';
+import { STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_RAWROT2 } from '../loaders/mdlstudioanim';
 
 let animSpeed = 1.0;
 
@@ -49,6 +49,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	#sheen;
 	#tint;
 	bonesScale;
+	static useNewAnimSystem = false;
 
 	static {
 		defaultMaterial.addUser(Source1ModelInstance);
@@ -230,9 +231,11 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	_playSequences(delta: number) {//TODO
-		this.frame += delta;
-		this.#animate();
-		return;
+		if (Source1ModelInstance.useNewAnimSystem) {
+			this.frame += delta;
+			this.#animate();
+			return;
+		}
 
 		this.frame += delta;
 		const now = new Date().getTime();
@@ -324,22 +327,18 @@ export class Source1ModelInstance extends Entity implements Animated {
 							vec3.add(skeletonBone.tempPosition, skeletonBone.tempPosition, positionData.datas[bone.id] as vec3);
 						} else {
 							vec3.copy(skeletonBone.tempPosition, positionData.datas[bone.id] as vec3);
-
 						}
 					}
 
 					const rotationData = frame.getData('rotation');
 					if (rotationData) {
-						if ((flag & STUDIO_ANIM_DELTA) == STUDIO_ANIM_DELTA) {
+						if (flag & STUDIO_ANIM_DELTA) {
 							quat.mul(skeletonBone.tempQuaternion, skeletonBone.tempQuaternion, rotationData.datas[bone.id] as quat);
 						} else {
 							quat.copy(skeletonBone.tempQuaternion, rotationData.datas[bone.id] as quat);
-
 						}
 					}
 				}
-
-				//skeletonBone.position
 			}
 
 
@@ -365,8 +364,10 @@ export class Source1ModelInstance extends Entity implements Animated {
 		}
 
 		for (const bone of skeleton._bones) {
-			bone.position = bone.tempPosition;
-			bone.quaternion = bone.tempQuaternion;
+			if (!bone.locked) {
+				bone.position = bone.tempPosition;
+				bone.quaternion = bone.tempQuaternion;
+			}
 		}
 	}
 
