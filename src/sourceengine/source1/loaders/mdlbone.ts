@@ -64,7 +64,6 @@ export class MdlBone {
 	dirty = true;
 	lastComputed = 0;
 	#skeleton;
-	_parentMergedBone;//todo: remove
 	parentBone;
 	boneId;
 	name: string;
@@ -114,18 +113,6 @@ export class MdlBone {
 
 	get parent() {
 		return this._parent;
-	}
-
-	set parentMergedBone(parentMergedBone) {
-		if (this._parentMergedBone != parentMergedBone) {
-			this._parentMergedBone = parentMergedBone;
-			this.dirty = true;
-		}
-	}
-
-	get parentMergedBone() {
-		//console.error('optimize me');
-		return this._parentMergedBone;
 	}
 
 	set worldPos(worldPos) {
