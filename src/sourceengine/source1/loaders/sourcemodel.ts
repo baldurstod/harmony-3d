@@ -166,7 +166,7 @@ export class SourceModel {
 
 			for (let frame = 0; frame < frameCount; frame++) {
 				const animationFrame = new AnimationFrame(frame);
-				const cycle = frame / frameCount
+				const cycle = frameCount > 1 ? frame / (frameCount - 1) : 0;
 				CalcPose(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, boneFlags, seq.id, cycle/*entity.frame / t*/, poseParameters, BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t*/);
 				//console.info(posRemoveMeTemp, quatRemoveMeTemp);
 
