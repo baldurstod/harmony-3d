@@ -208,21 +208,21 @@ export function CalcPose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags:
 // Purpose: calculate a pose for a single sequence
 //-----------------------------------------------------------------------------
 //TODOv2: put somewhere else
-const STUDIO_LOOPING = 0x0001		// ending frame should be the same as the starting frame
-const STUDIO_SNAP = 0x0002		// do not interpolate between previous animation and this one
-const STUDIO_DELTA = 0x0004		// this sequence 'adds' to the base sequences, not slerp blends
-const STUDIO_AUTOPLAY = 0x0008		// temporary flag that forces the sequence to always play
-const STUDIO_POST = 0x0010		//
-const STUDIO_ALLZEROS = 0x0020		// this animation/sequence has no real animation data
+export const STUDIO_LOOPING = 0x0001		// ending frame should be the same as the starting frame
+export const STUDIO_SNAP = 0x0002		// do not interpolate between previous animation and this one
+export const STUDIO_DELTA = 0x0004		// this sequence 'adds' to the base sequences, not slerp blends
+export const STUDIO_AUTOPLAY = 0x0008		// temporary flag that forces the sequence to always play
+export const STUDIO_POST = 0x0010		//
+export const STUDIO_ALLZEROS = 0x0020		// this animation/sequence has no real animation data
 //						0x0040
-const STUDIO_CYCLEPOSE = 0x0080		// cycle index is taken from a pose parameter index
-const STUDIO_REALTIME = 0x0100		// cycle index is taken from a real-time clock, not the animations cycle index
-const STUDIO_LOCAL = 0x0200		// sequence has a local context sequence
-const STUDIO_HIDDEN = 0x0400		// don't show in default selection views
-const STUDIO_OVERRIDE = 0x0800		// a forward declared sequence (empty)
-const STUDIO_ACTIVITY = 0x1000		// Has been updated at runtime to activity index
-const STUDIO_EVENT = 0x2000		// Has been updated at runtime to event index
-const STUDIO_WORLD = 0x4000		// sequence blends in worldspace
+export const STUDIO_CYCLEPOSE = 0x0080		// cycle index is taken from a pose parameter index
+export const STUDIO_REALTIME = 0x0100		// cycle index is taken from a real-time clock, not the animations cycle index
+export const STUDIO_LOCAL = 0x0200		// sequence has a local context sequence
+export const STUDIO_HIDDEN = 0x0400		// don't show in default selection views
+export const STUDIO_OVERRIDE = 0x0800		// a forward declared sequence (empty)
+export const STUDIO_ACTIVITY = 0x1000		// Has been updated at runtime to activity index
+export const STUDIO_EVENT = 0x2000		// Has been updated at runtime to event index
+export const STUDIO_WORLD = 0x4000		// sequence blends in worldspace
 
 const s1RemoveMe = 0.0;
 const anim_3wayblend = true;//TODO: removeme
