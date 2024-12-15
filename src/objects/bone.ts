@@ -314,7 +314,6 @@ export class Bone extends Entity {
 	}
 
 	fromJSON(json: any) {
-		console.error('warning: deprecate');
 		super.fromJSON(json);
 		mat4.copy(this.#poseToBone, json.posetobone ?? mat4.create());
 		vec3.copy(this.#refPosition, json.refposition ?? vec3.create());
