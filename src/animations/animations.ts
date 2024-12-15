@@ -7,6 +7,10 @@ export class Animations {
 		return this.#animations.entries();
 	}
 
+	clear() {
+		this.#animations.clear();
+	}
+
 	add(animation: AnimationDescription) {
 		this.#animations.set(animation.name, animation);
 		this.#computeWeights();
