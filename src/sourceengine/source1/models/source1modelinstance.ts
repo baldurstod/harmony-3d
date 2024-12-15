@@ -50,6 +50,8 @@ export class Source1ModelInstance extends Entity implements Animated {
 	#tint;
 	bonesScale;
 	static useNewAnimSystem = false;
+	useNewAnimSystem = false;
+	#animationList = [];
 
 	static {
 		defaultMaterial.addUser(Source1ModelInstance);
@@ -197,6 +199,17 @@ export class Source1ModelInstance extends Entity implements Animated {
 		this.playSequence(name);
 	}
 
+	async setAnimation(id: number, name: string, weight: number) {
+		//TODO: merge with addAnimation
+		this.#animationList[id] = { name: name, weight: weight };
+
+		this.#animations.clear();
+
+		for (const [index, anim] of this.#animationList.entries()) {
+			await this.addAnimation(index, anim.name, anim.weight);
+		}
+	}
+
 	playSequence(sequenceName: string) { //TODO
 		sequenceName = sequenceName.toLowerCase();
 		let existingSequence = this.sequences[sequenceName];
@@ -209,12 +222,12 @@ export class Source1ModelInstance extends Entity implements Animated {
 		this.frame = 0;
 	}
 
-	async addAnimation(animationName: string, weight = 1) {
+	async addAnimation(id: number, animationName: string, weight = 1) {
 		animationName = animationName.toLowerCase();
-		if (!this.#animations.setWeight(animationName, weight)) {
+		if (!this.#animations.setWeight(id, weight)) {
 			//let animation = new Animation(animationName);
 			//this.#fillAnimation(animation);
-			this.#animations.add(new AnimationDescription(await this.sourceModel.getAnimation(animationName, this), weight));
+			this.#animations.set(id, new AnimationDescription(await this.sourceModel.getAnimation(animationName, this), weight));
 		}
 	}
 
@@ -231,7 +244,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	_playSequences(delta: number) {//TODO
-		if (Source1ModelInstance.useNewAnimSystem) {
+		if (Source1ModelInstance.useNewAnimSystem || this.useNewAnimSystem) {
 			this.frame += delta;
 			this.#animate();
 			return;
@@ -299,8 +312,14 @@ export class Source1ModelInstance extends Entity implements Animated {
 		const quaternion = quat.create();
 
 		for (const [_, animationDescription] of this.#animations) {
+			if (!animationDescription) {
+				continue;
+			}
 			//console.info(animation);
 			const animation = animationDescription.animation;
+			if (!animation) {
+				continue;
+			}
 			for (const bone of animation.bones) {
 				const skeletonBone = skeleton.getBoneById(bone.id);
 				if (!skeletonBone) {

@@ -8,7 +8,7 @@ import { Entity } from '../entities/entity';
 import { SceneExplorer } from './sceneexplorer';
 import { Animated } from '../entities/animated';
 
-const MAX_ANIMATIONS = 1;
+const MAX_ANIMATIONS = 2;
 
 let id = 0;
 function getDataListId() {
@@ -391,6 +391,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 
 		(this.#entity as unknown as Animated).playAnimation(name);
+		(this.#entity as unknown as Animated).setAnimation(id, name, 1);//TODO: weight
 	}
 }
 
