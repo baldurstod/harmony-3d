@@ -1,23 +1,23 @@
 import { AnimationDescription } from './animationdescription';
 
 export class Animations {
-	#animations = new Map<string, AnimationDescription>();
+	#animations: Array<AnimationDescription> = [];
 
 	[Symbol.iterator] = () => {
 		return this.#animations.entries();
 	}
 
 	clear() {
-		this.#animations.clear();
+		this.#animations.length = 0;
 	}
 
-	add(animation: AnimationDescription) {
-		this.#animations.set(animation.name, animation);
+	set(id: number, animation: AnimationDescription) {
+		this.#animations[id] = animation;
 		this.#computeWeights();
 	}
 
-	remove(animation: AnimationDescription) {
-		this.#animations.delete(animation.name);
+	remove(id: number) {
+		this.#animations[id] = undefined;
 		this.#computeWeights();
 	}
 
@@ -25,12 +25,12 @@ export class Animations {
 		return this.#animations;
 	}
 
-	get(animationName: string) {
-		return this.#animations.get(animationName);
+	get(id: number) {
+		return this.#animations[id];
 	}
 
-	setWeight(animationName: string, weight: number) {
-		let animation = this.#animations.get(animationName);
+	setWeight(id: number, weight: number) {
+		let animation = this.#animations[id];
 		if (!animation) {
 			return false;
 		}
