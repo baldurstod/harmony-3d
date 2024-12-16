@@ -206,7 +206,9 @@ export class Source1ModelInstance extends Entity implements Animated {
 		this.#animations.clear();
 
 		for (const [index, anim] of this.#animationList.entries()) {
-			await this.addAnimation(index, anim.name, anim.weight);
+			if (anim) {
+				await this.addAnimation(index, anim.name, anim.weight);
+			}
 		}
 	}
 
