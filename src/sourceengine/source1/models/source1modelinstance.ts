@@ -343,7 +343,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 					}
 
 					const positionData = frame.getData('position');
-					if (positionData) {
+					if (positionData && positionData.datas[bone.id]) {
 						if ((flag & STUDIO_ANIM_DELTA) == STUDIO_ANIM_DELTA) {
 							vec3.add(skeletonBone.tempPosition, skeletonBone.tempPosition, positionData.datas[bone.id] as vec3);
 						} else {
@@ -352,7 +352,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 					}
 
 					const rotationData = frame.getData('rotation');
-					if (rotationData) {
+					if (rotationData && rotationData.datas[bone.id]) {
 						if (flag & STUDIO_ANIM_DELTA) {
 							quat.mul(skeletonBone.tempQuaternion, skeletonBone.tempQuaternion, rotationData.datas[bone.id] as quat);
 						} else {
