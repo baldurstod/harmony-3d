@@ -170,7 +170,7 @@ function InitPose(dynamicProp, pStudioHdr, pos, q, boneMask) {
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
 //function CalcPose(pStudioHdr, pIKContext, pos, q, sequence, cycle, poseParameter, boneMask, flWeight = 1.0, flTime = 0.0) {
-export function CalcPose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags: Array<number>, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+export function CalcPose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: Array<number>, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
 	cycle = cycle % 1;//TODOv2
 	const seqdesc = pStudioHdr.getSequenceById(sequence);
 	if (seqdesc) {
@@ -188,13 +188,13 @@ export function CalcPose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags:
 		}
 			*/
 
-		CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, cycle, poseParameter, boneMask, flTime);
+		CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameter, boneMask, flTime);
 
 		if (pIKContext) {
 			pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameter, flWeight);
 		}
 
-		AddSequenceLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime);
+		AddSequenceLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime);
 		/*
 				if (false && seqdesc.numiklocks) {//TODOV2
 					seq_ik.SolveSequenceLocks(seqdesc, pos, q);
@@ -236,7 +236,7 @@ for (let i = 0; i < SOURCE_MODEL_MAX_BONES; i++) {
 	CalcPoseSingle_pos3[i] = vec3.create();
 	CalcPoseSingle_q3[i] = quat.create();
 }
-function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneflags: Array<number>, seqdesc, sequence, cycle, poseParameter, boneMask, flTime) {
+function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneFlags: Array<number>, seqdesc, sequence, cycle, poseParameter, boneMask, flTime) {
 	let bResult = true;
 
 	const pos2 = CalcPoseSingle_pos2;//[];//vec3.create();//TODOv2: optimize (see source)
@@ -296,15 +296,15 @@ function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneflags: Array<number
 				bResult = false;
 			}
 			else {
-				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0, i1), cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0, i1), cycle, boneMask);
 			}
 		}
 		else if (s1 > 0.999) {
-			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0, i1 + 1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0, i1 + 1), cycle, boneMask);
 		}
 		else {
-			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0, i1), cycle, boneMask);
-			CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneflags, seqdesc, sequence, seqdesc.getBlend(i0, i1 + 1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0, i1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0, i1 + 1), cycle, boneMask);
 			BlendBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, s1, boneMask);
 		}
 	}
@@ -314,48 +314,48 @@ function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneflags: Array<number
 				bResult = false;
 			}
 			else {
-				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1), cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1), cycle, boneMask);
 			}
 		}
 		else if (s1 > 0.999) {
-			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1 + 1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1 + 1), cycle, boneMask);
 		}
 		else {
-			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1), cycle, boneMask);
-			CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneflags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1 + 1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1 + 1), cycle, boneMask);
 			BlendBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, s1, boneMask);
 		}
 	}
 	else {
 		if (s1 < 0.001) {
 			if (PoseIsAllZeros(pStudioHdr, sequence, seqdesc, i0 + 1, i1)) {
-				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0, i1), cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0, i1), cycle, boneMask);
 				ScaleBones(pStudioHdr, q, pos, sequence, 1.0 - s0, boneMask);
 			}
 			else if (PoseIsAllZeros(pStudioHdr, sequence, seqdesc, i0, i1)) {
-				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1), cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1), cycle, boneMask);
 				ScaleBones(pStudioHdr, q, pos, sequence, s0, boneMask);
 			}
 			else {
-				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0, i1), cycle, boneMask);
-				CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneflags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1), cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0, i1), cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1), cycle, boneMask);
 
 				BlendBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, s0, boneMask);
 			}
 		}
 		else if (s1 > 0.999) {
-			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0, i1 + 1), cycle, boneMask);
-			CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneflags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1 + 1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0, i1 + 1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1 + 1), cycle, boneMask);
 			BlendBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, s0, boneMask);
 		}
 		//else if (!anim_3wayblend.GetBool())
 		else if (!anim_3wayblend) {
-			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, seqdesc.getBlend(i0, i1), cycle, boneMask);
-			CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneflags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0, i1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1), cycle, boneMask);
 			BlendBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, s0, boneMask);
 
-			CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneflags, seqdesc, sequence, seqdesc.getBlend(i0, i1 + 1), cycle, boneMask);
-			CalcAnimation(dynamicProp, pStudioHdr, pos3, q3, boneflags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1 + 1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0, i1 + 1), cycle, boneMask);
+			CalcAnimation(dynamicProp, pStudioHdr, pos3, q3, boneFlags, seqdesc, sequence, seqdesc.getBlend(i0 + 1, i1 + 1), cycle, boneMask);
 			BlendBones(pStudioHdr, q2, pos2, seqdesc, sequence, q3, pos3, s0, boneMask);
 
 			BlendBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, s1, boneMask);
@@ -368,16 +368,16 @@ function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneflags: Array<number
 
 			if (weight[1] < 0.001) {
 				// on diagonal
-				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, iAnimIndices[0], cycle, boneMask);
-				CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneflags, seqdesc, sequence, iAnimIndices[2], cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, iAnimIndices[0], cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, iAnimIndices[2], cycle, boneMask);
 				BlendBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, weight[2] / (weight[0] + weight[2]), boneMask);
 			}
 			else {
-				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags, seqdesc, sequence, iAnimIndices[0], cycle, boneMask);
-				CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneflags, seqdesc, sequence, iAnimIndices[1], cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, iAnimIndices[0], cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, iAnimIndices[1], cycle, boneMask);
 				BlendBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, weight[1] / (weight[0] + weight[1]), boneMask);
 
-				CalcAnimation(dynamicProp, pStudioHdr, pos3, q3, boneflags, seqdesc, sequence, iAnimIndices[2], cycle, boneMask);
+				CalcAnimation(dynamicProp, pStudioHdr, pos3, q3, boneFlags, seqdesc, sequence, iAnimIndices[2], cycle, boneMask);
 				BlendBones(pStudioHdr, q, pos, seqdesc, sequence, q3, pos3, weight[2], boneMask);
 			}
 		}
@@ -394,7 +394,7 @@ function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneflags: Array<number
 //-----------------------------------------------------------------------------
 // Purpose: Find and decode a sub-frame of animation
 //-----------------------------------------------------------------------------
-function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags: Array<number>, seqdesc, sequence, animation, cycle, boneMask) {
+function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags: Array<number>, seqdesc, sequence, animation, cycle, boneMask) {
 	/*virtualmodel_t *pVModel = pStudioHdr->GetVirtualModel();TODOV2
 	if (pVModel)
 	{
@@ -467,7 +467,7 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags: Array<number>
 		pos[i] = vec3.create();
 
 		if (panim && panim.bone == i) {
-			boneflags[i] = panim.flags;
+			boneFlags[i] = panim.flags;
 			//if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask))
 			if (pweight > 0)//TODOv2
 			{
@@ -486,14 +486,16 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneflags: Array<number>
 			//} else if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
 		} else if (pweight > 0) {
 			if (animdesc.flags & STUDIO_DELTA) {
-				boneflags[i] = STUDIO_ANIM_DELTA;
+				boneFlags[i] = STUDIO_ANIM_DELTA;
 				q[i] = quat.create();//TODOV2
 				pos[i] = vec3.create();//TODOV2
 			} else {
-				boneflags[i] = 0;
+				boneFlags[i] = 0;
 				quat.copy(q[i], pbone.quaternion);
 				vec3.copy(pos[i], pbone.position);
 			}
+		} else {
+			boneFlags[i] = STUDIO_ANIM_DELTA;
 		}
 
 		if (false && testRemoveMe !== null) {
@@ -934,7 +936,7 @@ function Calc3WayBlendIndices(i0, i1, s0, s1, seqdesc, pAnimIndices, pWeight) {
 // Purpose: calculate a pose for a single sequence //TODOv2
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
-const AddSequenceLayers = function (dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags: Array<number>, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+const AddSequenceLayers = function (dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: Array<number>, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
 	//return;
 	for (let i = 0; i < seqdesc.numautolayers; ++i) {
 		const pLayer = seqdesc.getAutoLayer(i);
@@ -1002,7 +1004,7 @@ const AddSequenceLayers = function (dynamicProp, pStudioHdr, pIKContext, pos, q,
 
 		//const iSequence = pStudioHdr.iRelativeSeq(sequence, pLayer.iSequence);//TODOV2
 		const iSequence = pLayer.iSequence;//pStudioHdr.getSequenceById(pLayer.iSequence);
-		AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags, iSequence, layerCycle, poseParameter, boneMask, layerWeight, flTime);
+		AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, iSequence, layerCycle, poseParameter, boneMask, layerWeight, flTime);
 	}
 }
 
@@ -1016,7 +1018,7 @@ for (let i = 0; i < SOURCE_MODEL_MAX_BONES; i++) {
 	AccumulatePose_pos2[i] = vec3.create();
 	AccumulatePose_q2[i] = quat.create();
 }
-function AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags: Array<number>, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+function AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: Array<number>, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
 	//const pos2 = [];
 	//const q2 = [];
 	const pos2 = AccumulatePose_pos2;
@@ -1044,9 +1046,9 @@ function AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags: 
 		InitPose(dynamicProp, pStudioHdr, pos2, q2, boneMask);
 	}
 
-	if (CalcPoseSingle(dynamicProp, pStudioHdr, pos2, q2, boneflags, seqdesc, sequence, cycle, poseParameter, boneMask, flTime)) {
+	if (CalcPoseSingle(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, cycle, poseParameter, boneMask, flTime)) {
 		// this weight is wrong, the IK rules won't composite at the correct intensity
-		AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos2, q2, boneflags, seqdesc, sequence, cycle, poseParameter, boneMask, 1.0, flTime);
+		AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos2, q2, boneFlags, seqdesc, sequence, cycle, poseParameter, boneMask, 1.0, flTime);
 		SlerpBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, flWeight, boneMask);
 	}
 
@@ -1054,7 +1056,7 @@ function AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags: 
 		pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameter, flWeight);
 	}
 
-	AddSequenceLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime);
+	AddSequenceLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime);
 
 	if (false && seqdesc.numiklocks)//TODOv2
 	{
@@ -1066,7 +1068,7 @@ function AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags: 
 // Purpose: calculate a pose for a single sequence
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
-function AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags: Array<number>, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+function AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: Array<number>, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
 	if (!(seqdesc.flags & STUDIO_LOCAL)) {
 		return;
 	}
@@ -1113,7 +1115,7 @@ function AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags: 
 		}
 
 		const iSequence = pLayer.iSequence;//pStudioHdr.iRelativeSeq(sequence, pLayer.iSequence);
-		AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneflags, iSequence, layerCycle, poseParameter, boneMask, layerWeight, flTime);
+		AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, iSequence, layerCycle, poseParameter, boneMask, layerWeight, flTime);
 	}
 }
 
