@@ -225,6 +225,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	async addAnimation(id: number, animationName: string, weight = 1) {
+		//TODO: merge with setAnimation
 		animationName = animationName.toLowerCase();
 		if (!this.#animations.setWeight(id, weight)) {
 			//let animation = new Animation(animationName);
@@ -346,7 +347,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 
 					const positionData = frame.getData('position');
 					if (positionData && positionData.datas[bone.id]) {
-						if ((flag & STUDIO_ANIM_DELTA) == STUDIO_ANIM_DELTA) {
+						if (flag & STUDIO_ANIM_DELTA) {
 							vec3.add(skeletonBone.tempPosition, skeletonBone.tempPosition, positionData.datas[bone.id] as vec3);
 						} else {
 							vec3.copy(skeletonBone.tempPosition, positionData.datas[bone.id] as vec3);
