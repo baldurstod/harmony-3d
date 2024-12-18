@@ -1,19 +1,19 @@
 import { Texture } from './texture';
 
 export class AnimatedTexture extends Texture {
-	frames = [];
+	frames: Array<Texture> = [];
 
-	addFrame(frame, texture) {
+	addFrame(frame: number, texture: Texture) {
 		this.frames[frame] = texture;
 		texture.addUser(this);
 	}
 
-	getFrame(frame) {
+	getFrame(frame: number) {
 		frame = frame % this.frames.length;
 		return this.frames[frame];//TODOv3 handle missing textures
 	}
 
-	hasOnlyUser(user) {
+	hasOnlyUser(user: any) {
 		if (!super.hasOnlyUser(user)) {
 			return false;
 		}
