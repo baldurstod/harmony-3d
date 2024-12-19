@@ -1049,7 +1049,7 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 			throw 'Unknow kv3 compressionMethod ' + compressionMethod;
 			break;
 	}
-	block.keyValue = BinaryKv3Loader.getBinaryKv3(version, sa, singleByteCount, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize);
+	block.keyValue = BinaryKv3Loader.getBinaryKv3(version, sa, singleByteCount, 0, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize);
 }
 
 function decodeMethod1(reader, sa, decodeLength) {

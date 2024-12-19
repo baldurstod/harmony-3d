@@ -41,14 +41,15 @@ export const BinaryKv3Loader = new (function () {
 			return binaryKv3;
 		}
 
-		getBinaryKv3(version, binaryString, singleByteCount, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize) {
+		getBinaryKv3(version, binaryString, singleByteCount, doubleByteCount, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize) {
 			let reader = new BinaryReader(binaryString);
 			let stringDictionary = [];
 
 			//let offset = reader.byteLength - 4;//TODO: check last 4 bytes (0x00 0xDD 0xEE 0xFF)
 			let offset;
 			let byteCursor = 0;
-			let quadCursor = Math.ceil(singleByteCount / 4) * 4;
+			let doubleCursor = Math.ceil(singleByteCount / 2) * 2;
+			let quadCursor = Math.ceil((doubleCursor + doubleByteCount * 2) / 4) * 4;//Math.ceil(singleByteCount / 4) * 4;
 			let eightCursor = Math.ceil((quadCursor + quadByteCount * 4) / 8) * 8;
 			let dictionaryOffset = eightCursor + eightByteCount * 8;
 			let uncompressedBlobSizeReader, compressedBlobSizeReader;
@@ -86,9 +87,11 @@ export const BinaryKv3Loader = new (function () {
 			} while (offset >= 0)
 
 			let byteReader = new BinaryReader(reader);
+			let doubleReader = new BinaryReader(reader);
 			let quadReader = new BinaryReader(reader);
 			let eightReader = new BinaryReader(reader);
 
+			doubleReader.seek(doubleCursor);
 			quadReader.seek(quadCursor);
 			eightReader.seek(eightCursor);
 
@@ -107,7 +110,7 @@ export const BinaryKv3Loader = new (function () {
 				decompressBlobArray.decompressOffset = 0;
 			}
 
-			let rootElement = readBinaryKv3Element(byteReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize);
+			let rootElement = readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize);
 
 
 			// return it in a suitable format
@@ -126,7 +129,7 @@ function readStringDictionary(reader, stringDictionary, stringCount?) {
 	}
 }
 
-function readBinaryKv3Element(byteReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, elementType, isArray, compressionFrameSize) {
+function readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, elementType, isArray, compressionFrameSize) {
 	function shiftArray() {
 		let elementType = typeArray.shift();
 		if (elementType == DATA_TYPE_RESOURCE) {
@@ -247,7 +250,7 @@ function readBinaryKv3Element(byteReader, quadReader, eightReader, uncompressedB
 			count = quadReader.getUint32();
 			elements = [];
 			for (let i = 0; i < count; i++) {
-				elements.push(readBinaryKv3Element(byteReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, true, compressionFrameSize));
+				elements.push(readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, true, compressionFrameSize));
 			}
 			return elements;
 		case DATA_TYPE_OBJECT:
@@ -256,7 +259,7 @@ function readBinaryKv3Element(byteReader, quadReader, eightReader, uncompressedB
 			elements = new Map();
 			for (let i = 0; i < count; i++) {
 				let nameId = quadReader.getUint32();
-				let element = readBinaryKv3Element(byteReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize);
+				let element = readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize);
 				elements.set(nameId, element);
 				//elements.setProperty(nameId, element);
 			}
@@ -271,7 +274,7 @@ function readBinaryKv3Element(byteReader, quadReader, eightReader, uncompressedB
 			let subType = shiftArray()/*typeArray.shift()*/;
 			elements = [];
 			for (let i = 0; i < count; i++) {
-				elements.push(readBinaryKv3Element(byteReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType, true, compressionFrameSize));
+				elements.push(readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType, true, compressionFrameSize));
 			}
 			return elements;
 		case DATA_TYPE_INT32:
@@ -304,7 +307,7 @@ function readBinaryKv3Element(byteReader, quadReader, eightReader, uncompressedB
 			const subType2 = shiftArray()/*typeArray.shift()*/;
 			elements = [];
 			for (let i = 0; i < count; i++) {
-				elements.push(readBinaryKv3Element(byteReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType2, true, compressionFrameSize));
+				elements.push(readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType2, true, compressionFrameSize));
 			}
 			return elements;
 		case DATA_TYPE_RESOURCE:
