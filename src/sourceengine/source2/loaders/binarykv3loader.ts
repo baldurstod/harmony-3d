@@ -334,7 +334,7 @@ function binaryKv32KV3(elementKv3, stringDictionary) {
 			if (elementKv3 instanceof Map) {
 				newKey = stringDictionary[key];
 			} else {
-			//console.log(key, value);
+				//console.log(key, value);
 			}
 
 			if (value instanceof Map) {
@@ -362,21 +362,21 @@ function readElement(reader, stringDictionary, occurences?) {
 	var type = reader.getUint8();
 	//console.log(type);
 	switch (type) {
-/*
-kv element:
-2: bool (len 1)
-3:int (len 8)
-5:float (len 8)
-6: string (len 4, index to string dict)
-8:array (len 4 + content)
-9:element
-uint32: properties count
-propertie index uint32
-property type uint8
-property value (len depends on type)
+		/*
+		kv element:
+		2: bool (len 1)
+		3:int (len 8)
+		5:float (len 8)
+		6: string (len 4, index to string dict)
+		8:array (len 4 + content)
+		9:element
+		uint32: properties count
+		propertie index uint32
+		property type uint8
+		property value (len depends on type)
 
 
-86: resource(len 1 + 4, index to string dict)*/
+		86: resource(len 1 + 4, index to string dict)*/
 
 		case 0:
 			break;
@@ -396,11 +396,11 @@ property value (len depends on type)
 			if (occurences) {
 				let arr = [];
 				for (let i = 0; i < occurences; i++) {
-					arr.push(reader.getUint8() ? true:false);
+					arr.push(reader.getUint8() ? true : false);
 				}
 				return arr;//new SE2Kv3Value(type, arr);
 			} else {
-				return reader.getUint8() ? true:false;//new SE2Kv3Value(type, reader.getUint8() ? true:false);
+				return reader.getUint8() ? true : false;//new SE2Kv3Value(type, reader.getUint8() ? true:false);
 			}
 			break;
 		case 3: // Int 64
