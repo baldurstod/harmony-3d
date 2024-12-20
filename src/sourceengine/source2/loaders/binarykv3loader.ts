@@ -86,11 +86,12 @@ export const BinaryKv3Loader = new (function () {
 				}
 			}
 
-			if (version == 1 || version >= 5) {
+			if (version == 1) {//v1
 				offset = reader.byteLength - 4;
-			} else if (version >= 2) {
+			} else if (version < 5) {//v2-v4
 				offset = blobOffset;
 			}
+
 			let typeArray = [];
 			let valueArray = [];
 
@@ -107,11 +108,11 @@ export const BinaryKv3Loader = new (function () {
 				} while (offset >= 0)
 			} else {
 				if (bufferId == 1) {
-					for (let i = 0; i < dictionaryTypeLength && offset >= 0; i++) {
-						--offset;
-						let type = reader.getUint8(offset);
+					reader.seek(dictionaryOffset);
+					for (let i = 0; i < dictionaryTypeLength; i++) {
+						let type = reader.getUint8();
 						if (type) {
-							typeArray.unshift(type);
+							typeArray.push(type);
 						}
 					}
 				}
@@ -155,6 +156,7 @@ export const BinaryKv3Loader = new (function () {
 				let doubleCursorBuf0 = Math.ceil(singleByteCount[0] / 2) * 2;
 				let quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0] * 2) / 4) * 4;
 				let eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0] * 4) / 8) * 8;
+				console.info('cursor buff 0', byteCursorBuf0, doubleCursorBuf0, quadCursorBuf0, eightCursorBuf0)
 
 				byteReaderBuf0 = new BinaryReader(reader0);
 				doubleReaderBuf0 = new BinaryReader(reader0);
@@ -383,7 +385,6 @@ function readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader,
 			return elements;
 		case DATA_TYPE_TYPED_ARRAY3:
 			count = byteReader.getUint8();
-			console.info('DATA_TYPE_TYPED_ARRAY3', count);
 			const subType3 = shiftArray()/*typeArray.shift()*/;
 			elements = [];
 			for (let i = 0; i < count; i++) {
