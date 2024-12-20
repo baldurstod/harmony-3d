@@ -105,10 +105,10 @@ export const Source2BlockLoader = new (function () {
 					return await loadDataKv3(reader, block, 3);
 				case 0x4B563304: // KV3 v4 new since dota 7.33
 					return await loadDataKv3(reader, block, 4);
+				case 0x4B563305: // KV3 v5 new since frostivus 2024
+					return await loadDataKv3(reader, block, 5);
 				default:
-					if (TESTING) {
-						console.warn('Unknown block data type:', bytes);
-					}
+					console.warn('Unknown block data type:', bytes);
 			}
 			if (!introspection || !introspection.structsArray) {
 				if (parseVtex) {//TODO
@@ -968,6 +968,15 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 	reader.seek(block.offset);
 
 	let method = 1;
+	let bufferCount = 1;
+	const uncompressedBufferSize: Array<number> = [];
+	const compressedBufferSize: Array<number> = [];
+	const bytesBufferSize1: Array<number> = [];
+	const bytesBufferSize2: Array<number> = [];
+	const bytesBufferSize4: Array<number> = [];
+	const bytesBufferSize8: Array<number> = [];
+	const objectCount: Array<number> = [];
+	const arrayCount: Array<number> = [];
 
 	reader.skip(4);
 	let format = reader.getString(16);
@@ -975,20 +984,22 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 	let compressionDictionaryId;
 	let compressionFrameSize;
 	let dictionaryTypeLength, unknown3, unknown4, blobCount = 0, totalUncompressedBlobSize;
-	let unknown5, unknown6;
+	let unknown5: number, unknown6: number, unknown7: number, unknown8: number;
 	if (version >= 2) {
 		compressionDictionaryId = reader.getUint16();
 		compressionFrameSize = reader.getUint16();
 		//unknown1 = reader.getUint32();//0 or 0x40000000 depending on compression method
 	}
-	let singleByteCount = reader.getUint32();//skip this many bytes ?????
-	let quadByteCount = reader.getUint32();
-	let eightByteCount = reader.getUint32();
+
+	bytesBufferSize1.push(reader.getUint32());
+	bytesBufferSize2.push(0);
+	bytesBufferSize4.push(reader.getUint32());
+	bytesBufferSize8.push(reader.getUint32());
 	let compressedLength = block.length;
 	if (version >= 2) {
 		dictionaryTypeLength = reader.getUint32();
-		unknown3 = reader.getUint16();
-		unknown4 = reader.getUint16();
+		objectCount.push(reader.getUint16());
+		arrayCount.push(reader.getUint16());
 		if (false && TESTING) {
 			console.log(dictionaryTypeLength, unknown3, unknown4, block);
 		}
@@ -1006,50 +1017,88 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 		unknown6 = reader.getUint32();
 	}
 
-	let sa;
+	if (version >= 5) {
+		bufferCount = 2;
+		uncompressedBufferSize.push(reader.getUint32());
+		compressedBufferSize.push(reader.getUint32());
+		uncompressedBufferSize.push(reader.getUint32());
+		compressedBufferSize.push(reader.getUint32());
+		bytesBufferSize1.push(reader.getUint32());
+		bytesBufferSize2.push(reader.getUint32());
+		bytesBufferSize4.push(reader.getUint32());
+		bytesBufferSize8.push(reader.getUint32());
+
+		// TODO: use those values
+		unknown7 = reader.getUint32();
+		objectCount.push(reader.getUint32());
+		arrayCount.push(reader.getUint32());
+		unknown8 = reader.getUint32();
+
+		console.info(block.type, block, uncompressedBufferSize, compressedBufferSize, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8)
+	} else {
+		uncompressedBufferSize.push(decodeLength);
+		compressedBufferSize.push(compressedLength);
+	}
+
+	let sa: Uint8Array;
 	let compressedBlobReader;
 	let uncompressedBlobReader;
-	switch (compressionMethod) {
-		case 0:
-			if (TESTING && version >= 2 && (compressionDictionaryId != 0 || compressionFrameSize != 0)) {
-				throw 'Error compression method doesn\'t match';
-			}
-			sa = reader.getBytes(decodeLength);
-			break;
-		case 1:
-			let buf = new ArrayBuffer(decodeLength);
-			sa = new Uint8Array(buf);
-			if (blobCount > 0) {
-				compressedBlobReader = new BinaryReader(reader, reader.tell() + compressedLength);
-			}
-			decodeLz4(reader, sa, compressedLength, decodeLength);
-			{
+	let stringDictionary: Array<string>;
+	let buffer0: Uint8Array;
+	for (let i = 0; i < bufferCount; i++) {
+		switch (compressionMethod) {
+			case 0:
+				if (TESTING && version >= 2 && (compressionDictionaryId != 0 || compressionFrameSize != 0)) {
+					throw 'Error compression method doesn\'t match';
+				}
+				sa = reader.getBytes(uncompressedBufferSize[i]);
+				break;
+			case 1:
+				let buf = new ArrayBuffer(uncompressedBufferSize[i]);
+				sa = new Uint8Array(buf);
 				if (blobCount > 0) {
-					//SaveFile(new File([new Blob([sa])], 'decodeLz4_' + block.offset + '_' + block.length));
+					compressedBlobReader = new BinaryReader(reader, reader.tell() + compressedBufferSize[i]);
 				}
-				if (TESTING && (block.type == 'ANIM')) {
-					//SaveFile(new File([new Blob([sa])], 'decodeLz4_block_ANIM_' + block.length + '_' + block.offset));
+				decodeLz4(reader, sa, compressedBufferSize[i], uncompressedBufferSize[i]);
+				{
+					if (blobCount > 0) {
+						//SaveFile(new File([new Blob([sa])], 'decodeLz4_' + block.offset + '_' + block.length));
+					}
+					if (TESTING && (block.type == 'ANIM')) {
+						//SaveFile(new File([new Blob([sa])], 'decodeLz4_block_ANIM_' + block.length + '_' + block.offset));
+					}
+					//SaveFile(new File([new Blob([sa])], 'decodeLz4_block_' + block.type + '_' + block.length + '_' + block.offset));
 				}
-			}
-			break;
-		case 2://new since spectre arcana
-			//SaveFile(new File([new Blob([reader.getBytes(block.length, block.offset)])], 'block_' + block.offset + '_' + block.length));
-			let compressedBytes = reader.getBytes(compressedLength);
-			//SaveFile(new File([new Blob([compressedBytes])], 'block_' + block.offset + '_' + block.length));
-			let decompressedBytes = await Zstd.decompress(compressedBytes);
-			sa = new Uint8Array(new Uint8Array(decompressedBytes.buffer, 0, decodeLength));
-			if (blobCount > 0) {
-				uncompressedBlobReader = new BinaryReader(decompressedBytes, decodeLength);
-			}
-			//console.error(sa);
-			//SaveFile(new File([new Blob([sa])], 'zstd'));
+				break;
+			case 2://new since spectre arcana
+				//SaveFile(new File([new Blob([reader.getBytes(block.length, block.offset)])], 'block_' + block.offset + '_' + block.length));
+				let compressedBytes = reader.getBytes(compressedBufferSize[i]);
+				//SaveFile(new File([new Blob([compressedBytes])], 'block_' + block.offset + '_' + block.length));
+				let decompressedBytes = await Zstd.decompress(compressedBytes);
+				sa = new Uint8Array(new Uint8Array(decompressedBytes.buffer, 0, decodeLength));
+				if (blobCount > 0) {
+					uncompressedBlobReader = new BinaryReader(decompressedBytes, decodeLength);
+				}
+				//console.error(sa);
+				//SaveFile(new File([new Blob([sa])], 'zstd'));
 
-			break;
-		default:
-			throw 'Unknow kv3 compressionMethod ' + compressionMethod;
-			break;
+				break;
+			default:
+				throw 'Unknow kv3 compressionMethod ' + compressionMethod;
+		}
+		if (version >= 5) {
+			//SaveFile(new File([new Blob([sa])], 'block_' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
+		}
+
+		const result = BinaryKv3Loader.getBinaryKv3(version, sa, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, i, stringDictionary, objectCount[i], arrayCount[i], buffer0);
+		console.log(block.type, result);
+		if (version >= 5 && i == 0) {
+			stringDictionary = result as Array<string>;
+			buffer0 = sa;
+		} else {
+			block.keyValue = result;
+		}
 	}
-	block.keyValue = BinaryKv3Loader.getBinaryKv3(version, sa, singleByteCount, 0, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize);
 }
 
 function decodeMethod1(reader, sa, decodeLength) {
