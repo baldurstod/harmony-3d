@@ -134,7 +134,7 @@ export const BinaryKv3Loader = new (function () {
 
 			reader.seek(); // skip blob data
 
-			const readers: Readers = {};
+			const readers: Readers = {} as Readers;
 
 			let objectsSizeReader = quadReader;
 
@@ -181,7 +181,7 @@ export const BinaryKv3Loader = new (function () {
 				decompressBlobArray.decompressOffset = 0;
 			}
 
-			let rootElement = readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers as Readers);
+			let rootElement = readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers);
 
 
 			// return it in a suitable format
