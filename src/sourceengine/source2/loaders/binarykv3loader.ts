@@ -26,7 +26,6 @@ const DATA_TYPE_DOUBLE_ONE = 0x12;
 const DATA_TYPE_FLOAT = 0x13;
 const DATA_TYPE_BYTE = 0x17;
 const DATA_TYPE_TYPED_ARRAY2 = 0x18;
-const DATA_TYPE_TYPED_ARRAY3 = 0x19;
 const DATA_TYPE_RESOURCE = 0x86;
 
 export const BinaryKv3Loader = new (function () {
@@ -42,11 +41,9 @@ export const BinaryKv3Loader = new (function () {
 			return binaryKv3;
 		}
 
-		getBinaryKv3(version, binaryString, singleByteCount, doubleByteCount, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, bufferId: number, stringDictionary?: Array<string>) {
+		getBinaryKv3(version, binaryString, singleByteCount, doubleByteCount, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize) {
 			let reader = new BinaryReader(binaryString);
-			if (!stringDictionary) {
-				stringDictionary = [];
-			}
+			let stringDictionary = [];
 
 			//let offset = reader.byteLength - 4;//TODO: check last 4 bytes (0x00 0xDD 0xEE 0xFF)
 			let offset;
@@ -55,9 +52,6 @@ export const BinaryKv3Loader = new (function () {
 			let quadCursor = Math.ceil((doubleCursor + doubleByteCount * 2) / 4) * 4;//Math.ceil(singleByteCount / 4) * 4;
 			let eightCursor = Math.ceil((quadCursor + quadByteCount * 4) / 8) * 8;
 			let dictionaryOffset = eightCursor + eightByteCount * 8;
-			if (version >= 5 && bufferId == 0) {
-				dictionaryOffset = 0;
-			}
 			let uncompressedBlobSizeReader, compressedBlobSizeReader;
 			const blobOffset = dictionaryOffset + dictionaryTypeLength;
 			if (version >= 2 && blobCount != 0) {
@@ -73,7 +67,7 @@ export const BinaryKv3Loader = new (function () {
 				}
 			}
 
-			if (version == 1 || version >= 5) {
+			if (version == 1) {
 				offset = reader.byteLength - 4;
 			} else if (version >= 2) {
 				offset = blobOffset;
@@ -81,15 +75,6 @@ export const BinaryKv3Loader = new (function () {
 			let typeArray = [];
 			let valueArray = [];
 
-			for (let i = 0; i < dictionaryTypeLength && offset >= 0; i++) {
-				--offset;
-				let type = reader.getUint8(offset);
-				if (type) {
-					typeArray.unshift(type);
-				}
-			}
-
-			/*
 			do {
 				--offset;
 				let type = reader.getUint8(offset);
@@ -100,7 +85,6 @@ export const BinaryKv3Loader = new (function () {
 					break;
 				}
 			} while (offset >= 0)
-			 */
 
 			let byteReader = new BinaryReader(reader);
 			let doubleReader = new BinaryReader(reader);
@@ -112,17 +96,10 @@ export const BinaryKv3Loader = new (function () {
 			eightReader.seek(eightCursor);
 
 			reader.seek(); // skip blob data
+			let stringCount = quadReader.getUint32();
 
-			if (bufferId == 0) {
-				// In v5, strings are in buffer 0
-				let stringCount = quadReader.getUint32();
-				reader.seek(dictionaryOffset);
-				readStringDictionary(reader, stringDictionary, stringCount);
-
-				if (version >= 5) {
-					return stringDictionary;
-				}
-			}
+			reader.seek(dictionaryOffset);
+			readStringDictionary(reader, stringDictionary, stringCount);
 
 			let decompressBlobBuffer;
 			let decompressBlobArray;
@@ -331,14 +308,6 @@ function readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader,
 			elements = [];
 			for (let i = 0; i < count; i++) {
 				elements.push(readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType2, true, compressionFrameSize));
-			}
-			return elements;
-		case DATA_TYPE_TYPED_ARRAY3:
-			count = byteReader.getUint8();
-			const subType3 = shiftArray()/*typeArray.shift()*/;
-			elements = [];
-			for (let i = 0; i < count; i++) {
-				elements.push(readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType3, true, compressionFrameSize));
 			}
 			return elements;
 		case DATA_TYPE_RESOURCE:
