@@ -1075,9 +1075,9 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 				let compressedBytes = reader.getBytes(compressedBufferSize[i]);
 				//SaveFile(new File([new Blob([compressedBytes])], 'block_' + block.offset + '_' + block.length));
 				let decompressedBytes = await Zstd.decompress(compressedBytes);
-				sa = new Uint8Array(new Uint8Array(decompressedBytes.buffer, 0, decodeLength));
+				sa = new Uint8Array(new Uint8Array(decompressedBytes.buffer, 0, uncompressedBufferSize[i]));
 				if (blobCount > 0) {
-					uncompressedBlobReader = new BinaryReader(decompressedBytes, decodeLength);
+					uncompressedBlobReader = new BinaryReader(decompressedBytes, uncompressedBufferSize[i]);
 				}
 				//console.error(sa);
 				//SaveFile(new File([new Blob([sa])], 'zstd'));
