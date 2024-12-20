@@ -313,9 +313,7 @@ function readBinaryKv3Element(byteReader, doubleReader, quadReader, eightReader,
 						return uncompressedBlobReader.getBytes(uncompressedBlobSize);
 					} else {
 						//should not happend
-						if (TESTING) {
-							throw 'Missing reader';
-						}
+						throw 'Missing reader';
 					}
 				}
 			}
