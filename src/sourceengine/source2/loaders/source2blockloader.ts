@@ -1077,7 +1077,21 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 				let decompressedBytes = await Zstd.decompress(compressedBytes);
 				sa = new Uint8Array(new Uint8Array(decompressedBytes.buffer, 0, uncompressedBufferSize[i]));
 				if (blobCount > 0) {
-					uncompressedBlobReader = new BinaryReader(decompressedBytes, uncompressedBufferSize[i]);
+					if (version < 5) {
+						uncompressedBlobReader = new BinaryReader(decompressedBytes, uncompressedBufferSize[i]);
+					} else {
+						if (i == 1) {
+							const compressedBlobSize = compressedLength - (compressedBufferSize[0] + compressedBufferSize[1]);
+							let compressedBlobBytes = reader.getBytes(compressedBlobSize);
+							//SaveFile(new File([new Blob([compressedBlobBytes])], 'compressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
+							let decompressedBlobBytes = await Zstd.decompress(compressedBlobBytes);
+							console.info(decompressedBlobBytes);
+							uncompressedBlobReader = new BinaryReader(decompressedBlobBytes);
+							//SaveFile(new File([new Blob([decompressedBlobBytes])], 'decompressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
+
+						}
+						//compressedBlobReader = new BinaryReader(reader, reader.tell());
+					}
 				}
 				//console.error(sa);
 				//SaveFile(new File([new Blob([sa])], 'zstd'));
