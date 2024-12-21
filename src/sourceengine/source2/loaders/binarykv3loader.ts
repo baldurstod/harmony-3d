@@ -71,7 +71,7 @@ export const BinaryKv3Loader = new (function () {
 				eightCursor = quadCursor + quadByteCount[bufferId] * 4;
 			}
 
-			console.info(byteCursor, doubleCursor, quadCursor, eightCursor);
+			//console.info(byteCursor, doubleCursor, quadCursor, eightCursor);
 
 			let dictionaryOffset = eightCursor + eightByteCount[bufferId] * 8;
 			if (version >= 5 && bufferId == 0) {
@@ -162,7 +162,7 @@ export const BinaryKv3Loader = new (function () {
 				let doubleCursorBuf0 = Math.ceil(singleByteCount[0] / 2) * 2;
 				let quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0] * 2) / 4) * 4;
 				let eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0] * 4) / 8) * 8;
-				console.info('cursor buff 0', byteCursorBuf0, doubleCursorBuf0, quadCursorBuf0, eightCursorBuf0)
+				//console.info('cursor buff 0', byteCursorBuf0, doubleCursorBuf0, quadCursorBuf0, eightCursorBuf0)
 
 				byteReaderBuf0 = new BinaryReader(reader0);
 				doubleReaderBuf0 = new BinaryReader(reader0);

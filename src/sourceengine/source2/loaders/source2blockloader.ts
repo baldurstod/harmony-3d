@@ -1085,7 +1085,7 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 							let compressedBlobBytes = reader.getBytes(compressedBlobSize);
 							//SaveFile(new File([new Blob([compressedBlobBytes])], 'compressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
 							let decompressedBlobBytes = await Zstd.decompress(compressedBlobBytes);
-							console.info(decompressedBlobBytes);
+							//console.info(decompressedBlobBytes);
 							uncompressedBlobReader = new BinaryReader(decompressedBlobBytes);
 							//SaveFile(new File([new Blob([decompressedBlobBytes])], 'decompressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
 
@@ -1105,11 +1105,11 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 		}
 
 		const result = BinaryKv3Loader.getBinaryKv3(version, sa, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, i, stringDictionary, objectCount[i], arrayCount[i], buffer0);
-		console.log(block.type, result);
 		if (version >= 5 && i == 0) {
 			stringDictionary = result as Array<string>;
 			buffer0 = sa;
 		} else {
+			console.log(block.type, result);
 			block.keyValue = result;
 		}
 	}
