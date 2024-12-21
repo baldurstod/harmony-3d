@@ -1034,7 +1034,7 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 		arrayCount.push(reader.getUint32());
 		unknown8 = reader.getUint32();
 
-		console.info(block.type, block, uncompressedBufferSize, compressedBufferSize, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8)
+		//console.info(block.type, block, uncompressedBufferSize, compressedBufferSize, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8)
 	} else {
 		uncompressedBufferSize.push(decodeLength);
 		compressedBufferSize.push(compressedLength);
