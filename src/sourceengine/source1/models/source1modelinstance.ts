@@ -323,6 +323,25 @@ export class Source1ModelInstance extends Entity implements Animated {
 			if (!animation) {
 				continue;
 			}
+/*
+			if (!animation.once) {
+				animation.once = true;
+				const frame = animation.getFrame(10);
+				const rotationData = frame.getData('rotation');
+
+				var arr = []
+				for (const data of rotationData.datas as Array<quat>) {
+					let s = '';
+					for (let i = 0; i < 4; i++) {
+						s += data[i].toFixed(2) + ' ';
+					}
+					arr.push(s);
+				}
+				console.info(arr);
+
+			}
+*/
+
 			for (const bone of animation.bones) {
 				const skeletonBone = skeleton.getBoneById(bone.id);
 				if (!skeletonBone) {

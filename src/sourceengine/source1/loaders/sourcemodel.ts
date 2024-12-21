@@ -1,6 +1,6 @@
 import { Source1ModelInstance } from '../models/source1modelinstance';
 import { FileNameFromPath } from '../../../utils/utils';
-import { CalcPose, StudioFrames } from '../animations/calcanimations';
+import { CalcPose2, StudioFrames2 } from '../animations/calcanimations2';
 import { Animation } from '../../../animations/animation';
 import { SourceMDL } from './sourcemdl';
 import { BONE_USED_BY_ANYTHING } from './mdlbone';
@@ -167,7 +167,7 @@ export class SourceModel {
 			for (let frame = 0; frame < frameCount; frame++) {
 				const animationFrame = new AnimationFrame(frame);
 				const cycle = frameCount > 1 ? frame / (frameCount - 1) : 0;
-				CalcPose(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, boneFlags, seq.id, cycle/*entity.frame / t*/, poseParameters, BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t*/);
+				CalcPose2(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, boneFlags, seq.id, cycle/*entity.frame / t*/, poseParameters, BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t*/);
 				//console.info(posRemoveMeTemp, quatRemoveMeTemp);
 
 				animationFrame.setDatas('position', AnimationFrameDataType.Vec3, posRemoveMeTemp);

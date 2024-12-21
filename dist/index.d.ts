@@ -66,6 +66,7 @@ declare interface Animated {
     getAnimations: () => Promise<Set<string>>;
     playSequence: (name: string) => void;
     playAnimation: (name: string) => void;
+    setAnimation: (id: number, name: string, weight: number) => void;
 }
 
 export declare class AnimatedTextureProxy extends Proxy_2 {
@@ -79,6 +80,54 @@ export declare class AnimatedWeaponSheen extends Proxy_2 {
     init(): void;
     execute(variables: any, proxyParams: any, time: any): void;
 }
+
+declare class Animation_2 {
+    #private;
+    weight: number;
+    constructor(name: string);
+    [Symbol.iterator]: () => ArrayIterator<[number, AnimationFrame]>;
+    addFrame(animationFrame: AnimationFrame): void;
+    addBone(bone: AnimationBone): void;
+    get name(): any;
+    get frameCount(): number;
+    set fps(fps: number);
+    get fps(): number;
+    get bones(): AnimationBone[];
+    getFrame(id: number): AnimationFrame | undefined;
+}
+
+declare class AnimationBone {
+    #private;
+    refPosition: vec3;
+    refQuaternion: quat;
+    constructor(id: number, name: string, position: vec3, quaternion: quat);
+    get id(): number;
+    get name(): string;
+}
+
+declare class AnimationFrame {
+    #private;
+    constructor(frameId: number);
+    setDatas(name: string, type: AnimationFrameDataType, datas: Array<AnimationFrameDataTypes>): void;
+    pushData(name: string, data: AnimationFrameDataTypes): void;
+    getData(name: string): AnimationFrameData;
+}
+
+declare class AnimationFrameData {
+    type: AnimationFrameDataType;
+    datas: Array<AnimationFrameDataTypes>;
+    constructor(type: AnimationFrameDataType, datas?: Array<AnimationFrameDataTypes>);
+    pushData(data: AnimationFrameDataTypes): void;
+}
+
+declare enum AnimationFrameDataType {
+    Vec3 = 0,
+    Quat = 1,
+    Number = 2,
+    Boolean = 3
+}
+
+declare type AnimationFrameDataTypes = vec3 | quat | number | boolean;
 
 declare type AnyTexture = Texture | CubeTexture;
 
@@ -172,10 +221,12 @@ export declare class Bone extends Entity {
     isBone: boolean;
     dirty: boolean;
     lastComputed: number;
-    constructor(parameters: any);
+    tempPosition: vec3;
+    tempQuaternion: quat;
+    constructor(params?: any);
     set position(position: vec3);
     get position(): vec3;
-    setWorldPosition(position: any): void;
+    setWorldPosition(position: vec3): void;
     set refPosition(refPosition: vec3);
     get refPosition(): vec3;
     getTotalRefPosition(position?: vec3): vec3;
@@ -188,10 +239,10 @@ export declare class Bone extends Entity {
     get scale(): vec3;
     set parent(parent: Entity);
     get parent(): Entity;
-    set skeleton(skeleton: any);
-    get skeleton(): any;
-    set parentSkeletonBone(parentSkeletonBone: any);
-    get parentSkeletonBone(): any;
+    set skeleton(skeleton: Skeleton);
+    get skeleton(): Skeleton;
+    set parentSkeletonBone(parentSkeletonBone: Bone);
+    get parentSkeletonBone(): Bone;
     get boneMat(): mat4;
     get worldPos(): vec3;
     get worldQuat(): quat;
@@ -199,12 +250,13 @@ export declare class Bone extends Entity {
     getWorldPosition(vec?: vec3): vec3;
     getWorldQuaternion(q?: quat): vec4;
     getWorldScale(vec?: vec3): vec3;
-    getWorldPosOffset(offset: any, out?: vec3): vec3;
+    getWorldPosOffset(offset: vec3, out?: vec3): vec3;
     set poseToBone(poseToBone: mat4);
     get poseToBone(): mat4;
     set boneId(boneId: any);
     get boneId(): any;
     isProcedural(): boolean;
+    reset(): void;
     buildContextMenu(): {
         visibility: {
             i18n: string;
@@ -296,11 +348,11 @@ export declare class Bone extends Entity {
         Bone_1: any;
         unlock: {
             i18n: string;
-            f: (entity: any) => any;
+            f: (entity: Bone) => false;
         };
     };
     toJSON(): any;
-    static constructFromJSON(json: any): Promise<Bone>;
+    static constructFromJSON(json: JSONObject): Promise<Bone>;
     fromJSON(json: any): void;
     static getEntityName(): string;
 }
@@ -1525,11 +1577,11 @@ declare class Choreography {
 
      export declare class Detex {
          #private;
-         static decodeBC1(width: any, height: any, input: any, output: any): Promise<void>;
-         static decodeBC2(width: any, height: any, input: any, output: any): Promise<void>;
-         static decodeBC3(width: any, height: any, input: any, output: any): Promise<void>;
-         static decodeBC4(width: any, height: any, input: any, output: any): Promise<void>;
-         static decodeBC7(width: any, height: any, input: any, output: any): Promise<void>;
+         static decodeBC1(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
+         static decodeBC2(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
+         static decodeBC3(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
+         static decodeBC4(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
+         static decodeBC7(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
          static getWebAssembly(): Promise<any>;
      }
 
@@ -3540,6 +3592,64 @@ declare class Choreography {
              name: any;
              base: any;
              models: any;
+         }
+
+         declare class MdlBone {
+             #private;
+             _poseToBone: mat4;
+             _invPoseToBone: mat4;
+             _initPoseToBone: mat4;
+             _boneMat: mat4;
+             _position: vec3;
+             _quaternion: quat;
+             _worldPos: vec3;
+             _worldQuat: quat;
+             _worldMat: mat4;
+             _parent: any;
+             dirty: boolean;
+             lastComputed: number;
+             parentBone: number;
+             boneId: number;
+             name: string;
+             lowcasename: string;
+             bonecontroller: Array<number>;
+             rot: vec3;
+             posscale: vec3;
+             rotscale: vec3;
+             qAlignment: vec4;
+             flags: number;
+             proctype: number;
+             procindex: number;
+             physicsbone: number;
+             surfacepropidx: number;
+             contents: number;
+             constructor(skeleton?: Skeleton);
+             get skeleton(): any;
+             set quaternion(quaternion: quat);
+             get quaternion(): quat;
+             set position(position: vec3);
+             get position(): vec3;
+             set parent(parent: any);
+             get parent(): any;
+             set worldPos(worldPos: vec3);
+             set worldQuat(worldQuat: quat);
+             getWorldPos(offset: vec3, out?: vec3): vec3;
+             getRelativePos(): vec3;
+             set poseToBone(poseToBone: mat4);
+             get poseToBone(): mat4;
+             set initPoseToBone(initPoseToBone: mat4);
+             get initPoseToBone(): mat4;
+             getWorldQuat(): quat;
+             /**
+              * Is a procedural bone ?
+              * @returns {bool} yes is procedural bone
+              */
+             isProcedural(): boolean;
+             /**
+              * Use bone merge
+              * @returns {bool} yes bone is available for bone merge to occur against it
+              */
+             useBoneMerge(): boolean;
          }
 
          declare class MdlStudioAutoLayer {
@@ -6178,28 +6288,27 @@ declare class Choreography {
          export declare class Skeleton extends Entity {
              #private;
              isSkeleton: boolean;
-             _bones: any[];
+             _bones: Array<Bone>;
              _dirty: boolean;
-             constructor(parameters: any);
+             lastComputed: number;
+             constructor(params?: any);
              dirty(): void;
              getTexture(): Texture;
-             createBoneMatrixArray(): void;
-             createBoneMatrixTexture(): void;
-             updateBoneMatrixTexture(): void;
              setBonesMatrix(): void;
              set position(position: vec3);
              get position(): vec3;
              set quaternion(quaternion: vec4);
              get quaternion(): vec4;
-             addBone(boneId: any, boneName: any): any;
-             setParentSkeleton(skeleton: any): Promise<void>;
-             getBoneByName(boneName: any): any;
-             getBoneById(boneId: any): any;
+             addBone(boneId: number, boneName: string): any;
+             setParentSkeleton(skeleton: Skeleton): Promise<void>;
+             getBoneByName(boneName: string): any;
+             getBoneById(boneId: number): Bone;
              toString(): string;
              getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
-             get bones(): any[];
+             get bones(): Bone[];
+             reset(): void;
              toJSON(): any;
-             static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Skeleton>;
+             static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Skeleton>;
              dispose(): void;
              static getEntityName(): string;
          }
@@ -6231,7 +6340,7 @@ declare class Choreography {
              isSource1ModelInstance: boolean;
              animable: boolean;
              hasAnimations: true;
-             sourceModel: any;
+             sourceModel: SourceModel;
              bodyParts: {};
              sequences: {};
              meshes: Set<Mesh | SkeletalMesh>;
@@ -6240,9 +6349,11 @@ declare class Choreography {
              animationSpeed: number;
              isDynamic: boolean;
              bonesScale: any;
+             static useNewAnimSystem: boolean;
+             useNewAnimSystem: boolean;
              constructor(params?: any);
-             get skeleton(): any;
-             set skeleton(skeleton: any);
+             get skeleton(): Skeleton;
+             set skeleton(skeleton: Skeleton);
              addChild(child: any): Entity;
              removeChild(child: any): void;
              set skin(skin: number);
@@ -6252,12 +6363,13 @@ declare class Choreography {
              set tint(tint: any);
              setPoseParameter(paramName: any, paramValue: any): void;
              playAnimation(name: string): void;
-             playSequence(sequenceName: any): void;
-             addAnimation(animationName: any, weight?: number): Promise<void>;
+             setAnimation(id: number, name: string, weight: number): Promise<void>;
+             playSequence(sequenceName: string): void;
+             addAnimation(id: number, animationName: string, weight?: number): Promise<void>;
              update(scene: any, camera: any, delta: any): void;
-             _playSequences(delta: any): void;
+             _playSequences(delta: number): void;
              setMaterialOverride(materialOverride: any): Promise<void>;
-             getBoneById(boneId: any): any;
+             getBoneById(boneId: any): Bone;
              setBodyGroup(bodyPartName: any, bodyPartModelId: any): void;
              renderBodyParts(render: any): void;
              renderBodyPart(bodyPartName: any, render: any): void;
@@ -6409,7 +6521,7 @@ declare class Choreography {
              getHitboxes(): any[];
              replaceMaterial(material: any, recursive?: boolean): void;
              resetMaterial(recursive?: boolean): void;
-             getAnimations(): any;
+             getAnimations(): Promise<Set<string>>;
              toJSON(): any;
              static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Entity>;
              fromJSON(json: any): void;
@@ -6853,7 +6965,6 @@ declare class Choreography {
              poseParameters: {};
              meshes: Set<Mesh>;
              attachements: Map<any, any>;
-             anim: SourceAnimation;
              activity: string;
              activityModifiers: Set<unknown>;
              sequences: {};
@@ -8028,7 +8139,7 @@ declare class Choreography {
              readonly flexRules: any[];
              readonly flexControllers: any[];
              boneCount: number;
-             readonly bones: any[];
+             readonly bones: Array<MdlBone>;
              readonly boneNames: string[];
              numflexdesc: number;
              readonly attachements: any[];
@@ -8036,52 +8147,53 @@ declare class Choreography {
              loader: SourceEngineMDLLoader;
              reader: BinaryReader;
              readonly poseParameters: any[];
+             hitboxSets: any[];
              constructor(repository: string);
              getMaterialName(skinId: any, materialId: any, materialOverride?: any[]): any;
              getSkinList(): any[];
              getBodyPart(bodyPartId: any): MdlBodyPart;
              getBodyParts(): MdlBodyPart[];
-             getSequence(sequenceName: any): Promise<any>;
+             getSequence(sequenceName: any): Promise<MdlStudioSeqDesc>;
              getModelGroup(modelGroupId: any): MdlStudioModelGroup;
              getModelGroups(): MdlStudioModelGroup[];
              getExternalMdlCount(): number;
-             getExternalMdl(externalId: any): Promise<any>;
+             getExternalMdl(externalId: any): Promise<SourceMDL | null>;
              getTextureDir(): string[];
              getDimensions(out?: vec3): vec3;
              getBBoxMin(out?: vec3): vec3;
              getBBoxMax(out?: vec3): vec3;
-             getAnimList(): Promise<any[]>;
+             getAnimList(): Promise<Set<string>>;
              getFlexRules(): any[];
              getFlexControllers(): any[];
              runFlexesRules(flexesWeight: any, g_flexdescweight: any): void;
              addExternalMdl(mdlName: any): void;
              getBoneCount(): number;
-             getBones(): any[];
-             getBone(boneIndex: number): any;
-             getBoneByName(boneName: string): any;
+             getBones(): MdlBone[];
+             getBone(boneIndex: number): MdlBone;
+             getBoneByName(boneName: string): MdlBone;
              getBoneId(boneName: string): any;
              getAttachments(): any[];
-             getAttachementsNames(out: any): any;
+             getAttachementsNames(out?: Array<string>): string[];
              getAttachementById(attachementId: any): any;
              getAttachement(attachementName: any): any;
              getSequenceById(sequenceId: any): MdlStudioSeqDesc;
              getSequencesList(): any[];
              getSequencesList2(): any[];
-             getSequences(): any[];
+             getSequences(): string[];
              getSequences2(): any[];
              getAnimDescription(animIndex: any): any;
              getAnimFrame(dynamicProp: any, animDesc: any, frameIndex: any): any;
              getLocalPoseParameter(poseIndex: any): any;
              getPoseParameters(): any[];
              getAllPoseParameters(): any;
-             boneFlags(boneIndex: number): any;
+             boneFlags(boneIndex: number): number;
          }
 
          export declare class SourceModel {
              repository: string;
              fileName: string;
              name: string;
-             mdl: any;
+             mdl: SourceMDL;
              vvd: any;
              vtx: any;
              requiredLod: number;
@@ -8096,14 +8208,15 @@ declare class Choreography {
              addGeometry(mesh: any, geometry: any, bodyPartName: any, bodyPartModelId: any): void;
              createInstance(isDynamic: any, preventInit: any): Source1ModelInstance;
              getBodyNumber(bodygroups: any): number;
-             getBones(): any;
-             getAttachments(): any;
-             getBone(boneIndex: any): any;
+             getBones(): MdlBone[];
+             getAttachments(): any[];
+             getBone(boneIndex: any): MdlBone;
              getAttachementById(attachementIndex: any): any;
-             getBoneByName(boneName: any): any;
+             getBoneByName(boneName: any): MdlBone;
              getAttachement(attachementName: any): any;
-             getBodyPart(bodyPartId: any): any;
-             getBodyParts(): any;
+             getBodyPart(bodyPartId: any): MdlBodyPart;
+             getBodyParts(): MdlBodyPart[];
+             getAnimation(animationName: string, entity: Source1ModelInstance): Promise<Animation_2>;
          }
 
          declare class SourceModelMesh {
@@ -9263,12 +9376,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#167@#webAssembly"?: any;
-             "__#167@#HEAPU8"?: Uint8Array;
+             "__#170@#webAssembly"?: any;
+             "__#170@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#167@#initHeap"(): void;
+             "__#170@#initHeap"(): void;
          };
 
          export { }
