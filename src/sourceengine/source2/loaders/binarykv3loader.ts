@@ -171,7 +171,7 @@ export const BinaryKv3Loader = new (function () {
 
 				byteReaderBuf0.seek(byteCursorBuf0);
 				doubleReaderBuf0.seek(doubleCursorBuf0);
-				quadReaderBuf0.seek(quadCursorBuf0);
+				quadReaderBuf0.seek(quadCursorBuf0 + 4);// Eat a quad (string dictionnary length)
 				eightReaderBuf0.seek(eightCursorBuf0);
 
 				readers.reader1 = byteReaderBuf0;
