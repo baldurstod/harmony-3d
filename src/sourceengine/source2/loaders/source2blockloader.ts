@@ -1109,7 +1109,7 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 			stringDictionary = result as Array<string>;
 			buffer0 = sa;
 		} else {
-			console.log(block.type, result);
+			//console.log(block.type, result);
 			block.keyValue = result;
 		}
 	}
