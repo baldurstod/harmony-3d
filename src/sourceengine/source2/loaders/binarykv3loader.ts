@@ -66,6 +66,11 @@ export const BinaryKv3Loader = new (function () {
 			let quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId] * 2) / 4) * 4;//Math.ceil(singleByteCount / 4) * 4;
 			let eightCursor = Math.ceil((quadCursor + quadByteCount[bufferId] * 4) / 8) * 8;
 
+			if (version >= 5 && eightByteCount[bufferId] == 0) {
+				// In this case, don't align cursor
+				eightCursor = quadCursor + quadByteCount[bufferId] * 4;
+			}
+
 			console.info(byteCursor, doubleCursor, quadCursor, eightCursor);
 
 			let dictionaryOffset = eightCursor + eightByteCount[bufferId] * 8;
