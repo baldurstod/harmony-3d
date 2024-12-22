@@ -109,12 +109,14 @@ export class Source2ModelLoader {
 		let group = new Entity();
 		let ctrlRoot = vmdl.getBlockStruct('CTRL.keyValue.root');
 		let m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
+		let m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
 		if (ctrlRoot && m_refLODGroupMasks) {
 			let embeddedMeshes = ctrlRoot.embedded_meshes;
 			for (let meshIndex = 0; meshIndex < embeddedMeshes.length; ++meshIndex) {
 				let lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
+				let meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
 				let embeddedMesh = embeddedMeshes[meshIndex];
-				this.#loadMesh(repository, model, group, vmdl.getBlockById(embeddedMesh.data_block), vmdl.getBlockById(embeddedMesh.vbib_block), lodGroupMask, vmdl, meshIndex);
+				this.#loadMesh(repository, model, group, vmdl.getBlockById(embeddedMesh.data_block), vmdl.getBlockById(embeddedMesh.vbib_block), lodGroupMask, vmdl, meshIndex, meshGroupMask);
 
 				/*data_block: 1
 				mesh_index: 0
@@ -130,7 +132,7 @@ export class Source2ModelLoader {
 		return group;
 	}
 
-	#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex) {
+	#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask: number | undefined) {
 		const remappingTable = vmdl.getRemappingTable(meshIndex);
 
 		model._addAttachements(dataBlock.getKeyValue('m_attachments'));
@@ -164,6 +166,7 @@ export class Source2ModelLoader {
 
 				let geometry = new BufferGeometry();
 				geometry.properties.set('lodGroupMask', lodGroupMask);
+				geometry.properties.set('mesh_group_mask', meshGroupMask ?? 0xFFFFFFFF);
 				geometry.setIndex(indices);
 				geometry.setAttribute('aVertexPosition', vertexPosition);
 				geometry.setAttribute('aVertexNormal', vertexNormal);
@@ -191,9 +194,9 @@ export class Source2ModelLoader {
 	}
 
 	async _loadExternalMeshes(group, vmdl, model, repository) {
-		let callback = (mesh, lodGroupMask, meshIndex) => {
+		let callback = (mesh, lodGroupMask, meshIndex, meshGroupMask: number | undefined) => {
 			//TODO: only load highest LOD
-			this.#loadMesh(repository, model, group, mesh.getBlockByType('DATA'), mesh.getBlockByType('VBIB'), lodGroupMask, vmdl, meshIndex);
+			this.#loadMesh(repository, model, group, mesh.getBlockByType('DATA'), mesh.getBlockByType('VBIB'), lodGroupMask, vmdl, meshIndex, meshGroupMask);
 		}
 		await this.loadMeshes(vmdl, callback);
 	}
@@ -202,10 +205,12 @@ export class Source2ModelLoader {
 		let promises = new Set();
 		let m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
 		let m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
+		let m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
 		if (m_refMeshes && m_refLODGroupMasks) {
 			for (let meshIndex = 0; meshIndex < m_refMeshes.length; meshIndex++) {//TODOv3
 				let meshName = m_refMeshes[meshIndex];
 				let lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
+				let meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
 				if (meshName) {
 					let promise = MeshManager.getMesh(vmdl.repository, meshName);
 					promises.add(promise);
@@ -214,7 +219,7 @@ export class Source2ModelLoader {
 							if (VERBOSE) {
 								console.error(mesh);
 							}
-							callback(mesh, lodGroupMask, meshIndex);
+							callback(mesh, lodGroupMask, meshIndex, meshGroupMask);
 						}
 					);
 				}
