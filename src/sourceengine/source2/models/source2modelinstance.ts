@@ -84,12 +84,18 @@ export class Source2ModelInstance extends Entity implements Animated {
 	#refreshMeshesVisibility() {
 		// TODO: also use LOD mask
 		let mask = 0n;
+		let name: string;
 
 		for (let [group, choice] of this.#bodyGroups) {
-			const name = `${group}_@${choice}`;
+			if (group == 'autodefault') {
+				name = group;
+			} else {
+				name = `${group}_@${choice}`;
+			}
 			for (let [bodyGroupId, bodyGroupName] of this.sourceModel.bodyGroupsChoices.entries()) {
-				if (name == bodyGroupName) {
+				if (name == bodyGroupName || bodyGroupName == 'autodefault') {
 					mask += BigInt(Math.pow(2, bodyGroupId));
+					break;
 				}
 			}
 		}

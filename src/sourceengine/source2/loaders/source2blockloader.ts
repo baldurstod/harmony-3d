@@ -741,8 +741,8 @@ function loadDataVtex(reader, block) {
 	let extraDataOffset = reader.tell() + reader.getUint32();
 	let extraDataCount = reader.getUint32();
 
-	let NonPow2Width = 0;
-	let NonPow2Height = 0;
+	let nonPow2Width = 0;
+	let nonPow2Height = 0;
 	let compressedMips = null;//new Uint32Array(mips);
 
 	if (extraDataCount) {
@@ -775,6 +775,8 @@ function loadDataVtex(reader, block) {
 					let nh = reader.getUint16();
 					if (nw > 0 && nh > 0 && block.width >= nw && block.height >= nh) {
 						console.error('code me');
+						nonPow2Width = nw;
+						nonPow2Height = nh;
 					}
 					break;
 				case DATA_COMPRESSED_MIP_SIZE:
