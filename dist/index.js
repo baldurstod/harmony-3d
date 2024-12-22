@@ -34854,6 +34854,22 @@ function Studio_CPS2(pStudioHdr, seqdesc, iSequence, poseParameter) {
     }
     return t;
 }
+function Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameter) {
+    const panim = [];
+    const weight = [];
+    Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameter, panim, weight);
+    let t = 0;
+    for (let i = 0; i < 4; ++i) {
+        if (panim[i] && weight[i] > 0) {
+            t = Math.max(t, panim[i].numframes);
+        }
+    }
+    return t;
+}
+function StudioFrames2(pStudioHdr, iSequence, poseParameter) {
+    const seqdesc = pStudioHdr.getSequenceById(iSequence); //pStudioHdr.pSeqdesc(iSequence);
+    return Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameter);
+}
 const SOURCE_MODEL_MAX_BONES = 256;
 //-----------------------------------------------------------------------------
 // Purpose: calculate a pose for a single sequence
@@ -36270,7 +36286,7 @@ class SourceModel {
         }
         if (seq) {
             //const t = Studio_Duration(seq.mdl, seq.id, []);
-            const frameCount = StudioFrames(seq.mdl, seq.id, []);
+            const frameCount = StudioFrames2(seq.mdl, seq.id, []);
             const posRemoveMeTemp = [];
             const quatRemoveMeTemp = [];
             const boneFlags = [];

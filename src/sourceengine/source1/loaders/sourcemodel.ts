@@ -150,7 +150,7 @@ export class SourceModel {
 
 		if (seq) {
 			//const t = Studio_Duration(seq.mdl, seq.id, []);
-			const frameCount = StudioFrames(seq.mdl, seq.id, []);
+			const frameCount = StudioFrames2(seq.mdl, seq.id, []);
 			const posRemoveMeTemp: Array<vec3> = [];
 			const quatRemoveMeTemp: Array<quat> = [];
 			const boneFlags: Array<number> = [];
