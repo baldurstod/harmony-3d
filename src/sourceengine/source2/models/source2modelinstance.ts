@@ -103,7 +103,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 			mesh.visible = undefined;
 			if (geometry) {
 				const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask') ?? 0);
-				mesh.visible = (meshGroupMask & mask) > 0;
+				mesh.visible = (meshGroupMask & mask) > 0 ? undefined : false;
 			}
 		}
 	}
