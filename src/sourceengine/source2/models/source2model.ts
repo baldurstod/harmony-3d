@@ -27,12 +27,16 @@ export class Source2Model {
 	bodyParts = new Map();
 	attachements = new Map();
 	seqGroup;
+	bodyGroups = new Set<string>();
+	bodyGroupsChoices: Array<string> = [];
+
 	constructor(repository: string, vmdl) {
 		this.repository = repository;
 		this.vmdl = vmdl;
 
 		this.#loadInternalAnimGroup();
 		this.#createAnimGroup();
+		this.#createBodyGroups();
 	}
 
 	#createAnimGroup() {
@@ -40,6 +44,19 @@ export class Source2Model {
 		if (aseq) {
 			this.seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
 			this.seqGroup.setFile(this.vmdl);
+		}
+	}
+
+	#createBodyGroups() {
+		let meshGroups = this.vmdl.getPermModelData('m_meshGroups') as Array<string>;
+		if (meshGroups) {
+			for (const choice of meshGroups) {
+				const result = /(.*)_@\d$/.exec(choice);
+				if (result && result.length == 2) {
+					this.bodyGroups.add(result[1]);
+				}
+				this.bodyGroupsChoices.push(choice);
+			}
 		}
 	}
 
@@ -95,7 +112,7 @@ export class Source2Model {
 		}
 		return null;
 	}
-/*
+	/*
 	getAttachments() {
 		if (this.mdl) {
 			return this.mdl.getAttachments();

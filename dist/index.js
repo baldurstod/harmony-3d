@@ -22530,6 +22530,7 @@ class Source2ModelInstance extends Entity {
     animationSpeed = 1.0;
     sourceModel;
     hasAnimations = true;
+    #bodyGroups = new Map();
     constructor(sourceModel, isDynamic) {
         defaultMaterial$2.addUser(Source2ModelInstance);
         super();
@@ -22545,6 +22546,33 @@ class Source2ModelInstance extends Entity {
         }
         this.#init();
         this.#updateMaterials();
+        this.#bodyGroups.set('autodefault', 0);
+    }
+    setBodyGroup(name, choice) {
+        if (this.sourceModel.bodyGroups.has(name)) {
+            this.#bodyGroups.set(name, choice);
+        }
+        this.#refreshMeshesVisibility();
+    }
+    #refreshMeshesVisibility() {
+        // TODO: also use LOD mask
+        let mask = 0;
+        for (let [group, choice] of this.#bodyGroups) {
+            const name = `${group}_@${choice}`;
+            for (let [bodyGroupId, bodyGroupName] of this.sourceModel.bodyGroupsChoices.entries()) {
+                if (name == bodyGroupName) {
+                    mask += Math.pow(2, bodyGroupId);
+                }
+            }
+        }
+        for (const mesh of this.meshes) {
+            const geometry = mesh.geometry;
+            mesh.visible = undefined;
+            if (geometry) {
+                const meshGroupMask = geometry.properties.get('mesh_group_mask');
+                mesh.visible = (meshGroupMask & mask) == meshGroupMask;
+            }
+        }
     }
     get skeleton() {
         return this.#skeleton;
@@ -22625,6 +22653,9 @@ class Source2ModelInstance extends Entity {
     }
     playAnimation(name) {
         this.#animName = name;
+    }
+    async setAnimation(id, name, weight) {
+        throw 'code me';
     }
     setActivityModifiers(activityModifiers = []) {
         this.activityModifiers.clear();
@@ -22794,21 +22825,6 @@ class Source2ModelInstance extends Entity {
             let attachementInstance = new Source2ModelAttachementInstance(this, attachement);
             this.attachements.set(attachement.name, attachementInstance);
             attachements.addChild(attachementInstance);
-        }
-    }
-    setBodyGroup(bodyPartName, bodyPartModelId) {
-        let bodyPart = this.bodyParts[bodyPartName];
-        if (bodyPart) {
-            for (let index = 0, l = bodyPart.length; index < l; index++) {
-                let meshes = bodyPart[index];
-                let visible = false;
-                if (index === bodyPartModelId) {
-                    visible = true;
-                }
-                for (let mesh of meshes) {
-                    mesh.visible = visible;
-                }
-            }
         }
     }
     getAnimations() {
@@ -23768,17 +23784,32 @@ class Source2Model {
     bodyParts = new Map();
     attachements = new Map();
     seqGroup;
+    bodyGroups = new Set();
+    bodyGroupsChoices = [];
     constructor(repository, vmdl) {
         this.repository = repository;
         this.vmdl = vmdl;
         this.#loadInternalAnimGroup();
         this.#createAnimGroup();
+        this.#createBodyGroups();
     }
     #createAnimGroup() {
         let aseq = this.vmdl.getBlockByType('ASEQ');
         if (aseq) {
             this.seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
             this.seqGroup.setFile(this.vmdl);
+        }
+    }
+    #createBodyGroups() {
+        let meshGroups = this.vmdl.getPermModelData('m_meshGroups');
+        if (meshGroups) {
+            for (const choice of meshGroups) {
+                const result = /(.*)_@\d$/.exec(choice);
+                if (result && result.length == 2) {
+                    this.bodyGroups.add(result[1]);
+                }
+                this.bodyGroupsChoices.push(choice);
+            }
         }
     }
     matchActivity(activity, modifiers) {
@@ -23830,55 +23861,55 @@ class Source2Model {
         return null;
     }
     /*
-        getAttachments() {
-            if (this.mdl) {
-                return this.mdl.getAttachments();
-            }
-            return null;
+    getAttachments() {
+        if (this.mdl) {
+            return this.mdl.getAttachments();
         }
-    
-        getBone(boneIndex) {
-            if (this.mdl) {
-                return this.mdl.getBone(boneIndex);
-            }
-            return null;
+        return null;
+    }
+
+    getBone(boneIndex) {
+        if (this.mdl) {
+            return this.mdl.getBone(boneIndex);
         }
-    
-        getAttachementById(attachementIndex) {
-            if (this.mdl) {
-                return this.mdl.getAttachementById(attachementIndex);
-            }
-            return null;
+        return null;
+    }
+
+    getAttachementById(attachementIndex) {
+        if (this.mdl) {
+            return this.mdl.getAttachementById(attachementIndex);
         }
-    
-        getBoneByName(boneName) {
-            if (this.mdl) {
-                return this.mdl.getBoneByName(boneName);
-            }
-            return null;
+        return null;
+    }
+
+    getBoneByName(boneName) {
+        if (this.mdl) {
+            return this.mdl.getBoneByName(boneName);
         }
-    
-        getAttachement(attachementName) {
-            if (this.mdl) {
-                return this.mdl.getAttachement(attachementName);
-            }
-            return null;
+        return null;
+    }
+
+    getAttachement(attachementName) {
+        if (this.mdl) {
+            return this.mdl.getAttachement(attachementName);
         }
-    
-        getBodyPart(bodyPartId) {
-            if (this.mdl) {
-                return this.mdl.getBodyPart(bodyPartId);
-            }
-            return null;
+        return null;
+    }
+
+    getBodyPart(bodyPartId) {
+        if (this.mdl) {
+            return this.mdl.getBodyPart(bodyPartId);
         }
-    
-        getBodyParts() {
-            if (this.mdl) {
-                return this.mdl.getBodyParts();
-            }
-            return null;
+        return null;
+    }
+
+    getBodyParts() {
+        if (this.mdl) {
+            return this.mdl.getBodyParts();
         }
-    */
+        return null;
+    }
+*/
     getSkinMaterials(skin) {
         let materialGroups = this.vmdl.getPermModelData('m_materialGroups');
         if (materialGroups) {
@@ -24111,12 +24142,14 @@ class Source2ModelLoader {
         let group = new Entity();
         let ctrlRoot = vmdl.getBlockStruct('CTRL.keyValue.root');
         let m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
+        let m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
         if (ctrlRoot && m_refLODGroupMasks) {
             let embeddedMeshes = ctrlRoot.embedded_meshes;
             for (let meshIndex = 0; meshIndex < embeddedMeshes.length; ++meshIndex) {
                 let lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
+                let meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
                 let embeddedMesh = embeddedMeshes[meshIndex];
-                this.#loadMesh(repository, model, group, vmdl.getBlockById(embeddedMesh.data_block), vmdl.getBlockById(embeddedMesh.vbib_block), lodGroupMask, vmdl, meshIndex);
+                this.#loadMesh(repository, model, group, vmdl.getBlockById(embeddedMesh.data_block), vmdl.getBlockById(embeddedMesh.vbib_block), lodGroupMask, vmdl, meshIndex, meshGroupMask);
                 /*data_block: 1
                 mesh_index: 0
                 morph_block: 0
@@ -24128,7 +24161,7 @@ class Source2ModelLoader {
         await this._loadExternalMeshes(group, vmdl, model, repository);
         return group;
     }
-    #loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex) {
+    #loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask) {
         const remappingTable = vmdl.getRemappingTable(meshIndex);
         model._addAttachements(dataBlock.getKeyValue('m_attachments'));
         let drawCalls = dataBlock.getKeyValue('m_sceneObjects.0.m_drawCalls') || dataBlock.getKeyValue('root.m_drawCalls');
@@ -24158,6 +24191,7 @@ class Source2ModelLoader {
                 let vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(bufferIndex), remappingTable), 4);
                 let geometry = new BufferGeometry();
                 geometry.properties.set('lodGroupMask', lodGroupMask);
+                geometry.properties.set('mesh_group_mask', meshGroupMask ?? 0xFFFFFFFF);
                 geometry.setIndex(indices);
                 geometry.setAttribute('aVertexPosition', vertexPosition);
                 geometry.setAttribute('aVertexNormal', vertexNormal);
@@ -24178,9 +24212,9 @@ class Source2ModelLoader {
         }
     }
     async _loadExternalMeshes(group, vmdl, model, repository) {
-        let callback = (mesh, lodGroupMask, meshIndex) => {
+        let callback = (mesh, lodGroupMask, meshIndex, meshGroupMask) => {
             //TODO: only load highest LOD
-            this.#loadMesh(repository, model, group, mesh.getBlockByType('DATA'), mesh.getBlockByType('VBIB'), lodGroupMask, vmdl, meshIndex);
+            this.#loadMesh(repository, model, group, mesh.getBlockByType('DATA'), mesh.getBlockByType('VBIB'), lodGroupMask, vmdl, meshIndex, meshGroupMask);
         };
         await this.loadMeshes(vmdl, callback);
     }
@@ -24188,15 +24222,17 @@ class Source2ModelLoader {
         let promises = new Set();
         let m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
         let m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
+        let m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
         if (m_refMeshes && m_refLODGroupMasks) {
             for (let meshIndex = 0; meshIndex < m_refMeshes.length; meshIndex++) { //TODOv3
                 let meshName = m_refMeshes[meshIndex];
                 let lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
+                let meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
                 if (meshName) {
                     let promise = MeshManager.getMesh(vmdl.repository, meshName);
                     promises.add(promise);
                     promise.then((mesh) => {
-                        callback(mesh, lodGroupMask, meshIndex);
+                        callback(mesh, lodGroupMask, meshIndex, meshGroupMask);
                     });
                 }
             }

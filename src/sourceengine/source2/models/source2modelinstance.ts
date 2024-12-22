@@ -12,6 +12,7 @@ import { Interaction } from '../../../utils/interaction';
 import { Source2Model } from './source2model';
 import { Material } from '../../../materials/material';
 import { Animated } from '../../../entities/animated';
+import { pow2 } from '../../../math/functions';
 
 
 const identityVec3 = vec3.create();
@@ -43,8 +44,9 @@ export class Source2ModelInstance extends Entity implements Animated {
 	animationSpeed = 1.0;
 	sourceModel: Source2Model;
 	hasAnimations: true = true;
+	#bodyGroups = new Map<string, number>();
 
-	constructor(sourceModel, isDynamic) {
+	constructor(sourceModel: Source2Model, isDynamic) {
 		defaultMaterial.addUser(Source2ModelInstance);
 		super();
 		this.sourceModel = sourceModel;
@@ -61,6 +63,37 @@ export class Source2ModelInstance extends Entity implements Animated {
 		}
 		this.#init();
 		this.#updateMaterials();
+		this.#bodyGroups.set('autodefault', 0);
+	}
+
+	setBodyGroup(name: string, choice: number) {
+		if (this.sourceModel.bodyGroups.has(name)) {
+			this.#bodyGroups.set(name, choice);
+		}
+		this.#refreshMeshesVisibility();
+	}
+
+	#refreshMeshesVisibility() {
+		// TODO: also use LOD mask
+		let mask = 0;
+
+		for (let [group, choice] of this.#bodyGroups) {
+			const name = `${group}_@${choice}`;
+			for (let [bodyGroupId, bodyGroupName] of this.sourceModel.bodyGroupsChoices.entries()) {
+				if (name == bodyGroupName) {
+					mask += Math.pow(2, bodyGroupId);
+				}
+			}
+		}
+
+		for (const mesh of this.meshes) {
+			const geometry = mesh.geometry;
+			mesh.visible = undefined;
+			if (geometry) {
+				const meshGroupMask = geometry.properties.get('mesh_group_mask');
+				mesh.visible = (meshGroupMask & mask) == meshGroupMask;
+			}
+		}
 	}
 
 	get skeleton() {
@@ -152,6 +185,10 @@ export class Source2ModelInstance extends Entity implements Animated {
 
 	playAnimation(name) {
 		this.#animName = name;
+	}
+
+	async setAnimation(id: number, name: string, weight: number) {
+		throw 'code me';
 	}
 
 	setActivityModifiers(activityModifiers = []) {
@@ -334,22 +371,6 @@ export class Source2ModelInstance extends Entity implements Animated {
 			attachements.addChild(attachementInstance);
 		}
 
-	}
-
-	setBodyGroup(bodyPartName, bodyPartModelId) {
-		let bodyPart = this.bodyParts[bodyPartName];
-		if (bodyPart) {
-			for (let index = 0, l = bodyPart.length; index < l; index++) {
-				let meshes = bodyPart[index];
-				let visible = false;
-				if (index === bodyPartModelId) {
-					visible = true;
-				}
-				for (let mesh of meshes) {
-					mesh.visible = visible;
-				}
-			}
-		}
 	}
 
 	getAnimations() {

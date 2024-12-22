@@ -6937,6 +6937,8 @@ declare class Choreography {
              bodyParts: Map<any, any>;
              attachements: Map<any, any>;
              seqGroup: any;
+             bodyGroups: Set<string>;
+             bodyGroupsChoices: Array<string>;
              constructor(repository: string, vmdl: any);
              matchActivity(activity: any, modifiers: any): any;
              addGeometry(geometry: any, bodyPartName: any, bodyPartModelId: any): void;
@@ -6972,7 +6974,8 @@ declare class Choreography {
              animationSpeed: number;
              sourceModel: Source2Model;
              hasAnimations: true;
-             constructor(sourceModel: any, isDynamic: any);
+             constructor(sourceModel: Source2Model, isDynamic: any);
+             setBodyGroup(name: string, choice: number): void;
              get skeleton(): any;
              set position(position: vec3);
              get position(): vec3;
@@ -6985,9 +6988,9 @@ declare class Choreography {
              setPoseParameter(paramName: any, paramValue: any): void;
              playSequence(activity: any, activityModifiers?: any[]): void;
              playAnimation(name: any): void;
+             setAnimation(id: number, name: string, weight: number): Promise<void>;
              setActivityModifiers(activityModifiers?: any[]): void;
              update(scene: any, camera: any, delta: any): void;
-             setBodyGroup(bodyPartName: any, bodyPartModelId: any): void;
              getAnimations(): Promise<Set<string>>;
              buildContextMenu(): {
                  visibility: {
