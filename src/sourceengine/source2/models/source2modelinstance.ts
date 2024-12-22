@@ -63,7 +63,15 @@ export class Source2ModelInstance extends Entity implements Animated {
 		}
 		this.#init();
 		this.#updateMaterials();
+	}
+
+	#initDefaultBodyGroups() {
 		this.#bodyGroups.set('autodefault', 0);
+
+		for (const bodyGroup of this.sourceModel.bodyGroups) {
+			this.#bodyGroups.set(bodyGroup, 0);
+		}
+		this.#refreshMeshesVisibility();
 	}
 
 	setBodyGroup(name: string, choice: number) {
@@ -75,23 +83,27 @@ export class Source2ModelInstance extends Entity implements Animated {
 
 	#refreshMeshesVisibility() {
 		// TODO: also use LOD mask
-		let mask = 0;
+		let mask = 0n;
 
 		for (let [group, choice] of this.#bodyGroups) {
 			const name = `${group}_@${choice}`;
 			for (let [bodyGroupId, bodyGroupName] of this.sourceModel.bodyGroupsChoices.entries()) {
 				if (name == bodyGroupName) {
-					mask += Math.pow(2, bodyGroupId);
+					mask += BigInt(Math.pow(2, bodyGroupId));
 				}
 			}
+		}
+
+		if (mask == 0n) {
+			mask = 1n;
 		}
 
 		for (const mesh of this.meshes) {
 			const geometry = mesh.geometry;
 			mesh.visible = undefined;
 			if (geometry) {
-				const meshGroupMask = geometry.properties.get('mesh_group_mask');
-				mesh.visible = (meshGroupMask & mask) == meshGroupMask;
+				const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask') ?? 0);
+				mesh.visible = (meshGroupMask & mask) > 0;
 			}
 		}
 	}
@@ -316,6 +328,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 			this.bodyParts[bodyPartName] = newBodyPart;
 		}
 		this.setMeshesLOD(this.lod);
+		this.#initDefaultBodyGroups();
 	}
 
 	#initSkeleton() {

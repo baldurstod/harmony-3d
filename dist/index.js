@@ -22546,7 +22546,13 @@ class Source2ModelInstance extends Entity {
         }
         this.#init();
         this.#updateMaterials();
+    }
+    #initDefaultBodyGroups() {
         this.#bodyGroups.set('autodefault', 0);
+        for (const bodyGroup of this.sourceModel.bodyGroups) {
+            this.#bodyGroups.set(bodyGroup, 0);
+        }
+        this.#refreshMeshesVisibility();
     }
     setBodyGroup(name, choice) {
         if (this.sourceModel.bodyGroups.has(name)) {
@@ -22556,21 +22562,24 @@ class Source2ModelInstance extends Entity {
     }
     #refreshMeshesVisibility() {
         // TODO: also use LOD mask
-        let mask = 0;
+        let mask = 0n;
         for (let [group, choice] of this.#bodyGroups) {
             const name = `${group}_@${choice}`;
             for (let [bodyGroupId, bodyGroupName] of this.sourceModel.bodyGroupsChoices.entries()) {
                 if (name == bodyGroupName) {
-                    mask += Math.pow(2, bodyGroupId);
+                    mask += BigInt(Math.pow(2, bodyGroupId));
                 }
             }
+        }
+        if (mask == 0n) {
+            mask = 1n;
         }
         for (const mesh of this.meshes) {
             const geometry = mesh.geometry;
             mesh.visible = undefined;
             if (geometry) {
-                const meshGroupMask = geometry.properties.get('mesh_group_mask');
-                mesh.visible = (meshGroupMask & mask) == meshGroupMask;
+                const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask') ?? 0);
+                mesh.visible = (meshGroupMask & mask) > 0;
             }
         }
     }
@@ -22776,6 +22785,7 @@ class Source2ModelInstance extends Entity {
             this.bodyParts[bodyPartName] = newBodyPart;
         }
         this.setMeshesLOD(this.lod);
+        this.#initDefaultBodyGroups();
     }
     #initSkeleton() {
         let bones = this.sourceModel.getBones();
@@ -24191,7 +24201,7 @@ class Source2ModelLoader {
                 let vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(bufferIndex), remappingTable), 4);
                 let geometry = new BufferGeometry();
                 geometry.properties.set('lodGroupMask', lodGroupMask);
-                geometry.properties.set('mesh_group_mask', meshGroupMask ?? 0xFFFFFFFF);
+                geometry.properties.set('mesh_group_mask', meshGroupMask ?? 0xffffffffffffffffn);
                 geometry.setIndex(indices);
                 geometry.setAttribute('aVertexPosition', vertexPosition);
                 geometry.setAttribute('aVertexNormal', vertexNormal);

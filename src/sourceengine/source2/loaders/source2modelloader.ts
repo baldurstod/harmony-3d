@@ -166,7 +166,7 @@ export class Source2ModelLoader {
 
 				let geometry = new BufferGeometry();
 				geometry.properties.set('lodGroupMask', lodGroupMask);
-				geometry.properties.set('mesh_group_mask', meshGroupMask ?? 0xFFFFFFFF);
+				geometry.properties.set('mesh_group_mask', meshGroupMask ?? 0xFFFFFFFFFFFFFFFFn);
 				geometry.setIndex(indices);
 				geometry.setAttribute('aVertexPosition', vertexPosition);
 				geometry.setAttribute('aVertexNormal', vertexNormal);
