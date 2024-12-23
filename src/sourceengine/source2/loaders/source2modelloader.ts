@@ -57,54 +57,6 @@ export class Source2ModelLoader {
 		return promise;
 	}
 
-	async testProcess_removeme(vmdl, model, repository) {//TODOv3: removeme
-		let group = new Entity();
-		let drawCalls = vmdl.getBlockStruct('MDAT.keyValue.root.m_sceneObjects.0.m_drawCalls') || vmdl.getBlockStruct('MDAT.keyValue.root.m_drawCalls');//TODOv3 process multiple objects
-		if (drawCalls) {
-			for (let drawCallIndex = 0, l = drawCalls.length; drawCallIndex < l; ++drawCallIndex) {//TODOv3: mutualize buffer if used by multiple drawcalls
-				let drawCall = drawCalls[drawCallIndex];
-				let vertexBuffers = drawCall.m_vertexBuffers[0];//TODOv3 why 0 ?
-				if (!vertexBuffers) {
-					continue;
-				}
-				let bufferIndex = vertexBuffers.m_hBuffer;
-				//			for(let meshIndex = 0; meshIndex < 12/*TODOv3*/; ++meshIndex) {
-				let indices = new Uint32BufferAttribute(vmdl.getIndices(bufferIndex), 1, drawCall.m_nStartIndex * 4, drawCall.m_nIndexCount);
-				let vertexPosition = new Float32BufferAttribute(vmdl.getVertices(bufferIndex), 3);
-				let vertexNormal = new Float32BufferAttribute(vmdl.getNormals(bufferIndex), 3);
-				let textureCoord = new Float32BufferAttribute(vmdl.getCoords(bufferIndex), 2);
-				let vertexWeights = new Float32BufferAttribute(vmdl.getBoneWeight(bufferIndex), 4);
-				let vertexBones = new Float32BufferAttribute(vmdl.getBoneIndices(bufferIndex), 4);
-
-				let geometry = new BufferGeometry();
-				geometry.setIndex(indices);//, drawCall.m_nStartIndex, drawCall.m_nIndexCount);
-				geometry.setAttribute('aVertexPosition', vertexPosition);
-				geometry.setAttribute('aVertexNormal', vertexNormal);
-				geometry.setAttribute('aTextureCoord', textureCoord);
-				geometry.setAttribute('aBoneWeight', vertexWeights);
-				geometry.setAttribute('aBoneIndices', vertexBones);
-				geometry.count = drawCall.m_nIndexCount;
-				geometry.properties.set('materialPath', drawCall.m_material);//"models/characters/alyx/materials/alyx_body.vmat"
-				geometry.properties.set('bones', vmdl.getBlockStruct('MDAT.keyValue.root.m_skeleton.m_bones'));//mesh.getKeyValue('m_skeleton.m_bones');
-
-				let material = new MeshBasicMaterial();//removemeTODOv3
-				let staticMesh = new Mesh(geometry, material);
-				group.addChild(staticMesh);
-				const materialPath = geometry.properties.get('materialPath');
-				Source2MaterialManager.getMaterial(repository, materialPath).then(
-					(material) => staticMesh.setMaterial(material)
-				).catch(
-					(error) => console.error('unable to find material ' + materialPath, error)
-				);
-
-				model.addGeometry(geometry, FileNameFromPath(drawCall.m_material), 0/*TODOv3*/);
-			}
-		}
-		await this._loadExternalMeshes(group, vmdl, model, repository);
-		//vmdl.loadAnimGroups();//TODOv3
-		return group;
-	}
-
 	async testProcess2(vmdl, model, repository) {
 		let group = new Entity();
 		let ctrlRoot = vmdl.getBlockStruct('CTRL.keyValue.root');
