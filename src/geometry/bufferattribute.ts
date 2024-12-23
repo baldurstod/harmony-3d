@@ -1,5 +1,6 @@
 import { GL_ARRAY_BUFFER, GL_STATIC_DRAW, GL_BYTE, GL_SHORT, GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_FLOAT, GL_HALF_FLOAT, GL_UNSIGNED_INT, GL_INT, GL_DYNAMIC_DRAW, GL_STREAM_DRAW, GL_STATIC_READ, GL_DYNAMIC_READ, GL_STREAM_READ, GL_STATIC_COPY, GL_DYNAMIC_COPY, GL_STREAM_COPY } from '../webgl/constants';
 import { VERBOSE } from '../buildoptions';
+import { WebGLAnyRenderingContext } from '../types';
 
 const TypedArrayProto = Object.getPrototypeOf(Int8Array);// we can't use TypedArray directly
 
@@ -18,16 +19,16 @@ export enum BufferUsage {
 export class BufferAttribute {
 	#type;
 	#usage: BufferUsage = BufferUsage.StaticDraw;
-	#target;
+	#target: GLenum;
 	#wireframeDirty = true;
 	#solidWireframeDirty = true;
 	itemSize: number;
 	dirty: boolean;
 	_array: typeof TypedArrayProto;
-	count: number;
-	_buffer: WebGLBuffer;
+	count: number = 0;
+	_buffer?: WebGLBuffer;
 	#source: any;
-	divisor: number;
+	divisor: number = 0;
 	constructor(array: typeof TypedArrayProto, itemSize: number) {
 		this.itemSize = itemSize;
 		if (isNaN(this.itemSize)) {
@@ -57,14 +58,14 @@ export class BufferAttribute {
 		this.#solidWireframeDirty = true;
 	}
 
-	set target(target) {
+	set target(target: GLenum) {
 		this.#target = target;
 		this.dirty = true;
 		this.#wireframeDirty = true;
 		this.#solidWireframeDirty = true;
 	}
 
-	set array(array) {
+	set array(array: typeof TypedArrayProto) {
 		this.setArray(array);
 	}
 
@@ -108,7 +109,7 @@ export class BufferAttribute {
 		}
 	}
 
-	update(glContext) {
+	update(glContext: WebGLAnyRenderingContext) {
 		if (this.dirty) {
 			if (this._buffer === undefined) {
 				this._buffer = glContext.createBuffer();//TODOv3: createBuffer in graphics
@@ -123,7 +124,7 @@ export class BufferAttribute {
 		}
 	}
 
-	updateWireframe(glContext) {
+	updateWireframe(glContext: WebGLAnyRenderingContext) {
 		if (this.#wireframeDirty) {
 			if (this._buffer === undefined) {
 				this._buffer = glContext.createBuffer();//TODOv3: createBuffer in graphics
@@ -169,7 +170,7 @@ export class BufferAttribute {
 }
 
 export class Uint8BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset?, length?) {
+	constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number) {
 		super(null, itemSize);
 		this.setSource(array);
 		this.array = new Uint8Array(array);
@@ -177,7 +178,7 @@ export class Uint8BufferAttribute extends BufferAttribute {//fixme
 }
 
 export class Uint16BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset?, length?) {
+	constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number) {
 		super(null, itemSize);
 		this.setSource(array);
 		this.array = new Uint16Array(array);
@@ -185,7 +186,7 @@ export class Uint16BufferAttribute extends BufferAttribute {//fixme
 }
 
 export class Uint32BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset?, length?) {
+	constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number) {
 		super(null, itemSize);
 		this.setSource(array);
 		this.array = new Uint32Array(array);
@@ -193,7 +194,7 @@ export class Uint32BufferAttribute extends BufferAttribute {//fixme
 }
 
 export class Float32BufferAttribute extends BufferAttribute {//fixme
-	constructor(array: typeof TypedArrayProto, itemSize: number, offset?, length?) {
+	constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number) {
 		super(null, itemSize);
 		this.setSource(array);
 		this.array = new Float32Array(array);
