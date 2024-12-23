@@ -32,7 +32,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 	#materialsUsed = new Set<Material>();
 	#animName;
 	animable = true;
-	lod = 1;
+	#lod = 1n;
 	bodyParts = {};
 	poseParameters = {};
 	meshes = new Set<Mesh>();
@@ -108,8 +108,13 @@ export class Source2ModelInstance extends Entity implements Animated {
 			const geometry = mesh.geometry;
 			mesh.visible = undefined;
 			if (geometry) {
-				const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask') ?? 0);
+				const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask'));
+				const lodGroupMask = BigInt(geometry.properties.get('lodGroupMask'));
 				mesh.visible = (meshGroupMask & mask) > 0 ? undefined : false;
+
+				if (lodGroupMask && ((lodGroupMask & this.#lod) == 0n)) {
+					mesh.visible = false;
+				}
 			}
 		}
 	}
@@ -166,27 +171,14 @@ export class Source2ModelInstance extends Entity implements Animated {
 		return this.#skin;
 	}
 
-	setLOD(lod) {
-		this.lod = lod;
-		this.setMeshesLOD(lod);
+	setLOD(lod: number) {
+		this.#lod = BigInt(lod);
+		this.#refreshMeshesVisibility();
 		this.forEach((child) => {
 			if (child != this && (child as Source2ModelInstance).setLOD) {
 				(child as Source2ModelInstance).setLOD(lod);
 			}
 		});
-	}
-
-	setMeshesLOD(lod) {
-		for (let mesh of this.meshes) {
-			let geometry = mesh.geometry;
-			if (geometry && geometry.properties.get('lodGroupMask') !== undefined) {
-				if (geometry.properties.get('lodGroupMask') & lod) {
-					mesh.visible = undefined;
-				} else {
-					mesh.visible = false;
-				}
-			}
-		}
 	}
 
 	setPoseParameter(paramName, paramValue) {
@@ -333,7 +325,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 			}
 			this.bodyParts[bodyPartName] = newBodyPart;
 		}
-		this.setMeshesLOD(this.lod);
+		this.#refreshMeshesVisibility();
 		this.#initDefaultBodyGroups();
 	}
 
