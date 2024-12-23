@@ -58,11 +58,17 @@ export class Source2Model {
 		if (meshGroups) {
 
 			let bodyGroupId = 0;
+			let bodyGroup: string | undefined;
 			for (const choice of meshGroups) {
-				const result = /(.*)_@\d$/.exec(choice);
-				if (result && result.length == 2) {
-					this.bodyGroups.add(result[1]);
-					this.bodyGroupsChoices.add({ choice: choice, bodyGroup: result[1], bodyGroupId: bodyGroupId });
+				if (choice == 'autodefault') {
+					bodyGroup = choice;
+				} else {
+					const result = /(.*)_@\d$/.exec(choice);
+					bodyGroup = result?.[1];
+				}
+				if (bodyGroup) {
+					this.bodyGroups.add(bodyGroup);
+					this.bodyGroupsChoices.add({ choice: choice, bodyGroup: bodyGroup, bodyGroupId: bodyGroupId });
 				}
 				bodyGroupId++;
 			}
