@@ -504,16 +504,16 @@ export declare class BufferAttribute {
     dirty: boolean;
     _array: typeof TypedArrayProto;
     count: number;
-    _buffer: WebGLBuffer;
+    _buffer?: WebGLBuffer;
     divisor: number;
     constructor(array: typeof TypedArrayProto, itemSize: number);
     get type(): any;
     set usage(usage: BufferUsage);
-    set target(target: any);
-    set array(array: any);
+    set target(target: GLenum);
+    set array(array: typeof TypedArrayProto);
     setArray(array: typeof TypedArrayProto): void;
-    update(glContext: any): void;
-    updateWireframe(glContext: any): void;
+    update(glContext: WebGLAnyRenderingContext): void;
+    updateWireframe(glContext: WebGLAnyRenderingContext): void;
     clone(): BufferAttribute;
     setSource(source: any): void;
     getBuffer(): WebGLBuffer;
@@ -2058,7 +2058,7 @@ declare class Choreography {
          export declare function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number): void;
 
          export declare class Float32BufferAttribute extends BufferAttribute {
-             constructor(array: typeof TypedArrayProto, itemSize: number, offset?: any, length?: any);
+             constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number);
          }
 
          export declare class FloatArrayNode extends ParametersNode {
@@ -6962,7 +6962,6 @@ declare class Choreography {
              #private;
              isSource2ModelInstance: boolean;
              animable: boolean;
-             lod: number;
              bodyParts: {};
              poseParameters: {};
              meshes: Set<Mesh>;
@@ -6983,8 +6982,7 @@ declare class Choreography {
              removeChild(child: any): void;
              set skin(skin: number);
              get skin(): number;
-             setLOD(lod: any): void;
-             setMeshesLOD(lod: any): void;
+             setLOD(lod: number): void;
              setPoseParameter(paramName: any, paramValue: any): void;
              playSequence(activity: any, activityModifiers?: any[]): void;
              playAnimation(name: any): void;
@@ -7111,7 +7109,6 @@ declare class Choreography {
          export declare class Source2ModelLoader {
              #private;
              load(repositoryName: any, fileName: any): any;
-             testProcess_removeme(vmdl: any, model: any, repository: any): Promise<Entity>;
              testProcess2(vmdl: any, model: any, repository: any): Promise<Entity>;
              _loadExternalMeshes(group: any, vmdl: any, model: any, repository: any): Promise<void>;
              loadMeshes(vmdl: any, callback: any): Promise<void>;
@@ -9087,15 +9084,15 @@ declare class Choreography {
          declare const TypedArrayProto: any;
 
          export declare class Uint16BufferAttribute extends BufferAttribute {
-             constructor(array: typeof TypedArrayProto, itemSize: number, offset?: any, length?: any);
+             constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number);
          }
 
          export declare class Uint32BufferAttribute extends BufferAttribute {
-             constructor(array: typeof TypedArrayProto, itemSize: number, offset?: any, length?: any);
+             constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number);
          }
 
          export declare class Uint8BufferAttribute extends BufferAttribute {
-             constructor(array: typeof TypedArrayProto, itemSize: number, offset?: any, length?: any);
+             constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number);
          }
 
          declare class Uniform {

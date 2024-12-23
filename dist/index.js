@@ -862,10 +862,10 @@ class BufferAttribute {
     itemSize;
     dirty;
     _array;
-    count;
+    count = 0;
     _buffer;
     #source;
-    divisor;
+    divisor = 0;
     constructor(array, itemSize) {
         this.itemSize = itemSize;
         if (isNaN(this.itemSize)) {
@@ -993,21 +993,21 @@ class Uint16BufferAttribute extends BufferAttribute {
     constructor(array, itemSize, offset, length) {
         super(null, itemSize);
         this.setSource(array);
-        this.array = new Uint16Array(array);
+        this.array = new Uint16Array(array, offset, length);
     }
 }
 class Uint32BufferAttribute extends BufferAttribute {
     constructor(array, itemSize, offset, length) {
         super(null, itemSize);
         this.setSource(array);
-        this.array = new Uint32Array(array);
+        this.array = new Uint32Array(array, offset, length);
     }
 }
 class Float32BufferAttribute extends BufferAttribute {
     constructor(array, itemSize, offset, length) {
         super(null, itemSize);
         this.setSource(array);
-        this.array = new Float32Array(array);
+        this.array = new Float32Array(array, offset, length);
     }
 }
 
@@ -22518,7 +22518,7 @@ class Source2ModelInstance extends Entity {
     #materialsUsed = new Set();
     #animName;
     animable = true;
-    lod = 1;
+    #lod = 1n;
     bodyParts = {};
     poseParameters = {};
     meshes = new Set();
@@ -22563,11 +22563,18 @@ class Source2ModelInstance extends Entity {
     #refreshMeshesVisibility() {
         // TODO: also use LOD mask
         let mask = 0n;
+        let name;
         for (let [group, choice] of this.#bodyGroups) {
-            const name = `${group}_@${choice}`;
+            if (group == 'autodefault') {
+                name = group;
+            }
+            else {
+                name = `${group}_@${choice}`;
+            }
             for (let [bodyGroupId, bodyGroupName] of this.sourceModel.bodyGroupsChoices.entries()) {
-                if (name == bodyGroupName) {
+                if (name == bodyGroupName || bodyGroupName == 'autodefault') {
                     mask += BigInt(Math.pow(2, bodyGroupId));
+                    break;
                 }
             }
         }
@@ -22578,8 +22585,12 @@ class Source2ModelInstance extends Entity {
             const geometry = mesh.geometry;
             mesh.visible = undefined;
             if (geometry) {
-                const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask') ?? 0);
+                const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask'));
+                const lodGroupMask = BigInt(geometry.properties.get('lodGroupMask'));
                 mesh.visible = (meshGroupMask & mask) > 0 ? undefined : false;
+                if (lodGroupMask && ((lodGroupMask & this.#lod) == 0n)) {
+                    mesh.visible = false;
+                }
             }
         }
     }
@@ -22629,26 +22640,13 @@ class Source2ModelInstance extends Entity {
         return this.#skin;
     }
     setLOD(lod) {
-        this.lod = lod;
-        this.setMeshesLOD(lod);
+        this.#lod = BigInt(lod);
+        this.#refreshMeshesVisibility();
         this.forEach((child) => {
             if (child != this && child.setLOD) {
                 child.setLOD(lod);
             }
         });
-    }
-    setMeshesLOD(lod) {
-        for (let mesh of this.meshes) {
-            let geometry = mesh.geometry;
-            if (geometry && geometry.properties.get('lodGroupMask') !== undefined) {
-                if (geometry.properties.get('lodGroupMask') & lod) {
-                    mesh.visible = undefined;
-                }
-                else {
-                    mesh.visible = false;
-                }
-            }
-        }
     }
     setPoseParameter(paramName, paramValue) {
         this.poseParameters[paramName] = paramValue;
@@ -22784,7 +22782,7 @@ class Source2ModelInstance extends Entity {
             }
             this.bodyParts[bodyPartName] = newBodyPart;
         }
-        this.setMeshesLOD(this.lod);
+        this.#refreshMeshesVisibility();
         this.#initDefaultBodyGroups();
     }
     #initSkeleton() {
@@ -24107,46 +24105,6 @@ class Source2ModelLoader {
         });
         repoPromises[fileName] = promise;
         return promise;
-    }
-    async testProcess_removeme(vmdl, model, repository) {
-        let group = new Entity();
-        let drawCalls = vmdl.getBlockStruct('MDAT.keyValue.root.m_sceneObjects.0.m_drawCalls') || vmdl.getBlockStruct('MDAT.keyValue.root.m_drawCalls'); //TODOv3 process multiple objects
-        if (drawCalls) {
-            for (let drawCallIndex = 0, l = drawCalls.length; drawCallIndex < l; ++drawCallIndex) { //TODOv3: mutualize buffer if used by multiple drawcalls
-                let drawCall = drawCalls[drawCallIndex];
-                let vertexBuffers = drawCall.m_vertexBuffers[0]; //TODOv3 why 0 ?
-                if (!vertexBuffers) {
-                    continue;
-                }
-                let bufferIndex = vertexBuffers.m_hBuffer;
-                //			for(let meshIndex = 0; meshIndex < 12/*TODOv3*/; ++meshIndex) {
-                let indices = new Uint32BufferAttribute(vmdl.getIndices(bufferIndex), 1, drawCall.m_nStartIndex * 4, drawCall.m_nIndexCount);
-                let vertexPosition = new Float32BufferAttribute(vmdl.getVertices(bufferIndex), 3);
-                let vertexNormal = new Float32BufferAttribute(vmdl.getNormals(bufferIndex), 3);
-                let textureCoord = new Float32BufferAttribute(vmdl.getCoords(bufferIndex), 2);
-                let vertexWeights = new Float32BufferAttribute(vmdl.getBoneWeight(bufferIndex), 4);
-                let vertexBones = new Float32BufferAttribute(vmdl.getBoneIndices(bufferIndex), 4);
-                let geometry = new BufferGeometry();
-                geometry.setIndex(indices); //, drawCall.m_nStartIndex, drawCall.m_nIndexCount);
-                geometry.setAttribute('aVertexPosition', vertexPosition);
-                geometry.setAttribute('aVertexNormal', vertexNormal);
-                geometry.setAttribute('aTextureCoord', textureCoord);
-                geometry.setAttribute('aBoneWeight', vertexWeights);
-                geometry.setAttribute('aBoneIndices', vertexBones);
-                geometry.count = drawCall.m_nIndexCount;
-                geometry.properties.set('materialPath', drawCall.m_material); //"models/characters/alyx/materials/alyx_body.vmat"
-                geometry.properties.set('bones', vmdl.getBlockStruct('MDAT.keyValue.root.m_skeleton.m_bones')); //mesh.getKeyValue('m_skeleton.m_bones');
-                let material = new MeshBasicMaterial(); //removemeTODOv3
-                let staticMesh = new Mesh(geometry, material);
-                group.addChild(staticMesh);
-                const materialPath = geometry.properties.get('materialPath');
-                Source2MaterialManager.getMaterial(repository, materialPath).then((material) => staticMesh.setMaterial(material)).catch((error) => console.error('unable to find material ' + materialPath, error));
-                model.addGeometry(geometry, FileNameFromPath(drawCall.m_material), 0 /*TODOv3*/);
-            }
-        }
-        await this._loadExternalMeshes(group, vmdl, model, repository);
-        //vmdl.loadAnimGroups();//TODOv3
-        return group;
     }
     async testProcess2(vmdl, model, repository) {
         let group = new Entity();
@@ -55199,7 +55157,7 @@ class Source2TextureManagerClass extends EventTarget {
                     dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT5_EXT;
                     break;
             }
-            gl.bindTexture(target, texture);
+            //gl.bindTexture(target, texture);
             gl.compressedTexImage2D(target, 0, dxtFormat, width, height, 0, datas);
         }
         else {
@@ -55223,6 +55181,7 @@ class Source2TextureManagerClass extends EventTarget {
             }
             if (decompressFunc) {
                 Detex[decompressFunc](width, height, datas, uncompressedData).then(() => {
+                    // TODO: fix target in the 3 lines below
                     gl.bindTexture(GL_TEXTURE_2D, texture);
                     gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData); //TODO: params
                     gl.bindTexture(GL_TEXTURE_2D, null);
