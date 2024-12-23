@@ -216,6 +216,12 @@ export declare enum BlendingMode {
     Multiply = 4
 }
 
+declare type BodyGroupChoice = {
+    choice: string;
+    bodyGroup: string;
+    bodyGroupId: number;
+};
+
 export declare class Bone extends Entity {
     #private;
     isBone: boolean;
@@ -6938,7 +6944,7 @@ declare class Choreography {
              attachements: Map<any, any>;
              seqGroup: any;
              bodyGroups: Set<string>;
-             bodyGroupsChoices: Array<string>;
+             bodyGroupsChoices: Set<BodyGroupChoice>;
              constructor(repository: string, vmdl: any);
              matchActivity(activity: any, modifiers: any): any;
              addGeometry(geometry: any, bodyPartName: any, bodyPartModelId: any): void;

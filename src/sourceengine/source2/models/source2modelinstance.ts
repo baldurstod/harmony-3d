@@ -44,7 +44,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 	animationSpeed = 1.0;
 	sourceModel: Source2Model;
 	hasAnimations: true = true;
-	#bodyGroups = new Map<string, number>();
+	#bodyGroups = new Map<string, number | undefined>();
 
 	constructor(sourceModel: Source2Model, isDynamic) {
 		defaultMaterial.addUser(Source2ModelInstance);
@@ -66,10 +66,10 @@ export class Source2ModelInstance extends Entity implements Animated {
 	}
 
 	#initDefaultBodyGroups() {
-		this.#bodyGroups.set('autodefault', 0);
+		this.#bodyGroups.set('autodefault', undefined);
 
 		for (const bodyGroup of this.sourceModel.bodyGroups) {
-			this.#bodyGroups.set(bodyGroup, 0);
+			this.#bodyGroups.set(bodyGroup, undefined);
 		}
 		this.#refreshMeshesVisibility();
 	}
@@ -82,26 +82,17 @@ export class Source2ModelInstance extends Entity implements Animated {
 	}
 
 	#refreshMeshesVisibility() {
-		// TODO: also use LOD mask
 		let mask = 0n;
-		let name: string;
 
-		for (let [group, choice] of this.#bodyGroups) {
-			if (group == 'autodefault') {
-				name = group;
-			} else {
-				name = `${group}_@${choice}`;
-			}
-			for (let [bodyGroupId, bodyGroupName] of this.sourceModel.bodyGroupsChoices.entries()) {
-				if (name == bodyGroupName || bodyGroupName == 'autodefault') {
-					mask += BigInt(Math.pow(2, bodyGroupId));
-					break;
-				}
+		for (const bodyGroupsChoice of this.sourceModel.bodyGroupsChoices) {
+			const choice = this.#bodyGroups.get(bodyGroupsChoice.bodyGroup);
+			if ((choice === undefined) || (bodyGroupsChoice.choice == `${bodyGroupsChoice.bodyGroup}_@${choice}`)) {
+				mask += BigInt(Math.pow(2, bodyGroupsChoice.bodyGroupId));
 			}
 		}
 
 		if (mask == 0n) {
-			mask = 1n;
+			mask = 0xFFFFFFFFFFFFFFFFn;
 		}
 
 		for (const mesh of this.meshes) {

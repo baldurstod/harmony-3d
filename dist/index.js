@@ -22548,9 +22548,9 @@ class Source2ModelInstance extends Entity {
         this.#updateMaterials();
     }
     #initDefaultBodyGroups() {
-        this.#bodyGroups.set('autodefault', 0);
+        this.#bodyGroups.set('autodefault', undefined);
         for (const bodyGroup of this.sourceModel.bodyGroups) {
-            this.#bodyGroups.set(bodyGroup, 0);
+            this.#bodyGroups.set(bodyGroup, undefined);
         }
         this.#refreshMeshesVisibility();
     }
@@ -22561,25 +22561,15 @@ class Source2ModelInstance extends Entity {
         this.#refreshMeshesVisibility();
     }
     #refreshMeshesVisibility() {
-        // TODO: also use LOD mask
         let mask = 0n;
-        let name;
-        for (let [group, choice] of this.#bodyGroups) {
-            if (group == 'autodefault') {
-                name = group;
-            }
-            else {
-                name = `${group}_@${choice}`;
-            }
-            for (let [bodyGroupId, bodyGroupName] of this.sourceModel.bodyGroupsChoices.entries()) {
-                if (name == bodyGroupName || bodyGroupName == 'autodefault') {
-                    mask += BigInt(Math.pow(2, bodyGroupId));
-                    break;
-                }
+        for (const bodyGroupsChoice of this.sourceModel.bodyGroupsChoices) {
+            const choice = this.#bodyGroups.get(bodyGroupsChoice.bodyGroup);
+            if ((choice === undefined) || (bodyGroupsChoice.choice == `${bodyGroupsChoice.bodyGroup}_@${choice}`)) {
+                mask += BigInt(Math.pow(2, bodyGroupsChoice.bodyGroupId));
             }
         }
         if (mask == 0n) {
-            mask = 1n;
+            mask = 0xffffffffffffffffn;
         }
         for (const mesh of this.meshes) {
             const geometry = mesh.geometry;
@@ -23793,7 +23783,7 @@ class Source2Model {
     attachements = new Map();
     seqGroup;
     bodyGroups = new Set();
-    bodyGroupsChoices = [];
+    bodyGroupsChoices = new Set();
     constructor(repository, vmdl) {
         this.repository = repository;
         this.vmdl = vmdl;
@@ -23811,12 +23801,14 @@ class Source2Model {
     #createBodyGroups() {
         let meshGroups = this.vmdl.getPermModelData('m_meshGroups');
         if (meshGroups) {
+            let bodyGroupId = 0;
             for (const choice of meshGroups) {
                 const result = /(.*)_@\d$/.exec(choice);
                 if (result && result.length == 2) {
                     this.bodyGroups.add(result[1]);
+                    this.bodyGroupsChoices.add({ choice: choice, bodyGroup: result[1], bodyGroupId: bodyGroupId });
                 }
-                this.bodyGroupsChoices.push(choice);
+                bodyGroupId++;
             }
         }
     }

@@ -10,6 +10,12 @@ import { Source2Animations } from '../animations/source2animations';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
+export type BodyGroupChoice = {
+	choice: string,
+	bodyGroup: string,
+	bodyGroupId: number,
+}
+
 export class Source2Model {
 	#internalAnimGroup;
 	#includeModels = [];
@@ -28,7 +34,7 @@ export class Source2Model {
 	attachements = new Map();
 	seqGroup;
 	bodyGroups = new Set<string>();
-	bodyGroupsChoices: Array<string> = [];
+	bodyGroupsChoices = new Set<BodyGroupChoice>();
 
 	constructor(repository: string, vmdl) {
 		this.repository = repository;
@@ -50,12 +56,15 @@ export class Source2Model {
 	#createBodyGroups() {
 		let meshGroups = this.vmdl.getPermModelData('m_meshGroups') as Array<string>;
 		if (meshGroups) {
+
+			let bodyGroupId = 0;
 			for (const choice of meshGroups) {
 				const result = /(.*)_@\d$/.exec(choice);
 				if (result && result.length == 2) {
 					this.bodyGroups.add(result[1]);
+					this.bodyGroupsChoices.add({ choice: choice, bodyGroup: result[1], bodyGroupId: bodyGroupId });
 				}
-				this.bodyGroupsChoices.push(choice);
+				bodyGroupId++;
 			}
 		}
 	}
