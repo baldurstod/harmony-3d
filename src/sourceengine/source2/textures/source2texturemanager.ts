@@ -206,7 +206,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 				case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5: dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT5_EXT; break;
 			}
 
-			gl.bindTexture(target, texture);
+			//gl.bindTexture(target, texture);
 			gl.compressedTexImage2D(target, 0, dxtFormat, width, height, 0, datas);
 		} else {
 			/*gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
@@ -225,6 +225,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 			if (decompressFunc) {
 				Detex[decompressFunc](width, height, datas, uncompressedData).then(
 					() => {
+						// TODO: fix target in the 3 lines below
 						gl.bindTexture(GL_TEXTURE_2D, texture);
 						gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData);//TODO: params
 						gl.bindTexture(GL_TEXTURE_2D, null);
