@@ -137,9 +137,16 @@ export class Graphics {
 			this.autoResize = autoResize;
 		}
 
-		this.#canvas.addEventListener('mousedown', (event) => this.mouseDown(event));
-		this.#canvas.addEventListener('mousemove', (event) => this.mouseMove(event));
-		this.#canvas.addEventListener('mouseup', (event) => this.mouseUp(event));
+		this.#canvas.addEventListener('mousedown', (event: MouseEvent) => this.#mouseDown(event));
+		this.#canvas.addEventListener('mousemove', (event: MouseEvent) => this.#mouseMove(event));
+		this.#canvas.addEventListener('mouseup', (event: MouseEvent) => this.#mouseUp(event));
+		this.#canvas.addEventListener('keydown', (event: KeyboardEvent) => GraphicsEvents.keyDown(event));
+		this.#canvas.addEventListener('keyup', (event: KeyboardEvent) => GraphicsEvents.keyUp(event));
+		this.#canvas.addEventListener('wheel', (event: WheelEvent) => this.#wheel(event));
+		this.#canvas.addEventListener('touchstart', (event: TouchEvent) => GraphicsEvents.touchStart(this.#pickedEntity, event));
+		this.#canvas.addEventListener('touchmove', (event: TouchEvent) => GraphicsEvents.touchMove(this.#pickedEntity, event));
+		this.#canvas.addEventListener('touchcancel', (event: TouchEvent) => GraphicsEvents.touchCancel(this.#pickedEntity, event));
+
 		this.#readyPromiseResolve(true);
 		return this;
 	}
@@ -157,7 +164,7 @@ export class Graphics {
 		return pickList.get(pickedEntityIndex) ?? null;
 	}
 
-	mouseDown(event) {
+	#mouseDown(event: MouseEvent) {
 		this.#canvas.focus();
 		let x = event.offsetX;
 		let y = event.offsetY;
@@ -165,16 +172,23 @@ export class Graphics {
 		GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
 	}
 
-	mouseMove(event) {
+	#mouseMove(event: MouseEvent) {
 		let x = event.offsetX;
 		let y = event.offsetY;
 		GraphicsEvents.mouseMove(x, y, this.#pickedEntity, event);
 	}
 
-	mouseUp(event) {
+	#mouseUp(event: MouseEvent) {
 		let x = event.offsetX;
 		let y = event.offsetY;
 		GraphicsEvents.mouseUp(x, y, this.#pickedEntity, event);
+		this.#pickedEntity = null;
+	}
+
+	#wheel(event: WheelEvent) {
+		let x = event.offsetX;
+		let y = event.offsetY;
+		GraphicsEvents.wheel(x, y, this.#pickedEntity, event);
 		this.#pickedEntity = null;
 	}
 
