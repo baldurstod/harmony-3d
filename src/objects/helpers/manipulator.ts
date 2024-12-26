@@ -661,7 +661,8 @@ export class Manipulator extends Entity {
 						planeNormal = vec3.copy(planeNormal, zUnitVec3);
 						break;
 					default:
-						planeNormal = vec3.sub(vec3.create(), this.#far, this.#near);
+						this.getPositionFrom(camera, planeNormal);
+						planeNormal = vec3.normalize(planeNormal, planeNormal);
 						break;
 				}
 			} else {
@@ -676,7 +677,7 @@ export class Manipulator extends Entity {
 						planeNormal = vec3.transformQuat(planeNormal, zUnitVec3, this.#startQuaternion);
 						break;
 					default:
-						planeNormal = vec3.sub(vec3.create(), this.#far, this.#near);
+						planeNormal = vec3.sub(vec3.create()/*TODO: optimize*/, this.#far, this.#near);
 						break;
 				}
 			}
