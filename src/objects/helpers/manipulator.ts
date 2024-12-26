@@ -3,7 +3,7 @@ import { ShortcutHandler } from 'harmony-browser-utils';
 
 import { Entity } from '../../entities/entity';
 import { Graphics } from '../../graphics/graphics';
-import { GraphicsEvents, GraphicsEvent } from '../../graphics/graphicsevents';
+import { GraphicsEvents, GraphicsEvent, GraphicMouseDownEventData, GraphicMouseMoveEventData, GraphicMouseUpEventData } from '../../graphics/graphicsevents';
 import { LineMaterial } from '../../materials/linematerial';
 import { MATERIAL_BLENDING_NORMAL } from '../../materials/material';
 import { MeshBasicMaterial } from '../../materials/meshbasicmaterial';
@@ -145,8 +145,8 @@ export class Manipulator extends Entity {
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.resize((this.root as Scene)?.activeCamera));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (pickEvent: Event) => {
-			let detail = (pickEvent as CustomEvent).detail;
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: CustomEvent<GraphicMouseDownEventData>) => {
+			let detail = event.detail;
 			if (this.#entityAxis.has(detail.entity)) {
 				this.#axis = this.#entityAxis.get(detail.entity);
 				if (this.#axis < 10) {
@@ -160,8 +160,8 @@ export class Manipulator extends Entity {
 				this.#setAxisSelected(true);
 			}
 		});
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (pickEvent: Event) => {
-			let detail = (pickEvent as CustomEvent).detail;
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: CustomEvent<GraphicMouseMoveEventData>) => {
+			let detail = event.detail;
 			if (!detail.entity?.visible) {
 				return;
 			}
@@ -175,8 +175,8 @@ export class Manipulator extends Entity {
 				}
 			}
 		});
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (pickEvent: Event) => {
-			if (this.#entityAxis.has((pickEvent as CustomEvent).detail.entity)) {
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: CustomEvent<GraphicMouseUpEventData>) => {
+			if (this.#entityAxis.has(event.detail.entity)) {
 				new Graphics().dragging = false;
 				this.#setAxisSelected(false);
 			}

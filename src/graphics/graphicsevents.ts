@@ -8,6 +8,16 @@ export enum GraphicsEvent {
 	Tick = 'tick',
 }
 
+export type GraphicMouseDownEventData = {
+	x: number,
+	y: number,
+	entity: Entity | null,
+	mouseEvent: MouseEvent,
+}
+
+export type GraphicMouseUpEventData = GraphicMouseDownEventData;
+export type GraphicMouseMoveEventData = GraphicMouseDownEventData;
+
 export const GraphicsEvents = new (function () {
 	class GraphicsEvents extends EventTarget {
 		static #instance: GraphicsEvents;
@@ -28,15 +38,15 @@ export const GraphicsEvents = new (function () {
 		}
 
 		mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-			this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+			this.dispatchEvent(new CustomEvent<GraphicMouseMoveEventData>(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
 		}
 
 		mouseDown(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-			this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+			this.dispatchEvent(new CustomEvent<GraphicMouseDownEventData>(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
 		}
 
 		mouseUp(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-			this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+			this.dispatchEvent(new CustomEvent<GraphicMouseUpEventData>(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
 		}
 	}
 	return GraphicsEvents;
