@@ -162,10 +162,6 @@ export class Graphics {
 		let x = event.offsetX;
 		let y = event.offsetY;
 		this.#pickedEntity = this.pickEntity(x, y);
-		if (this.#pickedEntity) {
-			GraphicsEvents.pick(x, y, this.#pickedEntity);
-			event.stopPropagation();
-		}
 		GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
 	}
 

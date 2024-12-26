@@ -4,7 +4,6 @@ export enum GraphicsEvent {
 	MouseMove = 'mousemove',
 	MouseDown = 'mousedown',
 	MouseUp = 'mouseup',
-	Pick = 'pick',
 	Resize = 'resize',
 	Tick = 'tick',
 }
@@ -22,10 +21,6 @@ export const GraphicsEvents = new (function () {
 
 		tick(delta: number, time: number) {
 			this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time } }));
-		}
-
-		pick(x: number, y: number, pickedEntity: Entity) {
-			this.dispatchEvent(new CustomEvent(GraphicsEvent.Pick, { detail: { x: x, y: y, entity: pickedEntity } }));
 		}
 
 		resize(width: number, height: number) {
