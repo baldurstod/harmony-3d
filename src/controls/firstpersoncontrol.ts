@@ -5,6 +5,7 @@ import { Spherical } from './spherical'
 import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { clamp } from '../math/functions';
 import { Camera } from '../cameras/camera';
+import { GraphicKeyboardEventData, GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
 
 const xUnitVec3 = vec3.fromValues(1, 0, 0);
 const yUnitVec3 = vec3.fromValues(0, 1, 0);
@@ -52,8 +53,8 @@ export class FirstPersonControl extends CameraControl {
 	#quatInverse = quat.create();
 	#clickOffsetX: number;
 	#clickOffsetY: number;
-	constructor(camera: Camera, htmlElement: HTMLElement) {
-		super(camera, htmlElement);
+	constructor(camera: Camera) {
+		super(camera);
 
 
 
@@ -90,10 +91,7 @@ export class FirstPersonControl extends CameraControl {
 			*/
 	}
 
-	#onMouseDown(event) {
-		if (this.htmlElement !== event.target) {
-			return;
-		}
+	#onMouseDown(event: CustomEvent<GraphicMouseEventData>) {
 		if (!this.enabled) {
 			return;
 		}
@@ -103,13 +101,14 @@ export class FirstPersonControl extends CameraControl {
 
 		//event.preventDefault();
 		//event.stopPropagation();
+		const mouseEvent = event.detail.mouseEvent;
 
 		if (this.activeLook) {
-			switch (event.button) {
+			switch (mouseEvent.button) {
 				case 0:
 					this.#click = true;
-					this.#clickOffsetX = event.offsetX;
-					this.#clickOffsetY = event.offsetY;
+					this.#clickOffsetX = mouseEvent.offsetX;
+					this.#clickOffsetY = mouseEvent.offsetY;
 					this.#startLat = this.#lat;
 					this.#startLon = this.#lon;
 					this.#mouseX = 0;
@@ -119,16 +118,17 @@ export class FirstPersonControl extends CameraControl {
 				//case 2: this.#moveBackward = true; break;
 			}
 		}
-		event.target.requestPointerLock();
+		(event.target as Element).requestPointerLock();
 		this.#mouseDragOn = true;
 	}
 
-	#onMouseUp(event) {
+	#onMouseUp(event: CustomEvent<GraphicMouseEventData>) {
 		document.exitPointerLock();
-		event.preventDefault();
+		const mouseEvent = event.detail.mouseEvent;
+		mouseEvent.preventDefault();
 		//event.stopPropagation();
 		if (this.activeLook) {
-			switch (event.button) {
+			switch (mouseEvent.button) {
 				case 0:
 					this.#click = false;
 
@@ -142,7 +142,8 @@ export class FirstPersonControl extends CameraControl {
 		this.#mouseDragOn = false;
 	}
 
-	#onMouseMove(event) {
+	#onMouseMove(event: CustomEvent<GraphicMouseEventData>) {
+		const mouseEvent = event.detail.mouseEvent;
 		if (this.#mouseDragOn) {
 			if (false/*this.htmlElement === document*/) {
 				/*
@@ -155,18 +156,18 @@ export class FirstPersonControl extends CameraControl {
 				this.#mouseX = (event.offsetX - this.#clickOffsetX);
 				this.#mouseY = (event.offsetY - this.#clickOffsetY);*/
 
-				this.#mouseX += event.movementX;
-				this.#mouseY += event.movementY;
+				this.#mouseX += mouseEvent.movementX;
+				this.#mouseY += mouseEvent.movementY;
 				//console.error(event, this.#clickOffsetX, this.#clickOffsetY);
 			}
 			//console.error(this.#mouseX, this.#mouseY);
 
 
-			this.#rotateDelta[0] = event.movementX * this.#rotateSpeed;
-			this.#rotateDelta[1] = event.movementY * this.#rotateSpeed;
+			this.#rotateDelta[0] = mouseEvent.movementX * this.#rotateSpeed;
+			this.#rotateDelta[1] = mouseEvent.movementY * this.#rotateSpeed;
 			//console.error(event.movementX, event.movementY, ...this.#rotateDelta);
 
-			var element = this.htmlElement;
+			const element = mouseEvent.target as Element;
 
 			this.#rotateLeft(2 * Math.PI * this.#rotateDelta[0] / element.clientHeight); // yes, height
 
@@ -174,16 +175,10 @@ export class FirstPersonControl extends CameraControl {
 
 		}
 	}
-	#onKeyDown(event) {
-		if (event.target instanceof HTMLInputElement ||
-			event.target instanceof HTMLTextAreaElement
-		) {
-			return;
-		}
-
+	#onKeyDown(event: CustomEvent<GraphicKeyboardEventData>) {
 		//event.preventDefault();
 
-		switch (event.code) {
+		switch (event.detail.keyboardEvent.code) {
 			case 'ArrowUp':
 			case 'KeyW':
 				this.#moveForward = true;
@@ -211,13 +206,8 @@ export class FirstPersonControl extends CameraControl {
 		//console.error(event.code);//removeme
 	}
 
-	#onKeyUp(event) {
-		if (event.target instanceof HTMLInputElement ||
-			event.target instanceof HTMLTextAreaElement
-		) {
-			return;
-		}
-		switch (event.code) {
+	#onKeyUp(event: CustomEvent<GraphicKeyboardEventData>) {
+		switch (event.detail.keyboardEvent.code) {
 			case 'ArrowUp':
 			case 'KeyW':
 				this.#moveForward = false;
@@ -461,13 +451,18 @@ export class FirstPersonControl extends CameraControl {
 	}
 
 	#setupEventsListeners() {
-		this.htmlElement.addEventListener('contextmenu', event => this.#onContextMenu(event));
-		this.htmlElement.addEventListener('mousemove', event => this.#onMouseMove(event));
-		this.htmlElement.addEventListener('mousedown', event => this.#onMouseDown(event));
-		this.htmlElement.addEventListener('mouseup', event => this.#onMouseUp(event));
+		//this.htmlElement.addEventListener('contextmenu', event => this.#onContextMenu(event));
+		//this.htmlElement.addEventListener('mousemove', event => this.#onMouseMove(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseMove(event));
+		//this.htmlElement.addEventListener('mousedown', event => this.#onMouseDown(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseDown(event));
+		//this.htmlElement.addEventListener('mouseup', event => this.#onMouseUp(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseUp(event));
 
-		this.htmlElement.addEventListener('keydown', event => this.#onKeyDown(event), false);
-		this.htmlElement.addEventListener('keyup', event => this.#onKeyUp(event), false);
+		//this.htmlElement.addEventListener('keydown', event => this.#onKeyDown(event), false);
+		GraphicsEvents.addEventListener(GraphicsEvent.KeyDown, (event: CustomEvent<GraphicKeyboardEventData>) => this.#onKeyDown(event));
+		//this.htmlElement.addEventListener('keyup', event => this.#onKeyUp(event), false);
+		GraphicsEvents.addEventListener(GraphicsEvent.KeyUp, (event: CustomEvent<GraphicKeyboardEventData>) => this.#onKeyUp(event));
 	}
 
 	setupCamera() {

@@ -4,14 +4,8 @@ import { Graphics } from '../graphics/graphics';
 export class CameraControl {
 	#camera?: Camera;
 	#enabled = true;
-	#htmlElement?: HTMLElement;
-	constructor(camera?: Camera, htmlElement?: HTMLElement) {
+	constructor(camera?: Camera) {
 		this.#camera = camera;
-		this.#htmlElement = htmlElement;
-	}
-
-	get htmlElement() {
-		return this.#htmlElement;
 	}
 
 	set enabled(enabled: boolean) {

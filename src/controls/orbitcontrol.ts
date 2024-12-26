@@ -4,7 +4,7 @@ import { CameraControl } from './cameracontrol';
 import { Spherical } from './spherical';
 import { Target } from '../objects/target';
 import { TESTING } from '../buildoptions';
-import { GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
+import { GraphicKeyboardEventData, GraphicMouseEventData, GraphicsEvent, GraphicsEvents, GraphicTouchEventData, GraphicWheelEventData } from '../graphics/graphicsevents';
 import { Camera } from '../cameras/camera';
 
 // This set of controls performs orbiting, dollying(zooming), and panning.
@@ -104,8 +104,8 @@ export class OrbitControl extends CameraControl {
 	#dollyEnd = vec2.create();
 	#dollyDelta = vec2.create();
 
-	constructor(camera?: Camera, htmlElement?: HTMLElement) {
-		super(camera, htmlElement);
+	constructor(camera?: Camera) {
+		super(camera);
 
 		//TODO end
 		if (camera) {
@@ -305,9 +305,7 @@ export class OrbitControl extends CameraControl {
 		vec3.add(this.#panOffset, this.#panOffset, tempVec3);
 	}
 
-	#pan(deltaX, deltaY) {
-		var element = this.htmlElement;
-
+	#pan(deltaX: number, deltaY: number, element: Element) {
 		if (this.camera.isPerspective) {
 
 			// perspective
@@ -381,13 +379,14 @@ export class OrbitControl extends CameraControl {
 		vec2.set(this.#panStart, event.clientX, event.clientY);
 	}
 
-	#handleMouseMoveRotate(event) {
-		vec2.set(this.#rotateEnd, event.clientX, event.clientY);
-		this.#rotateDelta[0] = event.movementX * this.#rotateSpeed;
-		this.#rotateDelta[1] = event.movementY * this.#rotateSpeed;
+	#handleMouseMoveRotate(event: CustomEvent<GraphicMouseEventData>) {
+		const mouseEvent = event.detail.mouseEvent;
+		vec2.set(this.#rotateEnd, mouseEvent.clientX, mouseEvent.clientY);
+		this.#rotateDelta[0] = mouseEvent.movementX * this.#rotateSpeed;
+		this.#rotateDelta[1] = mouseEvent.movementY * this.#rotateSpeed;
 		//console.error(event.movementX, event.movementY, ...this.#rotateDelta);
 
-		var element = this.htmlElement;
+		const element = mouseEvent.target as HTMLElement;
 
 		this.#rotateLeft(2 * Math.PI * this.#rotateDelta[0] / element.clientHeight); // yes, height
 
@@ -423,22 +422,23 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	handleMouseMovePan(event) {
+	#handleMouseMovePan(event: CustomEvent<GraphicMouseEventData>) {
 		this.#panSpeed = 1.0;
-		this.#panDelta[0] = event.movementX * this.#panSpeed;
-		this.#panDelta[1] = event.movementY * this.#panSpeed;
-		this.#pan(this.#panDelta[0], this.#panDelta[1]);
+		this.#panDelta[0] = event.detail.mouseEvent.movementX * this.#panSpeed;
+		this.#panDelta[1] = event.detail.mouseEvent.movementY * this.#panSpeed;
+		this.#pan(this.#panDelta[0], this.#panDelta[1], event.detail.mouseEvent.target as HTMLElement);
 		this.update();
 	}
 
-	handleMouseWheel(event) {
+	#handleMouseWheel(event: CustomEvent<GraphicWheelEventData>) {
 		//console.error(event.deltaY, this.zoomScale);
+		const wheelEvent = event.detail.wheelEvent;
 
-		if (event.deltaY < 0) {
+		if (wheelEvent.deltaY < 0) {
 
 			this.#dollyOut(this.zoomScale);
 
-		} else if (event.deltaY > 0) {
+		} else if (wheelEvent.deltaY > 0) {
 
 			this.#dollyIn(this.zoomScale);
 
@@ -448,15 +448,20 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#handleKeyDown(event) {
+	#handleKeyDown(event: CustomEvent<GraphicKeyboardEventData>) {
+
+		if (this.enabled === false || this.#enableKeys === false || this.#enablePan === false) {
+			return;
+		}
+		const keyboardEvent = event.detail.keyboardEvent;
 
 		var needsUpdate = false;
-		if (event.ctrlKey || event.metaKey || event.altKey) {
+		if (keyboardEvent.ctrlKey || keyboardEvent.metaKey || keyboardEvent.altKey) {
 			return;
 		}
 
-		if (event.shiftKey) {
-			switch (event.code) {
+		if (keyboardEvent.shiftKey) {
+			switch (keyboardEvent.code) {
 				case 'ArrowUp':
 				case 'KeyW':
 					this.#keyRotateVertical = 1;
@@ -477,26 +482,25 @@ export class OrbitControl extends CameraControl {
 			return;
 		}
 
-		switch (event.code) {
-
+		switch (keyboardEvent.code) {
 			case 'ArrowUp':
 			case 'KeyW':
-				this.#pan(0, this.#keyPanSpeed);
+				this.#pan(0, this.#keyPanSpeed, (keyboardEvent.target as HTMLElement));
 				needsUpdate = true;
 				break;
 			case 'ArrowDown':
 			case 'KeyS':
-				this.#pan(0, - this.#keyPanSpeed);
+				this.#pan(0, - this.#keyPanSpeed, (keyboardEvent.target as HTMLElement));
 				needsUpdate = true;
 				break;
 			case 'ArrowLeft':
 			case 'KeyA':
-				this.#pan(this.#keyPanSpeed, 0);
+				this.#pan(this.#keyPanSpeed, 0, (keyboardEvent.target as HTMLElement));
 				needsUpdate = true;
 				break;
 			case 'ArrowRight':
 			case 'KeyD':
-				this.#pan(- this.#keyPanSpeed, 0);
+				this.#pan(- this.#keyPanSpeed, 0, (keyboardEvent.target as HTMLElement));
 				needsUpdate = true;
 				break;
 			/*
@@ -524,14 +528,18 @@ export class OrbitControl extends CameraControl {
 		if (needsUpdate) {
 
 			// prevent the browser from scrolling on cursor keys
-			event.preventDefault();
+			keyboardEvent.preventDefault();
 
 			this.update();
 		}
 	}
 
-	#handleKeyUp(event) {
-		switch (event.code) {
+	#handleKeyUp(event: CustomEvent<GraphicKeyboardEventData>) {
+		if (this.enabled === false || this.#enableKeys === false || this.#enablePan === false) {
+			return;
+		}
+
+		switch (event.detail.keyboardEvent.code) {
 			case 'ArrowUp':
 			case 'KeyW':
 			case 'ArrowDown':
@@ -547,7 +555,7 @@ export class OrbitControl extends CameraControl {
 		}
 	}
 
-	#handleTouchStartRotate(event) {
+	#handleTouchStartRotate(event: TouchEvent) {
 
 		if (event.touches.length == 1) {
 			vec2.set(this.#rotateStart, event.touches[0].pageX, event.touches[0].pageY);
@@ -563,7 +571,7 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#handleTouchStartPan(event) {
+	#handleTouchStartPan(event: TouchEvent) {
 
 		if (event.touches.length == 1) {
 
@@ -580,7 +588,7 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#handleTouchStartDolly(event) {
+	#handleTouchStartDolly(event: TouchEvent) {
 
 		var dx = event.touches[0].pageX - event.touches[1].pageX;
 		var dy = event.touches[0].pageY - event.touches[1].pageY;
@@ -591,7 +599,7 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#handleTouchStartDollyPan(event) {
+	#handleTouchStartDollyPan(event: TouchEvent) {
 
 		if (this.#enableDolly) this.#handleTouchStartDolly(event);
 
@@ -599,7 +607,7 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#handleTouchStartDollyRotate(event) {
+	#handleTouchStartDollyRotate(event: TouchEvent) {
 
 		if (this.#enableDolly) this.#handleTouchStartDolly(event);
 
@@ -607,7 +615,7 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#handleTouchMoveRotate(event) {
+	#handleTouchMoveRotate(event: TouchEvent) {
 
 		if (event.touches.length == 1) {
 
@@ -625,7 +633,7 @@ export class OrbitControl extends CameraControl {
 		vec2.sub(this.#rotateDelta, this.#rotateEnd, this.#rotateStart);
 		vec2.scale(this.#rotateDelta, this.#rotateDelta, this.#rotateSpeed);
 
-		var element = this.htmlElement;
+		const element = (event.target as HTMLElement);
 
 		this.#rotateLeft(2 * Math.PI * this.#rotateDelta[0] / element.clientHeight); // yes, height
 
@@ -635,7 +643,7 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#handleTouchMovePan(event) {
+	#handleTouchMovePan(event: TouchEvent) {
 
 		if (event.touches.length == 1) {
 
@@ -654,13 +662,13 @@ export class OrbitControl extends CameraControl {
 		//panDelta.subVectors(panEnd, panStart).multiplyScalar(this.#panSpeed);
 		vec2.scale(this.#panDelta, vec2.sub(this.#panDelta, this.#panEnd, this.#panStart), this.#panSpeed);
 
-		this.#pan(this.#panDelta[0], this.#panDelta[1]);
+		this.#pan(this.#panDelta[0], this.#panDelta[1], (event.target as HTMLElement));
 
 		vec2.copy(this.#panStart, this.#panEnd);
 
 	}
 
-	#handleTouchMoveDolly(event) {
+	#handleTouchMoveDolly(event: TouchEvent) {
 
 		var dx = event.touches[0].pageX - event.touches[1].pageX;
 		var dy = event.touches[0].pageY - event.touches[1].pageY;
@@ -679,7 +687,7 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#handleTouchMoveDollyPan(event) {
+	#handleTouchMoveDollyPan(event: TouchEvent) {
 
 		if (this.#enableDolly) this.#handleTouchMoveDolly(event);
 
@@ -687,7 +695,7 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#handleTouchMoveDollyRotate(event) {
+	#handleTouchMoveDollyRotate(event: TouchEvent) {
 
 		if (this.#enableDolly) this.#handleTouchMoveDolly(event);
 
@@ -695,20 +703,21 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#onMouseDown(event) {
+	#onMouseDown(event: CustomEvent<GraphicMouseEventData>) {
 		if (this.enabled === false) {
 			return;
 		}
 
 		// Prevent the browser from scrolling.
 		event.preventDefault();
+		const mouseEvent = event.detail.mouseEvent;
 
 		// Manually set the focus since calling preventDefault above
 		// prevents the browser from setting it automatically.
 
 		//this.htmlElement.focus ? this.htmlElement.focus(): window.focus();
 
-		let action = this.#mouseButtons[event.button];
+		let action = this.#mouseButtons[mouseEvent.button];
 
 		const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2, NONE: -1 };
 		const mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };
@@ -718,27 +727,27 @@ export class OrbitControl extends CameraControl {
 				if (this.#enableRotate) {
 					this.#handleMouseDownRotate(event);
 					this.#state = STATE.ROTATE;
-					event.target.requestPointerLock();
+					(mouseEvent.target as Element).requestPointerLock();
 				}
 				break;
 			case MOUSE.DOLLY:
 				if (this.#enableDolly) {
 					this.#handleMouseDownDolly(event);
 					this.#state = STATE.DOLLY;
-					event.target.requestPointerLock();
+					(mouseEvent.target as Element).requestPointerLock();
 				}
 				break;
 			case MOUSE.PAN:
 				if (this.#enablePan) {
 					this.#handleMouseDownPan(event);
 					this.#state = STATE.PAN;
-					event.target.requestPointerLock();
+					(mouseEvent.target as Element).requestPointerLock();
 				}
 				break;
 		}
 	}
 
-	#onMouseMove(event) {
+	#onMouseMove(event: CustomEvent<GraphicMouseEventData>) {
 		if (this.enabled === false) {
 			return;
 		}
@@ -755,12 +764,12 @@ export class OrbitControl extends CameraControl {
 				break;
 			case STATE.PAN:
 				if (this.#enablePan === false) return;
-				this.handleMouseMovePan(event);
+				this.#handleMouseMovePan(event);
 				break;
 		}
 	}
 
-	#onMouseUp(event) {
+	#onMouseUp(event: CustomEvent<GraphicMouseEventData>) {
 		document.exitPointerLock();
 
 		if (this.enabled === false) {
@@ -770,42 +779,25 @@ export class OrbitControl extends CameraControl {
 		this.#state = STATE.NONE;
 	}
 
-	#onMouseWheel(event) {
+	#onMouseWheel(event: CustomEvent<GraphicWheelEventData>) {
 		if (this.enabled === false || this.#enableDolly === false || (this.#state !== STATE.NONE && this.#state !== STATE.ROTATE)) return;
 
 		event.preventDefault();
 		event.stopPropagation();
 
-		this.handleMouseWheel(event);
+		this.#handleMouseWheel(event);
 	}
 
-	#onKeyDown(event) {
-		if (event.target instanceof HTMLInputElement ||
-			event.target instanceof HTMLTextAreaElement
-		) {
+	#onTouchStart(event: CustomEvent<GraphicTouchEventData>) {
+		if (this.enabled === false) {
 			return;
 		}
-		if (this.enabled === false || this.#enableKeys === false || this.#enablePan === false) return;
-		this.#handleKeyDown(event);
-	}
+		const touchEvent = event.detail.touchEvent;
 
-	#onKeyUp(event) {
-		if (event.target instanceof HTMLInputElement ||
-			event.target instanceof HTMLTextAreaElement
-		) {
-			return;
-		}
-		if (this.enabled === false || this.#enableKeys === false || this.#enablePan === false) return;
-		this.#handleKeyUp(event);
-	}
+		touchEvent.preventDefault();
 
-	#onTouchStart(event) {
 
-		if (this.enabled === false) return;
-
-		event.preventDefault();
-
-		switch (event.touches.length) {
+		switch (touchEvent.touches.length) {
 
 			case 1:
 
@@ -815,7 +807,7 @@ export class OrbitControl extends CameraControl {
 
 						if (this.#enableRotate === false) return;
 
-						this.#handleTouchStartRotate(event);
+						this.#handleTouchStartRotate(touchEvent);
 
 						this.#state = STATE.TOUCH_ROTATE;
 
@@ -825,7 +817,7 @@ export class OrbitControl extends CameraControl {
 
 						if (this.#enablePan === false) return;
 
-						this.#handleTouchStartPan(event);
+						this.#handleTouchStartPan(touchEvent);
 
 						this.#state = STATE.TOUCH_PAN;
 
@@ -847,7 +839,7 @@ export class OrbitControl extends CameraControl {
 
 						if (this.#enableDolly === false && this.#enablePan === false) return;
 
-						this.#handleTouchStartDollyPan(event);
+						this.#handleTouchStartDollyPan(touchEvent);
 
 						this.#state = STATE.TOUCH_DOLLY_PAN;
 
@@ -857,7 +849,7 @@ export class OrbitControl extends CameraControl {
 
 						if (this.#enableDolly === false && this.#enableRotate === false) return;
 
-						this.#handleTouchStartDollyRotate(event);
+						this.#handleTouchStartDollyRotate(touchEvent);
 
 						this.#state = STATE.TOUCH_DOLLY_ROTATE;
 
@@ -885,31 +877,32 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#onTouchMove(event) {
+	#onTouchMove(event: CustomEvent<GraphicTouchEventData>) {
 		if (this.enabled === false) return;
 
-		event.preventDefault();
-		event.stopPropagation();
+		const touchEvent = event.detail.touchEvent;
+		touchEvent.preventDefault();
+		touchEvent.stopPropagation();
 
 		switch (this.#state) {
 			case STATE.TOUCH_ROTATE:
 				if (this.#enableRotate === false) return;
-				this.#handleTouchMoveRotate(event);
+				this.#handleTouchMoveRotate(touchEvent);
 				this.update();
 				break;
 			case STATE.TOUCH_PAN:
 				if (this.#enablePan === false) return;
-				this.#handleTouchMovePan(event);
+				this.#handleTouchMovePan(touchEvent);
 				this.update();
 				break;
 			case STATE.TOUCH_DOLLY_PAN:
 				if (this.#enableDolly === false && this.#enablePan === false) return;
-				this.#handleTouchMoveDollyPan(event);
+				this.#handleTouchMoveDollyPan(touchEvent);
 				this.update();
 				break;
 			case STATE.TOUCH_DOLLY_ROTATE:
 				if (this.#enableDolly === false && this.#enableRotate === false) return;
-				this.#handleTouchMoveDollyRotate(event);
+				this.#handleTouchMoveDollyRotate(touchEvent);
 				this.update();
 				break;
 			default:
@@ -917,7 +910,7 @@ export class OrbitControl extends CameraControl {
 		}
 	}
 
-	#onTouchCancel(event) {
+	#onTouchCancel(event: CustomEvent<GraphicTouchEventData>) {
 		if (this.enabled === false) {
 			return;
 		}
@@ -930,19 +923,18 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#setupEventsListeners() {
-		this.htmlElement.addEventListener('contextmenu', event => this.#onContextMenu(event), false);
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseDown(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseMove(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseUp(event));
 
-		this.htmlElement.addEventListener('mousedown', event => this.#onMouseDown(event), false);
-		this.htmlElement.addEventListener('mousemove', event => this.#onMouseMove(event), false);
-		this.htmlElement.addEventListener('mouseup', event => this.#onMouseUp(event), false);
-		this.htmlElement.addEventListener('wheel', event => this.#onMouseWheel(event), false);
+		GraphicsEvents.addEventListener(GraphicsEvent.Wheel, (event: CustomEvent<GraphicWheelEventData>) => this.#onMouseWheel(event));
 
-		this.htmlElement.addEventListener('touchstart', event => this.#onTouchStart(event), false);
-		this.htmlElement.addEventListener('touchmove', event => this.#onTouchMove(event), false);
-		this.htmlElement.addEventListener('touchcancel', event => this.#onTouchCancel(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.TouchStart, (event: CustomEvent<GraphicTouchEventData>) => this.#onTouchStart(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.TouchMove, (event: CustomEvent<GraphicTouchEventData>) => this.#onTouchMove(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.TouchCancel, (event: CustomEvent<GraphicTouchEventData>) => this.#onTouchCancel(event));
 
-		this.htmlElement.addEventListener('keydown', event => this.#onKeyDown(event), false);
-		this.htmlElement.addEventListener('keyup', event => this.#onKeyUp(event), false);
+		GraphicsEvents.addEventListener(GraphicsEvent.KeyDown, (event: CustomEvent<GraphicKeyboardEventData>) => this.#handleKeyDown(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.KeyUp, (event: CustomEvent<GraphicKeyboardEventData>) => this.#handleKeyUp(event));
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: CustomEvent) => this.update(event.detail.delta));
 		// make sure element can receive keys.

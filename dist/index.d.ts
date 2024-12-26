@@ -759,8 +759,7 @@ export declare class Camera extends Entity {
 
 export declare class CameraControl {
     #private;
-    constructor(camera?: Camera, htmlElement?: HTMLElement);
-    get htmlElement(): HTMLElement;
+    constructor(camera?: Camera);
     set enabled(enabled: boolean);
     get enabled(): boolean;
     set camera(camera: Camera);
@@ -2041,7 +2040,7 @@ declare class Choreography {
              constrainVertical: boolean;
              verticalMin: number;
              verticalMax: number;
-             constructor(camera: Camera, htmlElement: HTMLElement);
+             constructor(camera: Camera);
              update(delta?: number): void;
              contextmenu(event: any): void;
              setupCamera(): void;
@@ -2701,9 +2700,6 @@ declare class Choreography {
              constructor();
              initCanvas(contextAttributes?: any): this;
              pickEntity(x: number, y: number): Entity;
-             mouseDown(event: any): void;
-             mouseMove(event: any): void;
-             mouseUp(event: any): void;
              getDefinesAsString(material: Material): string;
              render(scene: Scene, camera: Camera, delta: number): void;
              renderBackground(): void;
@@ -2770,18 +2766,28 @@ declare class Choreography {
              MouseMove = "mousemove",
              MouseDown = "mousedown",
              MouseUp = "mouseup",
-             Pick = "pick",
+             Wheel = "wheel",
              Resize = "resize",
-             Tick = "tick"
+             Tick = "tick",
+             KeyDown = "keydown",
+             KeyUp = "keyup",
+             TouchStart = "touchstart",
+             TouchMove = "touchmove",
+             TouchCancel = "touchcancel"
          }
 
          export declare const GraphicsEvents: {
              tick(delta: number, time: number): void;
-             pick(x: number, y: number, pickedEntity: Entity): void;
              resize(width: number, height: number): void;
              mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
              mouseDown(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
              mouseUp(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
+             wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent): void;
+             keyDown(keyboardEvent: KeyboardEvent): void;
+             keyUp(keyboardEvent: KeyboardEvent): void;
+             touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
+             touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
+             touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
              addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void;
              dispatchEvent(event: Event): boolean;
              removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
@@ -4485,7 +4491,7 @@ declare class Choreography {
 
          export declare class OrbitControl extends CameraControl {
              #private;
-             constructor(camera?: Camera, htmlElement?: HTMLElement);
+             constructor(camera?: Camera);
              set target(target: Target);
              get target(): Target;
              setTargetPosition(position: any): void;
@@ -4501,8 +4507,6 @@ declare class Choreography {
              update(delta?: number): boolean;
              set autoRotateSpeed(speed: any);
              get zoomScale(): number;
-             handleMouseMovePan(event: any): void;
-             handleMouseWheel(event: any): void;
              handleEnabled(): void;
          }
 
