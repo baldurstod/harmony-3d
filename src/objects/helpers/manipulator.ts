@@ -803,7 +803,7 @@ export class Manipulator extends Entity {
 
 		this.getWorldQuaternion(translationManipulatorTempQuat);
 		quat.invert(translationManipulatorTempQuat, translationManipulatorTempQuat);
-		camera.getWorldPosition(tempVec3);
+		this.getPositionFrom(camera, tempVec3);
 		vec3.normalize(tempVec3, tempVec3);
 		vec3.transformQuat(tempVec3, tempVec3, translationManipulatorTempQuat);
 		this.#circle.quaternion = quat.rotationTo(tempQuat, zUnitVec3, tempVec3);

@@ -2242,6 +2242,11 @@ class Entity {
         }
         return vec;
     }
+    getPositionFrom(other, vec = vec3.create()) {
+        this.getWorldPosition(tempVec3_1$3);
+        other.getWorldPosition(tempVec3_2$a);
+        return vec3.sub(vec, tempVec3_2$a, tempVec3_1$3);
+    }
     setWorldPosition(position) {
         if (this._parent) {
             this._parent.getWorldPosition(tempVec3_1$3);
@@ -10870,7 +10875,7 @@ class Manipulator extends Entity {
         }
         this.getWorldQuaternion(translationManipulatorTempQuat);
         quat.invert(translationManipulatorTempQuat, translationManipulatorTempQuat);
-        camera.getWorldPosition(tempVec3$r);
+        this.getPositionFrom(camera, tempVec3$r);
         vec3.normalize(tempVec3$r, tempVec3$r);
         vec3.transformQuat(tempVec3$r, tempVec3$r, translationManipulatorTempQuat);
         this.#circle.quaternion = quat.rotationTo(tempQuat$a, zUnitVec3, tempVec3$r);

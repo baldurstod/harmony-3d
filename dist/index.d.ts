@@ -1718,6 +1718,7 @@ declare class Choreography {
          set position(position: vec3);
          get position(): vec3;
          getWorldPosition(vec?: vec3): vec3;
+         getPositionFrom(other: Entity, vec?: vec3): vec3;
          setWorldPosition(position: vec3): void;
          getWorldQuaternion(q?: quat): quat;
          setWorldQuaternion(quaternion: quat): void;
@@ -2114,7 +2115,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): SpotLightHelper | PointLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 

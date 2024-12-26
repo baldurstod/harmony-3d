@@ -156,6 +156,13 @@ export class Entity {
 		return vec;
 	}
 
+	getPositionFrom(other: Entity, vec = vec3.create()) {
+		this.getWorldPosition(tempVec3_1);
+		other.getWorldPosition(tempVec3_2);
+
+		return vec3.sub(vec, tempVec3_2, tempVec3_1);
+	}
+
 	setWorldPosition(position: vec3) {
 		if (this._parent) {
 			this._parent.getWorldPosition(tempVec3_1);
