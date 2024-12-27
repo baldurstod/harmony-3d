@@ -1,5 +1,6 @@
 import { ENABLE_S3TC, TESTING } from '../../../buildoptions';
 import { Detex } from '../../../textures/detex';
+import { WebGLAnyRenderingContext } from '../../../types';
 import { GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_REPEAT, GL_CLAMP_TO_EDGE, GL_LINEAR, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z } from '../../../webgl/constants';
 import { GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_RGB, GL_RGBA, GL_FLOAT, GL_UNSIGNED_BYTE, GL_RGBA16F, GL_SRGB8_ALPHA8, GL_SRGB8 } from '../../../webgl/constants';
 import { TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_ONEBITALPHA } from './vtfconstants';
@@ -147,7 +148,7 @@ export class SourceEngineVTF {
 		}
 	}
 
-	#fillTexture(graphics, glContext, texture, mipmapLvl, frame1 = 0, srgb) {
+	#fillTexture(graphics, glContext, texture, mipmapLvl, frame1 = 0, srgb: boolean) {
 		if (this.filled && (this.frames == 1)) {
 			return;
 		}
@@ -206,7 +207,7 @@ export class SourceEngineVTF {
 			fillTextureDxt(graphics, glContext, webGLTexture, GL_TEXTURE_2D, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][face], clampS, clampT, srgb && this.isSRGB());
 		} else {
 			glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-			glContext.texImage2D(GL_TEXTURE_2D, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][face]);
+			glContext.texImage2D(GL_TEXTURE_2D, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][face]);
 		}
 
 
@@ -268,12 +269,12 @@ export class SourceEngineVTF {
 			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][5], clampS, clampT, isSRGB);
 		} else {
 			glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][0]);
-			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][1]);
-			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][2]);
-			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][3]);
-			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][4]);
-			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][5]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][0]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][1]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][2]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][3]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][4]);
+			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][5]);
 		}
 
 		glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -324,15 +325,15 @@ export class SourceEngineVTF {
 	/**
 	 * TODO
 	 */
-	getInternalFormat(glContext) {
+	#getInternalFormat(allowSrgb = true) {
 		switch (this.highResImageFormat) {
 			case IMAGE_FORMAT_RGB888:
 			case IMAGE_FORMAT_BGR888:
-				return this.isSRGB() ? GL_SRGB8 : GL_RGB;
+				return this.isSRGB() && allowSrgb ? GL_SRGB8 : GL_RGB;
 			case IMAGE_FORMAT_RGBA8888:
 			case IMAGE_FORMAT_BGRA8888:
 			case IMAGE_FORMAT_ABGR8888:
-				return this.isSRGB() ? GL_SRGB8_ALPHA8 : GL_RGBA;
+				return this.isSRGB() && allowSrgb ? GL_SRGB8_ALPHA8 : GL_RGBA;
 			case IMAGE_FORMAT_RGBA16161616F:// Note: format has been inverted at load time
 				return GL_RGBA16F;
 		}

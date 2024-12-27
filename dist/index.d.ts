@@ -2115,7 +2115,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): SpotLightHelper | PointLightHelper | Grid | CameraFrustum;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -2684,6 +2684,17 @@ declare class Choreography {
              render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
          }
 
+         export declare type GraphicKeyboardEventData = {
+             keyboardEvent: KeyboardEvent;
+         };
+
+         export declare type GraphicMouseEventData = {
+             x: number;
+             y: number;
+             entity: Entity | null;
+             mouseEvent: MouseEvent;
+         };
+
          export declare class Graphics {
              #private;
              isWebGL: boolean;
@@ -2792,6 +2803,18 @@ declare class Choreography {
              addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void;
              dispatchEvent(event: Event): boolean;
              removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
+         };
+
+         export declare type GraphicTouchEventData = {
+             entity: Entity | null;
+             touchEvent: TouchEvent;
+         };
+
+         export declare type GraphicWheelEventData = {
+             x: number;
+             y: number;
+             entity: Entity | null;
+             wheelEvent: WheelEvent;
          };
 
          export declare class Grid extends Mesh {
@@ -6359,7 +6382,6 @@ declare class Choreography {
              anim: SourceAnimation;
              animationSpeed: number;
              isDynamic: boolean;
-             bonesScale: any;
              static useNewAnimSystem: boolean;
              useNewAnimSystem: boolean;
              constructor(params?: any);
@@ -7522,7 +7544,7 @@ declare class Choreography {
              tempPos: vec3;
              tempRot: vec3;
              constructor(sourceModel?: any);
-             animate2(dynamicProp: any, poseParameters: any, position: any, orientation: any, sequences: any, bonesScale: any): void;
+             animate2(dynamicProp: any, poseParameters: any, position: any, orientation: any, sequences: any): void;
          }
 
          declare class SourceBinaryLoader {
@@ -8107,10 +8129,6 @@ declare class Choreography {
               * TODO
               */
              getFormat(glContext: any): 0 | 6407 | 6408;
-             /**
-              * TODO
-              */
-             getInternalFormat(glContext: any): 0 | 6407 | 6408 | 34842 | 35905 | 35907;
              /**
               * TODO
               */

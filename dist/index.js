@@ -33796,7 +33796,7 @@ class SourceAnimation {
     tempRot = vec3.create();
     constructor(sourceModel) {
     }
-    animate2(dynamicProp, poseParameters, position, orientation, sequences, bonesScale) {
+    animate2(dynamicProp, poseParameters, position, orientation, sequences /*, bonesScale*/) {
         const model = dynamicProp.sourceModel;
         if (!model) {
             return;
@@ -33840,8 +33840,6 @@ class SourceAnimation {
         }
         posRemoveMe = posRemoveMe || [];
         quatRemoveMe = quatRemoveMe || [];
-        //const currentFrame = mainAnimFrame%model.maxAnimLength;//TODOV2
-        const blendLayers = [];
         //const currentFrame = null;
         const seqList = Object.keys(sequences);
         const bonesRemoveMe = Object.create(null);
@@ -33859,39 +33857,7 @@ class SourceAnimation {
                         //g2 = g2RemoveMe;
                         //g1 = 2;
                         const animIndex = sequence.getBlend(g1, g2); //TODOV2
-                        const anim = sequence.mdl.getAnimDescription(animIndex);
-                        if (anim) {
-                            blendLayers.push(anim); //TODOv2: remove me
-                            /*
-                            if (frameTODOV2 && frameTODOV2.bones) {
-                                const boneList = Object.keys(frameTODOV2.bones);
-
-                                while (boneName = boneList.shift()) {
-                                    const bone = frameTODOV2.bones[boneName];
-                                    if (bone) {
-                                        boneId = bone.boneId;
-                                        weight = sequence.weightlist[boneId] > 0 ? 1 : 0;
-
-                                        bonesRemoveMe[boneName] = bonesRemoveMe[boneName] || Object.create(null);
-                                        bonesRemoveMe[boneName].count = (bonesRemoveMe[boneName].count + weight) || weight;
-                                        bonesRemoveMe[boneName].pos = bonesRemoveMe[boneName].pos || vec3.create();
-                                        bonesRemoveMe[boneName].rot = bonesRemoveMe[boneName].rot || vec3.create();
-                                        bonesRemoveMe[boneName].quat = bonesRemoveMe[boneName].quat || quat.create();//TODOv2
-
-                                        //tempQuatRemoveMe = quat.fromMat3(quat.create(), mat3.fromEuler(SourceEngineTempMat3, bone.rot));
-                                        quatFromEulerRad(tempQuatRemoveMe, bone.rot[0], bone.rot[1], bone.rot[2]);
-
-                                        vec3.scaleAndAdd(bonesRemoveMe[boneName].pos, bonesRemoveMe[boneName].pos, bone.pos, weight);
-                                        vec3.scaleAndAdd(bonesRemoveMe[boneName].rot, bonesRemoveMe[boneName].rot, bone.rot, weight);
-                                        //vec4.scaleAndAdd(bonesRemoveMe[boneName].quat, bonesRemoveMe[boneName].quat, tempQuatRemoveMe, weight);
-                                        if (weight > 0) {
-                                            quat.mul(bonesRemoveMe[boneName].quat, bonesRemoveMe[boneName].quat, tempQuatRemoveMe);
-                                        }
-                                    }
-                                }
-                            }
-                            */
-                        }
+                        sequence.mdl.getAnimDescription(animIndex);
                     }
                 }
             }
@@ -33911,10 +33877,6 @@ class SourceAnimation {
             vec3.zero(this.boneRot);
             vec3.zero(this.position);
             quat.identity(this.quaternion);
-            for (let addIndex = 0; addIndex < blendLayers.length * 0; addIndex++) {
-                const layer = blendLayers[addIndex];
-                (layer.frame === undefined ? /*frame*/ model.currentFrame : layer.frame);
-            }
             const bonesRemoveMeMe = bonesRemoveMe[bone.name];
             if (bonesRemoveMeMe !== undefined) ;
             else {
@@ -33929,8 +33891,8 @@ class SourceAnimation {
             //bone.boneQuat = this.boneQuat;
             //bone.position = this.position;
             bone.parent;
-            bone.parentMergedBone = null; //TODO: wtf ?
             bone.lowcasename;
+            //const parentMergedBone = bone.parentMergedBone;
             const dynamicPropBones = dynamicProp.skeleton._bones; //dynamicProp.bones;
             let dynamicPropBone = dynamicPropBones[boneIndex];
             if (dynamicPropBone === undefined) {
@@ -33941,12 +33903,14 @@ class SourceAnimation {
             //vec3.copy(dynamicPropBone.worldPos, bone.worldPos);
             //quat.copy(dynamicPropBone.worldQuat, bone.worldQuat);
             //dynamicProp.bones[boneNameLowerCase] = dynamicPropBones;
+            /*
             if (bonesScale !== undefined) {
                 const boneScale = bonesScale[bone.name];
                 if (boneScale) {
                     mat4.scale(bone.boneMat, bone.boneMat, [boneScale, boneScale, boneScale]);
                 }
             }
+            */
             let b = dynamicPropBones[boneIndex];
             if (b) {
                 if (!b.locked) {
@@ -34000,7 +33964,6 @@ class Source1ModelInstance extends Entity {
     isDynamic;
     #sheen;
     #tint;
-    bonesScale;
     static useNewAnimSystem = false;
     useNewAnimSystem = false;
     #animationList = [];
@@ -34201,7 +34164,7 @@ class Source1ModelInstance extends Entity {
                 sequence.play(this); //TODOv2: play autolayer ?
             }
         }
-        this.anim.animate2(this, this.#poseParameters, this.position, this.quaternion, this.sequences, this.bonesScale);
+        this.anim.animate2(this, this.#poseParameters, this.position, this.quaternion, this.sequences);
     }
     #animate() {
         const skeleton = this.#skeleton;
@@ -43545,7 +43508,7 @@ class SourceEngineVTF {
         }
         else {
             glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-            glContext.texImage2D(GL_TEXTURE_2D, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][face]);
+            glContext.texImage2D(GL_TEXTURE_2D, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][face]);
         }
         glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -43599,12 +43562,12 @@ class SourceEngineVTF {
         }
         else {
             glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][0]);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][1]);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][2]);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][3]);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][4]);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, this.getInternalFormat(glContext), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][5]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][0]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][1]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][2]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][3]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][4]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][5]);
         }
         glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -43649,15 +43612,15 @@ class SourceEngineVTF {
     /**
      * TODO
      */
-    getInternalFormat(glContext) {
+    #getInternalFormat(allowSrgb = true) {
         switch (this.highResImageFormat) {
             case IMAGE_FORMAT_RGB888:
             case IMAGE_FORMAT_BGR888:
-                return this.isSRGB() ? GL_SRGB8 : GL_RGB;
+                return this.isSRGB() && allowSrgb ? GL_SRGB8 : GL_RGB;
             case IMAGE_FORMAT_RGBA8888:
             case IMAGE_FORMAT_BGRA8888:
             case IMAGE_FORMAT_ABGR8888:
-                return this.isSRGB() ? GL_SRGB8_ALPHA8 : GL_RGBA;
+                return this.isSRGB() && allowSrgb ? GL_SRGB8_ALPHA8 : GL_RGBA;
             case IMAGE_FORMAT_RGBA16161616F: // Note: format has been inverted at load time
                 return GL_RGBA16F;
         }
@@ -44396,6 +44359,7 @@ const VMT_PARAMETERS = {
     $phongexponent: [SHADER_PARAM_TYPE_FLOAT, 5.0],
     $phongexponentfactor: [SHADER_PARAM_TYPE_FLOAT, 0.0],
     $phongexponenttexture: [SHADER_PARAM_TYPE_STRING, ""],
+    $phongboost: [SHADER_PARAM_TYPE_FLOAT, 1.0],
     $lightwarptexture: [SHADER_PARAM_TYPE_STRING, ""],
     $selfillumtint: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
     $detailscale: [SHADER_PARAM_TYPE_VEC2, [1, 1]],
@@ -44575,7 +44539,7 @@ class SourceEngineMaterial extends Material {
                 this.uniforms['uPhongExponentFactor'] = variables.get('$phongexponentfactor');
             }
             this.uniforms['uPhongExponent'] = variables.get('$phongexponent');
-            this.uniforms['uPhongBoost'] = params['$phongboost'] ?? 0;
+            this.uniforms['uPhongBoost'] = variables.get('$phongboost');
             if (params['$basemapalphaphongmask'] == 1) {
                 this.setDefine('USE_COLOR_ALPHA_AS_PHONG_MASK');
             }
@@ -44854,7 +44818,14 @@ class SourceEngineMaterial extends Material {
                     return readColor(value);
                 case SHADER_PARAM_TYPE_FLOAT:
                     let fl = Number(value);
-                    return Number.isNaN(fl) ? param[1] : fl;
+                    if (!Number.isNaN(fl)) {
+                        return fl;
+                    }
+                    const c = readColor(value);
+                    if (c) {
+                        return c[0];
+                    }
+                    return param[1];
                 case SHADER_PARAM_TYPE_INTEGER:
                     return Number(value) << 0;
                 case SHADER_PARAM_TYPE_BOOL:
