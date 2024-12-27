@@ -75,6 +75,7 @@ const VMT_PARAMETERS = {
 	$phongexponent: [SHADER_PARAM_TYPE_FLOAT, 5.0],
 	$phongexponentfactor: [SHADER_PARAM_TYPE_FLOAT, 0.0],
 	$phongexponenttexture: [SHADER_PARAM_TYPE_STRING, ""],
+	$phongboost: [SHADER_PARAM_TYPE_FLOAT, 1.0],
 	$lightwarptexture: [SHADER_PARAM_TYPE_STRING, ""],
 	$selfillumtint: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
 	$detailscale: [SHADER_PARAM_TYPE_VEC2, [1, 1]],
@@ -275,7 +276,7 @@ export class SourceEngineMaterial extends Material {
 			}
 
 			this.uniforms['uPhongExponent'] = variables.get('$phongexponent');
-			this.uniforms['uPhongBoost'] = params['$phongboost'] ?? 0;
+			this.uniforms['uPhongBoost'] = variables.get('$phongboost');
 
 			if (params['$basemapalphaphongmask'] == 1) {
 				this.setDefine('USE_COLOR_ALPHA_AS_PHONG_MASK');
@@ -607,8 +608,15 @@ export class SourceEngineMaterial extends Material {
 					return readColor(value);
 					break;
 				case SHADER_PARAM_TYPE_FLOAT:
-					let fl = Number(value)
-					return Number.isNaN(fl) ? param[1] : fl;
+					let fl = Number(value);
+					if (!Number.isNaN(fl)) {
+						return fl;
+					}
+					const c = readColor(value);
+					if (c) {
+						return c[0];
+					}
+					return param[1];
 					break;
 				case SHADER_PARAM_TYPE_INTEGER:
 					return Number(value) << 0;
