@@ -13,7 +13,7 @@ export class SourceAnimation {
 	constructor(sourceModel?) {
 	}
 
-	animate2(dynamicProp, poseParameters, position, orientation, sequences, bonesScale) {
+	animate2(dynamicProp, poseParameters, position, orientation, sequences/*, bonesScale*/) {
 		const model: SourceModel = dynamicProp.sourceModel;
 
 		if (!model) { return };
@@ -143,7 +143,6 @@ export class SourceAnimation {
 
 			for (let addIndex = 0; addIndex < blendLayers.length * 0; addIndex++) {
 				const layer = blendLayers[addIndex];
-				const trueFrame = (layer.frame === undefined ?/*frame*/model.currentFrame : layer.frame);
 
 				if (!datas) {
 					//this.boneRot = vec3.create();
@@ -155,8 +154,6 @@ export class SourceAnimation {
 						const rot = this.tempRot;//vec3.create();
 						vec3.zero(pos);
 						vec3.zero(rot);
-						const animNumber = model.animNumber;
-						const animNumberAnim = model.animNumberAnim;
 
 
 						//pos = bone.position;
@@ -226,26 +223,9 @@ export class SourceAnimation {
 			//bone.position = this.position;
 
 			const parent = bone.parent;
-			bone.parentMergedBone = null;//TODO: wtf ?
 			const boneNameLowerCase = bone.lowcasename;
-			if (false && /*TODOv3*/parentModel !== null) {
-				bone.parentMergedBone = parentModel.getBoneByName(boneNameLowerCase);
-				if (dynamicProp.parentAttachementName) {
-					const atta = parentModel.getAttachement(dynamicProp.parentAttachementName);
-					if (atta) {
-						bone.parentMergedBone = atta;
-						atta.worldQuat = atta.getWorldQuat();
-						atta.worldPos = atta.getWorldPos();
-					}
-				}
-			}
 
 			//const parentMergedBone = bone.parentMergedBone;
-			if (false && parent === null/*&&(!bone.parentMergedBone)*/) {//TODOv3
-				vec3.transformQuat(bone._position, bone._position, dynamicProp.quaternion);
-				quat.multiply(bone._quaternion, dynamicProp.quaternion, bone._quaternion);
-				vec3.add(bone._position, bone._position, dynamicProp.position);
-			}
 
 			const dynamicPropBones = dynamicProp.skeleton._bones;//dynamicProp.bones;
 			let dynamicPropBone = dynamicPropBones[boneIndex];
@@ -257,13 +237,14 @@ export class SourceAnimation {
 			//vec3.copy(dynamicPropBone.worldPos, bone.worldPos);
 			//quat.copy(dynamicPropBone.worldQuat, bone.worldQuat);
 			//dynamicProp.bones[boneNameLowerCase] = dynamicPropBones;
-
+			/*
 			if (bonesScale !== undefined) {
 				const boneScale = bonesScale[bone.name];
 				if (boneScale) {
 					mat4.scale(bone.boneMat, bone.boneMat, [boneScale, boneScale, boneScale]);
 				}
 			}
+			*/
 
 			let b = dynamicPropBones[boneIndex];
 			if (b) {

@@ -48,7 +48,6 @@ export class Source1ModelInstance extends Entity implements Animated {
 	isDynamic: boolean;
 	#sheen;
 	#tint;
-	bonesScale;
 	static useNewAnimSystem = false;
 	useNewAnimSystem = false;
 	#animationList = [];
@@ -297,7 +296,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 				sequence.play(this);//TODOv2: play autolayer ?
 			}
 		}
-		this.anim.animate2(this, this.#poseParameters, this.position, this.quaternion, this.sequences, this.bonesScale);
+		this.anim.animate2(this, this.#poseParameters, this.position, this.quaternion, this.sequences);
 	}
 
 	#animate() {
