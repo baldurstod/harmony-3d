@@ -6408,8 +6408,9 @@ declare class Choreography {
              renderBodyParts(render: any): void;
              renderBodyPart(bodyPartName: any, render: any): void;
              resetBodyPartModels(): void;
-             setBodyPartIdModel(bodyPartId: any, modelId: any): void;
-             setBodyPartModel(bodyPartName: any, modelId: any): void;
+             setBodyPartIdModel(bodyPartId: string, modelId: number): void;
+             setBodyPartModel(bodyPartName: string, modelId: number): void;
+             getBodyGroups(): Map<string, number>;
              toString(): string;
              attachSystem(system: any, attachementName?: string, cpIndex?: number, offset?: vec3): void;
              attachSystemToBone(system: any, boneName: any, offset: any): void;
@@ -8237,7 +8238,7 @@ declare class Choreography {
              constructor(repository: any, fileName: any, mdl: any, vvd: any, vtx: any);
              addGeometry(mesh: any, geometry: any, bodyPartName: any, bodyPartModelId: any): void;
              createInstance(isDynamic: any, preventInit: any): Source1ModelInstance;
-             getBodyNumber(bodygroups: any): number;
+             getBodyNumber(bodygroups: Map<string, number>): number;
              getBones(): MdlBone[];
              getAttachments(): any[];
              getBone(boneIndex: any): MdlBone;

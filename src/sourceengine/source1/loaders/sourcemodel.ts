@@ -68,18 +68,18 @@ export class SourceModel {
 		return new Source1ModelInstance({ sourceModel: this, isDynamic: isDynamic, preventInit: preventInit });
 	}
 
-	getBodyNumber(bodygroups) {
+	getBodyNumber(bodygroups: Map<string, number>) {
 		let bodyPartCount = 1;
 		let bodyPartNumber = 0;
-		/*
-		for (const bodyPart of  this.bodyParts) {
+
+		for (const bodyPart of this.mdl.bodyParts) {
 			if (bodyPart && bodyPart.models && (bodyPart.models.length > 1)) {
-				const bodyPartModel = bodygroups[bodyPart.name];
-				bodyPartNumber += (bodyPartModel ? bodyPartModel.modelId : 0) * bodyPartCount;
+				const bodyPartModel = bodygroups.get(bodyPart.name);
+				bodyPartNumber += (bodyPartModel ?? 0) * bodyPartCount;
 				bodyPartCount *= (bodyPart.models.length);
 			}
 		}
-			*/
+
 		return bodyPartNumber;
 	}
 

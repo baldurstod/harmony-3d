@@ -33967,6 +33967,7 @@ class Source1ModelInstance extends Entity {
     static useNewAnimSystem = false;
     useNewAnimSystem = false;
     #animationList = [];
+    #bodyGroups = new Map();
     static {
         defaultMaterial.addUser(Source1ModelInstance);
     }
@@ -34464,6 +34465,10 @@ class Source1ModelInstance extends Entity {
         //this.sourceModel.setBodyPartModel(bodyPartName, modelId);
         //this.bodyGroups[bodyPartName] = this.bodyGroups[bodyPartName] || {render : true, modelId : 0};
         //this.bodyGroups[bodyPartName].modelId = modelId;
+        this.#bodyGroups.set(bodyPartName, Number(modelId));
+    }
+    getBodyGroups() {
+        return new Map(this.#bodyGroups);
     }
     toString() {
         return 'Source1ModelInstance ' + super.toString();
@@ -36162,16 +36167,23 @@ class SourceModel {
         return new Source1ModelInstance({ sourceModel: this, isDynamic: isDynamic, preventInit: preventInit });
     }
     getBodyNumber(bodygroups) {
+        let bodyPartCount = 1;
         let bodyPartNumber = 0;
-        /*
-        for (const bodyPart of  this.bodyParts) {
+        for (const bodyPart of this.mdl.bodyParts) {
             if (bodyPart && bodyPart.models && (bodyPart.models.length > 1)) {
-                const bodyPartModel = bodygroups[bodyPart.name];
-                bodyPartNumber += (bodyPartModel ? bodyPartModel.modelId : 0) * bodyPartCount;
+                const bodyPartModel = bodygroups.get(bodyPart.name);
+                bodyPartNumber += (bodyPartModel ?? 0) * bodyPartCount;
                 bodyPartCount *= (bodyPart.models.length);
             }
         }
-            */
+        /*
+        for (const [name, models] of this.mdl.bodyParts) {
+            if (models.length > 1) {
+                const bodyPartModel = bodygroups.get(name);
+                bodyPartNumber += (bodyPartModel ?? 0) * bodyPartCount;
+                bodyPartCount *= models.length;
+            }
+        }*/
         return bodyPartNumber;
     }
     getBones() {

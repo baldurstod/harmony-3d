@@ -51,6 +51,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	static useNewAnimSystem = false;
 	useNewAnimSystem = false;
 	#animationList = [];
+	#bodyGroups = new Map<string, number>();
 
 	static {
 		defaultMaterial.addUser(Source1ModelInstance);
@@ -604,14 +605,14 @@ export class Source1ModelInstance extends Entity implements Animated {
 		}
 	}
 
-	setBodyPartIdModel(bodyPartId, modelId) {
+	setBodyPartIdModel(bodyPartId: string, modelId: number) {
 		const bodypart = this.sourceModel.getBodyPart(bodyPartId);
 		if (bodypart) {
 			this.setBodyPartModel(bodypart.name, modelId);
 		}
 	}
 
-	setBodyPartModel(bodyPartName, modelId) {
+	setBodyPartModel(bodyPartName: string, modelId: number) {
 		let bodyPart = this.bodyParts[bodyPartName];
 		if (bodyPart) {
 			//let id = 0;
@@ -624,6 +625,11 @@ export class Source1ModelInstance extends Entity implements Animated {
 		//this.sourceModel.setBodyPartModel(bodyPartName, modelId);
 		//this.bodyGroups[bodyPartName] = this.bodyGroups[bodyPartName] || {render : true, modelId : 0};
 		//this.bodyGroups[bodyPartName].modelId = modelId;
+		this.#bodyGroups.set(bodyPartName, Number(modelId));
+	}
+
+	getBodyGroups() {
+		return new Map(this.#bodyGroups);
 	}
 
 	toString() {
