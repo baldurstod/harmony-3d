@@ -1,4 +1,4 @@
-import { mat3, mat4, quat, vec3 } from 'gl-matrix';
+import { mat3, mat4, quat, vec3, vec4 } from 'gl-matrix';
 import { MAX_STUDIO_FLEX_DESC } from '../loaders/sourcemdl';
 import { Source1ModelManager } from '../models/source1modelmanager';
 import { AnimationDescription } from '../../../animations/animationdescription';
@@ -188,6 +188,13 @@ export class Source1ModelInstance extends Entity implements Animated {
 	set tint(tint) {
 		this.#tint = tint;
 		this.materialsParams['ItemTintColor'] = tint;
+	}
+
+	getTint(out = vec4.create()) {
+		if (this.#tint) {
+			vec4.copy(out, this.#tint);
+		}
+		return out;
 	}
 
 	setPoseParameter(paramName, paramValue) {
