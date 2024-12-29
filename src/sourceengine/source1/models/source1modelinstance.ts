@@ -190,11 +190,11 @@ export class Source1ModelInstance extends Entity implements Animated {
 		this.materialsParams['ItemTintColor'] = tint;
 	}
 
-	getTint(out = vec4.create()) {
+	getTint(out?: vec4): vec4 | undefined {
 		if (this.#tint) {
-			vec4.copy(out, this.#tint);
+			vec4.copy(out ?? vec4.create(), this.#tint);
+			return out;
 		}
-		return out;
 	}
 
 	setPoseParameter(paramName, paramValue) {
@@ -329,7 +329,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 			if (!animation) {
 				continue;
 			}
-/*
+			/*
 			if (!animation.once) {
 				animation.once = true;
 				const frame = animation.getFrame(10);

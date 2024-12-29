@@ -34081,11 +34081,11 @@ class Source1ModelInstance extends Entity {
         this.#tint = tint;
         this.materialsParams['ItemTintColor'] = tint;
     }
-    getTint(out = vec4.create()) {
+    getTint(out) {
         if (this.#tint) {
-            vec4.copy(out, this.#tint);
+            vec4.copy(out ?? vec4.create(), this.#tint);
+            return out;
         }
-        return out;
     }
     setPoseParameter(paramName, paramValue) {
         this.#poseParameters[paramName] = paramValue;
@@ -34197,7 +34197,7 @@ class Source1ModelInstance extends Entity {
                             animation.once = true;
                             const frame = animation.getFrame(10);
                             const rotationData = frame.getData('rotation');
-            
+
                             var arr = []
                             for (const data of rotationData.datas as Array<quat>) {
                                 let s = '';
@@ -34207,7 +34207,7 @@ class Source1ModelInstance extends Entity {
                                 arr.push(s);
                             }
                             console.info(arr);
-            
+
                         }
             */
             for (const bone of animation.bones) {

@@ -6394,7 +6394,7 @@ declare class Choreography {
              setSkin(skin: any): Promise<void>;
              set sheen(sheen: any);
              set tint(tint: any);
-             getTint(out?: vec4): vec4;
+             getTint(out?: vec4): vec4 | undefined;
              setPoseParameter(paramName: any, paramValue: any): void;
              playAnimation(name: string): void;
              setAnimation(id: number, name: string, weight: number): Promise<void>;
