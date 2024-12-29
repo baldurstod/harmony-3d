@@ -34083,7 +34083,7 @@ class Source1ModelInstance extends Entity {
     }
     getTint(out) {
         if (this.#tint) {
-            vec4.copy(out ?? vec4.create(), this.#tint);
+            out = vec4.copy(out ?? vec4.create(), this.#tint);
             return out;
         }
     }
@@ -34193,23 +34193,23 @@ class Source1ModelInstance extends Entity {
                 continue;
             }
             /*
-                        if (!animation.once) {
-                            animation.once = true;
-                            const frame = animation.getFrame(10);
-                            const rotationData = frame.getData('rotation');
+            if (!animation.once) {
+                animation.once = true;
+                const frame = animation.getFrame(10);
+                const rotationData = frame.getData('rotation');
 
-                            var arr = []
-                            for (const data of rotationData.datas as Array<quat>) {
-                                let s = '';
-                                for (let i = 0; i < 4; i++) {
-                                    s += data[i].toFixed(2) + ' ';
-                                }
-                                arr.push(s);
-                            }
-                            console.info(arr);
+                var arr = []
+                for (const data of rotationData.datas as Array<quat>) {
+                    let s = '';
+                    for (let i = 0; i < 4; i++) {
+                        s += data[i].toFixed(2) + ' ';
+                    }
+                    arr.push(s);
+                }
+                console.info(arr);
 
-                        }
-            */
+            }
+*/
             for (const bone of animation.bones) {
                 const skeletonBone = skeleton.getBoneById(bone.id);
                 if (!skeletonBone) {

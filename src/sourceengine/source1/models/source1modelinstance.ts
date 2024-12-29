@@ -192,7 +192,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 
 	getTint(out?: vec4): vec4 | undefined {
 		if (this.#tint) {
-			vec4.copy(out ?? vec4.create(), this.#tint);
+			out = vec4.copy(out ?? vec4.create(), this.#tint);
 			return out;
 		}
 	}
