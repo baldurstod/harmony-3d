@@ -1,5 +1,5 @@
 import { mat4, quat, vec3, vec4 } from 'gl-matrix';
-import { FBXExporter, createEmptyFile, FBXMaterial, FBXModel, fbxSceneToFBXFile, FBX_SKELETON_TYPE_LIMB, FBXManager, FBX_PROPERTY_TYPE_DOUBLE } from 'harmony-fbx';
+import { FBXExporter, fbxSceneToFBXFile, FBX_SKELETON_TYPE_LIMB, FBXManager, FBX_PROPERTY_TYPE_DOUBLE } from 'harmony-fbx';
 
 import { Camera } from '../cameras/camera';
 import { Graphics } from '../graphics/graphics';

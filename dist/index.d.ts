@@ -1939,7 +1939,7 @@ declare class Choreography {
 
          export declare function ExponentialDecay(decayTo: number, decayTime: number, dt: number): number;
 
-         export declare function exportToBinaryFBX(entity: any): Promise<any>;
+         export declare function exportToBinaryFBX(entity: any): Promise<ArrayBufferLike>;
 
          export declare class EyeRefractMaterial extends SourceEngineMaterial {
              #private;
@@ -6394,6 +6394,7 @@ declare class Choreography {
              setSkin(skin: any): Promise<void>;
              set sheen(sheen: any);
              set tint(tint: any);
+             getTint(out?: vec4): vec4;
              setPoseParameter(paramName: any, paramValue: any): void;
              playAnimation(name: string): void;
              setAnimation(id: number, name: string, weight: number): Promise<void>;
@@ -9405,12 +9406,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#170@#webAssembly"?: any;
-             "__#170@#HEAPU8"?: Uint8Array;
+             "__#202@#webAssembly"?: any;
+             "__#202@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#170@#initHeap"(): void;
+             "__#202@#initHeap"(): void;
          };
 
          export { }

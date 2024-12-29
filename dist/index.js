@@ -34081,6 +34081,12 @@ class Source1ModelInstance extends Entity {
         this.#tint = tint;
         this.materialsParams['ItemTintColor'] = tint;
     }
+    getTint(out = vec4.create()) {
+        if (this.#tint) {
+            vec4.copy(out, this.#tint);
+        }
+        return out;
+    }
     setPoseParameter(paramName, paramValue) {
         this.#poseParameters[paramName] = paramValue;
     }
