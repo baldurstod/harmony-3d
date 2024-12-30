@@ -9407,12 +9407,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#202@#webAssembly"?: any;
-             "__#202@#HEAPU8"?: Uint8Array;
+             "__#203@#webAssembly"?: any;
+             "__#203@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#202@#initHeap"(): void;
+             "__#203@#initHeap"(): void;
          };
 
          export { }

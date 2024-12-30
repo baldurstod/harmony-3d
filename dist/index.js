@@ -36176,14 +36176,6 @@ class SourceModel {
                 bodyPartCount *= (bodyPart.models.length);
             }
         }
-        /*
-        for (const [name, models] of this.mdl.bodyParts) {
-            if (models.length > 1) {
-                const bodyPartModel = bodygroups.get(name);
-                bodyPartNumber += (bodyPartModel ?? 0) * bodyPartCount;
-                bodyPartCount *= models.length;
-            }
-        }*/
         return bodyPartNumber;
     }
     getBones() {
