@@ -1,8 +1,9 @@
 import { Entity } from '../entities/entity';
 import '../css/materialeditor.css';
 import { Material } from './material';
+import { createElement, createShadowRoot } from 'harmony-ui';
 
-function getUniformsHtml(uniforms) {
+function getUniformsHtml(uniforms: any/*TODO: create a proper type for uniforms*/) {
 	let htmlUniforms = document.createElement('div');
 
 	for (let uniformName in uniforms) {
@@ -14,7 +15,7 @@ function getUniformsHtml(uniforms) {
 	return htmlUniforms;
 }
 
-function addHtmlParameter(name, value) {
+function addHtmlParameter(name: string, value: any) {
 	let htmlParameter = document.createElement('div');
 	let htmlParameterName = document.createElement('span');
 	htmlParameterName.innerHTML = name;
@@ -25,50 +26,71 @@ function addHtmlParameter(name, value) {
 	return htmlParameter;
 }
 
+let materialEditor: MaterialEditor | null = null;
+export function getMaterialEditor() {
+	if (!materialEditor) {
+		materialEditor = new MaterialEditor();
+	}
+	return materialEditor;
+}
+
 export class MaterialEditor {
-	static #htmlElement: HTMLElement;
-	static #entity: Entity;
-	static #material: Material;
+	static #instance: MaterialEditor;
+	#shadowRoot!: ShadowRoot;
+	#htmlHeader!: HTMLElement;
+	//static #entity: Entity;
+	#material?: Material;
 
-	static initHtml() {
-		this.#htmlElement = document.createElement('div');
-		this.#htmlElement.className = 'engine-material-editor';
-		this.refreshHtml();
+	constructor() {
+		if (MaterialEditor.#instance) {
+			return MaterialEditor.#instance;
+		}
+		MaterialEditor.#instance = this;
+
+		this.#shadowRoot = createShadowRoot('div', {
+			childs: [
+				this.#htmlHeader = createElement('div'),
+			],
+		});
 	}
 
-	static editEntity(entity) {
-		this.#entity = entity;
-		this.#material = entity?.material;
-		this.refreshHtml();
+	#initHtml() {
+		//this.#htmlElement = document.createElement('div');
+		//this.#htmlElement.className = 'engine-material-editor';
+		this.#refreshHtml();
 	}
 
-	static editMaterial(material) {
-		this.#entity = null;
+
+	editEntity(entity: Entity) {
+		//this.#entity = entity;
+		this.#material = (entity as any).material;
+		this.#refreshHtml();
+	}
+
+	editMaterial(material: Material) {
+		//this.#entity = null;
 		this.#material = material;
-		this.refreshHtml();
+		this.#refreshHtml();
 	}
 
-	static refreshHtml() {
-		if (this.#htmlElement) {
-			this.#htmlElement.innerText = '';
-			let material = this.#material;
-			if (material) {
+	#refreshHtml() {
+		//if (this.#htmlElement) {
+		this.#htmlHeader.innerText = '';
+		let material = this.#material;
+		if (material) {
 
-				let fileName = material.name;
-				if (fileName) {
-					this.#htmlElement.append(addHtmlParameter('filename', fileName));
-				}
-				//this.#htmlElement.innerHTML += this.material.name;
-				this.#htmlElement.append(getUniformsHtml(material.uniforms));
-
+			let fileName = material.name;
+			if (fileName) {
+				this.#htmlHeader.append(addHtmlParameter('filename', fileName));
 			}
+			//this.#htmlElement.innerHTML += this.material.name;
+			this.#htmlHeader.append(getUniformsHtml(material.uniforms));
+
 		}
+		//}
 	}
 
-	static get html() {
-		if (!this.#htmlElement) {
-			this.initHtml();
-		}
-		return this.#htmlElement;
+	get html() {
+		return this.#shadowRoot.host;
 	}
 }

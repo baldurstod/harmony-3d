@@ -884,14 +884,14 @@ export class Entity {
 			receive_shadows: { i18n: '#receive_shadows', selected: this.receiveShadow, f: () => this.toggleReceiveShadow() },
 			material: { i18n: '#material', submenu: {} },
 		};
-		/*
-		if (this.material) {
+
+		if ((this as any).material) {
 			Object.assign(menu.material.submenu, {
 				entitynull_5: null,
 				edit_material: { i18n: '#edit_material', f: () => Entity.editMaterial(this) }
 			})
 		}
-			*/
+
 		return menu;
 	}
 

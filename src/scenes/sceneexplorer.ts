@@ -13,7 +13,7 @@ import { ContextObserver } from '../helpers/contextobserver';
 import { AmbientLight } from '../lights/ambientlight';
 import { PointLight } from '../lights/pointlight';
 import { SpotLight } from '../lights/spotlight';
-import { MaterialEditor } from '../materials/materialeditor';
+import { getMaterialEditor, MaterialEditor } from '../materials/materialeditor';
 import { Decal } from '../objects/decal';
 import { Group } from '../objects/group';
 import { Target } from '../objects/target';
@@ -107,7 +107,7 @@ export class SceneExplorer {
 			if (this.#isVisible && (this.#isVisible != isVisible)) {
 				this.applyFilter();
 				if (this.#selectedEntity) {
-					SceneExplorerEntity.getEntityElement(this.#selectedEntity).select();
+					SceneExplorerEntity.getEntityElement(this.#selectedEntity)?.select();
 				}
 			}
 		}).observe(this.#shadowRoot.host);
@@ -354,7 +354,7 @@ export class SceneExplorer {
 		entity.addChild(this.#skeletonHelper);
 		if (this.#isVisible) {
 			this.#updateEntityElement(entity);
-			SceneExplorerEntity.getEntityElement(entity).select();
+			SceneExplorerEntity.getEntityElement(entity)?.select();
 		}
 	}
 
@@ -537,7 +537,7 @@ function initEntitySubmenu() {
 }
 
 Entity.editMaterial = function (entity) {
-	MaterialEditor.editEntity(entity);
+	getMaterialEditor().editEntity(entity);
 	/*
 	let entityHtml = SceneExplorer.getEntityHtml(entity);
 	if (entityHtml) {
