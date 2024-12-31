@@ -1,5 +1,5 @@
 import { ShortcutHandler } from 'harmony-browser-utils';
-import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot, defineHarmonyContextMenu, HTMLHarmonyContextMenuElement, HarmonyContextMenuItems } from 'harmony-ui';
+import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot, defineHarmonyContextMenu, HTMLHarmonyContextMenuElement, HarmonyContextMenuItems, defineHarmonyAccordion, HTMLHarmonyAccordionElement } from 'harmony-ui';
 import { SceneExplorerEvents } from './sceneexplorerevents';
 import { Camera } from '../cameras/camera';
 import { RotationControl } from '../controls/rotationcontrol';
@@ -40,6 +40,7 @@ import { Wireframe } from '../objects/wireframe';
 import { Scene } from './scene';
 import { dragPanSVG, panZoomSVG, rotateSVG } from 'harmony-svg';
 import { vec3 } from 'gl-matrix';
+import { Material } from '../materials/material';
 
 function FormatArray(array: Array<number> | vec3): string {
 	let arr: Array<string> = [];
@@ -61,6 +62,14 @@ const ENTITIES = [
 	'Source2ModelInstance',
 ]
 
+let sceneExplorer: SceneExplorer | null = null;
+export function getSceneExplorer() {
+	if (!sceneExplorer) {
+		sceneExplorer = new SceneExplorer();
+	}
+	return sceneExplorer;
+}
+
 export class SceneExplorer {
 	static #instance: SceneExplorer;
 	#scene?: Scene;
@@ -68,6 +77,9 @@ export class SceneExplorer {
 	#manipulator!: Manipulator;
 	#skeletonHelper!: SkeletonHelper;
 	#htmlProperties!: HTMLElement;
+	#htmlFileExplorer!: HTMLElement;
+	#htmlMaterialEditor!: HTMLElement;
+	#htmlExtra!: HTMLHarmonyAccordionElement;
 	#htmlHeader!: HTMLElement;
 	htmlFileSelector!: HTMLElement;
 	#htmlNameFilter!: HTMLInputElement;
@@ -82,7 +94,7 @@ export class SceneExplorer {
 	#htmlWorldPos!: HTMLElement;
 	#htmlWorldQuat!: HTMLElement;
 	#htmlWorldScale!: HTMLElement;
-	#htmlVisible!: HTMLInputElement;
+	//#htmlVisible!: HTMLInputElement;
 	#htmlScene!: HTMLElement;
 	#filterName = '';
 	#filterType = '';
@@ -144,6 +156,7 @@ export class SceneExplorer {
 	}
 
 	#initHtml() {
+		defineHarmonyAccordion();
 		this.#shadowRoot = createShadowRoot('scene-explorer', {
 			attributes: { tabindex: 1, },
 			adoptStyle: sceneExplorerCSS,
@@ -155,14 +168,62 @@ export class SceneExplorer {
 					hidden: true,
 					attributes: { tabindex: 1, },
 				}),
-				this.#htmlProperties = createElement('div', {
-					class: 'scene-explorer-properties',
-					hidden: 1,
-					attributes: {
-						tabindex: 1,
-					},
-				}),
-			]
+				this.#htmlExtra = createElement('harmony-accordion', {
+					multiple: 1,
+					childs: [
+						createElement('harmony-item', {
+							id: 'properties',
+							childs: [
+								createElement('div', {
+									slot: 'header',
+									i18n: '#properties',
+								}),
+								this.#htmlProperties = createElement('div', {
+									class: 'scene-explorer-properties',
+									slot: 'content',
+									attributes: {
+										tabindex: 1,
+									},
+								}),
+							],
+						}),
+						createElement('harmony-item', {
+							id: 'files',
+							hidden: 1,
+							childs: [
+								createElement('div', {
+									slot: 'header',
+									i18n: '#files',
+								}),
+								this.#htmlFileExplorer = createElement('div', {
+									class: 'file-explorer',
+									slot: 'content',
+									attributes: {
+										tabindex: 1,
+									},
+								}),
+							],
+						}),
+						createElement('harmony-item', {
+							id: 'material',
+							hidden: 1,
+							childs: [
+								createElement('div', {
+									slot: 'header',
+									i18n: '#material_editor',
+								}),
+								this.#htmlMaterialEditor = createElement('div', {
+									class: 'material-editor',
+									slot: 'content',
+									attributes: {
+										tabindex: 1,
+									},
+								}),
+							],
+						}),
+					],
+				}) as HTMLHarmonyAccordionElement,
+			],
 		});
 		I18n.observeElement(this.#shadowRoot);
 
@@ -256,22 +317,24 @@ export class SceneExplorer {
 			]
 		})
 
-
+		/*
 		let propertiesId = 'display_properties';
 		let htmlDisplayProperties = createElement('input') as HTMLInputElement;
 		htmlDisplayProperties.type = 'checkbox';
 		htmlDisplayProperties.id = propertiesId;
 		htmlDisplayProperties.checked = false;
 
+		/*
 		let htmlDisplayPropertiesSpan = createElement('span');
 		let htmlDisplayPropertiesLabel = createElement('label', { i18n: '#display_properties', htmlFor: propertiesId });
 
 		this.#htmlHeader.append(htmlDisplayPropertiesSpan);
 		htmlDisplayPropertiesSpan.append(htmlDisplayProperties, htmlDisplayPropertiesLabel);
+		*/
 
 		this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = (event.target as HTMLInputElement).value.toLowerCase(); this.applyFilter(); });
 		this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = (event.target as HTMLInputElement).value; this.applyFilter(); });
-		htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
+		//htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
 
 		this.#populateTypeFilter();
 	}
@@ -324,6 +387,7 @@ export class SceneExplorer {
 		this.#htmlWorldQuat = createElement('div', { class: 'scene-explorer-entity-world-quat' });
 		const htmlWorldScaleLabel = createElement('label', { i18n: '#world_scale' });
 		this.#htmlWorldScale = createElement('div', { class: 'scene-explorer-entity-world-scale' });
+		/*
 		const htmlVisibleLabel = createElement('label', { i18n: '#visible' });
 		this.#htmlVisible = createElement('input', {
 			class: 'scene-explorer-entity-visible',
@@ -332,8 +396,9 @@ export class SceneExplorer {
 				input: () => this.#selectedEntity?.toggleVisibility?.()
 			}
 		}) as HTMLInputElement;
+		*/
 		//this.htmlVisible.addEventListener('input', () => {if (this._currentEntity) this._currentEntity.toggleVisibility()});
-		this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale, htmlVisibleLabel, this.#htmlVisible);
+		this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale/*, htmlVisibleLabel, this.#htmlVisible*/);
 	}
 
 	#createEntityElement(entity: Entity, createExpanded = false) {
@@ -373,12 +438,14 @@ export class SceneExplorer {
 			this.#htmlWorldPos.innerText = FormatArray(entity.getWorldPosition());
 			this.#htmlWorldQuat.innerText = FormatArray(entity.getWorldQuaternion());
 			this.#htmlWorldScale.innerText = FormatArray(entity.getWorldScale());
-			this.#htmlVisible.checked = entity.visible;
+			//this.#htmlVisible.checked = entity.visible;
+			/*
 			if (entity.visibleSelf === undefined) {
 				this.#htmlVisible.indeterminate = true;
 			} else {
 				this.#htmlVisible.indeterminate = false;
 			}
+			*/
 		}
 	}
 
@@ -403,6 +470,15 @@ export class SceneExplorer {
 
 	showContextMenu(contextMenu: HarmonyContextMenuItems, x: number, y: number, entity: Entity) {
 		this.#htmlContextMenu.show(contextMenu, x, y, entity);
+	}
+
+	editMaterial(material: Material) {
+		const materialEditor = getMaterialEditor();
+		materialEditor.editMaterial(material);
+
+		this.#htmlMaterialEditor.append(materialEditor.getHTML());
+
+		this.#htmlExtra.expand('material');
 	}
 }
 
@@ -537,7 +613,17 @@ function initEntitySubmenu() {
 }
 
 Entity.editMaterial = function (entity) {
-	getMaterialEditor().editEntity(entity);
+	const material = (entity as any).material;
+
+	if (!material) {
+		return;
+	}
+
+	const sceneExplorer = getSceneExplorer();
+	sceneExplorer.editMaterial(material);
+	//materialEditor.editEntity(entity);
+
+	//this.#htmlMaterialEditor.append(materialEditor.getHTML());
 	/*
 	let entityHtml = SceneExplorer.getEntityHtml(entity);
 	if (entityHtml) {

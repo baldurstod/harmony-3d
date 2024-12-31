@@ -1,5 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, defineHarmonyToggleButton, toggle, defineHarmonyContextMenu } from 'harmony-ui';
+import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, defineHarmonyToggleButton, toggle, defineHarmonyAccordion, defineHarmonyContextMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
@@ -2919,14 +2919,12 @@ class Entity {
             receive_shadows: { i18n: '#receive_shadows', selected: this.receiveShadow, f: () => this.toggleReceiveShadow() },
             material: { i18n: '#material', submenu: {} },
         };
-        /*
         if (this.material) {
             Object.assign(menu.material.submenu, {
                 entitynull_5: null,
                 edit_material: { i18n: '#edit_material', f: () => Entity.editMaterial(this) }
-            })
+            });
         }
-            */
         return menu;
     }
     raycast(raycaster, intersections) {
@@ -19429,7 +19427,7 @@ if (window.customElements) {
     customElements.define('scene-explorer-entity', SceneExplorerEntity);
 }
 
-function getUniformsHtml(uniforms) {
+function getUniformsHtml(uniforms /*TODO: create a proper type for uniforms*/) {
     let htmlUniforms = document.createElement('div');
     for (let uniformName in uniforms) {
         let uniform = uniforms[uniformName];
@@ -19446,44 +19444,61 @@ function addHtmlParameter(name, value) {
     htmlParameter.append(htmlParameterName, htmlParameterValue);
     return htmlParameter;
 }
+let materialEditor = null;
+function getMaterialEditor() {
+    if (!materialEditor) {
+        materialEditor = new MaterialEditor();
+    }
+    return materialEditor;
+}
 class MaterialEditor {
-    static #htmlElement;
-    static #entity;
-    static #material;
-    static initHtml() {
-        this.#htmlElement = document.createElement('div');
-        this.#htmlElement.className = 'engine-material-editor';
-        this.refreshHtml();
+    static #instance;
+    #shadowRoot;
+    #htmlHeader;
+    //static #entity: Entity;
+    #material;
+    constructor() {
+        if (MaterialEditor.#instance) {
+            return MaterialEditor.#instance;
+        }
+        MaterialEditor.#instance = this;
+        this.#shadowRoot = createShadowRoot('div', {
+            childs: [
+                this.#htmlHeader = createElement('div'),
+            ],
+        });
     }
-    static editEntity(entity) {
-        this.#entity = entity;
-        this.#material = entity?.material;
-        this.refreshHtml();
+    #initHtml() {
+        //this.#htmlElement = document.createElement('div');
+        //this.#htmlElement.className = 'engine-material-editor';
+        this.#refreshHtml();
     }
-    static editMaterial(material) {
-        this.#entity = null;
+    editEntity(entity) {
+        //this.#entity = entity;
+        this.#material = entity.material;
+        this.#refreshHtml();
+    }
+    editMaterial(material) {
+        //this.#entity = null;
         this.#material = material;
-        this.refreshHtml();
+        this.#refreshHtml();
     }
-    static refreshHtml() {
-        if (this.#htmlElement) {
-            this.#htmlElement.innerText = '';
-            let material = this.#material;
-            if (material) {
-                let fileName = material.name;
-                if (fileName) {
-                    this.#htmlElement.append(addHtmlParameter('filename', fileName));
-                }
-                //this.#htmlElement.innerHTML += this.material.name;
-                this.#htmlElement.append(getUniformsHtml(material.uniforms));
+    #refreshHtml() {
+        //if (this.#htmlElement) {
+        this.#htmlHeader.innerText = '';
+        let material = this.#material;
+        if (material) {
+            let fileName = material.name;
+            if (fileName) {
+                this.#htmlHeader.append(addHtmlParameter('filename', fileName));
             }
+            //this.#htmlElement.innerHTML += this.material.name;
+            this.#htmlHeader.append(getUniformsHtml(material.uniforms));
         }
+        //}
     }
-    static get html() {
-        if (!this.#htmlElement) {
-            this.initHtml();
-        }
-        return this.#htmlElement;
+    getHTML() {
+        return this.#shadowRoot.host;
     }
 }
 
@@ -24676,6 +24691,13 @@ const ENTITIES = [
     'Source1ModelInstance',
     'Source2ModelInstance',
 ];
+let sceneExplorer = null;
+function getSceneExplorer() {
+    if (!sceneExplorer) {
+        sceneExplorer = new SceneExplorer();
+    }
+    return sceneExplorer;
+}
 class SceneExplorer {
     static #instance;
     #scene;
@@ -24683,6 +24705,9 @@ class SceneExplorer {
     #manipulator;
     #skeletonHelper;
     #htmlProperties;
+    #htmlFileExplorer;
+    #htmlMaterialEditor;
+    #htmlExtra;
     #htmlHeader;
     htmlFileSelector;
     #htmlNameFilter;
@@ -24697,7 +24722,7 @@ class SceneExplorer {
     #htmlWorldPos;
     #htmlWorldQuat;
     #htmlWorldScale;
-    #htmlVisible;
+    //#htmlVisible!: HTMLInputElement;
     #htmlScene;
     #filterName = '';
     #filterType = '';
@@ -24721,7 +24746,7 @@ class SceneExplorer {
             if (this.#isVisible && (this.#isVisible != isVisible)) {
                 this.applyFilter();
                 if (this.#selectedEntity) {
-                    SceneExplorerEntity.getEntityElement(this.#selectedEntity).select();
+                    SceneExplorerEntity.getEntityElement(this.#selectedEntity)?.select();
                 }
             }
         }).observe(this.#shadowRoot.host);
@@ -24750,6 +24775,7 @@ class SceneExplorer {
         return this.#shadowRoot.host;
     }
     #initHtml() {
+        defineHarmonyAccordion();
         this.#shadowRoot = createShadowRoot('scene-explorer', {
             attributes: { tabindex: 1, },
             adoptStyle: sceneExplorerCSS,
@@ -24761,14 +24787,62 @@ class SceneExplorer {
                     hidden: true,
                     attributes: { tabindex: 1, },
                 }),
-                this.#htmlProperties = createElement('div', {
-                    class: 'scene-explorer-properties',
-                    hidden: 1,
-                    attributes: {
-                        tabindex: 1,
-                    },
+                this.#htmlExtra = createElement('harmony-accordion', {
+                    multiple: 1,
+                    childs: [
+                        createElement('harmony-item', {
+                            id: 'properties',
+                            childs: [
+                                createElement('div', {
+                                    slot: 'header',
+                                    i18n: '#properties',
+                                }),
+                                this.#htmlProperties = createElement('div', {
+                                    class: 'scene-explorer-properties',
+                                    slot: 'content',
+                                    attributes: {
+                                        tabindex: 1,
+                                    },
+                                }),
+                            ],
+                        }),
+                        createElement('harmony-item', {
+                            id: 'files',
+                            hidden: 1,
+                            childs: [
+                                createElement('div', {
+                                    slot: 'header',
+                                    i18n: '#files',
+                                }),
+                                this.#htmlFileExplorer = createElement('div', {
+                                    class: 'file-explorer',
+                                    slot: 'content',
+                                    attributes: {
+                                        tabindex: 1,
+                                    },
+                                }),
+                            ],
+                        }),
+                        createElement('harmony-item', {
+                            id: 'material',
+                            hidden: 1,
+                            childs: [
+                                createElement('div', {
+                                    slot: 'header',
+                                    i18n: '#material_editor',
+                                }),
+                                this.#htmlMaterialEditor = createElement('div', {
+                                    class: 'material-editor',
+                                    slot: 'content',
+                                    attributes: {
+                                        tabindex: 1,
+                                    },
+                                }),
+                            ],
+                        }),
+                    ],
                 }),
-            ]
+            ],
         });
         I18n.observeElement(this.#shadowRoot);
         defineHarmonyContextMenu();
@@ -24855,18 +24929,23 @@ class SceneExplorer {
                 }),
             ]
         });
+        /*
         let propertiesId = 'display_properties';
-        let htmlDisplayProperties = createElement('input');
+        let htmlDisplayProperties = createElement('input') as HTMLInputElement;
         htmlDisplayProperties.type = 'checkbox';
         htmlDisplayProperties.id = propertiesId;
         htmlDisplayProperties.checked = false;
+
+        /*
         let htmlDisplayPropertiesSpan = createElement('span');
         let htmlDisplayPropertiesLabel = createElement('label', { i18n: '#display_properties', htmlFor: propertiesId });
+
         this.#htmlHeader.append(htmlDisplayPropertiesSpan);
         htmlDisplayPropertiesSpan.append(htmlDisplayProperties, htmlDisplayPropertiesLabel);
+        */
         this.#htmlNameFilter.addEventListener('change', (event) => { this.#filterName = event.target.value.toLowerCase(); this.applyFilter(); });
         this.#htmlTypeFilter.addEventListener('change', (event) => { this.#filterType = event.target.value; this.applyFilter(); });
-        htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
+        //htmlDisplayProperties.addEventListener('change', (event) => toggle(this.#htmlProperties));
         this.#populateTypeFilter();
     }
     #populateTypeFilter() {
@@ -24915,6 +24994,7 @@ class SceneExplorer {
         this.#htmlWorldQuat = createElement('div', { class: 'scene-explorer-entity-world-quat' });
         const htmlWorldScaleLabel = createElement('label', { i18n: '#world_scale' });
         this.#htmlWorldScale = createElement('div', { class: 'scene-explorer-entity-world-scale' });
+        /*
         const htmlVisibleLabel = createElement('label', { i18n: '#visible' });
         this.#htmlVisible = createElement('input', {
             class: 'scene-explorer-entity-visible',
@@ -24922,9 +25002,10 @@ class SceneExplorer {
             events: {
                 input: () => this.#selectedEntity?.toggleVisibility?.()
             }
-        });
+        }) as HTMLInputElement;
+        */
         //this.htmlVisible.addEventListener('input', () => {if (this._currentEntity) this._currentEntity.toggleVisibility()});
-        this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale, htmlVisibleLabel, this.#htmlVisible);
+        this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale /*, htmlVisibleLabel, this.#htmlVisible*/);
     }
     #createEntityElement(entity, createExpanded = false) {
         let htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
@@ -24942,7 +25023,7 @@ class SceneExplorer {
         entity.addChild(this.#skeletonHelper);
         if (this.#isVisible) {
             this.#updateEntityElement(entity);
-            SceneExplorerEntity.getEntityElement(entity).select();
+            SceneExplorerEntity.getEntityElement(entity)?.select();
         }
     }
     getSelectedEntity() {
@@ -24959,13 +25040,14 @@ class SceneExplorer {
             this.#htmlWorldPos.innerText = FormatArray(entity.getWorldPosition());
             this.#htmlWorldQuat.innerText = FormatArray(entity.getWorldQuaternion());
             this.#htmlWorldScale.innerText = FormatArray(entity.getWorldScale());
-            this.#htmlVisible.checked = entity.visible;
+            //this.#htmlVisible.checked = entity.visible;
+            /*
             if (entity.visibleSelf === undefined) {
                 this.#htmlVisible.indeterminate = true;
-            }
-            else {
+            } else {
                 this.#htmlVisible.indeterminate = false;
             }
+            */
         }
     }
     getEntityHtml(entity) {
@@ -24986,6 +25068,12 @@ class SceneExplorer {
     }
     showContextMenu(contextMenu, x, y, entity) {
         this.#htmlContextMenu.show(contextMenu, x, y, entity);
+    }
+    editMaterial(material) {
+        const materialEditor = getMaterialEditor();
+        materialEditor.editMaterial(material);
+        this.#htmlMaterialEditor.append(materialEditor.getHTML());
+        this.#htmlExtra.expand('material');
     }
 }
 function initEntitySubmenu() {
@@ -25114,7 +25202,14 @@ function initEntitySubmenu() {
     ];
 }
 Entity.editMaterial = function (entity) {
-    MaterialEditor.editEntity(entity);
+    const material = entity.material;
+    if (!material) {
+        return;
+    }
+    const sceneExplorer = getSceneExplorer();
+    sceneExplorer.editMaterial(material);
+    //materialEditor.editEntity(entity);
+    //this.#htmlMaterialEditor.append(materialEditor.getHTML());
     /*
     let entityHtml = SceneExplorer.getEntityHtml(entity);
     if (entityHtml) {

@@ -6033,6 +6033,7 @@ declare class Choreography {
              getSelectedEntity(): Entity;
              getEntityHtml(entity: Entity): void;
              showContextMenu(contextMenu: HarmonyContextMenuItems, x: number, y: number, entity: Entity): void;
+             editMaterial(material: Material): void;
          }
 
          export declare class Select extends Node_2 {
@@ -9407,12 +9408,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#203@#webAssembly"?: any;
-             "__#203@#HEAPU8"?: Uint8Array;
+             "__#204@#webAssembly"?: any;
+             "__#204@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#203@#initHeap"(): void;
+             "__#204@#initHeap"(): void;
          };
 
          export { }

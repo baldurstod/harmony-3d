@@ -90,7 +90,7 @@ export class MaterialEditor {
 		//}
 	}
 
-	get html() {
+	getHTML() {
 		return this.#shadowRoot.host;
 	}
 }
