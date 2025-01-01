@@ -5,6 +5,7 @@ export * from './cameras/export';
 export * from './composer/export';
 export * from './controls/export';
 export * from './entities/export';
+export * from './enums/export';
 export * from './exporters/export';
 export * from './geometry/export';
 export * from './graphics/export';
