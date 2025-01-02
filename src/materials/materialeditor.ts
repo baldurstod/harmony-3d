@@ -3,7 +3,7 @@ import '../css/materialeditor.css';
 import { Material } from './material';
 import { createElement, createShadowRoot, hide, show } from 'harmony-ui';
 import { GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_DST_ALPHA, GL_DST_COLOR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
-import { BlendingFactors } from '../enums/blending';
+import { BlendingEquation, BlendingFactors } from '../enums/blending';
 
 function getUniformsHtml(uniforms: any/*TODO: create a proper type for uniforms*/) {
 	let htmlUniforms = createElement('div');
@@ -44,7 +44,7 @@ export class MaterialEditor {
 	#htmlBlending: HTMLElement;
 	#htmlHasBlending: HTMLInputElement;
 	#htmlBlendFactors: Array<HTMLElement> = new Array(4);
-	#htmlBlendSelects: Array<HTMLSelectElement> = new Array(4);
+	#htmlBlendSelects: Array<HTMLSelectElement> = new Array(6);
 	#htmlParams: HTMLElement;
 	#material?: Material;
 
@@ -67,7 +67,7 @@ export class MaterialEditor {
 								createElement('label', {
 									childs: [
 										createElement('span', {
-											i18n: '#has_blending',
+											i18n: '#enable_blending',
 										}),
 										this.#htmlHasBlending = createElement('input', {
 											type: 'checkbox',
@@ -87,8 +87,8 @@ export class MaterialEditor {
 			],
 		});
 
-		const i18n = ['#source_color', '#source_alpha', '#destination_color', '#destination_alpha'];
-		for (let i = 0; i < 4; i++) {
+		const i18n = ['#source_color', '#source_alpha', '#destination_color', '#destination_alpha', '#mode_color', '#mode_alpha'];
+		for (let i = 0; i < 6; i++) {
 			this.#htmlBlendFactors[i] = createElement('div', {
 				hidden: 1,
 				parent: this.#htmlBlending,
@@ -105,17 +105,29 @@ export class MaterialEditor {
 				],
 			});
 
-			for (let suite in BlendingFactors) {
-				const value = BlendingFactors[suite];
-				if (typeof value === 'string') {
-					(createElement('option', {
-						parent: this.#htmlBlendSelects[i],
-						innerText: value,
-						value: value,
-					}) as HTMLOptionElement);
+			if (i < 4) {
+				for (let suite in BlendingFactors) {
+					const value = BlendingFactors[suite];
+					if (typeof value === 'string') {
+						(createElement('option', {
+							parent: this.#htmlBlendSelects[i],
+							innerText: value,
+							value: value,
+						}) as HTMLOptionElement);
+					}
+				}
+			} else {
+				for (let suite in BlendingEquation) {
+					const value = BlendingEquation[suite];
+					if (typeof value === 'string') {
+						(createElement('option', {
+							parent: this.#htmlBlendSelects[i],
+							innerText: value,
+							value: value,
+						}) as HTMLOptionElement);
+					}
 				}
 			}
-
 		}
 	}
 
@@ -181,7 +193,12 @@ export class MaterialEditor {
 		if (!this.#material) {
 			return;
 		}
-		const value = BlendingFactors[blending];
+		let value: GLenum;
+		if (i < 4) {
+			value = BlendingFactors[blending];
+		} else {
+			value = BlendingEquation[blending];
+		}
 		switch (i) {
 			case 0:// src color
 				this.#material.srcRGB = value;
@@ -194,6 +211,12 @@ export class MaterialEditor {
 				break;
 			case 3:// dst alpha
 				this.#material.dstAlpha = value;
+				break;
+			case 4:// color mode
+				this.#material.modeRGB = value;
+				break;
+			case 5:// alpha mode
+				this.#material.modeAlpha = value;
 				break;
 		}
 	}
