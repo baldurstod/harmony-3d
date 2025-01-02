@@ -139,8 +139,8 @@ export class Material {
 		this.depthMask = false;
 		this.srcRGB = srcRGB;
 		this.dstRGB = dstRGB;
-		this.srcAlpha = srcAlpha || srcRGB;
-		this.dstAlpha = dstAlpha || dstRGB;
+		this.srcAlpha = srcAlpha ?? srcRGB;
+		this.dstAlpha = dstAlpha ?? dstRGB;
 	}
 
 	setBlending(mode: BlendingMode, premultipliedAlpha: boolean = false) {
