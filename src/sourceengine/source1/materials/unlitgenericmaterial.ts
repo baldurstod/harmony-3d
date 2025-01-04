@@ -3,6 +3,7 @@ import { vec4 } from 'gl-matrix';
 import { GL_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_MAX } from '../../../webgl/constants';
 import { SourceEngineMaterial } from './sourceenginematerial';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
+import { MATERIAL_BLENDING_ADDITIVE } from '../../../materials/material';
 
 export class UnlitGenericMaterial extends SourceEngineMaterial {
 	diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
@@ -14,10 +15,9 @@ export class UnlitGenericMaterial extends SourceEngineMaterial {
 		this.uniforms['g_DiffuseModulation'] = this.diffuseModulation;
 
 		if (params['$additive'] == 1) {
-			this.setTransparency(GL_SRC_ALPHA, GL_ONE);
 			//this.setBlending('additive');
+			this.setBlending(MATERIAL_BLENDING_ADDITIVE);
 		}
-		this.modeAlpha = GL_MAX;
 
 	}
 

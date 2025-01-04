@@ -208,6 +208,32 @@ export declare class BenefactorLevel extends Proxy_2 {
 
 export declare function Bias(value: number, bias: number): number;
 
+export declare enum BlendingEquation {
+    Add = 32774,
+    Subtract = 32778,
+    ReverseSubtract = 32779,
+    Min = 32775,
+    Max = 32776
+}
+
+export declare enum BlendingFactors {
+    Zero = 0,
+    One = 1,
+    SrcColor = 768,
+    OneMinusSrcColor = 769,
+    DstColor = 774,
+    OneMinusDstColor = 775,
+    SrcAlpha = 770,
+    OneMinusSrcAlpha = 771,
+    DstAlpha = 772,
+    OneMinusDstAlpha = 773,
+    ConstantColor = 32769,
+    OneMinusConstantColor = 32770,
+    ConstantAlpha = 32771,
+    OneMinusConstantAlpha = 32772,
+    SrcAlphaSaturate = 776
+}
+
 export declare enum BlendingMode {
     None = 0,
     Normal = 1,
@@ -259,8 +285,8 @@ export declare class Bone extends Entity {
     getWorldPosOffset(offset: vec3, out?: vec3): vec3;
     set poseToBone(poseToBone: mat4);
     get poseToBone(): mat4;
-    set boneId(boneId: any);
-    get boneId(): any;
+    set boneId(boneId: number);
+    get boneId(): number;
     isProcedural(): boolean;
     reset(): void;
     buildContextMenu(): {
@@ -1945,7 +1971,7 @@ declare class Choreography {
              #private;
              constructor(params?: any);
              afterProcessProxies(): void;
-             beforeRender(camera: any): void;
+             beforeRender(camera: Camera): void;
              clone(): EyeRefractMaterial;
              get shaderSource(): string;
          }
@@ -2115,7 +2141,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -6532,7 +6558,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -7127,7 +7153,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
