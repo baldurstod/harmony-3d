@@ -245,6 +245,13 @@ export class Renderer {
 		} else {
 			this.unsetLights();
 		}
+
+		if (camera.projection == CameraProjection.Perspective) {
+			this.#graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_PERSPECTIVE_CAMERA');
+		} else {
+			this.#graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
+		}
+
 		let program = this.getProgram(object, material);
 		if (program.isValid()) {
 			WebGLRenderingState.useProgram(program.getProgram());
@@ -256,11 +263,6 @@ export class Renderer {
 			program.setUniformValue('uModelViewMatrix', object._mvMatrix);
 			program.setUniformValue('uViewMatrix', cameraMatrix);
 			program.setUniformValue('uProjectionMatrix', projectionMatrix);
-			if (camera.projection == CameraProjection.Perspective) {
-				this.#graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_PERSPECTIVE_CAMERA');
-			} else {
-				this.#graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
-			}
 			program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2));//TODO: perf: compute that once we set camera farplane
 			program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
 			program.setUniformValue('uNormalMatrix', object._normalMatrix);
