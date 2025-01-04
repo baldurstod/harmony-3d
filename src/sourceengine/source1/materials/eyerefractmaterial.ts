@@ -4,6 +4,8 @@ import { SourceEngineMaterial } from './sourceenginematerial';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { TextureManager } from '../../../textures/texturemanager';
 import { Source1TextureManager } from '../textures/source1texturemanager';
+import { Camera } from '../../../cameras/camera';
+import { Skeleton } from '../../../objects/skeleton';
 
 let tempVec3 = vec3.create();
 
@@ -38,6 +40,7 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 			this.setTexture('corneaMap', Source1TextureManager.getTexture(this.repository, parameters['$corneatexture'], 0));
 		}
 
+		/*
 		const eyeballArray = this.properties.get('eyeballArray');
 		const skeleton = this.properties.get('skeleton');
 		if (eyeballArray && skeleton) {//TODOv3: do this only once
@@ -50,18 +53,19 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 				}
 			}
 		}
+		*/
 	}
 
 
-	beforeRender(camera) {//TODO: check params
-
+	beforeRender(camera: Camera) {
 		const eyeballArray = this.properties.get('eyeballArray');
-		const skeleton = this.properties.get('skeleton');
+		const skeleton = this.properties.get('skeleton') as Skeleton;
 		if (eyeballArray && skeleton) {//TODOv3: do this only once
 			let eyeBall = eyeballArray[this.properties.get('materialParam')];
 			if (eyeBall) {
 				let bone = skeleton._bones[eyeBall.bone];
 				if (bone) {
+					bone.getWorldPosOffset(eyeBall.org, this.#eyeOrigin);
 					vec3.transformQuat(this.#eyeUp, eyeBall.up, bone.worldQuat);
 					vec3.sub(this.#eyeForward, camera.position, this.#eyeOrigin);
 					vec3.cross(this.#eyeRight, this.#eyeForward, this.#eyeUp);
@@ -83,10 +87,10 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 
 					this.uniforms['uIrisProjectionU'] = this.#irisProjectionU;
 					this.uniforms['uIrisProjectionV'] = this.#irisProjectionV;
+					this.uniforms['uEyeOrigin'] = this.#eyeOrigin;
 				}
 			}
 		}
-
 	}
 
 	clone() {

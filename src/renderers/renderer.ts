@@ -255,10 +255,11 @@ export class Renderer {
 		let program = this.getProgram(object, material);
 		if (program.isValid()) {
 			WebGLRenderingState.useProgram(program.getProgram());
-			this.applyMaterial(program, material);
 			if (renderLights) {
 				material.beforeRender(camera);
 			}
+			this.applyMaterial(program, material);
+
 			program.setUniformValue('uModelMatrix', object.worldMatrix);
 			program.setUniformValue('uModelViewMatrix', object._mvMatrix);
 			program.setUniformValue('uViewMatrix', cameraMatrix);

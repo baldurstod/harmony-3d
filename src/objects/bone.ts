@@ -17,7 +17,7 @@ const tempVec1 = vec3.create();
 
 export class Bone extends Entity {
 	isBone = true;
-	#boneId;
+	#boneId: number;
 	#poseToBone = mat4.create();
 	#boneMat = mat4.create();
 	#worldPos = vec3.create();
