@@ -14,7 +14,7 @@ export class EmitContinuously extends SourceEngineParticleOperator {
 
 	}
 
-	doEmit(elapsedTime) {
+	doEmit(elapsedTime: number) {
 		const emission_start_time = this.getParameter('emission_start_time') || 0;
 		let emission_rate = this.getParameter('emission_rate') || 100;
 		const emission_duration = this.getParameter('emission_duration') || 0;
@@ -25,8 +25,8 @@ export class EmitContinuously extends SourceEngineParticleOperator {
 
 		let currentTime = this.particleSystem.currentTime;
 
-		if (currentTime<emission_start_time) return;
-		if (emission_duration!=0 && (currentTime>emission_start_time + emission_duration)) return;
+		if (currentTime < emission_start_time) return;
+		if (emission_duration != 0 && (currentTime > emission_start_time + emission_duration)) return;
 
 		let nToEmit = this.remainder + elapsedTime * emission_rate;
 		this.remainder = nToEmit % 1;
@@ -40,6 +40,13 @@ export class EmitContinuously extends SourceEngineParticleOperator {
 			}
 			currentTime += timeStampStep;
 		}
+	}
+
+	finished() {
+		const emission_start_time = this.getParameter('emission_start_time') ?? 0;
+		const emission_duration = this.getParameter('emission_duration') ?? 0;
+		let currentTime = this.particleSystem.currentTime;
+		return emission_duration != 0 && (currentTime > emission_start_time + emission_duration);
 	}
 }
 SourceEngineParticleOperators.registerOperator(EmitContinuously);

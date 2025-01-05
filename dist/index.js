@@ -4,7 +4,7 @@ import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
-import { zoomOutSVG, zoomInSVG, contentCopySVG, runSVG, walkSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG, dragPanSVG, rotateSVG, panZoomSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, contentCopySVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG, dragPanSVG, rotateSVG, panZoomSVG } from 'harmony-svg';
 import { setTimeoutPromise } from 'harmony-utils';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
@@ -19124,6 +19124,7 @@ class SceneExplorerEntity extends HTMLElement {
     #htmlVisible;
     #htmlPlaying;
     #htmlAnimationsButton;
+    #htmlLoopedButton;
     #htmlReset;
     static #entitiesHTML = new Map();
     static #selectedEntity;
@@ -19181,6 +19182,21 @@ class SceneExplorerEntity extends HTMLElement {
                             ],
                             events: {
                                 change: (event) => this.#displayAnimations(event.target.state),
+                            }
+                        }),
+                        this.#htmlLoopedButton = createElement('harmony-toggle-button', {
+                            hidden: true,
+                            class: 'scene-explorer-entity-button-animations',
+                            childs: [
+                                createElement('off', {
+                                    innerHTML: repeatSVG,
+                                }),
+                                createElement('on', {
+                                    innerHTML: repeatOnSVG,
+                                }),
+                            ],
+                            events: {
+                                change: (event) => this.#entity?.setlooping(event.target.state),
                             }
                         }),
                         this.#htmlReset = createElement('div', {
@@ -19255,6 +19271,7 @@ class SceneExplorerEntity extends HTMLElement {
         display(this.#htmlPlaying, entity?.animable);
         display(this.#htmlAnimationsButton, entity?.hasAnimations);
         display(this.#htmlReset, entity?.resetable);
+        display(this.#htmlLoopedButton, entity?.isLoopable);
     }
     static setExplorer(explorer) {
         _a$2.#explorer = explorer;
@@ -40152,7 +40169,9 @@ class ParamType {
 class SourceEngineParticleSystem extends Entity {
     isParticleSystem = true;
     repository;
-    #autoKill;
+    #autoKill = false;
+    #looping = false;
+    isLoopable = true;
     #sequenceNumber = 0;
     #materialPromiseResolve;
     #materialPromise;
@@ -40197,7 +40216,7 @@ class SourceEngineParticleSystem extends Entity {
     pcf;
     material;
     materialName;
-    maxParticles = 0;
+    maxParticles = DEFAULT_MAX_PARTICLES;
     resetDelay = 0;
     snapshot;
     static #speed = 1.0;
@@ -40206,7 +40225,6 @@ class SourceEngineParticleSystem extends Entity {
     constructor(params) {
         params.name = params.name ?? `System ${systemNumber++}`;
         super(params);
-        this.#autoKill = false;
         this.repository = params.repository;
         this.addParam('max_particles', PARAM_TYPE_INT, 50);
         this.addParam('initial_particles', PARAM_TYPE_INT, 0);
@@ -40220,7 +40238,6 @@ class SourceEngineParticleSystem extends Entity {
         this.addParam('maximum sim tick rate', PARAM_TYPE_FLOAT, 1);
         this.addParam('maximum time step', PARAM_TYPE_FLOAT, 0.1);
         //this.maxParticles = null;
-        this.setMaxParticles(DEFAULT_MAX_PARTICLES);
         //this.getControlPoint(0);
         /*for (let i = 0; i < MAX_PARTICLE_CONTROL_POINTS; ++i) {
             let cp = new ControlPoint();
@@ -40274,9 +40291,6 @@ class SourceEngineParticleSystem extends Entity {
     reset() {
         this.stop();
         this.start();
-        //this.resetChilds();
-        //this.resetEmitters();
-        //this.emitInitialParticles();
     }
     #reset() {
         //console.log('Reset PS');
@@ -40400,18 +40414,23 @@ class SourceEngineParticleSystem extends Entity {
                         break;
                 }
             }
-            this.#checkAutoKill();
+            this.#checkFinished();
         }
     }
-    #checkAutoKill() {
-        if (this.#autoKill) {
-            if (this.#canKill()) {
+    #checkFinished() {
+        if (this.#finished()) {
+            if (this.#autoKill) {
                 this.stop();
                 this.remove();
+                return;
+            }
+            if (this.#looping) {
+                //TODO: add delay
+                this.#reset();
             }
         }
     }
-    #canKill() {
+    #finished() {
         if (Object.keys(this.tempChildren).length) {
             return false;
         }
@@ -40422,7 +40441,7 @@ class SourceEngineParticleSystem extends Entity {
             }
         }
         for (let child of this.childrenSystems) {
-            if ((child.livingParticles.length > 0) || !child.#canKill()) {
+            if ((child.livingParticles.length > 0) || !child.#finished()) {
                 return false;
             }
         }
@@ -40863,6 +40882,12 @@ class SourceEngineParticleSystem extends Entity {
     }
     get autoKill() {
         return this.#autoKill;
+    }
+    setlooping(looping) {
+        this.#looping = looping;
+    }
+    getlooping() {
+        return this.#looping;
     }
     dispose() {
         super.dispose();
@@ -46627,6 +46652,12 @@ class EmitContinuously extends SourceEngineParticleOperator {
             }
             currentTime += timeStampStep;
         }
+    }
+    finished() {
+        const emission_start_time = this.getParameter('emission_start_time') ?? 0;
+        const emission_duration = this.getParameter('emission_duration') ?? 0;
+        let currentTime = this.particleSystem.currentTime;
+        return emission_duration != 0 && (currentTime > emission_start_time + emission_duration);
     }
 }
 SourceEngineParticleOperators.registerOperator(EmitContinuously);

@@ -1690,7 +1690,8 @@ declare class Choreography {
          static functionName: string;
          remainder: number;
          constructor();
-         doEmit(elapsedTime: any): void;
+         doEmit(elapsedTime: number): void;
+         finished(): boolean;
      }
 
      /**
@@ -2141,7 +2142,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | Grid | CameraFrustum;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -3398,6 +3399,12 @@ declare class Choreography {
              static functionName: string;
              constructor();
              doOperate(particle: any, elapsedTime: any): void;
+         }
+
+         declare interface Loopable {
+             isLoopable: true;
+             setlooping: (looping: boolean) => void;
+             getlooping: () => boolean;
          }
 
          export declare class LoopSubdivision {
@@ -6558,7 +6565,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7153,7 +7160,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7851,10 +7858,11 @@ declare class Choreography {
              static registerOperator(name: any, className?: any): void;
          }
 
-         export declare class SourceEngineParticleSystem extends Entity {
+         export declare class SourceEngineParticleSystem extends Entity implements Loopable {
              #private;
              isParticleSystem: boolean;
              repository: string;
+             isLoopable: true;
              animable: boolean;
              resetable: boolean;
              paramList: Array<ParamType>;
@@ -7963,8 +7971,10 @@ declare class Choreography {
              setControlPointParent(controlPointId: number, parentControlPointId: number): void;
              getWorldQuaternion(q?: quat): quat;
              getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
-             set autoKill(autoKill: any);
-             get autoKill(): any;
+             set autoKill(autoKill: boolean);
+             get autoKill(): boolean;
+             setlooping(looping: boolean): void;
+             getlooping(): boolean;
              dispose(): void;
              getBounds(min?: vec3, max?: vec3): void;
              static setSpeed(speed: number): void;

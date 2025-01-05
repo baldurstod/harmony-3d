@@ -1,5 +1,5 @@
 import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, isVisible, show, toggle } from 'harmony-ui';
-import { pauseSVG, playSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
+import { pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
 
 import { EntityObserver, CHILD_ADDED, CHILD_REMOVED, PROPERTY_CHANGED, ENTITY_DELETED } from '../entities/entityobserver';
 
@@ -7,6 +7,7 @@ import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
 import { SceneExplorer } from './sceneexplorer';
 import { Animated } from '../interfaces/animated';
+import { Loopable } from '../interfaces/loopable';
 
 const MAX_ANIMATIONS = 2;
 
@@ -27,6 +28,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	#htmlVisible;
 	#htmlPlaying;
 	#htmlAnimationsButton?: HTMLHarmonyToggleButtonElement;
+	#htmlLoopedButton?: HTMLHarmonyToggleButtonElement;
 	#htmlReset;
 
 	static #entitiesHTML = new Map();
@@ -87,6 +89,21 @@ export class SceneExplorerEntity extends HTMLElement {
 							],
 							events: {
 								change: (event: Event) => this.#displayAnimations((event.target as HTMLHarmonyToggleButtonElement).state),
+							}
+						}) as HTMLHarmonyToggleButtonElement,
+						this.#htmlLoopedButton = createElement('harmony-toggle-button', {
+							hidden: true,
+							class: 'scene-explorer-entity-button-animations',
+							childs: [
+								createElement('off', {
+									innerHTML: repeatSVG,
+								}),
+								createElement('on', {
+									innerHTML: repeatOnSVG,
+								}),
+							],
+							events: {
+								change: (event: Event) => (this.#entity as unknown as Loopable)?.setlooping((event.target as HTMLHarmonyToggleButtonElement).state),
 							}
 						}) as HTMLHarmonyToggleButtonElement,
 						this.#htmlReset = createElement('div', {
@@ -165,6 +182,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		display(this.#htmlPlaying, entity?.animable);
 		display(this.#htmlAnimationsButton, (entity as unknown as Animated)?.hasAnimations);
 		display(this.#htmlReset, entity?.resetable);
+		display(this.#htmlLoopedButton, (entity as unknown as Loopable)?.isLoopable);
 	}
 
 	static setExplorer(explorer: SceneExplorer) {

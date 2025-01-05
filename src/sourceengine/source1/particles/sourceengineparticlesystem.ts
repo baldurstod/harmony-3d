@@ -16,6 +16,7 @@ import { registerEntity } from '../../../entities/entities';
 import { SourceEngineMaterial } from '../materials/sourceenginematerial';
 import { SourceEngineParticleOperator } from './operators/operator';
 import { CDmxAttribute } from '../loaders/sourceenginepcfloader';
+import { Loopable } from '../../../interfaces/loopable';
 
 export const MAX_PARTICLE_CONTROL_POINTS = 64;
 const RESET_DELAY = 0;
@@ -30,10 +31,12 @@ export class ParamType {
 	}
 }
 
-export class SourceEngineParticleSystem extends Entity {
+export class SourceEngineParticleSystem extends Entity implements Loopable {
 	isParticleSystem = true;
 	repository: string;
-	#autoKill;
+	#autoKill = false;
+	#looping = false;
+	isLoopable: true = true;
 	#sequenceNumber = 0;
 	#materialPromiseResolve?: (value: SourceEngineMaterial) => void;
 	#materialPromise?: Promise<SourceEngineMaterial>;
@@ -82,7 +85,7 @@ export class SourceEngineParticleSystem extends Entity {
 	pcf?: SourcePCF;
 	material?: SourceEngineMaterial;
 	materialName?: string;
-	maxParticles: number = 0;
+	maxParticles: number = DEFAULT_MAX_PARTICLES;
 	resetDelay: number = 0;
 	snapshot: any/*TODO: better type*/;
 
@@ -92,7 +95,6 @@ export class SourceEngineParticleSystem extends Entity {
 	constructor(params?: any) {
 		params.name = params.name ?? `System ${systemNumber++}`;
 		super(params);
-		this.#autoKill = false;
 		this.repository = params.repository;
 		this.addParam('max_particles', PARAM_TYPE_INT, 50);
 		this.addParam('initial_particles', PARAM_TYPE_INT, 0);
@@ -108,7 +110,6 @@ export class SourceEngineParticleSystem extends Entity {
 		this.addParam('maximum time step', PARAM_TYPE_FLOAT, 0.1);
 
 		//this.maxParticles = null;
-		this.setMaxParticles(DEFAULT_MAX_PARTICLES);
 		//this.getControlPoint(0);
 		/*for (let i = 0; i < MAX_PARTICLE_CONTROL_POINTS; ++i) {
 			let cp = new ControlPoint();
@@ -171,12 +172,8 @@ export class SourceEngineParticleSystem extends Entity {
 	}
 
 	reset() {
-		if (LOG) { console.log('Reset PS'); }
 		this.stop();
 		this.start();
-		//this.resetChilds();
-		//this.resetEmitters();
-		//this.emitInitialParticles();
 	}
 
 	#reset() {
@@ -319,20 +316,25 @@ export class SourceEngineParticleSystem extends Entity {
 						break;
 				}
 			}
-			this.#checkAutoKill();
+			this.#checkFinished();
 		}
 	}
 
-	#checkAutoKill() {
-		if (this.#autoKill) {
-			if (this.#canKill()) {
+	#checkFinished() {
+		if (this.#finished()) {
+			if (this.#autoKill) {
 				this.stop();
 				this.remove();
+				return;
+			}
+			if (this.#looping) {
+				//TODO: add delay
+				this.#reset();
 			}
 		}
 	}
 
-	#canKill() {
+	#finished(): boolean {
 		if (Object.keys(this.tempChildren).length) {
 			return false;
 		}
@@ -344,7 +346,7 @@ export class SourceEngineParticleSystem extends Entity {
 			}
 		}
 		for (let child of this.childrenSystems) {
-			if ((child.livingParticles.length > 0) || !child.#canKill()) {
+			if ((child.livingParticles.length > 0) || !child.#finished()) {
 				return false;
 			}
 		}
@@ -867,6 +869,14 @@ export class SourceEngineParticleSystem extends Entity {
 
 	get autoKill() {
 		return this.#autoKill;
+	}
+
+	setlooping(looping: boolean) {
+		this.#looping = looping;
+	}
+
+	getlooping() {
+		return this.#looping;
 	}
 
 	dispose() {
