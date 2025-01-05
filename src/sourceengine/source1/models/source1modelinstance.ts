@@ -17,7 +17,7 @@ import { Interaction } from '../../../utils/interaction';
 import { vec3RandomBox } from '../../../math/functions';
 import { getRandomInt } from '../../../utils/random';
 import { registerEntity } from '../../../entities/entities';
-import { Animated } from '../../../entities/animated';
+import { Animated } from '../../../interfaces/animated';
 import { SourceModel } from '../loaders/sourcemodel';
 import { STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_RAWROT2 } from '../loaders/mdlstudioanim';
 

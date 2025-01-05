@@ -6,7 +6,7 @@ import { EntityObserver, CHILD_ADDED, CHILD_REMOVED, PROPERTY_CHANGED, ENTITY_DE
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
 import { SceneExplorer } from './sceneexplorer';
-import { Animated } from '../entities/animated';
+import { Animated } from '../interfaces/animated';
 
 const MAX_ANIMATIONS = 2;
 

@@ -11,7 +11,7 @@ import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { Interaction } from '../../../utils/interaction';
 import { Source2Model } from './source2model';
 import { Material } from '../../../materials/material';
-import { Animated } from '../../../entities/animated';
+import { Animated } from '../../../interfaces/animated';
 import { pow2 } from '../../../math/functions';
 
 
