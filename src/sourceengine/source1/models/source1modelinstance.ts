@@ -40,7 +40,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	hasAnimations: true = true;
 	sourceModel: SourceModel;
 	bodyParts: { [key: string]: Entity } = {};
-	sequences = {};
+	sequences: { [key: string]: { frame?: number, startTime?: any, s?: any } } = {};
 	meshes = new Set<Mesh | SkeletalMesh>();
 	frame = 0;
 	anim = new SourceAnimation();//TODO: removeme
@@ -347,7 +347,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 				console.info(arr);
 
 			}
-*/
+	*/
 
 			for (const bone of animation.bones) {
 				const skeletonBone = skeleton.getBoneById(bone.id);
