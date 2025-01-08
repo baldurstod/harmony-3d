@@ -910,16 +910,16 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 
 		bone.position = reader.getVector3();
 		bone.quaternion = reader.getVector4();
-		reader.getVector3(undefined, undefined, bone.rot);
-		reader.getVector3(undefined, undefined, bone.posscale);
-		reader.getVector3(undefined, undefined, bone.rotscale);
+		reader.getVector3(undefined, undefined, bone.rot as Float32Array<ArrayBuffer>);
+		reader.getVector3(undefined, undefined, bone.posscale as Float32Array<ArrayBuffer>);
+		reader.getVector3(undefined, undefined, bone.rotscale as Float32Array<ArrayBuffer>);
 
 		let poseToBone = readMatrix3x4(reader);
 		bone.poseToBone = poseToBone;
 		bone.initPoseToBone = poseToBone;
 		//bone.invPoseToBone = mat4.invert(mat4.create(), bone.poseToBone);
 
-		reader.getVector4(undefined, undefined, bone.qAlignment);
+		reader.getVector4(undefined, undefined, bone.qAlignment as Float32Array<ArrayBuffer>);
 		bone.flags = reader.getInt32();
 		bone.proctype = reader.getInt32();
 		bone.procindex = reader.getInt32();

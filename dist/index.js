@@ -4602,7 +4602,7 @@ class WebGLShaderSource {
                                             }
                                             break;
                                         case '/':
-                                            startIndex = unrollSubstring.indexOf("\n", startIndex);
+                                            startIndex = unrollSubstring.indexOf('\n', startIndex);
                                             break;
                                     }
                                     break;
@@ -6709,7 +6709,7 @@ class Renderer {
         let pointShadowMap = [];
         let pointShadowMatrix = [];
         for (let pointLight of pointLights) {
-            if (pointLight.visible) {
+            if (pointLight.isVisible()) {
                 pointLight.getWorldPosition(lightPositionWorldSpace);
                 vec3.transformMat4(lightPositionCameraSpace, lightPositionWorldSpace, viewMatrix);
                 program.setUniformValue('uPointLights[' + pointLightId + '].position', lightPositionCameraSpace);
@@ -6771,7 +6771,7 @@ class Renderer {
         let ambientLights = renderList.ambientLights; //scene.getChildList(AmbientLight);
         let ambientAccumulator = vec3.create(); //TODO: do not create a vec3
         for (let ambientLight of ambientLights) {
-            if (ambientLight.visible) {
+            if (ambientLight.isVisible()) {
                 vec3.scaleAndAdd(ambientAccumulator, ambientAccumulator, ambientLight.color, ambientLight.intensity);
             }
         }
@@ -6798,7 +6798,7 @@ class Renderer {
         if (!object.isRenderable) {
             return;
         }
-        if (object.visible === false) {
+        if (object.isVisible() === false) {
             return;
         }
         if (geometry.count === 0) {
@@ -7047,7 +7047,7 @@ class RenderList {
         this.spotLights.sort(sortLights);
     }
     addObject(entity) {
-        if (entity.visible !== false) {
+        if (entity.isVisible() !== false) {
             if (entity.isLight) {
                 this.lights.push(entity);
                 if (entity.isAmbientLight) {
@@ -7067,7 +7067,7 @@ class RenderList {
                 }
             }
             else {
-                let material = entity.material;
+                const material = entity.material;
                 if (material) {
                     if (material.blend) { //TODOv3 changeblend
                         this.transparentList.push(entity);
@@ -13565,7 +13565,7 @@ class LoopSubdivision {
                 fd_write: (fd, iovsPtr, iovsLength, bytesWrittenPtr) => {
                     const iovs = new Uint32Array(this.#heapBuffer, iovsPtr, iovsLength * 2);
                     if (fd === 1 || fd === 2) { //stdout
-                        let text = "";
+                        let text = '';
                         let totalBytesWritten = 0;
                         const decoder = new TextDecoder();
                         for (let i = 0; i < iovsLength * 2; i += 2) {
@@ -15093,7 +15093,7 @@ class NodeImageEditorGui {
             }
             context.bezierCurveTo(xa, y1, xb, y2, x2, y2);
             context.lineWidth = 2;
-            context.strokeStyle = "#EEEEEE";
+            context.strokeStyle = '#EEEEEE';
             context.stroke();
         }
     }
@@ -18766,7 +18766,7 @@ class RepositoryEntry {
 }
 _a$3 = RepositoryEntry;
 function splitFilename(filename) {
-    const pos = filename.lastIndexOf(".");
+    const pos = filename.lastIndexOf('.');
     if (pos < 1) {
         // No dot found or dot in first position
         return { name: filename, extension: '' };
@@ -21554,7 +21554,7 @@ function readHandle(reader) {
     for (var i = 0; i < 8; i++) {
         c = reader.getUint8();
         hex = c.toString(16); // convert to hex
-        hex = (hex.length == 1 ? "0" + hex : hex);
+        hex = (hex.length == 1 ? '0' + hex : hex);
         str += hex;
     }
     return str;
@@ -21935,7 +21935,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 return loadStruct(reader, reference, struct, null, fieldOffset + pos, introspection);
             }
             else {
-                console.log("Unknown struct " + field.type, fieldOffset);
+                console.log('Unknown struct ' + field.type, fieldOffset);
             }
             console.log(fieldOffset);
             return fieldOffset;
@@ -21961,7 +21961,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                             }
                         }
                         else {
-                            console.log("Unknown struct " + field.type, fieldOffset);
+                            console.log('Unknown struct ' + field.type, fieldOffset);
                         }
                     }
                     else if (field.type2 == DATA_TYPE_HANDLE) { // HANDLE
@@ -21977,7 +21977,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                         return values; //this.reference.externalFiles[handle];
                     }
                     else {
-                        console.log("Unknown struct type for array " + field, fieldOffset);
+                        console.log('Unknown struct type for array ' + field, fieldOffset);
                     }
                 }
                 else {
@@ -22012,7 +22012,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 console.log(fieldOffset);
                 return;
             case DATA_TYPE_ENUM: //2
-                return ["enum", field.name, field.type2, fieldOffset, reader.getInt32(fieldOffset)];
+                return ['enum', field.name, field.type2, fieldOffset, reader.getInt32(fieldOffset)];
             case DATA_TYPE_HANDLE: //3
                 // Handle to an external ressource in the RERL block
                 reader.seek(fieldOffset);
@@ -22191,7 +22191,7 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
             entrySize = Math.max(mipmapWidth, 4) * Math.max(mipmapHeight, 4); // 1 byte per pixel, blocks of 16 bytes
             break;
         default:
-            console.warn("Unknown image format " + imageFormat, reader, mipmapWidth, mipmapHeight, compressedLength);
+            console.warn('Unknown image format ' + imageFormat, reader, mipmapWidth, mipmapHeight, compressedLength);
     }
     let imageDatas;
     if (compressedLength === null || compressedLength === entrySize) {
@@ -22544,7 +22544,7 @@ const MeshManager = new function () {
         }
         else {
             //TODO; create a dummy mesh
-            console.error("No mesh loaded");
+            console.error('No mesh loaded');
         }
         return mesh;
     };
@@ -23586,7 +23586,7 @@ const AnimManager = new (function () {
             }
             else {
                 //TODO; create dummy
-                console.error("No anim group loaded");
+                console.error('No anim group loaded');
             }
             return animGroup;
         }
@@ -23630,7 +23630,7 @@ const AnimManager = new (function () {
             }
             else {
                 //TODO; create dummy
-                console.error("No anim group loaded");
+                console.error('No anim group loaded');
             }
             return seqGroup;
         }
@@ -28676,7 +28676,7 @@ class ShaderEditor extends HTMLElement {
         if (this.#initialized) {
             return;
         }
-        this.#shadowRoot = this.attachShadow({ mode: "closed" });
+        this.#shadowRoot = this.attachShadow({ mode: 'closed' });
         I18n.observeElement(this.#shadowRoot);
         let aceScript = options.aceUrl ?? ACE_EDITOR_URI;
         this.#initialized = true;
@@ -34677,6 +34677,7 @@ class Source1ModelInstance extends Entity {
     getBoneById(boneId) {
         return this.#skeleton ? this.#skeleton.getBoneById(boneId) : null;
     }
+    /*
     setBodyGroup(bodyPartName, bodyPartModelId) {
         let bodyPart = this.bodyParts[bodyPartName];
         if (bodyPart) {
@@ -34692,6 +34693,7 @@ class Source1ModelInstance extends Entity {
             }
         }
     }
+    */
     renderBodyParts(render) {
         for (let bodyPartName in this.bodyParts) {
             this.renderBodyPart(bodyPartName, render);
@@ -34708,7 +34710,7 @@ class Source1ModelInstance extends Entity {
     renderBodyPart(bodyPartName, render) {
         let bodyPart = this.bodyParts[bodyPartName];
         if (bodyPart) {
-            bodyPart.visible = render ? undefined : false;
+            bodyPart.setVisible(render ? undefined : false);
             /*for (let model of bodyPart) {
                 for (let mesh of model) {
                     mesh.visible = render ? undefined : false;
@@ -34733,7 +34735,7 @@ class Source1ModelInstance extends Entity {
             //let id = 0;
             for (let bodyPartModel of bodyPart.children) {
                 //let bodyPartModel = bodyPart.children.get(id);
-                bodyPartModel.visible = (bodyPartModel.properties.get('modelId') == modelId) ? undefined : false;
+                bodyPartModel.setVisible((bodyPartModel.properties.get('modelId') == modelId) ? undefined : false);
                 //++id;
             }
         }
@@ -44651,9 +44653,9 @@ const VMT_PARAMETERS = {
     $phongalbedotint: [SHADER_PARAM_TYPE_BOOL, false],
     $phongexponent: [SHADER_PARAM_TYPE_FLOAT, 5.0],
     $phongexponentfactor: [SHADER_PARAM_TYPE_FLOAT, 0.0],
-    $phongexponenttexture: [SHADER_PARAM_TYPE_STRING, ""],
+    $phongexponenttexture: [SHADER_PARAM_TYPE_STRING, ''],
     $phongboost: [SHADER_PARAM_TYPE_FLOAT, 1.0],
-    $lightwarptexture: [SHADER_PARAM_TYPE_STRING, ""],
+    $lightwarptexture: [SHADER_PARAM_TYPE_STRING, ''],
     $selfillumtint: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
     $detailscale: [SHADER_PARAM_TYPE_VEC2, [1, 1]],
     $detailblendmode: [SHADER_PARAM_TYPE_INTEGER, 0],
@@ -46165,10 +46167,10 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
 }
 SourceEngineVMTLoader.registerMaterial('weapondecal', WeaponDecalMaterial);
 const WEAPON_DECAL_DEFAULT_PARAMETERS = {
-    //$basetexture : [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/stickers/default/sticker_default"],
-    //$aotexture : [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/stickers/default/ao_default"],
-    $grungetexture: [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/shared/sticker_paper"],
-    $weartexture: [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/shared/paint_wear"],
+    //$basetexture : [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/stickers/default/sticker_default'],
+    //$aotexture : [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/stickers/default/ao_default'],
+    $grungetexture: [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/shared/sticker_paper'],
+    $weartexture: [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/shared/paint_wear'],
     $decalstyle: [SHADER_PARAM_TYPE_INTEGER, 0],
     $colortint: [SHADER_PARAM_TYPE_COLOR, [255, 255, 255]],
     $colortint2: [SHADER_PARAM_TYPE_COLOR, [0, 0, 0]],
@@ -56367,7 +56369,7 @@ class Operator {
         curve.m_vDomainMaxs[1];
         parameter.m_nInputMode;
         //let modeClamped = parameter.m_nInputMode == "PF_INPUT_MODE_CLAMPED" ? true : false;
-        if (parameter.m_nInputMode == "PF_INPUT_MODE_CLAMPED") {
+        if (parameter.m_nInputMode == 'PF_INPUT_MODE_CLAMPED') {
             inputValue = clamp(inputValue, inputMin, inputMax);
         }
         else {

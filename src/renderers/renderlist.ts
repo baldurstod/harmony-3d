@@ -43,14 +43,14 @@ export class RenderList {
 			if ((entity as Light).isLight) {
 				this.lights.push(entity)
 				if ((entity as AmbientLight).isAmbientLight) {
-					this.ambientLights.push(entity);
+					this.ambientLights.push(entity as AmbientLight);
 				} else if ((entity as PointLight).isPointLight) {
-					this.pointLights.push(entity);
+					this.pointLights.push(entity as PointLight);
 					if (entity.castShadow) {
 						++this.pointLightShadows;
 					}
 				} else if ((entity as SpotLight).isSpotLight) {
-					this.spotLights.push(entity);
+					this.spotLights.push(entity as SpotLight);
 					if (entity.castShadow) {
 						++this.spotLightShadows;
 					}

@@ -5612,12 +5612,12 @@ declare class Choreography {
              constructor(graphics: Graphics);
              getProgram(mesh: Mesh, material: Material): Program;
              applyMaterial(program: any, material: any): void;
-             setupLights(renderList: any, camera: any, program: any, viewMatrix: any): void;
+             setupLights(renderList: RenderList, camera: any, program: any, viewMatrix: any): void;
              setLights(pointLights: any, spotLights: any, pointLightShadows: any, spotLightShadows: any): void;
              unsetLights(): void;
-             renderObject(renderList: any, object: any, camera: any, geometry: any, material: any, renderLights: boolean, lightPos: any): void;
+             renderObject(renderList: RenderList, object: Mesh, camera: any, geometry: any, material: any, renderLights: boolean, lightPos: any): void;
              _prepareRenderList(renderList: any, scene: any, camera: any, delta: any): void;
-             _renderRenderList(renderList: any, camera: any, renderLights: any, lightPos?: any): void;
+             _renderRenderList(renderList: RenderList, camera: any, renderLights: any, lightPos?: any): void;
              render(scene: Scene, camera: Camera, delta: number): void;
              clear(color: any, depth: any, stencil: any): void;
              /**
@@ -5638,6 +5638,20 @@ declare class Choreography {
              Front = 1,
              Back = 2,
              None = 3
+         }
+
+         declare class RenderList {
+             lights: any[];
+             pointLights: Array<PointLight>;
+             spotLights: Array<SpotLight>;
+             ambientLights: Array<AmbientLight>;
+             transparentList: Array<Mesh>;
+             opaqueList: Array<Mesh>;
+             pointLightShadows: number;
+             spotLightShadows: number;
+             reset(): void;
+             finish(): void;
+             addObject(entity: Entity): void;
          }
 
          export declare class RenderModels extends Operator {
@@ -6435,7 +6449,9 @@ declare class Choreography {
              animable: boolean;
              hasAnimations: true;
              sourceModel: SourceModel;
-             bodyParts: {};
+             bodyParts: {
+                 [key: string]: Entity;
+             };
              sequences: {};
              meshes: Set<Mesh | SkeletalMesh>;
              frame: number;
@@ -6464,7 +6480,6 @@ declare class Choreography {
              _playSequences(delta: number): void;
              setMaterialOverride(materialOverride: any): Promise<void>;
              getBoneById(boneId: any): Bone;
-             setBodyGroup(bodyPartName: any, bodyPartModelId: any): void;
              renderBodyParts(render: any): void;
              renderBodyPart(bodyPartName: any, render: any): void;
              resetBodyPartModels(): void;
