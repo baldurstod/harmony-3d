@@ -260,7 +260,7 @@ export class SceneExplorer {
 						htmlManipulator = createElement('input', {
 							type: 'checkbox',
 							events: {
-								change: (event: Event) => this.#manipulator.visible = (event.target as HTMLInputElement).checked,
+								change: (event: Event) => this.#manipulator.setVisible((event.target as HTMLInputElement).checked),
 							},
 						}) as HTMLInputElement,
 						createElement('span', { i18n: '#display_manipulator', }),
@@ -273,7 +273,7 @@ export class SceneExplorer {
 						click: () => {
 							this.#manipulator.setMode(ManipulatorMode.Translation);
 							htmlManipulator.checked = true;
-							this.#manipulator.visible = true;
+							this.#manipulator.setVisible(true);
 						},
 					}
 				}),
@@ -284,7 +284,7 @@ export class SceneExplorer {
 						click: () => {
 							this.#manipulator.setMode(ManipulatorMode.Rotation);
 							htmlManipulator.checked = true;
-							this.#manipulator.visible = true;
+							this.#manipulator.setVisible(true);
 						},
 					}
 				}),
@@ -295,7 +295,7 @@ export class SceneExplorer {
 						click: () => {
 							this.#manipulator.setMode(ManipulatorMode.Scale);
 							htmlManipulator.checked = true;
-							this.#manipulator.visible = true;
+							this.#manipulator.setVisible(true);
 						},
 					}
 				}),
@@ -310,7 +310,7 @@ export class SceneExplorer {
 					type: 'checkbox',
 					id: skeletonId,
 					events: {
-						change: (event: Event) => this.#skeletonHelper.visible = (event.target as HTMLInputElement).checked
+						change: (event: Event) => this.#skeletonHelper.setVisible((event.target as HTMLInputElement).checked)
 					}
 				}),
 				createElement('label', {

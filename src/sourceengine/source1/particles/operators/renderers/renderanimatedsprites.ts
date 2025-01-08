@@ -55,7 +55,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 		this.setupParticlesTexture(particleList, maxParticles);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh.setUniform('uVisibilityCameraDepthBias', this.getParameter('Visibility Camera Depth Bias'));//TODOv3:optimize
-		this.mesh.visible = Source1ParticleControler.visible;
+		this.mesh.setVisible(Source1ParticleControler.visible);
 
 		let orientationControlPointNumber = this.getParameter('orientation control point');
 		let orientationControlPoint = this.particleSystem.getControlPoint(orientationControlPointNumber);

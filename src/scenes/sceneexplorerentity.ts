@@ -280,7 +280,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 
 	#updateVisibility() {
-		if (this.#entity?.visible) {
+		if (this.#entity?.isVisible()) {
 			this.#htmlVisible.innerHTML = visibilityOnSVG;
 		} else {
 			this.#htmlVisible.innerHTML = visibilityOffSVG;

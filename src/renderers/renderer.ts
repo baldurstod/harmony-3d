@@ -13,6 +13,7 @@ import { WebGLAnyRenderingContext } from '../types';
 import { Mesh } from '../objects/mesh';
 import { Material } from '../materials/material';
 import { Scene } from '../scenes/scene';
+import { RenderList } from './renderlist';
 
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
@@ -102,7 +103,7 @@ export class Renderer {
 	applyMaterial(program, material) {
 	}
 
-	setupLights(renderList, camera, program, viewMatrix) {
+	setupLights(renderList: RenderList, camera, program, viewMatrix) {
 		let lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
 		let lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
 		let colorIntensity = vec3.create();//TODO: do not create a vec3
@@ -114,7 +115,7 @@ export class Renderer {
 		let pointShadowMap = [];
 		let pointShadowMatrix = [];
 		for (let pointLight of pointLights) {
-			if (pointLight.visible) {
+			if (pointLight.isVisible()) {
 				pointLight.getWorldPosition(lightPositionWorldSpace);;
 				vec3.transformMat4(lightPositionCameraSpace, lightPositionWorldSpace, viewMatrix);
 				program.setUniformValue('uPointLights[' + pointLightId + '].position', lightPositionCameraSpace);
@@ -182,7 +183,7 @@ export class Renderer {
 		let ambientLights = renderList.ambientLights;//scene.getChildList(AmbientLight);
 		let ambientAccumulator = vec3.create();//TODO: do not create a vec3
 		for (let ambientLight of ambientLights) {
-			if (ambientLight.visible) {
+			if (ambientLight.isVisible()) {
 				vec3.scaleAndAdd(ambientAccumulator, ambientAccumulator, ambientLight.color, ambientLight.intensity);
 			}
 		}
@@ -208,11 +209,11 @@ export class Renderer {
 		//TODO: other lights of disable lighting all together
 	}
 
-	renderObject(renderList, object, camera, geometry, material, renderLights = true, lightPos) {//fixme
+	renderObject(renderList: RenderList, object: Mesh, camera, geometry, material, renderLights = true, lightPos) {//fixme
 		if (!object.isRenderable) {
 			return;
 		}
-		if (object.visible === false) {
+		if (object.isVisible() === false) {
 			return;
 		}
 		if (geometry.count === 0) {
@@ -345,7 +346,7 @@ export class Renderer {
 		renderList.finish();
 	}
 
-	_renderRenderList(renderList, camera, renderLights, lightPos?) {
+	_renderRenderList(renderList: RenderList, camera, renderLights, lightPos?) {
 		for (let child of renderList.opaqueList) {
 			this.renderObject(renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
 		}

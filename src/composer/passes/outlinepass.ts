@@ -76,7 +76,7 @@ export class OutlinePass extends Pass {
 					entity.setVisible(entity.properties.get('oldVisible'));
 					entity.properties.delete('oldVisible');
 				} else {
-					entity.properties.set('oldVisible', entity.visibleSelf);
+					entity.properties.set('oldVisible', entity.isVisibleSelf());
 					entity.setVisible(visible);
 				}
 			}
@@ -90,7 +90,7 @@ export class OutlinePass extends Pass {
 					entity.setVisible(entity.properties.get('oldVisible'));
 					entity.properties.delete('oldVisible');
 				} else {
-					entity.properties.set('oldVisible', entity.visibleSelf);
+					entity.properties.set('oldVisible', entity.isVisibleSelf());
 					entity.setVisible(visible);
 				}
 			}

@@ -119,7 +119,7 @@ export class RenderTrails extends Operator {
 		let maxParticles = this.#maxParticles;
 		this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
-		this.mesh.visible = Source2ParticleManager.visible;
+		this.mesh.setVisible(Source2ParticleManager.visible);
 
 		vec2.set(tempVec2, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
 		this.material.setUniform('uFinalTextureScale', tempVec2);

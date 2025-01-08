@@ -39,7 +39,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	animable = true;
 	hasAnimations: true = true;
 	sourceModel: SourceModel;
-	bodyParts = {};
+	bodyParts: { [key: string]: Entity } = {};
 	sequences = {};
 	meshes = new Set<Mesh | SkeletalMesh>();
 	frame = 0;
@@ -465,7 +465,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 					group2.properties.set('modelId', modelId);
 					group2.name = `${bodyPartName} ${modelId}`;
 					if (Number(modelId) != 0) {
-						group2.visible = false;
+						group2.setVisible(false);
 					}
 					group.addChild(group2);
 					let newModel = [];
@@ -557,6 +557,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 		return this.#skeleton ? this.#skeleton.getBoneById(boneId) : null;
 	}
 
+	/*
 	setBodyGroup(bodyPartName, bodyPartModelId) {
 		let bodyPart = this.bodyParts[bodyPartName];
 		if (bodyPart) {
@@ -572,6 +573,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 			}
 		}
 	}
+	*/
 
 	renderBodyParts(render) {
 		for (let bodyPartName in this.bodyParts) {
@@ -590,7 +592,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	renderBodyPart(bodyPartName, render) {
 		let bodyPart = this.bodyParts[bodyPartName];
 		if (bodyPart) {
-			bodyPart.visible = render ? undefined : false;
+			bodyPart.setVisible(render ? undefined : false);
 			/*for (let model of bodyPart) {
 				for (let mesh of model) {
 					mesh.visible = render ? undefined : false;
@@ -618,7 +620,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 			//let id = 0;
 			for (let bodyPartModel of bodyPart.children) {
 				//let bodyPartModel = bodyPart.children.get(id);
-				bodyPartModel.visible = (bodyPartModel.properties.get('modelId') == modelId) ? undefined : false;
+				bodyPartModel.setVisible((bodyPartModel.properties.get('modelId') == modelId) ? undefined : false);
 				//++id;
 			}
 		}
@@ -682,7 +684,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	set material(material) {
 		for (let bodyPartName in this.bodyParts) {
 			let bodyPart = this.bodyParts[bodyPartName];
-			let meshes = bodyPart.getChildList('Mesh');
+			let meshes = bodyPart.getChildList('Mesh') as Set<Mesh>;
 			for (let mesh of meshes) {
 				mesh.setMaterial(material);
 			}

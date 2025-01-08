@@ -74,7 +74,7 @@ export class RenderRope extends SourceEngineParticleOperator {
 		let maxParticles = particleSystem.maxParticles;
 		this.setupParticlesTexture(particleList, maxParticles);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
-		this.mesh.visible = Source1ParticleControler.visible;
+		this.mesh.setVisible(Source1ParticleControler.visible);
 
 
 

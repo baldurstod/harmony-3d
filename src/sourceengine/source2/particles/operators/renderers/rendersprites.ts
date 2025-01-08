@@ -101,7 +101,7 @@ export class RenderSprites extends RenderBase {
 		let maxParticles = this.#maxParticles;
 		this.setupParticlesTexture(particleList, maxParticles);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
-		this.mesh.visible = Source2ParticleManager.visible;
+		this.mesh.setVisible(Source2ParticleManager.visible);
 
 		this.mesh.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 

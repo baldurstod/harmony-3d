@@ -72,8 +72,8 @@ export class SkeletonHelper extends Entity {
 	#clearSkeleton() {
 		this.#lines.forEach(value => value.dispose());
 		this.#lines.clear();
-		this.#boneStart.visible = false;
-		this.#boneEnd.visible = false;
+		this.#boneStart.setVisible(false);
+		this.#boneEnd.setVisible(false);
 	}
 	/*
 		set skeleton(skeleton) {
@@ -125,7 +125,7 @@ export class SkeletonHelper extends Entity {
 	#initListeners() {
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => {
-			if (!this.visible) {
+			if (!this.isVisible()) {
 				return;
 			}
 
@@ -157,7 +157,7 @@ export class SkeletonHelper extends Entity {
 	}
 
 	#pickBone(event) {
-		if (!this.visible) {
+		if (!this.isVisible()) {
 			return;
 		}
 

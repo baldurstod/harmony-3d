@@ -285,6 +285,10 @@ export class Entity {
 		}
 	}
 
+	isVisibleSelf(): boolean {
+		return this.#visible;
+	}
+
 	/**
 	 * @deprecated Please use `isVisible` instead.
 	 */
@@ -292,6 +296,9 @@ export class Entity {
 		return this.isVisible();
 	}
 
+	/**
+	 * @deprecated Please use `isVisibleSelf` instead.
+	 */
 	get visibleSelf() {
 		return this.#visible;
 	}
@@ -316,7 +323,7 @@ export class Entity {
 			}
 		} else { // false
 			if (this._parent) {
-				if (this._parent.visible) {
+				if (this._parent.isVisible()) {
 					this.setVisible(undefined);
 				} else {
 					this.setVisible(true);
@@ -608,7 +615,7 @@ export class Entity {
 		let objectStack: Entity[] = [];
 
 		while (currentEntity) {
-			if (currentEntity.isRenderable && (currentEntity.visible !== false)) {
+			if (currentEntity.isRenderable && (currentEntity.isVisible() !== false)) {
 				meshList.add(currentEntity);
 			}
 			for (let child of currentEntity.#children) {
@@ -839,7 +846,7 @@ export class Entity {
 
 	buildContextMenu() {
 		let menu = {
-			visibility: { i18n: '#visibility', selected: this.visible, f: () => this.toggleVisibility() },
+			visibility: { i18n: '#visibility', selected: this.isVisible(), f: () => this.toggleVisibility() },
 
 			remove: { i18n: '#remove', f: () => this.remove() },
 			destroy: { i18n: '#destroy', f: () => this.dispose() },

@@ -97,14 +97,14 @@ export class Source2ModelInstance extends Entity implements Animated {
 
 		for (const mesh of this.meshes) {
 			const geometry = mesh.geometry;
-			mesh.visible = undefined;
+			mesh.setVisible(undefined);
 			if (geometry) {
 				const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask'));
 				const lodGroupMask = BigInt(geometry.properties.get('lodGroupMask'));
-				mesh.visible = (meshGroupMask & mask) > 0 ? undefined : false;
+				mesh.setVisible((meshGroupMask & mask) > 0 ? undefined : false);
 
 				if (lodGroupMask && ((lodGroupMask & this.#lod) == 0n)) {
-					mesh.visible = false;
+					mesh.setVisible(false);
 				}
 			}
 		}
@@ -304,7 +304,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 						if (geometry.hasAttribute('aVertexTangent')) {
 							mesh.setDefine('USE_VERTEX_TANGENT');
 						}
-						mesh.visible = undefined;
+						mesh.setVisible(undefined);
 						mesh.properties.set('materialPath', geometry.properties.get('materialPath'));
 						newModel.push(mesh);
 						this.addChild(mesh);

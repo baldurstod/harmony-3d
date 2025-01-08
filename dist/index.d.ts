@@ -639,11 +639,6 @@ export declare class Camera extends Entity {
     set bottom(bottom: number);
     get bottom(): number;
     dirty(): void;
-    /**
-     * Get camera matrix
-     * @return TODO
-     */
-    get matrix(): void;
     get cameraMatrix(): mat4;
     get projectionMatrix(): mat4;
     get projectionMatrixInverse(): mat4;
@@ -1762,9 +1757,19 @@ declare class Choreography {
          render(canvas: HTMLCanvasElement): void;
          get transparent(): boolean;
          setVisible(visible: boolean | undefined): void;
+         /**
+          * @deprecated Please use `setVisible` instead.
+          */
          set visible(visible: boolean);
          isVisible(): boolean;
+         isVisibleSelf(): boolean;
+         /**
+          * @deprecated Please use `isVisible` instead.
+          */
          get visible(): boolean;
+         /**
+          * @deprecated Please use `isVisibleSelf` instead.
+          */
          get visibleSelf(): boolean;
          toggleVisibility(): void;
          setPlaying(playing: boolean): void;
@@ -3411,8 +3416,8 @@ declare class Choreography {
              #private;
              constructor();
              subdivide(indices: any, vertices: any, subdivideCount?: number, tolerance?: number): Promise<{
-                 indices: Uint32Array;
-                 vertices: Float32Array;
+                 indices: Uint32Array<ArrayBuffer>;
+                 vertices: Float32Array<ArrayBuffer>;
              }>;
          }
 
@@ -3467,6 +3472,9 @@ declare class Choreography {
              startRotate(x: number, y: number): void;
              startScale(x: number, y: number): void;
              setCamera(camera: Camera): void;
+             /**
+              * @deprecated Please use `setMode` instead.
+              */
              set mode(mode: ManipulatorMode);
              setMode(mode: ManipulatorMode): void;
              set axisOrientation(axisOrientation: number);
@@ -3572,6 +3580,9 @@ declare class Choreography {
              setBlending(mode: BlendingMode, premultipliedAlpha?: boolean): void;
              updateMaterial(time: any, mesh: any): void;
              beforeRender(camera: any): void;
+             /**
+              * @deprecated Please use `renderFace` instead.
+              */
              set culling(mode: any);
              renderFace(renderFace: RenderFace): void;
              getRenderFace(): RenderFace;
@@ -4352,6 +4363,9 @@ declare class Choreography {
          export declare class NodeImageEditorGui {
              #private;
              constructor(nodeImageEditor?: NodeImageEditor);
+             /**
+              * @deprecated Please use `setNodeImageEditor` instead.
+              */
              set nodeImageEditor(nodeImageEditor: NodeImageEditor);
              setNodeImageEditor(nodeImageEditor?: NodeImageEditor): void;
              get htmlElement(): Element;
@@ -4605,7 +4619,7 @@ declare class Choreography {
              #private;
              get value(): Promise<unknown>;
              getValue(): Promise<unknown>;
-             get pixelArray(): Promise<Uint8Array>;
+             get pixelArray(): Promise<Uint8Array<ArrayBufferLike>>;
              getPixelArray(): Promise<Uint8Array | null>;
              addSuccessor(successor: InputOutput): void;
              removeSuccessor(successor: InputOutput): void;
@@ -5733,6 +5747,9 @@ declare class Choreography {
              getWidth(): number;
              getHeight(): number;
              getTexture(): AnyTexture;
+             /**
+              * @deprecated Please use `getTexture` instead.
+              */
              get texture(): void;
              bind(): void;
              unbind(): void;
@@ -5746,10 +5763,16 @@ declare class Choreography {
              #private;
              isRenderTargetViewer: boolean;
              constructor(renderTarget: RenderTarget);
+             /**
+              * @deprecated Please use `setMaterial` instead.
+              */
              set material(material: void);
              setRenderTarget(renderTarget: RenderTarget): void;
              setMaterial(material: Material): void;
              getMaterial(): Material;
+             /**
+              * @deprecated Please use `getMaterial` instead.
+              */
              get material(): void;
              setPosition(x: number, y: number): void;
              setSize(x: number, y: number): void;
@@ -6057,6 +6080,9 @@ declare class Choreography {
              #private;
              htmlFileSelector: HTMLElement;
              constructor();
+             /**
+              * @deprecated Please use `setScene` instead.
+              */
              set scene(scene: Scene);
              setScene(scene: Scene): void;
              get scene(): Scene | undefined;
@@ -6874,7 +6900,7 @@ declare class Choreography {
              get imageFormat(): any;
              get displayName(): string;
              getRemappingTable(meshIndex: any): any;
-             remapBuffer(buffer: any, remappingTable: any): Float32Array;
+             remapBuffer(buffer: any, remappingTable: any): Float32Array<ArrayBuffer>;
          }
 
          /**
@@ -9446,7 +9472,7 @@ declare class Choreography {
          export declare const Zstd: {
              "__#204@#webAssembly"?: any;
              "__#204@#HEAPU8"?: Uint8Array;
-             decompress(compressedDatas: Uint8Array): Promise<Uint8Array>;
+             decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
              "__#204@#initHeap"(): void;

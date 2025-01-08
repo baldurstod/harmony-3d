@@ -162,7 +162,7 @@ export class Manipulator extends Entity {
 		});
 		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: CustomEvent<GraphicMouseEventData>) => {
 			let detail = event.detail;
-			if (!detail.entity?.visible) {
+			if (!detail.entity?.isVisible()) {
 				return;
 			}
 			if (this.#entityAxis.has(detail.entity)) {
@@ -194,7 +194,7 @@ export class Manipulator extends Entity {
 	}
 
 	resize(camera?: Camera) {
-		if (!this.visible) {
+		if (!this.isVisible()) {
 			return;
 		}
 		let scaleFactor = 1;
@@ -709,22 +709,22 @@ export class Manipulator extends Entity {
 	}
 
 	setMode(mode: ManipulatorMode) {
-		this.#translationManipulator.visible = false;
-		this.#rotationManipulator.visible = false;
-		this.#scaleManipulator.visible = false;
+		this.#translationManipulator.setVisible(false);
+		this.#rotationManipulator.setVisible(false);
+		this.#scaleManipulator.setVisible(false);
 		this.#setAxisSelected(false);
 		new Graphics().dragging = false;
 
 		this.#mode = mode;
 		switch (mode) {
 			case 0:
-				this.#translationManipulator.visible = undefined;
+				this.#translationManipulator.setVisible(undefined);
 				break;
 			case 1:
-				this.#rotationManipulator.visible = undefined;
+				this.#rotationManipulator.setVisible(undefined);
 				break;
 			case 2:
-				this.#scaleManipulator.visible = undefined;
+				this.#scaleManipulator.setVisible(undefined);
 				break;
 			default:
 
@@ -765,9 +765,9 @@ export class Manipulator extends Entity {
 	set enableX(enableX) {
 		this.#enableX = enableX;
 		let enable = enableX ? undefined : false;
-		this.#xArrow.visible = enable;
-		this.#xCircle.visible = enable;
-		this.#xScale.visible = enable;
+		this.#xArrow.setVisible(enable);
+		this.#xCircle.setVisible(enable);
+		this.#xScale.setVisible(enable);
 	}
 
 	get enableX() {
@@ -777,9 +777,9 @@ export class Manipulator extends Entity {
 	set enableY(enableY) {
 		this.#enableY = enableY;
 		let enable = enableY ? undefined : false;
-		this.#yArrow.visible = enable;
-		this.#yCircle.visible = enable;
-		this.#yScale.visible = enable;
+		this.#yArrow.setVisible(enable);
+		this.#yCircle.setVisible(enable);
+		this.#yScale.setVisible(enable);
 	}
 
 	get enableY() {
@@ -789,9 +789,9 @@ export class Manipulator extends Entity {
 	set enableZ(enableZ) {
 		this.#enableZ = enableZ;
 		let enable = enableZ ? undefined : false;
-		this.#zArrow.visible = enable;
-		this.#zCircle.visible = enable;
-		this.#zScale.visible = enable;
+		this.#zArrow.setVisible(enable);
+		this.#zCircle.setVisible(enable);
+		this.#zScale.setVisible(enable);
 	}
 
 	get enableZ() {

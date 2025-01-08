@@ -1548,6 +1548,9 @@ class Material {
     }
     beforeRender(camera) {
     }
+    /**
+     * @deprecated Please use `renderFace` instead.
+     */
     set culling(mode) {
         throw 'deprecated';
     }
@@ -2340,6 +2343,9 @@ class Entity {
             EntityObserver.propertyChanged(this, 'visible', oldValue, visible);
         }
     }
+    /**
+     * @deprecated Please use `setVisible` instead.
+     */
     set visible(visible) {
         this.setVisible(visible);
     }
@@ -2351,16 +2357,25 @@ class Entity {
             return this.#visible;
         }
     }
+    isVisibleSelf() {
+        return this.#visible;
+    }
+    /**
+     * @deprecated Please use `isVisible` instead.
+     */
     get visible() {
         return this.isVisible();
     }
+    /**
+     * @deprecated Please use `isVisibleSelf` instead.
+     */
     get visibleSelf() {
         return this.#visible;
     }
     toggleVisibility() {
         const oldValue = this.#visible;
         if (this.#visible === undefined) {
-            if (this.visible) {
+            if (this.isVisible()) {
                 this.setVisible(false);
             }
             else {
@@ -2369,7 +2384,7 @@ class Entity {
         }
         else if (this.#visible === true) {
             if (this._parent) {
-                if (this._parent.visible) {
+                if (this._parent.isVisible()) {
                     this.setVisible(false);
                 }
                 else {
@@ -2382,7 +2397,7 @@ class Entity {
         }
         else { // false
             if (this._parent) {
-                if (this._parent.visible) {
+                if (this._parent.isVisible()) {
                     this.setVisible(undefined);
                 }
                 else {
@@ -2619,7 +2634,7 @@ class Entity {
         let currentEntity = this;
         let objectStack = [];
         while (currentEntity) {
-            if (currentEntity.isRenderable && (currentEntity.visible !== false)) {
+            if (currentEntity.isRenderable && (currentEntity.isVisible() !== false)) {
                 meshList.add(currentEntity);
             }
             for (let child of currentEntity.#children) {
@@ -2838,7 +2853,7 @@ class Entity {
     }
     buildContextMenu() {
         let menu = {
-            visibility: { i18n: '#visibility', selected: this.visible, f: () => this.toggleVisibility() },
+            visibility: { i18n: '#visibility', selected: this.isVisible(), f: () => this.toggleVisibility() },
             remove: { i18n: '#remove', f: () => this.remove() },
             destroy: { i18n: '#destroy', f: () => this.dispose() },
             remove_more: {
@@ -5291,13 +5306,6 @@ class Camera extends Entity {
     dirty() {
         this.#dirtyCameraMatrix = true;
         this.#dirtyProjectionMatrix = true;
-    }
-    /**
-    * Get camera matrix
-    * @return TODO
-    */
-    get matrix() {
-        throw 'deprecated';
     }
     get cameraMatrix() {
         if (this.#dirtyCameraMatrix) {
@@ -7868,6 +7876,9 @@ class RenderTarget {
     getTexture() {
         return this.#texture;
     }
+    /**
+     * @deprecated Please use `getTexture` instead.
+     */
     get texture() {
         throw 'deprecated, use getTexture()';
     }
@@ -7954,12 +7965,12 @@ class OutlinePass extends Pass {
         this.scene.forEach((entity) => {
             if (entity.properties.get('selected') && entity.isRenderable) {
                 if (visible) {
-                    entity.visible = entity.properties.get('oldVisible');
+                    entity.setVisible(entity.properties.get('oldVisible'));
                     entity.properties.delete('oldVisible');
                 }
                 else {
-                    entity.properties.set('oldVisible', entity.visibleSelf);
-                    entity.visible = visible;
+                    entity.properties.set('oldVisible', entity.isVisibleSelf());
+                    entity.setVisible(visible);
                 }
             }
         });
@@ -7968,12 +7979,12 @@ class OutlinePass extends Pass {
         this.scene.forEach((entity) => {
             if (!entity.properties.get('selected') && entity.isRenderable) {
                 if (visible) {
-                    entity.visible = entity.properties.get('oldVisible');
+                    entity.setVisible(entity.properties.get('oldVisible'));
                     entity.properties.delete('oldVisible');
                 }
                 else {
-                    entity.properties.set('oldVisible', entity.visibleSelf);
-                    entity.visible = visible;
+                    entity.properties.set('oldVisible', entity.isVisibleSelf());
+                    entity.setVisible(visible);
                 }
             }
         });
@@ -10310,7 +10321,7 @@ class Manipulator extends Entity {
         });
         GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event) => {
             let detail = event.detail;
-            if (!detail.entity?.visible) {
+            if (!detail.entity?.isVisible()) {
                 return;
             }
             if (this.#entityAxis.has(detail.entity)) {
@@ -10342,7 +10353,7 @@ class Manipulator extends Entity {
         new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, event => this.enableZ = !this.enableZ);
     }
     resize(camera) {
-        if (!this.visible) {
+        if (!this.isVisible()) {
             return;
         }
         let scaleFactor = 1;
@@ -10786,26 +10797,29 @@ class Manipulator extends Entity {
     setCamera(camera) {
         this.camera = camera;
     }
+    /**
+     * @deprecated Please use `setMode` instead.
+     */
     set mode(mode) {
         console.warn('deprecated, use setMode()');
         this.setMode(mode);
     }
     setMode(mode) {
-        this.#translationManipulator.visible = false;
-        this.#rotationManipulator.visible = false;
-        this.#scaleManipulator.visible = false;
+        this.#translationManipulator.setVisible(false);
+        this.#rotationManipulator.setVisible(false);
+        this.#scaleManipulator.setVisible(false);
         this.#setAxisSelected(false);
         new Graphics().dragging = false;
         this.#mode = mode;
         switch (mode) {
             case 0:
-                this.#translationManipulator.visible = undefined;
+                this.#translationManipulator.setVisible(undefined);
                 break;
             case 1:
-                this.#rotationManipulator.visible = undefined;
+                this.#rotationManipulator.setVisible(undefined);
                 break;
             case 2:
-                this.#scaleManipulator.visible = undefined;
+                this.#scaleManipulator.setVisible(undefined);
                 break;
         }
         this.#setAxisSelected(false);
@@ -10840,9 +10854,9 @@ class Manipulator extends Entity {
     set enableX(enableX) {
         this.#enableX = enableX;
         let enable = enableX ? undefined : false;
-        this.#xArrow.visible = enable;
-        this.#xCircle.visible = enable;
-        this.#xScale.visible = enable;
+        this.#xArrow.setVisible(enable);
+        this.#xCircle.setVisible(enable);
+        this.#xScale.setVisible(enable);
     }
     get enableX() {
         return this.#enableX;
@@ -10850,9 +10864,9 @@ class Manipulator extends Entity {
     set enableY(enableY) {
         this.#enableY = enableY;
         let enable = enableY ? undefined : false;
-        this.#yArrow.visible = enable;
-        this.#yCircle.visible = enable;
-        this.#yScale.visible = enable;
+        this.#yArrow.setVisible(enable);
+        this.#yCircle.setVisible(enable);
+        this.#yScale.setVisible(enable);
     }
     get enableY() {
         return this.#enableY;
@@ -10860,9 +10874,9 @@ class Manipulator extends Entity {
     set enableZ(enableZ) {
         this.#enableZ = enableZ;
         let enable = enableZ ? undefined : false;
-        this.#zArrow.visible = enable;
-        this.#zCircle.visible = enable;
-        this.#zScale.visible = enable;
+        this.#zArrow.setVisible(enable);
+        this.#zCircle.setVisible(enable);
+        this.#zScale.setVisible(enable);
     }
     get enableZ() {
         return this.#enableZ;
@@ -14956,6 +14970,9 @@ class NodeImageEditorGui {
         this.#initResizeObserver();
         this.#setCanvasSize();
     }
+    /**
+     * @deprecated Please use `setNodeImageEditor` instead.
+     */
     set nodeImageEditor(nodeImageEditor) {
         console.warn('set nodeImageEditor is deprecated, use setNodeImageEditor instead');
         this.setNodeImageEditor(nodeImageEditor);
@@ -16295,8 +16312,6 @@ class SkeletonHelper extends Entity {
         this.#boneStart = new Sphere({ radius: 1, material: this.#boneTipMaterial });
         this.#boneEnd = new Sphere({ radius: 1, material: this.#boneTipMaterial });
         this.addChilds(this.#boneStart, this.#boneEnd);
-        this.#boneStart.userData = {};
-        this.#boneEnd.userData = {};
         this.#initListeners();
     }
     parentChanged(parent) {
@@ -16317,8 +16332,8 @@ class SkeletonHelper extends Entity {
     #clearSkeleton() {
         this.#lines.forEach(value => value.dispose());
         this.#lines.clear();
-        this.#boneStart.visible = false;
-        this.#boneEnd.visible = false;
+        this.#boneStart.setVisible(false);
+        this.#boneEnd.setVisible(false);
     }
     /*
         set skeleton(skeleton) {
@@ -16342,7 +16357,7 @@ class SkeletonHelper extends Entity {
             let boneLine = this.#lines.get(bone);
             if (!boneLine) {
                 boneLine = new Line({ material: this.#lineMaterial, parent: this });
-                boneLine.userData = { bone: bone };
+                boneLine.properties.set('bone', bone);
                 this.#lines.set(bone, boneLine);
                 this.addChild(boneLine);
             }
@@ -16351,8 +16366,8 @@ class SkeletonHelper extends Entity {
             boneLine.end = bone.worldPos;
             const boneParent = bone.parent;
             if (boneParent?.isBone) {
-                boneLine.start = boneParent.worldPos;
-                boneLine.userData.boneParent = boneParent;
+                boneLine.start = boneParent.getWorldPosition( /*TODO: optimize*/);
+                boneLine.properties.set('boneParent', boneParent);
             }
         }
     }
@@ -16361,7 +16376,7 @@ class SkeletonHelper extends Entity {
     }
     #initListeners() {
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => {
-            if (!this.visible) {
+            if (!this.isVisible()) {
                 return;
             }
             this.#update();
@@ -16380,15 +16395,15 @@ class SkeletonHelper extends Entity {
         const closest = this.#pickBone(event);
         this.#highlit(closest);
         if (closest) {
-            let bone = closest.userData.bone;
+            let bone = closest.properties.get('bone');
             if (closest.isLine) {
-                bone = bone?.parent ?? bone;
+                bone = bone?.parent /*TODO case where parent is not Bone*/ ?? bone;
             }
             SceneExplorerEvents.dispatchEvent(new CustomEvent('bonepicked', { detail: { bone: bone } }));
         }
     }
     #pickBone(event) {
-        if (!this.visible) {
+        if (!this.isVisible()) {
             return;
         }
         let normalizedX = (event.detail.x / new Graphics().getWidth()) * 2 - 1;
@@ -16432,10 +16447,10 @@ class SkeletonHelper extends Entity {
             line.material = this.#highlitLineMaterial;
             this.#boneStart.position = line.getStart(tempVec3$n);
             this.#boneEnd.position = line.getEnd(tempVec3$n);
-            this.#boneStart.visible = true;
-            this.#boneEnd.visible = true;
-            this.#boneStart.userData.bone = line.userData.boneParent;
-            this.#boneEnd.userData.bone = line.userData.bone;
+            this.#boneStart.setVisible(true);
+            this.#boneEnd.setVisible(true);
+            this.#boneStart.properties.set('bone', line.properties.get('boneParent'));
+            this.#boneEnd.properties.set('bone', line.properties.get('bone'));
         }
         this.#highlitLine = line;
     }
@@ -19258,6 +19273,9 @@ class SceneExplorerEntity extends HTMLElement {
             });
         }
     }
+    /**
+     * @deprecated Please use `setEntity` instead.
+     */
     set entity(entity) {
         //TODO: deprecate
         console.warn('deprecated, use setEntity instaed');
@@ -19350,7 +19368,7 @@ class SceneExplorerEntity extends HTMLElement {
         }
     }
     #updateVisibility() {
-        if (this.#entity?.visible) {
+        if (this.#entity?.isVisible()) {
             this.#htmlVisible.innerHTML = visibilityOnSVG;
         }
         else {
@@ -22766,13 +22784,13 @@ class Source2ModelInstance extends Entity {
         }
         for (const mesh of this.meshes) {
             const geometry = mesh.geometry;
-            mesh.visible = undefined;
+            mesh.setVisible(undefined);
             if (geometry) {
                 const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask'));
                 const lodGroupMask = BigInt(geometry.properties.get('lodGroupMask'));
-                mesh.visible = (meshGroupMask & mask) > 0 ? undefined : false;
+                mesh.setVisible((meshGroupMask & mask) > 0 ? undefined : false);
                 if (lodGroupMask && ((lodGroupMask & this.#lod) == 0n)) {
-                    mesh.visible = false;
+                    mesh.setVisible(false);
                 }
             }
         }
@@ -22953,7 +22971,7 @@ class Source2ModelInstance extends Entity {
                         if (geometry.hasAttribute('aVertexTangent')) {
                             mesh.setDefine('USE_VERTEX_TANGENT');
                         }
-                        mesh.visible = undefined;
+                        mesh.setVisible(undefined);
                         mesh.properties.set('materialPath', geometry.properties.get('materialPath'));
                         newModel.push(mesh);
                         this.addChild(mesh);
@@ -24912,6 +24930,9 @@ class SceneExplorer {
         EntityObserver.addEventListener(PROPERTY_CHANGED$1, (event) => this.#handlePropertyChanged(event.detail));
         SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone));
     }
+    /**
+     * @deprecated Please use `setScene` instead.
+     */
     set scene(scene) {
         console.warn('deprecated, use setScene instead');
         this.setScene(scene);
@@ -25031,7 +25052,7 @@ class SceneExplorer {
                         htmlManipulator = createElement('input', {
                             type: 'checkbox',
                             events: {
-                                change: (event) => this.#manipulator.visible = event.target.checked,
+                                change: (event) => this.#manipulator.setVisible(event.target.checked),
                             },
                         }),
                         createElement('span', { i18n: '#display_manipulator', }),
@@ -25044,7 +25065,7 @@ class SceneExplorer {
                         click: () => {
                             this.#manipulator.setMode(ManipulatorMode.Translation);
                             htmlManipulator.checked = true;
-                            this.#manipulator.visible = true;
+                            this.#manipulator.setVisible(true);
                         },
                     }
                 }),
@@ -25055,7 +25076,7 @@ class SceneExplorer {
                         click: () => {
                             this.#manipulator.setMode(ManipulatorMode.Rotation);
                             htmlManipulator.checked = true;
-                            this.#manipulator.visible = true;
+                            this.#manipulator.setVisible(true);
                         },
                     }
                 }),
@@ -25066,7 +25087,7 @@ class SceneExplorer {
                         click: () => {
                             this.#manipulator.setMode(ManipulatorMode.Scale);
                             htmlManipulator.checked = true;
-                            this.#manipulator.visible = true;
+                            this.#manipulator.setVisible(true);
                         },
                     }
                 }),
@@ -25079,7 +25100,7 @@ class SceneExplorer {
                     type: 'checkbox',
                     id: skeletonId,
                     events: {
-                        change: (event) => this.#skeletonHelper.visible = event.target.checked
+                        change: (event) => this.#skeletonHelper.setVisible(event.target.checked)
                     }
                 }),
                 createElement('label', {
@@ -34572,7 +34593,7 @@ class Source1ModelInstance extends Entity {
                     group2.properties.set('modelId', modelId);
                     group2.name = `${bodyPartName} ${modelId}`;
                     if (Number(modelId) != 0) {
-                        group2.visible = false;
+                        group2.setVisible(false);
                     }
                     group.addChild(group2);
                     for (let modelMesh of model) {
@@ -49386,7 +49407,7 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
         this.setupParticlesTexture(particleList, maxParticles);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setUniform('uVisibilityCameraDepthBias', this.getParameter('Visibility Camera Depth Bias')); //TODOv3:optimize
-        this.mesh.visible = Source1ParticleControler.visible;
+        this.mesh.setVisible(Source1ParticleControler.visible);
         let orientationControlPointNumber = this.getParameter('orientation control point');
         let orientationControlPoint = this.particleSystem.getControlPoint(orientationControlPointNumber);
         if (orientationControlPoint) {
@@ -49766,7 +49787,7 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
         let maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
         this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
-        this.mesh.visible = Source1ParticleControler.visible;
+        this.mesh.setVisible(Source1ParticleControler.visible);
         let index = 0;
         for (const particle of particleList) {
             let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, rate * SEQUENCE_SAMPLE_COUNT, particle.sequence);
@@ -62300,7 +62321,7 @@ class RenderSprites extends RenderBase {
         let maxParticles = this.#maxParticles;
         this.setupParticlesTexture(particleList, maxParticles);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
-        this.mesh.visible = Source2ParticleManager.visible;
+        this.mesh.setVisible(Source2ParticleManager.visible);
         this.mesh.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
         const uvs = this.geometry.attributes.get('aTextureCoord')._array;
         const uvs2 = this.geometry.attributes.get('aTextureCoord2')._array;
@@ -62548,7 +62569,7 @@ class RenderTrails extends Operator {
         let maxParticles = this.#maxParticles;
         this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
-        this.mesh.visible = Source2ParticleManager.visible;
+        this.mesh.setVisible(Source2ParticleManager.visible);
         vec2.set(tempVec2, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
         this.material.setUniform('uFinalTextureScale', tempVec2);
         geometry.attributes.get('aTextureCoord')._array;
@@ -65686,6 +65707,9 @@ class RenderTargetViewer {
         this.#renderTarget = renderTarget;
         this.refreshPlane();
     }
+    /**
+     * @deprecated Please use `setMaterial` instead.
+     */
     set material(material) {
         throw 'deprecated';
     }
@@ -65701,6 +65725,9 @@ class RenderTargetViewer {
     getMaterial() {
         return this.#material;
     }
+    /**
+     * @deprecated Please use `getMaterial` instead.
+     */
     get material() {
         throw 'deprecated';
     }

@@ -28,10 +28,10 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		this.addParam('length fade in time', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('max length', PARAM_TYPE_FLOAT, 2000.0);
 		this.addParam('min length', PARAM_TYPE_FLOAT, 0.0);
-	//	DMXELEMENT_UNPACK_FIELD('animation rate', '.1', float, m_flAnimationRate)
-	//	DMXELEMENT_UNPACK_FIELD('length fade in time', '0', float, m_flLengthFadeInTime)
-	//	DMXELEMENT_UNPACK_FIELD('max length', '2000', float, m_flMaxLength)
-	//	DMXELEMENT_UNPACK_FIELD('min length', '0', float, m_flMinLength)
+		//	DMXELEMENT_UNPACK_FIELD('animation rate', '.1', float, m_flAnimationRate)
+		//	DMXELEMENT_UNPACK_FIELD('length fade in time', '0', float, m_flLengthFadeInTime)
+		//	DMXELEMENT_UNPACK_FIELD('max length', '2000', float, m_flMaxLength)
+		//	DMXELEMENT_UNPACK_FIELD('min length', '0', float, m_flMinLength)
 	}
 
 	/*
@@ -46,7 +46,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		let maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
 		this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
-		this.mesh.visible = Source1ParticleControler.visible;
+		this.mesh.setVisible(Source1ParticleControler.visible);
 
 		let index = 0;
 		for (const particle of particleList) {
@@ -67,7 +67,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 				uvs[index++] = uMax;
 				uvs[index++] = vMax;
 			} else {
-				index+=8;
+				index += 8;
 			}
 		}
 		this.geometry.attributes.get('aTextureCoord').dirty = true;
@@ -151,11 +151,11 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		const m_flLengthFadeInTime = this.getParameter('length fade in time');
 		let rate = this.getParameter('animation rate') ?? 30;
 		const fit = this.getParameter('animation_fit_lifetime') ?? 0;
-/*
-		if (fit) {
-			rate = material.sequenceLength / particle.timeToLive;
-		}
-			*/
+		/*
+				if (fit) {
+					rate = material.sequenceLength / particle.timeToLive;
+				}
+					*/
 
 
 		const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
@@ -199,7 +199,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 			a[index++] = vecDelta[1];
 			a[index++] = vecDelta[2];
 			a[index++] = flLength;
-			index+=16;
+			index += 16;
 		}
 
 		this.updateParticlesTexture(maxParticles, a);
@@ -211,11 +211,11 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		const m_flLengthFadeInTime = this.getParameter('length fade in time');
 		const rate = this.getParameter('animation rate') || 30;
 		const fit = this.getParameter('animation_fit_lifetime') || 0;
-/*
-		if (fit) {
-			rate = material.sequenceLength / particle.timeToLive;
-		}
-*/
+		/*
+				if (fit) {
+					rate = material.sequenceLength / particle.timeToLive;
+				}
+		*/
 
 		const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
 		let index = 0;
@@ -257,7 +257,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 			a[index++] = vecDelta[1];
 			a[index++] = vecDelta[2];
 			a[index++] = flLength;
-			index+=16;
+			index += 16;
 		}
 
 		this.updateParticlesTexture(maxParticles, a);
