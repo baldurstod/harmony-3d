@@ -60,6 +60,9 @@ export class NodeImageEditorGui {
 		this.#setCanvasSize();
 	}
 
+	/**
+	 * @deprecated Please use `setNodeImageEditor` instead.
+	 */
 	set nodeImageEditor(nodeImageEditor: NodeImageEditor) {
 		console.warn('set nodeImageEditor is deprecated, use setNodeImageEditor instead');
 		this.setNodeImageEditor(nodeImageEditor);

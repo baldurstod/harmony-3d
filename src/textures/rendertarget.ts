@@ -82,6 +82,9 @@ export class RenderTarget {
 		return this.#texture;
 	}
 
+	/**
+	 * @deprecated Please use `getTexture` instead.
+	 */
 	get texture() {
 		throw 'deprecated, use getTexture()';
 	}

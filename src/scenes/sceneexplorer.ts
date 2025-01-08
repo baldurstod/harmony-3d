@@ -129,6 +129,9 @@ export class SceneExplorer {
 		SceneExplorerEvents.addEventListener('bonepicked', (event: Event) => this.selectEntity((event as CustomEvent).detail.bone));
 	}
 
+	/**
+	 * @deprecated Please use `setScene` instead.
+	 */
 	set scene(scene: Scene) {//TODO: deprecate
 		console.warn('deprecated, use setScene instead');
 		this.setScene(scene);

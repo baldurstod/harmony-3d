@@ -167,6 +167,9 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 	}
 
+	/**
+	 * @deprecated Please use `setEntity` instead.
+	 */
 	set entity(entity: Entity) {
 		//TODO: deprecate
 		console.warn('deprecated, use setEntity instaed');

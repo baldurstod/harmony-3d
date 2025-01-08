@@ -270,6 +270,9 @@ export class Entity {
 		}
 	}
 
+	/**
+	 * @deprecated Please use `setVisible` instead.
+	 */
 	set visible(visible) {
 		this.setVisible(visible);
 	}
@@ -282,6 +285,9 @@ export class Entity {
 		}
 	}
 
+	/**
+	 * @deprecated Please use `isVisible` instead.
+	 */
 	get visible() {
 		return this.isVisible();
 	}
@@ -293,14 +299,14 @@ export class Entity {
 	toggleVisibility() {
 		const oldValue = this.#visible;
 		if (this.#visible === undefined) {
-			if (this.visible) {
+			if (this.isVisible()) {
 				this.setVisible(false);
 			} else {
 				this.setVisible(true);
 			}
 		} else if (this.#visible === true) {
 			if (this._parent) {
-				if (this._parent.visible) {
+				if (this._parent.isVisible()) {
 					this.setVisible(false);
 				} else {
 					this.setVisible(undefined);

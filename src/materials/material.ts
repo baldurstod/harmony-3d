@@ -192,6 +192,9 @@ export class Material {
 
 	}
 
+	/**
+	 * @deprecated Please use `renderFace` instead.
+	 */
 	set culling(mode) {
 		throw 'deprecated';
 		this.#cullingMode = mode;

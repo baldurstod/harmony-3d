@@ -700,6 +700,9 @@ export class Manipulator extends Entity {
 		this.camera = camera;
 	}
 
+	/**
+	 * @deprecated Please use `setMode` instead.
+	 */
 	set mode(mode: ManipulatorMode) {
 		console.warn('deprecated, use setMode()');
 		this.setMode(mode);

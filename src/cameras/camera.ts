@@ -280,14 +280,6 @@ export class Camera extends Entity {
 		this.#dirtyProjectionMatrix = true;
 	}
 
-	/**
-	* Get camera matrix
-	* @return TODO
-	*/
-	get matrix() {
-		throw 'deprecated';
-	}
-
 	get cameraMatrix() {
 		if (this.#dirtyCameraMatrix) {
 			this.computeCameraMatrix();

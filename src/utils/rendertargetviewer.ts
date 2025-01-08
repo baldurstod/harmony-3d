@@ -30,6 +30,9 @@ export class RenderTargetViewer {
 		this.refreshPlane();
 	}
 
+	/**
+	 * @deprecated Please use `setMaterial` instead.
+	 */
 	set material(material) {
 		throw 'deprecated'
 	}
@@ -49,6 +52,9 @@ export class RenderTargetViewer {
 		return this.#material;
 	}
 
+	/**
+	 * @deprecated Please use `getMaterial` instead.
+	 */
 	get material() {
 		throw 'deprecated'
 	}

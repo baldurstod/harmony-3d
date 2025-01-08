@@ -9,19 +9,21 @@ import { SceneExplorerEvents } from '../../scenes/sceneexplorerevents';
 import { Sphere } from '../../primitives/sphere';
 import { MeshBasicMaterial } from '../../materials/meshbasicmaterial';
 import { Scene } from '../../scenes/scene';
+import { Skeleton } from '../skeleton';
+import { Bone } from '../bone';
 
 const tempVec3 = vec3.create();
 
 export class SkeletonHelper extends Entity {
-	#skeleton;
-	#lines = new Map();
+	#skeleton?: Skeleton;
+	#lines = new Map<Bone, Line>();
 	#lineMaterial;
 	#highlitLineMaterial;
 	#boneTipMaterial;
 	#raycaster;
 	#highlitLine;
-	#boneStart;
-	#boneEnd;
+	#boneStart: Sphere;
+	#boneEnd: Sphere;
 	enumerable = false;
 	constructor(parameters) {
 		super(parameters);
@@ -49,11 +51,7 @@ export class SkeletonHelper extends Entity {
 		this.#boneEnd = new Sphere({ radius: 1, material: this.#boneTipMaterial });
 		this.addChilds(this.#boneStart, this.#boneEnd);
 
-		this.#boneStart.userData = {};
-		this.#boneEnd.userData = {};
-
 		this.#initListeners();
-
 	}
 
 	parentChanged(parent) {
@@ -104,7 +102,7 @@ export class SkeletonHelper extends Entity {
 
 			if (!boneLine) {
 				boneLine = new Line({ material: this.#lineMaterial, parent: this });
-				boneLine.userData = { bone: bone };
+				boneLine.properties.set('bone', bone);
 				this.#lines.set(bone, boneLine);
 				this.addChild(boneLine);
 			}
@@ -113,9 +111,9 @@ export class SkeletonHelper extends Entity {
 			boneLine.start = bone.worldPos;
 			boneLine.end = bone.worldPos;
 			const boneParent = bone.parent;
-			if (boneParent?.isBone) {
-				boneLine.start = boneParent.worldPos;
-				boneLine.userData.boneParent = boneParent;
+			if ((boneParent as Bone)?.isBone) {
+				boneLine.start = boneParent.getWorldPosition(/*TODO: optimize*/);
+				boneLine.properties.set('boneParent', boneParent);
 			}
 		}
 	}
@@ -147,12 +145,12 @@ export class SkeletonHelper extends Entity {
 	}
 
 	#mouseUp(event) {
-		const closest = this.#pickBone(event);
+		const closest: Line = this.#pickBone(event);
 		this.#highlit(closest);
 		if (closest) {
-			let bone = closest.userData.bone;
+			let bone: Bone = closest.properties.get('bone');
 			if (closest.isLine) {
-				bone = bone?.parent ?? bone;
+				bone = (bone?.parent as Bone/*TODO case where parent is not Bone*/) ?? bone;
 			}
 			SceneExplorerEvents.dispatchEvent(new CustomEvent('bonepicked', { detail: { bone: bone } }));
 		}
@@ -198,7 +196,7 @@ export class SkeletonHelper extends Entity {
 		}
 	}
 
-	#highlit(line) {
+	#highlit(line: Line) {
 		if (!line?.isLine) {
 			return;
 		}
@@ -210,11 +208,11 @@ export class SkeletonHelper extends Entity {
 			line.material = this.#highlitLineMaterial;
 			this.#boneStart.position = line.getStart(tempVec3);
 			this.#boneEnd.position = line.getEnd(tempVec3);
-			this.#boneStart.visible = true;
-			this.#boneEnd.visible = true;
+			this.#boneStart.setVisible(true);
+			this.#boneEnd.setVisible(true);
 
-			this.#boneStart.userData.bone = line.userData.boneParent;
-			this.#boneEnd.userData.bone = line.userData.bone;
+			this.#boneStart.properties.set('bone', line.properties.get('boneParent'));
+			this.#boneEnd.properties.set('bone', line.properties.get('bone'));
 		}
 		this.#highlitLine = line;
 	}
