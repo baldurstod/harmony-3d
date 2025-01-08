@@ -182,7 +182,7 @@ export class Operator {//TODOv3: rename this class ?
 		let outputMax = curve.m_vDomainMaxs[1];
 		let inputMode = parameter.m_nInputMode;
 		//let modeClamped = parameter.m_nInputMode == "PF_INPUT_MODE_CLAMPED" ? true : false;
-		if (parameter.m_nInputMode == "PF_INPUT_MODE_CLAMPED") {
+		if (parameter.m_nInputMode == 'PF_INPUT_MODE_CLAMPED') {
 			inputValue = clamp(inputValue, inputMin, inputMax);
 		} else {
 			//"PF_INPUT_MODE_LOOPED"

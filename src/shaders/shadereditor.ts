@@ -31,7 +31,7 @@ export class ShaderEditor extends HTMLElement {
 			return;
 		}
 
-		this.#shadowRoot = this.attachShadow({ mode: "closed" });
+		this.#shadowRoot = this.attachShadow({ mode: 'closed' });
 		I18n.observeElement(this.#shadowRoot);
 
 

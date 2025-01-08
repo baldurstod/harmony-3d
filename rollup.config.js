@@ -63,7 +63,7 @@ async function postBuildCommands() {
 			if (error) {
 				console.log(error);
 			}
-			resolve("done")
+			resolve('done')
 		},
 	));
 }

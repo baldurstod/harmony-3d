@@ -184,7 +184,7 @@ export class WebGLShaderSource {
 											}
 											break;
 										case '/':
-											startIndex = unrollSubstring.indexOf("\n", startIndex);
+											startIndex = unrollSubstring.indexOf('\n', startIndex);
 											break;
 									}
 									break;

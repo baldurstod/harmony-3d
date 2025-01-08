@@ -19,7 +19,7 @@ export const MeshManager = new function() {
 			meshList[meshName] = mesh;
 		} else {
 			//TODO; create a dummy mesh
-			console.error("No mesh loaded");
+			console.error('No mesh loaded');
 		}
 		return mesh;
 	}

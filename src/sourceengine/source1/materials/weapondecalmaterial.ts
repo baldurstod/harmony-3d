@@ -253,10 +253,10 @@ SourceEngineVMTLoader.registerMaterial('weapondecal', WeaponDecalMaterial);
 
 
 const WEAPON_DECAL_DEFAULT_PARAMETERS = {
-	//$basetexture : [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/stickers/default/sticker_default"],
-	//$aotexture : [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/stickers/default/ao_default"],
-	$grungetexture: [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/shared/sticker_paper"],
-	$weartexture: [SHADER_PARAM_TYPE_STRING, "models/weapons/customization/shared/paint_wear"],
+	//$basetexture : [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/stickers/default/sticker_default'],
+	//$aotexture : [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/stickers/default/ao_default'],
+	$grungetexture: [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/shared/sticker_paper'],
+	$weartexture: [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/shared/paint_wear'],
 	$decalstyle: [SHADER_PARAM_TYPE_INTEGER, 0],
 	$colortint: [SHADER_PARAM_TYPE_COLOR, [255, 255, 255]],
 	$colortint2: [SHADER_PARAM_TYPE_COLOR, [0, 0, 0]],

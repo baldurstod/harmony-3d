@@ -16,7 +16,7 @@ export const AnimManager = new (function () {
 				animGroupList[animGroupName] = animGroup;
 			} else {
 				//TODO; create dummy
-				console.error("No anim group loaded");
+				console.error('No anim group loaded');
 			}
 			return animGroup;
 		}
@@ -65,7 +65,7 @@ export const AnimManager = new (function () {
 				seqGroupList[seqGroupName] = seqGroup;
 			} else {
 				//TODO; create dummy
-				console.error("No anim group loaded");
+				console.error('No anim group loaded');
 			}
 			return seqGroup;
 		}

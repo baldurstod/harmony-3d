@@ -202,7 +202,7 @@ export class NodeImageEditorGui {
 
 			context.bezierCurveTo(xa, y1, xb, y2, x2, y2);
 			context.lineWidth = 2;
-			context.strokeStyle = "#EEEEEE";
+			context.strokeStyle = '#EEEEEE';
 			context.stroke();
 		}
 	}

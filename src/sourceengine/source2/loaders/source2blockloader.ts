@@ -168,7 +168,7 @@ function readHandle(reader) {
 	for (var i = 0; i < 8; i++) {
 		c = reader.getUint8();
 		hex = c.toString(16); // convert to hex
-		hex = (hex.length == 1 ? "0" + hex : hex);
+		hex = (hex.length == 1 ? '0' + hex : hex);
 		str += hex;
 	}
 	return str;
@@ -585,14 +585,14 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
 		var indirectionType = reader.getInt8(fieldOffset);
 		if (field_indirectionByte == 3) { // Pointer
 			if (INFO) {
-				console.log("indirect type 3", fieldOffset);
+				console.log('indirect type 3', fieldOffset);
 			}
 			var struct = introspection.structs[field.type];
 			if (struct) {
 				var pos = reader.getUint32(fieldOffset);
 				return loadStruct(reader, reference, struct, null, fieldOffset + pos, introspection, depth + 1);
 			} else {
-				console.log("Unknown struct " + field.type, fieldOffset);
+				console.log('Unknown struct ' + field.type, fieldOffset);
 			}
 			console.log(fieldOffset);
 			return fieldOffset;
@@ -616,7 +616,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
 								values.push(loadStruct(reader, reference, struct, block, pos, introspection, depth + 1));
 							}
 						} else {
-							console.log("Unknown struct " + field.type, fieldOffset);
+							console.log('Unknown struct ' + field.type, fieldOffset);
 						}
 					} else if (field.type2 == DATA_TYPE_HANDLE) { // HANDLE
 						// Handle to an external ressource in the RERL block
@@ -630,7 +630,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
 						//var handle = readHandle(reader);
 						return values;//this.reference.externalFiles[handle];
 					} else {
-						console.log("Unknown struct type for array " + field, fieldOffset);
+						console.log('Unknown struct type for array ' + field, fieldOffset);
 					}
 				} else {
 					// single field
@@ -666,7 +666,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
 				console.log(fieldOffset);
 				return;
 			case DATA_TYPE_ENUM://2
-				return ["enum", field.name, field.type2, fieldOffset, reader.getInt32(fieldOffset)];
+				return ['enum', field.name, field.type2, fieldOffset, reader.getInt32(fieldOffset)];
 			case DATA_TYPE_HANDLE://3
 				// Handle to an external ressource in the RERL block
 				reader.seek(fieldOffset);
@@ -876,7 +876,7 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
 			entrySize = Math.max(mipmapWidth, 4) * Math.max(mipmapHeight, 4);// 1 byte per pixel, blocks of 16 bytes
 			break;
 		default:
-			console.warn("Unknown image format " + imageFormat, reader, mipmapWidth, mipmapHeight, compressedLength);
+			console.warn('Unknown image format ' + imageFormat, reader, mipmapWidth, mipmapHeight, compressedLength);
 	}
 	let imageDatas;
 	if (compressedLength === null || compressedLength === entrySize) {

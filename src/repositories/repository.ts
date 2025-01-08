@@ -160,7 +160,7 @@ export class RepositoryEntry {
 }
 
 function splitFilename(filename: string): { name: string, extension: string } {
-	const pos = filename.lastIndexOf(".");
+	const pos = filename.lastIndexOf('.');
 	if (pos < 1) {
 		// No dot found or dot in first position
 		return { name: filename, extension: '' };

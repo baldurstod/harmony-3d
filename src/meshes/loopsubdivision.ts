@@ -95,7 +95,7 @@ export class LoopSubdivision {
 				fd_write: (fd, iovsPtr, iovsLength, bytesWrittenPtr) => {
 					const iovs = new Uint32Array(this.#heapBuffer, iovsPtr, iovsLength * 2);
 					if(fd === 1 || fd === 2) { //stdout
-						let text = "";
+						let text = '';
 						let totalBytesWritten = 0;
 						const decoder = new TextDecoder();
 						for(let i =0; i < iovsLength * 2; i += 2){

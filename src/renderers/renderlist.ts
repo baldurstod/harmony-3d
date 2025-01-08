@@ -1,9 +1,9 @@
-import { Entity } from "../entities/entity";
-import { AmbientLight } from "../lights/ambientlight";
-import { Light } from "../lights/light";
-import { PointLight } from "../lights/pointlight";
-import { SpotLight } from "../lights/spotlight";
-import { Mesh } from "../objects/mesh";
+import { Entity } from '../entities/entity';
+import { AmbientLight } from '../lights/ambientlight';
+import { Light } from '../lights/light';
+import { PointLight } from '../lights/pointlight';
+import { SpotLight } from '../lights/spotlight';
+import { Mesh } from '../objects/mesh';
 
 function sortLights(first, second) {
 	if (first.castShadow) {
