@@ -2082,18 +2082,21 @@ declare class Choreography {
 
          declare class FlexController {
              controllers: {
-                 i: number;
-                 min: number;
-                 max: number;
+                 [key: string]: {
+                     i: number;
+                     min: number;
+                     max: number;
+                 };
              };
-             controllers2: any;
+             controllers2: {};
              controllerIndex: number;
-             constructor();
-             getController(name: any, min: any, max: any): any;
+             getController(name: any, min: any, max: any): number;
              getControllers(): {
-                 i: number;
-                 min: number;
-                 max: number;
+                 [key: string]: {
+                     i: number;
+                     min: number;
+                     max: number;
+                 };
              };
              getControllerValue(name: any): any;
              getControllerRealValue(name: any): number;

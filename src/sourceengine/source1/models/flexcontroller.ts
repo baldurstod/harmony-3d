@@ -1,13 +1,9 @@
 import { RemapValClamped } from '../../../math/functions';
 
 export class FlexController {
-	controllers: { i: number, min: number, max: number };
-	controllers2;
-	controllerIndex: number;
-
-	constructor() {
-		this.removeAllControllers();
-	}
+	controllers: { [key: string]: { i: number, min: number, max: number } } = {};
+	controllers2 = {};
+	controllerIndex: number = 0;
 
 	getController(name, min, max) {
 		if (!this.controllers[name]) {
@@ -59,7 +55,7 @@ export class FlexController {
 	}
 
 	removeAllControllers() {
-		this.controllers = { i: -1, min: 0, max: 0 };
+		this.controllers = {};
 		this.controllers2 = {};
 		this.controllerIndex = 0;
 	}
