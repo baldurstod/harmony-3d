@@ -164,7 +164,7 @@ export declare class AudioGroup {
 
 export declare class AudioMixer {
     static master: AudioGroup;
-    static muteGroup(groupName: any, mute?: boolean): void;
+    static muteGroup(groupName: string, mute?: boolean): void;
     static mute(mute?: boolean): void;
     static getGroup(groupName?: string): any;
     static playAudio(groupName: any, audio: any): void;
@@ -1790,7 +1790,7 @@ declare class Choreography {
          addChild(child: Entity): Entity;
          addChilds(...childs: Array<Entity>): void;
          isParent(parent: Entity): boolean;
-         removeChild(child: Entity): void;
+         removeChild(child?: Entity | null): void;
          toString(): string;
          translate(v: vec3): void;
          translateOnAxis(axis: vec3, distance: number): this;
@@ -2081,11 +2081,20 @@ declare class Choreography {
          }
 
          declare class FlexController {
-             controllers: {};
-             controllers2: {};
+             controllers: {
+                 i: number;
+                 min: number;
+                 max: number;
+             };
+             controllers2: any;
              controllerIndex: number;
+             constructor();
              getController(name: any, min: any, max: any): any;
-             getControllers(): {};
+             getControllers(): {
+                 i: number;
+                 min: number;
+                 max: number;
+             };
              getControllerValue(name: any): any;
              getControllerRealValue(name: any): number;
              setControllerValue(name: any, value: any): void;

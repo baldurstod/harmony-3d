@@ -3,7 +3,7 @@ import { AudioGroup } from './audiogroup';
 export class AudioMixer {
 	static master = new AudioGroup('master');
 
-	static muteGroup(groupName, mute = true) {
+	static muteGroup(groupName: string, mute = true) {
 		this.getGroup(groupName).mute(mute);
 	}
 
