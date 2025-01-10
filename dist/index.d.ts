@@ -1166,7 +1166,7 @@ declare class Choreography {
          doEmit(elapsedTime: any): void;
      }
 
-     declare class ControlPoint extends Entity {
+     export declare class ControlPoint extends Entity {
          #private;
          isControlPoint: boolean;
          currentWorldPosition: vec3;
