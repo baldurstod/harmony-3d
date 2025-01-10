@@ -7,6 +7,8 @@ export const ENTITY_DELETED = 'entitydeleted';
 export const PROPERTY_CHANGED = 'propertychanged';
 export const ATTRIBUTE_CHANGED = 'attributechanged';
 
+export type PropertyChangedEvent = { detail: { entity: Entity, name: string, value: any, oldValue: any } }
+
 class EntityObserverClass extends EventTarget {
 	parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null) {
 		this.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));

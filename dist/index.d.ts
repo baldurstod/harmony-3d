@@ -150,6 +150,8 @@ export declare class AttractToControlPoint extends Operator {
     doForce(particle: any, elapsedTime: any, accumulatedForces: any, strength?: number): void;
 }
 
+export declare const ATTRIBUTE_CHANGED = "attributechanged";
+
 export declare class AudioGroup {
     name: string;
     muted: boolean;
@@ -1942,6 +1944,8 @@ declare class Choreography {
           static getEntityName(): string;
           is(s: string): boolean;
          }
+
+         export declare const ENTITY_DELETED = "entitydeleted";
 
          export declare const EntityObserver: EntityObserverClass;
 
@@ -5102,6 +5106,15 @@ declare class Choreography {
          }
 
          export declare const PROPERTY_CHANGED = "propertychanged";
+
+         export declare type PropertyChangedEvent = {
+             detail: {
+                 entity: Entity;
+                 name: string;
+                 value: any;
+                 oldValue: any;
+             };
+         };
 
          /**
           * Source engine material interface
