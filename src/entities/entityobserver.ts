@@ -7,7 +7,7 @@ export const ENTITY_DELETED = 'entitydeleted';
 export const PROPERTY_CHANGED = 'propertychanged';
 export const ATTRIBUTE_CHANGED = 'attributechanged';
 
-export type PropertyChangedEvent = { detail: { entity: Entity, name: string, value: any, oldValue: any } }
+export type PropertyChangedEventData = { entity: Entity, name: string, value: any, oldValue: any };
 
 class EntityObserverClass extends EventTarget {
 	parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null) {

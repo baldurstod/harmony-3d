@@ -5107,13 +5107,11 @@ declare class Choreography {
 
          export declare const PROPERTY_CHANGED = "propertychanged";
 
-         export declare type PropertyChangedEvent = {
-             detail: {
-                 entity: Entity;
-                 name: string;
-                 value: any;
-                 oldValue: any;
-             };
+         export declare type PropertyChangedEventData = {
+             entity: Entity;
+             name: string;
+             value: any;
+             oldValue: any;
          };
 
          /**
