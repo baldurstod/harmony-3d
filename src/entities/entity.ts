@@ -513,7 +513,7 @@ export class Entity {
 		return false;
 	}
 
-	removeChild(child: Entity) {
+	removeChild(child?: Entity | null) {
 		if (this.#children.has(child)) {
 			this.#children.delete(child);
 			child.#setParent(null);
