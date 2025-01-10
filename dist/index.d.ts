@@ -1825,7 +1825,7 @@ declare class Choreography {
           get pickingColor(): vec3 | undefined;
           update(scene: Scene, camera: Camera, delta: number): void;
           set castShadow(castShadow: boolean | undefined);
-          get castShadow(): boolean;
+          get castShadow(): boolean | undefined;
           toggleCastShadow(): void;
           set receiveShadow(receiveShadow: boolean | undefined);
           get receiveShadow(): boolean;

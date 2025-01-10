@@ -764,7 +764,7 @@ export class Entity {
 		this.#castShadow = castShadow;
 	}
 
-	get castShadow(): boolean {
+	get castShadow(): boolean | undefined {
 		if (this.#castShadow === undefined) {
 			return this._parent ? this._parent.castShadow : true;
 		} else {
