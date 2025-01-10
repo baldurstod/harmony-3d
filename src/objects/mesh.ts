@@ -34,6 +34,8 @@ export class Mesh extends Entity {
 	isRenderable = true;
 	uniforms = {};
 	defines = Object.create(null);
+	isMesh = true;
+
 	constructor(geometry?: BufferGeometry, material?: Material) {
 		super();
 		this.setGeometry(geometry);

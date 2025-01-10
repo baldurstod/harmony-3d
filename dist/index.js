@@ -4094,6 +4094,7 @@ class Mesh extends Entity {
     isRenderable = true;
     uniforms = {};
     defines = Object.create(null);
+    isMesh = true;
     constructor(geometry, material) {
         super();
         this.setGeometry(geometry);
@@ -34485,7 +34486,7 @@ class Source1ModelInstance extends Entity {
                 console.info(arr);
 
             }
-*/
+    */
             for (const bone of animation.bones) {
                 const skeletonBone = skeleton.getBoneById(bone.id);
                 if (!skeletonBone) {

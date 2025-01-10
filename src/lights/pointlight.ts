@@ -9,7 +9,7 @@ export class PointLight extends Light {
 		this.range = params.range ?? 100.0;
 	}
 
-	set castShadow(castShadow) {
+	set castShadow(castShadow: boolean | undefined) {
 		super.castShadow = castShadow;
 		if (this.castShadow) {
 			this.shadow = new PointLightShadow(this);

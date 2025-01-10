@@ -20,7 +20,7 @@ export class SpotLight extends Light {
 		this.range = 0;
 	}
 
-	set castShadow(castShadow) {
+	set castShadow(castShadow: boolean | undefined) {
 		super.castShadow = castShadow;
 		if (this.castShadow) {
 			this.shadow = new SpotLightShadow(this);

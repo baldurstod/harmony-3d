@@ -3836,6 +3836,7 @@ declare class Choreography {
              isRenderable: boolean;
              uniforms: {};
              defines: any;
+             isMesh: boolean;
              constructor(geometry?: BufferGeometry, material?: Material);
              set material(material: Material);
              get material(): Material;
@@ -4859,8 +4860,8 @@ declare class Choreography {
          export declare class PointLight extends Light {
              isPointLight: boolean;
              constructor(params?: any);
-             set castShadow(castShadow: boolean);
-             get castShadow(): boolean;
+             set castShadow(castShadow: boolean | undefined);
+             get castShadow(): boolean | undefined;
              toJSON(): any;
              static constructFromJSON(json: any): Promise<PointLight>;
              fromJSON(json: any): void;
@@ -6452,7 +6453,13 @@ declare class Choreography {
              bodyParts: {
                  [key: string]: Entity;
              };
-             sequences: {};
+             sequences: {
+                 [key: string]: {
+                     frame?: number;
+                     startTime?: any;
+                     s?: any;
+                 };
+             };
              meshes: Set<Mesh | SkeletalMesh>;
              frame: number;
              anim: SourceAnimation;
@@ -8506,8 +8513,8 @@ declare class Choreography {
              innerAngleCos: number;
              outerAngleCos: number;
              constructor(parameters?: {});
-             set castShadow(castShadow: boolean);
-             get castShadow(): boolean;
+             set castShadow(castShadow: boolean | undefined);
+             get castShadow(): boolean | undefined;
              set angle(angle: number);
              get angle(): number;
              set innerAngle(innerAngle: number);
