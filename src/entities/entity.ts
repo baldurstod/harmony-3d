@@ -67,7 +67,7 @@ export class Entity {
 	drawOutline = false;
 	locked: boolean = false;
 	static editMaterial: (entity: Entity) => void;
-	properties = new Map<string, any>();
+	readonly properties = new Map<string, any>();
 	loadedPromise?: Promise<any>;
 
 	constructor(params?: any) {
@@ -1017,6 +1017,14 @@ export class Entity {
 		vec3.copy(this._position, source._position);
 		quat.copy(this._quaternion, source._quaternion);
 		vec3.copy(this._scale, source._scale);
+	}
+
+	getProperty(name: string): any {
+		return this.properties.get(name);
+	}
+
+	setProperty(name: string, value: any) {
+		return this.properties.set(name, value);
 	}
 
 	toJSON() {

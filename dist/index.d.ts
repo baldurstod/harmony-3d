@@ -1731,7 +1731,7 @@ declare class Choreography {
          drawOutline: boolean;
          locked: boolean;
          static editMaterial: (entity: Entity) => void;
-         properties: Map<string, any>;
+         readonly properties: Map<string, any>;
          loadedPromise?: Promise<any>;
          constructor(params?: any);
          setParameters(parameters?: any): void;
@@ -1937,6 +1937,8 @@ declare class Choreography {
           getAttribute(attributeName: string, inherited?: boolean): any;
           propagate(): void;
           copy(source: Entity): void;
+          getProperty(name: string): any;
+          setProperty(name: string, value: any): Map<string, any>;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
           createChild(entityName: string, parameters: any): Promise<Entity | Material>;
@@ -3683,6 +3685,15 @@ declare class Choreography {
          }
 
          export declare const MAX_FLOATS = 4096;
+
+         declare class MdlAttachement {
+             name: string;
+             lowcasename: string;
+             mdl: SourceMDL;
+             flags: number;
+             localbone: number;
+             local: Array<number>;
+         }
 
          declare class MdlBodyPart {
              name: any;
@@ -8281,7 +8292,7 @@ declare class Choreography {
              readonly bones: Array<MdlBone>;
              readonly boneNames: string[];
              numflexdesc: number;
-             readonly attachements: any[];
+             readonly attachements: Array<MdlAttachement>;
              readonly animDesc: any[];
              loader: SourceEngineMDLLoader;
              reader: BinaryReader;
@@ -8311,9 +8322,9 @@ declare class Choreography {
              getBone(boneIndex: number): MdlBone;
              getBoneByName(boneName: string): MdlBone;
              getBoneId(boneName: string): any;
-             getAttachments(): any[];
+             getAttachments(): MdlAttachement[];
              getAttachementsNames(out?: Array<string>): string[];
-             getAttachementById(attachementId: any): any;
+             getAttachementById(attachementId: any): MdlAttachement;
              getAttachement(attachementName: any): any;
              getSequenceById(sequenceId: any): MdlStudioSeqDesc;
              getSequencesList(): any[];
@@ -8348,9 +8359,9 @@ declare class Choreography {
              createInstance(isDynamic: any, preventInit: any): Source1ModelInstance;
              getBodyNumber(bodygroups: Map<string, number>): number;
              getBones(): MdlBone[];
-             getAttachments(): any[];
+             getAttachments(): MdlAttachement[];
              getBone(boneIndex: any): MdlBone;
-             getAttachementById(attachementIndex: any): any;
+             getAttachementById(attachementIndex: any): MdlAttachement;
              getBoneByName(boneName: any): MdlBone;
              getAttachement(attachementName: any): any;
              getBodyPart(bodyPartId: any): MdlBodyPart;

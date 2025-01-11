@@ -3040,6 +3040,12 @@ class Entity {
         quat.copy(this._quaternion, source._quaternion);
         vec3.copy(this._scale, source._scale);
     }
+    getProperty(name) {
+        return this.properties.get(name);
+    }
+    setProperty(name, value) {
+        return this.properties.set(name, value);
+    }
     toJSON() {
         let children = [];
         for (let child of this.#children) {
@@ -38632,7 +38638,13 @@ function MdlStudioVertAnim() {
 }
 function MdlEyeball() {
 }
-function MdlAttachement() {
+class MdlAttachement {
+    name;
+    lowcasename;
+    mdl;
+    flags = 0;
+    localbone = 0;
+    local = [];
 }
 function MdlStudioAnimDesc() {
     this.animSections = [];
