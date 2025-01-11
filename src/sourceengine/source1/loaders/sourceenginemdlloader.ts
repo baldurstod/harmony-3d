@@ -63,8 +63,16 @@ function MdlStudioVertAnim() { // mstudiovertanim_t
 }
 function MdlEyeball() {//removeme
 }
-function MdlAttachement() {//removeme
+
+export class MdlAttachement {
+	name: string;
+	lowcasename: string;
+	mdl: SourceMDL;
+	flags: number = 0;
+	localbone: number = 0;
+	local: Array<number> = [];
 }
+
 function MdlStudioAnimDesc() {//removeme
 	this.animSections = [];
 }
@@ -1092,7 +1100,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseAttachement(reader, mdl, startOffset) {
+	#parseAttachement(reader, mdl, startOffset): MdlAttachement {
 		const nameOffset = reader.getInt32(startOffset) + startOffset;
 
 		const attachement = new MdlAttachement();

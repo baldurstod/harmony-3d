@@ -5,7 +5,7 @@ import { FlexController } from '../models/flexcontroller';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
 import { MdlStudioSeqDesc } from './mdlstudioseqdesc';
-import { SourceEngineMDLLoader } from './sourceenginemdlloader';
+import { MdlAttachement, SourceEngineMDLLoader } from './sourceenginemdlloader';
 import { MdlBone } from './mdlbone';
 
 /**
@@ -55,7 +55,7 @@ export class SourceMDL {
 	readonly bones: Array<MdlBone> = [];
 	readonly boneNames: string[] = [];
 	numflexdesc = 0;
-	readonly attachements = [];
+	readonly attachements: Array<MdlAttachement> = [];
 	readonly animDesc = [];
 	loader: SourceEngineMDLLoader;
 	reader: BinaryReader;
