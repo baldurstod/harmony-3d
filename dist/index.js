@@ -1831,24 +1831,28 @@ const CHILD_REMOVED = 'childremoved';
 const ENTITY_DELETED = 'entitydeleted';
 const PROPERTY_CHANGED$1 = 'propertychanged';
 const ATTRIBUTE_CHANGED = 'attributechanged';
-class EntityObserverClass extends EventTarget {
+class EntityObserverClass {
+    #eventTarget = new EventTarget();
     parentChanged(child, oldParent, newParent) {
-        this.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
+        this.#eventTarget.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
     }
     childAdded(parent, child) {
-        this.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
+        this.#eventTarget.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
     }
     childRemoved(parent, child) {
-        this.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
+        this.#eventTarget.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
     }
     entityDeleted(entity) {
-        this.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
+        this.#eventTarget.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
     }
     propertyChanged(entity, propertyName, oldValue, newValue) {
-        this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED$1, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
+        this.#eventTarget.dispatchEvent(new CustomEvent(PROPERTY_CHANGED$1, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
     }
     attributeChanged(entity, attributeName, oldValue, newValue) {
-        this.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
+        this.#eventTarget.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
+    }
+    addEventListener(type, callback, options) {
+        this.#eventTarget.addEventListener(type, callback, options);
     }
 }
 const EntityObserver = new EntityObserverClass();

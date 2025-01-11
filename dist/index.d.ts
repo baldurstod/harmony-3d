@@ -152,6 +152,8 @@ export declare class AttractToControlPoint extends Operator {
 
 export declare const ATTRIBUTE_CHANGED = "attributechanged";
 
+export declare type AttributeChangedEventData = PropertyChangedEventData;
+
 export declare class AudioGroup {
     name: string;
     muted: boolean;
@@ -824,6 +826,13 @@ export declare class CharacterMaterial extends SourceEngineMaterial {
 export declare const CHILD_ADDED = "childadded";
 
 export declare const CHILD_REMOVED = "childremoved";
+
+export declare type ChildAddedEventData = {
+    child: Entity;
+    parent: Entity | null;
+};
+
+export declare type ChildRemovedEventData = ChildAddedEventData;
 
 export declare class ChoreographiesManager {
     #private;
@@ -1949,16 +1958,24 @@ declare class Choreography {
 
          export declare const ENTITY_DELETED = "entitydeleted";
 
+         export declare type EntityDeletedEventData = {
+             entity: Entity;
+         };
+
          export declare const EntityObserver: EntityObserverClass;
 
-         declare class EntityObserverClass extends EventTarget {
+         declare class EntityObserverClass {
+             #private;
              parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null): void;
              childAdded(parent: Entity, child: Entity): void;
              childRemoved(parent: Entity, child: Entity): void;
              entityDeleted(entity: Entity): void;
              propertyChanged(entity: Entity, propertyName: string, oldValue: any, newValue: any): void;
              attributeChanged(entity: Entity, attributeName: string, oldValue: any, newValue: any): void;
+             addEventListener(type: string, callback: (evt: CustomEvent<EntityObserverEventsData>) => void, options?: AddEventListenerOptions | boolean): void;
          }
+
+         export declare type EntityObserverEventsData = ParentChangedEventData | ChildAddedEventData | ChildRemovedEventData | EntityDeletedEventData | PropertyChangedEventData | AttributeChangedEventData;
 
          export declare class Environment {
              constructor();
@@ -4690,6 +4707,12 @@ declare class Choreography {
          }
 
          export declare const PARENT_CHANGED = "parentchanged";
+
+         export declare type ParentChangedEventData = {
+             child: Entity;
+             oldParent: Entity | null;
+             newParent: Entity | null;
+         };
 
          export declare function ParticleRandomFloat(id: any, offset: any): any;
 
@@ -9526,12 +9549,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#204@#webAssembly"?: any;
-             "__#204@#HEAPU8"?: Uint8Array;
+             "__#205@#webAssembly"?: any;
+             "__#205@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#204@#initHeap"(): void;
+             "__#205@#initHeap"(): void;
          };
 
          export { }
