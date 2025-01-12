@@ -1,1 +1,1 @@
-export const Includes = {}
+export const Includes: { [key: string]: string } = {}
