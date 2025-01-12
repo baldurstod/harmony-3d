@@ -245,7 +245,7 @@ export class Source1ParticleControler {
 	}
 
 	static async getSystemList(): Promise<FileSelectorFile> {
-		let repoList = [];
+		let repoList: Array<FileSelectorFile> = [];
 		let pcfs: { [key: string]: Array<{ name: string }> } = {};
 		for (let repoName in this.#systemNameToPcf) {
 			await this.#loadManifest(repoName);
