@@ -43,6 +43,14 @@ export enum ShaderDebugMode {
 	None = 0,
 }
 
+let graphics: Graphics | null = null;
+export function getGraphics() {
+	if (!graphics) {
+		graphics = new Graphics();
+	}
+	return graphics;
+}
+
 export class Graphics {
 	static #instance: Graphics;
 	#pixelRatio = /*window.devicePixelRatio ?? */1.0;
