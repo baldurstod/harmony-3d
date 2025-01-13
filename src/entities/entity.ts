@@ -285,7 +285,7 @@ export class Entity {
 		}
 	}
 
-	isVisibleSelf(): boolean {
+	isVisibleSelf(): boolean | undefined {
 		return this.#visible;
 	}
 
@@ -462,7 +462,7 @@ export class Entity {
 		return currentEntity;
 	}
 
-	addChild(child: Entity) {
+	addChild(child?: Entity | null) {
 		if (!child) {
 			return
 		}
@@ -514,7 +514,7 @@ export class Entity {
 	}
 
 	removeChild(child?: Entity | null) {
-		if (this.#children.has(child)) {
+		if (child && this.#children.has(child)) {
 			this.#children.delete(child);
 			child.#setParent(null);
 			EntityObserver.childRemoved(this, child);
