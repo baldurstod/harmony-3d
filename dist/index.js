@@ -38697,6 +38697,11 @@ function MdlStudioFlexRule() {
 function MdlStudioFlexOp() {
 }
 class MdlStudioFlexController {
+    localToGlobal = 0;
+    min = 0;
+    max = 0;
+    type = '';
+    name = '';
 }
 function MdlStudioHitboxSet() {
 }

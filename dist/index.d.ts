@@ -3826,6 +3826,11 @@ declare class Choreography {
          }
 
          declare class MdlStudioFlexController {
+             localToGlobal: number;
+             min: number;
+             max: number;
+             type: string;
+             name: string;
          }
 
          declare class MdlStudioModelGroup {
