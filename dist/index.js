@@ -29593,22 +29593,26 @@ class FlexAnimationTrack {
 class Sound {
     #repository;
     #wave;
-    constructor(repository, wave) {
+    #channel;
+    constructor(repository, wave, channel) {
         this.#repository = repository;
         this.#wave = wave;
+        this.#channel = channel;
     }
     getRepository() {
         return this.#repository;
     }
     getWave() {
-        const wave = this.#wave;
-        if (wave instanceof Array) {
-            const index = Math.floor(Math.random() * wave.length);
-            return wave[index];
+        if (Array.isArray(this.#wave)) {
+            const index = Math.floor(Math.random() * this.#wave.length);
+            return this.#wave[index];
         }
         else {
-            return wave;
+            return this.#wave;
         }
+    }
+    getChannel() {
+        return this.#channel;
     }
 }
 
@@ -29932,12 +29936,12 @@ class KvReader {
 
 class Source1SoundManager {
     static #mute = false;
-    static #audioList = {};
+    static #audioList = new Map();
     static #soundList = {};
-    static #soundsPerRepository = {};
+    static #soundsPerRepository = new Map();
     static #soundListPerRepository = {};
-    static #manifestsPerRepository = {};
-    static #promisePerRepository = {};
+    static #manifestsPerRepository = new Map();
+    static #promisePerRepository = new Map();
     /**
      * Play a sound
      * @param {String} soundName soundName
@@ -29952,13 +29956,13 @@ class Source1SoundManager {
             let wave = sound.getWave();
             // Remove #, *, ( and ) from paths
             wave = wave.replace(/[\(\)\#\*]/g, '').toLowerCase();
-            let audio = this.#audioList[wave];
+            let audio = this.#audioList.get(wave);
             //audio = null;//removeme
             if (!audio) {
                 const response = await new Repositories().getFileAsBlob(sound.getRepository(), '/sound/' + wave);
                 if (!response.error) {
                     audio = new Audio(URL.createObjectURL(response.blob) /*new URL('/sound/' + wave, repository.base).toString()*/);
-                    this.#audioList[wave] = audio;
+                    this.#audioList.set(wave, audio);
                     audio.volume = 0.1;
                     //audio.play();
                     AudioMixer.playAudio('master', audio); //TODO: change master per actual channel
@@ -29976,18 +29980,20 @@ class Source1SoundManager {
         if (repo) {
             return repo[soundName];
         }*/
-        return this.#soundsPerRepository[repositoryName]?.[soundName];
+        return this.#soundsPerRepository.get(repositoryName)?.get(soundName);
     }
     static async #fetchManifests(repositoryName) {
-        if (this.#promisePerRepository[repositoryName]) {
-            await this.#promisePerRepository[repositoryName];
+        if (this.#promisePerRepository.has(repositoryName)) {
+            await this.#promisePerRepository.get(repositoryName);
         }
-        this.#soundsPerRepository[repositoryName] = this.#soundsPerRepository[repositoryName] ?? {};
+        if (!this.#soundsPerRepository.has(repositoryName)) {
+            this.#soundsPerRepository.set(repositoryName, new Map());
+        }
         let promiseResolve;
-        this.#promisePerRepository[repositoryName] = new Promise(resolve => promiseResolve = resolve);
-        let manifests = this.#manifestsPerRepository[repositoryName];
+        this.#promisePerRepository.set(repositoryName, new Promise(resolve => promiseResolve = resolve));
+        let manifests = this.#manifestsPerRepository.get(repositoryName);
         if (manifests) {
-            delete this.#manifestsPerRepository[repositoryName];
+            this.#manifestsPerRepository.delete(repositoryName);
             for (const manifest of manifests) {
                 await this.#fetchManifest(repositoryName, manifest);
             }
@@ -30001,14 +30007,14 @@ class Source1SoundManager {
         }
     }
     static #loadManifest(repositoryName, manifestTxt) {
-        const sounds = this.#soundsPerRepository[repositoryName];
+        const sounds = this.#soundsPerRepository.get(repositoryName);
         const kv = new KvReader();
         kv.readText(manifestTxt);
         const list = kv.rootElements;
         const keyArray = Object.keys(list);
         for (let i = 0; i < keyArray.length; ++i) {
             const soundKey = keyArray[i];
-            const sound = list[soundKey];
+            const sound = list[soundKey] /*TODO: improve type*/;
             let wave;
             if (sound.rndwave) {
                 wave = [];
@@ -30020,8 +30026,8 @@ class Source1SoundManager {
                 wave = sound.wave;
             }
             //const wave = sound.rndwave ? sound.rndwave : sound.wave;
-            sounds[soundKey] = new Sound(repositoryName, wave);
-            sounds[soundKey].channel = sound.channel;
+            const s = new Sound(repositoryName, wave, sound.channel);
+            sounds?.set(soundKey, s);
         }
     }
     /**
@@ -30077,10 +30083,10 @@ class Source1SoundManager {
         }
         */
     static loadManifest(repositoryName, fileName) {
-        let manifests = this.#manifestsPerRepository[repositoryName];
+        let manifests = this.#manifestsPerRepository.get(repositoryName);
         if (!manifests) {
             manifests = [];
-            this.#manifestsPerRepository[repositoryName] = manifests;
+            this.#manifestsPerRepository.set(repositoryName, manifests);
         }
         manifests.push(fileName);
     }

@@ -11,7 +11,7 @@ class KvAttribute {
 		this.value = value;
 	}
 }
-class KvElement {
+export class KvElement {
 	addElement(name, value) {
 		if (!name) {
 			return;

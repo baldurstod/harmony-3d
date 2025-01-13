@@ -1,9 +1,12 @@
 export class Sound {
-	#repository;
-	#wave;
-	constructor(repository, wave) {
+	#repository: string;
+	#wave: string | Array<string>;
+	#channel: string;
+
+	constructor(repository: string, wave: string | Array<string>, channel: string) {
 		this.#repository = repository;
-		this.#wave = wave
+		this.#wave = wave;
+		this.#channel = channel;
 	}
 
 	getRepository() {
@@ -11,12 +14,15 @@ export class Sound {
 	}
 
 	getWave() {
-		const wave = this.#wave;
-		if (wave instanceof Array) {
-			const index = Math.floor(Math.random() * wave.length);
-			return wave[index];
+		if (Array.isArray(this.#wave)) {
+			const index = Math.floor(Math.random() * this.#wave.length);
+			return this.#wave[index];
 		} else {
-			return wave;
+			return this.#wave;
 		}
+	}
+
+	getChannel() {
+		return this.#channel;
 	}
 }
