@@ -38696,7 +38696,7 @@ function MdlStudioFlexRule() {
 }
 function MdlStudioFlexOp() {
 }
-function MdlStudioFlexController() {
+class MdlStudioFlexController {
 }
 function MdlStudioHitboxSet() {
 }

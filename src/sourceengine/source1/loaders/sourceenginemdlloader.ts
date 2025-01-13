@@ -128,7 +128,7 @@ function MdlStudioFlexRule() { // mstudioflexrule_t
 }
 function MdlStudioFlexOp() { // mstudioflexop_t
 }
-function MdlStudioFlexController() { //mstudioflexcontroller_t
+export class MdlStudioFlexController() { //mstudioflexcontroller_t
 }
 function MdlStudioHitboxSet() { //mstudiohitboxset_t
 }

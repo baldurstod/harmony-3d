@@ -3825,6 +3825,9 @@ declare class Choreography {
              name: any;
          }
 
+         declare class MdlStudioFlexController {
+         }
+
          declare class MdlStudioModelGroup {
              name: any;
              label: any;
@@ -8451,7 +8454,7 @@ declare class Choreography {
              readonly sequences: Array<MdlStudioSeqDesc>;
              readonly texturesDir: string[];
              readonly flexRules: never[];
-             readonly flexControllers: never[];
+             readonly flexControllers: Array<MdlStudioFlexController>;
              boneCount: number;
              readonly bones: Array<MdlBone>;
              readonly boneNames: string[];
@@ -8478,7 +8481,7 @@ declare class Choreography {
              getBBoxMax(out?: vec3): vec3;
              getAnimList(): Promise<Set<string>>;
              getFlexRules(): never[];
-             getFlexControllers(): never[];
+             getFlexControllers(): MdlStudioFlexController[];
              runFlexesRules(flexesWeight: any, g_flexdescweight: any): void;
              addExternalMdl(mdlName: any): void;
              getBoneCount(): number;

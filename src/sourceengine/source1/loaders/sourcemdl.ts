@@ -5,7 +5,7 @@ import { FlexController } from '../models/flexcontroller';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
 import { MdlStudioSeqDesc } from './mdlstudioseqdesc';
-import { MdlAttachement, SourceEngineMDLLoader } from './sourceenginemdlloader';
+import { MdlAttachement, MdlStudioFlexController, SourceEngineMDLLoader } from './sourceenginemdlloader';
 import { MdlBone } from './mdlbone';
 
 /**
@@ -50,7 +50,7 @@ export class SourceMDL {
 	readonly sequences: Array<MdlStudioSeqDesc> = [];
 	readonly texturesDir: string[] = [];
 	readonly flexRules = [];
-	readonly flexControllers = [];
+	readonly flexControllers: Array<MdlStudioFlexController> = [];
 	boneCount: number;
 	readonly bones: Array<MdlBone> = [];
 	readonly boneNames: string[] = [];
