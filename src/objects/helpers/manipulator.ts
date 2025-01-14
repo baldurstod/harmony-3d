@@ -182,15 +182,15 @@ export class Manipulator extends Entity {
 			}
 		});
 
-		new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_INCREASE, event => this.size *= 1.1);
-		new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_DECREASE, event => this.size *= 0.9);
-		new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TRANSLATION, event => this.mode = 0);
-		new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_ROTATION, event => this.mode = 1);
-		new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_SCALE, event => this.mode = 2);
-		new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_AXIS_ORIENTATION, event => this.#axisOrientation = (++this.#axisOrientation) % 2);
-		new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_X, event => this.enableX = !this.enableX);
-		new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Y, event => this.enableY = !this.enableY);
-		new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, event => this.enableZ = !this.enableZ);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_INCREASE, event => this.size *= 1.1);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_DECREASE, event => this.size *= 0.9);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TRANSLATION, event => this.mode = 0);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_ROTATION, event => this.mode = 1);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_SCALE, event => this.mode = 2);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_AXIS_ORIENTATION, event => this.#axisOrientation = (++this.#axisOrientation) % 2);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_X, event => this.enableX = !this.enableX);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Y, event => this.enableY = !this.enableY);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, event => this.enableZ = !this.enableZ);
 	}
 
 	resize(camera?: Camera) {
@@ -823,7 +823,7 @@ export class Manipulator extends Entity {
 }
 
 //Set default shortcuts
-new ShortcutHandler().setShortcuts(
+ShortcutHandler.setShortcuts(
 	'3dview,scene-explorer',
 	new Map(
 		[

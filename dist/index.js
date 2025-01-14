@@ -2559,7 +2559,7 @@ class Entity {
         return false;
     }
     removeChild(child) {
-        if (this.#children.has(child)) {
+        if (child && this.#children.has(child)) {
             this.#children.delete(child);
             child.#setParent(null);
             EntityObserver.childRemoved(this, child);
@@ -7241,7 +7241,7 @@ class Graphics {
     initCanvas(contextAttributes = {}) {
         this.#canvas = contextAttributes.canvas ?? document.createElement('canvas');
         this.#canvas.setAttribute('tabindex', '1');
-        new ShortcutHandler().addContext('3dview', this.#canvas);
+        ShortcutHandler.addContext('3dview', this.#canvas);
         this.#width = this.#canvas.width;
         this.#height = this.#canvas.height;
         this.#initContext(contextAttributes);
@@ -10353,15 +10353,15 @@ class Manipulator extends Entity {
                 this.#setAxisSelected(false);
             }
         });
-        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_INCREASE, event => this.size *= 1.1);
-        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_DECREASE, event => this.size *= 0.9);
-        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TRANSLATION, event => this.mode = 0);
-        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_ROTATION, event => this.mode = 1);
-        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_SCALE, event => this.mode = 2);
-        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_AXIS_ORIENTATION, event => this.#axisOrientation = (++this.#axisOrientation) % 2);
-        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_X, event => this.enableX = !this.enableX);
-        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Y, event => this.enableY = !this.enableY);
-        new ShortcutHandler().addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, event => this.enableZ = !this.enableZ);
+        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_INCREASE, event => this.size *= 1.1);
+        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_DECREASE, event => this.size *= 0.9);
+        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TRANSLATION, event => this.mode = 0);
+        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_ROTATION, event => this.mode = 1);
+        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_SCALE, event => this.mode = 2);
+        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_AXIS_ORIENTATION, event => this.#axisOrientation = (++this.#axisOrientation) % 2);
+        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_X, event => this.enableX = !this.enableX);
+        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Y, event => this.enableY = !this.enableY);
+        ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, event => this.enableZ = !this.enableZ);
     }
     resize(camera) {
         if (!this.isVisible()) {
@@ -10912,7 +10912,7 @@ class Manipulator extends Entity {
     }
 }
 //Set default shortcuts
-new ShortcutHandler().setShortcuts('3dview,scene-explorer', new Map([
+ShortcutHandler.setShortcuts('3dview,scene-explorer', new Map([
     [MANIPULATOR_SHORTCUT_INCREASE, 'PLUS'],
     [MANIPULATOR_SHORTCUT_DECREASE, '-'],
     [MANIPULATOR_SHORTCUT_TRANSLATION, 'ALT+T'],
@@ -25041,9 +25041,9 @@ class SceneExplorer {
         this.#initHtmlHeader();
         this.#initHtmlProperties();
         this.applyFilter();
-        new ShortcutHandler().addContext('scene-explorer,scene-explorer-nodes', this.#htmlScene);
-        new ShortcutHandler().addContext('scene-explorer,scene-explorer-files', this.htmlFileSelector);
-        new ShortcutHandler().addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
+        ShortcutHandler.addContext('scene-explorer,scene-explorer-nodes', this.#htmlScene);
+        ShortcutHandler.addContext('scene-explorer,scene-explorer-files', this.htmlFileSelector);
+        ShortcutHandler.addContext('scene-explorer,scene-explorer-properties', this.#htmlProperties);
     }
     #initHtmlHeader() {
         this.#htmlNameFilter = createElement('input', {
