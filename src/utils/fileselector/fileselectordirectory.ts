@@ -138,7 +138,7 @@ export class FileSelectorDirectory extends HTMLElement {
 			}
 		} else {
 			let filterName = this.#selector?.filter.name ?? '';
-			return file.name.toLowerCase().includes(filterName) || file.path.toLowerCase().includes(filterName);
+			return file.name.toLowerCase().includes(filterName) || file.path?.toLowerCase().includes(filterName) || false;
 		}
 		return false;
 	}
