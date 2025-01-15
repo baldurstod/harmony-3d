@@ -3637,7 +3637,7 @@ class FileSelectorDirectory extends HTMLElement {
         }
         else {
             let filterName = this.#selector?.filter.name ?? '';
-            return file.name.toLowerCase().includes(filterName) || file.path.toLowerCase().includes(filterName);
+            return file.name.toLowerCase().includes(filterName) || file.path?.toLowerCase().includes(filterName) || false;
         }
         return false;
     }
@@ -7210,17 +7210,17 @@ class Graphics {
     currentTick = 0;
     #renderBuffers = new Set();
     #renderTargetStack = [];
-    #readyPromise;
     #readyPromiseResolve;
+    #readyPromise = new Promise((resolve) => this.#readyPromiseResolve = resolve);
     #canvas;
-    #width;
-    #height;
+    #width = 0;
+    #height = 0;
     #offscreenCanvas;
     #forwardRenderer;
     glContext;
     #bipmapContext;
-    #pickedEntity;
-    #animationFrame;
+    #pickedEntity = null;
+    #animationFrame = 0;
     ANGLE_instanced_arrays;
     OES_texture_float_linear;
     #mediaRecorder;
@@ -7234,13 +7234,9 @@ class Graphics {
         this.setShaderQuality(ShaderQuality.Medium);
         this.setShaderDebugMode(ShaderDebugMode.None);
         this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
-        this.#readyPromise = new Promise((resolve, reject) => {
-            this.#readyPromiseResolve = resolve;
-        });
     }
     initCanvas(contextAttributes = {}) {
-        this.#canvas = contextAttributes.canvas ?? document.createElement('canvas');
-        this.#canvas.setAttribute('tabindex', '1');
+        this.#canvas = contextAttributes.canvas ?? createElement('canvas', { tabindex: 1 });
         ShortcutHandler.addContext('3dview', this.#canvas);
         this.#width = this.#canvas.width;
         this.#height = this.#canvas.height;
@@ -7252,7 +7248,7 @@ class Graphics {
         // init state end
         //this.clearColor = vec4.fromValues(0, 0, 0, 255);
         this.#forwardRenderer = new ForwardRenderer(this);
-        let autoResize = contextAttributes['autoResize'];
+        let autoResize = contextAttributes.autoResize;
         if (autoResize !== undefined) {
             this.autoResize = autoResize;
         }
@@ -7269,6 +7265,9 @@ class Graphics {
         return this;
     }
     pickEntity(x, y) {
+        if (!this.#canvas) {
+            return null;
+        }
         this.setIncludeCode('pickingMode', '#define PICKING_MODE');
         GraphicsEvents.tick(0, performance.now());
         this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
@@ -7494,7 +7493,7 @@ class Graphics {
     }
     set pixelRatio(pixelRatio) {
         this.#pixelRatio = pixelRatio;
-        this._updateSize();
+        this.#updateSize();
     }
     get pixelRatio() {
         return this.#pixelRatio;
@@ -7510,7 +7509,7 @@ class Graphics {
         if (isNumeric(height)) {
             this.#height = height;
         }
-        this._updateSize();
+        this.#updateSize();
         GraphicsEvents.resize(width, height);
         return [previousWidth, previousHeight];
     }
@@ -7519,7 +7518,10 @@ class Graphics {
         ret[1] = this.#height;
         return ret;
     }
-    _updateSize() {
+    #updateSize() {
+        if (!this.#canvas) {
+            return;
+        }
         this.#canvas.width = this.#width * this.#pixelRatio;
         this.#canvas.height = this.#height * this.#pixelRatio;
         this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
@@ -7548,7 +7550,7 @@ class Graphics {
             return;
         }
         const canvas = this.#canvas;
-        if (!canvas.parentElement) {
+        if (!canvas?.parentElement) {
             return;
         }
         const width = canvas.parentElement.clientWidth;
@@ -7565,7 +7567,7 @@ class Graphics {
             });
         };
         const resizeObserver = new ResizeObserver(callback);
-        if (this.#canvas.parentElement) {
+        if (this.#canvas?.parentElement) {
             resizeObserver.observe(this.#canvas.parentElement);
         }
     }
@@ -7597,10 +7599,12 @@ class Graphics {
     deleteRenderbuffer(renderBuffer) {
         this.glContext.deleteRenderbuffer(renderBuffer);
     }
-    setFramebuffer(framebuffer) {
+    /*
+    setFramebuffer(framebuffer: WebGLFramebuffer) {
         framebuffer.bind();
         //this.glContext.bindFramebuffer(_gl.FRAMEBUFFER, framebuffer);
     }
+    */
     pushRenderTarget(renderTarget) {
         this.#renderTargetStack.push(renderTarget);
         this.#setRenderTarget(renderTarget);
@@ -7636,7 +7640,7 @@ class Graphics {
         }
     }
     async savePictureAsFile(filename) {
-        return new File([await this.toBlob()], filename);
+        return new File([await this.toBlob() ?? new Blob()], filename);
     }
     async toBlob() {
         let promiseResolve;
@@ -7649,12 +7653,13 @@ class Graphics {
         this.#canvas.toBlob(callback);
         return promise;
     }
-    _savePicture(filename) {
+    async _savePicture(filename) {
+        /*
         const callback = function (blob) {
             //SaveFile(filename, blob);
-            SaveFile(new File([blob], filename));
         };
-        this.#canvas.toBlob(callback);
+        this.#canvas.toBlob(callback);*/
+        SaveFile(await this.savePictureAsFile(filename));
     }
     startRecording(frameRate = 60, bitsPerSecond) {
         const stream = this.#canvas.captureStream(frameRate);
@@ -7662,6 +7667,9 @@ class Graphics {
         this.#mediaRecorder.start();
     }
     stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
+        if (!this.#mediaRecorder) {
+            return;
+        }
         this.#mediaRecorder.ondataavailable = (event) => {
             const blob = new Blob([event.data], { 'type': RECORDER_MIME_TYPE });
             SaveFile(new File([blob], fileName));
@@ -7676,16 +7684,16 @@ class Graphics {
     async isReady() {
         await this.#readyPromise;
     }
-    getParameter(parameterName) {
-        return this.glContext?.getParameter(parameterName);
+    getParameter(param) {
+        return this.glContext?.getParameter(param);
     }
     cleanupGLError() {
-        this.glContext.getError(); //empty the error
+        this.glContext?.getError(); //empty the error
     }
-    getGLError(reason) {
-        let glError = this.glContext.getError();
+    getGLError(context) {
+        let glError = this.glContext?.getError() ?? 0;
         if (glError) {
-            console.error(`GL Error in ${reason} : `, glError);
+            console.error(`GL Error in ${context} : `, glError);
         }
     }
     useLogDepth(use) {

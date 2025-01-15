@@ -22,6 +22,7 @@ import { Entity } from '../entities/entity';
 import { Material } from '../materials/material';
 import { Scene } from '../scenes/scene';
 import { Camera } from '../cameras/camera';
+import { createElement } from 'harmony-ui';
 
 const FULL_PATATE = false;
 
@@ -51,6 +52,23 @@ export function getGraphics() {
 	return graphics;
 }
 
+type GraphicsInitOptions = {
+	canvas?: HTMLCanvasElement,
+	autoResize?: boolean,
+
+	webGL?: {
+		alpha?: boolean,
+		depth?: boolean,
+		stencil?: boolean,
+		desynchronized?: boolean,
+		antialias?: boolean,
+		failIfMajorPerformanceCaveat?: boolean,
+		powerPreference?: string,
+		premultipliedAlpha?: boolean,
+		preserveDrawingBuffer?: boolean,
+	}
+}
+
 export class Graphics {
 	static #instance: Graphics;
 	#pixelRatio = /*window.devicePixelRatio ?? */1.0;
@@ -74,20 +92,20 @@ export class Graphics {
 	currentTick = 0;
 	#renderBuffers = new Set<WebGLRenderbuffer>();
 	#renderTargetStack: Array<RenderTarget> = [];
-	#readyPromise: Promise<void>;
-	#readyPromiseResolve: (value: any) => void;
-	#canvas: HTMLCanvasElement;
-	#width: number;
-	#height: number;
-	#offscreenCanvas: OffscreenCanvas;
-	#forwardRenderer: ForwardRenderer;
-	glContext: WebGLAnyRenderingContext;
-	#bipmapContext: ImageBitmapRenderingContext | null;
-	#pickedEntity: Entity | null;
-	#animationFrame: number;
+	#readyPromiseResolve!: (value: boolean) => void;
+	#readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
+	#canvas?: HTMLCanvasElement;
+	#width: number = 0;
+	#height: number = 0;
+	#offscreenCanvas?: OffscreenCanvas;
+	#forwardRenderer?: ForwardRenderer;
+	glContext?: WebGLAnyRenderingContext;
+	#bipmapContext?: ImageBitmapRenderingContext | null;
+	#pickedEntity: Entity | null = null;
+	#animationFrame: number = 0;
 	ANGLE_instanced_arrays: any;
 	OES_texture_float_linear: any;
-	#mediaRecorder: MediaRecorder;
+	#mediaRecorder?: MediaRecorder;
 	dragging = false;
 
 	constructor() {
@@ -112,19 +130,14 @@ export class Graphics {
 		}
 
 		this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
-
-		this.#readyPromise = new Promise((resolve, reject) => {
-			this.#readyPromiseResolve = resolve;
-		});
 	}
 
-	initCanvas(contextAttributes: any = {}) {
-		this.#canvas = contextAttributes.canvas ?? document.createElement('canvas');
-		this.#canvas.setAttribute('tabindex', '1');
-		ShortcutHandler.addContext('3dview', this.#canvas);
+	initCanvas(contextAttributes: GraphicsInitOptions = {}) {
+		this.#canvas = contextAttributes.canvas ?? createElement('canvas', { tabindex: 1 }) as HTMLCanvasElement;
+		ShortcutHandler.addContext('3dview', this.#canvas!);
 
-		this.#width = this.#canvas.width;
-		this.#height = this.#canvas.height;
+		this.#width = this.#canvas!.width;
+		this.#height = this.#canvas!.height;
 		if (USE_OFF_SCREEN_CANVAS) {
 			this.#offscreenCanvas = new OffscreenCanvas(this.#width, this.#height);
 		}
@@ -140,26 +153,29 @@ export class Graphics {
 		//this.clearColor = vec4.fromValues(0, 0, 0, 255);
 		this.#forwardRenderer = new ForwardRenderer(this);
 
-		let autoResize = contextAttributes['autoResize'];
+		let autoResize = contextAttributes.autoResize;
 		if (autoResize !== undefined) {
 			this.autoResize = autoResize;
 		}
 
-		this.#canvas.addEventListener('mousedown', (event: MouseEvent) => this.#mouseDown(event));
-		this.#canvas.addEventListener('mousemove', (event: MouseEvent) => this.#mouseMove(event));
-		this.#canvas.addEventListener('mouseup', (event: MouseEvent) => this.#mouseUp(event));
-		this.#canvas.addEventListener('keydown', (event: KeyboardEvent) => GraphicsEvents.keyDown(event));
-		this.#canvas.addEventListener('keyup', (event: KeyboardEvent) => GraphicsEvents.keyUp(event));
-		this.#canvas.addEventListener('wheel', (event: WheelEvent) => this.#wheel(event));
-		this.#canvas.addEventListener('touchstart', (event: TouchEvent) => GraphicsEvents.touchStart(this.#pickedEntity, event));
-		this.#canvas.addEventListener('touchmove', (event: TouchEvent) => GraphicsEvents.touchMove(this.#pickedEntity, event));
-		this.#canvas.addEventListener('touchcancel', (event: TouchEvent) => GraphicsEvents.touchCancel(this.#pickedEntity, event));
+		this.#canvas!.addEventListener('mousedown', (event: MouseEvent) => this.#mouseDown(event));
+		this.#canvas!.addEventListener('mousemove', (event: MouseEvent) => this.#mouseMove(event));
+		this.#canvas!.addEventListener('mouseup', (event: MouseEvent) => this.#mouseUp(event));
+		this.#canvas!.addEventListener('keydown', (event: KeyboardEvent) => GraphicsEvents.keyDown(event));
+		this.#canvas!.addEventListener('keyup', (event: KeyboardEvent) => GraphicsEvents.keyUp(event));
+		this.#canvas!.addEventListener('wheel', (event: WheelEvent) => this.#wheel(event));
+		this.#canvas!.addEventListener('touchstart', (event: TouchEvent) => GraphicsEvents.touchStart(this.#pickedEntity, event));
+		this.#canvas!.addEventListener('touchmove', (event: TouchEvent) => GraphicsEvents.touchMove(this.#pickedEntity, event));
+		this.#canvas!.addEventListener('touchcancel', (event: TouchEvent) => GraphicsEvents.touchCancel(this.#pickedEntity, event));
 
 		this.#readyPromiseResolve(true);
 		return this;
 	}
 
 	pickEntity(x: number, y: number) {
+		if (!this.#canvas) {
+			return null;
+		}
 		this.setIncludeCode('pickingMode', '#define PICKING_MODE');
 		GraphicsEvents.tick(0, performance.now());
 		this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
@@ -173,7 +189,7 @@ export class Graphics {
 	}
 
 	#mouseDown(event: MouseEvent) {
-		this.#canvas.focus();
+		this.#canvas!.focus();
 		let x = event.offsetX;
 		let y = event.offsetY;
 		this.#pickedEntity = this.pickEntity(x, y);
@@ -217,10 +233,10 @@ export class Graphics {
 			WebGLStats.beginRender();
 		}
 		this.renderBackground();//TODOv3 put in rendering pipeline
-		this.#forwardRenderer.render(scene, camera, delta);
+		this.#forwardRenderer!.render(scene, camera, delta);
 
 		if (USE_OFF_SCREEN_CANVAS) {
-			let bitmap = this.#offscreenCanvas.transferToImageBitmap();
+			let bitmap = this.#offscreenCanvas!.transferToImageBitmap();
 			this.#bipmapContext?.transferFromImageBitmap(bitmap);
 		}
 
@@ -238,7 +254,7 @@ export class Graphics {
 		}
 	}
 
-	clear(color, depth, stencil) {
+	clear(color: boolean, depth: boolean, stencil: boolean) {
 		let bits = 0;
 		if (color) bits |= GL_COLOR_BUFFER_BIT;
 		if (depth) bits |= GL_DEPTH_BUFFER_BIT;
@@ -256,10 +272,9 @@ export class Graphics {
 		cancelAnimationFrame(this.#animationFrame);
 		let queueTask;
 		if (FULL_PATATE && TESTING) {
-			queueTask = (task) => {
+			queueTask = (task: () => void) => {
 				const mc = new MessageChannel();
-				const args = [].slice.call(arguments, 1);
-				mc.port1.onmessage = function () { task.apply(task, args); };
+				mc.port1.onmessage = () => task.apply(task);
 				mc.port2.postMessage(null);
 			}
 		} else {
@@ -275,14 +290,14 @@ export class Graphics {
 		}
 		this.#lastTick = tick;
 		if (FULL_PATATE && TESTING) {
-			queueTask(() => this._tick());
+			queueTask!(() => this._tick());
 		}
 	}
 
-	#initContext(contextAttributes) {
+	#initContext(contextAttributes: GraphicsInitOptions) {
 		const canvas = USE_OFF_SCREEN_CANVAS ? this.#offscreenCanvas : this.#canvas;
 		if (USE_OFF_SCREEN_CANVAS) {
-			this.#bipmapContext = this.#canvas.getContext('bitmaprenderer');
+			this.#bipmapContext = this.#canvas!.getContext('bitmaprenderer');
 		}
 		if (!canvas) {
 			return;
@@ -412,11 +427,11 @@ export class Graphics {
 		return WebGLRenderingState.getClearColor(clearColor);
 	}
 
-	clearDepth(clearDepth) {
+	clearDepth(clearDepth: GLclampf) {
 		WebGLRenderingState.clearDepth(clearDepth);
 	}
 
-	clearStencil(clearStencil) {
+	clearStencil(clearStencil: GLint) {
 		WebGLRenderingState.clearStencil(clearStencil);
 	}
 
@@ -431,7 +446,7 @@ export class Graphics {
 		return this.#autoResize;
 	}
 
-	getExtension(name) {
+	getExtension(name: string) {
 		if (this.glContext) {
 			if (this.#extensions.has(name)) {
 				return this.#extensions.get(name);
@@ -446,14 +461,14 @@ export class Graphics {
 
 	set pixelRatio(pixelRatio) {
 		this.#pixelRatio = pixelRatio;
-		this._updateSize();
+		this.#updateSize();
 	}
 
 	get pixelRatio() {
 		return this.#pixelRatio;
 	}
 
-	setSize(width, height) {
+	setSize(width: number, height: number) {
 		width = Math.max(width, 1);
 		height = Math.max(height, 1);
 		let previousWidth = this.#width;
@@ -464,7 +479,7 @@ export class Graphics {
 		if (isNumeric(height)) {
 			this.#height = height;
 		}
-		this._updateSize();
+		this.#updateSize();
 		GraphicsEvents.resize(width, height);
 		return [previousWidth, previousHeight];
 	}
@@ -475,12 +490,15 @@ export class Graphics {
 		return ret;
 	}
 
-	_updateSize() {
+	#updateSize() {
+		if (!this.#canvas) {
+			return;
+		}
 		this.#canvas.width = this.#width * this.#pixelRatio;
 		this.#canvas.height = this.#height * this.#pixelRatio;
 		if (USE_OFF_SCREEN_CANVAS) {
-			this.#offscreenCanvas.width = this.#canvas.width;
-			this.#offscreenCanvas.height = this.#canvas.height;
+			this.#offscreenCanvas!.width = this.#canvas.width;
+			this.#offscreenCanvas!.height = this.#canvas.height;
 		}
 
 		this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
@@ -495,12 +513,12 @@ export class Graphics {
 		return vec4.clone(this.#viewport);
 	}
 
-	set scissor(scissor) {
+	set scissor(scissor: vec4) {
 		vec4.copy(this.#scissor, scissor);
 		WebGLRenderingState.scissor(scissor);
 	}
 
-	set scissorTest(scissorTest) {
+	set scissorTest(scissorTest: boolean) {
 		if (scissorTest) {
 			WebGLRenderingState.enable(GL_SCISSOR_TEST);
 		} else {
@@ -513,7 +531,7 @@ export class Graphics {
 			return;
 		}
 		const canvas = this.#canvas;
-		if (!canvas.parentElement) {
+		if (!canvas?.parentElement) {
 			return;
 		}
 		const width = canvas.parentElement.clientWidth;
@@ -529,13 +547,13 @@ export class Graphics {
 	}
 
 	#initObserver() {
-		const callback = (entries, observer) => {
+		const callback: ResizeObserverCallback = (entries, observer) => {
 			entries.forEach(entry => {
 				this.checkCanvasSize();
 			});
 		};
 		const resizeObserver = new ResizeObserver(callback);
-		if (this.#canvas.parentElement) {
+		if (this.#canvas?.parentElement) {
 			resizeObserver.observe(this.#canvas.parentElement);
 		}
 	}
@@ -557,7 +575,7 @@ export class Graphics {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
-		let frameBuffer = this.glContext.createFramebuffer();
+		let frameBuffer = this.glContext!.createFramebuffer();
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.getGLError('createFramebuffer');
 		}
@@ -565,15 +583,15 @@ export class Graphics {
 		return frameBuffer;
 	}
 
-	deleteFramebuffer(frameBuffer) {
-		this.glContext.deleteFramebuffer(frameBuffer);
+	deleteFramebuffer(frameBuffer: WebGLFramebuffer) {
+		this.glContext!.deleteFramebuffer(frameBuffer);
 	}
 
 	createRenderbuffer() {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
-		let renderBuffer = this.glContext.createRenderbuffer();
+		let renderBuffer = this.glContext!.createRenderbuffer();
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.getGLError('createRenderbuffer');
 		}
@@ -584,13 +602,15 @@ export class Graphics {
 	}
 
 	deleteRenderbuffer(renderBuffer: WebGLRenderbuffer) {
-		this.glContext.deleteRenderbuffer(renderBuffer);
+		this.glContext!.deleteRenderbuffer(renderBuffer);
 	}
 
-	setFramebuffer(framebuffer) {
+	/*
+	setFramebuffer(framebuffer: WebGLFramebuffer) {
 		framebuffer.bind();
 		//this.glContext.bindFramebuffer(_gl.FRAMEBUFFER, framebuffer);
 	}
+	*/
 
 	pushRenderTarget(renderTarget: RenderTarget) {
 		this.#renderTargetStack.push(renderTarget);
@@ -609,7 +629,7 @@ export class Graphics {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.cleanupGLError();
 			}
-			this.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
+			this.glContext!.bindFramebuffer(GL_FRAMEBUFFER, null);
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.getGLError('bindFramebuffer');
 			}
@@ -619,7 +639,7 @@ export class Graphics {
 		}
 	}
 
-	savePicture(scene, camera, filename, width, height) {
+	savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number) {
 		let previousWidth = this.#width;
 		let previousHeight = this.#height;
 		let previousAutoResize = this.autoResize;
@@ -635,36 +655,40 @@ export class Graphics {
 	}
 
 	async savePictureAsFile(filename: string) {
-		return new File([await this.toBlob()], filename)
+		return new File([await this.toBlob() ?? new Blob()], filename)
 	}
 
-	async toBlob(): Promise<Blob> {
-		let promiseResolve: (value: Blob) => void;
-		const promise = new Promise<Blob>((resolve) => {
+	async toBlob(): Promise<Blob | null> {
+		let promiseResolve: (value: Blob | null) => void;
+		const promise = new Promise<Blob | null>((resolve) => {
 			promiseResolve = resolve;
 		});
-		const callback = function (blob) {
+		const callback = function (blob: Blob | null) {
 			promiseResolve(blob);
 		};
-		this.#canvas.toBlob(callback);
+		this.#canvas!.toBlob(callback);
 		return promise;
 	}
 
-	_savePicture(filename) {
+	async _savePicture(filename: string) {
+		/*
 		const callback = function (blob) {
 			//SaveFile(filename, blob);
-			SaveFile(new File([blob], filename));
 		};
-		this.#canvas.toBlob(callback);
+		this.#canvas.toBlob(callback);*/
+		SaveFile(await this.savePictureAsFile(filename));
 	}
 
-	startRecording(frameRate = 60, bitsPerSecond) {
-		const stream = this.#canvas.captureStream(frameRate);
+	startRecording(frameRate = 60, bitsPerSecond: number) {
+		const stream = this.#canvas!.captureStream(frameRate);
 		this.#mediaRecorder = new MediaRecorder(stream, { mimeType: RECORDER_MIME_TYPE, bitsPerSecond: bitsPerSecond });
 		this.#mediaRecorder.start();
 	}
 
 	stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
+		if (!this.#mediaRecorder) {
+			return;
+		}
 		this.#mediaRecorder.ondataavailable = (event) => {
 			const blob = new Blob([event.data], { 'type': RECORDER_MIME_TYPE });
 			SaveFile(new File([blob], fileName));
@@ -682,22 +706,22 @@ export class Graphics {
 		await this.#readyPromise;
 	}
 
-	getParameter(parameterName) {
-		return this.glContext?.getParameter(parameterName);
+	getParameter(param: GLenum) {
+		return this.glContext?.getParameter(param);
 	}
 
 	cleanupGLError() {
-		this.glContext.getError();//empty the error
+		this.glContext?.getError();//empty the error
 	}
 
-	getGLError(reason) {
-		let glError = this.glContext.getError();
+	getGLError(context: string) {
+		let glError = this.glContext?.getError() ?? 0;
 		if (glError) {
-			console.error(`GL Error in ${reason} : `, glError);
+			console.error(`GL Error in ${context} : `, glError);
 		}
 	}
 
-	useLogDepth(use) {
+	useLogDepth(use: boolean) {
 		this.setIncludeCode('LOG_DEPTH', use ? '#define USE_LOG_DEPTH' : '');
 	}
 

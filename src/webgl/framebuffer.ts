@@ -61,7 +61,7 @@ export class Framebuffer {
 				case ATTACHMENT_TYPE_RENDER_BUFFER:
 					//new Graphics().glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
 					//new Graphics().renderbufferStorage(GL_RENDERBUFFER, GL_RGBA4, 256, 256);
-					new Graphics().glContext.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
+					new Graphics().glContext!.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
 					if (ENABLE_GET_ERROR && DEBUG) {
 						new Graphics().getGLError('framebufferRenderbuffer');
 					}
@@ -70,8 +70,8 @@ export class Framebuffer {
 				case ATTACHMENT_TYPE_TEXTURE2D:
 					//console.error(new Graphics().getError());
 					let webGLTexture = attachmentParams.texture.texture;
-					new Graphics().glContext.bindTexture(attachmentParams.target, null);
-					new Graphics().glContext.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
+					new Graphics().glContext!.bindTexture(attachmentParams.target, null);
+					new Graphics().glContext!.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
 					if (ENABLE_GET_ERROR && DEBUG) {
 						new Graphics().getGLError('framebufferTexture2D');
 					}
@@ -87,7 +87,7 @@ export class Framebuffer {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			new Graphics().cleanupGLError();
 		}
-		new Graphics().glContext.bindFramebuffer(this.#target, this.#frameBuffer);
+		new Graphics().glContext!.bindFramebuffer(this.#target, this.#frameBuffer);
 		if (ENABLE_GET_ERROR && DEBUG) {
 			new Graphics().getGLError('bindFramebuffer');
 		}
