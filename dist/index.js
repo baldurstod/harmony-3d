@@ -36648,9 +36648,7 @@ class SourceModel {
                 animationFrame.setDatas('flags', AnimationFrameDataType.Number, boneFlags);
                 animation.addFrame(animationFrame);
             }
-            console.log(frameCount, bones);
         }
-        console.log(seq, animation);
         return animation;
     }
 }
