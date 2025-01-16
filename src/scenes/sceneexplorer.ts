@@ -344,7 +344,7 @@ export class SceneExplorer {
 
 	#populateTypeFilter() {
 		for (let type of ENTITIES) {
-			let option = createElement('option', { innerHTML: type, value: type });
+			let option = createElement('option', { innerText: type, value: type });
 			this.#htmlTypeFilter.append(option);
 		}
 	}
