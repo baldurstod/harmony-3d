@@ -1,5 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, defineHarmonyToggleButton, toggle, defineHarmonyAccordion, defineHarmonyContextMenu } from 'harmony-ui';
+import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, defineToggleButton, toggle, defineHarmonyAccordion, defineHarmonyContextMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
@@ -19173,7 +19173,7 @@ class SceneExplorerEntity extends HTMLElement {
     constructor() {
         super();
         this.#doOnce = true;
-        defineHarmonyToggleButton();
+        defineToggleButton();
         this.#htmlHeader = createElement('div', {
             class: 'scene-explorer-entity-header',
             childs: [
@@ -28771,7 +28771,7 @@ class ShaderEditor extends HTMLElement {
             return;
         }
         this.#htmlShaderNameSelect.innerText = '';
-        let shaderGroup = createElement('optgroup', { 'i18n-label': '#shader_editor_shaders', parent: this.#htmlShaderNameSelect });
+        let shaderGroup = createElement('optgroup', { i18n: { label: '#shader_editor_shaders', }, parent: this.#htmlShaderNameSelect });
         const shaderList = [...ShaderManager.shaderList].sort();
         for (let shaderName of shaderList) {
             const option = createElement('option', {
@@ -28785,7 +28785,7 @@ class ShaderEditor extends HTMLElement {
                 option.selected = true;
             }
         }
-        let includeGroup = createElement('optgroup', { 'i18n-label': '#shader_editor_includes', parent: this.#htmlShaderNameSelect });
+        let includeGroup = createElement('optgroup', { i18n: { label: '#shader_editor_includes', }, parent: this.#htmlShaderNameSelect });
         const includeList = [...getIncludeList()].sort();
         for (let includeName of includeList) {
             const option = createElement('option', {

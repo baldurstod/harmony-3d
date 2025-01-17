@@ -119,7 +119,7 @@ export class ShaderEditor extends HTMLElement {
 		}
 		this.#htmlShaderNameSelect.innerText = '';
 
-		let shaderGroup = createElement('optgroup', { 'i18n-label': '#shader_editor_shaders', parent: this.#htmlShaderNameSelect });
+		let shaderGroup = createElement('optgroup', { i18n: { label: '#shader_editor_shaders', }, parent: this.#htmlShaderNameSelect });
 
 		const shaderList = [...ShaderManager.shaderList].sort();
 		for (let shaderName of shaderList) {
@@ -136,7 +136,7 @@ export class ShaderEditor extends HTMLElement {
 			}
 		}
 
-		let includeGroup = createElement('optgroup', { 'i18n-label': '#shader_editor_includes', parent: this.#htmlShaderNameSelect });
+		let includeGroup = createElement('optgroup', { i18n: { label: '#shader_editor_includes', }, parent: this.#htmlShaderNameSelect });
 		const includeList = [...getIncludeList()].sort();
 		for (let includeName of includeList) {
 			const option = createElement('option', {
