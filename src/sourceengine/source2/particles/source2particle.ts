@@ -1,15 +1,15 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
-
 import { WARN } from '../../../buildoptions';
 import { clamp } from '../../../math/functions';
 import { PARTICLE_FIELD_COLOR, PARTICLE_FIELD_SEQUENCE_NUMBER, PARTICLE_FIELD_POSITION, PARTICLE_FIELD_POSITION_PREVIOUS, PARTICLE_FIELD_SCRATCH_VECTOR, PARTICLE_FIELD_GLOW_RGB, PARTICLE_FIELD_GLOW_ALPHA, PARTICLE_FIELD_SCRATCH_FLOAT, PARTICLE_FIELD_TRAIL_LENGTH, PARTICLE_FIELD_SHADER_EXTRA_DATA_1, PARTICLE_FIELD_SHADER_EXTRA_DATA_2 } from '../../common/particles/particlefields';
 import { PARTICLE_FIELD_HITBOX_OFFSET_POSITION } from '../../common/particles/particlefields';
 import { DEG_TO_RAD } from '../../../math/constants';
+import { Source2ParticleSystem } from './export';
 
 export const DEFAULT_PARTICLE_NORMAL = vec3.fromValues(0, 0, 1);
 
 export class Source2Particle {
-	id;
+	id!: number;
 	isAlive = false;
 	position = vec3.create();
 	quaternion = quat.create();
@@ -28,39 +28,39 @@ export class Source2Particle {
 	vMax = 1;
 	cTime = 0;
 	context = new Map();
-	system;
-	currentTime;
-	timeToLive;
-	initialTimeToLive;
-	proportionOfLife;
-	trail;
-	modelName;
-	u;
-	v;
-	radius;
-	initialRadius;
-	rotationRoll;
-	initialRoll;
-	rotationSpeedRoll;
-	rotationYaw;
-	startAlpha;
-	alpha;
-	glowAlpha;
-	sequence;
-	initialSequence;
-	sequence2;
-	frame;
-	PositionFromParentParticles;
-	posLockedToCP;
-	rotLockedToCP;
-	trailLength;
-	MovementRigidAttachToCP;
+	system: Source2ParticleSystem;
+	currentTime = 0;
+	timeToLive = 0;
+	initialTimeToLive = 0;
+	proportionOfLife = 0;
+	trail: Array<any> = [];//TODO: remove ?
+	modelName = '';
+	u = 0;//TODO: remove ?
+	v = 0;//TODO: remove ?
+	radius = 0;
+	initialRadius = 0;
+	rotationRoll = 0;
+	initialRoll = 0;
+	rotationSpeedRoll = 0;
+	rotationYaw = 0;
+	startAlpha = 0;
+	alpha = 0;
+	glowAlpha = 0;
+	sequence = 0;
+	initialSequence = 0;
+	sequence2 = 0;
+	frame = 0;
+	PositionFromParentParticles = false;
+	posLockedToCP = false;
+	rotLockedToCP = false;
+	trailLength = 0.1;
+	MovementRigidAttachToCP = false;
 
 
-	static consoleAlphaAlternate;
-	static consolePitch;
+	static consoleAlphaAlternate = false;
+	static consolePitch = false;
 
-	constructor(id, system) {
+	constructor(id: number, system: Source2ParticleSystem) {
 		//this.name = 'Particle ' + id;
 		//this.id = id;
 		//this.cpPosition = vec3.create();
@@ -89,7 +89,7 @@ export class Source2Particle {
 			SetAttributeToConstant(PARTICLE_ATTRIBUTE_YAW, 0);*/
 	}
 
-	step(elapsedTime) {
+	step(elapsedTime: number) {
 		this.currentTime += elapsedTime;
 		if (this.timeToLive) {
 			this.proportionOfLife = this.currentTime / this.timeToLive;
@@ -108,7 +108,7 @@ export class Source2Particle {
 		this.modelName = '';
 	}
 
-	reset(id) {
+	reset(id: number) {
 		this.id = id;
 		//this.firstRender = true;
 		this.currentTime = 0;
@@ -151,11 +151,11 @@ export class Source2Particle {
 		//mat4.identity(this.cpPreviousTransform);
 	}
 
-	setInitialField(field, value, mulInitial) {
+	setInitialField(field: number/*TODO: create a field enum*/, value: any, mulInitial: boolean = false) {
 		this.setField(field, value, mulInitial, true);
 	}
 
-	setField(field = 0, value, mulInitial = false, setInitial = false, additive = false) {
+	setField(field = 0, value: any, mulInitial = false, setInitial = false, additive = false) {
 		if (isNaN(field)) { return; }
 		//console.log('Field ' + field + ' ' + value);
 
@@ -417,7 +417,7 @@ export class Source2Particle {
 	/**
 	* TODO
 	*/
-	setInitialSequence(sequence) {
+	setInitialSequence(sequence: number) {
 		this.sequence = sequence;
 		this.initialSequence = sequence;
 	}
@@ -425,21 +425,21 @@ export class Source2Particle {
 	/**
 	* TODO
 	*/
-	setInitialRadius(radius) {
+	setInitialRadius(radius: number) {
 		this.radius = radius;
 		this.initialRadius = radius;
 	}
 	/**
 	* TODO
 	*/
-	setInitialTTL(timeToLive) {
+	setInitialTTL(timeToLive: number) {
 		this.timeToLive = timeToLive;
 		this.initialTimeToLive = timeToLive;
 	}
 	/**
 	* TODO
 	*/
-	setInitialColor(color) {
+	setInitialColor(color: vec4) {
 		this.color = color;
 		this.initialColor = color;
 	}
@@ -447,7 +447,7 @@ export class Source2Particle {
 	* Set particle initial rotation roll.
 	* @param {Number} roll Initial rotation roll.
 	*/
-	setInitialRoll(roll) {
+	setInitialRoll(roll:number) {
 		this.rotationRoll = roll;
 		this.initialRoll = roll;
 	}
@@ -458,15 +458,14 @@ export class Source2Particle {
 	* @param {vec3|null} The receiving vector. Created if null.
 	* @return {vec3} The world position.
 	*/
-	getWorldPos(worldPos) {
-		worldPos = worldPos || vec3.create();
+	getWorldPos(worldPos = vec3.create()) {
 		//vec3.transformQuat(worldPos, this.position, this.cpOrientation);
 		//vec3.transformQuat(worldPos, this.position, quat.create());
 
 		//vec3.transformQuat(worldPos, this.position, this.system.currentOrientation);
 		//vec3.transformQuat(worldPos, this.position, this.cpOrientation);
 		//if (this.initialCPPosition) {
-			//vec3.add(worldPos, worldPos, this.cpPosition);
+		//vec3.add(worldPos, worldPos, this.cpPosition);
 		//}
 		vec3.copy(worldPos, this.position);
 		return worldPos;
@@ -477,8 +476,8 @@ export class Source2Particle {
 	* @param {vec3|null} The receiving vector. Created if null.
 	* @return {vec3} The world position.
 	*/
-	getLocalPos(worldPos) {
-		worldPos = worldPos || vec3.create();
+	getLocalPos(worldPos = vec3.create()) {
+		//worldPos = worldPos || vec3.create();
 		//vec3.transformQuat(worldPos, this.position, this.cpOrientation);
 		vec3.transformQuat(worldPos, this.position, quat.create());
 		//vec3.add(worldPos, worldPos, this.cpPosition);
