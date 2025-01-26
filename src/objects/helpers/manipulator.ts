@@ -1,7 +1,7 @@
 import { mat4, quat, vec2, vec3, vec4 } from 'gl-matrix';
 import { ShortcutHandler } from 'harmony-browser-utils';
 
-import { Entity } from '../../entities/entity';
+import { Entity, LAYER_MAX } from '../../entities/entity';
 import { Graphics } from '../../graphics/graphics';
 import { GraphicsEvents, GraphicsEvent, GraphicMouseEventData } from '../../graphics/graphicsevents';
 import { LineMaterial } from '../../materials/linematerial';
@@ -123,9 +123,11 @@ export class Manipulator extends Entity {
 	#enableX: boolean = false;
 	#enableY: boolean = false;
 	#enableZ: boolean = false;
+
 	constructor(params?: any) {
 		super(params);
 		this.wireframe = 0;
+		this.setLayer(LAYER_MAX);
 		this.hideInExplorer = true;
 		this.castShadow = false;
 		this.serializable = false;

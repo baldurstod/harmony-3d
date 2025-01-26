@@ -2139,6 +2139,7 @@ let incrementalPickingId = 0;
 const IDENTITY_QUAT$1 = quat.create();
 const IDENTITY_VEC3 = vec3.create();
 const UNITY_VEC3 = vec3.fromValues(1, 1, 1);
+const LAYER_MAX = 50;
 class Entity {
     static addSubMenu;
     id = generateRandomUUID();
@@ -2173,6 +2174,7 @@ class Entity {
     static editMaterial;
     properties = new Map();
     loadedPromise;
+    #layer = undefined;
     constructor(params) {
         this.setParameters(params);
     }
@@ -3050,6 +3052,22 @@ class Entity {
     setProperty(name, value) {
         return this.properties.set(name, value);
     }
+    setLayer(layer) {
+        if (Number.isNaN(Number(layer))) {
+            this.#layer = undefined;
+        }
+        else {
+            this.#layer = clamp(layer, 0, LAYER_MAX);
+        }
+    }
+    getLayer() {
+        if (this.#layer === undefined) {
+            return this._parent?.getLayer() ?? undefined;
+        }
+        else {
+            return this.#layer;
+        }
+    }
     toJSON() {
         let children = [];
         for (let child of this.#children) {
@@ -3092,6 +3110,9 @@ class Entity {
         if (this.wireframe !== undefined) {
             json.wireframe = this.wireframe;
         }
+        if (this.#layer !== undefined) {
+            json.layer = this.#layer;
+        }
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
@@ -3127,6 +3148,7 @@ class Entity {
         this.materialsParams = json.materialsparams;
         this.#hideInExplorer = json.hideinexplorer ?? false;
         this.wireframe = json.wireframe;
+        this.#layer = json.layer;
     }
     static getEntityName() {
         return 'Entity';
@@ -9237,6 +9259,9 @@ class OrbitControl extends CameraControl {
         if (this.enabled === false) {
             return;
         }
+        if (event.detail.entity?.getLayer() > 0) {
+            return;
+        }
         // Prevent the browser from scrolling.
         event.preventDefault();
         const mouseEvent = event.detail.mouseEvent;
@@ -10308,6 +10333,7 @@ class Manipulator extends Entity {
     constructor(params) {
         super(params);
         this.wireframe = 0;
+        this.setLayer(LAYER_MAX);
         this.hideInExplorer = true;
         this.castShadow = false;
         this.serializable = false;
@@ -53430,34 +53456,34 @@ class Source2Particle {
     cTime = 0;
     context = new Map();
     system;
-    currentTime;
-    timeToLive;
-    initialTimeToLive;
-    proportionOfLife;
-    trail;
-    modelName;
-    u;
-    v;
-    radius;
-    initialRadius;
-    rotationRoll;
-    initialRoll;
-    rotationSpeedRoll;
-    rotationYaw;
-    startAlpha;
-    alpha;
-    glowAlpha;
-    sequence;
-    initialSequence;
-    sequence2;
-    frame;
-    PositionFromParentParticles;
-    posLockedToCP;
-    rotLockedToCP;
-    trailLength;
-    MovementRigidAttachToCP;
-    static consoleAlphaAlternate;
-    static consolePitch;
+    currentTime = 0;
+    timeToLive = 0;
+    initialTimeToLive = 0;
+    proportionOfLife = 0;
+    trail = []; //TODO: remove ?
+    modelName = '';
+    u = 0; //TODO: remove ?
+    v = 0; //TODO: remove ?
+    radius = 0;
+    initialRadius = 0;
+    rotationRoll = 0;
+    initialRoll = 0;
+    rotationSpeedRoll = 0;
+    rotationYaw = 0;
+    startAlpha = 0;
+    alpha = 0;
+    glowAlpha = 0;
+    sequence = 0;
+    initialSequence = 0;
+    sequence2 = 0;
+    frame = 0;
+    PositionFromParentParticles = false;
+    posLockedToCP = false;
+    rotLockedToCP = false;
+    trailLength = 0.1;
+    MovementRigidAttachToCP = false;
+    static consoleAlphaAlternate = false;
+    static consolePitch = false;
     constructor(id, system) {
         //this.name = 'Particle ' + id;
         //this.id = id;
@@ -53544,7 +53570,7 @@ class Source2Particle {
         //this.initialCPQuaternion = null;
         //mat4.identity(this.cpPreviousTransform);
     }
-    setInitialField(field, value, mulInitial) {
+    setInitialField(field /*TODO: create a field enum*/, value, mulInitial = false) {
         this.setField(field, value, mulInitial, true);
     }
     setField(field = 0, value, mulInitial = false, setInitial = false, additive = false) {
@@ -53819,8 +53845,7 @@ class Source2Particle {
     * @param {vec3|null} The receiving vector. Created if null.
     * @return {vec3} The world position.
     */
-    getWorldPos(worldPos) {
-        worldPos = worldPos || vec3.create();
+    getWorldPos(worldPos = vec3.create()) {
         //vec3.transformQuat(worldPos, this.position, this.cpOrientation);
         //vec3.transformQuat(worldPos, this.position, quat.create());
         //vec3.transformQuat(worldPos, this.position, this.system.currentOrientation);
@@ -53836,8 +53861,8 @@ class Source2Particle {
     * @param {vec3|null} The receiving vector. Created if null.
     * @return {vec3} The world position.
     */
-    getLocalPos(worldPos) {
-        worldPos = worldPos || vec3.create();
+    getLocalPos(worldPos = vec3.create()) {
+        //worldPos = worldPos || vec3.create();
         //vec3.transformQuat(worldPos, this.position, this.cpOrientation);
         vec3.transformQuat(worldPos, this.position, quat.create());
         //vec3.add(worldPos, worldPos, this.cpPosition);

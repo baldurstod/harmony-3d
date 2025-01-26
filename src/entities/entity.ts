@@ -5,7 +5,7 @@ import { DEBUG, VERBOSE } from '../buildoptions';
 import { JSONLoader } from '../importers/jsonloader';
 import { BoundingBox } from '../math/boundingbox';
 import { DEG_TO_RAD } from '../math/constants';
-import { generateRandomUUID } from '../math/functions';
+import { clamp, generateRandomUUID } from '../math/functions';
 import { stringToVec3, stringToQuat } from '../utils/utils';
 import { registerEntity } from './entities';
 import { Scene } from '../scenes/scene';
@@ -34,6 +34,8 @@ let incrementalPickingId = 0;
 export const IDENTITY_QUAT = quat.create();
 export const IDENTITY_VEC3 = vec3.create();
 export const UNITY_VEC3 = vec3.fromValues(1, 1, 1);
+
+export const LAYER_MAX = 50;
 
 export class Entity {
 	static addSubMenu: any;
@@ -69,6 +71,7 @@ export class Entity {
 	static editMaterial: (entity: Entity) => void;
 	readonly properties = new Map<string, any>();
 	loadedPromise?: Promise<any>;
+	#layer?: number = undefined;
 
 	constructor(params?: any) {
 		this.setParameters(params);
@@ -1027,6 +1030,22 @@ export class Entity {
 		return this.properties.set(name, value);
 	}
 
+	setLayer(layer?: number) {
+		if (Number.isNaN(Number(layer))) {
+			this.#layer = undefined;
+		} else {
+			this.#layer = clamp(layer, 0, LAYER_MAX);
+		}
+	}
+
+	getLayer(): number | undefined {
+		if (this.#layer === undefined) {
+			return this._parent?.getLayer() ?? undefined;
+		} else {
+			return this.#layer;
+		}
+	}
+
 	toJSON() {
 		let children: any[] = [];
 		for (let child of this.#children) {
@@ -1070,6 +1089,9 @@ export class Entity {
 		if (this.wireframe !== undefined) {
 			json.wireframe = this.wireframe;
 		}
+		if (this.#layer !== undefined) {
+			json.layer = this.#layer;
+		}
 		return json;
 	}
 
@@ -1109,6 +1131,7 @@ export class Entity {
 		this.materialsParams = json.materialsparams;
 		this.#hideInExplorer = json.hideinexplorer as boolean ?? false;
 		this.wireframe = json.wireframe as number;
+		this.#layer = json.layer as number;
 	}
 
 	static getEntityName() {

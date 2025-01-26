@@ -1948,6 +1948,8 @@ declare class Choreography {
           copy(source: Entity): void;
           getProperty(name: string): any;
           setProperty(name: string, value: any): Map<string, any>;
+          setLayer(layer?: number): void;
+          getLayer(): number | undefined;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
           createChild(entityName: string, parameters: any): Promise<Entity | Material>;
