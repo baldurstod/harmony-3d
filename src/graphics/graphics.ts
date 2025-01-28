@@ -133,7 +133,10 @@ export class Graphics {
 	}
 
 	initCanvas(contextAttributes: GraphicsInitOptions = {}) {
-		this.#canvas = contextAttributes.canvas ?? createElement('canvas', { tabindex: 1 }) as HTMLCanvasElement;
+		this.#canvas = contextAttributes.canvas ?? createElement('canvas') as HTMLCanvasElement;
+		if (!this.#canvas.hasAttribute('tabindex')) {
+			this.#canvas.setAttribute('tabindex', "1");
+		}
 		ShortcutHandler.addContext('3dview', this.#canvas!);
 
 		this.#width = this.#canvas!.width;

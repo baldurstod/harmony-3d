@@ -7258,7 +7258,10 @@ class Graphics {
         this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
     }
     initCanvas(contextAttributes = {}) {
-        this.#canvas = contextAttributes.canvas ?? createElement('canvas', { tabindex: 1 });
+        this.#canvas = contextAttributes.canvas ?? createElement('canvas');
+        if (!this.#canvas.hasAttribute('tabindex')) {
+            this.#canvas.setAttribute('tabindex', "1");
+        }
         ShortcutHandler.addContext('3dview', this.#canvas);
         this.#width = this.#canvas.width;
         this.#height = this.#canvas.height;
