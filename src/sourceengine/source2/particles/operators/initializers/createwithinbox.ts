@@ -2,6 +2,7 @@ import { quat, vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { Source2Particle } from '../../source2particle';
 
 let tempQuat = quat.create();
 let tempVec3 = vec3.create();
@@ -13,7 +14,7 @@ export class CreateWithinBox extends Operator {
 	localSpace = false;
 	scaleCP = -1;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, value: any) {
 		switch (paramName) {
 			case 'm_vecMin':
 				vec3.copy(this.vecMin, value);
@@ -32,10 +33,10 @@ export class CreateWithinBox extends Operator {
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: Source2Particle, elapsedTime: number) {
 		vec3RandomBox(tempVec3, this.vecMin, this.vecMax);
 		if (this.scaleCP !== -1) {
-			let scaleCp = this.system.getControlPointForScale(this.scaleCP);
+			const scaleCp = this.system.getControlPointForScale(this.scaleCP);
 			if (scaleCp) {
 				scaleCp.getWorldPosition(tempVec3_2);
 				vec3.scale(tempVec3, tempVec3, tempVec3_2[0]);//x position of the scale cp is used as scaling

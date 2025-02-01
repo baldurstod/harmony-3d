@@ -31,7 +31,7 @@ export class Source2ParticleSystem extends Entity {
 	forces = [];
 	constraints = [];
 	renderers = [];
-	controlPoints = [];
+	controlPoints: Array<ControlPoint> = [];
 	childSystems = [];
 	livingParticles = [];
 	poolParticles = [];
