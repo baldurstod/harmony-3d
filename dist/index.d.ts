@@ -1266,8 +1266,8 @@ declare class Choreography {
          vecMax: vec3;
          localSpace: boolean;
          scaleCP: number;
-         _paramChanged(paramName: any, value: any): void;
-         doInit(particle: any, elapsedTime: any): void;
+         _paramChanged(paramName: string, value: any): void;
+         doInit(particle: Source2Particle, elapsedTime: number): void;
      }
 
      export declare class CreateWithinSphere extends Operator {
@@ -7365,6 +7365,101 @@ declare class Choreography {
              doOperate(particle: any, elapsedTime: any): void;
          }
 
+         declare class Source2Particle {
+             id: number;
+             isAlive: boolean;
+             position: vec3;
+             quaternion: quat;
+             prevPosition: vec3;
+             velocity: vec3;
+             color: vec4;
+             initialColor: vec4;
+             normal: vec3;
+             scratchVec: vec3;
+             scratch: number;
+             hitboxOffsetPosition: vec3;
+             glowRGB: vec3;
+             uMin: number;
+             uMax: number;
+             vMin: number;
+             vMax: number;
+             cTime: number;
+             context: Map<any, any>;
+             system: Source2ParticleSystem;
+             currentTime: number;
+             timeToLive: number;
+             initialTimeToLive: number;
+             proportionOfLife: number;
+             trail: Array<any>;
+             modelName: string;
+             u: number;
+             v: number;
+             radius: number;
+             initialRadius: number;
+             rotationRoll: number;
+             initialRoll: number;
+             rotationSpeedRoll: number;
+             rotationYaw: number;
+             startAlpha: number;
+             alpha: number;
+             glowAlpha: number;
+             sequence: number;
+             initialSequence: number;
+             sequence2: number;
+             frame: number;
+             PositionFromParentParticles: boolean;
+             posLockedToCP: boolean;
+             rotLockedToCP: boolean;
+             trailLength: number;
+             MovementRigidAttachToCP: boolean;
+             static consoleAlphaAlternate: boolean;
+             static consolePitch: boolean;
+             constructor(id: number, system: Source2ParticleSystem);
+             step(elapsedTime: number): void;
+             start(): void;
+             die(): void;
+             reset(id: number): void;
+             setInitialField(field: number, value: any, mulInitial?: boolean): void;
+             setField(field: number, value: any, mulInitial?: boolean, setInitial?: boolean, additive?: boolean): void;
+             /**
+              * TODO
+              */
+             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+             /**
+              * TODO
+              */
+             setInitialSequence(sequence: number): void;
+             /**
+              * TODO
+              */
+             setInitialRadius(radius: number): void;
+             /**
+              * TODO
+              */
+             setInitialTTL(timeToLive: number): void;
+             /**
+              * TODO
+              */
+             setInitialColor(color: vec4): void;
+             /**
+              * Set particle initial rotation roll.
+              * @param {Number} roll Initial rotation roll.
+              */
+             setInitialRoll(roll: number): void;
+             /**
+              * Get particle world position
+              * @param {vec3|null} The receiving vector. Created if null.
+              * @return {vec3} The world position.
+              */
+             getWorldPos(worldPos?: vec3): vec3;
+             /**
+              * Get particle world position
+              * @param {vec3|null} The receiving vector. Created if null.
+              * @return {vec3} The world position.
+              */
+             getLocalPos(worldPos?: vec3): vec3;
+         }
+
          export declare const Source2ParticleLoader: {
              load(repository: any, fileName: any): Promise<unknown>;
              getSystem(repository: any, vpcf: any, snapshotModifiers?: any): Promise<Source2ParticleSystem>;
@@ -7405,7 +7500,7 @@ declare class Choreography {
              forces: any[];
              constraints: any[];
              renderers: any[];
-             controlPoints: any[];
+             controlPoints: Array<ControlPoint>;
              childSystems: any[];
              livingParticles: any[];
              poolParticles: any[];
@@ -7438,7 +7533,7 @@ declare class Choreography {
              getWorldQuaternion(q?: quat): quat;
              getControlPoint(controlPointId: any): any;
              getControlPointForScale(controlPointId: any): any;
-             getOwnControlPoint(controlPointId: any): any;
+             getOwnControlPoint(controlPointId: any): ControlPoint;
              getControlPointPosition(cpId: any): any;
              setControlPointPosition(cpId: any, position: any): void;
              setMaxParticles(max: any): void;

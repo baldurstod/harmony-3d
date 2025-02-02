@@ -19236,10 +19236,12 @@ class SceneExplorerEntity extends HTMLElement {
                             hidden: true,
                             class: 'scene-explorer-entity-button-animations',
                             childs: [
-                                createElement('off', {
+                                createElement('div', {
+                                    slot: 'off',
                                     innerHTML: runSVG,
                                 }),
-                                createElement('on', {
+                                createElement('div', {
+                                    slot: 'on',
                                     innerHTML: walkSVG,
                                 }),
                             ],
@@ -19251,10 +19253,12 @@ class SceneExplorerEntity extends HTMLElement {
                             hidden: true,
                             class: 'scene-explorer-entity-button-animations',
                             childs: [
-                                createElement('off', {
+                                createElement('div', {
+                                    slot: 'off',
                                     innerHTML: repeatSVG,
                                 }),
-                                createElement('on', {
+                                createElement('div', {
+                                    slot: 'on',
                                     innerHTML: repeatOnSVG,
                                 }),
                             ],
@@ -57489,7 +57493,7 @@ class CreateWithinBox extends Operator {
     doInit(particle, elapsedTime) {
         vec3RandomBox(tempVec3$5, this.vecMin, this.vecMax);
         if (this.scaleCP !== -1) {
-            let scaleCp = this.system.getControlPointForScale(this.scaleCP);
+            const scaleCp = this.system.getControlPointForScale(this.scaleCP);
             if (scaleCp) {
                 scaleCp.getWorldPosition(tempVec3_2$1);
                 vec3.scale(tempVec3$5, tempVec3$5, tempVec3_2$1[0]); //x position of the scale cp is used as scaling

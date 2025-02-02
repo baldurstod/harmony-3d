@@ -80,10 +80,12 @@ export class SceneExplorerEntity extends HTMLElement {
 							hidden: true,
 							class: 'scene-explorer-entity-button-animations',
 							childs: [
-								createElement('off', {
+								createElement('div', {
+									slot: 'off',
 									innerHTML: runSVG,
 								}),
-								createElement('on', {
+								createElement('div', {
+									slot: 'on',
 									innerHTML: walkSVG,
 								}),
 							],
@@ -95,10 +97,12 @@ export class SceneExplorerEntity extends HTMLElement {
 							hidden: true,
 							class: 'scene-explorer-entity-button-animations',
 							childs: [
-								createElement('off', {
+								createElement('div', {
+									slot: 'off',
 									innerHTML: repeatSVG,
 								}),
-								createElement('on', {
+								createElement('div', {
+									slot: 'on',
 									innerHTML: repeatOnSVG,
 								}),
 							],
