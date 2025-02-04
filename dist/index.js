@@ -1,5 +1,5 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, defineToggleButton, toggle, defineHarmonyAccordion, defineHarmonyContextMenu } from 'harmony-ui';
+import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, defineToggleButton, toggle, defineHarmonyAccordion, defineHarmonyMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
@@ -25077,8 +25077,8 @@ class SceneExplorer {
             ],
         });
         I18n.observeElement(this.#shadowRoot);
-        defineHarmonyContextMenu();
-        this.#htmlContextMenu = createElement('harmony-context-menu');
+        defineHarmonyMenu();
+        this.#htmlContextMenu = createElement('harmony-menu');
         this.#initHtmlHeader();
         this.#initHtmlProperties();
         this.applyFilter();
@@ -25299,7 +25299,7 @@ class SceneExplorer {
         }*/
     }
     showContextMenu(contextMenu, x, y, entity) {
-        this.#htmlContextMenu.show(contextMenu, x, y, entity);
+        this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
     }
     editMaterial(material) {
         const materialEditor = getMaterialEditor();

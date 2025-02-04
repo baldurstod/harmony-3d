@@ -1,5 +1,5 @@
 import { ShortcutHandler } from 'harmony-browser-utils';
-import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot, defineHarmonyContextMenu, HTMLHarmonyContextMenuElement, HarmonyContextMenuItems, defineHarmonyAccordion, HTMLHarmonyAccordionElement } from 'harmony-ui';
+import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot, defineHarmonyMenu, HTMLHarmonyMenuElement, HarmonyMenuItems, defineHarmonyAccordion, HTMLHarmonyAccordionElement } from 'harmony-ui';
 import { SceneExplorerEvents } from './sceneexplorerevents';
 import { Camera } from '../cameras/camera';
 import { RotationControl } from '../controls/rotationcontrol';
@@ -83,7 +83,7 @@ export class SceneExplorer {
 	#htmlHeader!: HTMLElement;
 	htmlFileSelector!: HTMLElement;
 	#htmlNameFilter!: HTMLInputElement;
-	#htmlContextMenu!: HTMLHarmonyContextMenuElement;
+	#htmlContextMenu!: HTMLHarmonyMenuElement;
 	#htmlTypeFilter!: HTMLSelectElement;
 	#shadowRoot!: ShadowRoot;
 	#htmlName!: HTMLElement;
@@ -230,8 +230,8 @@ export class SceneExplorer {
 		});
 		I18n.observeElement(this.#shadowRoot);
 
-		defineHarmonyContextMenu();
-		this.#htmlContextMenu = createElement('harmony-context-menu') as HTMLHarmonyContextMenuElement;
+		defineHarmonyMenu();
+		this.#htmlContextMenu = createElement('harmony-menu') as HTMLHarmonyMenuElement;
 
 		this.#initHtmlHeader();
 		this.#initHtmlProperties();
@@ -471,8 +471,8 @@ export class SceneExplorer {
 		}*/
 	}
 
-	showContextMenu(contextMenu: HarmonyContextMenuItems, x: number, y: number, entity: Entity) {
-		this.#htmlContextMenu.show(contextMenu, x, y, entity);
+	showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity) {
+		this.#htmlContextMenu.showContextual(contextMenu, x, y, entity);
 	}
 
 	editMaterial(material: Material) {

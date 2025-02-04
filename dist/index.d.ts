@@ -1,5 +1,5 @@
 import { BinaryReader } from 'harmony-binary-reader';
-import { HarmonyContextMenuItems } from 'harmony-ui';
+import { HarmonyMenuItems } from 'harmony-ui';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import { quat } from 'gl-matrix';
@@ -6189,7 +6189,7 @@ declare class Choreography {
              selectEntity(entity: Entity): void;
              getSelectedEntity(): Entity;
              getEntityHtml(entity: Entity): void;
-             showContextMenu(contextMenu: HarmonyContextMenuItems, x: number, y: number, entity: Entity): void;
+             showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity): void;
              editMaterial(material: Material): void;
          }
 
