@@ -380,8 +380,8 @@ export class NodeGui {
 
 		this.#htmlRectSelector.set({
 			rotation: angle,
-			left: center[0] - width * 0.5,
-			top: center[1] - height * 0.5,
+			left: center[0],
+			top: center[1],
 			width: width,
 			height: height,
 		});

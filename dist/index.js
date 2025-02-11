@@ -14441,9 +14441,9 @@ class ApplySticker extends Node {
         this.addParam(new NodeParam('adjust black', NodeParamType.Float, 0.0));
         this.addParam(new NodeParam('adjust white', NodeParamType.Float, 1.0));
         this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
-        this.addParam(new NodeParam('bottom left', NodeParamType.Vec2, vec2.create()));
         this.addParam(new NodeParam('top left', NodeParamType.Vec2, vec2.create()));
         this.addParam(new NodeParam('top right', NodeParamType.Vec2, vec2.create()));
+        this.addParam(new NodeParam('bottom left', NodeParamType.Vec2, vec2.create()));
         this.addParam(new NodeParam('path', NodeParamType.String, ''));
         this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
     }
@@ -14932,8 +14932,8 @@ class NodeGui {
         const angle = Math.atan2(AC[1], AC[0]);
         this.#htmlRectSelector.set({
             rotation: angle,
-            left: center[0] - width * 0.5,
-            top: center[1] - height * 0.5,
+            left: center[0],
+            top: center[1],
             width: width,
             height: height,
         });
