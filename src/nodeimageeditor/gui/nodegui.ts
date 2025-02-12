@@ -108,6 +108,7 @@ export class NodeGui {
 	#dragStartClientX: number;
 	#dragStartClientY: number;
 	#htmlParams = new Map<string, HTMLElement | Array<HTMLElement>>();
+	#htmlParamsValue = new Map<HTMLElement, HTMLInputElement>();
 
 	constructor(nodeImageEditorGui: NodeImageEditorGui, node: Node) {
 		this.#nodeChanged = () => {
@@ -292,45 +293,18 @@ export class NodeGui {
 		}
 
 		if (Array.isArray(paramHtml)) {
-			return paramHtml[index];
-		}
-		return paramHtml;
-	}
-
-	#createParamHTML(param: NodeParam, index?: number): HTMLElement {
-		let paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
-		let nameHtml = createElement('div', { parent: paramHtml });
-		let valueHtml: HTMLInputElement;
-
-		if (param.type != NodeParamType.StickerAdjust) {
-			valueHtml = createElement('input', {
-				parent: paramHtml,
-				events: {
-					change: (event) => this.#setParamValue(param, event.target.value, index)
-				}
-			}) as HTMLInputElement;
-			createElement('span', {
-				class: 'copy-button',
-				parent: paramHtml,
-				innerHTML: contentCopySVG,
-				events: {
-					click: async () => {
-						await navigator.clipboard.writeText(valueHtml.value);
-						valueHtml.classList.add('flash');
-						await setTimeoutPromise(1500);
-						valueHtml.classList.remove('flash');
-					},
-				}
-			});
+			paramHtml = paramHtml[index];
 		}
 
-		nameHtml.innerHTML = param.name;
 		let value: any;
 		if (index != undefined) {
 			value = param.value[index];
 		} else {
 			value = param.value;
 		}
+
+		const valueHtml = this.#htmlParamsValue.get(paramHtml);
+
 		switch (param.type) {
 			case NodeParamType.Float:
 			case NodeParamType.Degree:
@@ -424,8 +398,125 @@ export class NodeGui {
 				this.#updateManipulator();
 				break;
 		}
+
+
 		if (valueHtml) {
 			valueHtml.value = value;
+		}
+		return paramHtml;
+	}
+
+	#createParamHTML(param: NodeParam, index?: number): HTMLElement {
+		let paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
+		let nameHtml = createElement('div', { parent: paramHtml });
+		let valueHtml: HTMLInputElement;
+
+
+		if (param.type != NodeParamType.StickerAdjust) {
+			valueHtml = createElement('input', {
+				parent: paramHtml,
+				events: {
+					change: (event) => this.#setParamValue(param, event.target.value, index)
+				}
+			}) as HTMLInputElement;
+			createElement('span', {
+				class: 'copy-button',
+				parent: paramHtml,
+				innerHTML: contentCopySVG,
+				events: {
+					click: async () => {
+						await navigator.clipboard.writeText(valueHtml.value);
+						valueHtml.classList.add('flash');
+						await setTimeoutPromise(1500);
+						valueHtml.classList.remove('flash');
+					},
+				}
+			});
+		}
+
+		nameHtml.innerText = param.name;
+		this.#htmlParamsValue.set(paramHtml, valueHtml);
+
+		if (param.type == NodeParamType.StickerAdjust) {
+			defineHarmony2dManipulator();
+			defineHarmonyToggleButton();
+
+			createElement('harmony-toggle-button', {
+				class: 'sticker',
+				parent: paramHtml,
+				state: true,
+				childs: [
+					createElement('div', {
+						slot: 'off',
+						innerHTML: dragPanSVG,
+					}),
+					createElement('div', {
+						slot: 'on',
+						innerHTML: dragPanSVG,
+					}),
+				],
+				events: {
+					change: (event) => this.#htmlRectSelector.setMode({ translation: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+				}
+			}) as HTMLHarmonyToggleButtonElement;
+
+			createElement('harmony-toggle-button', {
+				class: 'sticker',
+				parent: paramHtml,
+				state: true,
+				childs: [
+					createElement('div', {
+						slot: 'off',
+						innerHTML: panZoomSVG,
+					}),
+					createElement('div', {
+						slot: 'on',
+						innerHTML: panZoomSVG,
+					}),
+				],
+				events: {
+					change: (event) => this.#htmlRectSelector.setMode({ resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None, scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+				}
+			}) as HTMLHarmonyToggleButtonElement;
+
+			createElement('harmony-toggle-button', {
+				class: 'sticker',
+				parent: paramHtml,
+				state: true,
+				childs: [
+					createElement('div', {
+						slot: 'off',
+						innerHTML: rotateSVG,
+					}),
+					createElement('div', {
+						slot: 'on',
+						innerHTML: rotateSVG,
+					}),
+				],
+				events: {
+					change: (event) => this.#htmlRectSelector.setMode({ rotation: event.target.state }),
+				}
+			}) as HTMLHarmonyToggleButtonElement;
+
+			this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {
+				class: 'node-image-editor-sticker-selector',
+				parent: this.#htmlPreview,
+				events: {
+					updateend: (event: CustomEvent) => {
+						const parameters = { 'top left': 0, 'bottom left': 2, 'top right': 1 };
+						const manipulator = event.target as HTMLHarmony2dManipulatorElement;
+						for (let name in parameters) {
+							const param = this.#node.getParam(name);
+							if (param) {
+								const rect = this.#htmlPreview.getBoundingClientRect();
+								const corner = manipulator.getCorner(parameters[name]);
+								this.#setParamValue(param, `${corner.x / rect.width} ${corner.y / rect.width}`, undefined, false);
+							}
+						}
+					},
+				}
+			}) as HTMLHarmony2dManipulatorElement;
+			this.#updateManipulator();
 		}
 
 		if (index === undefined) {
