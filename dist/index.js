@@ -1,10 +1,10 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
-import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, I18n, defineToggleButton, toggle, defineHarmonyAccordion, defineHarmonyMenu } from 'harmony-ui';
+import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu } from 'harmony-ui';
 import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
-import { zoomOutSVG, zoomInSVG, contentCopySVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG, dragPanSVG, rotateSVG, panZoomSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
 import { setTimeoutPromise } from 'harmony-utils';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
@@ -14682,7 +14682,7 @@ class NodeGui {
     #htmlPreview;
     #htmlRectSelector;
     #drag;
-    #htmlParams;
+    #htmlParamsContainer;
     _ioGui = new Map();
     #refreshTimeout;
     #nodeChanged;
@@ -14690,6 +14690,7 @@ class NodeGui {
     #nodeImageEditorGui;
     #dragStartClientX;
     #dragStartClientY;
+    #htmlParams = new Map();
     constructor(nodeImageEditorGui, node) {
         this.#nodeChanged = () => {
             clearTimeout(this.#refreshTimeout);
@@ -14773,7 +14774,7 @@ class NodeGui {
                     class: 'node-image-editor-node-content',
                     childs: [
                         htmlInputs = createElement('div', { class: 'node-image-editor-node-ios' }),
-                        this.#htmlParams = createElement('div', { class: 'node-image-editor-node-params' }),
+                        this.#htmlParamsContainer = createElement('div', { class: 'node-image-editor-node-params' }),
                         htmlOutputs = createElement('div', { class: 'node-image-editor-node-ios' }),
                     ],
                 }),
@@ -14830,40 +14831,50 @@ class NodeGui {
         resizeObserver.observe(this.#htmlPreview);
     }
     #refreshHtml() {
-        this.#htmlParams.innerText = '';
+        this.#htmlParamsContainer.innerText = '';
         for (let [_, param] of this.#node.params) {
             if (param.length && param.length > 1) {
                 for (let i = 0; i < param.length; ++i) {
-                    this.#htmlParams.append(this.#createParamHtml(param, i));
+                    this.#htmlParamsContainer.append(this.#getParamHTML(param, i));
                 }
             }
             else {
-                this.#htmlParams.append(this.#createParamHtml(param));
+                this.#htmlParamsContainer.append(this.#getParamHTML(param));
             }
         }
     }
-    #createParamHtml(param, index) {
+    #getParamHTML(param, index) {
+        const paramHtml = this.#htmlParams.get(param.name) ?? this.#createParamHTML(param, index);
+        if (Array.isArray(paramHtml)) {
+            return paramHtml[index];
+        }
+        return paramHtml;
+    }
+    #createParamHTML(param, index) {
         let paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
         let nameHtml = createElement('div', { parent: paramHtml });
-        let valueHtml = createElement('input', {
-            parent: paramHtml,
-            events: {
-                change: (event) => this.#setParamValue(param, event.target.value, index)
-            }
-        });
-        createElement('span', {
-            class: 'copy-button',
-            parent: paramHtml,
-            innerHTML: contentCopySVG,
-            events: {
-                click: async () => {
-                    await navigator.clipboard.writeText(valueHtml.value);
-                    valueHtml.classList.add('flash');
-                    await setTimeoutPromise(1500);
-                    valueHtml.classList.remove('flash');
-                },
-            }
-        });
+        let valueHtml;
+        if (param.type != NodeParamType.StickerAdjust) {
+            valueHtml = createElement('input', {
+                parent: paramHtml,
+                events: {
+                    change: (event) => this.#setParamValue(param, event.target.value, index)
+                }
+            });
+            createElement('span', {
+                class: 'copy-button',
+                parent: paramHtml,
+                innerHTML: contentCopySVG,
+                events: {
+                    click: async () => {
+                        await navigator.clipboard.writeText(valueHtml.value);
+                        valueHtml.classList.add('flash');
+                        await setTimeoutPromise(1500);
+                        valueHtml.classList.remove('flash');
+                    },
+                }
+            });
+        }
         nameHtml.innerHTML = param.name;
         let value;
         if (index != undefined) {
@@ -14885,7 +14896,61 @@ class NodeGui {
                 break;
             case NodeParamType.StickerAdjust:
                 defineHarmony2dManipulator();
-                hide(valueHtml);
+                defineHarmonyToggleButton();
+                createElement('harmony-toggle-button', {
+                    class: 'sticker',
+                    parent: paramHtml,
+                    state: true,
+                    childs: [
+                        createElement('div', {
+                            slot: 'off',
+                            innerHTML: dragPanSVG,
+                        }),
+                        createElement('div', {
+                            slot: 'on',
+                            innerHTML: dragPanSVG,
+                        }),
+                    ],
+                    events: {
+                        change: (event) => this.#htmlRectSelector.setMode({ translation: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+                    }
+                });
+                createElement('harmony-toggle-button', {
+                    class: 'sticker',
+                    parent: paramHtml,
+                    state: true,
+                    childs: [
+                        createElement('div', {
+                            slot: 'off',
+                            innerHTML: panZoomSVG,
+                        }),
+                        createElement('div', {
+                            slot: 'on',
+                            innerHTML: panZoomSVG,
+                        }),
+                    ],
+                    events: {
+                        change: (event) => this.#htmlRectSelector.setMode({ resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None, scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+                    }
+                });
+                createElement('harmony-toggle-button', {
+                    class: 'sticker',
+                    parent: paramHtml,
+                    state: true,
+                    childs: [
+                        createElement('div', {
+                            slot: 'off',
+                            innerHTML: rotateSVG,
+                        }),
+                        createElement('div', {
+                            slot: 'on',
+                            innerHTML: rotateSVG,
+                        }),
+                    ],
+                    events: {
+                        change: (event) => this.#htmlRectSelector.setMode({ rotation: event.target.state }),
+                    }
+                });
                 this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {
                     class: 'node-image-editor-sticker-selector',
                     parent: this.#htmlPreview,
@@ -14907,7 +14972,18 @@ class NodeGui {
                 this.#updateManipulator();
                 break;
         }
-        valueHtml.value = value;
+        if (valueHtml) {
+            valueHtml.value = value;
+        }
+        if (index === undefined) {
+            this.#htmlParams.set(param.name, paramHtml);
+        }
+        else {
+            if (!this.#htmlParams.has(param.name)) {
+                this.#htmlParams.set(param.name, []);
+            }
+            this.#htmlParams.get(param.name)[index] = paramHtml;
+        }
         return paramHtml;
     }
     #updateManipulator() {
@@ -14970,7 +15046,7 @@ class NodeGui {
     }
 }
 
-var nodeImageEditorCSS = ":host {\n\tbackground-color: #000000FF;\n\twidth: 100%;\n\theight: 100%;\n\tdisplay: flex;\n\tflex-direction: column;\n\tuser-select: none;\n}\n\n.node-image-editor-nodes {\n\toverflow: auto;\n\tposition: relative;\n\tdisplay: flex;\n\toverflow: auto;\n\tflex: 1;\n}\n\n.node-image-editor-nodes-column {\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-left: 50px;\n\tmargin-right: 50px;\n}\n\n.node-image-editor-canvas {\n\tpointer-events: none;\n}\n\n.node-image-editor-node {\n\tbackground-color: var(--main-bg-color-bright);\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-top: 50px;\n\tmargin-bottom: 50px;\n\tpadding: 5px;\n}\n\n.node-image-editor-node.collapsed {\n\twidth: auto;\n\tmargin-top: 1rem;\n\tmargin-bottom: 1rem;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-content {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-preview {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed button {\n\tdisplay: none;\n}\n\n.node-image-editor-node-header {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-title {\n\tflex: 1;\n}\n\n.node-image-editor-node-buttons {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-buttons>div {\n\tcursor: pointer;\n}\n\n.node-image-editor-node-preview {\n\tposition: relative;\n\t/*height: 32px;\n\twidth: 32px;*/\n\tbackground-color: #000000FF;\n\tdisplay: inline-block;\n\twidth: min-content;\n\tdisplay: flex;\n}\n\n.node-image-editor-sticker-selector {\n\tposition: absolute;\n\tpointer-events: none;\n\ttop: 0;\n\twidth: 100%;\n\theight: 100%;\n\t--harmony-2d-manipulator-bg-color: rgba(0, 0, 0, 0);\n\t--harmony-2d-manipulator-border: 1px dashed white;\n}\n\n.node-image-editor-sticker-selector>div {\n\tposition: absolute;\n\twidth: 0.4rem;\n\theight: 0.4rem;\n\tbackground-color: black;\n\tpointer-events: all;\n}\n\n.node-image-editor-sticker-selector>.handle-move {\n\tcursor: move;\n\ttop: calc(50% - 0.2rem);\n\tleft: calc(50% - 0.2rem);\n}\n\n.node-image-editor-sticker-selector>.handle-resize {\n\tcursor: nesw-resize;\n\ttop: -0.2rem;\n\tright: 0.2rem;\n}\n\n.node-image-editor-sticker-selector>.handle-rotate {\n\tcursor: grab;\n\ttop: -0.2rem;\n\tleft: -0.2rem;\n}\n\n.node-image-editor-node-content {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-ios {\n\theight: 100%;\n\tflex: 0;\n}\n\n.node-image-editor-node-io {\n\twidth: 10px;\n\theight: 10px;\n\tbackground-color: green;\n}\n\n.node-image-editor-node-params {\n\tflex: 1;\n\toverflow: hidden;\n\tpadding: 5px;\n}\n\n.node-image-editor-node-param {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-param>div {\n\tflex: 1;\n\t/*overflow: auto;*/\n}\n\n.node-image-editor-node-param>input {\n\theight: 1.5rem;\n\tbox-sizing: border-box;\n\tvertical-align: middle;\n}\n\n.node-image-editor-node-change-image {\n\topacity: 0%;\n\tposition: absolute;\n\ttop: 0px;\n\tleft: 0px;\n\theight: 100%;\n\twidth: 100%;\n\t/*background-image: url('./img/icons/image_search.svg');*/\n\toverflow: hidden;\n\tbackground-size: 100%;\n\tbackground-repeat: no-repeat;\n\tbackground-position: center;\n\tbackground-color: white;\n\tborder-radius: 4px;\n\tcursor: pointer;\n}\n\n.node-image-editor-node input[type=\"file\"] {\n\topacity: 0;\n\twidth: 100%;\n\theight: 100%;\n}\n\n.copy-button {\n\twidth: 2rem;\n\theight: 2rem;\n\tdisplay: inline-block;\n\tcursor: pointer;\n}\n\ninput {\n\t/*transition: background-color 1s;*/\n\tbackground-color: #FFF;\n\n\t/* only animation-duration here is required, rest are optional (also animation-name but it will be set on hover)*/\n\tanimation-duration: 1.5s;\n\t/* same as transition duration */\n\tanimation-timing-function: linear;\n\t/* kind of same as transition timing */\n\tanimation-delay: 0ms;\n\t/* same as transition delay */\n\tanimation-iteration-count: 1;\n\t/* set to 2 to make it run twice, or Infinite to run forever!*/\n\tanimation-direction: normal;\n\t/* can be set to \"alternate\" to run animation, then run it backwards.*/\n\tanimation-fill-mode: none;\n\t/* can be used to retain keyframe styling after animation, with \"forwards\" */\n\tanimation-play-state: running;\n\t/* can be set dynamically to pause mid animation*/\n\n}\n\n.flash {\n\tanimation-name: copyAnimation;\n}\n\n@keyframes copyAnimation {\n\t0% {\n\t\tbackground-color: #ffdf5d;\n\t}\n\t100% {\n\t\tbackground-color: #FFF;\n\t}\n}\n";
+var nodeImageEditorCSS = ":host {\n\tbackground-color: #000000FF;\n\twidth: 100%;\n\theight: 100%;\n\tdisplay: flex;\n\tflex-direction: column;\n\tuser-select: none;\n}\n\n.node-image-editor-nodes {\n\toverflow: auto;\n\tposition: relative;\n\tdisplay: flex;\n\toverflow: auto;\n\tflex: 1;\n}\n\n.node-image-editor-nodes-column {\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-left: 50px;\n\tmargin-right: 50px;\n}\n\n.node-image-editor-canvas {\n\tpointer-events: none;\n}\n\n.node-image-editor-node {\n\tbackground-color: var(--main-bg-color-bright);\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-top: 50px;\n\tmargin-bottom: 50px;\n\tpadding: 5px;\n}\n\n.node-image-editor-node.collapsed {\n\twidth: auto;\n\tmargin-top: 1rem;\n\tmargin-bottom: 1rem;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-content {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-preview {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed button {\n\tdisplay: none;\n}\n\n.node-image-editor-node-header {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-title {\n\tflex: 1;\n}\n\n.node-image-editor-node-buttons {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-buttons>div {\n\tcursor: pointer;\n}\n\n.node-image-editor-node-preview {\n\tposition: relative;\n\t/*height: 32px;\n\twidth: 32px;*/\n\tbackground-color: #000000FF;\n\tdisplay: inline-block;\n\twidth: min-content;\n\tdisplay: flex;\n}\n\n.node-image-editor-sticker-selector {\n\tposition: absolute;\n\tpointer-events: none;\n\ttop: 0;\n\twidth: 100%;\n\theight: 100%;\n\t--harmony-2d-manipulator-bg-color: rgba(0, 0, 0, 0);\n\t--harmony-2d-manipulator-border: 1px dashed white;\n}\n\n.node-image-editor-sticker-selector>div {\n\tposition: absolute;\n\twidth: 0.4rem;\n\theight: 0.4rem;\n\tbackground-color: black;\n\tpointer-events: all;\n}\n\n.node-image-editor-sticker-selector>.handle-move {\n\tcursor: move;\n\ttop: calc(50% - 0.2rem);\n\tleft: calc(50% - 0.2rem);\n}\n\n.node-image-editor-sticker-selector>.handle-resize {\n\tcursor: nesw-resize;\n\ttop: -0.2rem;\n\tright: 0.2rem;\n}\n\n.node-image-editor-sticker-selector>.handle-rotate {\n\tcursor: grab;\n\ttop: -0.2rem;\n\tleft: -0.2rem;\n}\n\n.node-image-editor-node-content {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-ios {\n\theight: 100%;\n\tflex: 0;\n}\n\n.node-image-editor-node-io {\n\twidth: 10px;\n\theight: 10px;\n\tbackground-color: green;\n}\n\n.node-image-editor-node-params {\n\tflex: 1;\n\toverflow: hidden;\n\tpadding: 5px;\n}\n\n.node-image-editor-node-param {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-param>div {\n\tflex: 1;\n\t/*overflow: auto;*/\n}\n\n.node-image-editor-node-param>input {\n\theight: 1.5rem;\n\tbox-sizing: border-box;\n\tvertical-align: middle;\n}\n\n.node-image-editor-node-change-image {\n\topacity: 0%;\n\tposition: absolute;\n\ttop: 0px;\n\tleft: 0px;\n\theight: 100%;\n\twidth: 100%;\n\t/*background-image: url('./img/icons/image_search.svg');*/\n\toverflow: hidden;\n\tbackground-size: 100%;\n\tbackground-repeat: no-repeat;\n\tbackground-position: center;\n\tbackground-color: white;\n\tborder-radius: 4px;\n\tcursor: pointer;\n}\n\n.node-image-editor-node input[type=\"file\"] {\n\topacity: 0;\n\twidth: 100%;\n\theight: 100%;\n}\n\n.copy-button {\n\twidth: 2rem;\n\theight: 2rem;\n\tdisplay: inline-block;\n\tcursor: pointer;\n}\n\ninput {\n\t/*transition: background-color 1s;*/\n\tbackground-color: #FFF;\n\n\t/* only animation-duration here is required, rest are optional (also animation-name but it will be set on hover)*/\n\tanimation-duration: 1.5s;\n\t/* same as transition duration */\n\tanimation-timing-function: linear;\n\t/* kind of same as transition timing */\n\tanimation-delay: 0ms;\n\t/* same as transition delay */\n\tanimation-iteration-count: 1;\n\t/* set to 2 to make it run twice, or Infinite to run forever!*/\n\tanimation-direction: normal;\n\t/* can be set to \"alternate\" to run animation, then run it backwards.*/\n\tanimation-fill-mode: none;\n\t/* can be used to retain keyframe styling after animation, with \"forwards\" */\n\tanimation-play-state: running;\n\t/* can be set dynamically to pause mid animation*/\n\n}\n\n.flash {\n\tanimation-name: copyAnimation;\n}\n\n@keyframes copyAnimation {\n\t0% {\n\t\tbackground-color: #ffdf5d;\n\t}\n\n\t100% {\n\t\tbackground-color: #FFF;\n\t}\n}\n\nharmony-toggle-button.sticker {\n\tmargin: 0.5rem;\n\tpadding: 0.2rem;\n\tborder-radius: 0.5rem;\n}\n\nharmony-toggle-button.sticker.on {\n\tbackground-color: green;\n}\n\nharmony-toggle-button.sticker.off {\n\tbackground-color: red;\n}\n";
 
 class NodeImageEditorGui {
     #filter = {};
@@ -19202,7 +19278,7 @@ class SceneExplorerEntity extends HTMLElement {
     constructor() {
         super();
         this.#doOnce = true;
-        defineToggleButton();
+        defineHarmonyToggleButton();
         this.#htmlHeader = createElement('div', {
             class: 'scene-explorer-entity-header',
             childs: [

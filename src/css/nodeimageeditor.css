@@ -211,7 +211,22 @@ input {
 	0% {
 		background-color: #ffdf5d;
 	}
+
 	100% {
 		background-color: #FFF;
 	}
+}
+
+harmony-toggle-button.sticker {
+	margin: 0.5rem;
+	padding: 0.2rem;
+	border-radius: 0.5rem;
+}
+
+harmony-toggle-button.sticker.on {
+	background-color: green;
+}
+
+harmony-toggle-button.sticker.off {
+	background-color: red;
 }

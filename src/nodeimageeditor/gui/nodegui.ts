@@ -1,5 +1,5 @@
 import { vec2 } from 'gl-matrix';
-import { createElement, defineHarmony2dManipulator, hide, HTMLHarmony2dManipulatorElement } from 'harmony-ui';
+import { createElement, defineHarmony2dManipulator, defineHarmonyToggleButton, hide, HTMLHarmony2dManipulatorElement, HTMLHarmonyToggleButtonElement, ManipulatorDirection } from 'harmony-ui';
 import { Graphics } from '../../graphics/graphics';
 import { Node } from '../node';
 import { ApplySticker } from '../operations/applysticker';
@@ -9,7 +9,7 @@ import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
 import { GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE } from '../../webgl/constants';
 import { NodeImageEditorGui } from './nodeimageeditorgui';
 import { NodeParam, NodeParamType } from '../nodeparam';
-import { contentCopySVG, zoomInSVG, zoomOutSVG } from 'harmony-svg';
+import { contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, zoomInSVG, zoomOutSVG } from 'harmony-svg';
 import { setTimeoutPromise } from 'harmony-utils';
 
 export const DELAY_BEFORE_REFRESH = 100;
@@ -93,14 +93,13 @@ function dropFilesSpecular(evt, node) {
 	}
 }
 
-
 export class NodeGui {
 	#expanded = true;
 	#html: HTMLElement;
 	#htmlPreview: HTMLElement;
 	#htmlRectSelector: HTMLHarmony2dManipulatorElement;
 	#drag: string;
-	#htmlParams;
+	#htmlParamsContainer: HTMLElement;
 	_ioGui = new Map();
 	#refreshTimeout: number;
 	#nodeChanged: () => void;
@@ -108,6 +107,8 @@ export class NodeGui {
 	#nodeImageEditorGui: NodeImageEditorGui;
 	#dragStartClientX: number;
 	#dragStartClientY: number;
+	#htmlParams = new Map<string, HTMLElement | Array<HTMLElement>>();
+
 	constructor(nodeImageEditorGui: NodeImageEditorGui, node: Node) {
 		this.#nodeChanged = () => {
 			clearTimeout(this.#refreshTimeout);
@@ -202,7 +203,7 @@ export class NodeGui {
 					class: 'node-image-editor-node-content',
 					childs: [
 						htmlInputs = createElement('div', { class: 'node-image-editor-node-ios' }),
-						this.#htmlParams = createElement('div', { class: 'node-image-editor-node-params' }),
+						this.#htmlParamsContainer = createElement('div', { class: 'node-image-editor-node-params' }),
 						htmlOutputs = createElement('div', { class: 'node-image-editor-node-ios' }),
 					],
 				}),
@@ -269,40 +270,53 @@ export class NodeGui {
 	}
 
 	#refreshHtml() {
-		this.#htmlParams.innerText = '';
+		this.#htmlParamsContainer.innerText = '';
 		for (let [_, param] of this.#node.params) {
 			if (param.length && param.length > 1) {
 				for (let i = 0; i < param.length; ++i) {
-					this.#htmlParams.append(this.#createParamHtml(param, i));
+					this.#htmlParamsContainer.append(this.#getParamHTML(param, i));
 				}
 			} else {
-				this.#htmlParams.append(this.#createParamHtml(param));
+				this.#htmlParamsContainer.append(this.#getParamHTML(param));
 			}
 		}
 	}
 
-	#createParamHtml(param: NodeParam, index?: number) {
+	#getParamHTML(param: NodeParam, index?: number): HTMLElement {
+		const paramHtml = this.#htmlParams.get(param.name) ?? this.#createParamHTML(param, index);
+
+		if (Array.isArray(paramHtml)) {
+			return paramHtml[index];
+		}
+		return paramHtml;
+	}
+
+	#createParamHTML(param: NodeParam, index?: number): HTMLElement {
 		let paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
 		let nameHtml = createElement('div', { parent: paramHtml });
-		let valueHtml: HTMLInputElement = createElement('input', {
-			parent: paramHtml,
-			events: {
-				change: (event) => this.#setParamValue(param, event.target.value, index)
-			}
-		}) as HTMLInputElement;
-		createElement('span', {
-			class: 'copy-button',
-			parent: paramHtml,
-			innerHTML: contentCopySVG,
-			events: {
-				click: async () => {
-					await navigator.clipboard.writeText(valueHtml.value);
-					valueHtml.classList.add('flash');
-					await setTimeoutPromise(1500);
-					valueHtml.classList.remove('flash');
-				},
-			}
-		});
+		let valueHtml: HTMLInputElement;
+
+		if (param.type != NodeParamType.StickerAdjust) {
+			valueHtml = createElement('input', {
+				parent: paramHtml,
+				events: {
+					change: (event) => this.#setParamValue(param, event.target.value, index)
+				}
+			}) as HTMLInputElement;
+			createElement('span', {
+				class: 'copy-button',
+				parent: paramHtml,
+				innerHTML: contentCopySVG,
+				events: {
+					click: async () => {
+						await navigator.clipboard.writeText(valueHtml.value);
+						valueHtml.classList.add('flash');
+						await setTimeoutPromise(1500);
+						valueHtml.classList.remove('flash');
+					},
+				}
+			});
+		}
 
 		nameHtml.innerHTML = param.name;
 		let value: any;
@@ -324,7 +338,64 @@ export class NodeGui {
 				break;
 			case NodeParamType.StickerAdjust:
 				defineHarmony2dManipulator();
-				hide(valueHtml);
+				defineHarmonyToggleButton();
+
+				createElement('harmony-toggle-button', {
+					class:'sticker',
+					parent: paramHtml,
+					state: true,
+					childs: [
+						createElement('div', {
+							slot: 'off',
+							innerHTML: dragPanSVG,
+						}),
+						createElement('div', {
+							slot: 'on',
+							innerHTML: dragPanSVG,
+						}),
+					],
+					events: {
+						change: (event) => this.#htmlRectSelector.setMode({ translation: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+					}
+				}) as HTMLHarmonyToggleButtonElement;
+
+				createElement('harmony-toggle-button', {
+					class:'sticker',
+					parent: paramHtml,
+					state: true,
+					childs: [
+						createElement('div', {
+							slot: 'off',
+							innerHTML: panZoomSVG,
+						}),
+						createElement('div', {
+							slot: 'on',
+							innerHTML: panZoomSVG,
+						}),
+					],
+					events: {
+						change: (event) => this.#htmlRectSelector.setMode({ resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None, scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+					}
+				}) as HTMLHarmonyToggleButtonElement;
+
+				createElement('harmony-toggle-button', {
+					class:'sticker',
+					parent: paramHtml,
+					state: true,
+					childs: [
+						createElement('div', {
+							slot: 'off',
+							innerHTML: rotateSVG,
+						}),
+						createElement('div', {
+							slot: 'on',
+							innerHTML: rotateSVG,
+						}),
+					],
+					events: {
+						change: (event) => this.#htmlRectSelector.setMode({ rotation: event.target.state }),
+					}
+				}) as HTMLHarmonyToggleButtonElement;
 
 				this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {
 					class: 'node-image-editor-sticker-selector',
@@ -347,7 +418,18 @@ export class NodeGui {
 				this.#updateManipulator();
 				break;
 		}
-		valueHtml.value = value;
+		if (valueHtml) {
+			valueHtml.value = value;
+		}
+
+		if (index === undefined) {
+			this.#htmlParams.set(param.name, paramHtml);
+		} else {
+			if (!this.#htmlParams.has(param.name)) {
+				this.#htmlParams.set(param.name, []);
+			}
+			this.#htmlParams.get(param.name)[index] = paramHtml;
+		}
 
 		return paramHtml;
 	}
