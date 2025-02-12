@@ -283,7 +283,13 @@ export class NodeGui {
 	}
 
 	#getParamHTML(param: NodeParam, index?: number): HTMLElement {
-		const paramHtml = this.#htmlParams.get(param.name) ?? this.#createParamHTML(param, index);
+		let paramHtml: HTMLElement | Array<HTMLElement>;
+
+		if (index === undefined) {
+			paramHtml = this.#htmlParams.get(param.name) ?? this.#createParamHTML(param, index);
+		} else {
+			paramHtml = this.#htmlParams.get(param.name)?.[index] ?? this.#createParamHTML(param, index);
+		}
 
 		if (Array.isArray(paramHtml)) {
 			return paramHtml[index];
@@ -341,7 +347,7 @@ export class NodeGui {
 				defineHarmonyToggleButton();
 
 				createElement('harmony-toggle-button', {
-					class:'sticker',
+					class: 'sticker',
 					parent: paramHtml,
 					state: true,
 					childs: [
@@ -360,7 +366,7 @@ export class NodeGui {
 				}) as HTMLHarmonyToggleButtonElement;
 
 				createElement('harmony-toggle-button', {
-					class:'sticker',
+					class: 'sticker',
 					parent: paramHtml,
 					state: true,
 					childs: [
@@ -379,7 +385,7 @@ export class NodeGui {
 				}) as HTMLHarmonyToggleButtonElement;
 
 				createElement('harmony-toggle-button', {
-					class:'sticker',
+					class: 'sticker',
 					parent: paramHtml,
 					state: true,
 					childs: [
