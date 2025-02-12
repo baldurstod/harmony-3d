@@ -4,7 +4,7 @@ import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
-import { zoomOutSVG, zoomInSVG, dragPanSVG, panZoomSVG, rotateSVG, contentCopySVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
 import { setTimeoutPromise } from 'harmony-utils';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
@@ -14875,80 +14875,6 @@ class NodeGui {
                 value = `${Number(value[0]).toFixed(FLOAT_VALUE_DECIMALS)} ${Number(value[1]).toFixed(FLOAT_VALUE_DECIMALS)}`;
                 break;
             case NodeParamType.StickerAdjust:
-                defineHarmony2dManipulator();
-                defineHarmonyToggleButton();
-                createElement('harmony-toggle-button', {
-                    class: 'sticker',
-                    parent: paramHtml,
-                    state: true,
-                    childs: [
-                        createElement('div', {
-                            slot: 'off',
-                            innerHTML: dragPanSVG,
-                        }),
-                        createElement('div', {
-                            slot: 'on',
-                            innerHTML: dragPanSVG,
-                        }),
-                    ],
-                    events: {
-                        change: (event) => this.#htmlRectSelector.setMode({ translation: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
-                    }
-                });
-                createElement('harmony-toggle-button', {
-                    class: 'sticker',
-                    parent: paramHtml,
-                    state: true,
-                    childs: [
-                        createElement('div', {
-                            slot: 'off',
-                            innerHTML: panZoomSVG,
-                        }),
-                        createElement('div', {
-                            slot: 'on',
-                            innerHTML: panZoomSVG,
-                        }),
-                    ],
-                    events: {
-                        change: (event) => this.#htmlRectSelector.setMode({ resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None, scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
-                    }
-                });
-                createElement('harmony-toggle-button', {
-                    class: 'sticker',
-                    parent: paramHtml,
-                    state: true,
-                    childs: [
-                        createElement('div', {
-                            slot: 'off',
-                            innerHTML: rotateSVG,
-                        }),
-                        createElement('div', {
-                            slot: 'on',
-                            innerHTML: rotateSVG,
-                        }),
-                    ],
-                    events: {
-                        change: (event) => this.#htmlRectSelector.setMode({ rotation: event.target.state }),
-                    }
-                });
-                this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {
-                    class: 'node-image-editor-sticker-selector',
-                    parent: this.#htmlPreview,
-                    events: {
-                        updateend: (event) => {
-                            const parameters = { 'top left': 0, 'bottom left': 2, 'top right': 1 };
-                            const manipulator = event.target;
-                            for (let name in parameters) {
-                                const param = this.#node.getParam(name);
-                                if (param) {
-                                    const rect = this.#htmlPreview.getBoundingClientRect();
-                                    const corner = manipulator.getCorner(parameters[name]);
-                                    this.#setParamValue(param, `${corner.x / rect.width} ${corner.y / rect.width}`, undefined, false);
-                                }
-                            }
-                        },
-                    }
-                });
                 this.#updateManipulator();
                 break;
         }
