@@ -138,6 +138,7 @@
 
 .node-image-editor-node-param {
 	display: flex;
+	text-wrap: nowrap;
 }
 
 .node-image-editor-node-param>div {
