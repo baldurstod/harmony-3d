@@ -99,7 +99,7 @@ export class Graphics {
 	#height: number = 0;
 	#offscreenCanvas?: OffscreenCanvas;
 	#forwardRenderer?: ForwardRenderer;
-	glContext?: WebGLAnyRenderingContext;
+	glContext!: WebGLAnyRenderingContext;
 	#bipmapContext?: ImageBitmapRenderingContext | null;
 	#pickedEntity: Entity | null = null;
 	#animationFrame: number = 0;

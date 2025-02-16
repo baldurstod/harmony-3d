@@ -11,14 +11,16 @@ import { DEBUG, ENABLE_S3TC, TESTING } from '../../../buildoptions';
 import { TEXTURE_CLEANUP_DELAY } from '../../../constants';
 import { Texture } from '../../../textures/texture';
 import { Source2SpriteSheet } from './source2spritesheet';
+import { CubeTexture } from '../../../textures/cubetexture';
 
 class Source2TextureManagerClass extends EventTarget {//TODO: keep event target ?
 	#texturesList = new Map<string, AnimatedTexture>();
 	#loadingTexturesList = new Map<string, Promise<AnimatedTexture>>();
-	#defaultTexture;
-	WEBGL_compressed_texture_s3tc;
-	EXT_texture_compression_bptc;
-	EXT_texture_compression_rgtc;
+	#defaultTexture!: Texture;
+	WEBGL_compressed_texture_s3tc: any;
+	EXT_texture_compression_bptc: any;
+	EXT_texture_compression_rgtc: any;
+
 	constructor() {
 		super();
 
@@ -34,7 +36,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
 	}
 
-	async getTexture(repository, path, frame) {
+	async getTexture(repository: string, path: string, frame: number) {
 		frame = Math.floor(frame);
 		let texture = await this.#getTexture(repository, path);
 		return texture ? texture.getFrame(frame) : this.#defaultTexture;//TODOv3
@@ -45,7 +47,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		return texture?.properties.get('vtex')?.getBlockByType('DATA')?.spriteSheet;
 	}
 
-	async #getTexture(repository, path): Promise<AnimatedTexture> {
+	async #getTexture(repository: string, path: string): Promise<AnimatedTexture> {
 		path = path.replace(/.vtex_c$/, '').replace(/.vtex$/, '');
 		path = path + '.vtex_c';
 		let fullPath = repository + path;
@@ -60,7 +62,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 				let vtex = await Source2TextureLoader.load(repository, path);
 				animatedTexture.properties.set('vtex', vtex);
 				let texture = TextureManager.createTexture();//TODOv3: add params
-				this.#initTexture(texture.texture, vtex);
+				this.#initTexture(texture.texture!, vtex);
 				animatedTexture.addFrame(0, texture);
 				resolve(animatedTexture);
 			});
@@ -70,14 +72,14 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 			this.#loadingTexturesList.delete(fullPath);
 
 		}
-		return this.#texturesList.get(fullPath);
+		return this.#texturesList.get(fullPath)!;
 	}
 
-	setTexture(path, texture) {
+	setTexture(path: string, texture: AnimatedTexture) {
 		this.#texturesList.set(path, texture);
 	}
 
-	#initTexture(texture, vtexFile) {
+	#initTexture(texture: WebGLTexture, vtexFile: any/*TODO: improve type*/) {
 		if (!texture || !vtexFile) {
 			return;
 		}
@@ -98,17 +100,17 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		}
 	}
 
-	#initCubeTexture(texture, imageFormat, width, height, imageData) {
+	#initCubeTexture(texture: WebGLTexture, imageFormat: number, width: number, height: number, imageData: Array<Uint8Array>) {
 		const glContext = new Graphics().glContext;
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 		switch (true) {
 			case (imageFormat & TEXTURE_FORMAT_UNCOMPRESSED) == TEXTURE_FORMAT_UNCOMPRESSED:
-				this.fillTexture(texture, imageFormat, width, height, imageData[0], GL_TEXTURE_CUBE_MAP_POSITIVE_X);
-				this.fillTexture(texture, imageFormat, width, height, imageData[1], GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
-				this.fillTexture(texture, imageFormat, width, height, imageData[2], GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
-				this.fillTexture(texture, imageFormat, width, height, imageData[3], GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
-				this.fillTexture(texture, imageFormat, width, height, imageData[4], GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
-				this.fillTexture(texture, imageFormat, width, height, imageData[5], GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
+				this.fillTexture(imageFormat, width, height, imageData[0], GL_TEXTURE_CUBE_MAP_POSITIVE_X);
+				this.fillTexture(imageFormat, width, height, imageData[1], GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
+				this.fillTexture(imageFormat, width, height, imageData[2], GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
+				this.fillTexture(imageFormat, width, height, imageData[3], GL_TEXTURE_CUBE_MAP_NEGATIVE_Y);
+				this.fillTexture(imageFormat, width, height, imageData[4], GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
+				this.fillTexture(imageFormat, width, height, imageData[5], GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
 				break;
 			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_S3TC) == TEXTURE_FORMAT_COMPRESSED_S3TC:
 				this.fillTextureDxt(texture, imageFormat, width, height, imageData[0], GL_TEXTURE_CUBE_MAP_POSITIVE_X);
@@ -120,11 +122,11 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 				break;
 			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_BPTC) == TEXTURE_FORMAT_COMPRESSED_BPTC:
 				throw 'TODO';
-				this.#fillTextureBptc(texture, width, height, imageFormat, imageData[0]);
+				this.#fillTextureBptc(texture, width, height, imageData[0]);
 				break;
 			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_RGTC) == TEXTURE_FORMAT_COMPRESSED_RGTC:
 				throw 'TODO';
-				this.#fillTextureRgtc(texture, width, height, imageFormat, imageData[0]);
+				this.#fillTextureRgtc(texture, width, height, imageData[0]);
 				break;
 			default:
 				if (DEBUG) {
@@ -138,7 +140,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
 	}
 
-	#initFlatTexture(texture, imageFormat, width, height, imageData) {
+	#initFlatTexture(texture: WebGLTexture, imageFormat: number/*TODO create an imageformat enum*/, width: number, height: number, imageData: Array<Uint8Array>) {
 		const glContext = new Graphics().glContext;
 		if (TESTING) {
 			new Graphics().cleanupGLError();
@@ -149,16 +151,16 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		}
 		switch (true) {
 			case (imageFormat & TEXTURE_FORMAT_UNCOMPRESSED) == TEXTURE_FORMAT_UNCOMPRESSED:
-				this.fillTexture(texture, imageFormat, width, height, imageData[0], GL_TEXTURE_2D);
+				this.fillTexture(imageFormat, width, height, imageData[0], GL_TEXTURE_2D);
 				break;
 			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_S3TC) == TEXTURE_FORMAT_COMPRESSED_S3TC:
 				this.fillTextureDxt(texture, imageFormat, width, height, imageData[0], GL_TEXTURE_2D);
 				break;
 			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_BPTC) == TEXTURE_FORMAT_COMPRESSED_BPTC:
-				this.#fillTextureBptc(texture, width, height, imageFormat, imageData[0]);
+				this.#fillTextureBptc(texture, width, height, imageData[0]);
 				break;
 			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_RGTC) == TEXTURE_FORMAT_COMPRESSED_RGTC:
-				this.#fillTextureRgtc(texture, width, height, imageFormat, imageData[0]);
+				this.#fillTextureRgtc(texture, width, height, imageData[0]);
 				break;
 			default:
 				if (DEBUG) {
@@ -171,7 +173,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		glContext.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	fillTexture(texture, imageFormat, width, height, datas, target) {
+	fillTexture(imageFormat: number, width: number, height: number, datas: ArrayBufferView | null, target: GLenum) {
 		const gl = new Graphics().glContext;
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 
@@ -191,7 +193,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	fillTextureDxt(texture, imageFormat, width, height, datas, target) {
+	fillTextureDxt(texture: WebGLTexture, imageFormat: number, width: number, height: number, datas: Uint8Array, target: GLenum) {
 		var gl = new Graphics().glContext;
 		var s3tc = this.WEBGL_compressed_texture_s3tc;//gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
 
@@ -216,26 +218,19 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 			gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 			let uncompressedData = new Uint8Array(width * height * 4);
 
-			let decompressFunc = null;
-			switch (imageFormat) {
-				case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1: decompressFunc = 'decodeBC1'; break;
-				case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3: decompressFunc = 'decodeBC2'; break;
-				case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5: decompressFunc = 'decodeBC3'; break;
-			}
-			if (decompressFunc) {
-				Detex[decompressFunc](width, height, datas, uncompressedData).then(
-					() => {
-						// TODO: fix target in the 3 lines below
-						gl.bindTexture(GL_TEXTURE_2D, texture);
-						gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData);//TODO: params
-						gl.bindTexture(GL_TEXTURE_2D, null);
-					}
-				);
-			}
+			Detex.decode(imageFormat, width, height, datas, uncompressedData).then(
+				() => {
+					// TODO: fix target in the 3 lines below
+					gl.bindTexture(GL_TEXTURE_2D, texture);
+					gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData);//TODO: params
+					gl.bindTexture(GL_TEXTURE_2D, null);
+				}
+			);
 		}
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
-	#fillTextureBptc(texture, width, height, imageFormat, datas) {
+
+	#fillTextureBptc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array) {
 		var gl = new Graphics().glContext;
 		var bptc = this.EXT_texture_compression_bptc;
 
@@ -268,7 +263,8 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		//gl.bindTexture(GL_TEXTURE_2D, null);
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
-	#fillTextureRgtc(texture, width, height, imageFormat, datas) {
+
+	#fillTextureRgtc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array) {
 		var gl = new Graphics().glContext;
 		var rgtc = this.EXT_texture_compression_rgtc;
 
