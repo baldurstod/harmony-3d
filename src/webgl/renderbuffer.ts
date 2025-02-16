@@ -25,25 +25,16 @@ export class Renderbuffer {
 	constructor(internalFormat: RenderBufferInternalFormat, width: number, height: number) {
 		this.#renderbuffer = new Graphics().createRenderbuffer() as WebGLRenderbuffer;
 		this.#internalFormat = internalFormat;
-		//this._renderbufferStorage(width, height);
 		renderbufferStorage(new Graphics().glContext, this.#renderbuffer, this.#internalFormat, width, height);
 	}
 
 	resize(width: number, height: number) {
-		//this._renderbufferStorage(width, height);
 		renderbufferStorage(new Graphics().glContext, this.#renderbuffer, this.#internalFormat, width, height);
 	}
 
 	getRenderbuffer() {
 		return this.#renderbuffer;
 	}
-
-	/*TODOv3 removeme
-		_renderbufferStorage(width, height) {
-			glContext.bindRenderbuffer(GL_RENDERBUFFER, this.renderbuffer);
-			glContext.renderbufferStorage(GL_RENDERBUFFER, this.internalFormat, width, height);
-			glContext.bindRenderbuffer(GL_RENDERBUFFER, null);
-		}*/
 
 	dispose() {
 		new Graphics().deleteRenderbuffer(this.#renderbuffer);
