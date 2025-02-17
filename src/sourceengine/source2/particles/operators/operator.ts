@@ -10,10 +10,12 @@ import { Source2ParticleSystem } from '../source2particlesystem';
 import { Source2Material } from '../../materials/source2material';
 import { Mesh } from '../../../../objects/mesh';
 import { Source2SpriteCard } from '../../materials/source2spritecard';
+import { Source2Particle } from '../source2particle';
+import { JSONObject } from '../../../../types';
 
 const COLOR_SCALE = 1 / 255;
 
-function vec4Scale(out, a, b) {
+function vec4Scale(out: vec4, a: vec4, b: number) {
 	out[0] = Number(a[0]) * b;
 	out[1] = Number(a[1]) * b;
 	out[2] = Number(a[2]) * b;
@@ -21,7 +23,7 @@ function vec4Scale(out, a, b) {
 	return out;
 }
 
-function vec4Lerp(out, a, b, t) {
+function vec4Lerp(out: vec4, a: vec4, b: vec4, t: number) {
 	let ax = Number(a[0]);
 	let ay = Number(a[1]);
 	let az = Number(a[2]);
@@ -35,7 +37,7 @@ function vec4Lerp(out, a, b, t) {
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
-	#parameters = {};
+	#parameters: { [key: string]: any/*TODO: better type*/ } = {};
 	system: Source2ParticleSystem
 	opStartFadeInTime = 0;
 	opEndFadeInTime = 0;
@@ -47,16 +49,17 @@ export class Operator {//TODOv3: rename this class ?
 	controlPointNumber: number = 0;
 	fieldInput = -1;
 	fieldOutput = -1;
-	scaleCp: number;
-	mesh: Mesh;
-	material: Source2SpriteCard;
-	endCapState;
-	currentTime: number;
+	scaleCp?: number;
+	mesh?: Mesh;
+	material?: Source2SpriteCard;
+	endCapState?: number;
+	currentTime: number = 0;
+
 	constructor(system: Source2ParticleSystem) {
 		this.system = system;
 	}
 
-	setParam(paramName, value) {
+	setParam(paramName: string, value: any) {
 		if (value instanceof Kv3Array) {
 			let arr = [];
 			for (let v of value.properties) {
@@ -77,16 +80,16 @@ export class Operator {//TODOv3: rename this class ?
 		this._paramChanged(paramName, value);
 	}
 
-	getParam(paramName) {
+	getParam(paramName: string) {
 		return this.#parameters[paramName];
 	}
 
-	getParamScalarValue(paramName, particle?) {
+	getParamScalarValue(paramName: string, particle?: Source2Particle) {
 		let parameter = this.#parameters[paramName];
 		return this.#getParamScalarValue(parameter, particle);
 	}
 
-	#getParamScalarValue(parameter, particle) {
+	#getParamScalarValue(parameter: JSONObject, particle?: Source2Particle) {
 		if (parameter) {
 			let inputValue;
 			let type = parameter.m_nType;
@@ -101,46 +104,46 @@ export class Operator {//TODOv3: rename this class ?
 					case 'PF_TYPE_PARTICLE_NUMBER_NORMALIZED':
 						if (this.normalizePerLiving) {
 							let max = this.system.livingParticles.length;
-							inputValue = particle.id % max / max;
+							inputValue = (particle?.id ?? 0) % max / max;
 						} else {
-							inputValue = particle.id / this.system.maxParticles;
+							inputValue = (particle?.id ?? 0) / this.system.maxParticles;
 						}
-						return this._getParamScalarValue2(parameter, inputValue);
+						return this.#getParamScalarValue2(parameter, inputValue);
 						break;
 					case 'PF_TYPE_PARTICLE_NUMBER':
-						inputValue = particle.id;
-						return this._getParamScalarValue2(parameter, inputValue);
+						inputValue = particle?.id ?? 0;
+						return this.#getParamScalarValue2(parameter, inputValue);
 						break;
 					case 'PF_TYPE_PARTICLE_AGE_NORMALIZED':
-						return this._getParamScalarValue2(parameter, particle.proportionOfLife);
+						return this.#getParamScalarValue2(parameter, particle?.proportionOfLife ?? 0);
 						break;
 					case 'PF_TYPE_RANDOM_BIASED':
 						//TODO: use parameter.m_nBiasType
-						return RemapValClampedBias(Math.random(), 0, 1, parameter.m_flRandomMin, parameter.m_flRandomMax, 0.5/*parameter.m_flBiasParameter*/);//TODO: use another bias function bias varies from -1 to 1
+						return RemapValClampedBias(Math.random(), 0, 1, parameter.m_flRandomMin as number, parameter.m_flRandomMax as number, 0.5/*parameter.m_flBiasParameter*/);//TODO: use another bias function bias varies from -1 to 1
 						break;
 					case 'PF_TYPE_RANDOM_UNIFORM':
-						return RandomFloat(parameter.m_flRandomMin, parameter.m_flRandomMax);
+						return RandomFloat(parameter.m_flRandomMin as number, parameter.m_flRandomMax as number);
 						break;
 					case 'PF_TYPE_COLLECTION_AGE':
-						return this._getParamScalarValue2(parameter, this.system.currentTime);
+						return this.#getParamScalarValue2(parameter, this.system.currentTime);
 						break;
 					case 'PF_TYPE_PARTICLE_NOISE':
-						return this._getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin, parameter.m_flNoiseOutputMax));//TODO
+						return this.#getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin as number, parameter.m_flNoiseOutputMax as number));//TODO
 						break;
 					case 'PF_TYPE_CONTROL_POINT_COMPONENT':
 						let cp = this.system.getControlPoint(parameter.m_nControlPoint);
 						if (cp) {
-							return cp.position[parameter.m_nVectorComponent];
+							return cp.position[parameter.m_nVectorComponent as number];
 						}
 						return 0;
 						break;
 					case 'PF_TYPE_PARTICLE_FLOAT':
 						return inputValue = RemapValClamped(
-							particle.getField(parameter.m_nScalarAttribute ?? 0),
-							parameter.m_flInput0 ?? 0,
-							parameter.m_flInput1 ?? 1,
-							parameter.m_flOutput0 ?? 0,
-							parameter.m_flOutput1 ?? 1
+							particle?.getField(parameter.m_nScalarAttribute as number ?? 0) as number ?? 0,
+							parameter.m_flInput0 as number ?? 0,
+							parameter.m_flInput1 as number ?? 1,
+							parameter.m_flOutput0 as number ?? 0,
+							parameter.m_flOutput1 as number ?? 1
 						);
 					default:
 						console.error('#getParamScalarValue unknown type', parameter);
@@ -152,7 +155,7 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	_getParamScalarValue2(parameter, inputValue) {
+	#getParamScalarValue2(parameter: any/*TODO: improve type*/, inputValue: number) {
 		let mapType = parameter.m_nMapType;
 
 		switch (mapType) {
@@ -160,7 +163,7 @@ export class Operator {//TODOv3: rename this class ?
 				return inputValue;
 				break;
 			case 'PF_MAP_TYPE_CURVE':
-				return this._getParamScalarValueCurve(parameter, inputValue);
+				return this.#getParamScalarValueCurve(parameter, inputValue);
 				break;
 			case 'PF_MAP_TYPE_MULT':
 				return inputValue * parameter.m_flMultFactor;
@@ -174,8 +177,8 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	_getParamScalarValueCurve(parameter, inputValue) {
-		let curve = parameter.m_Curve;
+	#getParamScalarValueCurve(parameter: JSONObject/*TODO: improve type*/, inputValue: number) {
+		let curve = parameter.m_Curve as any/*TODO: improve type*/;
 		let inputMin = curve.m_vDomainMins[0];
 		let inputMax = curve.m_vDomainMaxs[0];
 		let outputMin = curve.m_vDomainMins[1];
@@ -190,10 +193,10 @@ export class Operator {//TODOv3: rename this class ?
 			inputValue = inputMax !== 0 ? inputValue % inputMax : inputMin;
 
 		}
-		return this._getCurveValue(curve, inputValue);
+		return this.#getCurveValue(curve, inputValue);
 	}
 
-	_getCurveValue(curve, x) {
+	#getCurveValue(curve: any/*TODO: improve type*/, x: number) {
 		//TODO: do a real curve
 		let spline = curve.m_spline;
 		let previousKey = spline[0];
@@ -215,7 +218,7 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 
-	getParamVectorValue(paramName, particle?, outVec: vec3 | vec4 = vec4.create()) {
+	getParamVectorValue(paramName: string, particle?: Source2Particle, outVec: vec4 = vec4.create()) {
 		let parameter = this.#parameters[paramName];
 		if (parameter) {
 			let type = parameter.m_nType;
@@ -231,7 +234,7 @@ export class Operator {//TODOv3: rename this class ?
 						}
 						break;
 					case 'PVEC_TYPE_FLOAT_INTERP_GRADIENT':
-						return this._getParamVectorValueFloatInterpGradient(parameter, particle, outVec);
+						return this.#getParamVectorValueFloatInterpGradient(parameter, particle, outVec);
 						break;
 					case 'PVEC_TYPE_FLOAT_COMPONENTS':
 						outVec[0] = this.#getParamScalarValue(parameter.m_FloatComponentX, particle);
@@ -263,7 +266,7 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	_getParamVectorValueFloatInterpGradient(parameter, particle, outVec) {
+	#getParamVectorValueFloatInterpGradient(parameter: any/*TODO: improve type*/, particle: Source2Particle | undefined, outVec: vec4) {
 		let interpInput0 = parameter.m_flInterpInput0;
 		let interpInput1 = parameter.m_flInterpInput1;
 		let inputValue = this.#getParamScalarValue(parameter.m_FloatInterp, particle);
@@ -292,7 +295,7 @@ export class Operator {//TODOv3: rename this class ?
 
 	}
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, value: any) {
 		switch (paramName) {
 			case 'm_bDisableOperator':
 				this.disableOperator = value;
@@ -350,7 +353,7 @@ export class Operator {//TODOv3: rename this class ?
 				colorScale[0] = Number(value[0]) * COLOR_SCALE;
 				colorScale[1] = Number(value[1]) * COLOR_SCALE;
 				colorScale[2] = Number(value[2]) * COLOR_SCALE;
-				this.material.setUniform('uColorScale', colorScale);
+				this.material?.setUniform('uColorScale', colorScale);
 				break;
 			case 'm_flAlphaScale':
 				//handled in operator
@@ -370,7 +373,7 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	initializeParticle(particles, elapsedTime) {
+	initializeParticle(particles: Source2Particle, elapsedTime: number) {
 		if (!particles || this.disableOperator) {
 			return;
 		}
@@ -381,7 +384,7 @@ export class Operator {//TODOv3: rename this class ?
 		this.doInit(particles, elapsedTime, strength);
 	}
 
-	operateParticle(particle, elapsedTime) {
+	operateParticle(particle: Source2Particle, elapsedTime: number) {
 		if (!particle || this.disableOperator) {
 			return;
 		}
@@ -394,28 +397,28 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	forceParticle(particle, elapsedTime, accumulatedForces) {
+	forceParticle(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3) {
 		if (!particle || this.disableOperator) {
 			return;
 		}
 		this.doForce(particle, elapsedTime, accumulatedForces);
 	}
 
-	constraintParticle(particle) {
+	constraintParticle(particle: Source2Particle) {
 		if (!particle || this.disableOperator) {
 			return;
 		}
 		this.applyConstraint(particle);
 	}
 
-	emitParticle(creationTime, elapsedTime) {
+	emitParticle(creationTime: number, elapsedTime: number) {
 		if (!this.system || this.disableOperator) {
 			return;
 		}
 		return this.system.createParticle(creationTime, elapsedTime);
 	}
 
-	renderParticle(particleList, elapsedTime, material) {
+	renderParticle(particleList: Source2Particle, elapsedTime: number, material: Source2Material) {
 		if (!particleList) {
 			return;
 		}
@@ -450,7 +453,7 @@ export class Operator {//TODOv3: rename this class ?
 		this.material = material;
 	}
 
-	setParameter(parameter, type, value) {
+	setParameter(parameter: string, type: any/*TODO: improve type*/, value: any) {
 		if (parameter == '' || parameter == undefined) {
 			return this;
 		}
@@ -466,7 +469,7 @@ export class Operator {//TODOv3: rename this class ?
 		return this;
 	}
 
-	getParameter(parameter) {
+	getParameter(parameter: string) {
 		const p = this.#parameters[parameter];
 		if (p == undefined) {
 			return null;
@@ -479,7 +482,7 @@ export class Operator {//TODOv3: rename this class ?
 		return this.#parameters;
 	}
 
-	setParameters(parameters) {
+	setParameters(parameters: { [key: string]: any }) {
 		for (let i in parameters) {
 			const pair = parameters[i];
 			this.setParameter(pair[0], pair[1], pair[2]);
@@ -537,7 +540,7 @@ export class Operator {//TODOv3: rename this class ?
 		return 0;
 	}
 
-	getInputValue(inputField, particle) {
+	getInputValue(inputField: number, particle: Source2Particle) {
 		let input;
 		switch (inputField) {
 			case 0: //creation time
@@ -550,11 +553,11 @@ export class Operator {//TODOv3: rename this class ?
 		return input;
 	}
 
-	getInputValueAsVector(inputField, particle, v) {
+	getInputValueAsVector(inputField: number, particle: Source2Particle, v: vec4) {
 		let input;
 		switch (inputField) {
 			case 0: //creation time
-				vec3.copy(v, particle.position);
+				vec3.copy(v as vec3, particle.position);
 				break;
 			case 4:
 				v[0] = particle.rotationRoll;
@@ -569,7 +572,7 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	setOutputValue(outputField, value, particle) {
+	setOutputValue(outputField: number, value: any, particle: Source2Particle) {
 		particle.setInitialField(outputField, value /*TODO*/);
 	}
 
@@ -581,45 +584,45 @@ export class Operator {//TODOv3: rename this class ?
 		return false;
 	}
 
-	setOrientationType(orientationType) {
+	setOrientationType(orientationType: string | number | bigint) {
 		//TODO: finish this
 		switch (orientationType) {
 			case 'PARTICLE_ORIENTATION_SCREEN_ALIGNED':
 			case 0n:
 			case 0:
-				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_ALIGNED);
+				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_ALIGNED);
 				break;
 			case 'PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED':
 			case 1n:
 			case 1:
-				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED);
+				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED);
 				break;
 			case 'PARTICLE_ORIENTATION_WORLD_Z_ALIGNED':
 			case 2n:
 			case 2:
-				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
+				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
 				break;
 			case 'PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL':
 			case 3n:
 			case 3:
-				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL);
+				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL);
 				break;
 			case 'PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL':
 			case 4n:
 			case 4:
-				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL);
+				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL);
 				break;
 			case 'PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION':
 			case 5n:
 			case 5:
-				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION);
+				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION);
 				break;
 			default:
 				console.error('Unknonw orientationType ', orientationType);
 		}
 	}
 
-	setOutputBlendMode(outputBlendMode) {
+	setOutputBlendMode(outputBlendMode: string) {
 		let blendMode = 0;
 		switch (outputBlendMode) {
 			case 'PARTICLE_OUTPUT_BLEND_MODE_ADD':
@@ -643,7 +646,7 @@ export class Operator {//TODOv3: rename this class ?
 			default:
 				console.error('Unknonw outputBlendMode ', outputBlendMode);
 		}
-		this.material.setOutputBlendMode(blendMode);
+		this.material?.setOutputBlendMode(blendMode);
 	}
 
 	init() {
@@ -653,9 +656,9 @@ export class Operator {//TODOv3: rename this class ?
 	dispose() {
 	}
 
-	doInit(particle, elapsedTime: number, strength: number) { }
-	doOperate(particle, elapsedTime: number, strength: number) { }
-	doForce(particle, elapsedTime: number, strength: number) { }
-	applyConstraint(particle) { }
-	doRender(particle, elapsedTime: number, material: Source2Material) { }
+	doInit(particle: Source2Particle, elapsedTime: number, strength: number) { }
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number) { }
+	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number) { }
+	applyConstraint(particle: Source2Particle) { }
+	doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material) { }
 }
