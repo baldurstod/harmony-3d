@@ -100,6 +100,7 @@ export class SceneExplorer {
 	#filterType = '';
 	#isVisible = false;
 	//selectedEntity?: Entity;
+
 	constructor() {
 		if (SceneExplorer.#instance) {
 			return SceneExplorer.#instance;

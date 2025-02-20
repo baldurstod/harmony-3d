@@ -1,3 +1,3 @@
 export * from './environments/export';
 export { Scene } from './scene';
-export { SceneExplorer } from './sceneexplorer';
+export { SceneExplorer, getSceneExplorer } from './sceneexplorer';

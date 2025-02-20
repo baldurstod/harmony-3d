@@ -2201,6 +2201,8 @@ declare class Choreography {
 
          export declare function getRandomInt(max: any): number;
 
+         export declare function getSceneExplorer(): SceneExplorer;
+
          export declare const GL_ALPHA = 6406;
 
          export declare const GL_ALWAYS = 519;
@@ -3237,9 +3239,7 @@ declare class Choreography {
              [k: string]: JSONValue;
          }
 
-         declare type JSONValue = string | number | boolean | null | JSONValue[] | {
-             [key: string]: JSONValue;
-         };
+         declare type JSONValue = string | number | boolean | null | undefined | JSONValue[] | JSONObject;
 
          export declare class KeepOnlyLastChild extends Entity {
              addChild(child: Entity): Entity;
@@ -4593,51 +4593,51 @@ declare class Choreography {
              controlPointNumber: number;
              fieldInput: number;
              fieldOutput: number;
-             scaleCp: number;
-             mesh: Mesh;
-             material: Source2SpriteCard;
-             endCapState: any;
+             scaleCp?: number;
+             mesh?: Mesh;
+             material?: Source2SpriteCard;
+             endCapState?: number;
              currentTime: number;
              constructor(system: Source2ParticleSystem);
-             setParam(paramName: any, value: any): void;
-             getParam(paramName: any): any;
-             getParamScalarValue(paramName: any, particle?: any): any;
-             _getParamScalarValue2(parameter: any, inputValue: any): any;
-             _getParamScalarValueCurve(parameter: any, inputValue: any): any;
-             _getCurveValue(curve: any, x: any): any;
-             getParamVectorValue(paramName: any, particle?: any, outVec?: vec3 | vec4): any;
-             _getParamVectorValueFloatInterpGradient(parameter: any, particle: any, outVec: any): any;
-             _paramChanged(paramName: any, value: any): void;
-             initializeParticle(particles: any, elapsedTime: any): void;
-             operateParticle(particle: any, elapsedTime: any): void;
-             forceParticle(particle: any, elapsedTime: any, accumulatedForces: any): void;
-             constraintParticle(particle: any): void;
-             emitParticle(creationTime: any, elapsedTime: any): any;
-             renderParticle(particleList: any, elapsedTime: any, material: any): void;
+             setParam(paramName: string, value: any): void;
+             getParam(paramName: string): any;
+             getParamScalarValue(paramName: string, particle?: Source2Particle): any;
+             getParamVectorValue(paramName: string, particle?: Source2Particle, outVec?: vec4): any;
+             _paramChanged(paramName: string, value: any): void;
+             initializeParticle(particles: Source2Particle, elapsedTime: number): void;
+             operateParticle(particle: Source2Particle, elapsedTime: number): void;
+             forceParticle(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3): void;
+             constraintParticle(particle: Source2Particle): void;
+             emitParticle(creationTime: number, elapsedTime: number): any;
+             renderParticle(particleList: Source2Particle, elapsedTime: number, material: Source2Material): void;
              checkIfOperatorShouldRun(): boolean;
              fadeInOut(): number;
              setMaterial(material: Source2SpriteCard): void;
-             setParameter(parameter: any, type: any, value: any): this;
-             getParameter(parameter: any): any;
-             getParameters(): {};
-             setParameters(parameters: any): this;
+             setParameter(parameter: string, type: any, value: any): this;
+             getParameter(parameter: string): any;
+             getParameters(): {
+                 [key: string]: any;
+             };
+             setParameters(parameters: {
+                 [key: string]: any;
+             }): this;
              doNothing(): void;
              reset(): void;
              getOperatorFade(): number;
-             getInputValue(inputField: any, particle: any): any;
-             getInputValueAsVector(inputField: any, particle: any, v: any): void;
-             setOutputValue(outputField: any, value: any, particle: any): void;
+             getInputValue(inputField: number, particle: Source2Particle): any;
+             getInputValueAsVector(inputField: number, particle: Source2Particle, v: vec4): void;
+             setOutputValue(outputField: number, value: any, particle: Source2Particle): void;
              initMultipleOverride(): boolean;
              isPreEmission(): boolean;
-             setOrientationType(orientationType: any): void;
-             setOutputBlendMode(outputBlendMode: any): void;
+             setOrientationType(orientationType: string | number | bigint): void;
+             setOutputBlendMode(outputBlendMode: string): void;
              init(): void;
              dispose(): void;
-             doInit(particle: any, elapsedTime: number, strength: number): void;
-             doOperate(particle: any, elapsedTime: number, strength: number): void;
-             doForce(particle: any, elapsedTime: number, strength: number): void;
-             applyConstraint(particle: any): void;
-             doRender(particle: any, elapsedTime: number, material: Source2Material): void;
+             doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
+             doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+             doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
+             applyConstraint(particle: Source2Particle): void;
+             doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material): void;
          }
 
          export declare class OrbitControl extends CameraControl {
@@ -5649,7 +5649,7 @@ declare class Choreography {
 
          export declare class Renderbuffer {
              #private;
-             constructor(internalFormat: RenderBufferInternalFormat, width: number, height: number);
+             constructor(internalFormat: RenderBufferInternalFormat, width: number, height: number, samples?: number);
              resize(width: number, height: number): void;
              getRenderbuffer(): WebGLRenderbuffer;
              dispose(): void;
@@ -7508,7 +7508,7 @@ declare class Choreography {
              operators: any[];
              forces: any[];
              constraints: any[];
-             renderers: any[];
+             renderers: Array<Operator>;
              controlPoints: Array<ControlPoint>;
              childSystems: any[];
              livingParticles: any[];
@@ -7529,7 +7529,7 @@ declare class Choreography {
              parentSystem?: Source2ParticleSystem;
              isBounded: boolean;
              constructor(repository: string, fileName: string, name: string);
-             init(snapshotModifiers?: any): Promise<void>;
+             init(snapshotModifiers?: Map<string, string>): Promise<void>;
              start(): void;
              stop(): void;
              stopChildren(): void;
@@ -7540,10 +7540,10 @@ declare class Choreography {
              createParticle(creationTime: any, elapsedTime: any): any;
              getWorldPosition(vec?: vec3): vec3;
              getWorldQuaternion(q?: quat): quat;
-             getControlPoint(controlPointId: any): any;
-             getControlPointForScale(controlPointId: any): any;
+             getControlPoint(controlPointId: any): ControlPoint;
+             getControlPointForScale(controlPointId: any): ControlPoint;
              getOwnControlPoint(controlPointId: any): ControlPoint;
-             getControlPointPosition(cpId: any): any;
+             getControlPointPosition(cpId: any): vec3;
              setControlPointPosition(cpId: any, position: any): void;
              setMaxParticles(max: any): void;
              stepConstraints(particle: any): void;
