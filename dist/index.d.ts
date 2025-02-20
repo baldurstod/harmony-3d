@@ -6200,6 +6200,7 @@ declare class Choreography {
              getEntityHtml(entity: Entity): void;
              showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity): void;
              editMaterial(material: Material): void;
+             setJointsRadius(radius: number): void;
          }
 
          export declare class Select extends Node_2 {
@@ -6522,6 +6523,8 @@ declare class Choreography {
              getWorldPosition(vec?: vec3): vec3;
              getWorldQuaternion(q?: quat): quat;
              get wireframe(): number;
+             displayBoneJoints(display: boolean): void;
+             setJointsRadius(radius: number): void;
              dispose(): void;
          }
 
@@ -8573,6 +8576,7 @@ declare class Choreography {
              thetaLength: number;
              isSphere: boolean;
              constructor(params?: any);
+             setRadius(radius: number): void;
              updateGeometry(): void;
              buildContextMenu(): {
                  visibility: {

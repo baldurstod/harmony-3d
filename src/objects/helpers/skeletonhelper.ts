@@ -21,10 +21,12 @@ export class SkeletonHelper extends Entity {
 	#highlitLineMaterial;
 	#boneTipMaterial;
 	#raycaster;
-	#highlitLine;
+	#highlitLine?: Line;
 	#boneStart: Sphere;
 	#boneEnd: Sphere;
 	enumerable = false;
+	#displayJoints = true;
+
 	constructor(parameters) {
 		super(parameters);
 
@@ -156,6 +158,17 @@ export class SkeletonHelper extends Entity {
 		}
 	}
 
+	displayBoneJoints(display: boolean) {
+		this.#boneStart.setVisible(this.#highlitLine && display);
+		this.#boneEnd.setVisible(this.#highlitLine && display);
+		this.#displayJoints = display;
+	}
+
+	setJointsRadius(radius: number) {
+		this.#boneStart.setRadius(radius);
+		this.#boneEnd.setRadius(radius);
+	}
+
 	#pickBone(event) {
 		if (!this.isVisible()) {
 			return;
@@ -208,8 +221,8 @@ export class SkeletonHelper extends Entity {
 			line.material = this.#highlitLineMaterial;
 			this.#boneStart.position = line.getStart(tempVec3);
 			this.#boneEnd.position = line.getEnd(tempVec3);
-			this.#boneStart.setVisible(true);
-			this.#boneEnd.setVisible(true);
+			this.#boneStart.setVisible(this.#displayJoints);
+			this.#boneEnd.setVisible(this.#displayJoints);
 
 			this.#boneStart.properties.set('bone', line.properties.get('boneParent'));
 			this.#boneEnd.properties.set('bone', line.properties.get('bone'));

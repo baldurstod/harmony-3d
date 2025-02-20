@@ -22,6 +22,7 @@ export class Sphere extends Mesh {
 	thetaStart: number;
 	thetaLength: number;
 	isSphere = true;
+
 	constructor(params: any = {}) {
 		super(new SphereBufferGeometry(), params.material ?? new MeshBasicMaterial());
 		this.radius = params.radius ?? 1;
@@ -34,6 +35,11 @@ export class Sphere extends Mesh {
 
 		this.updateGeometry();
 		super.setParameters(arguments[0]);
+	}
+
+	setRadius(radius:number) {
+		this.radius = radius;
+		this.updateGeometry();
 	}
 
 	updateGeometry() {

@@ -1,5 +1,5 @@
 import { ShortcutHandler } from 'harmony-browser-utils';
-import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot, defineHarmonyMenu, HTMLHarmonyMenuElement, HarmonyMenuItems, defineHarmonyAccordion, HTMLHarmonyAccordionElement } from 'harmony-ui';
+import { createElement, hide, show, toggle, shadowRootStyle, I18n, createShadowRoot, defineHarmonyMenu, HTMLHarmonyMenuElement, HarmonyMenuItems, defineHarmonyAccordion, HTMLHarmonyAccordionElement, display } from 'harmony-ui';
 import { SceneExplorerEvents } from './sceneexplorerevents';
 import { Camera } from '../cameras/camera';
 import { RotationControl } from '../controls/rotationcontrol';
@@ -75,7 +75,7 @@ export class SceneExplorer {
 	#scene?: Scene;
 	#selectedEntity?: Entity;
 	#manipulator!: Manipulator;
-	#skeletonHelper!: SkeletonHelper;
+	#skeletonHelper = new SkeletonHelper({ visible: false });
 	#htmlProperties!: HTMLElement;
 	#htmlFileExplorer!: HTMLElement;
 	#htmlMaterialEditor!: HTMLElement;
@@ -85,6 +85,7 @@ export class SceneExplorer {
 	#htmlNameFilter!: HTMLInputElement;
 	#htmlContextMenu!: HTMLHarmonyMenuElement;
 	#htmlTypeFilter!: HTMLSelectElement;
+	#htmlDisplayBoneJoints!: HTMLElement;
 	#shadowRoot!: ShadowRoot;
 	#htmlName!: HTMLElement;
 	#htmlId!: HTMLElement;
@@ -110,7 +111,6 @@ export class SceneExplorer {
 		initEntitySubmenu();
 		SceneExplorerEntity.setExplorer(this);
 		this.#manipulator = new Manipulator({ visible: false });
-		this.#skeletonHelper = new SkeletonHelper({ visible: false });
 
 		new IntersectionObserver((entries, observer) => {
 			let isVisible = this.#isVisible;
@@ -249,7 +249,6 @@ export class SceneExplorer {
 		this.#htmlTypeFilter = createElement('select', {
 			parent: this.#htmlHeader,
 		}) as HTMLSelectElement;
-		const skeletonId = 'display_skeleton';
 
 		let htmlManipulator: HTMLInputElement;
 		createElement('span', {
@@ -304,22 +303,41 @@ export class SceneExplorer {
 		});
 
 
-		createElement('span', {
+		createElement('label', {
 			parent: this.#htmlHeader,
 			childs: [
 				createElement('input', {
 					type: 'checkbox',
-					id: skeletonId,
 					events: {
-						change: (event: Event) => this.#skeletonHelper.setVisible((event.target as HTMLInputElement).checked)
+						change: (event: Event) => {
+							const checked = (event.target as HTMLInputElement).checked;
+							this.#skeletonHelper.setVisible(checked);
+							display(this.#htmlDisplayBoneJoints, checked);
+						}
 					}
 				}),
-				createElement('label', {
+				createElement('span', {
 					i18n: '#display_skeleton',
-					htmlFor: skeletonId,
 				}),
 			]
-		})
+		});
+
+		this.#htmlDisplayBoneJoints = createElement('label', {
+			parent: this.#htmlHeader,
+			hidden: true,
+			childs: [
+				createElement('input', {
+					type: 'checkbox',
+					checked: true,
+					events: {
+						change: (event: Event) => this.#skeletonHelper.displayBoneJoints((event.target as HTMLInputElement).checked)
+					}
+				}),
+				createElement('span', {
+					i18n: '#display_bone_joints',
+				}),
+			]
+		});
 
 		/*
 		let propertiesId = 'display_properties';
@@ -483,6 +501,10 @@ export class SceneExplorer {
 		this.#htmlMaterialEditor.append(materialEditor.getHTML());
 
 		this.#htmlExtra.expand('material');
+	}
+
+	setJointsRadius(radius: number) {
+		this.#skeletonHelper.setJointsRadius(radius);
 	}
 }
 

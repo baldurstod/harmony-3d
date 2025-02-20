@@ -10191,6 +10191,10 @@ class Sphere extends Mesh {
         this.updateGeometry();
         super.setParameters(arguments[0]);
     }
+    setRadius(radius) {
+        this.radius = radius;
+        this.updateGeometry();
+    }
     updateGeometry() {
         this.geometry.updateGeometry(this.radius, this.segments, this.rings, this.phiStart, this.phiLength, this.thetaStart, this.thetaLength);
     }
@@ -16434,6 +16438,7 @@ class SkeletonHelper extends Entity {
     #boneStart;
     #boneEnd;
     enumerable = false;
+    #displayJoints = true;
     constructor(parameters) {
         super(parameters);
         this.#lineMaterial = new LineMaterial();
@@ -16545,6 +16550,15 @@ class SkeletonHelper extends Entity {
             SceneExplorerEvents.dispatchEvent(new CustomEvent('bonepicked', { detail: { bone: bone } }));
         }
     }
+    displayBoneJoints(display) {
+        this.#boneStart.setVisible(this.#highlitLine && display);
+        this.#boneEnd.setVisible(this.#highlitLine && display);
+        this.#displayJoints = display;
+    }
+    setJointsRadius(radius) {
+        this.#boneStart.setRadius(radius);
+        this.#boneEnd.setRadius(radius);
+    }
     #pickBone(event) {
         if (!this.isVisible()) {
             return;
@@ -16590,8 +16604,8 @@ class SkeletonHelper extends Entity {
             line.material = this.#highlitLineMaterial;
             this.#boneStart.position = line.getStart(tempVec3$n);
             this.#boneEnd.position = line.getEnd(tempVec3$n);
-            this.#boneStart.setVisible(true);
-            this.#boneEnd.setVisible(true);
+            this.#boneStart.setVisible(this.#displayJoints);
+            this.#boneEnd.setVisible(this.#displayJoints);
             this.#boneStart.properties.set('bone', line.properties.get('boneParent'));
             this.#boneEnd.properties.set('bone', line.properties.get('bone'));
         }
@@ -25027,7 +25041,7 @@ class SceneExplorer {
     #scene;
     #selectedEntity;
     #manipulator;
-    #skeletonHelper;
+    #skeletonHelper = new SkeletonHelper({ visible: false });
     #htmlProperties;
     #htmlFileExplorer;
     #htmlMaterialEditor;
@@ -25037,6 +25051,7 @@ class SceneExplorer {
     #htmlNameFilter;
     #htmlContextMenu;
     #htmlTypeFilter;
+    #htmlDisplayBoneJoints;
     #shadowRoot;
     #htmlName;
     #htmlId;
@@ -25061,7 +25076,6 @@ class SceneExplorer {
         initEntitySubmenu();
         SceneExplorerEntity.setExplorer(this);
         this.#manipulator = new Manipulator({ visible: false });
-        this.#skeletonHelper = new SkeletonHelper({ visible: false });
         new IntersectionObserver((entries, observer) => {
             let isVisible = this.#isVisible;
             for (let e of entries) {
@@ -25188,7 +25202,6 @@ class SceneExplorer {
         this.#htmlTypeFilter = createElement('select', {
             parent: this.#htmlHeader,
         });
-        const skeletonId = 'display_skeleton';
         let htmlManipulator;
         createElement('span', {
             class: 'manipulator',
@@ -25240,19 +25253,37 @@ class SceneExplorer {
                 }),
             ],
         });
-        createElement('span', {
+        createElement('label', {
             parent: this.#htmlHeader,
             childs: [
                 createElement('input', {
                     type: 'checkbox',
-                    id: skeletonId,
                     events: {
-                        change: (event) => this.#skeletonHelper.setVisible(event.target.checked)
+                        change: (event) => {
+                            const checked = event.target.checked;
+                            this.#skeletonHelper.setVisible(checked);
+                            display(this.#htmlDisplayBoneJoints, checked);
+                        }
                     }
                 }),
-                createElement('label', {
+                createElement('span', {
                     i18n: '#display_skeleton',
-                    htmlFor: skeletonId,
+                }),
+            ]
+        });
+        this.#htmlDisplayBoneJoints = createElement('label', {
+            parent: this.#htmlHeader,
+            hidden: true,
+            childs: [
+                createElement('input', {
+                    type: 'checkbox',
+                    checked: true,
+                    events: {
+                        change: (event) => this.#skeletonHelper.displayBoneJoints(event.target.checked)
+                    }
+                }),
+                createElement('span', {
+                    i18n: '#display_bone_joints',
                 }),
             ]
         });
@@ -25401,6 +25432,9 @@ class SceneExplorer {
         materialEditor.editMaterial(material);
         this.#htmlMaterialEditor.append(materialEditor.getHTML());
         this.#htmlExtra.expand('material');
+    }
+    setJointsRadius(radius) {
+        this.#skeletonHelper.setJointsRadius(radius);
     }
 }
 function initEntitySubmenu() {
