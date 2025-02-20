@@ -7,7 +7,7 @@ import { ControlPoint } from '../../common/particles/controlpoint';
 import { DEFAULT_MAX_PARTICLES, HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
 import { Entity } from '../../../entities/entity';
 import { TESTING } from '../../../buildoptions';
-import { WHITE } from '../../source1/particles/color';
+import { Operator } from './operators/operator';
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
 
@@ -18,7 +18,7 @@ export class Source2ParticleSystem extends Entity {
 	isSource2ParticleSystem = true;
 	fileName: string;
 	repository: string;
-	#parentModel;
+	#parentModel?: Entity;
 	animable = true;
 	resetable = true;
 	speed = 1;
@@ -30,7 +30,7 @@ export class Source2ParticleSystem extends Entity {
 	operators = [];
 	forces = [];
 	constraints = [];
-	renderers = [];
+	renderers: Array<Operator> = [];
 	controlPoints: Array<ControlPoint> = [];
 	childSystems = [];
 	livingParticles = [];
@@ -43,12 +43,12 @@ export class Source2ParticleSystem extends Entity {
 	disabled = false;
 	baseProperties;
 	firstStep = false;
-	currentTime: number;
-	elapsedTime: number;
-	previousElapsedTime: number;
-	maxParticles: number;
-	currentParticles: number;
-	resetDelay: number;
+	currentTime: number = 0;
+	elapsedTime: number = 0;
+	previousElapsedTime: number = 0;
+	maxParticles: number = 0;
+	currentParticles: number = 0;
+	resetDelay: number = 0;
 	parentSystem?: Source2ParticleSystem;
 	isBounded = false;
 
@@ -63,7 +63,7 @@ export class Source2ParticleSystem extends Entity {
 		this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: 5, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '' };
 	}
 
-	async init(snapshotModifiers?) {
+	async init(snapshotModifiers?: Map<string, string>) {
 		await this.#initSnapshot(snapshotModifiers);
 
 		for (let child of this.childSystems) {
@@ -75,11 +75,11 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	async #initSnapshot(snapshotModifiers?) {
+	async #initSnapshot(snapshotModifiers?: Map<string, string>) {
 		//TODO : we should add a snapshotmanager to avoid loading the same file multiple time
 		let snapshotFile = this.baseProperties.snapshot;
-		if (snapshotModifiers && snapshotModifiers[snapshotFile]) {
-			snapshotFile = snapshotModifiers[snapshotFile];
+		if (snapshotModifiers && snapshotModifiers.has(snapshotFile)) {
+			snapshotFile = snapshotModifiers.get(snapshotFile);
 		}
 		if (snapshotFile) {
 			let snapshot = await Source2SnapshotLoader.load(this.repository, snapshotFile);
@@ -339,7 +339,7 @@ export class Source2ParticleSystem extends Entity {
 		return quat.identity(q);
 	}
 
-	getControlPoint(controlPointId) {
+	getControlPoint(controlPointId): ControlPoint {
 		let parentSystem = this.parentSystem;
 		if (parentSystem !== undefined) {
 			return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);//TODO: remove recursion
