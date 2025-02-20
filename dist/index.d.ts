@@ -6195,7 +6195,7 @@ declare class Choreography {
              get scene(): Scene | undefined;
              get htmlElement(): Element;
              applyFilter(): void;
-             selectEntity(entity: Entity): void;
+             selectEntity(entity: Entity, scrollIntoView?: boolean): void;
              getSelectedEntity(): Entity;
              getEntityHtml(entity: Entity): void;
              showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity): void;

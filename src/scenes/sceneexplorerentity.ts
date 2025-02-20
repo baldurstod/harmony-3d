@@ -207,10 +207,26 @@ export class SceneExplorerEntity extends HTMLElement {
 		const selectedEntity = SceneExplorerEntity.#selectedEntity;
 		if (selectedEntity != this) {
 			selectedEntity?.unselect();
-			SceneExplorerEntity.#explorer?.selectEntity(this.#entity);
 		}
 
 		SceneExplorerEntity.#selectedEntity = this;
+	}
+
+	display() {
+		this.#display();
+
+		this.scrollIntoView();
+	}
+
+	#display() {
+		const parentEntity = this.#entity.parent;
+		if (parentEntity) {
+			const htmlParent = SceneExplorerEntity.getEntityElement(parentEntity);
+			if (htmlParent) {
+				htmlParent.#display();
+				htmlParent.expand();
+			}
+		}
 	}
 
 	unselect() {
@@ -335,7 +351,7 @@ export class SceneExplorerEntity extends HTMLElement {
 			show(this.#htmlChilds);
 		}
 		this.#expandChilds();
-		this.select();
+		SceneExplorerEntity.#explorer?.selectEntity(this.#entity);
 	}
 
 	#contextMenuHandler(event: MouseEvent) {

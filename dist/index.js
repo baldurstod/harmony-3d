@@ -19465,9 +19465,22 @@ class SceneExplorerEntity extends HTMLElement {
         const selectedEntity = _a$2.#selectedEntity;
         if (selectedEntity != this) {
             selectedEntity?.unselect();
-            _a$2.#explorer?.selectEntity(this.#entity);
         }
         _a$2.#selectedEntity = this;
+    }
+    display() {
+        this.#display();
+        this.scrollIntoView();
+    }
+    #display() {
+        const parentEntity = this.#entity.parent;
+        if (parentEntity) {
+            const htmlParent = _a$2.getEntityElement(parentEntity);
+            if (htmlParent) {
+                htmlParent.#display();
+                htmlParent.expand();
+            }
+        }
     }
     unselect() {
         this.classList.remove('selected');
@@ -19576,7 +19589,7 @@ class SceneExplorerEntity extends HTMLElement {
             show(this.#htmlChilds);
         }
         this.#expandChilds();
-        this.select();
+        _a$2.#explorer?.selectEntity(this.#entity);
     }
     #contextMenuHandler(event) {
         if (!event.shiftKey && this.#entity) {
@@ -25089,7 +25102,7 @@ class SceneExplorer {
             }
         }).observe(this.#shadowRoot.host);
         EntityObserver.addEventListener(PROPERTY_CHANGED$1, (event) => this.#handlePropertyChanged(event.detail));
-        SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone));
+        SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone, true));
     }
     /**
      * @deprecated Please use `setScene` instead.
@@ -25100,7 +25113,7 @@ class SceneExplorer {
     }
     setScene(scene) {
         this.#scene = scene;
-        this.selectEntity(scene);
+        this.selectEntity(scene, true);
         this.applyFilter();
     }
     get scene() {
@@ -25372,7 +25385,7 @@ class SceneExplorer {
         }
         return htmlEntityElement;
     }
-    selectEntity(entity) {
+    selectEntity(entity, scrollIntoView = false) {
         if (this.#selectedEntity == entity) {
             return;
         }
@@ -25382,6 +25395,9 @@ class SceneExplorer {
         if (this.#isVisible) {
             this.#updateEntityElement(entity);
             SceneExplorerEntity.getEntityElement(entity)?.select();
+            if (scrollIntoView) {
+                SceneExplorerEntity.getEntityElement(entity)?.display();
+            }
         }
     }
     getSelectedEntity() {

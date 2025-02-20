@@ -127,7 +127,7 @@ export class SceneExplorer {
 
 
 		EntityObserver.addEventListener(PROPERTY_CHANGED, (event: Event) => this.#handlePropertyChanged((event as CustomEvent).detail));
-		SceneExplorerEvents.addEventListener('bonepicked', (event: Event) => this.selectEntity((event as CustomEvent).detail.bone));
+		SceneExplorerEvents.addEventListener('bonepicked', (event: Event) => this.selectEntity((event as CustomEvent).detail.bone, true));
 	}
 
 	/**
@@ -140,7 +140,7 @@ export class SceneExplorer {
 
 	setScene(scene: Scene) {
 		this.#scene = scene;
-		this.selectEntity(scene);
+		this.selectEntity(scene, true);
 		this.applyFilter();
 	}
 
@@ -432,7 +432,7 @@ export class SceneExplorer {
 		return htmlEntityElement;
 	}
 
-	selectEntity(entity: Entity) {
+	selectEntity(entity: Entity, scrollIntoView = false) {
 		if (this.#selectedEntity == entity) {
 			return;
 		}
@@ -442,6 +442,10 @@ export class SceneExplorer {
 		if (this.#isVisible) {
 			this.#updateEntityElement(entity);
 			SceneExplorerEntity.getEntityElement(entity)?.select();
+
+			if (scrollIntoView) {
+				SceneExplorerEntity.getEntityElement(entity)?.display();
+			}
 		}
 	}
 
