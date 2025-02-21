@@ -62,7 +62,7 @@ export class SetControlPointOrientation extends Operator {
 			//TODO: dafuck ?
 			quat.invert(q, q);
 			cp.quaternion = q;
-			cp._compute();
+			//cp._compute();
 		}
 	}
 

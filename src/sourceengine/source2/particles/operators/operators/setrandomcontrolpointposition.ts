@@ -59,7 +59,7 @@ export class SetRandomControlPointPosition extends Operator {
 			cp1.position = v;
 
 			if (this.orient) {
-				cp1.orientation = headLocation.currentWorldQuaternion;
+				cp1.setWorldQuaternion(headLocation.currentWorldQuaternion);
 			}
 		}
 	}

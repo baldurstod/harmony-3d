@@ -1,4 +1,4 @@
-import { mat4, quat, vec3 } from 'gl-matrix';
+import { mat4, quat, vec3, vec4 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { DEG_TO_RAD } from '../../../../../math/constants';
@@ -6,7 +6,7 @@ import { DEG_TO_RAD } from '../../../../../math/constants';
 let m4 = mat4.create();
 let q = quat.create();
 let v = vec3.create();
-let a = vec3.create();
+let a = vec4.create();
 
 const DEFAULT_AXIS = vec3.fromValues(0, 0, 1);
 
@@ -31,7 +31,7 @@ export class MovementRotateParticleAroundAxis extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let axis = vec3.normalize(a, this.getParamVectorValue('m_vecRotAxis', particle, a) ?? DEFAULT_AXIS);
+		let axis = vec3.normalize(a as vec3, this.getParamVectorValue('m_vecRotAxis', particle, a) ?? DEFAULT_AXIS);
 		let rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
 
 		let cp = this.system.getControlPoint(this.controlPointNumber);

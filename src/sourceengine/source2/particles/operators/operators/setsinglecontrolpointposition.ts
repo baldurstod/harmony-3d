@@ -1,10 +1,10 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
 const DEFAULT_POSITION = vec3.fromValues(128, 0, 0);
 let v = vec3.create();
-let tempVec3 = vec3.create();
+let tempVec4 = vec4.create();
 
 export class SetSingleControlPointPosition extends Operator {
 	useWorldLocation = false;
@@ -39,7 +39,7 @@ export class SetSingleControlPointPosition extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		const cp1Pos = this.getParamVectorValue('m_vecCP1Pos', particle, tempVec3) ?? DEFAULT_POSITION;
+		const cp1Pos = this.getParamVectorValue('m_vecCP1Pos', particle, tempVec4) ?? DEFAULT_POSITION;
 		//TODO
 		if (!this.setOnce || !this.set) {
 			let cp = this.system.getOwnControlPoint(this.cp1);

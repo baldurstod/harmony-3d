@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { AddSIMD, MaxSIMD, MinSIMD, MulSIMD, SinEst01SIMD, MaskedAssign, Four_Ones, Four_Zeros } from '../../../../common/math/sse';
@@ -150,7 +150,7 @@ export class OscillateVector extends Operator {
 
 				const fvOscMultiplier = vec3.create();//todov3optimize
 				vec3.scale(fvOscMultiplier, fvRate, fl4ScaleFactor);
-				let fvOutput = vec3.create();//TODO: perf//todov3optimize
+				let fvOutput = vec4.create();//TODO: perf//todov3optimize
 				this.getInputValueAsVector(m_nField, particle, fvOutput);//*pOscField;
 
 				fvOscVal[0] = AddSIMD (fvOutput[0], MulSIMD (fvOscMultiplier[0], SinEst01SIMD(fvCos[0])));
