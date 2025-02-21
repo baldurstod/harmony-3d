@@ -871,11 +871,11 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		return this.#autoKill;
 	}
 
-	setlooping(looping: boolean) {
+	setLooping(looping: boolean) {
 		this.#looping = looping;
 	}
 
-	getlooping() {
+	getLooping() {
 		return this.#looping;
 	}
 

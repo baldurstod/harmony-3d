@@ -3470,8 +3470,8 @@ declare class Choreography {
 
          declare interface Loopable {
              isLoopable: true;
-             setlooping: (looping: boolean) => void;
-             getlooping: () => boolean;
+             setLooping: (looping: boolean) => void;
+             getLooping: () => boolean;
          }
 
          export declare class LoopSubdivision {
@@ -8211,8 +8211,8 @@ declare class Choreography {
              getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
              set autoKill(autoKill: boolean);
              get autoKill(): boolean;
-             setlooping(looping: boolean): void;
-             getlooping(): boolean;
+             setLooping(looping: boolean): void;
+             getLooping(): boolean;
              dispose(): void;
              getBounds(min?: vec3, max?: vec3): void;
              static setSpeed(speed: number): void;

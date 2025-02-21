@@ -19372,7 +19372,7 @@ class SceneExplorerEntity extends HTMLElement {
                                 }),
                             ],
                             events: {
-                                change: (event) => this.#entity?.setlooping(event.target.state),
+                                change: (event) => this.#entity?.setLooping(event.target.state),
                             }
                         }),
                         this.#htmlReset = createElement('div', {
@@ -41118,10 +41118,10 @@ class SourceEngineParticleSystem extends Entity {
     get autoKill() {
         return this.#autoKill;
     }
-    setlooping(looping) {
+    setLooping(looping) {
         this.#looping = looping;
     }
-    getlooping() {
+    getLooping() {
         return this.#looping;
     }
     dispose() {
