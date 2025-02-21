@@ -260,9 +260,10 @@ declare type BodyGroupChoice = {
     bodyGroupId: number;
 };
 
-export declare class Bone extends Entity {
+export declare class Bone extends Entity implements Lockable {
     #private;
     isBone: boolean;
+    isLockable: true;
     dirty: boolean;
     lastComputed: number;
     tempPosition: vec3;
@@ -300,6 +301,8 @@ export declare class Bone extends Entity {
     set boneId(boneId: number);
     get boneId(): number;
     isProcedural(): boolean;
+    setLocked(locked: boolean): void;
+    isLocked(): boolean;
     reset(): void;
     buildContextMenu(): {
         visibility: {
@@ -1747,9 +1750,11 @@ declare class Choreography {
          isRenderable: boolean;
          lockPos: boolean;
          lockRot: boolean;
-         lockScale: boolean;
          drawOutline: boolean;
          locked: boolean;
+         lockPosition: boolean;
+         lockRotation: boolean;
+         lockScale: boolean;
          static editMaterial: (entity: Entity) => void;
          readonly properties: Map<string, any>;
          loadedPromise?: Promise<any>;
@@ -3462,6 +3467,12 @@ declare class Choreography {
              #private;
              constructor(params?: any);
              setSegments(positions: any, colors?: any): void;
+         }
+
+         declare interface Lockable {
+             isLockable: true;
+             setLocked: (locked: boolean) => void;
+             isLocked: () => boolean;
          }
 
          export declare class LockToBone extends SourceEngineParticleOperator {

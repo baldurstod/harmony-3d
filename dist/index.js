@@ -4,7 +4,7 @@ import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
-import { zoomOutSVG, zoomInSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
+import { zoomOutSVG, zoomInSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
 import { setTimeoutPromise } from 'harmony-utils';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
@@ -1859,7 +1859,7 @@ const EntityObserver = new EntityObserverClass();
 
 const pickList = new Map();
 
-const tempVec3$y = vec3.create();
+const tempVec3$x = vec3.create();
 const tempMin = vec3.create();
 const tempMax = vec3.create();
 class BoundingBox {
@@ -1874,11 +1874,11 @@ class BoundingBox {
         vec3.set(tempMin, +Infinity, +Infinity, +Infinity);
         vec3.set(tempMax, -Infinity, -Infinity, -Infinity);
         for (let i = 0; i < pointArray.length; i += 3) {
-            tempVec3$y[0] = pointArray[i + 0];
-            tempVec3$y[1] = pointArray[i + 1];
-            tempVec3$y[2] = pointArray[i + 2];
-            vec3.min(tempMin, tempMin, tempVec3$y);
-            vec3.max(tempMax, tempMax, tempVec3$y);
+            tempVec3$x[0] = pointArray[i + 0];
+            tempVec3$x[1] = pointArray[i + 1];
+            tempVec3$x[2] = pointArray[i + 2];
+            vec3.min(tempMin, tempMin, tempVec3$x);
+            vec3.max(tempMax, tempMax, tempVec3$x);
         }
         if (pointArray.length) {
             if (!this.empty) {
@@ -2168,9 +2168,12 @@ class Entity {
     isRenderable = false;
     lockPos = false;
     lockRot = false;
-    lockScale = false;
+    //lockScale = false;
     drawOutline = false;
-    locked = false;
+    locked = false; // Prevents updates from animation system
+    lockPosition = false;
+    lockRotation = false;
+    lockScale = false;
     static editMaterial;
     properties = new Map();
     loadedPromise;
@@ -2221,6 +2224,9 @@ class Entity {
         return this.#name;
     }
     setPosition(position) {
+        if (this.lockPosition) {
+            return;
+        }
         const oldValue = vec3.copy(tempVec3_4$1, this._position);
         vec3.copy(this._position, position);
         if (!vec3.exactEquals(oldValue, position)) {
@@ -2303,6 +2309,9 @@ class Entity {
         return `${this._position[0].toFixed(2)} ${this._position[1].toFixed(2)} ${this._position[2].toFixed(2)}`;
     }
     setQuaternion(quaternion) {
+        if (this.lockRotation) {
+            return;
+        }
         const oldValue = quat.copy(tempQuat3, this._quaternion);
         quat.normalize(this._quaternion, quaternion);
         if (!quat.exactEquals(oldValue, this._quaternion)) {
@@ -2324,6 +2333,9 @@ class Entity {
         return `${this._quaternion[0].toFixed(2)} ${this._quaternion[1].toFixed(2)} ${this._quaternion[2].toFixed(2)} ${this._quaternion[3].toFixed(2)}`;
     }
     set scale(scale) {
+        if (this.lockScale) {
+            return;
+        }
         vec3.copy(this._scale, scale);
     }
     get scale() {
@@ -4104,7 +4116,7 @@ class Interaction {
     }
 }
 
-const tempVec3$x = vec3.create();
+const tempVec3$w = vec3.create();
 let v1$2 = vec3.create();
 let v2$1 = vec3.create();
 let v3$1 = vec3.create();
@@ -4217,11 +4229,11 @@ class Mesh extends Entity {
         max[2] = -Infinity;
         let vertexPosition = this.geometry.getAttribute('aVertexPosition')._array;
         for (let i = 0, l = vertexPosition.length; i < l; i += 3) {
-            tempVec3$x[0] = vertexPosition[i + 0];
-            tempVec3$x[1] = vertexPosition[i + 1];
-            tempVec3$x[2] = vertexPosition[i + 2];
-            vec3.min(min, min, tempVec3$x);
-            vec3.max(max, max, tempVec3$x);
+            tempVec3$w[0] = vertexPosition[i + 0];
+            tempVec3$w[1] = vertexPosition[i + 1];
+            tempVec3$w[2] = vertexPosition[i + 2];
+            vec3.min(min, min, tempVec3$w);
+            vec3.max(max, max, tempVec3$w);
         }
         //console.error(min, max);
     }
@@ -5051,7 +5063,7 @@ class Scene extends Entity {
 }
 registerEntity(Scene);
 
-const tempVec3$w = vec3.create();
+const tempVec3$v = vec3.create();
 class CubeBackground extends BackGround {
     #box = new Box();
     #scene = new Scene();
@@ -5069,7 +5081,7 @@ class CubeBackground extends BackGround {
         }
     }
     render(renderer, camera) {
-        this.#box.setPosition(camera.getPosition(tempVec3$w));
+        this.#box.setPosition(camera.getPosition(tempVec3$v));
         renderer.render(this.#scene, camera, 0);
     }
     setTexture(texture) {
@@ -5111,7 +5123,7 @@ var CameraProjection;
     CameraProjection[CameraProjection["Mixed"] = 2] = "Mixed";
 })(CameraProjection || (CameraProjection = {}));
 const tempQuat$c = quat.create();
-const tempVec3$v = vec3.create();
+const tempVec3$u = vec3.create();
 vec3.create();
 const proj1 = mat4.create();
 const proj2 = mat4.create();
@@ -5170,7 +5182,7 @@ class Camera extends Entity {
         //this._renderMode = 2;
     }
     computeCameraMatrix() {
-        mat4.fromRotationTranslation(this.#cameraMatrix, this.getWorldQuaternion(tempQuat$c), this.getWorldPosition(tempVec3$v));
+        mat4.fromRotationTranslation(this.#cameraMatrix, this.getWorldQuaternion(tempQuat$c), this.getWorldPosition(tempVec3$u));
         mat4.invert(this.#cameraMatrix, this.#cameraMatrix);
     }
     #computeProjectionMatrix() {
@@ -8337,7 +8349,7 @@ const xUnitVec3$1 = vec3.fromValues(1, 0, 0);
 vec3.fromValues(0, 1, 0);
 const zUnitVec3$2 = vec3.fromValues(0, 0, 1);
 const minusZUnitVec3 = vec3.fromValues(0, 0, -1);
-const tempVec3$u = vec3.create();
+const tempVec3$t = vec3.create();
 const spherical$1 = new Spherical();
 class FirstPersonControl extends CameraControl {
     #enableDamping = false;
@@ -8598,12 +8610,12 @@ class FirstPersonControl extends CameraControl {
             phi = mapLinear(phi, 0, Math.PI, this.verticalMin, this.verticalMax);
         }
         var position = this.camera.position;
-        spherical$1.toCartesian(tempVec3$u);
+        spherical$1.toCartesian(tempVec3$t);
         // rotate offset back to 'camera-up-vector-is-up' space
         //offset.applyQuaternion(quatInverse);
         //vec3.transformQuat(tempVec3, tempVec3, this.#quatInverse);
         //position.copy(this.target).add(offset);
-        vec3.add(position, position, tempVec3$u);
+        vec3.add(position, position, tempVec3$t);
         this.camera.lookAt(position); //TODO: optimize
         if (this.#enableDamping === true) {
             this.#sphericalDelta.theta *= (1 - this.#dampingFactor);
@@ -8690,9 +8702,9 @@ class FirstPersonControl extends CameraControl {
         // angle from z-axis around y-axis
         spherical.setFromVector3(tempVec3);
         */
-        vec3.copy(tempVec3$u, xUnitVec3$1 /*minusZUnitVec3*/);
-        vec3.transformQuat(tempVec3$u, tempVec3$u, this.camera._quaternion);
-        spherical$1.setFromVector3(tempVec3$u);
+        vec3.copy(tempVec3$t, xUnitVec3$1 /*minusZUnitVec3*/);
+        vec3.transformQuat(tempVec3$t, tempVec3$t, this.camera._quaternion);
+        spherical$1.setFromVector3(tempVec3$t);
         this.#lat = -(90 - RAD_TO_DEG * (spherical$1.phi));
         this.#lon = -RAD_TO_DEG * (spherical$1.theta);
         this.#startLat = this.#lat;
@@ -8721,8 +8733,8 @@ class FirstPersonControl extends CameraControl {
         if (this.camera) {
             quat.rotationTo(this.#q, this.camera.upVector, zUnitVec3$2);
             this.#quatInverse = quat.invert(this.#quatInverse, this.#q);
-            vec3.transformQuat(tempVec3$u, minusZUnitVec3, this.camera.quaternion);
-            spherical$1.setFromVector3(tempVec3$u);
+            vec3.transformQuat(tempVec3$t, minusZUnitVec3, this.camera.quaternion);
+            spherical$1.setFromVector3(tempVec3$t);
         }
     }
     handleEnabled() {
@@ -8756,7 +8768,7 @@ registerEntity(Target);
 // Zoom - middle mouse, or mousewheel / touch: two-finger spread or squish
 // Pan - right mouse, or left mouse + ctrl/meta/shiftKey, or arrow keys / touch: two-finger move
 const zUnitVec3$1 = vec3.fromValues(0, 0, 1);
-const tempVec3$t = vec3.create();
+const tempVec3$s = vec3.create();
 const tempVec3_2$9 = vec3.create();
 const spherical = new Spherical();
 // Mouse buttons
@@ -8879,12 +8891,12 @@ class OrbitControl extends CameraControl {
         }
         var position = this.camera._position;
         //offset.copy(position).sub(this.target);
-        vec3.sub(tempVec3$t, position, this.#target.getWorldPosition()); //TODO: optimise
+        vec3.sub(tempVec3$s, position, this.#target.getWorldPosition()); //TODO: optimise
         // rotate offset to 'y-axis-is-up' space
         //offset.applyQuaternion(q);
-        vec3.transformQuat(tempVec3$t, tempVec3$t, this.#q);
+        vec3.transformQuat(tempVec3$s, tempVec3$s, this.#q);
         // angle from z-axis around y-axis
-        spherical.setFromVector3(tempVec3$t);
+        spherical.setFromVector3(tempVec3$s);
         if (this.#autoRotate && this.#state === STATE.NONE) {
             this.#rotateLeft(this.#autoRotateSpeed);
         }
@@ -8920,13 +8932,13 @@ class OrbitControl extends CameraControl {
             vec3.add(tempVec3_2$9, this.#target._position, this.#panOffset);
             this.#target.setPosition(tempVec3_2$9);
         }
-        spherical.toCartesian(tempVec3$t);
+        spherical.toCartesian(tempVec3$s);
         // rotate offset back to 'camera-up-vector-is-up' space
         //offset.applyQuaternion(quatInverse);
-        vec3.transformQuat(tempVec3$t, tempVec3$t, this.#quatInverse);
+        vec3.transformQuat(tempVec3$s, tempVec3$s, this.#quatInverse);
         //position.copy(this.target).add(offset);
-        vec3.add(tempVec3$t, this.#target.getWorldPosition(), tempVec3$t);
-        this.camera.setPosition(tempVec3$t);
+        vec3.add(tempVec3$s, this.#target.getWorldPosition(), tempVec3$s);
+        this.camera.setPosition(tempVec3$s);
         this.camera.lookAt(this.#target.getWorldPosition(), this.#upVector); //TODO: optimize
         if (this.#enableDamping === true) {
             this.#sphericalDelta.theta *= (1 - this.#dampingFactor);
@@ -8966,22 +8978,22 @@ class OrbitControl extends CameraControl {
         this.#sphericalDelta.phi -= angle;
     }
     #panLeft(distance, rotation) {
-        vec3.transformQuat(tempVec3$t, [1, 0, 0], rotation);
-        vec3.scale(tempVec3$t, tempVec3$t, -distance);
-        vec3.add(this.#panOffset, this.#panOffset, tempVec3$t);
+        vec3.transformQuat(tempVec3$s, [1, 0, 0], rotation);
+        vec3.scale(tempVec3$s, tempVec3$s, -distance);
+        vec3.add(this.#panOffset, this.#panOffset, tempVec3$s);
     }
     #panUp(distance, rotation) {
-        vec3.transformQuat(tempVec3$t, [0, 1, 0], rotation);
-        vec3.scale(tempVec3$t, tempVec3$t, distance);
-        vec3.add(this.#panOffset, this.#panOffset, tempVec3$t);
+        vec3.transformQuat(tempVec3$s, [0, 1, 0], rotation);
+        vec3.scale(tempVec3$s, tempVec3$s, distance);
+        vec3.add(this.#panOffset, this.#panOffset, tempVec3$s);
     }
     #pan(deltaX, deltaY, element) {
         if (this.camera.isPerspective) {
             // perspective
             var position = this.camera.position;
             //offset.copy(position).sub(this.target);
-            vec3.sub(tempVec3$t, position, this.#target.getWorldPosition()); //todo // OPTIMIZE:
-            var targetDistance = vec3.len(tempVec3$t);
+            vec3.sub(tempVec3$s, position, this.#target.getWorldPosition()); //todo // OPTIMIZE:
+            var targetDistance = vec3.len(tempVec3$s);
             // half of the fov is center to top of screen
             targetDistance *= this.camera.getTanHalfVerticalFov(); //Math.tan((this.camera.fov / 2)* Math.PI / 180.0);
             // we use only clientHeight here so aspect ratio does not distort speed
@@ -10168,7 +10180,7 @@ class SphereBufferGeometry extends BufferGeometry {
 let intersectionPoint1 = vec3.create();
 let intersectionPoint2 = vec3.create();
 let intersectionNormal$1 = vec3.create();
-const tempVec3$s = vec3.create();
+const tempVec3$r = vec3.create();
 let v$f = vec3.create();
 class Sphere extends Mesh {
     radius;
@@ -10219,7 +10231,7 @@ class Sphere extends Mesh {
         let ray = raycaster.ray;
         let worldPosition = this.getWorldPosition(v$f);
         let inverseRadius = 1 / this.radius;
-        if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$s), intersectionPoint1, intersectionPoint2)) {
+        if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$r), intersectionPoint1, intersectionPoint2)) {
             //return super.raycast(raycaster, intersections);//TODO: improve
             //TODO: case when the ray spawn from inside the sphere
             vec3.sub(intersectionNormal$1, intersectionPoint1, worldPosition);
@@ -10274,7 +10286,7 @@ const zUnitVec3 = vec3.fromValues(0, 0, 1);
 const xyUnitVec3 = vec3.fromValues(1, 1, 0);
 const xzUnitVec3 = vec3.fromValues(1, 0, 1);
 const yzUnitVec3 = vec3.fromValues(0, 1, 1);
-const tempVec3$r = vec3.create();
+const tempVec3$q = vec3.create();
 const tempVec3_b = vec3.create();
 const translationManipulatorTempQuat = quat.create();
 const tempQuat$a = quat.create();
@@ -10419,9 +10431,9 @@ class Manipulator extends Entity {
         if (camera) {
             this.camera = camera;
             if (camera.isPerspective) {
-                this.getWorldPosition(tempVec3$r);
+                this.getWorldPosition(tempVec3$q);
                 camera.getWorldPosition(tempVec3_b);
-                scaleFactor = vec3.distance(tempVec3$r, tempVec3_b) * Math.min(1.9 * Math.tan(camera.verticalFov * DEG_TO_RAD), 7);
+                scaleFactor = vec3.distance(tempVec3$q, tempVec3_b) * Math.min(1.9 * Math.tan(camera.verticalFov * DEG_TO_RAD), 7);
                 scaleFactor *= 0.02;
             }
             else if (camera.isOrthographic) {
@@ -10429,7 +10441,7 @@ class Manipulator extends Entity {
                 scaleFactor *= 0.02;
             }
             scaleFactor *= this.size;
-            this.scale = vec3.set(tempVec3$r, scaleFactor, scaleFactor, scaleFactor);
+            this.scale = vec3.set(tempVec3$q, scaleFactor, scaleFactor, scaleFactor);
             this.#setupAxis();
         }
     }
@@ -10620,45 +10632,45 @@ class Manipulator extends Entity {
         }
     }
     #translationMoveHandler(x, y) {
-        this.#computeTranslationPosition(tempVec3$r, x, y);
-        vec3.sub(tempVec3$r, tempVec3$r, this.#startDragPosition);
+        this.#computeTranslationPosition(tempVec3$q, x, y);
+        vec3.sub(tempVec3$q, tempVec3$q, this.#startDragPosition);
         switch (this.#axis) {
             case 0:
                 break;
             case 1:
-                tempVec3$r[1] = 0;
-                tempVec3$r[2] = 0;
+                tempVec3$q[1] = 0;
+                tempVec3$q[2] = 0;
                 break;
             case 2:
-                tempVec3$r[0] = 0;
-                tempVec3$r[2] = 0;
+                tempVec3$q[0] = 0;
+                tempVec3$q[2] = 0;
                 break;
             case 3:
-                tempVec3$r[0] = 0;
-                tempVec3$r[1] = 0;
+                tempVec3$q[0] = 0;
+                tempVec3$q[1] = 0;
                 break;
             case 4:
-                tempVec3$r[2] = 0;
+                tempVec3$q[2] = 0;
                 break;
             case 5:
-                tempVec3$r[1] = 0;
+                tempVec3$q[1] = 0;
                 break;
             case 6:
-                tempVec3$r[0] = 0;
+                tempVec3$q[0] = 0;
                 break;
             default:
-                tempVec3$r[0] = 0;
-                tempVec3$r[1] = 0;
-                tempVec3$r[2] = 0;
+                tempVec3$q[0] = 0;
+                tempVec3$q[1] = 0;
+                tempVec3$q[2] = 0;
         }
-        vec3.transformQuat(tempVec3$r, tempVec3$r, this.getWorldQuaternion());
-        vec3.add(tempVec3$r, this.#startPosition, tempVec3$r);
+        vec3.transformQuat(tempVec3$q, tempVec3$q, this.getWorldQuaternion());
+        vec3.add(tempVec3$q, this.#startPosition, tempVec3$q);
         if (this._parent) {
-            this._parent.setWorldPosition(tempVec3$r);
+            this._parent.setWorldPosition(tempVec3$q);
             this._parent.locked = true;
         }
         else {
-            this.setWorldPosition(tempVec3$r);
+            this.setWorldPosition(tempVec3$q);
         }
     }
     #rotationMoveHandler(x, y) {
@@ -10674,7 +10686,7 @@ class Manipulator extends Entity {
         }
     }
     #scaleMoveHandler(x, y) {
-        let v3 = this.#computeTranslationPosition(tempVec3$r, x, y);
+        let v3 = this.#computeTranslationPosition(tempVec3$q, x, y);
         if (!v3) {
             return;
         }
@@ -10947,14 +10959,14 @@ class Manipulator extends Entity {
         }
         this.getWorldQuaternion(translationManipulatorTempQuat);
         quat.invert(translationManipulatorTempQuat, translationManipulatorTempQuat);
-        this.getPositionFrom(camera, tempVec3$r);
-        vec3.normalize(tempVec3$r, tempVec3$r);
-        vec3.transformQuat(tempVec3$r, tempVec3$r, translationManipulatorTempQuat);
-        this.#circle.quaternion = quat.rotationTo(tempQuat$a, zUnitVec3, tempVec3$r);
+        this.getPositionFrom(camera, tempVec3$q);
+        vec3.normalize(tempVec3$q, tempVec3$q);
+        vec3.transformQuat(tempVec3$q, tempVec3$q, translationManipulatorTempQuat);
+        this.#circle.quaternion = quat.rotationTo(tempQuat$a, zUnitVec3, tempVec3$q);
         this.#viewCircle.quaternion = tempQuat$a;
-        this.#xCircle.quaternion = quat.setAxisAngle(tempQuat$a, xUnitVec3, Math.atan2(tempVec3$r[1], -tempVec3$r[2]));
-        this.#yCircle.quaternion = quat.setAxisAngle(tempQuat$a, yUnitVec3, Math.atan2(tempVec3$r[0], tempVec3$r[2]));
-        this.#zCircle.quaternion = quat.setAxisAngle(tempQuat$a, zUnitVec3, Math.atan2(tempVec3$r[1], tempVec3$r[0]));
+        this.#xCircle.quaternion = quat.setAxisAngle(tempQuat$a, xUnitVec3, Math.atan2(tempVec3$q[1], -tempVec3$q[2]));
+        this.#yCircle.quaternion = quat.setAxisAngle(tempQuat$a, yUnitVec3, Math.atan2(tempVec3$q[0], tempVec3$q[2]));
+        this.#zCircle.quaternion = quat.setAxisAngle(tempQuat$a, zUnitVec3, Math.atan2(tempVec3$q[1], tempVec3$q[0]));
         this.#xCircle.rotateY(HALF_PI);
         this.#yCircle.rotateX(-HALF_PI);
     }
@@ -12026,7 +12038,7 @@ class SpotLight extends Light {
 registerEntity(SpotLight);
 
 const DIVISIONS = 32;
-const tempVec4 = vec4.create();
+const tempVec4$1 = vec4.create();
 class SpotLightHelper extends Mesh {
     #color = vec3.create();
     #angle;
@@ -12067,8 +12079,8 @@ class SpotLightHelper extends Mesh {
         let spotLight = this.#spotLight;
         if (spotLight && ((this.#range != spotLight.range) || (this.#angle != spotLight.angle) || (!vec3.exactEquals(spotLight.color, this.#color)))) {
             vec3.copy(this.#color, spotLight.color);
-            vec4.set(tempVec4, this.#color[0], this.#color[1], this.#color[2], 1.);
-            this.material.setMeshColor(tempVec4);
+            vec4.set(tempVec4$1, this.#color[0], this.#color[1], this.#color[2], 1.);
+            this.material.setMeshColor(tempVec4$1);
             let range = spotLight.range || 1000.0;
             let radius = Math.sin(spotLight.angle) * range;
             this.#range = spotLight.range;
@@ -16086,7 +16098,7 @@ class NodeImageEditor extends EventTarget {
     }
 }
 
-const tempVec3$q = vec3.create();
+const tempVec3$p = vec3.create();
 class BoundingBoxHelper extends Box {
     boundingBox = new BoundingBox();
     constructor(params = {}) {
@@ -16097,8 +16109,8 @@ class BoundingBoxHelper extends Box {
         if (this._parent) {
             this._parent.getBoundingBox(this.boundingBox);
             this.boundingBox.getCenter(this._position);
-            this.boundingBox.getSize(tempVec3$q);
-            this.setSize(tempVec3$q[0], tempVec3$q[1], tempVec3$q[2]);
+            this.boundingBox.getSize(tempVec3$p);
+            this.setSize(tempVec3$p[0], tempVec3$p[1], tempVec3$p[2]);
         }
     }
     getWorldPosition(vec = vec3.create()) {
@@ -16116,7 +16128,7 @@ class BoundingBoxHelper extends Box {
 const BASE_COLOR = [1, 1, 1, 1];
 const FRUSTRUM_COLOR = [1, 0, 0, 1];
 const AXIS_COLOR = [1, 1, 0, 1];
-const tempVec3$p = vec3.create();
+const tempVec3$o = vec3.create();
 const Points = [
     //Base Points
     { p: vec3.fromValues(0, 0, 0), c: BASE_COLOR },
@@ -16214,9 +16226,9 @@ class CameraFrustum extends Mesh {
             let verticesArray = this.#vertexPositionAttribute._array;
             for (let point of Points) {
                 if (index > 3) { //Skip the base point
-                    vec3.copy(tempVec3$p, point.p);
-                    this.#camera.invertProjection(tempVec3$p);
-                    verticesArray.set(tempVec3$p, index);
+                    vec3.copy(tempVec3$o, point.p);
+                    this.#camera.invertProjection(tempVec3$o);
+                    verticesArray.set(tempVec3$o, index);
                 }
                 index += 3;
             }
@@ -16277,7 +16289,7 @@ function getHelper(type) {
     }
 }
 
-const tempVec3$o = vec3.create();
+const tempVec3$n = vec3.create();
 let boxMaterial;
 class HitboxHelper extends Entity {
     #hitboxes = [];
@@ -16294,11 +16306,11 @@ class HitboxHelper extends Entity {
         if (parent && parent.getHitboxes) {
             let hitboxes = parent.getHitboxes();
             for (let hitbox of hitboxes) {
-                vec3.sub(tempVec3$o, hitbox.boundingBoxMax, hitbox.boundingBoxMin);
-                let box = new Box({ width: tempVec3$o[0], height: tempVec3$o[1], depth: tempVec3$o[2], material: boxMaterial });
+                vec3.sub(tempVec3$n, hitbox.boundingBoxMax, hitbox.boundingBoxMin);
+                let box = new Box({ width: tempVec3$n[0], height: tempVec3$n[1], depth: tempVec3$n[2], material: boxMaterial });
                 box.serializable = false;
-                vec3.lerp(tempVec3$o, hitbox.boundingBoxMin, hitbox.boundingBoxMax, 0.5);
-                box.position = tempVec3$o;
+                vec3.lerp(tempVec3$n, hitbox.boundingBoxMin, hitbox.boundingBoxMax, 0.5);
+                box.position = tempVec3$n;
                 if (hitbox.parent) {
                     hitbox.parent.addChild(box);
                 }
@@ -16426,7 +16438,7 @@ class Raycaster {
 
 const SceneExplorerEvents = new EventTarget();
 
-const tempVec3$n = vec3.create();
+const tempVec3$m = vec3.create();
 class SkeletonHelper extends Entity {
     #skeleton;
     #lines = new Map();
@@ -16602,8 +16614,8 @@ class SkeletonHelper extends Entity {
         }
         if (line) {
             line.material = this.#highlitLineMaterial;
-            this.#boneStart.position = line.getStart(tempVec3$n);
-            this.#boneEnd.position = line.getEnd(tempVec3$n);
+            this.#boneStart.position = line.getStart(tempVec3$m);
+            this.#boneEnd.position = line.getEnd(tempVec3$m);
             this.#boneStart.setVisible(this.#displayJoints);
             this.#boneEnd.setVisible(this.#displayJoints);
             this.#boneStart.properties.set('bone', line.properties.get('boneParent'));
@@ -16627,6 +16639,7 @@ const tempQuat1 = quat.create();
 const tempVec1 = vec3.create();
 class Bone extends Entity {
     isBone = true;
+    isLockable = true;
     #boneId;
     #poseToBone = mat4.create();
     #boneMat = mat4.create();
@@ -16853,6 +16866,14 @@ class Bone extends Entity {
     isProcedural() {
         return false;
         //return (this.flags & BONE_ALWAYS_PROCEDURAL) == BONE_ALWAYS_PROCEDURAL;
+    }
+    setLocked(locked) {
+        this.lockPosition = locked;
+        this.lockRotation = locked;
+        this.lockScale = locked;
+    }
+    isLocked() {
+        return this.lockPosition && this.lockRotation && this.lockScale;
     }
     reset() {
         vec3.zero(this._position);
@@ -18396,7 +18417,7 @@ class World extends Entity {
 registerEntity(World);
 
 const DEFAULT_SEGMENT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-const tempVec3$m = vec3.create();
+const tempVec3$l = vec3.create();
 const tempQuat$8 = quat.create();
 const tempQuat2 = quat.create();
 const UNIT_VEC3_X$1 = vec3.fromValues(1, 0, 0);
@@ -18435,31 +18456,31 @@ class BeamBufferGeometry extends BufferGeometry {
         for (let segment of segments) {
             if (previousSegment) {
                 indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
-                vec3.sub(tempVec3$m, segment.pos, previousSegment.pos);
-                vec3.normalize(tempVec3$m, tempVec3$m);
-                quat.rotationTo(tempQuat$8, UNIT_VEC3_X$1, tempVec3$m);
+                vec3.sub(tempVec3$l, segment.pos, previousSegment.pos);
+                vec3.normalize(tempVec3$l, tempVec3$l);
+                quat.rotationTo(tempQuat$8, UNIT_VEC3_X$1, tempVec3$l);
                 quat.rotationTo(tempQuat2, UNIT_VEC3_MINUS_Y, previousSegment.normal);
-                vec3.set(tempVec3$m, 0, 0, -previousSegment.width / 2.0);
-                vec3.transformQuat(tempVec3$m, tempVec3$m, tempQuat$8);
-                vec3.transformQuat(tempVec3$m, tempVec3$m, tempQuat2);
-                vec3.add(tempVec3$m, tempVec3$m, previousSegment.pos);
-                vertices.push(...tempVec3$m);
-                vec3.set(tempVec3$m, 0, 0, previousSegment.width / 2.0);
-                vec3.transformQuat(tempVec3$m, tempVec3$m, tempQuat$8);
-                vec3.transformQuat(tempVec3$m, tempVec3$m, tempQuat2);
-                vec3.add(tempVec3$m, tempVec3$m, previousSegment.pos);
-                vertices.push(...tempVec3$m);
+                vec3.set(tempVec3$l, 0, 0, -previousSegment.width / 2.0);
+                vec3.transformQuat(tempVec3$l, tempVec3$l, tempQuat$8);
+                vec3.transformQuat(tempVec3$l, tempVec3$l, tempQuat2);
+                vec3.add(tempVec3$l, tempVec3$l, previousSegment.pos);
+                vertices.push(...tempVec3$l);
+                vec3.set(tempVec3$l, 0, 0, previousSegment.width / 2.0);
+                vec3.transformQuat(tempVec3$l, tempVec3$l, tempQuat$8);
+                vec3.transformQuat(tempVec3$l, tempVec3$l, tempQuat2);
+                vec3.add(tempVec3$l, tempVec3$l, previousSegment.pos);
+                vertices.push(...tempVec3$l);
                 quat.rotationTo(tempQuat2, UNIT_VEC3_MINUS_Y, segment.normal);
-                vec3.set(tempVec3$m, 0, 0, -segment.width / 2.0);
-                vec3.transformQuat(tempVec3$m, tempVec3$m, tempQuat$8);
-                vec3.transformQuat(tempVec3$m, tempVec3$m, tempQuat2);
-                vec3.add(tempVec3$m, tempVec3$m, segment.pos);
-                vertices.push(...tempVec3$m);
-                vec3.set(tempVec3$m, 0, 0, segment.width / 2.0);
-                vec3.transformQuat(tempVec3$m, tempVec3$m, tempQuat$8);
-                vec3.transformQuat(tempVec3$m, tempVec3$m, tempQuat2);
-                vec3.add(tempVec3$m, tempVec3$m, segment.pos);
-                vertices.push(...tempVec3$m);
+                vec3.set(tempVec3$l, 0, 0, -segment.width / 2.0);
+                vec3.transformQuat(tempVec3$l, tempVec3$l, tempQuat$8);
+                vec3.transformQuat(tempVec3$l, tempVec3$l, tempQuat2);
+                vec3.add(tempVec3$l, tempVec3$l, segment.pos);
+                vertices.push(...tempVec3$l);
+                vec3.set(tempVec3$l, 0, 0, segment.width / 2.0);
+                vec3.transformQuat(tempVec3$l, tempVec3$l, tempQuat$8);
+                vec3.transformQuat(tempVec3$l, tempVec3$l, tempQuat2);
+                vec3.add(tempVec3$l, tempVec3$l, segment.pos);
+                vertices.push(...tempVec3$l);
                 uvs.push(0, previousSegment.texCoordY, 1, previousSegment.texCoordY, 0, segment.texCoordY, 1, segment.texCoordY);
                 colors.push(...previousSegment.color, ...previousSegment.color, ...segment.color, ...segment.color);
                 indiceBase += 4;
@@ -19297,6 +19318,7 @@ class SceneExplorerEntity extends HTMLElement {
     #htmlPlaying;
     #htmlAnimationsButton;
     #htmlLoopedButton;
+    #htmlLockedButton;
     #htmlReset;
     static #entitiesHTML = new Map();
     static #selectedEntity;
@@ -19343,7 +19365,6 @@ class SceneExplorerEntity extends HTMLElement {
                         }),
                         this.#htmlAnimationsButton = createElement('harmony-toggle-button', {
                             hidden: true,
-                            class: 'scene-explorer-entity-button-animations',
                             childs: [
                                 createElement('div', {
                                     slot: 'off',
@@ -19360,7 +19381,6 @@ class SceneExplorerEntity extends HTMLElement {
                         }),
                         this.#htmlLoopedButton = createElement('harmony-toggle-button', {
                             hidden: true,
-                            class: 'scene-explorer-entity-button-animations',
                             childs: [
                                 createElement('div', {
                                     slot: 'off',
@@ -19373,6 +19393,22 @@ class SceneExplorerEntity extends HTMLElement {
                             ],
                             events: {
                                 change: (event) => this.#entity?.setLooping(event.target.state),
+                            }
+                        }),
+                        this.#htmlLockedButton = createElement('harmony-toggle-button', {
+                            hidden: true,
+                            childs: [
+                                createElement('div', {
+                                    slot: 'off',
+                                    innerHTML: lockOpenRightSVG,
+                                }),
+                                createElement('div', {
+                                    slot: 'on',
+                                    innerHTML: lockSVG,
+                                }),
+                            ],
+                            events: {
+                                change: (event) => this.#entity?.setLocked(event.target.state),
                             }
                         }),
                         this.#htmlReset = createElement('div', {
@@ -19451,6 +19487,7 @@ class SceneExplorerEntity extends HTMLElement {
         display(this.#htmlAnimationsButton, entity?.hasAnimations);
         display(this.#htmlReset, entity?.resetable);
         display(this.#htmlLoopedButton, entity?.isLoopable);
+        display(this.#htmlLockedButton, entity?.isLockable);
     }
     static setExplorer(explorer) {
         _a$2.#explorer = explorer;
@@ -29099,7 +29136,7 @@ function loadScripts(array, callback) {
 
 vec3.create(); //TODO: use IDENTITY_VEC3
 quat.create();
-const tempVec3$l = vec3.create();
+const tempVec3$k = vec3.create();
 const tempQuat$6 = quat.create();
 let mat$2 = mat4.create();
 class ControlPoint extends Entity {
@@ -29126,8 +29163,8 @@ class ControlPoint extends Entity {
     model;
     getWorldTransformation(mat = mat4.create()) {
         this.getWorldQuaternion(tempQuat$6);
-        this.getWorldPosition(tempVec3$l);
-        return mat4.fromRotationTranslation(mat, tempQuat$6, tempVec3$l);
+        this.getWorldPosition(tempVec3$k);
+        return mat4.fromRotationTranslation(mat, tempQuat$6, tempVec3$k);
     }
     getWorldQuaternion(q = quat.create()) {
         if (this.#parentControlPoint) {
@@ -42620,7 +42657,7 @@ MapEntities.registerEntity('prop_scalable', PropDynamic);
 MapEntities.registerEntity('prop_physics_override', PropDynamic);
 
 const tempQuaternion = quat.create();
-const tempVec3$k = vec3.create();
+const tempVec3$j = vec3.create();
 const SPOTLIGHT_DEFAULT_QUATERNION = quat.fromValues(0, -1, 0, 1);
 class PropLightSpot extends MapEntity {
     spotLight = new SpotLight();
@@ -42658,9 +42695,9 @@ class PropLightSpot extends MapEntity {
                 this.setAngles();
                 break;
             case 'angles':
-                ParseAngles2(tempVec3$k, value);
-                this._angles[1] = tempVec3$k[1];
-                this._angles[2] = tempVec3$k[1];
+                ParseAngles2(tempVec3$j, value);
+                this._angles[1] = tempVec3$j[1];
+                this._angles[2] = tempVec3$j[1];
                 this.setAngles();
                 break;
             case '_quadratic_attn':
@@ -47004,7 +47041,7 @@ class EmitNoise extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(EmitNoise);
 
-let tempVec3$j = vec3.create();
+let tempVec3$i = vec3.create();
 class PullTowardsControlPoint extends SourceEngineParticleOperator {
     static functionName = 'Pull towards control point';
     constructor() {
@@ -47027,7 +47064,7 @@ class PullTowardsControlPoint extends SourceEngineParticleOperator {
             return;
         }
         const ofs = vec3.clone(particle.position);
-        vec3.subtract(ofs, ofs, cp.getWorldPosition(tempVec3$j)); //TODO: add particle base cp
+        vec3.subtract(ofs, ofs, cp.getWorldPosition(tempVec3$i)); //TODO: add particle base cp
         let len = vec3.length(ofs);
         if (len === 0) {
             len = FLT_EPSILON;
@@ -47061,7 +47098,7 @@ class RandomForce$1 extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(RandomForce$1);
 
-const tempVec3$i = vec3.create();
+const tempVec3$h = vec3.create();
 const tempVec3_2$6 = vec3.create();
 vec3.create();
 quat.create();
@@ -47078,7 +47115,7 @@ class TwistAroundAxis extends SourceEngineParticleOperator {
         const amountOfForce = this.getParameter('amount of force');
         this.getParameter('object local space axis 0/1');
         const cp = particle.system.getControlPoint(0);
-        const offsetToAxis = vec3.sub(tempVec3$i, particle.position, cp.getWorldPosition(tempVec3$i));
+        const offsetToAxis = vec3.sub(tempVec3$h, particle.position, cp.getWorldPosition(tempVec3$h));
         /*
                 if (!localSpace) {
                     cp.getWorldQuaternion(tempQuat);
@@ -47281,7 +47318,7 @@ class PositionFromParentParticles extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(PositionFromParentParticles);
 
-const tempVec3$h = vec3.create();
+const tempVec3$g = vec3.create();
 class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
     static functionName = 'Position Modify Offset Random';
     constructor() {
@@ -47303,7 +47340,7 @@ class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
         const offsetMax = this.getParameter('offset max');
         vec2.random(vec2.create(), 1.0);
         const controlPointNumber = this.getParameter('control_point_number');
-        const offset = vec3RandomBox(tempVec3$h, offsetMin, offsetMax);
+        const offset = vec3RandomBox(tempVec3$g, offsetMin, offsetMax);
         if (localSpace == 1) {
             const cp = particle.system.getControlPoint(controlPointNumber);
             if (cp) {
@@ -47378,7 +47415,7 @@ class PositionOnModelRandom extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(PositionOnModelRandom);
 
-let tempVec3$g = vec3.create();
+let tempVec3$f = vec3.create();
 class PositionWithinBoxRandom extends SourceEngineParticleOperator {
     static functionName = 'Position Within Box Random';
     constructor() {
@@ -47398,15 +47435,15 @@ class PositionWithinBoxRandom extends SourceEngineParticleOperator {
         vec3.copy(particle.prevPosition, particle.position);
         const controlPoint = particle.system.getControlPoint(controlPointNumber);
         if (controlPoint) {
-            controlPoint.getWorldPosition(tempVec3$g);
-            vec3.add(particle.position, particle.position, tempVec3$g);
-            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$g);
+            controlPoint.getWorldPosition(tempVec3$f);
+            vec3.add(particle.position, particle.position, tempVec3$f);
+            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$f);
         }
     }
 }
 SourceEngineParticleOperators.registerOperator(PositionWithinBoxRandom);
 
-let tempVec3$f = vec3.create();
+let tempVec3$e = vec3.create();
 class PositionWithinSphereRandom extends SourceEngineParticleOperator {
     static functionName = 'Position Within Sphere Random';
     constructor() {
@@ -47479,8 +47516,8 @@ class PositionWithinSphereRandom extends SourceEngineParticleOperator {
                 randpos += vecControlPoint;*/
                 cp = particle.system.getControlPoint(controlPointNumber);
                 if (cp) {
-                    cp.getWorldPosition(tempVec3$f);
-                    vec3.add(randpos, randpos, tempVec3$f);
+                    cp.getWorldPosition(tempVec3$e);
+                    vec3.add(randpos, randpos, tempVec3$e);
                 }
             }
             else {
@@ -47492,8 +47529,8 @@ class PositionWithinSphereRandom extends SourceEngineParticleOperator {
                 cp = particle.system.getControlPoint(controlPointNumber);
                 if (cp) {
                     vec3.transformQuat(randpos, randpos, cp.getWorldQuaternion());
-                    cp.getWorldPosition(tempVec3$f);
-                    vec3.add(randpos, randpos, tempVec3$f);
+                    cp.getWorldPosition(tempVec3$e);
+                    vec3.add(randpos, randpos, tempVec3$e);
                 }
             }
         }
@@ -47765,7 +47802,7 @@ SourceEngineParticleOperators.registerOperator(RemapNoiseToScalar);
 */
 
 const tempQuat$4 = quat.create();
-const tempVec3$e = vec3.create();
+const tempVec3$d = vec3.create();
 const tempVec3_2$3 = vec3.create();
 class RemapScalarToVector extends SourceEngineParticleOperator {
     static functionName = 'Remap Scalar to Vector';
@@ -47798,22 +47835,22 @@ class RemapScalarToVector extends SourceEngineParticleOperator {
             return;
         }
         const input = particle.getField(m_nFieldInput);
-        tempVec3$e[0] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[0], m_vecOutputMax[0]);
-        tempVec3$e[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
-        tempVec3$e[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
+        tempVec3$d[0] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[0], m_vecOutputMax[0]);
+        tempVec3$d[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
+        tempVec3$d[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
         const cp = this.particleSystem.getControlPoint(m_nControlPointNumber);
         if (m_nFieldOutput == 0) { // Position
             if (!m_bLocalCoords) {
-                vec3.add(tempVec3$e, cp.getWorldPosition(tempVec3_2$3), tempVec3$e);
+                vec3.add(tempVec3$d, cp.getWorldPosition(tempVec3_2$3), tempVec3$d);
             }
             else {
                 if (cp) {
                     cp.getWorldQuaternion(tempQuat$4);
-                    vec3.transformQuat(tempVec3$e, tempVec3$e, tempQuat$4);
-                    vec3.add(tempVec3$e, cp.getWorldPosition(tempVec3_2$3), tempVec3$e);
+                    vec3.transformQuat(tempVec3$d, tempVec3$d, tempQuat$4);
+                    vec3.add(tempVec3$d, cp.getWorldPosition(tempVec3_2$3), tempVec3$d);
                 }
-                particle.setField(0, tempVec3$e); //position
-                particle.setField(2, tempVec3$e); //previous position
+                particle.setField(0, tempVec3$d); //position
+                particle.setField(2, tempVec3$d); //previous position
             }
         }
         else {
@@ -48379,7 +48416,7 @@ class VelocityNoise extends SourceEngineParticleOperator {
 SourceEngineParticleOperators.registerOperator(VelocityNoise);
 
 let identityVec3 = vec3.create();
-const tempVec3$d = vec3.create();
+const tempVec3$c = vec3.create();
 class VelocityRandom$1 extends SourceEngineParticleOperator {
     static functionName = 'Velocity Random';
     constructor() {
@@ -48411,8 +48448,8 @@ class VelocityRandom$1 extends SourceEngineParticleOperator {
             vec3RandomBox(randomVector, speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max); //randomVector.randomize(speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max);
         }
         if (randomSpeed != 0) {
-            vec3.random(tempVec3$d, randomSpeed);
-            vec3.add(randomVector, randomVector, tempVec3$d);
+            vec3.random(tempVec3$c, randomSpeed);
+            vec3.add(randomVector, randomVector, tempVec3$c);
         }
         const cp = particle.system.getControlPoint(m_nControlPointNumber);
         if (cp) {
@@ -48626,7 +48663,7 @@ class LifespanDecay$1 extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(LifespanDecay$1);
 
-const tempVec3$c = vec3.create();
+const tempVec3$b = vec3.create();
 const tempMat4 = mat4.create();
 const IDENTITY_MAT4$2 = mat4.create();
 class LockToBone$1 extends SourceEngineParticleOperator {
@@ -48656,7 +48693,7 @@ class LockToBone$1 extends SourceEngineParticleOperator {
                     tempMat4[12] = 0;
                     tempMat4[13] = 0;
                     tempMat4[14] = 0;
-                    vec3.copy(tempVec3$c, initialVec);
+                    vec3.copy(tempVec3$b, initialVec);
                     for (let [bone, boneWeight] of bones) {
                         let boneMat;
                         if (bone) {
@@ -48680,12 +48717,12 @@ class LockToBone$1 extends SourceEngineParticleOperator {
                             tempMat4[14] += boneWeight * boneMat[14];
                         }
                     }
-                    vec3.transformMat4(tempVec3$c, tempVec3$c, tempMat4);
+                    vec3.transformMat4(tempVec3$b, tempVec3$b, tempMat4);
                     if (particle.initialVecOffset) {
-                        vec3.add(tempVec3$c, tempVec3$c, particle.initialVecOffset);
+                        vec3.add(tempVec3$b, tempVec3$b, particle.initialVecOffset);
                     }
                     vec3.copy(particle.prevPosition, particle.position);
-                    vec3.copy(particle.position, tempVec3$c);
+                    vec3.copy(particle.position, tempVec3$b);
                 }
             }
         }
@@ -48693,7 +48730,7 @@ class LockToBone$1 extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(LockToBone$1);
 
-const tempVec3$b = vec3.create();
+const tempVec3$a = vec3.create();
 const tempVec3_2$2 = vec3.create();
 const tempVec3_3 = vec3.create();
 class MovementBasic extends SourceEngineParticleOperator {
@@ -48715,7 +48752,7 @@ class MovementBasic extends SourceEngineParticleOperator {
             adj_dt *= (elapsedTime / particle.previousElapsedTime);
         }
         particle.previousElapsedTime = elapsedTime;*/
-        const accumulatedForces = vec3.copy(tempVec3$b, gravity);
+        const accumulatedForces = vec3.copy(tempVec3$a, gravity);
         //vec3.scale(accumulatedForces, accumulatedForces, 0.5);
         /*if (elapsedTime) {
             vec3.scale(accumulatedForces, accumulatedForces, 1/elapsedTime);
@@ -48853,7 +48890,7 @@ lock rotation
 This will update a particle relative to a Control Point's rotation as well as position.
 */
 
-const tempVec3$a = vec3.create();
+const tempVec3$9 = vec3.create();
 class MovementMaxVelocity extends SourceEngineParticleOperator {
     static functionName = 'Movement Max Velocity';
     constructor() {
@@ -48862,7 +48899,7 @@ class MovementMaxVelocity extends SourceEngineParticleOperator {
     }
     doOperate(particle, elapsedTime) {
         const maxVelocity = this.getParameter('Maximum Velocity');
-        const velocity = vec3.sub(tempVec3$a, particle.position, particle.prevPosition);
+        const velocity = vec3.sub(tempVec3$9, particle.position, particle.prevPosition);
         let speed = vec3.length(velocity);
         vec3.normalize(velocity, velocity);
         const maxVelocityNormalized = maxVelocity * elapsedTime;
@@ -48872,7 +48909,7 @@ class MovementMaxVelocity extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(MovementMaxVelocity);
 
-let tempVec3$9 = vec3.create();
+let tempVec3$8 = vec3.create();
 class MovementRotateParticleAroundAxis$1 extends SourceEngineParticleOperator {
     static functionName = 'Movement Rotate Particle Around Axis';
     once = true;
@@ -48901,9 +48938,9 @@ class MovementRotateParticleAroundAxis$1 extends SourceEngineParticleOperator {
             if (useLocalSpace == 1) {
                 quat.copy(q, cp.getWorldQuaternion());
             }
-            cp.getWorldPosition(tempVec3$9);
-            vec3.sub(particle.position, particle.position, tempVec3$9);
-            vec3.sub(particle.prevPosition, particle.prevPosition, tempVec3$9);
+            cp.getWorldPosition(tempVec3$8);
+            vec3.sub(particle.position, particle.position, tempVec3$8);
+            vec3.sub(particle.prevPosition, particle.prevPosition, tempVec3$8);
             const axis2 = vec3.clone(axis); //TODO: memory
             //axis2[1] = -axis2[1];
             //const tempQuat = quat.fromEuler(quat.create(), vec3.scale(vec3.create(), vec3.normalize(vec3.create(), axis), Math.HALF_PI));
@@ -48912,9 +48949,9 @@ class MovementRotateParticleAroundAxis$1 extends SourceEngineParticleOperator {
             vec3.transformQuat(axis2, axis2, q);
             mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis2);
             vec3.transformMat4(particle.position, particle.position, modelView);
-            vec3.add(particle.position, particle.position, tempVec3$9);
+            vec3.add(particle.position, particle.position, tempVec3$8);
             vec3.transformMat4(particle.prevPosition, particle.prevPosition, modelView);
-            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$9);
+            vec3.add(particle.prevPosition, particle.prevPosition, tempVec3$8);
         }
         else {
             mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis);
@@ -49242,7 +49279,7 @@ class RemapCPSpeedToCP extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(RemapCPSpeedToCP);
 
-const tempVec3$8 = vec3.create();
+const tempVec3$7 = vec3.create();
 class RemapDistanceToControlPointToScalar extends SourceEngineParticleOperator {
     static functionName = 'Remap Distance to Control Point to Scalar';
     constructor() {
@@ -49268,7 +49305,7 @@ class RemapDistanceToControlPointToScalar extends SourceEngineParticleOperator {
         const active = this.getParameter('only active within specified distance');
         const cp = this.particleSystem.getControlPoint(cpNumber);
         if (cp) {
-            const delta = vec3.subtract(tempVec3$8, cp.getWorldPosition(tempVec3$8), particle.position);
+            const delta = vec3.subtract(tempVec3$7, cp.getWorldPosition(tempVec3$7), particle.position);
             const deltaL = vec3.length(delta);
             if (active && ((deltaL < dMin) || (deltaL > dMax))) {
                 return;
@@ -49309,7 +49346,7 @@ SourceEngineParticleOperators.registerOperator(RemapDistanceToControlPointToScal
                     'only active within specified distance' 'bool' '0'
                     */
 
-const tempVec3$7 = vec3.create();
+const tempVec3$6 = vec3.create();
 class RemapDistanceToControlPointToVector extends SourceEngineParticleOperator {
     static functionName = 'Remap Distance to Control Point to Vector';
     constructor() {
@@ -49337,14 +49374,14 @@ class RemapDistanceToControlPointToVector extends SourceEngineParticleOperator {
         if (cp == undefined) {
             return;
         }
-        vec3.subtract(tempVec3$7, particle.cpPosition, particle.position);
-        const deltaL = vec3.length(tempVec3$7);
+        vec3.subtract(tempVec3$6, particle.cpPosition, particle.position);
+        const deltaL = vec3.length(tempVec3$6);
         if (activeDistance && (deltaL < distanceMin || deltaL > distanceMax)) {
             // Outside distance window
             return;
         }
-        vec3.lerp(tempVec3$7, outputMin, outputMax, (deltaL - distanceMin) / deltaDistance);
-        particle.setField(field, tempVec3$7);
+        vec3.lerp(tempVec3$6, outputMin, outputMax, (deltaL - distanceMin) / deltaDistance);
+        particle.setField(field, tempVec3$6);
     }
 }
 SourceEngineParticleOperators.registerOperator(RemapDistanceToControlPointToVector);
@@ -49522,7 +49559,7 @@ class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOpe
 }
 SourceEngineParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);
 
-const tempVec3$6 = vec3.create();
+const tempVec3$5 = vec3.create();
 class SetControlPointPositions$1 extends SourceEngineParticleOperator {
     static functionName = 'set control point positions';
     constructor() {
@@ -49559,7 +49596,7 @@ class SetControlPointPositions$1 extends SourceEngineParticleOperator {
             const cpParent = this.getParameter(name + ' Control Point Parent');
             const cpLocation = this.getParameter(name + ' Control Point Location');
             if (!useWorldLocation) {
-                const a = vec3.add(tempVec3$6, cpLocation, vecControlPoint);
+                const a = vec3.add(tempVec3$5, cpLocation, vecControlPoint);
                 this.particleSystem.setControlPointPosition(cpNumber, a);
             }
             else {
@@ -57612,7 +57649,7 @@ RegisterSource2ParticleOperator('C_INIT_CreateSequentialPath', CreateSequentialP
 RegisterSource2ParticleOperator('C_INIT_CreateSequentialPathV2', CreateSequentialPath);
 
 let tempQuat$2 = quat.create();
-let tempVec3$5 = vec3.create();
+let tempVec3$4 = vec3.create();
 let tempVec3_2$1 = vec3.create();
 class CreateWithinBox extends Operator {
     vecMin = vec3.create();
@@ -57638,27 +57675,27 @@ class CreateWithinBox extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        vec3RandomBox(tempVec3$5, this.vecMin, this.vecMax);
+        vec3RandomBox(tempVec3$4, this.vecMin, this.vecMax);
         if (this.scaleCP !== -1) {
             const scaleCp = this.system.getControlPointForScale(this.scaleCP);
             if (scaleCp) {
                 scaleCp.getWorldPosition(tempVec3_2$1);
-                vec3.scale(tempVec3$5, tempVec3$5, tempVec3_2$1[0]); //x position of the scale cp is used as scaling
+                vec3.scale(tempVec3$4, tempVec3$4, tempVec3_2$1[0]); //x position of the scale cp is used as scaling
             }
         }
         let controlPoint = this.system.getControlPoint(this.controlPointNumber);
         if (controlPoint) {
             controlPoint.getWorldPosition(tempVec3_2$1);
             if (this.localSpace) {
-                vec3.transformQuat(tempVec3$5, tempVec3$5, controlPoint.getWorldQuaternion(tempQuat$2));
-                vec3.add(tempVec3$5, tempVec3$5, tempVec3_2$1);
+                vec3.transformQuat(tempVec3$4, tempVec3$4, controlPoint.getWorldQuaternion(tempQuat$2));
+                vec3.add(tempVec3$4, tempVec3$4, tempVec3_2$1);
             }
             else {
-                vec3.add(tempVec3$5, tempVec3$5, tempVec3_2$1);
+                vec3.add(tempVec3$4, tempVec3$4, tempVec3_2$1);
             }
         }
-        vec3.copy(particle.position, tempVec3$5);
-        vec3.copy(particle.prevPosition, tempVec3$5);
+        vec3.copy(particle.position, tempVec3$4);
+        vec3.copy(particle.prevPosition, tempVec3$4);
     }
 }
 RegisterSource2ParticleOperator('C_INIT_CreateWithinBox', CreateWithinBox);
@@ -58854,7 +58891,7 @@ class RandomTrailLength extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_RandomTrailLength', RandomTrailLength);
 
-let tempVec3$4 = vec3.create();
+let tempVec3$3 = vec3.create();
 class RandomVector extends Operator {
     vecMin = vec3.create();
     vecMax = vec3.create();
@@ -58872,8 +58909,8 @@ class RandomVector extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        vec3RandomBox(tempVec3$4, this.vecMin, this.vecMax);
-        particle.setField(this.fieldOutput, tempVec3$4);
+        vec3RandomBox(tempVec3$3, this.vecMin, this.vecMax);
+        particle.setField(this.fieldOutput, tempVec3$3);
     }
 }
 RegisterSource2ParticleOperator('C_INIT_RandomVector', RandomVector);
@@ -59248,7 +59285,7 @@ RegisterSource2ParticleOperator('C_INIT_SetRigidAttachment', SetRigidAttachment)
 
 const DEFAULT_SPEED = vec3.create();
 const randomVector = vec3.create();
-const tempVec3$3 = vec3.create();
+const tempVec3$2 = vec3.create();
 class VelocityRandom extends Operator {
     ignoreDT = false;
     _paramChanged(paramName, value) {
@@ -59279,8 +59316,8 @@ class VelocityRandom extends Operator {
             vec3RandomBox(randomVector, localCoordinateSystemSpeedMin, localCoordinateSystemSpeedMax);
         }
         if (randomSpeed != 0) {
-            vec3.random(tempVec3$3, randomSpeed);
-            vec3.add(randomVector, randomVector, tempVec3$3);
+            vec3.random(tempVec3$2, randomSpeed);
+            vec3.add(randomVector, randomVector, tempVec3$2);
         }
         const cp = particle.system.getControlPoint(this.controlPointNumber);
         if (cp) {
@@ -60217,7 +60254,7 @@ RegisterSource2ParticleOperator('C_OP_MovementRigidAttachToCP', MovementRigidAtt
 let m4 = mat4.create();
 let q$1 = quat.create();
 let v$5 = vec3.create();
-let a = vec3.create();
+let a = vec4.create();
 const DEFAULT_AXIS = vec3.fromValues(0, 0, 1);
 class MovementRotateParticleAroundAxis extends Operator {
     localSpace = false;
@@ -60640,7 +60677,7 @@ class OscillateVector extends Operator {
                 }
                 const fvOscMultiplier = vec3.create(); //todov3optimize
                 vec3.scale(fvOscMultiplier, fvRate, fl4ScaleFactor);
-                let fvOutput = vec3.create(); //TODO: perf//todov3optimize
+                let fvOutput = vec4.create(); //TODO: perf//todov3optimize
                 this.getInputValueAsVector(m_nField, particle, fvOutput); //*pOscField;
                 fvOscVal[0] = AddSIMD(fvOutput[0], MulSIMD(fvOscMultiplier[0], SinEst01SIMD(fvCos[0])));
                 fvOscVal[1] = AddSIMD(fvOutput[1], MulSIMD(fvOscMultiplier[1], SinEst01SIMD(fvCos[1])));
@@ -61706,7 +61743,7 @@ class SetRandomControlPointPosition extends Operator {
             vec3.add(v$1, v$1, headLocation.currentWorldPosition);
             cp1.position = v$1;
             if (this.orient) {
-                cp1.orientation = headLocation.currentWorldQuaternion;
+                cp1.setWorldQuaternion(headLocation.currentWorldQuaternion);
             }
         }
     }
@@ -61718,7 +61755,7 @@ RegisterSource2ParticleOperator('C_OP_SetRandomControlPointPosition', SetRandomC
 
 const DEFAULT_POSITION = vec3.fromValues(128, 0, 0);
 let v = vec3.create();
-let tempVec3$2 = vec3.create();
+let tempVec4 = vec4.create();
 class SetSingleControlPointPosition extends Operator {
     useWorldLocation = false;
     setOnce = false;
@@ -61749,7 +61786,7 @@ class SetSingleControlPointPosition extends Operator {
         this.set = false;
     }
     doOperate(particle, elapsedTime) {
-        const cp1Pos = this.getParamVectorValue('m_vecCP1Pos', particle, tempVec3$2) ?? DEFAULT_POSITION;
+        const cp1Pos = this.getParamVectorValue('m_vecCP1Pos', particle, tempVec4) ?? DEFAULT_POSITION;
         //TODO
         if (!this.setOnce || !this.set) {
             let cp = this.system.getOwnControlPoint(this.cp1);

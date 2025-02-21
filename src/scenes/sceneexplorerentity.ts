@@ -1,5 +1,5 @@
 import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, isVisible, show, toggle } from 'harmony-ui';
-import { pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
+import { lockOpenRightSVG, lockSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
 
 import { EntityObserver, CHILD_ADDED, CHILD_REMOVED, PROPERTY_CHANGED, ENTITY_DELETED } from '../entities/entityobserver';
 
@@ -8,6 +8,7 @@ import { Entity } from '../entities/entity';
 import { SceneExplorer } from './sceneexplorer';
 import { Animated } from '../interfaces/animated';
 import { Loopable } from '../interfaces/loopable';
+import { Lockable } from '../interfaces/lockable';
 
 const MAX_ANIMATIONS = 2;
 
@@ -29,6 +30,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	#htmlPlaying;
 	#htmlAnimationsButton?: HTMLHarmonyToggleButtonElement;
 	#htmlLoopedButton?: HTMLHarmonyToggleButtonElement;
+	#htmlLockedButton?: HTMLHarmonyToggleButtonElement;
 	#htmlReset;
 
 	static #entitiesHTML = new Map();
@@ -78,7 +80,6 @@ export class SceneExplorerEntity extends HTMLElement {
 						}),
 						this.#htmlAnimationsButton = createElement('harmony-toggle-button', {
 							hidden: true,
-							class: 'scene-explorer-entity-button-animations',
 							childs: [
 								createElement('div', {
 									slot: 'off',
@@ -95,7 +96,6 @@ export class SceneExplorerEntity extends HTMLElement {
 						}) as HTMLHarmonyToggleButtonElement,
 						this.#htmlLoopedButton = createElement('harmony-toggle-button', {
 							hidden: true,
-							class: 'scene-explorer-entity-button-animations',
 							childs: [
 								createElement('div', {
 									slot: 'off',
@@ -108,6 +108,22 @@ export class SceneExplorerEntity extends HTMLElement {
 							],
 							events: {
 								change: (event: Event) => (this.#entity as unknown as Loopable)?.setLooping((event.target as HTMLHarmonyToggleButtonElement).state),
+							}
+						}) as HTMLHarmonyToggleButtonElement,
+						this.#htmlLockedButton = createElement('harmony-toggle-button', {
+							hidden: true,
+							childs: [
+								createElement('div', {
+									slot: 'off',
+									innerHTML: lockOpenRightSVG,
+								}),
+								createElement('div', {
+									slot: 'on',
+									innerHTML: lockSVG,
+								}),
+							],
+							events: {
+								change: (event: Event) => (this.#entity as unknown as Lockable)?.setLocked((event.target as HTMLHarmonyToggleButtonElement).state),
 							}
 						}) as HTMLHarmonyToggleButtonElement,
 						this.#htmlReset = createElement('div', {
@@ -190,6 +206,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		display(this.#htmlAnimationsButton, (entity as unknown as Animated)?.hasAnimations);
 		display(this.#htmlReset, entity?.resetable);
 		display(this.#htmlLoopedButton, (entity as unknown as Loopable)?.isLoopable);
+		display(this.#htmlLockedButton, (entity as unknown as Lockable)?.isLockable);
 	}
 
 	static setExplorer(explorer: SceneExplorer) {

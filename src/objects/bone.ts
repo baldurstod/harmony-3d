@@ -5,6 +5,7 @@ import { DEBUG } from '../buildoptions';
 import { registerEntity } from '../entities/entities';
 import { Skeleton } from './skeleton';
 import { JSONObject } from '../types';
+import { Lockable } from '../interfaces/lockable';
 
 const tempWorldMat = mat4.create();
 const tempWorldQuat = quat.create();
@@ -15,8 +16,9 @@ const tempPosition = vec3.create();
 const tempQuat1 = quat.create();
 const tempVec1 = vec3.create();
 
-export class Bone extends Entity {
+export class Bone extends Entity implements Lockable {
 	isBone = true;
+	isLockable: true = true;
 	#boneId: number;
 	#poseToBone = mat4.create();
 	#boneMat = mat4.create();
@@ -286,6 +288,17 @@ export class Bone extends Entity {
 	isProcedural() {
 		return false;
 		//return (this.flags & BONE_ALWAYS_PROCEDURAL) == BONE_ALWAYS_PROCEDURAL;
+	}
+
+	setLocked(locked: boolean) {
+		this.lockPosition = locked;
+		this.lockRotation = locked;
+		this.lockScale = locked;
+	}
+
+
+	isLocked(): boolean {
+		return this.lockPosition && this.lockRotation && this.lockScale;
 	}
 
 	reset() {

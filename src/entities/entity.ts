@@ -65,9 +65,12 @@ export class Entity {
 	isRenderable = false;
 	lockPos = false;
 	lockRot = false;
-	lockScale = false;
+	//lockScale = false;
 	drawOutline = false;
-	locked: boolean = false;
+	locked: boolean = false; // Prevents updates from animation system
+	lockPosition: boolean = false;
+	lockRotation: boolean = false;
+	lockScale: boolean = false;
 	static editMaterial: (entity: Entity) => void;
 	readonly properties = new Map<string, any>();
 	loadedPromise?: Promise<any>;
@@ -125,6 +128,9 @@ export class Entity {
 	}
 
 	setPosition(position: vec3) {
+		if (this.lockPosition) {
+			return;
+		}
 		const oldValue = vec3.copy(tempVec3_4, this._position);
 		vec3.copy(this._position, position);
 		if (!vec3.exactEquals(oldValue, position)) {
@@ -214,6 +220,9 @@ export class Entity {
 	}
 
 	setQuaternion(quaternion: quat) {
+		if (this.lockRotation) {
+			return;
+		}
 		const oldValue = quat.copy(tempQuat3, this._quaternion);
 		quat.normalize(this._quaternion, quaternion);
 		if (!quat.exactEquals(oldValue, this._quaternion)) {
@@ -240,6 +249,9 @@ export class Entity {
 	}
 
 	set scale(scale) {
+		if (this.lockScale) {
+			return;
+		}
 		vec3.copy(this._scale, scale);
 	}
 
