@@ -3,6 +3,9 @@ import { Entity } from '../../../entities/entity';
 import { Graphics } from '../../../graphics/graphics';
 import { registerEntity } from '../../../entities/entities';
 import { JSONObject } from '../../../types';
+import { Source2Snapshot } from '../../source2/particles/source2snapshot';
+import { Source2Model } from '../../source2/models/source2model';
+import { Source2ModelInstance } from '../../export';
 
 const identityVec3 = vec3.create();//TODO: use IDENTITY_VEC3
 const identityQuat = quat.create();
@@ -37,6 +40,8 @@ export class ControlPoint extends Entity {
 
 	parentModel = null;
 	lastComputed = -1;
+	snapshot?: Source2Snapshot;
+	model?: Source2ModelInstance;
 
 	getWorldTransformation(mat = mat4.create()) {
 		this.getWorldQuaternion(tempQuat);

@@ -29122,6 +29122,8 @@ class ControlPoint extends Entity {
     rVector = vec3.create();
     parentModel = null;
     lastComputed = -1;
+    snapshot;
+    model;
     getWorldTransformation(mat = mat4.create()) {
         this.getWorldQuaternion(tempQuat$6);
         this.getWorldPosition(tempVec3$l);
@@ -56998,6 +57000,8 @@ class Operator {
     doForce(particle, elapsedTime, accumulatedForces, strength) { }
     applyConstraint(particle) { }
     doRender(particle, elapsedTime, material) { }
+    initRenderer(particleSystem) { }
+    updateParticles(particleSystem, particleList, elapsedTime) { }
 }
 
 let vec$7 = vec3.create();

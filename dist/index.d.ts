@@ -1199,6 +1199,8 @@ declare class Choreography {
          rVector: vec3;
          parentModel: any;
          lastComputed: number;
+         snapshot?: Source2Snapshot;
+         model?: Source2ModelInstance;
          getWorldTransformation(mat?: mat4): mat4;
          getWorldQuaternion(q?: quat): quat;
          parentChanged(parent: Entity | null): void;
@@ -4638,6 +4640,8 @@ declare class Choreography {
              doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
              applyConstraint(particle: Source2Particle): void;
              doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material): void;
+             initRenderer(particleSystem: Source2ParticleSystem): void;
+             updateParticles(particleSystem: Source2ParticleSystem, particleList: any, elapsedTime: number): void;
          }
 
          export declare class OrbitControl extends CameraControl {
@@ -9683,12 +9687,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#206@#webAssembly"?: any;
-             "__#206@#HEAPU8"?: Uint8Array;
+             "__#182@#webAssembly"?: any;
+             "__#182@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#206@#initHeap"(): void;
+             "__#182@#initHeap"(): void;
          };
 
          export { }

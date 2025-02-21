@@ -661,4 +661,6 @@ export class Operator {//TODOv3: rename this class ?
 	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number) { }
 	applyConstraint(particle: Source2Particle) { }
 	doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material) { }
+	initRenderer(particleSystem: Source2ParticleSystem) { }
+	updateParticles(particleSystem: Source2ParticleSystem, particleList, elapsedTime: number) { }
 }
