@@ -662,5 +662,5 @@ export class Operator {//TODOv3: rename this class ?
 	applyConstraint(particle: Source2Particle) { }
 	doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material) { }
 	initRenderer(particleSystem: Source2ParticleSystem) { }
-	updateParticles(particleSystem: Source2ParticleSystem, particleList, elapsedTime: number) { }
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Array<Source2Particle>, elapsedTime: number) { }
 }

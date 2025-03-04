@@ -2058,17 +2058,11 @@ declare class Choreography {
          }
 
          export declare class FadeOut extends Operator {
-             fadeOutTimeMin: number;
-             fadeOutTimeMax: number;
-             fadeOutTimeExp: number;
-             proportional: boolean;
-             fadeOutTime: any;
-             startFadeOutTime: any;
-             invFadeOutTime: any;
-             constructor(system: any);
+             #private;
+             constructor(system: Source2ParticleSystem);
              _update(): void;
-             _paramChanged(paramName: any, value: any): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             _paramChanged(paramName: string, value: any): void;
+             doOperate(particle: Source2Particle, elapsedTime: number): void;
          }
 
          export declare class FadeOutSimple extends Operator {
@@ -4652,7 +4646,7 @@ declare class Choreography {
              applyConstraint(particle: Source2Particle): void;
              doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material): void;
              initRenderer(particleSystem: Source2ParticleSystem): void;
-             updateParticles(particleSystem: Source2ParticleSystem, particleList: any, elapsedTime: number): void;
+             updateParticles(particleSystem: Source2ParticleSystem, particleList: Array<Source2Particle>, elapsedTime: number): void;
          }
 
          export declare class OrbitControl extends CameraControl {
