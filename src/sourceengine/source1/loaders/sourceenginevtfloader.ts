@@ -16,17 +16,17 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 
 			if (vtf.isHigherThan72()) {
 				for (let i = 0; i < vtf.numResources; ++i) {
-					vtf.resEntries.push({type:reader.getUint32(), resData:reader.getUint32()});
+					vtf.resEntries.push({ type: reader.getUint32(), resData: reader.getUint32() });
 				}
 			} else {
-				if (vtf.lowResImageFormat==-1) {
-					vtf.resEntries.push({type:48, resData:vtf.headerSize});
+				if (vtf.lowResImageFormat == -1) {
+					vtf.resEntries.push({ type: 48, resData: vtf.headerSize });
 				} else {
-					vtf.resEntries.push({type:1, resData:vtf.headerSize});
-					if (vtf.lowResImageWidth ==0 && vtf.lowResImageHeight == 0) {
-						vtf.resEntries.push({type:48, resData:vtf.headerSize});
+					vtf.resEntries.push({ type: 1, resData: vtf.headerSize });
+					if (vtf.lowResImageWidth == 0 && vtf.lowResImageHeight == 0) {
+						vtf.resEntries.push({ type: 48, resData: vtf.headerSize });
 					} else {
-						vtf.resEntries.push({type:48, resData:vtf.headerSize + Math.max(2, vtf.lowResImageWidth * vtf.lowResImageHeight * 0.5)});// 0.5 bytes per pixel
+						vtf.resEntries.push({ type: 48, resData: vtf.headerSize + Math.max(2, vtf.lowResImageWidth * vtf.lowResImageHeight * 0.5) });// 0.5 bytes per pixel
 					}
 				}
 			}
@@ -35,7 +35,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 			}
 			this.#parseResEntries(reader, vtf);
 		}
-		catch(err) {
+		catch (err) {
 			if (DEBUG) {
 				console.error(err);
 			}
@@ -69,9 +69,9 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 			vtf.depth = reader.getUint16();
 		}
 		if (vtf.isHigherThan72()) {
-			reader.seek(reader.tell()+3);//padding
+			reader.seek(reader.tell() + 3);//padding
 			vtf.numResources = reader.getUint32();
-			reader.seek(reader.tell()+8);//padding
+			reader.seek(reader.tell() + 8);//padding
 		}
 	}
 
@@ -90,7 +90,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 				break;
 			case 48: // Image data
 				//TODO
-				if (vtf.mipmapCount>0) {
+				if (vtf.mipmapCount > 0) {
 					this.#parseImageData(reader, vtf, entry);
 				} else {
 					console.error('vtf.mipmapCount == 0');
@@ -106,8 +106,8 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 
 	#parseImageData(reader, vtf, entry) {
 		reader.seek(entry.resData);
-		let mipmapWidth = vtf.width*Math.pow(0.5, vtf.mipmapCount-1);
-		let mipmapHeight = vtf.height*Math.pow(0.5, vtf.mipmapCount-1);
+		let mipmapWidth = vtf.width * Math.pow(0.5, vtf.mipmapCount - 1);
+		let mipmapHeight = vtf.height * Math.pow(0.5, vtf.mipmapCount - 1);
 		entry.mipMaps = [];
 
 		for (let mipmapIndex = 0; mipmapIndex < vtf.mipmapCount; ++mipmapIndex) {
@@ -124,7 +124,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 
 		sheet.length = reader.getUint32();
 		let nVersion = reader.getUint32();
-		let nNumCoordsPerFrame = (nVersion) ? MAX_IMAGES_PER_FRAME_ON_DISK:1;
+		let nNumCoordsPerFrame = (nVersion) ? MAX_IMAGES_PER_FRAME_ON_DISK : 1;
 
 		let nNumSequences = reader.getUint32();
 		sheet.sequences = [];
@@ -172,8 +172,8 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 				//frame.values = [];
 				//frame.duration = reader.getFloat32();
 				let fThisDuration = reader.getFloat32();
-				InterpValue[ frameIndex ] = frameIndex;
-				InterpKnot [ frameIndex ] = SEQUENCE_SAMPLE_COUNT * (fCurTime / fTotalSequenceTime);
+				InterpValue[frameIndex] = frameIndex;
+				InterpKnot[frameIndex] = SEQUENCE_SAMPLE_COUNT * (fCurTime / fTotalSequenceTime);
 				fCurTime += fThisDuration;
 				group.duration += fThisDuration//frame.duration;
 
@@ -181,14 +181,14 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 					frame.values.push(reader.getFloat32());
 				}*/
 				let seq = Samples[frameIndex];
-				for(let nImage = 0 ; nImage < nNumCoordsPerFrame; nImage++) {
+				for (let nImage = 0; nImage < nNumCoordsPerFrame; nImage++) {
 					let s = seq.m_TextureCoordData[nImage];
 					let s2 = frameSample.m_TextureCoordData[nImage];
 					if (s) {
-						s.m_fLeft_U0	= reader.getFloat32();
-						s.m_fTop_V0		= reader.getFloat32();
-						s.m_fRight_U0	= reader.getFloat32();
-						s.m_fBottom_V0	= reader.getFloat32();
+						s.m_fLeft_U0 = reader.getFloat32();
+						s.m_fTop_V0 = reader.getFloat32();
+						s.m_fRight_U0 = reader.getFloat32();
+						s.m_fBottom_V0 = reader.getFloat32();
 
 						if (s2) {
 							s2.m_fLeft_U0 = s.m_fLeft_U0;
@@ -211,25 +211,25 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 			for (let nIdx = 0; nIdx < nTimeSamples; ++nIdx) {
 				//float flIdxA, flIdxB, flInterp;
 				let result = GetInterpolationData(InterpKnot, InterpValue, group.frameCount,
-									SEQUENCE_SAMPLE_COUNT,
-									nIdx,
-									!group.clamp/*,
+					SEQUENCE_SAMPLE_COUNT,
+					nIdx,
+					!group.clamp/*,
 									&flIdxA, &flIdxB, &flInterp */);
 				let sA = Samples[result.pValueA];
 				let sB = Samples[result.pValueB];
 				let oseq = group.m_pSamples[nIdx];
 
 				oseq.m_fBlendFactor = result.pInterpolationValue;
-				for(let nImage = 0 ; nImage< MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
-					let src0=sA.m_TextureCoordData[nImage];
-					let src1=sB.m_TextureCoordData[nImage];
-					let o=oseq.m_TextureCoordData[nImage];
+				for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
+					let src0 = sA.m_TextureCoordData[nImage];
+					let src1 = sB.m_TextureCoordData[nImage];
+					let o = oseq.m_TextureCoordData[nImage];
 					o.m_fLeft_U0 = src0.m_fLeft_U0;
-					o.m_fTop_V0	= src0.m_fTop_V0;
+					o.m_fTop_V0 = src0.m_fTop_V0;
 					o.m_fRight_U0 = src0.m_fRight_U0;
 					o.m_fBottom_V0 = src0.m_fBottom_V0;
 					o.m_fLeft_U1 = src1.m_fLeft_U0;
-					o.m_fTop_V1	= src1.m_fTop_V0;
+					o.m_fTop_V1 = src1.m_fTop_V0;
 					o.m_fRight_U1 = src1.m_fRight_U0;
 					o.m_fBottom_V1 = src1.m_fBottom_V0;
 				}
@@ -242,20 +242,20 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		let startingByte = reader.tell();
 
 		// Mipmap minimum size is 1*1 px
-		mipmapWidth = Math.max(1.0, vtf.width*Math.pow(0.5, vtf.mipmapCount-mipmaplvl-1));
-		mipmapHeight = Math.max(1.0, vtf.height*Math.pow(0.5, vtf.mipmapCount-mipmaplvl-1));
+		mipmapWidth = Math.max(1.0, vtf.width * Math.pow(0.5, vtf.mipmapCount - mipmaplvl - 1));
+		mipmapHeight = Math.max(1.0, vtf.height * Math.pow(0.5, vtf.mipmapCount - mipmaplvl - 1));
 
-		const mipmap = {width:mipmapWidth, height:mipmapHeight, frames:[]};
+		const mipmap = { width: mipmapWidth, height: mipmapHeight, frames: [] };
 		entry.mipMaps.push(mipmap);
 
 
 		let faceIndex;
 		let face;
-		for (let frameIndex=0; frameIndex < vtf.frames; ++frameIndex) {
+		for (let frameIndex = 0; frameIndex < vtf.frames; ++frameIndex) {
 			let frame = [];
 			mipmap.frames.push(frame);
-			for (faceIndex=0; faceIndex<vtf.faceCount; faceIndex++) {
-				if (vtf.faceCount==1) {
+			for (faceIndex = 0; faceIndex < vtf.faceCount; faceIndex++) {
+				if (vtf.faceCount == 1) {
 					face = [];
 				} else {
 					face = [];
@@ -341,7 +341,7 @@ function str2abRGBA16F(str) {
 	return bufView;
 }
 
-function float16(byte1, byte2){
+function float16(byte1, byte2) {
 	const b = new Uint8Array([byte1, byte2]);
 
 	let sign = b[1] >> 7;
@@ -349,13 +349,13 @@ function float16(byte1, byte2){
 	let mantissa = ((b[1] & 0x03) << 8) | b[0];
 
 
-	if(exponent == 0) {
+	if (exponent == 0) {
 		return (sign ? -1 : 1) * TWO_POW_MINUS_14 * (mantissa / TWO_POW_10);
 	} else if (exponent == 0x1F) {
 		return mantissa ? NaN : ((sign ? -1 : 1) * Infinity);
 	}
 
-	return (sign?-1:1) * Math.pow(2, exponent-15) * (1+(mantissa/TWO_POW_10));
+	return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / TWO_POW_10));
 }
 
 function str2ab(reader, start, length) {
@@ -363,39 +363,39 @@ function str2ab(reader, start, length) {
 }
 
 function str2abBGR(str) {
-// assume str.length is divisible by 3
+	// assume str.length is divisible by 3
 	const buf = new ArrayBuffer(str.length);
 	const bufView = new Uint8Array(buf);
 	for (let i = 0, strLen = str.length; i < strLen; i += 3) {
-		bufView[i	] = str.charCodeAt(i+2);
-		bufView[i+1] = str.charCodeAt(i+1);
-		bufView[i+2] = str.charCodeAt(i	);
+		bufView[i] = str.charCodeAt(i + 2);
+		bufView[i + 1] = str.charCodeAt(i + 1);
+		bufView[i + 2] = str.charCodeAt(i);
 	}
 	return bufView;
 }
 
 function str2abBGRA(str) {
-// assume str.length is divisible by 4
+	// assume str.length is divisible by 4
 	const buf = new ArrayBuffer(str.length);
 	const bufView = new Uint8Array(buf);
 	for (let i = 0, strLen = str.length; i < strLen; i += 4) {
-		bufView[i	] = str.charCodeAt(i+2);
-		bufView[i+1] = str.charCodeAt(i+1);
-		bufView[i+2] = str.charCodeAt(i	);
-		bufView[i+3] = str.charCodeAt(i+3);
+		bufView[i] = str.charCodeAt(i + 2);
+		bufView[i + 1] = str.charCodeAt(i + 1);
+		bufView[i + 2] = str.charCodeAt(i);
+		bufView[i + 3] = str.charCodeAt(i + 3);
 	}
 	return bufView;
 }
 
 function str2abARGB(str) {
-// assume str.length is divisible by 4
+	// assume str.length is divisible by 4
 	const buf = new ArrayBuffer(str.length);
 	const bufView = new Uint8Array(buf);
 	for (let i = 0, strLen = str.length; i < strLen; i += 4) {
-		bufView[i	] = str.charCodeAt(i+1);
-		bufView[i+1] = str.charCodeAt(i+2);
-		bufView[i+2] = str.charCodeAt(i+3);
-		bufView[i+3] = str.charCodeAt(i	);
+		bufView[i] = str.charCodeAt(i + 1);
+		bufView[i + 1] = str.charCodeAt(i + 2);
+		bufView[i + 2] = str.charCodeAt(i + 3);
+		bufView[i + 3] = str.charCodeAt(i);
 	}
 	return bufView;
 }
@@ -414,13 +414,13 @@ function str2abABGR(reader, start, length) {
 }*/
 
 function str2abABGR(reader, start, length) {
-	let arr =	new Uint8Array(reader.buffer.slice(start, start + length));
+	let arr = new Uint8Array(reader.buffer.slice(start, start + length));
 	for (let i = 0; i < length; i += 4) {
-		let a = arr[i	];
-		arr[i	] = arr[i+1];
-		arr[i+1] = arr[i+2];
-		arr[i+2] = arr[i+2]
-		arr[i+3] = a;
+		let a = arr[i];
+		arr[i] = arr[i + 1];
+		arr[i + 1] = arr[i + 2];
+		arr[i + 2] = arr[i + 2]
+		arr[i + 3] = a;
 	}
 	return arr;
 }
