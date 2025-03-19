@@ -166,10 +166,10 @@ export class SourceEngineMaterial extends Material {
 							if (v2) {
 								this.variables.set(parameterName, v2);
 							} else {
-								if (isNaN(value)) {
+								if (isNaN(Number(value))) {
 									this.variables.set(parameterName, value);
 								} else {
-									this.variables.set(parameterName, value * 1);
+									this.variables.set(parameterName, Number(value));
 								}
 							}
 						}
