@@ -413,13 +413,13 @@ function str2abABGR(reader, start, length) {
 	return bufView;
 }*/
 
-function str2abABGR(reader, start, length) {
+function str2abABGR(reader: BinaryReader, start: number, length: number) {
 	let arr = new Uint8Array(reader.buffer.slice(start, start + length));
 	for (let i = 0; i < length; i += 4) {
 		let a = arr[i];
-		arr[i] = arr[i + 1];
+		arr[i] = arr[i + 3];
 		arr[i + 1] = arr[i + 2];
-		arr[i + 2] = arr[i + 2]
+		arr[i + 2] = arr[i + 1]
 		arr[i + 3] = a;
 	}
 	return arr;
