@@ -44922,6 +44922,7 @@ const VMT_PARAMETERS = {
     $selfillumtint: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
     $detailscale: [SHADER_PARAM_TYPE_VEC2, [1, 1]],
     $detailblendmode: [SHADER_PARAM_TYPE_INTEGER, 0],
+    $no_draw: [SHADER_PARAM_TYPE_BOOL, false],
 };
 function initDefaultParameters(defaultParameters, parameters, variables) {
     if (defaultParameters) {
@@ -44996,11 +44997,11 @@ class SourceEngineMaterial extends Material {
                                 this.variables.set(parameterName, v2);
                             }
                             else {
-                                if (isNaN(value)) {
+                                if (isNaN(Number(value))) {
                                     this.variables.set(parameterName, value);
                                 }
                                 else {
-                                    this.variables.set(parameterName, value * 1);
+                                    this.variables.set(parameterName, Number(value));
                                 }
                             }
                         }
@@ -45074,6 +45075,9 @@ class SourceEngineMaterial extends Material {
         }
         if (variables.get('$normalmapalphaenvmapmask') == 1) {
             this.setDefine('USE_NORMAL_ALPHA_AS_ENVMAP_MASK');
+        }
+        if (variables.get('$no_draw')) {
+            this.setDefine('NO_DRAW');
         }
         this.uniforms['uTextureTransform'] = IDENTITY_MAT4$3;
         if (params['$basetexturetransform']) {
@@ -52568,6 +52572,10 @@ uniform float uDetailBlendFactor;
 
 #define uBaseMapAlphaPhongMask 0//TODO: set proper uniform
 void main(void) {
+	#ifdef NO_DRAW
+		discard;
+	#endif
+
 	vec4 diffuseColor = vec4(1.0);
 	#include compute_fragment_color_map
 	#include compute_fragment_detail_map

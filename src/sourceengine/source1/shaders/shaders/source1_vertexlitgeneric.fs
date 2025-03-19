@@ -36,6 +36,10 @@ uniform float uDetailBlendFactor;
 
 #define uBaseMapAlphaPhongMask 0//TODO: set proper uniform
 void main(void) {
+	#ifdef NO_DRAW
+		discard;
+	#endif
+
 	vec4 diffuseColor = vec4(1.0);
 	#include compute_fragment_color_map
 	#include compute_fragment_detail_map

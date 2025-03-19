@@ -80,6 +80,7 @@ const VMT_PARAMETERS = {
 	$selfillumtint: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
 	$detailscale: [SHADER_PARAM_TYPE_VEC2, [1, 1]],
 	$detailblendmode: [SHADER_PARAM_TYPE_INTEGER, 0],
+	$no_draw: [SHADER_PARAM_TYPE_BOOL, false],
 }
 
 function initDefaultParameters(defaultParameters, parameters, variables) {
@@ -247,6 +248,10 @@ export class SourceEngineMaterial extends Material {
 
 		if (variables.get('$normalmapalphaenvmapmask') == 1) {
 			this.setDefine('USE_NORMAL_ALPHA_AS_ENVMAP_MASK');
+		}
+
+		if (variables.get('$no_draw')) {
+			this.setDefine('NO_DRAW');
 		}
 
 		this.uniforms['uTextureTransform'] = IDENTITY_MAT4;
