@@ -20,6 +20,8 @@ import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 import { Source2SpriteSheet } from '../../../textures/source2spritesheet';
 import { Texture } from '../../../../../textures/texture';
+import { Source2ParticleSystem } from '../../export';
+import { Source2Particle } from '../../source2particle';
 
 const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
@@ -27,15 +29,16 @@ const SEQUENCE_SAMPLE_COUNT = 1;//TODO
 
 export class RenderRopes extends Operator {
 	geometry: BeamBufferGeometry;
-	setDefaultTexture = true;//TODO: remove this property
+	setDefaultTexture? = true;//TODO: remove this property
 	textureVWorldSize = 10;
 	textureVScrollRate = 10;
 	textureScroll = 0;
-	spriteSheet: Source2SpriteSheet;
+	#spriteSheet?: Source2SpriteSheet;
 	#maxParticles: number = 1000;//TODO: default value
-	texture: Texture;//TODO: set private ?
-	imgData: Float32Array;//TODO: set private ?
-	constructor(system) {
+	#texture?: Texture;
+	#imgData?: Float32Array;
+
+	constructor(system: Source2ParticleSystem) {
 		super(system);
 		this.material = new Source2SpriteCard(system.repository);
 		this.geometry = new BeamBufferGeometry();
@@ -52,7 +55,7 @@ export class RenderRopes extends Operator {
 		this.textureScroll = 0;
 	}
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, value: any) {
 		switch (paramName) {
 			case 'm_vecTexturesInput':
 				if (TESTING && LOG) {
@@ -80,25 +83,25 @@ export class RenderRopes extends Operator {
 		}
 	}
 
-	setSequenceCombineMode(sequenceCombineMode) {
-		this.material.removeDefine('USE_TEXTURE_COORD_2');
+	setSequenceCombineMode(sequenceCombineMode: string) {
+		this.material?.removeDefine('USE_TEXTURE_COORD_2');
 		switch (sequenceCombineMode) {
 			case 'SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1':
-				this.material.setDefine('SEQUENCE_COMBINE_MODE', String(SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1));
-				this.material.setDefine('USE_TEXTURE_COORD_2');
+				this.material?.setDefine('SEQUENCE_COMBINE_MODE', String(SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1));
+				this.material?.setDefine('USE_TEXTURE_COORD_2');
 				break;
 			default:
 				console.error('Unknonw sequenceCombineMode ', sequenceCombineMode);
 		}
 	}
 
-	async setTexture(texturePath) {
+	async setTexture(texturePath: string) {
 		delete this.setDefaultTexture;
-		this.material.setTexturePath(texturePath);
-		this.spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
+		this.material?.setTexturePath(texturePath);
+		this.#spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
 	}
 
-	updateParticles(particleSystem, particleList, elapsedTime) {//TODOv3
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Array<Source2Particle>, elapsedTime: number) {//TODOv3
 		this.textureScroll += elapsedTime * this.textureVScrollRate;
 		const subdivCount = this.getParameter('subdivision_count') ?? 3;
 
@@ -130,31 +133,33 @@ export class RenderRopes extends Operator {
 		geometry.segments = segments;
 	}
 
-	set maxParticles(maxParticles) {
+	set maxParticles(maxParticles: number) {
 		this.#maxParticles = maxParticles;
-		this._createParticlesArray();
+		this.#createParticlesArray();
 	}
 
-	initRenderer(particleSystem) {
-		this.mesh.serializable = false;
-		this.mesh.hideInExplorer = true;
-		this.mesh.setDefine('IS_ROPE');
-		this.mesh.setDefine('USE_VERTEX_COLOR');
-		this.createParticlesTexture();
-		this.mesh.setUniform('uParticles', this.texture);
+	initRenderer(particleSystem: Source2ParticleSystem) {
+		if (this.mesh) {
+			this.mesh.serializable = false;
+			this.mesh.hideInExplorer = true;
+			this.mesh.setDefine('IS_ROPE');
+			this.mesh.setDefine('USE_VERTEX_COLOR');
+			this.createParticlesTexture();
+			this.mesh.setUniform('uParticles', this.#texture);
+		}
 
 		this.maxParticles = particleSystem.maxParticles;
 		particleSystem.addChild(this.mesh);
 	}
 
-	_createParticlesArray() {
-		this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
+	#createParticlesArray() {
+		this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 	}
 
 	createParticlesTexture() {
-		this.texture = TextureManager.createTexture();
+		this.#texture = TextureManager.createTexture();
 		const gl = new Graphics().glContext;//TODO
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		gl.bindTexture(GL_TEXTURE_2D, null);
@@ -163,17 +168,25 @@ export class RenderRopes extends Operator {
 	updateParticlesTexture() {
 		const gl = new Graphics().glContext;
 
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		if (!this.#imgData || !this.#texture) {
+			return;
+		}
+
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		if (new Graphics().isWebGL2) {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
 		} else {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
 		}
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	setupParticlesTexture(particleList, maxParticles) {
-		const a = this.imgData;
+	setupParticlesTexture(particleList: Array<Source2Particle>, maxParticles: number) {
+		const a = this.#imgData;
+
+		if (!a) {
+			return;
+		}
 
 		let index = 0;
 		for (let particle of particleList) {//TODOv3

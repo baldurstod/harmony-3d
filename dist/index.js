@@ -62347,10 +62347,10 @@ class RenderRopes extends Operator {
     textureVWorldSize = 10;
     textureVScrollRate = 10;
     textureScroll = 0;
-    spriteSheet;
+    #spriteSheet;
     #maxParticles = 1000; //TODO: default value
-    texture; //TODO: set private ?
-    imgData; //TODO: set private ?
+    #texture;
+    #imgData;
     constructor(system) {
         super(system);
         this.material = new Source2SpriteCard(system.repository);
@@ -62392,11 +62392,11 @@ class RenderRopes extends Operator {
         }
     }
     setSequenceCombineMode(sequenceCombineMode) {
-        this.material.removeDefine('USE_TEXTURE_COORD_2');
+        this.material?.removeDefine('USE_TEXTURE_COORD_2');
         switch (sequenceCombineMode) {
             case 'SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1':
-                this.material.setDefine('SEQUENCE_COMBINE_MODE', String(SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1));
-                this.material.setDefine('USE_TEXTURE_COORD_2');
+                this.material?.setDefine('SEQUENCE_COMBINE_MODE', String(SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1));
+                this.material?.setDefine('USE_TEXTURE_COORD_2');
                 break;
             default:
                 console.error('Unknonw sequenceCombineMode ', sequenceCombineMode);
@@ -62404,8 +62404,8 @@ class RenderRopes extends Operator {
     }
     async setTexture(texturePath) {
         delete this.setDefaultTexture;
-        this.material.setTexturePath(texturePath);
-        this.spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
+        this.material?.setTexturePath(texturePath);
+        this.#spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
     }
     updateParticles(particleSystem, particleList, elapsedTime) {
         this.textureScroll += elapsedTime * this.textureVScrollRate;
@@ -62434,42 +62434,50 @@ class RenderRopes extends Operator {
     }
     set maxParticles(maxParticles) {
         this.#maxParticles = maxParticles;
-        this._createParticlesArray();
+        this.#createParticlesArray();
     }
     initRenderer(particleSystem) {
-        this.mesh.serializable = false;
-        this.mesh.hideInExplorer = true;
-        this.mesh.setDefine('IS_ROPE');
-        this.mesh.setDefine('USE_VERTEX_COLOR');
-        this.createParticlesTexture();
-        this.mesh.setUniform('uParticles', this.texture);
+        if (this.mesh) {
+            this.mesh.serializable = false;
+            this.mesh.hideInExplorer = true;
+            this.mesh.setDefine('IS_ROPE');
+            this.mesh.setDefine('USE_VERTEX_COLOR');
+            this.createParticlesTexture();
+            this.mesh.setUniform('uParticles', this.#texture);
+        }
         this.maxParticles = particleSystem.maxParticles;
         particleSystem.addChild(this.mesh);
     }
-    _createParticlesArray() {
-        this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
+    #createParticlesArray() {
+        this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
     createParticlesTexture() {
-        this.texture = TextureManager.createTexture();
+        this.#texture = TextureManager.createTexture();
         const gl = new Graphics().glContext; //TODO
-        gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
         const gl = new Graphics().glContext;
-        gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+        if (!this.#imgData || !this.#texture) {
+            return;
+        }
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         if (new Graphics().isWebGL2) {
-            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
+            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
-            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
+            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     setupParticlesTexture(particleList, maxParticles) {
-        const a = this.imgData;
+        const a = this.#imgData;
+        if (!a) {
+            return;
+        }
         let index = 0;
         for (let particle of particleList) { //TODOv3
             /*let pose = bone.boneMat;
@@ -62645,7 +62653,7 @@ class RenderSprites extends RenderBase {
     }
     set maxParticles(maxParticles) {
         this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
-        this._createParticlesArray();
+        this.#createParticlesArray();
         this._initBuffers();
     }
     _initBuffers() {
@@ -62680,7 +62688,7 @@ class RenderSprites extends RenderBase {
         this.maxParticles = particleSystem.maxParticles;
         particleSystem.addChild(this.mesh);
     }
-    _createParticlesArray() {
+    #createParticlesArray() {
         this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
     createParticlesTexture() {
@@ -62854,7 +62862,7 @@ class RenderTrails extends Operator {
     }
     set maxParticles(maxParticles) {
         this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
-        this._createParticlesArray();
+        this.#createParticlesArray();
         this._initBuffers();
     }
     _initBuffers() {
@@ -62889,7 +62897,7 @@ class RenderTrails extends Operator {
         this.maxParticles = particleSystem.maxParticles;
         particleSystem.addChild(this.mesh);
     }
-    _createParticlesArray() {
+    #createParticlesArray() {
         this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
     createParticlesTexture() {

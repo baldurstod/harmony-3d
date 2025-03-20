@@ -5788,24 +5788,20 @@ declare class Choreography {
          export declare class RenderRopes extends Operator {
              #private;
              geometry: BeamBufferGeometry;
-             setDefaultTexture: boolean;
+             setDefaultTexture?: boolean;
              textureVWorldSize: number;
              textureVScrollRate: number;
              textureScroll: number;
-             spriteSheet: Source2SpriteSheet;
-             texture: Texture;
-             imgData: Float32Array;
-             constructor(system: any);
-             _paramChanged(paramName: any, value: any): void;
-             setSequenceCombineMode(sequenceCombineMode: any): void;
-             setTexture(texturePath: any): Promise<void>;
-             updateParticles(particleSystem: any, particleList: any, elapsedTime: any): void;
-             set maxParticles(maxParticles: any);
-             initRenderer(particleSystem: any): void;
-             _createParticlesArray(): void;
+             constructor(system: Source2ParticleSystem);
+             _paramChanged(paramName: string, value: any): void;
+             setSequenceCombineMode(sequenceCombineMode: string): void;
+             setTexture(texturePath: string): Promise<void>;
+             updateParticles(particleSystem: Source2ParticleSystem, particleList: Array<Source2Particle>, elapsedTime: number): void;
+             set maxParticles(maxParticles: number);
+             initRenderer(particleSystem: Source2ParticleSystem): void;
              createParticlesTexture(): void;
              updateParticlesTexture(): void;
-             setupParticlesTexture(particleList: any, maxParticles: any): void;
+             setupParticlesTexture(particleList: Array<Source2Particle>, maxParticles: number): void;
              init(): void;
          }
 
@@ -5832,7 +5828,6 @@ declare class Choreography {
              set maxParticles(maxParticles: any);
              _initBuffers(): void;
              initRenderer(particleSystem: any): void;
-             _createParticlesArray(): void;
              createParticlesTexture(): void;
              updateParticlesTexture(): void;
              setupParticlesTexture(particleList: any, maxParticles: any): void;
@@ -5917,7 +5912,6 @@ declare class Choreography {
              set maxParticles(maxParticles: any);
              _initBuffers(): void;
              initRenderer(particleSystem: any): void;
-             _createParticlesArray(): void;
              createParticlesTexture(): void;
              updateParticlesTexture(): void;
              setupParticlesTexture(particleList: any, maxParticles: any, elapsedTime: any): void;

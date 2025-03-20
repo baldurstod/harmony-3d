@@ -194,7 +194,7 @@ export class RenderTrails extends Operator {
 
 	set maxParticles(maxParticles) {
 		this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
-		this._createParticlesArray();
+		this.#createParticlesArray();
 		this._initBuffers();
 	}
 
@@ -234,7 +234,7 @@ export class RenderTrails extends Operator {
 		particleSystem.addChild(this.mesh);
 	}
 
-	_createParticlesArray() {
+	#createParticlesArray() {
 		this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 	}
 
