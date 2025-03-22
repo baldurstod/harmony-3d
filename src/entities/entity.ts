@@ -1046,7 +1046,7 @@ export class Entity {
 		if (Number.isNaN(Number(layer))) {
 			this.#layer = undefined;
 		} else {
-			this.#layer = clamp(layer, 0, LAYER_MAX);
+			this.#layer = clamp(layer!, 0, LAYER_MAX);
 		}
 	}
 

@@ -24974,13 +24974,12 @@ class Source1ParticleControler {
 }
 
 class Source2ParticleManagerClass {
-    #vpcfs = {};
-    #fileList = {};
+    #vpcfs = {}; //TODO: turn to map
+    #fileList = {}; //TODO: turn to map and improve type
     speed = 1.0;
     activeSystemList = new Set();
-    visible = true;
+    visible;
     constructor() {
-        this.renderSystems = true;
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
             this.stepSystems(event.detail.delta); //TODOv3: improve this
         });
@@ -25019,8 +25018,8 @@ class Source2ParticleManagerClass {
     setInactive(system) {
         this.activeSystemList.delete(system);
     }
-    set renderSystems(renderSystems) {
-        this.visible = renderSystems ? undefined : false;
+    renderSystems(render) {
+        this.visible = render ? undefined : false;
     }
     async getSystemList() {
         const repoList = [];
@@ -25036,7 +25035,7 @@ class Source2ParticleManagerClass {
     }
     async loadManifests(...repositories) {
         for (const repository of repositories) {
-            this.#fileList[repository] = null;
+            this.#fileList[repository] = undefined;
         }
     }
     async #loadManifest(repositoryName) {

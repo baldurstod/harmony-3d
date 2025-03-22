@@ -1,5 +1,4 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
-
 import { Source2Particle } from './source2particle';
 import { Source2ParticleManager } from './source2particlemanager';
 import { Source2SnapshotLoader } from '../loaders/source2snapshotloader';

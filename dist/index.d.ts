@@ -2900,6 +2900,11 @@ declare class Choreography {
              };
          };
 
+         export declare type GraphicTickEvent = {
+             delta: number;
+             time: number;
+         };
+
          export declare type GraphicTouchEventData = {
              entity: Entity | null;
              touchEvent: TouchEvent;
@@ -7486,15 +7491,15 @@ declare class Choreography {
              #private;
              speed: number;
              activeSystemList: Set<Source2ParticleSystem>;
-             visible: boolean;
+             visible?: boolean;
              constructor();
-             getSystem(repository: any, vpcfPath: any, snapshotModifiers?: any): Promise<any>;
-             stepSystems(elapsedTime: any): void;
+             getSystem(repository: string, vpcfPath: string, snapshotModifiers?: Map<string, string>): Promise<any>;
+             stepSystems(elapsedTime: number): void;
              setActive(system: Source2ParticleSystem): void;
              setInactive(system: Source2ParticleSystem): void;
-             set renderSystems(renderSystems: any);
+             renderSystems(render: boolean): void;
              getSystemList(): Promise<FileSelectorFile>;
-             loadManifests(...repositories: any[]): Promise<void>;
+             loadManifests(...repositories: Array<string>): Promise<void>;
          }
 
          export declare class Source2ParticleSystem extends Entity {

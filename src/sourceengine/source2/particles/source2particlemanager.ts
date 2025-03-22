@@ -1,24 +1,26 @@
-import { GraphicsEvents, GraphicsEvent } from '../../../graphics/graphicsevents';
+import { GraphicsEvents, GraphicsEvent, GraphicTickEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
+import { JSONObject } from '../../../types';
 import { customFetch } from '../../../utils/customfetch';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
+import { Source2File } from '../loaders/source2file';
 import { Source2ParticleSystem } from './source2particlesystem';
 
-class Source2ParticleManagerClass {
-	#vpcfs = {};
-	#fileList = {};
+class Source2ParticleManagerClass {// TODO: turn into a proper singleton
+	#vpcfs: { [key: string]: Source2File } = {};//TODO: turn to map
+	#fileList: { [key: string]: undefined | Array<FileSelectorFile> } = {};//TODO: turn to map and improve type
 	speed = 1.0;
 	activeSystemList = new Set<Source2ParticleSystem>();
-	visible = true;
+	visible?: boolean;
+
 	constructor() {
-		this.renderSystems = true;
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: CustomEvent) => {
-			this.stepSystems(event.detail.delta);//TODOv3: improve this
+		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => {
+			this.stepSystems((event as CustomEvent<GraphicTickEvent>).detail.delta);//TODOv3: improve this
 		});
 	}
 
-	async #getVpcf(repository, vpcfPath) {
+	async #getVpcf(repository: string, vpcfPath: string) {
 		let fullPath = repository + vpcfPath;
 
 		let vpcf = this.#vpcfs[fullPath];
@@ -29,7 +31,7 @@ class Source2ParticleManagerClass {
 		return vpcf;
 	}
 
-	async getSystem(repository, vpcfPath, snapshotModifiers?) {
+	async getSystem(repository: string, vpcfPath: string, snapshotModifiers?: Map<string, string>) {
 		vpcfPath = vpcfPath.replace(/.vpcf_c/, '').replace(/.vpcf/, '');
 		vpcfPath = vpcfPath + '.vpcf_c';
 		let vpcf = await this.#getVpcf(repository, vpcfPath);
@@ -38,7 +40,7 @@ class Source2ParticleManagerClass {
 		}
 	}
 
-	stepSystems(elapsedTime) {
+	stepSystems(elapsedTime: number) {
 		if (elapsedTime) {
 			elapsedTime *= this.speed;
 			elapsedTime = Math.min(elapsedTime, 0.1);
@@ -58,12 +60,12 @@ class Source2ParticleManagerClass {
 		this.activeSystemList.delete(system);
 	}
 
-	set renderSystems(renderSystems) {
-		this.visible = renderSystems ? undefined : false;
+	renderSystems(render: boolean) {
+		this.visible = render ? undefined : false;
 	}
 
 	async getSystemList(): Promise<FileSelectorFile> {
-		const repoList = [];
+		const repoList: Array<FileSelectorFile> = [];
 		for (let repoName in this.#fileList) {
 			if (this.#fileList[repoName]) {
 				continue;
@@ -76,13 +78,13 @@ class Source2ParticleManagerClass {
 		return { name: '', path: '', files: repoList };
 	}
 
-	async loadManifests(...repositories) {
+	async loadManifests(...repositories: Array<string>) {
 		for (const repository of repositories) {
-			this.#fileList[repository] = null;
+			this.#fileList[repository] = undefined;
 		}
 	}
 
-	async #loadManifest(repositoryName) {
+	async #loadManifest(repositoryName: string) {
 		/*
 		const repository = new Repositories().getRepository(repositoryName);
 		if (!repository) {
