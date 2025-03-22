@@ -14,6 +14,11 @@ export enum GraphicsEvent {
 	TouchCancel = 'touchcancel',
 }
 
+export type GraphicTickEvent = {
+	delta: number,
+	time: number,
+}
+
 export type GraphicMouseEventData = {
 	x: number,
 	y: number,
@@ -49,7 +54,7 @@ export const GraphicsEvents = new (function () {
 		}
 
 		tick(delta: number, time: number) {
-			this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time } }));
+			this.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta: delta, time: time } }));
 		}
 
 		resize(width: number, height: number) {
