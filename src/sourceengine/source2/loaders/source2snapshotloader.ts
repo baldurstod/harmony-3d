@@ -4,24 +4,25 @@ import { BinaryReader } from 'harmony-binary-reader';
 import { Source2FileLoader } from './source2fileloader';
 import { Source2Snapshot } from '../particles/source2snapshot';
 import { LOG, DEBUG, ERROR, TESTING } from '../../../buildoptions';
+import { Source2File } from './source2file';
 
 export const Source2SnapshotLoader = new (function () {
 	class Source2SnapshotLoader {
 
-		async load(repository, fileName) {
-			fileName = fileName.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
-			let snapFile = await new Source2FileLoader(true).load(repository, fileName + '.vsnap_c');
+		async load(repository: string, filename: string) {
+			filename = filename.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
+			let snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
 			if (snapFile) {
-				return this.loadSnapshot(snapFile);
+				return this.loadSnapshot(snapFile as Source2File);
 			} else {
 				if (ERROR) {
-					console.error('Error loading snapshot', repository, fileName);
+					console.error('Error loading snapshot', repository, filename);
 				}
 				return null;
 			}
 		}
 
-		loadSnapshot(snapFile) {
+		loadSnapshot(snapFile: Source2File) {
 			let snapShot = new Source2Snapshot();
 			snapShot.file = snapFile;
 

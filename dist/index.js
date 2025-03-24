@@ -54162,9 +54162,9 @@ class Source2Snapshot {
 
 const Source2SnapshotLoader = new (function () {
     class Source2SnapshotLoader {
-        async load(repository, fileName) {
-            fileName = fileName.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
-            let snapFile = await new Source2FileLoader(true).load(repository, fileName + '.vsnap_c');
+        async load(repository, filename) {
+            filename = filename.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
+            let snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
             if (snapFile) {
                 return this.loadSnapshot(snapFile);
             }

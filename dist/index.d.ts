@@ -7714,8 +7714,8 @@ declare class Choreography {
          }
 
          export declare const Source2SnapshotLoader: {
-             load(repository: any, fileName: any): Promise<Source2Snapshot>;
-             loadSnapshot(snapFile: any): Source2Snapshot;
+             load(repository: string, filename: string): Promise<Source2Snapshot>;
+             loadSnapshot(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
