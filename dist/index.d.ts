@@ -7735,7 +7735,7 @@ declare class Choreography {
          declare class Source2SpriteSheet {
              sequences: Array<Source2SpriteSheetSequence>;
              addSequence(): Source2SpriteSheetSequence;
-             getFrame(sequenceId: any, frame: any): Source2SpriteSheetFrame;
+             getFrame(sequenceId: number, frame: number): Source2SpriteSheetFrame | null;
          }
 
          declare class Source2SpriteSheetFrame {

@@ -25,7 +25,7 @@ export class Source2SpriteSheet {
 		return sequence;
 	}
 
-	getFrame(sequenceId, frame): Source2SpriteSheetFrame {
+	getFrame(sequenceId: number, frame: number): Source2SpriteSheetFrame | null {
 		let sequence = this.sequences[sequenceId] ?? this.sequences[0];
 		if (sequence) {
 			frame = (frame % sequence.frames.length) << 0;
