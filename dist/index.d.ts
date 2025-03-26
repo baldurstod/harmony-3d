@@ -1200,7 +1200,7 @@ declare class Choreography {
          fVector: vec3;
          uVector: vec3;
          rVector: vec3;
-         parentModel: any;
+         parentModel?: Entity;
          lastComputed: number;
          snapshot?: Source2Snapshot;
          model?: Source2ModelInstance;

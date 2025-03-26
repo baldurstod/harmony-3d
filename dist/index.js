@@ -29156,7 +29156,7 @@ class ControlPoint extends Entity {
     uVector = vec3.create();
     // Right vector
     rVector = vec3.create();
-    parentModel = null;
+    parentModel;
     lastComputed = -1;
     snapshot;
     model;
