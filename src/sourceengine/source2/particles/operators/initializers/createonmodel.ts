@@ -57,11 +57,11 @@ export class CreateOnModel extends Operator {
 		let controlPoint = this.system.getControlPoint(this.controlPointNumber);
 		if (controlPoint) {
 			let controllingModel = controlPoint.parentModel;
-			if (controllingModel) {
+			if ((controllingModel as any)?.getRandomPointOnModel) {
 				let bones = [];
 				particle.bones = bones;
 				particle.initialVec = vec3.create();
-				const position = controllingModel.getRandomPointOnModel(vec3.create(), particle.initialVec, bones);
+				const position = (controllingModel as any).getRandomPointOnModel(vec3.create(), particle.initialVec, bones);
 				if (controlPoint) {
 					vec3.copy(particle.position, position);
 					vec3.copy(particle.prevPosition, position);

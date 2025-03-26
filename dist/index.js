@@ -57542,7 +57542,7 @@ class CreateOnModel extends Operator {
         let controlPoint = this.system.getControlPoint(this.controlPointNumber);
         if (controlPoint) {
             let controllingModel = controlPoint.parentModel;
-            if (controllingModel) {
+            if (controllingModel?.getRandomPointOnModel) {
                 let bones = [];
                 particle.bones = bones;
                 particle.initialVec = vec3.create();
