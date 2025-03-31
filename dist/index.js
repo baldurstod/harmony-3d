@@ -31340,18 +31340,18 @@ class Choreographies {
                 //reader.skip(4);//LZMA
                 const format = await this.#reader.getString(4, sceneEntry['do']);
                 let decompressedDatas;
-                if (format == 'LZMA') {
-                    const uncompressedSize = await this.#reader.getUint32();
-                    await this.#reader.getUint32();
-                    const properties = await this.#reader.getBytes(5);
-                    const compressedDatas = await this.#reader.getBytes(sceneEntry['dl'] - 17);
-                    //decompressedDatas = _decompress(properties, compressedDatas, uncompressedSize);
-                    decompressedDatas = DecompressLZMA(properties, compressedDatas, uncompressedSize);
-                }
-                else {
-                    decompressedDatas = await this.#reader.getString(sceneEntry['dl'], sceneEntry['do']);
-                }
                 try {
+                    if (format == 'LZMA') {
+                        const uncompressedSize = await this.#reader.getUint32();
+                        const compressedSize = await this.#reader.getUint32();
+                        const properties = await this.#reader.getBytes(5);
+                        const compressedDatas = await this.#reader.getBytes(sceneEntry['dl'] - 17);
+                        //decompressedDatas = _decompress(properties, compressedDatas, uncompressedSize);
+                        decompressedDatas = DecompressLZMA(properties, compressedDatas, uncompressedSize);
+                    }
+                    else {
+                        decompressedDatas = await this.#reader.getString(sceneEntry['dl'], sceneEntry['do']);
+                    }
                     choreography = await this.#loadChoreography(repository, decompressedDatas);
                 }
                 catch (e) {
@@ -31607,7 +31607,11 @@ class ChoreographiesManager {
                 this.#choreographies.add(choreography);
                 choreography.setActors(actors);
                 choreography.onStop = onStop;
-            } /* else {
+            }
+            else {
+                onStop && onStop();
+            }
+            /* else {
                 setTimeout(function() {playChoreo(choreoName, actors, onStop)}, 100);
             }*/
         }

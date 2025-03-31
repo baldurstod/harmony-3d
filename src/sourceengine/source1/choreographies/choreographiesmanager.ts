@@ -35,7 +35,11 @@ export class ChoreographiesManager {
 				this.#choreographies.add(choreography);
 				choreography.setActors(actors);
 				choreography.onStop = onStop;
-			}/* else {
+			} else {
+				onStop && onStop();
+			}
+
+			/* else {
 				setTimeout(function() {playChoreo(choreoName, actors, onStop)}, 100);
 			}*/
 		}
