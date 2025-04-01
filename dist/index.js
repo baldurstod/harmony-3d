@@ -31255,7 +31255,8 @@ class Choreographies {
     scenesCount;
     stringsCount;
     scenesOffset;
-    sceneEntries;
+    #sceneEntries = new Map();
+    #initialized = false;
     async loadFile(repositoryName, fileName) {
         //const repository = new Repositories().getRepository(repositoryName);
         this.#repository = repositoryName;
@@ -31291,14 +31292,15 @@ class Choreographies {
     }
     async getChoreography(fileName) {
         const choreoCRC = crc32(fileName.replace(/\//g, '\\').toLowerCase());
-        if (!this.sceneEntries) {
+        if (!this.#initialized) {
             await this.#parseSceneEntries();
-            if (!this.sceneEntries) {
+            this.#initialized = true;
+            if (!this.#initialized) {
                 return null;
             }
         }
         if (this.choreographies[choreoCRC]) ;
-        if (this.sceneEntries[choreoCRC]) {
+        if (this.#sceneEntries.get(choreoCRC)) {
             const choreo = await this.#parseSceneData(this.#repository, choreoCRC);
             if (choreo) {
                 this.choreographies[choreoCRC] = choreo;
@@ -31315,7 +31317,8 @@ class Choreographies {
             // Ensure we have enough data
             //if (this.hasChunk(this.scenesOffset, size))
             {
-                this.sceneEntries = {};
+                this.#sceneEntries.clear();
+                this.#initialized = true;
                 this.#reader.seek(this.scenesOffset);
                 for (let i = 0; i < this.scenesCount; i++) {
                     const sceneCRC = this.#reader.getUint32();
@@ -31323,7 +31326,7 @@ class Choreographies {
                     let dl = this.#reader.getUint32();
                     let sso = this.#reader.getUint32();
                     const sceneEntry = { 'do': doo, 'dl': dl, 'sso': sso };
-                    this.sceneEntries[sceneCRC] = sceneEntry;
+                    this.#sceneEntries.set(sceneCRC, sceneEntry);
                 }
             }
         }
@@ -31332,7 +31335,7 @@ class Choreographies {
     async #parseSceneData(repository, sceneCRC) {
         //await this.#reader.getLock();
         let choreography = null;
-        const sceneEntry = this.sceneEntries[sceneCRC];
+        const sceneEntry = this.#sceneEntries.get(sceneCRC);
         if (sceneEntry) {
             //if (this.hasChunk(sceneEntry['do'], sceneEntry['dl']) && this.hasChunk(sceneEntry['sso'], 8))
             {

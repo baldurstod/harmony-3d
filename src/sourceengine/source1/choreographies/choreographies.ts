@@ -26,7 +26,8 @@ export class Choreographies {
 	scenesCount: number;
 	stringsCount: number;
 	scenesOffset: number;
-	sceneEntries;
+	#sceneEntries: Map<number, SceneEntry> = new Map();
+	#initialized = false;
 
 	async loadFile(repositoryName: string, fileName: string) {
 		//const repository = new Repositories().getRepository(repositoryName);
@@ -69,9 +70,10 @@ export class Choreographies {
 	async getChoreography(fileName) {
 		const choreoCRC = crc32(fileName.replace(/\//g, '\\').toLowerCase());
 
-		if (!this.sceneEntries) {
+		if (!this.#initialized) {
 			await this.#parseSceneEntries();
-			if (!this.sceneEntries) {
+			this.#initialized = true;
+			if (!this.#initialized) {
 				return null;
 			}
 		}
@@ -80,7 +82,7 @@ export class Choreographies {
 			//return choreographies[choreoCRC];TODOVV2
 		}
 
-		if (this.sceneEntries[choreoCRC]) {
+		if (this.#sceneEntries.get(choreoCRC)) {
 			const choreo = await this.#parseSceneData(this.#repository, choreoCRC);
 			if (choreo) {
 				this.choreographies[choreoCRC] = choreo;
@@ -99,7 +101,8 @@ export class Choreographies {
 			// Ensure we have enough data
 			//if (this.hasChunk(this.scenesOffset, size))
 			{
-				this.sceneEntries = {};
+				this.#sceneEntries.clear();
+				this.#initialized = true;
 
 				this.#reader.seek(this.scenesOffset);
 				for (let i = 0; i < this.scenesCount; i++) {
@@ -108,7 +111,7 @@ export class Choreographies {
 					let dl = this.#reader.getUint32();
 					let sso = this.#reader.getUint32();
 					const sceneEntry = { 'do': doo, 'dl': dl, 'sso': sso };
-					this.sceneEntries[sceneCRC] = sceneEntry;
+					this.#sceneEntries.set(sceneCRC, sceneEntry);
 				}
 			}
 		}
@@ -119,7 +122,7 @@ export class Choreographies {
 		//await this.#reader.getLock();
 		let choreography = null;
 
-		const sceneEntry = this.sceneEntries[sceneCRC];
+		const sceneEntry = this.#sceneEntries.get(sceneCRC);
 		if (sceneEntry) {
 			//if (this.hasChunk(sceneEntry['do'], sceneEntry['dl']) && this.hasChunk(sceneEntry['sso'], 8))
 			{
@@ -131,14 +134,14 @@ export class Choreographies {
 					if (format == 'LZMA') {
 						const HEADER_SIZE = 17;// 4 + 4 + 4 + 5
 						const uncompressedSize = this.#reader.getUint32();
-						const compressedSize =  this.#reader.getUint32();
-						const properties =  this.#reader.getBytes(5);
-						const compressedDatas =  this.#reader.getBytes(sceneEntry['dl'] - HEADER_SIZE);
+						const compressedSize = this.#reader.getUint32();
+						const properties = this.#reader.getBytes(5);
+						const compressedDatas = this.#reader.getBytes(sceneEntry['dl'] - HEADER_SIZE);
 
 						//decompressedDatas = _decompress(properties, compressedDatas, uncompressedSize);
 						decompressedDatas = DecompressLZMA(properties, compressedDatas, uncompressedSize);
 					} else {
-						decompressedDatas =  this.#reader.getString(sceneEntry['dl'], sceneEntry['do']);
+						decompressedDatas = this.#reader.getString(sceneEntry['dl'], sceneEntry['do']);
 					}
 					choreography = await this.#loadChoreography(repository, decompressedDatas);
 				} catch (e) {
@@ -147,7 +150,7 @@ export class Choreographies {
 				}
 				if (choreography) {
 					//this.#reader.seek(sceneEntry['sso']);
-					choreography.sceneLength = ( this.#reader.getUint32(sceneEntry['sso'])) * 0.001;
+					choreography.sceneLength = (this.#reader.getUint32(sceneEntry['sso'])) * 0.001;
 				}
 			}
 		}
@@ -374,8 +377,8 @@ export class Choreographies {
 		const s = this.stringPool[stringIndex];
 		if (s === undefined) {
 			const stringOffsetOffset = 20 + stringIndex * 4;
-			const stringOffset =  this.#reader.getUint32(stringOffsetOffset);
-			return  this.#reader.getNullString(stringOffset);
+			const stringOffset = this.#reader.getUint32(stringOffsetOffset);
+			return this.#reader.getNullString(stringOffset);
 		}
 		throw new Error(`String not found ${stringIndex}`);
 	}
