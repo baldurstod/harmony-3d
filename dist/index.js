@@ -31283,11 +31283,11 @@ class Choreographies {
         await this.#parseHeader();
     }
     async #parseHeader() {
-        this.fileId = await this.#reader.getUint32(0);
-        this.fileVersion = await this.#reader.getUint32();
-        this.scenesCount = await this.#reader.getUint32();
-        this.stringsCount = await this.#reader.getUint32();
-        this.scenesOffset = await this.#reader.getUint32();
+        this.fileId = this.#reader.getUint32(0);
+        this.fileVersion = this.#reader.getUint32();
+        this.scenesCount = this.#reader.getUint32();
+        this.stringsCount = this.#reader.getUint32();
+        this.scenesOffset = this.#reader.getUint32();
     }
     async getChoreography(fileName) {
         const choreoCRC = crc32(fileName.replace(/\//g, '\\').toLowerCase());
@@ -31318,10 +31318,10 @@ class Choreographies {
                 this.sceneEntries = {};
                 this.#reader.seek(this.scenesOffset);
                 for (let i = 0; i < this.scenesCount; i++) {
-                    const sceneCRC = await this.#reader.getUint32();
-                    let doo = await this.#reader.getUint32();
-                    let dl = await this.#reader.getUint32();
-                    let sso = await this.#reader.getUint32();
+                    const sceneCRC = this.#reader.getUint32();
+                    let doo = this.#reader.getUint32();
+                    let dl = this.#reader.getUint32();
+                    let sso = this.#reader.getUint32();
                     const sceneEntry = { 'do': doo, 'dl': dl, 'sso': sso };
                     this.sceneEntries[sceneCRC] = sceneEntry;
                 }
@@ -31338,19 +31338,20 @@ class Choreographies {
             {
                 //this.#reader.seek(sceneEntry['do']);
                 //reader.skip(4);//LZMA
-                const format = await this.#reader.getString(4, sceneEntry['do']);
+                const format = this.#reader.getString(4, sceneEntry['do']);
                 let decompressedDatas;
                 try {
                     if (format == 'LZMA') {
-                        const uncompressedSize = await this.#reader.getUint32();
-                        const compressedSize = await this.#reader.getUint32();
-                        const properties = await this.#reader.getBytes(5);
-                        const compressedDatas = await this.#reader.getBytes(sceneEntry['dl'] - 17);
+                        const HEADER_SIZE = 17; // 4 + 4 + 4 + 5
+                        const uncompressedSize = this.#reader.getUint32();
+                        const compressedSize = this.#reader.getUint32();
+                        const properties = this.#reader.getBytes(5);
+                        const compressedDatas = this.#reader.getBytes(sceneEntry['dl'] - HEADER_SIZE);
                         //decompressedDatas = _decompress(properties, compressedDatas, uncompressedSize);
                         decompressedDatas = DecompressLZMA(properties, compressedDatas, uncompressedSize);
                     }
                     else {
-                        decompressedDatas = await this.#reader.getString(sceneEntry['dl'], sceneEntry['do']);
+                        decompressedDatas = this.#reader.getString(sceneEntry['dl'], sceneEntry['do']);
                     }
                     choreography = await this.#loadChoreography(repository, decompressedDatas);
                 }
@@ -31360,7 +31361,7 @@ class Choreographies {
                 }
                 if (choreography) {
                     //this.#reader.seek(sceneEntry['sso']);
-                    choreography.sceneLength = (await this.#reader.getUint32(sceneEntry['sso'])) * 0.001;
+                    choreography.sceneLength = (this.#reader.getUint32(sceneEntry['sso'])) * 0.001;
                 }
             }
         }
@@ -31550,8 +31551,8 @@ class Choreographies {
         const s = this.stringPool[stringIndex];
         if (s === undefined) {
             const stringOffsetOffset = 20 + stringIndex * 4;
-            const stringOffset = await this.#reader.getUint32(stringOffsetOffset, 4);
-            return await this.#reader.getNullString(stringOffset);
+            const stringOffset = this.#reader.getUint32(stringOffsetOffset);
+            return this.#reader.getNullString(stringOffset);
         }
         throw new Error(`String not found ${stringIndex}`);
     }
