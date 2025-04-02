@@ -1,6 +1,5 @@
 import { SaveFile } from 'harmony-browser-utils';
 import { BinaryReader } from 'harmony-binary-reader';
-
 import { Source2FileLoader } from './source2fileloader';
 import { Source2Snapshot } from '../particles/source2snapshot';
 import { LOG, DEBUG, ERROR, TESTING } from '../../../buildoptions';

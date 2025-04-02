@@ -1,8 +1,6 @@
 import { GraphicsEvents, GraphicsEvent, GraphicTickEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
-import { JSONObject } from '../../../types';
-import { customFetch } from '../../../utils/customfetch';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
 import { Source2File } from '../loaders/source2file';
 import { Source2ParticleSystem } from './source2particlesystem';

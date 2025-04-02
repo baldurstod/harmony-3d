@@ -8,7 +8,8 @@ import { RenderFace } from '../../../materials/constants';
 import { Source2File } from '../loaders/source2file';
 
 export class Source2SpriteCard extends Source2Material {
-	#texturePath;
+	#texturePath: string = '';
+
 	constructor(repository: string, source2File?: Source2File) {
 		super(repository, source2File);
 
@@ -24,7 +25,7 @@ export class Source2SpriteCard extends Source2Material {
 		this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
-	setOutputBlendMode(outputBlendMode) {
+	setOutputBlendMode(outputBlendMode: number) {
 		switch (outputBlendMode) {
 			case 0:
 				this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -50,7 +51,7 @@ export class Source2SpriteCard extends Source2Material {
 		}
 	}
 
-	async setTexturePath(texturePath) {
+	async setTexturePath(texturePath: string) {
 		this.#texturePath = texturePath;
 	}
 
@@ -60,7 +61,8 @@ export class Source2SpriteCard extends Source2Material {
 			this.setTexture('colorMap', await Source2TextureManager.getTexture(this.repository, this.#texturePath, 0), 'USE_COLOR_MAP');
 		}
 	}
-	getFrameSpan(sequence): number {
+
+	getFrameSpan(sequence: number): number {
 		console.error('code me');
 		return 0;
 	}
