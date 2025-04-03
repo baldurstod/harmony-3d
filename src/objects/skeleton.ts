@@ -138,14 +138,14 @@ export class Skeleton extends Entity {
 		}
 	}
 
-	async setParentSkeleton(skeleton: Skeleton) {
+	async setParentSkeleton(skeleton: Skeleton | null) {
 		await this.loadedPromise;
 		if (skeleton) {
 			await skeleton.loadedPromise;
 		}
 		let bones = this.#bonesByName;
 		for (let [boneName, bone] of bones) {
-			bone.parentSkeletonBone = skeleton ? skeleton.getBoneByName(boneName) : null;
+			bone.parentSkeletonBone = skeleton?.getBoneByName(boneName) ?? null;
 		}
 	}
 

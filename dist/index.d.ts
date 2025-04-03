@@ -6513,7 +6513,7 @@ declare class Choreography {
              set quaternion(quaternion: vec4);
              get quaternion(): vec4;
              addBone(boneId: number, boneName: string): any;
-             setParentSkeleton(skeleton: Skeleton): Promise<void>;
+             setParentSkeleton(skeleton: Skeleton | null): Promise<void>;
              getBoneByName(boneName: string): any;
              getBoneById(boneId: number): Bone;
              toString(): string;

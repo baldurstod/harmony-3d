@@ -17712,7 +17712,7 @@ class Skeleton extends Entity {
         }
         let bones = this.#bonesByName;
         for (let [boneName, bone] of bones) {
-            bone.parentSkeletonBone = skeleton ? skeleton.getBoneByName(boneName) : null;
+            bone.parentSkeletonBone = skeleton?.getBoneByName(boneName) ?? null;
         }
     }
     getBoneByName(boneName) {
