@@ -1,7 +1,7 @@
-import { quat } from 'gl-matrix';
+import { quat, vec3 } from 'gl-matrix';
 import { EPSILON, RAD_TO_DEG } from './constants'
 
-export function quatToEuler(out, q) {
+export function quatToEuler(out: vec3, q: quat): vec3 {
 	const test = q[0] * q[3] - q[1] * q[2];
 
 	if (test > 0.5 - EPSILON) { // singularity at north pole
@@ -37,7 +37,7 @@ export function quatToEuler(out, q) {
 	return out;
 }
 
-export function quatToEulerDeg(out, q) {
+export function quatToEulerDeg(out: vec3, q: quat): vec3 {
 	quatToEuler(out, q);
 	out[0] = RAD_TO_DEG * out[0];
 	out[1] = RAD_TO_DEG * out[1];
