@@ -9,3 +9,5 @@ export const ACE_EDITOR_URI = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12
 export const MAX_HARDWARE_BONES = 256;
 
 export const TEXTURE_CLEANUP_DELAY = 100000;
+
+export const SMD_HEADER = '// Created by harmony-3d';

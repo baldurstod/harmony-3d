@@ -102,14 +102,16 @@ declare class Animation_2 {
     get fps(): number;
     get bones(): AnimationBone[];
     getFrame(id: number): AnimationFrame | undefined;
+    toSMD(header?: string): string;
 }
 
 declare class AnimationBone {
     #private;
     refPosition: vec3;
     refQuaternion: quat;
-    constructor(id: number, name: string, position: vec3, quaternion: quat);
+    constructor(id: number, parentId: number, name: string, position: vec3, quaternion: quat);
     get id(): number;
+    getParentId(): number;
     get name(): string;
 }
 
@@ -118,7 +120,8 @@ declare class AnimationFrame {
     constructor(frameId: number);
     setDatas(name: string, type: AnimationFrameDataType, datas: Array<AnimationFrameDataTypes>): void;
     pushData(name: string, data: AnimationFrameDataTypes): void;
-    getData(name: string): AnimationFrameData;
+    getData(name: string): AnimationFrameData | undefined;
+    getFrameId(): number;
 }
 
 declare class AnimationFrameData {
@@ -5250,9 +5253,9 @@ declare class Choreography {
           */
          export declare function quatFromEulerRad(out: quat, x: number, y: number, z: number): quat;
 
-         export declare function quatToEuler(out: any, q: any): any;
+         export declare function quatToEuler(out: vec3, q: quat): vec3;
 
-         export declare function quatToEulerDeg(out: any, q: any): any;
+         export declare function quatToEulerDeg(out: vec3, q: quat): vec3;
 
          export declare const RAD_TO_DEG: number;
 
@@ -7725,10 +7728,10 @@ declare class Choreography {
          export declare class Source2SpriteCard extends Source2Material {
              #private;
              constructor(repository: string, source2File?: Source2File);
-             setOutputBlendMode(outputBlendMode: any): void;
-             setTexturePath(texturePath: any): Promise<void>;
+             setOutputBlendMode(outputBlendMode: number): void;
+             setTexturePath(texturePath: string): Promise<void>;
              initTextureUniforms(): Promise<void>;
-             getFrameSpan(sequence: any): number;
+             getFrameSpan(sequence: number): number;
              getShaderSource(): string;
          }
 
@@ -9691,12 +9694,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#182@#webAssembly"?: any;
-             "__#182@#HEAPU8"?: Uint8Array;
+             "__#236@#webAssembly"?: any;
+             "__#236@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#182@#initHeap"(): void;
+             "__#236@#initHeap"(): void;
          };
 
          export { }

@@ -6052,6 +6052,7 @@ const RECORDER_DEFAULT_FILENAME = 'Harmony3D recording.webm';
 const ACE_EDITOR_URI = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js';
 const MAX_HARDWARE_BONES = 256;
 const TEXTURE_CLEANUP_DELAY = 100000;
+const SMD_HEADER = '// Created by harmony-3d';
 
 class WebGLRenderingState {
     static #viewport = vec4.create();
@@ -36659,6 +36660,37 @@ class Animation {
         id = Math.round(id) % Math.max(this.#frameCount, 1);
         return this.#frames[id];
     }
+    toSMD(header = SMD_HEADER) {
+        const lines = [];
+        lines.push(header);
+        lines.push('version 1');
+        // Start bones declaration
+        lines.push('nodes');
+        for (const bone of this.#bones) { // TODO: sort bones ?
+            lines.push(`  ${bone.id} "${bone.name}" ${bone.getParentId()}`);
+        }
+        lines.push('end');
+        // Start frames
+        lines.push('skeleton');
+        for (const frame of this.#frames) {
+            lines.push(`  time ${frame.getFrameId()}`);
+            const positions = frame.getData('position');
+            const rotations = frame.getData('rotation');
+            if (!positions || !rotations) {
+                continue;
+            }
+            for (const bone of this.#bones) {
+                const bonePos = positions.datas[bone.id] ?? vec3.create();
+                const boneRot = quatToEuler(vec3.create(), rotations.datas[bone.id] ?? quat.create());
+                if (!bonePos || !boneRot) {
+                    continue;
+                }
+                lines.push(`  ${bone.id} ${bonePos[0].toFixed(5)} ${bonePos[1].toFixed(5)} ${bonePos[2].toFixed(5)} ${boneRot[0].toFixed(5)} ${boneRot[1].toFixed(5)} ${boneRot[2].toFixed(5)}`);
+            }
+        }
+        lines.push('end');
+        return lines.join('\n');
+    }
 }
 
 var AnimationFrameDataType;
@@ -36710,21 +36742,29 @@ class AnimationFrame {
     getData(name) {
         return this.#datas.get(name);
     }
+    getFrameId() {
+        return this.#frameId;
+    }
 }
 
 class AnimationBone {
     #id;
+    #parentId;
     #name;
     refPosition;
     refQuaternion;
-    constructor(id, name, position, quaternion) {
+    constructor(id, parentId, name, position, quaternion) {
         this.#id = id;
+        this.#parentId = parentId;
         this.#name = name.toLowerCase();
         this.refPosition = vec3.clone(position);
         this.refQuaternion = quat.clone(quaternion);
     }
     get id() {
         return this.#id;
+    }
+    getParentId() {
+        return this.#parentId;
     }
     get name() {
         return this.#name;
@@ -36847,7 +36887,7 @@ class SourceModel {
         const seq = await this.mdl.getSequence(animationName);
         const bones = this.mdl.getBones();
         for (const mdlBone of bones) {
-            animation.addBone(new AnimationBone(mdlBone.boneId, mdlBone.name, mdlBone.position, mdlBone.quaternion));
+            animation.addBone(new AnimationBone(mdlBone.boneId, mdlBone.parentBone, mdlBone.name, mdlBone.position, mdlBone.quaternion));
         }
         if (seq) {
             //const t = Studio_Duration(seq.mdl, seq.id, []);
@@ -56415,7 +56455,7 @@ class Source2SpringMeteor extends Source2Material {
 Source2MaterialLoader.registerMaterial('spring_meteor.vfx', Source2SpringMeteor);
 
 class Source2SpriteCard extends Source2Material {
-    #texturePath;
+    #texturePath = '';
     constructor(repository, source2File) {
         super(repository, source2File);
         //TODO: we should adapt transparency depending on particle renderer params ?

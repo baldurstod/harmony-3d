@@ -3,6 +3,7 @@ import { AnimationFrameData, AnimationFrameDataType, AnimationFrameDataTypes } f
 export class AnimationFrame {
 	#frameId: number;
 	#datas = new Map<string, AnimationFrameData>();
+
 	constructor(frameId: number) {
 		this.#frameId = frameId;
 	}
@@ -16,7 +17,11 @@ export class AnimationFrame {
 		frameDatas?.pushData(data);
 	}
 
-	getData(name: string) {
+	getData(name: string): AnimationFrameData | undefined {
 		return this.#datas.get(name);
+	}
+
+	getFrameId(): number {
+		return this.#frameId;
 	}
 }

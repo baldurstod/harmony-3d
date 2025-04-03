@@ -139,13 +139,13 @@ export class SourceModel {
 		return null;
 	}
 
-	async getAnimation(animationName: string, entity: Source1ModelInstance) {
+	async getAnimation(animationName: string, entity: Source1ModelInstance): Promise<Animation> {
 		const animation = new Animation(animationName);
 		const seq = await this.mdl.getSequence(animationName);
 		const bones = this.mdl.getBones();
 
 		for (const mdlBone of bones) {
-			animation.addBone(new AnimationBone(mdlBone.boneId, mdlBone.name, mdlBone.position, mdlBone.quaternion));
+			animation.addBone(new AnimationBone(mdlBone.boneId, mdlBone.parentBone, mdlBone.name, mdlBone.position, mdlBone.quaternion));
 		}
 
 		if (seq) {
