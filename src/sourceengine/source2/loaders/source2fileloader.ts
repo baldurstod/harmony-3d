@@ -6,13 +6,13 @@ import { Source2BlockLoader } from './source2blockloader';
 import { DEBUG, TESTING } from '../../../buildoptions';
 
 export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make singleton ???
-	vtex;
-	constructor(vtex?) {
+	vtex: boolean;
+	constructor(vtex: boolean = false) {
 		super();
 		this.vtex = vtex;
 	}
 
-	async parse(repository, fileName, arrayBuffer): Promise<Source2File> {
+	async parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File> {
 		let reader = new BinaryReader(arrayBuffer);
 
 		let file = new Source2File(repository, fileName);
@@ -24,7 +24,7 @@ export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make single
 		return file;
 	}
 
-	async #parseHeader(reader, file, parseVtex) {
+	async #parseHeader(reader: BinaryReader, file: Source2File, parseVtex: boolean) {
 		let startOffset = reader.tell();
 		file.fileLength = reader.getUint32();
 		file.versionMaj = reader.getUint16();

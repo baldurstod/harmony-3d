@@ -5,7 +5,7 @@ import { VTEX_FORMAT_DXT1, VTEX_FORMAT_DXT5, VTEX_FORMAT_R8G8B8A8_UINT, VTEX_FOR
 import { DEBUG } from '../../../buildoptions';
 import { Source2FileBlock } from './source2fileblock';
 
-const VTEX_TO_INTERNAL_IMAGE_FORMAT = {};
+const VTEX_TO_INTERNAL_IMAGE_FORMAT: { [key: number]: number } = {};
 VTEX_TO_INTERNAL_IMAGE_FORMAT[VTEX_FORMAT_DXT1] = TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1;
 VTEX_TO_INTERNAL_IMAGE_FORMAT[VTEX_FORMAT_DXT5] = TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5;
 VTEX_TO_INTERNAL_IMAGE_FORMAT[VTEX_FORMAT_R8] = TEXTURE_FORMAT_UNCOMPRESSED_R8;
@@ -48,6 +48,11 @@ export class Source2File {
 	// some blocks (MBUF, MDAT) may have multiple occurences that can be accessed via blocksArray
 	blocks: any = {};
 	blocksArray: Array<Source2FileBlock> = [];
+	fileLength: number = 0;
+	versionMaj: number = 0;
+	versionMin: number = 0;
+	maxBlockOffset: number = 0;
+
 	constructor(repository: string, fileName: string) {
 		this.repository = repository;
 		this.fileName = fileName;

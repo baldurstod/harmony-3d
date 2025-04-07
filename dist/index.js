@@ -20108,6 +20108,10 @@ class Source2File {
     // some blocks (MBUF, MDAT) may have multiple occurences that can be accessed via blocksArray
     blocks = {};
     blocksArray = [];
+    fileLength = 0;
+    versionMaj = 0;
+    versionMin = 0;
+    maxBlockOffset = 0;
     constructor(repository, fileName) {
         this.repository = repository;
         this.fileName = fileName;
@@ -22699,7 +22703,7 @@ function loadVtexCubemapRadiance(reader, block, offset, size) {
 
 class Source2FileLoader extends SourceBinaryLoader {
     vtex;
-    constructor(vtex) {
+    constructor(vtex = false) {
         super();
         this.vtex = vtex;
     }

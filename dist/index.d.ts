@@ -6996,6 +6996,10 @@ declare class Choreography {
              fileName: string;
              blocks: any;
              blocksArray: Array<Source2FileBlock>;
+             fileLength: number;
+             versionMaj: number;
+             versionMin: number;
+             maxBlockOffset: number;
              constructor(repository: string, fileName: string);
              addBlock(block: Source2FileBlock): void;
              getBlockByType(type: any): any;
@@ -7025,7 +7029,7 @@ declare class Choreography {
              getExternalFiles(): any;
              getExternalFile(fileIndex: any): any;
              getKeyValue(path: any): any;
-             get imageFormat(): any;
+             get imageFormat(): number;
              get displayName(): string;
              getRemappingTable(meshIndex: any): any;
              remapBuffer(buffer: any, remappingTable: any): Float32Array<ArrayBuffer>;
@@ -7056,9 +7060,9 @@ declare class Choreography {
 
          export declare class Source2FileLoader extends SourceBinaryLoader {
              #private;
-             vtex: any;
-             constructor(vtex?: any);
-             parse(repository: any, fileName: any, arrayBuffer: any): Promise<Source2File>;
+             vtex: boolean;
+             constructor(vtex?: boolean);
+             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File>;
          }
 
          export declare class Source2Generic extends Source2Material {
