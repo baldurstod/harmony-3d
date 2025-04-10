@@ -57,7 +57,7 @@ export class Source2Animation {
 		for (let i = 0; i < this.#animArray.length; i++) {
 			let anim = this.#animArray[i];
 			animations.add(anim.m_name);
-			for (let activity of anim.m_activityArray) {
+			for (let activity of anim.m_activityArray ?? []) {
 				animations.add(activity.m_name);
 			}
 		}
@@ -77,7 +77,7 @@ export class Source2Animation {
 			}
 			let matchingActivity = false;
 			let unmatchingModifiers = 0;
-			for (let activity of anim.m_activityArray) {
+			for (let activity of anim.m_activityArray ?? []) {
 				if (activity.m_name == activityName) {
 					matchingActivity = true;
 				}
@@ -96,7 +96,7 @@ export class Source2Animation {
 			if (matchingActivity) {
 				for (let activityModifier of activityModifiers) {
 					let modifierMatching = false;
-					for (let activity of anim.m_activityArray) {
+					for (let activity of anim.m_activityArray ?? []) {
 						if (activity.m_name == activityModifier) {
 							modifierMatching = true;
 							break;
