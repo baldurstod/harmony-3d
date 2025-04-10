@@ -125,9 +125,6 @@ async function _initChildren(repository, systemArray, kv3Array, snapshotModifier
 
 export const Source2ParticleLoader = new (function () {
 	class Source2ParticleLoader {
-		constructor() {
-		}
-
 		load(repository, fileName) {
 			let promise = new Promise((resolve, reject) => {
 				fileName = fileName.replace(/.vpcf_c/, '');
