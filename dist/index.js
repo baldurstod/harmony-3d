@@ -18889,7 +18889,7 @@ class RepositoryEntry {
         do {
             current = stack.pop();
             if (current && !childs.has(current)) {
-                if (filter && current.#matchFilter(filter)) {
+                if ((filter === undefined) || current.#matchFilter(filter)) {
                     childs.add(current);
                 }
                 for (const [_, child] of current.#childs) {
@@ -18967,7 +18967,11 @@ class MergeRepository {
     #repositories = [];
     constructor(name, ...repositories) {
         this.#name = name;
-        this.#repositories = [...repositories];
+        for (const repo of repositories) {
+            if (repo) {
+                this.#repositories.push(repo);
+            }
+        }
     }
     get name() {
         return this.#name;

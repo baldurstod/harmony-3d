@@ -6913,12 +6913,12 @@ declare class Choreography {
              loadAnimGroup(source2Model: any, repository: any, animGroupName: any): Promise<Source2AnimGroup>;
              getVagrp(repository: any, animGroupName: any, animGroup: any): Promise<boolean>;
              loadAnim(repository: any, animName: any, animGroup: any): Promise<Source2Animation>;
-             "__#37707@#getVanim"(repository: any, animName: any, anim: any): Promise<boolean>;
-             "__#37707@#loadVagrp"(repository: any, fileName: any, animGroup: any): Promise<void>;
-             "__#37707@#loadVanim"(repository: any, fileName: any, anim: any): Promise<void>;
+             "__#242@#getVanim"(repository: any, animName: any, anim: any): Promise<boolean>;
+             "__#242@#loadVagrp"(repository: any, fileName: any, animGroup: any): Promise<void>;
+             "__#242@#loadVanim"(repository: any, fileName: any, anim: any): Promise<void>;
              loadSequenceGroup(repository: any, seqGroupName: any, animGroup: any): Promise<Source2SeqGroup>;
-             "__#37707@#getVseq"(repository: any, seqGroupName: any, seqGroup: any): Promise<boolean>;
-             "__#37707@#loadVseq"(repository: any, fileName: any, seqGroup: any): Promise<void>;
+             "__#242@#getVseq"(repository: any, seqGroupName: any, seqGroup: any): Promise<boolean>;
+             "__#242@#loadVseq"(repository: any, fileName: any, seqGroup: any): Promise<void>;
          };
 
          export declare class Source2Crystal extends Source2Material {

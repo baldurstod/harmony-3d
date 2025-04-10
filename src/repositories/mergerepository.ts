@@ -3,9 +3,14 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
 export class MergeRepository implements Repository {
 	#name: string;
 	#repositories: Array<Repository> = [];
+
 	constructor(name: string, ...repositories: Array<Repository>) {
 		this.#name = name;
-		this.#repositories = [...repositories];
+		for (const repo of repositories) {
+			if (repo) {
+				this.#repositories.push(repo);
+			}
+		}
 	}
 
 	get name() {
@@ -57,7 +62,7 @@ export class MergeRepository implements Repository {
 		for (const repository of this.#repositories) {
 			const response = await repository.getFileList(filter);
 			if (!response.error) {
-				root.merge(response.root);
+				root.merge(response.root!);
 			}
 		}
 		return { root: root };
