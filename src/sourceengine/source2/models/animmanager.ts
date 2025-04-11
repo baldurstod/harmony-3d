@@ -1,16 +1,18 @@
 import { getLoader } from '../../../loaders/loaderfactory';
+import { loadAnim, loadAnimGroup, loadSequenceGroup } from '../loaders/source2animloader';
+import { Source2AnimGroup } from './source2animgroup';
 
 export const AnimManager = new (function () {
-	let animGroupList = {};
+	let animGroupList: { [key: string]: Source2AnimGroup } = {};
 	let seqGroupList = {};
 	let animList = Object.create(null);
 	class AnimManager {
 
-		getAnimGroup(source2Model, repository, animGroupName) {
-			var animGroup = animGroupList[animGroupName];
+		async getAnimGroup(source2Model, repository, animGroupName) {
+			let animGroup = animGroupList[animGroupName];
 			if (!animGroup) {
 
-				animGroup = getLoader('Source2AnimLoader').loadAnimGroup(source2Model, repository, animGroupName);
+				animGroup = await loadAnimGroup(source2Model, repository, animGroupName);
 			}
 			if (animGroup) {
 				animGroupList[animGroupName] = animGroup;
@@ -43,7 +45,7 @@ export const AnimManager = new (function () {
 		getAnim(repository, animName, animGroup) {
 			let anim = animList[animName];
 			if (anim === undefined) {
-				getLoader('Source2AnimLoader') as Source2AnimLoader.loadAnim(repository, animName, animGroup).then(
+				loadAnim(repository, animName, animGroup).then(
 					anim => animList[animName] = anim
 				)
 				return null;
@@ -56,10 +58,10 @@ export const AnimManager = new (function () {
 			animList[animName] = null;
 		}
 
-		getSequenceGroup(repository, seqGroupName, animGroup) {
+		getSequenceGroup(repository: string, seqGroupName: string, animGroup: Source2AnimGroup) {
 			var seqGroup = seqGroupList[seqGroupName];
 			if (!seqGroup) {
-				seqGroup = getLoader('Source2AnimLoader').loadSequenceGroup(repository, seqGroupName, animGroup);
+				seqGroup = loadSequenceGroup(repository, seqGroupName, animGroup);
 			}
 			if (seqGroup) {
 				seqGroupList[seqGroupName] = seqGroup;

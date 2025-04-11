@@ -12,6 +12,7 @@ export class Source2AnimGroup {
 	decodeKey;
 	directHSeqGroup;
 	loaded = false;
+
 	constructor(source2Model, repository: string) {
 		//TODO: remove repository param. redundant with model
 		this.#source2Model = source2Model;
