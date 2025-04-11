@@ -41,48 +41,6 @@ async function getVagrp(repository: string, animGroupName: string, animGroup: So
 
 }
 
-export async function loadAnim(repository: string, animName: string, animGroup: Source2AnimGroup) {
-	animName = animName.toLowerCase();
-	animName = animName.replace(/\.(vanim_c$|vanim$)/, '');
-	//this.fileName = animName;
-	//animName = repository + animName;
-	//this.animName = animName;
-
-	let anim = new Source2Animation(animGroup, animName);
-	await getVanim(repository, animName, anim);
-
-	return anim;
-}
-
-async function getVanim(repository: string, animName: string, anim: Source2Animation) {
-	var animFile = animName + '.vanim_c';
-	if (pending[animFile]) {
-		return true;
-	}
-	pending[animFile] = true;
-	/*
-				fetch(new Request(animFile)).then((response) => {
-					response.arrayBuffer().then((arrayBuffer) => {
-						this.loadVanim(repository, animFile, arrayBuffer, anim);
-					})
-				});
-				*/
-
-	loadVanim(repository, animFile, anim);
-	/*
-	let promise = new Promise((resolve, reject) => {
-		fetch(new Request(animFile)).then((response) => {
-			response.arrayBuffer().then(async (arrayBuffer) => {
-				this.loadVanim(repository, animFile, arrayBuffer, anim);
-				pending[animFile] = null;
-				resolve(true);
-			})
-		});
-	});
-	*/
-	return true;
-}
-
 async function loadVagrp(repository: string, fileName: string, animGroup: Source2AnimGroup) {
 	let vagrp = await new Source2FileLoader().load(repository, fileName) as Source2File;
 	if (vagrp) {
@@ -104,56 +62,4 @@ async function loadVagrp(repository: string, fileName: string, animGroup: Source
 		}
 	}
 	//this.fileLoaded(model);TODOv3
-}
-
-async function loadVanim(repository: string, fileName: string, anim: Source2Animation) {
-	let vanim = await new Source2FileLoader().load(repository, fileName) as Source2File;
-	if (vanim) {
-		anim.setFile(vanim);
-		let dataBlock = vanim.blocks.DATA;
-		if (dataBlock) {
-			anim.setAnimDatas(vanim.getBlockStruct('DATA.structs.AnimationResourceData_t') || vanim.getBlockStruct('DATA.keyValue.root'));
-		}
-	}
-	//this.fileLoaded(model);TODOv3
-}
-
-export async function loadSequenceGroup(repository: string, seqGroupName: string, animGroup: Source2AnimGroup) {
-	repository = repository.toLowerCase();
-	seqGroupName = seqGroupName.replace(/\.(vseq_c$|vseq)/, '');
-	//seqGroupName = repository + seqGroupName;
-
-	let seqGroup = new Source2SeqGroup(animGroup);
-	await getVseq(repository, seqGroupName, seqGroup);
-
-	return seqGroup;
-}
-
-async function getVseq(repository: string, seqGroupName: string, seqGroup: Source2SeqGroup) {
-	var seqFile = seqGroupName + '.vseq_c';
-	if (pending[seqFile]) {
-		return true;
-	}
-	pending[seqFile] = true;
-
-	await loadVseq(repository, seqFile, seqGroup);
-	/*
-	let promise = new Promise((resolve, reject) => {
-		fetch(new Request(seqFile)).then((response) => {
-			response.arrayBuffer().then(async (arrayBuffer) => {
-				await this.loadVseq(repository, seqFile, arrayBuffer, seqGroup);
-				pending[seqFile] = null;
-				resolve(true);
-			})
-		});
-	});
-	*/
-	return true;
-}
-
-async function loadVseq(repository: string, fileName: string, seqGroup: Source2SeqGroup) {
-	let vseq = await new Source2FileLoader().load(repository, fileName);
-	if (vseq) {
-		seqGroup.setFile(vseq);
-	}
 }
