@@ -3471,6 +3471,8 @@ declare class Choreography {
              setSegments(positions: any, colors?: any): void;
          }
 
+         export declare function loadAnimGroup(source2Model: Source2Model, repository: string, animGroupName: string): Promise<Source2AnimGroup>;
+
          declare interface Lockable {
              isLockable: true;
              setLocked: (locked: boolean) => void;
@@ -6861,7 +6863,7 @@ declare class Choreography {
              constructor(animGroup: any, filePath: any);
              setFile(sourceFile: any): void;
              setAnimDatas(data: any): void;
-             getAnimDesc(name: any): any;
+             getAnimDesc(name: string): Source2AnimationDesc | undefined;
              getDecodeKey(): any;
              getDecoderArray(): any;
              getSegment(segmentIndex: any): any;
@@ -6869,7 +6871,24 @@ declare class Choreography {
              getAnimationByActivity(activityName: any, activityModifiers: any): any[];
              getAnimationsByActivity(activityName: any): any[];
              get animArray(): any;
-             getAnimationByName(animName: any): any;
+             getAnimationByName(animName: any): Source2AnimationDesc;
+         }
+
+         declare class Source2AnimationDesc {
+             #private;
+             data: any;
+             animationResource: any;
+             frameBlockArray: any;
+             constructor(source2Model: any, data: any, animationResource: any);
+             get fps(): any;
+             get lastFrame(): any;
+             getFrame(frameIndex: any): any;
+             readSegment(frameIndex: any, segment: any, boneArray: any, dataChannelArray: any, decodeArray: any): void;
+             matchActivity(activityName: any): boolean;
+             getActivityName(): any;
+             hasModifiers(): boolean;
+             modifiersScore(activityName: any, modifiers: any): number;
+             matchModifiers(activityName: any, modifiers: any): boolean;
          }
 
          declare class Source2Animations {
@@ -6892,34 +6911,17 @@ declare class Choreography {
              constructor(source2Model: any, repository: string);
              setFile(sourceFile: any): void;
              setAnimationGroupResourceData(localAnimArray: any, decodeKey: any): void;
-             getAnim(animIndex: any): any;
-             getAnimDesc(name: any): any;
+             getAnim(animIndex: number): any;
+             getAnimDesc(name: string): Source2AnimationDesc | undefined;
              matchActivity(activity: any, modifiers: any): any;
              getAnims(): Set<Source2Animation>;
              getAnimationsByActivity(activityName: any): any[];
              getDecodeKey(): any;
              get source2Model(): any;
-             getAnimationByName(animName: any): any;
-             set _changemyname(_changemyname: any[]);
-             get _changemyname(): any[];
+             getAnimationByName(animName: string): Source2AnimationDesc;
+             set _changemyname(_changemyname: Source2Animation[]);
+             get _changemyname(): Source2Animation[];
          }
-
-         export declare const Source2AnimLoader: {
-             loadingSlot: number;
-             pending: {};
-             fileName: string;
-             animGroupName: string;
-             animName: string;
-             loadAnimGroup(source2Model: any, repository: any, animGroupName: any): Promise<Source2AnimGroup>;
-             getVagrp(repository: any, animGroupName: any, animGroup: any): Promise<boolean>;
-             loadAnim(repository: any, animName: any, animGroup: any): Promise<Source2Animation>;
-             "__#242@#getVanim"(repository: any, animName: any, anim: any): Promise<boolean>;
-             "__#242@#loadVagrp"(repository: any, fileName: any, animGroup: any): Promise<void>;
-             "__#242@#loadVanim"(repository: any, fileName: any, anim: any): Promise<void>;
-             loadSequenceGroup(repository: any, seqGroupName: any, animGroup: any): Promise<Source2SeqGroup>;
-             "__#242@#getVseq"(repository: any, seqGroupName: any, seqGroup: any): Promise<boolean>;
-             "__#242@#loadVseq"(repository: any, fileName: any, seqGroup: any): Promise<void>;
-         };
 
          export declare class Source2Crystal extends Source2Material {
              setupUniformsOnce(): void;
@@ -7163,7 +7165,6 @@ declare class Choreography {
              geometries: Set<unknown>;
              bodyParts: Map<any, any>;
              attachements: Map<any, any>;
-             seqGroup: any;
              bodyGroups: Set<string>;
              bodyGroupsChoices: Set<BodyGroupChoice>;
              constructor(repository: string, vmdl: any);
@@ -7178,11 +7179,11 @@ declare class Choreography {
              getIncludeModels(): any;
              addIncludeModel(includeModel: any): void;
              getAnim(activityName: any, activityModifiers: any): any;
-             getAnimation(name: any): any;
+             getAnimation(name: string): Source2AnimationDesc | undefined;
              getAnimationsByActivity(activityName: any, animations?: Source2Animations): Source2Animations;
              getAnimations(): Promise<Set<string>>;
              _addAttachements(attachements: any): void;
-             getAnimationByName(animName: any): any;
+             getAnimationByName(animName: any): Source2AnimationDesc;
          }
 
          export declare class Source2ModelInstance extends Entity implements Animated {
@@ -7211,10 +7212,10 @@ declare class Choreography {
              get skin(): number;
              setLOD(lod: number): void;
              setPoseParameter(paramName: any, paramValue: any): void;
-             playSequence(activity: any, activityModifiers?: any[]): void;
+             playSequence(activity: string, activityModifiers?: Array<string>): void;
              playAnimation(name: any): void;
              setAnimation(id: number, name: string, weight: number): Promise<void>;
-             setActivityModifiers(activityModifiers?: any[]): void;
+             setActivityModifiers(activityModifiers?: Array<string>): void;
              update(scene: any, camera: any, delta: any): void;
              getAnimations(): Promise<Set<string>>;
              buildContextMenu(): {
@@ -7682,23 +7683,6 @@ declare class Choreography {
              maxForce: vec3;
              _paramChanged(paramName: any, value: any): void;
              doForce(particle: any, elapsedTime: any, accumulatedForces: any): void;
-         }
-
-         declare class Source2SeqGroup {
-             #private;
-             sequences: any[];
-             file: any;
-             m_localS1SeqDescArray: any;
-             animArray: any;
-             loaded: boolean;
-             constructor(animGroup: any);
-             setFile(sourceFile: any): void;
-             getAnimDesc(name: any): any;
-             matchActivity(activity: any, modifiers: any): any;
-             getAnimationsByActivity(activityName: any): any[];
-             getDecodeKey(): any;
-             getDecoderArray(): any;
-             get localSequenceNameArray(): any;
          }
 
          export declare class Source2SetControlPointPositions extends Operator {

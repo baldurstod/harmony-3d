@@ -70,7 +70,7 @@ export class Source2AnimGroup {
 		if (localAnimArray) {
 			for (const localAnim of localAnimArray) {
 				const anim = getAnim(this.repository, localAnim, this);
-				console.info(anim);
+				//console.info(anim);
 			}
 		}
 	}
@@ -238,11 +238,17 @@ async function loadVseq(repository: string, fileName: string, seqGroup: Source2S
 
 
 let animList = {};
-function getAnim(repository, animName, animGroup) {
+function getAnim(repository: string, animName: string, animGroup: Source2AnimGroup) {
+	if (!animName) {
+		return "";
+	}
 	let anim = animList[animName];
 	if (anim === undefined) {
 		loadAnim(repository, animName, animGroup).then(
-			anim => animList[animName] = anim
+			anim => {
+				animList[animName] = anim;
+				animGroup._changemyname.push(anim);
+			}
 		)
 		return null;
 	} else {

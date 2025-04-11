@@ -23073,17 +23073,14 @@ class Source2ModelInstance extends Entity {
         this.poseParameters[paramName] = paramValue;
     }
     playSequence(activity, activityModifiers = []) {
-        this.activityModifiers.clear();
         this.activity = activity;
-        for (let modifier of activityModifiers) {
-            this.activityModifiers.add(modifier);
-        }
+        this.setActivityModifiers(activityModifiers);
     }
     playAnimation(name) {
         this.#animName = name;
     }
     async setAnimation(id, name, weight) {
-        throw 'code me';
+        this.#animName = name;
     }
     setActivityModifiers(activityModifiers = []) {
         this.activityModifiers.clear();
@@ -23378,22 +23375,23 @@ class Source2AnimationDesc {
         var decodeKey = this.animationResource.getDecodeKey();
         var decodeArray = this.animationResource.getDecoderArray();
         var boneArray = [];
-        /*		let fetch = this.data?.m_fetch;
-                if (fetch) {
-                    let localReferenceArray = fetch.m_localReferenceArray;
-                    //TODO: mix multiple anims
-                    if (localReferenceArray[0] !== undefined) {
-                        let animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
-                        if (animName) {
-                            //console.log(localReference);
-                            let animDesc = this.#source2Model.getAnimationByName(animName);
-                            if (animDesc) {
-                                return animDesc.getFrame(frameIndex);
-                            }
-                        }
-                        return [];
+        /*
+        let fetch = this.data?.m_fetch;
+        if (fetch) {
+            let localReferenceArray = fetch.m_localReferenceArray;
+            //TODO: mix multiple anims
+            if (localReferenceArray[0] !== undefined) {
+                let animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
+                if (animName) {
+                    //console.log(localReference);
+                    let animDesc = this.#source2Model.getAnimationByName(animName);
+                    if (animDesc) {
+                        return animDesc.getFrame(frameIndex);
                     }
-                }*/
+                }
+                return [];
+            }
+        }*/
         let actualAnimDesc = this.#getActualAnimDesc();
         if (actualAnimDesc) {
             return actualAnimDesc.getFrame(frameIndex);
@@ -23680,7 +23678,7 @@ class Source2Animation {
     }
     setAnimDatas(data) {
         if (data) {
-            this.#animArray = data.m_animArray;
+            this.#animArray = data.m_animArray ?? [];
             //console.error('data.m_animArray', data.m_animArray);
             this.decoderArray = data.m_decoderArray;
             this.segmentArray = data.m_segmentArray;
@@ -23757,7 +23755,7 @@ class Source2Animation {
                     }
                 }
                 if (unmatchingModifiers < bestScore) {
-                    let animDesc = this.#animNames[anim.m_name];
+                    let animDesc = this.#animNames.get(anim.m_name);
                     if (animDesc) {
                         bestMatch = animDesc;
                         bestScore = unmatchingModifiers;
@@ -23788,213 +23786,6 @@ class Source2Animation {
                 return anim;
             }
         }*/
-    }
-}
-
-const AnimManager = new (function () {
-    let animGroupList = Object.create(null);
-    let seqGroupList = {};
-    let animList = Object.create(null);
-    class AnimManager {
-        getAnimGroup(source2Model, repository, animGroupName) {
-            var animGroup = animGroupList[animGroupName];
-            if (!animGroup) {
-                animGroup = getLoader('Source2AnimLoader').loadAnimGroup(source2Model, repository, animGroupName);
-            }
-            if (animGroup) {
-                animGroupList[animGroupName] = animGroup;
-            }
-            else {
-                //TODO; create dummy
-                console.error('No anim group loaded');
-            }
-            return animGroup;
-        }
-        removeAnimGroup(animGroupName) {
-            animGroupList[animGroupName] = null;
-        }
-        /*async getAnim(repository, animName, animGroup) {
-            var anim = animList[animName];
-            if (!anim/* || anim.isInitialized()* /) {
-                anim = await getLoader('Source2AnimLoader').loadAnim(repository, animName, animGroup);
-            }
-            if (anim) {
-                animList[animName] = anim;
-                return anim;//.isLoaded() ? anim : null;
-            } else {
-                //TODO; create dummy
-                console.error("No anim loaded");
-                return null;
-            }
-        }*/
-        getAnim(repository, animName, animGroup) {
-            var anim = animList[animName];
-            if (anim === undefined) {
-                getLoader('Source2AnimLoader').loadAnim(repository, animName, animGroup).then((anim) => animList[animName] = anim);
-                return null;
-            }
-            else {
-                return anim;
-            }
-        }
-        removeAnim(animName) {
-            animList[animName] = null;
-        }
-        getSequenceGroup(repository, seqGroupName, animGroup) {
-            var seqGroup = seqGroupList[seqGroupName];
-            if (!seqGroup) {
-                seqGroup = getLoader('Source2AnimLoader').loadSequenceGroup(repository, seqGroupName, animGroup);
-            }
-            if (seqGroup) {
-                seqGroupList[seqGroupName] = seqGroup;
-            }
-            else {
-                //TODO; create dummy
-                console.error('No anim group loaded');
-            }
-            return seqGroup;
-        }
-    }
-    return AnimManager;
-}());
-
-class Source2AnimGroup {
-    #source2Model;
-    #_changemyname = [];
-    repository;
-    file;
-    decoderArray;
-    localAnimArray;
-    decodeKey;
-    directHSeqGroup;
-    loaded = false;
-    constructor(source2Model, repository) {
-        //TODO: remove repository param. redundant with model
-        this.#source2Model = source2Model;
-        this.repository = repository;
-    }
-    setFile(sourceFile) {
-        this.file = sourceFile;
-        let localAnimArray;
-        let decodeKey;
-        let animationGroupData = sourceFile.getBlockStruct('DATA.structs.AnimationGroupResourceData_t');
-        let directHSeqGroup;
-        if (animationGroupData) {
-            localAnimArray = animationGroupData.m_localHAnimArray;
-            decodeKey = animationGroupData.m_decodeKey;
-            directHSeqGroup = animationGroupData.m_directHSeqGroup;
-        }
-        else {
-            localAnimArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localHAnimArray');
-            decodeKey = sourceFile.getBlockStruct('DATA.keyValue.root.m_decodeKey');
-            directHSeqGroup = sourceFile.getBlockStruct('DATA.keyValue.root.m_directHSeqGroup');
-        }
-        this.decoderArray = sourceFile.getBlockStruct('ANIM.keyValue.root.m_decoderArray');
-        if (directHSeqGroup) {
-            (async () => {
-                this.directHSeqGroup = await AnimManager.getSequenceGroup(this.repository, directHSeqGroup, this);
-            })();
-        }
-        this.setAnimationGroupResourceData(localAnimArray, decodeKey);
-        let anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
-        if (anims) {
-            let loadedAnim = new Source2Animation(this, '');
-            loadedAnim.setAnimDatas(anims);
-            this._changemyname = this._changemyname || [];
-            this._changemyname.push(loadedAnim);
-            /*let m_animArray = anims.m_animArray;
-            for (let i = 0; i < m_animArray.length; i++) {
-            }*/
-        }
-        this.loaded = true;
-    }
-    setAnimationGroupResourceData(localAnimArray, decodeKey) {
-        this.localAnimArray = localAnimArray;
-        this.decodeKey = decodeKey;
-        this.getAnim(0);
-    }
-    getAnim(animIndex) {
-        if (this.localAnimArray && this.localAnimArray[animIndex]) {
-            return AnimManager.getAnim(this.repository, this.localAnimArray[animIndex], this);
-        }
-        return null;
-    }
-    getAnimDesc(name) {
-        let animation;
-        for (const a of this.#_changemyname) {
-            animation = a.getAnimDesc(name);
-            if (animation) {
-                return animation;
-            }
-        }
-    }
-    matchActivity(activity, modifiers) {
-        if (this.directHSeqGroup) {
-            return this.directHSeqGroup.matchActivity(activity, modifiers);
-        }
-    }
-    getAnims() {
-        let anims = new Set();
-        for (let anim of this._changemyname) {
-            if (anim) {
-                anims.add(anim);
-            }
-        }
-        if (this.localAnimArray) {
-            for (let animName of this.localAnimArray) {
-                if (animName) {
-                    let anim = AnimManager.getAnim(this.repository, animName, this);
-                    if (anim) {
-                        anims.add(anim);
-                    }
-                }
-            }
-        }
-        return anims;
-    }
-    getAnimationsByActivity(activityName) {
-        let anims = [];
-        for (let anim of this._changemyname) {
-            if (anim) {
-                anims.push(...anim.getAnimationsByActivity(activityName));
-            }
-        }
-        if (this.localAnimArray) {
-            for (let animName of this.localAnimArray) {
-                if (animName) {
-                    let anim = AnimManager.getAnim(this.repository, animName, this);
-                    if (anim) {
-                        anims.push(...anim.getAnimationsByActivity(activityName));
-                    }
-                }
-            }
-        }
-        if (this.directHSeqGroup) {
-            anims.push(...this.directHSeqGroup.getAnimationsByActivity(activityName));
-        }
-        return anims;
-    }
-    getDecodeKey() {
-        return this.decodeKey;
-    }
-    get source2Model() {
-        return this.#source2Model;
-    }
-    getAnimationByName(animName) {
-        //return this.#internalAnimGroup?.getAnimationByName(animName);
-        for (let source2Animation of this.getAnims()) {
-            let anim = source2Animation.getAnimationByName(animName);
-            if (anim) {
-                return anim;
-            }
-        }
-    }
-    //TODO: remove setter and getter
-    set _changemyname(_changemyname) {
-        this.#_changemyname = _changemyname;
-    }
-    get _changemyname() {
-        return this.#_changemyname;
     }
 }
 
@@ -24098,11 +23889,13 @@ class Source2SeqGroup {
         if (anims) {
             let loadedAnim = new Source2Animation(this, '');
             loadedAnim.setAnimDatas(anims);
+            this.#animGroup._changemyname = this.#animGroup._changemyname || [];
+            this.#animGroup._changemyname.push(loadedAnim);
         }
         this.loaded = true;
     }
     getAnimDesc(name) {
-        return this.#animNames[name];
+        return this.#animNames.get(name);
     }
     #processSeqDesc(m_localS1SeqDescArray, localSequenceNameArray) {
         if (m_localS1SeqDescArray) {
@@ -24156,6 +23949,332 @@ class Source2SeqGroup {
         return this.#localSequenceNameArray;
     }
 }
+
+class Source2AnimGroup {
+    #source2Model;
+    #_changemyname = [];
+    repository;
+    file;
+    decoderArray;
+    localAnimArray;
+    decodeKey;
+    directHSeqGroup;
+    loaded = false;
+    constructor(source2Model, repository) {
+        //TODO: remove repository param. redundant with model
+        this.#source2Model = source2Model;
+        this.repository = repository;
+    }
+    setFile(sourceFile) {
+        this.file = sourceFile;
+        let localAnimArray;
+        let decodeKey;
+        let animationGroupData = sourceFile.getBlockStruct('DATA.structs.AnimationGroupResourceData_t');
+        let directHSeqGroup;
+        if (animationGroupData) {
+            localAnimArray = animationGroupData.m_localHAnimArray;
+            decodeKey = animationGroupData.m_decodeKey;
+            directHSeqGroup = animationGroupData.m_directHSeqGroup;
+        }
+        else {
+            localAnimArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localHAnimArray');
+            decodeKey = sourceFile.getBlockStruct('DATA.keyValue.root.m_decodeKey');
+            directHSeqGroup = sourceFile.getBlockStruct('DATA.keyValue.root.m_directHSeqGroup');
+        }
+        this.decoderArray = sourceFile.getBlockStruct('ANIM.keyValue.root.m_decoderArray');
+        if (directHSeqGroup) {
+            (async () => {
+                this.directHSeqGroup = await getSequenceGroup(this.repository, directHSeqGroup, this);
+            })();
+        }
+        this.setAnimationGroupResourceData(localAnimArray, decodeKey);
+        let anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
+        if (anims) {
+            let loadedAnim = new Source2Animation(this, '');
+            loadedAnim.setAnimDatas(anims);
+            this._changemyname = this._changemyname || [];
+            this._changemyname.push(loadedAnim);
+            /*let m_animArray = anims.m_animArray;
+            for (let i = 0; i < m_animArray.length; i++) {
+            }*/
+        }
+        this.loaded = true;
+    }
+    setAnimationGroupResourceData(localAnimArray, decodeKey) {
+        this.localAnimArray = localAnimArray;
+        this.decodeKey = decodeKey;
+        //this.getAnim(0);
+        if (localAnimArray) {
+            for (const localAnim of localAnimArray) {
+                getAnim(this.repository, localAnim, this);
+                //console.info(anim);
+            }
+        }
+    }
+    getAnim(animIndex) {
+        if (this.localAnimArray && this.localAnimArray[animIndex]) {
+            return getAnim(this.repository, this.localAnimArray[animIndex], this);
+        }
+        return null;
+    }
+    getAnimDesc(name) {
+        let animation;
+        for (const a of this.#_changemyname) {
+            animation = a.getAnimDesc(name);
+            if (animation) {
+                return animation;
+            }
+        }
+    }
+    matchActivity(activity, modifiers) {
+        if (this.directHSeqGroup) {
+            return this.directHSeqGroup.matchActivity(activity, modifiers);
+        }
+    }
+    getAnims() {
+        let anims = new Set();
+        for (let anim of this._changemyname) {
+            if (anim) {
+                anims.add(anim);
+            }
+        }
+        if (this.localAnimArray) {
+            for (let animName of this.localAnimArray) {
+                if (animName) {
+                    let anim = getAnim(this.repository, animName, this);
+                    if (anim) {
+                        anims.add(anim);
+                    }
+                }
+            }
+        }
+        return anims;
+    }
+    getAnimationsByActivity(activityName) {
+        let anims = [];
+        for (let anim of this._changemyname) {
+            if (anim) {
+                anims.push(...anim.getAnimationsByActivity(activityName));
+            }
+        }
+        if (this.localAnimArray) {
+            for (let animName of this.localAnimArray) {
+                if (animName) {
+                    let anim = getAnim(this.repository, animName, this);
+                    if (anim) {
+                        anims.push(...anim.getAnimationsByActivity(activityName));
+                    }
+                }
+            }
+        }
+        if (this.directHSeqGroup) {
+            anims.push(...this.directHSeqGroup.getAnimationsByActivity(activityName));
+        }
+        return anims;
+    }
+    getDecodeKey() {
+        return this.decodeKey;
+    }
+    get source2Model() {
+        return this.#source2Model;
+    }
+    getAnimationByName(animName) {
+        //return this.#internalAnimGroup?.getAnimationByName(animName);
+        for (let source2Animation of this.getAnims()) {
+            let anim = source2Animation.getAnimationByName(animName);
+            if (anim) {
+                return anim;
+            }
+        }
+    }
+    //TODO: remove setter and getter
+    set _changemyname(_changemyname) {
+        this.#_changemyname = _changemyname;
+    }
+    get _changemyname() {
+        return this.#_changemyname;
+    }
+}
+let seqGroupList = {};
+function getSequenceGroup(repository, seqGroupName, animGroup) {
+    var seqGroup = seqGroupList[seqGroupName];
+    if (!seqGroup) {
+        seqGroup = loadSequenceGroup(repository, seqGroupName, animGroup);
+    }
+    if (seqGroup) {
+        seqGroupList[seqGroupName] = seqGroup;
+    }
+    else {
+        //TODO; create dummy
+        console.error('No anim group loaded');
+    }
+    return seqGroup;
+}
+async function loadSequenceGroup(repository, seqGroupName, animGroup) {
+    repository = repository.toLowerCase();
+    seqGroupName = seqGroupName.replace(/\.(vseq_c$|vseq)/, '');
+    //seqGroupName = repository + seqGroupName;
+    let seqGroup = new Source2SeqGroup(animGroup);
+    await getVseq(repository, seqGroupName, seqGroup);
+    return seqGroup;
+}
+const pending$1 = {};
+async function getVseq(repository, seqGroupName, seqGroup) {
+    var seqFile = seqGroupName + '.vseq_c';
+    if (pending$1[seqFile]) {
+        return true;
+    }
+    pending$1[seqFile] = true;
+    await loadVseq(repository, seqFile, seqGroup);
+    /*
+    let promise = new Promise((resolve, reject) => {
+        fetch(new Request(seqFile)).then((response) => {
+            response.arrayBuffer().then(async (arrayBuffer) => {
+                await this.loadVseq(repository, seqFile, arrayBuffer, seqGroup);
+                pending[seqFile] = null;
+                resolve(true);
+            })
+        });
+    });
+    */
+    return true;
+}
+async function loadVseq(repository, fileName, seqGroup) {
+    let vseq = await new Source2FileLoader().load(repository, fileName);
+    if (vseq) {
+        seqGroup.setFile(vseq);
+    }
+}
+let animList = {};
+function getAnim(repository, animName, animGroup) {
+    if (!animName) {
+        return "";
+    }
+    let anim = animList[animName];
+    if (anim === undefined) {
+        loadAnim(repository, animName, animGroup).then(anim => {
+            animList[animName] = anim;
+            animGroup._changemyname.push(anim);
+        });
+        return null;
+    }
+    else {
+        return anim;
+    }
+}
+async function loadAnim(repository, animName, animGroup) {
+    animName = animName.toLowerCase();
+    animName = animName.replace(/\.(vanim_c$|vanim$)/, '');
+    //this.fileName = animName;
+    //animName = repository + animName;
+    //this.animName = animName;
+    let anim = new Source2Animation(animGroup, animName);
+    await getVanim(repository, animName, anim);
+    return anim;
+}
+async function getVanim(repository, animName, anim) {
+    var animFile = animName + '.vanim_c';
+    if (pending$1[animFile]) {
+        return true;
+    }
+    pending$1[animFile] = true;
+    /*
+                fetch(new Request(animFile)).then((response) => {
+                    response.arrayBuffer().then((arrayBuffer) => {
+                        this.loadVanim(repository, animFile, arrayBuffer, anim);
+                    })
+                });
+                */
+    loadVanim(repository, animFile, anim);
+    /*
+    let promise = new Promise((resolve, reject) => {
+        fetch(new Request(animFile)).then((response) => {
+            response.arrayBuffer().then(async (arrayBuffer) => {
+                this.loadVanim(repository, animFile, arrayBuffer, anim);
+                pending[animFile] = null;
+                resolve(true);
+            })
+        });
+    });
+    */
+    return true;
+}
+async function loadVanim(repository, fileName, anim) {
+    let vanim = await new Source2FileLoader().load(repository, fileName);
+    if (vanim) {
+        anim.setFile(vanim);
+        let dataBlock = vanim.blocks.DATA;
+        if (dataBlock) {
+            anim.setAnimDatas(vanim.getBlockStruct('DATA.structs.AnimationResourceData_t') || vanim.getBlockStruct('DATA.keyValue.root'));
+        }
+    }
+    //this.fileLoaded(model);TODOv3
+}
+
+const pending = {};
+async function loadAnimGroup(source2Model, repository, animGroupName) {
+    animGroupName = animGroupName.toLowerCase();
+    animGroupName = animGroupName.replace(/\.(vagrp_c$|vagrp$)/, '');
+    let animGroup = new Source2AnimGroup(source2Model, repository);
+    await getVagrp(repository, animGroupName, animGroup);
+    return animGroup;
+}
+async function getVagrp(repository, animGroupName, animGroup) {
+    var agrpFile = animGroupName + '.vagrp_c';
+    if (pending[agrpFile]) {
+        return true;
+    }
+    pending[agrpFile] = true;
+    await loadVagrp(repository, agrpFile, animGroup);
+    /*
+    let promise = new Promise((resolve, reject) => {
+        fetch(new Request(agrpFile)).then((response) => {
+            response.arrayBuffer().then(async (arrayBuffer) => {
+                await this.#loadVagrp(repository, agrpFile, arrayBuffer, animGroup);
+                pending[agrpFile] = null;
+                resolve(true);
+            })
+        });
+    });
+    0*/
+    return true;
+}
+async function loadVagrp(repository, fileName, animGroup) {
+    let vagrp = await new Source2FileLoader().load(repository, fileName);
+    if (vagrp) {
+        animGroup.setFile(vagrp);
+        var dataBlock = vagrp.blocks.DATA;
+        if (dataBlock) {
+            //animGroup.meshesNames = vagrp.getPermModelData('m_meshGroups');
+            vagrp.getPermModelData('m_refMeshes');
+        }
+    }
+    //this.fileLoaded(model);TODOv3
+}
+
+const AnimManager = new (function () {
+    let animGroupList = {};
+    class AnimManager {
+        async getAnimGroup(source2Model, repository, animGroupName) {
+            let animGroup = animGroupList[animGroupName];
+            if (!animGroup) {
+                animGroup = await loadAnimGroup(source2Model, repository, animGroupName);
+            }
+            if (animGroup) {
+                animGroupList[animGroupName] = animGroup;
+            }
+            else {
+                //TODO; create dummy
+                console.error('No anim group loaded');
+            }
+            return animGroup;
+        }
+        removeAnimGroup(animGroupName) {
+            animGroupList[animGroupName] = null;
+        }
+    }
+    return AnimManager;
+}());
 
 const EMPTY_MODIFIERS = new Set();
 class Source2Animations {
@@ -24212,7 +24331,7 @@ class Source2Model {
     geometries = new Set();
     bodyParts = new Map();
     attachements = new Map();
-    seqGroup;
+    #seqGroup;
     bodyGroups = new Set();
     bodyGroupsChoices = new Set();
     constructor(repository, vmdl) {
@@ -24225,8 +24344,8 @@ class Source2Model {
     #createAnimGroup() {
         let aseq = this.vmdl.getBlockByType('ASEQ');
         if (aseq) {
-            this.seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
-            this.seqGroup.setFile(this.vmdl);
+            this.#seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
+            this.#seqGroup.setFile(this.vmdl);
         }
     }
     #createBodyGroups() {
@@ -24251,8 +24370,8 @@ class Source2Model {
         }
     }
     matchActivity(activity, modifiers) {
-        if (this.seqGroup) {
-            return this.seqGroup.matchActivity(activity, modifiers);
+        if (this.#seqGroup) {
+            return this.#seqGroup.matchActivity(activity, modifiers);
         }
         return null;
     }
@@ -24428,7 +24547,7 @@ class Source2Model {
     }
     getAnimation(name) {
         let animation;
-        animation = this.seqGroup?.getAnimDesc(name);
+        animation = this.#seqGroup?.getAnimDesc(name);
         if (animation) {
             return animation;
         }
@@ -24441,8 +24560,8 @@ class Source2Model {
     }
     getAnimationsByActivity(activityName, animations = new Source2Animations()) {
         let anims = [];
-        if (this.seqGroup) {
-            anims.push(...this.seqGroup.getAnimationsByActivity(activityName));
+        if (this.#seqGroup) {
+            anims.push(...this.#seqGroup.getAnimationsByActivity(activityName));
         }
         for (let animGroup of this.animGroups) {
             anims.push(...animGroup.getAnimationsByActivity(activityName));
@@ -24455,7 +24574,7 @@ class Source2Model {
         for (let animGroup of this.animGroups) {
             if (animGroup.localAnimArray) {
                 for (var localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {
-                    var animRemoveMe = animGroup.getAnim(localAnimIndex);
+                    const animRemoveMe = await animGroup.getAnim(localAnimIndex);
                     if (animRemoveMe) {
                         animRemoveMe.getAnimations(animations);
                     }
@@ -24463,7 +24582,7 @@ class Source2Model {
             }
             if (animGroup._changemyname) {
                 for (var animResIndex = 0; animResIndex < animGroup._changemyname.length; animResIndex++) {
-                    var animRemoveMe = animGroup._changemyname[animResIndex];
+                    const animRemoveMe = animGroup._changemyname[animResIndex];
                     if (animRemoveMe) {
                         animRemoveMe.getAnimations(animations);
                     }
@@ -53554,141 +53673,6 @@ Shaders['source1_weapondecal.vs'] = source1_weapondecal_vs;
 Shaders['source1_worldvertextransition.fs'] = source1_worldvertextransition_fs;
 Shaders['source1_worldvertextransition.vs'] = source1_worldvertextransition_vs;
 
-const Source2AnimLoader = new (function () {
-    class Source2AnimLoader {
-        loadingSlot = 100; //TODO
-        pending = {};
-        fileName;
-        animGroupName;
-        animName;
-        async loadAnimGroup(source2Model, repository, animGroupName) {
-            animGroupName = animGroupName.toLowerCase();
-            animGroupName = animGroupName.replace(/\.(vagrp_c$|vagrp$)/, '');
-            this.fileName = animGroupName;
-            this.animGroupName = animGroupName;
-            let animGroup = new Source2AnimGroup(source2Model, repository);
-            await this.getVagrp(repository, animGroupName, animGroup);
-            return animGroup;
-        }
-        async getVagrp(repository, animGroupName, animGroup) {
-            var agrpFile = animGroupName + '.vagrp_c';
-            if (this.pending[agrpFile]) {
-                return true;
-            }
-            this.pending[agrpFile] = true;
-            await this.#loadVagrp(repository, agrpFile, animGroup);
-            /*
-            let promise = new Promise((resolve, reject) => {
-                fetch(new Request(agrpFile)).then((response) => {
-                    response.arrayBuffer().then(async (arrayBuffer) => {
-                        await this.#loadVagrp(repository, agrpFile, arrayBuffer, animGroup);
-                        this.pending[agrpFile] = null;
-                        resolve(true);
-                    })
-                });
-            });
-            0*/
-            return true;
-        }
-        async loadAnim(repository, animName, animGroup) {
-            animName = animName.toLowerCase();
-            animName = animName.replace(/\.(vanim_c$|vanim$)/, '');
-            this.fileName = animName;
-            //animName = repository + animName;
-            this.animName = animName;
-            let anim = new Source2Animation(animGroup, animName);
-            await this.#getVanim(repository, animName, anim);
-            return anim;
-        }
-        async #getVanim(repository, animName, anim) {
-            var animFile = animName + '.vanim_c';
-            if (this.pending[animFile]) {
-                return true;
-            }
-            this.pending[animFile] = true;
-            /*
-                        fetch(new Request(animFile)).then((response) => {
-                            response.arrayBuffer().then((arrayBuffer) => {
-                                this.loadVanim(repository, animFile, arrayBuffer, anim);
-                            })
-                        });
-                        */
-            this.#loadVanim(repository, animFile, anim);
-            /*
-            let promise = new Promise((resolve, reject) => {
-                fetch(new Request(animFile)).then((response) => {
-                    response.arrayBuffer().then(async (arrayBuffer) => {
-                        this.loadVanim(repository, animFile, arrayBuffer, anim);
-                        this.pending[animFile] = null;
-                        resolve(true);
-                    })
-                });
-            });
-            */
-            return true;
-        }
-        async #loadVagrp(repository, fileName, animGroup) {
-            let vagrp = await new Source2FileLoader().load(repository, fileName);
-            if (vagrp) {
-                animGroup.setFile(vagrp);
-                var dataBlock = vagrp.blocks.DATA;
-                if (dataBlock) {
-                    animGroup.meshesNames = vagrp.getPermModelData('m_meshGroups');
-                    vagrp.getPermModelData('m_refMeshes');
-                }
-            }
-            //this.fileLoaded(model);TODOv3
-        }
-        async #loadVanim(repository, fileName, anim) {
-            let vanim = await new Source2FileLoader().load(repository, fileName);
-            if (vanim) {
-                anim.setFile(vanim);
-                let dataBlock = vanim.blocks.DATA;
-                if (dataBlock) {
-                    anim.setAnimDatas(vanim.getBlockStruct('DATA.structs.AnimationResourceData_t') || vanim.getBlockStruct('DATA.keyValue.root'));
-                }
-            }
-            //this.fileLoaded(model);TODOv3
-        }
-        async loadSequenceGroup(repository, seqGroupName, animGroup) {
-            repository = repository.toLowerCase();
-            seqGroupName = seqGroupName.replace(/\.(vseq_c$|vseq)/, '');
-            //seqGroupName = repository + seqGroupName;
-            let seqGroup = new Source2SeqGroup(animGroup);
-            await this.#getVseq(repository, seqGroupName, seqGroup);
-            return seqGroup;
-        }
-        async #getVseq(repository, seqGroupName, seqGroup) {
-            var seqFile = seqGroupName + '.vseq_c';
-            if (this.pending[seqFile]) {
-                return true;
-            }
-            this.pending[seqFile] = true;
-            await this.#loadVseq(repository, seqFile, seqGroup);
-            /*
-            let promise = new Promise((resolve, reject) => {
-                fetch(new Request(seqFile)).then((response) => {
-                    response.arrayBuffer().then(async (arrayBuffer) => {
-                        await this.loadVseq(repository, seqFile, arrayBuffer, seqGroup);
-                        this.pending[seqFile] = null;
-                        resolve(true);
-                    })
-                });
-            });
-            */
-            return true;
-        }
-        async #loadVseq(repository, fileName, seqGroup) {
-            let vseq = await new Source2FileLoader().load(repository, fileName);
-            if (vseq) {
-                seqGroup.setFile(vseq);
-            }
-        }
-    }
-    return Source2AnimLoader;
-}());
-registerLoader('Source2AnimLoader', Source2AnimLoader);
-
 const PARTICLE_FIELD_POSITION = 0;
 const PARTICLE_FIELD_POSITION_PREVIOUS = 2;
 const PARTICLE_FIELD_RADIUS = 3;
@@ -66080,4 +66064,4 @@ class RenderTargetViewer {
     }
 }
 
-export { ATTRIBUTE_CHANGED, Add, AddVectorToVector, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactors, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_COLOR_NONE, MATERIAL_COLOR_PER_MESH, MATERIAL_COLOR_PER_VERTEX, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, Polygonise, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, ProxyManager, PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2AnimLoader, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { ATTRIBUTE_CHANGED, Add, AddVectorToVector, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactors, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_COLOR_NONE, MATERIAL_COLOR_PER_MESH, MATERIAL_COLOR_PER_VERTEX, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, Polygonise, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, ProxyManager, PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
