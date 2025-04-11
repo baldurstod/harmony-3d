@@ -1,7 +1,7 @@
 import { getLoader } from '../../../loaders/loaderfactory';
 
 export const AnimManager = new (function () {
-	let animGroupList = Object.create(null);
+	let animGroupList = {};
 	let seqGroupList = {};
 	let animList = Object.create(null);
 	class AnimManager {
@@ -41,10 +41,10 @@ export const AnimManager = new (function () {
 		}*/
 
 		getAnim(repository, animName, animGroup) {
-			var anim = animList[animName];
+			let anim = animList[animName];
 			if (anim === undefined) {
-				getLoader('Source2AnimLoader').loadAnim(repository, animName, animGroup).then(
-					(anim) => animList[animName] = anim
+				getLoader('Source2AnimLoader') as Source2AnimLoader.loadAnim(repository, animName, animGroup).then(
+					anim => animList[animName] = anim
 				)
 				return null;
 			} else {

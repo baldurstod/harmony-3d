@@ -2,17 +2,19 @@ import { Source2Activity } from './source2activity';
 import { Source2Sequence } from './source2sequence';
 import { Source2Animation } from '../models/source2animation';
 import { Source2AnimationDesc } from '../models/source2animationdesc';
+import { Source2AnimGroup } from '../models/source2animgroup';
 
 export class Source2SeqGroup {
-	#animNames = new Map();
-	#animGroup;
+	#animNames: Map<string, Source2AnimationDesc> = new Map();
+	#animGroup: Source2AnimGroup;
 	#localSequenceNameArray;
 	sequences = [];
 	file;
 	m_localS1SeqDescArray;
 	animArray;
 	loaded = false;
-	constructor(animGroup) {
+
+	constructor(animGroup: Source2AnimGroup) {
 		this.#animGroup = animGroup;
 	}
 
@@ -47,13 +49,15 @@ export class Source2SeqGroup {
 		if (anims) {
 			let loadedAnim = new Source2Animation(this, '');
 			loadedAnim.setAnimDatas(anims);
+			this.#animGroup._changemyname = this.#animGroup._changemyname || [];
+			this.#animGroup._changemyname.push(loadedAnim);
 		}
 
 		this.loaded = true;
 	}
 
-	getAnimDesc(name) {
-		return this.#animNames[name];
+	getAnimDesc(name: string): Source2AnimationDesc | undefined {
+		return this.#animNames.get(name);
 	}
 
 	#processSeqDesc(m_localS1SeqDescArray, localSequenceNameArray) {
@@ -76,7 +80,7 @@ export class Source2SeqGroup {
 					}
 				}
 
-				let s2Seq = new Source2Sequence(sequence.m_sName, {activities: activities, animNames: animNames});
+				let s2Seq = new Source2Sequence(sequence.m_sName, { activities: activities, animNames: animNames });
 				//console.error(s2Seq);
 				this.sequences.push(s2Seq);
 			}

@@ -3,15 +3,17 @@ import { BinaryReader } from 'harmony-binary-reader';
 import { decodeCCompressedDeltaVector3 } from '../animations/decoders/compresseddeltavector3';
 import { clamp, pow2 } from '../../../math/functions';
 import { DEBUG, TESTING } from '../../../buildoptions';
+import { Source2Model } from './source2model';
 
 const Warning = {};
 export class Source2AnimationDesc {
-	#source2Model;
+	#source2Model: Source2Model;
 	#fps = 30;
 	#lastFrame = 0;
 	data;
 	animationResource;
 	frameBlockArray;
+
 	constructor(source2Model, data, animationResource) {
 		this.#source2Model = source2Model;
 		this.data = data;
@@ -34,7 +36,7 @@ export class Source2AnimationDesc {
 		return this.#getActualAnimDesc()?.lastFrame ?? this.#lastFrame;
 	}
 
-	#getActualAnimDesc() {
+	#getActualAnimDesc(): Source2AnimationDesc {
 		let fetch = this.data?.m_fetch;
 		if (fetch) {
 			let localReferenceArray = fetch.m_localReferenceArray;

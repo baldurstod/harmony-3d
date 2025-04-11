@@ -2,7 +2,7 @@ import { Source2AnimationDesc } from './source2animationdesc';
 
 export class Source2Animation {
 	#animArray;
-	#animNames = new Map();
+	#animNames: Map<string, Source2AnimationDesc> = new Map();
 	animGroup;
 	filePath;
 	file;
@@ -18,14 +18,15 @@ export class Source2Animation {
 		this.file = sourceFile;
 
 		this.setAnimDatas(sourceFile.getBlockStruct('DATA.structs.AnimationResourceData_t')
-							?? sourceFile.getBlockStruct('DATA.keyValue.root')
-							?? sourceFile.getBlockStruct('DATA.keyValue.root.m_localS1SeqDescArray')
-							?? sourceFile.getBlockStruct('ANIM.keyValue.root')
-						);
+			?? sourceFile.getBlockStruct('DATA.keyValue.root')
+			?? sourceFile.getBlockStruct('DATA.keyValue.root.m_localS1SeqDescArray')
+			?? sourceFile.getBlockStruct('ANIM.keyValue.root')
+		);
 	}
+
 	setAnimDatas(data) {
 		if (data) {
-			this.#animArray = data.m_animArray;
+			this.#animArray = data.m_animArray ?? [];
 			//console.error('data.m_animArray', data.m_animArray);
 			this.decoderArray = data.m_decoderArray;
 			this.segmentArray = data.m_segmentArray;
@@ -39,7 +40,7 @@ export class Source2Animation {
 			}
 		}
 	}
-	getAnimDesc(name) {
+	getAnimDesc(name: string): Source2AnimationDesc | undefined {
 		return this.#animNames.get(name);
 	}
 	getDecodeKey() {
@@ -107,7 +108,7 @@ export class Source2Animation {
 					}
 				}
 				if (unmatchingModifiers < bestScore) {
-					let animDesc = this.#animNames[anim.m_name];
+					let animDesc = this.#animNames.get(anim.m_name);
 					if (animDesc) {
 						bestMatch = animDesc;
 						bestScore = unmatchingModifiers;

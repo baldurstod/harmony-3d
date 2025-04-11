@@ -13,6 +13,7 @@ import { Source2Model } from './source2model';
 import { Material } from '../../../materials/material';
 import { Animated } from '../../../interfaces/animated';
 import { pow2 } from '../../../math/functions';
+import { Source2AnimationDesc } from './source2animationdesc';
 
 
 const identityVec3 = vec3.create();
@@ -176,12 +177,9 @@ export class Source2ModelInstance extends Entity implements Animated {
 		this.poseParameters[paramName] = paramValue;
 	}
 
-	playSequence(activity, activityModifiers = []) { //TODO
-		this.activityModifiers.clear();
+	playSequence(activity: string, activityModifiers: Array<string> = []) {
 		this.activity = activity;
-		for (let modifier of activityModifiers) {
-			this.activityModifiers.add(modifier);
-		}
+		this.setActivityModifiers(activityModifiers);
 	}
 
 	playAnimation(name) {
@@ -189,10 +187,10 @@ export class Source2ModelInstance extends Entity implements Animated {
 	}
 
 	async setAnimation(id: number, name: string, weight: number) {
-		throw 'code me';
+		this.#animName = name;
 	}
 
-	setActivityModifiers(activityModifiers = []) {
+	setActivityModifiers(activityModifiers: Array<string> = []) {
 		this.activityModifiers.clear();
 		for (let modifier of activityModifiers) {
 			if (modifier) {
@@ -216,7 +214,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 			return null;
 		}
 
-		let animDesc;
+		let animDesc: Source2AnimationDesc;
 		if (this.#animName) {
 			animDesc = this.sourceModel.getAnimation(this.#animName);
 		} else {

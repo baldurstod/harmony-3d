@@ -7,6 +7,7 @@ import { AnimManager } from './animmanager';
 import { Source2ModelAttachement } from './source2modelattachement';
 import { Source2SeqGroup } from '../animations/source2seqgroup';
 import { Source2Animations } from '../animations/source2animations';
+import { Source2AnimationDesc } from './source2animationdesc';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
@@ -32,7 +33,7 @@ export class Source2Model {
 	geometries = new Set();
 	bodyParts = new Map();
 	attachements = new Map();
-	seqGroup;
+	#seqGroup?: Source2SeqGroup;
 	bodyGroups = new Set<string>();
 	bodyGroupsChoices = new Set<BodyGroupChoice>();
 
@@ -48,8 +49,8 @@ export class Source2Model {
 	#createAnimGroup() {
 		let aseq = this.vmdl.getBlockByType('ASEQ');
 		if (aseq) {
-			this.seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
-			this.seqGroup.setFile(this.vmdl);
+			this.#seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
+			this.#seqGroup.setFile(this.vmdl);
 		}
 	}
 
@@ -76,8 +77,8 @@ export class Source2Model {
 	}
 
 	matchActivity(activity, modifiers) {
-		if (this.seqGroup) {
-			return this.seqGroup.matchActivity(activity, modifiers);
+		if (this.#seqGroup) {
+			return this.#seqGroup.matchActivity(activity, modifiers);
 		}
 		return null;
 	}
@@ -282,9 +283,9 @@ export class Source2Model {
 		}*/
 	}
 
-	getAnimation(name) {
-		let animation;
-		animation = this.seqGroup?.getAnimDesc(name);
+	getAnimation(name: string): Source2AnimationDesc | undefined {
+		let animation: Source2AnimationDesc | undefined;
+		animation = this.#seqGroup?.getAnimDesc(name);
 		if (animation) {
 			return animation;
 		}
@@ -299,8 +300,8 @@ export class Source2Model {
 
 	getAnimationsByActivity(activityName, animations = new Source2Animations()) {
 		let anims = [];
-		if (this.seqGroup) {
-			anims.push(...this.seqGroup.getAnimationsByActivity(activityName));
+		if (this.#seqGroup) {
+			anims.push(...this.#seqGroup.getAnimationsByActivity(activityName));
 		}
 
 		for (let animGroup of this.animGroups) {
@@ -316,7 +317,7 @@ export class Source2Model {
 		for (let animGroup of this.animGroups) {
 			if (animGroup.localAnimArray) {
 				for (var localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {
-					var animRemoveMe = animGroup.getAnim(localAnimIndex);
+					const animRemoveMe = await animGroup.getAnim(localAnimIndex);
 					if (animRemoveMe) {
 						animRemoveMe.getAnimations(animations);
 					}
@@ -324,7 +325,7 @@ export class Source2Model {
 			}
 			if (animGroup._changemyname) {
 				for (var animResIndex = 0; animResIndex < animGroup._changemyname.length; animResIndex++) {
-					var animRemoveMe = animGroup._changemyname[animResIndex];
+					const animRemoveMe = animGroup._changemyname[animResIndex];
 					if (animRemoveMe) {
 						animRemoveMe.getAnimations(animations);
 					}

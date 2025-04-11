@@ -20,12 +20,12 @@ export const Source2AnimLoader = new (function () {
 			this.animGroupName = animGroupName;
 
 			let animGroup = new Source2AnimGroup(source2Model, repository);
-			await this.getVagrp(repository, animGroupName, animGroup);
+			await this.#getVagrp(repository, animGroupName, animGroup);
 
 			return animGroup;
 		}
 
-		async getVagrp(repository, animGroupName, animGroup) {
+		async #getVagrp(repository, animGroupName, animGroup) {
 			var agrpFile = animGroupName + '.vagrp_c';
 			if (this.pending[agrpFile]) {
 				return true;

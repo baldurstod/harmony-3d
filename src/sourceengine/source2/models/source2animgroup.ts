@@ -1,9 +1,10 @@
 import { AnimManager } from './animmanager';
 import { Source2Animation } from './source2animation';
+import { Source2AnimationDesc } from './source2animationdesc';
 
 export class Source2AnimGroup {
 	#source2Model;
-	#_changemyname = [];
+	#_changemyname: Array<Source2Animation> = [];
 	repository: string;
 	file;
 	decoderArray;
@@ -61,18 +62,24 @@ export class Source2AnimGroup {
 	setAnimationGroupResourceData(localAnimArray, decodeKey) {
 		this.localAnimArray = localAnimArray;
 		this.decodeKey = decodeKey;
-		this.getAnim(0);
+		//this.getAnim(0);
+		if (localAnimArray) {
+			for (const localAnim of localAnimArray) {
+				const anim = AnimManager.getAnim(this.repository, localAnim, this);
+				console.info(anim);
+			}
+		}
 	}
 
-	getAnim(animIndex) {
+	getAnim(animIndex: number) {
 		if (this.localAnimArray && this.localAnimArray[animIndex]) {
 			return AnimManager.getAnim(this.repository, this.localAnimArray[animIndex], this);
 		}
 		return null;
 	}
 
-	getAnimDesc(name) {
-		let animation;
+	getAnimDesc(name: string): Source2AnimationDesc | undefined {
+		let animation: Source2AnimationDesc;
 		for (const a of this.#_changemyname) {
 			animation = a.getAnimDesc(name);
 			if (animation) {
@@ -87,7 +94,7 @@ export class Source2AnimGroup {
 		}
 	}
 
-	getAnims():Set<Source2Animation> {
+	getAnims(): Set<Source2Animation> {
 		let anims = new Set<Source2Animation>();
 
 		for (let anim of this._changemyname) {
@@ -145,7 +152,7 @@ export class Source2AnimGroup {
 		return this.#source2Model;
 	}
 
-	getAnimationByName(animName) {
+	getAnimationByName(animName: string): Source2AnimationDesc {
 		//return this.#internalAnimGroup?.getAnimationByName(animName);
 		for (let source2Animation of this.getAnims()) {
 			let anim = source2Animation.getAnimationByName(animName);
