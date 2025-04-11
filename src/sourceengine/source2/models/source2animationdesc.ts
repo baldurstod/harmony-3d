@@ -17,7 +17,7 @@ export class Source2AnimationDesc {
 		this.data = data;
 		this.animationResource = animationResource;
 		this.frameBlockArray = null;
-		if (data){
+		if (data) {
 			this.#fps = data.fps ?? 30;
 			if (data.m_pData) {
 				this.#lastFrame = data.m_pData.m_nFrames - 1;
@@ -61,7 +61,8 @@ export class Source2AnimationDesc {
 		var decodeArray = this.animationResource.getDecoderArray();
 		var boneArray = [];
 
-/*		let fetch = this.data?.m_fetch;
+		/*
+		let fetch = this.data?.m_fetch;
 		if (fetch) {
 			let localReferenceArray = fetch.m_localReferenceArray;
 			//TODO: mix multiple anims
@@ -84,7 +85,7 @@ export class Source2AnimationDesc {
 
 		if (frameBlockArray && decodeArray && decodeKey && decodeKey.m_boneArray) {
 			for (var i = 0; i < decodeKey.m_boneArray.length; i++) {
-				boneArray.push({name:decodeKey.m_boneArray[i].m_name});
+				boneArray.push({ name: decodeKey.m_boneArray[i].m_name });
 			}
 
 
@@ -207,14 +208,14 @@ export class Source2AnimationDesc {
 						break;
 					case 'CCompressedStaticFullVector3':
 					case 'CCompressedFullVector3':
-					//case 'CCompressedAnimVector3':
+						//case 'CCompressedAnimVector3':
 						var x = _getFloat32(bytes, 0);
 						var y = _getFloat32(bytes, 4);
 						var z = _getFloat32(bytes, 8);
 						tmpValue = vec3.fromValues(x, y, z);
 						break;
 					case 'CCompressedDeltaVector3':
-						tmpValue = decodeCCompressedDeltaVector3(reader, boneCount,boneIndex, frameIndex);
+						tmpValue = decodeCCompressedDeltaVector3(reader, boneCount, boneIndex, frameIndex);
 						break;
 					case 'CCompressedStaticVector3':
 						var x = _getFloat16(bytes, 0);
@@ -334,22 +335,22 @@ function _getFloat16(b, offset) {//TODOv3: optimize this function
 	var exponent = ((b[1 + offset] & 0x7C) >> 2);
 	var mantissa = ((b[1 + offset] & 0x03) << 8) | b[0 + offset];
 
-	if(exponent == 0) {
-		return (sign?-1:1) * Math.pow(2,-14) * (mantissa/Math.pow(2, 10));
+	if (exponent == 0) {
+		return (sign ? -1 : 1) * Math.pow(2, -14) * (mantissa / Math.pow(2, 10));
 	} else if (exponent == 0x1F) {
-		return mantissa?NaN:((sign?-1:1)*Infinity);
+		return mantissa ? NaN : ((sign ? -1 : 1) * Infinity);
 	}
 
-	return (sign?-1:1) * Math.pow(2, exponent-15) * (1+(mantissa/Math.pow(2, 10)));
+	return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / Math.pow(2, 10)));
 }
 function _getFloat32(b, offset) {//TODOv3: remove these functions or something
 	let sign = 1 - (2 * (b[3 + offset] >> 7)),
-	exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127,
-	mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
+		exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127,
+		mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
 
 	if (exponent === 128) {
 		if (mantissa !== 0) {
-		return NaN;
+			return NaN;
 		} else {
 			return sign * Infinity;
 		}
