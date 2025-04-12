@@ -1,4 +1,4 @@
-import { vec2 } from 'gl-matrix';
+import { vec2, vec3 } from 'gl-matrix';
 import { createElement, defineHarmony2dManipulator, defineHarmonyToggleButton, hide, HTMLHarmony2dManipulatorElement, HTMLHarmonyToggleButtonElement, ManipulatorDirection } from 'harmony-ui';
 import { Graphics } from '../../graphics/graphics';
 import { Node } from '../node';
@@ -225,10 +225,10 @@ export class NodeGui {
 		}
 
 		for (let input of this.#node.inputs.values()) {
-			htmlInputs.append(this._createIo(input));
+			htmlInputs.append(this.#createIo(input));
 		}
 		for (let output of this.#node.outputs.values()) {
-			htmlOutputs.append(this._createIo(output));
+			htmlOutputs.append(this.#createIo(output));
 		}
 
 		if (this.#node.hasPreview) {
@@ -436,6 +436,10 @@ export class NodeGui {
 							}
 						}
 					},
+				},
+				attributes: {
+					'min-width': "-Infinity",
+					'min-height': "-Infinity",
 				}
 			}) as HTMLHarmony2dManipulatorElement;
 			this.#updateManipulator();
@@ -473,18 +477,20 @@ export class NodeGui {
 
 		const t = (a2 * C[0] - a2 * A[0] - a1 * C[1] + a1 * A[1]) / (-a2 * c1 + a1 * c2);
 
+		const cross = vec2.cross(vec3.create(), AD, AC);
+		const flip = cross[2] > 0
 		const center = vec2.fromValues((C[0] + c1 * t) * rect.width, (C[1] + c2 * t) * rect.height);
-		const width = vec2.len(AC) * rect.width;
+		const width = vec2.len(AC) * rect.width * (flip ? -1 : 1);
 		const height = vec2.len(AD) * rect.height;
 
-		const angle = Math.atan2(AC[1], AC[0]);
+		const angle = Math.atan2(AC[1], AC[0]) + (flip ? Math.PI : 0);
 
 		this.#htmlRectSelector.set({
 			rotation: angle,
 			left: center[0],
 			top: center[1],
 			width: width,
-			height: height,
+			height: height
 		});
 	}
 
@@ -516,7 +522,7 @@ export class NodeGui {
 		node.validate();
 	}
 
-	_createIo(io) {
+	#createIo(io) {
 		let html = createElement('div', { class: 'node-image-editor-node-io' });
 		this._ioGui.set(io, html);
 		return html;
