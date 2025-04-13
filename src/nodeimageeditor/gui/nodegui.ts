@@ -93,6 +93,13 @@ function dropFilesSpecular(evt, node) {
 	}
 }
 
+const vec2Temp1 = vec2.create();
+const vec2Temp2 = vec2.create();
+const vec2Temp3 = vec2.create();
+const vec2Temp4 = vec2.create();
+const vec2Temp5 = vec2.create();
+const vec2Temp6 = vec2.create();
+
 export class NodeGui {
 	#expanded = true;
 	#html: HTMLElement;
@@ -363,6 +370,13 @@ export class NodeGui {
 			defineHarmony2dManipulator();
 			defineHarmonyToggleButton();
 
+			createElement('button', {
+				i18n: '#flip_up',
+				class: 'sticker',
+				parent: paramHtml,
+				$click: () => this.#flipSticker(0, -1),
+			});
+
 			createElement('harmony-toggle-button', {
 				class: 'sticker',
 				parent: paramHtml,
@@ -518,13 +532,44 @@ export class NodeGui {
 		}
 
 		node.setParam(param.name, value, index);
-		node.invalidate();
-		node.validate();
+		node.revalidate();
 	}
 
 	#createIo(io) {
 		let html = createElement('div', { class: 'node-image-editor-node-io' });
 		this._ioGui.set(io, html);
 		return html;
+	}
+
+	#flipSticker(x: number, y: number): void {
+		const topLeft = vec2.copy(vec2Temp1, this.#node.getValue('top left') as vec2);
+		const bottomLeft = vec2.copy(vec2Temp2, this.#node.getValue('bottom left') as vec2);
+		const topRight = vec2.copy(vec2Temp3, this.#node.getValue('top right') as vec2);
+
+		const newTopLeft = vec2.copy(vec2Temp4, topLeft);
+		const newBottomLeft = vec2.copy(vec2Temp5, bottomLeft);
+		const newTopRight = vec2.copy(vec2Temp6, topRight);
+
+		newTopLeft[1] = bottomLeft[1];
+		newBottomLeft[1] = topLeft[1];
+		newTopRight[1] = bottomLeft[1];
+
+
+		//this.#setParamValue(param, `${corner.x / rect.width} ${corner.y / rect.width}`, undefined, false);
+		const node = this.#node;
+		node.setParam('top left', newTopLeft);
+		node.setParam('bottom left', newBottomLeft);
+		node.setParam('top right', newTopRight);
+
+		this.#updateManipulator();
+		node.revalidate();
+
+		/*
+
+		this.#htmlRectSelector.set({
+			width: -0.06,
+		});
+		*/
+
 	}
 }
