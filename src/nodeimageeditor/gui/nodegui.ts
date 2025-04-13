@@ -96,9 +96,23 @@ function dropFilesSpecular(evt, node) {
 const vec2Temp1 = vec2.create();
 const vec2Temp2 = vec2.create();
 const vec2Temp3 = vec2.create();
+
 const vec2Temp4 = vec2.create();
 const vec2Temp5 = vec2.create();
 const vec2Temp6 = vec2.create();
+
+const vec2Temp7 = vec2.create();
+const vec2Temp8 = vec2.create();
+const vec2Temp9 = vec2.create();
+
+export enum FlipDirection {
+	FlipUp = 0,
+	FlipDown,
+	FlipLeft,
+	FlipRight,
+	FlipX,
+	FlipY,
+}
 
 export class NodeGui {
 	#expanded = true;
@@ -370,11 +384,30 @@ export class NodeGui {
 			defineHarmony2dManipulator();
 			defineHarmonyToggleButton();
 
-			createElement('button', {
-				i18n: '#flip_up',
-				class: 'sticker',
+			createElement('div', {
 				parent: paramHtml,
-				$click: () => this.#flipSticker(0, -1),
+				childs: [
+					createElement('button', {
+						i18n: '#flip_up',
+						class: 'sticker',
+						$click: () => this.#flipSticker(FlipDirection.FlipUp),
+					}),
+					createElement('button', {
+						i18n: '#flip_down',
+						class: 'sticker',
+						$click: () => this.#flipSticker(FlipDirection.FlipDown),
+					}),
+					createElement('button', {
+						i18n: '#flip_left',
+						class: 'sticker',
+						$click: () => this.#flipSticker(FlipDirection.FlipLeft),
+					}),
+					createElement('button', {
+						i18n: '#flip_right',
+						class: 'sticker',
+						$click: () => this.#flipSticker(FlipDirection.FlipRight),
+					}),
+				],
 			});
 
 			createElement('harmony-toggle-button', {
@@ -541,18 +574,73 @@ export class NodeGui {
 		return html;
 	}
 
-	#flipSticker(x: number, y: number): void {
-		const topLeft = vec2.copy(vec2Temp1, this.#node.getValue('top left') as vec2);
-		const bottomLeft = vec2.copy(vec2Temp2, this.#node.getValue('bottom left') as vec2);
-		const topRight = vec2.copy(vec2Temp3, this.#node.getValue('top right') as vec2);
+	#flipSticker(flip: FlipDirection): void {
+		const topLeft = vec2.copy(vec2.create(), this.#node.getValue('top left') as vec2);
+		const bottomLeft = vec2.copy(vec2.create(), this.#node.getValue('bottom left') as vec2);
+		const topRight = vec2.copy(vec2.create(), this.#node.getValue('top right') as vec2);
 
-		const newTopLeft = vec2.copy(vec2Temp4, topLeft);
-		const newBottomLeft = vec2.copy(vec2Temp5, bottomLeft);
-		const newTopRight = vec2.copy(vec2Temp6, topRight);
 
-		newTopLeft[1] = bottomLeft[1];
-		newBottomLeft[1] = topLeft[1];
-		newTopRight[1] = bottomLeft[1];
+		const newTopLeft = vec2.copy(vec2.create(), topLeft);
+		const newBottomLeft = vec2.copy(vec2.create(), bottomLeft);
+		const newTopRight = vec2.copy(vec2.create(), topRight);
+
+		let delta: number;
+		const top = vec2.sub(vec2.create(), topRight, topLeft);
+		const left = vec2.sub(vec2.create(), bottomLeft, topLeft);
+		const bottomRight = vec2.add(vec2.create(), top, bottomLeft);
+
+		const topN = vec2.normalize(vec2.create(), top);
+		const leftN = vec2.normalize(vec2.create(), left);
+
+		switch (flip) {
+			case FlipDirection.FlipUp:
+				//delta = bottomLeft[1] - topLeft[1];
+				//newBottomLeft[1] = topLeft[1] - delta;
+				const DA = vec2.sub(vec2.create(), topLeft, bottomLeft);
+				//const n1 = vec2.multiply(vec2.create(), vec2.dot(DA, topN));
+				const v = vec2.scaleAndAdd(vec2.create(), DA, topN, -2 * vec2.dot(DA, topN));
+
+				vec2.add(newBottomLeft, topLeft, v);
+
+				//newBottomLeft[1] = topLeft[1] - delta;
+
+				break;
+			case FlipDirection.FlipDown:
+
+
+				const AD = vec2.sub(vec2.create(), bottomLeft, topLeft);
+				const v1 = vec2.scaleAndAdd(vec2.create(), AD, topN, -2 * vec2.dot(AD, topN));
+				vec2.add(newTopLeft, bottomLeft, v1);
+				vec2.add(newTopRight, bottomRight, v1);
+
+
+
+				/*
+				delta = bottomLeft[1] - topLeft[1];
+				newTopLeft[1] = bottomLeft[1] + delta;
+				newTopRight[1] = bottomLeft[1] + delta;
+				*/
+				break;
+			case FlipDirection.FlipLeft:
+				const CA = vec2.sub(vec2.create(), topLeft, topRight);
+				const v2 = vec2.scaleAndAdd(vec2.create(), CA, leftN, -2 * vec2.dot(CA, leftN));
+				vec2.add(newTopRight, topLeft, v2);
+				//vec2.add(newTopRight, bottomRight, v1);
+				break;
+			case FlipDirection.FlipRight:
+				const AC = vec2.sub(vec2.create(), topRight, topLeft);
+				const v3 = vec2.scaleAndAdd(vec2.create(), AC, leftN, -2 * vec2.dot(AC, leftN));
+				vec2.add(newTopLeft, topRight, v3);
+				vec2.add(newBottomLeft, bottomRight, v3);
+				break;
+		}
+
+		/*
+
+				newTopLeft[1] = bottomLeft[1];
+				newBottomLeft[1] = topLeft[1];
+				newTopRight[1] = bottomLeft[1];
+				*/
 
 
 		//this.#setParamValue(param, `${corner.x / rect.width} ${corner.y / rect.width}`, undefined, false);
