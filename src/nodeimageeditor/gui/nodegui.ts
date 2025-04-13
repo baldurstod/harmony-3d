@@ -93,18 +93,6 @@ function dropFilesSpecular(evt, node) {
 	}
 }
 
-const vec2Temp1 = vec2.create();
-const vec2Temp2 = vec2.create();
-const vec2Temp3 = vec2.create();
-
-const vec2Temp4 = vec2.create();
-const vec2Temp5 = vec2.create();
-const vec2Temp6 = vec2.create();
-
-const vec2Temp7 = vec2.create();
-const vec2Temp8 = vec2.create();
-const vec2Temp9 = vec2.create();
-
 export enum FlipDirection {
 	FlipUp = 0,
 	FlipDown,
@@ -351,7 +339,7 @@ export class NodeGui {
 
 	#createParamHTML(param: NodeParam, index?: number): HTMLElement {
 		let paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
-		let nameHtml = createElement('div', { parent: paramHtml });
+		let nameHtml = createElement('div', { parent: paramHtml, class: 'name' });
 		let valueHtml: HTMLInputElement;
 
 
@@ -387,85 +375,102 @@ export class NodeGui {
 			createElement('div', {
 				parent: paramHtml,
 				childs: [
-					createElement('button', {
-						i18n: '#flip_up',
-						class: 'sticker',
-						$click: () => this.#flipSticker(FlipDirection.FlipUp),
+					createElement('div', {
+						childs: [
+							createElement('div', {
+								childs: [
+									createElement('button', {
+										i18n: '#flip_up',
+										class: 'sticker',
+										$click: () => this.#flipSticker(FlipDirection.FlipUp),
+									}),
+									createElement('button', {
+										i18n: '#flip_down',
+										class: 'sticker',
+										$click: () => this.#flipSticker(FlipDirection.FlipDown),
+									}),
+								],
+							}),
+							createElement('div', {
+								childs: [
+									createElement('button', {
+										i18n: '#flip_left',
+										class: 'sticker',
+										$click: () => this.#flipSticker(FlipDirection.FlipLeft),
+									}),
+									createElement('button', {
+										i18n: '#flip_right',
+										class: 'sticker',
+										$click: () => this.#flipSticker(FlipDirection.FlipRight),
+									}),
+								]
+							}),
+						],
 					}),
-					createElement('button', {
-						i18n: '#flip_down',
-						class: 'sticker',
-						$click: () => this.#flipSticker(FlipDirection.FlipDown),
-					}),
-					createElement('button', {
-						i18n: '#flip_left',
-						class: 'sticker',
-						$click: () => this.#flipSticker(FlipDirection.FlipLeft),
-					}),
-					createElement('button', {
-						i18n: '#flip_right',
-						class: 'sticker',
-						$click: () => this.#flipSticker(FlipDirection.FlipRight),
+					createElement('div', {
+						childs: [
+
+
+							createElement('harmony-toggle-button', {
+								class: 'sticker',
+								parent: paramHtml,
+								state: true,
+								childs: [
+									createElement('div', {
+										slot: 'off',
+										innerHTML: dragPanSVG,
+									}),
+									createElement('div', {
+										slot: 'on',
+										innerHTML: dragPanSVG,
+									}),
+								],
+								events: {
+									change: (event) => this.#htmlRectSelector.setMode({ translation: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+								}
+							}) as HTMLHarmonyToggleButtonElement,
+
+							createElement('harmony-toggle-button', {
+								class: 'sticker',
+								parent: paramHtml,
+								state: true,
+								childs: [
+									createElement('div', {
+										slot: 'off',
+										innerHTML: panZoomSVG,
+									}),
+									createElement('div', {
+										slot: 'on',
+										innerHTML: panZoomSVG,
+									}),
+								],
+								events: {
+									change: (event) => this.#htmlRectSelector.setMode({ resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None, scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+								}
+							}) as HTMLHarmonyToggleButtonElement,
+
+							createElement('harmony-toggle-button', {
+								class: 'sticker',
+								parent: paramHtml,
+								state: true,
+								childs: [
+									createElement('div', {
+										slot: 'off',
+										innerHTML: rotateSVG,
+									}),
+									createElement('div', {
+										slot: 'on',
+										innerHTML: rotateSVG,
+									}),
+								],
+								events: {
+									change: (event) => this.#htmlRectSelector.setMode({ rotation: event.target.state }),
+								}
+							}) as HTMLHarmonyToggleButtonElement,
+						],
 					}),
 				],
 			});
-
-			createElement('harmony-toggle-button', {
-				class: 'sticker',
-				parent: paramHtml,
-				state: true,
-				childs: [
-					createElement('div', {
-						slot: 'off',
-						innerHTML: dragPanSVG,
-					}),
-					createElement('div', {
-						slot: 'on',
-						innerHTML: dragPanSVG,
-					}),
-				],
-				events: {
-					change: (event) => this.#htmlRectSelector.setMode({ translation: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
-				}
-			}) as HTMLHarmonyToggleButtonElement;
-
-			createElement('harmony-toggle-button', {
-				class: 'sticker',
-				parent: paramHtml,
-				state: true,
-				childs: [
-					createElement('div', {
-						slot: 'off',
-						innerHTML: panZoomSVG,
-					}),
-					createElement('div', {
-						slot: 'on',
-						innerHTML: panZoomSVG,
-					}),
-				],
-				events: {
-					change: (event) => this.#htmlRectSelector.setMode({ resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None, scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
-				}
-			}) as HTMLHarmonyToggleButtonElement;
-
-			createElement('harmony-toggle-button', {
-				class: 'sticker',
-				parent: paramHtml,
-				state: true,
-				childs: [
-					createElement('div', {
-						slot: 'off',
-						innerHTML: rotateSVG,
-					}),
-					createElement('div', {
-						slot: 'on',
-						innerHTML: rotateSVG,
-					}),
-				],
-				events: {
-					change: (event) => this.#htmlRectSelector.setMode({ rotation: event.target.state }),
-				}
-			}) as HTMLHarmonyToggleButtonElement;
 
 			this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {
 				class: 'node-image-editor-sticker-selector',

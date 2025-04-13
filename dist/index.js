@@ -14252,6 +14252,10 @@ class Node extends EventTarget {
             this.#redrawState = DrawState.Valid;
         }
     }
+    async revalidate() {
+        this.invalidate();
+        await this.validate();
+    }
     async redraw(context = {}) {
         await this.operate(context);
         this.#redrawState = DrawState.Valid;
@@ -14700,6 +14704,15 @@ function dropFilesSpecular(evt, node) {
         reader.readAsDataURL(f);
     }
 }
+var FlipDirection;
+(function (FlipDirection) {
+    FlipDirection[FlipDirection["FlipUp"] = 0] = "FlipUp";
+    FlipDirection[FlipDirection["FlipDown"] = 1] = "FlipDown";
+    FlipDirection[FlipDirection["FlipLeft"] = 2] = "FlipLeft";
+    FlipDirection[FlipDirection["FlipRight"] = 3] = "FlipRight";
+    FlipDirection[FlipDirection["FlipX"] = 4] = "FlipX";
+    FlipDirection[FlipDirection["FlipY"] = 5] = "FlipY";
+})(FlipDirection || (FlipDirection = {}));
 class NodeGui {
     #expanded = true;
     #html;
@@ -14909,7 +14922,7 @@ class NodeGui {
     }
     #createParamHTML(param, index) {
         let paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
-        let nameHtml = createElement('div', { parent: paramHtml });
+        let nameHtml = createElement('div', { parent: paramHtml, class: 'name' });
         let valueHtml;
         if (param.type != NodeParamType.StickerAdjust) {
             valueHtml = createElement('input', {
@@ -14937,59 +14950,100 @@ class NodeGui {
         if (param.type == NodeParamType.StickerAdjust) {
             defineHarmony2dManipulator();
             defineHarmonyToggleButton();
-            createElement('harmony-toggle-button', {
-                class: 'sticker',
+            createElement('div', {
                 parent: paramHtml,
-                state: true,
                 childs: [
                     createElement('div', {
-                        slot: 'off',
-                        innerHTML: dragPanSVG,
+                        childs: [
+                            createElement('div', {
+                                childs: [
+                                    createElement('button', {
+                                        i18n: '#flip_up',
+                                        class: 'sticker',
+                                        $click: () => this.#flipSticker(FlipDirection.FlipUp),
+                                    }),
+                                    createElement('button', {
+                                        i18n: '#flip_down',
+                                        class: 'sticker',
+                                        $click: () => this.#flipSticker(FlipDirection.FlipDown),
+                                    }),
+                                ],
+                            }),
+                            createElement('div', {
+                                childs: [
+                                    createElement('button', {
+                                        i18n: '#flip_left',
+                                        class: 'sticker',
+                                        $click: () => this.#flipSticker(FlipDirection.FlipLeft),
+                                    }),
+                                    createElement('button', {
+                                        i18n: '#flip_right',
+                                        class: 'sticker',
+                                        $click: () => this.#flipSticker(FlipDirection.FlipRight),
+                                    }),
+                                ]
+                            }),
+                        ],
                     }),
                     createElement('div', {
-                        slot: 'on',
-                        innerHTML: dragPanSVG,
+                        childs: [
+                            createElement('harmony-toggle-button', {
+                                class: 'sticker',
+                                parent: paramHtml,
+                                state: true,
+                                childs: [
+                                    createElement('div', {
+                                        slot: 'off',
+                                        innerHTML: dragPanSVG,
+                                    }),
+                                    createElement('div', {
+                                        slot: 'on',
+                                        innerHTML: dragPanSVG,
+                                    }),
+                                ],
+                                events: {
+                                    change: (event) => this.#htmlRectSelector.setMode({ translation: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+                                }
+                            }),
+                            createElement('harmony-toggle-button', {
+                                class: 'sticker',
+                                parent: paramHtml,
+                                state: true,
+                                childs: [
+                                    createElement('div', {
+                                        slot: 'off',
+                                        innerHTML: panZoomSVG,
+                                    }),
+                                    createElement('div', {
+                                        slot: 'on',
+                                        innerHTML: panZoomSVG,
+                                    }),
+                                ],
+                                events: {
+                                    change: (event) => this.#htmlRectSelector.setMode({ resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None, scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+                                }
+                            }),
+                            createElement('harmony-toggle-button', {
+                                class: 'sticker',
+                                parent: paramHtml,
+                                state: true,
+                                childs: [
+                                    createElement('div', {
+                                        slot: 'off',
+                                        innerHTML: rotateSVG,
+                                    }),
+                                    createElement('div', {
+                                        slot: 'on',
+                                        innerHTML: rotateSVG,
+                                    }),
+                                ],
+                                events: {
+                                    change: (event) => this.#htmlRectSelector.setMode({ rotation: event.target.state }),
+                                }
+                            }),
+                        ],
                     }),
                 ],
-                events: {
-                    change: (event) => this.#htmlRectSelector.setMode({ translation: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
-                }
-            });
-            createElement('harmony-toggle-button', {
-                class: 'sticker',
-                parent: paramHtml,
-                state: true,
-                childs: [
-                    createElement('div', {
-                        slot: 'off',
-                        innerHTML: panZoomSVG,
-                    }),
-                    createElement('div', {
-                        slot: 'on',
-                        innerHTML: panZoomSVG,
-                    }),
-                ],
-                events: {
-                    change: (event) => this.#htmlRectSelector.setMode({ resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None, scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
-                }
-            });
-            createElement('harmony-toggle-button', {
-                class: 'sticker',
-                parent: paramHtml,
-                state: true,
-                childs: [
-                    createElement('div', {
-                        slot: 'off',
-                        innerHTML: rotateSVG,
-                    }),
-                    createElement('div', {
-                        slot: 'on',
-                        innerHTML: rotateSVG,
-                    }),
-                ],
-                events: {
-                    change: (event) => this.#htmlRectSelector.setMode({ rotation: event.target.state }),
-                }
             });
             this.#htmlRectSelector = this.#htmlRectSelector ?? createElement('harmony-2d-manipulator', {
                 class: 'node-image-editor-sticker-selector',
@@ -15078,13 +15132,78 @@ class NodeGui {
             this.#updateManipulator();
         }
         node.setParam(param.name, value, index);
-        node.invalidate();
-        node.validate();
+        node.revalidate();
     }
     #createIo(io) {
         let html = createElement('div', { class: 'node-image-editor-node-io' });
         this._ioGui.set(io, html);
         return html;
+    }
+    #flipSticker(flip) {
+        const topLeft = vec2.copy(vec2.create(), this.#node.getValue('top left'));
+        const bottomLeft = vec2.copy(vec2.create(), this.#node.getValue('bottom left'));
+        const topRight = vec2.copy(vec2.create(), this.#node.getValue('top right'));
+        const newTopLeft = vec2.copy(vec2.create(), topLeft);
+        const newBottomLeft = vec2.copy(vec2.create(), bottomLeft);
+        const newTopRight = vec2.copy(vec2.create(), topRight);
+        const top = vec2.sub(vec2.create(), topRight, topLeft);
+        const left = vec2.sub(vec2.create(), bottomLeft, topLeft);
+        const bottomRight = vec2.add(vec2.create(), top, bottomLeft);
+        const topN = vec2.normalize(vec2.create(), top);
+        const leftN = vec2.normalize(vec2.create(), left);
+        switch (flip) {
+            case FlipDirection.FlipUp:
+                //delta = bottomLeft[1] - topLeft[1];
+                //newBottomLeft[1] = topLeft[1] - delta;
+                const DA = vec2.sub(vec2.create(), topLeft, bottomLeft);
+                //const n1 = vec2.multiply(vec2.create(), vec2.dot(DA, topN));
+                const v = vec2.scaleAndAdd(vec2.create(), DA, topN, -2 * vec2.dot(DA, topN));
+                vec2.add(newBottomLeft, topLeft, v);
+                //newBottomLeft[1] = topLeft[1] - delta;
+                break;
+            case FlipDirection.FlipDown:
+                const AD = vec2.sub(vec2.create(), bottomLeft, topLeft);
+                const v1 = vec2.scaleAndAdd(vec2.create(), AD, topN, -2 * vec2.dot(AD, topN));
+                vec2.add(newTopLeft, bottomLeft, v1);
+                vec2.add(newTopRight, bottomRight, v1);
+                /*
+                delta = bottomLeft[1] - topLeft[1];
+                newTopLeft[1] = bottomLeft[1] + delta;
+                newTopRight[1] = bottomLeft[1] + delta;
+                */
+                break;
+            case FlipDirection.FlipLeft:
+                const CA = vec2.sub(vec2.create(), topLeft, topRight);
+                const v2 = vec2.scaleAndAdd(vec2.create(), CA, leftN, -2 * vec2.dot(CA, leftN));
+                vec2.add(newTopRight, topLeft, v2);
+                //vec2.add(newTopRight, bottomRight, v1);
+                break;
+            case FlipDirection.FlipRight:
+                const AC = vec2.sub(vec2.create(), topRight, topLeft);
+                const v3 = vec2.scaleAndAdd(vec2.create(), AC, leftN, -2 * vec2.dot(AC, leftN));
+                vec2.add(newTopLeft, topRight, v3);
+                vec2.add(newBottomLeft, bottomRight, v3);
+                break;
+        }
+        /*
+
+                newTopLeft[1] = bottomLeft[1];
+                newBottomLeft[1] = topLeft[1];
+                newTopRight[1] = bottomLeft[1];
+                */
+        //this.#setParamValue(param, `${corner.x / rect.width} ${corner.y / rect.width}`, undefined, false);
+        const node = this.#node;
+        node.setParam('top left', newTopLeft);
+        node.setParam('bottom left', newBottomLeft);
+        node.setParam('top right', newTopRight);
+        this.#updateManipulator();
+        node.revalidate();
+        /*
+
+        this.#htmlRectSelector.set({
+            width: -0.06,
+        });
+        */
     }
 }
 

@@ -4424,6 +4424,7 @@ declare class Choreography {
              getParams(): Map<string, NodeParam>;
              invalidate(): void;
              validate(): Promise<void>;
+             revalidate(): Promise<void>;
              redraw(context?: any): Promise<void>;
              getInputCount(): number;
              getType(): void;
