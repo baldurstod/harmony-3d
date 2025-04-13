@@ -157,6 +157,11 @@ export class Node extends EventTarget {
 		}
 	}
 
+	async revalidate(): Promise<void> {
+		this.invalidate();
+		await this.validate();
+	}
+
 	async redraw(context: any = {}) {
 		await this.operate(context);
 		this.#redrawState = DrawState.Valid;
