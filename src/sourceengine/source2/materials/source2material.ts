@@ -66,6 +66,7 @@ const DEFAULT_ALPHA_TEST_REFERENCE = 0.7;
 export class Source2Material extends Material {
 	#source2File?: Source2File;
 	repository: string;
+
 	constructor(repository: string, source2File?: Source2File) {
 		super();
 		this.repository = repository;
