@@ -27,9 +27,9 @@ const UNIFORMS = new Map([
 const TEXTURE_UNIFORMS = new Map([
 	['g_tColor', ['colorMap', 'USE_COLOR_MAP']],
 	['TextureColor', ['colorMap', 'USE_COLOR_MAP']],
-	['g_tNormal',[ 'normalMap', 'USE_NORMAL_MAP']],
-	['g_tAmbientOcclusion',[ 'aoMap', 'USE_AO_MAP']],
-	['g_tTintColor',[ 'tintColorMap', 'USE_TINT_COLOR_MAP']],
+	['g_tNormal', ['normalMap', 'USE_NORMAL_MAP']],
+	['g_tAmbientOcclusion', ['aoMap', 'USE_AO_MAP']],
+	['g_tTintColor', ['tintColorMap', 'USE_TINT_COLOR_MAP']],
 	['g_tSelfIllumFlowWaveform', ['selfIllumFlowWaveformMap', 'USE_SIFW_MAP']],
 	['g_tMaskParameters', ['maskParametersMap', 'USE_MASK_PARAMETERS_MAP']],//TextureSelfIllumMask
 
@@ -43,11 +43,13 @@ const TEXTURE_UNIFORMS = new Map([
 	['g_tEmissiveC', ['emissiveCMap', 'USE_EMISSIVE_C_MAP']],
 
 	['g_tMasks1', ['mask1Map', 'USE_MASK1_MAP']],
-	['g_tMasks2',[ 'mask2Map', 'USE_MASK2_MAP']],
-	['g_tDetail',[ 'detail1Map', 'USE_DETAIL1_MAP']],
+	['g_tMasks2', ['mask2Map', 'USE_MASK2_MAP']],
+	['g_tDetail', ['detail1Map', 'USE_DETAIL1_MAP']],
 	['g_tDetail2', ['detail2Map', 'USE_DETAIL2_MAP']],
 
-	['g_tDisplacementMask',[ 'displacementMaskMap', 'USE_DISPLACEMENT_MASK_MAP']],
+	['g_tMetalness', ['metalnessMap', 'USE_METALNESS_MAP']],
+
+	['g_tDisplacementMask', ['displacementMaskMap', 'USE_DISPLACEMENT_MASK_MAP']],
 	['g_tSpecular', ['specularMap', 'USE_SPECULAR_MAP']],
 	['g_tSpiralNormal', ['spiralNormalMap', 'USE_SPIRAL_NORMAL_MAP']],
 	['g_tSpiralOverlay', ['spiralOverlayMap', 'USE_SPIRAL_OVERLAY_MAP']],
@@ -314,11 +316,17 @@ export class Source2Material extends Material {
 		}
 	}
 
+	getTextureUniforms(): Array<Map<string, Array<string>>> {
+		return [TEXTURE_UNIFORMS];
+	}
+
 	async initTextureUniforms() {
-		for (let [paramName, [uniformName, defineName]] of TEXTURE_UNIFORMS) {
-			let paramValue = this.getTextureByName(paramName);
-			if (paramValue) {
-				this.setTexture(uniformName, paramValue ? await Source2TextureManager.getTexture(this.repository, paramValue, 0) : null, defineName);
+		for (const map of this.getTextureUniforms()) {
+			for (let [paramName, [uniformName, defineName]] of map) {
+				let paramValue = this.getTextureByName(paramName);
+				if (paramValue) {
+					this.setTexture(uniformName, paramValue ? await Source2TextureManager.getTexture(this.repository, paramValue, 0) : null, defineName);
+				}
 			}
 		}
 	}
