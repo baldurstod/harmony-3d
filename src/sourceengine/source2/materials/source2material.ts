@@ -24,39 +24,39 @@ const UNIFORMS = new Map([
 	['g_flMaterialCloakFactor', 'g_flMaterialCloakFactor'],
 ]);
 
-const TEXTURE_UNIFORMS = new Set([
-	['g_tColor', 'colorMap', 'USE_COLOR_MAP'],
-	['TextureColor', 'colorMap', 'USE_COLOR_MAP'],
-	['g_tNormal', 'normalMap', 'USE_NORMAL_MAP'],
-	['g_tAmbientOcclusion', 'aoMap', 'USE_AO_MAP'],
-	['g_tTintColor', 'tintColorMap', 'USE_TINT_COLOR_MAP'],
-	['g_tSelfIllumFlowWaveform', 'selfIllumFlowWaveformMap', 'USE_SIFW_MAP'],
-	['g_tMaskParameters', 'maskParametersMap', 'USE_MASK_PARAMETERS_MAP'],//TextureSelfIllumMask
+const TEXTURE_UNIFORMS = new Map([
+	['g_tColor', ['colorMap', 'USE_COLOR_MAP']],
+	['TextureColor', ['colorMap', 'USE_COLOR_MAP']],
+	['g_tNormal',[ 'normalMap', 'USE_NORMAL_MAP']],
+	['g_tAmbientOcclusion',[ 'aoMap', 'USE_AO_MAP']],
+	['g_tTintColor',[ 'tintColorMap', 'USE_TINT_COLOR_MAP']],
+	['g_tSelfIllumFlowWaveform', ['selfIllumFlowWaveformMap', 'USE_SIFW_MAP']],
+	['g_tMaskParameters', ['maskParametersMap', 'USE_MASK_PARAMETERS_MAP']],//TextureSelfIllumMask
 
-	['g_tColorA', 'colorAMap', 'USE_COLOR_A_MAP'],
-	['g_tColorB', 'colorBMap', 'USE_COLOR_B_MAP'],
-	['g_tColorC', 'colorCMap', 'USE_COLOR_C_MAP'],
-	['g_tColor1', 'color1Map', 'USE_COLOR_1_MAP'],
-	['g_tMask', 'maskMap', 'USE_MASK_MAP'],
-	['g_tNormalA', 'normalAMap', 'USE_NORMAL_A_MAP'],
-	['g_tEmissiveB', 'emissiveBMap', 'USE_EMISSIVE_B_MAP'],
-	['g_tEmissiveC', 'emissiveCMap', 'USE_EMISSIVE_C_MAP'],
+	['g_tColorA', ['colorAMap', 'USE_COLOR_A_MAP']],
+	['g_tColorB', ['colorBMap', 'USE_COLOR_B_MAP']],
+	['g_tColorC', ['colorCMap', 'USE_COLOR_C_MAP']],
+	['g_tColor1', ['color1Map', 'USE_COLOR_1_MAP']],
+	['g_tMask', ['maskMap', 'USE_MASK_MAP']],
+	['g_tNormalA', ['normalAMap', 'USE_NORMAL_A_MAP']],
+	['g_tEmissiveB', ['emissiveBMap', 'USE_EMISSIVE_B_MAP']],
+	['g_tEmissiveC', ['emissiveCMap', 'USE_EMISSIVE_C_MAP']],
 
-	['g_tMasks1', 'mask1Map', 'USE_MASK1_MAP'],
-	['g_tMasks2', 'mask2Map', 'USE_MASK2_MAP'],
-	['g_tDetail', 'detail1Map', 'USE_DETAIL1_MAP'],
-	['g_tDetail2', 'detail2Map', 'USE_DETAIL2_MAP'],
+	['g_tMasks1', ['mask1Map', 'USE_MASK1_MAP']],
+	['g_tMasks2',[ 'mask2Map', 'USE_MASK2_MAP']],
+	['g_tDetail',[ 'detail1Map', 'USE_DETAIL1_MAP']],
+	['g_tDetail2', ['detail2Map', 'USE_DETAIL2_MAP']],
 
-	['g_tDisplacementMask', 'displacementMaskMap', 'USE_DISPLACEMENT_MASK_MAP'],
-	['g_tSpecular', 'specularMap', 'USE_SPECULAR_MAP'],
-	['g_tSpiralNormal', 'spiralNormalMap', 'USE_SPIRAL_NORMAL_MAP'],
-	['g_tSpiralOverlay', 'spiralOverlayMap', 'USE_SPIRAL_OVERLAY_MAP'],
+	['g_tDisplacementMask',[ 'displacementMaskMap', 'USE_DISPLACEMENT_MASK_MAP']],
+	['g_tSpecular', ['specularMap', 'USE_SPECULAR_MAP']],
+	['g_tSpiralNormal', ['spiralNormalMap', 'USE_SPIRAL_NORMAL_MAP']],
+	['g_tSpiralOverlay', ['spiralOverlayMap', 'USE_SPIRAL_OVERLAY_MAP']],
 
-	['g_tCubeMap', 'cubeMap', 'USE_CUBE_MAP'],
+	['g_tCubeMap', ['cubeMap', 'USE_CUBE_MAP']],
 
-	['g_tNormalRoughness', 'normalMap', 'USE_NORMAL_MAP'],
-	['g_tTintMaskEdgeMask', 'tintMaskEdgeMaskMap', 'USE_TINT_MASK_EDGE_MASK_MAP'],
-	['g_tSelfIllumMask', 'selfIllumMaskMap', 'USE_SELF_ILLUM_MASK_MAP'],
+	['g_tNormalRoughness', ['normalMap', 'USE_NORMAL_MAP']],
+	['g_tTintMaskEdgeMask', ['tintMaskEdgeMaskMap', 'USE_TINT_MASK_EDGE_MASK_MAP']],
+	['g_tSelfIllumMask', ['selfIllumMaskMap', 'USE_SELF_ILLUM_MASK_MAP']],
 
 	//g_tAnimationTexture
 ]);
@@ -315,7 +315,7 @@ export class Source2Material extends Material {
 	}
 
 	async initTextureUniforms() {
-		for (let [paramName, uniformName, defineName] of TEXTURE_UNIFORMS) {
+		for (let [paramName, [uniformName, defineName]] of TEXTURE_UNIFORMS) {
 			let paramValue = this.getTextureByName(paramName);
 			if (paramValue) {
 				this.setTexture(uniformName, paramValue ? await Source2TextureManager.getTexture(this.repository, paramValue, 0) : null, defineName);
