@@ -203,11 +203,12 @@ export class WebGLShaderSource {
 						}
 						if (loopSnippet) {
 							const loopVariableRegexp = new RegExp('\\[\\s*' + loopVariable + '\\s*\\]', 'g');
+							const loopVariableRegexp2 = new RegExp('\\{\\s*' + loopVariable + '\\s*\\}', 'g');
 							const startLoopIndex = Number.parseInt(getDefineValue(startLoopName, includeCode));
 							const endLoopIndex = Number.parseInt(getDefineValue(endLoopName, includeCode));
 							let unrolled = '';
 							for (let i = startLoopIndex; i < endLoopIndex; i++) {
-								unrolled += loopSnippet.replace(loopVariableRegexp, `[${i}]`);
+								unrolled += loopSnippet.replace(loopVariableRegexp, `[${i}]`).replace(loopVariableRegexp2, `${i}`);
 							}
 							source = source.substring(0, nextUnroll - 1) + unrolled + source.substring(nextUnroll + startIndex);
 						}
