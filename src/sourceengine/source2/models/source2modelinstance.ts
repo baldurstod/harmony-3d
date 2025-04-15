@@ -45,7 +45,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 	animationSpeed = 1.0;
 	sourceModel: Source2Model;
 	hasAnimations: true = true;
-	#bodyGroups = new Map<string, number | undefined>();
+	#bodyGroups: Map<string, number> = new Map();
 
 	constructor(sourceModel: Source2Model, isDynamic) {
 		defaultMaterial.addUser(Source2ModelInstance);
@@ -70,7 +70,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 		this.#bodyGroups.set('autodefault', undefined);
 
 		for (const bodyGroup of this.sourceModel.bodyGroups) {
-			this.#bodyGroups.set(bodyGroup, undefined);
+			this.#bodyGroups.set(bodyGroup, 0);
 		}
 		this.#refreshMeshesVisibility();
 	}
