@@ -316,6 +316,10 @@ export class Source2Material extends Material {
 		}
 	}
 
+	getUniforms(): Array<Map<string, string>> {
+		return [UNIFORMS];
+	}
+
 	getTextureUniforms(): Array<Map<string, Array<string>>> {
 		return [TEXTURE_UNIFORMS];
 	}
