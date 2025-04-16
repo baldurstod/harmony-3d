@@ -7,6 +7,7 @@ export default `
 #include declare_fragment_specular_map
 #include source2_fragment_declare_detail_map
 #include declare_fragment_cube_map
+#include source2_fragment_declare_cs2_stickers
 //#include source1_declare_phong
 
 #include declare_lights
@@ -131,6 +132,27 @@ gl_FragColor.a = texelColor.a;
 #ifdef USE_CUBE_MAP
 	gl_FragColor += cubeMapColor * METALNESS_MASK;//METALNESS_MASK;
 #endif
+
+	#include source2_fragment_compute_cs2_stickers
+
+	if (length (vVertexPositionModelSpace.xy - g_vSticker0Offset.xy*15.) < 15.) {
+		gl_FragColor = vec4(1., 0., 0., 0.);
+	}
+
+	if (length (vVertexPositionModelSpace.xz - g_vSticker0Offset.xy * 15.) < 5.) {
+		gl_FragColor = vec4(1., 0., 0., 0.);
+	}
+
+	gl_FragColor.a = 1.0;
+	gl_FragColor = texture2D(stickerWepInputsMap, vTextureCoord.xy);
+
+	gl_FragColor = vec4(vTextureCoord.xy, 0.0, 1.0);
+
+//	gl_FragColor = texture2D(stickerWepInputsMap, vTextureCoord.xy);
+//gl_FragColor = texture2D(colorMap, vTextureCoord.xy);
+
+
+
 	#include compute_fragment_standard
 }
 `;

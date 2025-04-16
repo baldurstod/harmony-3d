@@ -4,6 +4,7 @@ export default `
 #include declare_vertex_uv
 #include declare_vertex_skinning
 #include declare_shadow_mapping
+#include declare_log_depth
 
 #include source2_varying_csgo_weapon
 
@@ -14,5 +15,8 @@ void main(void) {
 	#include compute_vertex_projection
 	#include compute_vertex_shadow_mapping
 	#include compute_vertex_standard
+
+	vVertexPositionModelSpace = vertexPositionModelSpace;
+	#include compute_vertex_log_depth
 }
 `;

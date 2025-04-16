@@ -4665,11 +4665,12 @@ class WebGLShaderSource {
                         }
                         if (loopSnippet) {
                             const loopVariableRegexp = new RegExp('\\[\\s*' + loopVariable + '\\s*\\]', 'g');
+                            const loopVariableRegexp2 = new RegExp('\\{\\s*' + loopVariable + '\\s*\\}', 'g');
                             const startLoopIndex = Number.parseInt(getDefineValue(startLoopName, includeCode));
                             const endLoopIndex = Number.parseInt(getDefineValue(endLoopName, includeCode));
                             let unrolled = '';
                             for (let i = startLoopIndex; i < endLoopIndex; i++) {
-                                unrolled += loopSnippet.replace(loopVariableRegexp, `[${i}]`);
+                                unrolled += loopSnippet.replace(loopVariableRegexp, `[${i}]`).replace(loopVariableRegexp2, `${i}`);
                             }
                             source = source.substring(0, nextUnroll - 1) + unrolled + source.substring(nextUnroll + startIndex);
                         }
@@ -5163,7 +5164,7 @@ class Camera extends Entity {
     isPerspective;
     isOrthographic;
     #tanHalfVerticalFov;
-    constructor(params = {}) {
+    constructor(params = {} /*TODO: create type*/) {
         super();
         super.setParameters(params);
         this.nearPlane = params.nearPlane ?? params.near ?? DEFAULT_NEAR_PLANE;
@@ -22551,6 +22552,9 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
         imageDatas = new Uint8Array(buf);
         decodeLz4(reader, imageDatas, compressedLength, entrySize);
         reader.seek(start + compressedLength); // decoder may overread, place the reader at the start of the next image block
+        if ((start + compressedLength) != reader.tell()) {
+            console.error('error decoding texture: wrong decompressed size: ', start, compressedLength, entrySize);
+        }
     }
     if (imageDatas && imageFormat == VTEX_FORMAT_BGRA8888) {
         for (let i = 0, l = imageDatas.length; i < l; i += 4) {
@@ -23106,7 +23110,7 @@ class Source2ModelInstance extends Entity {
     #initDefaultBodyGroups() {
         this.#bodyGroups.set('autodefault', undefined);
         for (const bodyGroup of this.sourceModel.bodyGroups) {
-            this.#bodyGroups.set(bodyGroup, undefined);
+            this.#bodyGroups.set(bodyGroup, 0);
         }
         this.#refreshMeshesVisibility();
     }
@@ -55990,34 +55994,35 @@ const UNIFORMS = new Map([
     ['g_flDetailBlendFactor', 'g_flDetailBlendFactor'],
     ['g_flMaterialCloakFactor', 'g_flMaterialCloakFactor'],
 ]);
-const TEXTURE_UNIFORMS = new Set([
-    ['g_tColor', 'colorMap', 'USE_COLOR_MAP'],
-    ['TextureColor', 'colorMap', 'USE_COLOR_MAP'],
-    ['g_tNormal', 'normalMap', 'USE_NORMAL_MAP'],
-    ['g_tAmbientOcclusion', 'aoMap', 'USE_AO_MAP'],
-    ['g_tTintColor', 'tintColorMap', 'USE_TINT_COLOR_MAP'],
-    ['g_tSelfIllumFlowWaveform', 'selfIllumFlowWaveformMap', 'USE_SIFW_MAP'],
-    ['g_tMaskParameters', 'maskParametersMap', 'USE_MASK_PARAMETERS_MAP'], //TextureSelfIllumMask
-    ['g_tColorA', 'colorAMap', 'USE_COLOR_A_MAP'],
-    ['g_tColorB', 'colorBMap', 'USE_COLOR_B_MAP'],
-    ['g_tColorC', 'colorCMap', 'USE_COLOR_C_MAP'],
-    ['g_tColor1', 'color1Map', 'USE_COLOR_1_MAP'],
-    ['g_tMask', 'maskMap', 'USE_MASK_MAP'],
-    ['g_tNormalA', 'normalAMap', 'USE_NORMAL_A_MAP'],
-    ['g_tEmissiveB', 'emissiveBMap', 'USE_EMISSIVE_B_MAP'],
-    ['g_tEmissiveC', 'emissiveCMap', 'USE_EMISSIVE_C_MAP'],
-    ['g_tMasks1', 'mask1Map', 'USE_MASK1_MAP'],
-    ['g_tMasks2', 'mask2Map', 'USE_MASK2_MAP'],
-    ['g_tDetail', 'detail1Map', 'USE_DETAIL1_MAP'],
-    ['g_tDetail2', 'detail2Map', 'USE_DETAIL2_MAP'],
-    ['g_tDisplacementMask', 'displacementMaskMap', 'USE_DISPLACEMENT_MASK_MAP'],
-    ['g_tSpecular', 'specularMap', 'USE_SPECULAR_MAP'],
-    ['g_tSpiralNormal', 'spiralNormalMap', 'USE_SPIRAL_NORMAL_MAP'],
-    ['g_tSpiralOverlay', 'spiralOverlayMap', 'USE_SPIRAL_OVERLAY_MAP'],
-    ['g_tCubeMap', 'cubeMap', 'USE_CUBE_MAP'],
-    ['g_tNormalRoughness', 'normalMap', 'USE_NORMAL_MAP'],
-    ['g_tTintMaskEdgeMask', 'tintMaskEdgeMaskMap', 'USE_TINT_MASK_EDGE_MASK_MAP'],
-    ['g_tSelfIllumMask', 'selfIllumMaskMap', 'USE_SELF_ILLUM_MASK_MAP'],
+const TEXTURE_UNIFORMS = new Map([
+    ['g_tColor', ['colorMap', 'USE_COLOR_MAP']],
+    ['TextureColor', ['colorMap', 'USE_COLOR_MAP']],
+    ['g_tNormal', ['normalMap', 'USE_NORMAL_MAP']],
+    ['g_tAmbientOcclusion', ['aoMap', 'USE_AO_MAP']],
+    ['g_tTintColor', ['tintColorMap', 'USE_TINT_COLOR_MAP']],
+    ['g_tSelfIllumFlowWaveform', ['selfIllumFlowWaveformMap', 'USE_SIFW_MAP']],
+    ['g_tMaskParameters', ['maskParametersMap', 'USE_MASK_PARAMETERS_MAP']], //TextureSelfIllumMask
+    ['g_tColorA', ['colorAMap', 'USE_COLOR_A_MAP']],
+    ['g_tColorB', ['colorBMap', 'USE_COLOR_B_MAP']],
+    ['g_tColorC', ['colorCMap', 'USE_COLOR_C_MAP']],
+    ['g_tColor1', ['color1Map', 'USE_COLOR_1_MAP']],
+    ['g_tMask', ['maskMap', 'USE_MASK_MAP']],
+    ['g_tNormalA', ['normalAMap', 'USE_NORMAL_A_MAP']],
+    ['g_tEmissiveB', ['emissiveBMap', 'USE_EMISSIVE_B_MAP']],
+    ['g_tEmissiveC', ['emissiveCMap', 'USE_EMISSIVE_C_MAP']],
+    ['g_tMasks1', ['mask1Map', 'USE_MASK1_MAP']],
+    ['g_tMasks2', ['mask2Map', 'USE_MASK2_MAP']],
+    ['g_tDetail', ['detail1Map', 'USE_DETAIL1_MAP']],
+    ['g_tDetail2', ['detail2Map', 'USE_DETAIL2_MAP']],
+    ['g_tMetalness', ['metalnessMap', 'USE_METALNESS_MAP']],
+    ['g_tDisplacementMask', ['displacementMaskMap', 'USE_DISPLACEMENT_MASK_MAP']],
+    ['g_tSpecular', ['specularMap', 'USE_SPECULAR_MAP']],
+    ['g_tSpiralNormal', ['spiralNormalMap', 'USE_SPIRAL_NORMAL_MAP']],
+    ['g_tSpiralOverlay', ['spiralOverlayMap', 'USE_SPIRAL_OVERLAY_MAP']],
+    ['g_tCubeMap', ['cubeMap', 'USE_CUBE_MAP']],
+    ['g_tNormalRoughness', ['normalMap', 'USE_NORMAL_MAP']],
+    ['g_tTintMaskEdgeMask', ['tintMaskEdgeMaskMap', 'USE_TINT_MASK_EDGE_MASK_MAP']],
+    ['g_tSelfIllumMask', ['selfIllumMaskMap', 'USE_SELF_ILLUM_MASK_MAP']],
     //g_tAnimationTexture
 ]);
 const DEFAULT_ALPHA_TEST_REFERENCE = 0.7;
@@ -56241,11 +56246,19 @@ class Source2Material extends Material {
             }
         }
     }
+    getUniforms() {
+        return [UNIFORMS];
+    }
+    getTextureUniforms() {
+        return [TEXTURE_UNIFORMS];
+    }
     async initTextureUniforms() {
-        for (let [paramName, uniformName, defineName] of TEXTURE_UNIFORMS) {
-            let paramValue = this.getTextureByName(paramName);
-            if (paramValue) {
-                this.setTexture(uniformName, paramValue ? await Source2TextureManager.getTexture(this.repository, paramValue, 0) : null, defineName);
+        for (const map of this.getTextureUniforms()) {
+            for (let [paramName, [uniformName, defineName]] of map) {
+                let paramValue = this.getTextureByName(paramName);
+                if (paramValue) {
+                    this.setTexture(uniformName, paramValue ? await Source2TextureManager.getTexture(this.repository, paramValue, 0) : null, defineName);
+                }
             }
         }
     }
@@ -56415,12 +56428,495 @@ class Source2CsgoWeaponStattrak extends Source2Material {
 }
 Source2MaterialLoader.registerMaterial('csgo_weapon_stattrak.vfx', Source2CsgoWeaponStattrak);
 
+const STICKER_COUNT = 5;
 class Source2CsgoWeapon extends Source2Material {
+    setupUniformsOnce() {
+        super.setupUniformsOnce();
+        if (this.getIntParam('F_STICKERS')) {
+            this.setDefine('ENABLE_STICKERS');
+        }
+        for (let i = 0; i < STICKER_COUNT; i++) {
+            //if (this.getIntParam(`g_bEnableSticker${i}`)) {
+            this.setDefine(`ENABLE_STICKER${i}`);
+            //}
+        }
+    }
+    getUniforms() {
+        const uniforms = super.getUniforms();
+        const m = new Map();
+        for (let i = 0; i < STICKER_COUNT; i++) {
+            m.set(`g_flSticker${i}Rotation`, `g_flSticker${i}Rotation`);
+            m.set(`g_flSticker${i}Wear`, `g_flSticker${i}Wear`);
+            m.set(`g_fWearScratchesSticker${i}`, `g_fWearScratchesSticker${i}`);
+            m.set(`g_vSticker${i}Offset`, `g_vSticker${i}Offset`);
+            m.set(`g_vSticker${i}Scale`, `g_vSticker${i}Scale`);
+            m.set(`g_vWearBiasSticker${i}`, `g_vWearBiasSticker${i}`);
+        }
+        uniforms.push(m);
+        return uniforms;
+    }
+    getTextureUniforms() {
+        const uniforms = super.getTextureUniforms();
+        const m = new Map();
+        for (let i = 0; i < STICKER_COUNT; i++) {
+            m.set(`g_tHoloSpectrumSticker${i}`, [`holoSpectrumSticker${i}Map`, `USE_HOLO_SPECTRUM_STICKER${i}_MAP`]);
+            m.set(`g_tNormalRoughnessSticker${i}`, [`normalRoughnessSticker${i}Map`, `USE_NORMAL_ROUGHNESS_STICKER${i}_MAP`]);
+            m.set(`g_tSfxMaskSticker${i}`, [`sfxMaskSticker${i}Map`, `USE_SFX_MASK_STICKER${i}_MAP`]);
+            m.set(`g_tSticker${i}`, [`sticker${i}Map`, `USE_STICKER${i}_MAP`]);
+        }
+        m.set('g_tStickerWepInputs', [`stickerWepInputsMap`, `USE_STICKER_WEP_INPUT_MAP`]);
+        uniforms.push(m);
+        return uniforms;
+    }
     get shaderSource() {
         return 'source2_csgo_weapon';
     }
 }
 Source2MaterialLoader.registerMaterial('csgo_weapon.vfx', Source2CsgoWeapon);
+/*
+{
+    "m_materialName": "materials/models/weapons/v_models/rif_ak47/ak47.vmat",
+    "m_shaderName": "csgo_weapon.vfx",
+    "m_intParams": [
+        {
+            "m_name": "F_STICKERS",
+            "m_nValue": 1
+        },
+        {
+            "m_name": "g_bEnableSticker0",
+            "m_nValue": 0
+        },
+        {
+            "m_name": "g_bEnableSticker1",
+            "m_nValue": 0
+        },
+        {
+            "m_name": "g_bEnableSticker2",
+            "m_nValue": 0
+        },
+        {
+            "m_name": "g_bEnableSticker3",
+            "m_nValue": 0
+        },
+        {
+            "m_name": "g_bEnableSticker4",
+            "m_nValue": 0
+        },
+        {
+            "m_name": "g_bFogEnabled",
+            "m_nValue": 1
+        },
+        {
+            "m_name": "g_nScaleTexCoordUByModelScaleAxis",
+            "m_nValue": 0
+        },
+        {
+            "m_name": "g_nScaleTexCoordVByModelScaleAxis",
+            "m_nValue": 0
+        },
+        {
+            "m_name": "g_nTextureAddressModeU",
+            "m_nValue": 0
+        },
+        {
+            "m_name": "g_nTextureAddressModeV",
+            "m_nValue": 0
+        }
+    ],
+    "m_floatParams": [
+        {
+            "m_name": "g_flMetalnessTransitionBias",
+            "m_flValue": 2
+        },
+        {
+            "m_name": "g_flModelTintAmount",
+            "m_flValue": 1
+        },
+        {
+            "m_name": "g_flSticker0Rotation",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_flSticker0Wear",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_flSticker1Rotation",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_flSticker1Wear",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_flSticker2Rotation",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_flSticker2Wear",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_flSticker3Rotation",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_flSticker3Wear",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_flSticker4Rotation",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_flSticker4Wear",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_flTexCoordRotation",
+            "m_flValue": 0
+        },
+        {
+            "m_name": "g_fWearScratchesSticker0",
+            "m_flValue": 1
+        },
+        {
+            "m_name": "g_fWearScratchesSticker1",
+            "m_flValue": 1
+        },
+        {
+            "m_name": "g_fWearScratchesSticker2",
+            "m_flValue": 1
+        },
+        {
+            "m_name": "g_fWearScratchesSticker3",
+            "m_flValue": 1
+        },
+        {
+            "m_name": "g_fWearScratchesSticker4",
+            "m_flValue": 1
+        }
+    ],
+    "m_vectorParams": [
+        {
+            "m_name": "g_vColorTint",
+            "m_value": [
+                1,
+                1,
+                1,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vMetalnessRemapRange",
+            "m_value": [
+                0,
+                1,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vSticker0Offset",
+            "m_value": [
+                0.15399999916553497,
+                -0.43799999356269836,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vSticker0Scale",
+            "m_value": [
+                15.350000381469727,
+                15.350000381469727,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vSticker1Offset",
+            "m_value": [
+                0.06499999761581421,
+                -0.4320000112056732,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vSticker1Scale",
+            "m_value": [
+                15.350000381469727,
+                15.350000381469727,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vSticker2Offset",
+            "m_value": [
+                -0.03200000151991844,
+                -0.43799999356269836,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vSticker2Scale",
+            "m_value": [
+                15.350000381469727,
+                15.350000381469727,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vSticker3Offset",
+            "m_value": [
+                -0.164000004529953,
+                -0.4440000057220459,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vSticker3Scale",
+            "m_value": [
+                15.350000381469727,
+                15.350000381469727,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vSticker4Offset",
+            "m_value": [
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vSticker4Scale",
+            "m_value": [
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vTexCoordCenter",
+            "m_value": [
+                0.5,
+                0.5,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vTexCoordOffset",
+            "m_value": [
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vTexCoordScale",
+            "m_value": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vTexCoordScrollSpeed",
+            "m_value": [
+                0,
+                0,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vWearBiasSticker0",
+            "m_value": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vWearBiasSticker1",
+            "m_value": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vWearBiasSticker2",
+            "m_value": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vWearBiasSticker3",
+            "m_value": [
+                1,
+                1,
+                0,
+                0
+            ]
+        },
+        {
+            "m_name": "g_vWearBiasSticker4",
+            "m_value": [
+                1,
+                1,
+                0,
+                0
+            ]
+        }
+    ],
+    "m_textureParams": [
+        {
+            "m_name": "g_tAmbientOcclusion",
+            "m_pValue": "materials/models/weapons/v_models/rif_ak47/ak47_ao_psd_286fb1af.vtex"
+        },
+        {
+            "m_name": "g_tColor",
+            "m_pValue": "materials/models/weapons/v_models/rif_ak47/ak47_color_psd_1f318532.vtex"
+        },
+        {
+            "m_name": "g_tHoloSpectrumSticker0",
+            "m_pValue": "materials/default/stickers/default_holospectrum_tga_e12c79bd.vtex"
+        },
+        {
+            "m_name": "g_tHoloSpectrumSticker1",
+            "m_pValue": "materials/default/stickers/default_holospectrum_tga_e12c79bd.vtex"
+        },
+        {
+            "m_name": "g_tHoloSpectrumSticker2",
+            "m_pValue": "materials/default/stickers/default_holospectrum_tga_e12c79bd.vtex"
+        },
+        {
+            "m_name": "g_tHoloSpectrumSticker3",
+            "m_pValue": "materials/default/stickers/default_holospectrum_tga_e12c79bd.vtex"
+        },
+        {
+            "m_name": "g_tHoloSpectrumSticker4",
+            "m_pValue": "materials/default/stickers/default_holospectrum_tga_e12c79bd.vtex"
+        },
+        {
+            "m_name": "g_tMetalness",
+            "m_pValue": "materials/models/weapons/v_models/rif_ak47/ak47_rough_psd_73589151.vtex"
+        },
+        {
+            "m_name": "g_tNormal",
+            "m_pValue": "materials/models/weapons/v_models/rif_ak47/ak47_normal_psd_57f37ac9.vtex"
+        },
+        {
+            "m_name": "g_tNormalRoughnessSticker0",
+            "m_pValue": "materials/default/default_normal_tga_4c6e7391.vtex"
+        },
+        {
+            "m_name": "g_tNormalRoughnessSticker1",
+            "m_pValue": "materials/default/default_normal_tga_4c6e7391.vtex"
+        },
+        {
+            "m_name": "g_tNormalRoughnessSticker2",
+            "m_pValue": "materials/default/default_normal_tga_4c6e7391.vtex"
+        },
+        {
+            "m_name": "g_tNormalRoughnessSticker3",
+            "m_pValue": "materials/default/default_normal_tga_4c6e7391.vtex"
+        },
+        {
+            "m_name": "g_tNormalRoughnessSticker4",
+            "m_pValue": "materials/default/default_normal_tga_4c6e7391.vtex"
+        },
+        {
+            "m_name": "g_tSfxMaskSticker0",
+            "m_pValue": "materials/default/stickers/default_holomask_tga_daef1ed1.vtex"
+        },
+        {
+            "m_name": "g_tSfxMaskSticker1",
+            "m_pValue": "materials/default/stickers/default_holomask_tga_daef1ed1.vtex"
+        },
+        {
+            "m_name": "g_tSfxMaskSticker2",
+            "m_pValue": "materials/default/stickers/default_holomask_tga_daef1ed1.vtex"
+        },
+        {
+            "m_name": "g_tSfxMaskSticker3",
+            "m_pValue": "materials/default/stickers/default_holomask_tga_daef1ed1.vtex"
+        },
+        {
+            "m_name": "g_tSfxMaskSticker4",
+            "m_pValue": "materials/default/stickers/default_holomask_tga_daef1ed1.vtex"
+        },
+        {
+            "m_name": "g_tSticker0",
+            "m_pValue": "materials/default/stickers/sticker_default_psd_7f7731d3.vtex"
+        },
+        {
+            "m_name": "g_tSticker1",
+            "m_pValue": "materials/default/stickers/sticker_default_psd_7f7731d3.vtex"
+        },
+        {
+            "m_name": "g_tSticker2",
+            "m_pValue": "materials/default/stickers/sticker_default_psd_7f7731d3.vtex"
+        },
+        {
+            "m_name": "g_tSticker3",
+            "m_pValue": "materials/default/stickers/sticker_default_psd_7f7731d3.vtex"
+        },
+        {
+            "m_name": "g_tSticker4",
+            "m_pValue": "materials/default/stickers/sticker_default_psd_7f7731d3.vtex"
+        },
+        {
+            "m_name": "g_tStickerGlitterNormal",
+            "m_pValue": "materials/default/stickers/squares_glitter_normal_tga_25145674.vtex"
+        },
+        {
+            "m_name": "g_tStickerScratches",
+            "m_pValue": "materials/default/stickers/sticker_default_scratches_psd_a9ad199b.vtex"
+        },
+        {
+            "m_name": "g_tStickerWepInputs",
+            "m_pValue": "weapons/models/ak47/materials/stickers/weapon_rif_ak47_sticker_mask_legacy_tga_1bdb00a.vtex"
+        }
+    ],
+    "m_dynamicParams": [],
+    "m_dynamicTextureParams": [],
+    "m_intAttributes": [],
+    "m_floatAttributes": [],
+    "m_vectorAttributes": [],
+    "m_textureAttributes": [],
+    "m_stringAttributes": [
+        {
+            "m_name": "composite_inputs",
+            "m_value": "materials/models/weapons/customization/rif_ak47/rif_ak47_composite_inputs.vmat"
+        },
+        {
+            "m_name": "PreviewModel",
+            "m_value": "weapons/models/ak47/weapon_rif_ak47.vmdl"
+        }
+    ],
+    "m_renderAttributesUsed": []
+}
+*/
 
 class Source2VrBlackUnlit extends Source2Material {
     get shaderSource() {
@@ -63155,6 +63651,36 @@ class RenderTrails extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_RenderTrails', RenderTrails);
 
+var source2_fragment_compute_cs2_stickers = `
+	#pragma unroll
+	for ( int i = 0; i < 5; i ++ ) {
+
+#ifdef ENABLE_STICKER{i}
+#endif
+	}
+`;
+
+var source2_fragment_declare_cs2_stickers = `
+#pragma unroll
+for ( int i = 0; i < 5; i ++ ) {
+#ifdef ENABLE_STICKER{i}
+	uniform float g_vSticker{i}Rotation;
+	uniform float g_vSticker{i}Wear;
+	uniform float g_fWearScratchesSticker{i};
+	uniform vec4 g_vSticker{i}Offset;
+	uniform vec4 g_vSticker{i}Scale;
+	uniform vec4 g_vWearBiasSticker{i};
+
+	uniform sampler2D sticker{i}Map;
+	uniform sampler2D normalRoughnessSticker{i}Map;
+	uniform sampler2D holoSpectrumSticker{i}Map;
+	uniform sampler2D sfxMaskSticker{i}Map;
+#endif
+}
+
+uniform sampler2D stickerWepInputsMap;
+`;
+
 var source2_varying_csgo_weapon_stattrak = `
 #include varying_standard
 `;
@@ -63163,6 +63689,8 @@ var source2_varying_csgo_weapon = `
 #include varying_standard
 `;
 
+Includes['source2_fragment_compute_cs2_stickers'] = source2_fragment_compute_cs2_stickers;
+Includes['source2_fragment_declare_cs2_stickers'] = source2_fragment_declare_cs2_stickers;
 Includes['source2_varying_csgo_weapon_stattrak'] = source2_varying_csgo_weapon_stattrak;
 Includes['source2_varying_csgo_weapon'] = source2_varying_csgo_weapon;
 
@@ -63534,6 +64062,7 @@ var source2_csgo_weapon_fs = `
 #include declare_fragment_specular_map
 #include source2_fragment_declare_detail_map
 #include declare_fragment_cube_map
+#include source2_fragment_declare_cs2_stickers
 //#include source1_declare_phong
 
 #include declare_lights
@@ -63658,6 +64187,27 @@ gl_FragColor.a = texelColor.a;
 #ifdef USE_CUBE_MAP
 	gl_FragColor += cubeMapColor * METALNESS_MASK;//METALNESS_MASK;
 #endif
+
+	#include source2_fragment_compute_cs2_stickers
+
+	if (length (vVertexPositionModelSpace.xy - g_vSticker0Offset.xy*15.) < 15.) {
+		gl_FragColor = vec4(1., 0., 0., 0.);
+	}
+
+	if (length (vVertexPositionModelSpace.xz - g_vSticker0Offset.xy * 15.) < 5.) {
+		gl_FragColor = vec4(1., 0., 0., 0.);
+	}
+
+	gl_FragColor.a = 1.0;
+	gl_FragColor = texture2D(stickerWepInputsMap, vTextureCoord.xy);
+
+	gl_FragColor = vec4(vTextureCoord.xy, 0.0, 1.0);
+
+//	gl_FragColor = texture2D(stickerWepInputsMap, vTextureCoord.xy);
+//gl_FragColor = texture2D(colorMap, vTextureCoord.xy);
+
+
+
 	#include compute_fragment_standard
 }
 `;
@@ -63668,6 +64218,7 @@ var source2_csgo_weapon_vs = `
 #include declare_vertex_uv
 #include declare_vertex_skinning
 #include declare_shadow_mapping
+#include declare_log_depth
 
 #include source2_varying_csgo_weapon
 
@@ -63678,6 +64229,9 @@ void main(void) {
 	#include compute_vertex_projection
 	#include compute_vertex_shadow_mapping
 	#include compute_vertex_standard
+
+	vVertexPositionModelSpace = vertexPositionModelSpace;
+	#include compute_vertex_log_depth
 }
 `;
 

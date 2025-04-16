@@ -59,7 +59,8 @@ export class Camera extends Entity {
 	isPerspective: boolean;
 	isOrthographic: boolean;
 	#tanHalfVerticalFov: number
-	constructor(params: any = {}) {
+
+	constructor(params: any = {}/*TODO: create type*/) {
 		super();
 		super.setParameters(params);
 		this.nearPlane = params.nearPlane ?? params.near ?? DEFAULT_NEAR_PLANE;

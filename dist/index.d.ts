@@ -6722,7 +6722,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -6974,6 +6974,9 @@ declare class Choreography {
          }
 
          export declare class Source2CsgoWeapon extends Source2Material {
+             setupUniformsOnce(): void;
+             getUniforms(): Array<Map<string, string>>;
+             getTextureUniforms(): Array<Map<string, Array<string>>>;
              get shaderSource(): string;
          }
 
@@ -7136,6 +7139,8 @@ declare class Choreography {
              setUniform(uniformName: any, uniformValue: any): void;
              initFloatUniforms(): void;
              initVectorUniforms(): void;
+             getUniforms(): Array<Map<string, string>>;
+             getTextureUniforms(): Array<Map<string, Array<string>>>;
              initTextureUniforms(): Promise<void>;
              getParam(paramName: any): any;
              getIntParam(intName: any): any;
@@ -7320,7 +7325,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;

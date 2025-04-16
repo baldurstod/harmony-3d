@@ -53,6 +53,8 @@ export class Source2CsgoWeapon extends Source2Material {
 			m.set(`g_tSticker${i}`, [`sticker${i}Map`, `USE_STICKER${i}_MAP`]);
 		}
 
+		m.set('g_tStickerWepInputs', [`stickerWepInputsMap`, `USE_STICKER_WEP_INPUT_MAP`]);
+
 		uniforms.push(m);
 		return uniforms;
 	}
