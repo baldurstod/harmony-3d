@@ -1,10 +1,11 @@
 import { vec4 } from 'gl-matrix';
 import { executeDynamicExpression } from './source2dynamicexpression';
-import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL } from '../../../materials/material';
+import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL, UniformValue } from '../../../materials/material';
 import { Source2TextureManager } from '../textures/source2texturemanager';
 import { DEBUG } from '../../../buildoptions';
 import { RenderFace } from '../../../materials/constants';
 import { Source2File } from '../loaders/source2file';
+import { Mesh } from '../../../objects/mesh';
 
 const UNIFORMS = new Map([
 	['g_vColorTint', 'g_vColorTint'],
@@ -65,6 +66,8 @@ const TEXTURE_UNIFORMS = new Map([
 
 const DEFAULT_ALPHA_TEST_REFERENCE = 0.7;
 
+type ProxyParams = { [key: string]: any };
+
 export class Source2Material extends Material {
 	#source2File?: Source2File;
 	repository: string;
@@ -76,7 +79,7 @@ export class Source2Material extends Material {
 		//this.setupUniforms();
 		this.setupUniformsOnce();
 		if (false && DEBUG && source2File) {
-			console.log(source2File.getBlockByType('DATA')?.keyValue?.root || source2File.getBlockByType('DATA')?.structs?.MaterialResourceData_t);
+			console.log(source2File!.getBlockByType('DATA')?.keyValue?.root || source2File!.getBlockByType('DATA')?.structs?.MaterialResourceData_t);
 		}
 	}
 
@@ -201,7 +204,7 @@ export class Source2Material extends Material {
 		return new (this.constructor as typeof Source2Material)(this.repository, this.#source2File);
 	}
 
-	getTextureByName(textureName) {
+	getTextureByName(textureName: string) {
 		if (this.#source2File) {
 			var textures = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_textureParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_textureParams');
 			if (textures) {
@@ -216,11 +219,11 @@ export class Source2Material extends Material {
 		return null;
 	}
 
-	updateMaterial(time, mesh) {
+	updateMaterial(time: number, mesh: Mesh) {
 		this.processProxies(time, mesh.materialsParams);
 	}
 
-	processProxies(time, proxyParams) {
+	processProxies(time: number, proxyParams: ProxyParams) {
 		//todov3//rename function
 
 		/*let proxies = this.proxies;
@@ -231,7 +234,7 @@ export class Source2Material extends Material {
 		this.afterProcessProxies(proxyParams);
 	}
 
-	_afterProcessProxies(proxyParams) {
+	_afterProcessProxies(proxyParams: ProxyParams) {
 		//this.setupUniforms();
 		this.initTextureUniforms();//TODO : do this only once
 		/*
@@ -275,7 +278,7 @@ export class Source2Material extends Material {
 
 	}
 
-	setDynamicUniform(uniformName) {
+	setDynamicUniform(uniformName: string) {
 		let value = this.getDynamicParam(uniformName);
 		if (value) {
 			if (uniformName.startsWith('g_fl')) {
@@ -286,11 +289,11 @@ export class Source2Material extends Material {
 		}
 	}
 
-	afterProcessProxies(proxyParams) {
+	afterProcessProxies(proxyParams: ProxyParams) {
 
 	}
 
-	setUniform(uniformName, uniformValue) {
+	setUniform(uniformName: string, uniformValue: UniformValue) {
 		this.uniforms[uniformName] = uniformValue;
 	}
 
@@ -335,7 +338,7 @@ export class Source2Material extends Material {
 		}
 	}
 
-	getParam(paramName) {
+	getParam(paramName: string) {
 		if (paramName.startsWith('g_f')) {
 			return this.getFloatParam(paramName);
 		} else if (paramName.startsWith('g_v')) {
@@ -353,7 +356,7 @@ export class Source2Material extends Material {
 		console.error(`unknown parameter : ${paramName}`, this);
 	}
 
-	getIntParam(intName) {
+	getIntParam(intName: string) {
 		if (this.#source2File) {
 			var ints = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_intParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_intParams');
 			if (ints) {
@@ -367,7 +370,7 @@ export class Source2Material extends Material {
 		}
 		return null;
 	}
-	getFloatParam(floatName) {
+	getFloatParam(floatName: string) {
 		if (this.#source2File) {
 			var floats = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_floatParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_floatParams');
 			if (floats) {
@@ -381,7 +384,7 @@ export class Source2Material extends Material {
 		}
 		return null;
 	}
-	getVectorParam(vectorName) {
+	getVectorParam(vectorName: string) {
 		if (this.#source2File) {
 			var vectors = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_vectorParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_vectorParams');
 			if (vectors) {
@@ -395,7 +398,7 @@ export class Source2Material extends Material {
 		}
 		return vec4.create();
 	}
-	getDynamicParam(dynamicName) {
+	getDynamicParam(dynamicName: string) {
 		if (this.#source2File) {
 			var dynamicParams = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_dynamicParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
 			if (dynamicParams) {
