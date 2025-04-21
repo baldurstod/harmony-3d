@@ -3,7 +3,7 @@ import { Entity } from '../entities/entity';
 import { LineSegmentsGeometry } from '../primitives/geometries/linesegmentsgeometry';
 import { Mesh } from './mesh';
 import { LineMaterial } from '../materials/linematerial';
-import { Material, MATERIAL_COLOR_PER_MESH } from '../materials/material';
+import { Material, MaterialColorMode } from '../materials/material';
 
 export class Wireframe extends Entity {
 	#material: Material = new LineMaterial({ polygonOffset: true, lineWidth: 3 });
@@ -16,7 +16,7 @@ export class Wireframe extends Entity {
 
 		//this.#material = material;
 
-		this.#material.colorMode = MATERIAL_COLOR_PER_MESH;
+		this.#material.setColorMode(MaterialColorMode.PerMesh);
 		this.#material.color = vec4.fromValues(0.0, 0.0, 0.0, 1.0);
 		this.#material.addUser(this);
 

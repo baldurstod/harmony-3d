@@ -5,9 +5,8 @@ import { Float32BufferAttribute, Uint8BufferAttribute, Uint16BufferAttribute } f
 import { BufferGeometry } from '../../geometry/buffergeometry';
 import { GraphicsEvents, GraphicsEvent } from '../../graphics/graphicsevents';
 import { LineBasicMaterial } from '../../materials/linebasicmaterial';
-import { MATERIAL_COLOR_PER_VERTEX } from '../../materials/material';
-import { DEBUG } from '../../buildoptions';
 import { GL_LINES } from '../../webgl/constants';
+import { MaterialColorMode } from '../../materials/material';
 
 const BASE_COLOR = [1, 1, 1, 1];
 const FRUSTRUM_COLOR = [1, 0, 0, 1];
@@ -101,7 +100,7 @@ export class CameraFrustum extends Mesh {
 		super(new BufferGeometry(), new LineBasicMaterial());
 		this.renderMode = GL_LINES;
 		this.#createVertices();
-		this.material.colorMode = MATERIAL_COLOR_PER_VERTEX;
+		this.material.setColorMode(MaterialColorMode.PerVertex);
 		this.castShadow = false;
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.update());

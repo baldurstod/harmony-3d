@@ -2,7 +2,7 @@ import { Mesh } from '../../objects/mesh';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
 import { BufferGeometry } from '../../geometry/buffergeometry';
 import { LineBasicMaterial } from '../../materials/linebasicmaterial';
-import { MATERIAL_COLOR_PER_MESH } from '../../materials/material';
+import { MaterialColorMode } from '../../materials/material';
 import { Sphere } from '../../primitives/sphere';
 import { PI, TWO_PI } from '../../math/constants';
 
@@ -16,9 +16,9 @@ export class PointLightHelper extends Mesh {
 		super(new BufferGeometry(), new LineBasicMaterial());
 		this.renderMode = GL_LINES;
 		this.#createVertices();
-		this.material.colorMode = MATERIAL_COLOR_PER_MESH;
+		this.material.setColorMode(MaterialColorMode.PerMesh);
 		this.material.setDefine('ALWAYS_ON_TOP');
-		let sphere = new Sphere({radius:SPHERE_RADIUS, segments:12, rings:12});
+		let sphere = new Sphere({ radius: SPHERE_RADIUS, segments: 12, rings: 12 });
 		sphere.material.setDefine('ALWAYS_ON_TOP');
 		this.addChild(sphere);
 	}
@@ -32,8 +32,8 @@ export class PointLightHelper extends Mesh {
 		let iInc = PI / 4;
 		let jInc = PI / 4;
 		let k = 0;
-		for (let i = 0; i < TWO_PI; i+=iInc) {
-			for (let j = 0; j < PI; j+=jInc) {
+		for (let i = 0; i < TWO_PI; i += iInc) {
+			for (let j = 0; j < PI; j += jInc) {
 				vertices.push(
 					RAYS_RADIUS * Math.cos(i) * Math.sin(j),
 					RAYS_RADIUS * Math.cos(j),
