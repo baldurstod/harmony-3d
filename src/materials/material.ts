@@ -1,5 +1,4 @@
-import { vec2, vec4 } from 'gl-matrix';
-
+import { vec2, vec3, vec4 } from 'gl-matrix';
 import { GL_LESS, GL_ONE, GL_ZERO, GL_DEPTH_TEST, GL_BLEND, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR } from '../webgl/constants';
 import { GL_FRONT, GL_BACK, GL_FRONT_AND_BACK } from '../webgl/constants';
 import { TESTING } from '../buildoptions';
@@ -26,6 +25,8 @@ export const MATERIAL_COLOR_PER_MESH = 2;
 export const DEFAULT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 export const DEFAULT_CULLING_MODE = MATERIAL_CULLING_BACK;
 
+export type UniformValue = number | vec2 | vec3 | vec4 | Texture | null;
+
 export class Material {
 	id: string;
 	name: string;
@@ -37,7 +38,7 @@ export class Material {
 	#cullingMode;
 	#users = new Set();
 	#parameters = new Map();
-	uniforms: any = {};
+	uniforms: { [key: string]: UniformValue } = {};// TODO: transform to map ?
 	defines: any;
 	parameters: any;
 	depthTest: boolean;
@@ -274,7 +275,7 @@ export class Material {
 		this.color = color;
 	}
 
-	setTexture(uniformName: string, texture: Texture, shaderDefine?: string) {
+	setTexture(uniformName: string, texture: Texture | null, shaderDefine?: string) {
 		let previousTexture = this.uniforms[uniformName];
 		if (previousTexture != texture) {
 			if (previousTexture) {
