@@ -3,7 +3,7 @@ import '../css/materialeditor.css';
 import { Material } from './material';
 import { createElement, createShadowRoot, hide, show } from 'harmony-ui';
 import { GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_DST_ALPHA, GL_DST_COLOR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
-import { BlendingEquation, BlendingFactors } from '../enums/blending';
+import { BlendingEquation, BlendingFactor } from '../enums/blending';
 
 function getUniformsHtml(uniforms: any/*TODO: create a proper type for uniforms*/) {
 	let htmlUniforms = createElement('div');
@@ -106,8 +106,8 @@ export class MaterialEditor {
 			});
 
 			if (i < 4) {
-				for (let suite in BlendingFactors) {
-					const value = BlendingFactors[suite];
+				for (let suite in BlendingFactor) {
+					const value = BlendingFactor[suite];
 					if (typeof value === 'string') {
 						(createElement('option', {
 							parent: this.#htmlBlendSelects[i],
@@ -158,10 +158,10 @@ export class MaterialEditor {
 
 		this.#htmlShader.append(addHtmlParameter('shader', material.getShaderSource()));
 
-		this.#htmlBlendSelects[0].value = BlendingFactors[this.#material.srcRGB];
-		this.#htmlBlendSelects[1].value = BlendingFactors[this.#material.srcAlpha];
-		this.#htmlBlendSelects[2].value = BlendingFactors[this.#material.dstRGB];
-		this.#htmlBlendSelects[3].value = BlendingFactors[this.#material.dstAlpha];
+		this.#htmlBlendSelects[0].value = BlendingFactor[this.#material.srcRGB];
+		this.#htmlBlendSelects[1].value = BlendingFactor[this.#material.srcAlpha];
+		this.#htmlBlendSelects[2].value = BlendingFactor[this.#material.dstRGB];
+		this.#htmlBlendSelects[3].value = BlendingFactor[this.#material.dstAlpha];
 		this.#htmlHasBlending.checked = this.#material.blend;
 
 
@@ -195,7 +195,7 @@ export class MaterialEditor {
 		}
 		let value: GLenum;
 		if (i < 4) {
-			value = BlendingFactors[blending];
+			value = BlendingFactor[blending];
 		} else {
 			value = BlendingEquation[blending];
 		}
