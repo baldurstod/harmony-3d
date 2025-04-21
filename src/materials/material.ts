@@ -1,11 +1,14 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
-import { GL_LESS, GL_ONE, GL_ZERO, GL_DEPTH_TEST, GL_BLEND, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR } from '../webgl/constants';
+import { GL_LESS, GL_ONE, GL_ZERO, GL_DEPTH_TEST, GL_BLEND, GL_FUNC_ADD, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_COLOR, GL_ONE_MINUS_SRC_COLOR, GL_DST_COLOR, GL_ONE_MINUS_DST_COLOR, GL_DST_ALPHA, GL_ONE_MINUS_DST_ALPHA, GL_CONSTANT_COLOR, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_CONSTANT_ALPHA, GL_CONSTANT_ALPHA, GL_SRC_ALPHA_SATURATE } from '../webgl/constants';
 import { GL_FRONT, GL_BACK, GL_FRONT_AND_BACK } from '../webgl/constants';
 import { TESTING } from '../buildoptions';
-import { MateriaParameter } from './materialparameter';
+import { MateriaParameter, MateriaParameterType, MateriaParameterValue, ParameterChanged } from './materialparameter';
 import { Texture } from '../textures/texture';
 import { BlendingMode, RenderFace } from './constants';
 import { registerEntity } from '../entities/entities';
+import { Mesh } from '../objects/mesh';
+import { Camera } from '../cameras/camera';
+import { JSONObject } from '../types';
 
 export const MATERIAL_BLENDING_NONE = 0;
 export const MATERIAL_BLENDING_NORMAL = 1;
@@ -18,65 +21,58 @@ export const MATERIAL_CULLING_FRONT = GL_FRONT;
 export const MATERIAL_CULLING_BACK = GL_BACK;
 export const MATERIAL_CULLING_FRONT_AND_BACK = GL_FRONT_AND_BACK;
 
-export const MATERIAL_COLOR_NONE = 0;
-export const MATERIAL_COLOR_PER_VERTEX = 1;
-export const MATERIAL_COLOR_PER_MESH = 2;
+export enum MaterialColorMode {
+	None = 0,
+	PerVertex,
+	PerMesh,
+}
 
 export const DEFAULT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 export const DEFAULT_CULLING_MODE = MATERIAL_CULLING_BACK;
 
-export type UniformValue = number | vec2 | vec3 | vec4 | Texture | null;
+export type UniformValue = number | vec2 | vec3 | vec4 | Texture | Array<Texture> | null;
+export type BlendFuncSeparateFactor = typeof GL_ZERO | typeof GL_ONE | typeof GL_SRC_COLOR | typeof GL_ONE_MINUS_SRC_COLOR | typeof GL_DST_COLOR | typeof GL_ONE_MINUS_DST_COLOR | typeof GL_SRC_ALPHA | typeof GL_ONE_MINUS_SRC_ALPHA | typeof GL_DST_ALPHA | typeof GL_ONE_MINUS_DST_ALPHA | typeof GL_CONSTANT_COLOR | typeof GL_ONE_MINUS_CONSTANT_COLOR | typeof GL_CONSTANT_ALPHA | typeof GL_ONE_MINUS_CONSTANT_ALPHA | typeof GL_SRC_ALPHA_SATURATE;
 
 export class Material {
-	id: string;
-	name: string;
+	//id: string;
+	name: string = '';
 	#renderFace = RenderFace.Front;
 	#renderLights = true;
 	#color = vec4.create();
-	#alphaTest;
-	#alphaTestReference;
-	#cullingMode;
-	#users = new Set();
-	#parameters = new Map();
+	#alphaTest: boolean = false;
+	#alphaTestReference: number = 0;
+	#users: Set<any> = new Set();
+	#parameters: Map<string, MateriaParameter> = new Map();
 	uniforms: { [key: string]: UniformValue } = {};// TODO: transform to map ?
-	defines: any;
+	defines: { [key: string]: any/*TODO: create a define type ?*/ } = {};//TODOv3: put defines in meshes too ?
 	parameters: any;
 	depthTest: boolean;
 	depthFunc: any;
 	depthMask: boolean;
 	colorMask: vec4;
 	blend: boolean = false;
-	srcRGB: any;
-	dstRGB: any;
-	srcAlpha: any;
-	dstAlpha: any;
-	modeRGB: any;
+	srcRGB: BlendFuncSeparateFactor = GL_ONE;
+	dstRGB: BlendFuncSeparateFactor = GL_ZERO;
+	srcAlpha: BlendFuncSeparateFactor = GL_ONE;
+	dstAlpha: BlendFuncSeparateFactor = GL_ZERO;
+	modeRGB: any;//TODO: create type like above
 	modeAlpha: any;
 	polygonOffset: boolean;
 	polygonOffsetFactor: number;
 	polygonOffsetUnits: number;
 	_dirtyProgram: boolean;
-	disableCulling: boolean;
-	cullMode: any;
-	#colorMode: any;
+	#colorMode: MaterialColorMode = MaterialColorMode.None;
 	colorMap?: Texture;
 	properties = new Map<string, any>();
+	static materialList: { [key: string]: typeof Material } = {};
 
-	static materialList = {};
 	constructor(params: any = {}) {
-		this.defines = {};//TODOv3: put defines in meshes too ?
-
 		this.parameters = params;
 		this.depthTest = params.depthTest ?? true;
 		this.depthFunc = GL_LESS;
 		this.depthMask = true;
 
 		this.colorMask = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-
-		this.srcRGB = GL_ONE;
-		this.dstRGB = GL_ZERO;
-		this.srcAlpha = GL_ONE;
-		this.dstAlpha = GL_ZERO;
 		this.modeRGB = GL_FUNC_ADD;
 		this.modeAlpha = GL_FUNC_ADD;
 
@@ -85,7 +81,6 @@ export class Material {
 			throw 'handle me';
 		}
 
-		this.colorMode = MATERIAL_COLOR_NONE;
 		this.color = DEFAULT_COLOR;
 
 		this.polygonOffset = params.polygonOffset ?? false;
@@ -114,14 +109,14 @@ export class Material {
 		}
 	}
 
-	removeDefine(define) {
+	removeDefine(define: string) {
 		if (this.defines[define] !== undefined) {
 			delete this.defines[define];
 			this._dirtyProgram = true;//TODOv3: invalidate program here ?
 		}
 	}
 
-	setValues(values) {//fixme//TODOv3
+	setValues(values: any) {// TODO: remove, seems to be useless
 		if (values === undefined) return;
 
 		for (var key in values) {
@@ -135,7 +130,7 @@ export class Material {
 		//return new this.constructor(this.parameters);
 	}
 
-	setTransparency(srcRGB, dstRGB, srcAlpha?, dstAlpha?) {
+	setTransparency(srcRGB: BlendFuncSeparateFactor, dstRGB: BlendFuncSeparateFactor, srcAlpha?: BlendFuncSeparateFactor, dstAlpha?: BlendFuncSeparateFactor) {
 		this.blend = true;
 		this.depthMask = false;
 		this.srcRGB = srcRGB;
@@ -184,20 +179,21 @@ export class Material {
 		}
 	}
 
-	updateMaterial(time, mesh) {
+	updateMaterial(time: number, mesh: Mesh) {
 
 	}
 
 
-	beforeRender(camera) {//TODO: check params
+	beforeRender(camera: Camera) {//TODO: check params
 
 	}
 
 	/**
 	 * @deprecated Please use `renderFace` instead.
 	 */
-	set culling(mode) {
+	set culling(mode: number) {
 		throw 'deprecated';
+		/*
 		this.#cullingMode = mode;
 		if (mode === MATERIAL_CULLING_NONE) {
 			this.setDefine('CULLING_DISABLED');
@@ -209,6 +205,7 @@ export class Material {
 			this.removeDefine('CULLING_DISABLED');
 			mode === MATERIAL_CULLING_BACK ? this.removeDefine('REVERSE_CULLING') : this.setDefine('REVERSE_CULLING');
 		}
+		*/
 	}
 
 	renderFace(renderFace: RenderFace) {
@@ -231,30 +228,40 @@ export class Material {
 		return this.#renderFace;
 	}
 
-	setColorMode(colorMode) {
+	setColorMode(colorMode: MaterialColorMode) {
 		this.#colorMode = colorMode;
 		switch (colorMode) {
-			case MATERIAL_COLOR_NONE:
+			case MaterialColorMode.None:
 				this.removeDefine('USE_VERTEX_COLOR');
 				this.removeDefine('USE_MESH_COLOR');
 				break;
-			case MATERIAL_COLOR_PER_VERTEX:
+			case MaterialColorMode.PerVertex:
 				this.setDefine('USE_VERTEX_COLOR');
 				this.removeDefine('USE_MESH_COLOR');
 				break;
-			case MATERIAL_COLOR_PER_MESH:
+			case MaterialColorMode.PerMesh:
 				this.removeDefine('USE_VERTEX_COLOR');
 				this.setDefine('USE_MESH_COLOR');
 				break;
 		}
 	}
 
-	set colorMode(colorMode) {
+	getColorMode(): MaterialColorMode {
+		return this.#colorMode;
+	}
+
+	/**
+	 * @deprecated Please use `setColorMode` instead.
+	 */
+	set colorMode(colorMode: MaterialColorMode) {
 		this.setColorMode(colorMode);
 	}
 
+	/**
+	 * @deprecated Please use `getColorMode` instead.
+	 */
 	get colorMode() {
-		return this.#colorMode;
+		return this.getColorMode();
 	}
 
 	setColor(color: vec4) {
@@ -271,12 +278,12 @@ export class Material {
 	}
 
 	setMeshColor(color = DEFAULT_COLOR) {//Note that some shaders may not provide per mesh color
-		this.colorMode = MATERIAL_COLOR_PER_MESH;
+		this.setColorMode(MaterialColorMode.PerMesh);
 		this.color = color;
 	}
 
 	setTexture(uniformName: string, texture: Texture | null, shaderDefine?: string) {
-		let previousTexture = this.uniforms[uniformName];
+		let previousTexture = this.uniforms[uniformName] as Texture;
 		if (previousTexture != texture) {
 			if (previousTexture) {
 				previousTexture.removeUser(this);
@@ -296,9 +303,9 @@ export class Material {
 		}
 	}
 
-	setTextureArray(uniformName, textureArray) {
-		let previousTextureArray = this.uniforms[uniformName];
-		let keepMe = new Set();
+	setTextureArray(uniformName: string, textureArray: Array<Texture>) {
+		let previousTextureArray: Array<Texture> | undefined = this.uniforms[uniformName] as Array<Texture>;
+		let keepMe: Set<Texture> = new Set();
 		if (textureArray) {
 			textureArray.forEach(texture => {
 				if (texture) {
@@ -319,35 +326,49 @@ export class Material {
 		}
 	}
 
-	setColorMap(texture) {
+	setColorMap(texture: Texture) {
 		this.setTexture('colorMap', texture, 'USE_COLOR_MAP');
 		this.colorMap = texture;
 	}
 
-	setColor2Map(texture) {
+	setColor2Map(texture: Texture) {
 		this.setTexture('color2Map', texture, 'USE_COLOR2_MAP');
 	}
 
-	setDetailMap(texture) {
+	setDetailMap(texture: Texture) {
 		this.setTexture('detailMap', texture, 'USE_DETAIL_MAP');
 	}
 
-	setNormalMap(texture) {
+	setNormalMap(texture: Texture) {
 		this.setTexture('normalMap', texture, 'USE_NORMAL_MAP');
 	}
 
-	setCubeMap(texture) {
+	setCubeMap(texture: Texture) {
 		this.setTexture('cubeMap', texture, 'USE_CUBE_MAP');
 	}
 
-	set alphaTest(alphaTest) {
+	setAlphaTest(alphaTest: boolean) {
 		this.#alphaTest = alphaTest;
 		this.#setAlphaTest();
 	}
 
-	set alphaTestReference(alphaTestReference) {
+	/**
+	 * @deprecated Please use `setAlphaTest` instead.
+	 */
+	set alphaTest(alphaTest: boolean) {
+		this.setAlphaTest(alphaTest);
+	}
+
+	setAlphaTestReference(alphaTestReference: number) {
 		this.#alphaTestReference = alphaTestReference;
 		this.#setAlphaTest();
+	}
+
+	/**
+	 * @deprecated Please use `setAlphaTestReference` instead.
+	 */
+	set alphaTestReference(alphaTestReference: number) {
+		this.setAlphaTestReference(alphaTestReference);
 	}
 
 	#setAlphaTest() {
@@ -368,28 +389,28 @@ export class Material {
 		return size;
 	}
 
-	addParameter(name, type, value, changed) {
+	addParameter(name: string, type: MateriaParameterType, value: any, changed?: ParameterChanged) {
 		const param = new MateriaParameter(name, type, value, changed);
 		this.#parameters.set(name, param);
 		return param;
 	}
 
-	removeParameter(name) {
+	removeParameter(name: string) {
 		this.#parameters.delete(name);
 	}
 
-	getParameter(name) {
-		this.#parameters.get(name);
+	getParameter(name: string): MateriaParameter | undefined {
+		return this.#parameters.get(name);
 	}
 
-	setParameterValue(name, value) {
+	setParameterValue(name: string, value: MateriaParameterValue) {
 		const parameter = this.#parameters.get(name);
 		if (parameter !== undefined) {
 			parameter.setValue(value);
 		}
 	}
 
-	setColor4Uniform(uniformName, value) {
+	setColor4Uniform(uniformName: string, value: UniformValue) {
 		this.uniforms[uniformName] = value;
 	}
 
@@ -412,23 +433,23 @@ export class Material {
 		return json;
 	}
 
-	static async constructFromJSON(json) {
+	static async constructFromJSON(json: JSONObject) {
 		return new Material(json.parameters);
 	}
 
-	fromJSON(json) {
-		this.color = json.color;
-		this.colorMode = json.colormode;
-		this.alphaTest = json.alphatest;
-		this.alphaTestReference = json.alphaTestReference;
-		this.renderFace(json.render_face ?? RenderFace.Front);
+	fromJSON(json: JSONObject) {
+		this.color = json.color as vec4;
+		this.setColorMode(json.colormode as MaterialColorMode);
+		this.setAlphaTest(json.alphatest as boolean);
+		this.setAlphaTestReference(json.alphaTestReference as number);
+		this.renderFace(json.render_face as RenderFace ?? RenderFace.Front);
 	}
 
-	addUser(user) {
+	addUser(user: any) {
 		this.#users.add(user);
 	}
 
-	removeUser(user) {
+	removeUser(user: any) {
 		this.#users.delete(user);
 		this.dispose();
 	}
@@ -437,11 +458,11 @@ export class Material {
 		return this.#users.size == 0;
 	}
 
-	#disposeUniform(uniform) {
+	#disposeUniform(uniform: UniformValue) {
 		if (Array.isArray(uniform)) {
 			uniform.forEach((subValue) => this.#disposeUniform(subValue));
-		} else if (uniform && uniform.isTexture) {
-			uniform.removeUser(this);
+		} else {
+			(uniform as any)?.removeUser?.(this);
 		}
 	}
 

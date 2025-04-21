@@ -1,8 +1,9 @@
 import { Material } from './material'
 import { registerEntity } from '../entities/entities';
+import { JSONObject } from '../types';
 
 export class LineMaterial extends Material {
-	#lineWidth:number = 1;
+	#lineWidth: number = 1;
 	constructor(params: any = {}) {
 		super(params);
 		this.lineWidth = params?.lineWidth ?? 10;
@@ -24,13 +25,13 @@ export class LineMaterial extends Material {
 		return json;
 	}
 
-	static async constructFromJSON(json) {
+	static async constructFromJSON(json: JSONObject) {
 		return new LineMaterial();
 	}
 
-	fromJSON(json) {
+	fromJSON(json: JSONObject) {
 		super.fromJSON(json);
-		this.lineWidth = json.linewidth;
+		this.lineWidth = json.linewidth as number;
 	}
 
 	static getEntityName(): string {
