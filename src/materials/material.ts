@@ -9,6 +9,7 @@ import { registerEntity } from '../entities/entities';
 import { Mesh } from '../objects/mesh';
 import { Camera } from '../cameras/camera';
 import { JSONObject } from '../types';
+import { BlendingFactor } from '../enums/blending';
 
 export const MATERIAL_BLENDING_NONE = 0;
 export const MATERIAL_BLENDING_NORMAL = 1;
@@ -30,8 +31,8 @@ export enum MaterialColorMode {
 export const DEFAULT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 export const DEFAULT_CULLING_MODE = MATERIAL_CULLING_BACK;
 
-export type UniformValue = number | vec2 | vec3 | vec4 | Texture | Array<Texture> | null;
-export type BlendFuncSeparateFactor = typeof GL_ZERO | typeof GL_ONE | typeof GL_SRC_COLOR | typeof GL_ONE_MINUS_SRC_COLOR | typeof GL_DST_COLOR | typeof GL_ONE_MINUS_DST_COLOR | typeof GL_SRC_ALPHA | typeof GL_ONE_MINUS_SRC_ALPHA | typeof GL_DST_ALPHA | typeof GL_ONE_MINUS_DST_ALPHA | typeof GL_CONSTANT_COLOR | typeof GL_ONE_MINUS_CONSTANT_COLOR | typeof GL_CONSTANT_ALPHA | typeof GL_ONE_MINUS_CONSTANT_ALPHA | typeof GL_SRC_ALPHA_SATURATE;
+export type UniformValue = boolean | number | Array<number> | vec2 | vec3 | vec4 | Texture | Array<Texture> | null;
+//export type BlendFuncSeparateFactor = typeof GL_ZERO | typeof GL_ONE | typeof GL_SRC_COLOR | typeof GL_ONE_MINUS_SRC_COLOR | typeof GL_DST_COLOR | typeof GL_ONE_MINUS_DST_COLOR | typeof GL_SRC_ALPHA | typeof GL_ONE_MINUS_SRC_ALPHA | typeof GL_DST_ALPHA | typeof GL_ONE_MINUS_DST_ALPHA | typeof GL_CONSTANT_COLOR | typeof GL_ONE_MINUS_CONSTANT_COLOR | typeof GL_CONSTANT_ALPHA | typeof GL_ONE_MINUS_CONSTANT_ALPHA | typeof GL_SRC_ALPHA_SATURATE;
 
 export class Material {
 	//id: string;
@@ -51,10 +52,10 @@ export class Material {
 	depthMask: boolean;
 	colorMask: vec4;
 	blend: boolean = false;
-	srcRGB: BlendFuncSeparateFactor = GL_ONE;
-	dstRGB: BlendFuncSeparateFactor = GL_ZERO;
-	srcAlpha: BlendFuncSeparateFactor = GL_ONE;
-	dstAlpha: BlendFuncSeparateFactor = GL_ZERO;
+	srcRGB: BlendingFactor = BlendingFactor.One;
+	dstRGB: BlendingFactor = BlendingFactor.Zero;
+	srcAlpha: BlendingFactor = BlendingFactor.One;
+	dstAlpha: BlendingFactor = BlendingFactor.Zero;
 	modeRGB: any;//TODO: create type like above
 	modeAlpha: any;
 	polygonOffset: boolean;
@@ -130,7 +131,7 @@ export class Material {
 		//return new this.constructor(this.parameters);
 	}
 
-	setTransparency(srcRGB: BlendFuncSeparateFactor, dstRGB: BlendFuncSeparateFactor, srcAlpha?: BlendFuncSeparateFactor, dstAlpha?: BlendFuncSeparateFactor) {
+	setTransparency(srcRGB: BlendingFactor, dstRGB: BlendingFactor, srcAlpha?: BlendingFactor, dstAlpha?: BlendingFactor) {
 		this.blend = true;
 		this.depthMask = false;
 		this.srcRGB = srcRGB;
