@@ -1,5 +1,6 @@
 import { BinaryReader } from 'harmony-binary-reader';
 import { HarmonyMenuItems } from 'harmony-ui';
+import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import { quat } from 'gl-matrix';
@@ -231,7 +232,7 @@ export declare enum BlendingEquation {
     Max = 32776
 }
 
-export declare enum BlendingFactors {
+export declare enum BlendingFactor {
     Zero = 0,
     One = 1,
     SrcColor = 768,
@@ -3460,8 +3461,8 @@ declare class Choreography {
              getShaderSource(): string;
              set lineWidth(lineWidth: number);
              toJSON(): any;
-             static constructFromJSON(json: any): Promise<LineMaterial>;
-             fromJSON(json: any): void;
+             static constructFromJSON(json: JSONObject): Promise<LineMaterial>;
+             fromJSON(json: JSONObject): void;
              static getEntityName(): string;
          }
 
@@ -3624,72 +3625,91 @@ declare class Choreography {
              #private;
              id: string;
              name: string;
-             uniforms: any;
-             defines: any;
+             uniforms: {
+                 [key: string]: UniformValue;
+             };
+             defines: {
+                 [key: string]: any;
+             };
              parameters: any;
              depthTest: boolean;
              depthFunc: any;
              depthMask: boolean;
              colorMask: vec4;
              blend: boolean;
-             srcRGB: any;
-             dstRGB: any;
-             srcAlpha: any;
-             dstAlpha: any;
+             srcRGB: BlendingFactor;
+             dstRGB: BlendingFactor;
+             srcAlpha: BlendingFactor;
+             dstAlpha: BlendingFactor;
              modeRGB: any;
              modeAlpha: any;
              polygonOffset: boolean;
              polygonOffsetFactor: number;
              polygonOffsetUnits: number;
              _dirtyProgram: boolean;
-             disableCulling: boolean;
-             cullMode: any;
              colorMap?: Texture;
              properties: Map<string, any>;
-             static materialList: {};
+             static materialList: {
+                 [key: string]: typeof Material;
+             };
              constructor(params?: any);
              get transparent(): boolean;
              set renderLights(renderLights: boolean);
              get renderLights(): boolean;
              setDefine(define: string, value?: string): void;
-             removeDefine(define: any): void;
+             removeDefine(define: string): void;
              setValues(values: any): void;
              clone(): void;
-             setTransparency(srcRGB: any, dstRGB: any, srcAlpha?: any, dstAlpha?: any): void;
+             setTransparency(srcRGB: BlendingFactor, dstRGB: BlendingFactor, srcAlpha?: BlendingFactor, dstAlpha?: BlendingFactor): void;
              setBlending(mode: BlendingMode, premultipliedAlpha?: boolean): void;
-             updateMaterial(time: any, mesh: any): void;
-             beforeRender(camera: any): void;
+             updateMaterial(time: number, mesh: Mesh): void;
+             beforeRender(camera: Camera): void;
              /**
               * @deprecated Please use `renderFace` instead.
               */
-             set culling(mode: any);
+             set culling(mode: number);
              renderFace(renderFace: RenderFace): void;
              getRenderFace(): RenderFace;
-             setColorMode(colorMode: any): void;
-             set colorMode(colorMode: any);
-             get colorMode(): any;
+             setColorMode(colorMode: MaterialColorMode): void;
+             getColorMode(): MaterialColorMode;
+             /**
+              * @deprecated Please use `setColorMode` instead.
+              */
+             set colorMode(colorMode: MaterialColorMode);
+             /**
+              * @deprecated Please use `getColorMode` instead.
+              */
+             get colorMode(): MaterialColorMode;
              setColor(color: vec4): void;
              set color(color: vec4);
              get color(): vec4;
              setMeshColor(color?: vec4): void;
-             setTexture(uniformName: string, texture: Texture, shaderDefine?: string): void;
-             setTextureArray(uniformName: any, textureArray: any): void;
-             setColorMap(texture: any): void;
-             setColor2Map(texture: any): void;
-             setDetailMap(texture: any): void;
-             setNormalMap(texture: any): void;
-             setCubeMap(texture: any): void;
-             set alphaTest(alphaTest: any);
-             set alphaTestReference(alphaTestReference: any);
+             setTexture(uniformName: string, texture: Texture | null, shaderDefine?: string): void;
+             setTextureArray(uniformName: string, textureArray: Array<Texture>): void;
+             setColorMap(texture: Texture): void;
+             setColor2Map(texture: Texture): void;
+             setDetailMap(texture: Texture): void;
+             setNormalMap(texture: Texture): void;
+             setCubeMap(texture: Texture): void;
+             setAlphaTest(alphaTest: boolean): void;
+             /**
+              * @deprecated Please use `setAlphaTest` instead.
+              */
+             set alphaTest(alphaTest: boolean);
+             setAlphaTestReference(alphaTestReference: number): void;
+             /**
+              * @deprecated Please use `setAlphaTestReference` instead.
+              */
+             set alphaTestReference(alphaTestReference: number);
              getColorMapSize(size?: vec2): vec2;
-             addParameter(name: any, type: any, value: any, changed: any): MateriaParameter;
-             removeParameter(name: any): void;
-             getParameter(name: any): void;
-             setParameterValue(name: any, value: any): void;
-             setColor4Uniform(uniformName: any, value: any): void;
+             addParameter(name: string, type: MateriaParameterType, value: any, changed?: ParameterChanged): MateriaParameter;
+             removeParameter(name: string): void;
+             getParameter(name: string): MateriaParameter | undefined;
+             setParameterValue(name: string, value: MateriaParameterValue): void;
+             setColor4Uniform(uniformName: string, value: UniformValue): void;
              toJSON(): any;
-             static constructFromJSON(json: any): Promise<Material>;
-             fromJSON(json: any): void;
+             static constructFromJSON(json: JSONObject): Promise<Material>;
+             fromJSON(json: JSONObject): void;
              addUser(user: any): void;
              removeUser(user: any): void;
              hasNoUser(): boolean;
@@ -3703,12 +3723,6 @@ declare class Choreography {
 
          export declare const MATERIAL_BLENDING_NORMAL = 1;
 
-         export declare const MATERIAL_COLOR_NONE = 0;
-
-         export declare const MATERIAL_COLOR_PER_MESH = 2;
-
-         export declare const MATERIAL_COLOR_PER_VERTEX = 1;
-
          export declare const MATERIAL_CULLING_BACK = 1029;
 
          export declare const MATERIAL_CULLING_FRONT = 1028;
@@ -3717,9 +3731,15 @@ declare class Choreography {
 
          export declare const MATERIAL_CULLING_NONE = 0;
 
+         declare enum MaterialColorMode {
+             None = 0,
+             PerVertex = 1,
+             PerMesh = 2
+         }
+
          export declare class MateriaParameter {
              #private;
-             constructor(name: string, type: MateriaParameterType, value: any, changed?: ParameterChanged);
+             constructor(name: string, type: MateriaParameterType, value: MateriaParameterValue, changed?: ParameterChanged);
              setValue(value: any): void;
          }
 
@@ -3744,6 +3764,8 @@ declare class Choreography {
              Texture2D = 17,
              Texture3D = 18
          }
+
+         declare type MateriaParameterValue = null | boolean | number | vec2 | vec3 | vec4 | mat2 | mat3 | mat4 | Texture;
 
          export declare const MAX_FLOATS = 4096;
 
@@ -5237,6 +5259,10 @@ declare class Choreography {
              static registerProxy(proxyName: any, proxyClass: typeof Proxy_2): void;
          }
 
+         declare type ProxyParams = {
+             [key: string]: any;
+         };
+
          export declare class PullTowardsControlPoint extends SourceEngineParticleOperator {
              static functionName: string;
              constructor();
@@ -6722,7 +6748,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7130,23 +7156,23 @@ declare class Choreography {
              setupUniformsOnce(): void;
              setupUniforms(): void;
              clone(): Source2Material;
-             getTextureByName(textureName: any): any;
-             updateMaterial(time: any, mesh: any): void;
-             processProxies(time: any, proxyParams: any): void;
-             _afterProcessProxies(proxyParams: any): void;
-             setDynamicUniform(uniformName: any): void;
-             afterProcessProxies(proxyParams: any): void;
-             setUniform(uniformName: any, uniformValue: any): void;
+             getTextureByName(textureName: string): any;
+             updateMaterial(time: number, mesh: Mesh): void;
+             processProxies(time: number, proxyParams: ProxyParams): void;
+             _afterProcessProxies(proxyParams: ProxyParams): void;
+             setDynamicUniform(uniformName: string): void;
+             afterProcessProxies(proxyParams: ProxyParams): void;
+             setUniform(uniformName: string, uniformValue: UniformValue): void;
              initFloatUniforms(): void;
              initVectorUniforms(): void;
              getUniforms(): Array<Map<string, string>>;
              getTextureUniforms(): Array<Map<string, Array<string>>>;
              initTextureUniforms(): Promise<void>;
-             getParam(paramName: any): any;
-             getIntParam(intName: any): any;
-             getFloatParam(floatName: any): any;
-             getVectorParam(vectorName: any): any;
-             getDynamicParam(dynamicName: any): any;
+             getParam(paramName: string): any;
+             getIntParam(intName: string): any;
+             getFloatParam(floatName: string): any;
+             getVectorParam(vectorName: string): any;
+             getDynamicParam(dynamicName: string): any;
          }
 
          export declare class Source2MaterialManager {
@@ -7325,7 +7351,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -9419,6 +9445,8 @@ declare class Choreography {
          export declare class UniformNoiseProxy extends Proxy_2 {
              execute(variables: any): void;
          }
+
+         declare type UniformValue = boolean | number | Array<number> | vec2 | vec3 | vec4 | Texture | Array<Texture> | null;
 
          export declare class UnlitGenericMaterial extends SourceEngineMaterial {
              diffuseModulation: vec4;

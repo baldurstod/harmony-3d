@@ -12,6 +12,7 @@ import { clamp } from '../../../math/functions';
 import { MatrixBuildScale, MatrixBuildTranslation } from './proxies/texturetransform';
 import { Proxy } from './proxies/proxy';
 import { RenderFace } from '../../../materials/constants';
+import { Texture } from '../../../textures/texture';
 
 const IDENTITY_MAT4 = mat4.create();
 
@@ -384,7 +385,7 @@ export class SourceEngineMaterial extends Material {
 	}
 
 	getTexCoords(flCreationTime, flCurTime, flAgeScale, nSequence) {
-		const texture = this.uniforms['colorMap'];
+		const texture = this.uniforms['colorMap'] as Texture;
 		if (!texture) {
 			return;
 		}
@@ -422,7 +423,7 @@ export class SourceEngineMaterial extends Material {
 	}
 
 	getFrameSpan(sequence) {
-		const texture = this.uniforms['colorMap'];
+		const texture = this.uniforms['colorMap'] as Texture;
 		if (!texture) {
 			return;
 		}
