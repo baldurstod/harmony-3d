@@ -1,4 +1,6 @@
+import { mat2, mat3, mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { isVec4 } from '../math/vector';
+import { Texture } from '../textures/texture';
 
 export enum MateriaParameterType {
 	None = 0,
@@ -22,6 +24,8 @@ export enum MateriaParameterType {
 	Texture3D,
 }
 
+export type MateriaParameterValue = null | boolean | number | vec2 | vec3 | vec4 | mat2 | mat3 | mat4 | Texture;
+
 export type ParameterChanged = (newValue: any, oldValue?: any) => void;
 
 export class MateriaParameter {
@@ -29,7 +33,7 @@ export class MateriaParameter {
 	#type: MateriaParameterType = MateriaParameterType.None;
 	#value: any
 	#changed?: ParameterChanged
-	constructor(name: string, type: MateriaParameterType, value: any, changed?: ParameterChanged) {
+	constructor(name: string, type: MateriaParameterType, value: MateriaParameterValue, changed?: ParameterChanged) {
 		this.#name = name;
 		this.#type = type;
 		this.#changed = changed;
