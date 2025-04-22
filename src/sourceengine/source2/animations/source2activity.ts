@@ -1,9 +1,10 @@
 export class Source2Activity {
-	name;
-	weight;
-	flags;
-	activity;
-	constructor(name, weight, flags, activity) {
+	name: string;
+	weight: number;
+	flags: number;
+	activity: number;
+
+	constructor(name: string, weight: number, flags: number, activity: number) {
 		this.name = name;
 		this.weight = weight;
 		this.flags = flags;
