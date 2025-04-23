@@ -72,8 +72,20 @@ export enum ManipulatorMode {
 	Scale
 }
 
+export enum ManipulatorAxis {
+	None = 0,
+	X,
+	Y,
+	Z,
+	XY,
+	XZ,
+	YZ,
+	XYZ,
+	View,
+}
+
 export class Manipulator extends Entity {
-	#entityAxis = new Map();
+	#entityAxis: Map<Entity, ManipulatorAxis> = new Map();
 	#xMaterial = new MeshBasicMaterial();
 	#yMaterial = new MeshBasicMaterial();
 	#zMaterial = new MeshBasicMaterial();
@@ -112,7 +124,7 @@ export class Manipulator extends Entity {
 	enumerable = false;
 	camera?: Camera;
 	size = 1;
-	#axis: number = 0;
+	#axis: ManipulatorAxis = ManipulatorAxis.None;
 	#startPosition: vec3 = vec3.create();
 	#startQuaternion: quat = quat.create();
 	#startLocalQuaternion: quat = quat.create();
@@ -136,7 +148,7 @@ export class Manipulator extends Entity {
 		this.#initRotationManipulator();
 		this.#initScaleManipulator();
 
-		this.setMode(0);
+		this.setMode(ManipulatorMode.Translation);
 
 		this.enableX = true;
 		this.enableY = true;
@@ -149,14 +161,18 @@ export class Manipulator extends Entity {
 
 		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: Event) => {
 			const detail = (event as CustomEvent<GraphicMouseEventData>).detail;
-			if (this.#entityAxis.has(detail.entity)) {
-				this.#axis = this.#entityAxis.get(detail.entity);
-				if (this.#axis < 10) {
-					this.startTranslate(detail.x, detail.y);
-				} else if (this.#axis < 20) {
-					this.startRotate(detail.x, detail.y);
-				} else {
-					this.startScale(detail.x, detail.y);
+			if (this.#entityAxis.has(detail.entity!)) {
+				this.#axis = this.#entityAxis.get(detail.entity!)!;
+				switch (this.#mode) {
+					case ManipulatorMode.Translation:
+						this.startTranslate(detail.x, detail.y);
+						break;
+					case ManipulatorMode.Rotation:
+						this.startRotate(detail.x, detail.y);
+						break;
+					case ManipulatorMode.Scale:
+						this.startScale(detail.x, detail.y);
+						break;
 				}
 				new Graphics().dragging = true;
 				this.#setAxisSelected(true);
@@ -168,31 +184,35 @@ export class Manipulator extends Entity {
 				return;
 			}
 			if (this.#entityAxis.has(detail.entity)) {
-				if (this.#axis < 10) {
-					this.#translationMoveHandler(detail.x, detail.y);
-				} else if (this.#axis < 20) {
-					this.#rotationMoveHandler(detail.x, detail.y);
-				} else {
-					this.#scaleMoveHandler(detail.x, detail.y);
+				switch (this.#mode) {
+					case ManipulatorMode.Translation:
+						this.#translationMoveHandler(detail.x, detail.y);
+						break;
+					case ManipulatorMode.Rotation:
+						this.#rotationMoveHandler(detail.x, detail.y);
+						break;
+					case ManipulatorMode.Scale:
+						this.#scaleMoveHandler(detail.x, detail.y);
+						break;
 				}
 			}
 		});
 		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: Event) => {
-			if (this.#entityAxis.has((event as CustomEvent<GraphicMouseEventData>).detail.entity)) {
+			if (this.#entityAxis.has((event as CustomEvent<GraphicMouseEventData>).detail.entity!)) {
 				new Graphics().dragging = false;
 				this.#setAxisSelected(false);
 			}
 		});
 
-		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_INCREASE, event => this.size *= 1.1);
-		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_DECREASE, event => this.size *= 0.9);
-		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TRANSLATION, event => this.mode = 0);
-		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_ROTATION, event => this.mode = 1);
-		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_SCALE, event => this.mode = 2);
-		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_AXIS_ORIENTATION, event => this.#axisOrientation = (++this.#axisOrientation) % 2);
-		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_X, event => this.enableX = !this.enableX);
-		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Y, event => this.enableY = !this.enableY);
-		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, event => this.enableZ = !this.enableZ);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_INCREASE, () => this.size *= 1.1);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_DECREASE, () => this.size *= 0.9);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TRANSLATION, () => this.setMode(ManipulatorMode.Translation));
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_ROTATION, () => this.setMode(ManipulatorMode.Rotation));
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_SCALE, () => this.setMode(ManipulatorMode.Scale));
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_AXIS_ORIENTATION, () => this.#axisOrientation = (++this.#axisOrientation) % 2);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_X, () => this.enableX = !this.enableX);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Y, () => this.enableY = !this.enableY);
+		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, () => this.enableZ = !this.enableZ);
 	}
 
 	resize(camera?: Camera) {
@@ -319,16 +339,16 @@ export class Manipulator extends Entity {
 		this.#translationManipulator.addChild(this.#xzPlane);
 		this.#translationManipulator.addChild(this.#yzPlane);
 
-		this.#entityAxis.set(this.#xyzSphere, 0);
-		this.#entityAxis.set(this.#xArrow, 1);
-		this.#entityAxis.set(xTip, 1);
-		this.#entityAxis.set(this.#yArrow, 2);
-		this.#entityAxis.set(yTip, 2);
-		this.#entityAxis.set(this.#zArrow, 3);
-		this.#entityAxis.set(zTip, 3);
-		this.#entityAxis.set(this.#xyPlane, 4);
-		this.#entityAxis.set(this.#xzPlane, 5);
-		this.#entityAxis.set(this.#yzPlane, 6);
+		this.#entityAxis.set(this.#xyzSphere, ManipulatorAxis.XYZ);
+		this.#entityAxis.set(this.#xArrow, ManipulatorAxis.X);
+		this.#entityAxis.set(xTip, ManipulatorAxis.X);
+		this.#entityAxis.set(this.#yArrow, ManipulatorAxis.Y);
+		this.#entityAxis.set(yTip, ManipulatorAxis.Y);
+		this.#entityAxis.set(this.#zArrow, ManipulatorAxis.Z);
+		this.#entityAxis.set(zTip, ManipulatorAxis.Z);
+		this.#entityAxis.set(this.#xyPlane, ManipulatorAxis.XY);
+		this.#entityAxis.set(this.#xzPlane, ManipulatorAxis.XZ);
+		this.#entityAxis.set(this.#yzPlane, ManipulatorAxis.YZ);
 	}
 
 	#initRotationManipulator() {
@@ -340,10 +360,10 @@ export class Manipulator extends Entity {
 		this.#rotationManipulator.addChild(this.#viewCircle);
 		this.#rotationManipulator.addChild(this.#circle);
 
-		this.#entityAxis.set(this.#xCircle, 11);
-		this.#entityAxis.set(this.#yCircle, 12);
-		this.#entityAxis.set(this.#zCircle, 13);
-		this.#entityAxis.set(this.#viewCircle, 17);
+		this.#entityAxis.set(this.#xCircle, ManipulatorAxis.X);
+		this.#entityAxis.set(this.#yCircle, ManipulatorAxis.Y);
+		this.#entityAxis.set(this.#zCircle, ManipulatorAxis.Z);
+		this.#entityAxis.set(this.#viewCircle, ManipulatorAxis.View);
 	}
 
 	#initScaleManipulator() {
@@ -386,12 +406,12 @@ export class Manipulator extends Entity {
 		this.addChild(this.#yzPlane);*/
 
 		//this.#entityAxis.set(_xyzSphere, 20);
-		this.#entityAxis.set(this.#xScale, 21);
-		this.#entityAxis.set(xScaleTip, 21);
-		this.#entityAxis.set(this.#yScale, 22);
-		this.#entityAxis.set(yScaleTip, 22);
-		this.#entityAxis.set(this.#zScale, 23);
-		this.#entityAxis.set(zScaleTip, 23);
+		this.#entityAxis.set(this.#xScale, ManipulatorAxis.X);
+		this.#entityAxis.set(xScaleTip, ManipulatorAxis.X);
+		this.#entityAxis.set(this.#yScale, ManipulatorAxis.Y);
+		this.#entityAxis.set(yScaleTip, ManipulatorAxis.Y);
+		this.#entityAxis.set(this.#zScale, ManipulatorAxis.Z);
+		this.#entityAxis.set(zScaleTip, ManipulatorAxis.Z);
 	}
 
 	startTranslate(x: number, y: number) {
@@ -434,27 +454,27 @@ export class Manipulator extends Entity {
 
 		vec3.sub(tempVec3, tempVec3, this.#startDragPosition);
 		switch (this.#axis) {
-			case 0:
+			case ManipulatorAxis.None:
 				break;
-			case 1:
+			case ManipulatorAxis.X:
 				tempVec3[1] = 0;
 				tempVec3[2] = 0;
 				break;
-			case 2:
+			case ManipulatorAxis.Y:
 				tempVec3[0] = 0;
 				tempVec3[2] = 0;
 				break;
-			case 3:
+			case ManipulatorAxis.Z:
 				tempVec3[0] = 0;
 				tempVec3[1] = 0;
 				break;
-			case 4:
+			case ManipulatorAxis.XY:
 				tempVec3[2] = 0;
 				break;
-			case 5:
+			case ManipulatorAxis.XZ:
 				tempVec3[1] = 0;
 				break;
-			case 6:
+			case ManipulatorAxis.YZ:
 				tempVec3[0] = 0;
 				break;
 			default:
@@ -497,17 +517,17 @@ export class Manipulator extends Entity {
 		vec3.scale(v3, v3, 2 / ARROW_LENGTH);
 
 		switch (this.#axis) {
-			case 20:
+			case ManipulatorAxis.None:
 				break;
-			case 21:
+			case ManipulatorAxis.X:
 				v3[1] = 1;
 				v3[2] = 1;
 				break;
-			case 22:
+			case ManipulatorAxis.Y:
 				v3[0] = 1;
 				v3[2] = 1;
 				break;
-			case 23:
+			case ManipulatorAxis.Z:
 				v3[0] = 1;
 				v3[1] = 1;
 				break;
@@ -599,7 +619,7 @@ export class Manipulator extends Entity {
 			planeNormal = vec3.sub(vec3.create(), projPoint, camera.position);
 			vec3.normalize(planeNormal, planeNormal);
 
-			if (this.#axis == 0 || this.#axis == 20) {
+			if (this.#axis == ManipulatorAxis.XYZ) {
 				vec3.transformQuat(planeNormal, vec3.fromValues(0, 0, 1), camera.quaternion);
 			}
 
@@ -653,13 +673,13 @@ export class Manipulator extends Entity {
 
 			if (this.#axisOrientation == ORIENTATION_WORLD) {
 				switch (this.#axis) {
-					case 11:
+					case ManipulatorAxis.X:
 						planeNormal = vec3.copy(planeNormal, xUnitVec3);
 						break;
-					case 12:
+					case ManipulatorAxis.Y:
 						planeNormal = vec3.copy(planeNormal, yUnitVec3);
 						break;
-					case 13:
+					case ManipulatorAxis.Z:
 						planeNormal = vec3.copy(planeNormal, zUnitVec3);
 						break;
 					default:
@@ -669,13 +689,13 @@ export class Manipulator extends Entity {
 				}
 			} else {
 				switch (this.#axis) {
-					case 11:
+					case ManipulatorAxis.X:
 						planeNormal = vec3.transformQuat(planeNormal, xUnitVec3, this.#startQuaternion);
 						break;
-					case 12:
+					case ManipulatorAxis.Y:
 						planeNormal = vec3.transformQuat(planeNormal, yUnitVec3, this.#startQuaternion);
 						break;
-					case 13:
+					case ManipulatorAxis.Z:
 						planeNormal = vec3.transformQuat(planeNormal, zUnitVec3, this.#startQuaternion);
 						break;
 					default:
@@ -719,13 +739,13 @@ export class Manipulator extends Entity {
 
 		this.#mode = mode;
 		switch (mode) {
-			case 0:
+			case ManipulatorMode.Translation:
 				this.#translationManipulator.setVisible(undefined);
 				break;
-			case 1:
+			case ManipulatorMode.Rotation:
 				this.#rotationManipulator.setVisible(undefined);
 				break;
-			case 2:
+			case ManipulatorMode.Scale:
 				this.#scaleManipulator.setVisible(undefined);
 				break;
 			default:
