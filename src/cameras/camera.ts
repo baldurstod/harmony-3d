@@ -15,7 +15,6 @@ export enum CameraProjection {
 
 const tempQuat = quat.create();
 const tempVec3 = vec3.create();
-const identityVec3 = vec3.create();
 
 const proj1 = mat4.create();
 const proj2 = mat4.create();
@@ -33,6 +32,7 @@ const DEFAULT_RIGHT = 1;
 const DEFAULT_TOP = 1;
 const DEFAULT_BOTTOM = -1;
 
+const FrontVector = vec3.fromValues(0, 0, -1);
 
 const LAMBDA = 10;
 const LAMBDA_DIVIDOR = 1 - Math.exp(-LAMBDA);
@@ -375,6 +375,10 @@ export class Camera extends Entity {
 
 	invertProjection(v3) {
 		vec3.transformMat4(v3, v3, this.projectionMatrixInverse);
+	}
+
+	getViewDirection(v: vec3 = vec3.create()): vec3 {
+		return vec3.transformQuat(v, FrontVector, this.getWorldQuaternion(tempQuat));
 	}
 
 	copy(source) {
