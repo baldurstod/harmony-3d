@@ -147,8 +147,8 @@ export class Manipulator extends Entity {
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.resize((this.root as Scene)?.activeCamera));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: CustomEvent<GraphicMouseEventData>) => {
-			let detail = event.detail;
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: Event) => {
+			const detail = (event as CustomEvent<GraphicMouseEventData>).detail;
 			if (this.#entityAxis.has(detail.entity)) {
 				this.#axis = this.#entityAxis.get(detail.entity);
 				if (this.#axis < 10) {
@@ -162,8 +162,8 @@ export class Manipulator extends Entity {
 				this.#setAxisSelected(true);
 			}
 		});
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: CustomEvent<GraphicMouseEventData>) => {
-			let detail = event.detail;
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: Event) => {
+			const detail = (event as CustomEvent<GraphicMouseEventData>).detail;
 			if (!detail.entity?.isVisible()) {
 				return;
 			}
@@ -177,8 +177,8 @@ export class Manipulator extends Entity {
 				}
 			}
 		});
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: CustomEvent<GraphicMouseEventData>) => {
-			if (this.#entityAxis.has(event.detail.entity)) {
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: Event) => {
+			if (this.#entityAxis.has((event as CustomEvent<GraphicMouseEventData>).detail.entity)) {
 				new Graphics().dragging = false;
 				this.#setAxisSelected(false);
 			}
