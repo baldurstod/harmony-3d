@@ -790,6 +790,7 @@ export declare class Camera extends Entity {
         };
     };
     invertProjection(v3: any): void;
+    getViewDirection(v?: vec3): vec3;
     copy(source: any): void;
     toJSON(): any;
     static constructFromJSON(json: any): Promise<Camera>;
@@ -2198,7 +2199,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 

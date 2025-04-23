@@ -128,7 +128,7 @@ export class Manipulator extends Entity {
 	#startPosition: vec3 = vec3.create();
 	#startQuaternion: quat = quat.create();
 	#startLocalQuaternion: quat = quat.create();
-	#startDragVector?: vec3 = vec3.create();
+	#startDragVector: number = 0//vec3 = vec3.create();
 	#translationManipulator = new Entity({ name: 'Translation manipulator' });
 	#rotationManipulator = new Entity({ name: 'Rotation manipulator' });
 	#scaleManipulator = new Entity({ name: 'Scale manipulator' });
@@ -494,9 +494,34 @@ export class Manipulator extends Entity {
 	}
 
 	#rotationMoveHandler(x: number, y: number) {//TODO: rename this func
-		let v3 = this.#computeQuaternion(x, y);
+		const v3 = this.#computeQuaternion(x, y);
 		quat.rotationTo(translationManipulatorTempQuat, this.#startDragVector, v3);
 		quat.mul(translationManipulatorTempQuat, this.#startLocalQuaternion, translationManipulatorTempQuat);
+
+		const viewDirection = this.camera.getViewDirection(vec3.create()/*TODO: optimize*/);
+
+		let rotateAxis = xUnitVec3;
+		switch (this.#axis) {
+			case ManipulatorAxis.Y:
+				rotateAxis = yUnitVec3;
+				break;
+			case ManipulatorAxis.Z:
+				rotateAxis = zUnitVec3;
+				break;
+			case ManipulatorAxis.View:
+				rotateAxis = viewDirection;
+				break;
+		}
+
+		let invert = Math.sign(vec3.dot(rotateAxis, viewDirection));
+		if (invert == 0) {
+			invert = 1;
+		}
+
+		const angleDelta = this.#startDragVector - v3;
+		quat.setAxisAngle(translationManipulatorTempQuat, rotateAxis, angleDelta * invert);
+		quat.mul(translationManipulatorTempQuat, translationManipulatorTempQuat, this.#startLocalQuaternion);
+
 		if (this._parent) {
 			this._parent.quaternion = translationManipulatorTempQuat;
 			this._parent.locked = true;
@@ -633,6 +658,23 @@ export class Manipulator extends Entity {
 	}
 
 	#computeQuaternion(x: number, y: number) {
+		const camera = this.camera;
+		if (!camera) {
+			return 0;
+		}
+
+		// transform the screen coordinates to normalized coordinates
+		const normalizedX = (x / new Graphics().getWidth()) * 2.0 - 1.0;
+		const normalizedY = 1.0 - (y / new Graphics().getHeight()) * 2.0;
+
+		this.getWorldPosition(tempVec3);
+		vec3.transformMat4(tempVec3, tempVec3, camera.cameraMatrix);
+		vec3.transformMat4(tempVec3, tempVec3, camera.projectionMatrix);
+
+		return Math.atan2(normalizedY - tempVec3[1], normalizedX - tempVec3[0]);
+	}
+
+	#computeQuaternion_removeme(x: number, y: number) {
 		let camera = this.camera;
 		if (camera) {
 			let projectionMatrix = camera.projectionMatrix;
@@ -760,7 +802,7 @@ export class Manipulator extends Entity {
 	}
 
 	getWorldQuaternion(q = quat.create()) {
-		if (this.#mode < 2) {
+		if (this.#mode < ManipulatorMode.Scale) {
 			switch (this.#axisOrientation) {
 				case ORIENTATION_WORLD:
 					quat.identity(q);
