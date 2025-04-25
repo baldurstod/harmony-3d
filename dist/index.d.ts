@@ -2874,7 +2874,7 @@ declare class Choreography {
          }
 
          export declare const GraphicsEvents: {
-             tick(delta: number, time: number): void;
+             tick(delta: number, time: number, speed: number): void;
              resize(width: number, height: number): void;
              mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
              mouseDown(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
@@ -2909,6 +2909,7 @@ declare class Choreography {
          export declare type GraphicTickEvent = {
              delta: number;
              time: number;
+             speed: number;
          };
 
          export declare type GraphicTouchEventData = {

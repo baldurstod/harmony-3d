@@ -184,7 +184,7 @@ export class Graphics {
 			return null;
 		}
 		this.setIncludeCode('pickingMode', '#define PICKING_MODE');
-		GraphicsEvents.tick(0, performance.now());
+		GraphicsEvents.tick(0, performance.now(), 0);
 		this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
 
 		const gl = this.glContext;
@@ -293,7 +293,7 @@ export class Graphics {
 		let delta = (tick - this.#lastTick) * this.speed * 0.001;
 		if (this.#running) {
 			++this.currentTick;
-			GraphicsEvents.tick(delta, tick);
+			GraphicsEvents.tick(delta, tick, this.speed);
 		}
 		this.#lastTick = tick;
 		if (FULL_PATATE && TESTING) {

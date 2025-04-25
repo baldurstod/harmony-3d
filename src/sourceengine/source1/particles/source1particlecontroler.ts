@@ -1,4 +1,4 @@
-import { GraphicsEvents, GraphicsEvent } from '../../../graphics/graphicsevents';
+import { GraphicsEvents, GraphicsEvent, GraphicTickEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
@@ -18,7 +18,7 @@ export class Source1ParticleControler {
 
 	static {
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => {
-			this.stepSystems(this.fixedTime ?? (event as CustomEvent).detail.delta);//TODOv3: imporve this
+			this.stepSystems(this.fixedTime ? (this.fixedTime * (event as CustomEvent<GraphicTickEvent>).detail.delta) : (event as CustomEvent<GraphicTickEvent>).detail.delta);//TODOv3: imporve this
 		});
 	}
 

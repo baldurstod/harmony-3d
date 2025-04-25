@@ -17,6 +17,7 @@ export enum GraphicsEvent {
 export type GraphicTickEvent = {
 	delta: number,
 	time: number,
+	speed: number,
 }
 
 export type GraphicMouseEventData = {
@@ -53,8 +54,8 @@ export const GraphicsEvents = new (function () {
 			GraphicsEvents.#instance = this;
 		}
 
-		tick(delta: number, time: number) {
-			this.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta: delta, time: time } }));
+		tick(delta: number, time: number, speed: number) {
+			this.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
 		}
 
 		resize(width: number, height: number) {

@@ -6078,8 +6078,8 @@ const GraphicsEvents = new (function () {
             super();
             GraphicsEvents.#instance = this;
         }
-        tick(delta, time) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time } }));
+        tick(delta, time, speed) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
         }
         resize(width, height) {
             this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
@@ -7387,7 +7387,7 @@ class Graphics {
             return null;
         }
         this.setIncludeCode('pickingMode', '#define PICKING_MODE');
-        GraphicsEvents.tick(0, performance.now());
+        GraphicsEvents.tick(0, performance.now(), 0);
         this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
         this.glContext;
         let pixels = new Uint8Array(4);
@@ -7464,7 +7464,7 @@ class Graphics {
         let delta = (tick - this.#lastTick) * this.speed * 0.001;
         if (this.#running) {
             ++this.currentTick;
-            GraphicsEvents.tick(delta, tick);
+            GraphicsEvents.tick(delta, tick, this.speed);
         }
         this.#lastTick = tick;
     }
@@ -25105,7 +25105,7 @@ class Source1ParticleControler {
     static fixedTime;
     static {
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
-            this.stepSystems(this.fixedTime ?? event.detail.delta); //TODOv3: imporve this
+            this.stepSystems(this.fixedTime ? (this.fixedTime * event.detail.delta) : event.detail.delta); //TODOv3: imporve this
         });
     }
     static setParticleConstructor(ps) {
