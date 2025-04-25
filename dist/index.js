@@ -25105,7 +25105,7 @@ class Source1ParticleControler {
     static fixedTime;
     static {
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
-            this.stepSystems(this.fixedTime ? (this.fixedTime * event.detail.delta) : event.detail.delta); //TODOv3: imporve this
+            this.stepSystems(this.fixedTime ? (this.fixedTime * event.detail.speed) : event.detail.delta); //TODOv3: imporve this
         });
     }
     static setParticleConstructor(ps) {
