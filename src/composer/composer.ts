@@ -2,7 +2,7 @@ import { vec2 } from 'gl-matrix';
 
 import { RenderTarget } from '../textures/rendertarget';
 import { Pass } from './pass';
-import { Graphics } from '../graphics/graphics';
+import { Graphics, RenderContext } from '../graphics/graphics';
 
 let tempVec2 = vec2.create();
 
@@ -24,7 +24,7 @@ export class Composer {
 		this.#setRenderTarget(renderTarget);
 	}
 
-	render(delta) {
+	render(delta: number, context: RenderContext) {
 		let pass: Pass;
 		let swapBuffer;
 
@@ -53,14 +53,14 @@ export class Composer {
 				this.writeBuffer = swapBuffer;
 			}
 
-			pass.render(new Graphics(), this.readBuffer, this.writeBuffer, i == lastPass, delta);
+			pass.render(new Graphics(), this.readBuffer, this.writeBuffer, i == lastPass, delta, context);
 
 		}
 	}
 
-	savePicture(filename, width, height) {
+	savePicture(filename: string, width: number, height: number) {
 		this.setSize(width, height);
-		this.render(0);
+		this.render(0, { DisableToolRendering: true });
 		new Graphics()._savePicture(filename);
 	}
 

@@ -2196,6 +2196,10 @@ const IDENTITY_QUAT$1 = quat.create();
 const IDENTITY_VEC3 = vec3.create();
 const UNITY_VEC3 = vec3.fromValues(1, 1, 1);
 const LAYER_MAX = 50;
+var EngineEntityAttributes;
+(function (EngineEntityAttributes) {
+    EngineEntityAttributes["IsTool"] = "is tool";
+})(EngineEntityAttributes || (EngineEntityAttributes = {}));
 class Entity {
     static addSubMenu;
     id = generateRandomUUID();
@@ -5139,7 +5143,7 @@ class CubeBackground extends BackGround {
     }
     render(renderer, camera) {
         this.#box.setPosition(camera.getPosition(tempVec3$v));
-        renderer.render(this.#scene, camera, 0);
+        renderer.render(this.#scene, camera, 0, { DisableToolRendering: true });
     }
     setTexture(texture) {
         this.#material.setTexture('uCubeTexture', texture);
@@ -5575,12 +5579,13 @@ registerEntity(Camera);
 class Pass {
     camera;
     quad;
+    scene;
     enabled = true;
     swapBuffers = true;
     renderToScreen = false;
     setSize(width, height) {
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen, delta) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         throw 'Can\'t render default pass';
     }
 }
@@ -5588,8 +5593,8 @@ class Pass {
 class ClearPass extends Pass {
     swapBuffers = false;
     #clearColor = vec4.create();
-    #clearDepth = false;
-    #clearStencil = false;
+    #clearDepth = 0;
+    #clearStencil = 0;
     constructor(clearColor, clearDepth, clearStencil) {
         super();
         this.clearColor = clearColor;
@@ -5605,7 +5610,7 @@ class ClearPass extends Pass {
     set clearStencil(clearStencil) {
         this.#clearStencil = clearStencil ?? null;
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         let clearColor = this.#clearColor != null;
         let clearDepth = this.#clearDepth != null;
         let clearStencil = this.#clearStencil != null;
@@ -5651,13 +5656,14 @@ class CopyPass extends Pass {
         super();
         let material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false });
         material.addUser(this);
-        this.quad = new FullScreenQuad({ material: material });
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
         this.camera = camera;
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        renderer.render(this.quad, this.camera);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
     }
 }
@@ -5668,13 +5674,14 @@ class CrosshatchPass extends Pass {
         let material = new ShaderMaterial({ shaderSource: 'crosshatch' });
         material.addUser(this);
         material.depthTest = false;
-        this.quad = new FullScreenQuad({ material: material });
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
         this.camera = camera;
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        renderer.render(this.quad, this.camera);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
     }
 }
@@ -5689,7 +5696,8 @@ class GrainPass extends Pass {
         material.addUser(this);
         material.uniforms['uGrainParams'] = vec4.create();
         material.depthTest = false;
-        this.quad = new FullScreenQuad({ material: material });
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
         this.camera = camera;
         this.intensity = 0.2;
         //this.density = 0.2;
@@ -5708,10 +5716,10 @@ class GrainPass extends Pass {
         this.#size = size;
         this.quad.material.uniforms['uGrainParams'][2] = this.#size;
     }*/
-    render(renderer, readBuffer, writeBuffer, renderToScreen) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        renderer.render(this.quad, this.camera);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
     }
 }
@@ -5722,13 +5730,14 @@ class OldMoviePass extends Pass {
         let material = new ShaderMaterial({ shaderSource: 'oldmovie' });
         material.addUser(this);
         material.depthTest = false;
-        this.quad = new FullScreenQuad({ material: material });
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
         this.camera = camera;
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        renderer.render(this.quad, this.camera);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
     }
 }
@@ -6992,13 +7001,17 @@ class Renderer {
             }
         }
     }
-    _prepareRenderList(renderList, scene, camera, delta) {
+    _prepareRenderList(renderList, scene, camera, delta, context) {
         renderList.reset();
         let currentObject = scene;
         let objectStack = [];
         //scene.pointLights = scene.getChildList(PointLight);
         //scene.ambientLights = scene.getChildList(AmbientLight);
         while (currentObject) {
+            if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.DisableToolRendering) {
+                currentObject = objectStack.shift();
+                continue;
+            }
             //objectStack.push(currentObject);
             for (let child of currentObject.children) {
                 {
@@ -7015,7 +7028,7 @@ class Renderer {
         }
         renderList.finish();
     }
-    _renderRenderList(renderList, camera, renderLights, lightPos) {
+    _renderRenderList(renderList, camera, renderLights, context, lightPos) {
         for (let child of renderList.opaqueList) {
             this.renderObject(renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
         }
@@ -7025,7 +7038,7 @@ class Renderer {
             }
         }
     }
-    render(scene, camera, delta) {
+    render(scene, camera, delta, context) {
     }
     clear(color, depth, stencil) {
         WebGLRenderingState.clear(color, depth, stencil);
@@ -7080,7 +7093,7 @@ class ShadowMap {
         this.#graphics = graphics;
         this.#glContext = this.#graphics.glContext;
     }
-    render(renderer, renderList, camera) {
+    render(renderer, renderList, camera, context) {
         let lights = renderList.lights;
         let blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
         let scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
@@ -7109,7 +7122,7 @@ class ShadowMap {
                         vec4.set(viewPort, mapSize[0] * shadowViewport[0], mapSize[1] * shadowViewport[1], mapSize[0] * shadowViewport[2], mapSize[1] * shadowViewport[3]);
                         shadow.computeShadowMatrix(viewPortIndex);
                         this.#graphics.viewport = viewPort;
-                        renderer._renderRenderList(renderList, shadow.camera, false, lightPos);
+                        renderer._renderRenderList(renderList, shadow.camera, false, context, lightPos);
                     }
                     this.#graphics.popRenderTarget();
                 }
@@ -7243,15 +7256,15 @@ class ForwardRenderer extends Renderer {
             program.setUniformValue(uniform, material.uniforms[uniform]);
         }
     }
-    render(scene, camera, delta) {
+    render(scene, camera, delta, context) {
         const renderList = new RenderList(); //TODO: optimize
         camera.dirty(); //Force matrices to recompute
-        this._prepareRenderList(renderList, scene, camera, delta);
-        this.#shadowMap.render(this, renderList, camera);
+        this._prepareRenderList(renderList, scene, camera, delta, context);
+        this.#shadowMap.render(this, renderList, camera, context);
         if (scene.background) {
             scene.background.render(this, camera);
         }
-        this._renderRenderList(renderList, camera, true);
+        this._renderRenderList(renderList, camera, true, context);
         WebGLRenderingState.depthMask(true); //TODOv3 check why we have to do this
         ++this.#frame;
     }
@@ -7418,9 +7431,9 @@ class Graphics {
         }
         return defines.join('\n') + '\n';
     }
-    render(scene, camera, delta) {
+    render(scene, camera, delta, context) {
         this.renderBackground(); //TODOv3 put in rendering pipeline
-        this.#forwardRenderer.render(scene, camera, delta);
+        this.#forwardRenderer.render(scene, camera, delta, context);
     }
     renderBackground() {
         if (this.autoClear) {
@@ -7573,6 +7586,9 @@ class Graphics {
     }
     clearStencil(clearStencil) {
         WebGLRenderingState.clearStencil(clearStencil);
+    }
+    setColorMask(mask) {
+        WebGLRenderingState.colorMask(mask);
     }
     set autoResize(autoResize) {
         this.#autoResize = autoResize;
@@ -7736,7 +7752,7 @@ class Graphics {
         try {
             this.autoResize = false;
             this.setSize(width, height);
-            this.render(scene, camera, 0);
+            this.render(scene, camera, 0, { DisableToolRendering: true });
             this._savePicture(filename);
         }
         finally {
@@ -8043,7 +8059,7 @@ let tempVec2$4 = vec2.create();
 class OutlinePass extends Pass {
     #edgedetectionMaterial;
     #copyMaterial;
-    scene;
+    outlineScene;
     #renderTargetDepthBuffer;
     #renderTargetMaskDownSampleBuffer;
     #renderTargetBlurBuffer1;
@@ -8052,9 +8068,9 @@ class OutlinePass extends Pass {
     #renderTargetEdgeBuffer2;
     width = 1;
     height = 1;
-    constructor(scene, camera) {
+    constructor(outlineScene, camera) {
         super();
-        this.scene = scene;
+        this.outlineScene = outlineScene;
         this.camera = camera;
         this.#initRenderTargets();
         this.#copyMaterial = new ShaderMaterial({ shaderSource: 'copy' });
@@ -8063,7 +8079,8 @@ class OutlinePass extends Pass {
         this.#copyMaterial.setBlending(MATERIAL_BLENDING_ADDITIVE);
         this.#edgedetectionMaterial = new ShaderMaterial({ shaderSource: 'edgedetection' });
         this.#edgedetectionMaterial.addUser(this);
-        this.quad = new FullScreenQuad();
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ parent: this.scene });
         //this.quad.material = material;
         this.camera = camera;
     }
@@ -8086,7 +8103,7 @@ class OutlinePass extends Pass {
         this.#renderTargetEdgeBuffer2.resize(width, height);
     }
     changeVisibilityOfSelectedObjects(visible) {
-        this.scene.forEach((entity) => {
+        this.outlineScene.forEach((entity) => {
             if (entity.properties.get('selected') && entity.isRenderable) {
                 if (visible) {
                     entity.setVisible(entity.properties.get('oldVisible'));
@@ -8100,7 +8117,7 @@ class OutlinePass extends Pass {
         });
     }
     changeVisibilityOfNonSelectedObjects(visible) {
-        this.scene.forEach((entity) => {
+        this.outlineScene.forEach((entity) => {
             if (!entity.properties.get('selected') && entity.isRenderable) {
                 if (visible) {
                     entity.setVisible(entity.properties.get('oldVisible'));
@@ -8113,7 +8130,7 @@ class OutlinePass extends Pass {
             }
         });
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         renderer.getSize(tempVec2$4);
         tempVec2$4[0];
         tempVec2$4[1];
@@ -8122,15 +8139,15 @@ class OutlinePass extends Pass {
         renderer.clear(true, true, false);
         //renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
         this.changeVisibilityOfSelectedObjects(false);
-        renderer.colorMask = [0, 0, 0, 0];
-        renderer.render(this.scene, this.camera, 0);
-        renderer.colorMask = undefined;
+        renderer.setColorMask([0, 0, 0, 0]);
+        renderer.render(this.outlineScene, this.camera, 0, context);
+        renderer.setColorMask([1, 1, 1, 1]);
         this.changeVisibilityOfSelectedObjects(true);
         //renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
         this.changeVisibilityOfNonSelectedObjects(false);
         renderer.setIncludeCode('outline_pass_silhouette_mode', '#define SILHOUETTE_MODE');
         renderer.setIncludeCode('silhouetteColor', '#define SILHOUETTE_COLOR vec4(1.0)');
-        renderer.render(this.scene, this.camera, 0);
+        renderer.render(this.outlineScene, this.camera, 0, context);
         renderer.setIncludeCode('outline_pass_silhouette_mode', '#undef SILHOUETTE_MODE');
         this.changeVisibilityOfNonSelectedObjects(true);
         renderer.popRenderTarget();
@@ -8142,20 +8159,20 @@ class OutlinePass extends Pass {
         this.quad.setMaterial(this.#edgedetectionMaterial);
         renderer.pushRenderTarget(this.#renderTargetEdgeBuffer1);
         renderer.clear(true, true, false);
-        renderer.render(this.quad, this.camera, 0);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
         /**************/
         this.#copyMaterial.uniforms['colorMap'] = readBuffer.getTexture();
         this.quad.setMaterial(this.#copyMaterial);
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
         renderer.clear(true, true, false);
-        renderer.render(this.quad, this.camera, 0);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
         /***************/
         this.#copyMaterial.uniforms['colorMap'] = this.#renderTargetEdgeBuffer1.getTexture();
         this.quad.setMaterial(this.#copyMaterial);
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        renderer.render(this.quad, this.camera, 0);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
     }
 }
@@ -8166,13 +8183,14 @@ class PalettePass extends Pass {
         let material = new ShaderMaterial({ shaderSource: 'palette' });
         material.addUser(this);
         material.depthTest = false;
-        this.quad = new FullScreenQuad({ material: material });
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
         this.camera = camera;
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        renderer.render(this.quad, this.camera);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
     }
 }
@@ -8186,7 +8204,8 @@ class PixelatePass extends Pass {
         this.#material = new ShaderMaterial({ shaderSource: 'pixelate' });
         this.#material.addUser(this);
         this.#material.depthTest = false;
-        this.quad = new FullScreenQuad({ material: this.#material });
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
         this.camera = camera;
         this.horizontalTiles = 10;
     }
@@ -8198,25 +8217,24 @@ class PixelatePass extends Pass {
         this.#pixelStyle = pixelStyle;
         this.#material.setDefine('PIXEL_STYLE', pixelStyle);
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.uniforms['colorMap'] = readBuffer.getTexture();
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        renderer.render(this.quad, this.camera);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
     }
 }
 
 class RenderPass extends Pass {
-    scene;
     constructor(scene, camera) {
         super();
         this.swapBuffers = false;
         this.scene = scene;
         this.camera = camera;
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen, delta) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        renderer.render(this.scene, this.camera, delta);
+        renderer.render(this.scene, this.camera, delta, context);
         renderer.popRenderTarget();
     }
 }
@@ -8228,7 +8246,8 @@ class SaturatePass extends Pass {
         let material = new ShaderMaterial({ shaderSource: 'saturate' });
         material.addUser(this);
         material.depthTest = false;
-        this.quad = new FullScreenQuad({ material: material });
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
         this.camera = camera;
         this.saturation = 1.0;
     }
@@ -8236,10 +8255,10 @@ class SaturatePass extends Pass {
         this.#saturation = saturation;
         this.quad.material.uniforms['uSaturation'] = this.#saturation;
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        renderer.render(this.quad, this.camera);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
     }
 }
@@ -8250,13 +8269,14 @@ class SketchPass extends Pass {
         let material = new ShaderMaterial({ shaderSource: 'sketch' });
         material.addUser(this);
         material.depthTest = false;
-        this.quad = new FullScreenQuad({ material: material });
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
         this.camera = camera;
     }
-    render(renderer, readBuffer, writeBuffer, renderToScreen) {
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
         renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        renderer.render(this.quad, this.camera);
+        renderer.render(this.scene, this.camera, 0, context);
         renderer.popRenderTarget();
     }
 }
@@ -8278,7 +8298,7 @@ class Composer {
         }
         this.#setRenderTarget(renderTarget);
     }
-    render(delta) {
+    render(delta, context) {
         let pass;
         let swapBuffer;
         new Graphics().getSize(tempVec2$3);
@@ -8300,12 +8320,12 @@ class Composer {
                 this.readBuffer = this.writeBuffer;
                 this.writeBuffer = swapBuffer;
             }
-            pass.render(new Graphics(), this.readBuffer, this.writeBuffer, i == lastPass, delta);
+            pass.render(new Graphics(), this.readBuffer, this.writeBuffer, i == lastPass, delta, context);
         }
     }
     savePicture(filename, width, height) {
         this.setSize(width, height);
-        this.render(0);
+        this.render(0, { DisableToolRendering: true });
         new Graphics()._savePicture(filename);
     }
     addPass(pass) {
@@ -10441,6 +10461,7 @@ class Manipulator extends Entity {
         this.#initRotationManipulator();
         this.#initScaleManipulator();
         this.setMode(ManipulatorMode.Translation);
+        this.setAttribute(EngineEntityAttributes.IsTool, true);
         this.enableX = true;
         this.enableY = true;
         this.enableZ = true;
@@ -11558,7 +11579,7 @@ async function renderMaterial(material, materialsParams) {
     new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
     fullScreenQuadMesh.material = material;
     fullScreenQuadMesh.materialsParams = materialsParams;
-    new Graphics().render(scene, camera, 0);
+    new Graphics().render(scene, camera, 0, { DisableToolRendering: true });
     let imgContent = await new Graphics().toBlob();
     new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
     new Graphics().setIncludeCode('SKIP_PROJECTION', '');
@@ -16246,7 +16267,7 @@ class NodeImageEditor extends EventTarget {
     }
     render(material) {
         this.#fullScreenQuadMesh.setMaterial(material);
-        new Graphics().render(this.#scene, this.#camera, 0);
+        new Graphics().render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
     }
     addNode(operationName, params = {}) {
         params.textureSize = params.textureSize ?? this.textureSize;
@@ -66249,7 +66270,7 @@ class RemGenerator {
             const size = this.#cubeSize;
             cubeUVRenderTarget.setViewport(col * size, i > 2 ? size : 0, size, size);
             new Graphics().pushRenderTarget(cubeUVRenderTarget);
-            renderer.render(scene, cubeCamera, 0);
+            renderer.render(scene, cubeCamera, 0, { DisableToolRendering: true });
             new Graphics().popRenderTarget();
         }
         backgroundBox.dispose();
@@ -66283,7 +66304,7 @@ class RemGenerator {
         const size = this.#cubeSize;
         cubeUVRenderTarget.setViewport(0, 0, 3 * size, 2 * size);
         new Graphics().pushRenderTarget(cubeUVRenderTarget);
-        renderer.render(scene, flatCamera, 0);
+        renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
         new Graphics().popRenderTarget();
     }
     #applyPMREM(cubeUVRenderTarget) {
@@ -66362,7 +66383,7 @@ class RemGenerator {
         const y = 4 * (this.#cubeSize - outputSize);
         targetOut.setViewport(x, y, 3 * outputSize, 2 * outputSize);
         new Graphics().pushRenderTarget(targetOut);
-        renderer.render(scene, flatCamera, 0);
+        renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
         new Graphics().popRenderTarget();
     }
 }
@@ -66805,7 +66826,7 @@ class ObjExporter {
             }
             this.#fullScreenQuadMesh.material = mesh.material;
             this.#fullScreenQuadMesh.materialsParams = mesh.materialsParams;
-            new Graphics().render(this.scene, this.camera, 0);
+            new Graphics().render(this.scene, this.camera, 0, { DisableToolRendering: true });
             //let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
             /*				let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
                         files.add(file);*/
@@ -66980,7 +67001,7 @@ class RenderTargetViewer {
         this.#plane.setSize(this.#size[0], this.#size[1]);
     }
     render(renderer) {
-        renderer.render(this.#scene, this.#camera, 0);
+        renderer.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
     }
     is(s) {
         return s == 'RenderTargetViewer';

@@ -1,8 +1,11 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { WebGLRenderingState } from '../webgl/renderingstate';
 import { GL_BLEND, GL_DEPTH_TEST, GL_SCISSOR_TEST } from '../webgl/constants';
-import { Graphics } from '../graphics/graphics';
+import { Graphics, RenderContext } from '../graphics/graphics';
 import { WebGLAnyRenderingContext } from '../types';
+import { Renderer } from '../renderers/renderer';
+import { RenderList } from '../renderers/renderlist';
+import { Camera } from '../cameras/camera';
 
 const CLEAR_COLOR = vec4.fromValues(1, 0, 1, 1);
 
@@ -19,7 +22,7 @@ export class ShadowMap {
 		this.#glContext = this.#graphics.glContext;
 	}
 
-	render(renderer, renderList, camera) {
+	render(renderer: Renderer, renderList: RenderList, camera: Camera, context: RenderContext) {
 		let lights = renderList.lights;
 
 		let blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
@@ -58,7 +61,7 @@ export class ShadowMap {
 
 						shadow.computeShadowMatrix(viewPortIndex);
 						this.#graphics.viewport = viewPort;
-						renderer._renderRenderList(renderList, shadow.camera, false, lightPos);
+						renderer._renderRenderList(renderList, shadow.camera, false, context, lightPos);
 					}
 					this.#graphics.popRenderTarget();
 				}

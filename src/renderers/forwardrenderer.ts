@@ -4,7 +4,7 @@ import { ShadowMap } from '../textures/shadowmap';
 import { RenderFace } from '../materials/constants';
 import { RenderList } from './renderlist';
 import { WebGLRenderingState } from '../webgl/renderingstate';
-import { Graphics } from '../graphics/graphics';
+import { Graphics, RenderContext } from '../graphics/graphics';
 import { Material } from '../materials/material';
 import { Scene } from '../scenes/scene';
 import { Camera } from '../cameras/camera';
@@ -73,17 +73,17 @@ export class ForwardRenderer extends Renderer {
 		}
 	}
 
-	render(scene: Scene, camera: Camera, delta: number) {
+	render(scene: Scene, camera: Camera, delta: number, context: RenderContext) {
 		const renderList = new RenderList();//TODO: optimize
 		camera.dirty();//Force matrices to recompute
-		this._prepareRenderList(renderList, scene, camera, delta);
+		this._prepareRenderList(renderList, scene, camera, delta, context);
 
-		this.#shadowMap.render(this, renderList, camera);
+		this.#shadowMap.render(this, renderList, camera, context);
 		if (scene.background) {
 			scene.background.render(this, camera);
 		}
 
-		this._renderRenderList(renderList, camera, true);
+		this._renderRenderList(renderList, camera, true, context);
 		WebGLRenderingState.depthMask(true);//TODOv3 check why we have to do this
 		++this.#frame;
 	}

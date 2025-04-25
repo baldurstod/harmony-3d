@@ -359,9 +359,9 @@ export class RemGenerator {
 
 			new Graphics().pushRenderTarget(cubeUVRenderTarget);
 			if (useSolidColor) {
-				renderer.render(scene2, cubeCamera, 0);
+				renderer.render(scene2, cubeCamera, 0, { DisableToolRendering: true });
 			}
-			renderer.render(scene, cubeCamera, 0);
+			renderer.render(scene, cubeCamera, 0, { DisableToolRendering: true });
 			new Graphics().popRenderTarget();
 		}
 
@@ -408,7 +408,7 @@ export class RemGenerator {
 		cubeUVRenderTarget.setViewport(0, 0, 3 * size, 2 * size);
 
 		new Graphics().pushRenderTarget(cubeUVRenderTarget);
-		renderer.render(scene, flatCamera, 0);
+		renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
 		new Graphics().popRenderTarget();
 
 	}
@@ -544,7 +544,7 @@ export class RemGenerator {
 
 		targetOut.setViewport(x, y, 3 * outputSize, 2 * outputSize);
 		new Graphics().pushRenderTarget(targetOut);
-		renderer.render(scene, flatCamera, 0);
+		renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
 		new Graphics().popRenderTarget();
 
 	}

@@ -2,21 +2,25 @@ import { Pass } from '../pass';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
 import { Camera } from '../../cameras/camera';
+import { Graphics, RenderContext } from '../../graphics/graphics';
+import { RenderTarget } from '../../textures/rendertarget';
+import { Scene } from '../../scenes/scene';
 
 export class CopyPass extends Pass {
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
 		let material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false });
 		material.addUser(this);
-		this.quad = new FullScreenQuad({ material: material });
+		this.scene = new Scene();
+		this.quad = new FullScreenQuad({ material: material, parent: this.scene });
 		this.camera = camera;
 	}
 
-	render(renderer, readBuffer, writeBuffer, renderToScreen) {
+	render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
 
 		renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		renderer.render(this.quad, this.camera);
+		renderer.render(this.scene, this.camera, 0, context);
 		renderer.popRenderTarget();
 	}
 }

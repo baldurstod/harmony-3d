@@ -44,7 +44,7 @@ export class ObjExporter {
 			}
 			this.#fullScreenQuadMesh.material = (mesh as Mesh).material;
 			this.#fullScreenQuadMesh.materialsParams = mesh.materialsParams;
-			new Graphics().render(this.scene, this.camera, 0);
+			new Graphics().render(this.scene, this.camera, 0, { DisableToolRendering: true });
 
 			//let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
 			/*				let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);

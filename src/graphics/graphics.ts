@@ -52,6 +52,10 @@ export function getGraphics() {
 	return graphics;
 }
 
+export type RenderContext = {
+	DisableToolRendering?: boolean;
+}
+
 type GraphicsInitOptions = {
 	canvas?: HTMLCanvasElement,
 	autoResize?: boolean,
@@ -231,12 +235,12 @@ export class Graphics {
 		return defines.join('\n') + '\n';
 	}
 
-	render(scene: Scene, camera: Camera, delta: number) {
+	render(scene: Scene, camera: Camera, delta: number, context: RenderContext) {
 		if (MEASURE_PERFORMANCE) {
 			WebGLStats.beginRender();
 		}
 		this.renderBackground();//TODOv3 put in rendering pipeline
-		this.#forwardRenderer!.render(scene, camera, delta);
+		this.#forwardRenderer!.render(scene, camera, delta, context);
 
 		if (USE_OFF_SCREEN_CANVAS) {
 			let bitmap = this.#offscreenCanvas!.transferToImageBitmap();
@@ -436,6 +440,10 @@ export class Graphics {
 
 	clearStencil(clearStencil: GLint) {
 		WebGLRenderingState.clearStencil(clearStencil);
+	}
+
+	setColorMask(mask: vec4) {
+		WebGLRenderingState.colorMask(mask);
 	}
 
 	set autoResize(autoResize) {
@@ -649,7 +657,7 @@ export class Graphics {
 		try {
 			this.autoResize = false;
 			this.setSize(width, height);
-			this.render(scene, camera, 0);
+			this.render(scene, camera, 0, { DisableToolRendering: true });
 			this._savePicture(filename);
 		} finally {
 			this.autoResize = previousAutoResize;

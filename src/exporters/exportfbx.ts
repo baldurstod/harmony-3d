@@ -520,7 +520,7 @@ async function renderMaterial(material, materialsParams) {
 
 	fullScreenQuadMesh.material = material;
 	fullScreenQuadMesh.materialsParams = materialsParams;
-	new Graphics().render(scene, camera, 0);
+	new Graphics().render(scene, camera, 0, { DisableToolRendering: true });
 
 	let imgContent = await new Graphics().toBlob();
 

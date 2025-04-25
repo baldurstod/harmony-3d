@@ -1,7 +1,7 @@
 import { mat4, quat, vec2, vec3, vec4 } from 'gl-matrix';
 import { ShortcutHandler } from 'harmony-browser-utils';
 
-import { Entity, LAYER_MAX } from '../../entities/entity';
+import { EngineEntityAttributes, Entity, LAYER_MAX } from '../../entities/entity';
 import { Graphics } from '../../graphics/graphics';
 import { GraphicsEvents, GraphicsEvent, GraphicMouseEventData } from '../../graphics/graphicsevents';
 import { LineMaterial } from '../../materials/linematerial';
@@ -149,6 +149,7 @@ export class Manipulator extends Entity {
 		this.#initScaleManipulator();
 
 		this.setMode(ManipulatorMode.Translation);
+		this.setAttribute(EngineEntityAttributes.IsTool, true);
 
 		this.enableX = true;
 		this.enableY = true;

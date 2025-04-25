@@ -935,7 +935,7 @@ declare class Choreography {
          set clearColor(clearColor: vec4);
          set clearDepth(clearDepth: any);
          set clearStencil(clearStencil: any);
-         render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
+         render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
      }
 
      export declare const COLLISION_GROUP_DEBRIS = 1;
@@ -1042,8 +1042,8 @@ declare class Choreography {
          readBuffer: RenderTarget;
          writeBuffer: RenderTarget;
          constructor(renderTarget?: RenderTarget);
-         render(delta: any): void;
-         savePicture(filename: any, width: any, height: any): void;
+         render(delta: number, context: RenderContext): void;
+         savePicture(filename: string, width: number, height: number): void;
          addPass(pass: any): void;
          setSize(width: any, height: any): void;
      }
@@ -1223,7 +1223,7 @@ declare class Choreography {
 
      export declare class CopyPass extends Pass {
          constructor(camera: Camera);
-         render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
+         render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
      }
 
      export declare const CParticleSystemDefinition = "CParticleSystemDefinition";
@@ -1314,7 +1314,7 @@ declare class Choreography {
 
      export declare class CrosshatchPass extends Pass {
          constructor(camera: any);
-         render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
+         render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
      }
 
      export declare class CubeBackground extends BackGround {
@@ -2172,7 +2172,7 @@ declare class Choreography {
              #private;
              constructor(graphics: Graphics);
              applyMaterial(program: Program, material: Material): void;
-             render(scene: Scene, camera: Camera, delta: number): void;
+             render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
              set scissorTest(scissorTest: any);
          }
 
@@ -2199,7 +2199,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | Grid | CameraFrustum;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -2767,7 +2767,7 @@ declare class Choreography {
              #private;
              constructor(camera: any);
              set intensity(intensity: any);
-             render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
+             render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
          export declare type GraphicKeyboardEventData = {
@@ -2799,7 +2799,7 @@ declare class Choreography {
              initCanvas(contextAttributes?: GraphicsInitOptions): this;
              pickEntity(x: number, y: number): Entity;
              getDefinesAsString(material: Material): string;
-             render(scene: Scene, camera: Camera, delta: number): void;
+             render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
              renderBackground(): void;
              clear(color: boolean, depth: boolean, stencil: boolean): void;
              _tick(): void;
@@ -2818,6 +2818,7 @@ declare class Choreography {
              getClearColor(clearColor?: vec4): vec4;
              clearDepth(clearDepth: GLclampf): void;
              clearStencil(clearStencil: GLint): void;
+             setColorMask(mask: vec4): void;
              set autoResize(autoResize: boolean);
              get autoResize(): boolean;
              getExtension(name: string): any;
@@ -4614,8 +4615,8 @@ declare class Choreography {
          }
 
          export declare class OldMoviePass extends Pass {
-             constructor(camera: any);
-             render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
+             constructor(camera: Camera);
+             render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
          export declare const ONE_EPS = 1.0000001;
@@ -4728,14 +4729,14 @@ declare class Choreography {
 
          export declare class OutlinePass extends Pass {
              #private;
-             scene: Scene;
+             outlineScene: Scene;
              width: number;
              height: number;
-             constructor(scene: Scene, camera: Camera);
+             constructor(outlineScene: Scene, camera: Camera);
              setSize(width: any, height: any): void;
              changeVisibilityOfSelectedObjects(visible: any): void;
              changeVisibilityOfNonSelectedObjects(visible: any): void;
-             render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
+             render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
          declare class Output extends InputOutput {
@@ -4769,7 +4770,7 @@ declare class Choreography {
 
          export declare class PalettePass extends Pass {
              constructor(camera: any);
-             render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
+             render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
          declare type ParameterChanged = (newValue: any, oldValue?: any) => void;
@@ -4797,13 +4798,14 @@ declare class Choreography {
          export declare function ParticleRandomVec3(vec: any, id: any, offset1: any, offset2: any, offset3: any): any;
 
          export declare class Pass {
-             camera: Camera;
+             camera?: Camera;
              quad?: FullScreenQuad;
+             scene?: Scene;
              enabled: boolean;
              swapBuffers: boolean;
              renderToScreen: boolean;
-             setSize(width: any, height: any): void;
-             render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any, delta: any): void;
+             setSize(width: number, height: number): void;
+             render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
          export declare class Path extends Curve {
@@ -4857,7 +4859,7 @@ declare class Choreography {
              constructor(camera: any);
              set horizontalTiles(horizontalTiles: any);
              set pixelStyle(pixelStyle: any);
-             render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
+             render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
          export declare class Plane extends Mesh {
@@ -5740,6 +5742,10 @@ declare class Choreography {
              DEPTH32F_STENCIL8 = 36013
          }
 
+         declare type RenderContext = {
+             DisableToolRendering?: boolean;
+         };
+
          export declare class RenderDeferredLight extends Operator {
              constructor(system: any);
              _paramChanged(paramName: any, value: any): void;
@@ -5756,9 +5762,9 @@ declare class Choreography {
              setLights(pointLights: any, spotLights: any, pointLightShadows: any, spotLightShadows: any): void;
              unsetLights(): void;
              renderObject(renderList: RenderList, object: Mesh, camera: any, geometry: any, material: any, renderLights: boolean, lightPos: any): void;
-             _prepareRenderList(renderList: any, scene: any, camera: any, delta: any): void;
-             _renderRenderList(renderList: RenderList, camera: any, renderLights: any, lightPos?: any): void;
-             render(scene: Scene, camera: Camera, delta: number): void;
+             _prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
+             _renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: RenderContext, lightPos?: vec3): void;
+             render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
              clear(color: any, depth: any, stencil: any): void;
              /**
               * Invalidate all shader (force recompile)
@@ -5803,9 +5809,8 @@ declare class Choreography {
          }
 
          export declare class RenderPass extends Pass {
-             scene: Scene;
              constructor(scene: Scene, camera: Camera);
-             render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any, delta: any): void;
+             render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
          export declare class RenderRope extends SourceEngineParticleOperator {
@@ -6204,7 +6209,7 @@ declare class Choreography {
              #private;
              constructor(camera: any);
              set saturation(saturation: any);
-             render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
+             render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
          export declare class Scene extends Entity {
@@ -6494,7 +6499,7 @@ declare class Choreography {
          export declare class ShadowMap {
              #private;
              constructor(graphics: Graphics);
-             render(renderer: any, renderList: any, camera: any): void;
+             render(renderer: Renderer, renderList: RenderList, camera: Camera, context: RenderContext): void;
          }
 
          export declare function SimpleSpline(value: number): number;
@@ -6571,7 +6576,7 @@ declare class Choreography {
 
          export declare class SketchPass extends Pass {
              constructor(camera: any);
-             render(renderer: any, readBuffer: any, writeBuffer: any, renderToScreen: any): void;
+             render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
          export declare class SnapshotRigidSkinToBones extends Operator {

@@ -37,6 +37,10 @@ export const UNITY_VEC3 = vec3.fromValues(1, 1, 1);
 
 export const LAYER_MAX = 50;
 
+export enum EngineEntityAttributes  {
+	IsTool = 'is tool',
+}
+
 export class Entity {
 	static addSubMenu: any;
 	id = generateRandomUUID();

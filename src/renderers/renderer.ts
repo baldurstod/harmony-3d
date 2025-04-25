@@ -8,12 +8,13 @@ import { GL_LINES } from '../webgl/constants';
 import { DEBUG, ENABLE_GET_ERROR, USE_STATS } from '../buildoptions';
 import { ToneMapping } from '../textures/constants';
 import { WebGLRenderingState } from '../webgl/renderingstate';
-import { Graphics } from '../graphics/graphics';
+import { Graphics, RenderContext } from '../graphics/graphics';
 import { WebGLAnyRenderingContext } from '../types';
 import { Mesh } from '../objects/mesh';
 import { Material } from '../materials/material';
 import { Scene } from '../scenes/scene';
 import { RenderList } from './renderlist';
+import { EngineEntityAttributes } from '../entities/entity';
 
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
@@ -322,7 +323,7 @@ export class Renderer {
 		}
 	}
 
-	_prepareRenderList(renderList, scene, camera, delta) {
+	_prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: RenderContext) {
 		renderList.reset();
 		let currentObject = scene;
 		let objectStack = [];
@@ -330,6 +331,11 @@ export class Renderer {
 		//scene.ambientLights = scene.getChildList(AmbientLight);
 
 		while (currentObject) {
+			if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.DisableToolRendering) {
+				currentObject = objectStack.shift();
+				continue;
+			}
+
 			//objectStack.push(currentObject);
 			for (let child of currentObject.children) {
 				if (true || child.constructor.name !== 'Skeleton') {
@@ -346,7 +352,7 @@ export class Renderer {
 		renderList.finish();
 	}
 
-	_renderRenderList(renderList: RenderList, camera, renderLights, lightPos?) {
+	_renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: RenderContext, lightPos?: vec3) {
 		for (let child of renderList.opaqueList) {
 			this.renderObject(renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
 		}
@@ -358,7 +364,7 @@ export class Renderer {
 		}
 	}
 
-	render(scene: Scene, camera: Camera, delta: number) {
+	render(scene: Scene, camera: Camera, delta: number, context: RenderContext) {
 	}
 
 	clear(color, depth, stencil) {

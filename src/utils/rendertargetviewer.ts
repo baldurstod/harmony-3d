@@ -79,7 +79,7 @@ export class RenderTargetViewer {
 	}
 
 	render(renderer: Renderer) {
-		renderer.render(this.#scene, this.#camera, 0);
+		renderer.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
 	}
 
 	is(s: string): boolean {

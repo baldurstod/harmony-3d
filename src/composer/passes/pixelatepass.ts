@@ -1,6 +1,9 @@
 import { Pass } from '../pass';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
+import { Graphics, RenderContext } from '../../graphics/graphics';
+import { RenderTarget } from '../../textures/rendertarget';
+import { Scene } from '../../scenes/scene';
 
 export class PixelatePass extends Pass {
 	#horizontalTiles;
@@ -11,7 +14,8 @@ export class PixelatePass extends Pass {
 		this.#material = new ShaderMaterial({ shaderSource: 'pixelate' });
 		this.#material.addUser(this);
 		this.#material.depthTest = false;
-		this.quad = new FullScreenQuad({ material: this.#material });
+		this.scene = new Scene();
+		this.quad = new FullScreenQuad({ material: this.#material, parent: this.scene });
 		this.camera = camera;
 		this.horizontalTiles = 10;
 	}
@@ -26,11 +30,11 @@ export class PixelatePass extends Pass {
 		this.#material.setDefine('PIXEL_STYLE', pixelStyle);
 	}
 
-	render(renderer, readBuffer, writeBuffer, renderToScreen) {
+	render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		this.#material.uniforms['colorMap'] = readBuffer.getTexture();
 
 		renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		renderer.render(this.quad, this.camera);
+		renderer.render(this.scene, this.camera, 0, context);
 		renderer.popRenderTarget();
 	}
 }
