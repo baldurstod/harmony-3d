@@ -6,6 +6,7 @@ import { Scene } from '../scenes/scene';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { EntityObserver } from '../entities/entityobserver';
 import { registerEntity } from '../entities/entities';
+import { JSONObject } from '../types';
 
 export enum CameraProjection {
 	Perspective = 0,
@@ -38,27 +39,27 @@ const LAMBDA = 10;
 const LAMBDA_DIVIDOR = 1 - Math.exp(-LAMBDA);
 
 export class Camera extends Entity {
-	#nearPlane: number;
-	#farPlane: number;
-	#orthoZoom: number;
-	#projection: CameraProjection;
-	#projectionMix: number;// 0: full perspective 1: full ortho
-	#left: number;
-	#right: number;
-	#top: number;
-	#bottom: number;
+	#nearPlane!: number;
+	#farPlane!: number;
+	#orthoZoom!: number;
+	#projection!: CameraProjection;
+	#projectionMix!: number;// 0: full perspective 1: full ortho
+	#left!: number;
+	#right!: number;
+	#top!: number;
+	#bottom!: number;
 	#cameraMatrix = mat4.create();
 	#projectionMatrix = mat4.create();
-	#verticalFov: number;
-	#aspectRatio: number;
+	#verticalFov!: number;
+	#aspectRatio!: number;
 	#dirtyCameraMatrix: boolean = true;
 	#dirtyProjectionMatrix: boolean = true;
 	#projectionMatrixInverse = mat4.create();
 	#worldMatrixInverse = mat4.create();
 	#upVector = vec3.create();
-	isPerspective: boolean;
-	isOrthographic: boolean;
-	#tanHalfVerticalFov: number
+	isPerspective!: boolean;
+	isOrthographic!: boolean;
+	#tanHalfVerticalFov!: number
 
 	constructor(params: any = {}/*TODO: create type*/) {
 		super();
@@ -122,7 +123,7 @@ export class Camera extends Entity {
 		return this.#projection;
 	}
 
-	setProjectionMix(projectionMix) {
+	setProjectionMix(projectionMix: number) {
 		this.projectionMix = (1 - Math.exp(-LAMBDA * projectionMix)) / LAMBDA_DIVIDOR;
 	}
 
@@ -313,7 +314,7 @@ export class Camera extends Entity {
 		return this.#worldMatrixInverse;
 	}
 
-	distanceFrom(point) {
+	distanceFrom(point: vec3) {
 		return vec3.distance(this._position, point);
 	}
 
@@ -373,7 +374,7 @@ export class Camera extends Entity {
 		});
 	}
 
-	invertProjection(v3) {
+	invertProjection(v3: vec3) {
 		vec3.transformMat4(v3, v3, this.projectionMatrixInverse);
 	}
 
@@ -381,7 +382,7 @@ export class Camera extends Entity {
 		return vec3.transformQuat(v, FrontVector, this.getWorldQuaternion(tempQuat));
 	}
 
-	copy(source) {
+	copy(source: Camera) {
 		super.copy(source);
 		this.nearPlane = source.nearPlane;
 		this.farPlane = source.farPlane;
@@ -439,7 +440,7 @@ export class Camera extends Entity {
 		return json;
 	}
 
-	static async constructFromJSON(json) {
+	static async constructFromJSON(json: JSONObject) {
 		return new Camera(json);
 	}
 
