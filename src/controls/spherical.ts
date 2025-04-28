@@ -3,9 +3,9 @@ import { vec3 } from 'gl-matrix';
 let EPSILON = 0.000001;
 
 export class Spherical {
-	theta: number;
-	phi: number;
-	radius: number;
+	theta!: number;
+	phi!: number;
+	radius!: number;
 	constructor(theta = 0, phi = 0, radius = 1.0) {
 		this.set(theta, phi, radius);
 	}
