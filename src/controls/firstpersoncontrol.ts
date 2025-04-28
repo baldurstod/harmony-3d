@@ -1,5 +1,4 @@
 import { quat, vec2, vec3 } from 'gl-matrix';
-
 import { CameraControl } from './cameracontrol'
 import { Spherical } from './spherical'
 import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
@@ -51,8 +50,9 @@ export class FirstPersonControl extends CameraControl {
 	#click = false;
 	#q = quat.create();
 	#quatInverse = quat.create();
-	#clickOffsetX: number;
-	#clickOffsetY: number;
+	//#clickOffsetX: number;
+	//#clickOffsetY: number;
+
 	constructor(camera: Camera) {
 		super(camera);
 
@@ -107,8 +107,8 @@ export class FirstPersonControl extends CameraControl {
 			switch (mouseEvent.button) {
 				case 0:
 					this.#click = true;
-					this.#clickOffsetX = mouseEvent.offsetX;
-					this.#clickOffsetY = mouseEvent.offsetY;
+					//this.#clickOffsetX = mouseEvent.offsetX;
+					//this.#clickOffsetY = mouseEvent.offsetY;
 					this.#startLat = this.#lat;
 					this.#startLon = this.#lon;
 					this.#mouseX = 0;
@@ -239,7 +239,7 @@ export class FirstPersonControl extends CameraControl {
 		}
 
 		if (this.heightSpeed) {
-			var y = clamp(this.camera.position[1], this.heightMin, this.heightMax);//TODO
+			var y = clamp(this.camera?.position[1] ?? 0, this.heightMin, this.heightMax);//TODO
 			var heightDelta = y - this.heightMin;
 
 			this.#autoSpeedFactor = delta * (heightDelta * this.heightCoef);
@@ -250,24 +250,24 @@ export class FirstPersonControl extends CameraControl {
 		var actualMoveSpeed = delta * this.movementSpeed;
 
 		if (this.#moveForward || (this.autoForward && !this.#moveBackward)) {
-			this.camera.translateZ(-(actualMoveSpeed + this.#autoSpeedFactor));
+			this.camera?.translateZ(-(actualMoveSpeed + this.#autoSpeedFactor));
 		}
 		if (this.#moveBackward) {
-			this.camera.translateZ(actualMoveSpeed);
+			this.camera?.translateZ(actualMoveSpeed);
 		}
 
 		if (this.#moveLeft) {
-			this.camera.translateX(- actualMoveSpeed);
+			this.camera?.translateX(- actualMoveSpeed);
 		}
 		if (this.#moveRight) {
-			this.camera.translateX(actualMoveSpeed);
+			this.camera?.translateX(actualMoveSpeed);
 		}
 
 		if (this.#moveUp) {
-			this.camera.translateY(actualMoveSpeed);
+			this.camera?.translateY(actualMoveSpeed);
 		}
 		if (this.#moveDown) {
-			this.camera.translateY(- actualMoveSpeed);
+			this.camera?.translateY(- actualMoveSpeed);
 		}
 
 		var actualLookSpeed = this.lookSpeed;
@@ -322,14 +322,14 @@ export class FirstPersonControl extends CameraControl {
 			//console.error(this.#lon, this.#lat, this.#mouseX, this.#mouseY , phi , theta);
 		}
 
-		function mapLinear(x, a1, a2, b1, b2) {
+		function mapLinear(x: number, a1: number, a2: number, b1: number, b2: number) {
 			return b1 + (x - a1) * (b2 - b1) / (a2 - a1);
 		}
 		if (this.constrainVertical) {
 			phi = mapLinear(phi, 0, Math.PI, this.verticalMin, this.verticalMax);
 		}
 
-		var position = this.camera.position;
+		var position = this.camera?.position ?? vec3.create()/*TODO: optimize*/;
 
 		spherical.toCartesian(tempVec3);
 
@@ -340,7 +340,7 @@ export class FirstPersonControl extends CameraControl {
 		//position.copy(this.target).add(offset);
 		vec3.add(position, position, tempVec3);
 
-		this.camera.lookAt(position);//TODO: optimize
+		this.camera?.lookAt(position);//TODO: optimize
 
 		if (this.#enableDamping === true) {
 			this.#sphericalDelta.theta *= (1 - this.#dampingFactor);
@@ -413,9 +413,11 @@ export class FirstPersonControl extends CameraControl {
 		*/
 
 	}
+	/*
 	contextmenu(event) {
 		event.preventDefault();
 	}
+	*/
 
 	#setOrientation() {
 		/*
@@ -435,7 +437,7 @@ export class FirstPersonControl extends CameraControl {
 
 
 		vec3.copy(tempVec3, xUnitVec3/*minusZUnitVec3*/);
-		vec3.transformQuat(tempVec3, tempVec3, this.camera._quaternion);
+		vec3.transformQuat(tempVec3, tempVec3, this.camera?._quaternion ?? quat.create()/*TODO: optimize*/);
 		spherical.setFromVector3(tempVec3);
 
 		this.#lat = -(90 - RAD_TO_DEG * (spherical.phi));
@@ -445,24 +447,26 @@ export class FirstPersonControl extends CameraControl {
 		this.update();
 	}
 
+	/*
 	#onContextMenu(event) {
 		if (this.enabled === false) return;
 		event.preventDefault();
 	}
+	*/
 
 	#setupEventsListeners() {
 		//this.htmlElement.addEventListener('contextmenu', event => this.#onContextMenu(event));
 		//this.htmlElement.addEventListener('mousemove', event => this.#onMouseMove(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseMove(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: Event) => this.#onMouseMove(event as CustomEvent<GraphicMouseEventData>));
 		//this.htmlElement.addEventListener('mousedown', event => this.#onMouseDown(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseDown(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: Event) => this.#onMouseDown(event as CustomEvent<GraphicMouseEventData>));
 		//this.htmlElement.addEventListener('mouseup', event => this.#onMouseUp(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseUp(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: Event) => this.#onMouseUp(event as CustomEvent<GraphicMouseEventData>));
 
 		//this.htmlElement.addEventListener('keydown', event => this.#onKeyDown(event), false);
-		GraphicsEvents.addEventListener(GraphicsEvent.KeyDown, (event: CustomEvent<GraphicKeyboardEventData>) => this.#onKeyDown(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.KeyDown, (event: Event) => this.#onKeyDown(event as CustomEvent<GraphicKeyboardEventData>));
 		//this.htmlElement.addEventListener('keyup', event => this.#onKeyUp(event), false);
-		GraphicsEvents.addEventListener(GraphicsEvent.KeyUp, (event: CustomEvent<GraphicKeyboardEventData>) => this.#onKeyUp(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.KeyUp, (event: Event) => this.#onKeyUp(event as CustomEvent<GraphicKeyboardEventData>));
 	}
 
 	setupCamera() {
@@ -481,11 +485,11 @@ export class FirstPersonControl extends CameraControl {
 		}
 	}
 
-	#rotateLeft(angle) {
+	#rotateLeft(angle: number) {
 		this.#sphericalDelta.theta -= angle;
 	}
 
-	#rotateUp(angle) {
+	#rotateUp(angle: number) {
 		this.#sphericalDelta.phi -= angle;
 	}
 }

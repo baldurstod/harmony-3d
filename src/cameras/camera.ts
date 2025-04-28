@@ -1,5 +1,4 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-
 import { DEBUG } from '../buildoptions';
 import { Entity } from '../entities/entity';
 import { Scene } from '../scenes/scene';
