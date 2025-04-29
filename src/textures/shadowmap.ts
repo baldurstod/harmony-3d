@@ -1,11 +1,12 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
-import { WebGLRenderingState } from '../webgl/renderingstate';
-import { GL_BLEND, GL_DEPTH_TEST, GL_SCISSOR_TEST } from '../webgl/constants';
+import { Camera } from '../cameras/camera';
 import { Graphics, RenderContext } from '../graphics/graphics';
-import { WebGLAnyRenderingContext } from '../types';
+import { PointLight } from '../lights/pointlight';
 import { Renderer } from '../renderers/renderer';
 import { RenderList } from '../renderers/renderlist';
-import { Camera } from '../cameras/camera';
+import { WebGLAnyRenderingContext } from '../types';
+import { GL_BLEND, GL_DEPTH_TEST, GL_SCISSOR_TEST } from '../webgl/constants';
+import { WebGLRenderingState } from '../webgl/renderingstate';
 
 const CLEAR_COLOR = vec4.fromValues(1, 0, 1, 1);
 
@@ -17,6 +18,7 @@ const viewPort = vec4.create();
 export class ShadowMap {
 	#graphics: Graphics;
 	#glContext: WebGLAnyRenderingContext;
+
 	constructor(graphics: Graphics) {
 		this.#graphics = graphics;
 		this.#glContext = this.#graphics.glContext;
@@ -48,7 +50,7 @@ export class ShadowMap {
 					vec2.copy(mapSize, shadow.textureSize);
 					this.#graphics.pushRenderTarget(renderTarget);
 					WebGLRenderingState.clear(true, true, true);
-					this.#graphics.setIncludeCode('IS_POINT_LIGHT', light.isPointLight ? '#define IS_POINT_LIGHT' : '');
+					this.#graphics.setIncludeCode('IS_POINT_LIGHT', (light as PointLight).isPointLight ? '#define IS_POINT_LIGHT' : '');
 					for (let viewPortIndex = 0; viewPortIndex < shadow.viewPortsLength; ++viewPortIndex) {
 						shadowViewport = shadow.viewPorts[viewPortIndex];
 						vec4.set(viewPort,

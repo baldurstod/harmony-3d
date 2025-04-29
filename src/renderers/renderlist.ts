@@ -5,7 +5,7 @@ import { PointLight } from '../lights/pointlight';
 import { SpotLight } from '../lights/spotlight';
 import { Mesh } from '../objects/mesh';
 
-function sortLights(first, second) {
+function sortLights(first: Light, second: Light) {
 	if (first.castShadow) {
 		return -1;
 	}
@@ -13,7 +13,7 @@ function sortLights(first, second) {
 }
 
 export class RenderList {
-	lights = [];
+	lights: Array<Light> = [];
 	pointLights: Array<PointLight> = [];
 	spotLights: Array<SpotLight> = [];
 	ambientLights: Array<AmbientLight> = [];
@@ -41,7 +41,7 @@ export class RenderList {
 	addObject(entity: Entity) {
 		if (entity.isVisible() !== false) {
 			if ((entity as Light).isLight) {
-				this.lights.push(entity)
+				this.lights.push(entity as Light)
 				if ((entity as AmbientLight).isAmbientLight) {
 					this.ambientLights.push(entity as AmbientLight);
 				} else if ((entity as PointLight).isPointLight) {

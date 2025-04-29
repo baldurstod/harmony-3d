@@ -1,5 +1,4 @@
 import { vec2, vec3 } from 'gl-matrix';
-
 import { Entity } from '../entities/entity';
 import { MaterialManager } from '../materials/materialmanager';
 import { BoundingBox } from '../math/boundingbox';
