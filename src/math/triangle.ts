@@ -24,7 +24,7 @@ export function getBarycentricCoordinates(out: vec3, position: vec3, a: vec3, b:
 	return vec3.set(out, 1 - u - v, v, u);
 }
 
-export function getUV(out: vec3, position: vec3, a: vec3, b: vec3, c: vec3, uv1: vec2, uv2: vec2, uv3: vec2) {
+export function getUV(out: vec2, position: vec3, a: vec3, b: vec3, c: vec3, uv1: vec2, uv2: vec2, uv3: vec2) {
 	getBarycentricCoordinates(v3, position, a, b, c);
 
 	out[0] = uv1[0] * v3[0] + uv2[0] * v3[1] + uv3[0] * v3[2];

@@ -7,7 +7,9 @@ import { Ray } from '../raycasting/ray';
 import { Interaction } from '../utils/interaction';
 import { GL_TRIANGLES } from '../webgl/constants';
 import { BufferGeometry } from '../geometry/buffergeometry';
-import { Material } from '../materials/material';
+import { Material, UniformValue } from '../materials/material';
+import { Raycaster } from '../raycasting/raycaster';
+import { Intersection } from '../raycasting/intersection';
 
 const tempVec3 = vec3.create();
 
@@ -26,12 +28,12 @@ let ray = new Ray();
 let uv = vec2.create();
 
 export class Mesh extends Entity {
-	#geometry: BufferGeometry;
-	#material: Material;
+	#geometry?: BufferGeometry;
+	#material?: Material;
 	#dirtyProgram = true;//TODOv3 use another method
 	renderMode = GL_TRIANGLES;
 	isRenderable = true;
-	uniforms = {};
+	uniforms: { [key: string]: any } = {};
 	defines = Object.create(null);
 	isMesh = true;
 
@@ -87,7 +89,7 @@ export class Mesh extends Entity {
 		return this.uniforms[name];
 	}
 
-	setUniform(name: string, uniform) {
+	setUniform(name: string, uniform: UniformValue) {
 		this.uniforms[name] = uniform;
 	}
 
@@ -104,18 +106,18 @@ export class Mesh extends Entity {
 	}
 
 	exportObj() {
-		let ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
-		let attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
+		let ret: { f?: Uint8Array | Uint32Array | Array<number>, v?: Float32Array | Array<number>, vn?: Float32Array | Array<number>, vt?: Float32Array | Array<number> } = {};
+		let attributes: { [key: string]: string } = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
 		let geometry = this.geometry;
 		for (let objAttribute in attributes) {
 			let geometryAttribute = attributes[objAttribute];
-			if (geometry.getAttribute(geometryAttribute)) {
+			if (geometry?.getAttribute(geometryAttribute)) {
 				let webglAttrib = geometry.getAttribute(geometryAttribute);
 				if (webglAttrib) {
-					ret[objAttribute] = webglAttrib._array;
+					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = webglAttrib._array;
 				}
 			} else {
-				ret[objAttribute] = [];
+				ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = [];
 			}
 		}
 		return ret;
@@ -139,7 +141,7 @@ export class Mesh extends Entity {
 		max[1] = -Infinity;
 		max[2] = -Infinity;
 
-		let vertexPosition = this.geometry.getAttribute('aVertexPosition')._array;
+		let vertexPosition = this.geometry?.getAttribute('aVertexPosition')?._array;
 		for (let i = 0, l = vertexPosition.length; i < l; i += 3) {
 			tempVec3[0] = vertexPosition[i + 0];
 			tempVec3[1] = vertexPosition[i + 1];
@@ -152,7 +154,7 @@ export class Mesh extends Entity {
 
 	getBoundingBox(boundingBox = new BoundingBox()) {
 		boundingBox.reset();
-		boundingBox.setPoints(this.geometry.getAttribute('aVertexPosition')._array);
+		boundingBox.setPoints(this.geometry?.getAttribute('aVertexPosition')?._array);
 		return boundingBox;
 	}
 
@@ -161,7 +163,7 @@ export class Mesh extends Entity {
 		this.#desaturate(this.getAttribute('desaturate'));
 	}
 
-	#desaturate(attributeValue) {
+	#desaturate(attributeValue: boolean) {
 		if (attributeValue) {
 			this.setDefine('DESATURATE');
 		} else {
@@ -175,7 +177,7 @@ export class Mesh extends Entity {
 		Object.assign(contextMenu.material.submenu, {
 			Mesh_1: null,
 			set_material: {
-				i18n: '#set_material', f: async (entity) => {
+				i18n: '#set_material', f: async () => {
 					let materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList()); if (materialName) {
 						let material = await MaterialManager.getMaterial(materialName, (material) => { if (material) { this.setMaterial(material); } });
 					}
@@ -185,12 +187,12 @@ export class Mesh extends Entity {
 		return contextMenu;
 	}
 
-	raycast(raycaster, intersections) {
+	raycast(raycaster: Raycaster, intersections: Array<Intersection>) {
 		let geometry = this.geometry;
-		let indices = geometry.getAttribute('index')._array;
-		let vertices = geometry.getAttribute('aVertexPosition')._array;
-		let textureCoords = geometry.getAttribute('aTextureCoord')._array;
-		let normals = geometry.getAttribute('aVertexNormal')?._array;
+		let indices = geometry?.getAttribute('index')?._array;
+		let vertices = geometry?.getAttribute('aVertexPosition')?._array;
+		let textureCoords = geometry?.getAttribute('aTextureCoord')?._array;
+		let normals = geometry?.getAttribute('aVertexNormal')?._array;
 		let worldMatrix = this.worldMatrix;
 		ray.copyTransform(raycaster.ray, worldMatrix);
 		if (normals) {
