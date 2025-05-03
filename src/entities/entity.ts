@@ -146,11 +146,17 @@ export class Entity {
 		return vec3.copy(position, this._position);
 	}
 
+	/**
+	 * @deprecated Please use `setPosition` instead.
+	 */
 	set position(position: vec3) {
 		// TODO: deprecate
 		this.setPosition(position);
 	}
 
+	/**
+	 * @deprecated Please use `getPosition` instead.
+	 */
 	get position() {
 		// TODO: deprecate
 		return this.getPosition();
