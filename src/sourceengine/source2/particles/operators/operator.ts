@@ -54,6 +54,7 @@ export class Operator {//TODOv3: rename this class ?
 	material?: Source2SpriteCard;
 	endCapState?: number;
 	currentTime: number = 0;
+	operateAllParticlesRemoveme = false;
 
 	constructor(system: Source2ParticleSystem) {
 		this.system = system;
@@ -131,7 +132,7 @@ export class Operator {//TODOv3: rename this class ?
 						return this.#getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin as number, parameter.m_flNoiseOutputMax as number));//TODO
 						break;
 					case 'PF_TYPE_CONTROL_POINT_COMPONENT':
-						let cp = this.system.getControlPoint(parameter.m_nControlPoint);
+						let cp = this.system.getControlPoint(parameter.m_nControlPoint as number);
 						if (cp) {
 							return cp.position[parameter.m_nVectorComponent as number];
 						}
@@ -384,8 +385,8 @@ export class Operator {//TODOv3: rename this class ?
 		this.doInit(particles, elapsedTime, strength);
 	}
 
-	operateParticle(particle: Source2Particle, elapsedTime: number) {
-		if (!particle || this.disableOperator) {
+	operateParticle(particle: Source2Particle | null | Array<Source2Particle>, elapsedTime: number) {
+		if (this.disableOperator) {
 			return;
 		}
 		if (this.endCapState != 1) {
@@ -657,7 +658,8 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 	doInit(particle: Source2Particle, elapsedTime: number, strength: number) { }
-	doOperate(particle: Source2Particle, elapsedTime: number, strength: number) { }
+	doEmit(elapsedTime: number) { }
+	doOperate(particle: Source2Particle | null | Array<Source2Particle>, elapsedTime: number, strength: number) { }
 	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number) { }
 	applyConstraint(particle: Source2Particle) { }
 	doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material) { }

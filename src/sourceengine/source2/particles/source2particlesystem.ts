@@ -7,10 +7,26 @@ import { DEFAULT_MAX_PARTICLES, HARD_MAX_PARTICLES } from '../../common/particle
 import { Entity } from '../../../entities/entity';
 import { TESTING } from '../../../buildoptions';
 import { Operator } from './operators/operator';
+import { Source2ModelInstance } from '../export';
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
 
 let vec = vec3.create();
+
+export type BaseProperties = {
+	color: vec4,
+	radius: number,
+	lifespan: number,
+	sequenceNumber: number,
+	snapshotControlPoint: number,
+	snapshot: string,
+	rotationSpeedRoll: number,
+	controlPointConfigurations: Array<{
+		m_drivers?: Array<any>,
+
+	}>
+	//this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: 5, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '', rotationSpeedRoll: 0, controlPointConfigurations: { m_drivers: [] } };
+}
 
 export class Source2ParticleSystem extends Entity {
 	isParticleSystem = true;
@@ -23,24 +39,24 @@ export class Source2ParticleSystem extends Entity {
 	speed = 1;
 	isRunning = false;
 	startAfterDelay = 0;
-	preEmissionOperators = [];
-	emitters = [];
-	initializers = [];
-	operators = [];
+	preEmissionOperators: Array<Operator> = [];
+	emitters: Array<Operator> = [];
+	initializers: Array<Operator> = [];
+	operators: Array<Operator> = [];
 	forces = [];
-	constraints = [];
+	constraints: Array<Operator> = [];
 	renderers: Array<Operator> = [];
 	controlPoints: Array<ControlPoint> = [];
-	childSystems = [];
-	livingParticles = [];
-	poolParticles = [];
+	childSystems: Array<Source2ParticleSystem> = [];
+	livingParticles: Array<Source2Particle> = [];
+	poolParticles: Array<Source2Particle> = [];
 	minBounds = vec3.create();
 	maxBounds = vec3.create();
 	particleCount = 0;
 	// particle to emit when the system starts
 	initialParticles = 0;
 	disabled = false;
-	baseProperties;
+	baseProperties: BaseProperties;
 	firstStep = false;
 	currentTime: number = 0;
 	elapsedTime: number = 0;
@@ -48,8 +64,9 @@ export class Source2ParticleSystem extends Entity {
 	maxParticles: number = 0;
 	currentParticles: number = 0;
 	resetDelay: number = 0;
-	parentSystem?: Source2ParticleSystem;
+	parentSystem: Source2ParticleSystem | null = null;
 	isBounded = false;
+	endCap = false;
 
 	constructor(repository: string, fileName: string, name: string) {
 		super({ name: name });
@@ -59,7 +76,7 @@ export class Source2ParticleSystem extends Entity {
 
 		//Add first control point
 		//this.getControlPoint(0);
-		this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: 5, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '' };
+		this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: 5, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '', rotationSpeedRoll: 0, controlPointConfigurations: [] };
 	}
 
 	async init(snapshotModifiers?: Map<string, string>) {
@@ -77,8 +94,8 @@ export class Source2ParticleSystem extends Entity {
 	async #initSnapshot(snapshotModifiers?: Map<string, string>) {
 		//TODO : we should add a snapshotmanager to avoid loading the same file multiple time
 		let snapshotFile = this.baseProperties.snapshot;
-		if (snapshotModifiers && snapshotModifiers.has(snapshotFile)) {
-			snapshotFile = snapshotModifiers.get(snapshotFile);
+		if (snapshotModifiers?.has(snapshotFile)) {
+			snapshotFile = snapshotModifiers.get(snapshotFile)!;
 		}
 		if (snapshotFile) {
 			let snapshot = await Source2SnapshotLoader.load(this.repository, snapshotFile);
@@ -126,7 +143,7 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	do(action, params) {
+	do(action: string, params?: any) {
 		switch (action) {
 			case 'reset':
 				this.reset();
@@ -163,11 +180,11 @@ export class Source2ParticleSystem extends Entity {
 
 	#preEmission() {
 		for (let operator of this.preEmissionOperators) {
-			operator.operateParticle(true, this.elapsedTime);
+			operator.operateParticle(null, this.elapsedTime);
 		}
 	}
 
-	step(elapsedTime) {
+	step(elapsedTime: number) {
 		if (!this.isPlaying()) {
 			elapsedTime = 0.0000001;
 		}
@@ -195,7 +212,7 @@ export class Source2ParticleSystem extends Entity {
 		this.#recomputeBounds();
 	}
 
-	#emitInitialParticles(elapsedTime) {
+	#emitInitialParticles(elapsedTime: number) {
 		for (let i = 0; i < this.initialParticles; ++i) {
 			this.createParticle(0, elapsedTime);
 		}
@@ -251,7 +268,7 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	#stepRenderers(elapsedTime) {
+	#stepRenderers(elapsedTime: number) {
 		//TODOv3: multiple passes
 		for (let renderer of this.renderers) {
 			if (!renderer.disableOperator) {
@@ -260,7 +277,7 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	#stepChildren(elapsedTime) {
+	#stepChildren(elapsedTime: number) {
 		for (let child of this.childSystems) {
 			if (!child.endCap) {
 				child.step(elapsedTime);
@@ -268,11 +285,11 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	createParticle(creationTime, elapsedTime) {
+	createParticle(creationTime: number, elapsedTime: number) {
 		if (this.livingParticles.length < this.maxParticles) {
 			// first try to get one from the pool
 			if (this.poolParticles.length > 0) {
-				const particle = this.poolParticles.pop();
+				const particle = this.poolParticles.pop()!;
 				//init the particle to its initial state;
 				particle.reset(++this.particleCount);
 				particle.cTime = creationTime;
@@ -290,7 +307,7 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	#startParticle(particle, elapsedTime) {
+	#startParticle(particle: Source2Particle, elapsedTime: number) {
 		this.resetDelay = 0;
 
 		this.livingParticles.push(particle);
@@ -313,7 +330,7 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	#preInitParticle(particle) {
+	#preInitParticle(particle: Source2Particle) {
 		particle.setInitialRadius(this.baseProperties.radius);
 		vec4.copy(particle.color, this.baseProperties.color);
 		vec4.copy(particle.initialColor, particle.color);
@@ -326,7 +343,7 @@ export class Source2ParticleSystem extends Entity {
 		particle.rotationSpeedRoll = this.baseProperties.rotationSpeedRoll;
 	}
 
-	#initControlPoint(particle) {
+	#initControlPoint(particle: Source2Particle) {
 		this.getWorldPosition(particle.cpPosition);
 	}
 
@@ -338,9 +355,9 @@ export class Source2ParticleSystem extends Entity {
 		return quat.identity(q);
 	}
 
-	getControlPoint(controlPointId): ControlPoint {
+	getControlPoint(controlPointId: number): ControlPoint {
 		let parentSystem = this.parentSystem;
-		if (parentSystem !== undefined) {
+		if (parentSystem) {
 			return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);//TODO: remove recursion
 		}
 
@@ -351,9 +368,9 @@ export class Source2ParticleSystem extends Entity {
 		return controlPoint;
 	}
 
-	getControlPointForScale(controlPointId) {
+	getControlPointForScale(controlPointId: number) {
 		let parentSystem = this.parentSystem;
-		if (parentSystem !== undefined) {
+		if (parentSystem) {
 			return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
 		}
 
@@ -365,14 +382,14 @@ export class Source2ParticleSystem extends Entity {
 		return controlPoint;
 	}
 
-	getOwnControlPoint(controlPointId) {
+	getOwnControlPoint(controlPointId: number) {
 		//return this.getControlPoint(controlPointId);
 		return this.controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
 	}
 
-	#createControlPoint(controlPointId) {
+	#createControlPoint(controlPointId: number) {
 		let controlPoint = new ControlPoint();
-		controlPoint.name = controlPointId;
+		controlPoint.name = String(controlPointId);
 		this.addChild(controlPoint);
 		this.controlPoints[controlPointId] = controlPoint;
 
@@ -383,7 +400,7 @@ export class Source2ParticleSystem extends Entity {
 		return controlPoint;
 	}
 
-	getControlPointPosition(cpId) {
+	getControlPointPosition(cpId: number) {
 		const cp = this.getControlPoint(cpId);
 		if (cp) {
 			return cp.getWorldPosition(vec);
@@ -391,18 +408,18 @@ export class Source2ParticleSystem extends Entity {
 		return vec3.create();
 	}
 
-	setControlPointPosition(cpId, position) {
+	setControlPointPosition(cpId: number, position: vec3) {
 		const cp = this.getControlPoint(cpId);
 		if (cp) {
 			cp.position = position;
 		}
 	}
 
-	setMaxParticles(max) {
+	setMaxParticles(max: number) {
 		this.maxParticles = Math.max(Math.min(max, HARD_MAX_PARTICLES), 1);
 	}
 
-	stepConstraints(particle) {
+	stepConstraints(particle: Source2Particle) {
 		//TODOv3: multiple passes
 		for (let j in this.constraints) {
 			const constraint = this.constraints[j];
@@ -424,12 +441,12 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	getBounds(minBounds, maxBounds) {
+	getBounds(minBounds: vec3, maxBounds: vec3) {
 		vec3.copy(minBounds, this.minBounds);
 		vec3.copy(maxBounds, this.maxBounds);
 	}
 
-	getBoundsCenter(center) {
+	getBoundsCenter(center: vec3) {
 		if (this.isBounded) {
 			vec3.add(center, this.minBounds, this.maxBounds);
 			vec3.scale(center, center, 0.5);
@@ -438,23 +455,23 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	parentChanged(parent = null) {
-		if (parent?.isSource2ParticleSystem) {
-			this.parentSystem = parent;
+	parentChanged(parent: Entity | null) {
+		if ((parent as Source2ParticleSystem)?.isSource2ParticleSystem) {
+			this.parentSystem = parent as Source2ParticleSystem;
 		} else {
 			parent?.addChild(this.getControlPoint(0));
-			this.setParentModel(parent);
+			this.setParentModel(parent ?? undefined);
 		}
 	}
 
-	setParentModel(model) {
-		if (!model) {
+	setParentModel(model?: Entity | undefined) {
+		if (!(model as Source2ModelInstance)?.isSource2ModelInstance) {
 			return;
 		}
 
 		this.#parentModel = model;
 
-		this.getControlPoint(0).model = model;
+		this.getControlPoint(0).model = model as Source2ModelInstance;
 		if (this.baseProperties.controlPointConfigurations) {
 			for (let controlPointConfiguration of this.baseProperties.controlPointConfigurations) {
 				/*if (controlPointConfiguration.m_name == 'point_follow')*/ {
@@ -464,9 +481,9 @@ export class Source2ParticleSystem extends Entity {
 						for (let driver of drivers) {
 							const attachmentName = driver.m_attachmentName;
 							if (attachmentName) {
-								let attachementInstance = model?.getAttachement(attachmentName);
+								let attachementInstance = (model as Source2ModelInstance)?.getAttachement(attachmentName);
 								if (driver.m_entityName == 'parent') {
-									attachementInstance = model?.parent?.getAttachement?.(attachmentName) ?? attachementInstance;
+									attachementInstance = (model?.parent as any)?.getAttachement?.(attachmentName) ?? attachementInstance;
 								}
 
 								if (attachementInstance) {
@@ -487,7 +504,7 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	getParentModel() {
+	getParentModel(): Entity | undefined {
 		// TODO: remove recursion
 		if (this.parentSystem) {
 			return this.parentSystem.getParentModel();
@@ -495,7 +512,7 @@ export class Source2ParticleSystem extends Entity {
 		return this.#parentModel;
 	}
 
-	getParticle(index) {
+	getParticle(index?: number) {
 		if (index == undefined) {
 			index = Math.floor(Math.random() * this.livingParticles.length);
 		}

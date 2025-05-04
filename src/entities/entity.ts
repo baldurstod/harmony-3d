@@ -723,7 +723,7 @@ export class Entity {
 		return boundingBox;
 	}
 
-	getParentModel(): undefined | Entity {
+	getParentModel(): Entity | undefined {
 		return this._parent?.getParentModel();
 	}
 

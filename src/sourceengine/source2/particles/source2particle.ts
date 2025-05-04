@@ -14,6 +14,7 @@ export class Source2Particle {
 	position = vec3.create();
 	quaternion = quat.create();
 	prevPosition = vec3.create();
+	cpPosition = vec3.create();
 	velocity = vec3.create();
 	color = vec4.create();
 	initialColor = vec4.create();
@@ -55,6 +56,7 @@ export class Source2Particle {
 	rotLockedToCP = false;
 	trailLength = 0.1;
 	MovementRigidAttachToCP = false;
+	previousElapsedTime: number = 0;
 
 
 	static consoleAlphaAlternate = false;
@@ -447,7 +449,7 @@ export class Source2Particle {
 	* Set particle initial rotation roll.
 	* @param {Number} roll Initial rotation roll.
 	*/
-	setInitialRoll(roll:number) {
+	setInitialRoll(roll: number) {
 		this.rotationRoll = roll;
 		this.initialRoll = roll;
 	}
