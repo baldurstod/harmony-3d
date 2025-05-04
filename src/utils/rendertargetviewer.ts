@@ -16,11 +16,12 @@ export class RenderTargetViewer {
 	#scene = new Scene();
 	#camera = new Camera({ projection: CameraProjection.Orthographic, position: [0, 0, 1] });
 	#plane = new Plane();
-	#renderTarget?: RenderTarget;
+	#renderTarget: RenderTarget;
 	#position = vec2.create();
 	#size = vec2.fromValues(DEFAULT_SIZE, DEFAULT_SIZE);
 	isRenderTargetViewer = true;
 	#material?: Material;
+
 	constructor(renderTarget: RenderTarget) {
 		ContextObserver.observe(GraphicsEvents, this.#camera);
 		ContextObserver.observe(GraphicsEvents, this);
@@ -39,13 +40,13 @@ export class RenderTargetViewer {
 
 	setRenderTarget(renderTarget: RenderTarget) {
 		this.#renderTarget = renderTarget;
-		this.#plane.material.setColorMap(renderTarget?.getTexture());
+		this.#plane.material!.setColorMap(renderTarget.getTexture());
 	}
 
 	setMaterial(material: Material) {
 		this.#material = material;
 		this.#plane.setMaterial(material);
-		material.setColorMap(this.#renderTarget?.getTexture());
+		material.setColorMap(this.#renderTarget.getTexture());
 	}
 
 	getMaterial() {
