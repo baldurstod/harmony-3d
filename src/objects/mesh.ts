@@ -106,7 +106,7 @@ export class Mesh extends Entity {
 	}
 
 	exportObj() {
-		let ret: { f?: Uint8Array | Uint32Array | Array<number>, v?: Float32Array | Array<number>, vn?: Float32Array | Array<number>, vt?: Float32Array | Array<number> } = {};
+		let ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
 		let attributes: { [key: string]: string } = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
 		let geometry = this.geometry;
 		for (let objAttribute in attributes) {
@@ -117,7 +117,11 @@ export class Mesh extends Entity {
 					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = webglAttrib._array;
 				}
 			} else {
-				ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = [];
+				if (objAttribute == 'f') {
+					ret['f'] = new Uint8Array();
+				} else {
+					ret[objAttribute as ('v' | 'vn' | 'vt')] = new Float32Array();
+				}
 			}
 		}
 		return ret;
