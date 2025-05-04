@@ -2,12 +2,16 @@ import { PlaneBufferGeometry } from './geometries/planebuffergeometry';
 import { JSONLoader } from '../importers/jsonloader';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
+import { Material } from '../materials/material';
+import { JSONObject } from '../types';
+import { Entity } from '../entities/entity';
 
 export class Plane extends Mesh {
 	#widthSegments: number;
 	#heightSegments: number;
 	#width: number;
 	#height: number;
+
 	//constructor({ width = 1, height, material = new MeshBasicMaterial(), widthSegments = 1, heightSegments = 1 } = {}) {
 	constructor(params: any = {}) {
 		super(new PlaneBufferGeometry(), params.material ?? new MeshBasicMaterial());
@@ -54,11 +58,11 @@ export class Plane extends Mesh {
 		json.height = this.#height;
 		json.widthSegments = this.#widthSegments;
 		json.heightsegments = this.#heightSegments;
-		json.material = this.material.toJSON();
+		json.material = this.material!.toJSON();
 		return json;
 	}
 
-	static async constructFromJSON(json, entities, loadedPromise) {
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
 		let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
 		return new Plane({ width: json.width, height: json.height, material: material, widthSegments: json.widthSegments, heightSegments: json.heightSegments });
 	}
