@@ -35,6 +35,8 @@ function vec4Lerp(out: vec4, a: vec4, b: vec4, t: number) {
 	return out;
 }
 
+export type Source2OperatorParamValue = any;/*TODO: improve type */
+
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
 	#parameters: { [key: string]: any/*TODO: better type*/ } = {};
@@ -60,7 +62,7 @@ export class Operator {//TODOv3: rename this class ?
 		this.system = system;
 	}
 
-	setParam(paramName: string, value: any) {
+	setParam(paramName: string, value: Source2OperatorParamValue) {
 		if (value instanceof Kv3Array) {
 			let arr = [];
 			for (let v of value.properties) {

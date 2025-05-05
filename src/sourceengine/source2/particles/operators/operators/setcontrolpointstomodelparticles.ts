@@ -1,5 +1,6 @@
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
+import { Operator, Source2OperatorParamValue } from '../operator';
+import { Source2Particle } from '../../source2particle';
 
 export class SetControlPointsToModelParticles extends Operator {
 	#followAttachement = false;
@@ -10,7 +11,7 @@ export class SetControlPointsToModelParticles extends Operator {
 	firstSourcePoint = 0;
 	skin = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
 		switch (paramName) {
 			case 'm_HitboxSetName':
 				this.hitboxSetName = value;
@@ -38,7 +39,7 @@ export class SetControlPointsToModelParticles extends Operator {
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle, elapsedTime: number) {
 		//todo: use m_bSkin m_bAttachment m_HitboxSetName m_AttachmentName
 		let children = this.system.childSystems;
 		let firstControlPoint = this.firstControlPoint;
@@ -55,7 +56,7 @@ export class SetControlPointsToModelParticles extends Operator {
 					if (this.#followAttachement) {
 						const model = this.system.getParentModel();
 						if (model) {
-							const attachement = model.getAttachement(this.#attachmentName);
+							const attachement = (model as any).getAttachement?.(this.#attachmentName);
 							if (attachement) {
 								childCp.quaternion = attachement.getWorldQuaternion();
 								childCp.quaternion = particle.quaternion;
