@@ -3,7 +3,12 @@ import { HarmonyMenuItems } from 'harmony-ui';
 import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
+import { MdlAttachement as MdlAttachement_2 } from './sourceenginemdlloader';
+import { MdlBodyPart as MdlBodyPart_2 } from './sourcemdl';
+import { MdlBone as MdlBone_2 } from './mdlbone';
 import { quat } from 'gl-matrix';
+import { Source1ModelInstance as Source1ModelInstance_2 } from './source1modelinstance';
+import { Texture as Texture_2 } from '../..';
 import { vec2 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
 import { vec4 } from 'gl-matrix';
@@ -191,6 +196,19 @@ export declare class BackGround {
     dispose(): void;
     is(s: string): boolean;
 }
+
+export declare type BaseProperties = {
+    color: vec4;
+    radius: number;
+    lifespan: number;
+    sequenceNumber: number;
+    snapshotControlPoint: number;
+    snapshot: string;
+    rotationSpeedRoll: number;
+    controlPointConfigurations: Array<{
+        m_drivers?: Array<any>;
+    }>;
+};
 
 export declare class BasicMovement extends Operator {
     gravity: vec3;
@@ -633,7 +651,7 @@ export declare class Camera extends Entity {
     reset(): void;
     setProjection(projection: CameraProjection): void;
     get projection(): CameraProjection;
-    setProjectionMix(projectionMix: any): void;
+    setProjectionMix(projectionMix: number): void;
     set projectionMix(projectionMix: number);
     get projectionMix(): number;
     set nearPlane(nearPlane: number);
@@ -662,7 +680,7 @@ export declare class Camera extends Entity {
     get projectionMatrix(): mat4;
     get projectionMatrixInverse(): mat4;
     get worldMatrixInverse(): mat4;
-    distanceFrom(point: any): number;
+    distanceFrom(point: vec3): number;
     set position(position: vec3);
     get position(): vec3;
     set quaternion(quaternion: quat);
@@ -789,11 +807,11 @@ export declare class Camera extends Entity {
             f: () => void;
         };
     };
-    invertProjection(v3: any): void;
+    invertProjection(v3: vec3): void;
     getViewDirection(v?: vec3): vec3;
-    copy(source: any): void;
+    copy(source: Camera): void;
     toJSON(): any;
-    static constructFromJSON(json: any): Promise<Camera>;
+    static constructFromJSON(json: JSONObject): Promise<Camera>;
     static getEntityName(): string;
     is(s: string): boolean;
 }
@@ -1769,7 +1787,13 @@ declare class Choreography {
          get name(): string;
          setPosition(position: vec3): void;
          getPosition(position?: vec3): vec3;
+         /**
+          * @deprecated Please use `setPosition` instead.
+          */
          set position(position: vec3);
+         /**
+          * @deprecated Please use `getPosition` instead.
+          */
          get position(): vec3;
          getWorldPosition(vec?: vec3): vec3;
          getPositionFrom(other: Entity, vec?: vec3): vec3;
@@ -1848,7 +1872,7 @@ declare class Choreography {
           getAllChilds(includeSelf: boolean): Set<unknown>;
           getBoundsModelSpace(min?: vec3, max?: vec3): void;
           getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
-          getParentModel(): undefined | Entity;
+          getParentModel(): Entity | undefined;
           getChildList(type?: string): Set<Entity>;
           forEach(callback: (ent: Entity) => void): void;
           forEachVisible(callback: (ent: Entity) => void): void;
@@ -2115,7 +2139,6 @@ declare class Choreography {
              verticalMax: number;
              constructor(camera: Camera);
              update(delta?: number): void;
-             contextmenu(event: any): void;
              setupCamera(): void;
              handleEnabled(): void;
          }
@@ -3955,7 +3978,9 @@ declare class Choreography {
              #private;
              renderMode: number;
              isRenderable: boolean;
-             uniforms: {};
+             uniforms: {
+                 [key: string]: any;
+             };
              defines: any;
              isMesh: boolean;
              constructor(geometry?: BufferGeometry, material?: Material);
@@ -3966,7 +3991,7 @@ declare class Choreography {
              setMaterial(material?: Material): void;
              getMaterial(): Material;
              getUniform(name: string): any;
-             setUniform(name: string, uniform: any): void;
+             setUniform(name: string, uniform: UniformValue): void;
              deleteUniform(name: string): void;
              setDefine(define: string, value?: string | number): void;
              removeDefine(define: string): void;
@@ -4069,7 +4094,7 @@ declare class Choreography {
                      submenu: {};
                  };
              };
-             raycast(raycaster: any, intersections: any): void;
+             raycast(raycaster: Raycaster, intersections: Array<Intersection>): void;
              static getEntityName(): string;
              is(s: string): boolean;
          }
@@ -4641,17 +4666,18 @@ declare class Choreography {
              material?: Source2SpriteCard;
              endCapState?: number;
              currentTime: number;
+             operateAllParticlesRemoveme: boolean;
              constructor(system: Source2ParticleSystem);
-             setParam(paramName: string, value: any): void;
+             setParam(paramName: string, value: Source2OperatorParamValue): void;
              getParam(paramName: string): any;
              getParamScalarValue(paramName: string, particle?: Source2Particle): any;
              getParamVectorValue(paramName: string, particle?: Source2Particle, outVec?: vec4): any;
              _paramChanged(paramName: string, value: any): void;
              initializeParticle(particles: Source2Particle, elapsedTime: number): void;
-             operateParticle(particle: Source2Particle, elapsedTime: number): void;
+             operateParticle(particle: Source2Particle | null | Array<Source2Particle>, elapsedTime: number): void;
              forceParticle(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3): void;
              constraintParticle(particle: Source2Particle): void;
-             emitParticle(creationTime: number, elapsedTime: number): any;
+             emitParticle(creationTime: number, elapsedTime: number): Source2Particle;
              renderParticle(particleList: Source2Particle, elapsedTime: number, material: Source2Material): void;
              checkIfOperatorShouldRun(): boolean;
              fadeInOut(): number;
@@ -4677,7 +4703,8 @@ declare class Choreography {
              init(): void;
              dispose(): void;
              doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
-             doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+             doEmit(elapsedTime: number): void;
+             doOperate(particle: Source2Particle | null | Array<Source2Particle>, elapsedTime: number, strength: number): void;
              doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
              applyConstraint(particle: Source2Particle): void;
              doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material): void;
@@ -4972,7 +4999,7 @@ declare class Choreography {
                  };
              };
              toJSON(): any;
-             static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Plane>;
+             static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Plane>;
              static getEntityName(): string;
          }
 
@@ -5788,7 +5815,7 @@ declare class Choreography {
          }
 
          declare class RenderList {
-             lights: any[];
+             lights: Array<Light>;
              pointLights: Array<PointLight>;
              spotLights: Array<SpotLight>;
              ambientLights: Array<AmbientLight>;
@@ -6040,8 +6067,8 @@ declare class Choreography {
          export declare class RgbeImporter {
              #private;
              constructor(context: WebGLAnyRenderingContext);
-             fetch(url: string): Promise<Texture | "error while fetching resource">;
-             import(reader: BinaryReader): Texture;
+             fetch(url: string): Promise<Texture_2 | "error while fetching resource">;
+             import(reader: BinaryReader): Texture_2;
          }
 
          export declare class RingWave extends Operator {
@@ -6216,16 +6243,16 @@ declare class Choreography {
          export declare class Scene extends Entity {
              #private;
              background?: BackGround;
-             layers: Set<unknown>;
+             layers: Set<any>;
              environment?: Environment;
              activeCamera?: Camera;
              constructor(parameters?: any);
-             addLayer(layer: any, index: any): any;
+             addLayer(layer: any, index: number): any;
              removeLayer(layer: any): void;
              setWorld(world: World): void;
              getWorld(): World;
              toString(): string;
-             static constructFromJSON(json: any): Promise<Scene>;
+             static constructFromJSON(json: JSONObject): Promise<Scene>;
              static getEntityName(): string;
              is(s: string): boolean;
          }
@@ -6319,8 +6346,8 @@ declare class Choreography {
              numControlPoints: number;
              firstSourcePoint: number;
              skin: boolean;
-             _paramChanged(paramName: any, value: any): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             _paramChanged(paramName: string, value: Source2OperatorParamValue): void;
+             doOperate(particle: Source2Particle, elapsedTime: number): void;
          }
 
          export declare class SetControlPointToCenter extends Operator {
@@ -6791,7 +6818,7 @@ declare class Choreography {
 
          export declare class Source1ModelManager {
              #private;
-             static createInstance(repository: string, fileName: string, dynamic: boolean, preventInit?: boolean): Promise<Source1ModelInstance>;
+             static createInstance(repository: string, fileName: string, dynamic: boolean, preventInit?: boolean): Promise<Source1ModelInstance_2>;
              static loadManifest(repositoryName: string): void;
              static getModelList(): Promise<FileSelectorFile>;
          }
@@ -7395,6 +7422,8 @@ declare class Choreography {
              doOperate(particle: any, elapsedTime: any): void;
          }
 
+         declare type Source2OperatorParamValue = any;
+
          export declare class Source2OscillateScalar extends Operator {
              rateMin: number;
              rateMax: number;
@@ -7438,6 +7467,7 @@ declare class Choreography {
              position: vec3;
              quaternion: quat;
              prevPosition: vec3;
+             cpPosition: vec3;
              velocity: vec3;
              color: vec4;
              initialColor: vec4;
@@ -7479,6 +7509,7 @@ declare class Choreography {
              rotLockedToCP: boolean;
              trailLength: number;
              MovementRigidAttachToCP: boolean;
+             previousElapsedTime: number;
              static consoleAlphaAlternate: boolean;
              static consolePitch: boolean;
              constructor(id: number, system: Source2ParticleSystem);
@@ -7560,23 +7591,23 @@ declare class Choreography {
              speed: number;
              isRunning: boolean;
              startAfterDelay: number;
-             preEmissionOperators: any[];
-             emitters: any[];
-             initializers: any[];
-             operators: any[];
+             preEmissionOperators: Array<Operator>;
+             emitters: Array<Operator>;
+             initializers: Array<Operator>;
+             operators: Array<Operator>;
              forces: any[];
-             constraints: any[];
+             constraints: Array<Operator>;
              renderers: Array<Operator>;
              controlPoints: Array<ControlPoint>;
-             childSystems: any[];
-             livingParticles: any[];
-             poolParticles: any[];
+             childSystems: Array<Source2ParticleSystem>;
+             livingParticles: Array<Source2Particle>;
+             poolParticles: Array<Source2Particle>;
              minBounds: vec3;
              maxBounds: vec3;
              particleCount: number;
              initialParticles: number;
              disabled: boolean;
-             baseProperties: any;
+             baseProperties: BaseProperties;
              firstStep: boolean;
              currentTime: number;
              elapsedTime: number;
@@ -7584,33 +7615,34 @@ declare class Choreography {
              maxParticles: number;
              currentParticles: number;
              resetDelay: number;
-             parentSystem?: Source2ParticleSystem;
+             parentSystem: Source2ParticleSystem | null;
              isBounded: boolean;
+             endCap: boolean;
              constructor(repository: string, fileName: string, name: string);
              init(snapshotModifiers?: Map<string, string>): Promise<void>;
              start(): void;
              stop(): void;
              stopChildren(): void;
-             do(action: any, params: any): void;
+             do(action: string, params?: any): void;
              reset(): void;
-             step(elapsedTime: any): void;
+             step(elapsedTime: number): void;
              stepControlPoint(): void;
-             createParticle(creationTime: any, elapsedTime: any): any;
+             createParticle(creationTime: number, elapsedTime: number): Source2Particle;
              getWorldPosition(vec?: vec3): vec3;
              getWorldQuaternion(q?: quat): quat;
-             getControlPoint(controlPointId: any): ControlPoint;
-             getControlPointForScale(controlPointId: any): ControlPoint;
-             getOwnControlPoint(controlPointId: any): ControlPoint;
-             getControlPointPosition(cpId: any): vec3;
-             setControlPointPosition(cpId: any, position: any): void;
-             setMaxParticles(max: any): void;
-             stepConstraints(particle: any): void;
-             getBounds(minBounds: any, maxBounds: any): void;
-             getBoundsCenter(center: any): void;
-             parentChanged(parent?: any): void;
-             setParentModel(model: any): void;
-             getParentModel(): any;
-             getParticle(index: any): any;
+             getControlPoint(controlPointId: number): ControlPoint;
+             getControlPointForScale(controlPointId: number): ControlPoint;
+             getOwnControlPoint(controlPointId: number): ControlPoint;
+             getControlPointPosition(cpId: number): vec3;
+             setControlPointPosition(cpId: number, position: vec3): void;
+             setMaxParticles(max: number): void;
+             stepConstraints(particle: Source2Particle): void;
+             getBounds(minBounds: vec3, maxBounds: vec3): void;
+             getBoundsCenter(center: vec3): void;
+             parentChanged(parent: Entity | null): void;
+             setParentModel(model?: Entity | undefined): void;
+             getParentModel(): Entity | undefined;
+             getParticle(index?: number): Source2Particle;
              dispose(): void;
              buildContextMenu(): {
                  visibility: {
@@ -8552,14 +8584,14 @@ declare class Choreography {
              addGeometry(mesh: any, geometry: any, bodyPartName: any, bodyPartModelId: any): void;
              createInstance(isDynamic: any, preventInit: any): Source1ModelInstance;
              getBodyNumber(bodygroups: Map<string, number>): number;
-             getBones(): MdlBone[];
-             getAttachments(): MdlAttachement[];
-             getBone(boneIndex: any): MdlBone;
-             getAttachementById(attachementIndex: any): MdlAttachement;
-             getBoneByName(boneName: any): MdlBone;
+             getBones(): MdlBone_2[];
+             getAttachments(): MdlAttachement_2[];
+             getBone(boneIndex: any): MdlBone_2;
+             getAttachementById(attachementIndex: any): MdlAttachement_2;
+             getBoneByName(boneName: any): MdlBone_2;
              getAttachement(attachementName: any): any;
-             getBodyPart(bodyPartId: any): MdlBodyPart;
-             getBodyParts(): MdlBodyPart[];
+             getBodyPart(bodyPartId: any): MdlBodyPart_2;
+             getBodyParts(): MdlBodyPart_2[];
              getAnimation(animationName: string, entity: Source1ModelInstance): Promise<Animation_2>;
          }
 
@@ -9723,12 +9755,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#236@#webAssembly"?: any;
-             "__#236@#HEAPU8"?: Uint8Array;
+             "__#235@#webAssembly"?: any;
+             "__#235@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#236@#initHeap"(): void;
+             "__#235@#initHeap"(): void;
          };
 
          export { }

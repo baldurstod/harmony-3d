@@ -1261,15 +1261,15 @@ class BoxBufferGeometry extends BufferGeometry {
     }
 }
 
-const entities = new Map();
+const entities$1 = new Map();
 function registerEntity(ent) {
-    if (entities.has(ent.getEntityName().toLowerCase())) {
+    if (entities$1.has(ent.getEntityName().toLowerCase())) {
         console.error(`${ent.getEntityName().toLowerCase()} is already registered`);
     }
-    entities.set(ent.getEntityName().toLowerCase(), ent);
+    entities$1.set(ent.getEntityName().toLowerCase(), ent);
 }
 function getEntity(name) {
-    return entities.get(name.toLowerCase());
+    return entities$1.get(name.toLowerCase());
 }
 
 class JSONLoader {
@@ -2296,10 +2296,16 @@ class Entity {
     getPosition(position = vec3.create()) {
         return vec3.copy(position, this._position);
     }
+    /**
+     * @deprecated Please use `setPosition` instead.
+     */
     set position(position) {
         // TODO: deprecate
         this.setPosition(position);
     }
+    /**
+     * @deprecated Please use `getPosition` instead.
+     */
     get position() {
         // TODO: deprecate
         return this.getPosition();
@@ -3313,9 +3319,9 @@ const edge1 = vec3.create();
 const edge2 = vec3.create();
 const h = vec3.create();
 const h2 = vec3.create();
-const s = vec3.create();
+const s$1 = vec3.create();
 const q$2 = vec3.create();
-const m = mat4.create();
+const m$1 = mat4.create();
 const _segCenter = vec3.create();
 const _segDir = vec3.create();
 const _diff = vec3.create();
@@ -3339,14 +3345,14 @@ class Ray {
         vec3.copy(this.direction, other.direction);
     }
     copyTransform(other, worldMatrix) {
-        mat4.invert(m, worldMatrix);
-        vec3.transformMat4(this.origin, other.origin, m);
+        mat4.invert(m$1, worldMatrix);
+        vec3.transformMat4(this.origin, other.origin, m$1);
         let x = other.direction[0];
         let y = other.direction[1];
         let z = other.direction[2];
-        this.direction[0] = m[0] * x + m[4] * y + m[8] * z;
-        this.direction[1] = m[1] * x + m[5] * y + m[9] * z;
-        this.direction[2] = m[2] * x + m[6] * y + m[10] * z;
+        this.direction[0] = m$1[0] * x + m$1[4] * y + m$1[8] * z;
+        this.direction[1] = m$1[1] * x + m$1[5] * y + m$1[9] * z;
+        this.direction[2] = m$1[2] * x + m$1[6] * y + m$1[10] * z;
     }
     setOrigin(origin) {
         vec3.copy(this.origin, origin);
@@ -3367,12 +3373,12 @@ class Ray {
             return false;
         }
         let f = 1.0 / a;
-        vec3.sub(s, this.origin, v0);
-        let u = f * vec3.dot(s, h);
+        vec3.sub(s$1, this.origin, v0);
+        let u = f * vec3.dot(s$1, h);
         if (u < 0.0 || u > 1.0) {
             return false;
         }
-        vec3.cross(q$2, s, edge1);
+        vec3.cross(q$2, s$1, edge1);
         let v = f * vec3.dot(this.direction, q$2);
         if (v < 0.0 || u + v > 1.0) {
             return false;
@@ -4188,8 +4194,8 @@ let uv2$1 = vec2.create();
 let uv3$1 = vec2.create();
 let intersectionPoint$1 = vec3.create();
 let intersectionNormal$2 = vec3.create();
-let ray$1 = new Ray();
-let uv$1 = vec2.create();
+let ray$2 = new Ray();
+let uv$2 = vec2.create();
 class Mesh extends Entity {
     #geometry;
     #material;
@@ -4260,14 +4266,19 @@ class Mesh extends Entity {
         let geometry = this.geometry;
         for (let objAttribute in attributes) {
             let geometryAttribute = attributes[objAttribute];
-            if (geometry.getAttribute(geometryAttribute)) {
+            if (geometry?.getAttribute(geometryAttribute)) {
                 let webglAttrib = geometry.getAttribute(geometryAttribute);
                 if (webglAttrib) {
                     ret[objAttribute] = webglAttrib._array;
                 }
             }
             else {
-                ret[objAttribute] = [];
+                if (objAttribute == 'f') {
+                    ret['f'] = new Uint8Array();
+                }
+                else {
+                    ret[objAttribute] = new Float32Array();
+                }
             }
         }
         return ret;
@@ -4287,7 +4298,7 @@ class Mesh extends Entity {
         max[0] = -Infinity;
         max[1] = -Infinity;
         max[2] = -Infinity;
-        let vertexPosition = this.geometry.getAttribute('aVertexPosition')._array;
+        let vertexPosition = this.geometry?.getAttribute('aVertexPosition')?._array;
         for (let i = 0, l = vertexPosition.length; i < l; i += 3) {
             tempVec3$w[0] = vertexPosition[i + 0];
             tempVec3$w[1] = vertexPosition[i + 1];
@@ -4299,7 +4310,7 @@ class Mesh extends Entity {
     }
     getBoundingBox(boundingBox = new BoundingBox()) {
         boundingBox.reset();
-        boundingBox.setPoints(this.geometry.getAttribute('aVertexPosition')._array);
+        boundingBox.setPoints(this.geometry?.getAttribute('aVertexPosition')?._array);
         return boundingBox;
     }
     propagate() {
@@ -4319,7 +4330,7 @@ class Mesh extends Entity {
         Object.assign(contextMenu.material.submenu, {
             Mesh_1: null,
             set_material: {
-                i18n: '#set_material', f: async (entity) => {
+                i18n: '#set_material', f: async () => {
                     let materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList());
                     if (materialName) {
                         await MaterialManager.getMaterial(materialName, (material) => { if (material) {
@@ -4333,12 +4344,12 @@ class Mesh extends Entity {
     }
     raycast(raycaster, intersections) {
         let geometry = this.geometry;
-        let indices = geometry.getAttribute('index')._array;
-        let vertices = geometry.getAttribute('aVertexPosition')._array;
-        let textureCoords = geometry.getAttribute('aTextureCoord')._array;
-        let normals = geometry.getAttribute('aVertexNormal')?._array;
+        let indices = geometry?.getAttribute('index')?._array;
+        let vertices = geometry?.getAttribute('aVertexPosition')?._array;
+        let textureCoords = geometry?.getAttribute('aTextureCoord')?._array;
+        let normals = geometry?.getAttribute('aVertexNormal')?._array;
         let worldMatrix = this.worldMatrix;
-        ray$1.copyTransform(raycaster.ray, worldMatrix);
+        ray$2.copyTransform(raycaster.ray, worldMatrix);
         if (normals) {
             for (let i = 0, l = indices.length; i < l; i += 3) {
                 let i1 = 3 * indices[i];
@@ -4347,7 +4358,7 @@ class Mesh extends Entity {
                 vec3.set(v1$2, vertices[i1], vertices[i1 + 1], vertices[i1 + 2]);
                 vec3.set(v2$1, vertices[i2], vertices[i2 + 1], vertices[i2 + 2]);
                 vec3.set(v3$1, vertices[i3], vertices[i3 + 1], vertices[i3 + 2]);
-                if (ray$1.intersectTriangle(v1$2, v2$1, v3$1, intersectionPoint$1)) {
+                if (ray$2.intersectTriangle(v1$2, v2$1, v3$1, intersectionPoint$1)) {
                     vec3.set(n1$1, normals[i1], normals[i1 + 1], normals[i1 + 2]);
                     vec3.set(n2$1, normals[i2], normals[i2 + 1], normals[i2 + 2]);
                     vec3.set(n3$1, normals[i3], normals[i3 + 1], normals[i3 + 2]);
@@ -4357,7 +4368,7 @@ class Mesh extends Entity {
                     vec2.set(uv1$1, textureCoords[i1], textureCoords[i1 + 1]);
                     vec2.set(uv2$1, textureCoords[i2], textureCoords[i2 + 1]);
                     vec2.set(uv3$1, textureCoords[i3], textureCoords[i3 + 1]);
-                    getUV(uv$1, intersectionPoint$1, v1$2, v2$1, v3$1, uv1$1, uv2$1, uv3$1);
+                    getUV(uv$2, intersectionPoint$1, v1$2, v2$1, v3$1, uv1$1, uv2$1, uv3$1);
                     getNormal(intersectionNormal$2, intersectionPoint$1, v1$2, v2$1, v3$1, n1$1, n2$1, n3$1);
                     let x = intersectionNormal$2[0];
                     let y = intersectionNormal$2[1];
@@ -4367,7 +4378,7 @@ class Mesh extends Entity {
                     intersectionNormal$2[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
                     intersectionNormal$2[2] = worldMatrix[2] * x + worldMatrix[6] * y + worldMatrix[10] * z;
                     vec3.transformMat4(intersectionPoint$1, intersectionPoint$1, worldMatrix);
-                    intersections.push(ray$1.createIntersection(intersectionPoint$1, intersectionNormal$2, uv$1, this, 0));
+                    intersections.push(ray$2.createIntersection(intersectionPoint$1, intersectionNormal$2, uv$2, this, 0));
                 }
             }
         }
@@ -4380,7 +4391,7 @@ class Mesh extends Entity {
                 vec3.set(v1$2, vertices[i1], vertices[i1 + 1], vertices[i1 + 2]);
                 vec3.set(v2$1, vertices[i2], vertices[i2 + 1], vertices[i2 + 2]);
                 vec3.set(v3$1, vertices[i3], vertices[i3 + 1], vertices[i3 + 2]);
-                if (ray$1.intersectTriangle(v1$2, v2$1, v3$1, intersectionPoint$1)) {
+                if (ray$2.intersectTriangle(v1$2, v2$1, v3$1, intersectionPoint$1)) {
                     vec3.set(n1$1, normals[0], normals[1], normals[2]);
                     vec3.set(n2$1, normals[0], normals[1], normals[2]);
                     vec3.set(n3$1, normals[0], normals[1], normals[2]);
@@ -4390,7 +4401,7 @@ class Mesh extends Entity {
                     vec2.set(uv1$1, textureCoords[i1], textureCoords[i1 + 1]);
                     vec2.set(uv2$1, textureCoords[i2], textureCoords[i2 + 1]);
                     vec2.set(uv3$1, textureCoords[i3], textureCoords[i3 + 1]);
-                    getUV(uv$1, intersectionPoint$1, v1$2, v2$1, v3$1, uv1$1, uv2$1, uv3$1);
+                    getUV(uv$2, intersectionPoint$1, v1$2, v2$1, v3$1, uv1$1, uv2$1, uv3$1);
                     getNormal(intersectionNormal$2, intersectionPoint$1, v1$2, v2$1, v3$1, n1$1, n2$1, n3$1);
                     let x = intersectionNormal$2[0];
                     let y = intersectionNormal$2[1];
@@ -4400,7 +4411,7 @@ class Mesh extends Entity {
                     intersectionNormal$2[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
                     intersectionNormal$2[2] = worldMatrix[2] * x + worldMatrix[6] * y + worldMatrix[10] * z;
                     vec3.transformMat4(intersectionPoint$1, intersectionPoint$1, worldMatrix);
-                    intersections.push(ray$1.createIntersection(intersectionPoint$1, intersectionNormal$2, uv$1, this, 0));
+                    intersections.push(ray$2.createIntersection(intersectionPoint$1, intersectionNormal$2, uv$2, this, 0));
                 }
             }
         }
@@ -5083,12 +5094,12 @@ class Scene extends Entity {
             });
         };
     }
-    addLayer(layer, index) {
+    addLayer(layer /*TODO: create a layer type*/, index) {
         this.#layers.set(layer, index);
         this.#updateLayers();
         return layer;
     }
-    removeLayer(layer) {
+    removeLayer(layer /*TODO: create a layer type*/) {
         this.#layers.delete(layer);
         this.#updateLayers();
     }
@@ -5742,23 +5753,23 @@ class OldMoviePass extends Pass {
     }
 }
 
-const textures = new Set();
-let context;
+const textures$1 = new Set();
+let context$1;
 const TextureFactoryEventTarget = new EventTarget();
 function setTextureFactoryContext(c) {
-    context = c;
+    context$1 = c;
 }
 function createTexture() {
-    const texture = context.createTexture();
-    textures.add(texture);
-    TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureCreated', { detail: { texture: texture, count: textures.size } }));
+    const texture = context$1.createTexture();
+    textures$1.add(texture);
+    TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureCreated', { detail: { texture: texture, count: textures$1.size } }));
     return texture;
 }
 function deleteTexture(texture) {
     if (texture) {
-        context.deleteTexture(texture);
-        textures.delete(texture);
-        TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureDeleted', { detail: { texture: texture, count: textures.size } }));
+        context$1.deleteTexture(texture);
+        textures$1.delete(texture);
+        TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureDeleted', { detail: { texture: texture, count: textures$1.size } }));
     }
 }
 function fillFlatTexture(texture, color = [255, 255, 255], needCubeMap) {
@@ -5778,25 +5789,25 @@ function fillFlatTexture(texture, color = [255, 255, 255], needCubeMap) {
             }
         }
         if (needCubeMap) {
-            context.bindTexture(GL_TEXTURE_CUBE_MAP, texture.texture);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            context.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            context.generateMipmap(GL_TEXTURE_CUBE_MAP);
-            context.bindTexture(GL_TEXTURE_CUBE_MAP, null);
+            context$1.bindTexture(GL_TEXTURE_CUBE_MAP, texture.texture);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            context$1.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            context$1.generateMipmap(GL_TEXTURE_CUBE_MAP);
+            context$1.bindTexture(GL_TEXTURE_CUBE_MAP, null);
         }
         else {
-            context.bindTexture(GL_TEXTURE_2D, texture.texture); //TODOv3: pass param to createTexture and remove this
-            context.texImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            context.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            context.generateMipmap(GL_TEXTURE_2D);
-            context.bindTexture(GL_TEXTURE_2D, null);
+            context$1.bindTexture(GL_TEXTURE_2D, texture.texture); //TODOv3: pass param to createTexture and remove this
+            context$1.texImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            context$1.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            context$1.generateMipmap(GL_TEXTURE_2D);
+            context$1.bindTexture(GL_TEXTURE_2D, null);
         }
     }
     return texture;
@@ -5816,25 +5827,25 @@ function fillCheckerTexture(texture, color = [255, 0, 255], width = 64, height =
             }
         }
         if (needCubeMap) {
-            context.bindTexture(GL_TEXTURE_CUBE_MAP, texture.texture);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            context.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            context.generateMipmap(GL_TEXTURE_CUBE_MAP);
-            context.bindTexture(GL_TEXTURE_CUBE_MAP, null);
+            context$1.bindTexture(GL_TEXTURE_CUBE_MAP, texture.texture);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            context$1.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            context$1.generateMipmap(GL_TEXTURE_CUBE_MAP);
+            context$1.bindTexture(GL_TEXTURE_CUBE_MAP, null);
         }
         else {
-            context.bindTexture(GL_TEXTURE_2D, texture.texture); //TODOv3: pass param to createTexture and remove this
-            context.texImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            context.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            context.generateMipmap(GL_TEXTURE_2D);
-            context.bindTexture(GL_TEXTURE_2D, null);
+            context$1.bindTexture(GL_TEXTURE_2D, texture.texture); //TODOv3: pass param to createTexture and remove this
+            context$1.texImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            context$1.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            context$1.generateMipmap(GL_TEXTURE_2D);
+            context$1.bindTexture(GL_TEXTURE_2D, null);
         }
     }
     return texture;
@@ -5854,39 +5865,39 @@ function fillNoiseTexture(texture, width = 64, height = 64, needCubeMap = false)
             }
         }
         if (needCubeMap) {
-            context.bindTexture(GL_TEXTURE_CUBE_MAP, texture.texture);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            context.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            context.generateMipmap(GL_TEXTURE_CUBE_MAP);
-            context.bindTexture(GL_TEXTURE_CUBE_MAP, null);
+            context$1.bindTexture(GL_TEXTURE_CUBE_MAP, texture.texture);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            context$1.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            context$1.generateMipmap(GL_TEXTURE_CUBE_MAP);
+            context$1.bindTexture(GL_TEXTURE_CUBE_MAP, null);
         }
         else {
-            context.bindTexture(GL_TEXTURE_2D, texture.texture); //TODOv3: pass param to createTexture and remove this
-            context.texImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
-            context.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-            context.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-            context.generateMipmap(GL_TEXTURE_2D);
-            context.bindTexture(GL_TEXTURE_2D, null);
+            context$1.bindTexture(GL_TEXTURE_2D, texture.texture); //TODOv3: pass param to createTexture and remove this
+            context$1.texImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, byteArray);
+            context$1.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+            context$1.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+            context$1.generateMipmap(GL_TEXTURE_2D);
+            context$1.bindTexture(GL_TEXTURE_2D, null);
         }
     }
     return texture;
 }
 function fillTextureWithImage(texture, image) {
-    context.bindTexture(GL_TEXTURE_2D, texture.texture);
-    context.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha);
-    context.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, texture.flipY);
-    context.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, image);
-    context.generateMipmap(GL_TEXTURE_2D);
-    context.bindTexture(GL_TEXTURE_2D, null);
+    context$1.bindTexture(GL_TEXTURE_2D, texture.texture);
+    context$1.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, texture.premultiplyAlpha);
+    context$1.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, texture.flipY);
+    context$1.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    context$1.generateMipmap(GL_TEXTURE_2D);
+    context$1.bindTexture(GL_TEXTURE_2D, null);
     texture.width = image.width;
     texture.height = image.height;
-    context.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
+    context$1.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 }
 
 class Texture {
@@ -7082,7 +7093,7 @@ class Renderer {
 }
 
 const CLEAR_COLOR$1 = vec4.fromValues(1, 0, 1, 1);
-const a$a = vec4.create();
+const a$b = vec4.create();
 const mapSize = vec2.create();
 const lightPos = vec3.create();
 const viewPort = vec4.create();
@@ -7098,7 +7109,7 @@ class ShadowMap {
         let blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
         let scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
         let depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
-        WebGLRenderingState.getClearColor(a$a);
+        WebGLRenderingState.getClearColor(a$b);
         WebGLRenderingState.disable(GL_BLEND);
         WebGLRenderingState.disable(GL_SCISSOR_TEST);
         WebGLRenderingState.enable(GL_DEPTH_TEST);
@@ -7131,7 +7142,7 @@ class ShadowMap {
         blendCapability ? WebGLRenderingState.enable(GL_BLEND) : WebGLRenderingState.disable(GL_BLEND);
         scissorCapability ? WebGLRenderingState.enable(GL_SCISSOR_TEST) : WebGLRenderingState.disable(GL_SCISSOR_TEST);
         depthCapability ? WebGLRenderingState.enable(GL_DEPTH_TEST) : WebGLRenderingState.disable(GL_DEPTH_TEST);
-        WebGLRenderingState.clearColor(a$a);
+        WebGLRenderingState.clearColor(a$b);
         this.#graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
     }
 }
@@ -8469,8 +8480,8 @@ class FirstPersonControl extends CameraControl {
     #click = false;
     #q = quat.create();
     #quatInverse = quat.create();
-    #clickOffsetX;
-    #clickOffsetY;
+    //#clickOffsetX: number;
+    //#clickOffsetY: number;
     constructor(camera) {
         super(camera);
         //private
@@ -8511,8 +8522,8 @@ class FirstPersonControl extends CameraControl {
             switch (mouseEvent.button) {
                 case 0:
                     this.#click = true;
-                    this.#clickOffsetX = mouseEvent.offsetX;
-                    this.#clickOffsetY = mouseEvent.offsetY;
+                    //this.#clickOffsetX = mouseEvent.offsetX;
+                    //this.#clickOffsetY = mouseEvent.offsetY;
                     this.#startLat = this.#lat;
                     this.#startLon = this.#lon;
                     this.#mouseX = 0;
@@ -8627,7 +8638,7 @@ class FirstPersonControl extends CameraControl {
             return;
         }
         if (this.heightSpeed) {
-            var y = clamp(this.camera.position[1], this.heightMin, this.heightMax); //TODO
+            var y = clamp(this.camera?.position[1] ?? 0, this.heightMin, this.heightMax); //TODO
             var heightDelta = y - this.heightMin;
             this.#autoSpeedFactor = delta * (heightDelta * this.heightCoef);
         }
@@ -8636,22 +8647,22 @@ class FirstPersonControl extends CameraControl {
         }
         var actualMoveSpeed = delta * this.movementSpeed;
         if (this.#moveForward || (this.autoForward && !this.#moveBackward)) {
-            this.camera.translateZ(-(actualMoveSpeed + this.#autoSpeedFactor));
+            this.camera?.translateZ(-(actualMoveSpeed + this.#autoSpeedFactor));
         }
         if (this.#moveBackward) {
-            this.camera.translateZ(actualMoveSpeed);
+            this.camera?.translateZ(actualMoveSpeed);
         }
         if (this.#moveLeft) {
-            this.camera.translateX(-actualMoveSpeed);
+            this.camera?.translateX(-actualMoveSpeed);
         }
         if (this.#moveRight) {
-            this.camera.translateX(actualMoveSpeed);
+            this.camera?.translateX(actualMoveSpeed);
         }
         if (this.#moveUp) {
-            this.camera.translateY(actualMoveSpeed);
+            this.camera?.translateY(actualMoveSpeed);
         }
         if (this.#moveDown) {
-            this.camera.translateY(-actualMoveSpeed);
+            this.camera?.translateY(-actualMoveSpeed);
         }
         var actualLookSpeed = this.lookSpeed;
         if (!this.activeLook) {
@@ -8690,14 +8701,14 @@ class FirstPersonControl extends CameraControl {
         if (this.constrainVertical) {
             phi = mapLinear(phi, 0, Math.PI, this.verticalMin, this.verticalMax);
         }
-        var position = this.camera.position;
+        var position = this.camera?.position ?? vec3.create() /*TODO: optimize*/;
         spherical$1.toCartesian(tempVec3$t);
         // rotate offset back to 'camera-up-vector-is-up' space
         //offset.applyQuaternion(quatInverse);
         //vec3.transformQuat(tempVec3, tempVec3, this.#quatInverse);
         //position.copy(this.target).add(offset);
         vec3.add(position, position, tempVec3$t);
-        this.camera.lookAt(position); //TODO: optimize
+        this.camera?.lookAt(position); //TODO: optimize
         if (this.#enableDamping === true) {
             this.#sphericalDelta.theta *= (1 - this.#dampingFactor);
             this.#sphericalDelta.phi *= (1 - this.#dampingFactor);
@@ -8765,9 +8776,11 @@ class FirstPersonControl extends CameraControl {
         return as_quat_array(R)
         */
     }
+    /*
     contextmenu(event) {
         event.preventDefault();
     }
+    */
     #setOrientation() {
         /*
 
@@ -8784,7 +8797,7 @@ class FirstPersonControl extends CameraControl {
         spherical.setFromVector3(tempVec3);
         */
         vec3.copy(tempVec3$t, xUnitVec3$1 /*minusZUnitVec3*/);
-        vec3.transformQuat(tempVec3$t, tempVec3$t, this.camera._quaternion);
+        vec3.transformQuat(tempVec3$t, tempVec3$t, this.camera?._quaternion ?? quat.create() /*TODO: optimize*/);
         spherical$1.setFromVector3(tempVec3$t);
         this.#lat = -(90 - RAD_TO_DEG * (spherical$1.phi));
         this.#lon = -RAD_TO_DEG * (spherical$1.theta);
@@ -8792,11 +8805,12 @@ class FirstPersonControl extends CameraControl {
         this.#startLon = this.#lon;
         this.update();
     }
+    /*
     #onContextMenu(event) {
-        if (this.enabled === false)
-            return;
+        if (this.enabled === false) return;
         event.preventDefault();
     }
+    */
     #setupEventsListeners() {
         //this.htmlElement.addEventListener('contextmenu', event => this.#onContextMenu(event));
         //this.htmlElement.addEventListener('mousemove', event => this.#onMouseMove(event));
@@ -10262,7 +10276,7 @@ let intersectionPoint1 = vec3.create();
 let intersectionPoint2 = vec3.create();
 let intersectionNormal$1 = vec3.create();
 const tempVec3$r = vec3.create();
-let v$f = vec3.create();
+let v$g = vec3.create();
 class Sphere extends Mesh {
     radius;
     segments;
@@ -10310,7 +10324,7 @@ class Sphere extends Mesh {
     }
     raycast(raycaster, intersections) {
         let ray = raycaster.ray;
-        let worldPosition = this.getWorldPosition(v$f);
+        let worldPosition = this.getWorldPosition(v$g);
         let inverseRadius = 1 / this.radius;
         if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$r), intersectionPoint1, intersectionPoint2)) {
             //return super.raycast(raycaster, intersections);//TODO: improve
@@ -11560,16 +11574,16 @@ async function configureMaterial(material, fbxMaterial, materialsParams) {
         fbxMaterial.diffuse.connectSrcObject(fbxTexture);
     }
 }
-let scene;
-let camera;
+let scene$1;
+let camera$1;
 let fullScreenQuadMesh;
 async function renderMaterial(material, materialsParams) {
-    if (!scene) {
-        scene = new Scene();
-        camera = new Camera();
-        camera.position = [0, 0, 100];
+    if (!scene$1) {
+        scene$1 = new Scene();
+        camera$1 = new Camera();
+        camera$1.position = [0, 0, 100];
         fullScreenQuadMesh = new FullScreenQuad();
-        scene.addChild(fullScreenQuadMesh);
+        scene$1.addChild(fullScreenQuadMesh);
     }
     let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024); //TODOv3: constant
     let previousClearColor = new Graphics().getClearColor();
@@ -11579,7 +11593,7 @@ async function renderMaterial(material, materialsParams) {
     new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
     fullScreenQuadMesh.material = material;
     fullScreenQuadMesh.materialsParams = materialsParams;
-    new Graphics().render(scene, camera, 0, { DisableToolRendering: true });
+    new Graphics().render(scene$1, camera$1, 0, { DisableToolRendering: true });
     let imgContent = await new Graphics().toBlob();
     new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
     new Graphics().setIncludeCode('SKIP_PROJECTION', '');
@@ -12444,10 +12458,10 @@ class QuadraticBezierCurve extends Curve {
     }
 }
 
-let p0 = vec3.create();
-let p1 = vec3.create();
-let p2 = vec3.create();
-let p3 = vec3.create();
+let p0$1 = vec3.create();
+let p1$1 = vec3.create();
+let p2$1 = vec3.create();
+let p3$1 = vec3.create();
 class Path extends Curve {
     looping;
     _curves = [];
@@ -12529,23 +12543,23 @@ class Path extends Curve {
         for (let i = 0, l = path.length; i < l;) {
             switch (path[i++]) {
                 case 'm':
-                    vec3.set(p0, path[i++], path[i++], 0);
-                    this.moveTo(p0);
+                    vec3.set(p0$1, path[i++], path[i++], 0);
+                    this.moveTo(p0$1);
                     break;
                 case 'l':
-                    vec3.set(p1, path[i++], path[i++], 0);
-                    this.lineTo(p1);
+                    vec3.set(p1$1, path[i++], path[i++], 0);
+                    this.lineTo(p1$1);
                     break;
                 case 'q':
-                    vec3.set(p2, path[i++], path[i++], 0);
-                    vec3.set(p1, path[i++], path[i++], 0);
-                    this.quadraticCurveTo(p1, p2);
+                    vec3.set(p2$1, path[i++], path[i++], 0);
+                    vec3.set(p1$1, path[i++], path[i++], 0);
+                    this.quadraticCurveTo(p1$1, p2$1);
                     break;
                 case 'c':
-                    vec3.set(p3, path[i++], path[i++], 0);
-                    vec3.set(p1, path[i++], path[i++], 0);
-                    vec3.set(p2, path[i++], path[i++], 0);
-                    this.cubicCurveTo(p1, p2, p3);
+                    vec3.set(p3$1, path[i++], path[i++], 0);
+                    vec3.set(p1$1, path[i++], path[i++], 0);
+                    vec3.set(p2$1, path[i++], path[i++], 0);
+                    this.cubicCurveTo(p1$1, p2$1, p3$1);
                     break;
             }
         }
@@ -12637,7 +12651,7 @@ function filterPoints(start, end) {
     let p = start, again;
     do {
         again = false;
-        if (!p.steiner && (equals(p, p.next) || area(p.prev, p, p.next) === 0)) {
+        if (!p.steiner && (equals(p, p.next) || area$1(p.prev, p, p.next) === 0)) {
             removeNode(p);
             p = end = p.prev;
             if (p === p.next)
@@ -12696,13 +12710,13 @@ function earcutLinked(ear, triangles, dim, minX, minY, invSize, pass) {
 // check whether a polygon node forms a valid ear with adjacent nodes
 function isEar(ear) {
     const a = ear.prev, b = ear, c = ear.next;
-    if (area(a, b, c) >= 0)
+    if (area$1(a, b, c) >= 0)
         return false; // reflex, can't be an ear
     // now make sure we don't have other points inside the potential ear
     let p = ear.next.next;
     while (p !== ear.prev) {
         if (pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-            area(p.prev, p, p.next) >= 0)
+            area$1(p.prev, p, p.next) >= 0)
             return false;
         p = p.next;
     }
@@ -12710,7 +12724,7 @@ function isEar(ear) {
 }
 function isEarHashed(ear, minX, minY, invSize) {
     const a = ear.prev, b = ear, c = ear.next;
-    if (area(a, b, c) >= 0)
+    if (area$1(a, b, c) >= 0)
         return false; // reflex, can't be an ear
     // triangle bbox; min & max are calculated like this for speed
     const minTX = a.x < b.x ? (a.x < c.x ? a.x : c.x) : (b.x < c.x ? b.x : c.x), minTY = a.y < b.y ? (a.y < c.y ? a.y : c.y) : (b.y < c.y ? b.y : c.y), maxTX = a.x > b.x ? (a.x > c.x ? a.x : c.x) : (b.x > c.x ? b.x : c.x), maxTY = a.y > b.y ? (a.y > c.y ? a.y : c.y) : (b.y > c.y ? b.y : c.y);
@@ -12721,12 +12735,12 @@ function isEarHashed(ear, minX, minY, invSize) {
     while (p && p.z >= minZ && n && n.z <= maxZ) {
         if (p !== ear.prev && p !== ear.next &&
             pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-            area(p.prev, p, p.next) >= 0)
+            area$1(p.prev, p, p.next) >= 0)
             return false;
         p = p.prevZ;
         if (n !== ear.prev && n !== ear.next &&
             pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, n.x, n.y) &&
-            area(n.prev, n, n.next) >= 0)
+            area$1(n.prev, n, n.next) >= 0)
             return false;
         n = n.nextZ;
     }
@@ -12734,7 +12748,7 @@ function isEarHashed(ear, minX, minY, invSize) {
     while (p && p.z >= minZ) {
         if (p !== ear.prev && p !== ear.next &&
             pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, p.x, p.y) &&
-            area(p.prev, p, p.next) >= 0)
+            area$1(p.prev, p, p.next) >= 0)
             return false;
         p = p.prevZ;
     }
@@ -12742,7 +12756,7 @@ function isEarHashed(ear, minX, minY, invSize) {
     while (n && n.z <= maxZ) {
         if (n !== ear.prev && n !== ear.next &&
             pointInTriangle(a.x, a.y, b.x, b.y, c.x, c.y, n.x, n.y) &&
-            area(n.prev, n, n.next) >= 0)
+            area$1(n.prev, n, n.next) >= 0)
             return false;
         n = n.nextZ;
     }
@@ -12871,7 +12885,7 @@ function findHoleBridge(hole, outerNode) {
 }
 // whether sector in vertex m contains sector in vertex p in the same coordinates
 function sectorContainsSector(m, p) {
-    return area(m.prev, m, p.prev) < 0 && area(p.next, m, m.next) < 0;
+    return area$1(m.prev, m, p.prev) < 0 && area$1(p.next, m, m.next) < 0;
 }
 // interlink polygon nodes in z-order
 function indexCurve(start, minX, minY, invSize) {
@@ -12967,11 +12981,11 @@ function pointInTriangle(ax, ay, bx, by, cx, cy, px, py) {
 function isValidDiagonal(a, b) {
     return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && // dones't intersect other edges
         (locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) && // locally visible
-            (area(a.prev, a, b.prev) || area(a, b.prev, b)) || // does not create opposite-facing sectors
-            equals(a, b) && area(a.prev, a, a.next) > 0 && area(b.prev, b, b.next) > 0); // special zero-length case
+            (area$1(a.prev, a, b.prev) || area$1(a, b.prev, b)) || // does not create opposite-facing sectors
+            equals(a, b) && area$1(a.prev, a, a.next) > 0 && area$1(b.prev, b, b.next) > 0); // special zero-length case
 }
 // signed area of a triangle
-function area(p, q, r) {
+function area$1(p, q, r) {
     return (q.y - p.y) * (r.x - q.x) - (q.x - p.x) * (r.y - q.y);
 }
 // check if two points are equal
@@ -12980,10 +12994,10 @@ function equals(p1, p2) {
 }
 // check if two segments intersect
 function intersects(p1, q1, p2, q2) {
-    const o1 = sign$1(area(p1, q1, p2));
-    const o2 = sign$1(area(p1, q1, q2));
-    const o3 = sign$1(area(p2, q2, p1));
-    const o4 = sign$1(area(p2, q2, q1));
+    const o1 = sign$1(area$1(p1, q1, p2));
+    const o2 = sign$1(area$1(p1, q1, q2));
+    const o3 = sign$1(area$1(p2, q2, p1));
+    const o4 = sign$1(area$1(p2, q2, q1));
     if (o1 !== o2 && o3 !== o4)
         return true; // general case
     if (o1 === 0 && onSegment(p1, p2, q1))
@@ -13016,9 +13030,9 @@ function intersectsPolygon(a, b) {
 }
 // check if a polygon diagonal is locally inside the polygon
 function locallyInside(a, b) {
-    return area(a.prev, a, a.next) < 0 ?
-        area(a, b, a.next) >= 0 && area(a, a.prev, b) >= 0 :
-        area(a, b, a.prev) < 0 || area(a, a.next, b) < 0;
+    return area$1(a.prev, a, a.next) < 0 ?
+        area$1(a, b, a.next) >= 0 && area$1(a, a.prev, b) >= 0 :
+        area$1(a, b, a.prev) < 0 || area$1(a, a.next, b) < 0;
 }
 // check if the middle point of a polygon diagonal is inside the polygon
 function middleInside(a, b) {
@@ -15888,7 +15902,7 @@ class CombineLerp extends Node {
 }
 registerOperation('combine_lerp', CombineLerp);
 
-class Multiply$1 extends Node {
+let Multiply$1 = class Multiply extends Node {
     #renderTarget;
     #textureSize;
     constructor(editor, params) {
@@ -15940,7 +15954,7 @@ class Multiply$1 extends Node {
             this.material.removeUser(this);
         }
     }
-}
+};
 registerOperation('multiply', Multiply$1);
 
 const MAX_SELECTORS = 16;
@@ -16621,9 +16635,9 @@ class Line extends Mesh {
 }
 registerEntity(Line);
 
-const a$9 = vec3.create();
-const b$3 = vec3.create();
-const c = vec3.create();
+const a$a = vec3.create();
+const b$4 = vec3.create();
+const c$1 = vec3.create();
 class Raycaster {
     near;
     far;
@@ -16642,13 +16656,13 @@ class Raycaster {
     }
     castCameraRay(camera, normalizedX, normalizedY, entities, recursive) {
         let projectionMatrixInverse = camera.projectionMatrixInverse;
-        let nearP = vec3.set(a$9, normalizedX, normalizedY, -1);
-        let farP = vec3.set(b$3, normalizedX, normalizedY, 1);
+        let nearP = vec3.set(a$a, normalizedX, normalizedY, -1);
+        let farP = vec3.set(b$4, normalizedX, normalizedY, 1);
         vec3.transformMat4(nearP, nearP, projectionMatrixInverse);
         vec3.transformMat4(farP, farP, projectionMatrixInverse);
         vec3.transformQuat(nearP, nearP, camera.quaternion);
         vec3.transformQuat(farP, farP, camera.quaternion);
-        let rayDirection = vec3.sub(c, farP, nearP);
+        let rayDirection = vec3.sub(c$1, farP, nearP);
         vec3.normalize(rayDirection, rayDirection);
         return this.castRay(camera.position, rayDirection, entities, recursive);
     }
@@ -17393,8 +17407,8 @@ let uv2 = vec2.create();
 let uv3 = vec2.create();
 let intersectionPoint = vec3.create();
 let intersectionNormal = vec3.create();
-let ray = new Ray();
-let uv = vec2.create();
+let ray$1 = new Ray();
+let uv$1 = vec2.create();
 class SkeletalMesh extends Mesh {
     isSkeletalMesh = true;
     #bonesPerVertex = 3;
@@ -17721,7 +17735,7 @@ class SkeletalMesh extends Mesh {
         let skinnedVertexNormal = new Float32Array(vertexCount * 3);
         let textureCoords = geometry.getAttribute('aTextureCoord')._array;
         let worldMatrix = this.worldMatrix;
-        ray.copyTransform(raycaster.ray, worldMatrix);
+        ray$1.copyTransform(raycaster.ray, worldMatrix);
         let vertexPosition = geometry.getAttribute('aVertexPosition')._array;
         let vertexNormal = geometry.getAttribute('aVertexNormal')._array;
         let vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
@@ -17792,7 +17806,7 @@ class SkeletalMesh extends Mesh {
             vec3.set(v1$1, skinnedVertexPosition[i1], skinnedVertexPosition[i1 + 1], skinnedVertexPosition[i1 + 2]);
             vec3.set(v2, skinnedVertexPosition[i2], skinnedVertexPosition[i2 + 1], skinnedVertexPosition[i2 + 2]);
             vec3.set(v3, skinnedVertexPosition[i3], skinnedVertexPosition[i3 + 1], skinnedVertexPosition[i3 + 2]);
-            if (ray.intersectTriangle(v1$1, v2, v3, intersectionPoint)) {
+            if (ray$1.intersectTriangle(v1$1, v2, v3, intersectionPoint)) {
                 vec3.set(n1, skinnedVertexNormal[i1], skinnedVertexNormal[i1 + 1], skinnedVertexNormal[i1 + 2]);
                 vec3.set(n2, skinnedVertexNormal[i2], skinnedVertexNormal[i2 + 1], skinnedVertexNormal[i2 + 2]);
                 vec3.set(n3, skinnedVertexNormal[i3], skinnedVertexNormal[i3 + 1], skinnedVertexNormal[i3 + 2]);
@@ -17802,7 +17816,7 @@ class SkeletalMesh extends Mesh {
                 vec2.set(uv1, textureCoords[i1], textureCoords[i1 + 1]);
                 vec2.set(uv2, textureCoords[i2], textureCoords[i2 + 1]);
                 vec2.set(uv3, textureCoords[i3], textureCoords[i3 + 1]);
-                getUV(uv, intersectionPoint, v1$1, v2, v3, uv1, uv2, uv3);
+                getUV(uv$1, intersectionPoint, v1$1, v2, v3, uv1, uv2, uv3);
                 getNormal(intersectionNormal, intersectionPoint, v1$1, v2, v3, n1, n2, n3);
                 let x = intersectionNormal[0];
                 let y = intersectionNormal[1];
@@ -17812,7 +17826,7 @@ class SkeletalMesh extends Mesh {
                 intersectionNormal[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
                 intersectionNormal[2] = worldMatrix[2] * x + worldMatrix[6] * y + worldMatrix[10] * z;
                 vec3.transformMat4(intersectionPoint, intersectionPoint, worldMatrix);
-                intersections.push(ray.createIntersection(intersectionPoint, intersectionNormal, uv, this, 0));
+                intersections.push(ray$1.createIntersection(intersectionPoint, intersectionNormal, uv$1, this, 0));
             }
         }
     }
@@ -18747,8 +18761,8 @@ class Metaball extends Entity {
     }
 }
 
-let a$8 = vec3.create();
-let b$2 = vec3.create();
+let a$9 = vec3.create();
+let b$3 = vec3.create();
 const THRESHOLD = 0.99;
 class MetaballsBufferGeometry extends BufferGeometry {
     constructor(balls) {
@@ -18769,9 +18783,9 @@ class MetaballsBufferGeometry extends BufferGeometry {
             vertices.push(...triangles[triangleIndex][0]);
             vertices.push(...triangles[triangleIndex][1]);
             vertices.push(...triangles[triangleIndex][2]);
-            vec3.sub(a$8, triangles[triangleIndex][1], triangles[triangleIndex][0]);
-            vec3.sub(b$2, triangles[triangleIndex][2], triangles[triangleIndex][0]);
-            vec3.cross(normal, a$8, b$2);
+            vec3.sub(a$9, triangles[triangleIndex][1], triangles[triangleIndex][0]);
+            vec3.sub(b$3, triangles[triangleIndex][2], triangles[triangleIndex][0]);
+            vec3.cross(normal, a$9, b$3);
             vec3.normalize(normal, normal);
             normals.push(...normal);
             normals.push(...normal);
@@ -18788,9 +18802,9 @@ class MetaballsBufferGeometry extends BufferGeometry {
         let min = vec3.fromValues(+Infinity, +Infinity, +Infinity);
         let max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
         for (let ball of balls) {
-            vec3.set(b$2, ball.radius, ball.radius, ball.radius);
-            vec3.min(min, min, vec3.sub(a$8, ball.currentWorldPosition, b$2));
-            vec3.max(max, max, vec3.add(a$8, ball.currentWorldPosition, b$2));
+            vec3.set(b$3, ball.radius, ball.radius, ball.radius);
+            vec3.min(min, min, vec3.sub(a$9, ball.currentWorldPosition, b$3));
+            vec3.max(max, max, vec3.add(a$9, ball.currentWorldPosition, b$3));
         }
         return [min, max];
     }
@@ -18912,8 +18926,8 @@ class Metaballs extends Mesh {
     }
 }
 
-let a$7 = vec3.create();
-let b$1 = vec3.create();
+let a$8 = vec3.create();
+let b$2 = vec3.create();
 class TrianglesBufferGeometry extends BufferGeometry {
     constructor(triangles) {
         super();
@@ -18931,9 +18945,9 @@ class TrianglesBufferGeometry extends BufferGeometry {
             vertices.push(...triangles[triangleIndex][0]);
             vertices.push(...triangles[triangleIndex][1]);
             vertices.push(...triangles[triangleIndex][2]);
-            vec3.sub(a$7, triangles[triangleIndex][1], triangles[triangleIndex][0]);
-            vec3.sub(b$1, triangles[triangleIndex][2], triangles[triangleIndex][0]);
-            vec3.cross(normal, a$7, b$1);
+            vec3.sub(a$8, triangles[triangleIndex][1], triangles[triangleIndex][0]);
+            vec3.sub(b$2, triangles[triangleIndex][2], triangles[triangleIndex][0]);
+            vec3.cross(normal, a$8, b$2);
             vec3.normalize(normal, normal);
             normals.push(...normal);
             normals.push(...normal);
@@ -19534,9 +19548,9 @@ class CubeEnvironment extends Environment {
 
 var _a$2;
 const MAX_ANIMATIONS = 2;
-let id = 0;
+let dataListId = 0;
 function getDataListId() {
-    return `animations-datalist${++id}`;
+    return `animations-datalist${++dataListId}`;
 }
 class SceneExplorerEntity extends HTMLElement {
     #doOnce;
@@ -23007,7 +23021,7 @@ const MeshManager = new function () {
     this.removeMesh = removeMesh;
 };
 
-const tempPos = vec3.create();
+const tempPos$1 = vec3.create();
 const tempQuat$7 = quat.create();
 class Source2ModelAttachement {
     name;
@@ -23039,8 +23053,8 @@ class Source2ModelAttachementInstance extends Entity {
         if (bone) {
             bone.getWorldPosition(vec);
             bone.getWorldQuaternion(tempQuat$7);
-            vec3.transformQuat(tempPos, this.attachement.influenceOffsets[0], tempQuat$7);
-            vec3.add(vec, vec, tempPos);
+            vec3.transformQuat(tempPos$1, this.attachement.influenceOffsets[0], tempQuat$7);
+            vec3.add(vec, vec, tempPos$1);
         }
         else {
             vec3.copy(vec, this._position);
@@ -43061,7 +43075,7 @@ MapEntities.registerEntity('prop_dynamic_override', PropDynamic);
 MapEntities.registerEntity('prop_scalable', PropDynamic);
 MapEntities.registerEntity('prop_physics_override', PropDynamic);
 
-const tempQuaternion = quat.create();
+const tempQuaternion$1 = quat.create();
 const tempVec3$j = vec3.create();
 const SPOTLIGHT_DEFAULT_QUATERNION = quat.fromValues(0, -1, 0, 1);
 class PropLightSpot extends MapEntity {
@@ -43122,8 +43136,8 @@ class PropLightSpot extends MapEntity {
         }
     }
     setAngles() {
-        AngleQuaternion(this._angles, tempQuaternion);
-        quat.mul(this._quaternion, SPOTLIGHT_DEFAULT_QUATERNION, tempQuaternion);
+        AngleQuaternion(this._angles, tempQuaternion$1);
+        quat.mul(this._quaternion, SPOTLIGHT_DEFAULT_QUATERNION, tempQuaternion$1);
     }
     setInput(inputName, parameter) {
         throw 'code me';
@@ -43685,9 +43699,9 @@ class Equals extends Proxy {
 }
 ProxyManager.registerProxy('Equals', Equals);
 
-const scale = 0.6;
-const loBeat = 1.0 * scale;
-const hiBeat = 0.8 * scale;
+const scale$1 = 0.6;
+const loBeat = 1.0 * scale$1;
+const hiBeat = 0.8 * scale$1;
 class HeartbeatScale extends Proxy {
     #datas;
     #sineperiod;
@@ -47226,7 +47240,7 @@ class CollisionViaTraces extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(CollisionViaTraces);
 
-let cpPosition = vec3.create();
+let cpPosition$1 = vec3.create();
 let tempVec3_2$7 = vec3.create();
 class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
     static functionName = 'Constrain distance to control point';
@@ -47252,19 +47266,19 @@ class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
         const cp = this.particleSystem.getControlPoint(cpNumber);
         const v = vec3.copy(tempVec3_2$7, particle.position);
         if (cp) {
-            vec3.sub(v, v, cp.getWorldPosition(cpPosition));
+            vec3.sub(v, v, cp.getWorldPosition(cpPosition$1));
         }
         const distance = vec3.length(v);
         if (distance > 0) {
             vec3.scale(v, v, 1 / distance);
             if (distance < minDistance) {
                 vec3.scale(v, v, minDistance);
-                vec3.add(particle.position, cpPosition, v);
+                vec3.add(particle.position, cpPosition$1, v);
             }
             else {
                 if (distance > maxDistance) {
                     vec3.scale(v, v, maxDistance);
-                    vec3.add(particle.position, cpPosition, v);
+                    vec3.add(particle.position, cpPosition$1, v);
                 }
             }
         }
@@ -47272,8 +47286,8 @@ class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(ConstrainDistanceToControlPoint);
 
-const a$6 = vec3.create();
-const b = vec3.create();
+const a$7 = vec3.create();
+const b$1 = vec3.create();
 /*
     DMXELEMENT_UNPACK_FIELD( "minimum distance", "0", float, m_fMinDistance )
     DMXELEMENT_UNPACK_FIELD( "maximum distance", "100", float, m_flMaxDistance0 )
@@ -47307,8 +47321,8 @@ class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngineParticl
         const startCP = this.particleSystem.getControlPoint(startNumber);
         const endCP = this.particleSystem.getControlPoint(endNumber);
         if (startCP && endCP) {
-            const delta = vec3.sub(vec3.create(), endCP.getWorldPosition(b), startCP.getWorldPosition(a$6));
-            vec3.scaleAndAdd(particle.position, a$6, delta, travelTime);
+            const delta = vec3.sub(vec3.create(), endCP.getWorldPosition(b$1), startCP.getWorldPosition(a$7));
+            vec3.scaleAndAdd(particle.position, a$7, delta, travelTime);
         }
     }
 }
@@ -47487,7 +47501,7 @@ class PullTowardsControlPoint extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(PullTowardsControlPoint);
 
-class RandomForce$1 extends SourceEngineParticleOperator {
+let RandomForce$1 = class RandomForce extends SourceEngineParticleOperator {
     static functionName = 'random force';
     constructor() {
         super();
@@ -47504,7 +47518,7 @@ class RandomForce$1 extends SourceEngineParticleOperator {
         }*/
         vec3.add(accumulatedForces, accumulatedForces, f);
     }
-}
+};
 SourceEngineParticleOperators.registerOperator(RandomForce$1);
 
 const tempVec3$h = vec3.create();
@@ -47619,7 +47633,7 @@ class LifetimeRandom extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(LifetimeRandom);
 
-const a$5 = vec3.create();
+const a$6 = vec3.create();
 class PositionAlongPathRandom extends SourceEngineParticleOperator {
     static functionName = 'Position Along Path Random';
     sequence = 0;
@@ -47643,7 +47657,7 @@ class PositionAlongPathRandom extends SourceEngineParticleOperator {
         const delta = startCP.deltaPosFrom(endCP);
         this.sequence / nbPart;
         vec3.scale(delta, delta, Math.random());
-        vec3.add(particle.position, startCP.getWorldPosition(a$5), delta);
+        vec3.add(particle.position, startCP.getWorldPosition(a$6), delta);
         vec3.copy(particle.prevPosition, particle.position);
         ++this.sequence;
         if (this.sequence > nbPart) { //TODO: handle loop
@@ -47700,7 +47714,7 @@ class PositionAlongPathSequential extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(PositionAlongPathSequential);
 
-class PositionFromParentParticles extends SourceEngineParticleOperator {
+let PositionFromParentParticles$1 = class PositionFromParentParticles extends SourceEngineParticleOperator {
     static functionName = 'Position From Parent Particles';
     constructor() {
         super();
@@ -47724,8 +47738,8 @@ class PositionFromParentParticles extends SourceEngineParticleOperator {
         }
         particle.PositionFromParentParticles = true;
     }
-}
-SourceEngineParticleOperators.registerOperator(PositionFromParentParticles);
+};
+SourceEngineParticleOperators.registerOperator(PositionFromParentParticles$1);
 
 const tempVec3$g = vec3.create();
 class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
@@ -47782,7 +47796,7 @@ void VectorRotate(const float *in1, const matrix3x4_t& in2, float *out)
 }
 SourceEngineParticleOperators.registerOperator(PositionModifyOffsetRandom);
 
-const a$4 = vec3.create();
+const a$5 = vec3.create();
 class PositionOnModelRandom extends SourceEngineParticleOperator {
     static functionName = 'Position on Model Random';
     constructor() {
@@ -47816,7 +47830,7 @@ class PositionOnModelRandom extends SourceEngineParticleOperator {
         }
         else {
             if (controlPoint) {
-                vec3.copy(particle.position, controlPoint.getWorldPosition(a$4));
+                vec3.copy(particle.position, controlPoint.getWorldPosition(a$5));
                 vec3.copy(particle.prevPosition, particle.position);
             }
         }
@@ -47997,7 +48011,7 @@ class RadiusRandom extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(RadiusRandom);
 
-const a$3 = vec3.create();
+const a$4 = vec3.create();
 class RemapControlPointToScalar extends SourceEngineParticleOperator {
     static functionName = 'remap control point to scalar';
     constructor() {
@@ -48057,7 +48071,7 @@ class RemapControlPointToScalar extends SourceEngineParticleOperator {
         if (inputField == 0 || inputField == 1 || inputField == 2) {
             const cp = this.particleSystem.getControlPoint(cpNumber);
             if (cp) {
-                return cp.getWorldPosition(a$3)[inputField];
+                return cp.getWorldPosition(a$4)[inputField];
             }
         }
         return 0;
@@ -48073,7 +48087,7 @@ let tempVec3_2$4 = vec3.create();
 let tempVec3_3$1 = vec3.create();
 let tempVec3_4 = vec3.create();
 let tempVec3_5 = vec3.create();
-const a$2 = vec3.create();
+const a$3 = vec3.create();
 class RemapControlPointToVector extends SourceEngineParticleOperator {
     static functionName = 'remap control point to vector';
     constructor() {
@@ -48116,7 +48130,7 @@ class RemapControlPointToVector extends SourceEngineParticleOperator {
         if (inputField == 0 || inputField == 1 || inputField == 2) {
             const cp = this.particleSystem.getControlPoint(cpNumber);
             if (cp) {
-                return cp.getWorldPosition(a$2)[inputField];
+                return cp.getWorldPosition(a$3)[inputField];
             }
         }
         return 0;
@@ -48715,12 +48729,15 @@ class VelocityNoise extends SourceEngineParticleOperator {
         const m_bNoiseAbs = (m_vecAbsValInv[0] != 0.0) || (m_vecAbsValInv[1] != 0.0) || (m_vecAbsValInv[2] != 0.0);
         // Set up values for more optimal absolute value calculations inside the loop
         if (m_vecAbsVal[0] != 0.0) {
+            g_SIMD_clear_signmask;
             flAbsScaleX = 1.0;
         }
         if (m_vecAbsVal[1] != 0.0) {
+            g_SIMD_clear_signmask;
             flAbsScaleY = 1.0;
         }
         if (m_vecAbsVal[2] != 0.0) {
+            g_SIMD_clear_signmask;
             flAbsScaleZ = 1.0;
         }
         const ValueScaleX = (flAbsScaleX * (m_vecOutputMax[0] - m_vecOutputMin[0]));
@@ -48823,10 +48840,37 @@ class VelocityNoise extends SourceEngineParticleOperator {
     }
 }
 SourceEngineParticleOperators.registerOperator(VelocityNoise);
+/*
+
+VelocityNoise.prototype.getNoise = function (particle, time) {
+    //return NoiseSIMD(particle.position, particle.cTime);
+    //return Math.random();
+    return Math.cos(time * 5) * 0.5 + 0.5;
+}
+    */
+// Clamp velocity to min/max values if set
+/*VelocityNoise.prototype.clampVelocity = function(velocity) {
+    const output_minimum = this.getParameter('output minimum');
+    const output_maximum = this.getParameter('output maximum');
+
+    if (output_minimum != null) {
+        if (velocity.x < output_minimum.x) velocity.x = output_minimum.x;
+        if (velocity.y < output_minimum.y) velocity.y = output_minimum.y;
+        if (velocity.z < output_minimum.z) velocity.z = output_minimum.z;
+    }
+
+    if (output_maximum != null) {
+        if (velocity.x > output_maximum.x) velocity.x = output_maximum.x;
+        if (velocity.y > output_maximum.y) velocity.y = output_maximum.y;
+        if (velocity.z > output_maximum.z) velocity.z = output_maximum.z;
+    }
+}*/
+//TODO: place somewhere else
+const g_SIMD_clear_signmask = 0x7fffffff;
 
 let identityVec3 = vec3.create();
 const tempVec3$c = vec3.create();
-class VelocityRandom$1 extends SourceEngineParticleOperator {
+let VelocityRandom$1 = class VelocityRandom extends SourceEngineParticleOperator {
     static functionName = 'Velocity Random';
     constructor() {
         super();
@@ -48872,7 +48916,7 @@ class VelocityRandom$1 extends SourceEngineParticleOperator {
     initMultipleOverride() {
         return true;
     }
-}
+};
 SourceEngineParticleOperators.registerOperator(VelocityRandom$1);
 
 class AlphaFadeAndDecay extends SourceEngineParticleOperator {
@@ -49059,7 +49103,7 @@ class ColorFade extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(ColorFade);
 
-class LifespanDecay$1 extends SourceEngineParticleOperator {
+let LifespanDecay$1 = class LifespanDecay extends SourceEngineParticleOperator {
     static functionName = 'Lifespan Decay';
     constructor() {
         super();
@@ -49069,13 +49113,13 @@ class LifespanDecay$1 extends SourceEngineParticleOperator {
             particle.die();
         }
     }
-}
+};
 SourceEngineParticleOperators.registerOperator(LifespanDecay$1);
 
 const tempVec3$b = vec3.create();
 const tempMat4 = mat4.create();
 const IDENTITY_MAT4$2 = mat4.create();
-class LockToBone$1 extends SourceEngineParticleOperator {
+let LockToBone$1 = class LockToBone extends SourceEngineParticleOperator {
     static functionName = 'Movement Lock to Bone';
     constructor() {
         super();
@@ -49136,7 +49180,7 @@ class LockToBone$1 extends SourceEngineParticleOperator {
             }
         }
     }
-}
+};
 SourceEngineParticleOperators.registerOperator(LockToBone$1);
 
 const tempVec3$a = vec3.create();
@@ -49319,7 +49363,7 @@ class MovementMaxVelocity extends SourceEngineParticleOperator {
 SourceEngineParticleOperators.registerOperator(MovementMaxVelocity);
 
 let tempVec3$8 = vec3.create();
-class MovementRotateParticleAroundAxis$1 extends SourceEngineParticleOperator {
+let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis extends SourceEngineParticleOperator {
     static functionName = 'Movement Rotate Particle Around Axis';
     once = true;
     constructor() {
@@ -49367,10 +49411,10 @@ class MovementRotateParticleAroundAxis$1 extends SourceEngineParticleOperator {
             vec3.transformMat4(particle.position, particle.position, modelView);
         }
     }
-}
+};
 SourceEngineParticleOperators.registerOperator(MovementRotateParticleAroundAxis$1);
 
-class OscillateScalar$1 extends SourceEngineParticleOperator {
+let OscillateScalar$1 = class OscillateScalar extends SourceEngineParticleOperator {
     static functionName = 'Oscillate Scalar';
     constructor() {
         super();
@@ -49458,7 +49502,7 @@ class OscillateScalar$1 extends SourceEngineParticleOperator {
             }
         }
     }
-}
+};
 SourceEngineParticleOperators.registerOperator(OscillateScalar$1);
 
 /*					'oscillation field' 'int' '0'
@@ -49468,7 +49512,7 @@ SourceEngineParticleOperators.registerOperator(OscillateScalar$1);
                     'oscillation field' 'int' '7'*/
 const tempVec3Freq = vec3.create();
 const tempVec3Rate = vec3.create();
-class OscillateVector$1 extends SourceEngineParticleOperator {
+let OscillateVector$1 = class OscillateVector extends SourceEngineParticleOperator {
     static functionName = 'Oscillate Vector';
     constructor() {
         super();
@@ -49596,7 +49640,7 @@ class OscillateVector$1 extends SourceEngineParticleOperator {
             //} while (--nCtr);
         }
     }
-}
+};
 SourceEngineParticleOperators.registerOperator(OscillateVector$1);
 
 class RadiusScale extends SourceEngineParticleOperator {
@@ -49654,7 +49698,7 @@ class RadiusScale extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(RadiusScale);
 
-const a$1 = vec3.create();
+const a$2 = vec3.create();
 class RemapCPSpeedToCP extends SourceEngineParticleOperator {
     static functionName = 'remap cp speed to cp';
     constructor() {
@@ -49679,7 +49723,7 @@ class RemapCPSpeedToCP extends SourceEngineParticleOperator {
         const incp = this.particleSystem.getControlPoint(inCPNumber);
         const outcp = this.particleSystem.getControlPoint(outCPNumber);
         if (incp && outcp && (outputField == 0 || outputField == 1 || outputField == 2)) {
-            vec3.length(incp.getWorldPosition(a$1));
+            vec3.length(incp.getWorldPosition(a$2));
             let position = outcp.position; //TODO optimize
             position[outputField] = RemapValClamped(200, inputMinimum, inputMaximum, outputMinimum, outputMaximum);
             outcp.position = position;
@@ -49969,7 +50013,7 @@ class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOpe
 SourceEngineParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);
 
 const tempVec3$5 = vec3.create();
-class SetControlPointPositions$1 extends SourceEngineParticleOperator {
+let SetControlPointPositions$1 = class SetControlPointPositions extends SourceEngineParticleOperator {
     static functionName = 'set control point positions';
     constructor() {
         super();
@@ -50018,7 +50062,7 @@ class SetControlPointPositions$1 extends SourceEngineParticleOperator {
             this.particleSystem.setControlPointParent(cpNumber, cpParent);
         }
     }
-}
+};
 SourceEngineParticleOperators.registerOperator(SetControlPointPositions$1);
 
 const tempVec3_min = vec3.create();
@@ -53930,6 +53974,7 @@ class Source2Particle {
     position = vec3.create();
     quaternion = quat.create();
     prevPosition = vec3.create();
+    cpPosition = vec3.create();
     velocity = vec3.create();
     color = vec4.create();
     initialColor = vec4.create();
@@ -53971,6 +54016,7 @@ class Source2Particle {
     rotLockedToCP = false;
     trailLength = 0.1;
     MovementRigidAttachToCP = false;
+    previousElapsedTime = 0;
     static consoleAlphaAlternate = false;
     static consolePitch = false;
     constructor(id, system) {
@@ -54555,8 +54601,9 @@ class Source2ParticleSystem extends Entity {
     maxParticles = 0;
     currentParticles = 0;
     resetDelay = 0;
-    parentSystem;
+    parentSystem = null;
     isBounded = false;
+    endCap = false;
     constructor(repository, fileName, name) {
         super({ name: name });
         this.fileName = fileName;
@@ -54564,7 +54611,7 @@ class Source2ParticleSystem extends Entity {
         this.setMaxParticles(DEFAULT_MAX_PARTICLES);
         //Add first control point
         //this.getControlPoint(0);
-        this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: 5, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '' };
+        this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: 5, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '', rotationSpeedRoll: 0, controlPointConfigurations: [] };
     }
     async init(snapshotModifiers) {
         await this.#initSnapshot(snapshotModifiers);
@@ -54578,7 +54625,7 @@ class Source2ParticleSystem extends Entity {
     async #initSnapshot(snapshotModifiers) {
         //TODO : we should add a snapshotmanager to avoid loading the same file multiple time
         let snapshotFile = this.baseProperties.snapshot;
-        if (snapshotModifiers && snapshotModifiers.has(snapshotFile)) {
+        if (snapshotModifiers?.has(snapshotFile)) {
             snapshotFile = snapshotModifiers.get(snapshotFile);
         }
         if (snapshotFile) {
@@ -54654,7 +54701,7 @@ class Source2ParticleSystem extends Entity {
     }
     #preEmission() {
         for (let operator of this.preEmissionOperators) {
-            operator.operateParticle(true, this.elapsedTime);
+            operator.operateParticle(null, this.elapsedTime);
         }
     }
     step(elapsedTime) {
@@ -54809,7 +54856,7 @@ class Source2ParticleSystem extends Entity {
     }
     getControlPoint(controlPointId) {
         let parentSystem = this.parentSystem;
-        if (parentSystem !== undefined) {
+        if (parentSystem) {
             return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId); //TODO: remove recursion
         }
         let controlPoint = this.controlPoints[controlPointId];
@@ -54820,7 +54867,7 @@ class Source2ParticleSystem extends Entity {
     }
     getControlPointForScale(controlPointId) {
         let parentSystem = this.parentSystem;
-        if (parentSystem !== undefined) {
+        if (parentSystem) {
             return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
         }
         let controlPoint = this.controlPoints[controlPointId];
@@ -54836,7 +54883,7 @@ class Source2ParticleSystem extends Entity {
     }
     #createControlPoint(controlPointId) {
         let controlPoint = new ControlPoint();
-        controlPoint.name = controlPointId;
+        controlPoint.name = String(controlPointId);
         this.addChild(controlPoint);
         this.controlPoints[controlPointId] = controlPoint;
         vec3.set(controlPoint.fVector, 0, 1, 0);
@@ -54892,17 +54939,17 @@ class Source2ParticleSystem extends Entity {
             vec3.zero(center);
         }
     }
-    parentChanged(parent = null) {
+    parentChanged(parent) {
         if (parent?.isSource2ParticleSystem) {
             this.parentSystem = parent;
         }
         else {
             parent?.addChild(this.getControlPoint(0));
-            this.setParentModel(parent);
+            this.setParentModel(parent ?? undefined);
         }
     }
     setParentModel(model) {
-        if (!model) {
+        if (!model?.isSource2ModelInstance) {
             return;
         }
         this.#parentModel = model;
@@ -55355,7 +55402,7 @@ function processFunction(functionCode) {
             pow();
             break;
         case 22: // step
-            step();
+            step$1();
             break;
         case 23: // smoothstep
             smoothstep();
@@ -55383,10 +55430,10 @@ function processFunction(functionCode) {
             stack.push(vec4.fromValues(time, time, time, time));
             break;
         case 28: // min
-            min();
+            min$1();
             break;
         case 29: // max
-            max();
+            max$1();
             break;
         case 30:
             SrgbLinearToGamma();
@@ -55395,13 +55442,13 @@ function processFunction(functionCode) {
             SrgbGammaToLinear();
             break;
         case 32: // random
-            random();
+            random$1();
             break;
         case 33:
-            normalize();
+            normalize$1();
             break;
         case 34:
-            length();
+            length$1();
             break;
         case 35:
             sqr();
@@ -55715,7 +55762,7 @@ function pow() {
     a[3] = b[3] ** a[3];
     stack.push(a);
 }
-function step() {
+function step$1() {
     let a = stack.pop();
     let b = stack.pop();
     a[0] = b[0] >= a[0] ? 1 : 0;
@@ -55738,7 +55785,7 @@ function smoothstep() {
     x[3] = _smoothstep(min[3], max[3], x[3]);
     stack.push(x);
 }
-function min() {
+function min$1() {
     let a = stack.pop();
     let b = stack.pop();
     a[0] = Math.min(b[0], a[0]);
@@ -55747,7 +55794,7 @@ function min() {
     a[3] = Math.min(b[3], a[3]);
     stack.push(a);
 }
-function max() {
+function max$1() {
     let a = stack.pop();
     let b = stack.pop();
     a[0] = Math.max(b[0], a[0]);
@@ -55782,7 +55829,7 @@ function SrgbGammaToLinear() {
     a[3] = (a[3] <= 0.04045) ? (a[3] / 12.92) : (Math.pow((a[3] + 0.055) / 1.055, 2.4));
     stack.push(a);
 }
-function random() {
+function random$1() {
     let a = stack.pop();
     let b = stack.pop();
     a[0] = getRandomArbitrary(b[0], a[0]);
@@ -55791,12 +55838,12 @@ function random() {
     a[3] = getRandomArbitrary(b[3], a[3]);
     stack.push(a);
 }
-function normalize() {
+function normalize$1() {
     let a = stack.pop();
     vec3.normalize(a, a);
     stack.push(a);
 }
-function length() {
+function length$1() {
     let a = stack.pop();
     a[0] = a[1] = a[2] = a[3] = Math.hypot(a[0], a[1], a[2]);
     stack.push(a);
@@ -56531,6 +56578,12 @@ class Source2CsgoWeaponStattrak extends Source2Material {
 Source2MaterialLoader.registerMaterial('csgo_weapon_stattrak.vfx', Source2CsgoWeaponStattrak);
 
 const STICKER_COUNT = 5;
+class WeaponSticker {
+    sticker = '';
+    holoSpectrum = '';
+    normalRoughness = '';
+    sfxMask = '';
+}
 class Source2CsgoWeapon extends Source2Material {
     setupUniformsOnce() {
         super.setupUniformsOnce();
@@ -57285,6 +57338,7 @@ class Operator {
     material;
     endCapState;
     currentTime = 0;
+    operateAllParticlesRemoveme = false;
     constructor(system) {
         this.system = system;
     }
@@ -57570,7 +57624,7 @@ class Operator {
         this.doInit(particles, elapsedTime, strength);
     }
     operateParticle(particle, elapsedTime) {
-        if (!particle || this.disableOperator) {
+        if (this.disableOperator) {
             return;
         }
         if (this.endCapState != 1) {
@@ -57809,6 +57863,7 @@ class Operator {
     dispose() {
     }
     doInit(particle, elapsedTime, strength) { }
+    doEmit(elapsedTime) { }
     doOperate(particle, elapsedTime, strength) { }
     doForce(particle, elapsedTime, accumulatedForces, strength) { }
     applyConstraint(particle) { }
@@ -58804,7 +58859,7 @@ export const PARTICLE_FIELD_MANUAL_ANIMATION_FRAME = 38;
 export const PARTICLE_FIELD_SHADER_EXTRA_DATA_1 = 39;
 export const PARTICLE_FIELD_SHADER_EXTRA_DATA_2 = 40;
 */
-let v$e = vec3.create();
+let v$f = vec3.create();
 class InitFromCPSnapshot extends Operator {
     attributeToRead = -1;
     attributeToWrite = PARTICLE_FIELD_POSITION;
@@ -58863,9 +58918,9 @@ class InitFromCPSnapshot extends Operator {
                         //TODO: check attributeToRead[id] is actually a vector
                         //TODO: only transform position when this.localSpaceAngles = true
                         {
-                            vec3.transformMat4(v$e, attributeToRead[id], localSpaceCP.currentWorldTransformation);
+                            vec3.transformMat4(v$f, attributeToRead[id], localSpaceCP.currentWorldTransformation);
                         }
-                        particle.setInitialField(this.attributeToWrite, v$e);
+                        particle.setInitialField(this.attributeToWrite, v$f);
                     }
                 }
                 else {
@@ -59115,7 +59170,7 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
 RegisterSource2ParticleOperator('C_INIT_InitSkinnedPositionFromCPSnapshot', InitSkinnedPositionFromCPSnapshot);
 
 const DEFAULT_INPUT_VALUE = vec3.create();
-let v$d = vec4.create();
+let v$e = vec4.create();
 class InitVec extends Operator {
     setMethod = null;
     scaleInitialRange = false;
@@ -59138,7 +59193,7 @@ class InitVec extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        let inputValue = this.getParamVectorValue('m_InputValue', particle, v$d) ?? DEFAULT_INPUT_VALUE;
+        let inputValue = this.getParamVectorValue('m_InputValue', particle, v$e) ?? DEFAULT_INPUT_VALUE;
         particle.setField(this.fieldOutput, inputValue, this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
     }
 }
@@ -59165,7 +59220,7 @@ class NormalAlignToCP extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_NormalAlignToCP', NormalAlignToCP);
 
-const v$c = vec3.create();
+const v$d = vec3.create();
 class NormalOffset extends Operator {
     offsetMin = vec3.create();
     offsetMax = vec3.create();
@@ -59190,12 +59245,12 @@ class NormalOffset extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        vec3RandomBox(v$c, this.offsetMin, this.offsetMax);
+        vec3RandomBox(v$d, this.offsetMin, this.offsetMax);
         if (this.localCoords) {
             let cp = this.system.getControlPoint(this.controlPointNumber);
-            vec3.transformQuat(v$c, v$c, cp.currentWorldQuaternion);
+            vec3.transformQuat(v$d, v$d, cp.currentWorldQuaternion);
         }
-        vec3.add(particle.normal, particle.normal, v$c);
+        vec3.add(particle.normal, particle.normal, v$d);
         if (this.normalize) {
             vec3.normalize(particle.normal, particle.normal);
         }
@@ -59206,7 +59261,7 @@ class NormalOffset extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_NormalOffset', NormalOffset);
 
-let v$b = vec3.create();
+let v$c = vec3.create();
 class OffsetVectorToVector extends Operator {
     outputMin = vec3.create();
     outputMax = vec3.fromValues(1, 1, 1);
@@ -59225,20 +59280,20 @@ class OffsetVectorToVector extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        vec3RandomBox(v$b, this.outputMin, this.outputMax);
-        vec3.add(v$b, v$b, particle.getField(this.fieldInput));
+        vec3RandomBox(v$c, this.outputMin, this.outputMax);
+        vec3.add(v$c, v$c, particle.getField(this.fieldInput));
         if (this.fieldOutput == PARTICLE_FIELD_COLOR) {
-            v$b[0] = ((v$b[0] % ONE_EPS) + ONE_EPS) % ONE_EPS;
-            v$b[1] = ((v$b[1] % ONE_EPS) + ONE_EPS) % ONE_EPS;
-            v$b[2] = ((v$b[2] % ONE_EPS) + ONE_EPS) % ONE_EPS;
+            v$c[0] = ((v$c[0] % ONE_EPS) + ONE_EPS) % ONE_EPS;
+            v$c[1] = ((v$c[1] % ONE_EPS) + ONE_EPS) % ONE_EPS;
+            v$c[2] = ((v$c[2] % ONE_EPS) + ONE_EPS) % ONE_EPS;
         }
-        particle.setField(this.fieldOutput, v$b);
+        particle.setField(this.fieldOutput, v$c);
     }
 }
 RegisterSource2ParticleOperator('C_INIT_OffsetVectorToVector', OffsetVectorToVector);
 
 const DEFAULT_OFFSET = vec3.create();
-const offset = vec3.create();
+const offset$1 = vec3.create();
 class PositionOffset extends Operator {
     localCoords = false;
     proportional = false;
@@ -59260,15 +59315,15 @@ class PositionOffset extends Operator {
     doInit(particle, elapsedTime) {
         let offsetMin = this.getParamVectorValue('m_OffsetMin') ?? DEFAULT_OFFSET;
         let offsetMax = this.getParamVectorValue('m_OffsetMax') ?? DEFAULT_OFFSET;
-        vec3RandomBox(offset, offsetMin, offsetMax);
+        vec3RandomBox(offset$1, offsetMin, offsetMax);
         if (this.localCoords) {
             const cp = particle.system.getControlPoint(this.controlPointNumber);
             if (cp) {
-                vec3.transformQuat(offset, offset, cp.getWorldQuaternion());
+                vec3.transformQuat(offset$1, offset$1, cp.getWorldQuaternion());
             }
         }
-        vec3.add(particle.position, particle.position, offset);
-        vec3.add(particle.prevPosition, particle.prevPosition, offset);
+        vec3.add(particle.position, particle.position, offset$1);
+        vec3.add(particle.prevPosition, particle.prevPosition, offset$1);
     }
     initMultipleOverride() {
         return true;
@@ -59276,7 +59331,7 @@ class PositionOffset extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_PositionOffset', PositionOffset);
 
-let v$a = vec3.create();
+let v$b = vec3.create();
 class PositionWarp extends Operator {
     warpMin = vec3.fromValues(1, 1, 1);
     warpMax = vec3.fromValues(1, 1, 1);
@@ -59322,18 +59377,18 @@ class PositionWarp extends Operator {
     }
     doInit(particle, elapsedTime) {
         //TODO: use time parameters, m_bUseCount
-        vec3RandomBox(v$a, this.warpMin, this.warpMax);
+        vec3RandomBox(v$b, this.warpMin, this.warpMax);
         if (this.scaleControlPointNumber != -1) {
             let scaleCp = this.system.getControlPoint(this.scaleControlPointNumber);
             if (scaleCp) {
-                vec3.mul(v$a, v$a, scaleCp._position); //Not sure if it's position or world position
+                vec3.mul(v$b, v$b, scaleCp._position); //Not sure if it's position or world position
             }
         }
         if (this.radiusComponent != -1) {
-            particle.radius *= v$a[this.radiusComponent];
+            particle.radius *= v$b[this.radiusComponent];
         }
-        vec3.mul(particle.position, particle.position, v$a);
-        vec3.mul(particle.prevPosition, particle.prevPosition, v$a);
+        vec3.mul(particle.position, particle.position, v$b);
+        vec3.mul(particle.prevPosition, particle.prevPosition, v$b);
         if (this.prevPosScale != -1) {
             vec3.scale(particle.prevPosition, particle.prevPosition, this.prevPosScale);
         }
@@ -59750,7 +59805,7 @@ class RandomYawFlip extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_RandomYawFlip', RandomYawFlip);
 
-class RemapCPtoScalar$1 extends Operator {
+let RemapCPtoScalar$1 = class RemapCPtoScalar extends Operator {
     cpInput = 0;
     field = 0; //X
     inputMin = 0;
@@ -59815,10 +59870,10 @@ class RemapCPtoScalar$1 extends Operator {
         }
         particle.setField(this.fieldOutput, value, scaleInitial);
     }
-}
+};
 RegisterSource2ParticleOperator('C_INIT_RemapCPtoScalar', RemapCPtoScalar$1);
 
-let v$9 = vec3.create();
+let v$a = vec3.create();
 let v1 = vec3.fromValues(1, 1, 1);
 class RemapCPtoVector extends Operator {
     cpInput = 0;
@@ -59886,17 +59941,17 @@ class RemapCPtoVector extends Operator {
         let outputMin = this.outputMin;
         let outputMax = this.outputMax;
         let input = this.system.getControlPoint(this.cpInput).currentWorldPosition;
-        v$9[0] = RemapValClampedBias(input[0], inputMin[0], inputMax[0], outputMin[0], outputMax[0], this.remapBias);
-        v$9[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.remapBias);
-        v$9[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.remapBias);
+        v$a[0] = RemapValClampedBias(input[0], inputMin[0], inputMax[0], outputMin[0], outputMax[0], this.remapBias);
+        v$a[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.remapBias);
+        v$a[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.remapBias);
         let scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
         if (scaleInitial) {
-            vec3.lerp(v$9, v1, v$9, strength);
+            vec3.lerp(v$a, v1, v$a, strength);
         }
         else {
-            vec3.lerp(v$9, particle.getField(this.fieldOutput), v$9, strength);
+            vec3.lerp(v$a, particle.getField(this.fieldOutput), v$a, strength);
         }
-        particle.setField(this.fieldOutput, v$9, scaleInitial);
+        particle.setField(this.fieldOutput, v$a, scaleInitial);
     }
 }
 RegisterSource2ParticleOperator('C_INIT_RemapCPtoVector', RemapCPtoVector);
@@ -60034,7 +60089,7 @@ class RingWave extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_RingWave', RingWave);
 
-let v$8 = vec3.create();
+let v$9 = vec3.create();
 class SetRigidAttachment extends Operator {
     localSpace = true;
     fieldOutput = PARTICLE_FIELD_POSITION_PREVIOUS;
@@ -60053,8 +60108,8 @@ class SetRigidAttachment extends Operator {
         if (!this.localSpace) {
             throw 'code me';
         }
-        vec3.sub(v$8, particle.getField(this.fieldInput), this.system.getControlPoint(this.controlPointNumber).currentWorldPosition);
-        particle.setField(this.fieldOutput, v$8);
+        vec3.sub(v$9, particle.getField(this.fieldInput), this.system.getControlPoint(this.controlPointNumber).currentWorldPosition);
+        particle.setField(this.fieldOutput, v$9);
     }
 }
 RegisterSource2ParticleOperator('C_INIT_SetRigidAttachment', SetRigidAttachment);
@@ -60202,7 +60257,7 @@ class ColorInterpolate extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_ColorInterpolate', ColorInterpolate);
 
-let v$7 = vec3.create();
+let v$8 = vec3.create();
 class DampenToCP extends Operator {
     range = 100;
     scale = 1;
@@ -60226,9 +60281,9 @@ class DampenToCP extends Operator {
         }
         else {
             let dampenAmount = distance / this.range;
-            vec3.sub(v$7, particle.position, particle.prevPosition);
-            vec3.scale(v$7, v$7, dampenAmount);
-            vec3.add(particle.position, particle.prevPosition, v$7);
+            vec3.sub(v$8, particle.position, particle.prevPosition);
+            vec3.scale(v$8, v$8, dampenAmount);
+            vec3.add(particle.position, particle.prevPosition, v$8);
             //TODO: operator strength
         }
     }
@@ -60952,8 +61007,8 @@ RegisterSource2ParticleOperator('C_OP_MaintainSequentialPath', MaintainSequentia
 //const tempMat4 = mat4.create();
 vec3.create();
 vec3.create();
-let v$6 = vec3.create();
-class MovementRigidAttachToCP extends Operator {
+let v$7 = vec3.create();
+let MovementRigidAttachToCP$1 = class MovementRigidAttachToCP extends Operator {
     scaleControlPoint = -1;
     scaleCPField = 0; //-1: disabled, 0: X, 1: Y, 2 :Z
     fieldInput = PARTICLE_FIELD_POSITION_PREVIOUS;
@@ -61019,18 +61074,18 @@ class MovementRigidAttachToCP extends Operator {
             }
             //vec3.transformMat4(particle.position, particle.position, delta);
             //vec3.transformMat4(particle.prevPosition, particle.prevPosition, delta);
-            vec3.transformMat4(v$6, particle.getField(this.fieldInput), delta);
-            particle.setField(this.fieldInput, v$6);
-            particle.setField(this.fieldOutput, v$6);
+            vec3.transformMat4(v$7, particle.getField(this.fieldInput), delta);
+            particle.setField(this.fieldInput, v$7);
+            particle.setField(this.fieldOutput, v$7);
         }
     }
-}
-RegisterSource2ParticleOperator('C_OP_MovementRigidAttachToCP', MovementRigidAttachToCP);
+};
+RegisterSource2ParticleOperator('C_OP_MovementRigidAttachToCP', MovementRigidAttachToCP$1);
 
 let m4 = mat4.create();
 let q$1 = quat.create();
-let v$5 = vec3.create();
-let a = vec4.create();
+let v$6 = vec3.create();
+let a$1 = vec4.create();
 const DEFAULT_AXIS = vec3.fromValues(0, 0, 1);
 class MovementRotateParticleAroundAxis extends Operator {
     localSpace = false;
@@ -61050,7 +61105,7 @@ class MovementRotateParticleAroundAxis extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let axis = vec3.normalize(a, this.getParamVectorValue('m_vecRotAxis', particle, a) ?? DEFAULT_AXIS);
+        let axis = vec3.normalize(a$1, this.getParamVectorValue('m_vecRotAxis', particle, a$1) ?? DEFAULT_AXIS);
         let rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
         let cp = this.system.getControlPoint(this.controlPointNumber);
         if (this.localSpace) {
@@ -61062,10 +61117,10 @@ class MovementRotateParticleAroundAxis extends Operator {
         vec3.transformQuat(axis, axis, q$1);
         mat4.identity(m4);
         mat4.rotate(m4, m4, DEG_TO_RAD * rotationRate * elapsedTime * elapsedTime, axis);
-        vec3.sub(v$5, particle.position, cp.currentWorldPosition);
+        vec3.sub(v$6, particle.position, cp.currentWorldPosition);
         //TODO: should we do previous position too ?
-        vec3.transformMat4(v$5, v$5, m4);
-        vec3.add(particle.position, v$5, cp.currentWorldPosition);
+        vec3.transformMat4(v$6, v$6, m4);
+        vec3.add(particle.position, v$6, cp.currentWorldPosition);
     }
 }
 RegisterSource2ParticleOperator('C_OP_MovementRotateParticleAroundAxis', MovementRotateParticleAroundAxis);
@@ -61134,7 +61189,7 @@ class Noise extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_Noise', Noise);
 
-let v$4 = vec3.create();
+let v$5 = vec3.create();
 class NormalizeVector extends Operator {
     fieldOutput = PARTICLE_FIELD_POSITION;
     scale = 1;
@@ -61148,10 +61203,10 @@ class NormalizeVector extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        vec3.copy(v$4, particle.getField(this.fieldOutput));
-        vec3.normalize(v$4, v$4);
-        vec3.scale(v$4, v$4, this.scale);
-        particle.setField(this.fieldOutput, v$4);
+        vec3.copy(v$5, particle.getField(this.fieldOutput));
+        vec3.normalize(v$5, v$5);
+        vec3.scale(v$5, v$5, this.scale);
+        particle.setField(this.fieldOutput, v$5);
     }
 }
 RegisterSource2ParticleOperator('C_OP_NormalizeVector', NormalizeVector);
@@ -61929,7 +61984,7 @@ class RampScalarSpline extends Operator {
 RegisterSource2ParticleOperator('C_OP_RampScalarSpline', RampScalarSpline);
 
 const DEFAULT_VECTOR = vec3.fromValues(1, 0, 0);
-let v$3 = vec3.create();
+let v$4 = vec3.create();
 class RemapControlPointDirectionToVector extends Operator {
     fieldOutput = PARTICLE_FIELD_POSITION;
     scale = 1;
@@ -61943,9 +61998,9 @@ class RemapControlPointDirectionToVector extends Operator {
     }
     doOperate(particle, elapsedTime) {
         let cp = this.system.getControlPoint(this.controlPointNumber);
-        vec3.transformQuat(v$3, DEFAULT_VECTOR, cp.currentWorldQuaternion);
-        vec3.scale(v$3, v$3, this.scale);
-        particle.setField(this.fieldOutput, v$3);
+        vec3.transformQuat(v$4, DEFAULT_VECTOR, cp.currentWorldQuaternion);
+        vec3.scale(v$4, v$4, this.scale);
+        particle.setField(this.fieldOutput, v$4);
     }
 }
 RegisterSource2ParticleOperator('C_OP_RemapControlPointDirectionToVector', RemapControlPointDirectionToVector);
@@ -62117,7 +62172,7 @@ class SetControlPointOrientation extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_SetControlPointOrientation', SetControlPointOrientation);
 
-const v$2 = vec3.create();
+const v$3 = vec3.create();
 class SetControlPointPositions extends Operator {
     useWorldLocation = false;
     orient = false;
@@ -62179,9 +62234,9 @@ class SetControlPointPositions extends Operator {
             cpLocation = this.cpPos[cpIndex];
             let cp = this.system.getControlPoint(cpNumber);
             if (!useWorldLocation) {
-                vec3.transformQuat(v$2, cpLocation, headLocation.currentWorldQuaternion);
-                vec3.add(v$2, v$2, headLocation.currentWorldPosition);
-                cp.position = v$2;
+                vec3.transformQuat(v$3, cpLocation, headLocation.currentWorldQuaternion);
+                vec3.add(v$3, v$3, headLocation.currentWorldPosition);
+                cp.position = v$3;
             }
             else {
                 cp.position = cpLocation;
@@ -62244,7 +62299,7 @@ class SetControlPointsToModelParticles extends Operator {
                     if (this.#followAttachement) {
                         const model = this.system.getParentModel();
                         if (model) {
-                            const attachement = model.getAttachement(this.#attachmentName);
+                            const attachement = model.getAttachement?.(this.#attachmentName);
                             if (attachement) {
                                 childCp.quaternion = attachement.getWorldQuaternion();
                                 childCp.quaternion = particle.quaternion;
@@ -62470,7 +62525,7 @@ class SetPerChildControlPoint extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_SetPerChildControlPoint', SetPerChildControlPoint);
 
-const v$1 = vec3.create();
+const v$2 = vec3.create();
 class SetRandomControlPointPosition extends Operator {
     useWorldLocation = false;
     orient = false;
@@ -62512,12 +62567,12 @@ class SetRandomControlPointPosition extends Operator {
         //TODO: do interpolation
         if ((reRandomRate >= 0 || this.lastRandomTime < 0) && (this.system.currentTime - this.lastRandomTime > reRandomRate)) {
             this.lastRandomTime = this.system.currentTime;
-            vec3RandomBox(v$1, this.cpMinPos, this.cpMaxPos);
+            vec3RandomBox(v$2, this.cpMinPos, this.cpMaxPos);
             let headLocation = this.system.getControlPoint(this.headLocation);
             let cp1 = this.system.getControlPoint(this.cp1);
-            vec3.transformQuat(v$1, v$1, headLocation.currentWorldQuaternion);
-            vec3.add(v$1, v$1, headLocation.currentWorldPosition);
-            cp1.position = v$1;
+            vec3.transformQuat(v$2, v$2, headLocation.currentWorldQuaternion);
+            vec3.add(v$2, v$2, headLocation.currentWorldPosition);
+            cp1.position = v$2;
             if (this.orient) {
                 cp1.setWorldQuaternion(headLocation.currentWorldQuaternion);
             }
@@ -62530,7 +62585,7 @@ class SetRandomControlPointPosition extends Operator {
 RegisterSource2ParticleOperator('C_OP_SetRandomControlPointPosition', SetRandomControlPointPosition);
 
 const DEFAULT_POSITION = vec3.fromValues(128, 0, 0);
-let v = vec3.create();
+let v$1 = vec3.create();
 let tempVec4 = vec4.create();
 class SetSingleControlPointPosition extends Operator {
     useWorldLocation = false;
@@ -62571,9 +62626,9 @@ class SetSingleControlPointPosition extends Operator {
             }
             else {
                 let headCp = this.system.getControlPoint(this.headLocation);
-                vec3.transformQuat(v, cp1Pos, headCp.currentWorldQuaternion);
-                vec3.add(v, v, headCp.currentWorldPosition);
-                cp.position = v;
+                vec3.transformQuat(v$1, cp1Pos, headCp.currentWorldQuaternion);
+                vec3.add(v$1, v$1, headCp.currentWorldPosition);
+                cp.position = v$1;
             }
             this.set = true;
         }
@@ -66972,12 +67027,12 @@ class RenderTargetViewer {
     }
     setRenderTarget(renderTarget) {
         this.#renderTarget = renderTarget;
-        this.#plane.material.setColorMap(renderTarget?.getTexture());
+        this.#plane.material.setColorMap(renderTarget.getTexture());
     }
     setMaterial(material) {
         this.#material = material;
         this.#plane.setMaterial(material);
-        material.setColorMap(this.#renderTarget?.getTexture());
+        material.setColorMap(this.#renderTarget.getTexture());
     }
     getMaterial() {
         return this.#material;
@@ -67008,4 +67063,4 @@ class RenderTargetViewer {
     }
 }
 
-export { ATTRIBUTE_CHANGED, Add, AddVectorToVector, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, Polygonise, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, ProxyManager, PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { ATTRIBUTE_CHANGED, Add, AddVectorToVector, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, Polygonise, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, ProxyManager, PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };

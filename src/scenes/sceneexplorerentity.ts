@@ -12,9 +12,9 @@ import { Lockable } from '../interfaces/lockable';
 
 const MAX_ANIMATIONS = 2;
 
-let id = 0;
+let dataListId = 0;
 function getDataListId() {
-	return `animations-datalist${++id}`;
+	return `animations-datalist${++dataListId}`;
 }
 
 export class SceneExplorerEntity extends HTMLElement {
