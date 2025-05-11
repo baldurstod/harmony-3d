@@ -103,11 +103,10 @@ function initDefaultParameters(defaultParameters, parameters, variables) {
 	}
 }
 
-let defaultTexture;
-
-function getDefaultTexture() {
+let defaultTexture: Texture;
+function getDefaultTexture(): Texture {
 	if (!defaultTexture) {
-		defaultTexture = TextureManager.createCheckerTexture();
+		defaultTexture = TextureManager.createFlatTexture([255, 255, 255]);
 		defaultTexture.addUser(SourceEngineMaterial);
 	}
 	return defaultTexture;
