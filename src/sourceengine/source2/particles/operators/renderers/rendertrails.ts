@@ -21,6 +21,8 @@ import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
 import { Source2SpriteSheet } from '../../../textures/source2spritesheet';
 import { Texture } from '../../../../../textures/texture';
+import { Source2ParticleSystem } from '../../export';
+import { Source2Particle } from '../../source2particle';
 
 const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
@@ -30,17 +32,18 @@ const tempVec2 = vec2.create();
 
 export class RenderTrails extends Operator {
 	geometry: BufferGeometry;
-	setDefaultTexture = true;//TODO: remove this property
+	setDefaultTexture? = true;//TODO: remove this property
 	minLength = 0;
 	maxLength = 2000;
 	lengthFadeInTime = 0;
 	ignoreDT = false;
 	lengthScale = 1;
-	spriteSheet: Source2SpriteSheet;
+	spriteSheet?: Source2SpriteSheet;
 	#maxParticles: number = 1000;//TODO: default value
-	texture: Texture;//TODO: set private ?
-	imgData: Float32Array;//TODO: set private ?
-	constructor(system) {
+	texture?: Texture;//TODO: set private ?
+	imgData?: Float32Array;//TODO: set private ?
+
+	constructor(system: Source2ParticleSystem) {
 		super(system);
 		this.material = new Source2SpriteCard(system.repository);
 		this.geometry = new BufferGeometry();
@@ -54,7 +57,7 @@ export class RenderTrails extends Operator {
 		//this.setParam(OPERATOR_PARAM_SEQUENCE_COMBINE_MODE, SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0);//TODOv3: get the actual default value
 	}
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, value: any) {
 		switch (paramName) {
 			case 'm_vecTexturesInput':
 				if (TESTING && LOG) {
@@ -92,25 +95,25 @@ export class RenderTrails extends Operator {
 		}
 	}
 
-	setSequenceCombineMode(sequenceCombineMode) {
-		this.material.removeDefine('USE_TEXTURE_COORD_2');
+	setSequenceCombineMode(sequenceCombineMode: string) {
+		this.material!.removeDefine('USE_TEXTURE_COORD_2');
 		switch (sequenceCombineMode) {
 			case 'SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1':
-				this.material.setDefine('SEQUENCE_COMBINE_MODE', String(SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1));
-				this.material.setDefine('USE_TEXTURE_COORD_2');
+				this.material!.setDefine('SEQUENCE_COMBINE_MODE', String(SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1));
+				this.material!.setDefine('USE_TEXTURE_COORD_2');
 				break;
 			default:
 				console.error('Unknonw sequenceCombineMode ', sequenceCombineMode);
 		}
 	}
 
-	async setTexture(texturePath) {
+	async setTexture(texturePath: string) {
 		delete this.setDefaultTexture;
-		this.material.setTexturePath(texturePath);
+		this.material!.setTexturePath(texturePath);
 		this.spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
 	}
 
-	updateParticles(particleSystem, particleList, elapsedTime) {//TODOv3
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Array<Source2Particle>, elapsedTime: number) {
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
@@ -118,14 +121,14 @@ export class RenderTrails extends Operator {
 		geometry.count = particleList.length * 6;
 		let maxParticles = this.#maxParticles;
 		this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
-		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
-		this.mesh.setVisible(Source2ParticleManager.visible);
+		this.mesh!.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
+		this.mesh!.setVisible(Source2ParticleManager.visible);
 
 		vec2.set(tempVec2, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
-		this.material.setUniform('uFinalTextureScale', tempVec2);
+		this.material!.setUniform('uFinalTextureScale', tempVec2);
 
-		const uvs = geometry.attributes.get('aTextureCoord')._array;
-		const uvs2 = geometry.attributes.get('aTextureCoord2')._array;
+		const uvs = geometry.attributes.get('aTextureCoord')!._array;
+		const uvs2 = geometry.attributes.get('aTextureCoord2')!._array;
 		let index = 0;
 		let index2 = 0;
 		for (let i = 0; i < particleList.length; i++) {
@@ -139,7 +142,7 @@ export class RenderTrails extends Operator {
 				flAgeScale = rate * SEQUENCE_SAMPLE_COUNT;
 				if (useAnimRate) {
 					particle.frame += elapsedTime * rate;
-					const frameSpan = this.material.getFrameSpan(sequence);
+					const frameSpan = this.material!.getFrameSpan(sequence);
 					if (frameSpan !== null) {
 						flAgeScale = flAgeScale / frameSpan;
 					}
@@ -150,6 +153,7 @@ export class RenderTrails extends Operator {
 
 			let spriteSheet = this.spriteSheet;
 			if (false && spriteSheet) {
+				/*
 				let coords = spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
 				if (coords) {
@@ -183,16 +187,17 @@ export class RenderTrails extends Operator {
 					uvs2[index2++] = uMax;
 					uvs2[index2++] = vMax;
 				}
+				*/
 			} else {
 				index += 8;
 				index2 += 8;
 			}
-			geometry.attributes.get('aTextureCoord').dirty = true;
-			geometry.attributes.get('aTextureCoord2').dirty = true;
+			geometry.attributes.get('aTextureCoord')!.dirty = true;
+			geometry.attributes.get('aTextureCoord2')!.dirty = true;
 		}
 	}
 
-	set maxParticles(maxParticles) {
+	set maxParticles(maxParticles: number) {
 		this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
 		this.#createParticlesArray();
 		this._initBuffers();
@@ -220,15 +225,15 @@ export class RenderTrails extends Operator {
 		geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2));
 		geometry.setAttribute('aTextureCoord2', new Float32BufferAttribute(uvs2, 2));
 		geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1));
-		this.mesh.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
+		this.mesh!.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 
-	initRenderer(particleSystem) {
-		this.mesh.serializable = false;
-		this.mesh.hideInExplorer = true;
-		this.mesh.setDefine('HARDWARE_PARTICLES');
+	initRenderer(particleSystem: Source2ParticleSystem) {
+		this.mesh!.serializable = false;
+		this.mesh!.hideInExplorer = true;
+		this.mesh!.setDefine('HARDWARE_PARTICLES');
 		this.createParticlesTexture();
-		this.mesh.setUniform('uParticles', this.texture);
+		this.mesh!.setUniform('uParticles', this.texture!);
 
 		this.maxParticles = particleSystem.maxParticles;
 		particleSystem.addChild(this.mesh);
@@ -250,17 +255,17 @@ export class RenderTrails extends Operator {
 	updateParticlesTexture() {
 		const gl = new Graphics().glContext;
 
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.texture!.texture);
 		if (new Graphics().isWebGL2) {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData!);
 		} else {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData!);
 		}
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	setupParticlesTexture(particleList, maxParticles, elapsedTime) {
-		const a = this.imgData;
+	setupParticlesTexture(particleList: Array<Source2Particle>, maxParticles: number, elapsedTime: number) {
+		const a = this.imgData!;
 		const m_flMaxLength = this.maxLength;
 		const m_flMinLength = this.minLength;
 		const m_flLengthFadeInTime = this.lengthFadeInTime;
