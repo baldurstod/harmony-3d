@@ -145,7 +145,7 @@ export class RenderRopes extends Operator {
 			this.mesh.setDefine('IS_ROPE');
 			this.mesh.setDefine('USE_VERTEX_COLOR');
 			this.createParticlesTexture();
-			this.mesh.setUniform('uParticles', this.#texture);
+			this.mesh.setUniform('uParticles', this.#texture!);
 		}
 
 		this.maxParticles = particleSystem.maxParticles;
