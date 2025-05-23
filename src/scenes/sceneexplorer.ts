@@ -155,8 +155,8 @@ export class SceneExplorer {
 		}
 	}
 
-	get htmlElement() {
-		return this.#shadowRoot.host;
+	get htmlElement(): HTMLElement {
+		return this.#shadowRoot.host as HTMLElement;
 	}
 
 	#initHtml() {

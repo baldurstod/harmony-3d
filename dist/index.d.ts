@@ -6267,7 +6267,7 @@ declare class Choreography {
              set scene(scene: Scene);
              setScene(scene: Scene): void;
              get scene(): Scene | undefined;
-             get htmlElement(): Element;
+             get htmlElement(): HTMLElement;
              applyFilter(): void;
              selectEntity(entity: Entity, scrollIntoView?: boolean): void;
              getSelectedEntity(): Entity;
