@@ -267,7 +267,7 @@ const BYTES_PER_VERTEX_COORD = VERTEX_COORD_LEN * 4;
 const BYTES_PER_VERTEX_BONE_INDICE = VERTEX_BONE_INDICE_LEN * 4;
 const BYTES_PER_VERTEX_BONE_WEIGHT = VERTEX_BONE_WEIGHT_LEN * 4;
 const BYTES_PER_INDEX = 1 * 4;
-function loadVbib(reader, block) {
+function loadVbib(reader: BinaryReader, block) {
 
 	var VERTEX_HEADER_SIZE = 24;
 	var INDEX_HEADER_SIZE = 24;
@@ -286,7 +286,8 @@ function loadVbib(reader, block) {
 		reader.seek(vertexOffset + i * VERTEX_HEADER_SIZE);
 		var s1: any = {};
 		s1.vertexCount = reader.getInt32();
-		s1.bytesPerVertex = reader.getInt32();
+		s1.bytesPerVertex = reader.getInt16();
+		reader.skip(2);// TODO: figure out what it is. Used to be 0, now 1024 for pudge model spring 2025
 		s1.headerOffset = reader.tell() + reader.getInt32();
 		s1.headerCount = reader.getInt32();
 		s1.dataOffset = reader.tell() + reader.getInt32();
@@ -890,6 +891,9 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
 		imageDatas = new Uint8Array(buf);
 		decodeLz4(reader, imageDatas, compressedLength, entrySize);
 		reader.seek(start + compressedLength);// decoder may overread, place the reader at the start of the next image block
+		if ((start + compressedLength) != reader.tell()) {
+			console.error('error decoding texture: wrong decompressed size: ', start, compressedLength, entrySize);
+		}
 	}
 
 	if (imageDatas && imageFormat == VTEX_FORMAT_BGRA8888) {

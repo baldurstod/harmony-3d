@@ -5966,26 +5966,26 @@ declare class Choreography {
          export declare class RenderTrails extends Operator {
              #private;
              geometry: BufferGeometry;
-             setDefaultTexture: boolean;
+             setDefaultTexture?: boolean;
              minLength: number;
              maxLength: number;
              lengthFadeInTime: number;
              ignoreDT: boolean;
              lengthScale: number;
-             spriteSheet: Source2SpriteSheet;
-             texture: Texture;
-             imgData: Float32Array;
-             constructor(system: any);
-             _paramChanged(paramName: any, value: any): void;
-             setSequenceCombineMode(sequenceCombineMode: any): void;
-             setTexture(texturePath: any): Promise<void>;
-             updateParticles(particleSystem: any, particleList: any, elapsedTime: any): void;
-             set maxParticles(maxParticles: any);
+             spriteSheet?: Source2SpriteSheet;
+             texture?: Texture;
+             imgData?: Float32Array;
+             constructor(system: Source2ParticleSystem);
+             _paramChanged(paramName: string, value: any): void;
+             setSequenceCombineMode(sequenceCombineMode: string): void;
+             setTexture(texturePath: string): Promise<void>;
+             updateParticles(particleSystem: Source2ParticleSystem, particleList: Array<Source2Particle>, elapsedTime: number): void;
+             set maxParticles(maxParticles: number);
              _initBuffers(): void;
-             initRenderer(particleSystem: any): void;
+             initRenderer(particleSystem: Source2ParticleSystem): void;
              createParticlesTexture(): void;
              updateParticlesTexture(): void;
-             setupParticlesTexture(particleList: any, maxParticles: any, elapsedTime: any): void;
+             setupParticlesTexture(particleList: Array<Source2Particle>, maxParticles: number, elapsedTime: number): void;
              init(): void;
          }
 

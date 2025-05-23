@@ -22120,7 +22120,8 @@ function loadVbib(reader, block) {
         reader.seek(vertexOffset + i * VERTEX_HEADER_SIZE);
         var s1 = {};
         s1.vertexCount = reader.getInt32();
-        s1.bytesPerVertex = reader.getInt32();
+        s1.bytesPerVertex = reader.getInt16();
+        reader.skip(2); // TODO: figure out what it is. Used to be 0, now 1024 for pudge model spring 2025
         s1.headerOffset = reader.tell() + reader.getInt32();
         s1.headerCount = reader.getInt32();
         s1.dataOffset = reader.tell() + reader.getInt32();
