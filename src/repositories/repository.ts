@@ -94,7 +94,7 @@ export class RepositoryEntry {
 		do {
 			current = stack.pop();
 			if (current && !childs.has(current)) {
-				if ((filter === undefined) ||current.#matchFilter(filter)) {
+				if ((filter === undefined) || current.#matchFilter(filter)) {
 					childs.add(current);
 				}
 				for (const [_, child] of current.#childs) {

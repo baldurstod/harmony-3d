@@ -18976,6 +18976,14 @@ class Triangles extends Mesh {
     }
 }
 
+let loaders = new Map();
+function registerLoader(name, loader) {
+    loaders.set(name, loader);
+}
+function getLoader(name) {
+    return loaders.get(name);
+}
+
 class OverrideRepository {
     #base;
     #overrides = new Map();
@@ -19057,6 +19065,28 @@ class ManifestRepository {
         }
         const json = response.root.toJSON();
         this.#base.overrideFile(name, new File([JSON.stringify(json)], name));
+        return null;
+    }
+    async generateParticlesManifest(filename = 'particles/manifest.json', filter) {
+        const response = await this.#base.getFileList(filter);
+        if (response.error) {
+            return response.error;
+        }
+        const files = response.root.getAllChilds({ extension: 'pcf', directories: false });
+        const manifestFiles = [];
+        for (const file of files) {
+            const pcfLoader = getLoader('SourceEnginePCFLoader');
+            const pcf = await new pcfLoader().load(this.name, file.getFullName());
+            const systems = [];
+            for (const name in pcf.systems) {
+                systems.push(name);
+            }
+            manifestFiles.push({
+                name: file.getName(),
+                particlesystemdefinitions: systems,
+            });
+        }
+        this.#base.overrideFile(filename, new File([JSON.stringify({ files: manifestFiles })], filename));
         return null;
     }
 }
@@ -20193,14 +20223,6 @@ class WireframeHelper extends Entity {
     static getEntityName() {
         return 'Wireframe helper';
     }
-}
-
-let loaders = new Map();
-function registerLoader(name, loader) {
-    loaders.set(name, loader);
-}
-function getLoader(name) {
-    return loaders.get(name);
 }
 
 class Source1ModelManager {
@@ -25323,8 +25345,8 @@ class Source1ParticleControler {
     }
     static async getSystemList() {
         let repoList = [];
-        let pcfs = {};
         for (let repoName in this.#systemNameToPcf) {
+            let pcfs = {};
             await this.#loadManifest(repoName);
             let repo = this.#systemNameToPcf[repoName];
             for (let systemName in repo) {
@@ -55275,7 +55297,7 @@ function executeDynamicExpression(byteCode, renderAttributes = []) {
             case 22: // /
                 divide();
                 break;
-            case 23: // /
+            case 23: // %
                 modulo();
                 break;
             case 24: // negate

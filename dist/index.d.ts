@@ -3565,6 +3565,7 @@ declare class Choreography {
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
              getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
              generateModelManifest(name?: string, filter?: RepositoryFilter): Promise<RepositoryError | null>;
+             generateParticlesManifest(filename?: string, filter?: RepositoryFilter): Promise<RepositoryError | null>;
          }
 
          export declare class Manipulator extends Entity {
@@ -7893,7 +7894,7 @@ declare class Choreography {
 
          declare class SourceBinaryLoader {
              repository: string;
-             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP>;
+             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP | SourcePCF>;
              parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP;
          }
 
@@ -9755,12 +9756,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#235@#webAssembly"?: any;
-             "__#235@#HEAPU8"?: Uint8Array;
+             "__#236@#webAssembly"?: any;
+             "__#236@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#235@#initHeap"(): void;
+             "__#236@#initHeap"(): void;
          };
 
          export { }

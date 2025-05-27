@@ -21,14 +21,14 @@ export class OverrideRepository implements Repository {
 
 	async getFile(filename: string): Promise<RepositoryArrayBufferResponse> {
 		if (this.#overrides.has(filename)) {
-			return { buffer: await this.#overrides.get(filename).arrayBuffer() };
+			return { buffer: await this.#overrides.get(filename)!.arrayBuffer() };
 		}
 		return this.#base.getFile(filename);
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
 		if (this.#overrides.has(filename)) {
-			return { text: await this.#overrides.get(filename).text() };
+			return { text: await this.#overrides.get(filename)!.text() };
 		}
 		return this.#base.getFileAsText(filename);
 	}
@@ -42,7 +42,7 @@ export class OverrideRepository implements Repository {
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
 		if (this.#overrides.has(filename)) {
-			return { json: JSON.parse(await this.#overrides.get(filename).text()) };
+			return { json: JSON.parse(await this.#overrides.get(filename)!.text()) };
 		}
 		return this.#base.getFileAsJson(filename);
 	}

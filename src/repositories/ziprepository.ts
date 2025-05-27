@@ -8,6 +8,7 @@ export class ZipRepository implements Repository {
 	#zipEntries = new Map<string, File>();
 	#initPromiseResolve?: (value: boolean) => void;
 	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
+
 	constructor(name: string, zip: File) {
 		this.#name = name;
 		this.#zip = zip;
