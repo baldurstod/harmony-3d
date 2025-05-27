@@ -112,7 +112,7 @@ export function executeDynamicExpression(byteCode, renderAttributes = []) {
 			case 22: // /
 				divide();
 				break;
-			case 23: // /
+			case 23: // %
 				modulo();
 				break;
 			case 24: // negate
