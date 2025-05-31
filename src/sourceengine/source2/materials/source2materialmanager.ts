@@ -1,7 +1,7 @@
 import { Source2MaterialLoader } from '../loaders/source2materialloader';
 import { Source2Material } from './source2material';
 
-function cleanSource2MaterialName(name) {
+function cleanSource2MaterialName(name: string) {
 	name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmat_c$/g, '').replace(/.vmat$/g, '');
 	name = name + '.vmat_c';
 	return name;
@@ -15,11 +15,11 @@ export class Source2MaterialManager {
 		this.#materialList2.add(material);
 	}
 
-	static removeMaterial(material) {
+	static removeMaterial(material: Source2Material) {
 		this.#materialList2.delete(material);
 	}
 
-	static getMaterial(repository, fileName, searchPaths?): Promise<Source2Material> {
+	static getMaterial(repository: string, fileName: string, searchPaths?: Array<string>): Promise<Source2Material | null> {//TODO: remove searchPaths ?
 		console.assert(searchPaths == null, 'searchPaths must be null');//TODOv3 remove searchPaths
 		fileName = cleanSource2MaterialName(fileName);
 		if (searchPaths) {
@@ -27,7 +27,7 @@ export class Source2MaterialManager {
 			for (let searchPath of searchPaths) {
 				promises.push(this.#getMaterial(repository, 'materials/' + searchPath + fileName));
 			}
-			let promise = new Promise<Source2Material>(resolve => {
+			let promise = new Promise<Source2Material | null>(resolve => {
 				Promise.allSettled(promises).then(
 					(promises) => {
 						for (let promise of promises) {
@@ -45,7 +45,7 @@ export class Source2MaterialManager {
 		}
 	}
 
-	static #getMaterial(repository, fileName): Promise<Source2Material> {
+	static #getMaterial(repository: string, fileName: string): Promise<Source2Material> {
 		let material = this.#materialList.get(fileName);
 		if (material instanceof Promise) {
 			let promise = new Promise<Source2Material>((resolve, reject) => {
