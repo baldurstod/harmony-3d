@@ -4,6 +4,7 @@ export enum RepositoryError {
 	NotSupported,
 }
 
+export type RepositoryFileResponse = { file?: File | null, error?: RepositoryError };
 export type RepositoryArrayBufferResponse = { buffer?: ArrayBuffer | null, error?: RepositoryError };
 export type RepositoryTextResponse = { text?: string | null, error?: RepositoryError };
 export type RepositoryBlobResponse = { blob?: Blob | null, error?: RepositoryError };
@@ -14,6 +15,7 @@ export type RepositoryFilter = { name?: string | RegExp, extension?: string | Re
 
 export interface Repository {
 	name: string;
+	getFile: (filepath: string) => Promise<RepositoryFileResponse>;
 	getFileAsArrayBuffer: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
 	getFileAsText: (filepath: string) => Promise<RepositoryTextResponse>;
 	getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;

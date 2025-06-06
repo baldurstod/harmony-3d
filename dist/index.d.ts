@@ -3559,6 +3559,7 @@ declare class Choreography {
              #private;
              constructor(base: Repository);
              get name(): string;
+             getFile(filename: string): Promise<RepositoryFileResponse>;
              getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse>;
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
@@ -3966,6 +3967,7 @@ declare class Choreography {
              #private;
              constructor(name: string, ...repositories: Array<Repository>);
              get name(): string;
+             getFile(filename: string): Promise<RepositoryFileResponse>;
              getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse>;
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
@@ -4789,6 +4791,7 @@ declare class Choreography {
              #private;
              constructor(base: Repository);
              get name(): string;
+             getFile(filename: string): Promise<RepositoryFileResponse>;
              getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse>;
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
@@ -6003,6 +6006,7 @@ declare class Choreography {
 
          export declare interface Repository {
              name: string;
+             getFile: (filepath: string) => Promise<RepositoryFileResponse>;
              getFileAsArrayBuffer: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
              getFileAsText: (filepath: string) => Promise<RepositoryTextResponse>;
              getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;
@@ -6044,6 +6048,11 @@ declare class Choreography {
 
          export declare type RepositoryFileListResponse = {
              root?: RepositoryEntry;
+             error?: RepositoryError;
+         };
+
+         export declare type RepositoryFileResponse = {
+             file?: File | null;
              error?: RepositoryError;
          };
 
@@ -9572,6 +9581,7 @@ declare class Choreography {
              #private;
              constructor(name: string, files: Array<File>);
              get name(): string;
+             getFile(filename: string): Promise<RepositoryFileResponse>;
              getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse>;
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
@@ -9703,6 +9713,7 @@ declare class Choreography {
              constructor(name: string, base: string);
              get name(): string;
              get base(): string;
+             getFile(fileName: string): Promise<RepositoryFileResponse>;
              getFileAsArrayBuffer(fileName: string): Promise<RepositoryArrayBufferResponse>;
              getFileAsText(fileName: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
@@ -9744,6 +9755,7 @@ declare class Choreography {
              #private;
              constructor(name: string, zip: File);
              get name(): string;
+             getFile(filename: string): Promise<RepositoryFileResponse>;
              getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse>;
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;

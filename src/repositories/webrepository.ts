@@ -1,5 +1,5 @@
 import { customFetch } from '../utils/customfetch';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class WebRepository implements Repository {
 	#name: string;
@@ -15,6 +15,20 @@ export class WebRepository implements Repository {
 
 	get base() {
 		return this.#base;
+	}
+
+	async getFile(fileName: string): Promise<RepositoryFileResponse> {
+		const url = new URL(fileName, this.#base);
+		const response = await customFetch(url);
+		if (response.ok) {
+			return { file: new File([new Uint8Array(await response.arrayBuffer())], fileName) };
+		} else {
+			let error: RepositoryError = RepositoryError.UnknownError;
+			if (response.status == 404) {
+				error = RepositoryError.FileNotFound
+			}
+			return { error: error };
+		}
 	}
 
 	async getFileAsArrayBuffer(fileName: string): Promise<RepositoryArrayBufferResponse> {

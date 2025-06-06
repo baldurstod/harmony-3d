@@ -18993,6 +18993,12 @@ class OverrideRepository {
     get name() {
         return this.#base.name;
     }
+    async getFile(filename) {
+        if (this.#overrides.has(filename)) {
+            return { file: this.#overrides.get(filename) };
+        }
+        return this.#base.getFile(filename);
+    }
     async getFileAsArrayBuffer(filename) {
         if (this.#overrides.has(filename)) {
             return { buffer: await this.#overrides.get(filename).arrayBuffer() };
@@ -19007,9 +19013,9 @@ class OverrideRepository {
     }
     async getFileAsBlob(filename) {
         if (this.#overrides.has(filename)) {
-            return { blob: await this.#overrides.get(filename) };
+            return { blob: this.#overrides.get(filename) };
         }
-        return this.#base.getFileAsText(filename);
+        return this.#base.getFileAsBlob(filename);
     }
     async getFileAsJson(filename) {
         if (this.#overrides.has(filename)) {
@@ -19034,6 +19040,9 @@ class ManifestRepository {
     }
     get name() {
         return this.#base.name;
+    }
+    async getFile(filename) {
+        return this.#base.getFile(filename);
     }
     async getFileAsArrayBuffer(filename) {
         return this.#base.getFileAsArrayBuffer(filename);
@@ -19240,6 +19249,15 @@ class MergeRepository {
     get name() {
         return this.#name;
     }
+    async getFile(filename) {
+        for (const repository of this.#repositories) {
+            const response = await repository.getFile(filename);
+            if (!response.error) {
+                return response;
+            }
+        }
+        return { error: RepositoryError.FileNotFound };
+    }
     async getFileAsArrayBuffer(filename) {
         for (const repository of this.#repositories) {
             const response = await repository.getFileAsArrayBuffer(filename);
@@ -19356,6 +19374,14 @@ class VpkRepository {
     get name() {
         return this.#name;
     }
+    async getFile(filename) {
+        await this.#initPromise;
+        const response = await this.#vpk.getFile(cleanupFilename$1(filename));
+        if (response.error) {
+            return { error: RepositoryError.FileNotFound };
+        }
+        return { file: response.file };
+    }
     async getFileAsArrayBuffer(filename) {
         await this.#initPromise;
         const response = await this.#vpk.getFile(cleanupFilename$1(filename));
@@ -19415,6 +19441,20 @@ class WebRepository {
     }
     get base() {
         return this.#base;
+    }
+    async getFile(fileName) {
+        const url = new URL(fileName, this.#base);
+        const response = await customFetch(url);
+        if (response.ok) {
+            return { file: new File([new Uint8Array(await response.arrayBuffer())], fileName) };
+        }
+        else {
+            let error = RepositoryError.UnknownError;
+            if (response.status == 404) {
+                error = RepositoryError.FileNotFound;
+            }
+            return { error: error };
+        }
     }
     async getFileAsArrayBuffer(fileName) {
         const url = new URL(fileName, this.#base);
@@ -19504,6 +19544,11 @@ class ZipRepository {
     }
     get name() {
         return this.#name;
+    }
+    async getFile(filename) {
+        await this.#initPromise;
+        cleanupFilename(filename);
+        throw 'code me';
     }
     async getFileAsArrayBuffer(filename) {
         await this.#initPromise;

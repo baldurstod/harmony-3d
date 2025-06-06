@@ -1,5 +1,5 @@
 import { Vpk } from 'harmony-vpk';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class VpkRepository implements Repository {
 	#name: string;
@@ -23,6 +23,15 @@ export class VpkRepository implements Repository {
 
 	get name() {
 		return this.#name;
+	}
+
+	async getFile(filename: string): Promise<RepositoryFileResponse> {
+		await this.#initPromise;
+		const response = await this.#vpk.getFile(cleanupFilename(filename));
+		if (response.error) {
+			return { error: RepositoryError.FileNotFound };
+		}
+		return { file: response.file };
 	}
 
 	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {

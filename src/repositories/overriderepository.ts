@@ -1,14 +1,22 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class OverrideRepository implements Repository {
 	#base: Repository;
 	#overrides = new Map<string, File>();
+
 	constructor(base: Repository) {
 		this.#base = base;
 	}
 
 	get name() {
 		return this.#base.name;
+	}
+
+	async getFile(filename: string): Promise<RepositoryFileResponse> {
+		if (this.#overrides.has(filename)) {
+			return { file: this.#overrides.get(filename) };
+		}
+		return this.#base.getFile(filename);
 	}
 
 	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
@@ -27,9 +35,9 @@ export class OverrideRepository implements Repository {
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
 		if (this.#overrides.has(filename)) {
-			return { blob: await this.#overrides.get(filename) };
+			return { blob: this.#overrides.get(filename) };
 		}
-		return this.#base.getFileAsText(filename);
+		return this.#base.getFileAsBlob(filename);
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {

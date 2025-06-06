@@ -2,7 +2,7 @@ import { getLoader } from '../loaders/loaderfactory';
 import { SourceEnginePCFLoader } from '../sourceengine/export';
 import { SourcePCF } from '../sourceengine/source1/loaders/sourcepcf';
 import { OverrideRepository } from './overriderepository';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class ManifestRepository implements Repository {
 	#base: OverrideRepository;
@@ -13,6 +13,10 @@ export class ManifestRepository implements Repository {
 
 	get name() {
 		return this.#base.name;
+	}
+
+	async getFile(filename: string): Promise<RepositoryFileResponse> {
+		return this.#base.getFile(filename);
 	}
 
 	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {

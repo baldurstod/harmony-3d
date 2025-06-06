@@ -1,5 +1,5 @@
 import { BlobReader, BlobWriter, ZipReader, ZipReaderGetEntriesOptions } from '@zip.js/zip.js';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class ZipRepository implements Repository {
 	#name: string;
@@ -33,6 +33,13 @@ export class ZipRepository implements Repository {
 
 	get name() {
 		return this.#name;
+	}
+
+	async getFile(filename: string): Promise<RepositoryFileResponse> {
+		await this.#initPromise;
+		cleanupFilename(filename);
+		throw 'code me';
+		return { file: null };
 	}
 
 	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
