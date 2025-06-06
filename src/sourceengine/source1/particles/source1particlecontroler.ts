@@ -140,7 +140,7 @@ export class Source1ParticleControler {
 			this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
 
 
-			const response = await new Repositories().getFileAsJson(repositoryName, 'particles/manifest.json');//TODO const
+			const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json');//TODO const
 			if (response.error) {
 				reject(false);
 			}

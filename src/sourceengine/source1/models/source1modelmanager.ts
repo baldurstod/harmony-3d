@@ -58,7 +58,7 @@ export class Source1ModelManager {
 		const repoList = [];
 		for (const [repositoryName, repo] of this.#modelListPerRepository) {
 			if (repo === null) {
-				const response = await new Repositories().getFileAsJson(repositoryName, 'models_manifest.json');
+				const response = await Repositories.getFileAsJson(repositoryName, 'models_manifest.json');
 				if (!response.error) {
 					this.#modelListPerRepository.set(repositoryName, response.json);
 					repoList.push({ name: repositoryName, files: [response.json] });

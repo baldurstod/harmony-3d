@@ -92,7 +92,7 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 			*/
 
 		//const manifestUrl = new URL('particles_manifest.json', repository.base);//todo variable
-		const response = await new Repositories().getFileAsJson(repositoryName, 'particles_manifest.json');//TODO const
+		const response = await Repositories.getFileAsJson(repositoryName, 'particles_manifest.json');//TODO const
 
 		//const response = await customFetch(new Request(manifestUrl));
 

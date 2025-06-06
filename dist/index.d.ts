@@ -5992,14 +5992,13 @@ declare class Choreography {
 
          export declare class Repositories {
              #private;
-             constructor();
-             addRepository(repo: Repository): void;
-             getRepository(name: string): Repository;
-             getRepositoryList(): string[];
-             getFile(repositoryName: string, filepath: string): Promise<RepositoryArrayBufferResponse>;
-             getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryTextResponse>;
-             getFileAsBlob(repositoryName: string, filepath: string): Promise<RepositoryBlobResponse>;
-             getFileAsJson(repositoryName: string, filepath: string): Promise<RepositoryJsonResponse>;
+             static addRepository(repo: Repository): void;
+             static getRepository(name: string): Repository;
+             static getRepositoryList(): string[];
+             static getFile(repositoryName: string, filepath: string): Promise<RepositoryArrayBufferResponse>;
+             static getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryTextResponse>;
+             static getFileAsBlob(repositoryName: string, filepath: string): Promise<RepositoryBlobResponse>;
+             static getFileAsJson(repositoryName: string, filepath: string): Promise<RepositoryJsonResponse>;
          }
 
          export declare interface Repository {
@@ -7213,8 +7212,8 @@ declare class Choreography {
          export declare class Source2MaterialManager {
              #private;
              static addMaterial(material: Source2Material): void;
-             static removeMaterial(material: any): void;
-             static getMaterial(repository: any, fileName: any, searchPaths?: any): Promise<Source2Material>;
+             static removeMaterial(material: Source2Material): void;
+             static getMaterial(repository: string, fileName: string, searchPaths?: Array<string>): Promise<Source2Material | null>;
          }
 
          declare class Source2Model {

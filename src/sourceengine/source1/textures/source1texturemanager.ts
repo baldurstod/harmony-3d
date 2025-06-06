@@ -13,6 +13,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 	#defaultTexture;
 	#defaultTextureCube;
 	fallbackRepository: string;
+
 	constructor() {
 		super();
 		new Graphics().ready.then(() => {

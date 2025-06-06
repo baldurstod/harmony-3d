@@ -19303,45 +19303,38 @@ class MergeRepository {
 }
 
 class Repositories {
-    static #instance;
-    #repositories = {};
-    constructor() {
-        if (Repositories.#instance) {
-            return Repositories.#instance;
-        }
-        Repositories.#instance = this;
-    }
-    addRepository(repo) {
+    static #repositories = {};
+    static addRepository(repo) {
         this.#repositories[repo.name] = repo;
     }
-    getRepository(name) {
+    static getRepository(name) {
         return this.#repositories[name];
     }
-    getRepositoryList() {
+    static getRepositoryList() {
         return Object.keys(this.#repositories);
     }
-    async getFile(repositoryName, filepath) {
+    static async getFile(repositoryName, filepath) {
         const repo = this.#repositories[repositoryName];
         if (!repo) {
             return null;
         }
         return repo?.getFile(filepath);
     }
-    async getFileAsText(repositoryName, filepath) {
+    static async getFileAsText(repositoryName, filepath) {
         const repo = this.#repositories[repositoryName];
         if (!repo) {
             return null;
         }
         return repo?.getFileAsText(filepath);
     }
-    async getFileAsBlob(repositoryName, filepath) {
+    static async getFileAsBlob(repositoryName, filepath) {
         const repo = this.#repositories[repositoryName];
         if (!repo) {
             return null;
         }
         return repo?.getFileAsBlob(filepath);
     }
-    async getFileAsJson(repositoryName, filepath) {
+    static async getFileAsJson(repositoryName, filepath) {
         const repo = this.#repositories[repositoryName];
         if (!repo) {
             return null;
@@ -20273,7 +20266,7 @@ class Source1ModelManager {
         const repoList = [];
         for (const [repositoryName, repo] of this.#modelListPerRepository) {
             if (repo === null) {
-                const response = await new Repositories().getFileAsJson(repositoryName, 'models_manifest.json');
+                const response = await Repositories.getFileAsJson(repositoryName, 'models_manifest.json');
                 if (!response.error) {
                     this.#modelListPerRepository.set(repositoryName, response.json);
                     repoList.push({ name: repositoryName, files: [response.json] });
@@ -20292,7 +20285,7 @@ class SourceBinaryLoader {
     async load(repositoryName, fileName) {
         this.repository = repositoryName;
         let promise = new Promise(resolve => {
-            const p = new Repositories().getFile(repositoryName, fileName);
+            const p = Repositories.getFile(repositoryName, fileName);
             p.then((response) => {
                 if (!response.error) {
                     resolve(this.parse(repositoryName, fileName, response.buffer));
@@ -25116,7 +25109,7 @@ class Source2ModelManager {
                     */
                 //let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
                 //repo = await response.json();
-                const response = await new Repositories().getFileAsJson(repositoryName, 'models_manifest.json'); //todo variable
+                const response = await Repositories.getFileAsJson(repositoryName, 'models_manifest.json'); //todo variable
                 if (!response.error) {
                     this.#modelListPerRepository[repositoryName] = response.json;
                     repo = response.json;
@@ -25249,7 +25242,7 @@ class Source1ParticleControler {
         this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
             let systemNameToPcfRepo = {};
             this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
-            const response = await new Repositories().getFileAsJson(repositoryName, 'particles/manifest.json'); //TODO const
+            const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json'); //TODO const
             if (response.error) {
                 reject(false);
             }
@@ -25443,7 +25436,7 @@ class Source2ParticleManagerClass {
         }
             */
         //const manifestUrl = new URL('particles_manifest.json', repository.base);//todo variable
-        const response = await new Repositories().getFileAsJson(repositoryName, 'particles_manifest.json'); //TODO const
+        const response = await Repositories.getFileAsJson(repositoryName, 'particles_manifest.json'); //TODO const
         //const response = await customFetch(new Request(manifestUrl));
         if (response.error) {
             return;
@@ -30579,7 +30572,7 @@ class Source1SoundManager {
             let audio = this.#audioList.get(wave);
             //audio = null;//removeme
             if (!audio) {
-                const response = await new Repositories().getFileAsBlob(sound.getRepository(), '/sound/' + wave);
+                const response = await Repositories.getFileAsBlob(sound.getRepository(), '/sound/' + wave);
                 if (!response.error) {
                     audio = new Audio(URL.createObjectURL(response.blob) /*new URL('/sound/' + wave, repository.base).toString()*/);
                     this.#audioList.set(wave, audio);
@@ -30621,7 +30614,7 @@ class Source1SoundManager {
         promiseResolve(true);
     }
     static async #fetchManifest(repositoryName, manifestPath) {
-        const response = await new Repositories().getFileAsText(repositoryName, manifestPath);
+        const response = await Repositories.getFileAsText(repositoryName, manifestPath);
         if (!response.error) {
             this.#loadManifest(repositoryName, response.text);
         }
@@ -31662,7 +31655,7 @@ class Choreographies {
             return null;
         }
             */
-        const respone = await new Repositories().getFile(repositoryName, fileName);
+        const respone = await Repositories.getFile(repositoryName, fileName);
         if (respone.error) {
             return null;
         }
@@ -40273,7 +40266,7 @@ class SourceEngineVMTLoaderClass {
             }
                 */
             //let req = customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
-            const response = await new Repositories().getFileAsText(repositoryName, fileName);
+            const response = await Repositories.getFileAsText(repositoryName, fileName);
             if (!response.error) {
                 this.parse(resolve, repositoryName, fileName, response.text);
             }

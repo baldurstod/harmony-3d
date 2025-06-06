@@ -92,7 +92,7 @@ export class Source2ModelManager {
 
 				//let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
 				//repo = await response.json();
-				const response = await new Repositories().getFileAsJson(repositoryName, 'models_manifest.json');//todo variable
+				const response = await Repositories.getFileAsJson(repositoryName, 'models_manifest.json');//todo variable
 				if (!response.error) {
 					this.#modelListPerRepository[repositoryName] = response.json;
 					repo = response.json;
