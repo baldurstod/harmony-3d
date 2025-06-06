@@ -3963,6 +3963,21 @@ declare class Choreography {
              originalName: any;
          }
 
+         /**
+          * Cache the result of the underlying repository
+          */
+         export declare class MemoryCacheRepository implements Repository {
+             #private;
+             constructor(base: Repository);
+             get name(): string;
+             getFile(filename: string): Promise<RepositoryFileResponse>;
+             getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse>;
+             getFileAsText(filename: string): Promise<RepositoryTextResponse>;
+             getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
+             getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
+             getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+         }
+
          export declare class MergeRepository implements Repository {
              #private;
              constructor(name: string, ...repositories: Array<Repository>);

@@ -1,4 +1,5 @@
 export * from './manifestrepository';
+export * from './memorycacherepository';
 export * from './mergerepository';
 export * from './overriderepository';
 export * from './repositories';
