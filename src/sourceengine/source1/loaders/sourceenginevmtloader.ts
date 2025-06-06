@@ -9,15 +9,6 @@ class SourceEngineVMTLoaderClass {
 	#extraMaterials = new Map<string, string>();
 
 	load(repositoryName, fileName) {
-		//let fullPathName = repository + fileName;
-		/*
-		const repository = new Repositories().getRepository(repositoryName);
-		if (!repository) {
-			console.error(`Unknown repository ${repositoryName} in SourceEngineVMTLoader.load`);
-			return null;
-		}
-			*/
-
 		let promise = new Promise(async (resolve, reject) => {
 			/*
 			const requestCallback = async response => {

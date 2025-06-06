@@ -83,13 +83,6 @@ export class Source2ModelManager {
 		for (let repositoryName in modelListPerRepository) {
 			let repo = modelListPerRepository[repositoryName];
 			if (repo === null) {
-				/*
-				const repository = new Repositories().getRepository(repositoryName);
-				if (!repository) {
-					continue;
-				}
-					*/
-
 				//let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
 				//repo = await response.json();
 				const response = await Repositories.getFileAsJson(repositoryName, 'models_manifest.json');//todo variable

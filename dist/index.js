@@ -25101,12 +25101,6 @@ class Source2ModelManager {
         for (let repositoryName in modelListPerRepository) {
             let repo = modelListPerRepository[repositoryName];
             if (repo === null) {
-                /*
-                const repository = new Repositories().getRepository(repositoryName);
-                if (!repository) {
-                    continue;
-                }
-                    */
                 //let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
                 //repo = await response.json();
                 const response = await Repositories.getFileAsJson(repositoryName, 'models_manifest.json'); //todo variable
@@ -25428,13 +25422,6 @@ class Source2ParticleManagerClass {
         }
     }
     async #loadManifest(repositoryName) {
-        /*
-        const repository = new Repositories().getRepository(repositoryName);
-        if (!repository) {
-            console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
-            return;
-        }
-            */
         //const manifestUrl = new URL('particles_manifest.json', repository.base);//todo variable
         const response = await Repositories.getFileAsJson(repositoryName, 'particles_manifest.json'); //TODO const
         //const response = await customFetch(new Request(manifestUrl));
@@ -30643,58 +30630,6 @@ class Source1SoundManager {
             sounds?.set(soundKey, s);
         }
     }
-    /**
-     * Load soundManifest
-     */
-    /*
-
-        static loadManifest(repositoryName, fileName) {
-            const callback =
-                async (response) => {
-                    if (!response.ok) {
-                        return;
-                    }
-                    let arg1 = await response.text();
-                    if (arg1) {
-                        const kv = new KvReader();
-                        kv.readText(arg1);
-                        const list = kv.rootElements//['Demoman.Death'];
-                        const keyArray = Object.keys(list);
-                        for (let i = 0; i < keyArray.length; ++i) {
-                            const soundKey = keyArray[i];
-                            const sound = list[soundKey];
-                            let wave;
-                            if (sound.rndwave) {
-                                wave = [];
-                                Object.keys(sound.rndwave).forEach(function(element) {
-                                    wave.push(sound.rndwave[element]);
-                                });
-                            } else {
-                                wave = sound.wave;
-                            }
-                            //const wave = sound.rndwave ? sound.rndwave : sound.wave;
-                            this.#soundList[soundKey] = new Sound(wave);
-                            this.#soundList[soundKey].repositoryName = repositoryName;
-                            this.#soundList[soundKey].channel = sound.channel;
-                        }
-                    }
-                    this.#initialisationPhase = 2;//TODO: per file
-                }
-            const ajaxReject =
-                function(value) {
-                    //TODO: ????
-                };
-
-
-            const repository = new Repositories().getRepository(repositoryName);
-            if (!repository) {
-                console.error(`Unknown repository ${repositoryName} in Source1SoundManager.loadManifest`);
-                return null;
-            }
-
-            customFetch(new URL(fileName, repository.base)).then(callback, ajaxReject);
-        }
-        */
     static loadManifest(repositoryName, fileName) {
         let manifests = this.#manifestsPerRepository.get(repositoryName);
         if (!manifests) {
@@ -31647,7 +31582,6 @@ class Choreographies {
     #sceneEntries = new Map();
     #initialized = false;
     async loadFile(repositoryName, fileName) {
-        //const repository = new Repositories().getRepository(repositoryName);
         this.#repository = repositoryName;
         /*
         if (!repository) {
@@ -40238,14 +40172,6 @@ class SourceEngineVMTLoaderClass {
     #materials = new Map();
     #extraMaterials = new Map();
     load(repositoryName, fileName) {
-        //let fullPathName = repository + fileName;
-        /*
-        const repository = new Repositories().getRepository(repositoryName);
-        if (!repository) {
-            console.error(`Unknown repository ${repositoryName} in SourceEngineVMTLoader.load`);
-            return null;
-        }
-            */
         let promise = new Promise(async (resolve, reject) => {
             /*
             const requestCallback = async response => {

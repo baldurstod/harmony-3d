@@ -6888,9 +6888,6 @@ declare class Choreography {
               * @param {String} soundName soundName
               */
              static playSound(repositoryName: string, soundName: string): Promise<HTMLAudioElement>;
-             /**
-              * Load soundManifest
-              */
              static loadManifest(repositoryName: string, fileName: string): void;
              static mute(): void;
              static unmute(): void;
@@ -7522,7 +7519,7 @@ declare class Choreography {
              /**
               * TODO
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number, number] | [number, number, number] | Float32Array<ArrayBufferLike>;
              /**
               * TODO
               */

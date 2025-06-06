@@ -118,60 +118,6 @@ export class Source1SoundManager {
 		}
 
 	}
-
-	/**
-	 * Load soundManifest
-	 */
-	/*
-
-		static loadManifest(repositoryName, fileName) {
-			const callback =
-				async (response) => {
-					if (!response.ok) {
-						return;
-					}
-					let arg1 = await response.text();
-					if (arg1) {
-						const kv = new KvReader();
-						kv.readText(arg1);
-						const list = kv.rootElements//['Demoman.Death'];
-						const keyArray = Object.keys(list);
-						for (let i = 0; i < keyArray.length; ++i) {
-							const soundKey = keyArray[i];
-							const sound = list[soundKey];
-							let wave;
-							if (sound.rndwave) {
-								wave = [];
-								Object.keys(sound.rndwave).forEach(function(element) {
-									wave.push(sound.rndwave[element]);
-								});
-							} else {
-								wave = sound.wave;
-							}
-							//const wave = sound.rndwave ? sound.rndwave : sound.wave;
-							this.#soundList[soundKey] = new Sound(wave);
-							this.#soundList[soundKey].repositoryName = repositoryName;
-							this.#soundList[soundKey].channel = sound.channel;
-						}
-					}
-					this.#initialisationPhase = 2;//TODO: per file
-				}
-			const ajaxReject =
-				function(value) {
-					//TODO: ????
-				};
-
-
-			const repository = new Repositories().getRepository(repositoryName);
-			if (!repository) {
-				console.error(`Unknown repository ${repositoryName} in Source1SoundManager.loadManifest`);
-				return null;
-			}
-
-			customFetch(new URL(fileName, repository.base)).then(callback, ajaxReject);
-		}
-		*/
-
 	static loadManifest(repositoryName: string, fileName: string) {
 		let manifests = this.#manifestsPerRepository.get(repositoryName);
 

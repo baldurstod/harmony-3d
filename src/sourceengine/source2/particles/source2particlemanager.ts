@@ -83,13 +83,6 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 	}
 
 	async #loadManifest(repositoryName: string) {
-		/*
-		const repository = new Repositories().getRepository(repositoryName);
-		if (!repository) {
-			console.error(`Unknown repository ${repositoryName} in Source1ParticleControler.#loadManifest`);
-			return;
-		}
-			*/
 
 		//const manifestUrl = new URL('particles_manifest.json', repository.base);//todo variable
 		const response = await Repositories.getFileAsJson(repositoryName, 'particles_manifest.json');//TODO const

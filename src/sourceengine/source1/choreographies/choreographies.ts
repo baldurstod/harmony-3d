@@ -30,7 +30,6 @@ export class Choreographies {
 	#initialized = false;
 
 	async loadFile(repositoryName: string, fileName: string) {
-		//const repository = new Repositories().getRepository(repositoryName);
 		this.#repository = repositoryName;
 		/*
 		if (!repository) {
