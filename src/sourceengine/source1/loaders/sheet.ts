@@ -16,7 +16,7 @@ class SequenceSampleTextureCoords_t {
 
 export class SheetSequenceSample_t {
 	m_fBlendFactor = 0;
-	m_TextureCoordData = [];
+	m_TextureCoordData: Array<SequenceSampleTextureCoords_t> = [];
 	constructor() {
 		for (let i = 0; i < MAX_IMAGES_PER_FRAME_IN_MEMORY; ++i) {
 			this.m_TextureCoordData[i] = new SequenceSampleTextureCoords_t();
@@ -24,13 +24,11 @@ export class SheetSequenceSample_t {
 	}
 }
 
-
-
-export function GetInterpolationData(pKnotPositions, pKnotValues,
-	nNumValuesinList,
-	nInterpolationRange,
-	flPositionToInterpolateAt,
-	bWrap) {
+export function GetInterpolationData(pKnotPositions: Float32Array, pKnotValues: Float32Array,
+	nNumValuesinList: number,
+	nInterpolationRange: number,
+	flPositionToInterpolateAt: number,
+	bWrap: boolean) {
 	// first, find the bracketting knots by looking for the first knot >= our index
 	let result = Object.create(null);
 	let idx;
@@ -73,7 +71,8 @@ export function GetInterpolationData(pKnotPositions, pKnotValues,
 		flOffsetFromStartOfGap = flPositionToInterpolateAt - pKnotPositions[nKnot1];
 	}
 
-	function FLerp(f1, f2, i1, i2, x) {
+	function FLerp(f1: number, f2: number, i1: number, i2: number, x: number) {
+		// TODO: use a common function
 		return f1 + (f2 - f1) * (x - i1) / (i2 - i1);
 	}
 

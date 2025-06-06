@@ -20384,7 +20384,7 @@ class Source1ModelManager {
 }
 
 class SourceBinaryLoader {
-    repository;
+    repository = '';
     async load(repositoryName, fileName) {
         this.repository = repositoryName;
         let promise = new Promise(resolve => {
@@ -44360,27 +44360,28 @@ class Detex {
 class SourceEngineVTF {
     repository;
     fileName;
-    versionMaj = null;
-    versionMin = null;
-    width = null;
-    height = null;
-    flags = null;
-    frames = null;
+    versionMaj = 0;
+    versionMin = 0;
+    width = 0;
+    height = 0;
+    flags = 0;
+    frames = 1;
     faceCount = 1;
-    firstFrame = null;
-    reflectivity = null;
-    bumpmapScale = null;
-    highResImageFormat = null;
-    mipmapCount = null;
-    lowResImageFormat = null;
-    lowResImageWidth = null;
-    lowResImageHeight = null;
-    depth = null;
+    firstFrame = 0;
+    reflectivity = vec3.create();
+    bumpmapScale = 0;
+    highResImageFormat = 0;
+    mipmapCount = 0;
+    lowResImageFormat = 0;
+    lowResImageWidth = 0;
+    lowResImageHeight = 0;
+    depth = 0;
     resEntries = [];
     currentFrame = 0;
     filled = false;
-    numResources;
-    headerSize;
+    numResources = 0;
+    headerSize = 0;
+    sheet; //TODO: create proper type for sheet
     constructor(repository, fileName) {
         this.repository = repository;
         this.fileName = fileName;
@@ -44465,22 +44466,20 @@ class SourceEngineVTF {
         }
         return null;
     }
-    /**
-     * TODO
-     */
-    getImageDatas(mipmapLvl) {
+    /*
+    getImageDatas(mipmapLvl: number) {
         let entry = this.getResource(48);
         if (!entry) {
             entry = this.getResource(1);
             if (entry) {
                 return entry.imageData;
-            }
-            else {
+            } else {
                 return null;
             }
         }
         return entry.mipMaps[mipmapLvl];
     }
+    */
     fillTexture(graphics, glContext, texture, mipmapLvl, frame1 = 0, srgb = true) {
         if (this.flags & TEXTUREFLAGS_ENVMAP) {
             this.#fillCubeMapTexture(graphics, glContext, texture.texture, mipmapLvl, srgb);
@@ -44501,7 +44500,7 @@ class SourceEngineVTF {
             mipmapLvl = Math.min(mipmapLvl, this.mipmapCount - 1);
         }
         const face = 0;
-        let frame;
+        let frame = 0;
         if (isNaN(frame1)) ;
         else {
             this.currentFrame = frame1;
@@ -44521,8 +44520,8 @@ class SourceEngineVTF {
         let webGLTexture = texture.texture;
         glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         glContext.bindTexture(GL_TEXTURE_2D, webGLTexture);
-        const clampS = this.flags & TEXTUREFLAGS_CLAMPS;
-        const clampT = this.flags & TEXTUREFLAGS_CLAMPT;
+        const clampS = (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
+        const clampT = (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
         texture.width = mipmap.width;
         texture.height = mipmap.height;
         if (this.isDxtCompressed()) {
@@ -44530,7 +44529,7 @@ class SourceEngineVTF {
         }
         else {
             glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-            glContext.texImage2D(GL_TEXTURE_2D, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][face]);
+            glContext.texImage2D(GL_TEXTURE_2D, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), mipmap.frames[frame][face]);
         }
         glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -44571,8 +44570,8 @@ class SourceEngineVTF {
         }
         glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
         glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
-        const clampS = this.flags & TEXTUREFLAGS_CLAMPS;
-        const clampT = this.flags & TEXTUREFLAGS_CLAMPT;
+        const clampS = (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
+        const clampT = (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
         if (this.isDxtCompressed()) {
             let isSRGB = srgb && this.isSRGB();
             fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][0], clampS, clampT, isSRGB);
@@ -44584,12 +44583,12 @@ class SourceEngineVTF {
         }
         else {
             glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][0]);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][1]);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][2]);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][3]);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][4]);
-            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(glContext), this.getType(glContext), mipmap.frames[frame][5]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), mipmap.frames[frame][0]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_X, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), mipmap.frames[frame][1]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Y, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), mipmap.frames[frame][2]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), mipmap.frames[frame][3]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_Z, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), mipmap.frames[frame][4]);
+            glContext.texImage2D(GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), mipmap.frames[frame][5]);
         }
         glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
         glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -44598,9 +44597,7 @@ class SourceEngineVTF {
         glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
         this.filled = true;
     }
-    /**
-     * TODO
-     */
+    /*
     getDxtFormat(s3tc) {
         switch (this.highResImageFormat) {
             case IMAGE_FORMAT_DXT1:
@@ -44610,15 +44607,16 @@ class SourceEngineVTF {
             case IMAGE_FORMAT_DXT5:
                 return s3tc.COMPRESSED_RGBA_S3TC_DXT5_EXT;
             /* TODO: check format */
-            /*case IMAGE_FORMAT_DXT1_ONEBITALPHA:
-                return s3tc.COMPRESSED_RGB_S3TC_DXT1_EXT;*/
-        }
-        return 0;
-    }
+    /*case IMAGE_FORMAT_DXT1_ONEBITALPHA:
+        return s3tc.COMPRESSED_RGB_S3TC_DXT1_EXT;* /
+}
+return 0;
+}
+*/
     /**
      * TODO
      */
-    getFormat(glContext) {
+    getFormat() {
         switch (this.highResImageFormat) {
             case IMAGE_FORMAT_RGB888:
             case IMAGE_FORMAT_BGR888: // Note: format has been inverted at load time
@@ -44651,7 +44649,7 @@ class SourceEngineVTF {
     /**
      * TODO
      */
-    getType(glContext) {
+    getType() {
         switch (this.highResImageFormat) {
             case IMAGE_FORMAT_RGBA16161616F:
                 return GL_FLOAT;
@@ -44818,6 +44816,7 @@ function GetInterpolationData(pKnotPositions, pKnotValues, nNumValuesinList, nIn
         flOffsetFromStartOfGap = flPositionToInterpolateAt - pKnotPositions[nKnot1];
     }
     function FLerp(f1, f2, i1, i2, x) {
+        // TODO: use a common function
         return f1 + (f2 - f1) * (x - i1) / (i2 - i1);
     }
     result.pValueA = pKnotValues[nKnot1];
@@ -44937,7 +44936,7 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
         if (sheet.format == 0) ;
         //for (let groupIndex=0; groupIndex < sheet.groupsCount; ++groupIndex) {
         while (nNumSequences--) {
-            const group = Object.create(null);
+            const group = Object.create(null); // TODO: create proper type
             group.duration = 0;
             group.m_pSamples = [];
             group.m_pSamples2 = [];
@@ -45229,7 +45228,7 @@ class Source1TextureManagerClass extends EventTarget {
     #texturesList = new Map();
     #defaultTexture;
     #defaultTextureCube;
-    fallbackRepository;
+    fallbackRepository = '';
     constructor() {
         super();
         new Graphics().ready.then(() => {
@@ -45243,7 +45242,7 @@ class Source1TextureManagerClass extends EventTarget {
     getTexture(repository, path, frame, needCubeMap = false, srgb = true) {
         frame = Math.floor(frame);
         let animatedTexture = this.#getTexture(repository, path, needCubeMap, srgb);
-        return (animatedTexture.getFrame ? animatedTexture.getFrame(frame) : animatedTexture) ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
+        return (animatedTexture?.getFrame ? animatedTexture.getFrame(frame) : animatedTexture) ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
     }
     #getTexture(repository, path, needCubeMap, srgb = true) {
         path = path.replace(/.vtf$/, '');
@@ -45306,7 +45305,7 @@ class Source1TextureManagerClass extends EventTarget {
     }
     removeTexture(path) {
         if (this.#texturesList.has(path)) {
-            this.#texturesList.get(path).removeUser(this);
+            this.#texturesList.get(path)?.removeUser(this);
             this.#texturesList.delete(path);
         }
     }
@@ -45322,7 +45321,7 @@ class Source1TextureManagerClass extends EventTarget {
 const Source1TextureManager = new Source1TextureManagerClass();
 function vtfToTexture(vtf, animatedTexture, srgb) {
     const alphaBits = vtf.getAlphaBits();
-    animatedTexture.vtf = vtf;
+    //animatedTexture.vtf = vtf;
     animatedTexture.setAlphaBits(alphaBits);
     let glContext = new Graphics().glContext;
     for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {

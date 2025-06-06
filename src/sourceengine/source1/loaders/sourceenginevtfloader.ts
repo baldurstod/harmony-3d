@@ -1,12 +1,12 @@
 import { BinaryReader, TWO_POW_10, TWO_POW_MINUS_14 } from 'harmony-binary-reader';
 import { DEBUG } from '../../../buildoptions';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
-import { IMAGE_FORMAT_ABGR8888, IMAGE_FORMAT_BGR888, IMAGE_FORMAT_BGR888_BLUESCREEN, IMAGE_FORMAT_BGRA8888, IMAGE_FORMAT_DXT1, IMAGE_FORMAT_DXT3, IMAGE_FORMAT_DXT5, IMAGE_FORMAT_RGB888, IMAGE_FORMAT_RGB888_BLUESCREEN, IMAGE_FORMAT_RGBA16161616F, IMAGE_FORMAT_RGBA8888, SourceEngineVTF } from '../textures/sourceenginevtf';
+import { IMAGE_FORMAT_ABGR8888, IMAGE_FORMAT_BGR888, IMAGE_FORMAT_BGR888_BLUESCREEN, IMAGE_FORMAT_BGRA8888, IMAGE_FORMAT_DXT1, IMAGE_FORMAT_DXT3, IMAGE_FORMAT_DXT5, IMAGE_FORMAT_RGB888, IMAGE_FORMAT_RGB888_BLUESCREEN, IMAGE_FORMAT_RGBA16161616F, IMAGE_FORMAT_RGBA8888, SourceEngineVTF, VTFMipMap, VTFResourceEntry } from '../textures/sourceenginevtf';
 import { GetInterpolationData, MAX_IMAGES_PER_FRAME_IN_MEMORY, MAX_IMAGES_PER_FRAME_ON_DISK, SEQUENCE_SAMPLE_COUNT, SheetSequenceSample_t } from './sheet';
 
 export class SourceEngineVTFLoader extends SourceBinaryLoader {
 
-	parse(repository, fileName, arrayBuffer) {
+	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceEngineVTF | null {
 		let vtf = new SourceEngineVTF(repository, fileName);
 		try {
 			let reader = new BinaryReader(arrayBuffer);
@@ -42,7 +42,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		return vtf;
 	}
 
-	#parseHeader(reader, vtf) {
+	#parseHeader(reader: BinaryReader, vtf: SourceEngineVTF) {
 		reader.seek(4); //skip first 4 char TODO: check == 'VTF\0' ?
 
 		vtf.setVerionMaj(reader.getUint32());
@@ -73,7 +73,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseResEntries(reader, vtf) {
+	#parseResEntries(reader: BinaryReader, vtf: SourceEngineVTF) {
 		const startOffset = reader.tell();
 
 		for (let resIndex = 0; resIndex < vtf.resEntries.length; ++resIndex) {
@@ -81,7 +81,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseResEntry(reader, vtf, entry) {
+	#parseResEntry(reader: BinaryReader, vtf: SourceEngineVTF, entry: VTFResourceEntry) {
 		switch (entry.type) {
 			case 1: // Low-res image data
 				//TODO
@@ -102,7 +102,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseImageData(reader, vtf, entry) {
+	#parseImageData(reader: BinaryReader, vtf: SourceEngineVTF, entry: VTFResourceEntry) {
 		reader.seek(entry.resData);
 		let mipmapWidth = vtf.width * Math.pow(0.5, vtf.mipmapCount - 1);
 		let mipmapHeight = vtf.height * Math.pow(0.5, vtf.mipmapCount - 1);
@@ -115,7 +115,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseSheet(reader, vtf, entry) {
+	#parseSheet(reader: BinaryReader, vtf: SourceEngineVTF, entry: VTFResourceEntry) {
 		reader.seek(entry.resData);
 		const sheet = Object.create(null);
 		vtf.sheet = sheet;
@@ -133,7 +133,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 
 		//for (let groupIndex=0; groupIndex < sheet.groupsCount; ++groupIndex) {
 		while (nNumSequences--) {
-			const group = Object.create(null);
+			const group = Object.create(null);// TODO: create proper type
 			group.duration = 0;
 			group.m_pSamples = [];
 			group.m_pSamples2 = [];
@@ -235,7 +235,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseMipMap(reader, vtf, entry, mipmaplvl, mipmapWidth, mipmapHeight) {
+	#parseMipMap(reader: BinaryReader, vtf: SourceEngineVTF, entry: VTFResourceEntry, mipmaplvl: number, mipmapWidth: number, mipmapHeight: number) {
 		//TODO: frame face, zlice
 		let startingByte = reader.tell();
 
@@ -243,14 +243,13 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		mipmapWidth = Math.max(1.0, vtf.width * Math.pow(0.5, vtf.mipmapCount - mipmaplvl - 1));
 		mipmapHeight = Math.max(1.0, vtf.height * Math.pow(0.5, vtf.mipmapCount - mipmaplvl - 1));
 
-		const mipmap = { width: mipmapWidth, height: mipmapHeight, frames: [] };
-		entry.mipMaps.push(mipmap);
-
+		const mipmap: VTFMipMap = { width: mipmapWidth, height: mipmapHeight, frames: [] };
+		entry.mipMaps!.push(mipmap);
 
 		let faceIndex;
 		let face;
 		for (let frameIndex = 0; frameIndex < vtf.frames; ++frameIndex) {
-			let frame = [];
+			let frame: Array<Uint8Array | Float32Array> = [];
 			mipmap.frames.push(frame);
 			for (faceIndex = 0; faceIndex < vtf.faceCount; faceIndex++) {
 				if (vtf.faceCount == 1) {
@@ -327,7 +326,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 	}
 }
 
-function str2abRGBA16F(str) {
+function str2abRGBA16F(str: string) {
 	let len = str.length / 2;
 	const buf = new ArrayBuffer(str.length * 2);
 	const bufView = new Float32Array(buf);
@@ -339,7 +338,7 @@ function str2abRGBA16F(str) {
 	return bufView;
 }
 
-function float16(byte1, byte2) {
+function float16(byte1: number, byte2: number) {
 	const b = new Uint8Array([byte1, byte2]);
 
 	let sign = b[1] >> 7;
@@ -356,11 +355,11 @@ function float16(byte1, byte2) {
 	return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / TWO_POW_10));
 }
 
-function str2ab(reader, start, length) {
+function str2ab(reader: BinaryReader, start: number, length: number) {
 	return new Uint8Array(reader.buffer.slice(start, start + length));
 }
 
-function str2abBGR(str) {
+function str2abBGR(str: string) {
 	// assume str.length is divisible by 3
 	const buf = new ArrayBuffer(str.length);
 	const bufView = new Uint8Array(buf);
@@ -372,7 +371,7 @@ function str2abBGR(str) {
 	return bufView;
 }
 
-function str2abBGRA(str) {
+function str2abBGRA(str: string) {
 	// assume str.length is divisible by 4
 	const buf = new ArrayBuffer(str.length);
 	const bufView = new Uint8Array(buf);
@@ -385,7 +384,7 @@ function str2abBGRA(str) {
 	return bufView;
 }
 
-function str2abARGB(str) {
+function str2abARGB(str: string) {
 	// assume str.length is divisible by 4
 	const buf = new ArrayBuffer(str.length);
 	const bufView = new Uint8Array(buf);
@@ -421,8 +420,4 @@ function str2abABGR(reader: BinaryReader, start: number, length: number) {
 		arr[i + 3] = a;
 	}
 	return arr;
-}
-
-function ab2str(arrayBuf) {
-	return String.fromCharCode.apply(null, arrayBuf);
 }

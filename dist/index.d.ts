@@ -1997,7 +1997,7 @@ declare class Choreography {
           getLayer(): number | undefined;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
-          createChild(entityName: string, parameters: any): Promise<Entity | Material>;
+          createChild(entityName: string, parameters: any): Promise<Material | Entity>;
           fromJSON(json: JSONObject): void;
           static getEntityName(): string;
           is(s: string): boolean;
@@ -2222,7 +2222,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -3266,8 +3266,8 @@ declare class Choreography {
          }
 
          export declare class JSONLoader {
-             static fromJSON(rootEntity: object): Promise<Entity | Material>;
-             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material>;
+             static fromJSON(rootEntity: object): Promise<Material | Entity>;
+             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Material | Entity>;
              static registerEntity(ent: typeof Entity | typeof Material): void;
          }
 
@@ -6808,7 +6808,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -6925,15 +6925,15 @@ declare class Choreography {
              #private;
              fallbackRepository: string;
              constructor();
-             getTexture(repository: any, path: any, frame: any, needCubeMap?: boolean, srgb?: boolean): any;
-             getTextureAsync(repository: any, path: any, frame: any, needCubeMap: any, defaultTexture: any, srgb?: boolean): Promise<any>;
+             getTexture(repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture | null;
+             getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture: Texture, srgb?: boolean): Promise<Texture>;
              getInternalTextureName(): string;
              addInternalTexture(texture?: Texture): {
                  name: string;
                  texture: Texture;
              };
-             setTexture(path: any, texture: any): void;
-             removeTexture(path: any): void;
+             setTexture(path: string, texture: Texture): void;
+             removeTexture(path: string): void;
          }
 
          declare class Source2Animation {
@@ -7408,7 +7408,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7545,7 +7545,7 @@ declare class Choreography {
              /**
               * TODO
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number];
              /**
               * TODO
               */
@@ -7916,8 +7916,8 @@ declare class Choreography {
 
          declare class SourceBinaryLoader {
              repository: string;
-             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP | SourcePCF>;
-             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP;
+             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP | SourcePCF | SourceEngineVTF>;
+             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP | null;
          }
 
          export declare class SourceBSP extends World {
@@ -8436,36 +8436,37 @@ declare class Choreography {
              fileName: string;
              versionMaj: number;
              versionMin: number;
-             width: any;
-             height: any;
-             flags: any;
-             frames: any;
+             width: number;
+             height: number;
+             flags: number;
+             frames: number;
              faceCount: number;
-             firstFrame: any;
-             reflectivity: any;
-             bumpmapScale: any;
-             highResImageFormat: any;
-             mipmapCount: any;
-             lowResImageFormat: any;
-             lowResImageWidth: any;
-             lowResImageHeight: any;
-             depth: any;
-             resEntries: any[];
+             firstFrame: number;
+             reflectivity: vec3;
+             bumpmapScale: number;
+             highResImageFormat: number;
+             mipmapCount: number;
+             lowResImageFormat: number;
+             lowResImageWidth: number;
+             lowResImageHeight: number;
+             depth: number;
+             resEntries: Array<VTFResourceEntry>;
              currentFrame: number;
              filled: boolean;
-             numResources: any;
-             headerSize: any;
+             numResources: number;
+             headerSize: number;
+             sheet?: any;
              constructor(repository: string, fileName: string);
              setVerionMin(value: number): void;
              /**
               * TODO
               */
-             setFlags(flags: any): void;
-             getAlphaBits(): 0 | 8 | 1;
+             setFlags(flags: number): void;
+             getAlphaBits(): number;
              /**
               * TODO
               */
-             setVerionMaj(value: any): void;
+             setVerionMaj(value: number): void;
              /**
               * TODO
               */
@@ -8485,24 +8486,16 @@ declare class Choreography {
              /**
               * TODO
               */
-             getResource(type: any): any;
+             getResource(type: number): VTFResourceEntry | null;
+             fillTexture(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1?: number, srgb?: boolean): void;
              /**
               * TODO
               */
-             getImageDatas(mipmapLvl: any): any;
-             fillTexture(graphics: any, glContext: any, texture: any, mipmapLvl: any, frame1?: number, srgb?: boolean): void;
+             getFormat(): number;
              /**
               * TODO
               */
-             getDxtFormat(s3tc: any): any;
-             /**
-              * TODO
-              */
-             getFormat(glContext: any): 0 | 6407 | 6408;
-             /**
-              * TODO
-              */
-             getType(glContext: any): 5121 | 5126;
+             getType(): number;
              /**
               * Return whether the texture is compressed or not
               * @return {bool} true if texture is dxt compressed
@@ -9605,6 +9598,18 @@ declare class Choreography {
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
              getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
          }
+
+         declare type VTFMipMap = {
+             height: number;
+             width: number;
+             frames: Array<Array<Uint8Array | Float32Array>>;
+         };
+
+         declare type VTFResourceEntry = {
+             type: number;
+             resData: number;
+             mipMaps?: Array<VTFMipMap>;
+         };
 
          export declare class WaterLod extends Proxy_2 {
          }

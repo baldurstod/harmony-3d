@@ -1,3 +1,4 @@
+import { vec3 } from 'gl-matrix';
 import { ENABLE_S3TC } from '../../../buildoptions';
 import { Graphics } from '../../../graphics/graphics';
 import { Detex } from '../../../textures/detex';
@@ -9,7 +10,7 @@ import { TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_EIGHTBITALPHA, T
 export type VTFMipMap = {
 	height: number;
 	width: number;
-	frames: Array<Array<Uint8Array>>;
+	frames: Array<Array<Uint8Array | Float32Array>>;
 }
 
 export type VTFResourceEntry = {
@@ -23,25 +24,26 @@ export class SourceEngineVTF {
 	fileName: string;
 	versionMaj: number = 0;
 	versionMin: number = 0;
-	width = null;
-	height = null;
+	width = 0;
+	height = 0;
 	flags: number = 0;
 	frames = 1;
 	faceCount = 1;
-	firstFrame = null;
-	reflectivity = null;
-	bumpmapScale = null;
+	firstFrame = 0;
+	reflectivity = vec3.create();
+	bumpmapScale = 0;
 	highResImageFormat = 0;
 	mipmapCount = 0;
-	lowResImageFormat = null;
-	lowResImageWidth = null;
-	lowResImageHeight = null;
-	depth = null;
+	lowResImageFormat = 0;
+	lowResImageWidth = 0;
+	lowResImageHeight = 0;
+	depth = 0;
 	resEntries: Array<VTFResourceEntry> = [];
 	currentFrame = 0;
 	filled = false;
 	numResources: number = 0;
 	headerSize: number = 0;
+	sheet?: any;//TODO: create proper type for sheet
 
 	constructor(repository: string, fileName: string) {
 		this.repository = repository;
@@ -414,7 +416,7 @@ export const IMAGE_FORMAT_RGBA16161616 = 25;
 export const IMAGE_FORMAT_UVLX8888 = 26;
 
 
-function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, target: GLenum, width: number, height: number, dxtLevel: number, datas: Uint8Array, clampS: boolean, clampT: boolean, srgb: boolean): void {//removeme
+function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, target: GLenum, width: number, height: number, dxtLevel: number, datas: Uint8Array | Float32Array, clampS: boolean, clampT: boolean, srgb: boolean): void {//removeme
 	const s3tc = graphics.getExtension('WEBGL_compressed_texture_s3tc');
 	const s3tcSRGB = graphics.getExtension('WEBGL_compressed_texture_s3tc_srgb');
 

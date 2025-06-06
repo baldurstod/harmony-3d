@@ -6,13 +6,14 @@ import { TextureManager } from '../../../textures/texturemanager';
 import { TESTING } from '../../../buildoptions';
 import { TEXTURE_CLEANUP_DELAY } from '../../../constants';
 import { Texture } from '../../../textures/texture';
+import { SourceEngineVTF } from './sourceenginevtf';
 
 let internalTextureId = 0;
 class Source1TextureManagerClass extends EventTarget {//TODO: keep event target ?
-	#texturesList = new Map();
-	#defaultTexture;
-	#defaultTextureCube;
-	fallbackRepository: string;
+	#texturesList = new Map<string, Texture>();
+	#defaultTexture!: Texture;
+	#defaultTextureCube!: Texture;
+	fallbackRepository: string = '';
 
 	constructor() {
 		super();
@@ -26,14 +27,14 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
 	}
 
-	getTexture(repository, path, frame, needCubeMap = false, srgb = true) {
+	getTexture(repository: string, path: string, frame: number, needCubeMap = false, srgb = true): Texture | null {
 		frame = Math.floor(frame);
 		let animatedTexture = this.#getTexture(repository, path, needCubeMap, srgb);
 
-		return (animatedTexture.getFrame ? animatedTexture.getFrame(frame) : animatedTexture) ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
+		return ((animatedTexture as AnimatedTexture)?.getFrame ? (animatedTexture as AnimatedTexture).getFrame(frame) : animatedTexture) ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
 	}
 
-	#getTexture(repository, path, needCubeMap, srgb = true) {
+	#getTexture(repository: string, path: string, needCubeMap: boolean, srgb = true): Texture | undefined {
 		if (false && TESTING && needCubeMap) {
 			return this.#defaultTextureCube;
 		}
@@ -50,7 +51,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 			let animatedTexture = new AnimatedTexture();//TODOv3: merge with TextureManager.createTexture(); below
 			this.setTexture(fullPath, animatedTexture);
 			new SourceEngineVTFLoader().load(repository, pathWithMaterials).then(
-				(vtf) => vtfToTexture(vtf, animatedTexture, srgb)
+				(vtf) => vtfToTexture(vtf as SourceEngineVTF, animatedTexture, srgb)
 			).catch(
 				() => {
 					let fallbackTexture = this.#getTexture(this.fallbackRepository, path, needCubeMap);
@@ -64,7 +65,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		return this.#texturesList.get(fullPath);
 	}
 
-	async getTextureAsync(repository, path, frame, needCubeMap, defaultTexture, srgb = true) {
+	async getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture: Texture, srgb = true) {
 		frame = Math.floor(frame);
 		path = path.replace(/.vtf$/, '');
 		path = path.replace(/.psd/, '');
@@ -78,7 +79,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		if (!this.#texturesList.has(fullPath)) {
 			let animatedTexture = new AnimatedTexture();//TODOv3: merge with TextureManager.createTexture(); below
 			this.setTexture(fullPath, animatedTexture);
-			let vtf = await new SourceEngineVTFLoader().load(repository, pathWithMaterials);
+			let vtf = await new SourceEngineVTFLoader().load(repository, pathWithMaterials) as SourceEngineVTF;
 
 			if (vtf) {
 				vtfToTexture(vtf, animatedTexture, srgb);
@@ -87,7 +88,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 				return null;
 			}
 		}
-		return this.#texturesList.get(fullPath)?.getFrame(frame) ?? defaultTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);//TODOv3
+		return (this.#texturesList.get(fullPath) as AnimatedTexture)?.getFrame(frame) ?? defaultTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);//TODOv3
 	}
 
 	getInternalTextureName() {
@@ -101,14 +102,14 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		return { name: textureName, texture: texture };
 	}
 
-	setTexture(path, texture) {
+	setTexture(path: string, texture: Texture) {
 		texture.addUser(this);
 		this.#texturesList.set(path, texture);
 	}
 
-	removeTexture(path) {
+	removeTexture(path: string) {
 		if (this.#texturesList.has(path)) {
-			this.#texturesList.get(path).removeUser(this);
+			this.#texturesList.get(path)?.removeUser(this);
 			this.#texturesList.delete(path);
 		}
 	}
@@ -124,9 +125,9 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 }
 export const Source1TextureManager = new Source1TextureManagerClass();
 
-export function vtfToTexture(vtf, animatedTexture, srgb) {
+export function vtfToTexture(vtf: SourceEngineVTF, animatedTexture: AnimatedTexture, srgb: boolean) {
 	const alphaBits = vtf.getAlphaBits();
-	animatedTexture.vtf = vtf;
+	//animatedTexture.vtf = vtf;
 	animatedTexture.setAlphaBits(alphaBits);
 	let glContext = new Graphics().glContext;
 	for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {

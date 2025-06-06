@@ -8,15 +8,16 @@ import { SourceEngineVTF } from '../../source1/textures/sourceenginevtf';
 import { Source2File } from '../../source2/loaders/source2file';
 
 export class SourceBinaryLoader {
-	repository: string;
-	async load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP | SourcePCF> {
+	repository: string = '';
+
+	async load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP | SourcePCF | SourceEngineVTF> {
 		this.repository = repositoryName;
 
 		let promise = new Promise<Source2File | any>(resolve => {
 			const p = Repositories.getFileAsArrayBuffer(repositoryName, fileName);
 			p.then((response) => {
 				if (!response.error) {
-					resolve(this.parse(repositoryName, fileName, response.buffer));
+					resolve(this.parse(repositoryName, fileName, response.buffer!));
 				} else {
 					resolve(null);
 				}
@@ -25,7 +26,7 @@ export class SourceBinaryLoader {
 		return promise;
 	}
 
-	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP {
+	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP | null {
 		throw 'override me';
 	}
 }
