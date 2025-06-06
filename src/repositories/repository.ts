@@ -2,6 +2,7 @@ export enum RepositoryError {
 	FileNotFound = 1,
 	UnknownError,
 	NotSupported,
+	RepoNotFound,
 }
 
 export type RepositoryFileResponse = { file?: File | null, error?: RepositoryError };

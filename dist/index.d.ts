@@ -6011,8 +6011,9 @@ declare class Choreography {
          export declare class Repositories {
              #private;
              static addRepository(repo: Repository): void;
-             static getRepository(name: string): Repository;
-             static getRepositoryList(): string[];
+             static getRepository(name: string): Repository | undefined;
+             static getRepositoryList(): Array<string>;
+             static getFile(repositoryName: string, filepath: string): Promise<RepositoryFileResponse>;
              static getFileAsArrayBuffer(repositoryName: string, filepath: string): Promise<RepositoryArrayBufferResponse>;
              static getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryTextResponse>;
              static getFileAsBlob(repositoryName: string, filepath: string): Promise<RepositoryBlobResponse>;
@@ -6058,7 +6059,8 @@ declare class Choreography {
          export declare enum RepositoryError {
              FileNotFound = 1,
              UnknownError = 2,
-             NotSupported = 3
+             NotSupported = 3,
+             RepoNotFound = 4
          }
 
          export declare type RepositoryFileListResponse = {
@@ -6806,7 +6808,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -7406,7 +7408,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;

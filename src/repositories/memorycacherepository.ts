@@ -18,7 +18,7 @@ export class MemoryCacheRepository implements Repository {
 
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
 		if (this.#files.has(filename)) {
-			return this.#files.get(filename);
+			return this.#files.get(filename)!;
 		}
 
 		const response = this.#base.getFile(filename);
@@ -32,7 +32,7 @@ export class MemoryCacheRepository implements Repository {
 			return response;
 		}
 
-		return { buffer: await response.file.arrayBuffer() };
+		return { buffer: await response.file!.arrayBuffer() };
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
@@ -41,7 +41,7 @@ export class MemoryCacheRepository implements Repository {
 			return response;
 		}
 
-		return { text: await response.file.text() };
+		return { text: await response.file!.text() };
 	}
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
@@ -50,17 +50,16 @@ export class MemoryCacheRepository implements Repository {
 			return response;
 		}
 
-		return { blob: await response.file };
+		return { blob: response.file };
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
-
 		const response = await this.getFile(filename);
 		if (response.error) {
 			return response;
 		}
 
-		return { json: JSON.parse(await response.file.text()) };
+		return { json: JSON.parse(await response.file!.text()) };
 	}
 
 	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {

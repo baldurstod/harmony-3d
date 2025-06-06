@@ -19132,7 +19132,7 @@ class MemoryCacheRepository {
         if (response.error) {
             return response;
         }
-        return { blob: await response.file };
+        return { blob: response.file };
     }
     async getFileAsJson(filename) {
         const response = await this.getFile(filename);
@@ -19156,6 +19156,7 @@ var RepositoryError;
     RepositoryError[RepositoryError["FileNotFound"] = 1] = "FileNotFound";
     RepositoryError[RepositoryError["UnknownError"] = 2] = "UnknownError";
     RepositoryError[RepositoryError["NotSupported"] = 3] = "NotSupported";
+    RepositoryError[RepositoryError["RepoNotFound"] = 4] = "RepoNotFound";
 })(RepositoryError || (RepositoryError = {}));
 class RepositoryEntry {
     #repository;
@@ -19381,31 +19382,38 @@ class Repositories {
     static getRepositoryList() {
         return Object.keys(this.#repositories);
     }
+    static async getFile(repositoryName, filepath) {
+        const repo = this.#repositories[repositoryName];
+        if (!repo) {
+            return { error: RepositoryError.RepoNotFound };
+        }
+        return repo?.getFile(filepath);
+    }
     static async getFileAsArrayBuffer(repositoryName, filepath) {
         const repo = this.#repositories[repositoryName];
         if (!repo) {
-            return null;
+            return { error: RepositoryError.RepoNotFound };
         }
         return repo?.getFileAsArrayBuffer(filepath);
     }
     static async getFileAsText(repositoryName, filepath) {
         const repo = this.#repositories[repositoryName];
         if (!repo) {
-            return null;
+            return { error: RepositoryError.RepoNotFound };
         }
         return repo?.getFileAsText(filepath);
     }
     static async getFileAsBlob(repositoryName, filepath) {
         const repo = this.#repositories[repositoryName];
         if (!repo) {
-            return null;
+            return { error: RepositoryError.RepoNotFound };
         }
         return repo?.getFileAsBlob(filepath);
     }
     static async getFileAsJson(repositoryName, filepath) {
         const repo = this.#repositories[repositoryName];
         if (!repo) {
-            return null;
+            return { error: RepositoryError.RepoNotFound };
         }
         return repo?.getFileAsJson(filepath);
     }
