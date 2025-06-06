@@ -17,9 +17,9 @@ export class MergeRepository implements Repository {
 		return this.#name;
 	}
 
-	async getFile(filename: string): Promise<RepositoryArrayBufferResponse> {
+	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
 		for (const repository of this.#repositories) {
-			const response = await repository.getFile(filename);
+			const response = await repository.getFileAsArrayBuffer(filename);
 			if (!response.error) {
 				return response;
 			}

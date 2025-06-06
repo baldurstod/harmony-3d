@@ -15,13 +15,13 @@ export class Repositories {
 		return Object.keys(this.#repositories);
 	}
 
-	static async getFile(repositoryName: string, filepath: string): Promise<RepositoryArrayBufferResponse> {
+	static async getFileAsArrayBuffer(repositoryName: string, filepath: string): Promise<RepositoryArrayBufferResponse> {
 		const repo = this.#repositories[repositoryName];
 		if (!repo) {
 			return null;
 		}
 
-		return repo?.getFile(filepath);
+		return repo?.getFileAsArrayBuffer(filepath);
 	}
 
 	static async getFileAsText(repositoryName: string, filepath: string): Promise<RepositoryTextResponse> {

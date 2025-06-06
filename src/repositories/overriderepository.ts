@@ -10,20 +10,12 @@ export class OverrideRepository implements Repository {
 	get name() {
 		return this.#base.name;
 	}
-	/*
-		async #getFile(filename: string): Promise<File | undefined> {
-			if (this.#overrides.has(filename)) {
-				return this.#overrides.get(filename);
-			}
-			return this.#zipEntries.get(filename);
-		}
-			*/
 
-	async getFile(filename: string): Promise<RepositoryArrayBufferResponse> {
+	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
 		if (this.#overrides.has(filename)) {
 			return { buffer: await this.#overrides.get(filename)!.arrayBuffer() };
 		}
-		return this.#base.getFile(filename);
+		return this.#base.getFileAsArrayBuffer(filename);
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {

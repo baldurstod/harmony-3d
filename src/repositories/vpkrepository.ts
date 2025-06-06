@@ -25,7 +25,7 @@ export class VpkRepository implements Repository {
 		return this.#name;
 	}
 
-	async getFile(filename: string): Promise<RepositoryArrayBufferResponse> {
+	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
 		await this.#initPromise;
 		const response = await this.#vpk.getFile(cleanupFilename(filename));
 		if (response.error) {

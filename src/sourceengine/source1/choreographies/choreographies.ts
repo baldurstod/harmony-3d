@@ -38,7 +38,7 @@ export class Choreographies {
 		}
 			*/
 
-		const respone = await Repositories.getFile(repositoryName, fileName);
+		const respone = await Repositories.getFileAsArrayBuffer(repositoryName, fileName);
 		if (respone.error) {
 			return null;
 		}

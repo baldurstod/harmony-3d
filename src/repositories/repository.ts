@@ -14,7 +14,7 @@ export type RepositoryFilter = { name?: string | RegExp, extension?: string | Re
 
 export interface Repository {
 	name: string;
-	getFile: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
+	getFileAsArrayBuffer: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
 	getFileAsText: (filepath: string) => Promise<RepositoryTextResponse>;
 	getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;
 	getFileAsJson: (filepath: string) => Promise<RepositoryJsonResponse>;

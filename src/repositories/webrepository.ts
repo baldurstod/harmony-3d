@@ -17,7 +17,7 @@ export class WebRepository implements Repository {
 		return this.#base;
 	}
 
-	async getFile(fileName: string): Promise<RepositoryArrayBufferResponse> {
+	async getFileAsArrayBuffer(fileName: string): Promise<RepositoryArrayBufferResponse> {
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
 		if (response.ok) {

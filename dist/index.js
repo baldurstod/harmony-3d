@@ -18993,19 +18993,11 @@ class OverrideRepository {
     get name() {
         return this.#base.name;
     }
-    /*
-        async #getFile(filename: string): Promise<File | undefined> {
-            if (this.#overrides.has(filename)) {
-                return this.#overrides.get(filename);
-            }
-            return this.#zipEntries.get(filename);
-        }
-            */
-    async getFile(filename) {
+    async getFileAsArrayBuffer(filename) {
         if (this.#overrides.has(filename)) {
             return { buffer: await this.#overrides.get(filename).arrayBuffer() };
         }
-        return this.#base.getFile(filename);
+        return this.#base.getFileAsArrayBuffer(filename);
     }
     async getFileAsText(filename) {
         if (this.#overrides.has(filename)) {
@@ -19043,8 +19035,8 @@ class ManifestRepository {
     get name() {
         return this.#base.name;
     }
-    async getFile(filename) {
-        return this.#base.getFile(filename);
+    async getFileAsArrayBuffer(filename) {
+        return this.#base.getFileAsArrayBuffer(filename);
     }
     async getFileAsText(filename) {
         return this.#base.getFileAsText(filename);
@@ -19248,9 +19240,9 @@ class MergeRepository {
     get name() {
         return this.#name;
     }
-    async getFile(filename) {
+    async getFileAsArrayBuffer(filename) {
         for (const repository of this.#repositories) {
-            const response = await repository.getFile(filename);
+            const response = await repository.getFileAsArrayBuffer(filename);
             if (!response.error) {
                 return response;
             }
@@ -19313,12 +19305,12 @@ class Repositories {
     static getRepositoryList() {
         return Object.keys(this.#repositories);
     }
-    static async getFile(repositoryName, filepath) {
+    static async getFileAsArrayBuffer(repositoryName, filepath) {
         const repo = this.#repositories[repositoryName];
         if (!repo) {
             return null;
         }
-        return repo?.getFile(filepath);
+        return repo?.getFileAsArrayBuffer(filepath);
     }
     static async getFileAsText(repositoryName, filepath) {
         const repo = this.#repositories[repositoryName];
@@ -19364,7 +19356,7 @@ class VpkRepository {
     get name() {
         return this.#name;
     }
-    async getFile(filename) {
+    async getFileAsArrayBuffer(filename) {
         await this.#initPromise;
         const response = await this.#vpk.getFile(cleanupFilename$1(filename));
         if (response.error) {
@@ -19424,7 +19416,7 @@ class WebRepository {
     get base() {
         return this.#base;
     }
-    async getFile(fileName) {
+    async getFileAsArrayBuffer(fileName) {
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
         if (response.ok) {
@@ -19513,7 +19505,7 @@ class ZipRepository {
     get name() {
         return this.#name;
     }
-    async getFile(filename) {
+    async getFileAsArrayBuffer(filename) {
         await this.#initPromise;
         const file = this.#zipEntries.get(cleanupFilename(filename));
         if (!file) {
@@ -20285,7 +20277,7 @@ class SourceBinaryLoader {
     async load(repositoryName, fileName) {
         this.repository = repositoryName;
         let promise = new Promise(resolve => {
-            const p = Repositories.getFile(repositoryName, fileName);
+            const p = Repositories.getFileAsArrayBuffer(repositoryName, fileName);
             p.then((response) => {
                 if (!response.error) {
                     resolve(this.parse(repositoryName, fileName, response.buffer));
@@ -31589,7 +31581,7 @@ class Choreographies {
             return null;
         }
             */
-        const respone = await Repositories.getFile(repositoryName, fileName);
+        const respone = await Repositories.getFileAsArrayBuffer(repositoryName, fileName);
         if (respone.error) {
             return null;
         }

@@ -35,7 +35,7 @@ export class ZipRepository implements Repository {
 		return this.#name;
 	}
 
-	async getFile(filename: string): Promise<RepositoryArrayBufferResponse> {
+	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
 		await this.#initPromise;
 		const file = this.#zipEntries.get(cleanupFilename(filename));
 		if (!file) {

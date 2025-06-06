@@ -15,8 +15,8 @@ export class ManifestRepository implements Repository {
 		return this.#base.name;
 	}
 
-	async getFile(filename: string): Promise<RepositoryArrayBufferResponse> {
-		return this.#base.getFile(filename);
+	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
+		return this.#base.getFileAsArrayBuffer(filename);
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
