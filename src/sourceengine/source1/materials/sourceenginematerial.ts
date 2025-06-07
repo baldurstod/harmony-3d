@@ -498,7 +498,7 @@ export class SourceEngineMaterial extends Material {
 			const texture = Source1TextureManager.getTexture(this.repository, baseTexture, parameters['$frame'] || variables.get('$frame') || 0);
 			this.setColorMap(texture);
 			// Disable self illum if texture doesn't have alpha channel (fix for D-eye-monds)
-			this.setDefine('COLOR_MAP_ALPHA_BITS', texture?.getAlphaBits() ?? 0);
+			this.setDefine('COLOR_MAP_ALPHA_BITS', String(texture?.getAlphaBits() ?? 0));
 		}
 
 		let normalMap = variables.get('$bumpmap') ?? variables.get('$normalmap');

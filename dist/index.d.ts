@@ -1997,7 +1997,7 @@ declare class Choreography {
           getLayer(): number | undefined;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
-          createChild(entityName: string, parameters: any): Promise<Material | Entity>;
+          createChild(entityName: string, parameters: any): Promise<Entity | Material>;
           fromJSON(json: JSONObject): void;
           static getEntityName(): string;
           is(s: string): boolean;
@@ -2222,7 +2222,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | Grid | CameraFrustum;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -3266,8 +3266,8 @@ declare class Choreography {
          }
 
          export declare class JSONLoader {
-             static fromJSON(rootEntity: object): Promise<Material | Entity>;
-             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Material | Entity>;
+             static fromJSON(rootEntity: object): Promise<Entity | Material>;
+             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material>;
              static registerEntity(ent: typeof Entity | typeof Material): void;
          }
 
@@ -6926,6 +6926,7 @@ declare class Choreography {
              fallbackRepository: string;
              constructor();
              getTexture(repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture | null;
+             getVtf(repository: string, path: string): Promise<SourceEngineVTF | null>;
              getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture: Texture, srgb?: boolean): Promise<Texture>;
              getInternalTextureName(): string;
              addInternalTexture(texture?: Texture): {
@@ -7916,7 +7917,7 @@ declare class Choreography {
 
          declare class SourceBinaryLoader {
              repository: string;
-             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP | SourcePCF | SourceEngineVTF>;
+             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP | SourcePCF | SourceEngineVTF | null>;
              parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP | null;
          }
 

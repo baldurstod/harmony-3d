@@ -10,7 +10,7 @@ import { Source2File } from '../../source2/loaders/source2file';
 export class SourceBinaryLoader {
 	repository: string = '';
 
-	async load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP | SourcePCF | SourceEngineVTF> {
+	async load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP | SourcePCF | SourceEngineVTF | null> {
 		this.repository = repositoryName;
 
 		let promise = new Promise<Source2File | any>(resolve => {

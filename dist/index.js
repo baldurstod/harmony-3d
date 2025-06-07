@@ -44826,6 +44826,9 @@ function GetInterpolationData(pKnotPositions, pKnotValues, nNumValuesinList, nIn
 }
 
 class SourceEngineVTFLoader extends SourceBinaryLoader {
+    async load(repositoryName, path) {
+        return super.load(repositoryName, path);
+    }
     parse(repository, fileName, arrayBuffer) {
         let vtf = new SourceEngineVTF(repository, fileName);
         try {
@@ -45226,6 +45229,7 @@ class AnimatedTexture extends Texture {
 let internalTextureId = 0;
 class Source1TextureManagerClass extends EventTarget {
     #texturesList = new Map();
+    #vtfList = new Map();
     #defaultTexture;
     #defaultTextureCube;
     fallbackRepository = '';
@@ -45244,27 +45248,40 @@ class Source1TextureManagerClass extends EventTarget {
         let animatedTexture = this.#getTexture(repository, path, needCubeMap, srgb);
         return (animatedTexture?.getFrame ? animatedTexture.getFrame(frame) : animatedTexture) ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
     }
-    #getTexture(repository, path, needCubeMap, srgb = true) {
+    async getVtf(repository, path) {
+        let vtf = this.#vtfList.get(path);
+        if (vtf !== undefined) {
+            return vtf;
+        }
+        vtf = await new SourceEngineVTFLoader().load(repository, path);
+        if (vtf) {
+            this.#vtfList.set(path, vtf);
+        }
+        return vtf;
+    }
+    #getTexture(repository, path, needCubeMap, srgb = true, allocatedTexture) {
         path = path.replace(/.vtf$/, '');
         path = path.replace(/.psd/, '');
         path = path.toLowerCase();
-        if (this.#texturesList.has(path)) { //Internal texture
-            return this.#texturesList.get(path);
+        const texture = this.#texturesList.get(path);
+        if (texture !== undefined) {
+            return texture;
         }
         let pathWithMaterials = 'materials/' + path + '.vtf'; //TODOv3
         let fullPath = repository + pathWithMaterials;
         if (!this.#texturesList.has(fullPath)) {
-            let animatedTexture = new AnimatedTexture(); //TODOv3: merge with TextureManager.createTexture(); below
+            let animatedTexture = allocatedTexture ?? new AnimatedTexture(); //TODOv3: merge with TextureManager.createTexture(); below
             this.setTexture(fullPath, animatedTexture);
-            new SourceEngineVTFLoader().load(repository, pathWithMaterials).then((vtf) => vtfToTexture(vtf, animatedTexture, srgb)).catch(() => {
-                let fallbackTexture = this.#getTexture(this.fallbackRepository, path, needCubeMap);
-                if (fallbackTexture) {
-                    //TODO: dispose of  the previous animatedTexture
-                    this.setTexture(fullPath, fallbackTexture);
+            this.getVtf(repository, pathWithMaterials).then((vtf) => {
+                if (vtf) {
+                    vtfToTexture(vtf, animatedTexture, srgb);
+                }
+                else {
+                    this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture);
                 }
             });
         }
-        return this.#texturesList.get(fullPath);
+        return this.#texturesList.get(fullPath) ?? null;
     }
     async getTextureAsync(repository, path, frame, needCubeMap, defaultTexture, srgb = true) {
         frame = Math.floor(frame);
@@ -45279,7 +45296,7 @@ class Source1TextureManagerClass extends EventTarget {
         if (!this.#texturesList.has(fullPath)) {
             let animatedTexture = new AnimatedTexture(); //TODOv3: merge with TextureManager.createTexture(); below
             this.setTexture(fullPath, animatedTexture);
-            let vtf = await new SourceEngineVTFLoader().load(repository, pathWithMaterials);
+            let vtf = await this.getVtf(repository, pathWithMaterials);
             if (vtf) {
                 vtfToTexture(vtf, animatedTexture, srgb);
             }
@@ -45743,7 +45760,7 @@ class SourceEngineMaterial extends Material {
             const texture = Source1TextureManager.getTexture(this.repository, baseTexture, parameters['$frame'] || variables.get('$frame') || 0);
             this.setColorMap(texture);
             // Disable self illum if texture doesn't have alpha channel (fix for D-eye-monds)
-            this.setDefine('COLOR_MAP_ALPHA_BITS', texture?.getAlphaBits() ?? 0);
+            this.setDefine('COLOR_MAP_ALPHA_BITS', String(texture?.getAlphaBits() ?? 0));
         }
         let normalMap = variables.get('$bumpmap') ?? variables.get('$normalmap');
         if (normalMap) {

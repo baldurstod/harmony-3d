@@ -6,6 +6,10 @@ import { GetInterpolationData, MAX_IMAGES_PER_FRAME_IN_MEMORY, MAX_IMAGES_PER_FR
 
 export class SourceEngineVTFLoader extends SourceBinaryLoader {
 
+	async load(repositoryName: string, path: string): Promise<SourceEngineVTF | null> {
+		return super.load(repositoryName, path) as Promise<SourceEngineVTF | null>;
+	}
+
 	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceEngineVTF | null {
 		let vtf = new SourceEngineVTF(repository, fileName);
 		try {
