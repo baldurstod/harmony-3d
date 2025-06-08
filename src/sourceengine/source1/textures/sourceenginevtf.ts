@@ -19,6 +19,8 @@ export type VTFResourceEntry = {
 	mipMaps?: Array<VTFMipMap>;
 }
 
+const VTF_ENTRY_IMAGE_DATAS = 48;
+
 export class SourceEngineVTF {
 	repository: string;
 	fileName: string;
@@ -140,7 +142,7 @@ export class SourceEngineVTF {
 
 	/*
 	getImageDatas(mipmapLvl: number) {
-		let entry = this.getResource(48);
+		let entry = this.getResource(VTF_ENTRY_IMAGE_DATAS);
 		if (!entry) {
 			entry = this.getResource(1);
 			if (entry) {
@@ -194,7 +196,7 @@ export class SourceEngineVTF {
 			this.currentFrame = frame;
 		}
 
-		const res48 = this.getResource(48);
+		const res48 = this.getResource(VTF_ENTRY_IMAGE_DATAS);
 		if (!res48) {
 			//TODO: show error
 			return;
@@ -254,7 +256,7 @@ export class SourceEngineVTF {
 			}
 		}*/
 
-		const res48 = this.getResource(48);
+		const res48 = this.getResource(VTF_ENTRY_IMAGE_DATAS);
 		if (!res48) {
 			//TODO: show error
 			return;
@@ -316,9 +318,6 @@ return 0;
 }
 */
 
-	/**
-	 * TODO
-	 */
 	getFormat(): number {
 		switch (this.highResImageFormat) {
 			case IMAGE_FORMAT_RGB888:
@@ -334,9 +333,6 @@ return 0;
 
 	}
 
-	/**
-	 * TODO
-	 */
 	#getInternalFormat(allowSrgb = true): number {
 		switch (this.highResImageFormat) {
 			case IMAGE_FORMAT_RGB888:
@@ -352,10 +348,6 @@ return 0;
 		return 0;
 	}
 
-
-	/**
-	 * TODO
-	 */
 	getType(): number {
 		switch (this.highResImageFormat) {
 			case IMAGE_FORMAT_RGBA16161616F:
@@ -381,6 +373,39 @@ return 0;
 
 	isSRGB(): boolean {
 		return ((this.flags & TEXTUREFLAGS_SRGB) == TEXTUREFLAGS_SRGB);
+	}
+
+	async getImageData(mipmap?: number, frame: number = 0, face: number = 0): Promise<ImageData | null> {
+		frame = Math.round(frame) % this.frames;
+
+		const highResDatas = this.getResource(VTF_ENTRY_IMAGE_DATAS);
+		if (!highResDatas) {
+			return null;
+		}
+
+		if (mipmap == undefined) {
+			mipmap = this.mipmapCount - 1;
+		} else {
+			mipmap = Math.min(mipmap, this.mipmapCount - 1);
+		}
+
+		const mipmapDatas = highResDatas.mipMaps![mipmap];
+		if (!mipmapDatas) {
+			return null;
+		}
+
+		let datas: Uint8ClampedArray;
+		const mipmapWidth = mipmapDatas.width;
+		const mipmapHeight = mipmapDatas.height;
+		const mipmapFaceDatas = mipmapDatas.frames[frame][face];
+		if (this.isDxtCompressed()) {
+			datas = await decompressDxt(this.highResImageFormat - 12, mipmapWidth, mipmapHeight, mipmapFaceDatas);
+		} else {
+			datas = new Uint8ClampedArray(mipmapWidth * mipmapHeight * 4);
+			datas.set(mipmapFaceDatas);
+		}
+
+		return new ImageData(datas, mipmapWidth, mipmapHeight);
 	}
 }
 
@@ -416,6 +441,23 @@ export const IMAGE_FORMAT_RGBA16161616 = 25;
 export const IMAGE_FORMAT_UVLX8888 = 26;
 
 
+async function decompressDxt(dxtLevel: number, width: number, height: number, datas: Uint8Array | Float32Array): Promise<Uint8ClampedArray> {
+	let uncompressedData = new Uint8ClampedArray(width * height * 4);
+
+	let decompressFunc = null;
+	switch (dxtLevel) {
+		case 1: decompressFunc = 'decodeBC1'; break;
+		case 2: decompressFunc = 'decodeBC2'; break;
+		case 3: decompressFunc = 'decodeBC3'; break;
+	}
+	if (decompressFunc) {
+		await (Detex as any)[decompressFunc](width, height, datas, uncompressedData);
+	}
+
+	return uncompressedData;
+}
+
+
 function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, target: GLenum, width: number, height: number, dxtLevel: number, datas: Uint8Array | Float32Array, clampS: boolean, clampT: boolean, srgb: boolean): void {//removeme
 	const s3tc = graphics.getExtension('WEBGL_compressed_texture_s3tc');
 	const s3tcSRGB = graphics.getExtension('WEBGL_compressed_texture_s3tc_srgb');
@@ -433,8 +475,15 @@ function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext,
 		glContext.compressedTexImage2D(target, 0, dxtFormat, width, height, 0, datas);
 	} else {
 		glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-		let uncompressedData = new Uint8Array(width * height * 4);
 
+		(async () => {
+			let uncompressedData = await decompressDxt(dxtLevel, width, height, datas);//new Uint8Array(width * height * 4);
+			glContext.bindTexture(GL_TEXTURE_2D, texture);
+			glContext.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData);//TODO: params
+			glContext.bindTexture(GL_TEXTURE_2D, null);
+		})()
+
+		/*
 		let decompressFunc = null;
 		switch (dxtLevel) {
 			case 1: decompressFunc = 'decodeBC1'; break;
@@ -450,6 +499,7 @@ function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext,
 				}
 			);
 		}
+		*/
 		/*const dxtflag = dxtLevel == 1 ? (1 << 0) : (1 << 2);
 		let uncompressedData;
 		if (datas.uncompressedData) {

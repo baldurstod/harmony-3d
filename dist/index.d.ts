@@ -7546,7 +7546,7 @@ declare class Choreography {
              /**
               * TODO
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
              /**
               * TODO
               */
@@ -8489,13 +8489,7 @@ declare class Choreography {
               */
              getResource(type: number): VTFResourceEntry | null;
              fillTexture(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1?: number, srgb?: boolean): void;
-             /**
-              * TODO
-              */
              getFormat(): number;
-             /**
-              * TODO
-              */
              getType(): number;
              /**
               * Return whether the texture is compressed or not
@@ -8503,6 +8497,7 @@ declare class Choreography {
               */
              isDxtCompressed(): boolean;
              isSRGB(): boolean;
+             getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
          }
 
          export declare class SourceEngineVTXLoader extends SourceBinaryLoader {
