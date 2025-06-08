@@ -90,7 +90,7 @@ export class MaterialEditor {
 		const i18n = ['#source_color', '#source_alpha', '#destination_color', '#destination_alpha', '#mode_color', '#mode_alpha'];
 		for (let i = 0; i < 6; i++) {
 			this.#htmlBlendFactors[i] = createElement('div', {
-				hidden: 1,
+				hidden: true,
 				parent: this.#htmlBlending,
 				childs: [
 					createElement('span', {

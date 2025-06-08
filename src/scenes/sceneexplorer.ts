@@ -193,7 +193,7 @@ export class SceneExplorer {
 						}),
 						createElement('harmony-item', {
 							id: 'files',
-							hidden: 1,
+							hidden: true,
 							childs: [
 								createElement('div', {
 									slot: 'header',
@@ -210,7 +210,7 @@ export class SceneExplorer {
 						}),
 						createElement('harmony-item', {
 							id: 'material',
-							hidden: 1,
+							hidden: true,
 							childs: [
 								createElement('div', {
 									slot: 'header',
