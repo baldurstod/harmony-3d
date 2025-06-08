@@ -17,11 +17,12 @@ export class MemoryCacheRepository implements Repository {
 	}
 
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
-		if (this.#files.has(filename)) {
-			return this.#files.get(filename)!;
+		let response = this.#files.get(filename);
+		if (response) {
+			return response;
 		}
 
-		const response = this.#base.getFile(filename);
+		 response = this.#base.getFile(filename);
 		this.#files.set(filename, response);
 		return response;
 	}
