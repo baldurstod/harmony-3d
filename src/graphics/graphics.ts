@@ -1,5 +1,5 @@
 import { vec2, vec4 } from 'gl-matrix';
-import { SaveFile } from 'harmony-browser-utils';
+import { saveFile } from 'harmony-browser-utils';
 import { ShortcutHandler } from 'harmony-browser-utils';
 
 import { GraphicsEvents } from './graphicsevents';
@@ -684,10 +684,10 @@ export class Graphics {
 	async _savePicture(filename: string) {
 		/*
 		const callback = function (blob) {
-			//SaveFile(filename, blob);
+			//saveFile(filename, blob);
 		};
 		this.#canvas.toBlob(callback);*/
-		SaveFile(await this.savePictureAsFile(filename));
+		saveFile(await this.savePictureAsFile(filename));
 	}
 
 	startRecording(frameRate = 60, bitsPerSecond: number) {
@@ -702,7 +702,7 @@ export class Graphics {
 		}
 		this.#mediaRecorder.ondataavailable = (event) => {
 			const blob = new Blob([event.data], { 'type': RECORDER_MIME_TYPE });
-			SaveFile(new File([blob], fileName));
+			saveFile(new File([blob], fileName));
 		}
 		this.#mediaRecorder.stop();
 		//Stop the canvas stream

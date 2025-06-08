@@ -1,4 +1,4 @@
-import { SaveFile } from 'harmony-browser-utils';
+import { saveFile } from 'harmony-browser-utils';
 import { BinaryReader } from 'harmony-binary-reader';
 
 const LOW_RES_IMAGE = 0x01;
@@ -142,8 +142,8 @@ export class VTFWriter {
 		let arrayBuffer = this.write(vtffile);
 		var dataView = new DataView(arrayBuffer);
 
-		//SaveFile(filename, new Blob([dataView]));
-		SaveFile(new File([new Blob([dataView])], filename));
+		//saveFile(filename, new Blob([dataView]));
+		saveFile(new File([new Blob([dataView])], filename));
 	}
 
 	static write(vtffile: VTFFile) {

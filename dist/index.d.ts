@@ -2222,7 +2222,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -6808,7 +6808,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -7409,7 +7409,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -9782,12 +9782,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#236@#webAssembly"?: any;
-             "__#236@#HEAPU8"?: Uint8Array;
+             "__#237@#webAssembly"?: any;
+             "__#237@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#236@#initHeap"(): void;
+             "__#237@#initHeap"(): void;
          };
 
          export { }

@@ -1,4 +1,4 @@
-import { SaveFile } from 'harmony-browser-utils';
+import { saveFile } from 'harmony-browser-utils';
 import { BinaryReader } from 'harmony-binary-reader';
 import { Source2FileLoader } from './source2fileloader';
 import { Source2Snapshot } from '../particles/source2snapshot';
@@ -84,7 +84,7 @@ export const Source2SnapshotLoader = new (function () {
 							attributeValue = null;
 							console.error('Unknow snapshot attribute type', snapshotAttribute.type, snapshotAttribute, snapFile, Number(snapshotAttribute.data_size) / particleCount);
 							if (TESTING) {
-								SaveFile(new File([new Blob([snapBlock.datas])], 'snap_datas_' + snapBlock.length));
+								saveFile(new File([new Blob([snapBlock.datas])], 'snap_datas_' + snapBlock.length));
 							}
 					}
 					snapShot.attributes[snapshotAttribute.name] = attributeValue;

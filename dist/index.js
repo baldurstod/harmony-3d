@@ -1,6 +1,6 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
 import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu } from 'harmony-ui';
-import { ShortcutHandler, SaveFile } from 'harmony-browser-utils';
+import { ShortcutHandler, saveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
@@ -7788,10 +7788,10 @@ class Graphics {
     async _savePicture(filename) {
         /*
         const callback = function (blob) {
-            //SaveFile(filename, blob);
+            //saveFile(filename, blob);
         };
         this.#canvas.toBlob(callback);*/
-        SaveFile(await this.savePictureAsFile(filename));
+        saveFile(await this.savePictureAsFile(filename));
     }
     startRecording(frameRate = 60, bitsPerSecond) {
         const stream = this.#canvas.captureStream(frameRate);
@@ -7804,7 +7804,7 @@ class Graphics {
         }
         this.#mediaRecorder.ondataavailable = (event) => {
             const blob = new Blob([event.data], { 'type': RECORDER_MIME_TYPE });
-            SaveFile(new File([blob], fileName));
+            saveFile(new File([blob], fileName));
         };
         this.#mediaRecorder.stop();
         //Stop the canvas stream
@@ -14153,8 +14153,8 @@ class VTFWriter {
     static writeAndSave(vtffile, filename) {
         let arrayBuffer = this.write(vtffile);
         var dataView = new DataView(arrayBuffer);
-        //SaveFile(filename, new Blob([dataView]));
-        SaveFile(new File([new Blob([dataView])], filename));
+        //saveFile(filename, new Blob([dataView]));
+        saveFile(new File([new Blob([dataView])], filename));
     }
     static write(vtffile) {
         //TODO: check vtffile
@@ -14474,8 +14474,8 @@ class Node extends EventTarget {
         const canvas = createElement('canvas', { width: image.width, height: image.height });
         const ctx = canvas.getContext('2d');
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => SaveFile(new File([blob], 'texture.png'))); //toDataURL
-        //		SaveFile(new File([blob], 'texture.png'));
+        canvas.toBlob((blob) => saveFile(new File([blob], 'texture.png'))); //toDataURL
+        //		saveFile(new File([blob], 'texture.png'));
         this.previewPic.width = PREVIEW_PICTURE_SIZE;
         this.previewPic.height = PREVIEW_PICTURE_SIZE;
     }
@@ -31800,7 +31800,7 @@ class Choreographies {
     }
     async #loadChoreography(repository, fileContent) {
         const reader = new BinaryReader(fileContent, undefined, undefined, true);
-        //SaveFile(new File([new Blob([reader.buffer])], '#parseSceneData'));
+        //saveFile(new File([new Blob([reader.buffer])], '#parseSceneData'));
         const choreography = new Choreography(repository);
         await reader.getInt32();
         await reader.getInt8();

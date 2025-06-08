@@ -159,7 +159,7 @@ export class Choreographies {
 
 	async #loadChoreography(repository, fileContent) {
 		const reader = new BinaryReader(fileContent, undefined, undefined, true);
-		//SaveFile(new File([new Blob([reader.buffer])], '#parseSceneData'));
+		//saveFile(new File([new Blob([reader.buffer])], '#parseSceneData'));
 		const choreography = new Choreography(repository);
 
 		const formatId = await reader.getInt32();

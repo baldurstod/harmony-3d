@@ -1,5 +1,4 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
-import { SaveFile } from 'harmony-browser-utils';
 import { BinaryReader } from 'harmony-binary-reader';
 import { MeshoptDecoder } from 'meshoptimizer';
 
