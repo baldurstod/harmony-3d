@@ -76,7 +76,8 @@ export class Camera extends Entity {
 	#tanHalfVerticalFov!: number
 
 	constructor(params: CameraParameters = {}) {
-		super(params);
+		super();
+		super.setParameters(params);
 		this.nearPlane = params.nearPlane ?? DEFAULT_NEAR_PLANE;
 		this.farPlane = params.farPlane ?? DEFAULT_FAR_PLANE;
 		this.orthoZoom = params.orthoZoom ?? DEFAULT_ORTHO_ZOOM;

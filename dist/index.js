@@ -5236,7 +5236,8 @@ class Camera extends Entity {
     isOrthographic;
     #tanHalfVerticalFov;
     constructor(params = {}) {
-        super(params);
+        super();
+        super.setParameters(params);
         this.nearPlane = params.nearPlane ?? DEFAULT_NEAR_PLANE;
         this.farPlane = params.farPlane ?? DEFAULT_FAR_PLANE;
         this.orthoZoom = params.orthoZoom ?? DEFAULT_ORTHO_ZOOM;
