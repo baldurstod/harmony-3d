@@ -1,10 +1,15 @@
-import { Light } from './light';
+import { Light, LightParameters } from './light';
 import { PointLightShadow } from './pointlightshadow';
 import { registerEntity } from '../entities/entities';
 
+export type PointLightParameters = LightParameters & {
+	range?: number,
+};
+
 export class PointLight extends Light {
 	isPointLight = true;
-	constructor(params: any = {}) {
+
+	constructor(params: PointLightParameters = {}) {
 		super(params);
 		this.range = params.range ?? 100.0;
 	}

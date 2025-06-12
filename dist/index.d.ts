@@ -3338,11 +3338,11 @@ declare class Choreography {
              #private;
              shadow: LightShadow;
              isLight: boolean;
-             constructor(parameters?: any);
-             set color(color: any);
-             get color(): any;
-             set intensity(intensity: any);
-             get intensity(): any;
+             constructor(parameters?: LightParameters);
+             set color(color: vec3);
+             get color(): vec3;
+             set intensity(intensity: number);
+             get intensity(): number;
              set range(range: any);
              get range(): any;
              set shadowTextureSize(shadowTextureSize: number);
@@ -3463,6 +3463,11 @@ declare class Choreography {
              clone(): LightMappedGenericMaterial;
              getShaderSource(): string;
          }
+
+         declare type LightParameters = EntityParameters & {
+             color?: vec3;
+             intensity?: number;
+         };
 
          export declare class LightShadow {
              #private;
@@ -5063,7 +5068,7 @@ declare class Choreography {
 
          export declare class PointLight extends Light {
              isPointLight: boolean;
-             constructor(params?: any);
+             constructor(params?: PointLightParameters);
              set castShadow(castShadow: boolean | undefined);
              get castShadow(): boolean | undefined;
              toJSON(): any;
@@ -5185,6 +5190,10 @@ declare class Choreography {
              #private;
              constructor();
          }
+
+         declare type PointLightParameters = LightParameters & {
+             range?: number;
+         };
 
          export declare function Polygonise(/*GRIDCELL */ grid: any, /*double */ isolevel: any, /*TRIANGLE **/ triangles: any): any;
 
