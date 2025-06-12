@@ -61,11 +61,13 @@ export declare class AlphaRandom extends SourceEngineParticleOperator {
 
 export declare class AmbientLight extends Light {
     isAmbientLight: boolean;
-    constructor(params?: any);
+    constructor(params?: AmbientLightParameters);
     static constructFromJSON(json: any): Promise<AmbientLight>;
     static getEntityName(): string;
     is(s: string): boolean;
 }
+
+declare type AmbientLightParameters = LightParameters;
 
 declare interface Animated {
     hasAnimations: true;

@@ -19673,406 +19673,7 @@ class CubeEnvironment extends Environment {
     }
 }
 
-var _a$2;
-const MAX_ANIMATIONS = 2;
-let dataListId = 0;
-function getDataListId() {
-    return `animations-datalist${++dataListId}`;
-}
-class SceneExplorerEntity extends HTMLElement {
-    #doOnce;
-    #entity;
-    #htmlHeader;
-    #htmlContent;
-    #htmlAnimations;
-    #htmlInputDataList;
-    #htmlChilds;
-    #htmlTitle;
-    #htmlVisible;
-    #htmlPlaying;
-    #htmlAnimationsButton;
-    #htmlLoopedButton;
-    #htmlLockedButton;
-    #htmlReset;
-    static #entitiesHTML = new Map();
-    static #selectedEntity;
-    static #explorer;
-    static #draggedEntity;
-    static {
-        EntityObserver.addEventListener(CHILD_ADDED, (event) => _a$2.#expandEntityChilds(event.detail.parent));
-        EntityObserver.addEventListener(CHILD_REMOVED, (event) => _a$2.#expandEntityChilds(event.detail.parent));
-        EntityObserver.addEventListener(PROPERTY_CHANGED$1, (event) => _a$2.#handlePropertyChanged(event.detail));
-        EntityObserver.addEventListener(ENTITY_DELETED, (event) => _a$2.#handleEntityDeleted(event.detail));
-    }
-    constructor() {
-        super();
-        this.#doOnce = true;
-        defineHarmonyToggleButton();
-        this.#htmlHeader = createElement('div', {
-            class: 'scene-explorer-entity-header',
-            childs: [
-                this.#htmlTitle = createElement('div', {
-                    class: 'scene-explorer-entity-title',
-                    events: {
-                        click: () => this.#titleClick(),
-                    }
-                }),
-                createElement('div', {
-                    class: 'scene-explorer-entity-buttons',
-                    childs: [
-                        this.#htmlVisible = createElement('div', {
-                            class: 'scene-explorer-entity-button-visible',
-                            events: {
-                                click: () => {
-                                    this.#entity?.toggleVisibility();
-                                },
-                            }
-                        }),
-                        this.#htmlPlaying = createElement('div', {
-                            hidden: true,
-                            class: 'scene-explorer-entity-button-play',
-                            events: {
-                                click: () => {
-                                    this.#entity?.togglePlaying();
-                                },
-                            }
-                        }),
-                        this.#htmlAnimationsButton = createElement('harmony-toggle-button', {
-                            hidden: true,
-                            childs: [
-                                createElement('div', {
-                                    slot: 'off',
-                                    innerHTML: runSVG,
-                                }),
-                                createElement('div', {
-                                    slot: 'on',
-                                    innerHTML: walkSVG,
-                                }),
-                            ],
-                            events: {
-                                change: (event) => this.#displayAnimations(event.target.state),
-                            }
-                        }),
-                        this.#htmlLoopedButton = createElement('harmony-toggle-button', {
-                            hidden: true,
-                            childs: [
-                                createElement('div', {
-                                    slot: 'off',
-                                    innerHTML: repeatSVG,
-                                }),
-                                createElement('div', {
-                                    slot: 'on',
-                                    innerHTML: repeatOnSVG,
-                                }),
-                            ],
-                            events: {
-                                change: (event) => this.#entity?.setLooping(event.target.state),
-                            }
-                        }),
-                        this.#htmlLockedButton = createElement('harmony-toggle-button', {
-                            hidden: true,
-                            childs: [
-                                createElement('div', {
-                                    slot: 'off',
-                                    innerHTML: lockOpenRightSVG,
-                                }),
-                                createElement('div', {
-                                    slot: 'on',
-                                    innerHTML: lockSVG,
-                                }),
-                            ],
-                            events: {
-                                change: (event) => this.#entity?.setLocked(event.target.state),
-                            }
-                        }),
-                        this.#htmlReset = createElement('div', {
-                            hidden: true,
-                            class: 'scene-explorer-entity-button-reset',
-                            innerHTML: restartSVG,
-                            events: {
-                                click: () => {
-                                    this.#entity?.do('reset');
-                                },
-                            }
-                        }),
-                    ]
-                }),
-            ]
-        });
-        this.#htmlContent = createElement('div', {
-            class: 'scene-explorer-entity-content',
-            hidden: true,
-        });
-        this.#htmlChilds = createElement('div', {
-            class: 'scene-explorer-entity-childs',
-            hidden: true,
-        });
-    }
-    connectedCallback() {
-        if (this.#doOnce) {
-            this.#doOnce = false;
-            this.#htmlHeader.draggable = true;
-            this.append(this.#htmlHeader, this.#htmlContent, this.#htmlChilds);
-            this.addEventListener('contextmenu', event => this.#contextMenuHandler(event));
-            this.addEventListener('dragstart', event => {
-                if (event.dataTransfer) {
-                    event.dataTransfer.effectAllowed = 'link';
-                }
-                _a$2.#draggedEntity = this.#entity;
-                event.stopPropagation();
-            });
-            this.addEventListener('dragenter', event => {
-                this.classList.add('dragged-over');
-            });
-            this.addEventListener('dragleave', event => {
-                this.classList.remove('dragged-over');
-            });
-            this.addEventListener('dragover', event => {
-                event.preventDefault();
-                event.stopPropagation();
-            });
-            this.addEventListener('drop', event => {
-                const draggedEntity = _a$2.#draggedEntity;
-                if (draggedEntity) {
-                    this.classList.remove('dragged-over');
-                    this.#entity?.addChild(draggedEntity);
-                    event.stopPropagation();
-                }
-            });
-            this.addEventListener('dragend', () => {
-                _a$2.#draggedEntity = undefined;
-            });
-        }
-    }
-    /**
-     * @deprecated Please use `setEntity` instead.
-     */
-    set entity(entity) {
-        //TODO: deprecate
-        console.warn('deprecated, use setEntity instaed');
-        this.setEntity(entity);
-    }
-    setEntity(entity) {
-        this.#entity = entity;
-        this.#update();
-        this.#updateVisibility();
-        this.#updatePlaying();
-        display(this.#htmlPlaying, entity?.animable);
-        display(this.#htmlAnimationsButton, entity?.hasAnimations);
-        display(this.#htmlReset, entity?.resetable);
-        display(this.#htmlLoopedButton, entity?.isLoopable);
-        display(this.#htmlLockedButton, entity?.isLockable);
-    }
-    static setExplorer(explorer) {
-        _a$2.#explorer = explorer;
-    }
-    /*
-    static get selectedEntity() {
-        return SceneExplorerEntity.#selectedEntity.#entity;
-    }
-    */
-    select() {
-        this.classList.add('selected');
-        const selectedEntity = _a$2.#selectedEntity;
-        if (selectedEntity != this) {
-            selectedEntity?.unselect();
-        }
-        _a$2.#selectedEntity = this;
-    }
-    display() {
-        this.#display();
-        this.scrollIntoView();
-    }
-    #display() {
-        const parentEntity = this.#entity.parent;
-        if (parentEntity) {
-            const htmlParent = _a$2.getEntityElement(parentEntity);
-            if (htmlParent) {
-                htmlParent.#display();
-                htmlParent.expand();
-            }
-        }
-    }
-    unselect() {
-        this.classList.remove('selected');
-    }
-    static getEntityElement(entity) {
-        if (entity.hideInExplorer) {
-            return null;
-        }
-        let entityElement = _a$2.#entitiesHTML.get(entity);
-        if (!entityElement) {
-            entityElement = createElement('scene-explorer-entity');
-            entityElement.setEntity(entity);
-            _a$2.#entitiesHTML.set(entity, entityElement);
-        }
-        return entityElement;
-    }
-    static #handlePropertyChanged(detail) {
-        const entity = detail.entity;
-        _a$2.#updateEntity(entity);
-        switch (detail.name) {
-            case 'visible':
-                this.#updateEntityVisibility(entity);
-                for (let child of entity.children) {
-                    this.#updateEntityVisibility(child);
-                }
-                break;
-            case 'playing':
-                this.#updateEntityPlaying(entity);
-                break;
-        }
-    }
-    static #handleEntityDeleted(detail) {
-        _a$2.#entitiesHTML.delete(detail.entity);
-        //console.log('deleted entity', detail.entity);
-    }
-    static #updateEntity(entity) {
-        let entityElement = _a$2.#entitiesHTML.get(entity);
-        if (entityElement) {
-            entityElement.#update();
-        }
-    }
-    static #expandEntityChilds(entity) {
-        let entityElement = _a$2.#entitiesHTML.get(entity);
-        if (entityElement) {
-            entityElement.#expandChilds();
-        }
-    }
-    #update() {
-        const entity = this.#entity;
-        if (entity) {
-            const className = entity.constructor.getEntityName();
-            this.#htmlTitle.innerText = entity.name ? `${entity.name} (${className})` : className;
-        }
-    }
-    static #updateEntityVisibility(entity) {
-        const entityElement = _a$2.#entitiesHTML.get(entity);
-        if (entityElement) {
-            entityElement.#updateVisibility();
-        }
-    }
-    #updateVisibility() {
-        if (this.#entity?.isVisible()) {
-            this.#htmlVisible.innerHTML = visibilityOnSVG;
-        }
-        else {
-            this.#htmlVisible.innerHTML = visibilityOffSVG;
-        }
-    }
-    static #updateEntityPlaying(entity) {
-        const entityElement = _a$2.#entitiesHTML.get(entity);
-        if (entityElement) {
-            entityElement.#updatePlaying();
-        }
-    }
-    #updatePlaying() {
-        if (this.#entity?.isPlaying()) {
-            this.#htmlPlaying.innerHTML = playSVG;
-        }
-        else {
-            this.#htmlPlaying.innerHTML = pauseSVG;
-        }
-    }
-    expand() {
-        show(this.#htmlChilds);
-        this.#expandChilds();
-        //this.select();
-    }
-    #expandChilds() {
-        this.#htmlChilds.innerText = '';
-        const entity = this.#entity;
-        if (!entity) {
-            return;
-        }
-        for (let child of entity.children) {
-            const childHtml = _a$2.getEntityElement(child);
-            if (childHtml) {
-                this.#htmlChilds.append(childHtml);
-            }
-        }
-    }
-    #titleClick() {
-        if (this == _a$2.#selectedEntity) {
-            toggle(this.#htmlChilds);
-        }
-        else {
-            show(this.#htmlChilds);
-        }
-        this.#expandChilds();
-        _a$2.#explorer?.selectEntity(this.#entity);
-    }
-    #contextMenuHandler(event) {
-        if (!event.shiftKey && this.#entity) {
-            _a$2.#explorer?.showContextMenu(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
-            event.preventDefault();
-            event.stopPropagation();
-        }
-    }
-    async #displayAnimations(display) {
-        if (!this.#entity) {
-            return;
-        }
-        if (this.#htmlAnimations && !display) {
-            hide(this.#htmlAnimations);
-            return;
-        }
-        this.#initAnimations();
-        //SceneExplorerEntity.#explorer?.showAnimations(this.#entity);
-        const animList = await this.#entity.getAnimations?.();
-        if (!animList) {
-            return;
-        }
-        this.#htmlInputDataList.innerText = '';
-        for (let value of animList) {
-            createElement('option', {
-                innerText: value,
-                parent: this.#htmlInputDataList,
-            });
-        }
-        show(this.#htmlAnimations);
-        show(this.#htmlContent);
-    }
-    #initAnimations() {
-        if (this.#htmlAnimations) {
-            return;
-        }
-        this.#htmlAnimations = createElement('div', {
-            class: 'animations',
-            parent: this.#htmlContent,
-        });
-        const dataListId = getDataListId();
-        for (let i = 0; i < MAX_ANIMATIONS; i++) {
-            createElement('div', {
-                class: 'animation',
-                parent: this.#htmlAnimations,
-                childs: [
-                    createElement('input', {
-                        list: dataListId,
-                        events: {
-                            change: (event) => this.#setAnimName(i, event.target.value)
-                        }
-                    }),
-                ],
-            });
-        }
-        this.#htmlInputDataList = createElement('datalist', {
-            id: dataListId,
-            parent: this.#htmlAnimations,
-        });
-    }
-    #setAnimName(id, name) {
-        if (!this.#entity) {
-            return;
-        }
-        this.#entity.playAnimation(name);
-        this.#entity.setAnimation(id, name, 1); //TODO: weight
-    }
-}
-_a$2 = SceneExplorerEntity;
-if (window.customElements) {
-    customElements.define('scene-explorer-entity', SceneExplorerEntity);
-}
+var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: teal;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\tcursor: pointer;\n}\n";
 
 function getUniformsHtml(uniforms /*TODO: create a proper type for uniforms*/) {
     let htmlUniforms = createElement('div');
@@ -20381,6 +19982,245 @@ class Source1ModelManager {
             }
         }
         return { name: '', path: '', files: repoList };
+    }
+}
+
+class Source1ParticleControler {
+    static #loadManifestPromises = {};
+    static speed = 1.0;
+    static visible = true;
+    static #systemList = {}; //TODOv3: make map
+    static #activeSystemList = new Map();
+    static #pcfList = {};
+    static #systemNameToPcf = {};
+    static #sourceEngineParticleSystem;
+    static fixedTime;
+    static {
+        GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
+            this.stepSystems(this.fixedTime ? (this.fixedTime * event.detail.speed) : event.detail.delta); //TODOv3: imporve this
+        });
+    }
+    static setParticleConstructor(ps) {
+        this.#sourceEngineParticleSystem = ps;
+    }
+    /**
+     * Reset all active systems
+     */
+    static resetAll() {
+        for (let system of this.#activeSystemList.values()) {
+            system.reset();
+        }
+    }
+    /**
+     * Step systems
+     * @param {Number} elapsedTime Step time
+     */
+    static stepSystems(elapsedTime) {
+        if (elapsedTime) {
+            elapsedTime *= this.speed;
+            elapsedTime = Math.min(elapsedTime, 0.1);
+            for (let system of this.#activeSystemList.values()) {
+                if (system.parentSystem === undefined) {
+                    system.step(elapsedTime);
+                }
+            }
+        }
+    }
+    /**
+     * Add system TODO
+     * @param {Number} elapsedTime Step time
+     */
+    static addSystem2(system) {
+        this.#systemList[system.id] = system;
+    }
+    /**
+     * Create system
+     * @param {Number} elapsedTime Step time
+     */
+    static async createSystem(repository, systemName) {
+        if (!repository) {
+            //try to get repository from filename
+            for (let repo in this.#systemNameToPcf) {
+                if (systemName.startsWith(repo)) {
+                    repository = repo;
+                    systemName = systemName.replace(repo, '');
+                    break;
+                }
+            }
+            let index = systemName.lastIndexOf('.pcf/');
+            if (index != -1) {
+                systemName = systemName.substring(index + 5);
+            }
+        }
+        let ps = new this.#sourceEngineParticleSystem({ repository: repository, name: systemName }); //TODOV2
+        this.#systemList[ps.id] = ps;
+        await this.#createSystem(repository, ps);
+        return ps;
+    }
+    /**
+     * Create system
+     * @param {Number} elapsedTime Step time
+     */
+    static async #createSystem(repositoryName, system) {
+        let pcfName = await this.#getPcfBySystemName(repositoryName, system.name);
+        if (pcfName) {
+            let pcf = await this.#getPcf(repositoryName, 'particles/' + pcfName);
+            if (pcf) {
+                pcf.initSystem(system);
+            }
+        }
+    }
+    static async #getPcfBySystemName(repository, systemName) {
+        await this.#loadManifest(repository);
+        let systemNameToPcfRepo = this.#systemNameToPcf[repository];
+        if (systemNameToPcfRepo) {
+            return systemNameToPcfRepo[systemName];
+        }
+        return null;
+        /*
+
+                    let promise = new Promise((resolve, reject) => {
+                        let systemNameToPcfRepo = systemNameToPcf[repository];
+                        if (systemNameToPcfRepo) {
+                            resolve(systemNameToPcfRepo[systemName]);
+                        } else {
+                            let kallback = () => {
+                                resolve(systemNameToPcf[repository][systemName]);
+                            }
+                            this.#loadManifest(repository).then(kallback, reject);//TODOv2: root
+                        }
+                    });
+                    return promise;*/
+    }
+    static async loadManifest(repository) {
+        if (this.#systemNameToPcf[repository] === undefined) {
+            this.#systemNameToPcf[repository] = null;
+        }
+    }
+    /**
+     * TODO
+     */
+    static async #loadManifest(repositoryName) {
+        this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
+            let systemNameToPcfRepo = {};
+            this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
+            const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json'); //TODO const
+            if (response.error) {
+                reject(false);
+            }
+            const json /*TODO: change type*/ = response.json;
+            if (json && json.files) {
+                for (let file of json.files) {
+                    let pcfName = file.name;
+                    for (let definition of file.particlesystemdefinitions) {
+                        systemNameToPcfRepo[definition] = pcfName;
+                    }
+                }
+                resolve(true);
+            }
+            else {
+                reject(false);
+            }
+        });
+        return this.#loadManifestPromises[repositoryName];
+    }
+    /**
+     * Start all systems
+     */
+    static startAll() {
+        for (let system of this.#activeSystemList.values()) {
+            system.start();
+        }
+    }
+    /**
+     * Stop all systems
+     */
+    static stopAll() {
+        for (let system of this.#activeSystemList.values()) {
+            system.stop();
+        }
+    }
+    /**
+     * Set a system active
+     */
+    static setActive(system) {
+        if (!system) {
+            return;
+        }
+        this.#activeSystemList.set(system.id, system);
+    }
+    /**
+     * Set a system inactive
+     */
+    static setInactive(system) {
+        if (!system) {
+            return;
+        }
+        this.#activeSystemList.delete(system.id);
+    }
+    /**
+     * Get a pcf from cache or load it
+     * @param {String} name Name of the pcf
+     * @return {Object SourcePCF} Pcf
+     */
+    static async #getPcf(repositoryName, pcfName) {
+        let promise = new Promise((resolve, reject) => {
+            let pcf = this.#pcfList[pcfName];
+            if (!pcf) {
+                let callback1 = (pcf) => {
+                    if (pcf) {
+                        this.#pcfList[pcfName] = pcf;
+                        pcf.repositoryName = repositoryName;
+                    }
+                    resolve(pcf);
+                };
+                this.#loadPcf(repositoryName, pcfName).then(callback1);
+            }
+            else {
+                resolve(pcf);
+            }
+        });
+        return promise;
+    }
+    /**
+     * Load a pcf
+     * @param {String} name Name of the pcf
+     * @return {Object SourcePCF} Pcf or null
+     */
+    static async #loadPcf(repositoryName, pcfName) {
+        //TODO: return an empty system if not found?
+        let promise = new Promise((resolve, reject) => {
+            let pcfLoader = getLoader('SourceEnginePCFLoader');
+            new pcfLoader().load(repositoryName, pcfName).then((pcf) => resolve(pcf)); //TODOv3: handle reject
+        });
+        return promise;
+    }
+    static setSpeed(s) {
+        this.speed = s;
+    }
+    static async getSystemList() {
+        let repoList = [];
+        for (let repoName in this.#systemNameToPcf) {
+            let pcfs = {};
+            await this.#loadManifest(repoName);
+            let repo = this.#systemNameToPcf[repoName];
+            for (let systemName in repo) {
+                let pcfName = repo[systemName];
+                if (!pcfs[pcfName]) {
+                    pcfs[pcfName] = [];
+                }
+                pcfs[pcfName].push({ name: systemName });
+            }
+            let pcfList = [];
+            for (let pcfName in pcfs) {
+                pcfList.push({ name: pcfName, files: pcfs[pcfName] });
+            }
+            repoList.push({ name: repoName, files: pcfList });
+        }
+        return { name: '', path: '', files: repoList };
+    }
+    static set renderSystems(renderSystems) {
+        this.visible = renderSystems ? undefined : false;
     }
 }
 
@@ -24987,20 +24827,20 @@ class Source2Model {
     }
 }
 
-var _a$1;
+var _a$2;
 const defaultMaterial$1 = new MeshBasicMaterial();
 class Source2ModelLoader {
     static #loadPromisesPerRepo = {};
     static {
-        defaultMaterial$1.addUser(_a$1);
+        defaultMaterial$1.addUser(_a$2);
     }
     load(repositoryName, fileName) {
         // Cleanup filename
         fileName = fileName.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
-        let repoPromises = _a$1.#loadPromisesPerRepo[repositoryName];
+        let repoPromises = _a$2.#loadPromisesPerRepo[repositoryName];
         if (!repoPromises) {
             repoPromises = {};
-            _a$1.#loadPromisesPerRepo[repositoryName] = repoPromises;
+            _a$2.#loadPromisesPerRepo[repositoryName] = repoPromises;
         }
         let promise = repoPromises[fileName];
         if (promise) {
@@ -25124,14 +24964,14 @@ class Source2ModelLoader {
     async #loadIncludeModels(model) {
         const includeModels = model.getIncludeModels();
         for (const includeModel of includeModels) {
-            const refModel = await new _a$1().load(model.repository, includeModel);
+            const refModel = await new _a$2().load(model.repository, includeModel);
             if (refModel) {
                 model.addIncludeModel(refModel);
             }
         }
     }
 }
-_a$1 = Source2ModelLoader;
+_a$2 = Source2ModelLoader;
 
 class Source2ModelManager {
     static #modelListPerRepository = {};
@@ -25221,245 +25061,6 @@ class Source2ModelManager {
     }
 }
 
-class Source1ParticleControler {
-    static #loadManifestPromises = {};
-    static speed = 1.0;
-    static visible = true;
-    static #systemList = {}; //TODOv3: make map
-    static #activeSystemList = new Map();
-    static #pcfList = {};
-    static #systemNameToPcf = {};
-    static #sourceEngineParticleSystem;
-    static fixedTime;
-    static {
-        GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => {
-            this.stepSystems(this.fixedTime ? (this.fixedTime * event.detail.speed) : event.detail.delta); //TODOv3: imporve this
-        });
-    }
-    static setParticleConstructor(ps) {
-        this.#sourceEngineParticleSystem = ps;
-    }
-    /**
-     * Reset all active systems
-     */
-    static resetAll() {
-        for (let system of this.#activeSystemList.values()) {
-            system.reset();
-        }
-    }
-    /**
-     * Step systems
-     * @param {Number} elapsedTime Step time
-     */
-    static stepSystems(elapsedTime) {
-        if (elapsedTime) {
-            elapsedTime *= this.speed;
-            elapsedTime = Math.min(elapsedTime, 0.1);
-            for (let system of this.#activeSystemList.values()) {
-                if (system.parentSystem === undefined) {
-                    system.step(elapsedTime);
-                }
-            }
-        }
-    }
-    /**
-     * Add system TODO
-     * @param {Number} elapsedTime Step time
-     */
-    static addSystem2(system) {
-        this.#systemList[system.id] = system;
-    }
-    /**
-     * Create system
-     * @param {Number} elapsedTime Step time
-     */
-    static async createSystem(repository, systemName) {
-        if (!repository) {
-            //try to get repository from filename
-            for (let repo in this.#systemNameToPcf) {
-                if (systemName.startsWith(repo)) {
-                    repository = repo;
-                    systemName = systemName.replace(repo, '');
-                    break;
-                }
-            }
-            let index = systemName.lastIndexOf('.pcf/');
-            if (index != -1) {
-                systemName = systemName.substring(index + 5);
-            }
-        }
-        let ps = new this.#sourceEngineParticleSystem({ repository: repository, name: systemName }); //TODOV2
-        this.#systemList[ps.id] = ps;
-        await this.#createSystem(repository, ps);
-        return ps;
-    }
-    /**
-     * Create system
-     * @param {Number} elapsedTime Step time
-     */
-    static async #createSystem(repositoryName, system) {
-        let pcfName = await this.#getPcfBySystemName(repositoryName, system.name);
-        if (pcfName) {
-            let pcf = await this.#getPcf(repositoryName, 'particles/' + pcfName);
-            if (pcf) {
-                pcf.initSystem(system);
-            }
-        }
-    }
-    static async #getPcfBySystemName(repository, systemName) {
-        await this.#loadManifest(repository);
-        let systemNameToPcfRepo = this.#systemNameToPcf[repository];
-        if (systemNameToPcfRepo) {
-            return systemNameToPcfRepo[systemName];
-        }
-        return null;
-        /*
-
-                    let promise = new Promise((resolve, reject) => {
-                        let systemNameToPcfRepo = systemNameToPcf[repository];
-                        if (systemNameToPcfRepo) {
-                            resolve(systemNameToPcfRepo[systemName]);
-                        } else {
-                            let kallback = () => {
-                                resolve(systemNameToPcf[repository][systemName]);
-                            }
-                            this.#loadManifest(repository).then(kallback, reject);//TODOv2: root
-                        }
-                    });
-                    return promise;*/
-    }
-    static async loadManifest(repository) {
-        if (this.#systemNameToPcf[repository] === undefined) {
-            this.#systemNameToPcf[repository] = null;
-        }
-    }
-    /**
-     * TODO
-     */
-    static async #loadManifest(repositoryName) {
-        this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
-            let systemNameToPcfRepo = {};
-            this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
-            const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json'); //TODO const
-            if (response.error) {
-                reject(false);
-            }
-            const json /*TODO: change type*/ = response.json;
-            if (json && json.files) {
-                for (let file of json.files) {
-                    let pcfName = file.name;
-                    for (let definition of file.particlesystemdefinitions) {
-                        systemNameToPcfRepo[definition] = pcfName;
-                    }
-                }
-                resolve(true);
-            }
-            else {
-                reject(false);
-            }
-        });
-        return this.#loadManifestPromises[repositoryName];
-    }
-    /**
-     * Start all systems
-     */
-    static startAll() {
-        for (let system of this.#activeSystemList.values()) {
-            system.start();
-        }
-    }
-    /**
-     * Stop all systems
-     */
-    static stopAll() {
-        for (let system of this.#activeSystemList.values()) {
-            system.stop();
-        }
-    }
-    /**
-     * Set a system active
-     */
-    static setActive(system) {
-        if (!system) {
-            return;
-        }
-        this.#activeSystemList.set(system.id, system);
-    }
-    /**
-     * Set a system inactive
-     */
-    static setInactive(system) {
-        if (!system) {
-            return;
-        }
-        this.#activeSystemList.delete(system.id);
-    }
-    /**
-     * Get a pcf from cache or load it
-     * @param {String} name Name of the pcf
-     * @return {Object SourcePCF} Pcf
-     */
-    static async #getPcf(repositoryName, pcfName) {
-        let promise = new Promise((resolve, reject) => {
-            let pcf = this.#pcfList[pcfName];
-            if (!pcf) {
-                let callback1 = (pcf) => {
-                    if (pcf) {
-                        this.#pcfList[pcfName] = pcf;
-                        pcf.repositoryName = repositoryName;
-                    }
-                    resolve(pcf);
-                };
-                this.#loadPcf(repositoryName, pcfName).then(callback1);
-            }
-            else {
-                resolve(pcf);
-            }
-        });
-        return promise;
-    }
-    /**
-     * Load a pcf
-     * @param {String} name Name of the pcf
-     * @return {Object SourcePCF} Pcf or null
-     */
-    static async #loadPcf(repositoryName, pcfName) {
-        //TODO: return an empty system if not found?
-        let promise = new Promise((resolve, reject) => {
-            let pcfLoader = getLoader('SourceEnginePCFLoader');
-            new pcfLoader().load(repositoryName, pcfName).then((pcf) => resolve(pcf)); //TODOv3: handle reject
-        });
-        return promise;
-    }
-    static setSpeed(s) {
-        this.speed = s;
-    }
-    static async getSystemList() {
-        let repoList = [];
-        for (let repoName in this.#systemNameToPcf) {
-            let pcfs = {};
-            await this.#loadManifest(repoName);
-            let repo = this.#systemNameToPcf[repoName];
-            for (let systemName in repo) {
-                let pcfName = repo[systemName];
-                if (!pcfs[pcfName]) {
-                    pcfs[pcfName] = [];
-                }
-                pcfs[pcfName].push({ name: systemName });
-            }
-            let pcfList = [];
-            for (let pcfName in pcfs) {
-                pcfList.push({ name: pcfName, files: pcfs[pcfName] });
-            }
-            repoList.push({ name: repoName, files: pcfList });
-        }
-        return { name: '', path: '', files: repoList };
-    }
-    static set renderSystems(renderSystems) {
-        this.visible = renderSystems ? undefined : false;
-    }
-}
-
 class Source2ParticleManagerClass {
     #vpcfs = {}; //TODO: turn to map
     #fileList = {}; //TODO: turn to map and improve type
@@ -25540,7 +25141,406 @@ class Source2ParticleManagerClass {
 }
 const Source2ParticleManager = new Source2ParticleManagerClass();
 
-var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: teal;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\tcursor: pointer;\n}\n";
+var _a$1;
+const MAX_ANIMATIONS = 2;
+let dataListId = 0;
+function getDataListId() {
+    return `animations-datalist${++dataListId}`;
+}
+class SceneExplorerEntity extends HTMLElement {
+    #doOnce;
+    #entity;
+    #htmlHeader;
+    #htmlContent;
+    #htmlAnimations;
+    #htmlInputDataList;
+    #htmlChilds;
+    #htmlTitle;
+    #htmlVisible;
+    #htmlPlaying;
+    #htmlAnimationsButton;
+    #htmlLoopedButton;
+    #htmlLockedButton;
+    #htmlReset;
+    static #entitiesHTML = new Map();
+    static #selectedEntity;
+    static #explorer;
+    static #draggedEntity;
+    static {
+        EntityObserver.addEventListener(CHILD_ADDED, (event) => _a$1.#expandEntityChilds(event.detail.parent));
+        EntityObserver.addEventListener(CHILD_REMOVED, (event) => _a$1.#expandEntityChilds(event.detail.parent));
+        EntityObserver.addEventListener(PROPERTY_CHANGED$1, (event) => _a$1.#handlePropertyChanged(event.detail));
+        EntityObserver.addEventListener(ENTITY_DELETED, (event) => _a$1.#handleEntityDeleted(event.detail));
+    }
+    constructor() {
+        super();
+        this.#doOnce = true;
+        defineHarmonyToggleButton();
+        this.#htmlHeader = createElement('div', {
+            class: 'scene-explorer-entity-header',
+            childs: [
+                this.#htmlTitle = createElement('div', {
+                    class: 'scene-explorer-entity-title',
+                    events: {
+                        click: () => this.#titleClick(),
+                    }
+                }),
+                createElement('div', {
+                    class: 'scene-explorer-entity-buttons',
+                    childs: [
+                        this.#htmlVisible = createElement('div', {
+                            class: 'scene-explorer-entity-button-visible',
+                            events: {
+                                click: () => {
+                                    this.#entity?.toggleVisibility();
+                                },
+                            }
+                        }),
+                        this.#htmlPlaying = createElement('div', {
+                            hidden: true,
+                            class: 'scene-explorer-entity-button-play',
+                            events: {
+                                click: () => {
+                                    this.#entity?.togglePlaying();
+                                },
+                            }
+                        }),
+                        this.#htmlAnimationsButton = createElement('harmony-toggle-button', {
+                            hidden: true,
+                            childs: [
+                                createElement('div', {
+                                    slot: 'off',
+                                    innerHTML: runSVG,
+                                }),
+                                createElement('div', {
+                                    slot: 'on',
+                                    innerHTML: walkSVG,
+                                }),
+                            ],
+                            events: {
+                                change: (event) => this.#displayAnimations(event.target.state),
+                            }
+                        }),
+                        this.#htmlLoopedButton = createElement('harmony-toggle-button', {
+                            hidden: true,
+                            childs: [
+                                createElement('div', {
+                                    slot: 'off',
+                                    innerHTML: repeatSVG,
+                                }),
+                                createElement('div', {
+                                    slot: 'on',
+                                    innerHTML: repeatOnSVG,
+                                }),
+                            ],
+                            events: {
+                                change: (event) => this.#entity?.setLooping(event.target.state),
+                            }
+                        }),
+                        this.#htmlLockedButton = createElement('harmony-toggle-button', {
+                            hidden: true,
+                            childs: [
+                                createElement('div', {
+                                    slot: 'off',
+                                    innerHTML: lockOpenRightSVG,
+                                }),
+                                createElement('div', {
+                                    slot: 'on',
+                                    innerHTML: lockSVG,
+                                }),
+                            ],
+                            events: {
+                                change: (event) => this.#entity?.setLocked(event.target.state),
+                            }
+                        }),
+                        this.#htmlReset = createElement('div', {
+                            hidden: true,
+                            class: 'scene-explorer-entity-button-reset',
+                            innerHTML: restartSVG,
+                            events: {
+                                click: () => {
+                                    this.#entity?.do('reset');
+                                },
+                            }
+                        }),
+                    ]
+                }),
+            ]
+        });
+        this.#htmlContent = createElement('div', {
+            class: 'scene-explorer-entity-content',
+            hidden: true,
+        });
+        this.#htmlChilds = createElement('div', {
+            class: 'scene-explorer-entity-childs',
+            hidden: true,
+        });
+    }
+    connectedCallback() {
+        if (this.#doOnce) {
+            this.#doOnce = false;
+            this.#htmlHeader.draggable = true;
+            this.append(this.#htmlHeader, this.#htmlContent, this.#htmlChilds);
+            this.addEventListener('contextmenu', event => this.#contextMenuHandler(event));
+            this.addEventListener('dragstart', event => {
+                if (event.dataTransfer) {
+                    event.dataTransfer.effectAllowed = 'link';
+                }
+                _a$1.#draggedEntity = this.#entity;
+                event.stopPropagation();
+            });
+            this.addEventListener('dragenter', event => {
+                this.classList.add('dragged-over');
+            });
+            this.addEventListener('dragleave', event => {
+                this.classList.remove('dragged-over');
+            });
+            this.addEventListener('dragover', event => {
+                event.preventDefault();
+                event.stopPropagation();
+            });
+            this.addEventListener('drop', event => {
+                const draggedEntity = _a$1.#draggedEntity;
+                if (draggedEntity) {
+                    this.classList.remove('dragged-over');
+                    this.#entity?.addChild(draggedEntity);
+                    event.stopPropagation();
+                }
+            });
+            this.addEventListener('dragend', () => {
+                _a$1.#draggedEntity = undefined;
+            });
+        }
+    }
+    /**
+     * @deprecated Please use `setEntity` instead.
+     */
+    set entity(entity) {
+        //TODO: deprecate
+        console.warn('deprecated, use setEntity instaed');
+        this.setEntity(entity);
+    }
+    setEntity(entity) {
+        this.#entity = entity;
+        this.#update();
+        this.#updateVisibility();
+        this.#updatePlaying();
+        display(this.#htmlPlaying, entity?.animable);
+        display(this.#htmlAnimationsButton, entity?.hasAnimations);
+        display(this.#htmlReset, entity?.resetable);
+        display(this.#htmlLoopedButton, entity?.isLoopable);
+        display(this.#htmlLockedButton, entity?.isLockable);
+    }
+    static setExplorer(explorer) {
+        _a$1.#explorer = explorer;
+    }
+    /*
+    static get selectedEntity() {
+        return SceneExplorerEntity.#selectedEntity.#entity;
+    }
+    */
+    select() {
+        this.classList.add('selected');
+        const selectedEntity = _a$1.#selectedEntity;
+        if (selectedEntity != this) {
+            selectedEntity?.unselect();
+        }
+        _a$1.#selectedEntity = this;
+    }
+    display() {
+        this.#display();
+        this.scrollIntoView();
+    }
+    #display() {
+        const parentEntity = this.#entity.parent;
+        if (parentEntity) {
+            const htmlParent = _a$1.getEntityElement(parentEntity);
+            if (htmlParent) {
+                htmlParent.#display();
+                htmlParent.expand();
+            }
+        }
+    }
+    unselect() {
+        this.classList.remove('selected');
+    }
+    static getEntityElement(entity) {
+        if (entity.hideInExplorer) {
+            return null;
+        }
+        let entityElement = _a$1.#entitiesHTML.get(entity);
+        if (!entityElement) {
+            entityElement = createElement('scene-explorer-entity');
+            entityElement.setEntity(entity);
+            _a$1.#entitiesHTML.set(entity, entityElement);
+        }
+        return entityElement;
+    }
+    static #handlePropertyChanged(detail) {
+        const entity = detail.entity;
+        _a$1.#updateEntity(entity);
+        switch (detail.name) {
+            case 'visible':
+                this.#updateEntityVisibility(entity);
+                for (let child of entity.children) {
+                    this.#updateEntityVisibility(child);
+                }
+                break;
+            case 'playing':
+                this.#updateEntityPlaying(entity);
+                break;
+        }
+    }
+    static #handleEntityDeleted(detail) {
+        _a$1.#entitiesHTML.delete(detail.entity);
+        //console.log('deleted entity', detail.entity);
+    }
+    static #updateEntity(entity) {
+        let entityElement = _a$1.#entitiesHTML.get(entity);
+        if (entityElement) {
+            entityElement.#update();
+        }
+    }
+    static #expandEntityChilds(entity) {
+        let entityElement = _a$1.#entitiesHTML.get(entity);
+        if (entityElement) {
+            entityElement.#expandChilds();
+        }
+    }
+    #update() {
+        const entity = this.#entity;
+        if (entity) {
+            const className = entity.constructor.getEntityName();
+            this.#htmlTitle.innerText = entity.name ? `${entity.name} (${className})` : className;
+        }
+    }
+    static #updateEntityVisibility(entity) {
+        const entityElement = _a$1.#entitiesHTML.get(entity);
+        if (entityElement) {
+            entityElement.#updateVisibility();
+        }
+    }
+    #updateVisibility() {
+        if (this.#entity?.isVisible()) {
+            this.#htmlVisible.innerHTML = visibilityOnSVG;
+        }
+        else {
+            this.#htmlVisible.innerHTML = visibilityOffSVG;
+        }
+    }
+    static #updateEntityPlaying(entity) {
+        const entityElement = _a$1.#entitiesHTML.get(entity);
+        if (entityElement) {
+            entityElement.#updatePlaying();
+        }
+    }
+    #updatePlaying() {
+        if (this.#entity?.isPlaying()) {
+            this.#htmlPlaying.innerHTML = playSVG;
+        }
+        else {
+            this.#htmlPlaying.innerHTML = pauseSVG;
+        }
+    }
+    expand() {
+        show(this.#htmlChilds);
+        this.#expandChilds();
+        //this.select();
+    }
+    #expandChilds() {
+        this.#htmlChilds.innerText = '';
+        const entity = this.#entity;
+        if (!entity) {
+            return;
+        }
+        for (let child of entity.children) {
+            const childHtml = _a$1.getEntityElement(child);
+            if (childHtml) {
+                this.#htmlChilds.append(childHtml);
+            }
+        }
+    }
+    #titleClick() {
+        if (this == _a$1.#selectedEntity) {
+            toggle(this.#htmlChilds);
+        }
+        else {
+            show(this.#htmlChilds);
+        }
+        this.#expandChilds();
+        _a$1.#explorer?.selectEntity(this.#entity);
+    }
+    #contextMenuHandler(event) {
+        if (!event.shiftKey && this.#entity) {
+            _a$1.#explorer?.showContextMenu(this.#entity.buildContextMenu(), event.clientX, event.clientY, this.#entity);
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+    async #displayAnimations(display) {
+        if (!this.#entity) {
+            return;
+        }
+        if (this.#htmlAnimations && !display) {
+            hide(this.#htmlAnimations);
+            return;
+        }
+        this.#initAnimations();
+        //SceneExplorerEntity.#explorer?.showAnimations(this.#entity);
+        const animList = await this.#entity.getAnimations?.();
+        if (!animList) {
+            return;
+        }
+        this.#htmlInputDataList.innerText = '';
+        for (let value of animList) {
+            createElement('option', {
+                innerText: value,
+                parent: this.#htmlInputDataList,
+            });
+        }
+        show(this.#htmlAnimations);
+        show(this.#htmlContent);
+    }
+    #initAnimations() {
+        if (this.#htmlAnimations) {
+            return;
+        }
+        this.#htmlAnimations = createElement('div', {
+            class: 'animations',
+            parent: this.#htmlContent,
+        });
+        const dataListId = getDataListId();
+        for (let i = 0; i < MAX_ANIMATIONS; i++) {
+            createElement('div', {
+                class: 'animation',
+                parent: this.#htmlAnimations,
+                childs: [
+                    createElement('input', {
+                        list: dataListId,
+                        events: {
+                            change: (event) => this.#setAnimName(i, event.target.value)
+                        }
+                    }),
+                ],
+            });
+        }
+        this.#htmlInputDataList = createElement('datalist', {
+            id: dataListId,
+            parent: this.#htmlAnimations,
+        });
+    }
+    #setAnimName(id, name) {
+        if (!this.#entity) {
+            return;
+        }
+        this.#entity.playAnimation(name);
+        this.#entity.setAnimation(id, name, 1); //TODO: weight
+    }
+}
+_a$1 = SceneExplorerEntity;
+if (window.customElements) {
+    customElements.define('scene-explorer-entity', SceneExplorerEntity);
+}
 
 function FormatArray(array) {
     let arr = [];
