@@ -1,9 +1,12 @@
-import { Light } from './light';
 import { registerEntity } from '../entities/entities';
+import { Light, LightParameters } from './light';
+
+export type AmbientLightParameters = LightParameters;
 
 export class AmbientLight extends Light {
 	isAmbientLight = true;
-	constructor(params: any = {}) {
+
+	constructor(params: AmbientLightParameters = {}) {
 		super(params);
 	}
 
