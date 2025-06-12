@@ -646,7 +646,7 @@ export declare class Camera extends Entity {
     #private;
     isPerspective: boolean;
     isOrthographic: boolean;
-    constructor(params?: any);
+    constructor(params?: CameraParameters);
     computeCameraMatrix(): void;
     reset(): void;
     setProjection(projection: CameraProjection): void;
@@ -834,6 +834,21 @@ export declare class CameraFrustum extends Mesh {
     update(): void;
     parentChanged(parent: any): void;
 }
+
+declare type CameraParameters = EntityParameters & {
+    nearPlane?: number;
+    farPlane?: number;
+    orthoZoom?: number;
+    projectionMix?: number;
+    projection?: CameraProjection;
+    verticalFov?: number;
+    aspectRatio?: number;
+    upVector?: vec3;
+    left?: number;
+    right?: number;
+    top?: number;
+    bottom?: number;
+};
 
 export declare enum CameraProjection {
     Perspective = 0,
@@ -1781,8 +1796,8 @@ declare class Choreography {
          static editMaterial: (entity: Entity) => void;
          readonly properties: Map<string, any>;
          loadedPromise?: Promise<any>;
-         constructor(params?: any);
-         setParameters(parameters?: any): void;
+         constructor(params?: EntityParameters);
+         setParameters(parameters?: EntityParameters): void;
          set name(name: string);
          get name(): string;
          setPosition(position: vec3): void;
@@ -2023,6 +2038,18 @@ declare class Choreography {
          }
 
          export declare type EntityObserverEventsData = ParentChangedEventData | ChildAddedEventData | ChildRemovedEventData | EntityDeletedEventData | PropertyChangedEventData | AttributeChangedEventData;
+
+         declare type EntityParameters = {
+             name?: string;
+             parent?: Entity;
+             position?: vec3;
+             quaternion?: quat;
+             scale?: vec3;
+             hideInExplorer?: boolean;
+             castShadow?: boolean;
+             receiveShadow?: boolean;
+             visible?: boolean;
+         };
 
          export declare class Environment {
              constructor();
@@ -6272,7 +6299,7 @@ declare class Choreography {
              layers: Set<any>;
              environment?: Environment;
              activeCamera?: Camera;
-             constructor(parameters?: any);
+             constructor(parameters?: SceneParameters);
              addLayer(layer: any, index: number): any;
              removeLayer(layer: any): void;
              setWorld(world: World): void;
@@ -6302,6 +6329,8 @@ declare class Choreography {
              editMaterial(material: Material): void;
              setJointsRadius(radius: number): void;
          }
+
+         declare type SceneParameters = EntityParameters;
 
          export declare class Select extends Node_2 {
              #private;

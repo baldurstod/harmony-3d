@@ -1,6 +1,6 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 import { DEBUG } from '../buildoptions';
-import { Entity } from '../entities/entity';
+import { Entity, EntityParameters } from '../entities/entity';
 import { Scene } from '../scenes/scene';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { EntityObserver } from '../entities/entityobserver';
@@ -37,6 +37,21 @@ const FrontVector = vec3.fromValues(0, 0, -1);
 const LAMBDA = 10;
 const LAMBDA_DIVIDOR = 1 - Math.exp(-LAMBDA);
 
+export type CameraParameters = EntityParameters & {
+	nearPlane?: number,
+	farPlane?: number,
+	orthoZoom?: number,
+	projectionMix?: number,
+	projection?: CameraProjection,
+	verticalFov?: number,
+	aspectRatio?: number,
+	upVector?: vec3,
+	left?: number,
+	right?: number,
+	top?: number,
+	bottom?: number,
+};
+
 export class Camera extends Entity {
 	#nearPlane!: number;
 	#farPlane!: number;
@@ -60,16 +75,15 @@ export class Camera extends Entity {
 	isOrthographic!: boolean;
 	#tanHalfVerticalFov!: number
 
-	constructor(params: any = {}/*TODO: create type*/) {
-		super();
-		super.setParameters(params);
-		this.nearPlane = params.nearPlane ?? params.near ?? DEFAULT_NEAR_PLANE;
-		this.farPlane = params.farPlane ?? params.far ?? DEFAULT_FAR_PLANE;
+	constructor(params: CameraParameters = {}) {
+		super(params);
+		this.nearPlane = params.nearPlane ?? DEFAULT_NEAR_PLANE;
+		this.farPlane = params.farPlane ?? DEFAULT_FAR_PLANE;
 		this.orthoZoom = params.orthoZoom ?? DEFAULT_ORTHO_ZOOM;
 		this.projectionMix = params.projectionMix ?? DEFAULT_PROJECTION_MIX;
 		this.setProjection(params.projection ?? DEFAULT_PROJECTION);
-		this.verticalFov = params.verticalFov ?? params.fov ?? DEFAULT_VERTICAL_FOV;
-		this.aspectRatio = params.aspectRatio ?? params.aspect ?? DEFAULT_ASPECT_RATIO;
+		this.verticalFov = params.verticalFov ?? DEFAULT_VERTICAL_FOV;
+		this.aspectRatio = params.aspectRatio ?? DEFAULT_ASPECT_RATIO;
 		this.upVector = params.upVector ?? DEFAULT_UP_VECTOR;
 
 		this.left = params.left ?? DEFAULT_LEFT;

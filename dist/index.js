@@ -5235,16 +5235,15 @@ class Camera extends Entity {
     isPerspective;
     isOrthographic;
     #tanHalfVerticalFov;
-    constructor(params = {} /*TODO: create type*/) {
-        super();
-        super.setParameters(params);
-        this.nearPlane = params.nearPlane ?? params.near ?? DEFAULT_NEAR_PLANE;
-        this.farPlane = params.farPlane ?? params.far ?? DEFAULT_FAR_PLANE;
+    constructor(params = {}) {
+        super(params);
+        this.nearPlane = params.nearPlane ?? DEFAULT_NEAR_PLANE;
+        this.farPlane = params.farPlane ?? DEFAULT_FAR_PLANE;
         this.orthoZoom = params.orthoZoom ?? DEFAULT_ORTHO_ZOOM;
         this.projectionMix = params.projectionMix ?? DEFAULT_PROJECTION_MIX;
         this.setProjection(params.projection ?? DEFAULT_PROJECTION);
-        this.verticalFov = params.verticalFov ?? params.fov ?? DEFAULT_VERTICAL_FOV;
-        this.aspectRatio = params.aspectRatio ?? params.aspect ?? DEFAULT_ASPECT_RATIO;
+        this.verticalFov = params.verticalFov ?? DEFAULT_VERTICAL_FOV;
+        this.aspectRatio = params.aspectRatio ?? DEFAULT_ASPECT_RATIO;
         this.upVector = params.upVector ?? DEFAULT_UP_VECTOR;
         this.left = params.left ?? DEFAULT_LEFT;
         this.right = params.right ?? DEFAULT_RIGHT;
@@ -66376,7 +66375,7 @@ class RemGenerator {
     #sceneToCubeUV(scene, near, far, cubeUVRenderTarget) {
         const fov = 90;
         const aspect = 1;
-        const cubeCamera = new Camera({ projection: CameraProjection.Perspective, fov: fov, aspect, near, far });
+        const cubeCamera = new Camera({ projection: CameraProjection.Perspective, verticalFov: fov, aspectRatio: aspect, nearPlane: near, farPlane: far });
         const upSign = [1, -1, 1, 1, 1, 1];
         const forwardSign = [1, 1, 1, -1, -1, -1];
         const renderer = this.#renderer;

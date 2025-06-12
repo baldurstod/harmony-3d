@@ -37,8 +37,20 @@ export const UNITY_VEC3 = vec3.fromValues(1, 1, 1);
 
 export const LAYER_MAX = 50;
 
-export enum EngineEntityAttributes  {
+export enum EngineEntityAttributes {
 	IsTool = 'is tool',
+}
+
+export type EntityParameters = {
+	name?: string;
+	parent?: Entity;
+	position?: vec3;
+	quaternion?: quat;
+	scale?: vec3;
+	hideInExplorer?: boolean;
+	castShadow?: boolean;
+	receiveShadow?: boolean;
+	visible?: boolean;
 }
 
 export class Entity {
@@ -80,11 +92,11 @@ export class Entity {
 	loadedPromise?: Promise<any>;
 	#layer?: number = undefined;
 
-	constructor(params?: any) {
+	constructor(params?: EntityParameters) {
 		this.setParameters(params);
 	}
 
-	setParameters(parameters?: any) {
+	setParameters(parameters?: EntityParameters) {
 		if (!parameters) {
 			return;
 		}
@@ -1118,7 +1130,7 @@ export class Entity {
 	}
 
 	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
-		let entity = new Entity({ name: json.name });
+		let entity = new Entity({ name: json.name as string });
 		entity.fromJSON(json);
 		return entity;
 	}

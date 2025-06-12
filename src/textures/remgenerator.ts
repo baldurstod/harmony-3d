@@ -290,7 +290,7 @@ export class RemGenerator {
 
 		const fov = 90;
 		const aspect = 1;
-		const cubeCamera = new Camera({ projection: CameraProjection.Perspective, fov: fov, aspect, near, far });
+		const cubeCamera = new Camera({ projection: CameraProjection.Perspective, verticalFov: fov, aspectRatio: aspect, nearPlane: near, farPlane: far });
 		const upSign = [1, - 1, 1, 1, 1, 1];
 		const forwardSign = [1, 1, 1, - 1, - 1, - 1];
 		const renderer = this.#renderer;
