@@ -36892,7 +36892,7 @@ class Source1ModelInstance extends Entity {
     useNewAnimSystem = false;
     #animationList = [];
     #bodyGroups = new Map();
-    frameframe;
+    frameframe = { bones: {} };
     static {
         defaultMaterial.addUser(Source1ModelInstance);
     }

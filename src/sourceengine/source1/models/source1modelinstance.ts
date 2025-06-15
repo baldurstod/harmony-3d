@@ -52,7 +52,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	useNewAnimSystem = false;
 	#animationList = [];
 	#bodyGroups = new Map<string, number>();
-	readonly frameframe: { bones: { [key: string]: any/*TODO: imporve type*/ } };
+	readonly frameframe: { bones: { [key: string]: any/*TODO: improve type*/ } } = { bones: {} };
 
 	static {
 		defaultMaterial.addUser(Source1ModelInstance);
