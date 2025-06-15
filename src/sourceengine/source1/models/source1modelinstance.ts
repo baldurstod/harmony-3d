@@ -52,6 +52,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	useNewAnimSystem = false;
 	#animationList = [];
 	#bodyGroups = new Map<string, number>();
+	readonly frameframe: { bones: { [key: string]: any/*TODO: imporve type*/ } };
 
 	static {
 		defaultMaterial.addUser(Source1ModelInstance);
@@ -553,7 +554,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 		}
 	}
 
-	getBoneById(boneId) {
+	getBoneById(boneId: number): Bone {
 		return this.#skeleton ? this.#skeleton.getBoneById(boneId) : null;
 	}
 

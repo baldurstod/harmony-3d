@@ -1,6 +1,7 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-
 import { FLT_EPSILON } from '../../../math/constants';
+import { MdlBone } from './mdlbone';
+import { SourceMdl } from './sourcemdl';
 
 export const STUDIO_ANIM_RAWPOS = 0x01 // Vector48
 export const STUDIO_ANIM_RAWROT = 0x02 // Quaternion48
@@ -11,38 +12,51 @@ export const STUDIO_ANIM_RAWROT2 = 0x20 // Quaternion64
 
 const tempMat4 = mat4.create();
 const tempQuat = quat.create();
+const tempvec3 = vec3.create();
+
+/**
+ *	MdlStudioAnimValuePtr
+ */
+export class MdlStudioAnimValuePtr { // mstudioanim_valueptr_t
+	offset: Array<number> = [];
+	base: number = 0;
+
+	getAnimValue2(i: number) {
+		return this.base + this.offset[i];
+	}
+}
 
 export class MdlStudioAnim {//mstudioanim_t
-	animValuePtrRot;
-	animValuePtrPos;
-	rawpos;
-	rawrot;
-	rawrot2;
-	flags;
-	bone;
-	nextOffset;
+	readonly animValuePtrRot = new MdlStudioAnimValuePtr();
+	readonly animValuePtrPos = new MdlStudioAnimValuePtr();
+	readonly rawpos = vec3.create();
+	readonly rawrot = quat.create();
+	readonly rawrot2 = quat.create();
+	flags = 0;
+	bone = 0;
+	nextOffset = 0;
 
-	getRotValue() {
+	getRotValue(): MdlStudioAnimValuePtr | null {
 		return this.animValuePtrRot;
 	}
 
-	getPosValue() {
+	getPosValue(): MdlStudioAnimValuePtr | null {
 		return this.animValuePtrPos;
 	}
 
-	getQuaternion48() {
+	getQuaternion48(): quat {
 		return this.rawrot;
 	}
 
-	getQuaternion64() {
+	getQuaternion64(): quat {
 		return this.rawrot2;
 	}
 
 	/**
 	 * TODO
 	 */
-	getRot(rot, mdl, bone, frame) {
-		let fromEuler5 = function (out, q, i, j, k, h, parity, repeat, frame) {
+	getRot(rot: vec3, mdl: SourceMdl, bone: MdlBone, frame: number): vec3 {
+		let fromEuler5 = function (out: vec3, q: quat, i: number, j: number, k: number, h: number, parity: string, repeat: string, frame: string) {
 			var M = tempMat4;//Dim M(,) As Double = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
 			var Nq;
 			var s;
@@ -92,21 +106,17 @@ export class MdlStudioAnim {//mstudioanim_t
 
 			return Eul_FromHMatrix(out, M, i, j, k, h, parity, repeat, frame)
 		}
-		let fromEuler4 = function (out, a) {
-			fromEuler5(out, a, 0, 1, 2, 0, 'even', 'no', 'S')
-			var a = out[0];
-			var b = out[1];
-			var c = out[2];
-			out[0] = c;
-			out[1] = b;
-			out[2] = a;
-
+		let fromEuler4 = function (out: vec3, q: quat) {
+			fromEuler5(out, q, 0, 1, 2, 0, 'even', 'no', 'S')
+			const temp = out[0];
+			out[0] = out[2];
+			out[2] = temp;
 
 			return out;
 		}
 
-		var Eul_FromHMatrix = function (out, M, i, j, k, h, parity, repeat, frame) {
-			var ea = tempQuat;
+		var Eul_FromHMatrix = function (out: vec3, M: mat4, i: number, j: number, k: number, h: number, parity: string, repeat: string, frame: string) {
+			var ea = tempvec3;
 
 			if (repeat == 'yes') {
 				var sy = Math.sqrt(M[i * 4 + j] * M[i * 4 + j] + M[i * 4 + k] * M[i * 4 + k])
@@ -144,7 +154,7 @@ export class MdlStudioAnim {//mstudioanim_t
 				ea[2] = t
 			}
 
-			quat.copy(out, ea);
+			vec3.copy(out, ea);
 			return out
 		}
 
@@ -152,7 +162,9 @@ export class MdlStudioAnim {//mstudioanim_t
 		let offset;
 
 		if ((flag & STUDIO_ANIM_RAWROT) == STUDIO_ANIM_RAWROT) {
-			rot = vec3.add(rot, rot, this.rawrot);
+			//rot = vec3.add(rot, rot, this.rawrot);
+			rot = fromEuler4(rot, this.rawrot2);//TODO: fix the from euler function
+			return rot;
 		}
 		if ((flag & STUDIO_ANIM_RAWROT2) == STUDIO_ANIM_RAWROT2) {
 			rot = fromEuler4(rot, this.rawrot2);//TODO: fix the from euler function
@@ -163,7 +175,7 @@ export class MdlStudioAnim {//mstudioanim_t
 			for (let i = 0; i < 3; ++i) {
 				offset = this.animValuePtrRot.offset[i];
 				if (offset) {
-					rot[i] = this.readValue(mdl, frame, this.animValuePtrRot.base + offset, bone.boneId, i) * bone.rotscale[i];
+					rot[i] = this.readValue(mdl, frame, this.animValuePtrRot.base + offset/*, bone.boneId, i*/) * bone.rotscale[i];
 				}
 			}
 		}
@@ -173,7 +185,8 @@ export class MdlStudioAnim {//mstudioanim_t
 		}
 		return rot;
 	}
-	getPos(pos, mdl, bone, frame) {
+
+	getPos(pos: vec3, mdl: SourceMdl, bone: MdlBone, frame: number): vec3 {
 		const flag = this.flags;
 		let offset;
 		pos[0] = 0;
@@ -199,7 +212,7 @@ export class MdlStudioAnim {//mstudioanim_t
 			for (let i = 0; i < 3; ++i) {
 				offset = this.animValuePtrPos.offset[i];
 				if (offset) {
-					pos[i] = this.readValue(mdl, frame, this.animValuePtrPos.base + offset, bone.boneId, i) * bone.posscale[i];
+					pos[i] = this.readValue(mdl, frame, this.animValuePtrPos.base + offset/*, bone.boneId, i*/) * bone.posscale[i];
 				}
 			}
 		}
@@ -209,7 +222,8 @@ export class MdlStudioAnim {//mstudioanim_t
 		}
 		return pos;
 	}
-	readValue(mdl, frame, offset, boneid, memberid) {
+
+	readValue(mdl: SourceMdl, frame: number, offset: number/*, boneid, memberid*/) {
 		const reader = mdl.reader;
 		reader.seek(offset)
 		let valid = 0;
@@ -242,5 +256,4 @@ export class MdlStudioAnim {//mstudioanim_t
 
 		return reader.getInt16();
 	}
-
 }

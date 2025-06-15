@@ -1,19 +1,20 @@
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
+import { ModelLoader, Source1ModelInstance } from '../export';
 import { SourceModel } from '../loaders/sourcemodel';
 
 export class Source1ModelManager {
 	static #modelListPerRepository: Map<string, any> = new Map();
 	static #modelsPerRepository: Map<string, Map<string, SourceModel>> = new Map();
 
-	static async #createModel(repositoryName: string, fileName: string) {
+	static async #createModel(repositoryName: string, fileName: string): Promise<SourceModel | null> {
 		let model = this.#getModel(repositoryName, fileName);
 		if (model) {
 			return model;
 		}
 
-		const modelLoader = getLoader('ModelLoader');
+		const modelLoader = getLoader('ModelLoader') as typeof ModelLoader;
 		model = await new modelLoader().load(repositoryName, fileName);
 		if (model) {
 			this.#modelsPerRepository.get(repositoryName)?.set(fileName, model);
@@ -22,14 +23,14 @@ export class Source1ModelManager {
 		return model;
 	}
 
-	static #getModel(repositoryName: string, fileName: string) {
+	static #getModel(repositoryName: string, fileName: string): SourceModel | null {
 		if (!this.#modelsPerRepository.has(repositoryName)) {
 			this.#modelsPerRepository.set(repositoryName, new Map<string, SourceModel>());
 		}
-		return this.#modelsPerRepository.get(repositoryName)?.get(fileName);
+		return this.#modelsPerRepository.get(repositoryName)?.get(fileName) ?? null;
 	}
 
-	static async createInstance(repository: string, fileName: string, dynamic: boolean, preventInit = false) {
+	static async createInstance(repository: string, fileName: string, dynamic: boolean, preventInit = false): Promise<Source1ModelInstance | null> {
 		if (!repository) {
 			//try to get repository from filename
 			for (const [repo] of this.#modelListPerRepository) {
@@ -48,7 +49,7 @@ export class Source1ModelManager {
 		return null;
 	}
 
-	static loadManifest(repositoryName: string) {
+	static loadManifest(repositoryName: string): void {
 		if (!this.#modelListPerRepository.has(repositoryName)) {
 			this.#modelListPerRepository.set(repositoryName, null);
 		}

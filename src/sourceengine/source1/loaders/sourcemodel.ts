@@ -1,13 +1,15 @@
-import { Source1ModelInstance } from '../models/source1modelinstance';
-import { FileNameFromPath } from '../../../utils/utils';
-import { CalcPose2, StudioFrames2 } from '../animations/calcanimations2';
+import { quat, vec3 } from 'gl-matrix';
 import { Animation } from '../../../animations/animation';
-import { SourceMDL } from './sourcemdl';
-import { BONE_USED_BY_ANYTHING } from './mdlbone';
+import { AnimationBone } from '../../../animations/animationbone';
 import { AnimationFrame } from '../../../animations/animationframe';
 import { AnimationFrameDataType } from '../../../animations/animationframedata';
-import { AnimationBone } from '../../../animations/animationbone';
-import { quat, vec3 } from 'gl-matrix';
+import { FileNameFromPath } from '../../../utils/utils';
+import { CalcPose2, StudioFrames2 } from '../animations/calcanimations2';
+import { Source1ModelInstance } from '../models/source1modelinstance';
+import { BONE_USED_BY_ANYTHING, MdlBone } from './mdlbone';
+import { MdlAttachment, MdlBodyPart, SourceMdl } from './sourcemdl';
+import { SourceVtx } from './sourcevtx';
+import { SourceVvd } from './sourcevvd';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
@@ -15,7 +17,7 @@ export class SourceModel {
 	repository: string;
 	fileName: string;
 	name: string;
-	mdl: SourceMDL;//TODO: set private ?
+	mdl: SourceMdl;//TODO: set private ?
 	vvd;
 	vtx;
 	requiredLod: number = 0;
@@ -26,7 +28,8 @@ export class SourceModel {
 	materialRepository = null;
 	dirty = true;
 	bodyParts = new Map<string, Array<Array<SourceModelMesh>>>();
-	constructor(repository, fileName, mdl, vvd, vtx) {
+
+	constructor(repository: string, fileName: string, mdl: SourceMdl, vvd: SourceVvd, vtx: SourceVtx) {
 		this.repository = repository;
 		this.fileName = fileName;
 		this.name = FileNameFromPath(fileName);
@@ -43,7 +46,7 @@ export class SourceModel {
 		//this.geometries = new Set();
 	}
 
-	addGeometry(mesh, geometry, bodyPartName, bodyPartModelId) {
+	addGeometry(mesh, geometry, bodyPartName, bodyPartModelId): void {
 		let modelMesh = new SourceModelMesh(mesh, geometry);
 
 		if (bodyPartName !== undefined) {
@@ -64,11 +67,11 @@ export class SourceModel {
 		//this.geometries.add(geometry);
 	}
 
-	createInstance(isDynamic, preventInit) {
+	createInstance(isDynamic, preventInit): Source1ModelInstance {
 		return new Source1ModelInstance({ sourceModel: this, isDynamic: isDynamic, preventInit: preventInit });
 	}
 
-	getBodyNumber(bodygroups: Map<string, number>) {
+	getBodyNumber(bodygroups: Map<string, number>): number {
 		let bodyPartCount = 1;
 		let bodyPartNumber = 0;
 
@@ -83,56 +86,56 @@ export class SourceModel {
 		return bodyPartNumber;
 	}
 
-	getBones() {
+	getBones(): Array<MdlBone> | null {
 		if (this.mdl) {
 			return this.mdl.getBones();
 		}
 		return null;
 	}
 
-	getAttachments() {
+	getAttachments(): Array<MdlAttachment> | null {
 		if (this.mdl) {
 			return this.mdl.getAttachments();
 		}
 		return null;
 	}
 
-	getBone(boneIndex) {
+	getBone(boneIndex): MdlBone | null {
 		if (this.mdl) {
 			return this.mdl.getBone(boneIndex);
 		}
 		return null;
 	}
 
-	getAttachementById(attachementIndex) {
+	getAttachementById(attachementIndex): MdlAttachment | null {
 		if (this.mdl) {
-			return this.mdl.getAttachementById(attachementIndex);
+			return this.mdl.getAttachmentById(attachementIndex);
 		}
 		return null;
 	}
 
-	getBoneByName(boneName) {
+	getBoneByName(boneName): MdlBone | null {
 		if (this.mdl) {
 			return this.mdl.getBoneByName(boneName);
 		}
 		return null;
 	}
 
-	getAttachement(attachementName) {
+	getAttachement(attachementName): MdlAttachment | null {
 		if (this.mdl) {
-			return this.mdl.getAttachement(attachementName);
+			return this.mdl.getAttachment(attachementName);
 		}
 		return null;
 	}
 
-	getBodyPart(bodyPartId) {
+	getBodyPart(bodyPartId): MdlBodyPart | null {
 		if (this.mdl) {
 			return this.mdl.getBodyPart(bodyPartId);
 		}
 		return null;
 	}
 
-	getBodyParts() {
+	getBodyParts(): Array<MdlBodyPart> | null {
 		if (this.mdl) {
 			return this.mdl.getBodyParts();
 		}

@@ -3,11 +3,7 @@ import { HarmonyMenuItems } from 'harmony-ui';
 import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
-import { MdlAttachement as MdlAttachement_2 } from './sourceenginemdlloader';
-import { MdlBodyPart as MdlBodyPart_2 } from './sourcemdl';
-import { MdlBone as MdlBone_2 } from './mdlbone';
 import { quat } from 'gl-matrix';
-import { Source1ModelInstance as Source1ModelInstance_2 } from './source1modelinstance';
 import { Texture as Texture_2 } from '../..';
 import { vec2 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
@@ -2197,6 +2193,10 @@ declare class Choreography {
              removeAllControllers(): void;
          }
 
+         declare type FlexWeight = {
+             [key: string]: number;
+         };
+
          export declare function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number): void;
 
          export declare class Float32BufferAttribute extends BufferAttribute {
@@ -3831,10 +3831,10 @@ declare class Choreography {
 
          export declare const MAX_FLOATS = 4096;
 
-         declare class MdlAttachement {
+         declare class MdlAttachment {
              name: string;
              lowcasename: string;
-             mdl: SourceMDL;
+             mdl: SourceMdl | null;
              flags: number;
              localbone: number;
              local: Array<number>;
@@ -3904,6 +3904,19 @@ declare class Choreography {
              useBoneMerge(): boolean;
          }
 
+         declare class MdlStripHeader {
+             vertices: any[];
+             indexes: any[];
+             numIndices: number;
+             indexOffset: number;
+             numVerts: number;
+             vertOffset: number;
+             numBones: number;
+             flags: number;
+             numBoneStateChanges: number;
+             boneStateChangeOffset: number;
+         }
+
          declare class MdlStudioAutoLayer {
              iSequence: any;
              iPose: any;
@@ -3930,9 +3943,42 @@ declare class Choreography {
              name: string;
          }
 
+         declare class MdlStudioFlexOp {
+             op: number;
+             index: number;
+             value: number;
+         }
+
+         declare class MdlStudioFlexRule {
+             readonly ops: Array<MdlStudioFlexOp>;
+             flex: number;
+         }
+
+         declare class MdlStudioHitbox {
+             name: string;
+             readonly bbmin: vec3;
+             readonly bbmax: vec3;
+             boneId: number;
+             groupId: number;
+         }
+
+         declare class MdlStudioHitboxSet {
+             name: string;
+             hitboxes: Array<MdlStudioHitbox>;
+         }
+
          declare class MdlStudioModelGroup {
              name: any;
              label: any;
+         }
+
+         declare class MdlStudioPoseParam {
+             name: string;
+             flags: number;
+             start: number;
+             end: number;
+             loop: number;
+             midpoint: number;
          }
 
          declare class MdlStudioSeqDesc {
@@ -3995,6 +4041,13 @@ declare class Choreography {
          declare class MdlTexture {
              name: any;
              originalName: any;
+         }
+
+         declare class MdlVertex {
+             boneWeightIndex: Array<number>;
+             boneID: Array<number>;
+             numBones: number;
+             origMeshVertID: number;
          }
 
          /**
@@ -4442,7 +4495,7 @@ declare class Choreography {
 
          export declare class ModelLoader {
              #private;
-             load(repositoryName: any, fileName: any): Promise<unknown>;
+             load(repositoryName: string, fileName: string): Promise<SourceModel | null>;
          }
 
          export declare const MOUSE: {
@@ -6702,6 +6755,11 @@ declare class Choreography {
              isDynamic: boolean;
              static useNewAnimSystem: boolean;
              useNewAnimSystem: boolean;
+             readonly frameframe: {
+                 bones: {
+                     [key: string]: any;
+                 };
+             };
              constructor(params?: any);
              get skeleton(): Skeleton;
              set skeleton(skeleton: Skeleton);
@@ -6721,7 +6779,7 @@ declare class Choreography {
              update(scene: any, camera: any, delta: any): void;
              _playSequences(delta: number): void;
              setMaterialOverride(materialOverride: any): Promise<void>;
-             getBoneById(boneId: any): Bone;
+             getBoneById(boneId: number): Bone;
              renderBodyParts(render: any): void;
              renderBodyPart(bodyPartName: any, render: any): void;
              resetBodyPartModels(): void;
@@ -6884,7 +6942,7 @@ declare class Choreography {
 
          export declare class Source1ModelManager {
              #private;
-             static createInstance(repository: string, fileName: string, dynamic: boolean, preventInit?: boolean): Promise<Source1ModelInstance_2>;
+             static createInstance(repository: string, fileName: string, dynamic: boolean, preventInit?: boolean): Promise<Source1ModelInstance | null>;
              static loadManifest(repositoryName: string): void;
              static getModelList(): Promise<FileSelectorFile>;
          }
@@ -7623,7 +7681,7 @@ declare class Choreography {
          }
 
          export declare const Source2ParticleLoader: {
-             load(repository: any, fileName: any): Promise<unknown>;
+             load(repository: any, fileName: any): Promise<Source2File>;
              getSystem(repository: any, vpcf: any, snapshotModifiers?: any): Promise<Source2ParticleSystem>;
          };
 
@@ -7957,8 +8015,8 @@ declare class Choreography {
 
          declare class SourceBinaryLoader {
              repository: string;
-             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMDL | SourceBSP | SourcePCF | SourceEngineVTF | null>;
-             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVVD | SourceVTX | SourceEngineVTF | SourcePCF | SourceMDL | SourceBSP | null;
+             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMdl | SourceVvd | SourceVtx | SourceBSP | SourcePCF | SourceEngineVTF | null>;
+             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVvd | SourceVtx | SourceEngineVTF | SourcePCF | SourceMdl | SourceBSP | null;
          }
 
          export declare class SourceBSP extends World {
@@ -8078,7 +8136,8 @@ declare class Choreography {
 
          export declare class SourceEngineMDLLoader extends SourceBinaryLoader {
              #private;
-             parse(repository: any, fileName: any, arrayBuffer: any): SourceMDL;
+             load(repository: string, path: string): Promise<SourceMdl | null>;
+             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceMdl;
              _parseAnimSection(reader: any, animDesc: any, frameIndex: any): any[];
          }
 
@@ -8543,19 +8602,21 @@ declare class Choreography {
          export declare class SourceEngineVTXLoader extends SourceBinaryLoader {
              #private;
              constructor(mdlVersion: number);
-             parse(repository: any, fileName: any, arrayBuffer: any): SourceVTX;
+             load(repository: string, path: string): Promise<SourceVtx | null>;
+             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVtx;
          }
 
          export declare class SourceEngineVVDLoader extends SourceBinaryLoader {
              #private;
-             parse(repository: any, fileName: any, arrayBuffer: any): SourceVVD;
+             load(repository: string, path: string): Promise<SourceVvd | null>;
+             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVvd;
          }
 
-         declare class SourceMDL {
+         declare class SourceMdl {
              #private;
              repository: string;
-             readonly externalMdlsV2: any[];
-             readonly attachementNames: {};
+             readonly externalMdlsV2: Array<Promise<SourceMdl | null>>;
+             readonly attachmentNames: Map<string, MdlAttachment>;
              readonly flexController: FlexController;
              readonly skinReferences: Array<Array<any>>;
              readonly textures: Array<MdlTexture>;
@@ -8564,56 +8625,110 @@ declare class Choreography {
              readonly bodyParts: Array<MdlBodyPart>;
              readonly sequences: Array<MdlStudioSeqDesc>;
              readonly texturesDir: string[];
-             readonly flexRules: any[];
+             readonly flexRules: Array<MdlStudioFlexRule>;
              readonly flexControllers: Array<MdlStudioFlexController>;
              boneCount: number;
              readonly bones: Array<MdlBone>;
-             readonly boneNames: string[];
+             readonly boneNames: Map<string, number>;
              numflexdesc: number;
-             readonly attachements: Array<MdlAttachement>;
+             readonly attachments: Array<MdlAttachment>;
              readonly animDesc: any[];
              loader: SourceEngineMDLLoader;
              reader: BinaryReader;
-             readonly poseParameters: any[];
-             hitboxSets: any[];
+             readonly poseParameters: Array<MdlStudioPoseParam>;
+             readonly hitboxSets: Array<MdlStudioHitboxSet>;
+             boneOffset: number;
+             boneControllerCount: number;
+             boneControllerOffset: number;
+             hitboxCount: number;
+             hitboxOffset: number;
+             localAnimCount: number;
+             localAnimOffset: number;
+             localSeqCount: number;
+             localSeqOffset: number;
+             numFlexRules: number;
+             flexRulesIndex: number;
+             textureCount: number;
+             textureOffset: number;
+             textureDirCount: number;
+             textureDirOffset: number;
+             skinReferenceCount: number;
+             skinFamilyCount: number;
+             skinReferenceOffset: number;
+             bodyPartCount: number;
+             bodyPartOffset: number;
+             attachementCount: number;
+             attachementOffset: number;
+             localNodeCount: number;
+             localNodeIndex: number;
+             localNodeNameIndex: number;
+             flexDescIndex: number;
+             flexControllerCount: number;
+             flexControllerIndex: number;
+             ikChainCount: number;
+             ikChainIndex: number;
+             mouthsCount: number;
+             mouthsIndex: number;
+             localPoseParamCount: number;
+             localPoseParamOffset: number;
+             surfacePropIndex: number;
+             keyValueIndex: number;
+             keyValueCount: number;
+             ikLockCount: number;
+             ikLockIndex: number;
+             includeModelCount: number;
+             includeModelOffset: number;
+             animBlocksNameIndex: number;
+             boneTableByNameIndex: number;
+             vertexBase: number;
+             offsetBase: number;
+             flexControllerUICount: number;
+             flexControllerUIIndex: number;
+             studiohdr2index: number;
+             srcbonetransform_count: number;
+             srcbonetransform_index: number;
+             illumpositionattachmentindex: number;
+             flMaxEyeDeflection: number;
+             linearboneOffset: number;
              constructor(repository: string);
-             getMaterialName(skinId: any, materialId: any, materialOverride?: any[]): any;
-             getSkinList(): any[];
-             getBodyPart(bodyPartId: any): MdlBodyPart;
-             getBodyParts(): MdlBodyPart[];
-             getSequence(sequenceName: any): Promise<MdlStudioSeqDesc>;
-             getModelGroup(modelGroupId: any): MdlStudioModelGroup;
-             getModelGroups(): MdlStudioModelGroup[];
+             getMaterialName(skinId: number, materialId: number): string;
+             getSkinList(): Array<number>;
+             getBodyPart(bodyPartId: number): MdlBodyPart;
+             getBodyParts(): Array<MdlBodyPart>;
+             getSequence(sequenceName: string): Promise<MdlStudioSeqDesc | null>;
+             getModelGroup(modelGroupId: number): MdlStudioModelGroup;
+             getModelGroups(): Array<MdlStudioModelGroup>;
              getExternalMdlCount(): number;
-             getExternalMdl(externalId: any): Promise<SourceMDL | null>;
-             getTextureDir(): string[];
+             getExternalMdl(externalId: number): Promise<SourceMdl | null>;
+             getTextureDir(): Array<string>;
              getDimensions(out?: vec3): vec3;
              getBBoxMin(out?: vec3): vec3;
              getBBoxMax(out?: vec3): vec3;
              getAnimList(): Promise<Set<string>>;
-             getFlexRules(): any[];
-             getFlexControllers(): MdlStudioFlexController[];
-             runFlexesRules(flexesWeight: any, g_flexdescweight: any): void;
-             addExternalMdl(mdlName: any): void;
+             getFlexRules(): Array<MdlStudioFlexRule>;
+             getFlexControllers(): Array<MdlStudioFlexController>;
+             runFlexesRules(flexesWeight: FlexWeight, g_flexdescweight: Float32Array): void;
+             addExternalMdl(mdlName: string): void;
              getBoneCount(): number;
-             getBones(): MdlBone[];
-             getBone(boneIndex: number): MdlBone;
-             getBoneByName(boneName: string): MdlBone;
-             getBoneId(boneName: string): any;
-             getAttachments(): MdlAttachement[];
-             getAttachementsNames(out?: Array<string>): string[];
-             getAttachementById(attachementId: any): MdlAttachement;
-             getAttachement(attachementName: any): any;
-             getSequenceById(sequenceId: any): MdlStudioSeqDesc;
-             getSequencesList(): any[];
-             getSequencesList2(): any[];
-             getSequences(): string[];
-             getSequences2(): any[];
-             getAnimDescription(animIndex: any): any;
-             getAnimFrame(dynamicProp: any, animDesc: any, frameIndex: any): any;
-             getLocalPoseParameter(poseIndex: any): any;
-             getPoseParameters(): any[];
-             getAllPoseParameters(): any;
+             getBones(): Array<MdlBone>;
+             getBone(boneIndex: number): MdlBone | null;
+             getBoneByName(boneName: string): MdlBone | null;
+             getBoneId(boneName: string): number;
+             getAttachments(): Array<MdlAttachment>;
+             getAttachmentsNames(out?: Array<string>): Array<MdlAttachment>;
+             getAttachmentById(attachmentId: number): MdlAttachment | null;
+             getAttachment(attachmentName: string): MdlAttachment | null;
+             getSequenceById(sequenceId: number): MdlStudioSeqDesc;
+             getSequences(): Array<string>;
+             getSequences2(): Array<string>;
+             getAnimDescription(animIndex: number): null;
+             getAnimFrame(dynamicProp: Source1ModelInstance, animDesc: any, frameIndex: number): {
+                 bones: {
+                     [key: string]: any;
+                 };
+             };
+             getLocalPoseParameter(poseIndex: number): MdlStudioPoseParam;
+             getPoseParameters(): Array<MdlStudioPoseParam>;
              boneFlags(boneIndex: number): number;
          }
 
@@ -8621,7 +8736,7 @@ declare class Choreography {
              repository: string;
              fileName: string;
              name: string;
-             mdl: SourceMDL;
+             mdl: SourceMdl;
              vvd: any;
              vtx: any;
              requiredLod: number;
@@ -8632,18 +8747,18 @@ declare class Choreography {
              materialRepository: any;
              dirty: boolean;
              bodyParts: Map<string, SourceModelMesh[][]>;
-             constructor(repository: any, fileName: any, mdl: any, vvd: any, vtx: any);
+             constructor(repository: string, fileName: string, mdl: SourceMdl, vvd: SourceVvd, vtx: SourceVtx);
              addGeometry(mesh: any, geometry: any, bodyPartName: any, bodyPartModelId: any): void;
              createInstance(isDynamic: any, preventInit: any): Source1ModelInstance;
              getBodyNumber(bodygroups: Map<string, number>): number;
-             getBones(): MdlBone_2[];
-             getAttachments(): MdlAttachement_2[];
-             getBone(boneIndex: any): MdlBone_2;
-             getAttachementById(attachementIndex: any): MdlAttachement_2;
-             getBoneByName(boneName: any): MdlBone_2;
-             getAttachement(attachementName: any): any;
-             getBodyPart(bodyPartId: any): MdlBodyPart_2;
-             getBodyParts(): MdlBodyPart_2[];
+             getBones(): Array<MdlBone> | null;
+             getAttachments(): Array<MdlAttachment> | null;
+             getBone(boneIndex: any): MdlBone | null;
+             getAttachementById(attachementIndex: any): MdlAttachment | null;
+             getBoneByName(boneName: any): MdlBone | null;
+             getAttachement(attachementName: any): MdlAttachment | null;
+             getBodyPart(bodyPartId: any): MdlBodyPart | null;
+             getBodyParts(): Array<MdlBodyPart> | null;
              getAnimation(animationName: string, entity: Source1ModelInstance): Promise<Animation_2>;
          }
 
@@ -8670,22 +8785,57 @@ declare class Choreography {
              addAttributes(operator: any, list: any): void;
          }
 
-         /**
-          * VTX Model
-          */
-         declare class SourceVTX {
-             bodyparts: any[];
-             getBodyparts(): any[];
+         declare class SourceVtx {
+             bodyparts: Array<VTXBodyPart>;
+             version: number;
+             vertCacheSize: number;
+             maxBonesPerStrip: number;
+             maxBonesPerFace: number;
+             maxBonesPerVert: number;
+             checkSum: number;
+             numLODs: number;
+             materialReplacementListOffset: number;
+             numBodyParts: number;
+             bodyPartOffset: number;
+             getBodyparts(): VTXBodyPart[];
+         }
+
+         declare class SourceVvd {
+             vertices: Array<SourceVvdVertex>;
+             numFixups: number;
+             fixups: Array<SourceVvdFixup>;
+             modelFormatID: number;
+             formatVersionID: number;
+             checkSum: number;
+             numLODs: number;
+             numLODVertexes: Array<number>;
+             fixupTableStart: number;
+             vertexDataStart: number;
+             tangentDataStart: number;
+             getVertices(lodLevel: number): any[];
+         }
+
+         declare class SourceVvdBoneWeight {
+             weight: Array<number>;
+             bone: Array<number>;
+             numbones: number;
          }
 
          /**
           * VVD Model
           */
-         declare class SourceVVD {
-             vertices: any;
-             numFixups: any;
-             fixups: any;
-             getVertices(lodLevel: any): any;
+         declare class SourceVvdFixup {
+             lod: number;
+             sourceVertexID: number;
+             numVertexes: number;
+         }
+
+         declare class SourceVvdVertex {
+             m_BoneWeights: SourceVvdBoneWeight;
+             m_vecPosition: vec3;
+             m_vecNormal: vec3;
+             m_vecTexCoord: vec2;
+             m_vecTangent: vec4;
          }
 
          export declare class Sphere extends Mesh {
@@ -9646,6 +9796,40 @@ declare class Choreography {
              resData: number;
              mipMaps?: Array<VTFMipMap>;
          };
+
+         /**
+          * VTX Model
+          */
+         declare class VTXBodyPart {
+             models: Array<VTXModel>;
+             numModels: number;
+         }
+
+         declare class VTXLod {
+             meshes: Array<VTXMesh>;
+             numMeshes: number;
+             switchPoint: number;
+         }
+
+         declare class VTXMesh {
+             stripGroups: Array<VTXStripGroupHeader>;
+             numStripGroups: number;
+         }
+
+         declare class VTXModel {
+             lods: Array<VTXLod>;
+             numLODs: number;
+         }
+
+         declare class VTXStripGroupHeader {
+             vertices: Array<MdlVertex>;
+             indexes: Array<number>;
+             strips: Array<MdlStripHeader>;
+             numVerts: number;
+             numIndices: number;
+             numStrips: number;
+             flags: number;
+         }
 
          export declare class WaterLod extends Proxy_2 {
          }

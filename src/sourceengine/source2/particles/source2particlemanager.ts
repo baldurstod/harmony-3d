@@ -1,7 +1,8 @@
-import { GraphicsEvents, GraphicsEvent, GraphicTickEvent } from '../../../graphics/graphicsevents';
+import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
+import { Source2ParticleLoader } from '../export';
 import { Source2File } from '../loaders/source2file';
 import { Source2ParticleSystem } from './source2particlesystem';
 
@@ -23,7 +24,7 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 
 		let vpcf = this.#vpcfs[fullPath];
 		if (vpcf === undefined) {
-			vpcf = await getLoader('Source2ParticleLoader').load(repository, vpcfPath);
+			vpcf = await (getLoader('Source2ParticleLoader') as typeof Source2ParticleLoader).load(repository, vpcfPath);
 			this.#vpcfs[fullPath] = vpcf;
 		}
 		return vpcf;

@@ -5,7 +5,7 @@ import { STUDIO_AL_SPLINE, STUDIO_AL_XFADE, STUDIO_AL_NOBLEND, STUDIO_AL_LOCAL, 
 import { STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWROT2 } from '../loaders/mdlstudioanim'
 import { FLT_EPSILON } from '../../../math/constants';
 import { clamp, SimpleSpline, quatFromEulerRad } from '../../../math/functions';
-import { SourceMDL } from '../loaders/sourcemdl';
+import { SourceMdl } from '../loaders/sourcemdl';
 import { QuaternionIdentityBlend } from '../../../math/quaternion';
 
 /**
@@ -1540,7 +1540,7 @@ function Studio_LocalPoseParameter(pStudioHdr, poseParameter, seqdesc, iSequence
 }
 
 function ScaleBones(
-	pStudioHdr: SourceMDL,//const CStudioHdr *pStudioHdr,
+	pStudioHdr: SourceMdl,//const CStudioHdr *pStudioHdr,
 	q1: Array<quat>,//Quaternion q1[MAXSTUDIOBONES],
 	pos1: Array<vec3>,//Vector pos1[MAXSTUDIOBONES],
 	sequence: number,//int sequence,

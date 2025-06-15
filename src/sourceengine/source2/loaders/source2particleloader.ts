@@ -1,10 +1,12 @@
 import { vec4 } from 'gl-matrix';
-import { Source2FileLoader } from './source2fileloader';
+import { LOG, TESTING, VERBOSE } from '../../../buildoptions';
+import { registerLoader } from '../../../loaders/loaderfactory';
+import { SourcePCF } from '../../source1/loaders/sourcepcf';
+import { GetSource2ParticleOperator } from '../particles/operators/source2particleoperators';
 import { Source2ParticleManager } from '../particles/source2particlemanager';
 import { Source2ParticleSystem } from '../particles/source2particlesystem';
-import { GetSource2ParticleOperator } from '../particles/operators/source2particleoperators';
-import { registerLoader } from '../../../loaders/loaderfactory';
-import { LOG, DEBUG, VERBOSE, TESTING } from '../../../buildoptions';
+import { Source2FileLoader } from './source2fileloader';
+import { Source2File } from './source2file';
 
 export const CParticleSystemDefinition = 'CParticleSystemDefinition';
 
@@ -125,20 +127,18 @@ async function _initChildren(repository, systemArray, kv3Array, snapshotModifier
 
 export const Source2ParticleLoader = new (function () {
 	class Source2ParticleLoader {
-		load(repository, fileName) {
-			let promise = new Promise((resolve, reject) => {
+		load(repository, fileName): Promise<Source2File> {
+			let promise = new Promise<Source2File>(resolve => {
 				fileName = fileName.replace(/.vpcf_c/, '');
-				let vpcfPromise = new Source2FileLoader(true).load(repository, fileName + '.vpcf_c');
+				let vpcfPromise = new Source2FileLoader().load(repository, fileName + '.vpcf_c');
 				vpcfPromise.then(
-					(source2File) => {
+					(source2File: Source2File) => {
 						if (VERBOSE) {
 							console.log(source2File);
 						}
 						resolve(source2File);
 					}
-				).catch(
-					(error) => reject(error)
-				)
+				);
 			});
 			return promise;
 		}

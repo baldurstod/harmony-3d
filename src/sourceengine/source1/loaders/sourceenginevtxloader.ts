@@ -1,7 +1,6 @@
 import { BinaryReader } from 'harmony-binary-reader';
-
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
-import { SourceVTX } from './sourcevtx';
+import { MdlStripHeader, MdlVertex, SourceVtx, VTXBodyPart, VTXLod, VTXMesh, VTXModel, VTXStripGroupHeader } from './sourcevtx';
 
 const BODYPART_HEADER_SIZE = 8; // Size in bytes of a BodyPartHeader_t
 const MODEL_HEADER_SIZE = 8;
@@ -10,51 +9,27 @@ const MESH_HEADER_SIZE = 9;
 const STRIP_GROUP_HEADER_SIZE = 25;
 const STRIP_HEADER_SIZE = 27;
 
-function VTXBodyPart() {
-	this.models = [];
-}
-function VTXModel() {
-	this.lods = [];
-}
-function VTXLod() {
-	this.meshes = [];
-}
-function VTXMesh() {
-	this.stripGroups = [];
-}
-function VTXStripGroup() {
-	this.stripGroups = [];
-}
-function MdlVertex() {
-	this.boneWeightIndex = [];
-	this.boneID = [];
-}
-function VTXStripGroupHeader() {
-	this.vertices = [];
-	this.indexes = [];
-	this.strips = [];
-}
-function MdlStripHeader() {
-	this.vertices = [];
-	this.indexes = [];
-}
-
 export class SourceEngineVTXLoader extends SourceBinaryLoader {
 	#mdlVersion: number;
+
 	constructor(mdlVersion: number) {
 		super();
 		this.#mdlVersion = mdlVersion;
 	}
 
-	parse(repository, fileName, arrayBuffer) {
-		let vtx = new SourceVTX()
+	async load(repository: string, path: string): Promise<SourceVtx | null> {
+		return super.load(repository, path) as Promise<SourceVtx | null>;
+	}
+
+	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVtx {
+		let vtx = new SourceVtx()
 		let reader = new BinaryReader(arrayBuffer);
 		this.#parseHeader(reader, vtx);
 		this.#parseBodyParts(reader, vtx);
 		return vtx;
 	}
 
-	#parseHeader(reader, vtx) {
+	#parseHeader(reader: BinaryReader, vtx: SourceVtx): void {
 		reader.seek(0);
 		vtx.version = reader.getInt32();
 		vtx.vertCacheSize = reader.getInt32();
@@ -69,7 +44,7 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		vtx.bodyPartOffset = reader.getInt32();
 	}
 
-	#parseBodyParts(reader, vtx) {
+	#parseBodyParts(reader: BinaryReader, vtx: SourceVtx): void {
 		const bodyparts = vtx.bodyparts;
 		for (let i = 0; i < vtx.numBodyParts; ++i) {
 			// seek the start of body part
@@ -77,13 +52,11 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 			let bodypart = this.#parseBodyPartHeader(reader, vtx);
 			if (bodypart) {
 				bodyparts.push(bodypart);
-			} else {
-				return false;// More data awaiting
 			}
 		}
 	}
 
-	#parseBodyPartHeader(reader, vtx) {
+	#parseBodyPartHeader(reader: BinaryReader, vtx: SourceVtx): VTXBodyPart {
 		const bodypart = new VTXBodyPart();
 
 		const baseOffset = reader.tell();
@@ -104,7 +77,7 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		return bodypart;
 	}
 
-	#parseModelHeader(reader, vtx) {
+	#parseModelHeader(reader: BinaryReader, vtx: SourceVtx): VTXModel {
 		const model = new VTXModel();
 
 		const baseOffset = reader.tell();
@@ -125,7 +98,7 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		return model;
 	}
 
-	#parseLODHeader(reader, vtx) {
+	#parseLODHeader(reader: BinaryReader, vtx: SourceVtx): VTXLod {
 		const lod = new VTXLod();
 
 		const baseOffset = reader.tell();
@@ -141,7 +114,7 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		return lod;
 	}
 
-	#parseMeshHeader(reader, vtx) {
+	#parseMeshHeader(reader: BinaryReader, vtx: SourceVtx): VTXMesh {
 		const mesh = new VTXMesh();
 
 		const baseOffset = reader.tell();
@@ -163,7 +136,7 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		return mesh;
 	}
 
-	#parseStripGroupHeader(reader, vtx) {
+	#parseStripGroupHeader(reader: BinaryReader, vtx: SourceVtx): VTXStripGroupHeader {
 		const stripGroup = new VTXStripGroupHeader();
 
 		const baseOffset = reader.tell();
@@ -197,7 +170,7 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		return stripGroup;
 	}
 
-	#parseStripHeader(reader, vtx) {
+	#parseStripHeader(reader: BinaryReader, vtx: SourceVtx): MdlStripHeader {
 		const stripHeader = new MdlStripHeader();
 
 		//const baseOffset = reader.tell();removeme
@@ -217,7 +190,7 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		return stripHeader;
 	}
 
-	#parseVertex(reader, vtx) {
+	#parseVertex(reader: BinaryReader, vtx: SourceVtx): MdlVertex {
 		const vertex = new MdlVertex();
 
 		for (let i = 0; i < vtx.maxBonesPerVert; ++i) {

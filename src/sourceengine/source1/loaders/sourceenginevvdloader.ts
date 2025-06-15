@@ -1,9 +1,8 @@
-import { vec2, vec3 } from 'gl-matrix';
+import { vec2, vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
-
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
-import { SourceVVD } from './sourcevvd';
 import { MAX_NUM_LODS } from './constants';
+import { SourceVvd, SourceVvdVertex } from './sourcevvd';
 
 const VERTEX_SIZE = 48 // size in bytes of a vertex
 const TANGENT_SIZE = 16 // size in bytes of a vertex
@@ -11,21 +10,14 @@ const FIXUP_STRUCT_SIZE = 12; // size in bytes of a vertex vertexFileFixup
 
 const MAX_NUM_BONES_PER_VERT = 3;
 
-function StudioBoneWeight() {
-	this.weight = [];
-	this.bone = [];
-	this.numbones = 0;
-}
-function StudioVertex() {
-	this.m_BoneWeights = new StudioBoneWeight();
-	this.m_vecPosition = vec3.create();
-	this.m_vecNormal = vec3.create();
-	this.m_vecTexCoord = vec2.create();
-}
-
 export class SourceEngineVVDLoader extends SourceBinaryLoader {
-	parse(repository, fileName, arrayBuffer) {
-		let vvd = new SourceVVD()
+
+	async load(repository: string, path: string): Promise<SourceVvd | null> {
+		return super.load(repository, path) as Promise<SourceVvd | null>;
+	}
+
+	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVvd {
+		let vvd = new SourceVvd()
 		let reader = new BinaryReader(arrayBuffer);
 		this.#parseHeader(reader, vvd);
 		this.#parseVertices(reader, vvd);
@@ -33,14 +25,13 @@ export class SourceEngineVVDLoader extends SourceBinaryLoader {
 		return vvd;
 	}
 
-	#parseHeader(reader, vvd) {
+	#parseHeader(reader: BinaryReader, vvd: SourceVvd): void {
 		reader.seek(0);
 		vvd.modelFormatID = reader.getInt32();
 		vvd.formatVersionID = reader.getInt32();
 		vvd.checkSum = reader.getInt32();
 		vvd.numLODs = reader.getInt32();
 
-		vvd.numLODVertexes = [];
 		for (let i = 0; i < MAX_NUM_LODS; ++i) {
 			vvd.numLODVertexes.push(reader.getInt32());
 		}
@@ -51,19 +42,18 @@ export class SourceEngineVVDLoader extends SourceBinaryLoader {
 		vvd.tangentDataStart = reader.getInt32();
 	}
 
-	#parseVertices(reader, vvd) {
+	#parseVertices(reader: BinaryReader, vvd: SourceVvd): void {
 		if (vvd.numLODVertexes) {
 			if (vvd.numLODVertexes[0] === 0) {//TODO ????
 				return;
 			}
 
-			vvd.vertices = [];
 			for (let i = 0; i < vvd.numLODVertexes[0]; ++i) {
 				// seek the start of body part
 				reader.seek(vvd.vertexDataStart + i * VERTEX_SIZE);
 				const vertex = this.#parseVertex(reader, vvd);
 				reader.seek(vvd.tangentDataStart + i * TANGENT_SIZE);
-				const m_vecTangent = reader.getVector4();//vec4.fromValues(reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32());
+				const m_vecTangent = reader.getVector4() as vec4;//vec4.fromValues(reader.getFloat32(), reader.getFloat32(), reader.getFloat32(), reader.getFloat32());
 
 				// Avoid a nul vector
 				if ((m_vecTangent[0] == 0.0) && (m_vecTangent[1] == 0.0) && (m_vecTangent[2] == 0.0)) {
@@ -74,8 +64,8 @@ export class SourceEngineVVDLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseVertex(reader, vvd) {
-		const vertex = new StudioVertex();
+	#parseVertex(reader: BinaryReader, vvd: SourceVvd): SourceVvdVertex {
+		const vertex = new SourceVvdVertex();
 
 		for (let i = 0; i < MAX_NUM_BONES_PER_VERT; ++i) {
 			vertex.m_BoneWeights.weight[i] = reader.getFloat32();
@@ -93,12 +83,11 @@ export class SourceEngineVVDLoader extends SourceBinaryLoader {
 		return vertex;
 	}
 
-	#parseFixups(reader, vvd) {
+	#parseFixups(reader: BinaryReader, vvd: SourceVvd): void {
 		if (vvd.numFixups === 0) {
 			return;
 		}
 
-		vvd.fixups = [];
 		for (let i = 0; i < vvd.numFixups; ++i) {
 			// seek the start of body part
 			reader.seek(vvd.fixupTableStart + i * FIXUP_STRUCT_SIZE);
@@ -106,7 +95,7 @@ export class SourceEngineVVDLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseFixup(reader, vvd) {
+	#parseFixup(reader: BinaryReader, vvd: SourceVvd): void {
 		const fixup = Object.create(null);
 
 		fixup.lod = reader.getInt32();

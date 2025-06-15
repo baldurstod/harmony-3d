@@ -1,32 +1,38 @@
-import { SourceModel } from './sourcemodel';
-import { SourceEngineVTXLoader } from './sourceenginevtxloader';
-import { SourceEngineVVDLoader } from './sourceenginevvdloader';
+import { VERBOSE } from '../../../buildoptions';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../geometry/buffergeometry';
-import { VERBOSE } from '../../../buildoptions';
 import { getLoader, registerLoader } from '../../../loaders/loaderfactory';
 import { SourceEngineMDLLoader } from './sourceenginemdlloader';
-import { SourceMDL } from './sourcemdl';
+import { SourceEngineVTXLoader } from './sourceenginevtxloader';
+import { SourceEngineVVDLoader } from './sourceenginevvdloader';
+import { SourceMdl } from './sourcemdl';
+import { SourceModel } from './sourcemodel';
+import { SourceVtx } from './sourcevtx';
+import { SourceVvd } from './sourcevvd';
 
 export class ModelLoader {
-	load(repositoryName, fileName) {
-		let promise = new Promise(async (resolve) => {
+	load(repositoryName: string, fileName: string): Promise<SourceModel | null> {
+		let promise: Promise<SourceModel | null> = new Promise(async (resolve) => {
 			fileName = fileName.toLowerCase().replace(/.mdl$/, '');
 
 			// First load mdl. We need the mdl version to load the vtx
 			let mdlLoader = getLoader('SourceEngineMDLLoader') as typeof SourceEngineMDLLoader;
-			const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl')as SourceMDL;
+			const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
 
 			let vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
 			let vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
 
-			Promise.all([vvdPromise, vtxPromise]).then((values) => this.#fileLoaded(resolve, repositoryName, fileName, mdl, values[0], values[1]));
+			Promise.all([vvdPromise, vtxPromise]).then(([vvd, vtx]) => {
+				if (vvd && vtx) {
+					this.#fileLoaded(resolve, repositoryName, fileName, mdl, vvd, vtx);
+				}
+			});
 
 		});
 		return promise;
 	}
 
-	#fileLoaded(resolve, repositoryName, fileName, mdl, vvd, vtx) {
+	#fileLoaded(resolve: (value: SourceModel | null) => void, repositoryName: string, fileName: string, mdl: SourceMdl, vvd: SourceVvd, vtx: SourceVtx): void {
 		let requiredLod = 0;
 		const vertices = [];
 		const normals = [];
@@ -128,7 +134,7 @@ export class ModelLoader {
 
 							// reverse triangles from CW to CCW
 							for (let i = 0, l = indices.length; i < l; i += 3) {//TODOv3: optimize
-								let a = indices[i + 1];
+								let a: number = indices[i + 1];
 								indices[i + 1] = indices[i + 2];
 								indices[i + 2] = a;
 							}

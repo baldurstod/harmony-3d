@@ -1,9 +1,9 @@
-let loaders = new Map()
+const loaders = new Map<string, any>()
 
-export function registerLoader(name, loader) {
+export function registerLoader(name: string, loader: any): void {
 	loaders.set(name, loader);
 }
 
-export function getLoader(name) {
+export function getLoader(name: string): any | undefined {
 	return loaders.get(name);
 }

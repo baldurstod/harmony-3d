@@ -1,16 +1,15 @@
-import { mat4, quat } from 'gl-matrix';
+import { mat4, quat, vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
-
-import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
-import { SourceMDL, MdlStudioModelGroup, MdlTexture, MdlBodyPart } from './sourcemdl';
-import { MdlStudioAutoLayer, MdlStudioEvent, MdlStudioSeqDesc } from './mdlstudioseqdesc';
-import { MdlStudioAnim, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWROT2 } from './mdlstudioanim';
-import { MdlBone } from './mdlbone';
 import { DEBUG, LOG, TESTING } from '../../../buildoptions';
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
+import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
 import { StringStrip } from '../utils/utils';
 import { MAX_NUM_LODS } from './constants';
+import { MdlBone } from './mdlbone';
+import { MdlStudioAnim, MdlStudioAnimValuePtr, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_RAWROT2 } from './mdlstudioanim';
+import { MdlStudioAutoLayer, MdlStudioEvent, MdlStudioSeqDesc } from './mdlstudioseqdesc';
+import { MdlAttachment, MdlBodyPart, MdlStudioAnimDesc, MdlStudioFlexOp, MdlStudioFlexRule, MdlStudioModelGroup, MdlStudioPoseParam, MdlTexture, SourceMdl } from './sourcemdl';
 
 const BODYPART_STRUCT_SIZE = 16;
 const MODEL_VERTEX_DATA_STRUCT_SIZE = 8;// Size in bytes of mstudio_modelvertexdata_t
@@ -51,83 +50,79 @@ const STUDIO_FLEX_STRUCT_SIZE = 60; // Size in bytes of mstudioflex_t
 const STUDIO_HITBOX_SET_STRUCT_SIZE = 12; // Size in bytes of mstudiohitboxset_t
 const STUDIO_HITBOX_STRUCT_SIZE = 68; // Size in bytes of mstudiobbox_t
 
-function ModelTest() {
-	this.render = true;//removeme
-}
-function MeshTest() {
-	this.render = true;//removeme
-}
-function MdlStudioFlex() {//removeme
-}
-function MdlStudioVertAnim() { // mstudiovertanim_t
-}
-function MdlEyeball() {//removeme
-}
-
-export class MdlAttachement {
-	name: string;
-	lowcasename: string;
-	mdl: SourceMDL;
-	flags: number = 0;
-	localbone: number = 0;
-	local: Array<number> = [];
+class ModelTest {
+	render = true;//removeme
+	name = '';
+	type = 0;
+	boundingradius = 0;
+	readonly meshArray: Array<MeshTest> = [];
+	readonly vertexArray: Array<never> = [];
+	readonly eyeballArray: Array<MdlEyeball> = [];
+	numvertices = 0;
+	vertexindex = 0;
+	tangentsindex = 0;
+	numattachments = 0;
+	attachmentindex = 0;
+	numeyeballs = 0;
+	eyeballindex = 0;
 }
 
-function MdlStudioAnimDesc() {//removeme
-	this.animSections = [];
-}
-MdlStudioAnimDesc.prototype.pAnim = function (frameIndex/*, flStall TODOv2*/) {
-	if (this.mdl) {
-		return this.mdl.loader._parseAnimSection(this.mdl.reader, this, frameIndex);
-	}
-	return null;
-	return this.animSections[frameIndex];
-	return;
-	if (this.mdl) {
-		return this.mdl._parseAnimSection(this, frameIndex);
-	}
-	return null;
-}
-
-MdlStudioAnimDesc.prototype.pZeroFrameData = function () {//TODOv2:rename
-	return null;
-	/*
-	short				zeroframespan;	// frames per span
-		short				zeroframecount; // number of spans
-		int					zeroframeindex;
-		byte				*pZeroFrameData() const { if (zeroframeindex) return (((byte *)this) + zeroframeindex); else return NULL; };
-		*/
+class MeshTest {
+	render = true;//removeme
+	model?: ModelTest;
+	material = 0;
+	modelindex = 0;
+	numvertices = 0;
+	vertexoffset = 0;
+	numflexes = 0;
+	flexindex = 0;
+	materialtype = 0;
+	materialparam = 0;
+	meshid = 0;
+	readonly center = vec3.create();
+	readonly flexes: Array<MdlStudioFlex> = [];
 }
 
-
-MdlStudioAnimDesc.prototype.getAnimBlock = function (reader, block, index) {
-	if (block == -1) {
-		return null;
-	}
-	if (block == 0) {
-		return this.startOffset + index;
-	}
-
-	/* TODO
-	byte *pAnimBlock = pStudiohdr()->GetAnimBlock(block);
-	if (pAnimBlock)
-	{
-	return (mstudioanim_t *)(pAnimBlock + index);
-	}
-	*/
-
-	return null;
+class MdlStudioFlex {//removeme
+	flexdesc = 0;
+	target0 = 0;
+	target1 = 0;
+	target2 = 0;
+	target3 = 0;
+	numverts = 0;
+	vertindex = 0;
+	flexpair = 0;
+	vertanimtype = 0;
+	readonly vertAnims: Array<MdlStudioVertAnim> = [];
 }
 
-
-
-
-function MdlStudioPoseParam() { // mstudioposeparamdesc_t
+class MdlStudioVertAnim { // mstudiovertanim_t
+	index = 0;
+	speed = 0;
+	side = 0;
+	readonly flDelta: Array<number> = [];
+	readonly flNDelta: Array<number> = [];
 }
-function MdlStudioFlexRule() { // mstudioflexrule_t
+
+class MdlEyeball {//removeme
+	name = '';
+	bone = -1;
+	readonly org = vec3.create();
+	zoffset = 0;
+	radius = 0;
+	readonly up = vec3.create();
+	readonly forward = vec3.create();
+	texture = 0;
+	irisScale = 0;
+	readonly upperflexdesc: Array<number> = [];
+	readonly lowerflexdesc: Array<number> = [];
+	readonly uppertarget = vec3.create();
+	readonly lowertarget = vec3.create();
+	upperlidflexdesc = 0;
+	lowerlidflexdesc = 0;
+	m_bNonFACS = 0;
 }
-function MdlStudioFlexOp() { // mstudioflexop_t
-}
+
 export class MdlStudioFlexController { //mstudioflexcontroller_t
 	localToGlobal = 0;
 	min = 0;
@@ -135,30 +130,20 @@ export class MdlStudioFlexController { //mstudioflexcontroller_t
 	type = '';
 	name = '';
 }
-function MdlStudioHitboxSet() { //mstudiohitboxset_t
+export class MdlStudioHitboxSet { //mstudiohitboxset_t
+	name = '';
+	hitboxes: Array<MdlStudioHitbox> = [];
 }
-function MdlStudioHitbox() { //mstudiobbox_t
+export class MdlStudioHitbox { //mstudiobbox_t
+	name = '';
+	readonly bbmin = vec3.create();
+	readonly bbmax = vec3.create();
+	boneId = -1;
+	groupId = -1;
 }
-
-
-
-/**
- *	MdlStudioAnimValuePtr
- */
-class MdlStudioAnimValuePtr { // mstudioanim_valueptr_t
-	offset;
-	base;
-	constructor() {
-		this.offset = [];
-	}
-	getAnimValue2(i) {
-		return this.base + this.offset[i];
-	}
-}
-
 
 const invQuaternion64 = (1 / 1048576.5);
-const readQuaternion64 = function (reader) {
+function readQuaternion64(reader: BinaryReader, q: quat = quat.create()): quat {
 	const b = reader.getBytes(8);
 
 	const x = ((b[7] & 0x7F) << 14) | (b[6] << 6) | ((b[5] & 0xFC) >> 2);
@@ -175,12 +160,13 @@ const readQuaternion64 = function (reader) {
 		tmpw = -tmpw;
 	}
 
-	return quat.fromValues(tmpx, tmpy, tmpz, tmpw);
+	return quat.set(q, tmpx, tmpy, tmpz, tmpw);
 }
 
 const invQuaternion48xy = (1 / 32768.0);
 const invQuaternion48z = (1 / 16384.0);
-const readQuaternion48 = function (reader) {
+
+function readQuaternion48(reader: BinaryReader, q: quat = quat.create()): quat {
 	const x = reader.getUint16();
 	const y = reader.getUint16();
 	const tmp = reader.getUint16();
@@ -196,14 +182,19 @@ const readQuaternion48 = function (reader) {
 		tmpw = -tmpw;
 	}
 
-	return quat.fromValues(tmpx, tmpy, tmpz, tmpw);
+	return quat.set(q, tmpx, tmpy, tmpz, tmpw);
 }
 
 
 export class SourceEngineMDLLoader extends SourceBinaryLoader {
-	#parseAnimSectionOnce;
-	parse(repository, fileName, arrayBuffer) {
-		let mdl = new SourceMDL(repository);
+	#parseAnimSectionOnce = false;
+
+	async load(repository: string, path: string): Promise<SourceMdl | null> {
+		return super.load(repository, path) as Promise<SourceMdl | null>;
+	}
+
+	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer) {
+		let mdl = new SourceMdl(repository);
 		let reader = new BinaryReader(arrayBuffer);
 		mdl.reader = reader;//TODOv3//removeme
 		mdl.loader = this;//TODOv3//removeme
@@ -216,7 +207,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		this.#parseAnimDescriptions(reader, mdl);
 		this.#parseSequences(reader, mdl);
 		this.#parseBones(reader, mdl);
-		this.#parsePoseParameters(reader, mdl);
+		parsePoseParameters(reader, mdl);
 		this.#parseAttachements(reader, mdl);
 		this.#parseFlexRules(reader, mdl);
 		this.#parseFlexControllers(reader, mdl);
@@ -224,7 +215,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		return mdl;
 	}
 
-	#parseHeader(reader, mdl) {
+	#parseHeader(reader: BinaryReader, mdl: SourceMdl) {
 		mdl.header = Object.create(null);
 		const header = mdl.header;
 		reader.seek(0);
@@ -376,7 +367,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		mdl.bodyParts = bodyParts;
 	}
 
-	#parseBodyPart(reader, mdl, startOffset) {
+	#parseBodyPart(reader, mdl, startOffset): MdlBodyPart | null {
 		const nameOffset = reader.getInt32(startOffset) + startOffset;
 		// Ensure we have enough data for the name
 		const bodyPart = new MdlBodyPart();
@@ -401,7 +392,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		return bodyPart;
 	}
 
-	#parseModel(reader, mdl, startOffset) {
+	#parseModel(reader: BinaryReader, mdl: SourceMdl, startOffset: number): ModelTest {
 		// Ensure we have enough data for the name
 		const model = new ModelTest();
 
@@ -410,9 +401,6 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		model.boundingradius = reader.getFloat32();
 		const nummeshes = reader.getInt32();
 		const meshOffset = reader.getInt32();
-		model.meshArray = [];
-		model.vertexArray = [];
-		model.eyeballArray = [];
 
 		model.numvertices = reader.getInt32();
 		model.vertexindex = reader.getInt32();
@@ -447,7 +435,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		return model;
 	}
 
-	#parseMesh(reader, mdl, startOffset) {
+	#parseMesh(reader: BinaryReader, mdl: SourceMdl, startOffset: number): MeshTest {
 		// Ensure we have enough data
 		//const mesh = new MdlMesh();TODO
 		const mesh = new MeshTest();//TODO
@@ -465,7 +453,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		mesh.materialparam = reader.getInt32();
 
 		mesh.meshid = reader.getInt32();
-		mesh.center = reader.getVector3();
+		reader.getVector3(undefined, undefined, mesh.center as Float32Array<ArrayBuffer>);
 
 		//mesh.vertexData = this.readMeshVertexData();
 		reader.skip(4 + MAX_NUM_LODS * 4);
@@ -474,21 +462,18 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		reader.skip(4 * 8);
 
 		//TODO: read flexes
-		mesh.flexes = this.#parseFlexes(reader, mdl, mesh.flexindex, mesh.numflexes);
+		this.#parseFlexes(reader, mdl, mesh.flexindex, mesh.numflexes, mesh.flexes);
 
 		return mesh;
 	}
 
-	#parseFlexes(reader, mdl, startOffset, count) {
-		const flexes = [];
-
+	#parseFlexes(reader, mdl, startOffset, count, flexes: Array<MdlStudioFlex>): void {
 		for (let i = 0; i < count; ++i) {
-			flexes.push(this.#parseFlex(reader, mdl, startOffset + i * STUDIO_FLEX_STRUCT_SIZE));
+			flexes.push(this.#parseFlex(reader, startOffset + i * STUDIO_FLEX_STRUCT_SIZE));
 		}
-		return flexes;
 	}
 
-	#parseFlex(reader, mdl, startOffset) {
+	#parseFlex(reader: BinaryReader, startOffset: number): MdlStudioFlex {
 		reader.seek(startOffset);
 
 		const flex = new MdlStudioFlex();
@@ -502,7 +487,6 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		flex.vertindex = reader.getInt32();
 		flex.flexpair = reader.getInt32();
 		flex.vertanimtype = reader.getInt8();
-		flex.vertAnims = [];
 
 		const vertOffset = startOffset + flex.vertindex;
 		if (flex.vertanimtype == STUDIO_VERT_ANIM_NORMAL) {
@@ -521,16 +505,13 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		return flex;
 	}
 
-	#parseVertAnim(reader, startOffset) {
+	#parseVertAnim(reader, startOffset): MdlStudioVertAnim {
 		reader.seek(startOffset);
 
 		const vert = new MdlStudioVertAnim();
 		vert.index = reader.getUint16();
 		vert.speed = reader.getUint8();
 		vert.side = reader.getUint8();
-
-		vert.flDelta = [];
-		vert.flNDelta = [];
 
 		vert.flDelta[0] = reader.getFloat16();
 		vert.flDelta[1] = reader.getFloat16();
@@ -542,27 +523,27 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		return vert;
 	}
 
-	#parseEyeBall(reader, startOffset) {//mstudioeyeball_t
+	#parseEyeBall(reader: BinaryReader, startOffset: number): MdlEyeball {//mstudioeyeball_t
 		const eyeball = new MdlEyeball();
 
 		const nameOffset = startOffset + reader.getInt32(startOffset);
 
 		eyeball.bone = reader.getInt32();
-		eyeball.org = reader.getVector3();
+		reader.getVector3(undefined, undefined, eyeball.org as Float32Array<ArrayBuffer>);
 		eyeball.zoffset = reader.getFloat32();
 		eyeball.radius = reader.getFloat32();
-		eyeball.up = reader.getVector3();
-		eyeball.forward = reader.getVector3();
+		reader.getVector3(undefined, undefined, eyeball.up as Float32Array<ArrayBuffer>);
+		reader.getVector3(undefined, undefined, eyeball.forward as Float32Array<ArrayBuffer>);
 		eyeball.texture = reader.getInt32();
 
 		reader.skip(4);//unused
 		eyeball.irisScale = reader.getFloat32();
 		reader.skip(4);//unused
 
-		eyeball.upperflexdesc = [reader.getInt32(), reader.getInt32(), reader.getInt32()];
-		eyeball.lowerflexdesc = [reader.getInt32(), reader.getInt32(), reader.getInt32()];
-		eyeball.uppertarget = reader.getVector3();
-		eyeball.lowertarget = reader.getVector3();
+		eyeball.upperflexdesc.push(reader.getInt32(), reader.getInt32(), reader.getInt32());
+		eyeball.lowerflexdesc.push(reader.getInt32(), reader.getInt32(), reader.getInt32());
+		reader.getVector3(undefined, undefined, eyeball.uppertarget as Float32Array<ArrayBuffer>);
+		reader.getVector3(undefined, undefined, eyeball.lowertarget as Float32Array<ArrayBuffer>);
 
 		eyeball.upperlidflexdesc = reader.getInt32();
 		eyeball.lowerlidflexdesc = reader.getInt32();
@@ -578,8 +559,8 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		return eyeball;
 	}
 
-	#parseSkinReferences(reader, mdl) {
-		const skinReferences = [];
+	#parseSkinReferences(reader: BinaryReader, mdl: SourceMdl): void {
+		const skinReferences = mdl.skinReferences;
 		// Ensure we have enough data
 
 		reader.seek(mdl.skinReferenceOffset);
@@ -589,7 +570,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 				skinReferences[i].push(reader.getInt16());
 			}
 		}
-		mdl.skinReferences = skinReferences;
+		//mdl.skinReferences = skinReferences;
 	}
 
 	#parseTextures(reader, mdl) {
@@ -709,8 +690,6 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		animDesc.zeroframeOffset = reader.getInt32();
 
 		const spanStallTime = reader.getFloat32();
-
-		animDesc.frames = [];
 
 		//TODO
 		let numSection;
@@ -1014,7 +993,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		return null;
 	}
 
-	#parseAnimBlock(reader, startOffset) {
+	#parseAnimBlock(reader: BinaryReader, startOffset: number): MdlStudioAnim {
 		reader.seek(startOffset);
 
 		const anim = new MdlStudioAnim();
@@ -1028,61 +1007,23 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		// valid if animation unvaring over timeline
 		if ((anim.flags & STUDIO_ANIM_RAWROT) == STUDIO_ANIM_RAWROT) { // 1: STUDIO_ANIM_RAWROT
 			//reader.getString(6); //TODO: read Quaternion48
-			anim.rawrot = readQuaternion48(reader);
+			readQuaternion48(reader, anim.rawrot);
 		}
 		if ((anim.flags & STUDIO_ANIM_RAWROT2) == STUDIO_ANIM_RAWROT2) { // 2: STUDIO_ANIM_RAWROT2
-			anim.rawrot2 = readQuaternion64(reader);
+			readQuaternion64(reader, anim.rawrot2);
 		}
 		if ((anim.flags & STUDIO_ANIM_RAWPOS) == STUDIO_ANIM_RAWPOS) { // 3: STUDIO_ANIM_RAWROT
-			anim.rawpos = reader.getVector48();
+			reader.getVector48(undefined, undefined, anim.rawpos as Float32Array<ArrayBuffer>);
 		}
 
 		if ((anim.flags & STUDIO_ANIM_ANIMROT) == STUDIO_ANIM_ANIMROT) { // 1: STUDIO_ANIM_ANIMROT
-			anim.animValuePtrRot = this.#parseAnimValuePtr(reader);
+			parseAnimValuePtr(reader, anim.animValuePtrRot);
 		}
 		if ((anim.flags & STUDIO_ANIM_ANIMPOS) == STUDIO_ANIM_ANIMPOS) { // 2: STUDIO_ANIM_ANIMPOS
-			anim.animValuePtrPos = this.#parseAnimValuePtr(reader);
+			parseAnimValuePtr(reader, anim.animValuePtrPos);
 		}
 
 		return anim;
-	}
-	#parseAnimValuePtr(reader) {// mstudioanim_valueptr_t
-		const animValuePtr = new MdlStudioAnimValuePtr();
-		animValuePtr.base = reader.tell();
-
-		for (let i = 0; i < 3; ++i) {
-			animValuePtr.offset.push(reader.getInt16());
-		}
-		return animValuePtr;
-	}
-
-	#parsePoseParameters(reader, mdl) {
-		const poseParameters = [];
-
-		for (let i = 0; i < mdl.localPoseParamCount; ++i) {
-			const poseParameter = this.#parsePoseParameter(reader, mdl, mdl.localPoseParamOffset + i * STUDIO_POSE_PARAMETER_STRUCT_SIZE);
-			if (poseParameter) {
-				poseParameters.push(poseParameter);
-			} else {
-				return;// More data awaiting
-			}
-		}
-		mdl.poseParameters = poseParameters;
-	}
-
-	#parsePoseParameter(reader, mdl, startOffset) {
-		reader.seek(startOffset);
-		const nameOffset = reader.getInt32() + startOffset;
-		const poseParameter = new MdlStudioPoseParam();
-		poseParameter.flags = reader.getInt32();
-		poseParameter.start = reader.getFloat32();
-		poseParameter.end = reader.getFloat32();
-		poseParameter.loop = reader.getFloat32();
-		poseParameter.midpoint = RemapValClamped(0.5, poseParameter.start, poseParameter.end, 0, 1);
-
-		reader.seek(nameOffset);
-		poseParameter.name = reader.getNullString();
-		return poseParameter;
 	}
 
 	#parseAttachements(reader, mdl) {
@@ -1105,10 +1046,10 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseAttachement(reader, mdl, startOffset): MdlAttachement {
+	#parseAttachement(reader, mdl, startOffset): MdlAttachment {
 		const nameOffset = reader.getInt32(startOffset) + startOffset;
 
-		const attachement = new MdlAttachement();
+		const attachement = new MdlAttachment();
 		attachement.mdl = mdl;
 
 		attachement.flags = reader.getInt32();
@@ -1125,7 +1066,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		return attachement;
 	}
 
-	#parseFlexRules(reader, mdl) {
+	#parseFlexRules(reader: BinaryReader, mdl: SourceMdl) {
 		if (mdl.numFlexRules && mdl.flexRulesIndex) {
 			//const size = mdl.numFlexRules * STUDIO_FLEX_RULE_STRUCT_SIZE;
 			for (let i = 0; i < mdl.numFlexRules; ++i) {
@@ -1134,13 +1075,12 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseFlexRule(reader, startOffset) {
+	#parseFlexRule(reader, startOffset): MdlStudioFlexRule {
 		reader.seek(startOffset);
 
 		const rule = new MdlStudioFlexRule();
 
 		rule.flex = reader.getInt32();
-		rule.ops = [];
 		const numops = reader.getInt32();
 		const opindex = startOffset + reader.getInt32();
 
@@ -1216,11 +1156,10 @@ function readMatrix3x4(reader) {
 	return matrix;
 }
 
-function parseHitBoxSets(reader, mdl) {
+function parseHitBoxSets(reader: BinaryReader, mdl: SourceMdl): void {
 	let hitboxSetCount = mdl.hitboxCount;
 	let hitboxSetOffset = mdl.hitboxOffset;
 	if (hitboxSetCount && hitboxSetOffset) {
-		mdl.hitboxSets = [];
 		for (let i = 0; i < hitboxSetCount; ++i) {
 			mdl.hitboxSets.push(parseHitboxSet(reader, mdl, hitboxSetOffset));
 			hitboxSetOffset += STUDIO_HITBOX_SET_STRUCT_SIZE;
@@ -1229,7 +1168,7 @@ function parseHitBoxSets(reader, mdl) {
 	}
 }
 
-function parseHitboxSet(reader, mdl, startOffset) {
+function parseHitboxSet(reader: BinaryReader, mdl: SourceMdl, startOffset: number): MdlStudioHitboxSet {
 	const hitboxSet = new MdlStudioHitboxSet();
 	const nameOffset = reader.getInt32(startOffset) + startOffset;
 
@@ -1238,21 +1177,58 @@ function parseHitboxSet(reader, mdl, startOffset) {
 	hitboxSet.name = reader.getNullString(nameOffset);
 	const hitboxes = [];
 	for (let i = 0; i < hitboxCount; ++i) {
-		hitboxes.push(parseHitbox(reader, mdl, hitboxOffset));
+		hitboxes.push(parseHitbox(reader, hitboxOffset));
 		hitboxOffset += STUDIO_HITBOX_STRUCT_SIZE;
 	}
 	hitboxSet.hitboxes = hitboxes;
 	return hitboxSet;
 }
 
-function parseHitbox(reader, mdl, startOffset) {
+function parseHitbox(reader: BinaryReader, startOffset: number) {
 	reader.seek(startOffset);
 	const hitbox = new MdlStudioHitbox();
 
 	hitbox.boneId = reader.getInt32();
 	hitbox.groupId = reader.getInt32();
-	hitbox.bbmin = reader.getVector3();
-	hitbox.bbmax = reader.getVector3();
+	reader.getVector3(undefined, undefined, hitbox.bbmin as Float32Array<ArrayBuffer>);
+	reader.getVector3(undefined, undefined, hitbox.bbmax as Float32Array<ArrayBuffer>);
 	hitbox.name = reader.getNullString(reader.getInt32() + startOffset);
 	return hitbox;
+}
+
+
+function parseAnimValuePtr(reader: BinaryReader, animValuePtr: MdlStudioAnimValuePtr): void {// mstudioanim_valueptr_t
+	animValuePtr.base = reader.tell();
+
+	for (let i = 0; i < 3; ++i) {
+		animValuePtr.offset.push(reader.getInt16());
+	}
+}
+
+function parsePoseParameters(reader: BinaryReader, mdl: SourceMdl): void {
+	const poseParameters = mdl.poseParameters;
+
+	for (let i = 0; i < mdl.localPoseParamCount; ++i) {
+		const poseParameter = parsePoseParameter(reader, mdl.localPoseParamOffset + i * STUDIO_POSE_PARAMETER_STRUCT_SIZE);
+		if (poseParameter) {
+			poseParameters.push(poseParameter);
+		} else {
+			return;// More data awaiting
+		}
+	}
+}
+
+function parsePoseParameter(reader: BinaryReader, startOffset: number): MdlStudioPoseParam {
+	reader.seek(startOffset);
+	const nameOffset = reader.getInt32() + startOffset;
+	const poseParameter = new MdlStudioPoseParam();
+	poseParameter.flags = reader.getInt32();
+	poseParameter.start = reader.getFloat32();
+	poseParameter.end = reader.getFloat32();
+	poseParameter.loop = reader.getFloat32();
+	poseParameter.midpoint = RemapValClamped(0.5, poseParameter.start, poseParameter.end, 0, 1);
+
+	reader.seek(nameOffset);
+	poseParameter.name = reader.getNullString();
+	return poseParameter;
 }
