@@ -1,13 +1,12 @@
 import { quat, vec3 } from 'gl-matrix';
 import { SMD_HEADER } from '../constants';
+import { quatToEuler } from '../math/quaternion';
 import { AnimationBone } from './animationbone';
 import { AnimationFrame } from './animationframe';
-import { quatToEuler } from '../math/quaternion';
 
 export class Animation {
-	#name;
+	#name: string;
 	weight = 1;
-	#frame = 0;
 	#frameCount = 0;
 	#looping = false;
 	//#sequence;
@@ -20,25 +19,25 @@ export class Animation {
 		this.#name = name;
 	}
 
-	[Symbol.iterator] = () => {
+	[Symbol.iterator] = (): ArrayIterator<[number, AnimationFrame]> => {
 		return this.#frames.entries();
 	}
 
-	addFrame(animationFrame: AnimationFrame) {
+	addFrame(animationFrame: AnimationFrame): void {
 		this.#frames.push(animationFrame);
 		++this.#frameCount;
 	}
 
-	addBone(bone: AnimationBone) {
+	addBone(bone: AnimationBone): void {
 		this.#bones[bone.id] = bone;
 		this.#bonesByName.set(bone.name, bone);
 	}
 
-	get name() {
+	get name(): string {
 		return this.#name;
 	}
 
-	get frameCount() {
+	get frameCount(): number {
 		return this.#frameCount;
 	}
 
@@ -46,17 +45,25 @@ export class Animation {
 		this.#fps = fps;
 	}
 
-	get fps() {
+	get fps(): number {
 		return this.#fps;
 	}
 
-	get bones() {
+	get bones(): AnimationBone[] {
 		return this.#bones;
 	}
 
 	getFrame(id: number): AnimationFrame | undefined {
 		id = Math.round(id) % Math.max(this.#frameCount, 1);
 		return this.#frames[id];
+	}
+
+	setLooping(looping: boolean): void {
+		this.#looping = looping;
+	}
+
+	isLooping(): boolean {
+		return this.#looping;
 	}
 
 	toSMD(header: string = SMD_HEADER): string {

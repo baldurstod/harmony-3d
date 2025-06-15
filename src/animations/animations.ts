@@ -3,33 +3,33 @@ import { AnimationDescription } from './animationdescription';
 export class Animations {
 	#animations: AnimationDescription[] = [];
 
-	[Symbol.iterator] = () => {
+	[Symbol.iterator] = (): ArrayIterator<[number, AnimationDescription]> => {
 		return this.#animations.entries();
 	}
 
-	clear() {
+	clear(): void {
 		this.#animations.length = 0;
 	}
 
-	set(id: number, animation: AnimationDescription) {
+	set(id: number, animation: AnimationDescription): void {
 		this.#animations[id] = animation;
 		this.#computeWeights();
 	}
 
-	remove(id: number) {
+	remove(id: number): void {
 		this.#animations[id] = undefined;
 		this.#computeWeights();
 	}
 
-	get animations() {
+	get animations(): AnimationDescription[] {
 		return this.#animations;
 	}
 
-	get(id: number) {
+	get(id: number): AnimationDescription {
 		return this.#animations[id];
 	}
 
-	setWeight(id: number, weight: number) {
+	setWeight(id: number, weight: number): boolean {
 		const animation = this.#animations[id];
 		if (!animation) {
 			return false;
@@ -40,7 +40,7 @@ export class Animations {
 		return true;
 	}
 
-	#computeWeights() {
-
+	#computeWeights(): void {
+		// do nothing.
 	}
 }

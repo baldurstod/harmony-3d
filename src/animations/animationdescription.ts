@@ -4,6 +4,7 @@ export class AnimationDescription {
 	#animation: Animation;
 	#weight: number;
 	#frame = 0;
+
 	constructor(animation: Animation, weight: number) {
 		this.#animation = animation;
 		this.#weight = weight;
@@ -13,7 +14,7 @@ export class AnimationDescription {
 		this.#weight = weight;
 	}
 
-	get weight() {
+	get weight(): number {
 		return this.#weight;
 	}
 
@@ -21,11 +22,15 @@ export class AnimationDescription {
 		this.#frame = Math.floor(frame % this.#animation.frameCount);
 	}
 
-	get name() {
+	get frame(): number {
+		return this.#frame;
+	}
+
+	get name(): string {
 		return this.#animation.name;
 	}
 
-	get animation() {
+	get animation(): Animation {
 		return this.#animation;
 	}
 }

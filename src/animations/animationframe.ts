@@ -8,11 +8,11 @@ export class AnimationFrame {
 		this.#frameId = frameId;
 	}
 
-	setDatas(name: string, type: AnimationFrameDataType, datas: AnimationFrameDataTypes[]) {
+	setDatas(name: string, type: AnimationFrameDataType, datas: AnimationFrameDataTypes[]): void {
 		this.#datas.set(name, new AnimationFrameData(type, datas));
 	}
 
-	pushData(name: string, data: AnimationFrameDataTypes) {
+	pushData(name: string, data: AnimationFrameDataTypes): void {
 		const frameDatas = this.#datas.get(name);
 		frameDatas?.pushData(data);
 	}

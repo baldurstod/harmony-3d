@@ -33,7 +33,7 @@ export class AnimationFrameData {
 		}
 	}
 
-	pushData(data: AnimationFrameDataTypes) {
+	pushData(data: AnimationFrameDataTypes): void {
 		this.datas.push(data);
 	}
 }

@@ -15,15 +15,15 @@ export class AnimationBone {
 		this.refQuaternion = quat.clone(quaternion);
 	}
 
-	get id() {
+	get id(): number {
 		return this.#id;
 	}
 
-	getParentId() {
-		return this.#parentId
+	getParentId(): number {
+		return this.#parentId;
 	}
 
-	get name() {
+	get name(): string {
 		return this.#name;
 	}
 }
