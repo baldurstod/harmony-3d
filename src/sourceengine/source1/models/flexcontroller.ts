@@ -1,9 +1,9 @@
 import { RemapValClamped } from '../../../math/functions';
 
 export class FlexController {
-	controllers: { [key: string]: { i: number, min: number, max: number } } = {};
+	controllers: Record<string, { i: number, min: number, max: number }> = {};
 	controllers2 = {};
-	controllerIndex: number = 0;
+	controllerIndex = 0;
 
 	getController(name, min, max) {
 		if (!this.controllers[name]) {
@@ -49,7 +49,7 @@ export class FlexController {
 	}
 
 	setAllValues(value) {
-		for (let i in this.controllers) {
+		for (const i in this.controllers) {
 			this.setControllerValue(i, value);
 		}
 	}

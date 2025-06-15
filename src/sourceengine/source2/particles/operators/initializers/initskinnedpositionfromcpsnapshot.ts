@@ -5,8 +5,8 @@ import { DEFAULT_PARTICLE_NORMAL } from '../../source2particle';
 import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
 import { TESTING } from '../../../../../buildoptions';
 
-let mat = mat4.create();
-let nmat = mat3.create();
+const mat = mat4.create();
+const nmat = mat3.create();
 const IDENTITY_MAT4 = mat4.create();
 
 export class InitSkinnedPositionFromCPSnapshot extends Operator {
@@ -85,8 +85,8 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 
 	doInit(particle, elapsedTime) {
 		//TODO: use all parameters
-		let system = this.system;
-		let snapshot = system.getControlPoint(this.snapshotControlPointNumber)?.snapshot;
+		const system = this.system;
+		const snapshot = system.getControlPoint(this.snapshotControlPointNumber)?.snapshot;
 
 		if (!snapshot) {
 			if (TESTING) {
@@ -95,7 +95,7 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 			return;
 		}
 
-		let cp = system.getControlPoint(this.controlPointNumber);
+		const cp = system.getControlPoint(this.controlPointNumber);
 
 		if (!cp) {
 			if (TESTING) {
@@ -115,7 +115,7 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 			attributeId = (particle.id - 1) % snapshot.particleCount;
 		}
 
-		let positionAttribute = snapshot.attributes['position'];
+		const positionAttribute = snapshot.attributes['position'];
 		if (!positionAttribute) {
 			if (TESTING) {
 				console.warn(`Cannot find snapshot attribute position in system ${this.system.name}`, snapshot);
@@ -123,21 +123,21 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 			return;
 		}
 
-		let position = positionAttribute[attributeId];
+		const position = positionAttribute[attributeId];
 		particle.setInitialField(PARTICLE_FIELD_POSITION, position);
 
 		particle.initialSkinnedPosition = position;
-		let skinningAttribute = snapshot.attributes['skinning'];
+		const skinningAttribute = snapshot.attributes['skinning'];
 		if (skinningAttribute) {
 			particle.skinning = skinningAttribute[attributeId];
 		}
 
-		let hitboxAttribute = snapshot.attributes['hitbox'];
+		const hitboxAttribute = snapshot.attributes['hitbox'];
 		if (hitboxAttribute) {
 			particle.snapHitbox = hitboxAttribute[attributeId];
 		}
 
-		let hitboxOffsetAttribute = snapshot.attributes['hitbox_offset'];
+		const hitboxOffsetAttribute = snapshot.attributes['hitbox_offset'];
 		if (hitboxOffsetAttribute) {
 			particle.snapHitboxOffset = hitboxOffsetAttribute[attributeId];
 		}
@@ -151,7 +151,7 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 		}
 
 		let bone, boneName, boneWeight, boneMat;
-		let model = cp.model;
+		const model = cp.model;
 		if (!model) {
 			if (TESTING) {
 				console.warn(`Cannot find cp model in system ${this.system.name}`, cp);
@@ -159,7 +159,7 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 			return;
 		}
 
-		let skeleton = model.skeleton;
+		const skeleton = model.skeleton;
 		if (!skeleton) {
 			if (TESTING) {
 				console.warn(`Model doesnot have a skeleton in system ${this.system.name}`, model);
@@ -167,9 +167,9 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 			return;
 		}
 
-		let particleSkinning = particle.skinning;
-		let particleInitialPosition = particle.initialSkinnedPosition;
-		let particleInitialNormal = particle.initialSkinnedNormal ?? DEFAULT_PARTICLE_NORMAL;
+		const particleSkinning = particle.skinning;
+		const particleInitialPosition = particle.initialSkinnedPosition;
+		const particleInitialNormal = particle.initialSkinnedNormal ?? DEFAULT_PARTICLE_NORMAL;
 
 		if (particleSkinning && particleInitialPosition) {
 			mat[ 0] = 0;mat[ 1] = 0;mat[ 2] = 0;
@@ -209,8 +209,8 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 			vec3.copy(particle.prevPosition, particle.position);
 		} else {
 			//Probably should do it better, but it just works
-			let particleHitbox = particle.snapHitbox;
-			let particleHitboxOffset = particle.snapHitboxOffset;
+			const particleHitbox = particle.snapHitbox;
+			const particleHitboxOffset = particle.snapHitboxOffset;
 			if (particleHitbox) {
 				bone = skeleton.getBoneByName(particleHitbox);
 				if (bone) {

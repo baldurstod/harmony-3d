@@ -2,7 +2,7 @@ import { Source2AnimationDesc } from './source2animationdesc';
 
 export class Source2Animation {
 	#animArray;
-	#animNames: Map<string, Source2AnimationDesc> = new Map();
+	#animNames = new Map<string, Source2AnimationDesc>();
 	animGroup;
 	filePath;
 	file;
@@ -34,7 +34,7 @@ export class Source2Animation {
 
 			if (this.#animArray) {
 				for (let i = 0; i < this.#animArray.length; i++) {
-					let anim = this.#animArray[i];
+					const anim = this.#animArray[i];
 					this.#animNames.set(anim.m_name, new Source2AnimationDesc(this.animGroup.source2Model, anim, this));
 				}
 			}
@@ -56,9 +56,9 @@ export class Source2Animation {
 
 	async getAnimations(animations = new Set()) {
 		for (let i = 0; i < this.#animArray.length; i++) {
-			let anim = this.#animArray[i];
+			const anim = this.#animArray[i];
 			animations.add(anim.m_name);
-			for (let activity of anim.m_activityArray ?? []) {
+			for (const activity of anim.m_activityArray ?? []) {
 				animations.add(activity.m_name);
 			}
 		}
@@ -69,21 +69,21 @@ export class Source2Animation {
 		if (!this.#animArray) {
 			return [,];
 		}
-		let anims = new Map();
+		const anims = new Map();
 		let bestMatch;
 		let bestScore = Infinity;
-		for (let anim of this.#animArray) {
+		for (const anim of this.#animArray) {
 			if (!anim.m_activityArray) {
 				continue;
 			}
 			let matchingActivity = false;
 			let unmatchingModifiers = 0;
-			for (let activity of anim.m_activityArray ?? []) {
+			for (const activity of anim.m_activityArray ?? []) {
 				if (activity.m_name == activityName) {
 					matchingActivity = true;
 				}
 				let modifierMatching = false;
-				for (let activityModifier of activityModifiers) {
+				for (const activityModifier of activityModifiers) {
 					if (activity.m_name == activityModifier) {
 						modifierMatching = true;
 						break;
@@ -95,9 +95,9 @@ export class Source2Animation {
 			}
 
 			if (matchingActivity) {
-				for (let activityModifier of activityModifiers) {
+				for (const activityModifier of activityModifiers) {
 					let modifierMatching = false;
-					for (let activity of anim.m_activityArray ?? []) {
+					for (const activity of anim.m_activityArray ?? []) {
 						if (activity.m_name == activityModifier) {
 							modifierMatching = true;
 							break;
@@ -108,7 +108,7 @@ export class Source2Animation {
 					}
 				}
 				if (unmatchingModifiers < bestScore) {
-					let animDesc = this.#animNames.get(anim.m_name);
+					const animDesc = this.#animNames.get(anim.m_name);
 					if (animDesc) {
 						bestMatch = animDesc;
 						bestScore = unmatchingModifiers;
@@ -120,8 +120,8 @@ export class Source2Animation {
 	}
 
 	getAnimationsByActivity(activityName) {
-		let anims = [];
-		for (let [animName, animDesc] of this.#animNames) {
+		const anims = [];
+		for (const [animName, animDesc] of this.#animNames) {
 			if (animDesc.matchActivity(activityName)) {
 				anims.push(animDesc);
 			}

@@ -41,16 +41,16 @@ export class SetControlPointsToModelParticles extends Operator {
 
 	doOperate(particle: Source2Particle, elapsedTime: number) {
 		//todo: use m_bSkin m_bAttachment m_HitboxSetName m_AttachmentName
-		let children = this.system.childSystems;
-		let firstControlPoint = this.firstControlPoint;
-		let firstSourcePoint = this.firstSourcePoint;
+		const children = this.system.childSystems;
+		const firstControlPoint = this.firstControlPoint;
+		const firstSourcePoint = this.firstSourcePoint;
 
 
 		for (let i = 0; i < this.numControlPoints; ++i) {
-			let particle = this.system.livingParticles[firstSourcePoint + i];
+			const particle = this.system.livingParticles[firstSourcePoint + i];
 			if (particle) {
-				for (let child of children) {
-					let childCp = child.getOwnControlPoint(firstControlPoint + i);
+				for (const child of children) {
+					const childCp = child.getOwnControlPoint(firstControlPoint + i);
 					childCp.position = particle.position;
 
 					if (this.#followAttachement) {

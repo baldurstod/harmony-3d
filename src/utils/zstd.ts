@@ -15,18 +15,18 @@ export const Zstd = new (function () {
 			}
 			const api = wa.instance.exports;
 
-			let srcSize = compressedDatas.length;
+			const srcSize = compressedDatas.length;
 
 			const src = api.create_buffer(srcSize);
 
 			this.#HEAPU8.set(compressedDatas, src);
 
-			let result = api.decompress(src, srcSize);
+			const result = api.decompress(src, srcSize);
 
 			api.destroy_buffer(src);
 			if (result >= 0) {
 				const resultPointer = api.get_result_pointer();
-				let temp = new Uint8Array(new Uint8Array(this.#HEAPU8.buffer, resultPointer, api.get_result_size()));
+				const temp = new Uint8Array(new Uint8Array(this.#HEAPU8.buffer, resultPointer, api.get_result_size()));
 				api.destroy_buffer(resultPointer);
 				return temp;
 			}
@@ -42,15 +42,15 @@ export const Zstd = new (function () {
 			const wa = await this.getWebAssembly();
 			const api = wa.instance.exports;
 
-			let srcSize = compressedDatas.length;
-			let dstSize = uncompressedDatas.length;
+			const srcSize = compressedDatas.length;
+			const dstSize = uncompressedDatas.length;
 
 			const src = api.create_buffer(srcSize);
 			const dst = api.create_buffer(dstSize);
 
 			this.#HEAPU8.set(compressedDatas, src);
 
-			let result = api.decompress_ZSTD(dst, dstSize, src, srcSize);
+			const result = api.decompress_ZSTD(dst, dstSize, src, srcSize);
 			console.error(result);
 
 			const resultView = new Uint8ClampedArray(this.#HEAPU8.buffer, dst, dstSize);

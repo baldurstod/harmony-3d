@@ -5,8 +5,8 @@ import { ModelLoader, Source1ModelInstance } from '../export';
 import { SourceModel } from '../loaders/sourcemodel';
 
 export class Source1ModelManager {
-	static #modelListPerRepository: Map<string, any> = new Map();
-	static #modelsPerRepository: Map<string, Map<string, SourceModel>> = new Map();
+	static #modelListPerRepository = new Map<string, any>();
+	static #modelsPerRepository = new Map<string, Map<string, SourceModel>>();
 
 	static async #createModel(repositoryName: string, fileName: string): Promise<SourceModel | null> {
 		let model = this.#getModel(repositoryName, fileName);
@@ -41,9 +41,9 @@ export class Source1ModelManager {
 				}
 			}
 		}
-		let model = await this.#createModel(repository, fileName);
+		const model = await this.#createModel(repository, fileName);
 		if (model) {
-			let instance = model.createInstance(dynamic, preventInit);
+			const instance = model.createInstance(dynamic, preventInit);
 			return instance;
 		}
 		return null;

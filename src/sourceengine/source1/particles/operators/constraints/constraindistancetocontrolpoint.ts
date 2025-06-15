@@ -4,8 +4,8 @@ import { SourceEngineParticleOperators } from '../../sourceengineparticleoperato
 import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 
-let cpPosition = vec3.create();
-let tempVec3_2 = vec3.create();
+const cpPosition = vec3.create();
+const tempVec3_2 = vec3.create();
 
 export class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
 	static functionName = 'Constrain distance to control point';

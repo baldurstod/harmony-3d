@@ -91,12 +91,12 @@ export class SourceBSP extends World {
 	_createStaticProps() {
 		const lumpGameDatas = this.getLumpData(LUMP_GAME_LUMP);
 		if (lumpGameDatas && lumpGameDatas.prps && lumpGameDatas.prps.lumpData) {
-			let propsStatic = lumpGameDatas.prps.lumpData;
-			let propNames = propsStatic.name;
-			let props = propsStatic.props;
+			const propsStatic = lumpGameDatas.prps.lumpData;
+			const propNames = propsStatic.name;
+			const props = propsStatic.props;
 			const tempQuaternion = quat.create();
 
-			for (let prop of props) {
+			for (const prop of props) {
 				Source1ModelManager.createInstance(this.repository, propNames[prop.propType], true).then(
 					(model) => {
 						this.staticProps.addChild(model);
@@ -113,10 +113,10 @@ export class SourceBSP extends World {
 		const list = Object.keys(kv.rootElements);
 
 		for (let i = 0; i < list.length; ++i) {
-			let entity = kv.rootElements[list[i]];
+			const entity = kv.rootElements[list[i]];
 
 			if (entity.classname) {
-				let e = MapEntities.createEntity(this, entity.classname);
+				const e = MapEntities.createEntity(this, entity.classname);
 				if (e) {
 					e.setKeyValues(entity);
 					this.addEntity(e);
@@ -170,10 +170,10 @@ export class SourceBSP extends World {
 		const lumpVertices = this.getLumpData(LUMP_VERTEXES);
 
 
-		let texInfo = lumpTexInfo[face.texinfo];
-		let texData = lumpTexData[texInfo.texdata];
+		const texInfo = lumpTexInfo[face.texinfo];
+		const texData = lumpTexData[texInfo.texdata];
 
-		let texName = lumpTexDataStringData[texData.nameStringTableID];
+		const texName = lumpTexDataStringData[texData.nameStringTableID];
 		//console.log(face);
 		let buffer = this.#geometries[texName];
 		if (!buffer) {
@@ -185,11 +185,11 @@ export class SourceBSP extends World {
 			this.#geometries[texName] = buffer;
 		}
 
-		let textureVecsU = texInfo.textureVecs[0];
-		let textureVecsV = texInfo.textureVecs[1];
+		const textureVecsU = texInfo.textureVecs[0];
+		const textureVecsV = texInfo.textureVecs[1];
 		const firstEdge = face.firstedge;
 		const lastEdge = firstEdge + face.numedges;
-		let firstIndice = buffer.lastIndice;
+		const firstIndice = buffer.lastIndice;
 		for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
 			const surfedge = lumpSurfEdges[surfEdgeIndex];
 			const edge = lumpEdges[Math.abs(surfedge)];//TODOv3 ? why abs
@@ -248,10 +248,10 @@ export class SourceBSP extends World {
 		const lumpVertices = this.getLumpData(LUMP_VERTEXES);
 
 
-		let texInfo = lumpTexInfo[face.texinfo];
-		let texData = lumpTexData[texInfo.texdata];
+		const texInfo = lumpTexInfo[face.texinfo];
+		const texData = lumpTexData[texInfo.texdata];
 
-		let texName = lumpTexDataStringData[texData.nameStringTableID];
+		const texName = lumpTexDataStringData[texData.nameStringTableID];
 		//console.log(face);
 		let buffer = this.#geometries[texName];
 		if (!buffer) {
@@ -263,8 +263,8 @@ export class SourceBSP extends World {
 			this.#geometries[texName] = buffer;
 		}
 
-		let textureVecsU = texInfo.textureVecs[0];
-		let textureVecsV = texInfo.textureVecs[1];
+		const textureVecsU = texInfo.textureVecs[0];
+		const textureVecsV = texInfo.textureVecs[1];
 		const firstEdge = face.firstedge;
 		const lastEdge = firstEdge + face.numedges;
 
@@ -322,7 +322,7 @@ export class SourceBSP extends World {
 		for (let level = 0; level < dispInfo.power; ++level) {
 			const squares = Math.pow(2, level);
 			const levelVerts2 = Math.pow(2, level) + 1;
-			let subdiv2 = subdiv / 2;
+			const subdiv2 = subdiv / 2;
 			for (let i = 0; i < squares; ++i) {
 				for (let j = 0; j < squares; ++j) {
 					const iMin = subdiv * i;
@@ -374,11 +374,11 @@ export class SourceBSP extends World {
 			}
 		}
 
-		let verticesCount = 0;
+		const verticesCount = 0;
 		subdiv = Math.pow(2, dispInfo.power);
 		for (let i = 0; i < subdiv; ++i) {
 			for (let j = 0; j < subdiv; ++j) {
-				let firstIndice = buffer.lastIndice;
+				const firstIndice = buffer.lastIndice;
 				const v1 = tesselateVertices[i][j];
 				const v2 = tesselateVertices[i + 1][j];
 				const v3 = tesselateVertices[i + 1][j + 1];
@@ -462,8 +462,8 @@ export class SourceBSP extends World {
 			/* Init displacement buffer */
 			if (lumpDispInfos) {
 				for (let i = 0; i < lumpDispInfos.length; ++i) {//TODO
-					let dispInfo = lumpDispInfos[i];
-					let face = lumpFaces[dispInfo.mapFace];
+					const dispInfo = lumpDispInfos[i];
+					const face = lumpFaces[dispInfo.mapFace];
 					if (face) {
 						this.initDispGeometry(dispInfo, face);
 					}
@@ -478,14 +478,14 @@ export class SourceBSP extends World {
 				const lastFace = leaf.firstleafface + leaf.numleaffaces;
 
 				for (let faceIndex = firstFace; faceIndex < lastFace; ++faceIndex) {
-					let face = lumpFaces[lumpLeafFaces[faceIndex]];
+					const face = lumpFaces[lumpLeafFaces[faceIndex]];
 					this.initFaceGeometry(face);
 				}
 			}
 		}
 
-		for (let textureName in this.#geometries) {
-			let geometry = this.#geometries[textureName];
+		for (const textureName in this.#geometries) {
+			const geometry = this.#geometries[textureName];
 
 			if (textureName.toLowerCase().substring(0, 5) == 'tools') {//TODOV3
 				continue;
@@ -501,11 +501,11 @@ export class SourceBSP extends World {
 				//continue;
 			}
 
-			let bufferGeometry = new BufferGeometry();
+			const bufferGeometry = new BufferGeometry();
 
-			let vertexPosition = new Float32BufferAttribute(geometry.vertices, 3);
-			let vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1);
-			let textureCoord = new Float32BufferAttribute(geometry.coords, 2);
+			const vertexPosition = new Float32BufferAttribute(geometry.vertices, 3);
+			const vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1);
+			const textureCoord = new Float32BufferAttribute(geometry.coords, 2);
 
 			bufferGeometry.setIndex(new Uint16BufferAttribute(geometry.indices, 1));
 			bufferGeometry.setAttribute('aVertexPosition', vertexPosition);
@@ -514,7 +514,7 @@ export class SourceBSP extends World {
 
 			bufferGeometry.count = geometry.indices.length;
 
-			let staticMesh = new Mesh(bufferGeometry, null);
+			const staticMesh = new Mesh(bufferGeometry, null);
 			staticMesh.name = textureName;
 			SourceEngineMaterialManager.getMaterial(this.repository, textureName).then(
 				(material) => staticMesh.setMaterial(material)
@@ -539,14 +539,14 @@ export class SourceBSP extends World {
 	}
 
 	getOBBSize(modelIndex) {
-		let lumpModels = this.getLumpData(LUMP_MODELS);
-		let lumpFaces = this.getLumpData(LUMP_FACES);
-		let lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
-		let lumpEdges = this.getLumpData(LUMP_EDGES);
-		let lumpVertices = this.getLumpData(LUMP_VERTEXES);
+		const lumpModels = this.getLumpData(LUMP_MODELS);
+		const lumpFaces = this.getLumpData(LUMP_FACES);
+		const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
+		const lumpEdges = this.getLumpData(LUMP_EDGES);
+		const lumpVertices = this.getLumpData(LUMP_VERTEXES);
 
 		if (lumpModels && lumpFaces && lumpSurfEdges && lumpEdges && lumpVertices) {
-			let model = lumpModels[modelIndex];
+			const model = lumpModels[modelIndex];
 			if (model) {
 				if (model.numfaces == 0) {
 					return vec3.create();
@@ -561,23 +561,23 @@ export class SourceBSP extends World {
 						}
 					}
 				}
-				let min = vec3.fromValues(Infinity, Infinity, Infinity);
-				let max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
+				const min = vec3.fromValues(Infinity, Infinity, Infinity);
+				const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
 
-				let firstFace = model.firstface;
-				let lastFace = firstFace + model.numfaces;
+				const firstFace = model.firstface;
+				const lastFace = firstFace + model.numfaces;
 
 				for (let j = firstFace; j < lastFace; j++) {
-					let face = lumpFaces[j];
+					const face = lumpFaces[j];
 					if (face) {
-						let firstEdge = face.firstedge;
-						let lastEdge = firstEdge + face.numedges;
+						const firstEdge = face.firstedge;
+						const lastEdge = firstEdge + face.numedges;
 
 						for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; surfEdgeIndex++) {
-							let surfedge = lumpSurfEdges[surfEdgeIndex];
-							let edge = lumpEdges[Math.abs(surfedge)];
-							let vertice1 = lumpVertices[edge.f];
-							let vertice2 = lumpVertices[edge.s];
+							const surfedge = lumpSurfEdges[surfEdgeIndex];
+							const edge = lumpEdges[Math.abs(surfedge)];
+							const vertice1 = lumpVertices[edge.f];
+							const vertice2 = lumpVertices[edge.s];
 
 							compare(vertice1);
 							compare(vertice2);

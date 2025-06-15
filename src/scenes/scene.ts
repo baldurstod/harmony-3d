@@ -9,10 +9,10 @@ import { Environment } from './environments/environment';
 export type SceneParameters = EntityParameters;
 
 export class Scene extends Entity {
-	#layers: Map<any/*TODO: create a layer type*/, number> = new Map();
+	#layers = new Map<any/*TODO: create a layer type*/, number>();
 	#world?: World;
 	background?: BackGround;
-	layers: Set<any/*TODO: create a layer type*/> = new Set();
+	layers = new Set<any/*TODO: create a layer type*/>();
 	environment?: Environment;
 	activeCamera?: Camera;
 

@@ -4,10 +4,10 @@ import { Source2MaterialLoader } from '../../loaders/source2materialloader';
 const STICKER_COUNT = 5;
 
 class WeaponSticker {
-	sticker: string = '';
-	holoSpectrum: string = '';
-	normalRoughness: string = '';
-	sfxMask: string = '';
+	sticker = '';
+	holoSpectrum = '';
+	normalRoughness = '';
+	sfxMask = '';
 }
 
 export class Source2CsgoWeapon extends Source2Material {
@@ -25,9 +25,9 @@ export class Source2CsgoWeapon extends Source2Material {
 		}
 	}
 
-	getUniforms(): Array<Map<string, string>> {
+	getUniforms(): Map<string, string>[] {
 		const uniforms = super.getUniforms();
-		const m: Map<string, string> = new Map();
+		const m = new Map<string, string>();
 
 		for (let i = 0; i < STICKER_COUNT; i++) {
 			m.set(`g_flSticker${i}Rotation`, `g_flSticker${i}Rotation`);
@@ -42,9 +42,9 @@ export class Source2CsgoWeapon extends Source2Material {
 		return uniforms;
 	}
 
-	getTextureUniforms(): Array<Map<string, Array<string>>> {
+	getTextureUniforms(): Map<string, string[]>[] {
 		const uniforms = super.getTextureUniforms();
-		const m: Map<string, Array<string>> = new Map();
+		const m = new Map<string, string[]>();
 
 		for (let i = 0; i < STICKER_COUNT; i++) {
 			m.set(`g_tHoloSpectrumSticker${i}`, [`holoSpectrumSticker${i}Map`, `USE_HOLO_SPECTRUM_STICKER${i}_MAP`]);

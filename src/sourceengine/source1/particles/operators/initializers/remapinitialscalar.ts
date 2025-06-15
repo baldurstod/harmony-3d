@@ -42,7 +42,7 @@ export class RemapInitialScalar extends SourceEngineParticleOperator {
 		//const v = this.getInputValue(inputField, particle);
 		const v = particle.getField(inputField);
 		const d = (v-inputMinimum)/(inputMaximum-inputMinimum);
-		let out = d*(outputMaximum-outputMinimum)+outputMinimum;
+		const out = d*(outputMaximum-outputMinimum)+outputMinimum;
 		//out = clamp(out, outputMinimum, outputMaximum);
 
 		//this.setOutputValue(outputField, out, particle);

@@ -14,7 +14,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 	#vtfList = new Map<string, SourceEngineVTF>();
 	#defaultTexture!: Texture;
 	#defaultTextureCube!: Texture;
-	fallbackRepository: string = '';
+	fallbackRepository = '';
 
 	constructor() {
 		super();
@@ -30,7 +30,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 
 	getTexture(repository: string, path: string, frame: number, needCubeMap = false, srgb = true): Texture | null {
 		frame = Math.floor(frame);
-		let animatedTexture = this.#getTexture(repository, path, needCubeMap, srgb);
+		const animatedTexture = this.#getTexture(repository, path, needCubeMap, srgb);
 
 		return ((animatedTexture as AnimatedTexture)?.getFrame ? (animatedTexture as AnimatedTexture).getFrame(frame) : animatedTexture) ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
 	}
@@ -61,10 +61,10 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 			return texture;
 		}
 
-		let pathWithMaterials = 'materials/' + path + '.vtf';//TODOv3
-		let fullPath = repository + pathWithMaterials;
+		const pathWithMaterials = 'materials/' + path + '.vtf';//TODOv3
+		const fullPath = repository + pathWithMaterials;
 		if (!this.#texturesList.has(fullPath)) {
-			let animatedTexture = allocatedTexture ?? new AnimatedTexture();//TODOv3: merge with TextureManager.createTexture(); below
+			const animatedTexture = allocatedTexture ?? new AnimatedTexture();//TODOv3: merge with TextureManager.createTexture(); below
 			this.setTexture(fullPath, animatedTexture);
 
 			this.getVtf(repository, pathWithMaterials).then(
@@ -89,12 +89,12 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		if (this.#texturesList.has(path)) {//Internal texture
 			return this.#texturesList.get(path);//.getFrame(frame);//TODOv3: add frame back
 		}
-		let pathWithMaterials = 'materials/' + path + '.vtf';//TODOv3
-		let fullPath = repository + pathWithMaterials;
+		const pathWithMaterials = 'materials/' + path + '.vtf';//TODOv3
+		const fullPath = repository + pathWithMaterials;
 		if (!this.#texturesList.has(fullPath)) {
-			let animatedTexture = new AnimatedTexture();//TODOv3: merge with TextureManager.createTexture(); below
+			const animatedTexture = new AnimatedTexture();//TODOv3: merge with TextureManager.createTexture(); below
 			this.setTexture(fullPath, animatedTexture);
-			let vtf = await this.getVtf(repository, pathWithMaterials);
+			const vtf = await this.getVtf(repository, pathWithMaterials);
 
 			if (vtf) {
 				vtfToTexture(vtf, animatedTexture, srgb);
@@ -111,7 +111,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	addInternalTexture(texture?: Texture) {
-		let textureName = this.getInternalTextureName();
+		const textureName = this.getInternalTextureName();
 		texture = texture ?? TextureManager.createTexture();//TODOv3: add params + create animated texture
 		this.setTexture(textureName, texture);
 		return { name: textureName, texture: texture };
@@ -144,9 +144,9 @@ export function vtfToTexture(vtf: SourceEngineVTF, animatedTexture: AnimatedText
 	const alphaBits = vtf.getAlphaBits();
 	//animatedTexture.vtf = vtf;
 	animatedTexture.setAlphaBits(alphaBits);
-	let glContext = new Graphics().glContext;
+	const glContext = new Graphics().glContext;
 	for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
-		let texture = TextureManager.createTexture();//TODOv3: add params
+		const texture = TextureManager.createTexture();//TODOv3: add params
 		texture.properties.set('vtf', vtf);
 		texture.setAlphaBits(alphaBits);
 		const currentMipMap = vtf.mipmapCount;//TODOv3: choose mipmap

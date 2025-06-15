@@ -1,9 +1,9 @@
 export class Sound {
 	#repository: string;
-	#wave: string | Array<string>;
+	#wave: string | string[];
 	#channel: string;
 
-	constructor(repository: string, wave: string | Array<string>, channel: string) {
+	constructor(repository: string, wave: string | string[], channel: string) {
 		this.#repository = repository;
 		this.#wave = wave;
 		this.#channel = channel;

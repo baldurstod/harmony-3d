@@ -8,7 +8,7 @@ export class AnimationFrame {
 		this.#frameId = frameId;
 	}
 
-	setDatas(name: string, type: AnimationFrameDataType, datas: Array<AnimationFrameDataTypes>) {
+	setDatas(name: string, type: AnimationFrameDataType, datas: AnimationFrameDataTypes[]) {
 		this.#datas.set(name, new AnimationFrameData(type, datas));
 	}
 

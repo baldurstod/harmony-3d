@@ -5,7 +5,7 @@ import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { vec3RandomBox, lerp, RandomVectorInUnitSphere } from '../../../../../math/functions';
 
-let tempVec3 = vec3.create();
+const tempVec3 = vec3.create();
 
 export class PositionWithinSphereRandom extends SourceEngineParticleOperator {
 	static functionName = 'Position Within Sphere Random';

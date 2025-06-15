@@ -7,16 +7,16 @@ import { WebGLAnyRenderingContext } from '../../../types';
 import { GL_CLAMP_TO_EDGE, GL_FLOAT, GL_LINEAR, GL_REPEAT, GL_RGB, GL_RGBA, GL_RGBA16F, GL_SRGB8, GL_SRGB8_ALPHA8, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
 import { TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_SRGB } from './vtfconstants';
 
-export type VTFMipMap = {
+export interface VTFMipMap {
 	height: number;
 	width: number;
-	frames: Array<Array<Uint8Array | Float32Array>>;
+	frames: (Uint8Array | Float32Array)[][];
 }
 
-export type VTFResourceEntry = {
+export interface VTFResourceEntry {
 	type: number;
 	resData: number;//TODO: rename property to dataOffset
-	mipMaps?: Array<VTFMipMap>;
+	mipMaps?: VTFMipMap[];
 }
 
 const VTF_ENTRY_IMAGE_DATAS = 48;
@@ -24,11 +24,11 @@ const VTF_ENTRY_IMAGE_DATAS = 48;
 export class SourceEngineVTF {
 	repository: string;
 	fileName: string;
-	versionMaj: number = 0;
-	versionMin: number = 0;
+	versionMaj = 0;
+	versionMin = 0;
 	width = 0;
 	height = 0;
-	flags: number = 0;
+	flags = 0;
 	frames = 1;
 	faceCount = 1;
 	firstFrame = 0;
@@ -40,11 +40,11 @@ export class SourceEngineVTF {
 	lowResImageWidth = 0;
 	lowResImageHeight = 0;
 	depth = 0;
-	resEntries: Array<VTFResourceEntry> = [];
+	resEntries: VTFResourceEntry[] = [];
 	currentFrame = 0;
 	filled = false;
-	numResources: number = 0;
-	headerSize: number = 0;
+	numResources = 0;
+	headerSize = 0;
 	sheet?: any;//TODO: create proper type for sheet
 
 	constructor(repository: string, fileName: string) {
@@ -132,7 +132,7 @@ export class SourceEngineVTF {
 	 */
 	getResource(type: number): VTFResourceEntry | null {
 		for (let i = 0; i < this.resEntries.length; ++i) {
-			let entry = this.resEntries[i];
+			const entry = this.resEntries[i];
 			if (entry.type == type) {
 				return entry;
 			}
@@ -207,7 +207,7 @@ export class SourceEngineVTF {
 			//TODO: show error
 			return;
 		}
-		let webGLTexture = texture.texture;
+		const webGLTexture = texture.texture;
 
 		glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 		glContext.bindTexture(GL_TEXTURE_2D, webGLTexture);
@@ -246,7 +246,7 @@ export class SourceEngineVTF {
 			mipmapLvl = Math.min(mipmapLvl, this.mipmapCount - 1);
 		}
 
-		let frame = 0;
+		const frame = 0;
 		//TODOv3: removeme
 		/*if (delta!=undefined) {
 			this.currentFrame += delta / 100.0;
@@ -275,7 +275,7 @@ export class SourceEngineVTF {
 		const clampT = (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
 
 		if (this.isDxtCompressed()) {
-			let isSRGB = srgb && this.isSRGB();
+			const isSRGB = srgb && this.isSRGB();
 			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][0], clampS, clampT, isSRGB);
 			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][1], clampS, clampT, isSRGB);
 			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][2], clampS, clampT, isSRGB);
@@ -375,7 +375,7 @@ return 0;
 		return ((this.flags & TEXTUREFLAGS_SRGB) == TEXTUREFLAGS_SRGB);
 	}
 
-	async getImageData(mipmap?: number, frame: number = 0, face: number = 0): Promise<ImageData | null> {
+	async getImageData(mipmap?: number, frame = 0, face = 0): Promise<ImageData | null> {
 		frame = Math.round(frame) % this.frames;
 
 		const highResDatas = this.getResource(VTF_ENTRY_IMAGE_DATAS);
@@ -442,7 +442,7 @@ export const IMAGE_FORMAT_UVLX8888 = 26;
 
 
 async function decompressDxt(dxtLevel: number, width: number, height: number, datas: Uint8Array | Float32Array): Promise<Uint8ClampedArray> {
-	let uncompressedData = new Uint8ClampedArray(width * height * 4);
+	const uncompressedData = new Uint8ClampedArray(width * height * 4);
 
 	let decompressFunc = null;
 	switch (dxtLevel) {
@@ -477,7 +477,7 @@ function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext,
 		glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 
 		(async () => {
-			let uncompressedData = await decompressDxt(dxtLevel, width, height, datas);//new Uint8Array(width * height * 4);
+			const uncompressedData = await decompressDxt(dxtLevel, width, height, datas);//new Uint8Array(width * height * 4);
 			glContext.bindTexture(GL_TEXTURE_2D, texture);
 			glContext.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData);//TODO: params
 			glContext.bindTexture(GL_TEXTURE_2D, null);

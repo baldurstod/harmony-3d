@@ -38,7 +38,7 @@ export class RemapCPSpeedToCP extends SourceEngineParticleOperator {
 		if (incp&&outcp&&(outputField==0||outputField==1||outputField==2)) {
 			const v = vec3.length(incp.getWorldPosition(a));
 
-			let position = outcp.position;//TODO optimize
+			const position = outcp.position;//TODO optimize
 			position[outputField] = RemapValClamped(200, inputMinimum, inputMaximum, outputMinimum, outputMaximum);
 			outcp.position = position;
 		}

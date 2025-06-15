@@ -48,15 +48,15 @@ export class DistanceBetweenCPs extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let inputMin = this.getParamScalarValue('m_flInputMin') ?? 0;
-		let inputMax = this.getParamScalarValue('m_flInputMax') ?? 128;
-		let outputMin = this.getParamScalarValue('m_flOutputMin') ?? 0;
-		let outputMax = this.getParamScalarValue('m_flOutputMax') ?? 1;
+		const inputMin = this.getParamScalarValue('m_flInputMin') ?? 0;
+		const inputMax = this.getParamScalarValue('m_flInputMax') ?? 128;
+		const outputMin = this.getParamScalarValue('m_flOutputMin') ?? 0;
+		const outputMax = this.getParamScalarValue('m_flOutputMax') ?? 1;
 
 		//TODO: los and other parameters
 
-		let startCpPos = this.system.getControlPoint(this.startCP).currentWorldPosition;
-		let endCPPos = this.system.getControlPoint(this.endCP).currentWorldPosition;
+		const startCpPos = this.system.getControlPoint(this.startCP).currentWorldPosition;
+		const endCPPos = this.system.getControlPoint(this.endCP).currentWorldPosition;
 
 		let value = vec3.distance(startCpPos, endCPPos);
 

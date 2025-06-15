@@ -36,7 +36,7 @@ export class SourcePCF {
 		ps.repository = this.repository;
 
 		for (let attributeIndex = 0; attributeIndex < attributes.length; ++attributeIndex) {
-			let attribute = attributes[attributeIndex];
+			const attribute = attributes[attributeIndex];
 			switch (attribute.typeName) {
 				case 'renderers':
 				case 'operators':
@@ -66,7 +66,7 @@ export class SourcePCF {
 		system.repository = this.repository;
 
 		for (let attributeIndex = 0; attributeIndex < attributes.length; ++attributeIndex) {
-			let attribute = attributes[attributeIndex];
+			const attribute = attributes[attributeIndex];
 			switch (attribute.typeName) {
 				case 'renderers':
 				case 'operators':
@@ -117,7 +117,7 @@ export class SourcePCF {
 
 	addAttributes(operator, list) {
 		for (let i = 0; i < list.length; ++i) {
-			let attrib = list[i];
+			const attrib = list[i];
 
 			operator.setParameter(attrib.typeName, ELEMENT_TYPES[attrib.type], attrib.value);
 		}

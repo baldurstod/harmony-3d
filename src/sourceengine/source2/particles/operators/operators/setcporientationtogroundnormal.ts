@@ -4,7 +4,7 @@ import { Operator } from '../operator';
 
 const UNIT_VEC3_X = vec3.fromValues(1, 0, 0);
 const UNIT_VEC3_Z = vec3.fromValues(0, 0, 1);
-let q = quat.create();
+const q = quat.create();
 
 export class SetCPOrientationToGroundNormal extends Operator {
 	m_flInterpRate = 0;
@@ -49,7 +49,7 @@ export class SetCPOrientationToGroundNormal extends Operator {
 
 	doOperate(particle, elapsedTime) {
 		//TODO: do it properly
-		let outputCP = this.system.getControlPoint(this.outputCP);
+		const outputCP = this.system.getControlPoint(this.outputCP);
 		if (outputCP) {
 			quat.rotationTo(q, UNIT_VEC3_X, UNIT_VEC3_Z);
 			outputCP.quaternion = q;

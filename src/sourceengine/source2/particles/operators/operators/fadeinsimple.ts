@@ -26,7 +26,7 @@ export class FadeInSimple extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let proportionOfLife = particle.currentTime / particle.timeToLive;
+		const proportionOfLife = particle.currentTime / particle.timeToLive;
 		particle.alpha = SimpleSplineRemapValWithDeltasClamped(proportionOfLife, 0, this.fadeInTime, this.invFadeInTime, 0, particle.startAlpha);
 		//TODO: use fieldOutput
 	}

@@ -8,9 +8,9 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 	}
 
 	#setupGeometry() {
-		var positions = [- 1, 2, 0, 1, 2, 0, - 1, 1, 0, 1, 1, 0, - 1, 0, 0, 1, 0, 0, - 1, - 1, 0, 1, - 1, 0];
-		var uvs = [- 1, 2, 1, 2, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 2, 1, - 2];
-		var indices = [0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5];
+		const positions = [- 1, 2, 0, 1, 2, 0, - 1, 1, 0, 1, 1, 0, - 1, 0, 0, 1, 0, 0, - 1, - 1, 0, 1, - 1, 0];
+		const uvs = [- 1, 2, 1, 2, - 1, 1, 1, 1, - 1, - 1, 1, - 1, - 1, - 2, 1, - 2];
+		const indices = [0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5];
 		// build geometry
 
 		this.setIndex(new Uint16BufferAttribute(indices, 1));
@@ -20,11 +20,11 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 	}
 
 	setSegments(positions, colors?, lineStrip?: boolean) {
-		let start = [];
-		let end = [];
+		const start = [];
+		const end = [];
 		let instanceCount = 0;
 
-		let increment = lineStrip ? 3 : 6;
+		const increment = lineStrip ? 3 : 6;
 		for (let i = 0, l = positions.length; i < l; i += increment) {
 			start.push(positions[i + 0]);
 			start.push(positions[i + 1]);
@@ -36,9 +36,9 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 			++instanceCount;
 		}
 
-		let startAttribute = new Float32BufferAttribute(start, 3);
+		const startAttribute = new Float32BufferAttribute(start, 3);
 		startAttribute.divisor = 1;
-		let endAttribute = new Float32BufferAttribute(end, 3);
+		const endAttribute = new Float32BufferAttribute(end, 3);
 		endAttribute.divisor = 1;
 
 		this.setAttribute('aSegmentStart', startAttribute);
@@ -52,8 +52,8 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 
 
 		/*************************/
-		let start = [];
-		let end = [];
+		const start = [];
+		const end = [];
 		let x = Math.random();
 		let y = Math.random();
 		let z = Math.random();
@@ -72,9 +72,9 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 			end[i + 2] = z;
 		}
 
-		let startAttribute = new Float32BufferAttribute(start, 3);
+		const startAttribute = new Float32BufferAttribute(start, 3);
 		startAttribute.divisor = 1;
-		let endAttribute = new Float32BufferAttribute(end, 3);
+		const endAttribute = new Float32BufferAttribute(end, 3);
 		endAttribute.divisor = 1;
 
 		this.setAttribute('aSegmentStart', startAttribute);

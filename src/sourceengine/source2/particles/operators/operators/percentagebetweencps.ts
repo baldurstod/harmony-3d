@@ -4,8 +4,8 @@ import { Operator } from '../operator';
 import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { RemapValClamped } from '../../../../../math/functions';
 
-let va = vec3.create();
-let vb = vec3.create();
+const va = vec3.create();
+const vb = vec3.create();
 
 export class PercentageBetweenCPs extends Operator {
 	fieldOutput = PARTICLE_FIELD_RADIUS;
@@ -58,13 +58,13 @@ export class PercentageBetweenCPs extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let startCpPos = this.system.getControlPoint(this.startCP).currentWorldPosition;
-		let endCPPos = this.system.getControlPoint(this.endCP).currentWorldPosition;
+		const startCpPos = this.system.getControlPoint(this.startCP).currentWorldPosition;
+		const endCPPos = this.system.getControlPoint(this.endCP).currentWorldPosition;
 
 		let percentage;
-		let dist = vec3.distance(startCpPos, endCPPos);
+		const dist = vec3.distance(startCpPos, endCPPos);
 		if (this.radialCheck) {
-			let dist2 = vec3.distance(startCpPos, particle.position);
+			const dist2 = vec3.distance(startCpPos, particle.position);
 			percentage = dist2 / dist;
 		} else {
 			vec3.sub(va, particle.position, startCpPos);
@@ -79,7 +79,7 @@ export class PercentageBetweenCPs extends Operator {
 		}
 
 
-		let value = RemapValClamped(percentage, this.inputMin, this.inputMax, this.outputMin, this.outputMax);
+		const value = RemapValClamped(percentage, this.inputMin, this.inputMax, this.outputMin, this.outputMax);
 		particle.setField(this.fieldOutput, value, this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
 	}
 }

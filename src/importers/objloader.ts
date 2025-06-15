@@ -7,29 +7,29 @@ import { Mesh } from '../objects/mesh';
 import { Obj, ObjFace } from './obj';
 
 function readVertex(line) {
-	let arr = line.split(' ');
+	const arr = line.split(' ');
 	return vec3.fromValues(arr[1] ?? 0.0, arr[2] ?? 0.0, arr[3] ?? 0.0/*, arr[4] ?? 1.0*/);
 }
 
 function readVertexCoord(line) {
-	let arr = line.split(' ');
+	const arr = line.split(' ');
 	return vec2.fromValues(arr[1] ?? 0.0, arr[2] ?? 0);
 }
 
 function readVertexNormal(line) {
-	let arr = line.split(' ');
-	let v = vec3.fromValues(arr[1] ?? 1.0, arr[2] ?? 1, arr[3] ?? 1);
+	const arr = line.split(' ');
+	const v = vec3.fromValues(arr[1] ?? 1.0, arr[2] ?? 1, arr[3] ?? 1);
 	return vec3.normalize(v, v);
 }
 
 function readFace(line) {
-	let arr = line.split(' ');
-	let face = new ObjFace();
+	const arr = line.split(' ');
+	const face = new ObjFace();
 	for (let i = 1; i < arr.length; i++) {
-		let v = arr[i];
+		const v = arr[i];
 		///let faceVertex = [];
 		if (v) {
-			let v2 = v.split('/');
+			const v2 = v.split('/');
 			//faceVertex.push(v2[0] ?? 0, v2[1] ?? 0, v2[2] ?? 0);
 			face.v.push((v2[0] ?? 1) - 1);
 			face.t.push((v2[1] ?? 1) - 1);
@@ -46,8 +46,8 @@ function readFace(line) {
 }
 
 function buildMesh(obj) {
-	let geometry = new BufferGeometry();
-	let material = new MeshBasicMaterial();
+	const geometry = new BufferGeometry();
+	const material = new MeshBasicMaterial();
 
 	const m = obj.toMesh();
 
@@ -63,11 +63,11 @@ function buildMesh(obj) {
 
 export class OBJImporter {
 	static load(txt) {
-		let lines = txt.split('\n');
-		let vertices = [];
-		let verticesNormals = [];
-		let verticesCoords = [];
-		let faces = [];
+		const lines = txt.split('\n');
+		const vertices = [];
+		const verticesNormals = [];
+		const verticesCoords = [];
+		const faces = [];
 
 		const obj = new Obj();
 

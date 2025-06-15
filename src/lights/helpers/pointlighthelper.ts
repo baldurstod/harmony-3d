@@ -18,7 +18,7 @@ export class PointLightHelper extends Mesh {
 		this.#createVertices();
 		this.material.setColorMode(MaterialColorMode.PerMesh);
 		this.material.setDefine('ALWAYS_ON_TOP');
-		let sphere = new Sphere({ radius: SPHERE_RADIUS, segments: 12, rings: 12 });
+		const sphere = new Sphere({ radius: SPHERE_RADIUS, segments: 12, rings: 12 });
 		sphere.material.setDefine('ALWAYS_ON_TOP');
 		this.addChild(sphere);
 	}
@@ -29,8 +29,8 @@ export class PointLightHelper extends Mesh {
 
 		vertices.push(0, 0, 0);
 
-		let iInc = PI / 4;
-		let jInc = PI / 4;
+		const iInc = PI / 4;
+		const jInc = PI / 4;
 		let k = 0;
 		for (let i = 0; i < TWO_PI; i += iInc) {
 			for (let j = 0; j < PI; j += jInc) {
@@ -43,7 +43,7 @@ export class PointLightHelper extends Mesh {
 			}
 		}
 
-		let geometry = this.geometry;
+		const geometry = this.geometry;
 		geometry.setIndex(new Uint16BufferAttribute(indices, 1));
 		geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3));
 		geometry.count = indices.length;

@@ -7,17 +7,17 @@ export class Font {
 	}
 
 	generateShapes(text, size = 100) {
-		let shapes = [];
-		let paths = this.createPaths(text, size);
+		const shapes = [];
+		const paths = this.createPaths(text, size);
 
-		for (let path of paths) {
+		for (const path of paths) {
 			shapes.push(...path.toShapes());
 		}
 		return shapes;
 	}
 
 	createPaths(text = '', size = 1) {
-		let data = this.json;
+		const data = this.json;
 		const chars = Array.from(text);
 		const scale = size / data.resolution;
 		const line_height = (data.boundingBox.yMax - data.boundingBox.yMin + data.underlineThickness) * scale;
@@ -26,7 +26,7 @@ export class Font {
 
 		let offsetX = 0, offsetY = 0;
 
-		for (let char of chars) {
+		for (const char of chars) {
 			if (char === '\n') {
 				offsetX = 0;
 				offsetY -= line_height;
@@ -40,7 +40,7 @@ export class Font {
 	}
 
 	createPath(char, scale, offsetX, offsetY) {
-		let data = this.json;
+		const data = this.json;
 
 		const glyph = data.glyphs[char] ?? data.glyphs['?'];
 
@@ -49,10 +49,10 @@ export class Font {
 		let x, y, cpx, cpy, cpx1, cpy1, cpx2, cpy2;
 
 		if (glyph.o) {
-			let outline = glyph.o.split(' ');
+			const outline = glyph.o.split(' ');
 
 			for (let i = 0, l = outline.length; i < l;) {
-				let action = outline[i++];
+				const action = outline[i++];
 
 				switch (action) {
 					case 'm': // moveTo

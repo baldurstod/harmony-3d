@@ -55,7 +55,7 @@ export class SetControlPointPositions extends SourceEngineParticleOperator {
 			} else {
 				this.particleSystem.setControlPointPosition(cpNumber, cpLocation);
 			}
-			let controlPoint = this.particleSystem.getControlPoint(cpNumber);
+			const controlPoint = this.particleSystem.getControlPoint(cpNumber);
 			if (controlPoint) {
 				controlPoint.setWorldQuaternion(quat.create());
 			}

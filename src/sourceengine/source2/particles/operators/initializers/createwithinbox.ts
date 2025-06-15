@@ -4,9 +4,9 @@ import { Operator } from '../operator';
 import { vec3RandomBox } from '../../../../../math/functions';
 import { Source2Particle } from '../../source2particle';
 
-let tempQuat = quat.create();
-let tempVec3 = vec3.create();
-let tempVec3_2 = vec3.create();
+const tempQuat = quat.create();
+const tempVec3 = vec3.create();
+const tempVec3_2 = vec3.create();
 
 export class CreateWithinBox extends Operator {
 	vecMin = vec3.create();
@@ -43,7 +43,7 @@ export class CreateWithinBox extends Operator {
 			}
 		}
 
-		let controlPoint = this.system.getControlPoint(this.controlPointNumber);
+		const controlPoint = this.system.getControlPoint(this.controlPointNumber);
 		if (controlPoint) {
 			controlPoint.getWorldPosition(tempVec3_2);
 			if (this.localSpace) {

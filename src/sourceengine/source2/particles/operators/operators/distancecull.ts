@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
-let vec = vec3.create();
+const vec = vec3.create();
 
 export class DistanceCull extends Operator {
 	pointOffset = vec3.create();
@@ -29,9 +29,9 @@ export class DistanceCull extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let cp = this.system.getControlPoint(this.controlPointNumber);
+		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
-			let origin = cp.getWorldPosition(vec);
+			const origin = cp.getWorldPosition(vec);
 			vec3.add(origin, origin, this.pointOffset);
 
 			if (this.cullInside) {//TODO: improve this

@@ -4,7 +4,7 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { PARTICLE_FIELD_POSITION, PARTICLE_FIELD_POSITION_PREVIOUS } from '../../../../common/particles/particlefields';
 
-let v = vec3.create();
+const v = vec3.create();
 
 export class SetRigidAttachment extends Operator {
 	localSpace = true;

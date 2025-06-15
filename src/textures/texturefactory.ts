@@ -31,10 +31,10 @@ export function deleteTexture(texture: WebGLTexture | null) {
 }
 
 export function fillFlatTexture(texture: Texture, color = [255, 255, 255], needCubeMap: boolean) {//TODOv3: mutualize with fillCheckerTexture
-	let width = 64;
-	let height = 64;
+	const width = 64;
+	const height = 64;
 	if (texture) {
-		let byteArray = new Uint8Array(width * height * 3);
+		const byteArray = new Uint8Array(width * height * 3);
 		let pixelIndex = 0;
 		for (let i = 0; i < width; i++) {
 			for (let j = 0; j < height; j++) {
@@ -72,7 +72,7 @@ export function fillFlatTexture(texture: Texture, color = [255, 255, 255], needC
 
 export function fillCheckerTexture(texture: Texture, color = [255, 0, 255], width = 64, height = 64, needCubeMap: boolean) {
 	if (texture) {
-		let byteArray = new Uint8Array(width * height * 3);
+		const byteArray = new Uint8Array(width * height * 3);
 		let pixelIndex = 0;
 		for (let i = 0; i < width; i++) {
 			for (let j = 0; j < height; j++) {
@@ -108,11 +108,11 @@ export function fillCheckerTexture(texture: Texture, color = [255, 0, 255], widt
 	return texture;
 }
 
-export function fillNoiseTexture(texture: Texture, width = 64, height = 64, needCubeMap: boolean = false) {//TODO: do a proper noise
+export function fillNoiseTexture(texture: Texture, width = 64, height = 64, needCubeMap = false) {//TODO: do a proper noise
 	if (texture) {
-		let byteArray = new Uint8Array(width * height * 3);
+		const byteArray = new Uint8Array(width * height * 3);
 		let pixelIndex = 0;
-		let randomVec3 = vec3.create();
+		const randomVec3 = vec3.create();
 		for (let i = 0; i < width; i++) {
 			for (let j = 0; j < height; j++) {
 				vec3.random(randomVec3, 255.0);

@@ -15,7 +15,7 @@ export class MapEntityAmbientLight extends MapEntity {
 	}
 
 	setKeyValue(key, value) {
-		let ambientLight = this.#ambientLight;
+		const ambientLight = this.#ambientLight;
 		//pointLight.range = 1000;
 		switch (key) {
 			case '_ambient':

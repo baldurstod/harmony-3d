@@ -34,9 +34,9 @@ export class OscillateScalarSimple extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let currentTime = this.system.currentTime;
+		const currentTime = this.system.currentTime;
 
-		let sinFactor = (this.oscMult * currentTime + this.oscAdd) * this.frequency;
+		const sinFactor = (this.oscMult * currentTime + this.oscAdd) * this.frequency;
 
 		let value = particle.getField(this.field) + this.rate * Math.sin(sinFactor * Math.PI) * DEG_TO_RAD;//DEG_TO_RAD seems to apply to all field even radius, alpha and so on. Valve style
 		if (this.field == PARTICLE_FIELD_ALPHA) {

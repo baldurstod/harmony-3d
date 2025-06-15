@@ -28,16 +28,16 @@ export class BasicMovement extends Operator {
 		/*if (particle.id == 5) {
 			console.error(particle.prevPosition, particle.position);
 		}*/
-		let adj_dt = (elapsedTime / this.system.previousElapsedTime) * ExponentialDecay((1.0 - Math.max(0.0, this.drag)), (1.0 / 30.0), elapsedTime);
+		const adj_dt = (elapsedTime / this.system.previousElapsedTime) * ExponentialDecay((1.0 - Math.max(0.0, this.drag)), (1.0 / 30.0), elapsedTime);
 
 		const accumulatedForces = vec3.clone(this.gravity);
-		for (let force of this.system.forces.values()) {
+		for (const force of this.system.forces.values()) {
 			force.forceParticle(particle, elapsedTime, accumulatedForces);
 		}
 
 		const accFactor = vec3.scale(vec3.create(), accumulatedForces, elapsedTime * elapsedTime);
 
-		let vecTemp = vec3.sub(vec3.create(), particle.position, particle.prevPosition);
+		const vecTemp = vec3.sub(vec3.create(), particle.position, particle.prevPosition);
 		vec3.scale(vecTemp, vecTemp, adj_dt);
 
 		vec3.add(vecTemp, vecTemp, accFactor);

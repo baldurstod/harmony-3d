@@ -31,15 +31,15 @@ export class Box extends Mesh {
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			Box_1: null,
-			width: { i18n: '#width', f: () => { let width = prompt('Width', String(this.#width)); if (width) { this.#width = Number(width); this.#updateGeometry(); } } },
-			height: { i18n: '#height', f: () => { let height = prompt('Height', String(this.#height)); if (height) { this.#height = Number(height); this.#updateGeometry(); } } },
-			depth: { i18n: '#depth', f: () => { let depth = prompt('Depth', String(this.#depth)); if (depth) { this.#depth = Number(depth); this.#updateGeometry(); } } },
+			width: { i18n: '#width', f: () => { const width = prompt('Width', String(this.#width)); if (width) { this.#width = Number(width); this.#updateGeometry(); } } },
+			height: { i18n: '#height', f: () => { const height = prompt('Height', String(this.#height)); if (height) { this.#height = Number(height); this.#updateGeometry(); } } },
+			depth: { i18n: '#depth', f: () => { const depth = prompt('Depth', String(this.#depth)); if (depth) { this.#depth = Number(depth); this.#updateGeometry(); } } },
 			cube: { i18n: '#cube', f: () => { let size: string | number = prompt('Cube size', '0'); if (size) { size = Number(size); this.#width = size; this.#height = size; this.#depth = size; this.#updateGeometry(); } } },
 		});
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.width = this.#width;
 		json.height = this.#height;
 		json.depth = this.#depth;
@@ -51,7 +51,7 @@ export class Box extends Mesh {
 	}
 
 	static async constructFromJSON(json, entities, loadedPromise) {
-		let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
 		return new Box({ width: json.width, height: json.height, depth: json.depth, material: (material as Material), widthSegments: json.widthSegments, heightSegments: json.heightSegments, depthSegments: json.depthSegments });
 	}
 

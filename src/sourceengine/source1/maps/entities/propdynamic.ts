@@ -12,7 +12,7 @@ export class PropDynamic extends MapEntity {
 	async setupModel(kvElement) {
 		const entity = kvElement;
 		if (entity && entity.model) {
-			let model = await this.setModel(entity.model);
+			const model = await this.setModel(entity.model);
 			const skin = entity.skin || 0;
 			if (model) {
 				model.skin = skin;
@@ -60,7 +60,7 @@ export class PropDynamic extends MapEntity {
 	async setModel(modelName) {
 		modelName = modelName.replace(/.mdl$/g, '');
 
-		let model = await Source1ModelManager.createInstance(this.map.repository, modelName, true);
+		const model = await Source1ModelManager.createInstance(this.map.repository, modelName, true);
 		/*model.position = this.position;
 		model.quaternion = this._quaternion;*/
 		this.model = model;

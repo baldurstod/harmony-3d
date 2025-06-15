@@ -7,7 +7,7 @@ import { Source1TextureManager } from '../textures/source1texturemanager';
 import { Camera } from '../../../cameras/camera';
 import { Skeleton } from '../../../objects/skeleton';
 
-let tempVec3 = vec3.create();
+const tempVec3 = vec3.create();
 
 export class EyeRefractMaterial extends SourceEngineMaterial {
 	#eyeOrigin = vec3.create();
@@ -31,8 +31,8 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 	}
 
 	afterProcessProxies() {
-		let variables = this.variables;
-		let parameters = this.parameters;
+		const variables = this.variables;
+		const parameters = this.parameters;
 		if (parameters['$iris']) {
 			this.setColorMap(Source1TextureManager.getTexture(this.repository, parameters['$iris'], parameters['$frame'] || 0));
 		}
@@ -61,9 +61,9 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 		const eyeballArray = this.properties.get('eyeballArray');
 		const skeleton = this.properties.get('skeleton') as Skeleton;
 		if (eyeballArray && skeleton) {//TODOv3: do this only once
-			let eyeBall = eyeballArray[this.properties.get('materialParam')];
+			const eyeBall = eyeballArray[this.properties.get('materialParam')];
 			if (eyeBall) {
-				let bone = skeleton._bones[eyeBall.bone];
+				const bone = skeleton._bones[eyeBall.bone];
 				if (bone) {
 					bone.getWorldPosOffset(eyeBall.org, this.#eyeOrigin);
 					vec3.transformQuat(this.#eyeUp, eyeBall.up, bone.worldQuat);
@@ -77,7 +77,7 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 					vec3.cross(this.#eyeUp, this.#eyeRight, this.#eyeForward);//TODOv3: fix this bullshit
 					vec3.normalize(this.#eyeUp, this.#eyeUp);
 
-					let scale = eyeBall.irisScale;//(1 / eyeBall.irisScale);TODOv3
+					const scale = eyeBall.irisScale;//(1 / eyeBall.irisScale);TODOv3
 
 					vec3.scale((this.#irisProjectionU as vec3), this.#eyeRight, -scale);
 					vec3.scale((this.#irisProjectionV as vec3), this.#eyeUp, -scale);

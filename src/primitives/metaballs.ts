@@ -5,7 +5,7 @@ import { Mesh } from '../objects/mesh';
 
 export class Metaballs extends Mesh {
 	cubeWidth: number;
-	#balls: Array<Metaball> = [];
+	#balls: Metaball[] = [];
 	constructor(material = new MeshBasicMaterial(), cubeWidth = 1) {
 		super(new MetaballsBufferGeometry(), material);
 
@@ -22,7 +22,7 @@ export class Metaballs extends Mesh {
 		return ball;
 	}
 
-	setBalls(balls: Array<Metaball>) {
+	setBalls(balls: Metaball[]) {
 		this.#balls = balls;
 	}
 
@@ -34,7 +34,7 @@ export class Metaballs extends Mesh {
 		return Object.assign(super.buildContextMenu(), {
 			Metaballs_1: null,
 			add_ball: { i18n: '#add_ball', f: () => { this.addBall(); } },
-			cube_width: { i18n: '#cube_width', f: () => { let cubeWidth = prompt('Cube width', String(this.cubeWidth)); if (cubeWidth) { this.cubeWidth = Number(cubeWidth); } } }
+			cube_width: { i18n: '#cube_width', f: () => { const cubeWidth = prompt('Cube width', String(this.cubeWidth)); if (cubeWidth) { this.cubeWidth = Number(cubeWidth); } } }
 		});
 	}
 }

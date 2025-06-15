@@ -62,9 +62,9 @@ export class SpotLight extends Light {
 
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
-			angle: { i18n: '#angle', f: () => { let angle = prompt('Angle', String(this.angle)); if (angle !== null) { this.angle = Number(angle); } } },
-			inner_angle: { i18n: '#inner_angle', f: () => { let innerAngle = prompt('Inner angle', String(this.#innerAngle)); if (innerAngle !== null) { this.innerAngle = Number(innerAngle); } } },
-			range: { i18n: '#range', f: () => { let range = prompt('Range', this.range); if (range !== null) { this.range = range; } } },
+			angle: { i18n: '#angle', f: () => { const angle = prompt('Angle', String(this.angle)); if (angle !== null) { this.angle = Number(angle); } } },
+			inner_angle: { i18n: '#inner_angle', f: () => { const innerAngle = prompt('Inner angle', String(this.#innerAngle)); if (innerAngle !== null) { this.innerAngle = Number(innerAngle); } } },
+			range: { i18n: '#range', f: () => { const range = prompt('Range', this.range); if (range !== null) { this.range = range; } } },
 		});
 	}
 

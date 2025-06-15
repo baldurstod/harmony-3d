@@ -15,7 +15,7 @@ export class NormalLock extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let cp = this.system.getControlPoint(this.controlPointNumber);
+		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
 			//mat4.invert(mat, particle.cpPreviousTransform);
 

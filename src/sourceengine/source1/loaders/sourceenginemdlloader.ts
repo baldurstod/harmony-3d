@@ -55,9 +55,9 @@ class ModelTest {
 	name = '';
 	type = 0;
 	boundingradius = 0;
-	readonly meshArray: Array<MeshTest> = [];
-	readonly vertexArray: Array<never> = [];
-	readonly eyeballArray: Array<MdlEyeball> = [];
+	readonly meshArray: MeshTest[] = [];
+	readonly vertexArray: never[] = [];
+	readonly eyeballArray: MdlEyeball[] = [];
 	numvertices = 0;
 	vertexindex = 0;
 	tangentsindex = 0;
@@ -80,7 +80,7 @@ class MeshTest {
 	materialparam = 0;
 	meshid = 0;
 	readonly center = vec3.create();
-	readonly flexes: Array<MdlStudioFlex> = [];
+	readonly flexes: MdlStudioFlex[] = [];
 }
 
 class MdlStudioFlex {//removeme
@@ -93,15 +93,15 @@ class MdlStudioFlex {//removeme
 	vertindex = 0;
 	flexpair = 0;
 	vertanimtype = 0;
-	readonly vertAnims: Array<MdlStudioVertAnim> = [];
+	readonly vertAnims: MdlStudioVertAnim[] = [];
 }
 
 class MdlStudioVertAnim { // mstudiovertanim_t
 	index = 0;
 	speed = 0;
 	side = 0;
-	readonly flDelta: Array<number> = [];
-	readonly flNDelta: Array<number> = [];
+	readonly flDelta: number[] = [];
+	readonly flNDelta: number[] = [];
 }
 
 class MdlEyeball {//removeme
@@ -114,8 +114,8 @@ class MdlEyeball {//removeme
 	readonly forward = vec3.create();
 	texture = 0;
 	irisScale = 0;
-	readonly upperflexdesc: Array<number> = [];
-	readonly lowerflexdesc: Array<number> = [];
+	readonly upperflexdesc: number[] = [];
+	readonly lowerflexdesc: number[] = [];
 	readonly uppertarget = vec3.create();
 	readonly lowertarget = vec3.create();
 	upperlidflexdesc = 0;
@@ -132,7 +132,7 @@ export class MdlStudioFlexController { //mstudioflexcontroller_t
 }
 export class MdlStudioHitboxSet { //mstudiohitboxset_t
 	name = '';
-	hitboxes: Array<MdlStudioHitbox> = [];
+	hitboxes: MdlStudioHitbox[] = [];
 }
 export class MdlStudioHitbox { //mstudiobbox_t
 	name = '';
@@ -194,8 +194,8 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 	}
 
 	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer) {
-		let mdl = new SourceMdl(repository);
-		let reader = new BinaryReader(arrayBuffer);
+		const mdl = new SourceMdl(repository);
+		const reader = new BinaryReader(arrayBuffer);
 		mdl.reader = reader;//TODOv3//removeme
 		mdl.loader = this;//TODOv3//removeme
 		this.#parseHeader(reader, mdl);
@@ -467,7 +467,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		return mesh;
 	}
 
-	#parseFlexes(reader, mdl, startOffset, count, flexes: Array<MdlStudioFlex>): void {
+	#parseFlexes(reader, mdl, startOffset, count, flexes: MdlStudioFlex[]): void {
 		for (let i = 0; i < count; ++i) {
 			flexes.push(this.#parseFlex(reader, startOffset + i * STUDIO_FLEX_STRUCT_SIZE));
 		}
@@ -577,7 +577,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		const textures = [];
 
 		for (let i = 0; i < mdl.textureCount; ++i) {
-			let texture = this.#parseTexture(reader, mdl, mdl.textureOffset + i * TEXTURE_STRUCT_SIZE);
+			const texture = this.#parseTexture(reader, mdl, mdl.textureOffset + i * TEXTURE_STRUCT_SIZE);
 			texture.name = texture.name;
 			textures.push(texture);
 		}
@@ -700,7 +700,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		}
 		numSection = 0;
 		for (let i = 0; i < numSection; i++) {
-			let section = this._parseAnimSection(reader, animDesc, i);//TODOv3
+			const section = this._parseAnimSection(reader, animDesc, i);//TODOv3
 			animDesc.animSections.push(section);
 		}
 
@@ -895,7 +895,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 
 		bone.parentBone = reader.getInt32();
 
-		bone.bonecontroller = new Array();
+		bone.bonecontroller = [];
 		for (let i = 0; i < 6; ++i) {
 			bone.bonecontroller.push(reader.getInt32());
 		}
@@ -906,7 +906,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		reader.getVector3(undefined, undefined, bone.posscale as Float32Array<ArrayBuffer>);
 		reader.getVector3(undefined, undefined, bone.rotscale as Float32Array<ArrayBuffer>);
 
-		let poseToBone = readMatrix3x4(reader);
+		const poseToBone = readMatrix3x4(reader);
 		bone.poseToBone = poseToBone;
 		bone.initPoseToBone = poseToBone;
 		//bone.invPoseToBone = mat4.invert(mat4.create(), bone.poseToBone);
@@ -941,8 +941,8 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 			const sectionOffset1 = animDesc.startOffset + animDesc.sectionOffset + sectionIndex * 8;//TODOv2: name
 			reader.seek(sectionOffset1);
 
-			let block = reader.getInt32();//block;//TODOv2
-			let sectionOffset = reader.getInt32();
+			const block = reader.getInt32();//block;//TODOv2
+			const sectionOffset = reader.getInt32();
 			if (TESTING && block == -1) {
 				throw 'error';
 			}
@@ -1137,7 +1137,7 @@ registerLoader('SourceEngineMDLLoader', SourceEngineMDLLoader);
 
 
 function readMatrix3x4(reader) {
-	let matrix = mat4.create();
+	const matrix = mat4.create();
 	matrix[0] = reader.getFloat32();
 	matrix[4] = reader.getFloat32();
 	matrix[8] = reader.getFloat32();
@@ -1157,7 +1157,7 @@ function readMatrix3x4(reader) {
 }
 
 function parseHitBoxSets(reader: BinaryReader, mdl: SourceMdl): void {
-	let hitboxSetCount = mdl.hitboxCount;
+	const hitboxSetCount = mdl.hitboxCount;
 	let hitboxSetOffset = mdl.hitboxOffset;
 	if (hitboxSetCount && hitboxSetOffset) {
 		for (let i = 0; i < hitboxSetCount; ++i) {
@@ -1172,7 +1172,7 @@ function parseHitboxSet(reader: BinaryReader, mdl: SourceMdl, startOffset: numbe
 	const hitboxSet = new MdlStudioHitboxSet();
 	const nameOffset = reader.getInt32(startOffset) + startOffset;
 
-	let hitboxCount = reader.getInt32();
+	const hitboxCount = reader.getInt32();
 	let hitboxOffset = reader.getInt32() + startOffset;
 	hitboxSet.name = reader.getNullString(nameOffset);
 	const hitboxes = [];

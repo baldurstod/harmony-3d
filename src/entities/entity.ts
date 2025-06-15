@@ -41,7 +41,7 @@ export enum EngineEntityAttributes {
 	IsTool = 'is tool',
 }
 
-export type EntityParameters = {
+export interface EntityParameters {
 	name?: string;
 	parent?: Entity;
 	position?: vec3;
@@ -64,8 +64,8 @@ export class Entity {
 	#visible?: boolean;
 	#playing = true;
 	#worldMatrix = mat4.create();
-	#name: string = '';
-	#children: Set<Entity> = new Set();
+	#name = '';
+	#children = new Set<Entity>();
 	#attributes = new Map<string, any>();
 	#pickingColor?: vec3;
 	enumerable = true;
@@ -83,10 +83,10 @@ export class Entity {
 	lockRot = false;
 	//lockScale = false;
 	drawOutline = false;
-	locked: boolean = false; // Prevents updates from animation system
-	lockPosition: boolean = false;
-	lockRotation: boolean = false;
-	lockScale: boolean = false;
+	locked = false; // Prevents updates from animation system
+	lockPosition = false;
+	lockRotation = false;
+	lockScale = false;
 	static editMaterial: (entity: Entity) => void;
 	readonly properties = new Map<string, any>();
 	loadedPromise?: Promise<any>;
@@ -430,27 +430,27 @@ export class Entity {
 	}
 
 	removeThis() {
-		for (let child of this.#children) {
+		for (const child of this.#children) {
 			child.parent = this.parent;
 		}
 		this.remove();
 	}
 
 	removeChildren() {
-		for (let child of this.#children) {
+		for (const child of this.#children) {
 			child.remove();
 		}
 	}
 
 	disposeChildren() {
-		for (let child of this.#children) {
+		for (const child of this.#children) {
 			child.dispose();
 		}
 	}
 
 	removeSiblings() {
 		if (this._parent != null) {
-			for (let child of this._parent.#children) {
+			for (const child of this._parent.#children) {
 				if (child !== this) {
 					child.remove();
 				}
@@ -460,8 +460,8 @@ export class Entity {
 
 	removeSimilarSiblings() {
 		if (this._parent != null) {
-			let constructorName = this.constructor.name;
-			for (let child of this._parent.#children) {
+			const constructorName = this.constructor.name;
+			for (const child of this._parent.#children) {
 				if (child !== this && child.constructor.name === constructorName) {
 					child.remove();
 				}
@@ -534,12 +534,12 @@ export class Entity {
 		return child;
 	}
 
-	addChilds(...childs: Array<Entity>) {
+	addChilds(...childs: Entity[]) {
 		childs.forEach(child => this.addChild(child));
 	}
 
 	isParent(parent: Entity): boolean {
-		let _parent = this._parent;
+		const _parent = this._parent;
 		if (_parent) {
 			if (_parent === parent) {
 				return true;
@@ -631,7 +631,7 @@ export class Entity {
 	 * @return {void}.
 	 */
 	lookAt(target: vec3, upVector = undefined): void {
-		let parent = this._parent;
+		const parent = this._parent;
 		mat4.lookAt(tempMat4, this._position, target, upVector ?? _upVector);
 		mat4.getRotation(tempQuat, tempMat4);
 		quat.invert(tempQuat, tempQuat);
@@ -645,17 +645,17 @@ export class Entity {
 	}
 
 	getMeshList(): Set<Entity> {
-		let meshList = new Set<Entity>();
+		const meshList = new Set<Entity>();
 		const treated = new WeakSet();
 
 		let currentEntity: Entity | undefined = this;
-		let objectStack: Entity[] = [];
+		const objectStack: Entity[] = [];
 
 		while (currentEntity) {
 			if (currentEntity.isRenderable && (currentEntity.isVisible() !== false)) {
 				meshList.add(currentEntity);
 			}
-			for (let child of currentEntity.#children) {
+			for (const child of currentEntity.#children) {
 				if (!treated.has(child)) {
 					objectStack.push(child);
 					treated.add(child);
@@ -680,9 +680,9 @@ export class Entity {
 	}
 
 	getAllChilds(includeSelf: boolean) {
-		let ws = new WeakSet();
-		let childs = new Set();
-		let objectStack: Entity[] = [];
+		const ws = new WeakSet();
+		const childs = new Set();
+		const objectStack: Entity[] = [];
 
 		let currentEntity: Entity | undefined = this;
 		if (includeSelf) {
@@ -690,7 +690,7 @@ export class Entity {
 		}
 
 		while (currentEntity) {
-			for (let child of currentEntity.#children) {
+			for (const child of currentEntity.#children) {
 				if (!ws.has(child)) {
 					objectStack.push(child);
 					childs.add(child);
@@ -711,7 +711,7 @@ export class Entity {
 			max[0] = -Infinity;
 			max[1] = -Infinity;
 			max[2] = -Infinity;
-			for (let child of this.#children) {
+			for (const child of this.#children) {
 				child.getBoundsModelSpace(tempVec3_1, tempVec3_2);
 				vec3.min(min, min, tempVec3_1);
 				vec3.max(max, max, tempVec3_2);
@@ -728,8 +728,8 @@ export class Entity {
 
 	getBoundingBox(boundingBox = new BoundingBox()) {
 		boundingBox.reset();
-		let childBoundingBox = new BoundingBox();
-		for (let child of this.#children) {
+		const childBoundingBox = new BoundingBox();
+		for (const child of this.#children) {
 			boundingBox.addBoundingBox(child.getBoundingBox(childBoundingBox));
 		}
 		return boundingBox;
@@ -740,13 +740,13 @@ export class Entity {
 	}
 
 	getChildList(type?: string) {
-		let ws = new WeakSet();
-		let childs: Set<Entity> = new Set();
-		let objectStack: Entity[] = [];
+		const ws = new WeakSet();
+		const childs = new Set<Entity>();
+		const objectStack: Entity[] = [];
 
 		let currentEntity: Entity | undefined = this;
 		while (currentEntity) {
-			for (let child of currentEntity.#children) {
+			for (const child of currentEntity.#children) {
 				if (!ws.has(child) && child.enumerable) {
 					objectStack.push(child);
 					ws.add(child);
@@ -762,7 +762,7 @@ export class Entity {
 
 	forEach(callback: (ent: Entity) => void) {
 		callback(this);
-		for (let child of this.#children) {
+		for (const child of this.#children) {
 			child.forEach(callback);
 		}
 	}
@@ -770,14 +770,14 @@ export class Entity {
 	forEachVisible(callback: (ent: Entity) => void) {
 		if (this.#visible) {
 			callback(this);
-			for (let child of this.#children) {
+			for (const child of this.#children) {
 				child.forEach(callback);
 			}
 		}
 	}
 
 	forEachParent(callback: (ent: Entity) => void) {
-		let parent = this._parent;
+		const parent = this._parent;
 		if (parent) {
 			callback(parent);
 			parent.forEachParent(callback);
@@ -785,7 +785,7 @@ export class Entity {
 	}
 
 	setupPickingId() {
-		let pickingId = ++incrementalPickingId;
+		const pickingId = ++incrementalPickingId;
 		pickList.set(pickingId, this);
 		this.#pickingColor = vec3.fromValues(((pickingId >> 16) & 0xFF) / 255.0, ((pickingId >> 8) & 0xFF) / 255.0, ((pickingId >> 0) & 0xFF) / 255.0);
 	}
@@ -882,7 +882,7 @@ export class Entity {
 	}
 
 	buildContextMenu() {
-		let menu = {
+		const menu = {
 			visibility: { i18n: '#visibility', selected: this.isVisible(), f: () => this.toggleVisibility() },
 
 			remove: { i18n: '#remove', f: () => this.remove() },
@@ -895,30 +895,30 @@ export class Entity {
 					{ i18n: '#remove_similar_siblings', f: () => this.removeSimilarSiblings() },
 				]
 			},
-			name: { i18n: '#name', f: () => { let n = prompt('Name', this.name); if (n !== null) { this.name = n; } } },
+			name: { i18n: '#name', f: () => { const n = prompt('Name', this.name); if (n !== null) { this.name = n; } } },
 			add: { i18n: '#add', submenu: Entity.addSubMenu },
 			entitynull_1: null,
-			position: { i18n: '#position', f: () => { let v = prompt('Position', this.position.join(' ')); if (v !== null) { this.lockPos = true; this.position = stringToVec3(v); } } },
-			translate: { i18n: '#translate', f: () => { let t = prompt('Translation', '0 0 0'); if (t !== null) { this.lockPos = true; this.translate(stringToVec3(t)); } } },
+			position: { i18n: '#position', f: () => { const v = prompt('Position', this.position.join(' ')); if (v !== null) { this.lockPos = true; this.position = stringToVec3(v); } } },
+			translate: { i18n: '#translate', f: () => { const t = prompt('Translation', '0 0 0'); if (t !== null) { this.lockPos = true; this.translate(stringToVec3(t)); } } },
 			reset_position: { i18n: '#reset_position', f: () => this.position = IDENTITY_VEC3 },
 			entitynull_2: null,
-			quaternion: { i18n: '#quaternion', f: () => { let v = prompt('Quaternion', this.quaternion.join(' ')); if (v !== null) { this.lockRot = true; this.quaternion = stringToQuat(v); } } },
+			quaternion: { i18n: '#quaternion', f: () => { const v = prompt('Quaternion', this.quaternion.join(' ')); if (v !== null) { this.lockRot = true; this.quaternion = stringToQuat(v); } } },
 			rotate: {
 				i18n: '#rotate', submenu: [
-					{ i18n: '#rotate_x_global', f: () => { let r = Number(prompt('Rotation around X global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalX(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_y_global', f: () => { let r = Number(prompt('Rotation around Y global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalY(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_z_global', f: () => { let r = Number(prompt('Rotation around Z global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalZ(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_x', f: () => { let r = Number(prompt('Rotation around X', '0')); if (r !== null) { this.lockRot = true; this.rotateX(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_y', f: () => { let r = Number(prompt('Rotation around Y', '0')); if (r !== null) { this.lockRot = true; this.rotateY(r * DEG_TO_RAD); } } },
-					{ i18n: '#rotate_z', f: () => { let r = Number(prompt('Rotation around Z', '0')); if (r !== null) { this.lockRot = true; this.rotateZ(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_x_global', f: () => { const r = Number(prompt('Rotation around X global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalX(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_y_global', f: () => { const r = Number(prompt('Rotation around Y global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalY(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_z_global', f: () => { const r = Number(prompt('Rotation around Z global', '0')); if (r !== null) { this.lockRot = true; this.rotateGlobalZ(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_x', f: () => { const r = Number(prompt('Rotation around X', '0')); if (r !== null) { this.lockRot = true; this.rotateX(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_y', f: () => { const r = Number(prompt('Rotation around Y', '0')); if (r !== null) { this.lockRot = true; this.rotateY(r * DEG_TO_RAD); } } },
+					{ i18n: '#rotate_z', f: () => { const r = Number(prompt('Rotation around Z', '0')); if (r !== null) { this.lockRot = true; this.rotateZ(r * DEG_TO_RAD); } } },
 				]
 			},
 			reset_rotation: { i18n: '#reset_rotation', f: () => this.quaternion = IDENTITY_QUAT },
 			entitynull_3: null,
 			scale: {
 				i18n: '#scale', f: () => {
-					let s = prompt('Scale', this.scale.join(' ')); if (s !== null) {
-						let arr = s.split(' ');
+					const s = prompt('Scale', this.scale.join(' ')); if (s !== null) {
+						const arr = s.split(' ');
 						if (arr.length == 3) {
 							this.scale = vec3.set(tempVec3_1, Number(arr[0]), Number(arr[1]), Number(arr[2]));
 						} else if (arr.length == 1) {
@@ -945,13 +945,13 @@ export class Entity {
 		return menu;
 	}
 
-	raycast(raycaster: Raycaster, intersections: Array<Intersection>) {
+	raycast(raycaster: Raycaster, intersections: Intersection[]) {
 	}
 
 	setWireframe(wireframe: number, recursive = true) {
 		this.wireframe = wireframe;
 		if (recursive) {
-			for (let child of this.#children) {
+			for (const child of this.#children) {
 				child.setWireframe(wireframe, recursive);
 			}
 		}
@@ -1011,7 +1011,7 @@ export class Entity {
 
 	replaceMaterial(material: Material, recursive = true) {
 		if (recursive) {
-			for (let child of this.#children) {
+			for (const child of this.#children) {
 				child.replaceMaterial(material, recursive);
 			}
 		}
@@ -1019,7 +1019,7 @@ export class Entity {
 
 	resetMaterial(recursive = true) {
 		if (recursive) {
-			for (let child of this.#children) {
+			for (const child of this.#children) {
 				child.resetMaterial(recursive);
 			}
 		}
@@ -1044,7 +1044,7 @@ export class Entity {
 	}
 
 	propagate() {
-		for (let child of this.#children) {
+		for (const child of this.#children) {
 			child.propagate();
 		}
 	}
@@ -1081,14 +1081,14 @@ export class Entity {
 	}
 
 	toJSON() {
-		let children: any[] = [];
-		for (let child of this.#children) {
+		const children: any[] = [];
+		for (const child of this.#children) {
 			if (child.#serializable) {
 				children.push(child.toJSON());
 			}
 		}
 
-		let json: any = {
+		const json: any = {
 			constructor: (this.constructor as typeof Entity).getEntityName(),
 			id: this.id,
 			name: this.name
@@ -1130,7 +1130,7 @@ export class Entity {
 	}
 
 	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
-		let entity = new Entity({ name: json.name as string });
+		const entity = new Entity({ name: json.name as string });
 		entity.fromJSON(json);
 		return entity;
 	}

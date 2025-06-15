@@ -9,8 +9,8 @@ import { FrameBufferTarget, TextureFormat, TextureType } from './constants';
 import { AnyTexture } from '../types';
 
 export class RenderTarget {
-	#width: number = 0;
-	#height: number = 0;
+	#width = 0;
+	#height = 0;
 	#target: FrameBufferTarget = GL_FRAMEBUFFER;
 	#frameBuffer = new Framebuffer(this.#target);
 	#depthRenderbuffer?: Renderbuffer;
@@ -115,7 +115,7 @@ export class RenderTarget {
 	}
 
 	clone() {
-		let dest = new RenderTarget({ width: this.#width, height: this.#height, depthBuffer: this.#depthBuffer, stencilBuffer: this.#stencilBuffer });
+		const dest = new RenderTarget({ width: this.#width, height: this.#height, depthBuffer: this.#depthBuffer, stencilBuffer: this.#stencilBuffer });
 
 		//dest.texture = this.#texture.clone();
 

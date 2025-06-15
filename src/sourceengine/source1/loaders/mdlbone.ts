@@ -65,21 +65,21 @@ export class MdlBone {
 	dirty = true;
 	lastComputed = 0;
 	#skeleton;/*TODO:remove*/
-	parentBone: number = -1;
-	boneId: number = -1;
-	name: string = '';
-	lowcasename: string = '';
-	bonecontroller: Array<number> = [];
+	parentBone = -1;
+	boneId = -1;
+	name = '';
+	lowcasename = '';
+	bonecontroller: number[] = [];
 	rot = vec3.create();
 	posscale = vec3.create();
 	rotscale = vec3.create();
 	qAlignment = vec4.create();
-	flags: number = 0;
-	proctype: number = 0;
-	procindex: number = 0;
-	physicsbone: number = 0;
-	surfacepropidx: number = 0;
-	contents: number = 0;
+	flags = 0;
+	proctype = 0;
+	procindex = 0;
+	physicsbone = 0;
+	surfacepropidx = 0;
+	contents = 0;
 
 	constructor(skeleton?: Skeleton/*TODO:remove*/) {
 		this.#skeleton = skeleton;/*TODO:remove*/

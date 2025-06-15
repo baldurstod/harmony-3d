@@ -2,9 +2,9 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
 
 export class MergeRepository implements Repository {
 	#name: string;
-	#repositories: Array<Repository> = [];
+	#repositories: Repository[] = [];
 
-	constructor(name: string, ...repositories: Array<Repository>) {
+	constructor(name: string, ...repositories: Repository[]) {
 		this.#name = name;
 		for (const repo of repositories) {
 			if (repo) {

@@ -31,15 +31,15 @@ export class SetParentControlPointsToChildCP extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let children = this.system.childSystems;
+		const children = this.system.childSystems;
 		let childId = this.childGroupID;
 		let cpId = this.firstSourcePoint;
 		let count = this.numControlPoints;
 		while (count--) {
-			let child = children[childId];
-			let cp = this.system.getControlPoint(cpId);
+			const child = children[childId];
+			const cp = this.system.getControlPoint(cpId);
 			if (child && cp) {
-				let childCp = child.getOwnControlPoint(this.childControlPoint);
+				const childCp = child.getOwnControlPoint(this.childControlPoint);
 				childCp.position = cp.currentWorldPosition;
 			}
 			++childId;

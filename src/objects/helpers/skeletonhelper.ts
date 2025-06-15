@@ -99,7 +99,7 @@ export class SkeletonHelper extends Entity {
 			return;
 		}
 
-		for (let bone of this.#skeleton.bones) {
+		for (const bone of this.#skeleton.bones) {
 			let boneLine = this.#lines.get(bone);
 
 			if (!boneLine) {
@@ -174,8 +174,8 @@ export class SkeletonHelper extends Entity {
 			return;
 		}
 
-		let normalizedX = (event.detail.x / new Graphics().getWidth()) * 2 - 1;
-		let normalizedY = 1 - (event.detail.y / new Graphics().getHeight()) * 2;
+		const normalizedX = (event.detail.x / new Graphics().getWidth()) * 2 - 1;
+		const normalizedY = 1 - (event.detail.y / new Graphics().getHeight()) * 2;
 
 		const scene = this.root;
 		if (!scene.is('Scene')) {
@@ -183,12 +183,12 @@ export class SkeletonHelper extends Entity {
 		}
 
 
-		let intersections = this.#raycaster.castCameraRay((scene as Scene).activeCamera, normalizedX, normalizedY, [this], true);
+		const intersections = this.#raycaster.castCameraRay((scene as Scene).activeCamera, normalizedX, normalizedY, [this], true);
 		if (intersections.length) {
 
 			let closest = null;
 			let closestDist = Infinity;
-			for (let intersection of intersections) {
+			for (const intersection of intersections) {
 				const entity = intersection.entity;
 				if (entity.isLine) {
 					if (intersection.distanceFromRay < closestDist) {

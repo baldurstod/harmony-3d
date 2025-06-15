@@ -1,8 +1,8 @@
 import { createElement } from 'harmony-ui';
 
 export function imageDataToImage(imagedata: ImageData, image = new Image()) {
-	var canvas = createElement('canvas', { width: imagedata.width, height: imagedata.height }) as HTMLCanvasElement;
-	var ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+	const canvas = createElement('canvas', { width: imagedata.width, height: imagedata.height }) as HTMLCanvasElement;
+	const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 	canvas.width = imagedata.width;
 	canvas.height = imagedata.height;
 	ctx.putImageData(imagedata, 0, 0);
@@ -12,12 +12,12 @@ export function imageDataToImage(imagedata: ImageData, image = new Image()) {
 }
 
 export function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number) {
-	let rowLength = width * 4
-	let tempRow = new Uint8ClampedArray(rowLength);
-	let halfHeight = height * 0.5;
+	const rowLength = width * 4
+	const tempRow = new Uint8ClampedArray(rowLength);
+	const halfHeight = height * 0.5;
 	for (let row = 0; row < halfHeight; ++row) {
-		let topOffset = row * rowLength;
-		let bottomOffset = (height - row - 1) * rowLength;
+		const topOffset = row * rowLength;
+		const bottomOffset = (height - row - 1) * rowLength;
 
 		tempRow.set(pixelArray.subarray(topOffset, topOffset + rowLength));
 		pixelArray.copyWithin(topOffset, bottomOffset, bottomOffset + rowLength);

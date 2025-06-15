@@ -45,8 +45,8 @@ export class HTMLFileSelectorFileElement extends HTMLElement {
 			return false;
 		}
 
-		let filterName = this.#selector.filter.name;
-		let visible = this.#file.name.toLowerCase().includes(filterName) || this.#file.path.toLowerCase().includes(filterName);
+		const filterName = this.#selector.filter.name;
+		const visible = this.#file.name.toLowerCase().includes(filterName) || this.#file.path.toLowerCase().includes(filterName);
 		this.visible = visible;
 		return visible;
 	}

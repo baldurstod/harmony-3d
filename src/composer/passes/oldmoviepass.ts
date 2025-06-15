@@ -9,7 +9,7 @@ import { Camera } from '../../cameras/camera';
 export class OldMoviePass extends Pass {
 	constructor(camera: Camera) {
 		super();
-		let material = new ShaderMaterial({ shaderSource: 'oldmovie' });
+		const material = new ShaderMaterial({ shaderSource: 'oldmovie' });
 		material.addUser(this);
 		material.depthTest = false;
 		this.scene = new Scene();

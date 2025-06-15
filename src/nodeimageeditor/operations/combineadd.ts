@@ -45,7 +45,7 @@ export class CombineAdd extends Node {
 
 		//this.material.uniforms['uInput[0]'] = await this.getInput('input').value;
 
-		let textureArray = [];
+		const textureArray = [];
 		for (let i = 0; i < 8; ++i) {
 			textureArray.push(await this.getInput('input' + i).value);
 		}
@@ -57,7 +57,7 @@ export class CombineAdd extends Node {
 		new Graphics().pushRenderTarget(this.#renderTarget);
 		this.editor.render(this.material);
 
-		let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
+		const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
 		new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		new Graphics().popRenderTarget();
 

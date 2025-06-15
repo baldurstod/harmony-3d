@@ -25,8 +25,8 @@ export class TranslationControl extends Entity {
 	#update(delta: number) {
 		switch (this.#mode) {
 			case TranslationMode.Bounce:
-				let distance = vec3.distance(this.#startPoint, this.#endPoint);
-				let deltaL = distance ? this.#speed * delta / distance : 1;
+				const distance = vec3.distance(this.#startPoint, this.#endPoint);
+				const deltaL = distance ? this.#speed * delta / distance : 1;
 				let percent = this.#percent + deltaL * this.#bounceDirection;
 				if (percent >= 1) {
 					this.#bounceDirection = -1;
@@ -48,9 +48,9 @@ export class TranslationControl extends Entity {
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			TranslationControl_1: null,
-			speed: { i18n: '#speed', f: () => { let s = prompt('Speed', String(this.#speed)); if (s !== null) { this.#speed = Number(s); } } },
-			start_position: { i18n: '#start_position', f: () => { let v = prompt('Position', this.#startPoint.join(' ')); if (v !== null) { stringToVec3(v, this.#startPoint); } } },
-			end_position: { i18n: '#end_position', f: () => { let v = prompt('Position', this.#endPoint.join(' ')); if (v !== null) { stringToVec3(v, this.#endPoint); } } },
+			speed: { i18n: '#speed', f: () => { const s = prompt('Speed', String(this.#speed)); if (s !== null) { this.#speed = Number(s); } } },
+			start_position: { i18n: '#start_position', f: () => { const v = prompt('Position', this.#startPoint.join(' ')); if (v !== null) { stringToVec3(v, this.#startPoint); } } },
+			end_position: { i18n: '#end_position', f: () => { const v = prompt('Position', this.#endPoint.join(' ')); if (v !== null) { stringToVec3(v, this.#endPoint); } } },
 		});
 	}
 }

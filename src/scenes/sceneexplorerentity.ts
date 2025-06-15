@@ -272,7 +272,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		switch (detail.name) {
 			case 'visible':
 				this.#updateEntityVisibility(entity);
-				for (let child of entity.children) {
+				for (const child of entity.children) {
 					this.#updateEntityVisibility(child);
 				}
 				break;
@@ -288,14 +288,14 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 
 	static #updateEntity(entity: any) {
-		let entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
+		const entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (entityElement) {
 			entityElement.#update();
 		}
 	}
 
 	static #expandEntityChilds(entity: Entity) {
-		let entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
+		const entityElement = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (entityElement) {
 			entityElement.#expandChilds();
 		}
@@ -353,7 +353,7 @@ export class SceneExplorerEntity extends HTMLElement {
 			return;
 		}
 
-		for (let child of entity.children) {
+		for (const child of entity.children) {
 			const childHtml = SceneExplorerEntity.getEntityElement(child);
 			if (childHtml) {
 				this.#htmlChilds.append(childHtml);
@@ -398,7 +398,7 @@ export class SceneExplorerEntity extends HTMLElement {
 		}
 
 		(this.#htmlInputDataList as HTMLDataListElement).innerText = '';
-		for (let value of animList) {
+		for (const value of animList) {
 			createElement('option', {
 				innerText: value as string,
 				parent: this.#htmlInputDataList,

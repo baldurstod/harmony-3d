@@ -42,14 +42,14 @@ export class BeamBufferGeometry extends BufferGeometry {
 		let previousSegment = null;
 
 		let indiceBase = 0;
-		let indices = [];
-		let vertices = [];
-		let normals = [];
-		let uvs = [];
-		let colors = [];
-		let widths = [];
+		const indices = [];
+		const vertices = [];
+		const normals = [];
+		const uvs = [];
+		const colors = [];
+		const widths = [];
 
-		for (let segment of segments) {
+		for (const segment of segments) {
 			if (previousSegment) {
 				indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
 

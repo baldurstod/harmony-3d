@@ -16,13 +16,13 @@ export class LockToBone extends SourceEngineParticleOperator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let controlPoint = particle.system.getControlPoint(this.getParameter('control_point_number'));
+		const controlPoint = particle.system.getControlPoint(this.getParameter('control_point_number'));
 		if (controlPoint) {
 			// TODO : Actually we should get the model parenting the control point
-			let controllingModel = controlPoint.parentModel;
+			const controllingModel = controlPoint.parentModel;
 			if (controllingModel) {
-				let bones = particle.bones;
-				let initialVec = particle.initialVec;
+				const bones = particle.bones;
+				const initialVec = particle.initialVec;
 				if (bones && initialVec) {
 
 					tempMat4[0] = 0;tempMat4[1] = 0;tempMat4[2] = 0;
@@ -32,7 +32,7 @@ export class LockToBone extends SourceEngineParticleOperator {
 
 					vec3.copy(tempVec3, initialVec);
 
-					for (let [bone, boneWeight] of bones) {
+					for (const [bone, boneWeight] of bones) {
 						let boneMat;
 						if (bone) {
 							boneMat = mat4.fromRotationTranslationScale(mat4.create(), bone.worldQuat, bone.worldPos, bone.worldScale);

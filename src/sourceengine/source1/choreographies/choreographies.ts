@@ -10,7 +10,7 @@ import { DEBUG } from '../../../buildoptions';
 
 const CHOREOGRAPHIES_CHUNK_SIZE = 200000;
 
-type SceneEntry = {
+interface SceneEntry {
 	do: any,
 	dl: any,
 	sso: any,
@@ -26,7 +26,7 @@ export class Choreographies {
 	scenesCount: number;
 	stringsCount: number;
 	scenesOffset: number;
-	#sceneEntries: Map<number, SceneEntry> = new Map();
+	#sceneEntries = new Map<number, SceneEntry>();
 	#initialized = false;
 
 	async loadFile(repositoryName: string, fileName: string) {
@@ -106,9 +106,9 @@ export class Choreographies {
 				this.#reader.seek(this.scenesOffset);
 				for (let i = 0; i < this.scenesCount; i++) {
 					const sceneCRC = this.#reader.getUint32();
-					let doo = this.#reader.getUint32();
-					let dl = this.#reader.getUint32();
-					let sso = this.#reader.getUint32();
+					const doo = this.#reader.getUint32();
+					const dl = this.#reader.getUint32();
+					const sso = this.#reader.getUint32();
 					const sceneEntry = { 'do': doo, 'dl': dl, 'sso': sso };
 					this.#sceneEntries.set(sceneCRC, sceneEntry);
 				}
@@ -341,7 +341,7 @@ export class Choreographies {
 	async #loadCurveData(reader) {
 		const curveData = new CurveData();
 
-		let count = await reader.getUint8();
+		const count = await reader.getUint8();
 		/*if (count == 3) {
 			//	TODO: there is an issue with choreo 'scenes/workshop/player/engineer/low/taunt_jackhammer_rodeo.vcd'
 			count is stored as an unsigned char but actual count is 259
@@ -399,7 +399,7 @@ export class Choreographies {
 
 const makeCRCTable = function () {
 	let c;
-	let crcTable = [];
+	const crcTable = [];
 	for (let n = 0; n < 256; n++) {
 		c = n;
 		for (let k = 0; k < 8; k++) {
@@ -412,7 +412,7 @@ const makeCRCTable = function () {
 
 let CacheCrcTable;
 const crc32 = function (str) {
-	let crcTable = CacheCrcTable ?? (CacheCrcTable = makeCRCTable());
+	const crcTable = CacheCrcTable ?? (CacheCrcTable = makeCRCTable());
 	let crc = 0 ^ (-1);
 
 	for (let i = 0; i < str.length; i++) {

@@ -9,7 +9,7 @@ export class AudioGroup {
 
 	mute(mute) {
 		this.muted = (mute == true);
-		for (let audio of this.audioList) {
+		for (const audio of this.audioList) {
 			audio.muted = this.muted;
 		}
 	}
@@ -32,7 +32,7 @@ export class AudioGroup {
 
 	createSubGroup(name) {
 		console.log('Creating group ' + name);
-		let subGroup = new AudioGroup(name);
+		const subGroup = new AudioGroup(name);
 		this.groups.set(name, subGroup);
 		return subGroup;
 	}

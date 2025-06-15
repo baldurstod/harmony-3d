@@ -14,34 +14,34 @@ export class SphereBufferGeometry extends BufferGeometry {
 		//thetaStart = thetaStart !== undefined ? thetaStart : 0;
 		//thetaLength = thetaLength !== undefined ? thetaLength : Math.PI;
 
-		var thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
+		const thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
 
-		var ix, iy;
+		let ix, iy;
 
-		var index = 0;
-		var grid = [];
+		let index = 0;
+		const grid = [];
 
-		var vertex = vec3.create();
-		var normal = vec3.create();
+		const vertex = vec3.create();
+		const normal = vec3.create();
 
 		// buffers
 
-		var indices = [];
-		var vertices = [];
-		var normals = [];
-		var uvs = [];
+		const indices = [];
+		const vertices = [];
+		const normals = [];
+		const uvs = [];
 
 		// generate vertices, normals and uvs
 
 		for (iy = 0; iy <= rings; iy ++) {
 
-			var verticesRow = [];
+			const verticesRow = [];
 
-			var v = iy / rings;
+			const v = iy / rings;
 
 			// special case for the poles
 
-			var uOffset = 0;
+			let uOffset = 0;
 
 			if (iy == 0 && thetaStart == 0) {
 
@@ -55,7 +55,7 @@ export class SphereBufferGeometry extends BufferGeometry {
 
 			for (ix = 0; ix <= segments; ix ++) {
 
-				var u = ix / segments;
+				const u = ix / segments;
 
 				// vertex
 
@@ -87,10 +87,10 @@ export class SphereBufferGeometry extends BufferGeometry {
 
 			for (ix = 0; ix < segments; ix ++) {
 
-				var a = grid[ iy ][ ix + 1 ];
-				var b = grid[ iy ][ ix ];
-				var c = grid[ iy + 1 ][ ix ];
-				var d = grid[ iy + 1 ][ ix + 1 ];
+				const a = grid[ iy ][ ix + 1 ];
+				const b = grid[ iy ][ ix ];
+				const c = grid[ iy + 1 ][ ix ];
+				const d = grid[ iy + 1 ][ ix + 1 ];
 
 				if (iy !== 0 || thetaStart > 0) indices.push(a, b, d);
 				if (iy !== rings - 1 || thetaEnd < Math.PI) indices.push(b, c, d);

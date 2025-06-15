@@ -9,7 +9,7 @@ import { Scene } from '../../scenes/scene';
 export class CopyPass extends Pass {
 	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
-		let material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false });
+		const material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false });
 		material.addUser(this);
 		this.scene = new Scene();
 		this.quad = new FullScreenQuad({ material: material, parent: this.scene });

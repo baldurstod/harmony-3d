@@ -35,13 +35,13 @@ export class ShaderEditor extends HTMLElement {
 		I18n.observeElement(this.#shadowRoot);
 
 
-		let aceScript = options.aceUrl ?? ACE_EDITOR_URI;
+		const aceScript = options.aceUrl ?? ACE_EDITOR_URI;
 		this.#initialized = true;
 
 		this.style.cssText = 'display: flex;flex-direction: column;height: 100%;width: 100%;';
 		this.#htmlShaderNameSelect = createElement('select') as HTMLSelectElement;
 		this.#htmlShaderNameSelect.addEventListener('input', (event) => {
-			let selectedOption = (event.target as HTMLSelectElement).selectedOptions[0];
+			const selectedOption = (event.target as HTMLSelectElement).selectedOptions[0];
 			if (selectedOption) {
 				if (selectedOption.getAttribute('data-shader')) {
 					this.editorShaderName = (event.target as HTMLSelectElement).value;
@@ -54,7 +54,7 @@ export class ShaderEditor extends HTMLElement {
 
 		this.#htmlShaderRenderMode = createElement('input') as HTMLInputElement;
 		this.#htmlShaderRenderMode.addEventListener('input', (event) => {
-			let n = Number((event.target as HTMLInputElement).value);
+			const n = Number((event.target as HTMLInputElement).value);
 			if (Number.isNaN(n)) {
 				new Graphics().setIncludeCode('RENDER_MODE', '#undef RENDER_MODE')
 			} else {
@@ -62,11 +62,11 @@ export class ShaderEditor extends HTMLElement {
 			}
 		});
 
-		let htmlCustomShaderButtons = createElement('div');
+		const htmlCustomShaderButtons = createElement('div');
 		if (options.displayCustomShaderButtons) {
-			let htmlButtonSaveCustomShader = createElement('button', { i18n: '#save_custom_shader' });
-			let htmlButtonLoadCustomShader = createElement('button', { i18n: '#load_custom_shader' });
-			let htmlButtonRemoveCustomShader = createElement('button', { i18n: '#remove_custom_shader' });
+			const htmlButtonSaveCustomShader = createElement('button', { i18n: '#save_custom_shader' });
+			const htmlButtonLoadCustomShader = createElement('button', { i18n: '#load_custom_shader' });
+			const htmlButtonRemoveCustomShader = createElement('button', { i18n: '#remove_custom_shader' });
 
 			htmlCustomShaderButtons.append(htmlButtonSaveCustomShader, htmlButtonLoadCustomShader, htmlButtonRemoveCustomShader);
 			this.#shadowRoot.append(htmlCustomShaderButtons);
@@ -77,7 +77,7 @@ export class ShaderEditor extends HTMLElement {
 		}
 
 
-		let c = createElement('div', { style: 'flex:1;' });
+		const c = createElement('div', { style: 'flex:1;' });
 		if (!TESTING) {
 			hide(this.#htmlShaderRenderMode);
 		}
@@ -119,10 +119,10 @@ export class ShaderEditor extends HTMLElement {
 		}
 		this.#htmlShaderNameSelect.innerText = '';
 
-		let shaderGroup = createElement('optgroup', { i18n: { label: '#shader_editor_shaders', }, parent: this.#htmlShaderNameSelect });
+		const shaderGroup = createElement('optgroup', { i18n: { label: '#shader_editor_shaders', }, parent: this.#htmlShaderNameSelect });
 
 		const shaderList = [...ShaderManager.shaderList].sort();
-		for (let shaderName of shaderList) {
+		for (const shaderName of shaderList) {
 			const option = createElement('option', {
 				class: 'shader-editor-shader-list-shader',
 				value: shaderName,
@@ -136,9 +136,9 @@ export class ShaderEditor extends HTMLElement {
 			}
 		}
 
-		let includeGroup = createElement('optgroup', { i18n: { label: '#shader_editor_includes', }, parent: this.#htmlShaderNameSelect });
+		const includeGroup = createElement('optgroup', { i18n: { label: '#shader_editor_includes', }, parent: this.#htmlShaderNameSelect });
 		const includeList = [...getIncludeList()].sort();
-		for (let includeName of includeList) {
+		for (const includeName of includeList) {
 			const option = createElement('option', {
 				class: 'shader-editor-shader-list-include',
 				value: includeName,
@@ -153,7 +153,7 @@ export class ShaderEditor extends HTMLElement {
 		}
 
 		if (!this.editorShaderName && !this.editorIncludeName) {
-			let selectedOption = this.#htmlShaderNameSelect.selectedOptions[0];
+			const selectedOption = this.#htmlShaderNameSelect.selectedOptions[0];
 			if (selectedOption) {
 				if (selectedOption.getAttribute('data-shader')) {
 					this.editorShaderName = selectedOption.value;
@@ -238,23 +238,23 @@ export class ShaderEditor extends HTMLElement {
 	}
 
 	#saveCustomShader() {
-		let type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
-		let name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
+		const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
+		const name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
 		this.dispatchEvent(new CustomEvent('save-custom-shader', { detail: { type: type, name: name, source: this.#shaderEditor.getValue() } }));
 	}
 
 	#loadCustomShader() {
-		let type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
-		let name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
-		let shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
+		const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
+		const name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
+		const shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
 		this.dispatchEvent(new CustomEvent('load-custom-shader', { detail: { type: type, name: name, shaderType: shaderType } }));
 
 	}
 
 	#removeCustomShader() {
-		let type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
-		let name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
-		let shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
+		const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
+		const name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
+		const shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
 		this.dispatchEvent(new CustomEvent('remove-custom-shader', { detail: { type: type, name: name, shaderType: shaderType } }));
 	}
 }

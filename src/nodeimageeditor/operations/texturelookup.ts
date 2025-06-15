@@ -49,7 +49,7 @@ export class TextureLookup extends Node {
 		this.material.setTexture('uInput', this.inputTexture);
 		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
 
-		let texTransform = mat3.create();
+		const texTransform = mat3.create();
 		mat3.rotate(texTransform, texTransform, this.getValue('rotation'));
 		mat3.scale(texTransform, texTransform, vec2.set(tempVec2, this.getValue('scale u'), this.getValue('scale v')));
 		mat3.translate(texTransform, texTransform, vec2.set(tempVec2, this.getValue('translate u'), this.getValue('translate v')));
@@ -63,7 +63,7 @@ export class TextureLookup extends Node {
 		new Graphics().pushRenderTarget(this.#renderTarget);
 		this.editor.render(this.material);
 
-		let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
+		const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
 		new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		new Graphics().popRenderTarget();
 
@@ -78,10 +78,10 @@ export class TextureLookup extends Node {
 	}
 
 	async toString(tabs = '') {
-		let ret = [];
-		let tabs1 = tabs + '\t';
+		const ret = [];
+		const tabs1 = tabs + '\t';
 		ret.push(tabs + this.constructor.name);
-		for (let input of this.inputs.values()) {
+		for (const input of this.inputs.values()) {
 			if (input.getPredecessor()) {
 				ret.push(await input.toString(tabs1));
 			}

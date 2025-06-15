@@ -5,7 +5,7 @@ export class TimelineChannel extends TimelineElement {
 	type: TimelineElementType.Channel = TimelineElementType.Channel;
 	#clips = new Set<TimelineClip>;
 
-	constructor(name: string = 'Channel') {
+	constructor(name = 'Channel') {
 		super(name);
 	}
 

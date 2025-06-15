@@ -8,8 +8,8 @@ import { Event } from './event';
 export class Choreography {
 	#repository;
 	actors2 = [];
-	#events: Array<Event> = [];
-	#actors: Array<Actor> = [];
+	#events: Event[] = [];
+	#actors: Actor[] = [];
 	previousTime = -1;
 	currentTime = 0;
 	animsSpeed = 1;
@@ -46,7 +46,7 @@ export class Choreography {
 	 * toString
 	 */
 	toString(indent = '') {
-		let arr = [];
+		const arr = [];
 		for (let i = 0; i < this.#events.length; ++i) {
 			arr.push(this.#events[i].toString(indent));
 		}

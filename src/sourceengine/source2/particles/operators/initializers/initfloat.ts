@@ -25,7 +25,7 @@ export class InitFloat extends Operator {
 	}
 
 	doInit(particle, elapsedTime) {
-		let value = this.getParamScalarValue('m_InputValue', particle);
+		const value = this.getParamScalarValue('m_InputValue', particle);
 		//TODO: use setMethod
 		particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE', true);
 

@@ -12,7 +12,7 @@ import { Program } from '../webgl/program';
 
 export class ForwardRenderer extends Renderer {
 	#shadowMap: ShadowMap;
-	#frame: number = 0;
+	#frame = 0;
 	constructor(graphics: Graphics) {
 		super(graphics);
 		this.#shadowMap = new ShadowMap(graphics);
@@ -68,7 +68,7 @@ export class ForwardRenderer extends Renderer {
 
 		WebGLRenderingState.polygonOffset(material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits);
 
-		for (let uniform in material.uniforms) {
+		for (const uniform in material.uniforms) {
 			program.setUniformValue(uniform, material.uniforms[uniform]);
 		}
 	}

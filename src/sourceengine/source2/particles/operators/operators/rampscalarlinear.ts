@@ -45,7 +45,7 @@ export class RampScalarLinear extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let context = particle.context.get(this);
+		const context = particle.context.get(this);
 		let rate, startTime, endTime;
 		if (context == undefined) {
 			//Init per particle parameters
@@ -59,12 +59,12 @@ export class RampScalarLinear extends Operator {
 			endTime = context.e;
 		}
 
-		let particleTime = this.proportionalOp ? particle.proportionOfLife : particle.currentTime;
+		const particleTime = this.proportionalOp ? particle.proportionOfLife : particle.currentTime;
 		if (particleTime < startTime || particleTime > endTime) {
 			return;
 		}
 
-		let value = particle.getField(this.field) + rate * elapsedTime;
+		const value = particle.getField(this.field) + rate * elapsedTime;
 		particle.setField(this.field, value);
 
 	}

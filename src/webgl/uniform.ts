@@ -11,8 +11,8 @@ import { WebGLAnyRenderingContext } from '../types';
 import { Texture } from '../textures/texture';
 import { CubeTexture } from '../textures/cubetexture';
 
-function flattenArray(array: Array<Float32List>, arrayCount: number, arraySize: number) {
-	let out = new Float32Array(arrayCount * arraySize);//TODO: cache this
+function flattenArray(array: Float32List[], arrayCount: number, arraySize: number) {
+	const out = new Float32Array(arrayCount * arraySize);//TODO: cache this
 	let offset = 0;
 	for (let i = 0; i < arrayCount; i++) {
 		for (let j = 0; j < arraySize; j++) {
@@ -182,7 +182,7 @@ export class Uniform {
 		glContext.uniformMatrix4fv(this.#uniformLocation, false, value);
 	}
 
-	#uniformMatrix4fvArray(glContext: WebGLAnyRenderingContext, value: Array<Float32List>) {
+	#uniformMatrix4fvArray(glContext: WebGLAnyRenderingContext, value: Float32List[]) {
 		glContext.uniformMatrix4fv(this.#uniformLocation, false, flattenArray(value, this.#size, 16));
 	}
 
@@ -200,7 +200,7 @@ export class Uniform {
 		glContext.uniform1iv(this.#uniformLocation, (this.#textureUnit as number[]));
 
 		for (let i = 0; i < this.#size; ++i) {
-			let texture = textures[i];
+			const texture = textures[i];
 			glContext.activeTexture(GL_TEXTURE0 + (this.#textureUnit as number[])[i]);
 			if (texture) {
 				glContext.bindTexture(GL_TEXTURE_2D, textures[i].texture);

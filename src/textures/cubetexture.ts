@@ -2,21 +2,21 @@ import { Texture } from './texture';
 
 export class CubeTexture extends Texture {
 	isCubeTexture: boolean
-	#images?: Array<HTMLImageElement>;
+	#images?: HTMLImageElement[];
 	constructor(parameters: any) {
 		super(parameters)
 		this.isCubeTexture = true;
 		this.setImages(parameters.images);
 	}
 
-	setImages(images?: Array<HTMLImageElement>) {
+	setImages(images?: HTMLImageElement[]) {
 		if (!images) {
 			return
 		}
 		this.#images = images;
 	}
 
-	getImages(): Array<HTMLImageElement> | undefined {
+	getImages(): HTMLImageElement[] | undefined {
 		return this.#images;
 	}
 

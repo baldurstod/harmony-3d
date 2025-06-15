@@ -52,11 +52,11 @@ export function getGraphics() {
 	return graphics;
 }
 
-export type RenderContext = {
+export interface RenderContext {
 	DisableToolRendering?: boolean;
 }
 
-type GraphicsInitOptions = {
+interface GraphicsInitOptions {
 	canvas?: HTMLCanvasElement,
 	autoResize?: boolean,
 
@@ -95,18 +95,18 @@ export class Graphics {
 	#lastTick = performance.now();
 	currentTick = 0;
 	#renderBuffers = new Set<WebGLRenderbuffer>();
-	#renderTargetStack: Array<RenderTarget> = [];
+	#renderTargetStack: RenderTarget[] = [];
 	#readyPromiseResolve!: (value: boolean) => void;
 	#readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
 	#canvas?: HTMLCanvasElement;
-	#width: number = 0;
-	#height: number = 0;
+	#width = 0;
+	#height = 0;
 	#offscreenCanvas?: OffscreenCanvas;
 	#forwardRenderer?: ForwardRenderer;
 	glContext!: WebGLAnyRenderingContext;
 	#bipmapContext?: ImageBitmapRenderingContext | null;
 	#pickedEntity: Entity | null = null;
-	#animationFrame: number = 0;
+	#animationFrame = 0;
 	ANGLE_instanced_arrays: any;
 	OES_texture_float_linear: any;
 	#mediaRecorder?: MediaRecorder;
@@ -160,7 +160,7 @@ export class Graphics {
 		//this.clearColor = vec4.fromValues(0, 0, 0, 255);
 		this.#forwardRenderer = new ForwardRenderer(this);
 
-		let autoResize = contextAttributes.autoResize;
+		const autoResize = contextAttributes.autoResize;
 		if (autoResize !== undefined) {
 			this.autoResize = autoResize;
 		}
@@ -188,44 +188,44 @@ export class Graphics {
 		this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
 
 		const gl = this.glContext;
-		let pixels = new Uint8Array(4);
+		const pixels = new Uint8Array(4);
 		this.glContext?.readPixels(x, this.#canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
-		let pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
+		const pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
 		return pickList.get(pickedEntityIndex) ?? null;
 	}
 
 	#mouseDown(event: MouseEvent) {
 		this.#canvas!.focus();
-		let x = event.offsetX;
-		let y = event.offsetY;
+		const x = event.offsetX;
+		const y = event.offsetY;
 		this.#pickedEntity = this.pickEntity(x, y);
 		GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
 	}
 
 	#mouseMove(event: MouseEvent) {
-		let x = event.offsetX;
-		let y = event.offsetY;
+		const x = event.offsetX;
+		const y = event.offsetY;
 		GraphicsEvents.mouseMove(x, y, this.#pickedEntity, event);
 	}
 
 	#mouseUp(event: MouseEvent) {
-		let x = event.offsetX;
-		let y = event.offsetY;
+		const x = event.offsetX;
+		const y = event.offsetY;
 		GraphicsEvents.mouseUp(x, y, this.#pickedEntity, event);
 		this.#pickedEntity = null;
 	}
 
 	#wheel(event: WheelEvent) {
-		let x = event.offsetX;
-		let y = event.offsetY;
+		const x = event.offsetX;
+		const y = event.offsetY;
 		GraphicsEvents.wheel(x, y, this.#pickedEntity, event);
 		this.#pickedEntity = null;
 	}
 
 	getDefinesAsString(material: Material) {//TODOv3 rename var material
-		let defines: string[] = [];
-		for (let [name, value] of Object.entries(material.defines)) {
+		const defines: string[] = [];
+		for (const [name, value] of Object.entries(material.defines)) {
 			if (value === false) {
 				defines.push('#undef ' + name + ' ' + value);
 			} else {
@@ -243,12 +243,12 @@ export class Graphics {
 		this.#forwardRenderer!.render(scene, camera, delta, context);
 
 		if (USE_OFF_SCREEN_CANVAS) {
-			let bitmap = this.#offscreenCanvas!.transferToImageBitmap();
+			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
 			this.#bipmapContext?.transferFromImageBitmap(bitmap);
 		}
 
 		if (MEASURE_PERFORMANCE) {
-			var t1 = performance.now();
+			const t1 = performance.now();
 			if (USE_STATS) {
 				WebGLStats.endRender();
 			}
@@ -290,7 +290,7 @@ export class Graphics {
 
 		const tick = performance.now();
 		this.#time = (tick - this.#timeOrigin) * 0.001;
-		let delta = (tick - this.#lastTick) * this.speed * 0.001;
+		const delta = (tick - this.#lastTick) * this.speed * 0.001;
 		if (this.#running) {
 			++this.currentTick;
 			GraphicsEvents.tick(delta, tick, this.speed);
@@ -404,7 +404,7 @@ export class Graphics {
 
 	#refreshIncludeCode() {
 		this.#globalIncludeCode = '';
-		for (let code of this.#includeCode.values()) {
+		for (const code of this.#includeCode.values()) {
 			this.#globalIncludeCode += code + '\n';
 		}
 	}
@@ -462,7 +462,7 @@ export class Graphics {
 			if (this.#extensions.has(name)) {
 				return this.#extensions.get(name);
 			} else {
-				let extension = this.glContext.getExtension(name);
+				const extension = this.glContext.getExtension(name);
 				this.#extensions.set(name, extension);
 				return extension;
 			}
@@ -482,8 +482,8 @@ export class Graphics {
 	setSize(width: number, height: number) {
 		width = Math.max(width, 1);
 		height = Math.max(height, 1);
-		let previousWidth = this.#width;
-		let previousHeight = this.#height;
+		const previousWidth = this.#width;
+		const previousHeight = this.#height;
 		if (isNumeric(width)) {
 			this.#width = width;
 		}
@@ -586,7 +586,7 @@ export class Graphics {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
-		let frameBuffer = this.glContext!.createFramebuffer();
+		const frameBuffer = this.glContext!.createFramebuffer();
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.getGLError('createFramebuffer');
 		}
@@ -602,7 +602,7 @@ export class Graphics {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
-		let renderBuffer = this.glContext!.createRenderbuffer();
+		const renderBuffer = this.glContext!.createRenderbuffer();
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.getGLError('createRenderbuffer');
 		}
@@ -651,9 +651,9 @@ export class Graphics {
 	}
 
 	savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number) {
-		let previousWidth = this.#width;
-		let previousHeight = this.#height;
-		let previousAutoResize = this.autoResize;
+		const previousWidth = this.#width;
+		const previousHeight = this.#height;
+		const previousAutoResize = this.autoResize;
 		try {
 			this.autoResize = false;
 			this.setSize(width, height);
@@ -726,7 +726,7 @@ export class Graphics {
 	}
 
 	getGLError(context: string) {
-		let glError = this.glContext?.getError() ?? 0;
+		const glError = this.glContext?.getError() ?? 0;
 		if (glError) {
 			console.error(`GL Error in ${context} : `, glError);
 		}

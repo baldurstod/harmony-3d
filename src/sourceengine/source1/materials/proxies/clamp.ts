@@ -25,8 +25,8 @@ export class Clamp extends Proxy {
 		if (typeof v1 == 'number') {
 			super.setResult(variables, Math.min(Math.max(v1, this.#minVal), this.#maxVal));
 		} else {//array
-			let clampedArray = [];
-			for (let i in v1) {
+			const clampedArray = [];
+			for (const i in v1) {
 				clampedArray[i] = Math.min(Math.max(v1[i], this.#minVal), this.#maxVal);
 			}
 			super.setResult(variables, clampedArray);

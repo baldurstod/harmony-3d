@@ -29,11 +29,11 @@ export class InstantaneousEmitter extends Operator {
 	doEmit(elapsedTime) {
 		//todo: use snapshotControlPoint
 		let particlesToEmit = this.getParamScalarValue('m_nParticlesToEmit') ?? 100;
-		let startTime = this.getParamScalarValue('m_flStartTime') ?? 0;
+		const startTime = this.getParamScalarValue('m_flStartTime') ?? 0;
 
-		let system = this.system;
+		const system = this.system;
 		if (this.snapshotControlPoint != -1) {
-			let snapshot = system.getControlPoint(this.snapshotControlPoint)?.snapshot;
+			const snapshot = system.getControlPoint(this.snapshotControlPoint)?.snapshot;
 			if (snapshot) {
 				particlesToEmit = snapshot.particleCount;
 			} else {

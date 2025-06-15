@@ -49,7 +49,7 @@ export class RandomColor extends Operator {
 
 	doInit(particle, elapsedTime) {
 		//TODO: use tint
-		let rand = Math.random();
+		const rand = Math.random();
 		vec3.lerp(particle.color, this.colorMin, this.colorMax, rand);
 		vec3.copy(particle.initialColor, particle.color);
 	}

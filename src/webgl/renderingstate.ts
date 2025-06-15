@@ -176,15 +176,15 @@ export class WebGLRenderingState {
 	}
 
 	static initUsedAttributes() {
-		let usedAttributes = this.#usedVertexAttribArray;
+		const usedAttributes = this.#usedVertexAttribArray;
 		for (let i = 0, l = usedAttributes.length; i < l; i++) {
 			usedAttributes[i] = 0;
 		}
 	}
 
 	static disableUnusedAttributes() {
-		let usedAttributes = this.#usedVertexAttribArray;
-		let enabledAttributes = this.#enabledVertexAttribArray;
+		const usedAttributes = this.#usedVertexAttribArray;
+		const enabledAttributes = this.#enabledVertexAttribArray;
 		for (let i = 0, l = usedAttributes.length; i < l; i++) {
 			if (usedAttributes[i] !== enabledAttributes[i]) {
 				this.#glContext.disableVertexAttribArray(i);

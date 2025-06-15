@@ -20,14 +20,14 @@ export class SourceModel {
 	mdl: SourceMdl;//TODO: set private ?
 	vvd;
 	vtx;
-	requiredLod: number = 0;
+	requiredLod = 0;
 	drawBodyPart = {};
-	currentSkin: number = 0;
+	currentSkin = 0;
 	currentSheen = null;
 	animLayers = [];
 	materialRepository = null;
 	dirty = true;
-	bodyParts = new Map<string, Array<Array<SourceModelMesh>>>();
+	bodyParts = new Map<string, SourceModelMesh[][]>();
 
 	constructor(repository: string, fileName: string, mdl: SourceMdl, vvd: SourceVvd, vtx: SourceVtx) {
 		this.repository = repository;
@@ -47,7 +47,7 @@ export class SourceModel {
 	}
 
 	addGeometry(mesh, geometry, bodyPartName, bodyPartModelId): void {
-		let modelMesh = new SourceModelMesh(mesh, geometry);
+		const modelMesh = new SourceModelMesh(mesh, geometry);
 
 		if (bodyPartName !== undefined) {
 			let bodyPart = this.bodyParts.get(bodyPartName);
@@ -86,14 +86,14 @@ export class SourceModel {
 		return bodyPartNumber;
 	}
 
-	getBones(): Array<MdlBone> | null {
+	getBones(): MdlBone[] | null {
 		if (this.mdl) {
 			return this.mdl.getBones();
 		}
 		return null;
 	}
 
-	getAttachments(): Array<MdlAttachment> | null {
+	getAttachments(): MdlAttachment[] | null {
 		if (this.mdl) {
 			return this.mdl.getAttachments();
 		}
@@ -135,7 +135,7 @@ export class SourceModel {
 		return null;
 	}
 
-	getBodyParts(): Array<MdlBodyPart> | null {
+	getBodyParts(): MdlBodyPart[] | null {
 		if (this.mdl) {
 			return this.mdl.getBodyParts();
 		}
@@ -154,9 +154,9 @@ export class SourceModel {
 		if (seq) {
 			//const t = Studio_Duration(seq.mdl, seq.id, []);
 			const frameCount = StudioFrames2(seq.mdl, seq.id, []);
-			const posRemoveMeTemp: Array<vec3> = [];
-			const quatRemoveMeTemp: Array<quat> = [];
-			const boneFlags: Array<number> = [];
+			const posRemoveMeTemp: vec3[] = [];
+			const quatRemoveMeTemp: quat[] = [];
+			const boneFlags: number[] = [];
 			const poseParameters = {};
 
 			for (const [boneId, bone] of animation.bones.entries()) {

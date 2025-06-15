@@ -46,8 +46,8 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	#maximumTimeStep = 0.1;
 	animable = true;
 	resetable = true;
-	paramList: Array<ParamType> = [];
-	parameters: { [key: string]: { type?: string, value?: string } } = {};
+	paramList: ParamType[] = [];
+	parameters: Record<string, { type?: string, value?: string }> = {};
 	minimumTickRate = 0;
 	maximumTickRate = 1;
 	// particle to emit when the system starts
@@ -63,30 +63,30 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	attachementBone = null;
 
 	// List of living particles
-	livingParticles = new Array();
+	livingParticles = [];
 	// List of dead but reusable particles
-	poolParticles = new Array();
+	poolParticles = [];
 
 	currentOrientation = quat.create();
 	prevOrientation = quat.create();
 
-	emitters: { [key: string]: SourceEngineParticleOperator } = {};//new Array();//todo transform to map
-	initializers: { [key: string]: SourceEngineParticleOperator } = {};// = new Array();//todo transform to map
-	operators: { [key: string]: SourceEngineParticleOperator } = {};//new Array();//todo transform to map
+	emitters: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
+	initializers: Record<string, SourceEngineParticleOperator> = {};// = new Array();//todo transform to map
+	operators: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
 	forces = new Map();//new Array();//todo transform to map
-	constraints: { [key: string]: SourceEngineParticleOperator } = {};//new Array();//todo transform to map
-	controlPoints: Array<ControlPoint> = [];
+	constraints: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
+	controlPoints: ControlPoint[] = [];
 
-	childrenSystems: Array<SourceEngineParticleSystem> = [];//todo transform to map
-	tempChildren: { [key: string]: string } = {};//new Array();//todo transform to map
+	childrenSystems: SourceEngineParticleSystem[] = [];//todo transform to map
+	tempChildren: Record<string, string> = {};//new Array();//todo transform to map
 	operatorRandomSampleOffset = 0;
 	parentSystem?: SourceEngineParticleSystem;
-	firstStep: boolean = false;
+	firstStep = false;
 	pcf?: SourcePCF;
 	material?: SourceEngineMaterial;
 	materialName?: string;
 	maxParticles: number = DEFAULT_MAX_PARTICLES;
-	resetDelay: number = 0;
+	resetDelay = 0;
 	snapshot: any/*TODO: better type*/;
 
 	static #speed = 1.0;
@@ -193,20 +193,20 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	#resetEmitters() {
-		for (let i in this.emitters) {//TODOv3
+		for (const i in this.emitters) {//TODOv3
 			const emitter = this.emitters[i];
 			emitter.reset();
 		}
 	}
 
 	#resetInitializers() {
-		for (let i in this.initializers) {
+		for (const i in this.initializers) {
 			this.initializers[i].reset();
 		}
 	}
 
 	updateChilds() {
-		for (let i in this.tempChildren) {
+		for (const i in this.tempChildren) {
 			const ps = this.pcf?.getSystem(this.tempChildren[i]);
 
 			if (ps) {
@@ -276,7 +276,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	#stepEmitters() {
-		for (let i in this.emitters) {
+		for (const i in this.emitters) {
 			const emitter = this.emitters[i];
 			emitter.doEmit(this.elapsedTime);
 		}
@@ -289,7 +289,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 			const particle = this.livingParticles[i];
 			particle.step(this.elapsedTime);
 			this.operatorRandomSampleOffset = 0;
-			for (let j in this.operators) {
+			for (const j in this.operators) {
 				const operator = this.operators[j];
 				operator.operateParticle(particle, this.elapsedTime);
 
@@ -308,7 +308,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		}
 
 		if (this.livingParticles.length == 0) {
-			for (let j in this.operators) {
+			for (const j in this.operators) {
 				const operator = this.operators[j];
 				switch (operator.functionName) {
 					case 'set control point positions':
@@ -339,13 +339,13 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 			return false;
 		}
 
-		for (let i in this.emitters) {
+		for (const i in this.emitters) {
 			const emitter = this.emitters[i];
 			if (!emitter.finished()) {
 				return false;
 			}
 		}
-		for (let child of this.childrenSystems) {
+		for (const child of this.childrenSystems) {
 			if ((child.livingParticles.length > 0) || !child.#finished()) {
 				return false;
 			}
@@ -355,7 +355,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 
 	#stepOperators1() {
 		if (this.livingParticles.length == 0) {
-			for (let j in this.operators) {
+			for (const j in this.operators) {
 				const operator = this.operators[j];
 				switch (operator.functionName) {
 					case 'set control point positions':
@@ -372,7 +372,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	stepForces() {
 		for (let i = 0; i < this.livingParticles.length; ++i) {
 			const particle = this.livingParticles[i];
-			for (let force of this.forces.values()) {
+			for (const force of this.forces.values()) {
 				//const force = this.forces[j];
 				force.forceParticle(particle, this.elapsedTime);
 			}
@@ -381,7 +381,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 
 	stepConstraints(particle: SourceEngineParticle) {
 		//TODOv3: multiple passes
-		for (let j in this.constraints) {
+		for (const j in this.constraints) {
 			const constraint = this.constraints[j];
 			constraint.constraintParticle(particle);
 		}
@@ -394,7 +394,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	#stepChildren(elapsedTime: number) {
-		for (let j in this.childrenSystems) {//TODOv3
+		for (const j in this.childrenSystems) {//TODOv3
 			const child = this.childrenSystems[j];
 			child.#step(elapsedTime);
 		}
@@ -434,13 +434,13 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		particle.start();
 
 		// Init modifiers in a 2nd loop
-		for (let i in this.initializers) {
+		for (const i in this.initializers) {
 			const initializer = this.initializers[i];
 			if (!initializer.initMultipleOverride()) {
 				initializer.initializeParticle(particle, elapsedTime);
 			}
 		}
-		for (let i in this.initializers) {
+		for (const i in this.initializers) {
 			const initializer = this.initializers[i];
 			if (initializer.initMultipleOverride()) {
 				initializer.initializeParticle(particle, elapsedTime);
@@ -692,7 +692,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		if (controlPointId < 0 || controlPointId >= MAX_PARTICLE_CONTROL_POINTS) {
 			return null;
 		}
-		let parentSystem = this.parentSystem;
+		const parentSystem = this.parentSystem;
 		if (parentSystem !== undefined) {
 			return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
 		}
@@ -709,7 +709,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	#createControlPoint(controlPointId: number) {
-		let controlPoint = new ControlPoint();
+		const controlPoint = new ControlPoint();
 		controlPoint.name = String(controlPointId);
 		if (controlPointId == 0) {
 			this.addChild(controlPoint);
@@ -724,9 +724,9 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		vec3.set(controlPoint.uVector, 0, 0, 1);
 		vec3.set(controlPoint.rVector, 1, 0, 0);
 
-		let parentSystem = this.parentSystem;
+		const parentSystem = this.parentSystem;
 		if (parentSystem !== undefined) {
-			let parentControlPoint = parentSystem.getControlPoint(controlPointId);
+			const parentControlPoint = parentSystem.getControlPoint(controlPointId);
 			if (parentControlPoint) {
 				controlPoint.parentControlPoint = parentControlPoint;
 			}
@@ -835,7 +835,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	setControlPointParent(controlPointId: number, parentControlPointId: number) {
 		const controlPoint = this.getControlPoint(controlPointId);
 
-		let parentSystem = this.parentSystem;
+		const parentSystem = this.parentSystem;
 		if (parentSystem !== undefined) {
 			//parentSystem.getControlPoint(parentControlPointId).addChild(controlPoint);
 		} else {
@@ -901,7 +901,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		} else {
 			vec3.set(min, Infinity, Infinity, Infinity);
 			vec3.set(max, -Infinity, -Infinity, -Infinity);
-			for (let particle of this.livingParticles) {
+			for (const particle of this.livingParticles) {
 				vec3.min(min, min, particle.position);
 				vec3.max(max, max, particle.position);
 			}
@@ -920,7 +920,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	buildContextMenu() {
-		let startStop = this.isRunning ? { i18n: '#stop', f: () => this.stop() } : { i18n: '#start', f: () => this.start() };
+		const startStop = this.isRunning ? { i18n: '#stop', f: () => this.stop() } : { i18n: '#start', f: () => this.start() };
 
 		return Object.assign(super.buildContextMenu(), {
 			SourceEngineParticleSystem_1: null,
@@ -930,28 +930,28 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.repository = this.repository;
 		if (!this.isRunning) {
 			json.isrunning = false;
 		}
 
-		let jControlPoint: Array<string> = [];
+		const jControlPoint: string[] = [];
 		this.controlPoints.forEach((element, index) => jControlPoint[index] = element.id);
 		json.controlpoints = jControlPoint;
 		return json;
 	}
 
 	static async constructFromJSON(json: any/*TODO: better type*/, entities: Map<string, Entity>, loadedPromise: Promise<void>) {
-		let entity = await Source1ParticleControler.createSystem(json.repository, json.name);
+		const entity = await Source1ParticleControler.createSystem(json.repository, json.name);
 		if (entity) {
 			loadedPromise.then(() => {
 				console.error(entities);
 
-				let jControlPoint = json.controlpoints;
+				const jControlPoint = json.controlpoints;
 				if (jControlPoint) {
 					for (let i = 0; i < jControlPoint.length; ++i) {
-						let cpEntity = entities.get(jControlPoint[i]) as ControlPoint;
+						const cpEntity = entities.get(jControlPoint[i]) as ControlPoint;
 						if (cpEntity) {
 							entity.controlPoints[i] = cpEntity;
 						}

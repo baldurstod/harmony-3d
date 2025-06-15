@@ -7,7 +7,7 @@ import { Source2AnimationDesc } from './source2animationdesc';
 
 export class Source2AnimGroup {
 	#source2Model;
-	#_changemyname: Array<Source2Animation> = [];
+	#_changemyname: Source2Animation[] = [];
 	repository: string;
 	file;
 	decoderArray;
@@ -28,7 +28,7 @@ export class Source2AnimGroup {
 		let localAnimArray;
 		let decodeKey;
 		let decoderArray;
-		let animationGroupData = sourceFile.getBlockStruct('DATA.structs.AnimationGroupResourceData_t');
+		const animationGroupData = sourceFile.getBlockStruct('DATA.structs.AnimationGroupResourceData_t');
 
 		let directHSeqGroup;
 		if (animationGroupData) {
@@ -50,9 +50,9 @@ export class Source2AnimGroup {
 		}
 		this.setAnimationGroupResourceData(localAnimArray, decodeKey);
 
-		let anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
+		const anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
 		if (anims) {
-			let loadedAnim = new Source2Animation(this, '');
+			const loadedAnim = new Source2Animation(this, '');
 			loadedAnim.setAnimDatas(anims);
 			this._changemyname = this._changemyname || [];
 			this._changemyname.push(loadedAnim);
@@ -99,18 +99,18 @@ export class Source2AnimGroup {
 	}
 
 	getAnims(): Set<Source2Animation> {
-		let anims = new Set<Source2Animation>();
+		const anims = new Set<Source2Animation>();
 
-		for (let anim of this._changemyname) {
+		for (const anim of this._changemyname) {
 			if (anim) {
 				anims.add(anim);
 			}
 		}
 
 		if (this.localAnimArray) {
-			for (let animName of this.localAnimArray) {
+			for (const animName of this.localAnimArray) {
 				if (animName) {
-					let anim = getAnim(this.repository, animName, this);
+					const anim = getAnim(this.repository, animName, this);
 					if (anim) {
 						anims.add(anim);
 					}
@@ -122,18 +122,18 @@ export class Source2AnimGroup {
 	}
 
 	getAnimationsByActivity(activityName) {
-		let anims = [];
+		const anims = [];
 
-		for (let anim of this._changemyname) {
+		for (const anim of this._changemyname) {
 			if (anim) {
 				anims.push(...anim.getAnimationsByActivity(activityName));
 			}
 		}
 
 		if (this.localAnimArray) {
-			for (let animName of this.localAnimArray) {
+			for (const animName of this.localAnimArray) {
 				if (animName) {
-					let anim = getAnim(this.repository, animName, this);
+					const anim = getAnim(this.repository, animName, this);
 					if (anim) {
 						anims.push(...anim.getAnimationsByActivity(activityName));
 					}
@@ -158,8 +158,8 @@ export class Source2AnimGroup {
 
 	getAnimationByName(animName: string): Source2AnimationDesc {
 		//return this.#internalAnimGroup?.getAnimationByName(animName);
-		for (let source2Animation of this.getAnims()) {
-			let anim = source2Animation.getAnimationByName(animName);
+		for (const source2Animation of this.getAnims()) {
+			const anim = source2Animation.getAnimationByName(animName);
 			if (anim) {
 				return anim;
 			}
@@ -177,10 +177,10 @@ export class Source2AnimGroup {
 }
 
 
-let seqGroupList = {};
+const seqGroupList = {};
 
 function getSequenceGroup(repository: string, seqGroupName: string, animGroup: Source2AnimGroup) {
-	var seqGroup = seqGroupList[seqGroupName];
+	let seqGroup = seqGroupList[seqGroupName];
 	if (!seqGroup) {
 		seqGroup = loadSequenceGroup(repository, seqGroupName, animGroup);
 	}
@@ -199,15 +199,15 @@ export async function loadSequenceGroup(repository: string, seqGroupName: string
 	seqGroupName = seqGroupName.replace(/\.(vseq_c$|vseq)/, '');
 	//seqGroupName = repository + seqGroupName;
 
-	let seqGroup = new Source2SeqGroup(animGroup);
+	const seqGroup = new Source2SeqGroup(animGroup);
 	await getVseq(repository, seqGroupName, seqGroup);
 
 	return seqGroup;
 }
 
-const pending: { [key: string]: boolean } = {};
+const pending: Record<string, boolean> = {};
 async function getVseq(repository: string, seqGroupName: string, seqGroup: Source2SeqGroup) {
-	var seqFile = seqGroupName + '.vseq_c';
+	const seqFile = seqGroupName + '.vseq_c';
 	if (pending[seqFile]) {
 		return true;
 	}
@@ -229,7 +229,7 @@ async function getVseq(repository: string, seqGroupName: string, seqGroup: Sourc
 }
 
 async function loadVseq(repository: string, fileName: string, seqGroup: Source2SeqGroup) {
-	let vseq = await new Source2FileLoader().load(repository, fileName);
+	const vseq = await new Source2FileLoader().load(repository, fileName);
 	if (vseq) {
 		seqGroup.setFile(vseq);
 	}
@@ -237,12 +237,12 @@ async function loadVseq(repository: string, fileName: string, seqGroup: Source2S
 
 
 
-let animList = {};
+const animList = {};
 function getAnim(repository: string, animName: string, animGroup: Source2AnimGroup) {
 	if (!animName) {
 		return "";
 	}
-	let anim = animList[animName];
+	const anim = animList[animName];
 	if (anim === undefined) {
 		loadAnim(repository, animName, animGroup).then(
 			anim => {
@@ -265,14 +265,14 @@ export async function loadAnim(repository: string, animName: string, animGroup: 
 	//animName = repository + animName;
 	//this.animName = animName;
 
-	let anim = new Source2Animation(animGroup, animName);
+	const anim = new Source2Animation(animGroup, animName);
 	await getVanim(repository, animName, anim);
 
 	return anim;
 }
 
 async function getVanim(repository: string, animName: string, anim: Source2Animation) {
-	var animFile = animName + '.vanim_c';
+	const animFile = animName + '.vanim_c';
 	if (pending[animFile]) {
 		return true;
 	}
@@ -301,10 +301,10 @@ async function getVanim(repository: string, animName: string, anim: Source2Anima
 }
 
 async function loadVanim(repository: string, fileName: string, anim: Source2Animation) {
-	let vanim = await new Source2FileLoader().load(repository, fileName) as Source2File;
+	const vanim = await new Source2FileLoader().load(repository, fileName) as Source2File;
 	if (vanim) {
 		anim.setFile(vanim);
-		let dataBlock = vanim.blocks.DATA;
+		const dataBlock = vanim.blocks.DATA;
 		if (dataBlock) {
 			anim.setAnimDatas(vanim.getBlockStruct('DATA.structs.AnimationResourceData_t') || vanim.getBlockStruct('DATA.keyValue.root'));
 		}

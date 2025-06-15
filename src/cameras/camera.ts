@@ -66,8 +66,8 @@ export class Camera extends Entity {
 	#projectionMatrix = mat4.create();
 	#verticalFov!: number;
 	#aspectRatio!: number;
-	#dirtyCameraMatrix: boolean = true;
-	#dirtyProjectionMatrix: boolean = true;
+	#dirtyCameraMatrix = true;
+	#dirtyProjectionMatrix = true;
 	#projectionMatrixInverse = mat4.create();
 	#worldMatrixInverse = mat4.create();
 	#upVector = vec3.create();
@@ -105,11 +105,11 @@ export class Camera extends Entity {
 		if (this.#projection == CameraProjection.Perspective) {
 			mat4.perspective(this.#projectionMatrix, this.#verticalFov, this.#aspectRatio, this.#nearPlane, this.#farPlane);
 		} else if (this.#projection == CameraProjection.Orthographic) {
-			let ortho = this.#orthoZoom;
+			const ortho = this.#orthoZoom;
 			mat4.ortho(this.#projectionMatrix, this.#left / ortho, this.#right / ortho, this.#bottom / ortho, this.#top / ortho, this.#nearPlane, this.#farPlane);
 		} else {
 			// Mixed perspective / ortho
-			let invOrtho = 1 / this.#orthoZoom;
+			const invOrtho = 1 / this.#orthoZoom;
 			mat4.perspective(proj1, this.#verticalFov, this.#aspectRatio, this.#nearPlane, this.#farPlane);
 			mat4.ortho(proj2, this.#left * invOrtho, this.#right * invOrtho, this.#bottom * invOrtho, this.#top * invOrtho, this.#nearPlane, this.#farPlane);
 
@@ -365,7 +365,7 @@ export class Camera extends Entity {
 	}
 
 	setActiveCamera() {
-		let scene = this.root;
+		const scene = this.root;
 		if (scene.is('Scene')) {
 			(scene as Scene).activeCamera = this;
 		} else {
@@ -380,10 +380,10 @@ export class Camera extends Entity {
 			camera1: null,
 			cameraPerspective: { i18n: '#perspective_camera', selected: this.isPerspective, f: () => this.setProjection(CameraProjection.Perspective) },
 			cameraOrthographic: { i18n: '#orthographic_camera', selected: this.isOrthographic, f: () => this.setProjection(CameraProjection.Orthographic) },
-			cameraNearPlane: { i18n: '#near_plane', f: () => { let nearPlane = prompt('Near plane', String(this.nearPlane)); if (nearPlane !== null) { this.nearPlane = Number(nearPlane); } } },
-			cameraFarPlane: { i18n: '#far_plane', f: () => { let farPlane = prompt('Far plane', String(this.farPlane)); if (farPlane !== null) { this.farPlane = Number(farPlane); } } },
-			cameraOrthoZoom: { i18n: '#zoom', f: () => { let zoom = prompt('Zoom', String(this.orthoZoom)); if (zoom !== null) { this.orthoZoom = Number(zoom); } } },
-			cameraFov: { i18n: '#fov', f: () => { let fov = prompt('FOV', String(this.verticalFov)); if (fov !== null) { this.verticalFov = Number(fov); } } },
+			cameraNearPlane: { i18n: '#near_plane', f: () => { const nearPlane = prompt('Near plane', String(this.nearPlane)); if (nearPlane !== null) { this.nearPlane = Number(nearPlane); } } },
+			cameraFarPlane: { i18n: '#far_plane', f: () => { const farPlane = prompt('Far plane', String(this.farPlane)); if (farPlane !== null) { this.farPlane = Number(farPlane); } } },
+			cameraOrthoZoom: { i18n: '#zoom', f: () => { const zoom = prompt('Zoom', String(this.orthoZoom)); if (zoom !== null) { this.orthoZoom = Number(zoom); } } },
+			cameraFov: { i18n: '#fov', f: () => { const fov = prompt('FOV', String(this.verticalFov)); if (fov !== null) { this.verticalFov = Number(fov); } } },
 			cameraSetActiveCamera: { i18n: '#set_active_camera', f: () => this.setActiveCamera() },
 		});
 	}
@@ -414,7 +414,7 @@ export class Camera extends Entity {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		if (this.nearPlane != DEFAULT_NEAR_PLANE) {
 			json.nearplane = this.#nearPlane;
 		}

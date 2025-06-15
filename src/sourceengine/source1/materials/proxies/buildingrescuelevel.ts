@@ -21,9 +21,9 @@ export class BuildingRescueLevel extends Proxy {
 	execute(variables) {
 		const v = variables.get(this.#r);
 		if (v) {
-			let iAmmo = 200;
-			let maxAmmo = 200;
-			let iIncreasedRangeCost = 100;
+			const iAmmo = 200;
+			const maxAmmo = 200;
+			const iIncreasedRangeCost = 100;
 			let scale = 1.0;
 			if (iAmmo < iIncreasedRangeCost) {
 				scale = 10.0;

@@ -17,7 +17,7 @@ export class MaintainEmitter extends Operator {
 	}
 
 	doEmit(elapsedTime) {
-		let nToEmit = this.particlesToMaintain - this.system.livingParticles.length;
+		const nToEmit = this.particlesToMaintain - this.system.livingParticles.length;
 
 		if (nToEmit > 0) {
 			let currentTime = this.system.currentTime;

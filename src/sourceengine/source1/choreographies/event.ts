@@ -164,7 +164,7 @@ export class Event {
 	 * Add a flex animation track
 	 */
 	addTrack(controllerName) {
-		let track = new FlexAnimationTrack(this);
+		const track = new FlexAnimationTrack(this);
 		track.setFlexControllerName(controllerName);
 		this.flexAnimTracks[controllerName] = track;
 		return track;
@@ -176,7 +176,7 @@ export class Event {
 	toString(indent) {
 		indent = indent || '';
 		const subindent = indent + '\t';
-		let arr = [];
+		const arr = [];
 		arr.push(indent + 'Event ' + EventType[this.type] + ' ' + this.name);
 		arr.push(subindent + 'time ' + this.startTime + ' ' + this.endTime);
 		if (this.param1) {
@@ -196,7 +196,7 @@ export class Event {
 			arr.push(subindent + 'flexanimations');
 		}
 
-		for (let i in this.flexAnimTracks) {
+		for (const i in this.flexAnimTracks) {
 			arr.push(this.flexAnimTracks[i].toString(subindent + '\t'));
 		}
 
@@ -211,7 +211,7 @@ export class Event {
 	 * Step
 	 */
 	step(previousTime, currentTime) {
-		let actor = this.getActor();
+		const actor = this.getActor();
 		if (actor) {
 			actor.frame = currentTime;
 		}

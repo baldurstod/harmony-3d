@@ -43,7 +43,7 @@ export class Wireframe extends Entity {
 				continue;
 			}
 
-			let segments: Array<number> = [];
+			const segments: number[] = [];
 			const line = new LineSegmentsGeometry();
 			line.addUser(this);
 			const me = new Mesh(line, this.#material);
@@ -56,9 +56,9 @@ export class Wireframe extends Entity {
 			const vertexPos = m.v;
 
 			for (let i = 0, l = vertexIndices.length; i < l; i += 3) {
-				let vertexIndex1 = vertexIndices[i + 0] * 3;
-				let vertexIndex2 = vertexIndices[i + 1] * 3;
-				let vertexIndex3 = vertexIndices[i + 2] * 3;
+				const vertexIndex1 = vertexIndices[i + 0] * 3;
+				const vertexIndex2 = vertexIndices[i + 1] * 3;
+				const vertexIndex3 = vertexIndices[i + 2] * 3;
 
 				segments.push(vertexPos[vertexIndex1], vertexPos[vertexIndex1 + 1], vertexPos[vertexIndex1 + 2]);
 				segments.push(vertexPos[vertexIndex2], vertexPos[vertexIndex2 + 1], vertexPos[vertexIndex2 + 2]);

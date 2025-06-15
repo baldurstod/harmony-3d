@@ -1,7 +1,7 @@
 import { AnimationDescription } from './animationdescription';
 
 export class Animations {
-	#animations: Array<AnimationDescription> = [];
+	#animations: AnimationDescription[] = [];
 
 	[Symbol.iterator] = () => {
 		return this.#animations.entries();
@@ -30,7 +30,7 @@ export class Animations {
 	}
 
 	setWeight(id: number, weight: number) {
-		let animation = this.#animations[id];
+		const animation = this.#animations[id];
 		if (!animation) {
 			return false;
 		}

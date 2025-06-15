@@ -16,7 +16,7 @@ export const DELAY_BEFORE_REFRESH = 100;
 const FLOAT_VALUE_DECIMALS = 3;
 
 function dropFiles(evt, node) {
-	let files = evt.target.files; // FileList object
+	const files = evt.target.files; // FileList object
 
 	// Loop through the FileList and render image files as thumbnails.
 	for (let i = 0, f; f = files[i]; i++) {
@@ -25,12 +25,12 @@ function dropFiles(evt, node) {
 			continue;
 		}
 
-		let reader = new FileReader();
+		const reader = new FileReader();
 
 		// Closure to capture the file information.
 		reader.onload = (function (theFile) {
 			return function (e) {
-				let texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
+				const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
 
 				if (node instanceof ApplySticker) {
 					texture.wrapS = GL_CLAMP_TO_EDGE;
@@ -55,7 +55,7 @@ function dropFiles(evt, node) {
 }
 
 function dropFilesSpecular(evt, node) {
-	let files = evt.target.files; // FileList object
+	const files = evt.target.files; // FileList object
 
 	// Loop through the FileList and render image files as thumbnails.
 	for (let i = 0, f; f = files[i]; i++) {
@@ -64,12 +64,12 @@ function dropFilesSpecular(evt, node) {
 			continue;
 		}
 
-		let reader = new FileReader();
+		const reader = new FileReader();
 
 		// Closure to capture the file information.
 		reader.onload = (function (theFile) {
 			return function (e) {
-				let texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
+				const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
 
 				if (node instanceof ApplySticker) {
 					texture.wrapS = GL_CLAMP_TO_EDGE;
@@ -116,7 +116,7 @@ export class NodeGui {
 	#nodeImageEditorGui: NodeImageEditorGui;
 	#dragStartClientX: number;
 	#dragStartClientY: number;
-	#htmlParams = new Map<string, HTMLElement | Array<HTMLElement>>();
+	#htmlParams = new Map<string, HTMLElement | HTMLElement[]>();
 	#htmlParamsValue = new Map<HTMLElement, HTMLInputElement>();
 
 	constructor(nodeImageEditorGui: NodeImageEditorGui, node: Node) {
@@ -233,34 +233,34 @@ export class NodeGui {
 			this.#html.append(this.#htmlPreview);
 		}
 
-		for (let input of this.#node.inputs.values()) {
+		for (const input of this.#node.inputs.values()) {
 			htmlInputs.append(this.#createIo(input));
 		}
-		for (let output of this.#node.outputs.values()) {
+		for (const output of this.#node.outputs.values()) {
 			htmlOutputs.append(this.#createIo(output));
 		}
 
 		if (this.#node.hasPreview) {
-			let htmlSavePicture = createElement('button', { i18n: '#save_picture' });
+			const htmlSavePicture = createElement('button', { i18n: '#save_picture' });
 			htmlSavePicture.addEventListener('click', () => this.#node.savePicture());
 			this.#html.append(htmlSavePicture);
 
-			let htmlSaveVTF = createElement('button', { i18n: '#save_vtf' });
+			const htmlSaveVTF = createElement('button', { i18n: '#save_vtf' });
 			htmlSaveVTF.addEventListener('click', () => this.#node.saveVTF());
 			this.#html.append(htmlSaveVTF);
 		}
 
 		if ((this.#node instanceof TextureLookup) || this.#node instanceof ApplySticker) {
-			let inputImage = createElement('input', { type: 'file', accept: 'image/*' });
+			const inputImage = createElement('input', { type: 'file', accept: 'image/*' });
 			inputImage.addEventListener('input', (event) => dropFiles(event, this.#node));
 
 			this.#htmlPreview.addEventListener('click', (event) => { if (event.target == this.#node.previewPic) { inputImage.click() } });
 		}
 		if (this.#node instanceof ApplySticker) {
-			let htmlLoadStickerSpecular = createElement('button', { i18n: '#load_sticker_specular' });
+			const htmlLoadStickerSpecular = createElement('button', { i18n: '#load_sticker_specular' });
 			this.#html.append(htmlLoadStickerSpecular);
 
-			let inputImage = createElement('input', { type: 'file', accept: 'image/*' });
+			const inputImage = createElement('input', { type: 'file', accept: 'image/*' });
 			inputImage.addEventListener('input', (event) => dropFilesSpecular(event, this.#node));
 
 			htmlLoadStickerSpecular.addEventListener('click', () => inputImage.click());
@@ -281,7 +281,7 @@ export class NodeGui {
 
 	#refreshHtml() {
 		this.#htmlParamsContainer.innerText = '';
-		for (let [_, param] of this.#node.params) {
+		for (const [_, param] of this.#node.params) {
 			if (param.length && param.length > 1) {
 				for (let i = 0; i < param.length; ++i) {
 					this.#htmlParamsContainer.append(this.#getParamHTML(param, i));
@@ -293,7 +293,7 @@ export class NodeGui {
 	}
 
 	#getParamHTML(param: NodeParam, index?: number): HTMLElement {
-		let paramHtml: HTMLElement | Array<HTMLElement>;
+		let paramHtml: HTMLElement | HTMLElement[];
 
 		if (index === undefined) {
 			paramHtml = this.#htmlParams.get(param.name) ?? this.#createParamHTML(param, index);
@@ -338,8 +338,8 @@ export class NodeGui {
 	}
 
 	#createParamHTML(param: NodeParam, index?: number): HTMLElement {
-		let paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
-		let nameHtml = createElement('div', { parent: paramHtml, class: 'name' });
+		const paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
+		const nameHtml = createElement('div', { parent: paramHtml, class: 'name' });
 		let valueHtml: HTMLInputElement;
 
 
@@ -479,7 +479,7 @@ export class NodeGui {
 					updateend: (event: CustomEvent) => {
 						const parameters = { 'top left': 0, 'bottom left': 2, 'top right': 1 };
 						const manipulator = event.target as HTMLHarmony2dManipulatorElement;
-						for (let name in parameters) {
+						for (const name in parameters) {
 							const param = this.#node.getParam(name);
 							if (param) {
 								const rect = this.#htmlPreview.getBoundingClientRect();
@@ -547,7 +547,7 @@ export class NodeGui {
 	}
 
 	#setParamValue(param: NodeParam, stringValue: string, index?: number, updateManipulator = true) {
-		let node = this.#node;
+		const node = this.#node;
 		let value: any;
 		switch (param.type) {
 			case NodeParamType.Float:
@@ -558,7 +558,7 @@ export class NodeGui {
 				value = Number(stringValue) * DEG_TO_RAD;
 				break;
 			case NodeParamType.Vec2:
-				let arr = stringValue.split(' ');
+				const arr = stringValue.split(' ');
 				value = vec2.fromValues(Number(arr[0]), Number(arr[1]));
 				break;
 			default:
@@ -574,7 +574,7 @@ export class NodeGui {
 	}
 
 	#createIo(io) {
-		let html = createElement('div', { class: 'node-image-editor-node-io' });
+		const html = createElement('div', { class: 'node-image-editor-node-io' });
 		this._ioGui.set(io, html);
 		return html;
 	}

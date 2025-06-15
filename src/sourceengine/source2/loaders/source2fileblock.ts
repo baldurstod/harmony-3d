@@ -21,7 +21,7 @@ export class Source2FileBlock {
 	}
 
 	getKeyValue(path) {
-		let keyValue = this.keyValue;
+		const keyValue = this.keyValue;
 		if (keyValue) {
 			return keyValue.getValue(path);
 		}
@@ -29,12 +29,12 @@ export class Source2FileBlock {
 	}
 
 	getIndices(bufferId) {
-		let indexBuffer = this.indices[bufferId];
+		const indexBuffer = this.indices[bufferId];
 		return indexBuffer ? indexBuffer.indices : [];
 	}
 
 	getVertices(bufferId) {
-		let vertexBuffer = this.vertices[bufferId];
+		const vertexBuffer = this.vertices[bufferId];
 		return vertexBuffer ? vertexBuffer.vertices : [];
 	}
 
@@ -66,7 +66,7 @@ export class Source2FileBlock {
 			}
 		function DecompressTangent(compressedTangent, outputTangent) {
 			DecompressNormal(compressedTangent, outputTangent);
-			var tSign = compressedTangent[1] - 128.0 < 0 ? -1.0 : 1.0;
+			const tSign = compressedTangent[1] - 128.0 < 0 ? -1.0 : 1.0;
 			outputTangent[3] = tSign;
 		}
 
@@ -97,13 +97,13 @@ export class Source2FileBlock {
 				unpackedNormal[0] += negativeZCompensation * (1 - unpackedNormalXPositive) + -negativeZCompensation * unpackedNormalXPositive; // mix() - x×(1−a)+y×a
 				unpackedNormal[1] += negativeZCompensation * (1 - unpackedNormalYPositive) + -negativeZCompensation * unpackedNormalYPositive;
 
-				let normal = vec3.normalize(unpackedNormal, unpackedNormal); // Get final normal by normalizing it onto the unit sphere
+				const normal = vec3.normalize(unpackedNormal, unpackedNormal); // Get final normal by normalizing it onto the unit sphere
 				normals = normal;
 
 				// Invert tangent when normal Z is negative
-				let tangentSign = (normal[2] >= 0.0) ? 1.0 : -1.0;
+				const tangentSign = (normal[2] >= 0.0) ? 1.0 : -1.0;
 				// equal to tangentSign * (1.0 + abs(normal.z))
-				let rcpTangentZ = 1.0 / (tangentSign + normal[2]);
+				const rcpTangentZ = 1.0 / (tangentSign + normal[2]);
 
 				// Be careful of rearranging ops here, could lead to differences in float precision, especially when dealing with compressed data.
 				const unalignedTangent = vec3.create();
@@ -120,11 +120,11 @@ export class Source2FileBlock {
 				// But it doesn't line up with the texcoords. For that, it uses nPackedFrameT, which is the rotation.
 
 				// Angle to use to rotate tangent
-				var nPackedFrameT = Tbits / 2047.0 * TWO_PI;
+				const nPackedFrameT = Tbits / 2047.0 * TWO_PI;
 
 				// Rotate tangent to the correct angle that aligns with texcoords.
 				//let tangent = unalignedTangent * Math.cos(nPackedFrameT) + Vector3.Cross(normal, unalignedTangent) * Math.sin(nPackedFrameT);
-				let tangent = vec3.scale(vec3.create(), unalignedTangent, Math.cos(nPackedFrameT));
+				const tangent = vec3.scale(vec3.create(), unalignedTangent, Math.cos(nPackedFrameT));
 				const c = vec3.cross(vec3.create(), normal, unalignedTangent);
 				vec3.scale(c, c, Math.sin(nPackedFrameT));
 				vec3.add(tangent, tangent, c);
@@ -133,17 +133,17 @@ export class Source2FileBlock {
 				return [normals, tangents];
 			}
 
-		let vertexBuffer = this.vertices[bufferId];
-		let normals = new Float32Array(vertexBuffer.normals);
-		var normalArray = [];
-		var tangentArray = [];
+		const vertexBuffer = this.vertices[bufferId];
+		const normals = new Float32Array(vertexBuffer.normals);
+		const normalArray = [];
+		const tangentArray = [];
 		const compressedNormal = vec2.create();
 		const compressedTangent = vec2.create();
 		let normalVec3;
 		let normalTemp = vec3.create();
 		let tangentTemp = vec3.create();
 
-		for (var i = 0, l = normals.length; i < l; i+=4) {
+		for (let i = 0, l = normals.length; i < l; i+=4) {
 
 			if (!vertexBuffer.decompressTangentV2) {
 				compressedNormal[0] = normals[i + 0] * 255.0;
@@ -168,23 +168,23 @@ export class Source2FileBlock {
 	}
 
 	getCoords(bufferId) {
-		let vertexBuffer = this.vertices[bufferId];
+		const vertexBuffer = this.vertices[bufferId];
 		return vertexBuffer ? vertexBuffer.coords : [];
 	}
 	getNormal(bufferId) {
-		let vertexBuffer = this.vertices[bufferId];
+		const vertexBuffer = this.vertices[bufferId];
 		return vertexBuffer ? vertexBuffer.normals : [];
 	}
 	getTangent(bufferId) {
-		let vertexBuffer = this.vertices[bufferId];
+		const vertexBuffer = this.vertices[bufferId];
 		return vertexBuffer ? vertexBuffer.tangents : [];
 	}
 	getBoneIndices(bufferId) {
-		let vertexBuffer = this.vertices[bufferId];
+		const vertexBuffer = this.vertices[bufferId];
 		return vertexBuffer ? vertexBuffer.boneIndices : [];
 	}
 	getBoneWeight(bufferId) {
-		let vertexBuffer = this.vertices[bufferId];
+		const vertexBuffer = this.vertices[bufferId];
 		return vertexBuffer ? vertexBuffer.boneWeight : [];
 	}
 }

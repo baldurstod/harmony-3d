@@ -58,12 +58,12 @@ export class RemapCPtoScalar extends Operator {
 	}
 
 	doInit(particle, elapsedTime, strength) {
-		let cpInputPos = this.system.getControlPoint(this.cpInput).currentWorldPosition;
+		const cpInputPos = this.system.getControlPoint(this.cpInput).currentWorldPosition;
 		let value = cpInputPos[this.field];
 
 		value = RemapValClampedBias(value, this.inputMin, this.inputMax, this.outputMin, this.outputMax, this.remapBias);
 
-		let scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE';//TODO: optimize
+		const scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE';//TODO: optimize
 
 		if (scaleInitial) {
 			value = lerp(1, value, strength);

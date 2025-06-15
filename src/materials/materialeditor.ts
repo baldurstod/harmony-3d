@@ -6,10 +6,10 @@ import { GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_DST_ALPHA, GL_DST_COLOR, GL_ON
 import { BlendingEquation, BlendingFactor } from '../enums/blending';
 
 function getUniformsHtml(uniforms: any/*TODO: create a proper type for uniforms*/) {
-	let htmlUniforms = createElement('div');
+	const htmlUniforms = createElement('div');
 
-	for (let uniformName in uniforms) {
-		let uniform = uniforms[uniformName];
+	for (const uniformName in uniforms) {
+		const uniform = uniforms[uniformName];
 
 		htmlUniforms.append(addHtmlParameter(uniformName, uniform));
 	}
@@ -18,10 +18,10 @@ function getUniformsHtml(uniforms: any/*TODO: create a proper type for uniforms*
 }
 
 function addHtmlParameter(name: string, value: any) {
-	let htmlParameter = createElement('div');
-	let htmlParameterName = createElement('span');
+	const htmlParameter = createElement('div');
+	const htmlParameterName = createElement('span');
 	htmlParameterName.innerHTML = name;
-	let htmlParameterValue = createElement('span');
+	const htmlParameterValue = createElement('span');
 	htmlParameterValue.innerHTML = value;
 
 	htmlParameter.append(htmlParameterName, htmlParameterValue);
@@ -43,8 +43,8 @@ export class MaterialEditor {
 	#htmlShader: HTMLElement;
 	#htmlBlending: HTMLElement;
 	#htmlHasBlending: HTMLInputElement;
-	#htmlBlendFactors: Array<HTMLElement> = new Array(4);
-	#htmlBlendSelects: Array<HTMLSelectElement> = new Array(6);
+	#htmlBlendFactors = new Array<HTMLElement>(4);
+	#htmlBlendSelects = new Array<HTMLSelectElement>(6);
 	#htmlParams: HTMLElement;
 	#material?: Material;
 
@@ -54,7 +54,7 @@ export class MaterialEditor {
 		}
 		MaterialEditor.#instance = this;
 
-		const blendOptions: Array<HTMLOptionElement> = [];
+		const blendOptions: HTMLOptionElement[] = [];
 
 		this.#shadowRoot = createShadowRoot('div', {
 			childs: [
@@ -106,7 +106,7 @@ export class MaterialEditor {
 			});
 
 			if (i < 4) {
-				for (let suite in BlendingFactor) {
+				for (const suite in BlendingFactor) {
 					const value = BlendingFactor[suite];
 					if (typeof value === 'string') {
 						(createElement('option', {
@@ -117,7 +117,7 @@ export class MaterialEditor {
 					}
 				}
 			} else {
-				for (let suite in BlendingEquation) {
+				for (const suite in BlendingEquation) {
 					const value = BlendingEquation[suite];
 					if (typeof value === 'string') {
 						(createElement('option', {
@@ -146,12 +146,12 @@ export class MaterialEditor {
 	#refreshHtml() {
 		this.#htmlParams.innerText = '';
 		this.#htmlShader.innerText = '';
-		let material = this.#material;
+		const material = this.#material;
 		if (!material) {
 			return;
 		}
 
-		let fileName = material.name;
+		const fileName = material.name;
 		if (fileName) {
 			this.#htmlParams.append(addHtmlParameter('filename', fileName));
 		}

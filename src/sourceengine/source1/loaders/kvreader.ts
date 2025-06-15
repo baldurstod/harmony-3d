@@ -26,9 +26,9 @@ export class KvElement {
 	}
 	toString(linePrefix) {
 		linePrefix = linePrefix || '';
-		let s = [linePrefix, '"'/*, this.type, '"\n'*/, linePrefix, '{\n'];
+		const s = [linePrefix, '"'/*, this.type, '"\n'*/, linePrefix, '{\n'];
 
-		for (let i in this) {
+		for (const i in this) {
 			s.push(this.toString(linePrefix + '\t'));
 		}
 		s.push(linePrefix);
@@ -130,7 +130,7 @@ export class KvReader {
 		this.pushKey();
 	}
 	popElement() {
-		let a = this.currentElement;
+		const a = this.currentElement;
 		this.currentElement = this.elementStack.pop();
 		if (!this.currentElement) {
 			//this.rootElements.push(a);

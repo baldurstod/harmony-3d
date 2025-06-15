@@ -47,12 +47,12 @@ export class InitialVelocityNoise extends Operator {
 	doInit(particle, elapsedTime) {
 		//TODO: fix this operator
 		return;
-		let outputMin = this.getParamVectorValue('m_vecOutputMin') ?? DEFAULT_OUTPUT_MIN;
-		let outputMax = this.getParamVectorValue('m_vecOutputMax') ?? DEFAULT_OUTPUT_MAX;
-		let offsetLoc = this.getParamVectorValue('m_vecOffsetLoc') ?? DEFAULT_OFFSET_LOC;
-		let offset = this.getParamScalarValue('m_flOffset') ?? 0;
-		let noiseScale = this.getParamScalarValue('m_flNoiseScale') ?? 1;
-		let noiseScaleLoc = this.getParamScalarValue('m_flNoiseScaleLoc') ?? 0.01;
+		const outputMin = this.getParamVectorValue('m_vecOutputMin') ?? DEFAULT_OUTPUT_MIN;
+		const outputMax = this.getParamVectorValue('m_vecOutputMax') ?? DEFAULT_OUTPUT_MAX;
+		const offsetLoc = this.getParamVectorValue('m_vecOffsetLoc') ?? DEFAULT_OFFSET_LOC;
+		const offset = this.getParamScalarValue('m_flOffset') ?? 0;
+		const noiseScale = this.getParamScalarValue('m_flNoiseScale') ?? 1;
+		const noiseScaleLoc = this.getParamScalarValue('m_flNoiseScaleLoc') ?? 0.01;
 
 
 		//let nAbsValX = 0xffffffff;
@@ -62,7 +62,7 @@ export class InitialVelocityNoise extends Operator {
 		let flAbsScaleY = 0.5;
 		let flAbsScaleZ = 0.5;
 		// Set up single if check for absolute value inversion inside the loop
-		let m_bNoiseAbs = ( this.absValInv[0] != 0.0 ) || ( this.absValInv[1] != 0.0 ) || ( this.absValInv[2] != 0.0 );
+		const m_bNoiseAbs = ( this.absValInv[0] != 0.0 ) || ( this.absValInv[1] != 0.0 ) || ( this.absValInv[2] != 0.0 );
 		// Set up values for more optimal absolute value calculations inside the loop
 		if ( this.absVal[0] != 0.0 )
 		{
@@ -82,14 +82,14 @@ export class InitialVelocityNoise extends Operator {
 
 		//float ValueScaleX, ValueScaleY, ValueScaleZ, ValueBaseX, ValueBaseY, ValueBaseZ;
 
-		let ValueScaleX = flAbsScaleX * (outputMax[0] - outputMin[0]);
-		let ValueBaseX = outputMin[0] + ( ( 1.0 - flAbsScaleX ) * ( outputMax[0] - outputMin[0] ) );
+		const ValueScaleX = flAbsScaleX * (outputMax[0] - outputMin[0]);
+		const ValueBaseX = outputMin[0] + ( ( 1.0 - flAbsScaleX ) * ( outputMax[0] - outputMin[0] ) );
 
-		let ValueScaleY = ( flAbsScaleY *(outputMax[1]-outputMin[1] ) );
-		let ValueBaseY = (outputMin[1]+ ( ( 1.0 - flAbsScaleY ) *( outputMax[1]-outputMin[1] ) ) );
+		const ValueScaleY = ( flAbsScaleY *(outputMax[1]-outputMin[1] ) );
+		const ValueBaseY = (outputMin[1]+ ( ( 1.0 - flAbsScaleY ) *( outputMax[1]-outputMin[1] ) ) );
 
-		let ValueScaleZ = ( flAbsScaleZ *(outputMax[2]-outputMin[2] ) );
-		let ValueBaseZ = (outputMin[2]+ ( ( 1.0 - flAbsScaleZ ) *( outputMax[2]-outputMin[2] ) ) );
+		const ValueScaleZ = ( flAbsScaleZ *(outputMax[2]-outputMin[2] ) );
+		const ValueBaseZ = (outputMin[2]+ ( ( 1.0 - flAbsScaleZ ) *( outputMax[2]-outputMin[2] ) ) );
 
 
 		//float CoordScale = m_flNoiseScale;
@@ -107,7 +107,7 @@ export class InitialVelocityNoise extends Operator {
 			vec3.add(CoordLoc, particle.position, offsetLoc);
 
 			//float Offset = m_flOffset;
-			let a = (particle.cTime + offset) * noiseScale;
+			const a = (particle.cTime + offset) * noiseScale;
 			//Coord = Vector ( (*pCreationTime + Offset), (*pCreationTime + Offset), (*pCreationTime + Offset) );
 			vec3.set(Coord, a, a, a);
 

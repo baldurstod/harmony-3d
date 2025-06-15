@@ -4,14 +4,14 @@ import { vec2, vec3, vec4 } from 'gl-matrix';
  * VVD Model
  */
 export class SourceVvdFixup {
-	lod: number = 0;
-	sourceVertexID: number = 0;
-	numVertexes: number = 0;
+	lod = 0;
+	sourceVertexID = 0;
+	numVertexes = 0;
 }
 
 class SourceVvdBoneWeight {
-	weight: Array<number> = [];
-	bone: Array<number> = [];
+	weight: number[] = [];
+	bone: number[] = [];
 	numbones = 0;
 }
 
@@ -25,17 +25,17 @@ export class SourceVvdVertex {
 
 
 export class SourceVvd {
-	vertices: Array<SourceVvdVertex> = [];
-	numFixups: number = 0;
-	fixups: Array<SourceVvdFixup> = [];
-	modelFormatID: number = 0;
-	formatVersionID: number = 0;
-	checkSum: number = 0;
-	numLODs: number = 0;
-	numLODVertexes: Array<number> = [];
-	fixupTableStart: number = 0;
-	vertexDataStart: number = 0;
-	tangentDataStart: number = 0;
+	vertices: SourceVvdVertex[] = [];
+	numFixups = 0;
+	fixups: SourceVvdFixup[] = [];
+	modelFormatID = 0;
+	formatVersionID = 0;
+	checkSum = 0;
+	numLODs = 0;
+	numLODVertexes: number[] = [];
+	fixupTableStart = 0;
+	vertexDataStart = 0;
+	tangentDataStart = 0;
 
 	getVertices(lodLevel: number) {
 		if (this.vertices) {

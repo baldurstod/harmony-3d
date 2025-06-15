@@ -6,8 +6,8 @@ export class BufferGeometry {
 	#elementArrayType: GLenum;
 	#users = new Set<any>();
 	attributes = new Map<string, BufferAttribute>();
-	dirty: boolean = true;
-	count: number = 0;
+	dirty = true;
+	count = 0;
 	properties = new Map<string, any>();
 
 	getAttribute(name: string) {
@@ -68,7 +68,7 @@ export class BufferGeometry {
 	update(glContext) {
 		throw 'error';
 		if (this.dirty) {
-			for (let [name, attribute] of this.attributes) {
+			for (const [name, attribute] of this.attributes) {
 				attribute.update(glContext);
 			}
 			this.dirty = false;
@@ -159,7 +159,7 @@ export class BufferGeometry {
 
 	clone(): BufferGeometry {
 		const clone = new BufferGeometry();
-		for (let [attributeName, attribute] of this.attributes) {
+		for (const [attributeName, attribute] of this.attributes) {
 			clone.attributes.set(attributeName, attribute);
 		}
 

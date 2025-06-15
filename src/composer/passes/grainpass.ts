@@ -13,7 +13,7 @@ export class GrainPass extends Pass {
 	//#size;
 	constructor(camera) {//TODO: camera is not really needed
 		super();
-		let material = new ShaderMaterial({ shaderSource: 'grain' });
+		const material = new ShaderMaterial({ shaderSource: 'grain' });
 		material.addUser(this);
 		material.uniforms['uGrainParams'] = vec4.create();
 		material.depthTest = false;

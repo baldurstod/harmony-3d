@@ -43,8 +43,8 @@ export class SetRandomControlPointPosition extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let reRandomRate = this.getParamScalarValue('m_flReRandomRate') ?? -1;
-		let interpolation = this.getParamScalarValue('m_flInterpolation') ?? 1;
+		const reRandomRate = this.getParamScalarValue('m_flReRandomRate') ?? -1;
+		const interpolation = this.getParamScalarValue('m_flInterpolation') ?? 1;
 
 		//TODO: do interpolation
 		if ((reRandomRate >= 0 || this.lastRandomTime < 0) && (this.system.currentTime - this.lastRandomTime > reRandomRate)) {
@@ -52,8 +52,8 @@ export class SetRandomControlPointPosition extends Operator {
 
 			vec3RandomBox(v, this.cpMinPos, this.cpMaxPos);
 
-			let headLocation = this.system.getControlPoint(this.headLocation);
-			let cp1 = this.system.getControlPoint(this.cp1);
+			const headLocation = this.system.getControlPoint(this.headLocation);
+			const cp1 = this.system.getControlPoint(this.cp1);
 			vec3.transformQuat(v, v, headLocation.currentWorldQuaternion);
 			vec3.add(v, v, headLocation.currentWorldPosition);
 			cp1.position = v;

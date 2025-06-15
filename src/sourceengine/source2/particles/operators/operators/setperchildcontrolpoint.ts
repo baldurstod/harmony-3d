@@ -35,19 +35,19 @@ export class SetPerChildControlPoint extends Operator {
 
 	doOperate(particle, elapsedTime) {
 		//TODO: set m_bSetOrientation
-		let particleIncrement = this.getParamScalarValue('m_nParticleIncrement') ?? 1;
+		const particleIncrement = this.getParamScalarValue('m_nParticleIncrement') ?? 1;
 		let particleId = this.getParamScalarValue('m_nFirstSourcePoint') ?? 0;
 
 
-		let children = this.system.childSystems;
+		const children = this.system.childSystems;
 		let childId = this.childGroupID;
-		let cpId = particleId;
+		const cpId = particleId;
 		let count = this.numBasedOnParticleCount ? this.system.livingParticles.length : this.numControlPoints;
 		while (count--) {
-			let child = children[childId];
-			let sourceParticle = this.system.livingParticles[particleId];
+			const child = children[childId];
+			const sourceParticle = this.system.livingParticles[particleId];
 			if (child && sourceParticle) {
-				let childCp = child.getOwnControlPoint(this.firstControlPoint);
+				const childCp = child.getOwnControlPoint(this.firstControlPoint);
 				childCp.position = sourceParticle.position;
 			}
 			++childId;

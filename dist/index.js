@@ -25,7 +25,7 @@ class GRIDCELL {
         this.val = new Float32Array(8);
     }
 }
-let edgeTable = new Uint16Array([
+const edgeTable = new Uint16Array([
     0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
     0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
     0x190, 0x99, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
@@ -59,7 +59,7 @@ let edgeTable = new Uint16Array([
     0xf00, 0xe09, 0xd03, 0xc0a, 0xb06, 0xa0f, 0x905, 0x80c,
     0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0
 ]);
-let triTable = new Int8Array([
+const triTable = new Int8Array([
     -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
     0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -329,7 +329,7 @@ function Polygonise(/*GRIDCELL */ grid, /*double */ isolevel, /*TRIANGLE **/ tri
     let ntriang;
     let cubeindex;
     //XYZ vertlist[12];
-    let vertlist = [];
+    const vertlist = [];
     for (let i = 0; i < 12; ++i) {
         vertlist.push(vec3.create());
     }
@@ -398,7 +398,7 @@ function Polygonise(/*GRIDCELL */ grid, /*double */ isolevel, /*TRIANGLE **/ tri
     ntriang = 0;
     cubeindex <<= 4;
     for (let i = 0; triTable[cubeindex] != -1; i += 3) {
-        let triangle = triangles[ntriang] ?? new TRIANGLE();
+        const triangle = triangles[ntriang] ?? new TRIANGLE();
         triangles[ntriang] = triangle;
         triangle.p[0] = vertlist[triTable[cubeindex]];
         triangle.p[1] = vertlist[triTable[cubeindex + 1]];
@@ -414,7 +414,7 @@ function Polygonise(/*GRIDCELL */ grid, /*double */ isolevel, /*TRIANGLE **/ tri
 */
 function VertexInterp(isolevel, p1, p2, valp1, valp2) {
     let mu;
-    let p = vec3.create();
+    const p = vec3.create();
     if (Math.abs(isolevel - valp1) < 0.00001)
         return (p1);
     if (Math.abs(isolevel - valp2) < 0.00001)
@@ -438,7 +438,7 @@ class AudioGroup {
     }
     mute(mute) {
         this.muted = (mute == true);
-        for (let audio of this.audioList) {
+        for (const audio of this.audioList) {
             audio.muted = this.muted;
         }
     }
@@ -459,7 +459,7 @@ class AudioGroup {
     }
     createSubGroup(name) {
         console.log('Creating group ' + name);
-        let subGroup = new AudioGroup(name);
+        const subGroup = new AudioGroup(name);
         this.groups.set(name, subGroup);
         return subGroup;
     }
@@ -950,9 +950,9 @@ class BufferAttribute {
             if (this._buffer === undefined) {
                 this._buffer = glContext.createBuffer(); //TODOv3: createBuffer in graphics
             }
-            let lineArray = new Uint32Array(2 * this._array.length);
+            const lineArray = new Uint32Array(2 * this._array.length);
             let a, b, c;
-            let arr = this._array;
+            const arr = this._array;
             let j = 0;
             for (let i = 0; i < arr.length; i += 3) {
                 a = arr[i + 0];
@@ -1147,7 +1147,7 @@ class BufferGeometry {
     }
     clone() {
         const clone = new BufferGeometry();
-        for (let [attributeName, attribute] of this.attributes) {
+        for (const [attributeName, attribute] of this.attributes) {
             clone.attributes.set(attributeName, attribute);
         }
         clone.count = this.count;
@@ -1205,21 +1205,21 @@ class BoxBufferGeometry extends BufferGeometry {
         this.count = this.#indices.length;
     }
     #buildPlane(u, v, w, udir, vdir, width, height, depth, gridX, gridY) {
-        var segmentWidth = width / gridX;
-        var segmentHeight = height / gridY;
-        var widthHalf = width / 2;
-        var heightHalf = height / 2;
-        var depthHalf = depth / 2;
-        var gridX1 = gridX + 1;
-        var gridY1 = gridY + 1;
-        var vertexCounter = 0;
-        var ix, iy;
-        var vector = vec3.create();
+        const segmentWidth = width / gridX;
+        const segmentHeight = height / gridY;
+        const widthHalf = width / 2;
+        const heightHalf = height / 2;
+        const depthHalf = depth / 2;
+        const gridX1 = gridX + 1;
+        const gridY1 = gridY + 1;
+        let vertexCounter = 0;
+        let ix, iy;
+        const vector = vec3.create();
         // generate vertices, normals and uvs
         for (iy = 0; iy < gridY1; iy++) {
-            var y = iy * segmentHeight - heightHalf;
+            const y = iy * segmentHeight - heightHalf;
             for (ix = 0; ix < gridX1; ix++) {
-                var x = ix * segmentWidth - widthHalf;
+                const x = ix * segmentWidth - widthHalf;
                 // set values to correct vector component
                 vector[u] = x * udir;
                 vector[v] = y * vdir;
@@ -1245,10 +1245,10 @@ class BoxBufferGeometry extends BufferGeometry {
         // 3. so we need to generate six (2*3) indices per segment
         for (iy = 0; iy < gridY; iy++) {
             for (ix = 0; ix < gridX; ix++) {
-                var a = this.#numberOfVertices + ix + gridX1 * iy;
-                var b = this.#numberOfVertices + ix + gridX1 * (iy + 1);
-                var c = this.#numberOfVertices + (ix + 1) + gridX1 * (iy + 1);
-                var d = this.#numberOfVertices + (ix + 1) + gridX1 * iy;
+                const a = this.#numberOfVertices + ix + gridX1 * iy;
+                const b = this.#numberOfVertices + ix + gridX1 * (iy + 1);
+                const c = this.#numberOfVertices + (ix + 1) + gridX1 * (iy + 1);
+                const d = this.#numberOfVertices + (ix + 1) + gridX1 * iy;
                 // faces
                 this.#indices.push(a, b, d);
                 this.#indices.push(b, c, d);
@@ -1287,12 +1287,12 @@ class JSONLoader {
         if (jsonEntity) {
             const constructor = getEntity(jsonEntity.constructor);
             if (constructor) {
-                let entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
+                const entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
                 entity.fromJSON(jsonEntity);
                 entities.set(entity.id, entity);
                 if (jsonEntity.children) {
-                    for (let child of jsonEntity.children) {
-                        let childEntity = await this.loadEntity(child, entities, loadedPromise);
+                    for (const child of jsonEntity.children) {
+                        const childEntity = await this.loadEntity(child, entities, loadedPromise);
                         if (childEntity && entity['addChild']) {
                             entity['addChild'](childEntity);
                         }
@@ -1655,7 +1655,7 @@ class Material {
         this.color = color;
     }
     setTexture(uniformName, texture, shaderDefine) {
-        let previousTexture = this.uniforms[uniformName];
+        const previousTexture = this.uniforms[uniformName];
         if (previousTexture != texture) {
             if (previousTexture) {
                 previousTexture.removeUser(this);
@@ -1676,8 +1676,8 @@ class Material {
         }
     }
     setTextureArray(uniformName, textureArray) {
-        let previousTextureArray = this.uniforms[uniformName];
-        let keepMe = new Set();
+        const previousTextureArray = this.uniforms[uniformName];
+        const keepMe = new Set();
         if (textureArray) {
             textureArray.forEach(texture => {
                 if (texture) {
@@ -1772,7 +1772,7 @@ class Material {
         this.uniforms[uniformName] = value;
     }
     toJSON() {
-        let json = {
+        const json = {
             constructor: this.constructor.getEntityName(),
         };
         //TODO
@@ -1816,10 +1816,10 @@ class Material {
     }
     dispose() {
         if (this.hasNoUser()) {
-            let uniforms = this.uniforms;
-            let uniformArray = Object.keys(uniforms);
-            for (let uniformName of uniformArray) {
-                let uniform = uniforms[uniformName];
+            const uniforms = this.uniforms;
+            const uniformArray = Object.keys(uniforms);
+            for (const uniformName of uniformArray) {
+                const uniform = uniforms[uniformName];
                 this.#disposeUniform(uniform);
             }
         }
@@ -1863,7 +1863,7 @@ class MeshBasicMaterial extends Material {
         return 'meshbasic';
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.skinning = this.skinning;
         return json;
     }
@@ -2045,7 +2045,7 @@ function SimpleSpline(value) {
  * @returns {vec3} out
  */
 function vec3RandomBox(out, a, b) {
-    let ax = a[0], ay = a[1], az = a[2], bx = b[0], by = b[1], bz = b[2];
+    const ax = a[0], ay = a[1], az = a[2], bx = b[0], by = b[1], bz = b[2];
     out[0] = (bx - ax) * Math.random() + ax;
     out[1] = (by - ay) * Math.random() + ay;
     out[2] = (bz - az) * Math.random() + az;
@@ -2070,7 +2070,7 @@ function RandomFloat(min, max) {
     return Math.random() * (max - min) + min;
 }
 function RandomFloatExp(min, max, exponent) {
-    let rand = Math.pow(Math.random(), exponent);
+    const rand = Math.pow(Math.random(), exponent);
     return rand * (max - min) + min;
 }
 /**
@@ -2082,7 +2082,7 @@ function RandomFloatExp(min, max, exponent) {
  * @returns {vec3} out
  */
 function Vec3Middle(out, a, b) {
-    var ax = a[0], ay = a[1], az = a[2], bx = b[0], by = b[1], bz = b[2];
+    const ax = a[0], ay = a[1], az = a[2], bx = b[0], by = b[1], bz = b[2];
     out[0] = (bx + ax) * 0.5;
     out[1] = (by + ay) * 0.5;
     out[2] = (bz + az) * 0.5;
@@ -2092,16 +2092,16 @@ function Vec3Middle(out, a, b) {
  * Same as quat.fromEuler with angles in radians
  */
 function quatFromEulerRad(out, x, y, z) {
-    let halfToRad = 0.5;
+    const halfToRad = 0.5;
     x *= halfToRad;
     y *= halfToRad;
     z *= halfToRad;
-    let sx = Math.sin(x);
-    let cx = Math.cos(x);
-    let sy = Math.sin(y);
-    let cy = Math.cos(y);
-    let sz = Math.sin(z);
-    let cz = Math.cos(z);
+    const sx = Math.sin(x);
+    const cx = Math.cos(x);
+    const sy = Math.sin(y);
+    const cy = Math.cos(y);
+    const sz = Math.sin(z);
+    const cz = Math.cos(z);
     out[0] = sx * cy * cz - cx * sy * sz;
     out[1] = cx * sy * cz + sx * cy * sz;
     out[2] = cx * cy * sz - sx * sy * cz;
@@ -2160,19 +2160,19 @@ function generateRandomUUID() {
 }
 
 function FileNameFromPath(path) {
-    let startIndex = path.lastIndexOf('/') + 1;
-    let endIndex = path.lastIndexOf('.');
+    const startIndex = path.lastIndexOf('/') + 1;
+    const endIndex = path.lastIndexOf('.');
     return path.slice(startIndex, endIndex == -1 ? undefined : endIndex);
 }
 function stringToVec3(s, v = vec3.create()) {
-    let arr = s.split(' ');
+    const arr = s.split(' ');
     if (arr.length == 3) {
         return vec3.set(v, Number(arr[0]), Number(arr[1]), Number(arr[2]));
     }
     return v;
 }
 function stringToQuat(s, q = quat.create()) {
-    let arr = s.split(' ');
+    const arr = s.split(' ');
     if (arr.length == 4) {
         return quat.set(q, Number(arr[0]), Number(arr[1]), Number(arr[2]), Number(arr[3]));
     }
@@ -2540,24 +2540,24 @@ class Entity {
         }
     }
     removeThis() {
-        for (let child of this.#children) {
+        for (const child of this.#children) {
             child.parent = this.parent;
         }
         this.remove();
     }
     removeChildren() {
-        for (let child of this.#children) {
+        for (const child of this.#children) {
             child.remove();
         }
     }
     disposeChildren() {
-        for (let child of this.#children) {
+        for (const child of this.#children) {
             child.dispose();
         }
     }
     removeSiblings() {
         if (this._parent != null) {
-            for (let child of this._parent.#children) {
+            for (const child of this._parent.#children) {
                 if (child !== this) {
                     child.remove();
                 }
@@ -2566,8 +2566,8 @@ class Entity {
     }
     removeSimilarSiblings() {
         if (this._parent != null) {
-            let constructorName = this.constructor.name;
-            for (let child of this._parent.#children) {
+            const constructorName = this.constructor.name;
+            for (const child of this._parent.#children) {
                 if (child !== this && child.constructor.name === constructorName) {
                     child.remove();
                 }
@@ -2627,7 +2627,7 @@ class Entity {
         childs.forEach(child => this.addChild(child));
     }
     isParent(parent) {
-        let _parent = this._parent;
+        const _parent = this._parent;
         if (_parent) {
             if (_parent === parent) {
                 return true;
@@ -2702,7 +2702,7 @@ class Entity {
      * @return {void}.
      */
     lookAt(target, upVector = undefined) {
-        let parent = this._parent;
+        const parent = this._parent;
         mat4.lookAt(tempMat4$4, this._position, target, upVector ?? _upVector);
         mat4.getRotation(tempQuat$c, tempMat4$4);
         quat.invert(tempQuat$c, tempQuat$c);
@@ -2713,15 +2713,15 @@ class Entity {
         this.quaternion = tempQuat$c;
     }
     getMeshList() {
-        let meshList = new Set();
+        const meshList = new Set();
         const treated = new WeakSet();
         let currentEntity = this;
-        let objectStack = [];
+        const objectStack = [];
         while (currentEntity) {
             if (currentEntity.isRenderable && (currentEntity.isVisible() !== false)) {
                 meshList.add(currentEntity);
             }
-            for (let child of currentEntity.#children) {
+            for (const child of currentEntity.#children) {
                 if (!treated.has(child)) {
                     objectStack.push(child);
                     treated.add(child);
@@ -2745,15 +2745,15 @@ class Entity {
         }
     }
     getAllChilds(includeSelf) {
-        let ws = new WeakSet();
-        let childs = new Set();
-        let objectStack = [];
+        const ws = new WeakSet();
+        const childs = new Set();
+        const objectStack = [];
         let currentEntity = this;
         if (includeSelf) {
             childs.add(this);
         }
         while (currentEntity) {
-            for (let child of currentEntity.#children) {
+            for (const child of currentEntity.#children) {
                 if (!ws.has(child)) {
                     objectStack.push(child);
                     childs.add(child);
@@ -2773,7 +2773,7 @@ class Entity {
             max[0] = -Infinity;
             max[1] = -Infinity;
             max[2] = -Infinity;
-            for (let child of this.#children) {
+            for (const child of this.#children) {
                 child.getBoundsModelSpace(tempVec3_1$3, tempVec3_2$a);
                 vec3.min(min, min, tempVec3_1$3);
                 vec3.max(max, max, tempVec3_2$a);
@@ -2790,8 +2790,8 @@ class Entity {
     }
     getBoundingBox(boundingBox = new BoundingBox()) {
         boundingBox.reset();
-        let childBoundingBox = new BoundingBox();
-        for (let child of this.#children) {
+        const childBoundingBox = new BoundingBox();
+        for (const child of this.#children) {
             boundingBox.addBoundingBox(child.getBoundingBox(childBoundingBox));
         }
         return boundingBox;
@@ -2800,12 +2800,12 @@ class Entity {
         return this._parent?.getParentModel();
     }
     getChildList(type) {
-        let ws = new WeakSet();
-        let childs = new Set();
-        let objectStack = [];
+        const ws = new WeakSet();
+        const childs = new Set();
+        const objectStack = [];
         let currentEntity = this;
         while (currentEntity) {
-            for (let child of currentEntity.#children) {
+            for (const child of currentEntity.#children) {
                 if (!ws.has(child) && child.enumerable) {
                     objectStack.push(child);
                     ws.add(child);
@@ -2820,27 +2820,27 @@ class Entity {
     }
     forEach(callback) {
         callback(this);
-        for (let child of this.#children) {
+        for (const child of this.#children) {
             child.forEach(callback);
         }
     }
     forEachVisible(callback) {
         if (this.#visible) {
             callback(this);
-            for (let child of this.#children) {
+            for (const child of this.#children) {
                 child.forEach(callback);
             }
         }
     }
     forEachParent(callback) {
-        let parent = this._parent;
+        const parent = this._parent;
         if (parent) {
             callback(parent);
             parent.forEachParent(callback);
         }
     }
     setupPickingId() {
-        let pickingId = ++incrementalPickingId;
+        const pickingId = ++incrementalPickingId;
         pickList.set(pickingId, this);
         this.#pickingColor = vec3.fromValues(((pickingId >> 16) & 0xFF) / 255.0, ((pickingId >> 8) & 0xFF) / 255.0, ((pickingId >> 0) & 0xFF) / 255.0);
     }
@@ -2936,7 +2936,7 @@ class Entity {
         return this.#hideInExplorer;
     }
     buildContextMenu() {
-        let menu = {
+        const menu = {
             visibility: { i18n: '#visibility', selected: this.isVisible(), f: () => this.toggleVisibility() },
             remove: { i18n: '#remove', f: () => this.remove() },
             destroy: { i18n: '#destroy', f: () => this.dispose() },
@@ -2948,48 +2948,48 @@ class Entity {
                     { i18n: '#remove_similar_siblings', f: () => this.removeSimilarSiblings() },
                 ]
             },
-            name: { i18n: '#name', f: () => { let n = prompt('Name', this.name); if (n !== null) {
+            name: { i18n: '#name', f: () => { const n = prompt('Name', this.name); if (n !== null) {
                     this.name = n;
                 } } },
             add: { i18n: '#add', submenu: Entity.addSubMenu },
             entitynull_1: null,
-            position: { i18n: '#position', f: () => { let v = prompt('Position', this.position.join(' ')); if (v !== null) {
+            position: { i18n: '#position', f: () => { const v = prompt('Position', this.position.join(' ')); if (v !== null) {
                     this.lockPos = true;
                     this.position = stringToVec3(v);
                 } } },
-            translate: { i18n: '#translate', f: () => { let t = prompt('Translation', '0 0 0'); if (t !== null) {
+            translate: { i18n: '#translate', f: () => { const t = prompt('Translation', '0 0 0'); if (t !== null) {
                     this.lockPos = true;
                     this.translate(stringToVec3(t));
                 } } },
             reset_position: { i18n: '#reset_position', f: () => this.position = IDENTITY_VEC3 },
             entitynull_2: null,
-            quaternion: { i18n: '#quaternion', f: () => { let v = prompt('Quaternion', this.quaternion.join(' ')); if (v !== null) {
+            quaternion: { i18n: '#quaternion', f: () => { const v = prompt('Quaternion', this.quaternion.join(' ')); if (v !== null) {
                     this.lockRot = true;
                     this.quaternion = stringToQuat(v);
                 } } },
             rotate: {
                 i18n: '#rotate', submenu: [
-                    { i18n: '#rotate_x_global', f: () => { let r = Number(prompt('Rotation around X global', '0')); if (r !== null) {
+                    { i18n: '#rotate_x_global', f: () => { const r = Number(prompt('Rotation around X global', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateGlobalX(r * DEG_TO_RAD);
                         } } },
-                    { i18n: '#rotate_y_global', f: () => { let r = Number(prompt('Rotation around Y global', '0')); if (r !== null) {
+                    { i18n: '#rotate_y_global', f: () => { const r = Number(prompt('Rotation around Y global', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateGlobalY(r * DEG_TO_RAD);
                         } } },
-                    { i18n: '#rotate_z_global', f: () => { let r = Number(prompt('Rotation around Z global', '0')); if (r !== null) {
+                    { i18n: '#rotate_z_global', f: () => { const r = Number(prompt('Rotation around Z global', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateGlobalZ(r * DEG_TO_RAD);
                         } } },
-                    { i18n: '#rotate_x', f: () => { let r = Number(prompt('Rotation around X', '0')); if (r !== null) {
+                    { i18n: '#rotate_x', f: () => { const r = Number(prompt('Rotation around X', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateX(r * DEG_TO_RAD);
                         } } },
-                    { i18n: '#rotate_y', f: () => { let r = Number(prompt('Rotation around Y', '0')); if (r !== null) {
+                    { i18n: '#rotate_y', f: () => { const r = Number(prompt('Rotation around Y', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateY(r * DEG_TO_RAD);
                         } } },
-                    { i18n: '#rotate_z', f: () => { let r = Number(prompt('Rotation around Z', '0')); if (r !== null) {
+                    { i18n: '#rotate_z', f: () => { const r = Number(prompt('Rotation around Z', '0')); if (r !== null) {
                             this.lockRot = true;
                             this.rotateZ(r * DEG_TO_RAD);
                         } } },
@@ -2999,9 +2999,9 @@ class Entity {
             entitynull_3: null,
             scale: {
                 i18n: '#scale', f: () => {
-                    let s = prompt('Scale', this.scale.join(' '));
+                    const s = prompt('Scale', this.scale.join(' '));
                     if (s !== null) {
-                        let arr = s.split(' ');
+                        const arr = s.split(' ');
                         if (arr.length == 3) {
                             this.scale = vec3.set(tempVec3_1$3, Number(arr[0]), Number(arr[1]), Number(arr[2]));
                         }
@@ -3031,7 +3031,7 @@ class Entity {
     setWireframe(wireframe, recursive = true) {
         this.wireframe = wireframe;
         if (recursive) {
-            for (let child of this.#children) {
+            for (const child of this.#children) {
                 child.setWireframe(wireframe, recursive);
             }
         }
@@ -3087,14 +3087,14 @@ class Entity {
     }
     replaceMaterial(material, recursive = true) {
         if (recursive) {
-            for (let child of this.#children) {
+            for (const child of this.#children) {
                 child.replaceMaterial(material, recursive);
             }
         }
     }
     resetMaterial(recursive = true) {
         if (recursive) {
-            for (let child of this.#children) {
+            for (const child of this.#children) {
                 child.resetMaterial(recursive);
             }
         }
@@ -3114,7 +3114,7 @@ class Entity {
         }
     }
     propagate() {
-        for (let child of this.#children) {
+        for (const child of this.#children) {
             child.propagate();
         }
     }
@@ -3147,13 +3147,13 @@ class Entity {
         }
     }
     toJSON() {
-        let children = [];
-        for (let child of this.#children) {
+        const children = [];
+        for (const child of this.#children) {
             if (child.#serializable) {
                 children.push(child.toJSON());
             }
         }
-        let json = {
+        const json = {
             constructor: this.constructor.getEntityName(),
             id: this.id,
             name: this.name
@@ -3194,7 +3194,7 @@ class Entity {
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
-        let entity = new Entity({ name: json.name });
+        const entity = new Entity({ name: json.name });
         entity.fromJSON(json);
         return entity;
     }
@@ -3243,10 +3243,10 @@ class MaterialManager {
         this.#materials.set(materialName, { materialClass: materialClass, manager: manager });
     }
     static getMaterial(materialName, callback) {
-        let material = this.#materials.get(materialName);
+        const material = this.#materials.get(materialName);
         if (material) {
-            let manager = material.manager;
-            let materialClass = material.materialClass;
+            const manager = material.manager;
+            const materialClass = material.materialClass;
             if (manager) {
                 manager.pickMaterial(materialName, materialClass, callback);
             }
@@ -3260,22 +3260,22 @@ class MaterialManager {
     }
 }
 
-let v0 = vec3.create();
-let v1$3 = vec3.create();
-let v2$2 = vec3.create();
-let v3$2 = vec3.create();
+const v0 = vec3.create();
+const v1$3 = vec3.create();
+const v2$2 = vec3.create();
+const v3$2 = vec3.create();
 function getBarycentricCoordinates(out, position, a, b, c) {
     vec3.sub(v0, c, a);
     vec3.sub(v1$3, b, a);
     vec3.sub(v2$2, position, a);
-    let dot00 = vec3.dot(v0, v0);
-    let dot01 = vec3.dot(v0, v1$3);
-    let dot02 = vec3.dot(v0, v2$2);
-    let dot11 = vec3.dot(v1$3, v1$3);
-    let dot12 = vec3.dot(v1$3, v2$2);
-    let invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
-    let u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-    let v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+    const dot00 = vec3.dot(v0, v0);
+    const dot01 = vec3.dot(v0, v1$3);
+    const dot02 = vec3.dot(v0, v2$2);
+    const dot11 = vec3.dot(v1$3, v1$3);
+    const dot12 = vec3.dot(v1$3, v2$2);
+    const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+    const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+    const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
     // barycentric coordinates must always sum to 1
     return vec3.set(out, 1 - u - v, v, u);
 }
@@ -3347,9 +3347,9 @@ class Ray {
     copyTransform(other, worldMatrix) {
         mat4.invert(m$1, worldMatrix);
         vec3.transformMat4(this.origin, other.origin, m$1);
-        let x = other.direction[0];
-        let y = other.direction[1];
-        let z = other.direction[2];
+        const x = other.direction[0];
+        const y = other.direction[1];
+        const z = other.direction[2];
         this.direction[0] = m$1[0] * x + m$1[4] * y + m$1[8] * z;
         this.direction[1] = m$1[1] * x + m$1[5] * y + m$1[9] * z;
         this.direction[2] = m$1[2] * x + m$1[6] * y + m$1[10] * z;
@@ -3368,23 +3368,23 @@ class Ray {
         vec3.sub(edge1, v1, v0);
         vec3.sub(edge2, v2, v0);
         vec3.cross(h, this.direction, edge2);
-        let a = vec3.dot(edge1, h);
+        const a = vec3.dot(edge1, h);
         if (a > -EPSILON$1 && a < EPSILON$1) {
             return false;
         }
-        let f = 1.0 / a;
+        const f = 1.0 / a;
         vec3.sub(s$1, this.origin, v0);
-        let u = f * vec3.dot(s$1, h);
+        const u = f * vec3.dot(s$1, h);
         if (u < 0.0 || u > 1.0) {
             return false;
         }
         vec3.cross(q$2, s$1, edge1);
-        let v = f * vec3.dot(this.direction, q$2);
+        const v = f * vec3.dot(this.direction, q$2);
         if (v < 0.0 || u + v > 1.0) {
             return false;
         }
         // At this stage we can compute t to find out where the intersection point is on the line.
-        let t = f * vec3.dot(edge2, q$2);
+        const t = f * vec3.dot(edge2, q$2);
         if (t > EPSILON$1) { // ray intersection
             this.positionAt(t, intersectionPoint);
             return true;
@@ -3398,15 +3398,15 @@ class Ray {
         vec3.div(h, h, scale);
         vec3.div(h2, this.direction, scale);
         vec3.normalize(h2, h2);
-        let p = vec3.dot(h2, h);
-        let q = vec3.dot(h, h) - (radius * radius);
-        let discriminant = (p * p) - q;
+        const p = vec3.dot(h2, h);
+        const q = vec3.dot(h, h) - (radius * radius);
+        const discriminant = (p * p) - q;
         if (discriminant < 0.0) {
             return false;
         }
-        let dRoot = Math.sqrt(discriminant);
-        let dist1 = -p - dRoot;
-        let dist2 = -p + dRoot;
+        const dRoot = Math.sqrt(discriminant);
+        const dist1 = -p - dRoot;
+        const dist2 = -p + dRoot;
         vec3.scaleAndAdd(intersectionPoint1, h, h2, dist1);
         vec3.scaleAndAdd(intersectionPoint2, h, h2, dist2);
         vec3.mul(intersectionPoint1, intersectionPoint1, scale);
@@ -3595,8 +3595,8 @@ class HTMLFileSelectorFileElement extends HTMLElement {
         if (!this.#selector || !this.#file) {
             return false;
         }
-        let filterName = this.#selector.filter.name;
-        let visible = this.#file.name.toLowerCase().includes(filterName) || this.#file.path.toLowerCase().includes(filterName);
+        const filterName = this.#selector.filter.name;
+        const visible = this.#file.name.toLowerCase().includes(filterName) || this.#file.path.toLowerCase().includes(filterName);
         this.visible = visible;
         return visible;
     }
@@ -3641,7 +3641,7 @@ class FileSelectorDirectory extends HTMLElement {
         this.#content = createElement('div', { class: 'file-selector-directory-content' });
     }
     #childExpanded(child) {
-        for (let enumeratedChild of this.#content.children) {
+        for (const enumeratedChild of this.#content.children) {
             if (enumeratedChild.tagName == 'FILE-SELECTOR-DIRECTORY' && enumeratedChild != child) {
                 enumeratedChild.collapse();
             }
@@ -3679,12 +3679,12 @@ class FileSelectorDirectory extends HTMLElement {
     }
     sort() {
         this.#childs.sort((a, b) => {
-            let aIsDir = a.tagName == 'FILE-SELECTOR-DIRECTORY';
-            let bIsDir = b.tagName == 'FILE-SELECTOR-DIRECTORY';
+            const aIsDir = a.tagName == 'FILE-SELECTOR-DIRECTORY';
+            const bIsDir = b.tagName == 'FILE-SELECTOR-DIRECTORY';
             if (aIsDir) {
                 if (bIsDir) {
-                    let aname = a.file?.name;
-                    let bname = b.file?.name;
+                    const aname = a.file?.name;
+                    const bname = b.file?.name;
                     if (aname && bname) {
                         return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
                     }
@@ -3698,8 +3698,8 @@ class FileSelectorDirectory extends HTMLElement {
                     return this.#sortingDirection;
                 }
                 else {
-                    let aname = a.file?.name;
-                    let bname = b.file?.name;
+                    const aname = a.file?.name;
+                    const bname = b.file?.name;
                     if (aname && bname) {
                         return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
                     }
@@ -3707,14 +3707,14 @@ class FileSelectorDirectory extends HTMLElement {
             }
             return 0;
         });
-        for (let child of this.#childs) {
+        for (const child of this.#childs) {
             this.#content.append(child);
         }
     }
     refreshFilter() {
         let visible = false;
         if (this.#expanded) {
-            for (let child of this.#childs) {
+            for (const child of this.#childs) {
                 visible = child.refreshFilter() || visible;
             }
         }
@@ -3729,14 +3729,14 @@ class FileSelectorDirectory extends HTMLElement {
     }
     #matchFilter(file) {
         if (file.files) {
-            for (let child of file.files) {
+            for (const child of file.files) {
                 if (this.#matchFilter(child)) {
                     return true;
                 }
             }
         }
         else {
-            let filterName = this.#selector?.filter.name ?? '';
+            const filterName = this.#selector?.filter.name ?? '';
             return file.name.toLowerCase().includes(filterName) || file.path?.toLowerCase().includes(filterName) || false;
         }
         return false;
@@ -3749,10 +3749,10 @@ class FileSelectorDirectory extends HTMLElement {
                 this.#content.replaceChildren();
                 this.#childs = [];
                 if (this.#file && this.#file.files) {
-                    let files = this.#file.files;
-                    let l = files.length == 1;
-                    for (let file of files) {
-                        let fileChilds = file.files;
+                    const files = this.#file.files;
+                    const l = files.length == 1;
+                    for (const file of files) {
+                        const fileChilds = file.files;
                         let child;
                         if (fileChilds) {
                             child = document.createElement('file-selector-directory');
@@ -3809,8 +3809,8 @@ class FileSelector extends HTMLElement {
         super();
         this.#header = createElement('div', { class: 'file-selector-header' });
         this.#content = createElement('div', { class: 'file-selector-content' });
-        let htmlDisplayPropertiesSpan = createElement('span', { parent: this.#header });
-        let treeViewId = 'display_tree_view';
+        const htmlDisplayPropertiesSpan = createElement('span', { parent: this.#header });
+        const treeViewId = 'display_tree_view';
         createElement('input', {
             parent: htmlDisplayPropertiesSpan,
             type: 'checkbox',
@@ -3821,7 +3821,7 @@ class FileSelector extends HTMLElement {
             }
         });
         createElement('label', { i18n: '#display_tree_view', parent: htmlDisplayPropertiesSpan, htmlFor: treeViewId });
-        let htmlFilter = createElement('div', { class: 'file-selector-filter', parent: this.#header });
+        const htmlFilter = createElement('div', { class: 'file-selector-filter', parent: this.#header });
         createElement('input', {
             parent: htmlFilter,
             events: {
@@ -3851,18 +3851,18 @@ class FileSelector extends HTMLElement {
         this.#updateHtml();
     }
     #getFileList(root) {
-        let list = [];
-        let stack = [root];
+        const list = [];
+        const stack = [root];
         root.path = '';
-        let rootName = root.name; //.replace(/\/$/g, '');
+        const rootName = root.name; //.replace(/\/$/g, '');
         let current;
         do {
             current = stack.pop();
             if (current) {
                 if (current.files) {
-                    for (let file of current.files) {
-                        let path2 = current.path?.replace(/\/$/g, ''); //remove trailing /
-                        let name2 = current.name?.replace(/\/$/g, ''); //remove trailing /
+                    for (const file of current.files) {
+                        const path2 = current.path?.replace(/\/$/g, ''); //remove trailing /
+                        const name2 = current.name?.replace(/\/$/g, ''); //remove trailing /
                         if (current == root) {
                             file.path = '/';
                         }
@@ -3884,12 +3884,12 @@ class FileSelector extends HTMLElement {
     }
     refreshFilter() {
         if (this.#tileView) {
-            for (let tile of this.#htmlTiles) {
+            for (const tile of this.#htmlTiles) {
                 tile.visible = this.#matchFilter(tile.file);
             }
         }
         else {
-            for (let directory of this.#htmlDirectories) {
+            for (const directory of this.#htmlDirectories) {
                 directory.refreshFilter();
             }
         }
@@ -3897,14 +3897,14 @@ class FileSelector extends HTMLElement {
     #sortItems() {
         if (this.#tileView) {
             this.#htmlTiles.sort((a, b) => {
-                let aname = a.file?.name;
-                let bname = b.file?.name;
+                const aname = a.file?.name;
+                const bname = b.file?.name;
                 if (aname && bname) {
                     return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
                 }
                 return 0;
             });
-            for (let tile of this.#htmlTiles) {
+            for (const tile of this.#htmlTiles) {
                 this.#content.append(tile);
             }
         }
@@ -3929,9 +3929,9 @@ class FileSelector extends HTMLElement {
         this.#htmlDirectories = [];
         if (this.#tileView) {
             if (this.#fileList) {
-                for (let rootFile of this.#fileList.files) {
-                    let fileList = this.#getFileList(rootFile);
-                    for (let file of fileList) {
+                for (const rootFile of this.#fileList.files) {
+                    const fileList = this.#getFileList(rootFile);
+                    for (const file of fileList) {
                         const tile = createElement('file-selector-tile', { parent: this.#content });
                         tile.selector = this;
                         tile.setFile(file);
@@ -3943,8 +3943,8 @@ class FileSelector extends HTMLElement {
         }
         else {
             if (this.#fileList) {
-                let expandDirectory = this.#fileList.files.length == 1;
-                for (let rootFile of this.#fileList.files) {
+                const expandDirectory = this.#fileList.files.length == 1;
+                for (const rootFile of this.#fileList.files) {
                     this.#getFileList(rootFile); //Just add path
                     const root = createElement('file-selector-directory', { parent: this.#content });
                     root.selector = this;
@@ -4041,7 +4041,7 @@ class Interaction {
         this.show();
         //this.#htmlColorPicker.setOptions({alpha:false});
         show(this.#htmlColorPicker);
-        let promise = new Promise((resolve, reject) => {
+        const promise = new Promise((resolve, reject) => {
         });
         /*
         this.#htmlColorPickeronDone = (color) => {
@@ -4053,8 +4053,8 @@ class Interaction {
         };
         */
         this.#htmlColorPickeronChange = (color) => {
-            let rgba = color.rgba;
-            let c = vec4.fromValues(rgba[0], rgba[1], rgba[2], rgba[3]);
+            const rgba = color.rgba;
+            const c = vec4.fromValues(rgba[0], rgba[1], rgba[2], rgba[3]);
             if (onChange) {
                 onChange(c);
             }
@@ -4071,10 +4071,10 @@ class Interaction {
         show(this.#htmlInput);
         this.#htmlInput.value = defaultValue ? defaultValue : '';
         if (list) {
-            let isMap = list.constructor.name == 'Map';
+            const isMap = list.constructor.name == 'Map';
             this.#htmlInputDataList.innerText = '';
-            for (let value of list) {
-                let animOption = document.createElement('option');
+            for (const value of list) {
+                const animOption = document.createElement('option');
                 this.#htmlInputDataList.append(animOption);
                 if (isMap) {
                     animOption.innerHTML = value[0];
@@ -4087,14 +4087,14 @@ class Interaction {
         }
         let promiseResolve;
         this.#htmlInput.onchange = (event) => {
-            for (let option of this.#htmlInputDataList.options) {
+            for (const option of this.#htmlInputDataList.options) {
                 if (option.value == event.target.value) {
                     promiseResolve(option.value);
                 }
             }
             hide(this.#htmlInput);
         };
-        let promise = new Promise(resolve => {
+        const promise = new Promise(resolve => {
             promiseResolve = resolve;
         });
         return promise;
@@ -4169,11 +4169,11 @@ class Interaction {
         //this.#htmlFileSelector.style.display = 'none';
         //this.hide();
         //return value;
-        let fileSelector = document.createElement('file-selector'); //TODO: create only once
+        const fileSelector = document.createElement('file-selector'); //TODO: create only once
         htmlContainer.append(fileSelector);
         fileSelector.fileList = fileList;
         fileSelector.addEventListener('fileSelected', event => {
-            let file = event.detail.file;
+            const file = event.detail.file;
             callback(file.root, file.path + file.name);
         });
     }
@@ -4183,19 +4183,19 @@ class Interaction {
 }
 
 const tempVec3$w = vec3.create();
-let v1$2 = vec3.create();
-let v2$1 = vec3.create();
-let v3$1 = vec3.create();
-let n1$1 = vec3.create();
-let n2$1 = vec3.create();
-let n3$1 = vec3.create();
-let uv1$1 = vec2.create();
-let uv2$1 = vec2.create();
-let uv3$1 = vec2.create();
-let intersectionPoint$1 = vec3.create();
-let intersectionNormal$2 = vec3.create();
-let ray$2 = new Ray();
-let uv$2 = vec2.create();
+const v1$2 = vec3.create();
+const v2$1 = vec3.create();
+const v3$1 = vec3.create();
+const n1$1 = vec3.create();
+const n2$1 = vec3.create();
+const n3$1 = vec3.create();
+const uv1$1 = vec2.create();
+const uv2$1 = vec2.create();
+const uv3$1 = vec2.create();
+const intersectionPoint$1 = vec3.create();
+const intersectionNormal$2 = vec3.create();
+const ray$2 = new Ray();
+const uv$2 = vec2.create();
 class Mesh extends Entity {
     #geometry;
     #material;
@@ -4261,13 +4261,13 @@ class Mesh extends Entity {
         delete this.defines[define];
     }
     exportObj() {
-        let ret = {};
-        let attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
-        let geometry = this.geometry;
-        for (let objAttribute in attributes) {
-            let geometryAttribute = attributes[objAttribute];
+        const ret = {};
+        const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
+        const geometry = this.geometry;
+        for (const objAttribute in attributes) {
+            const geometryAttribute = attributes[objAttribute];
             if (geometry?.getAttribute(geometryAttribute)) {
-                let webglAttrib = geometry.getAttribute(geometryAttribute);
+                const webglAttrib = geometry.getAttribute(geometryAttribute);
                 if (webglAttrib) {
                     ret[objAttribute] = webglAttrib._array;
                 }
@@ -4298,7 +4298,7 @@ class Mesh extends Entity {
         max[0] = -Infinity;
         max[1] = -Infinity;
         max[2] = -Infinity;
-        let vertexPosition = this.geometry?.getAttribute('aVertexPosition')?._array;
+        const vertexPosition = this.geometry?.getAttribute('aVertexPosition')?._array;
         for (let i = 0, l = vertexPosition.length; i < l; i += 3) {
             tempVec3$w[0] = vertexPosition[i + 0];
             tempVec3$w[1] = vertexPosition[i + 1];
@@ -4326,12 +4326,12 @@ class Mesh extends Entity {
         }
     }
     buildContextMenu() {
-        let contextMenu = super.buildContextMenu();
+        const contextMenu = super.buildContextMenu();
         Object.assign(contextMenu.material.submenu, {
             Mesh_1: null,
             set_material: {
                 i18n: '#set_material', f: async () => {
-                    let materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList());
+                    const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList());
                     if (materialName) {
                         await MaterialManager.getMaterial(materialName, (material) => { if (material) {
                             this.setMaterial(material);
@@ -4343,12 +4343,12 @@ class Mesh extends Entity {
         return contextMenu;
     }
     raycast(raycaster, intersections) {
-        let geometry = this.geometry;
-        let indices = geometry?.getAttribute('index')?._array;
-        let vertices = geometry?.getAttribute('aVertexPosition')?._array;
-        let textureCoords = geometry?.getAttribute('aTextureCoord')?._array;
+        const geometry = this.geometry;
+        const indices = geometry?.getAttribute('index')?._array;
+        const vertices = geometry?.getAttribute('aVertexPosition')?._array;
+        const textureCoords = geometry?.getAttribute('aTextureCoord')?._array;
         let normals = geometry?.getAttribute('aVertexNormal')?._array;
-        let worldMatrix = this.worldMatrix;
+        const worldMatrix = this.worldMatrix;
         ray$2.copyTransform(raycaster.ray, worldMatrix);
         if (normals) {
             for (let i = 0, l = indices.length; i < l; i += 3) {
@@ -4370,9 +4370,9 @@ class Mesh extends Entity {
                     vec2.set(uv3$1, textureCoords[i3], textureCoords[i3 + 1]);
                     getUV(uv$2, intersectionPoint$1, v1$2, v2$1, v3$1, uv1$1, uv2$1, uv3$1);
                     getNormal(intersectionNormal$2, intersectionPoint$1, v1$2, v2$1, v3$1, n1$1, n2$1, n3$1);
-                    let x = intersectionNormal$2[0];
-                    let y = intersectionNormal$2[1];
-                    let z = intersectionNormal$2[2];
+                    const x = intersectionNormal$2[0];
+                    const y = intersectionNormal$2[1];
+                    const z = intersectionNormal$2[2];
                     //Tranform the normal with the world matrix
                     intersectionNormal$2[0] = worldMatrix[0] * x + worldMatrix[4] * y + worldMatrix[8] * z;
                     intersectionNormal$2[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
@@ -4403,9 +4403,9 @@ class Mesh extends Entity {
                     vec2.set(uv3$1, textureCoords[i3], textureCoords[i3 + 1]);
                     getUV(uv$2, intersectionPoint$1, v1$2, v2$1, v3$1, uv1$1, uv2$1, uv3$1);
                     getNormal(intersectionNormal$2, intersectionPoint$1, v1$2, v2$1, v3$1, n1$1, n2$1, n3$1);
-                    let x = intersectionNormal$2[0];
-                    let y = intersectionNormal$2[1];
-                    let z = intersectionNormal$2[2];
+                    const x = intersectionNormal$2[0];
+                    const y = intersectionNormal$2[1];
+                    const z = intersectionNormal$2[2];
                     //Tranform the normal with the world matrix
                     intersectionNormal$2[0] = worldMatrix[0] * x + worldMatrix[4] * y + worldMatrix[8] * z;
                     intersectionNormal$2[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
@@ -4453,15 +4453,15 @@ class Box extends Mesh {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Box_1: null,
-            width: { i18n: '#width', f: () => { let width = prompt('Width', String(this.#width)); if (width) {
+            width: { i18n: '#width', f: () => { const width = prompt('Width', String(this.#width)); if (width) {
                     this.#width = Number(width);
                     this.#updateGeometry();
                 } } },
-            height: { i18n: '#height', f: () => { let height = prompt('Height', String(this.#height)); if (height) {
+            height: { i18n: '#height', f: () => { const height = prompt('Height', String(this.#height)); if (height) {
                     this.#height = Number(height);
                     this.#updateGeometry();
                 } } },
-            depth: { i18n: '#depth', f: () => { let depth = prompt('Depth', String(this.#depth)); if (depth) {
+            depth: { i18n: '#depth', f: () => { const depth = prompt('Depth', String(this.#depth)); if (depth) {
                     this.#depth = Number(depth);
                     this.#updateGeometry();
                 } } },
@@ -4475,7 +4475,7 @@ class Box extends Mesh {
         });
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.width = this.#width;
         json.height = this.#height;
         json.depth = this.#depth;
@@ -4486,7 +4486,7 @@ class Box extends Mesh {
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
-        let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
         return new Box({ width: json.width, height: json.height, depth: json.depth, material: material, widthSegments: json.widthSegments, heightSegments: json.heightSegments, depthSegments: json.depthSegments });
     }
     /*dispose() {
@@ -4585,14 +4585,14 @@ class WebGLShaderSource {
         this.#sizeOfSourceRow = [];
         this.#sourceRowToInclude.clear();
         this.#includes.clear();
-        let allIncludes = new Set();
-        let sourceLineArray = source.split('\n');
+        const allIncludes = new Set();
+        const sourceLineArray = source.split('\n');
         sourceLineArray.unshift(getHeader(this.#type) ?? '');
         let compileRow = 1;
         //TODOv3: use regexp to do a better job
-        let outArray = [];
+        const outArray = [];
         for (let i = 0; i < sourceLineArray.length; ++i) {
-            let line = sourceLineArray[i];
+            const line = sourceLineArray[i];
             let actualSize = 1;
             if (line.startsWith('#extension')) {
                 this.#extensions += line + '\n';
@@ -4601,8 +4601,8 @@ class WebGLShaderSource {
             }
             else if (line.trim().startsWith('#include')) {
                 //this.extensions += line + '\n';
-                let includeName = line.replace('#include', '').trim();
-                let include = this.getInclude(includeName, compileRow, new Set(), allIncludes);
+                const includeName = line.replace('#include', '').trim();
+                const include = this.getInclude(includeName, compileRow, new Set(), allIncludes);
                 if (include) {
                     this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
                     outArray.push(...include);
@@ -4640,18 +4640,18 @@ class WebGLShaderSource {
             return undefined;
         }
         recursion.add(includeName);
-        let include = getIncludeSource(includeName);
+        const include = getIncludeSource(includeName);
         if (include == undefined) {
             return undefined;
         }
-        let includeLineArray = include.trim().split('\n');
+        const includeLineArray = include.trim().split('\n');
         includeLineArray.unshift(''); //Add an empty line to insure nested include won't occupy the same line #
-        let outArray = [];
+        const outArray = [];
         for (let i = 0, l = includeLineArray.length; i < l; ++i) {
-            let line = includeLineArray[i];
+            const line = includeLineArray[i];
             if (line.trim().startsWith('#include')) {
-                let includeName = line.replace('#include', '').trim();
-                let include = this.getInclude(includeName, compileRow + i, recursion, allIncludes);
+                const includeName = line.replace('#include', '').trim();
+                const include = this.getInclude(includeName, compileRow + i, recursion, allIncludes);
                 if (include) {
                     this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
                     outArray.push(...include);
@@ -4660,7 +4660,7 @@ class WebGLShaderSource {
                 continue;
             }
             if (line.trim().startsWith('#pragma')) {
-                let result = PRAGMA_REGEX.exec(line);
+                const result = PRAGMA_REGEX.exec(line);
                 if (result && result[1] == 'once') {
                     if (allIncludes.has(includeName)) {
                         return null;
@@ -4676,11 +4676,11 @@ class WebGLShaderSource {
     }
     getCompileSource(includeCode = '') {
         function getDefineValue(defineName, includeCode = '') {
-            let sourceLineArray = includeCode.split('\n');
+            const sourceLineArray = includeCode.split('\n');
             const definePattern = /\s*#define\s+(\S+)\s+(\S+)/;
             for (let i = 0, l = sourceLineArray.length; i < l; ++i) {
-                let line = sourceLineArray[i];
-                let regexResult = definePattern.exec(line);
+                const line = sourceLineArray[i];
+                const regexResult = definePattern.exec(line);
                 if (regexResult && defineName) {
                     if (regexResult[1] == defineName) {
                         return regexResult[2];
@@ -4696,9 +4696,9 @@ class WebGLShaderSource {
             while ((nextUnroll = source.lastIndexOf('#pragma unroll', nextUnroll - 1)) != -1) {
                 forPattern.lastIndex = 0;
                 unrollSubstring = source.substring(nextUnroll);
-                let regexResult = forPattern.exec(unrollSubstring);
+                const regexResult = forPattern.exec(unrollSubstring);
                 if (regexResult && regexResult.length == 6) {
-                    let loopVariable = regexResult[1];
+                    const loopVariable = regexResult[1];
                     if ((loopVariable == regexResult[3]) && (loopVariable == regexResult[5])) { //Check the variable name is the same everywhere
                         let startIndex = forPattern.lastIndex;
                         let curlyCount = 1; //we already ate one
@@ -4753,8 +4753,8 @@ class WebGLShaderSource {
         return (WebGLShaderSource.isWebGL2 ? '#version 300 es\n' : '\n') + this.#extensions + includeCode + unrollLoops(this.#compileSource, includeCode);
     }
     getCompileSourceLineNumber(includeCode) {
-        let source = this.getCompileSource(includeCode);
-        let sourceLineArray = source.split('\n');
+        const source = this.getCompileSource(includeCode);
+        const sourceLineArray = source.split('\n');
         for (let i = sourceLineArray.length - 1; i >= 0; i--) {
             sourceLineArray[i] = (i + 1).toString().padStart(4) + ' ' + sourceLineArray[i];
         }
@@ -4782,10 +4782,10 @@ class WebGLShaderSource {
         }
         const arr = this.#error.replace('\n', '').split(splitRegex);
         while (arr.length) {
-            let errorType = consumeLine(arr);
-            let errorCol = consumeLine(arr);
-            let errorRow = Number(consumeLine(arr));
-            let errorText = consumeLine(arr);
+            const errorType = consumeLine(arr);
+            const errorCol = consumeLine(arr);
+            const errorRow = Number(consumeLine(arr));
+            const errorText = consumeLine(arr);
             if (errorType && errorCol && errorRow && errorText) {
                 let row = Math.max(errorRow - this.#lineDelta, 0);
                 if (convertRows) {
@@ -4799,12 +4799,12 @@ class WebGLShaderSource {
     }
     getIncludeAnnotations() {
         const annotations = [];
-        let sourceLineArray = this.#source.split('\n');
+        const sourceLineArray = this.#source.split('\n');
         sourceLineArray.unshift(getHeader(this.#type) ?? '');
         for (let i = sourceLineArray.length - 1; i >= 0; i--) {
-            let line = sourceLineArray[i];
+            const line = sourceLineArray[i];
             if (line.trim().startsWith('#include')) {
-                let include = this.getInclude(line.replace('#include', '').trim());
+                const include = this.getInclude(line.replace('#include', '').trim());
                 if (include) {
                     include.shift(); //Remove the first empty line
                     annotations.push({ type: 'info', column: 0, row: Math.max(i - 1, 0), text: include.join('\n') });
@@ -4853,7 +4853,7 @@ class ShaderManager {
     }
     static getShaderSource(type, name, invalidCustomShaders = false) {
         if (this.#shaderList.get(name) === undefined) {
-            let source = Shaders[name];
+            const source = Shaders[name];
             if (source) {
                 this.addSource(type, name, source);
             }
@@ -4884,13 +4884,13 @@ class ShaderManager {
     }
     static getIncludeAnnotations(includeName) {
         let annotations;
-        for (let [shaderName, shaderSource] of this.#shaderList) {
+        for (const [shaderName, shaderSource] of this.#shaderList) {
             annotations = this.#getIncludeAnnotations(includeName, shaderName, shaderSource);
             if (annotations.length) {
                 return annotations;
             }
         }
-        for (let [shaderName, shaderSource] of this.#customShaderList) {
+        for (const [shaderName, shaderSource] of this.#customShaderList) {
             annotations = this.#getIncludeAnnotations(includeName, shaderName, shaderSource);
             if (annotations.length) {
                 return annotations;
@@ -4898,13 +4898,13 @@ class ShaderManager {
         }
     }
     static #getIncludeAnnotations(includeName, shaderName, shaderSource) {
-        let errorArray = [];
+        const errorArray = [];
         if (shaderSource.isErroneous()) {
             if (shaderSource.containsInclude(includeName)) {
-                let errors = shaderSource.getCompileError(false);
-                for (let error of errors) {
+                const errors = shaderSource.getCompileError(false);
+                for (const error of errors) {
                     const sourceRowToInclude = shaderSource.getSourceRowToInclude();
-                    for (let [startLine, [includeName2, includeLength]] of sourceRowToInclude) {
+                    for (const [startLine, [includeName2, includeLength]] of sourceRowToInclude) {
                         //let [includeName2, includeLength] = shaderSource.sourceRowToInclude[startLine];
                         if (startLine <= error.row && (startLine + includeLength) > error.row && includeName == includeName2) {
                             errorArray.push({ type: error.type, column: error.column, row: error.row - startLine, text: error.text });
@@ -4919,10 +4919,10 @@ class ShaderManager {
         return this.#shaderList.keys();
     }
     static resetShadersSource() {
-        for (let source of this.#shaderList.values()) {
+        for (const source of this.#shaderList.values()) {
             source.reset();
         }
-        for (let source of this.#customShaderList.values()) {
+        for (const source of this.#customShaderList.values()) {
             source.reset();
         }
     }
@@ -5262,12 +5262,12 @@ class Camera extends Entity {
             mat4.perspective(this.#projectionMatrix, this.#verticalFov, this.#aspectRatio, this.#nearPlane, this.#farPlane);
         }
         else if (this.#projection == CameraProjection.Orthographic) {
-            let ortho = this.#orthoZoom;
+            const ortho = this.#orthoZoom;
             mat4.ortho(this.#projectionMatrix, this.#left / ortho, this.#right / ortho, this.#bottom / ortho, this.#top / ortho, this.#nearPlane, this.#farPlane);
         }
         else {
             // Mixed perspective / ortho
-            let invOrtho = 1 / this.#orthoZoom;
+            const invOrtho = 1 / this.#orthoZoom;
             mat4.perspective(proj1, this.#verticalFov, this.#aspectRatio, this.#nearPlane, this.#farPlane);
             mat4.ortho(proj2, this.#left * invOrtho, this.#right * invOrtho, this.#bottom * invOrtho, this.#top * invOrtho, this.#nearPlane, this.#farPlane);
             mat4.multiplyScalar(this.#projectionMatrix, proj1, 1 - this.#projectionMix);
@@ -5483,7 +5483,7 @@ class Camera extends Entity {
         return 'Camera ' + super.toString();
     }
     setActiveCamera() {
-        let scene = this.root;
+        const scene = this.root;
         if (scene.is('Scene')) {
             scene.activeCamera = this;
         }
@@ -5493,16 +5493,16 @@ class Camera extends Entity {
             camera1: null,
             cameraPerspective: { i18n: '#perspective_camera', selected: this.isPerspective, f: () => this.setProjection(CameraProjection.Perspective) },
             cameraOrthographic: { i18n: '#orthographic_camera', selected: this.isOrthographic, f: () => this.setProjection(CameraProjection.Orthographic) },
-            cameraNearPlane: { i18n: '#near_plane', f: () => { let nearPlane = prompt('Near plane', String(this.nearPlane)); if (nearPlane !== null) {
+            cameraNearPlane: { i18n: '#near_plane', f: () => { const nearPlane = prompt('Near plane', String(this.nearPlane)); if (nearPlane !== null) {
                     this.nearPlane = Number(nearPlane);
                 } } },
-            cameraFarPlane: { i18n: '#far_plane', f: () => { let farPlane = prompt('Far plane', String(this.farPlane)); if (farPlane !== null) {
+            cameraFarPlane: { i18n: '#far_plane', f: () => { const farPlane = prompt('Far plane', String(this.farPlane)); if (farPlane !== null) {
                     this.farPlane = Number(farPlane);
                 } } },
-            cameraOrthoZoom: { i18n: '#zoom', f: () => { let zoom = prompt('Zoom', String(this.orthoZoom)); if (zoom !== null) {
+            cameraOrthoZoom: { i18n: '#zoom', f: () => { const zoom = prompt('Zoom', String(this.orthoZoom)); if (zoom !== null) {
                     this.orthoZoom = Number(zoom);
                 } } },
-            cameraFov: { i18n: '#fov', f: () => { let fov = prompt('FOV', String(this.verticalFov)); if (fov !== null) {
+            cameraFov: { i18n: '#fov', f: () => { const fov = prompt('FOV', String(this.verticalFov)); if (fov !== null) {
                     this.verticalFov = Number(fov);
                 } } },
             cameraSetActiveCamera: { i18n: '#set_active_camera', f: () => this.setActiveCamera() },
@@ -5531,7 +5531,7 @@ class Camera extends Entity {
         this.dirty();
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         if (this.nearPlane != DEFAULT_NEAR_PLANE) {
             json.nearplane = this.#nearPlane;
         }
@@ -5622,9 +5622,9 @@ class ClearPass extends Pass {
         this.#clearStencil = clearStencil ?? null;
     }
     render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        let clearColor = this.#clearColor != null;
-        let clearDepth = this.#clearDepth != null;
-        let clearStencil = this.#clearStencil != null;
+        const clearColor = this.#clearColor != null;
+        const clearDepth = this.#clearDepth != null;
+        const clearStencil = this.#clearStencil != null;
         if (clearColor) {
             renderer.clearColor(this.#clearColor);
         }
@@ -5643,9 +5643,9 @@ class ClearPass extends Pass {
 class FullScreenQuadGeometry extends BufferGeometry {
     constructor() {
         super();
-        let indices = [0, 2, 1, 2, 3, 1];
-        let vertices = [-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0];
-        let uvs = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0];
+        const indices = [0, 2, 1, 2, 3, 1];
+        const vertices = [-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0];
+        const uvs = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0];
         this.setIndex(new Uint16BufferAttribute(indices, 1));
         this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3));
         this.setAttribute('aVertexNormal', new Float32BufferAttribute(vertices, 3)); //TODOv3: fix this
@@ -5665,7 +5665,7 @@ class FullScreenQuad extends Mesh {
 class CopyPass extends Pass {
     constructor(camera) {
         super();
-        let material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false });
+        const material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false });
         material.addUser(this);
         this.scene = new Scene();
         this.quad = new FullScreenQuad({ material: material, parent: this.scene });
@@ -5682,7 +5682,7 @@ class CopyPass extends Pass {
 class CrosshatchPass extends Pass {
     constructor(camera) {
         super();
-        let material = new ShaderMaterial({ shaderSource: 'crosshatch' });
+        const material = new ShaderMaterial({ shaderSource: 'crosshatch' });
         material.addUser(this);
         material.depthTest = false;
         this.scene = new Scene();
@@ -5703,7 +5703,7 @@ class GrainPass extends Pass {
     //#size;
     constructor(camera) {
         super();
-        let material = new ShaderMaterial({ shaderSource: 'grain' });
+        const material = new ShaderMaterial({ shaderSource: 'grain' });
         material.addUser(this);
         material.uniforms['uGrainParams'] = vec4.create();
         material.depthTest = false;
@@ -5738,7 +5738,7 @@ class GrainPass extends Pass {
 class OldMoviePass extends Pass {
     constructor(camera) {
         super();
-        let material = new ShaderMaterial({ shaderSource: 'oldmovie' });
+        const material = new ShaderMaterial({ shaderSource: 'oldmovie' });
         material.addUser(this);
         material.depthTest = false;
         this.scene = new Scene();
@@ -5773,10 +5773,10 @@ function deleteTexture(texture) {
     }
 }
 function fillFlatTexture(texture, color = [255, 255, 255], needCubeMap) {
-    let width = 64;
-    let height = 64;
+    const width = 64;
+    const height = 64;
     if (texture) {
-        let byteArray = new Uint8Array(width * height * 3);
+        const byteArray = new Uint8Array(width * height * 3);
         let pixelIndex = 0;
         for (let i = 0; i < width; i++) {
             for (let j = 0; j < height; j++) {
@@ -5814,7 +5814,7 @@ function fillFlatTexture(texture, color = [255, 255, 255], needCubeMap) {
 }
 function fillCheckerTexture(texture, color = [255, 0, 255], width = 64, height = 64, needCubeMap) {
     if (texture) {
-        let byteArray = new Uint8Array(width * height * 3);
+        const byteArray = new Uint8Array(width * height * 3);
         let pixelIndex = 0;
         for (let i = 0; i < width; i++) {
             for (let j = 0; j < height; j++) {
@@ -5852,9 +5852,9 @@ function fillCheckerTexture(texture, color = [255, 0, 255], width = 64, height =
 }
 function fillNoiseTexture(texture, width = 64, height = 64, needCubeMap = false) {
     if (texture) {
-        let byteArray = new Uint8Array(width * height * 3);
+        const byteArray = new Uint8Array(width * height * 3);
         let pixelIndex = 0;
-        let randomVec3 = vec3.create();
+        const randomVec3 = vec3.create();
         for (let i = 0; i < width; i++) {
             for (let j = 0; j < height; j++) {
                 vec3.random(randomVec3, 255.0);
@@ -6031,7 +6031,7 @@ class TextureManager {
         this.#texturesList.set(path, texture);
     }
     static createTexture(textureParams) {
-        let texture = new Texture(textureParams);
+        const texture = new Texture(textureParams);
         texture.texture = createTexture();
         //TODOv3: init texture parameters
         //texture.setParameters(Graphics.glContext, target);
@@ -6041,22 +6041,22 @@ class TextureManager {
         deleteTexture(texture.texture);
     }
     static createFlatTexture(color = [255, 0, 255], needCubeMap = false) {
-        let texture = this.createTexture();
+        const texture = this.createTexture();
         fillFlatTexture(texture, color, needCubeMap);
         return texture;
     }
     static createCheckerTexture(color = [255, 0, 255], width = 64, height = 64, needCubeMap = false) {
-        let texture = this.createTexture();
+        const texture = this.createTexture();
         fillCheckerTexture(texture, color, width, height, needCubeMap);
         return texture;
     }
     static createNoiseTexture(width, height, needCubeMap = false) {
-        let texture = this.createTexture();
+        const texture = this.createTexture();
         fillNoiseTexture(texture, width, height, needCubeMap);
         return texture;
     }
     static createTextureFromImage(image, textureParams) {
-        let texture = this.createTexture(textureParams);
+        const texture = this.createTexture(textureParams);
         fillTextureWithImage(texture, image);
         return texture;
     }
@@ -6283,14 +6283,14 @@ class WebGLRenderingState {
         }
     }
     static initUsedAttributes() {
-        let usedAttributes = this.#usedVertexAttribArray;
+        const usedAttributes = this.#usedVertexAttribArray;
         for (let i = 0, l = usedAttributes.length; i < l; i++) {
             usedAttributes[i] = 0;
         }
     }
     static disableUnusedAttributes() {
-        let usedAttributes = this.#usedVertexAttribArray;
-        let enabledAttributes = this.#enabledVertexAttribArray;
+        const usedAttributes = this.#usedVertexAttribArray;
+        const enabledAttributes = this.#enabledVertexAttribArray;
         for (let i = 0, l = usedAttributes.length; i < l; i++) {
             if (usedAttributes[i] !== enabledAttributes[i]) {
                 this.#glContext.disableVertexAttribArray(i);
@@ -6393,7 +6393,7 @@ class WebGLStats {
     static tick() {
         this.#endTime = performance.now();
         ++this.#frames;
-        let timeSinceReset = this.#endTime - this.#startTime;
+        const timeSinceReset = this.#endTime - this.#startTime;
         this.#updateHtml();
         if (timeSinceReset > 1000) {
             this.#fps = Math.round(this.#frames / timeSinceReset * 1000);
@@ -6433,7 +6433,7 @@ class WebGLStats {
 }
 
 function flattenArray(array, arrayCount, arraySize) {
-    let out = new Float32Array(arrayCount * arraySize); //TODO: cache this
+    const out = new Float32Array(arrayCount * arraySize); //TODO: cache this
     let offset = 0;
     for (let i = 0; i < arrayCount; i++) {
         for (let j = 0; j < arraySize; j++) {
@@ -6597,7 +6597,7 @@ class Uniform {
     #uniformSampler2DArray(glContext, textures) {
         glContext.uniform1iv(this.#uniformLocation, this.#textureUnit);
         for (let i = 0; i < this.#size; ++i) {
-            let texture = textures[i];
+            const texture = textures[i];
             glContext.activeTexture(GL_TEXTURE0 + this.#textureUnit[i]);
             if (texture) {
                 glContext.bindTexture(GL_TEXTURE_2D, textures[i].texture);
@@ -6650,7 +6650,7 @@ class Program {
         throw 'error';
     }
     setUniformValue(name, value) {
-        let uniform = this.uniforms.get(name);
+        const uniform = this.uniforms.get(name);
         if (uniform !== undefined) {
             uniform.setValue(this.#glContext, value);
         }
@@ -6664,7 +6664,7 @@ class Program {
             if (fsOk) {
                 this.#glContext.linkProgram(this.#program);
                 if (!this.#glContext.getProgramParameter(this.#program, this.#glContext.LINK_STATUS)) {
-                    let linkError = this.#glContext.getProgramInfoLog(this.#program);
+                    const linkError = this.#glContext.getProgramInfoLog(this.#program);
                     if (this.#linkError != linkError) {
                         console.error(`Failed linking program for ${this.#vertexShaderName} and ${this.#fragmentShaderName}`);
                         console.error('Reason : ' + linkError);
@@ -6694,20 +6694,20 @@ class Program {
         this.uniforms.clear();
         const activeAttributes = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_ATTRIBUTES);
         for (let i = 0; i < activeAttributes; i++) {
-            let attribInfo = this.#glContext.getActiveAttrib(this.#program, i);
+            const attribInfo = this.#glContext.getActiveAttrib(this.#program, i);
             if (attribInfo) {
                 this.#setProgramAttribute(attribInfo.name);
             }
         }
         const activeUniforms = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_UNIFORMS);
         for (let i = 0; i < activeUniforms; i++) {
-            let uniformInfo = this.#glContext.getActiveUniform(this.#program, i);
+            const uniformInfo = this.#glContext.getActiveUniform(this.#program, i);
             if (uniformInfo) {
                 this.#setProgramUniform(uniformInfo);
             }
         }
         let samplerId = 0;
-        for (let [uniformName, uniform] of this.uniforms) {
+        for (const [uniformName, uniform] of this.uniforms) {
             if (uniform.isTextureSampler()) {
                 uniform.setTextureUnit(samplerId); //setValue(this.#glContext, samplerId);
                 samplerId += uniform.getSize();
@@ -6728,12 +6728,12 @@ class Program {
         if (!shaderSource || !shaderSource.isValid()) {
             return null;
         }
-        let compileSource = shaderSource.getCompileSource(includeCode);
+        const compileSource = shaderSource.getCompileSource(includeCode);
         this.#glContext.shaderSource(shader, compileSource);
         this.#glContext.compileShader(shader);
         if (!this.#glContext.getShaderParameter(shader, this.#glContext.COMPILE_STATUS)) {
-            let shaderInfoLog = this.#glContext.getShaderInfoLog(shader);
-            let m = 'Compile error in ' + shaderName + '. Reason : ' + shaderInfoLog;
+            const shaderInfoLog = this.#glContext.getShaderInfoLog(shader);
+            const m = 'Compile error in ' + shaderName + '. Reason : ' + shaderInfoLog;
             console.warn(m, shaderSource.getCompileSourceLineNumber(includeCode), m);
             ShaderManager.setCompileError(shaderName, shaderInfoLog);
             shaderSource.setCompileError(this.#glContext.getShaderInfoLog(shader), includeCode);
@@ -6746,8 +6746,8 @@ class Program {
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
 function getDefinesAsString(material) {
-    let defines = [];
-    for (let [name, value] of Object.entries(material.defines)) {
+    const defines = [];
+    for (const [name, value] of Object.entries(material.defines)) {
         if (value === false) {
             defines.push('#undef ' + name);
         }
@@ -6795,10 +6795,10 @@ class Renderer {
     }
     #setupVertexAttributes(program, geometry, wireframe) {
         WebGLRenderingState.initUsedAttributes();
-        let geometryAttributes = geometry.attributes;
-        let programAttributes = program.attributes;
-        for (let [attributeName, attribute] of geometryAttributes) {
-            let attributeLocation = programAttributes.get(attributeName);
+        const geometryAttributes = geometry.attributes;
+        const programAttributes = program.attributes;
+        for (const [attributeName, attribute] of geometryAttributes) {
+            const attributeLocation = programAttributes.get(attributeName);
             if (attributeName == 'index') {
                 if (wireframe == 1) {
                     attribute.updateWireframe(this.#glContext); //TODO: put somewhere else
@@ -6818,23 +6818,23 @@ class Renderer {
         WebGLRenderingState.disableUnusedAttributes();
     }
     #setupVertexUniforms(program, mesh) {
-        for (let uniform in mesh.uniforms) {
+        for (const uniform in mesh.uniforms) {
             program.setUniformValue(uniform, mesh.uniforms[uniform]);
         }
     }
     applyMaterial(program, material) {
     }
     setupLights(renderList, camera, program, viewMatrix) {
-        let lightPositionCameraSpace = vec3.create(); //TODO: do not create a vec3
-        let lightPositionWorldSpace = vec3.create(); //TODO: do not create a vec3
-        let colorIntensity = vec3.create(); //TODO: do not create a vec3
-        let pointLights = renderList.pointLights; //scene.getChildList(PointLight);
-        let spotLights = renderList.spotLights;
+        const lightPositionCameraSpace = vec3.create(); //TODO: do not create a vec3
+        const lightPositionWorldSpace = vec3.create(); //TODO: do not create a vec3
+        const colorIntensity = vec3.create(); //TODO: do not create a vec3
+        const pointLights = renderList.pointLights; //scene.getChildList(PointLight);
+        const spotLights = renderList.spotLights;
         let shadow;
         let pointLightId = 0;
-        let pointShadowMap = [];
-        let pointShadowMatrix = [];
-        for (let pointLight of pointLights) {
+        const pointShadowMap = [];
+        const pointShadowMatrix = [];
+        for (const pointLight of pointLights) {
             if (pointLight.isVisible()) {
                 pointLight.getWorldPosition(lightPositionWorldSpace);
                 vec3.transformMat4(lightPositionCameraSpace, lightPositionWorldSpace, viewMatrix);
@@ -6860,9 +6860,9 @@ class Renderer {
         program.setUniformValue('uPointShadowMap[0]', pointShadowMap);
         program.setUniformValue('uPointShadowMatrix[0]', pointShadowMatrix);
         let spotLightId = 0;
-        let spotShadowMap = [];
-        let spotShadowMatrix = [];
-        for (let spotLight of spotLights) {
+        const spotShadowMap = [];
+        const spotShadowMatrix = [];
+        for (const spotLight of spotLights) {
             if (spotLight.visible) {
                 spotLight.getWorldPosition(lightPositionCameraSpace);
                 vec3.transformMat4(lightPositionCameraSpace, lightPositionCameraSpace, viewMatrix);
@@ -6874,10 +6874,10 @@ class Renderer {
                 //program.setUniformValue('uSpotLights[' + spotLightId + '].direction', spotLight.getDirection(tempVec3));
                 //program.setUniformValue('uSpotLights[' + spotLightId + '].direction', [0, 0, -1]);
                 spotLight.getDirection(lightDirection);
-                let m = viewMatrix;
-                let x = lightDirection[0];
-                let y = lightDirection[1];
-                let z = lightDirection[2];
+                const m = viewMatrix;
+                const x = lightDirection[0];
+                const y = lightDirection[1];
+                const z = lightDirection[2];
                 lightDirection[0] = m[0] * x + m[4] * y + m[8] * z;
                 lightDirection[1] = m[1] * x + m[5] * y + m[9] * z;
                 lightDirection[2] = m[2] * x + m[6] * y + m[10] * z;
@@ -6894,9 +6894,9 @@ class Renderer {
         }
         program.setUniformValue('uSpotShadowMap[0]', spotShadowMap);
         program.setUniformValue('uSpotShadowMatrix[0]', spotShadowMatrix);
-        let ambientLights = renderList.ambientLights; //scene.getChildList(AmbientLight);
-        let ambientAccumulator = vec3.create(); //TODO: do not create a vec3
-        for (let ambientLight of ambientLights) {
+        const ambientLights = renderList.ambientLights; //scene.getChildList(AmbientLight);
+        const ambientAccumulator = vec3.create(); //TODO: do not create a vec3
+        for (const ambientLight of ambientLights) {
             if (ambientLight.isVisible()) {
                 vec3.scaleAndAdd(ambientAccumulator, ambientAccumulator, ambientLight.color, ambientLight.intensity);
             }
@@ -6937,8 +6937,8 @@ class Renderer {
         }
         renderLights &&= material.renderLights;
         material.updateMaterial(this.#graphics.getTime(), object); //TODO: frame delta
-        let cameraMatrix = camera.cameraMatrix;
-        let projectionMatrix = camera.projectionMatrix;
+        const cameraMatrix = camera.cameraMatrix;
+        const projectionMatrix = camera.projectionMatrix;
         mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
         //object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
         mat3.normalFromMat4(object._normalMatrix, cameraMatrix); //TODO: fixme
@@ -6959,7 +6959,7 @@ class Renderer {
         else {
             this.#graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
         }
-        let program = this.getProgram(object, material);
+        const program = this.getProgram(object, material);
         if (program.isValid()) {
             WebGLRenderingState.useProgram(program.getProgram());
             if (renderLights) {
@@ -6974,7 +6974,7 @@ class Renderer {
             program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
             program.setUniformValue('uNormalMatrix', object._normalMatrix);
             program.setUniformValue('uCameraPosition', camera.position);
-            let pickingColor = object.pickingColor;
+            const pickingColor = object.pickingColor;
             if (pickingColor) {
                 program.setUniformValue('uPickingColor', pickingColor);
             }
@@ -7015,7 +7015,7 @@ class Renderer {
     _prepareRenderList(renderList, scene, camera, delta, context) {
         renderList.reset();
         let currentObject = scene;
-        let objectStack = [];
+        const objectStack = [];
         //scene.pointLights = scene.getChildList(PointLight);
         //scene.ambientLights = scene.getChildList(AmbientLight);
         while (currentObject) {
@@ -7024,7 +7024,7 @@ class Renderer {
                 continue;
             }
             //objectStack.push(currentObject);
-            for (let child of currentObject.children) {
+            for (const child of currentObject.children) {
                 {
                     objectStack.push(child);
                 }
@@ -7040,11 +7040,11 @@ class Renderer {
         renderList.finish();
     }
     _renderRenderList(renderList, camera, renderLights, context, lightPos) {
-        for (let child of renderList.opaqueList) {
+        for (const child of renderList.opaqueList) {
             this.renderObject(renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
         }
         if (renderLights) {
-            for (let child of renderList.transparentList) {
+            for (const child of renderList.transparentList) {
                 this.renderObject(renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
             }
         }
@@ -7063,7 +7063,7 @@ class Renderer {
      * Invalidate all shader (force recompile)
      */
     invalidateShaders() {
-        for (let shader of this.#materialsProgram.values()) {
+        for (const shader of this.#materialsProgram.values()) {
             shader.invalidate();
         }
     }
@@ -7105,10 +7105,10 @@ class ShadowMap {
         this.#glContext = this.#graphics.glContext;
     }
     render(renderer, renderList, camera, context) {
-        let lights = renderList.lights;
-        let blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
-        let scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
-        let depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
+        const lights = renderList.lights;
+        const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
+        const scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
+        const depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
         WebGLRenderingState.getClearColor(a$b);
         WebGLRenderingState.disable(GL_BLEND);
         WebGLRenderingState.disable(GL_SCISSOR_TEST);
@@ -7263,7 +7263,7 @@ class ForwardRenderer extends Renderer {
                 break;
         }
         WebGLRenderingState.polygonOffset(material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits);
-        for (let uniform in material.uniforms) {
+        for (const uniform in material.uniforms) {
             program.setUniformValue(uniform, material.uniforms[uniform]);
         }
     }
@@ -7377,7 +7377,7 @@ class Graphics {
         // init state end
         //this.clearColor = vec4.fromValues(0, 0, 0, 255);
         this.#forwardRenderer = new ForwardRenderer(this);
-        let autoResize = contextAttributes.autoResize;
+        const autoResize = contextAttributes.autoResize;
         if (autoResize !== undefined) {
             this.autoResize = autoResize;
         }
@@ -7401,38 +7401,38 @@ class Graphics {
         GraphicsEvents.tick(0, performance.now(), 0);
         this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
         this.glContext;
-        let pixels = new Uint8Array(4);
+        const pixels = new Uint8Array(4);
         this.glContext?.readPixels(x, this.#canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        let pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
+        const pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
         return pickList.get(pickedEntityIndex) ?? null;
     }
     #mouseDown(event) {
         this.#canvas.focus();
-        let x = event.offsetX;
-        let y = event.offsetY;
+        const x = event.offsetX;
+        const y = event.offsetY;
         this.#pickedEntity = this.pickEntity(x, y);
         GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
     }
     #mouseMove(event) {
-        let x = event.offsetX;
-        let y = event.offsetY;
+        const x = event.offsetX;
+        const y = event.offsetY;
         GraphicsEvents.mouseMove(x, y, this.#pickedEntity, event);
     }
     #mouseUp(event) {
-        let x = event.offsetX;
-        let y = event.offsetY;
+        const x = event.offsetX;
+        const y = event.offsetY;
         GraphicsEvents.mouseUp(x, y, this.#pickedEntity, event);
         this.#pickedEntity = null;
     }
     #wheel(event) {
-        let x = event.offsetX;
-        let y = event.offsetY;
+        const x = event.offsetX;
+        const y = event.offsetY;
         GraphicsEvents.wheel(x, y, this.#pickedEntity, event);
         this.#pickedEntity = null;
     }
     getDefinesAsString(material) {
-        let defines = [];
-        for (let [name, value] of Object.entries(material.defines)) {
+        const defines = [];
+        for (const [name, value] of Object.entries(material.defines)) {
             if (value === false) {
                 defines.push('#undef ' + name + ' ' + value);
             }
@@ -7472,7 +7472,7 @@ class Graphics {
         }
         const tick = performance.now();
         this.#time = (tick - this.#timeOrigin) * 0.001;
-        let delta = (tick - this.#lastTick) * this.speed * 0.001;
+        const delta = (tick - this.#lastTick) * this.speed * 0.001;
         if (this.#running) {
             ++this.currentTick;
             GraphicsEvents.tick(delta, tick, this.speed);
@@ -7568,7 +7568,7 @@ class Graphics {
     }
     #refreshIncludeCode() {
         this.#globalIncludeCode = '';
-        for (let code of this.#includeCode.values()) {
+        for (const code of this.#includeCode.values()) {
             this.#globalIncludeCode += code + '\n';
         }
     }
@@ -7616,7 +7616,7 @@ class Graphics {
                 return this.#extensions.get(name);
             }
             else {
-                let extension = this.glContext.getExtension(name);
+                const extension = this.glContext.getExtension(name);
                 this.#extensions.set(name, extension);
                 return extension;
             }
@@ -7633,8 +7633,8 @@ class Graphics {
     setSize(width, height) {
         width = Math.max(width, 1);
         height = Math.max(height, 1);
-        let previousWidth = this.#width;
-        let previousHeight = this.#height;
+        const previousWidth = this.#width;
+        const previousHeight = this.#height;
         if (isNumeric(width)) {
             this.#width = width;
         }
@@ -7714,7 +7714,7 @@ class Graphics {
         return this.#running;
     }
     createFramebuffer() {
-        let frameBuffer = this.glContext.createFramebuffer();
+        const frameBuffer = this.glContext.createFramebuffer();
         //this.frameBuffers.add(frameBuffer);
         return frameBuffer;
     }
@@ -7722,7 +7722,7 @@ class Graphics {
         this.glContext.deleteFramebuffer(frameBuffer);
     }
     createRenderbuffer() {
-        let renderBuffer = this.glContext.createRenderbuffer();
+        const renderBuffer = this.glContext.createRenderbuffer();
         if (renderBuffer) {
             this.#renderBuffers.add(renderBuffer);
         }
@@ -7757,9 +7757,9 @@ class Graphics {
         }
     }
     savePicture(scene, camera, filename, width, height) {
-        let previousWidth = this.#width;
-        let previousHeight = this.#height;
-        let previousAutoResize = this.autoResize;
+        const previousWidth = this.#width;
+        const previousHeight = this.#height;
+        const previousAutoResize = this.autoResize;
         try {
             this.autoResize = false;
             this.setSize(width, height);
@@ -7823,7 +7823,7 @@ class Graphics {
         this.glContext?.getError(); //empty the error
     }
     getGLError(context) {
-        let glError = this.glContext?.getError() ?? 0;
+        const glError = this.glContext?.getError() ?? 0;
         if (glError) {
             console.error(`GL Error in ${context} : `, glError);
         }
@@ -7889,7 +7889,7 @@ class Framebuffer {
         this.#dirty = true;
     }
     #setupAttachments() {
-        for (let [attachmentPoint, attachmentParams] of this.#attachments) {
+        for (const [attachmentPoint, attachmentParams] of this.#attachments) {
             switch (attachmentParams.type) {
                 case ATTACHMENT_TYPE_RENDER_BUFFER:
                     //new Graphics().glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
@@ -7899,7 +7899,7 @@ class Framebuffer {
                     break;
                 case ATTACHMENT_TYPE_TEXTURE2D:
                     //console.error(new Graphics().getError());
-                    let webGLTexture = attachmentParams.texture.texture;
+                    const webGLTexture = attachmentParams.texture.texture;
                     new Graphics().glContext.bindTexture(attachmentParams.target, null);
                     new Graphics().glContext.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
                     break;
@@ -7921,7 +7921,7 @@ class Framebuffer {
     }
     dispose() {
         new Graphics().deleteFramebuffer(this.#frameBuffer);
-        for (let [attachmentPoint, attachment] of this.#attachments) {
+        for (const [attachmentPoint, attachment] of this.#attachments) {
             switch (attachment.type) {
                 case ATTACHMENT_TYPE_RENDER_BUFFER:
                     attachment.renderbuffer.dispose();
@@ -8055,7 +8055,7 @@ class RenderTarget {
         vec4.set(this.#scissor, x, y, width, height);
     }
     clone() {
-        let dest = new RenderTarget({ width: this.#width, height: this.#height, depthBuffer: this.#depthBuffer, stencilBuffer: this.#stencilBuffer });
+        const dest = new RenderTarget({ width: this.#width, height: this.#height, depthBuffer: this.#depthBuffer, stencilBuffer: this.#stencilBuffer });
         //dest.texture = this.#texture.clone();
         return dest;
     }
@@ -8066,7 +8066,7 @@ class RenderTarget {
 }
 
 const CLEAR_COLOR = vec4.fromValues(0, 0, 0, 0);
-let tempVec2$4 = vec2.create();
+const tempVec2$4 = vec2.create();
 class OutlinePass extends Pass {
     #edgedetectionMaterial;
     #copyMaterial;
@@ -8191,7 +8191,7 @@ class OutlinePass extends Pass {
 class PalettePass extends Pass {
     constructor(camera) {
         super();
-        let material = new ShaderMaterial({ shaderSource: 'palette' });
+        const material = new ShaderMaterial({ shaderSource: 'palette' });
         material.addUser(this);
         material.depthTest = false;
         this.scene = new Scene();
@@ -8254,7 +8254,7 @@ class SaturatePass extends Pass {
     #saturation;
     constructor(camera) {
         super();
-        let material = new ShaderMaterial({ shaderSource: 'saturate' });
+        const material = new ShaderMaterial({ shaderSource: 'saturate' });
         material.addUser(this);
         material.depthTest = false;
         this.scene = new Scene();
@@ -8277,7 +8277,7 @@ class SaturatePass extends Pass {
 class SketchPass extends Pass {
     constructor(camera) {
         super();
-        let material = new ShaderMaterial({ shaderSource: 'sketch' });
+        const material = new ShaderMaterial({ shaderSource: 'sketch' });
         material.addUser(this);
         material.depthTest = false;
         this.scene = new Scene();
@@ -8292,7 +8292,7 @@ class SketchPass extends Pass {
     }
 }
 
-let tempVec2$3 = vec2.create();
+const tempVec2$3 = vec2.create();
 class Composer {
     #width = 0;
     #height = 0;
@@ -8304,7 +8304,7 @@ class Composer {
     writeBuffer;
     constructor(renderTarget) {
         if (!renderTarget) {
-            let rendererSize = new Graphics().getSize();
+            const rendererSize = new Graphics().getSize();
             renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
         }
         this.#setRenderTarget(renderTarget);
@@ -8391,7 +8391,7 @@ class CameraControl {
     }
 }
 
-let EPSILON = 0.000001;
+const EPSILON = 0.000001;
 class Spherical {
     theta;
     phi;
@@ -8430,7 +8430,7 @@ class Spherical {
         }
     }
     toCartesian(v) {
-        let sinPhiRadius = Math.sin(this.phi) * this.radius;
+        const sinPhiRadius = Math.sin(this.phi) * this.radius;
         v[0] = sinPhiRadius * Math.cos(this.theta);
         v[1] = sinPhiRadius * Math.sin(this.theta);
         v[2] = Math.cos(this.phi) * this.radius;
@@ -8638,14 +8638,14 @@ class FirstPersonControl extends CameraControl {
             return;
         }
         if (this.heightSpeed) {
-            var y = clamp(this.camera?.position[1] ?? 0, this.heightMin, this.heightMax); //TODO
-            var heightDelta = y - this.heightMin;
+            const y = clamp(this.camera?.position[1] ?? 0, this.heightMin, this.heightMax); //TODO
+            const heightDelta = y - this.heightMin;
             this.#autoSpeedFactor = delta * (heightDelta * this.heightCoef);
         }
         else {
             this.#autoSpeedFactor = 0.0;
         }
-        var actualMoveSpeed = delta * this.movementSpeed;
+        const actualMoveSpeed = delta * this.movementSpeed;
         if (this.#moveForward || (this.autoForward && !this.#moveBackward)) {
             this.camera?.translateZ(-(actualMoveSpeed + this.#autoSpeedFactor));
         }
@@ -8664,14 +8664,14 @@ class FirstPersonControl extends CameraControl {
         if (this.#moveDown) {
             this.camera?.translateY(-actualMoveSpeed);
         }
-        var actualLookSpeed = this.lookSpeed;
+        let actualLookSpeed = this.lookSpeed;
         if (!this.activeLook) {
             actualLookSpeed = 0;
         }
         if (!this.#click) {
             actualLookSpeed = 0;
         }
-        var verticalLookRatio = 1;
+        let verticalLookRatio = 1;
         if (this.constrainVertical) {
             verticalLookRatio = Math.PI / (this.verticalMax - this.verticalMin);
         }
@@ -8692,7 +8692,7 @@ class FirstPersonControl extends CameraControl {
         }
         //this.#lat = Math.max(- 85, Math.min(85, this.#lat));
         //this.#lat = 90;//removeme
-        var phi = DEG_TO_RAD * (90 - this.#lat);
+        let phi = DEG_TO_RAD * (90 - this.#lat);
         DEG_TO_RAD * (this.#lon);
         if (this.#click) ;
         function mapLinear(x, a1, a2, b1, b2) {
@@ -8701,7 +8701,7 @@ class FirstPersonControl extends CameraControl {
         if (this.constrainVertical) {
             phi = mapLinear(phi, 0, Math.PI, this.verticalMin, this.verticalMax);
         }
-        var position = this.camera?.position ?? vec3.create() /*TODO: optimize*/;
+        const position = this.camera?.position ?? vec3.create() /*TODO: optimize*/;
         spherical$1.toCartesian(tempVec3$t);
         // rotate offset back to 'camera-up-vector-is-up' space
         //offset.applyQuaternion(quatInverse);
@@ -8984,7 +8984,7 @@ class OrbitControl extends CameraControl {
         if (this.enabled === false) {
             return;
         }
-        var position = this.camera._position;
+        const position = this.camera._position;
         //offset.copy(position).sub(this.target);
         vec3.sub(tempVec3$s, position, this.#target.getWorldPosition()); //TODO: optimise
         // rotate offset to 'y-axis-is-up' space
@@ -9085,10 +9085,10 @@ class OrbitControl extends CameraControl {
     #pan(deltaX, deltaY, element) {
         if (this.camera.isPerspective) {
             // perspective
-            var position = this.camera.position;
+            const position = this.camera.position;
             //offset.copy(position).sub(this.target);
             vec3.sub(tempVec3$s, position, this.#target.getWorldPosition()); //todo // OPTIMIZE:
-            var targetDistance = vec3.len(tempVec3$s);
+            let targetDistance = vec3.len(tempVec3$s);
             // half of the fov is center to top of screen
             targetDistance *= this.camera.getTanHalfVerticalFov(); //Math.tan((this.camera.fov / 2)* Math.PI / 180.0);
             // we use only clientHeight here so aspect ratio does not distort speed
@@ -9189,7 +9189,7 @@ class OrbitControl extends CameraControl {
             return;
         }
         const keyboardEvent = event.detail.keyboardEvent;
-        var needsUpdate = false;
+        let needsUpdate = false;
         if (keyboardEvent.ctrlKey || keyboardEvent.metaKey || keyboardEvent.altKey) {
             return;
         }
@@ -9284,8 +9284,8 @@ class OrbitControl extends CameraControl {
             vec2.set(this.#rotateStart, event.touches[0].pageX, event.touches[0].pageY);
         }
         else {
-            var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-            var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+            const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
+            const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
             vec2.set(this.#rotateStart, x, y);
         }
     }
@@ -9294,15 +9294,15 @@ class OrbitControl extends CameraControl {
             vec2.set(this.#panStart, event.touches[0].pageX, event.touches[0].pageY);
         }
         else {
-            var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-            var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+            const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
+            const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
             vec2.set(this.#panStart, x, y);
         }
     }
     #handleTouchStartDolly(event) {
-        var dx = event.touches[0].pageX - event.touches[1].pageX;
-        var dy = event.touches[0].pageY - event.touches[1].pageY;
-        var distance = Math.sqrt(dx * dx + dy * dy);
+        const dx = event.touches[0].pageX - event.touches[1].pageX;
+        const dy = event.touches[0].pageY - event.touches[1].pageY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
         vec2.set(this.#dollyStart, 0, distance);
     }
     #handleTouchStartDollyPan(event) {
@@ -9322,8 +9322,8 @@ class OrbitControl extends CameraControl {
             vec2.set(this.#rotateEnd, event.touches[0].pageX, event.touches[0].pageY);
         }
         else {
-            var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-            var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+            const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
+            const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
             vec2.set(this.#rotateEnd, x, y);
         }
         vec2.sub(this.#rotateDelta, this.#rotateEnd, this.#rotateStart);
@@ -9339,8 +9339,8 @@ class OrbitControl extends CameraControl {
             vec2.set(this.#panEnd, event.touches[0].pageX, event.touches[0].pageY);
         }
         else {
-            var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-            var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+            const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
+            const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
             //panEnd.set(x, y);
             vec2.set(this.#panEnd, x, y);
         }
@@ -9350,9 +9350,9 @@ class OrbitControl extends CameraControl {
         vec2.copy(this.#panStart, this.#panEnd);
     }
     #handleTouchMoveDolly(event) {
-        var dx = event.touches[0].pageX - event.touches[1].pageX;
-        var dy = event.touches[0].pageY - event.touches[1].pageY;
-        var distance = Math.sqrt(dx * dx + dy * dy);
+        const dx = event.touches[0].pageX - event.touches[1].pageX;
+        const dy = event.touches[0].pageY - event.touches[1].pageY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
         //dollyEnd.set(0, distance);
         vec2.set(this.#dollyEnd, 0, distance);
         vec2.set(this.#dollyDelta, 0, Math.pow(this.#dollyEnd[1] / this.#dollyStart[1], this.#dollySpeed));
@@ -9385,7 +9385,7 @@ class OrbitControl extends CameraControl {
         // Manually set the focus since calling preventDefault above
         // prevents the browser from setting it automatically.
         //this.htmlElement.focus ? this.htmlElement.focus(): window.focus();
-        let action = this.#mouseButtons[mouseEvent.button];
+        const action = this.#mouseButtons[mouseEvent.button];
         const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2, NONE: -1 };
         switch (action) {
             case MOUSE.ROTATE:
@@ -9612,16 +9612,16 @@ class RotationControl extends Entity {
     }
     #update(delta) {
         quat.setAxisAngle(tempQuat$a, this.#axis, this.#rotationSpeed * delta);
-        let quaternion = this._quaternion;
+        const quaternion = this._quaternion;
         quat.mul(quaternion, quaternion, tempQuat$a);
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             RotationControl_1: null,
-            rotation_axis: { i18n: '#rotation_axis', f: () => { let v = prompt('Rotation axis', this.axis.join(' ')); if (v !== null) {
+            rotation_axis: { i18n: '#rotation_axis', f: () => { const v = prompt('Rotation axis', this.axis.join(' ')); if (v !== null) {
                     this.axis = stringToVec3(v);
                 } } },
-            rotation_speed: { i18n: '#rotation_speed', f: () => { let s = prompt('Rotation speed', String(this.rotationSpeed * RAD_TO_DEG)); if (s !== null) {
+            rotation_speed: { i18n: '#rotation_speed', f: () => { const s = prompt('Rotation speed', String(this.rotationSpeed * RAD_TO_DEG)); if (s !== null) {
                     this.rotationSpeed = Number(s) * DEG_TO_RAD;
                 } } },
         });
@@ -9648,8 +9648,8 @@ class TranslationControl extends Entity {
     #update(delta) {
         switch (this.#mode) {
             case TranslationMode.Bounce:
-                let distance = vec3.distance(this.#startPoint, this.#endPoint);
-                let deltaL = distance ? this.#speed * delta / distance : 1;
+                const distance = vec3.distance(this.#startPoint, this.#endPoint);
+                const deltaL = distance ? this.#speed * delta / distance : 1;
                 let percent = this.#percent + deltaL * this.#bounceDirection;
                 if (percent >= 1) {
                     this.#bounceDirection = -1;
@@ -9667,13 +9667,13 @@ class TranslationControl extends Entity {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             TranslationControl_1: null,
-            speed: { i18n: '#speed', f: () => { let s = prompt('Speed', String(this.#speed)); if (s !== null) {
+            speed: { i18n: '#speed', f: () => { const s = prompt('Speed', String(this.#speed)); if (s !== null) {
                     this.#speed = Number(s);
                 } } },
-            start_position: { i18n: '#start_position', f: () => { let v = prompt('Position', this.#startPoint.join(' ')); if (v !== null) {
+            start_position: { i18n: '#start_position', f: () => { const v = prompt('Position', this.#startPoint.join(' ')); if (v !== null) {
                     stringToVec3(v, this.#startPoint);
                 } } },
-            end_position: { i18n: '#end_position', f: () => { let v = prompt('Position', this.#endPoint.join(' ')); if (v !== null) {
+            end_position: { i18n: '#end_position', f: () => { const v = prompt('Position', this.#endPoint.join(' ')); if (v !== null) {
                     stringToVec3(v, this.#endPoint);
                 } } },
         });
@@ -9695,7 +9695,7 @@ class LineMaterial extends Material {
         this.uniforms['linewidth'] = lineWidth;
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.linewidth = this.#lineWidth;
         return json;
     }
@@ -9728,9 +9728,9 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
         this.#setupGeometry();
     }
     #setupGeometry() {
-        var positions = [-1, 2, 0, 1, 2, 0, -1, 1, 0, 1, 1, 0, -1, 0, 0, 1, 0, 0, -1, -1, 0, 1, -1, 0];
-        var uvs = [-1, 2, 1, 2, -1, 1, 1, 1, -1, -1, 1, -1, -1, -2, 1, -2];
-        var indices = [0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5];
+        const positions = [-1, 2, 0, 1, 2, 0, -1, 1, 0, 1, 1, 0, -1, 0, 0, 1, 0, 0, -1, -1, 0, 1, -1, 0];
+        const uvs = [-1, 2, 1, 2, -1, 1, 1, 1, -1, -1, 1, -1, -1, -2, 1, -2];
+        const indices = [0, 2, 1, 2, 3, 1, 2, 4, 3, 4, 5, 3, 4, 6, 5, 6, 7, 5];
         // build geometry
         this.setIndex(new Uint16BufferAttribute(indices, 1));
         this.setAttribute('aVertexPosition', new Float32BufferAttribute(positions, 3));
@@ -9738,10 +9738,10 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
         this.count = indices.length;
     }
     setSegments(positions, colors, lineStrip) {
-        let start = [];
-        let end = [];
+        const start = [];
+        const end = [];
         let instanceCount = 0;
-        let increment = lineStrip ? 3 : 6;
+        const increment = lineStrip ? 3 : 6;
         for (let i = 0, l = positions.length; i < l; i += increment) {
             start.push(positions[i + 0]);
             start.push(positions[i + 1]);
@@ -9751,9 +9751,9 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
             end.push(positions[i + 5]);
             ++instanceCount;
         }
-        let startAttribute = new Float32BufferAttribute(start, 3);
+        const startAttribute = new Float32BufferAttribute(start, 3);
         startAttribute.divisor = 1;
-        let endAttribute = new Float32BufferAttribute(end, 3);
+        const endAttribute = new Float32BufferAttribute(end, 3);
         endAttribute.divisor = 1;
         this.setAttribute('aSegmentStart', startAttribute);
         this.setAttribute('aSegmentEnd', endAttribute);
@@ -9761,8 +9761,8 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
     }
     updateGeometry() {
         /*************************/
-        let start = [];
-        let end = [];
+        const start = [];
+        const end = [];
         let x = Math.random();
         let y = Math.random();
         let z = Math.random();
@@ -9777,9 +9777,9 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
             end[i + 1] = y;
             end[i + 2] = z;
         }
-        let startAttribute = new Float32BufferAttribute(start, 3);
+        const startAttribute = new Float32BufferAttribute(start, 3);
         startAttribute.divisor = 1;
-        let endAttribute = new Float32BufferAttribute(end, 3);
+        const endAttribute = new Float32BufferAttribute(end, 3);
         endAttribute.divisor = 1;
         this.setAttribute('aSegmentStart', startAttribute);
         this.setAttribute('aSegmentEnd', endAttribute);
@@ -9813,12 +9813,12 @@ class Circle extends LineSegments {
         this.#update();
     }
     #update() {
-        let startEnd = [];
-        let a = (this.#endAngle - this.#startAngle) / this.#segments;
+        const startEnd = [];
+        const a = (this.#endAngle - this.#startAngle) / this.#segments;
         for (let i = 0; i < this.#segments + 1; i++) {
-            let theta = a * i + this.#startAngle;
-            let x = this.#radius * Math.cos(theta);
-            let y = this.#radius * Math.sin(theta);
+            const theta = a * i + this.#startAngle;
+            const x = this.#radius * Math.cos(theta);
+            const y = this.#radius * Math.sin(theta);
             startEnd.push(x);
             startEnd.push(y);
             startEnd.push(0);
@@ -9826,7 +9826,7 @@ class Circle extends LineSegments {
         this.setSegments(startEnd);
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.radius = this.#radius;
         json.segments = this.#segments;
         json.startAngle = this.#startAngle;
@@ -9835,7 +9835,7 @@ class Circle extends LineSegments {
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
-        let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
         return new Circle({ radius: json.radius, segments: json.segments, material: material, startAngle: json.startAngle, endAngle: json.endAngle });
     }
     static getEntityName() {
@@ -9869,17 +9869,17 @@ class ConeBufferGeometry extends BufferGeometry {
         this.count = this.#indices.length;
     }
     #generateCone(radius, height, segments) {
-        var normal = vec3.create();
-        var vertex = vec3.create();
-        let thetaPerSegment = TWO_PI / segments;
+        const normal = vec3.create();
+        const vertex = vec3.create();
+        const thetaPerSegment = TWO_PI / segments;
         //let halfHeight = height / 2.0;
         for (let segmentId = 0; segmentId <= segments; ++segmentId) {
-            let theta = thetaPerSegment * segmentId;
-            let sinTheta = Math.sin(theta);
-            let cosTheta = Math.cos(theta);
+            const theta = thetaPerSegment * segmentId;
+            const sinTheta = Math.sin(theta);
+            const cosTheta = Math.cos(theta);
             vertex[0] = radius * cosTheta;
             vertex[1] = radius * sinTheta;
-            let u = segmentId / segments;
+            const u = segmentId / segments;
             normal[0] = cosTheta;
             normal[1] = sinTheta;
             //TODO: compute proper normal
@@ -9892,13 +9892,13 @@ class ConeBufferGeometry extends BufferGeometry {
             this.#vertices.push(0, 0, height);
             this.#normals.push(...normal);
             this.#uvs.push(u, 1);
-            let indexStart = segmentId * 2;
+            const indexStart = segmentId * 2;
             this.#indices.push(indexStart, indexStart + 2, indexStart + 1);
             this.#indices.push(indexStart + 1, indexStart + 2, indexStart + 3);
         }
     }
     #generateCap(radius, z, segments) {
-        let middlePointIndex = this.#vertices.length / 3;
+        const middlePointIndex = this.#vertices.length / 3;
         // Push middle vertex
         this.#vertices.push(0, 0, z);
         this.#normals.push(0, 0, Math.sign(z));
@@ -9933,11 +9933,11 @@ class Cone extends Mesh {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Cone_1: null,
-            radius: { i18n: '#radius', f: () => { let radius = prompt('Radius', String(this.#radius)); if (radius) {
+            radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.#radius)); if (radius) {
                     this.#radius = Number(radius);
                     this.#updateGeometry();
                 } } },
-            height: { i18n: '#height', f: () => { let height = prompt('Height', String(this.#height)); if (height) {
+            height: { i18n: '#height', f: () => { const height = prompt('Height', String(this.#height)); if (height) {
                     this.#height = Number(height);
                     this.#updateGeometry();
                 } } },
@@ -9974,17 +9974,17 @@ class CylinderBufferGeometry extends BufferGeometry {
         this.count = this.#indices.length;
     }
     generateCylinder(radius, height, segments) {
-        var normal = vec3.create();
-        var vertex = vec3.create();
-        let thetaPerSegment = TWO_PI / segments;
-        let halfHeight = height / 2.0;
+        const normal = vec3.create();
+        const vertex = vec3.create();
+        const thetaPerSegment = TWO_PI / segments;
+        const halfHeight = height / 2.0;
         for (let segmentId = 0; segmentId <= segments; ++segmentId) {
-            let theta = thetaPerSegment * segmentId;
-            let sinTheta = Math.sin(theta);
-            let cosTheta = Math.cos(theta);
+            const theta = thetaPerSegment * segmentId;
+            const sinTheta = Math.sin(theta);
+            const cosTheta = Math.cos(theta);
             vertex[0] = radius * cosTheta;
             vertex[1] = radius * sinTheta;
-            let u = segmentId / segments;
+            const u = segmentId / segments;
             normal[0] = cosTheta;
             normal[1] = sinTheta;
             //No need to normalize the normal
@@ -9998,14 +9998,14 @@ class CylinderBufferGeometry extends BufferGeometry {
             this.#vertices.push(...vertex);
             this.#normals.push(...normal);
             this.#uvs.push(u, 1);
-            let indexStart = segmentId * 2;
+            const indexStart = segmentId * 2;
             this.#indices.push(indexStart, indexStart + 2, indexStart + 1);
             this.#indices.push(indexStart + 1, indexStart + 2, indexStart + 3);
         }
     }
     generateCap(radius, z, segments) {
-        let middlePointIndex = this.#vertices.length / 3;
-        let sign = Math.sign(z);
+        const middlePointIndex = this.#vertices.length / 3;
+        const sign = Math.sign(z);
         // Push middle vertex
         this.#vertices.push(0, 0, z);
         this.#normals.push(0, 0, sign);
@@ -10045,26 +10045,26 @@ class Cylinder extends Mesh {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Cylinder_1: null,
-            radius: { i18n: '#radius', f: () => { let radius = prompt('Radius', String(this.#radius)); if (radius) {
+            radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.#radius)); if (radius) {
                     this.#radius = Number(radius);
                     this.#updateGeometry();
                 } } },
-            height: { i18n: '#height', f: () => { let height = prompt('Height', String(this.#height)); if (height) {
+            height: { i18n: '#height', f: () => { const height = prompt('Height', String(this.#height)); if (height) {
                     this.#height = Number(height);
                     this.#updateGeometry();
                 } } },
-            segments: { i18n: '#segments', f: () => { let segments = prompt('Segments', String(this.#segments)); if (segments) {
+            segments: { i18n: '#segments', f: () => { const segments = prompt('Segments', String(this.#segments)); if (segments) {
                     this.#segments = Number(segments);
                     this.#updateGeometry();
                 } } },
-            hasCap: { i18n: '#has_caps', f: () => { let hasCap = prompt('Has Caps', String(this.#hasCap)); if (hasCap) {
+            hasCap: { i18n: '#has_caps', f: () => { const hasCap = prompt('Has Caps', String(this.#hasCap)); if (hasCap) {
                     this.#hasCap = (Number(hasCap) == 1);
                     this.#updateGeometry();
                 } } },
         });
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.radius = this.#radius;
         json.height = this.#height;
         json.segments = this.#segments;
@@ -10073,7 +10073,7 @@ class Cylinder extends Mesh {
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
-        let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
         return new Cylinder({ radius: json.radius, height: json.height, material: material, segments: json.segments, hasCap: json.hasCap });
     }
     static getEntityName() {
@@ -10089,25 +10089,25 @@ class PlaneBufferGeometry extends BufferGeometry {
     updateGeometry(width, height, widthSegments, heightSegments) {
         ///width = width || 1;
         //height = height || 1;
-        var width_half = width / 2;
-        var height_half = height / 2;
-        var gridX = Math.floor(widthSegments);
-        var gridY = Math.floor(heightSegments);
-        var gridX1 = gridX + 1;
-        var gridY1 = gridY + 1;
-        var segment_width = width / gridX;
-        var segment_height = height / gridY;
-        var ix, iy;
+        const width_half = width / 2;
+        const height_half = height / 2;
+        const gridX = Math.floor(widthSegments);
+        const gridY = Math.floor(heightSegments);
+        const gridX1 = gridX + 1;
+        const gridY1 = gridY + 1;
+        const segment_width = width / gridX;
+        const segment_height = height / gridY;
+        let ix, iy;
         // buffers
-        var indices = [];
-        var vertices = [];
-        var normals = [];
-        var uvs = [];
+        const indices = [];
+        const vertices = [];
+        const normals = [];
+        const uvs = [];
         // generate vertices, normals and uvs
         for (iy = 0; iy < gridY1; iy++) {
-            var y = iy * segment_height - height_half;
+            const y = iy * segment_height - height_half;
             for (ix = 0; ix < gridX1; ix++) {
-                var x = ix * segment_width - width_half;
+                const x = ix * segment_width - width_half;
                 vertices.push(x, -y, 0);
                 normals.push(0, 0, 1);
                 uvs.push(ix / gridX);
@@ -10117,10 +10117,10 @@ class PlaneBufferGeometry extends BufferGeometry {
         // indices
         for (iy = 0; iy < gridY; iy++) {
             for (ix = 0; ix < gridX; ix++) {
-                var a = ix + gridX1 * iy;
-                var b = ix + gridX1 * (iy + 1);
-                var c = (ix + 1) + gridX1 * (iy + 1);
-                var d = (ix + 1) + gridX1 * iy;
+                const a = ix + gridX1 * iy;
+                const b = ix + gridX1 * (iy + 1);
+                const c = (ix + 1) + gridX1 * (iy + 1);
+                const d = (ix + 1) + gridX1 * iy;
                 // faces
                 indices.push(a, b, d);
                 indices.push(b, c, d);
@@ -10169,15 +10169,15 @@ class Plane extends Mesh {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Plane_1: null,
-            width: { i18n: '#width', f: () => { let width = prompt(); if (width) {
+            width: { i18n: '#width', f: () => { const width = prompt(); if (width) {
                     this.#width = Number(width);
                     this.#updateGeometry();
                 } } },
-            height: { i18n: '#height', f: () => { let height = prompt(); if (height) {
+            height: { i18n: '#height', f: () => { const height = prompt(); if (height) {
                     this.#height = Number(height);
                     this.#updateGeometry();
                 } } },
-            square: { i18n: '#square', f: () => { let size = Number(prompt('Square size')); if (size) {
+            square: { i18n: '#square', f: () => { const size = Number(prompt('Square size')); if (size) {
                     this.#width = size;
                     this.#height = size;
                     this.#updateGeometry();
@@ -10185,7 +10185,7 @@ class Plane extends Mesh {
         });
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.width = this.#width;
         json.height = this.#height;
         json.widthSegments = this.#widthSegments;
@@ -10194,7 +10194,7 @@ class Plane extends Mesh {
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
-        let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
         return new Plane({ width: json.width, height: json.height, material: material, widthSegments: json.widthSegments, heightSegments: json.heightSegments });
     }
     static getEntityName() {
@@ -10211,23 +10211,23 @@ class SphereBufferGeometry extends BufferGeometry {
         //phiLength = phiLength !== undefined ? phiLength : Math.PI * 2;
         //thetaStart = thetaStart !== undefined ? thetaStart : 0;
         //thetaLength = thetaLength !== undefined ? thetaLength : Math.PI;
-        var thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
-        var ix, iy;
-        var index = 0;
-        var grid = [];
-        var vertex = vec3.create();
-        var normal = vec3.create();
+        const thetaEnd = Math.min(thetaStart + thetaLength, Math.PI);
+        let ix, iy;
+        let index = 0;
+        const grid = [];
+        const vertex = vec3.create();
+        const normal = vec3.create();
         // buffers
-        var indices = [];
-        var vertices = [];
-        var normals = [];
-        var uvs = [];
+        const indices = [];
+        const vertices = [];
+        const normals = [];
+        const uvs = [];
         // generate vertices, normals and uvs
         for (iy = 0; iy <= rings; iy++) {
-            var verticesRow = [];
-            var v = iy / rings;
+            const verticesRow = [];
+            const v = iy / rings;
             // special case for the poles
-            var uOffset = 0;
+            let uOffset = 0;
             if (iy == 0 && thetaStart == 0) {
                 uOffset = 0.5 / segments;
             }
@@ -10235,7 +10235,7 @@ class SphereBufferGeometry extends BufferGeometry {
                 uOffset = -0.5 / segments;
             }
             for (ix = 0; ix <= segments; ix++) {
-                var u = ix / segments;
+                const u = ix / segments;
                 // vertex
                 vertex[0] = -radius * Math.cos(phiStart + u * phiLength) * Math.sin(thetaStart + v * thetaLength);
                 vertex[2] = radius * Math.cos(thetaStart + v * thetaLength);
@@ -10253,10 +10253,10 @@ class SphereBufferGeometry extends BufferGeometry {
         // indices
         for (iy = 0; iy < rings; iy++) {
             for (ix = 0; ix < segments; ix++) {
-                var a = grid[iy][ix + 1];
-                var b = grid[iy][ix];
-                var c = grid[iy + 1][ix];
-                var d = grid[iy + 1][ix + 1];
+                const a = grid[iy][ix + 1];
+                const b = grid[iy][ix];
+                const c = grid[iy + 1][ix];
+                const d = grid[iy + 1][ix + 1];
                 if (iy !== 0 || thetaStart > 0)
                     indices.push(a, b, d);
                 if (iy !== rings - 1 || thetaEnd < Math.PI)
@@ -10272,11 +10272,11 @@ class SphereBufferGeometry extends BufferGeometry {
     }
 }
 
-let intersectionPoint1 = vec3.create();
-let intersectionPoint2 = vec3.create();
-let intersectionNormal$1 = vec3.create();
+const intersectionPoint1 = vec3.create();
+const intersectionPoint2 = vec3.create();
+const intersectionNormal$1 = vec3.create();
 const tempVec3$r = vec3.create();
-let v$g = vec3.create();
+const v$g = vec3.create();
 class Sphere extends Mesh {
     radius;
     segments;
@@ -10308,24 +10308,24 @@ class Sphere extends Mesh {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Sphere_1: null,
-            radius: { i18n: '#radius', f: () => { let radius = prompt('Radius', String(this.radius)); if (radius) {
+            radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.radius)); if (radius) {
                     this.radius = Number(radius);
                     this.updateGeometry();
                 } } },
-            segments: { i18n: '#segments', f: () => { let segments = prompt('Segments', String(this.segments)); if (segments) {
+            segments: { i18n: '#segments', f: () => { const segments = prompt('Segments', String(this.segments)); if (segments) {
                     this.segments = Number(segments);
                     this.updateGeometry();
                 } } },
-            rings: { i18n: '#rings', f: () => { let rings = prompt('Rings', String(this.rings)); if (rings) {
+            rings: { i18n: '#rings', f: () => { const rings = prompt('Rings', String(this.rings)); if (rings) {
                     this.rings = Number(rings);
                     this.updateGeometry();
                 } } }
         });
     }
     raycast(raycaster, intersections) {
-        let ray = raycaster.ray;
-        let worldPosition = this.getWorldPosition(v$g);
-        let inverseRadius = 1 / this.radius;
+        const ray = raycaster.ray;
+        const worldPosition = this.getWorldPosition(v$g);
+        const inverseRadius = 1 / this.radius;
         if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$r), intersectionPoint1, intersectionPoint2)) {
             //return super.raycast(raycaster, intersections);//TODO: improve
             //TODO: case when the ray spawn from inside the sphere
@@ -10338,7 +10338,7 @@ class Sphere extends Mesh {
         }
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.radius = this.radius;
         json.segments = this.segments;
         json.rings = this.rings;
@@ -10350,7 +10350,7 @@ class Sphere extends Mesh {
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
-        let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
         return new Sphere({ radius: json.radius, material: material, segments: json.segments, rings: json.rings, phiStart: json.phistart, phiLength: json.philength, thetaStart: json.thetastart, thetaLength: json.thetalength });
     }
     static getEntityName() {
@@ -10624,11 +10624,11 @@ class Manipulator extends Entity {
         this.#yArrow.rotateX(-HALF_PI);
         this.#yArrow.translateZ(ARROW_LENGTH / 2);
         this.#zArrow.translateZ(ARROW_LENGTH / 2);
-        let xTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#xMaterial, name: 'Manipulator X tip' });
+        const xTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#xMaterial, name: 'Manipulator X tip' });
         xTip.translateZ(ARROW_LENGTH / 2);
-        let yTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#yMaterial, name: 'Manipulator Y tip' });
+        const yTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#yMaterial, name: 'Manipulator Y tip' });
         yTip.translateZ(ARROW_LENGTH / 2);
-        let zTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#zMaterial, name: 'Manipulator Z tip' });
+        const zTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#zMaterial, name: 'Manipulator Z tip' });
         zTip.translateZ(ARROW_LENGTH / 2);
         this.#xyPlane.translateOnAxis([1, 1, 0], HALF_PLANE_LENGTH);
         this.#xzPlane.translateOnAxis([1, 0, 1], HALF_PLANE_LENGTH);
@@ -10676,11 +10676,11 @@ class Manipulator extends Entity {
         this.#yScale.rotateX(-HALF_PI);
         this.#yScale.translateZ(ARROW_LENGTH / 2);
         this.#zScale.translateZ(ARROW_LENGTH / 2);
-        let xScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#xMaterial });
+        const xScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#xMaterial });
         xScaleTip.translateZ(ARROW_LENGTH / 2);
-        let yScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#yMaterial });
+        const yScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#yMaterial });
         yScaleTip.translateZ(ARROW_LENGTH / 2);
-        let zScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#zMaterial });
+        const zScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#zMaterial });
         zScaleTip.translateZ(ARROW_LENGTH / 2);
         /*this.#xyPlane = new Plane(PLANE_LENGTH, PLANE_LENGTH, this.#xyMaterial);
         this.#xyPlane.translateOnAxis([1, 1, 0], HALF_PLANE_LENGTH);
@@ -10729,7 +10729,7 @@ class Manipulator extends Entity {
         this.#startDragVector = this.#computeQuaternion(x, y);
     }
     startScale(x, y) {
-        let startScalePosition = this.#startScalePosition;
+        const startScalePosition = this.#startScalePosition;
         if (this._parent) {
             this._parent.getWorldPosition(this.#startPosition);
         }
@@ -10818,7 +10818,7 @@ class Manipulator extends Entity {
         }
     }
     #scaleMoveHandler(x, y) {
-        let v3 = this.#computeTranslationPosition(tempVec3$q, x, y);
+        const v3 = this.#computeTranslationPosition(tempVec3$q, x, y);
         if (!v3) {
             return;
         }
@@ -10852,15 +10852,15 @@ class Manipulator extends Entity {
         }
     }
     #computeTranslationPosition(out, x, y) {
-        let camera = this.camera;
+        const camera = this.camera;
         if (camera) {
-            let projectionMatrix = camera.projectionMatrix;
-            let viewMatrix = camera.cameraMatrix;
+            const projectionMatrix = camera.projectionMatrix;
+            const viewMatrix = camera.cameraMatrix;
             camera.nearPlane;
             camera.farPlane;
             camera.aspectRatio;
-            let invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
-            let invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
+            const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
+            const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
             // transform the screen coordinates to normalized coordinates
             this.#cursorPos[0] = (x / new Graphics().getWidth()) * 2.0 - 1.0;
             this.#cursorPos[1] = 1.0 - (y / new Graphics().getHeight()) * 2.0;
@@ -10876,7 +10876,7 @@ class Manipulator extends Entity {
                 if (vec3.dot(planeNormal, lineDirection) == 0) {
                     return vec3.create(); //TODO: optimize
                 }
-                let t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
+                const t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
                 return vec3.scaleAndAdd(out, linePoint, lineDirection, t);
             }
             let planeNormal = vec3.create();
@@ -10904,13 +10904,13 @@ class Manipulator extends Entity {
                     break;
             }
             /********************/
-            let worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
-            let A = worldPos; //vec3.clone(this._parent.position) : vec3.clone(this.position);
-            let B = vec3.add(vec3.create(), A, planeNormal);
-            let P = camera.position;
-            let AP = vec3.sub(vec3.create(), P, A); //P-A;
-            let AB = vec3.sub(vec3.create(), B, A); //B-A;
-            let projPoint = vec3.add(vec3.create(), A, vec3.scale(AB, AB, vec3.dot(AP, AB) / vec3.dot(AB, AB)));
+            const worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
+            const A = worldPos; //vec3.clone(this._parent.position) : vec3.clone(this.position);
+            const B = vec3.add(vec3.create(), A, planeNormal);
+            const P = camera.position;
+            const AP = vec3.sub(vec3.create(), P, A); //P-A;
+            const AB = vec3.sub(vec3.create(), B, A); //B-A;
+            const projPoint = vec3.add(vec3.create(), A, vec3.scale(AB, AB, vec3.dot(AP, AB) / vec3.dot(AB, AB)));
             planeNormal = vec3.sub(vec3.create(), projPoint, camera.position);
             vec3.normalize(planeNormal, planeNormal);
             if (this.#axis == ManipulatorAxis.XYZ) {
@@ -10937,15 +10937,15 @@ class Manipulator extends Entity {
         return Math.atan2(normalizedY - tempVec3$q[1], normalizedX - tempVec3$q[0]);
     }
     #computeQuaternion_removeme(x, y) {
-        let camera = this.camera;
+        const camera = this.camera;
         if (camera) {
-            let projectionMatrix = camera.projectionMatrix;
-            let viewMatrix = camera.cameraMatrix;
+            const projectionMatrix = camera.projectionMatrix;
+            const viewMatrix = camera.cameraMatrix;
             camera.nearPlane;
             camera.farPlane;
             camera.aspectRatio;
-            let invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
-            let invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
+            const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
+            const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
             this.#cursorPos[0] = (x / new Graphics().getWidth()) * 2.0 - 1.0;
             this.#cursorPos[1] = 1.0 - (y / new Graphics().getHeight()) * 2.0;
             this.#near[0] = this.#far[0] = this.#cursorPos[0];
@@ -10960,7 +10960,7 @@ class Manipulator extends Entity {
                 if (vec3.dot(planeNormal, lineDirection) == 0) {
                     return vec3.create(); //TODO: optimize
                 }
-                let t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
+                const t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
                 return vec3.scaleAndAdd(vec3.create(), linePoint, lineDirection, t); //TODO: optimize pass vec3 as param
             }
             let v4;
@@ -10998,7 +10998,7 @@ class Manipulator extends Entity {
                         break;
                 }
             }
-            let worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
+            const worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
             v4 = lineIntersection(worldPos, planeNormal, this.#near, vec3.sub(vec3.create(), this.#far, this.#near));
             if (!v4) {
                 return vec3.create(); //TODO: optimize
@@ -11069,7 +11069,7 @@ class Manipulator extends Entity {
     }
     set enableX(enableX) {
         this.#enableX = enableX;
-        let enable = enableX ? undefined : false;
+        const enable = enableX ? undefined : false;
         this.#xArrow.setVisible(enable);
         this.#xCircle.setVisible(enable);
         this.#xScale.setVisible(enable);
@@ -11079,7 +11079,7 @@ class Manipulator extends Entity {
     }
     set enableY(enableY) {
         this.#enableY = enableY;
-        let enable = enableY ? undefined : false;
+        const enable = enableY ? undefined : false;
         this.#yArrow.setVisible(enable);
         this.#yCircle.setVisible(enable);
         this.#yScale.setVisible(enable);
@@ -11089,7 +11089,7 @@ class Manipulator extends Entity {
     }
     set enableZ(enableZ) {
         this.#enableZ = enableZ;
-        let enable = enableZ ? undefined : false;
+        const enable = enableZ ? undefined : false;
         this.#zArrow.setVisible(enable);
         this.#zCircle.setVisible(enable);
         this.#zScale.setVisible(enable);
@@ -11197,12 +11197,12 @@ quat.rotateX(ROTATE_Z, ROTATE_Z, -HALF_PI);
 const tempMat4$3 = mat4.create();
 async function exportToBinaryFBX(entity) {
     const fbxManager = new FBXManager();
-    let fbxFile = fbxSceneToFBXFile(await entityToFBXScene(fbxManager, entity));
+    const fbxFile = fbxSceneToFBXFile(await entityToFBXScene(fbxManager, entity));
     return new FBXExporter().exportBinary(fbxFile);
 }
 async function entityToFBXScene(fbxManager, entity) {
     const fbxScene = fbxManager.createObject('FBXScene', 'Scene');
-    let playing = new Graphics().isRunning();
+    const playing = new Graphics().isRunning();
     new Graphics().pause();
     await createFBXSceneEntity(fbxScene, entity);
     if (playing) {
@@ -11234,7 +11234,7 @@ async function createFBXSceneEntity(fbxScene, entity, context = {}) {
     await createChildEntities(fbxScene, entity, context);
 }
 async function createChildEntities(fbxScene, entity, context) {
-    for (let childEntity of entity.children) {
+    for (const childEntity of entity.children) {
         await createFBXSceneEntity(fbxScene, childEntity, context);
     }
 }
@@ -11254,29 +11254,29 @@ async function createSource1ModelInstance(fbxScene, entity, context) {
     const exportedBones = context.exportedBones;
     if (entity.skeleton) {
         const bones = entity.skeleton.bones;
-        for (let bone of bones) {
+        for (const bone of bones) {
             exportedBones.get(bone);
         }
     }
 }
 async function createFBXMesh(fbxScene, mesh, context) {
     const fbxManager = fbxScene.manager;
-    let meshPose = fbxManager.createObject('FBXPose', 'Pose ' + mesh.name);
+    const meshPose = fbxManager.createObject('FBXPose', 'Pose ' + mesh.name);
     fbxScene.addObject(meshPose);
     if (!mesh.exportObj || !mesh.visible || !mesh.is('Mesh') || mesh.parent?.isParticleSystem) {
         return;
     }
-    let fbxMeshNode = fbxManager.createObject('FBXNode', mesh.name);
+    const fbxMeshNode = fbxManager.createObject('FBXNode', mesh.name);
     fbxMeshNode.localRotation.value = quatToEulerDeg([0, 0, 0], quat.mul(quat.create(), ROTATE_Z, mesh.getWorldQuaternion()));
     fbxMeshNode.localTranslation.value = vec3.transformQuat(vec3.create(), mesh.getWorldPosition(), ROTATE_Z);
     fbxMeshNode.localScaling.value = mesh.getWorldScale();
-    let fbxMaterial = fbxManager.createObject('FBXSurfacePhong');
+    const fbxMaterial = fbxManager.createObject('FBXSurfacePhong');
     fbxMaterial.name = 'mat_' + fbxMaterial.id + '.png';
-    let fbxMesh = fbxManager.createObject('FBXMesh', 'Name me FBXMesh');
+    const fbxMesh = fbxManager.createObject('FBXMesh', 'Name me FBXMesh');
     fbxMeshNode.nodeAttribute = fbxMesh;
     fbxMeshNode.addMaterial(fbxMaterial);
     fbxScene.rootNode.addChild(fbxMeshNode);
-    let meshMaterial = mesh.material;
+    const meshMaterial = mesh.material;
     //console.log(meshMaterial);
     if (meshMaterial) {
         await configureMaterial(meshMaterial, fbxMaterial, mesh.materialsParams);
@@ -11294,31 +11294,31 @@ async function createFBXMesh(fbxScene, mesh, context) {
         meshDatas.bi;
         meshDatas.bw;
     }
-    let boneIndexes = new Map();
-    let boneWeights = new Map();
-    let polygons = [];
-    let edges = [];
-    let uvIndex = [];
-    let vertexIndices = meshDatas.f;
+    const boneIndexes = new Map();
+    const boneWeights = new Map();
+    const polygons = [];
+    const edges = [];
+    const uvIndex = [];
+    const vertexIndices = meshDatas.f;
     let vertexIndex1;
     let vertexIndex2;
     let vertexIndex3;
-    let remappedIndex = new Map();
+    const remappedIndex = new Map();
     let currentIndex = 0;
-    let remappedVertices = [];
-    let remappedNormals = [];
-    let remappedUV = [];
-    let remappedBoneIndices = [];
-    let remappedBoneWeight = [];
+    const remappedVertices = [];
+    const remappedNormals = [];
+    const remappedUV = [];
+    const remappedBoneIndices = [];
+    const remappedBoneWeight = [];
     const bonesPerVertex = mesh.bonesPerVertex;
     function remapIndex(index) {
         if (remappedIndex.has(index)) {
             return remappedIndex.get(index);
         }
-        let newIndex = currentIndex++;
+        const newIndex = currentIndex++;
         remappedIndex.set(index, newIndex);
-        let vIndex = index * 3;
-        let uvIndex = index * 2;
+        const vIndex = index * 3;
+        const uvIndex = index * 2;
         if (meshDatas.v) {
             remappedVertices.push(meshDatas.v[vIndex], meshDatas.v[vIndex + 1], meshDatas.v[vIndex + 2]);
         }
@@ -11350,9 +11350,9 @@ async function createFBXMesh(fbxScene, mesh, context) {
     {
         for (let vertexIndex = 0, l = remappedBoneIndices.length / bonesPerVertex; vertexIndex < l; ++vertexIndex) {
             for (let j = 0; j < bonesPerVertex; ++j) {
-                let k = vertexIndex * bonesPerVertex + j;
-                let boneIndex = remappedBoneIndices[k];
-                let boneWeight = remappedBoneWeight[k];
+                const k = vertexIndex * bonesPerVertex + j;
+                const boneIndex = remappedBoneIndices[k];
+                const boneWeight = remappedBoneWeight[k];
                 if (boneWeight != 0) {
                     if (!boneIndexes.has(boneIndex)) {
                         boneIndexes.set(boneIndex, []);
@@ -11376,7 +11376,7 @@ async function createFBXMesh(fbxScene, mesh, context) {
     fbxModel.name = mesh.name;*/
     //fbxFile.addModel(fbxModel);
     if (mesh.skeleton) {
-        let boneDatas = { bi: boneIndexes, bw: boneWeights };
+        const boneDatas = { bi: boneIndexes, bw: boneWeights };
         //for (let i = 0; i < )
         {
             exportSkeleton(fbxScene, mesh.skeleton, context, fbxMesh, boneDatas, meshPose);
@@ -11386,8 +11386,8 @@ async function createFBXMesh(fbxScene, mesh, context) {
 async function createFBXCamera(fbxScene, camera) {
     const fbxManager = fbxScene.manager;
     console.log(camera);
-    let fbxCameraNode = fbxManager.createObject('FBXNode', camera.name);
-    let fbxCamera = fbxManager.createObject('FBXCamera', camera.name);
+    const fbxCameraNode = fbxManager.createObject('FBXNode', camera.name);
+    const fbxCamera = fbxManager.createObject('FBXCamera', camera.name);
     fbxCameraNode.nodeAttribute = fbxCamera;
     //fbxCamera.position.value = camera.position;
     fbxCameraNode.localTranslation.value = camera.position;
@@ -11399,16 +11399,16 @@ async function createFBXCamera(fbxScene, camera) {
 //38772576 -> 39350848 -> 49570336 -> 49569504 -> 39673840 samba dancing
 function exportSkeleton(fbxScene, skeleton, context, fbxMesh, boneDatas, meshPose) {
     const fbxManager = fbxScene.manager;
-    let fbxSkin = fbxManager.createObject('FBXSkin', skeleton.name);
+    const fbxSkin = fbxManager.createObject('FBXSkin', skeleton.name);
     const exportedClusters = new WeakMap();
     fbxSkin.geometry = fbxMesh;
-    for (let bone of skeleton.bones) {
+    for (const bone of skeleton.bones) {
         exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneDatas, meshPose);
     }
 }
 function exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneDatas, meshPose) {
     const fbxManager = fbxScene.manager;
-    let boneParent = bone.parent ?? bone.skeleton;
+    const boneParent = bone.parent ?? bone.skeleton;
     const boneParentSkeletonBone = bone.parentSkeletonBone;
     if (boneParent) {
         if (boneParent.isBone) {
@@ -11428,9 +11428,9 @@ function exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneData
     }
     else {
         fbxBone = fbxManager.createObject('FBXNode', bone.name); //TODO
-        let angles = vec3.create();
-        let transformedQuat = quat.create();
-        let transformedVec = vec3.create();
+        const angles = vec3.create();
+        const transformedQuat = quat.create();
+        const transformedVec = vec3.create();
         if (boneParentSkeletonBone) {
             if (boneParent.isSkeleton) {
                 fbxBone.localTranslation.value = vec3.transformQuat(transformedVec, boneParentSkeletonBone.worldPos, ROTATE_Z);
@@ -11455,13 +11455,13 @@ function exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneData
         }
         meshPose.add(fbxBone, bone.boneMat, true);
         fbxBone.localRotation.value = angles;
-        let fbxLimb = fbxManager.createObject('FBXSkeleton', 'Name me FBXSkeleton', FBX_SKELETON_TYPE_LIMB);
+        const fbxLimb = fbxManager.createObject('FBXSkeleton', 'Name me FBXSkeleton', FBX_SKELETON_TYPE_LIMB);
         fbxBone.nodeAttribute = fbxLimb;
         fbxBone.parent = exportedBones.get(boneParent) ?? fbxScene.rootNode;
         exportedBones.set(bone, fbxBone);
     }
     if (!exportedClusters.has(bone)) {
-        let fbxCluster = fbxManager.createObject('FBXCluster', bone.name);
+        const fbxCluster = fbxManager.createObject('FBXCluster', bone.name);
         fbxCluster.transformMatrix = bone.poseToBone;
         fbxCluster.transformLinkMatrix = mat4.invert(tempMat4$3, bone.poseToBone);
         fbxCluster.link = fbxBone;
@@ -11563,8 +11563,8 @@ export async function entitytoFBXFile(entity) {
 async function configureMaterial(material, fbxMaterial, materialsParams) {
     const fbxManager = fbxMaterial.manager;
     if (material.uniforms['colorMap']) {
-        let fbxTexture = fbxManager.createObject('FBXTexture');
-        let fbxVideo = fbxManager.createObject('FBXVideo');
+        const fbxTexture = fbxManager.createObject('FBXTexture');
+        const fbxVideo = fbxManager.createObject('FBXVideo');
         fbxTexture.fbxMapping = 'DiffuseColor';
         fbxTexture.media = fbxVideo;
         fbxTexture.name = 'mat_' + fbxTexture.id + '.png';
@@ -11585,8 +11585,8 @@ async function renderMaterial(material, materialsParams) {
         fullScreenQuadMesh = new FullScreenQuad();
         scene$1.addChild(fullScreenQuadMesh);
     }
-    let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024); //TODOv3: constant
-    let previousClearColor = new Graphics().getClearColor();
+    const [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024); //TODOv3: constant
+    const previousClearColor = new Graphics().getClearColor();
     new Graphics().clearColor(vec4.fromValues(0, 0, 0, 0));
     new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
     new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
@@ -11594,7 +11594,7 @@ async function renderMaterial(material, materialsParams) {
     fullScreenQuadMesh.material = material;
     fullScreenQuadMesh.materialsParams = materialsParams;
     new Graphics().render(scene$1, camera$1, 0, { DisableToolRendering: true });
-    let imgContent = await new Graphics().toBlob();
+    const imgContent = await new Graphics().toBlob();
     new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
     new Graphics().setIncludeCode('SKIP_PROJECTION', '');
     new Graphics().setIncludeCode('SKIP_LIGHTING', '');
@@ -11625,7 +11625,7 @@ class ContextObserverClass {
         const subject = event.target;
         const dependents = this.#observed.get(subject);
         if (dependents) {
-            for (let dependent of dependents) {
+            for (const dependent of dependents) {
                 ContextObserverClass.#processEvent(subject, dependent, event);
             }
         }
@@ -11672,7 +11672,7 @@ class ContextObserverClass {
         const size = this.#observed.get(subject).size;
         if (size == 0) {
             const types = this.#listeners.get(subject);
-            for (let type of types) {
+            for (const type of types) {
                 //console.log(listener);
                 this.#removeListener(subject, type);
             }
@@ -11741,7 +11741,7 @@ class RgbeImporter {
         return this.import(new BinaryReader(await response.arrayBuffer()));
     }
     import(reader) {
-        let rgbe = decodeRGBE(reader.getDataView());
+        const rgbe = decodeRGBE(reader.getDataView());
         console.info(rgbe);
         if (!rgbe) {
             return null;
@@ -11818,26 +11818,26 @@ class Obj {
 }
 
 function readVertex(line) {
-    let arr = line.split(' ');
+    const arr = line.split(' ');
     return vec3.fromValues(arr[1] ?? 0.0, arr[2] ?? 0.0, arr[3] ?? 0.0 /*, arr[4] ?? 1.0*/);
 }
 function readVertexCoord(line) {
-    let arr = line.split(' ');
+    const arr = line.split(' ');
     return vec2.fromValues(arr[1] ?? 0.0, arr[2] ?? 0);
 }
 function readVertexNormal(line) {
-    let arr = line.split(' ');
-    let v = vec3.fromValues(arr[1] ?? 1.0, arr[2] ?? 1, arr[3] ?? 1);
+    const arr = line.split(' ');
+    const v = vec3.fromValues(arr[1] ?? 1.0, arr[2] ?? 1, arr[3] ?? 1);
     return vec3.normalize(v, v);
 }
 function readFace(line) {
-    let arr = line.split(' ');
-    let face = new ObjFace();
+    const arr = line.split(' ');
+    const face = new ObjFace();
     for (let i = 1; i < arr.length; i++) {
-        let v = arr[i];
+        const v = arr[i];
         ///let faceVertex = [];
         if (v) {
-            let v2 = v.split('/');
+            const v2 = v.split('/');
             //faceVertex.push(v2[0] ?? 0, v2[1] ?? 0, v2[2] ?? 0);
             face.v.push((v2[0] ?? 1) - 1);
             face.t.push((v2[1] ?? 1) - 1);
@@ -11854,8 +11854,8 @@ function readFace(line) {
     return face;
 }
 function buildMesh(obj) {
-    let geometry = new BufferGeometry();
-    let material = new MeshBasicMaterial();
+    const geometry = new BufferGeometry();
+    const material = new MeshBasicMaterial();
     const m = obj.toMesh();
     geometry.setIndex(new Uint32BufferAttribute(m.i, 1));
     geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(m.v, 3));
@@ -11866,7 +11866,7 @@ function buildMesh(obj) {
 }
 class OBJImporter {
     static load(txt) {
-        let lines = txt.split('\n');
+        const lines = txt.split('\n');
         const obj = new Obj();
         for (let line of lines) {
             line = line.trim();
@@ -11916,7 +11916,7 @@ class PointLightHelper extends Mesh {
         this.#createVertices();
         this.material.setColorMode(MaterialColorMode.PerMesh);
         this.material.setDefine('ALWAYS_ON_TOP');
-        let sphere = new Sphere({ radius: SPHERE_RADIUS, segments: 12, rings: 12 });
+        const sphere = new Sphere({ radius: SPHERE_RADIUS, segments: 12, rings: 12 });
         sphere.material.setDefine('ALWAYS_ON_TOP');
         this.addChild(sphere);
     }
@@ -11924,8 +11924,8 @@ class PointLightHelper extends Mesh {
         const indices = [];
         const vertices = [];
         vertices.push(0, 0, 0);
-        let iInc = PI / 4;
-        let jInc = PI / 4;
+        const iInc = PI / 4;
+        const jInc = PI / 4;
         let k = 0;
         for (let i = 0; i < TWO_PI; i += iInc) {
             for (let j = 0; j < PI; j += jInc) {
@@ -11933,7 +11933,7 @@ class PointLightHelper extends Mesh {
                 indices.push(0, ++k);
             }
         }
-        let geometry = this.geometry;
+        const geometry = this.geometry;
         geometry.setIndex(new Uint16BufferAttribute(indices, 1));
         geometry.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3));
         geometry.count = indices.length;
@@ -11990,20 +11990,20 @@ class Light extends Entity {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Light_1: null,
-            color: { i18n: '#color', f: () => { let color = prompt('Color', this.color.join(' ')); if (color !== null) {
+            color: { i18n: '#color', f: () => { const color = prompt('Color', this.color.join(' ')); if (color !== null) {
                     this.color = stringToVec3(color);
                 } } },
-            intensity: { i18n: '#intensity', f: () => { let intensity = prompt('Intensity', String(this.intensity)); if (intensity !== null) {
+            intensity: { i18n: '#intensity', f: () => { const intensity = prompt('Intensity', String(this.intensity)); if (intensity !== null) {
                     this.intensity = Number(intensity);
                 } } },
         }, this.shadow ? {
-            texture_size: { i18n: '#texture_size', f: () => { let textureSize = prompt('Texture size', String(this.shadow.textureSize[0])); if (textureSize !== null) {
+            texture_size: { i18n: '#texture_size', f: () => { const textureSize = prompt('Texture size', String(this.shadow.textureSize[0])); if (textureSize !== null) {
                     this.shadowTextureSize = Number.parseFloat(textureSize);
                 } } }
         } : null);
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.color = this.color;
         json.intensity = this.intensity;
         json.shadowtexturesize = this.shadowTextureSize;
@@ -12062,8 +12062,8 @@ class LightShadow {
         return this.#textureSize;
     }
     computeShadowMatrix(mapIndex) {
-        let shadowCamera = this.camera;
-        let shadowMatrix = this.shadowMatrix;
+        const shadowCamera = this.camera;
+        const shadowMatrix = this.shadowMatrix;
         mat4.set(shadowMatrix, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.0, 0.0, 0.0, 0.5, 0.0, 0.5, 0.5, 0.5, 1.0);
         shadowCamera.dirty();
         mat4.mul(shadowMatrix, shadowMatrix, shadowCamera.projectionMatrix);
@@ -12138,13 +12138,13 @@ class SpotLight extends Light {
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
-            angle: { i18n: '#angle', f: () => { let angle = prompt('Angle', String(this.angle)); if (angle !== null) {
+            angle: { i18n: '#angle', f: () => { const angle = prompt('Angle', String(this.angle)); if (angle !== null) {
                     this.angle = Number(angle);
                 } } },
-            inner_angle: { i18n: '#inner_angle', f: () => { let innerAngle = prompt('Inner angle', String(this.#innerAngle)); if (innerAngle !== null) {
+            inner_angle: { i18n: '#inner_angle', f: () => { const innerAngle = prompt('Inner angle', String(this.#innerAngle)); if (innerAngle !== null) {
                     this.innerAngle = Number(innerAngle);
                 } } },
-            range: { i18n: '#range', f: () => { let range = prompt('Range', this.range); if (range !== null) {
+            range: { i18n: '#range', f: () => { const range = prompt('Range', this.range); if (range !== null) {
                     this.range = range;
                 } } },
         });
@@ -12187,26 +12187,26 @@ class SpotLightHelper extends Mesh {
         }
         //close loop
         indices.push(k, 1);
-        let geometry = this.geometry;
+        const geometry = this.geometry;
         geometry.setIndex(new Uint16BufferAttribute(indices, 1));
         this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3);
         geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
         geometry.count = indices.length;
     }
     update() {
-        let spotLight = this.#spotLight;
+        const spotLight = this.#spotLight;
         if (spotLight && ((this.#range != spotLight.range) || (this.#angle != spotLight.angle) || (!vec3.exactEquals(spotLight.color, this.#color)))) {
             vec3.copy(this.#color, spotLight.color);
             vec4.set(tempVec4$1, this.#color[0], this.#color[1], this.#color[2], 1.);
             this.material.setMeshColor(tempVec4$1);
-            let range = spotLight.range || 1000.0;
-            let radius = Math.sin(spotLight.angle) * range;
+            const range = spotLight.range || 1000.0;
+            const radius = Math.sin(spotLight.angle) * range;
             this.#range = spotLight.range;
             this.#angle = spotLight.angle;
-            let verticesArray = this.#vertexPositionAttribute._array;
+            const verticesArray = this.#vertexPositionAttribute._array;
             for (let i = 0; i < DIVISIONS; i += 1) {
-                let angle = i * TWO_PI / DIVISIONS;
-                let index = (i + 1) * 3;
+                const angle = i * TWO_PI / DIVISIONS;
+                const index = (i + 1) * 3;
                 verticesArray[index + 0] = Math.cos(angle) * radius;
                 verticesArray[index + 1] = Math.sin(angle) * radius;
                 verticesArray[index + 2] = -range;
@@ -12287,8 +12287,8 @@ class PointLightShadow extends LightShadow {
         this.viewPortsLength = 6;
     }
     computeShadowMatrix(mapIndex) {
-        let shadowCamera = this.camera;
-        let shadowMatrix = this.shadowMatrix;
+        const shadowCamera = this.camera;
+        const shadowMatrix = this.shadowMatrix;
         shadowCamera.setWorldQuaternion(DIRECTIONS[mapIndex]);
         shadowCamera.dirty();
         shadowCamera.getWorldPosition(worldPos);
@@ -12314,7 +12314,7 @@ class PointLight extends Light {
         return super.castShadow;
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.range = this.range;
         return json;
     }
@@ -12327,7 +12327,7 @@ class PointLight extends Light {
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
-            range: { i18n: '#range', f: () => { let range = prompt('Range', this.range); if (range !== null) {
+            range: { i18n: '#range', f: () => { const range = prompt('Range', this.range); if (range !== null) {
                     this.range = range;
                 } } },
         });
@@ -12370,7 +12370,7 @@ class Curve {
         return length;
     }
     getPoints(divisions = 5) {
-        let points = [];
+        const points = [];
         for (let i = 0; i <= divisions; i++) {
             points.push(this.getPosition(i / divisions));
         }
@@ -12396,9 +12396,9 @@ class CubicBezierCurve extends Curve {
     }
     getPosition(t, out = vec3.create()) {
         //P = (1 - t)³ * P0 + 3 * (1 - t)² * t * P1 + 3 * (1 - t) * t² * P2 + t³ * P3
-        let oneMinusT = 1 - t;
-        let oneMinusTSqr = oneMinusT * oneMinusT;
-        let tSqr = t * t;
+        const oneMinusT = 1 - t;
+        const oneMinusTSqr = oneMinusT * oneMinusT;
+        const tSqr = t * t;
         vec3.scale(out, this.p0, oneMinusTSqr * oneMinusT);
         vec3.scaleAndAdd(out, out, this.p1, 3 * oneMinusTSqr * t);
         vec3.scaleAndAdd(out, out, this.p2, 3 * oneMinusT * tSqr);
@@ -12450,7 +12450,7 @@ class QuadraticBezierCurve extends Curve {
     }
     getPosition(t, out = vec3.create()) {
         //P = (1 - t)² * P0 + 2 * (1 - t) * t * P1 + t² * P2
-        let oneMinusT = 1 - t;
+        const oneMinusT = 1 - t;
         vec3.scale(out, this.p0, oneMinusT * oneMinusT);
         vec3.scaleAndAdd(out, out, this.p1, 2 * oneMinusT * t);
         vec3.scaleAndAdd(out, out, this.p2, t * t);
@@ -12458,10 +12458,10 @@ class QuadraticBezierCurve extends Curve {
     }
 }
 
-let p0$1 = vec3.create();
-let p1$1 = vec3.create();
-let p2$1 = vec3.create();
-let p3$1 = vec3.create();
+const p0$1 = vec3.create();
+const p1$1 = vec3.create();
+const p2$1 = vec3.create();
+const p3$1 = vec3.create();
 class Path extends Curve {
     looping;
     _curves = [];
@@ -12483,19 +12483,19 @@ class Path extends Curve {
     }
     getArcLength(divisions) {
         let length = 0;
-        for (let curve of this._curves) {
+        for (const curve of this._curves) {
             length += curve.getArcLength(divisions);
         }
         return length;
     }
     getPosition(t, out = vec3.create()) {
-        let l = this.arcLength * t;
+        const l = this.arcLength * t;
         let accumulate = 0;
         let accumulateTmp = 0;
-        for (let curve of this._curves) {
+        for (const curve of this._curves) {
             accumulateTmp += curve.arcLength;
             if (accumulateTmp > l) {
-                let t2 = (l - accumulate) / curve.arcLength;
+                const t2 = (l - accumulate) / curve.arcLength;
                 return curve.getPosition(t2, out);
             }
             accumulate = accumulateTmp;
@@ -12518,14 +12518,14 @@ class Path extends Curve {
         vec3.copy(this.cursor, p3);
     }
     getPoints(divisions = 12) {
-        let points = [];
+        const points = [];
         let last;
         for (let i = 0, curves = this.curves; i < curves.length; i++) {
-            let curve = curves[i];
-            let resolution = curve.getAppropriateDivision(divisions);
-            let pts = curve.getPoints(resolution);
+            const curve = curves[i];
+            const resolution = curve.getAppropriateDivision(divisions);
+            const pts = curve.getPoints(resolution);
             for (let j = 0; j < pts.length; j++) {
-                let point = pts[j];
+                const point = pts[j];
                 if (last && vec3.equals(last, point)) {
                     continue;
                 }
@@ -13348,21 +13348,21 @@ class Font {
         this.json = json;
     }
     generateShapes(text, size = 100) {
-        let shapes = [];
-        let paths = this.createPaths(text, size);
-        for (let path of paths) {
+        const shapes = [];
+        const paths = this.createPaths(text, size);
+        for (const path of paths) {
             shapes.push(...path.toShapes());
         }
         return shapes;
     }
     createPaths(text = '', size = 1) {
-        let data = this.json;
+        const data = this.json;
         const chars = Array.from(text);
         const scale = size / data.resolution;
         const line_height = (data.boundingBox.yMax - data.boundingBox.yMin + data.underlineThickness) * scale;
         const paths = [];
         let offsetX = 0, offsetY = 0;
-        for (let char of chars) {
+        for (const char of chars) {
             if (char === '\n') {
                 offsetX = 0;
                 offsetY -= line_height;
@@ -13376,14 +13376,14 @@ class Font {
         return paths;
     }
     createPath(char, scale, offsetX, offsetY) {
-        let data = this.json;
+        const data = this.json;
         const glyph = data.glyphs[char] ?? data.glyphs['?'];
         const path = new ShapePath();
         let x, y, cpx, cpy, cpx1, cpy1, cpx2, cpy2;
         if (glyph.o) {
-            let outline = glyph.o.split(' ');
+            const outline = glyph.o.split(' ');
             for (let i = 0, l = outline.length; i < l;) {
-                let action = outline[i++];
+                const action = outline[i++];
                 switch (action) {
                     case 'm': // moveTo
                         x = outline[i++] * scale + offsetX;
@@ -13433,22 +13433,22 @@ class FontManager {
             if (!this.#fontsPath) {
                 throw 'No manifest set';
             }
-            let response = await customFetch(this.#fontsPath + 'manifest.json');
+            const response = await customFetch(this.#fontsPath + 'manifest.json');
             resolve(await response.json());
         });
         return this.#manifestPromise;
     }
     static async #loadFont(name, style) {
-        let manifest = await this.#getManifest();
-        let fonts = manifest?.fonts;
+        const manifest = await this.#getManifest();
+        const fonts = manifest?.fonts;
         if (fonts) {
-            let font = fonts[name];
+            const font = fonts[name];
             if (font && font.styles) {
-                let s = font.styles[style];
+                const s = font.styles[style];
                 if (s) {
-                    let response = await customFetch(this.#fontsPath + s);
-                    let fontFile = await response.json();
-                    let font = new Font(fontFile);
+                    const response = await customFetch(this.#fontsPath + s);
+                    const fontFile = await response.json();
+                    const font = new Font(fontFile);
                     this.#fontList.get(name).set(style, font);
                     return font;
                 }
@@ -13458,9 +13458,9 @@ class FontManager {
     static async getFont(name, style = 'normal') {
         name = name.toLowerCase();
         style = style.toLowerCase();
-        let fontFamilly = this.#fontList.get(name);
+        const fontFamilly = this.#fontList.get(name);
         if (fontFamilly) {
-            let font = fontFamilly.get(style);
+            const font = fontFamilly.get(style);
             if (font) {
                 return font;
             }
@@ -13471,13 +13471,13 @@ class FontManager {
         return await this.#loadFont(name, style);
     }
     static async getFontList() {
-        let list = [];
-        let manifest = await this.#getManifest();
-        let fonts = manifest?.fonts;
+        const list = [];
+        const manifest = await this.#getManifest();
+        const fonts = manifest?.fonts;
         if (fonts) {
-            for (let fontName in fonts) {
-                let font = fonts[fontName];
-                for (let styleName in font.styles) {
+            for (const fontName in fonts) {
+                const font = fonts[fontName];
+                for (const styleName in font.styles) {
                     list.push([fontName, styleName]);
                 }
             }
@@ -13546,7 +13546,7 @@ class MeshBasicPbrMaterial extends Material {
         return 'meshbasicpbr';
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         return json;
     }
     static async constructFromJSON(json) {
@@ -13918,8 +13918,8 @@ class Input extends InputOutput {
         return true; //TODO: check input mandatory
     }
     async toString(tabs = '') {
-        let ret = [];
-        let tabs1 = tabs + '\t';
+        const ret = [];
+        const tabs1 = tabs + '\t';
         ret.push(tabs + 'id : ' + this.id);
         if (this.#predecessor) {
             ret.push(await this.#predecessor.toString(tabs1));
@@ -13938,7 +13938,7 @@ class Output extends InputOutput {
         return this.getValue();
     }
     getValue() {
-        let valuePromise = new Promise(async (resolve, reject) => {
+        const valuePromise = new Promise(async (resolve, reject) => {
             await this.node.validate();
             if (this.type == IO_TYPE_TEXTURE_2D) {
                 resolve(this._value);
@@ -13953,7 +13953,7 @@ class Output extends InputOutput {
         return this.getPixelArray();
     }
     getPixelArray() {
-        let valuePromise = new Promise(async (resolve, reject) => {
+        const valuePromise = new Promise(async (resolve, reject) => {
             await this.node.validate();
             if (this.type == InputOutputType.Texture2D) {
                 resolve(this.#pixelArray ?? null);
@@ -13976,8 +13976,8 @@ class Output extends InputOutput {
     }
     successorsLength() {
         let max = 0;
-        for (let successor of this.#successors) {
-            let l = successor.node.successorsLength() + 1;
+        for (const successor of this.#successors) {
+            const l = successor.node.successorsLength() + 1;
             if (l > max) {
                 max = l;
             }
@@ -13985,7 +13985,7 @@ class Output extends InputOutput {
         return max;
     }
     invalidate() {
-        for (let successor of this.#successors) {
+        for (const successor of this.#successors) {
             successor.node.invalidate();
         }
     }
@@ -14017,8 +14017,8 @@ class Output extends InputOutput {
 }
 
 function imageDataToImage(imagedata, image = new Image()) {
-    var canvas = createElement('canvas', { width: imagedata.width, height: imagedata.height });
-    var ctx = canvas.getContext('2d');
+    const canvas = createElement('canvas', { width: imagedata.width, height: imagedata.height });
+    const ctx = canvas.getContext('2d');
     canvas.width = imagedata.width;
     canvas.height = imagedata.height;
     ctx.putImageData(imagedata, 0, 0);
@@ -14026,12 +14026,12 @@ function imageDataToImage(imagedata, image = new Image()) {
     return image;
 }
 function flipPixelArray(pixelArray, width, height) {
-    let rowLength = width * 4;
-    let tempRow = new Uint8ClampedArray(rowLength);
-    let halfHeight = height * 0.5;
+    const rowLength = width * 4;
+    const tempRow = new Uint8ClampedArray(rowLength);
+    const halfHeight = height * 0.5;
     for (let row = 0; row < halfHeight; ++row) {
-        let topOffset = row * rowLength;
-        let bottomOffset = (height - row - 1) * rowLength;
+        const topOffset = row * rowLength;
+        const bottomOffset = (height - row - 1) * rowLength;
         tempRow.set(pixelArray.subarray(topOffset, topOffset + rowLength));
         pixelArray.copyWithin(topOffset, bottomOffset, bottomOffset + rowLength);
         pixelArray.set(tempRow, bottomOffset);
@@ -14151,22 +14151,22 @@ class VTFFile {
 }
 class VTFWriter {
     static writeAndSave(vtffile, filename) {
-        let arrayBuffer = this.write(vtffile);
-        var dataView = new DataView(arrayBuffer);
+        const arrayBuffer = this.write(vtffile);
+        const dataView = new DataView(arrayBuffer);
         //saveFile(filename, new Blob([dataView]));
         saveFile(new File([new Blob([dataView])], filename));
     }
     static write(vtffile) {
         //TODO: check vtffile
-        let writer = new BinaryReader(new Uint8Array(this.#computeLength(vtffile)));
+        const writer = new BinaryReader(new Uint8Array(this.#computeLength(vtffile)));
         this.#writeHeader(writer, vtffile);
         return writer.buffer;
     }
     static #computeLength(vtffile) {
         let result = 80 + vtffile.numResources * 8;
-        let resArray = vtffile.resources;
-        for (let i in resArray) {
-            let resource = resArray[i];
+        const resArray = vtffile.resources;
+        for (const i in resArray) {
+            const resource = resArray[i];
             if (resource.flag != 2) {
                 result += resource.length;
             }
@@ -14174,12 +14174,12 @@ class VTFWriter {
         return result;
     }
     static #writeHeader(writer, vtffile) {
-        let fixedHeaderLength = 80;
+        const fixedHeaderLength = 80;
         writer.seek(0);
         writer.setUint32(0x00465456); //VTF\0
         writer.setUint32(VTFWriter.majorVersion);
         writer.setUint32(VTFWriter.minorVersion);
-        let headerLength = fixedHeaderLength + vtffile.numResources * 8;
+        const headerLength = fixedHeaderLength + vtffile.numResources * 8;
         writer.setUint32(headerLength);
         writer.setUint16(vtffile.width);
         writer.setUint16(vtffile.height);
@@ -14202,12 +14202,12 @@ class VTFWriter {
         writer.skip(3);
         writer.setUint32(vtffile.numResources);
         writer.skip(8);
-        let resArray = vtffile.resources;
+        const resArray = vtffile.resources;
         let dataOffset = headerLength;
         let resHeaderOffset = fixedHeaderLength;
-        for (let i in resArray) {
+        for (const i in resArray) {
             writer.seek(resHeaderOffset);
-            let resource = resArray[i];
+            const resource = resArray[i];
             writer.setUint32(resource.type);
             /*writer.skip(-1);
             writer.setUint8(resource.flag);*/
@@ -14279,13 +14279,13 @@ class Node extends EventTarget {
         this.setParams(params);
     }
     addInput(inputId, inputType, size = 1) {
-        let input = new Input(this, inputId, inputType, size);
+        const input = new Input(this, inputId, inputType, size);
         this.inputs.set(inputId, input);
         this.invalidate();
         return input;
     }
     addOutput(outputId, outputType) {
-        let output = new Output(this, outputId, outputType);
+        const output = new Output(this, outputId, outputType);
         this.outputs.set(outputId, output);
         this.invalidate();
         return output;
@@ -14307,7 +14307,7 @@ class Node extends EventTarget {
         return this.params.get(paramName);
     }
     getValue(paramName) {
-        let p = this.params.get(paramName);
+        const p = this.params.get(paramName);
         if (p) {
             return p.value;
         }
@@ -14315,9 +14315,9 @@ class Node extends EventTarget {
     }
     setParams(params) {
         if (params) {
-            for (let paramName in params) {
-                let param = params[paramName];
-                let p = this.params.get(paramName);
+            for (const paramName in params) {
+                const param = params[paramName];
+                const p = this.params.get(paramName);
                 if (p) {
                     p.value = param;
                 }
@@ -14326,7 +14326,7 @@ class Node extends EventTarget {
         }
     }
     setParam(paramName, paramValue, paramIndex) {
-        let p = this.params.get(paramName);
+        const p = this.params.get(paramName);
         if (p) {
             if (paramIndex != undefined) {
                 p.value[paramIndex] = paramValue;
@@ -14338,8 +14338,8 @@ class Node extends EventTarget {
         }
     }
     setPredecessor(inputId, predecessor, predecessorOutputId) {
-        let input = this.inputs.get(inputId);
-        let output = predecessor.outputs.get(predecessorOutputId);
+        const input = this.inputs.get(inputId);
+        const output = predecessor.outputs.get(predecessorOutputId);
         if (input && output) {
             input.setPredecessor(output);
             this.invalidate();
@@ -14355,7 +14355,7 @@ class Node extends EventTarget {
         // Invalidate only if valid to avoid recursion
         if (this.#redrawState != DrawState.Invalid) {
             this.#redrawState = DrawState.Invalid;
-            for (let output of this.outputs.values()) {
+            for (const output of this.outputs.values()) {
                 output.invalidate();
             }
         }
@@ -14384,9 +14384,9 @@ class Node extends EventTarget {
         throw 'This function must be overriden';
     }
     ready() {
-        let node = this;
-        let promiseFunction = function (resolve, reject) {
-            let callback = function () {
+        const node = this;
+        const promiseFunction = function (resolve, reject) {
+            const callback = function () {
                 if (node.isValid()) {
                     resolve(true);
                 }
@@ -14408,8 +14408,8 @@ class Node extends EventTarget {
                 return this.#operation.isValid(startingPoint);
             }
             else {
-                let inputs = this.inputs;
-                for (let i of inputs.values()) {
+                const inputs = this.inputs;
+                for (const i of inputs.values()) {
                     if (!i.isValid(startingPoint)) {
                         return false;
                     }
@@ -14419,7 +14419,7 @@ class Node extends EventTarget {
         return this.#redrawState == DrawState.Valid;
     }
     hasSuccessor() {
-        for (let output of this.outputs.values()) {
+        for (const output of this.outputs.values()) {
             if (output.hasSuccessor()) {
                 return true;
             }
@@ -14428,8 +14428,8 @@ class Node extends EventTarget {
     }
     successorsLength() {
         let max = 0;
-        for (let output of this.outputs.values()) {
-            let l = output.successorsLength();
+        for (const output of this.outputs.values()) {
+            const l = output.successorsLength();
             if (l > max) {
                 max = l;
             }
@@ -14444,22 +14444,22 @@ class Node extends EventTarget {
         this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
     }
     updatePreview(context = {}) {
-        let previewSize = context.previewSize ?? this.previewSize;
-        let renderTarget2 = this.#previewRenderTarget ?? new RenderTarget({ width: previewSize, height: previewSize, depthBuffer: false, stencilBuffer: false });
+        const previewSize = context.previewSize ?? this.previewSize;
+        const renderTarget2 = this.#previewRenderTarget ?? new RenderTarget({ width: previewSize, height: previewSize, depthBuffer: false, stencilBuffer: false });
         if (this.#previewRenderTarget) {
             renderTarget2.resize(previewSize, previewSize);
         }
         this.#previewRenderTarget = renderTarget2;
         new Graphics().pushRenderTarget(renderTarget2);
         this.editor.render(this.material);
-        let pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
+        const pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
         new Graphics().glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         this.#pixelArray = new Uint8ClampedArray(pixelArray);
         //set alpha to 1
         for (let i = 3; i < pixelArray.length; i += 4) {
             pixelArray[i] = 255;
         }
-        let imageData = new ImageData(pixelArray, previewSize, previewSize);
+        const imageData = new ImageData(pixelArray, previewSize, previewSize);
         try {
             imageDataToImage(imageData, this.previewPic);
         }
@@ -14470,7 +14470,7 @@ class Node extends EventTarget {
     }
     async savePicture() {
         await this.redraw({ previewSize: 2048 });
-        let image = this.previewPic;
+        const image = this.previewPic;
         const canvas = createElement('canvas', { width: image.width, height: image.height });
         const ctx = canvas.getContext('2d');
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
@@ -14483,7 +14483,7 @@ class Node extends EventTarget {
         if (!this.#pixelArray) {
             return;
         }
-        let vtfFile = new VTFFile(2048, 2048);
+        const vtfFile = new VTFFile(2048, 2048);
         vtfFile.setFlag(TEXTUREFLAGS_EIGHTBITALPHA | TEXTUREFLAGS_NOMIP);
         await this.redraw({ previewSize: 2048 });
         vtfFile.setImageData(this.#pixelArray);
@@ -14492,10 +14492,10 @@ class Node extends EventTarget {
         this.previewPic.height = PREVIEW_PICTURE_SIZE;
     }
     async toString(tabs = '') {
-        let ret = [];
-        let tabs1 = tabs + '\t';
+        const ret = [];
+        const tabs1 = tabs + '\t';
         ret.push(tabs + this.constructor.name);
-        for (let input of this.inputs.values()) {
+        for (const input of this.inputs.values()) {
             if (input.getPredecessor()) {
                 ret.push(await input.toString(tabs1));
             }
@@ -14598,7 +14598,7 @@ class ApplySticker extends Node {
         this.material.setTexture('uStickerSpecular', await this.getInput('specular').value);
         this.material.setTexture('uInput', await this.getInput('input').value);
         this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
-        let texTransform = mat3.create();
+        const texTransform = mat3.create();
         ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left'), this.getValue('top left'), this.getValue('top right'));
         this.material.uniforms['uTransformTexCoord0'] = texTransform;
         /*texTransform = mat3.identity(texTransform);
@@ -14637,10 +14637,10 @@ class ApplySticker extends Node {
         return 'apply sticker';
     }
     async toString(tabs = '') {
-        let ret = [];
-        let tabs1 = tabs + '\t';
+        const ret = [];
+        const tabs1 = tabs + '\t';
         ret.push(tabs + this.constructor.name);
-        for (let input of this.inputs.values()) {
+        for (const input of this.inputs.values()) {
             if (input.getPredecessor()) {
                 ret.push(await input.toString(tabs1));
             }
@@ -14661,18 +14661,18 @@ registerOperation('apply_sticker', ApplySticker);
 //void ComputeTextureMatrixFromRectangle( VMatrix* pOutMat, const Vector2D& bl, const Vector2D& tl, const Vector2D& tr )
 function ComputeTextureMatrixFromRectangle(out, bl, tl, tr) {
     const tempVec2 = vec2.create();
-    let leftEdge = vec2.sub(vec2.create(), bl, tl);
-    let topEdge = vec2.sub(vec2.create(), tr, tl);
-    let topEdgePerpLeft = vec2.fromValues(-topEdge[1], topEdge[0]);
-    let magLeftEdge = vec2.length(leftEdge);
-    let magTopEdge = vec2.length(topEdge);
-    let xScalar = (vec2.dot(topEdgePerpLeft, leftEdge) > 0) ? 1 : -1;
+    const leftEdge = vec2.sub(vec2.create(), bl, tl);
+    const topEdge = vec2.sub(vec2.create(), tr, tl);
+    const topEdgePerpLeft = vec2.fromValues(-topEdge[1], topEdge[0]);
+    const magLeftEdge = vec2.length(leftEdge);
+    const magTopEdge = vec2.length(topEdge);
+    const xScalar = (vec2.dot(topEdgePerpLeft, leftEdge) > 0) ? 1 : -1;
     // Simplification of acos( ( A . L ) / ( mag( A ) * mag( L ) )
     // Because A is ( 0, 1), which means A . L is just L.y
     // and mag( A ) * mag( L ) is just mag( L )
-    let rotationD = Math.acos(leftEdge[1] / magLeftEdge)
+    const rotationD = Math.acos(leftEdge[1] / magLeftEdge)
         * (leftEdge[0] < 0 ? 1 : -1);
-    let texTransform = mat3.create();
+    const texTransform = mat3.create();
     mat3.translate(texTransform, texTransform, tl);
     mat3.rotate(texTransform, texTransform, rotationD);
     mat3.scale(texTransform, texTransform, vec2.set(tempVec2, xScalar * magTopEdge, magLeftEdge));
@@ -14713,7 +14713,7 @@ class TextureLookup extends Node {
     async operate(context = {}) {
         this.material.setTexture('uInput', this.inputTexture);
         this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
-        let texTransform = mat3.create();
+        const texTransform = mat3.create();
         mat3.rotate(texTransform, texTransform, this.getValue('rotation'));
         mat3.scale(texTransform, texTransform, vec2.set(tempVec2$2, this.getValue('scale u'), this.getValue('scale v')));
         mat3.translate(texTransform, texTransform, vec2.set(tempVec2$2, this.getValue('translate u'), this.getValue('translate v')));
@@ -14724,7 +14724,7 @@ class TextureLookup extends Node {
         }
         new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
-        let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
+        const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         new Graphics().popRenderTarget();
         this.updatePreview(context);
@@ -14735,10 +14735,10 @@ class TextureLookup extends Node {
         return 'texture lookup';
     }
     async toString(tabs = '') {
-        let ret = [];
-        let tabs1 = tabs + '\t';
+        const ret = [];
+        const tabs1 = tabs + '\t';
         ret.push(tabs + this.constructor.name);
-        for (let input of this.inputs.values()) {
+        for (const input of this.inputs.values()) {
             if (input.getPredecessor()) {
                 ret.push(await input.toString(tabs1));
             }
@@ -14758,18 +14758,18 @@ registerOperation('texture lookup', TextureLookup);
 const DELAY_BEFORE_REFRESH = 100;
 const FLOAT_VALUE_DECIMALS = 3;
 function dropFiles(evt, node) {
-    let files = evt.target.files; // FileList object
+    const files = evt.target.files; // FileList object
     // Loop through the FileList and render image files as thumbnails.
     for (let i = 0, f; f = files[i]; i++) {
         // Only process image files.
         if (!f.type.match('image.*')) {
             continue;
         }
-        let reader = new FileReader();
+        const reader = new FileReader();
         // Closure to capture the file information.
         reader.onload = (function (theFile) {
             return function (e) {
-                let texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
+                const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
                 if (node instanceof ApplySticker) {
                     texture.wrapS = GL_CLAMP_TO_EDGE;
                     texture.wrapT = GL_CLAMP_TO_EDGE;
@@ -14790,18 +14790,18 @@ function dropFiles(evt, node) {
     }
 }
 function dropFilesSpecular(evt, node) {
-    let files = evt.target.files; // FileList object
+    const files = evt.target.files; // FileList object
     // Loop through the FileList and render image files as thumbnails.
     for (let i = 0, f; f = files[i]; i++) {
         // Only process image files.
         if (!f.type.match('image.*')) {
             continue;
         }
-        let reader = new FileReader();
+        const reader = new FileReader();
         // Closure to capture the file information.
         reader.onload = (function (theFile) {
             return function (e) {
-                let texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
+                const texture = TextureManager.createTexture({ minFilter: GL_LINEAR });
                 if (node instanceof ApplySticker) {
                     texture.wrapS = GL_CLAMP_TO_EDGE;
                     texture.wrapT = GL_CLAMP_TO_EDGE;
@@ -14945,31 +14945,31 @@ class NodeGui {
         if (this.#node.hasPreview) {
             this.#html.append(this.#htmlPreview);
         }
-        for (let input of this.#node.inputs.values()) {
+        for (const input of this.#node.inputs.values()) {
             htmlInputs.append(this.#createIo(input));
         }
-        for (let output of this.#node.outputs.values()) {
+        for (const output of this.#node.outputs.values()) {
             htmlOutputs.append(this.#createIo(output));
         }
         if (this.#node.hasPreview) {
-            let htmlSavePicture = createElement('button', { i18n: '#save_picture' });
+            const htmlSavePicture = createElement('button', { i18n: '#save_picture' });
             htmlSavePicture.addEventListener('click', () => this.#node.savePicture());
             this.#html.append(htmlSavePicture);
-            let htmlSaveVTF = createElement('button', { i18n: '#save_vtf' });
+            const htmlSaveVTF = createElement('button', { i18n: '#save_vtf' });
             htmlSaveVTF.addEventListener('click', () => this.#node.saveVTF());
             this.#html.append(htmlSaveVTF);
         }
         if ((this.#node instanceof TextureLookup) || this.#node instanceof ApplySticker) {
-            let inputImage = createElement('input', { type: 'file', accept: 'image/*' });
+            const inputImage = createElement('input', { type: 'file', accept: 'image/*' });
             inputImage.addEventListener('input', (event) => dropFiles(event, this.#node));
             this.#htmlPreview.addEventListener('click', (event) => { if (event.target == this.#node.previewPic) {
                 inputImage.click();
             } });
         }
         if (this.#node instanceof ApplySticker) {
-            let htmlLoadStickerSpecular = createElement('button', { i18n: '#load_sticker_specular' });
+            const htmlLoadStickerSpecular = createElement('button', { i18n: '#load_sticker_specular' });
             this.#html.append(htmlLoadStickerSpecular);
-            let inputImage = createElement('input', { type: 'file', accept: 'image/*' });
+            const inputImage = createElement('input', { type: 'file', accept: 'image/*' });
             inputImage.addEventListener('input', (event) => dropFilesSpecular(event, this.#node));
             htmlLoadStickerSpecular.addEventListener('click', () => inputImage.click());
         }
@@ -14987,7 +14987,7 @@ class NodeGui {
     }
     #refreshHtml() {
         this.#htmlParamsContainer.innerText = '';
-        for (let [_, param] of this.#node.params) {
+        for (const [_, param] of this.#node.params) {
             if (param.length && param.length > 1) {
                 for (let i = 0; i < param.length; ++i) {
                     this.#htmlParamsContainer.append(this.#getParamHTML(param, i));
@@ -15038,8 +15038,8 @@ class NodeGui {
         return paramHtml;
     }
     #createParamHTML(param, index) {
-        let paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
-        let nameHtml = createElement('div', { parent: paramHtml, class: 'name' });
+        const paramHtml = createElement('div', { class: 'node-image-editor-node-param' });
+        const nameHtml = createElement('div', { parent: paramHtml, class: 'name' });
         let valueHtml;
         if (param.type != NodeParamType.StickerAdjust) {
             valueHtml = createElement('input', {
@@ -15169,7 +15169,7 @@ class NodeGui {
                     updateend: (event) => {
                         const parameters = { 'top left': 0, 'bottom left': 2, 'top right': 1 };
                         const manipulator = event.target;
-                        for (let name in parameters) {
+                        for (const name in parameters) {
                             const param = this.#node.getParam(name);
                             if (param) {
                                 const rect = this.#htmlPreview.getBoundingClientRect();
@@ -15228,7 +15228,7 @@ class NodeGui {
         });
     }
     #setParamValue(param, stringValue, index, updateManipulator = true) {
-        let node = this.#node;
+        const node = this.#node;
         let value;
         switch (param.type) {
             case NodeParamType.Float:
@@ -15239,7 +15239,7 @@ class NodeGui {
                 value = Number(stringValue) * DEG_TO_RAD;
                 break;
             case NodeParamType.Vec2:
-                let arr = stringValue.split(' ');
+                const arr = stringValue.split(' ');
                 value = vec2.fromValues(Number(arr[0]), Number(arr[1]));
                 break;
             default:
@@ -15252,7 +15252,7 @@ class NodeGui {
         node.revalidate();
     }
     #createIo(io) {
-        let html = createElement('div', { class: 'node-image-editor-node-io' });
+        const html = createElement('div', { class: 'node-image-editor-node-io' });
         this._ioGui.set(io, html);
         return html;
     }
@@ -15412,7 +15412,7 @@ class NodeImageEditorGui {
         this.#htmlNodes.innerText = '';
         this.#htmlNodes.append(this.#canvas);
         if (this.#nodeImageEditor) {
-            for (let node of this.#nodeImageEditor.getNodes()) {
+            for (const node of this.#nodeImageEditor.getNodes()) {
                 let nodeGui = this.#nodesGui.get(node);
                 if (!nodeGui) {
                     nodeGui = new NodeGui(this, node);
@@ -15427,11 +15427,11 @@ class NodeImageEditorGui {
     #organizeNodes() {
         this.#htmlNodes.innerText = '';
         this.#htmlNodes.append(this.#canvas);
-        let nodes = new Map();
+        const nodes = new Map();
         if (this.#nodeImageEditor) {
-            for (let node of this.#nodeImageEditor.getNodes()) {
-                let nodeGui = this.#nodesGui.get(node);
-                let l = node.successorsLength();
+            for (const node of this.#nodeImageEditor.getNodes()) {
+                const nodeGui = this.#nodesGui.get(node);
+                const l = node.successorsLength();
                 //nodeGui.html.style.right = l * WIDTH + 'px';
                 let s = nodes.get(l);
                 if (!s) {
@@ -15448,11 +15448,11 @@ class NodeImageEditorGui {
                 return a[0] < b[0] ? -1 : 1;
             });
         };
-        for (let [s, n] of nodes) {
-            let column = createElement('div', { class: 'node-image-editor-nodes-column' });
+        for (const [s, n] of nodes) {
+            const column = createElement('div', { class: 'node-image-editor-nodes-column' });
             this.#htmlNodes.prepend(column);
             for (let i = 0; i < n.length; ++i) {
-                let nodeGui = n[i];
+                const nodeGui = n[i];
                 //nodeGui.html.style.top = i * HEIGHT + 'px';
                 nodeGui.html.getBoundingClientRect();
                 //maxHeight = Math.max(maxHeight, rect.bottom);
@@ -15463,7 +15463,7 @@ class NodeImageEditorGui {
     }
     #drawLink(p1, p2) {
         if (p1 && p2) {
-            let context = this.#context;
+            const context = this.#context;
             let p1BoundingRect = p1.getBoundingClientRect();
             let p2BoundingRect = p2.getBoundingClientRect();
             let p1Weight = 1;
@@ -15476,11 +15476,11 @@ class NodeImageEditorGui {
                 p2BoundingRect = p2?.parentNode?.parentNode?.parentNode?.getBoundingClientRect();
                 p2Weight = 0;
             }
-            let panelBoundingRect = this.#canvas.getBoundingClientRect();
-            let x1 = p1BoundingRect.left + p1BoundingRect.width / 2 * p1Weight - panelBoundingRect.left;
-            let y1 = p1BoundingRect.top + p1BoundingRect.height / 2 - panelBoundingRect.top;
-            let x2 = p2BoundingRect.left + p2BoundingRect.width / 2 * p2Weight - panelBoundingRect.left;
-            let y2 = p2BoundingRect.top + p2BoundingRect.height / 2 - panelBoundingRect.top;
+            const panelBoundingRect = this.#canvas.getBoundingClientRect();
+            const x1 = p1BoundingRect.left + p1BoundingRect.width / 2 * p1Weight - panelBoundingRect.left;
+            const y1 = p1BoundingRect.top + p1BoundingRect.height / 2 - panelBoundingRect.top;
+            const x2 = p2BoundingRect.left + p2BoundingRect.width / 2 * p2Weight - panelBoundingRect.left;
+            const y2 = p2BoundingRect.top + p2BoundingRect.height / 2 - panelBoundingRect.top;
             context.beginPath();
             context.moveTo(x1, y1);
             //context.bezierCurveTo(Math.max(x2, x1 + max),y1,Math.min(x1, x2 - max),y2,x2,y2);
@@ -15502,19 +15502,19 @@ class NodeImageEditorGui {
     #drawLinks() {
         this.#context.clearRect(0, 0, this.#canvas.clientWidth, this.#canvas.clientHeight);
         if (this.#nodeImageEditor) {
-            for (let node of this.#nodeImageEditor.getNodes()) {
-                let nodeGui = this.#nodesGui.get(node);
-                let inputs = node.inputs;
-                for (let input of inputs.values()) {
+            for (const node of this.#nodeImageEditor.getNodes()) {
+                const nodeGui = this.#nodesGui.get(node);
+                const inputs = node.inputs;
+                for (const input of inputs.values()) {
                     if (input.getPredecessor()) {
                         const predecessorNode = input.getPredecessor()?.node;
                         if (!predecessorNode) {
                             continue;
                         }
-                        let nodeGui2 = this.#nodesGui.get(predecessorNode);
+                        const nodeGui2 = this.#nodesGui.get(predecessorNode);
                         if (nodeGui && nodeGui2) {
-                            let inputGui = nodeGui._ioGui.get(input);
-                            let outputGui = nodeGui2._ioGui.get(input.getPredecessor());
+                            const inputGui = nodeGui._ioGui.get(input);
+                            const outputGui = nodeGui2._ioGui.get(input.getPredecessor());
                             this.#drawLink(outputGui, inputGui);
                         }
                     }
@@ -15524,8 +15524,8 @@ class NodeImageEditorGui {
     }
     #refreshFilter() {
         if (this.#nodeImageEditor) {
-            for (let node of this.#nodeImageEditor.getNodes()) {
-                let nodeGui = this.#nodesGui.get(node);
+            for (const node of this.#nodeImageEditor.getNodes()) {
+                const nodeGui = this.#nodesGui.get(node);
                 if (nodeGui) {
                     this.#matchFilter(nodeGui);
                 }
@@ -15757,11 +15757,11 @@ class DrawCircle extends Node {
         this.#textureSize = params.textureSize;
     }
     async operate(context = {}) {
-        let center = await this.getInput('center').value;
-        let radius = await this.getInput('radius').value;
-        let borderColor = await this.getInput('bordercolor').value;
-        let fillColor = await this.getInput('fillcolor').value;
-        let border = await this.getInput('border').value;
+        const center = await this.getInput('center').value;
+        const radius = await this.getInput('radius').value;
+        const borderColor = await this.getInput('bordercolor').value;
+        const fillColor = await this.getInput('fillcolor').value;
+        const border = await this.getInput('border').value;
         this.getOutput('perimeter')._value = Math.PI * radius * 2;
         this.getOutput('area')._value = Math.PI * radius ** 2;
         this.material.uniforms['uRadius'] = radius;
@@ -15774,7 +15774,7 @@ class DrawCircle extends Node {
         }
         new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
-        let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
+        const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         new Graphics().popRenderTarget();
         this.getOutput('output')._value = this.#renderTarget.getTexture();
@@ -15822,7 +15822,7 @@ class CombineAdd extends Node {
         this.material.uniforms['uInput4'] = input4;
         this.material.uniforms['uInput5'] = input5;*/
         //this.material.uniforms['uInput[0]'] = await this.getInput('input').value;
-        let textureArray = [];
+        const textureArray = [];
         for (let i = 0; i < 8; ++i) {
             textureArray.push(await this.getInput('input' + i).value);
         }
@@ -15832,7 +15832,7 @@ class CombineAdd extends Node {
         }
         new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
-        let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
+        const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         new Graphics().popRenderTarget();
         this.updatePreview(context);
@@ -15880,7 +15880,7 @@ class CombineLerp extends Node {
         }
         new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
-        let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
+        const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         new Graphics().popRenderTarget();
         this.updatePreview(context);
@@ -15918,12 +15918,12 @@ let Multiply$1 = class Multiply extends Node {
         this.#textureSize = params.textureSize;
     }
     async operate(context = {}) {
-        let textureArray = [];
-        let usedArray = [];
+        const textureArray = [];
+        const usedArray = [];
         for (let i = 0; i < 8; ++i) {
             //let inputName = 'uInput' + i;
             //this.material.uniforms['uInput' + i] = await this.getInput('input' + i).value;
-            let texture = await this.getInput('input' + i).value;
+            const texture = await this.getInput('input' + i).value;
             textureArray.push(texture);
             usedArray.push(texture != undefined);
         }
@@ -15980,7 +15980,7 @@ class Select extends Node {
         }
         new Graphics().pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
-        let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
+        const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         new Graphics().popRenderTarget();
         this.updatePreview(context);
@@ -15991,17 +15991,17 @@ class Select extends Node {
         return 'select';
     }
     async toString(tabs = '') {
-        let ret = [];
-        let tabs1 = tabs + '\t';
+        const ret = [];
+        const tabs1 = tabs + '\t';
         ret.push(tabs + this.constructor.name);
-        for (let input of this.inputs.values()) {
+        for (const input of this.inputs.values()) {
             if (input.getPredecessor()) {
                 ret.push(await input.toString(tabs1));
             }
         }
-        let selectvalues = await this.getInput('selectvalues').value;
-        let a = [];
-        for (let v of selectvalues) {
+        const selectvalues = await this.getInput('selectvalues').value;
+        const a = [];
+        for (const v of selectvalues) {
             if (v) {
                 a.push(v);
             }
@@ -16288,7 +16288,7 @@ class NodeImageEditor extends EventTarget {
         if (!operationName) {
             return null;
         }
-        let node = getOperation(operationName, this, params);
+        const node = getOperation(operationName, this, params);
         if (node) {
             this.textureSize = params.textureSize;
         }
@@ -16452,11 +16452,11 @@ class CameraFrustum extends Mesh {
         const indices = Lines;
         const vertices = [];
         const colors = [];
-        for (let point of Points) {
+        for (const point of Points) {
             vertices.push(...point.p);
             colors.push(...point.c);
         }
-        let geometry = this.geometry;
+        const geometry = this.geometry;
         geometry.setIndex(new Uint16BufferAttribute(indices, 1));
         this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3);
         geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
@@ -16466,8 +16466,8 @@ class CameraFrustum extends Mesh {
     update() {
         if (this.#camera) {
             let index = 0;
-            let verticesArray = this.#vertexPositionAttribute._array;
-            for (let point of Points) {
+            const verticesArray = this.#vertexPositionAttribute._array;
+            for (const point of Points) {
                 if (index > 3) { //Skip the base point
                     vec3.copy(tempVec3$o, point.p);
                     this.#camera.invertProjection(tempVec3$o);
@@ -16507,11 +16507,11 @@ class Grid extends Mesh {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Grid_1: null,
-            size: { i18n: '#size', f: () => { let size = prompt('Size', String(this.#size)); if (size) {
+            size: { i18n: '#size', f: () => { const size = prompt('Size', String(this.#size)); if (size) {
                     this.#size = Number(size);
                     this.#updateGeometry();
                 } } },
-            spacing: { i18n: '#spacing', f: () => { let spacing = prompt('Spacing', String(this.#spacing)); if (spacing) {
+            spacing: { i18n: '#spacing', f: () => { const spacing = prompt('Spacing', String(this.#spacing)); if (spacing) {
                     this.#spacing = this.material.spacing = Number(spacing);
                 } } }
         });
@@ -16547,10 +16547,10 @@ class HitboxHelper extends Entity {
     parentChanged(parent) {
         this.removeBoxes();
         if (parent && parent.getHitboxes) {
-            let hitboxes = parent.getHitboxes();
-            for (let hitbox of hitboxes) {
+            const hitboxes = parent.getHitboxes();
+            for (const hitbox of hitboxes) {
                 vec3.sub(tempVec3$n, hitbox.boundingBoxMax, hitbox.boundingBoxMin);
-                let box = new Box({ width: tempVec3$n[0], height: tempVec3$n[1], depth: tempVec3$n[2], material: boxMaterial });
+                const box = new Box({ width: tempVec3$n[0], height: tempVec3$n[1], depth: tempVec3$n[2], material: boxMaterial });
                 box.serializable = false;
                 vec3.lerp(tempVec3$n, hitbox.boundingBoxMin, hitbox.boundingBoxMax, 0.5);
                 box.position = tempVec3$n;
@@ -16619,14 +16619,14 @@ class Line extends Mesh {
         }
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.start = vec3.clone(this.start);
         json.end = vec3.clone(this.end);
         json.material = this.material.toJSON();
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
-        let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+        const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
         return new Line({ start: json.start, end: json.end, material: material });
     }
     static getEntityName() {
@@ -16648,21 +16648,21 @@ class Raycaster {
     }
     castRay(origin, direction, entities, recursive) {
         this.ray.set(origin, direction);
-        let intersections = [];
-        for (let entity of entities) {
+        const intersections = [];
+        for (const entity of entities) {
             this.intersectEntity(entity, intersections, recursive);
         }
         return intersections;
     }
     castCameraRay(camera, normalizedX, normalizedY, entities, recursive) {
-        let projectionMatrixInverse = camera.projectionMatrixInverse;
-        let nearP = vec3.set(a$a, normalizedX, normalizedY, -1);
-        let farP = vec3.set(b$4, normalizedX, normalizedY, 1);
+        const projectionMatrixInverse = camera.projectionMatrixInverse;
+        const nearP = vec3.set(a$a, normalizedX, normalizedY, -1);
+        const farP = vec3.set(b$4, normalizedX, normalizedY, 1);
         vec3.transformMat4(nearP, nearP, projectionMatrixInverse);
         vec3.transformMat4(farP, farP, projectionMatrixInverse);
         vec3.transformQuat(nearP, nearP, camera.quaternion);
         vec3.transformQuat(farP, farP, camera.quaternion);
-        let rayDirection = vec3.sub(c$1, farP, nearP);
+        const rayDirection = vec3.sub(c$1, farP, nearP);
         vec3.normalize(rayDirection, rayDirection);
         return this.castRay(camera.position, rayDirection, entities, recursive);
     }
@@ -16672,7 +16672,7 @@ class Raycaster {
         }
         entity.raycast(this, intersections);
         if (recursive) {
-            for (let child of entity.children) {
+            for (const child of entity.children) {
                 this.intersectEntity(child, intersections, recursive);
             }
         }
@@ -16756,7 +16756,7 @@ class SkeletonHelper extends Entity {
         if (!this.#skeleton) {
             return;
         }
-        for (let bone of this.#skeleton.bones) {
+        for (const bone of this.#skeleton.bones) {
             let boneLine = this.#lines.get(bone);
             if (!boneLine) {
                 boneLine = new Line({ material: this.#lineMaterial, parent: this });
@@ -16818,17 +16818,17 @@ class SkeletonHelper extends Entity {
         if (!this.isVisible()) {
             return;
         }
-        let normalizedX = (event.detail.x / new Graphics().getWidth()) * 2 - 1;
-        let normalizedY = 1 - (event.detail.y / new Graphics().getHeight()) * 2;
+        const normalizedX = (event.detail.x / new Graphics().getWidth()) * 2 - 1;
+        const normalizedY = 1 - (event.detail.y / new Graphics().getHeight()) * 2;
         const scene = this.root;
         if (!scene.is('Scene')) {
             return;
         }
-        let intersections = this.#raycaster.castCameraRay(scene.activeCamera, normalizedX, normalizedY, [this], true);
+        const intersections = this.#raycaster.castCameraRay(scene.activeCamera, normalizedX, normalizedY, [this], true);
         if (intersections.length) {
             let closest = null;
             let closestDist = Infinity;
-            for (let intersection of intersections) {
+            for (const intersection of intersections) {
                 const entity = intersection.entity;
                 if (entity.isLine) {
                     if (intersection.distanceFromRay < closestDist) {
@@ -16920,7 +16920,7 @@ class Bone extends Entity {
         return vec3.clone(this.#refPosition);
     }
     getTotalRefPosition(position = vec3.create()) {
-        let parent = this._parent;
+        const parent = this._parent;
         if (parent && parent.isBone) {
             parent.getTotalRefPosition(position);
             parent.getTotalRefQuaternion(tempQuat1);
@@ -16933,7 +16933,7 @@ class Bone extends Entity {
         return position;
     }
     getTotalRefQuaternion(quaternion = quat.create()) {
-        let parent = this._parent;
+        const parent = this._parent;
         if (parent && parent.isBone) {
             parent.getTotalRefQuaternion(tempQuat1);
             quat.multiply(quaternion, tempQuat1, this.#refQuaternion);
@@ -17051,11 +17051,11 @@ class Bone extends Entity {
         return mat4.clone(this.#poseToBone);
     }
     #compute() {
-        let parent = this._parent;
+        const parent = this._parent;
         this.#parentSkeletonBone;
         if (!this.#parentSkeletonBone) {
             if (parent) {
-                let parentWorldQuaternion = parent.getWorldQuaternion(tempWorldQuat);
+                const parentWorldQuaternion = parent.getWorldQuaternion(tempWorldQuat);
                 vec3.mul(this.#worldScale, parent.getWorldScale(tempWorldScale), this._scale);
                 vec3.mul(tempPosition, this._position, tempWorldScale);
                 vec3.transformQuat(this.#worldPos, tempPosition, parentWorldQuaternion);
@@ -17129,7 +17129,7 @@ class Bone extends Entity {
         } : null);
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.posetobone = mat4.clone(this.#poseToBone);
         json.refposition = vec3.clone(this.#refPosition);
         json.refquaternion = quat.clone(this.#refQuaternion);
@@ -17185,7 +17185,7 @@ class Decal extends Mesh {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             StaticDecal_1: null,
-            size: { i18n: '#size', f: () => { let v = prompt('Size', this.size.join(' ')); if (v !== null) {
+            size: { i18n: '#size', f: () => { const v = prompt('Size', this.size.join(' ')); if (v !== null) {
                     this.setSize(stringToVec3(v));
                 } } },
             refresh: { i18n: '#refresh', f: () => this.refreshGeometry() },
@@ -17201,10 +17201,10 @@ class Decal extends Mesh {
 registerEntity(Decal);
 class DecalGeometry extends BufferGeometry {
     applyTo(mesh, projectorMatrix, size) {
-        let indices = [];
-        let vertices = [];
-        let normals = [];
-        let uvs = [];
+        const indices = [];
+        const vertices = [];
+        const normals = [];
+        const uvs = [];
         this.#generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs);
         //console.log(uvs);
         this.setIndex(new Uint16BufferAttribute(indices, 1));
@@ -17216,8 +17216,8 @@ class DecalGeometry extends BufferGeometry {
     #generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs) {
         let decalVertices = [];
         const projectorMatrixInverse = mat4.invert(mat4.create(), projectorMatrix);
-        let vertex = vec3.create();
-        let normal = vec3.create();
+        const vertex = vec3.create();
+        const normal = vec3.create();
         const geometry = mesh.geometry;
         if (!geometry) {
             return;
@@ -17236,7 +17236,7 @@ class DecalGeometry extends BufferGeometry {
             normalArray = mesh.skinnedVertexNormal;
         }
         for (let i = 0, l = indexAttribute.count; i < l; ++i) {
-            let index = indexArray[i];
+            const index = indexArray[i];
             vertex[0] = posArray[index * 3];
             vertex[1] = posArray[index * 3 + 1];
             vertex[2] = posArray[index * 3 + 2];
@@ -17396,19 +17396,19 @@ class Group extends Entity {
 registerEntity(Group);
 
 const IDENTITY_MAT4$4 = mat4.create();
-let v1$1 = vec3.create();
-let v2 = vec3.create();
-let v3 = vec3.create();
-let n1 = vec3.create();
-let n2 = vec3.create();
-let n3 = vec3.create();
-let uv1 = vec2.create();
-let uv2 = vec2.create();
-let uv3 = vec2.create();
-let intersectionPoint = vec3.create();
-let intersectionNormal = vec3.create();
-let ray$1 = new Ray();
-let uv$1 = vec2.create();
+const v1$1 = vec3.create();
+const v2 = vec3.create();
+const v3 = vec3.create();
+const n1 = vec3.create();
+const n2 = vec3.create();
+const n3 = vec3.create();
+const uv1 = vec2.create();
+const uv2 = vec2.create();
+const uv3 = vec2.create();
+const intersectionPoint = vec3.create();
+const intersectionNormal = vec3.create();
+const ray$1 = new Ray();
+const uv$1 = vec2.create();
 class SkeletalMesh extends Mesh {
     isSkeletalMesh = true;
     #bonesPerVertex = 3;
@@ -17429,25 +17429,25 @@ class SkeletalMesh extends Mesh {
         return this.#bonesPerVertex;
     }
     exportObj() {
-        let ret = {};
-        let skeletonBones = this.skeleton._bones;
-        let attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
-        let geometry = this.geometry;
-        let vertexCount = geometry.getAttribute('aVertexPosition').count;
-        let skinnedVertexPosition = new Float32Array(vertexCount * 3);
-        let skinnedVertexNormal = new Float32Array(vertexCount * 3);
-        let vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-        let vertexNormal = geometry.getAttribute('aVertexNormal')._array;
-        let vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-        let vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-        let boneCount = geometry.getAttribute('aBoneIndices').itemSize;
-        let tempVertex = vec3.create();
-        let tempVertexNormal = vec3.create();
-        let accumulateMat = mat4.create();
+        const ret = {};
+        const skeletonBones = this.skeleton._bones;
+        const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
+        const geometry = this.geometry;
+        const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+        const skinnedVertexNormal = new Float32Array(vertexCount * 3);
+        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+        const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
+        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
+        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+        const tempVertex = vec3.create();
+        const tempVertexNormal = vec3.create();
+        const accumulateMat = mat4.create();
         if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
             for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
-                let vertexArrayIndex = vertexIndex * 3;
-                let boneArrayIndex = vertexIndex * boneCount;
+                const vertexArrayIndex = vertexIndex * 3;
+                const boneArrayIndex = vertexIndex * boneCount;
                 accumulateMat[0] = 0;
                 accumulateMat[1] = 0;
                 accumulateMat[2] = 0;
@@ -17467,10 +17467,10 @@ class SkeletalMesh extends Mesh {
                 tempVertexNormal[1] = vertexNormal[vertexArrayIndex + 1];
                 tempVertexNormal[2] = vertexNormal[vertexArrayIndex + 2];
                 for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-                    let boneArrayIndex2 = boneArrayIndex + boneIndex;
-                    let bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
-                    let boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
-                    let boneWeight = vertexBoneWeight[boneArrayIndex2];
+                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
+                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
+                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
+                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
                     if (boneWeight && boneMat) {
                         accumulateMat[0] += boneWeight * boneMat[0];
                         accumulateMat[1] += boneWeight * boneMat[1];
@@ -17499,8 +17499,8 @@ class SkeletalMesh extends Mesh {
                 skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
             }
         }
-        for (let objAttribute in attributes) {
-            let geometryAttribute = attributes[objAttribute];
+        for (const objAttribute in attributes) {
+            const geometryAttribute = attributes[objAttribute];
             if (geometry.getAttribute(geometryAttribute)) {
                 if (geometryAttribute == 'aVertexPosition') {
                     ret[objAttribute] = skinnedVertexPosition;
@@ -17509,7 +17509,7 @@ class SkeletalMesh extends Mesh {
                     ret[objAttribute] = skinnedVertexNormal;
                 }
                 else {
-                    let webglAttrib = geometry.getAttribute(geometryAttribute);
+                    const webglAttrib = geometry.getAttribute(geometryAttribute);
                     if (webglAttrib) {
                         ret[objAttribute] = webglAttrib._array;
                     }
@@ -17522,29 +17522,29 @@ class SkeletalMesh extends Mesh {
         return ret;
     }
     getRandomPointOnModel(vec, initialVec, bones) {
-        let ret = {};
-        let skeletonBones = this.skeleton._bones;
+        const ret = {};
+        const skeletonBones = this.skeleton._bones;
         //let attributes = {f:'index',v:'aVertexPosition',vn:'aVertexNormal',vt:'aTextureCoord'};
-        let geometry = this.geometry;
-        let vertexCount = geometry.getAttribute('aVertexPosition').count;
-        let vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-        let vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-        let vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-        let boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+        const geometry = this.geometry;
+        const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
+        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
         vec3.create();
-        let accumulateMat = mat4.create();
+        const accumulateMat = mat4.create();
         function RandomInt(max) {
             return Math.floor(Math.random() * max);
         }
-        let vertexIndex = RandomInt(vertexCount);
+        const vertexIndex = RandomInt(vertexCount);
         vec[0] = 0;
         vec[1] = 0;
         vec[2] = 0;
         if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
             //for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex)
             {
-                let vertexArrayIndex = vertexIndex * 3;
-                let boneArrayIndex = vertexIndex * boneCount;
+                const vertexArrayIndex = vertexIndex * 3;
+                const boneArrayIndex = vertexIndex * boneCount;
                 accumulateMat[0] = 0;
                 accumulateMat[1] = 0;
                 accumulateMat[2] = 0;
@@ -17562,10 +17562,10 @@ class SkeletalMesh extends Mesh {
                 vec[2] = vertexPosition[vertexArrayIndex + 2];
                 vec3.copy(initialVec, vec);
                 for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-                    let boneArrayIndex2 = boneArrayIndex + boneIndex;
-                    let bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
-                    let boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
-                    let boneWeight = vertexBoneWeight[boneArrayIndex2];
+                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
+                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
+                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
+                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
                     if (bones) {
                         bones.push([bone, boneWeight]);
                     }
@@ -17591,21 +17591,21 @@ class SkeletalMesh extends Mesh {
     }
     getBoundingBox(boundingBox = new BoundingBox()) {
         boundingBox.reset();
-        let skeletonBones = this.skeleton._bones;
-        let geometry = this.geometry;
-        let vertexCount = geometry.getAttribute('aVertexPosition').count;
-        let skinnedVertexPosition = new Float32Array(vertexCount * 3);
-        let vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+        const skeletonBones = this.skeleton._bones;
+        const geometry = this.geometry;
+        const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
         geometry.getAttribute('aVertexNormal')._array;
-        let vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-        let vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-        let boneCount = geometry.getAttribute('aBoneIndices').itemSize;
-        let tempVertex = vec3.create();
-        let accumulateMat = mat4.create();
+        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
+        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+        const tempVertex = vec3.create();
+        const accumulateMat = mat4.create();
         if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
             for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
-                let vertexArrayIndex = vertexIndex * 3;
-                let boneArrayIndex = vertexIndex * boneCount;
+                const vertexArrayIndex = vertexIndex * 3;
+                const boneArrayIndex = vertexIndex * boneCount;
                 accumulateMat[0] = 0;
                 accumulateMat[1] = 0;
                 accumulateMat[2] = 0;
@@ -17622,10 +17622,10 @@ class SkeletalMesh extends Mesh {
                 tempVertex[1] = vertexPosition[vertexArrayIndex + 1];
                 tempVertex[2] = vertexPosition[vertexArrayIndex + 2];
                 for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-                    let boneArrayIndex2 = boneArrayIndex + boneIndex;
-                    let bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
-                    let boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
-                    let boneWeight = vertexBoneWeight[boneArrayIndex2];
+                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
+                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
+                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
+                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
                     if (boneWeight && boneMat) {
                         accumulateMat[0] += boneWeight * boneMat[0];
                         accumulateMat[1] += boneWeight * boneMat[1];
@@ -17654,23 +17654,23 @@ class SkeletalMesh extends Mesh {
         return 'SkeletalMesh ' + super.toString();
     }
     prepareRayCasting() {
-        let skeletonBones = this.skeleton._bones;
-        let geometry = this.geometry;
-        let vertexCount = geometry.getAttribute('aVertexPosition').count;
-        let skinnedVertexPosition = new Float32Array(vertexCount * 3);
-        let skinnedVertexNormal = new Float32Array(vertexCount * 3);
-        let vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-        let vertexNormal = geometry.getAttribute('aVertexNormal')._array;
-        let vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-        let vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-        let boneCount = geometry.getAttribute('aBoneIndices').itemSize;
-        let tempVertex = vec3.create();
-        let tempVertexNormal = vec3.create();
-        let accumulateMat = mat4.create();
+        const skeletonBones = this.skeleton._bones;
+        const geometry = this.geometry;
+        const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+        const skinnedVertexNormal = new Float32Array(vertexCount * 3);
+        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+        const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
+        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
+        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+        const tempVertex = vec3.create();
+        const tempVertexNormal = vec3.create();
+        const accumulateMat = mat4.create();
         if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
             for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
-                let vertexArrayIndex = vertexIndex * 3;
-                let boneArrayIndex = vertexIndex * boneCount;
+                const vertexArrayIndex = vertexIndex * 3;
+                const boneArrayIndex = vertexIndex * boneCount;
                 accumulateMat[0] = 0;
                 accumulateMat[1] = 0;
                 accumulateMat[2] = 0;
@@ -17686,14 +17686,14 @@ class SkeletalMesh extends Mesh {
                 tempVertex[0] = vertexPosition[vertexArrayIndex + 0];
                 tempVertex[1] = vertexPosition[vertexArrayIndex + 1];
                 tempVertex[2] = vertexPosition[vertexArrayIndex + 2];
-                let tempVertexNormalX = vertexNormal[vertexArrayIndex + 0];
-                let tempVertexNormalY = vertexNormal[vertexArrayIndex + 1];
-                let tempVertexNormalZ = vertexNormal[vertexArrayIndex + 2];
+                const tempVertexNormalX = vertexNormal[vertexArrayIndex + 0];
+                const tempVertexNormalY = vertexNormal[vertexArrayIndex + 1];
+                const tempVertexNormalZ = vertexNormal[vertexArrayIndex + 2];
                 for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-                    let boneArrayIndex2 = boneArrayIndex + boneIndex;
-                    let bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
-                    let boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
-                    let boneWeight = vertexBoneWeight[boneArrayIndex2];
+                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
+                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
+                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
+                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
                     if (boneWeight && boneMat) {
                         accumulateMat[0] += boneWeight * boneMat[0];
                         accumulateMat[1] += boneWeight * boneMat[1];
@@ -17726,28 +17726,28 @@ class SkeletalMesh extends Mesh {
     }
     raycast(raycaster, intersections) {
         //TODO: case when normals are not provided
-        let skeletonBones = this.skeleton._bones;
-        let geometry = this.geometry;
-        let indices = geometry.getAttribute('index')._array;
+        const skeletonBones = this.skeleton._bones;
+        const geometry = this.geometry;
+        const indices = geometry.getAttribute('index')._array;
         //let normals = geometry.getAttribute('aVertexNormal')._array;
-        let vertexCount = geometry.getAttribute('aVertexPosition').count;
-        let skinnedVertexPosition = new Float32Array(vertexCount * 3);
-        let skinnedVertexNormal = new Float32Array(vertexCount * 3);
-        let textureCoords = geometry.getAttribute('aTextureCoord')._array;
-        let worldMatrix = this.worldMatrix;
+        const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        const skinnedVertexPosition = new Float32Array(vertexCount * 3);
+        const skinnedVertexNormal = new Float32Array(vertexCount * 3);
+        const textureCoords = geometry.getAttribute('aTextureCoord')._array;
+        const worldMatrix = this.worldMatrix;
         ray$1.copyTransform(raycaster.ray, worldMatrix);
-        let vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-        let vertexNormal = geometry.getAttribute('aVertexNormal')._array;
-        let vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-        let vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-        let boneCount = geometry.getAttribute('aBoneIndices').itemSize;
-        let tempVertex = vec3.create();
-        let tempVertexNormal = vec3.create();
-        let accumulateMat = mat4.create();
+        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+        const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
+        const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
+        const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+        const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+        const tempVertex = vec3.create();
+        const tempVertexNormal = vec3.create();
+        const accumulateMat = mat4.create();
         if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
             for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
-                let vertexArrayIndex = vertexIndex * 3;
-                let boneArrayIndex = vertexIndex * boneCount;
+                const vertexArrayIndex = vertexIndex * 3;
+                const boneArrayIndex = vertexIndex * boneCount;
                 accumulateMat[0] = 0;
                 accumulateMat[1] = 0;
                 accumulateMat[2] = 0;
@@ -17767,10 +17767,10 @@ class SkeletalMesh extends Mesh {
                 tempVertexNormal[1] = vertexNormal[vertexArrayIndex + 1];
                 tempVertexNormal[2] = vertexNormal[vertexArrayIndex + 2];
                 for (let boneIndex = 0; boneIndex < boneCount; ++boneIndex) {
-                    let boneArrayIndex2 = boneArrayIndex + boneIndex;
-                    let bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
-                    let boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
-                    let boneWeight = vertexBoneWeight[boneArrayIndex2];
+                    const boneArrayIndex2 = boneArrayIndex + boneIndex;
+                    const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
+                    const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
+                    const boneWeight = vertexBoneWeight[boneArrayIndex2];
                     if (boneWeight && boneMat) {
                         accumulateMat[0] += boneWeight * boneMat[0];
                         accumulateMat[1] += boneWeight * boneMat[1];
@@ -17818,9 +17818,9 @@ class SkeletalMesh extends Mesh {
                 vec2.set(uv3, textureCoords[i3], textureCoords[i3 + 1]);
                 getUV(uv$1, intersectionPoint, v1$1, v2, v3, uv1, uv2, uv3);
                 getNormal(intersectionNormal, intersectionPoint, v1$1, v2, v3, n1, n2, n3);
-                let x = intersectionNormal[0];
-                let y = intersectionNormal[1];
-                let z = intersectionNormal[2];
+                const x = intersectionNormal[0];
+                const y = intersectionNormal[1];
+                const z = intersectionNormal[2];
                 //Tranform the normal with the world matrix
                 intersectionNormal[0] = worldMatrix[0] * x + worldMatrix[4] * y + worldMatrix[8] * z;
                 intersectionNormal[1] = worldMatrix[1] * x + worldMatrix[5] * y + worldMatrix[9] * z;
@@ -17854,7 +17854,7 @@ class Skeleton extends Entity {
     }
     dirty() {
         this._dirty = true;
-        for (let bone of this._bones) {
+        for (const bone of this._bones) {
             bone.dirty = true;
         }
         /*if (this._bones[0]) {
@@ -17892,8 +17892,8 @@ class Skeleton extends Entity {
     }
     setBonesMatrix() {
         let index = 0;
-        let bones = this._bones;
-        let imgData = this.#imgData;
+        const bones = this._bones;
+        const imgData = this.#imgData;
         let pose;
         if (bones.length == 0) {
             pose = this.#rootBone.boneMat;
@@ -17901,7 +17901,7 @@ class Skeleton extends Entity {
                 imgData[index++] = pose[k];
             }
         }
-        for (let bone of bones) {
+        for (const bone of bones) {
             pose = bone.boneMat;
             for (let k = 0; k < 16; ++k) {
                 imgData[index++] = pose[k];
@@ -17932,9 +17932,9 @@ class Skeleton extends Entity {
         }
     }
     addBone(boneId, boneName) {
-        let boneNameLowerCase = boneName.toLowerCase();
+        const boneNameLowerCase = boneName.toLowerCase();
         if (!this.#bonesByName.has(boneNameLowerCase)) {
-            let bone = new Bone({ name: boneName, boneId: boneId });
+            const bone = new Bone({ name: boneName, boneId: boneId });
             bone.skeleton = this;
             //this.addChild(bone);
             this._bones[boneId] = bone;
@@ -17942,7 +17942,7 @@ class Skeleton extends Entity {
             return bone;
         }
         else {
-            let bone = this.#bonesByName.get(boneNameLowerCase);
+            const bone = this.#bonesByName.get(boneNameLowerCase);
             this._bones[boneId] = bone;
             return bone;
         }
@@ -17952,8 +17952,8 @@ class Skeleton extends Entity {
         if (skeleton) {
             await skeleton.loadedPromise;
         }
-        let bones = this.#bonesByName;
-        for (let [boneName, bone] of bones) {
+        const bones = this.#bonesByName;
+        for (const [boneName, bone] of bones) {
             bone.parentSkeletonBone = skeleton?.getBoneByName(boneName) ?? null;
         }
     }
@@ -17979,9 +17979,9 @@ class Skeleton extends Entity {
         }
     }
     toJSON() {
-        let json = super.toJSON();
-        let jBones = [];
-        let bones = this._bones;
+        const json = super.toJSON();
+        const jBones = [];
+        const bones = this._bones;
         for (let i = 0; i < bones.length; ++i) {
             jBones.push(bones[i].id);
         }
@@ -17989,14 +17989,14 @@ class Skeleton extends Entity {
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
-        let entity = new Skeleton({ name: json.name });
+        const entity = new Skeleton({ name: json.name });
         let loadedPromiseResolve;
         entity.loadedPromise = new Promise((resolve) => loadedPromiseResolve = resolve);
         loadedPromise.then(() => {
-            let jBones = json.bones;
+            const jBones = json.bones;
             if (jBones) {
                 for (let i = 0; i < jBones.length; ++i) {
-                    let boneEntity = entities.get(jBones[i]);
+                    const boneEntity = entities.get(jBones[i]);
                     if (boneEntity) {
                         entity._bones[i] = boneEntity;
                         entity.#bonesByName.set(boneEntity.name.toLowerCase(), boneEntity);
@@ -18503,14 +18503,14 @@ class Text3D extends Mesh {
         this.#updateGeometry();
     }
     async #updateGeometry() {
-        let font = await FontManager.getFont(this.#font);
+        const font = await FontManager.getFont(this.#font);
         if (font) {
-            let shapes = font.generateShapes(this.#text, this.#size);
+            const shapes = font.generateShapes(this.#text, this.#size);
             this.geometry.createGeometry(shapes, { depth: this.#depth, bevelThickness: 2, bevelSize: 0.5 });
         }
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.text = this.#text;
         json.size = this.#size;
         json.depth = this.#depth;
@@ -18532,12 +18532,12 @@ class Text3D extends Mesh {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Text3D_1: null,
-            text: { i18n: '#text', f: () => { let text = prompt('Text', this.#text); this.text = text; } },
+            text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.text = text; } },
             font: {
                 i18n: '#font', f: async () => {
-                    let fontList = await FontManager.getFontList();
-                    let fontList2 = new Map();
-                    for (let font of fontList) {
+                    const fontList = await FontManager.getFontList();
+                    const fontList2 = new Map();
+                    for (const font of fontList) {
                         if (font[1] == 'normal') {
                             fontList2.set(font[0], font);
                         }
@@ -18545,7 +18545,7 @@ class Text3D extends Mesh {
                             fontList2.set(font.join(' '), font);
                         }
                     }
-                    let font = await new Interaction().getString(0, 0, fontList2);
+                    const font = await new Interaction().getString(0, 0, fontList2);
                     if (font) {
                         this.#font = font[0];
                         this.#style = font[1];
@@ -18553,8 +18553,8 @@ class Text3D extends Mesh {
                     }
                 }
             },
-            font_size: { i18n: '#font_size', f: () => { let size = prompt('Size', String(this.#size)); this.size = Number(size); } },
-            font_depth: { i18n: '#font_depth', f: () => { let depth = prompt('Depth', String(this.#depth)); this.depth = Number(depth); } }
+            font_size: { i18n: '#font_size', f: () => { const size = prompt('Size', String(this.#size)); this.size = Number(size); } },
+            font_depth: { i18n: '#font_depth', f: () => { const depth = prompt('Depth', String(this.#depth)); this.depth = Number(depth); } }
         });
     }
     static getEntityName() {
@@ -18593,7 +18593,7 @@ class Wireframe extends Entity {
             if (mesh == this || !mesh.isVisible()) {
                 continue;
             }
-            let segments = [];
+            const segments = [];
             const line = new LineSegmentsGeometry();
             line.addUser(this);
             const me = new Mesh(line, this.#material);
@@ -18603,9 +18603,9 @@ class Wireframe extends Entity {
             const vertexIndices = m.f;
             const vertexPos = m.v;
             for (let i = 0, l = vertexIndices.length; i < l; i += 3) {
-                let vertexIndex1 = vertexIndices[i + 0] * 3;
-                let vertexIndex2 = vertexIndices[i + 1] * 3;
-                let vertexIndex3 = vertexIndices[i + 2] * 3;
+                const vertexIndex1 = vertexIndices[i + 0] * 3;
+                const vertexIndex2 = vertexIndices[i + 1] * 3;
+                const vertexIndex3 = vertexIndices[i + 2] * 3;
                 segments.push(vertexPos[vertexIndex1], vertexPos[vertexIndex1 + 1], vertexPos[vertexIndex1 + 2]);
                 segments.push(vertexPos[vertexIndex2], vertexPos[vertexIndex2 + 1], vertexPos[vertexIndex2 + 2]);
                 segments.push(vertexPos[vertexIndex2], vertexPos[vertexIndex2 + 1], vertexPos[vertexIndex2 + 2]);
@@ -18638,7 +18638,7 @@ class Wireframe extends Entity {
 class World extends Entity {
     parentChanged(parent) {
         const iterator = this.getParentIterator();
-        for (let p of iterator) {
+        for (const p of iterator) {
             if (p.is('Scene')) {
                 p.setWorld(this);
                 iterator.return(null);
@@ -18692,11 +18692,11 @@ class BeamBufferGeometry extends BufferGeometry {
     set segments(segments) {
         let previousSegment = null;
         let indiceBase = 0;
-        let indices = [];
-        let vertices = [];
-        let uvs = [];
-        let colors = [];
-        for (let segment of segments) {
+        const indices = [];
+        const vertices = [];
+        const uvs = [];
+        const colors = [];
+        for (const segment of segments) {
             if (previousSegment) {
                 indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
                 vec3.sub(tempVec3$l, segment.pos, previousSegment.pos);
@@ -18754,15 +18754,15 @@ class Metaball extends Entity {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Metaball_1: null,
-            radius: { i18n: '#radius', f: () => { let radius = prompt('Radius', String(this.radius)); if (radius) {
+            radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.radius)); if (radius) {
                     this.setRadius(Number(radius));
                 } } }
         });
     }
 }
 
-let a$9 = vec3.create();
-let b$3 = vec3.create();
+const a$9 = vec3.create();
+const b$3 = vec3.create();
 const THRESHOLD = 0.99;
 class MetaballsBufferGeometry extends BufferGeometry {
     constructor(balls) {
@@ -18771,12 +18771,12 @@ class MetaballsBufferGeometry extends BufferGeometry {
     }
     updateGeometry(balls = [], cubeWidth = 1) {
         // build geometry
-        let triangles = this.TestMarchingCubes(balls, cubeWidth);
-        var indices = [];
-        var vertices = [];
-        var normals = [];
+        const triangles = this.TestMarchingCubes(balls, cubeWidth);
+        const indices = [];
+        const vertices = [];
+        const normals = [];
         let vertexIndex;
-        let normal = vec3.create();
+        const normal = vec3.create();
         for (let triangleIndex = 0; triangleIndex < triangles.length; ++triangleIndex) {
             vertexIndex = triangleIndex * 3;
             indices.push(vertexIndex, vertexIndex + 1, vertexIndex + 2);
@@ -18799,9 +18799,9 @@ class MetaballsBufferGeometry extends BufferGeometry {
         this.count = indices.length;
     }
     static getBoundingBox(balls) {
-        let min = vec3.fromValues(+Infinity, +Infinity, +Infinity);
-        let max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
-        for (let ball of balls) {
+        const min = vec3.fromValues(+Infinity, +Infinity, +Infinity);
+        const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
+        for (const ball of balls) {
             vec3.set(b$3, ball.radius, ball.radius, ball.radius);
             vec3.min(min, min, vec3.sub(a$9, ball.currentWorldPosition, b$3));
             vec3.max(max, max, vec3.add(a$9, ball.currentWorldPosition, b$3));
@@ -18810,14 +18810,14 @@ class MetaballsBufferGeometry extends BufferGeometry {
     }
     static computeValue(balls, position) {
         let value = 0;
-        for (let ball of balls) {
-            let a = 1 / vec3.squaredDistance(ball.currentWorldPosition, position);
+        for (const ball of balls) {
+            const a = 1 / vec3.squaredDistance(ball.currentWorldPosition, position);
             value += ball.radius2 * a;
         }
         if (value < THRESHOLD) {
-            for (let ball of balls) {
-                for (let ball2 of balls) {
-                    let a = 1 / (vec3.squaredDistance(ball.currentWorldPosition, position) + vec3.squaredDistance(ball2.currentWorldPosition, position));
+            for (const ball of balls) {
+                for (const ball2 of balls) {
+                    const a = 1 / (vec3.squaredDistance(ball.currentWorldPosition, position) + vec3.squaredDistance(ball2.currentWorldPosition, position));
                     value += 20 * a;
                 }
             }
@@ -18825,21 +18825,21 @@ class MetaballsBufferGeometry extends BufferGeometry {
         return value;
     }
     TestMarchingCubes(balls, cubeWidth) {
-        let [min, max] = MetaballsBufferGeometry.getBoundingBox(balls);
-        for (let ball of balls) {
+        const [min, max] = MetaballsBufferGeometry.getBoundingBox(balls);
+        for (const ball of balls) {
             ball.getWorldPosition(ball.currentWorldPosition);
         }
         vec3.floor(min, min);
         vec3.ceil(max, max);
-        let grid = new GRIDCELL();
-        let isolevel = THRESHOLD; //1 / (radius * radius - 0.01);
-        let triangles = [];
+        const grid = new GRIDCELL();
+        const isolevel = THRESHOLD; //1 / (radius * radius - 0.01);
+        const triangles = [];
         vec3.fromValues(3, 3, 3);
         vec3.fromValues(7, 7, 7);
         for (let i = min[0] - 1; i <= max[0]; i += cubeWidth) {
             for (let j = min[1] - 1; j <= max[1]; j += cubeWidth) {
                 for (let k = min[2] - 1; k <= max[2]; k += cubeWidth) {
-                    let tris = [];
+                    const tris = [];
                     grid.p[0][0] = i;
                     grid.p[0][1] = j;
                     grid.p[0][2] = k;
@@ -18877,9 +18877,9 @@ class MetaballsBufferGeometry extends BufferGeometry {
                 }
             }
         }
-        let tris = [];
+        const tris = [];
         for (let i = 0; i < triangles.length; ++i) {
-            let triangle = [];
+            const triangle = [];
             if (triangles[i].p[0] && triangles[i].p[1] && triangles[i].p[2]) {
                 triangle.push(triangles[i].p[0]);
                 triangle.push(triangles[i].p[1]);
@@ -18919,26 +18919,26 @@ class Metaballs extends Mesh {
         return Object.assign(super.buildContextMenu(), {
             Metaballs_1: null,
             add_ball: { i18n: '#add_ball', f: () => { this.addBall(); } },
-            cube_width: { i18n: '#cube_width', f: () => { let cubeWidth = prompt('Cube width', String(this.cubeWidth)); if (cubeWidth) {
+            cube_width: { i18n: '#cube_width', f: () => { const cubeWidth = prompt('Cube width', String(this.cubeWidth)); if (cubeWidth) {
                     this.cubeWidth = Number(cubeWidth);
                 } } }
         });
     }
 }
 
-let a$8 = vec3.create();
-let b$2 = vec3.create();
+const a$8 = vec3.create();
+const b$2 = vec3.create();
 class TrianglesBufferGeometry extends BufferGeometry {
     constructor(triangles) {
         super();
         this.updateGeometry(triangles);
     }
     updateGeometry(triangles = []) {
-        var indices = [];
-        var vertices = [];
-        var normals = [];
+        const indices = [];
+        const vertices = [];
+        const normals = [];
         let vertexIndex;
-        let normal = vec3.create();
+        const normal = vec3.create();
         for (let triangleIndex = 0; triangleIndex < triangles.length; ++triangleIndex) {
             vertexIndex = triangleIndex * 3;
             indices.push(vertexIndex, vertexIndex + 1, vertexIndex + 2);
@@ -19173,7 +19173,7 @@ class RepositoryEntry {
     addEntry(filename) {
         const splittedPath = filename.split(/[\/\\]+/);
         let current = this;
-        let len = splittedPath.length - 1;
+        const len = splittedPath.length - 1;
         for (const [i, p] of splittedPath.entries()) {
             if (!current.#childs.has(p)) {
                 current = current.#addFile(p, i != len);
@@ -19676,18 +19676,18 @@ class CubeEnvironment extends Environment {
 var sceneExplorerCSS = ":host {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\twidth: 100%;\n\theight: 100%;\n\toverflow: auto;\n\t/*padding: 5px;*/\n\t/*box-sizing: border-box;*/\n\tdisplay: flex;\n\tflex-direction: column;\n\tfont-size: 1.5em;\n\tuser-select: none;\n}\n\n.scene-explorer-contextmenu {\n\tposition: absolute;\n\theight: 50px;\n\twidth: 50px;\n\tbackground-color: turquoise;\n}\n\n.scene-explorer-scene {\n\tflex: 1;\n\toverflow: auto;\n}\n\n.scene-explorer-file-selector {\n\tflex: 1;\n\toverflow: auto;\n\tdisplay: flex;\n}\n\n.scene-explorer-properties {\n\tbackground-color: orange;\n\tdisplay: flex;\n\tflex-wrap: wrap;\n\n}\n\n.scene-explorer-properties>div,\n.scene-explorer-properties>label {\n\twidth: 50%;\n}\n\n.scene-explorer-properties>.scene-explorer-entity-title {\n\twidth: 100%;\n}\n\n.scene-explorer-selector {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tbackground-color: bisque;\n\tmargin: 10px;\n}\n\n\nscene-explorer-entity {\n\tflex-direction: column;\n}\n\n.scene-explorer-entity-header {\n\tcursor: pointer;\n\tdisplay: flex;\n}\n\nscene-explorer-entity>.scene-explorer-entity-header {\n\tbackground-color: teal;\n}\n\nscene-explorer-entity.selected>.scene-explorer-entity-header {\n\tbackground-color: var(--theme-scene-explorer-entity-selected-bg-color);\n}\n\n.scene-explorer-entity-buttons {\n\tdisplay: flex;\n}\n\n.scene-explorer-entity-buttons>div {\n\twidth: 20px;\n\theight: 20px;\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-button-properties {\n\tbackground-color: blue;\n}\n\n.scene-explorer-entity-button-childs {\n\tbackground-color: green;\n}\n\n.scene-explorer-entity-visible {\n\tcursor: pointer;\n}\n\n.scene-explorer-entity-childs {\n\tbackground-color: teal;\n\t/*padding: 5px;*/\n\tpadding-left: 20px;\n}\n\n.file-explorer-file {\n\tcursor: pointer;\n}\n\n.file-explorer-file-header:hover {\n\tfont-weight: bold;\n}\n\n.file-explorer-childs {\n\tpadding-left: 20px;\n}\n\nfile-selector {\n\tdisplay: flex;\n\tflex-direction: column;\n\toverflow: auto;\n\twidth: 100%;\n}\n\n.file-selector-header {\n\tflex: 0;\n}\n\n.file-selector-content {\n\tflex: 1;\n\toverflow: auto;\n}\n\nfile-selector-directory {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-file {\n\tdisplay: block;\n\tcursor: pointer;\n}\n\nfile-selector-tile {\n\tdisplay: block;\n\toverflow: hidden;\n\twidth: 100%;\n\tcursor: pointer;\n}\n\n.file-selector-directory-header:hover,\nfile-selector-file:hover,\nfile-selector-tile:hover {\n\tbackground-color: var(--theme-file-selector-item-hover-bg-color);\n}\n\n.file-selector-directory-content {\n\tpadding-left: 20px;\n}\n\n.manipulator {\n\tdisplay: inline-flex;\n}\n\n.manipulator-button {\n\tbackground-color: var(--theme-scene-explorer-bg-color);\n\tcursor: pointer;\n}\n";
 
 function getUniformsHtml(uniforms /*TODO: create a proper type for uniforms*/) {
-    let htmlUniforms = createElement('div');
-    for (let uniformName in uniforms) {
-        let uniform = uniforms[uniformName];
+    const htmlUniforms = createElement('div');
+    for (const uniformName in uniforms) {
+        const uniform = uniforms[uniformName];
         htmlUniforms.append(addHtmlParameter(uniformName, uniform));
     }
     return htmlUniforms;
 }
 function addHtmlParameter(name, value) {
-    let htmlParameter = createElement('div');
-    let htmlParameterName = createElement('span');
+    const htmlParameter = createElement('div');
+    const htmlParameterName = createElement('span');
     htmlParameterName.innerHTML = name;
-    let htmlParameterValue = createElement('span');
+    const htmlParameterValue = createElement('span');
     htmlParameterValue.innerHTML = value;
     htmlParameter.append(htmlParameterName, htmlParameterValue);
     return htmlParameter;
@@ -19760,7 +19760,7 @@ class MaterialEditor {
                 ],
             });
             if (i < 4) {
-                for (let suite in BlendingFactor) {
+                for (const suite in BlendingFactor) {
                     const value = BlendingFactor[suite];
                     if (typeof value === 'string') {
                         createElement('option', {
@@ -19772,7 +19772,7 @@ class MaterialEditor {
                 }
             }
             else {
-                for (let suite in BlendingEquation) {
+                for (const suite in BlendingEquation) {
                     const value = BlendingEquation[suite];
                     if (typeof value === 'string') {
                         createElement('option', {
@@ -19798,11 +19798,11 @@ class MaterialEditor {
     #refreshHtml() {
         this.#htmlParams.innerText = '';
         this.#htmlShader.innerText = '';
-        let material = this.#material;
+        const material = this.#material;
         if (!material) {
             return;
         }
-        let fileName = material.name;
+        const fileName = material.name;
         if (fileName) {
             this.#htmlParams.append(addHtmlParameter('filename', fileName));
         }
@@ -19873,11 +19873,11 @@ class WireframeHelper extends Entity {
     }
     parentChanged(parent) {
         if (parent instanceof Entity) {
-            let meshes = parent.getChildList('Mesh');
-            for (let mesh of meshes) {
+            const meshes = parent.getChildList('Mesh');
+            for (const mesh of meshes) {
                 if (mesh.renderMode !== GL_LINES) { //TODO: improve wireframe detection
-                    let wireframeGeometry = mesh.geometry.clone();
-                    let wireframeMesh = new Mesh(wireframeGeometry, mesh.material);
+                    const wireframeGeometry = mesh.geometry.clone();
+                    const wireframeMesh = new Mesh(wireframeGeometry, mesh.material);
                     wireframeMesh.renderMode = GL_LINES;
                     this.#meshToWireframe.set(mesh, wireframeMesh);
                     this.#wireframeToMesh.set(wireframeMesh, mesh);
@@ -19894,20 +19894,20 @@ class WireframeHelper extends Entity {
         }
     }
     static updateWireframeIndex(geometry) {
-        let attribute = geometry.attributes.get('index');
+        const attribute = geometry.attributes.get('index');
         if (attribute) {
-            let indexArray = attribute._array;
+            const indexArray = attribute._array;
             let wireframeArray;
-            let arraySize = indexArray.length * 2;
-            let wireframeAttribute = (geometry.elementArrayType == GL_UNSIGNED_INT) ? new Uint32BufferAttribute(new Array(arraySize), 1) : new Uint16BufferAttribute(new Array(arraySize), 1);
+            const arraySize = indexArray.length * 2;
+            const wireframeAttribute = (geometry.elementArrayType == GL_UNSIGNED_INT) ? new Uint32BufferAttribute(new Array(arraySize), 1) : new Uint16BufferAttribute(new Array(arraySize), 1);
             wireframeAttribute.target = GL_ELEMENT_ARRAY_BUFFER;
             geometry.setAttribute('index', wireframeAttribute);
             geometry.count = arraySize;
             wireframeArray = wireframeAttribute._array;
             for (let i = 0, j = 0, l = indexArray.length; i < l; i += 3, j += 6) {
-                let i1 = indexArray[i];
-                let i2 = indexArray[i + 1];
-                let i3 = indexArray[i + 2];
+                const i1 = indexArray[i];
+                const i2 = indexArray[i + 1];
+                const i3 = indexArray[i + 2];
                 wireframeArray[j + 0] = i1;
                 wireframeArray[j + 1] = i2;
                 wireframeArray[j + 2] = i2;
@@ -19955,9 +19955,9 @@ class Source1ModelManager {
                 }
             }
         }
-        let model = await this.#createModel(repository, fileName);
+        const model = await this.#createModel(repository, fileName);
         if (model) {
-            let instance = model.createInstance(dynamic, preventInit);
+            const instance = model.createInstance(dynamic, preventInit);
             return instance;
         }
         return null;
@@ -20007,7 +20007,7 @@ class Source1ParticleControler {
      * Reset all active systems
      */
     static resetAll() {
-        for (let system of this.#activeSystemList.values()) {
+        for (const system of this.#activeSystemList.values()) {
             system.reset();
         }
     }
@@ -20019,7 +20019,7 @@ class Source1ParticleControler {
         if (elapsedTime) {
             elapsedTime *= this.speed;
             elapsedTime = Math.min(elapsedTime, 0.1);
-            for (let system of this.#activeSystemList.values()) {
+            for (const system of this.#activeSystemList.values()) {
                 if (system.parentSystem === undefined) {
                     system.step(elapsedTime);
                 }
@@ -20040,19 +20040,19 @@ class Source1ParticleControler {
     static async createSystem(repository, systemName) {
         if (!repository) {
             //try to get repository from filename
-            for (let repo in this.#systemNameToPcf) {
+            for (const repo in this.#systemNameToPcf) {
                 if (systemName.startsWith(repo)) {
                     repository = repo;
                     systemName = systemName.replace(repo, '');
                     break;
                 }
             }
-            let index = systemName.lastIndexOf('.pcf/');
+            const index = systemName.lastIndexOf('.pcf/');
             if (index != -1) {
                 systemName = systemName.substring(index + 5);
             }
         }
-        let ps = new this.#sourceEngineParticleSystem({ repository: repository, name: systemName }); //TODOV2
+        const ps = new this.#sourceEngineParticleSystem({ repository: repository, name: systemName }); //TODOV2
         this.#systemList[ps.id] = ps;
         await this.#createSystem(repository, ps);
         return ps;
@@ -20062,9 +20062,9 @@ class Source1ParticleControler {
      * @param {Number} elapsedTime Step time
      */
     static async #createSystem(repositoryName, system) {
-        let pcfName = await this.#getPcfBySystemName(repositoryName, system.name);
+        const pcfName = await this.#getPcfBySystemName(repositoryName, system.name);
         if (pcfName) {
-            let pcf = await this.#getPcf(repositoryName, 'particles/' + pcfName);
+            const pcf = await this.#getPcf(repositoryName, 'particles/' + pcfName);
             if (pcf) {
                 pcf.initSystem(system);
             }
@@ -20072,7 +20072,7 @@ class Source1ParticleControler {
     }
     static async #getPcfBySystemName(repository, systemName) {
         await this.#loadManifest(repository);
-        let systemNameToPcfRepo = this.#systemNameToPcf[repository];
+        const systemNameToPcfRepo = this.#systemNameToPcf[repository];
         if (systemNameToPcfRepo) {
             return systemNameToPcfRepo[systemName];
         }
@@ -20102,7 +20102,7 @@ class Source1ParticleControler {
      */
     static async #loadManifest(repositoryName) {
         this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
-            let systemNameToPcfRepo = {};
+            const systemNameToPcfRepo = {};
             this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
             const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json'); //TODO const
             if (response.error) {
@@ -20110,9 +20110,9 @@ class Source1ParticleControler {
             }
             const json /*TODO: change type*/ = response.json;
             if (json && json.files) {
-                for (let file of json.files) {
-                    let pcfName = file.name;
-                    for (let definition of file.particlesystemdefinitions) {
+                for (const file of json.files) {
+                    const pcfName = file.name;
+                    for (const definition of file.particlesystemdefinitions) {
                         systemNameToPcfRepo[definition] = pcfName;
                     }
                 }
@@ -20128,7 +20128,7 @@ class Source1ParticleControler {
      * Start all systems
      */
     static startAll() {
-        for (let system of this.#activeSystemList.values()) {
+        for (const system of this.#activeSystemList.values()) {
             system.start();
         }
     }
@@ -20136,7 +20136,7 @@ class Source1ParticleControler {
      * Stop all systems
      */
     static stopAll() {
-        for (let system of this.#activeSystemList.values()) {
+        for (const system of this.#activeSystemList.values()) {
             system.stop();
         }
     }
@@ -20164,10 +20164,10 @@ class Source1ParticleControler {
      * @return {Object SourcePCF} Pcf
      */
     static async #getPcf(repositoryName, pcfName) {
-        let promise = new Promise((resolve, reject) => {
-            let pcf = this.#pcfList[pcfName];
+        const promise = new Promise((resolve, reject) => {
+            const pcf = this.#pcfList[pcfName];
             if (!pcf) {
-                let callback1 = (pcf) => {
+                const callback1 = (pcf) => {
                     if (pcf) {
                         this.#pcfList[pcfName] = pcf;
                         pcf.repositoryName = repositoryName;
@@ -20189,8 +20189,8 @@ class Source1ParticleControler {
      */
     static async #loadPcf(repositoryName, pcfName) {
         //TODO: return an empty system if not found?
-        let promise = new Promise((resolve, reject) => {
-            let pcfLoader = getLoader('SourceEnginePCFLoader');
+        const promise = new Promise((resolve, reject) => {
+            const pcfLoader = getLoader('SourceEnginePCFLoader');
             new pcfLoader().load(repositoryName, pcfName).then((pcf) => resolve(pcf)); //TODOv3: handle reject
         });
         return promise;
@@ -20199,20 +20199,20 @@ class Source1ParticleControler {
         this.speed = s;
     }
     static async getSystemList() {
-        let repoList = [];
-        for (let repoName in this.#systemNameToPcf) {
-            let pcfs = {};
+        const repoList = [];
+        for (const repoName in this.#systemNameToPcf) {
+            const pcfs = {};
             await this.#loadManifest(repoName);
-            let repo = this.#systemNameToPcf[repoName];
-            for (let systemName in repo) {
-                let pcfName = repo[systemName];
+            const repo = this.#systemNameToPcf[repoName];
+            for (const systemName in repo) {
+                const pcfName = repo[systemName];
                 if (!pcfs[pcfName]) {
                     pcfs[pcfName] = [];
                 }
                 pcfs[pcfName].push({ name: systemName });
             }
-            let pcfList = [];
-            for (let pcfName in pcfs) {
+            const pcfList = [];
+            for (const pcfName in pcfs) {
                 pcfList.push({ name: pcfName, files: pcfs[pcfName] });
             }
             repoList.push({ name: repoName, files: pcfList });
@@ -20228,7 +20228,7 @@ class SourceBinaryLoader {
     repository = '';
     async load(repositoryName, fileName) {
         this.repository = repositoryName;
-        let promise = new Promise(resolve => {
+        const promise = new Promise(resolve => {
             const p = Repositories.getFileAsArrayBuffer(repositoryName, fileName);
             p.then((response) => {
                 if (!response.error) {
@@ -20334,39 +20334,39 @@ class Source2File {
         return this.blocksArray[id];
     }
     getVertexCount(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return 0;
         }
         return block.indices[bufferId].indices.length;
     }
     getIndices(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        let indexBuffer = block.indices[bufferId];
+        const indexBuffer = block.indices[bufferId];
         return indexBuffer ? indexBuffer.indices : [];
     }
     getVertices(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        let vertexBuffer = block.vertices[bufferId];
+        const vertexBuffer = block.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.vertices : [];
     }
     getNormals(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        let vertexBuffer = block.vertices[bufferId];
-        let normals = vertexBuffer.normals;
-        var ret = [];
+        const vertexBuffer = block.vertices[bufferId];
+        const normals = vertexBuffer.normals;
+        const ret = [];
         const normalVec4 = vec4.create();
         let normalVec3;
-        for (var i = 0, l = normals.length; i < l; i += 4) {
+        for (let i = 0, l = normals.length; i < l; i += 4) {
             normalVec4[0] = normals[i + 0];
             normalVec4[1] = normals[i + 1];
             normalVec4[2] = normals[i + 2];
@@ -20379,42 +20379,42 @@ class Source2File {
         return ret; //vertexBuffer ? vertexBuffer.normals : [];
     }
     getCoords(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        let vertexBuffer = block.vertices[bufferId];
+        const vertexBuffer = block.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.coords : [];
     }
     getBoneIndices(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        let vertexBuffer = block.vertices[bufferId];
+        const vertexBuffer = block.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.boneIndices : [];
     }
     getBoneWeight(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        let vertexBuffer = block.vertices[bufferId];
+        const vertexBuffer = block.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.boneWeight : [];
     }
     getPositionArray(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        var vertexBuffer = block.vertices[bufferId];
-        var indexBuffer = block.indices[bufferId];
-        var vertices = vertexBuffer ? vertexBuffer.vertices : [];
-        var indices = indexBuffer ? indexBuffer.indices : [];
-        var ret = [];
-        var indicesLength = indices.length;
-        for (var i = 0; i < indicesLength; i++) {
-            var vertexId = indices[i] * 3;
+        const vertexBuffer = block.vertices[bufferId];
+        const indexBuffer = block.indices[bufferId];
+        const vertices = vertexBuffer ? vertexBuffer.vertices : [];
+        const indices = indexBuffer ? indexBuffer.indices : [];
+        const ret = [];
+        const indicesLength = indices.length;
+        for (let i = 0; i < indicesLength; i++) {
+            const vertexId = indices[i] * 3;
             ret.push(vertices[vertexId + 0]);
             ret.push(vertices[vertexId + 1]);
             ret.push(vertices[vertexId + 2]);
@@ -20430,7 +20430,7 @@ class Source2File {
             //outputTangent.w		= ztSigns.y;
         }*/
         function DecompressNormal(inputNormal) {
-            let outputNormal = vec3.create();
+            const outputNormal = vec3.create();
             //float2 ztSigns		= (inputNormal.xy - 128.0) < 0;				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
             const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0)); // sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
             //float2 xyAbs		= abs(inputNormal.xy - 128.0) - ztSigns;		// 0..127
@@ -20450,20 +20450,20 @@ class Source2File {
             outputNormal[1] *= (1 - xySigns[1]) - xySigns[1];
             return vec3.normalize(outputNormal, outputNormal);
         }
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        var vertexBuffer = block.vertices[bufferId];
-        var indexBuffer = block.indices[bufferId];
-        var normals = vertexBuffer ? vertexBuffer.normals : [];
-        var indices = indexBuffer ? indexBuffer.indices : [];
-        var ret = [];
-        var indicesLength = indices.length;
+        const vertexBuffer = block.vertices[bufferId];
+        const indexBuffer = block.indices[bufferId];
+        const normals = vertexBuffer ? vertexBuffer.normals : [];
+        const indices = indexBuffer ? indexBuffer.indices : [];
+        const ret = [];
+        const indicesLength = indices.length;
         const normalVec4 = vec4.create();
         let normalVec3;
-        for (var i = 0; i < indicesLength; i++) {
-            var vertexId = indices[i] * 4;
+        for (let i = 0; i < indicesLength; i++) {
+            const vertexId = indices[i] * 4;
             normalVec4[0] = normals[vertexId + 0];
             normalVec4[1] = normals[vertexId + 1];
             normalVec4[2] = normals[vertexId + 2];
@@ -20481,40 +20481,40 @@ class Source2File {
         return ret;
     }
     getCoordArray(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        var vertexBuffer = block.vertices[bufferId];
-        var indexBuffer = block.indices[bufferId];
-        var coords = vertexBuffer ? vertexBuffer.coords : [];
-        var indices = indexBuffer ? indexBuffer.indices : [];
+        const vertexBuffer = block.vertices[bufferId];
+        const indexBuffer = block.indices[bufferId];
+        const coords = vertexBuffer ? vertexBuffer.coords : [];
+        const indices = indexBuffer ? indexBuffer.indices : [];
         //var coords = block.vertices[bufferId].coords;
         //var indices = block.indices[bufferId].indices;
-        var ret = [];
-        var indicesLength = indices.length;
-        for (var i = 0; i < indicesLength; i++) {
-            var vertexId = indices[i] * 2;
+        const ret = [];
+        const indicesLength = indices.length;
+        for (let i = 0; i < indicesLength; i++) {
+            const vertexId = indices[i] * 2;
             ret.push(coords[vertexId + 0]);
             ret.push(coords[vertexId + 1]);
         }
         return ret;
     }
     getBoneIndiceArray(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        var vertexBuffer = block.vertices[bufferId];
-        var indexBuffer = block.indices[bufferId];
-        var vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
-        var indices = indexBuffer ? indexBuffer.indices : [];
+        const vertexBuffer = block.vertices[bufferId];
+        const indexBuffer = block.indices[bufferId];
+        const vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
+        const indices = indexBuffer ? indexBuffer.indices : [];
         //var vertices = block.vertices[bufferId].boneIndices;
         //var indices = block.indices[bufferId].indices;
-        var ret = [];
-        var indicesLength = indices.length;
-        for (var i = 0; i < indicesLength; i++) {
-            var vertexId = indices[i] * 4;
+        const ret = [];
+        const indicesLength = indices.length;
+        for (let i = 0; i < indicesLength; i++) {
+            const vertexId = indices[i] * 4;
             ret.push(vertices[vertexId + 0]);
             ret.push(vertices[vertexId + 1]);
             ret.push(vertices[vertexId + 2]);
@@ -20523,20 +20523,20 @@ class Source2File {
         return ret;
     }
     getBoneWeightArray(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        var vertexBuffer = block.vertices[bufferId];
-        var indexBuffer = block.indices[bufferId];
-        var vertices = vertexBuffer ? vertexBuffer.boneWeight : [];
-        var indices = indexBuffer ? indexBuffer.indices : [];
+        const vertexBuffer = block.vertices[bufferId];
+        const indexBuffer = block.indices[bufferId];
+        const vertices = vertexBuffer ? vertexBuffer.boneWeight : [];
+        const indices = indexBuffer ? indexBuffer.indices : [];
         //var vertices = block.vertices[bufferId].boneWeight;
         //var indices = block.indices[bufferId].indices;
-        var ret = [];
-        var indicesLength = indices.length;
-        for (var i = 0; i < indicesLength; i++) {
-            var vertexId = indices[i] * 4;
+        const ret = [];
+        const indicesLength = indices.length;
+        for (let i = 0; i < indicesLength; i++) {
+            const vertexId = indices[i] * 4;
             ret.push(vertices[vertexId + 0] / 255); //TODO: optimise
             ret.push(vertices[vertexId + 1] / 255);
             ret.push(vertices[vertexId + 2] / 255);
@@ -20545,20 +20545,20 @@ class Source2File {
         return ret;
     }
     getTangentArray(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        var vertexBuffer = block.vertices[bufferId];
-        var indexBuffer = block.indices[bufferId];
-        var vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
-        var indices = indexBuffer ? indexBuffer.indices : [];
+        const vertexBuffer = block.vertices[bufferId];
+        const indexBuffer = block.indices[bufferId];
+        const vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
+        const indices = indexBuffer ? indexBuffer.indices : [];
         //var vertices = block.vertices[bufferId].boneIndices;
         //var indices = block.indices[bufferId].indices;
-        var ret = [];
-        var indicesLength = indices.length;
-        for (var i = 0; i < indicesLength; i++) {
-            var vertexId = indices[i] * 4;
+        const ret = [];
+        const indicesLength = indices.length;
+        for (let i = 0; i < indicesLength; i++) {
+            const vertexId = indices[i] * 4;
             ret.push(vertices[vertexId + 0]);
             ret.push(vertices[vertexId + 1]);
             ret.push(vertices[vertexId + 2]);
@@ -20567,20 +20567,20 @@ class Source2File {
         return ret;
     }
     getBinormalArray(bufferId) {
-        var block = this.blocks.VBIB || this.blocks.MBUF;
+        const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        var vertexBuffer = block.vertices[bufferId];
-        var indexBuffer = block.indices[bufferId];
-        var vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
-        var indices = indexBuffer ? indexBuffer.indices : [];
+        const vertexBuffer = block.vertices[bufferId];
+        const indexBuffer = block.indices[bufferId];
+        const vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
+        const indices = indexBuffer ? indexBuffer.indices : [];
         //var vertices = block.vertices[bufferId].boneIndices;
         //var indices = block.indices[bufferId].indices;
-        var ret = [];
-        var indicesLength = indices.length;
-        for (var i = 0; i < indicesLength; i++) {
-            var vertexId = indices[i] * 4;
+        const ret = [];
+        const indicesLength = indices.length;
+        for (let i = 0; i < indicesLength; i++) {
+            const vertexId = indices[i] * 4;
             ret.push(vertices[vertexId + 0]);
             ret.push(vertices[vertexId + 1]);
             ret.push(vertices[vertexId + 2]);
@@ -20589,21 +20589,21 @@ class Source2File {
         return ret;
     }
     getWidth() {
-        var block = this.blocks.DATA;
+        const block = this.blocks.DATA;
         if (!block) {
             return 0;
         }
         return block.width;
     }
     getHeight() {
-        var block = this.blocks.DATA;
+        const block = this.blocks.DATA;
         if (!block) {
             return 0;
         }
         return block.height;
     }
     getDxtLevel() {
-        var block = this.blocks.DATA;
+        const block = this.blocks.DATA;
         if (!block) {
             return 0;
         }
@@ -20616,27 +20616,27 @@ class Source2File {
         return 0;
     }
     isCompressed() {
-        var block = this.blocks.DATA;
+        const block = this.blocks.DATA;
         if (!block) {
             return false;
         }
         return block.imageFormat <= 2; //DXT1 or DXT5
     }
     isCubeTexture() {
-        var block = this.blocks.DATA;
+        const block = this.blocks.DATA;
         if (!block) {
             return false;
         }
         return (block.flags & VTEX_FLAG_CUBE_TEXTURE) == VTEX_FLAG_CUBE_TEXTURE;
     }
     getBlockStruct(path) {
-        var arr = path.split('.');
-        var data = this.blocks;
+        const arr = path.split('.');
+        let data = this.blocks;
         if (!data) {
             return null;
         }
-        var sub;
-        for (var i = 0; i < arr.length; i++) {
+        let sub;
+        for (let i = 0; i < arr.length; i++) {
             sub = data[arr[i]];
             if (!sub) {
                 return null;
@@ -20652,20 +20652,20 @@ class Source2File {
         return this.getBlockStruct('DATA.structs.MaterialResourceData_t.' + path) || this.getBlockStruct('DATA.keyValue.root.' + path);
     }
     getExternalFiles() {
-        var externalFiles = this.getBlockStruct('RERL.externalFiles2');
+        const externalFiles = this.getBlockStruct('RERL.externalFiles2');
         return externalFiles;
     }
     getExternalFile(fileIndex) {
-        var externalFiles = this.getBlockStruct('RERL.externalFiles2');
+        const externalFiles = this.getBlockStruct('RERL.externalFiles2');
         if (externalFiles) {
             return externalFiles[fileIndex];
         }
         return null;
     }
     getKeyValue(path) {
-        var dataBlock = this.blocks['DATA'];
+        const dataBlock = this.blocks['DATA'];
         if (dataBlock) {
-            var keyValue = dataBlock.keyValue;
+            const keyValue = dataBlock.keyValue;
             if (keyValue) {
                 return keyValue.getValue(path);
             }
@@ -20673,19 +20673,19 @@ class Source2File {
         return null;
     }
     get imageFormat() {
-        var block = this.blocks.DATA;
+        const block = this.blocks.DATA;
         if (!block) {
             return TEXTURE_FORMAT_UNKNOWN;
         }
-        let imageFormat = block.imageFormat;
+        const imageFormat = block.imageFormat;
         {
             return VTEX_TO_INTERNAL_IMAGE_FORMAT[imageFormat];
         }
     }
     get displayName() {
-        let fileName = this.fileName;
+        const fileName = this.fileName;
         if (fileName) {
-            let result = /(\w+)\.\w+$/.exec(fileName);
+            const result = /(\w+)\.\w+$/.exec(fileName);
             if (result && result.length == 2) {
                 return result[1];
             }
@@ -20722,7 +20722,7 @@ class Source2File {
     }
 }
 function DecompressNormal(inputNormal) {
-    let outputNormal = vec3.create();
+    const outputNormal = vec3.create();
     //float2 ztSigns		= (inputNormal.xy - 128.0) < 0;				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
     const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0)); // sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
     //float2 xyAbs		= abs(inputNormal.xy - 128.0) - ztSigns;		// 0..127
@@ -20761,18 +20761,18 @@ class Source2FileBlock {
         this.length = length;
     }
     getKeyValue(path) {
-        let keyValue = this.keyValue;
+        const keyValue = this.keyValue;
         if (keyValue) {
             return keyValue.getValue(path);
         }
         return null;
     }
     getIndices(bufferId) {
-        let indexBuffer = this.indices[bufferId];
+        const indexBuffer = this.indices[bufferId];
         return indexBuffer ? indexBuffer.indices : [];
     }
     getVertices(bufferId) {
-        let vertexBuffer = this.vertices[bufferId];
+        const vertexBuffer = this.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.vertices : [];
     }
     getNormalsTangents(bufferId) {
@@ -20799,7 +20799,7 @@ class Source2FileBlock {
         }
         function DecompressTangent(compressedTangent, outputTangent) {
             DecompressNormal(compressedTangent, outputTangent);
-            var tSign = compressedTangent[1] - 128.0 < 0 ? -1.0 : 1.0;
+            const tSign = compressedTangent[1] - 128.0 < 0 ? -1.0 : 1.0;
             outputTangent[3] = tSign;
         }
         function DecompressNormal2(inputNormal) {
@@ -20822,12 +20822,12 @@ class Source2FileBlock {
             const unpackedNormalYPositive = unpackedNormal[1] >= 0.0 ? 1.0 : 0.0;
             unpackedNormal[0] += negativeZCompensation * (1 - unpackedNormalXPositive) + -negativeZCompensation * unpackedNormalXPositive; // mix() - x×(1−a)+y×a
             unpackedNormal[1] += negativeZCompensation * (1 - unpackedNormalYPositive) + -negativeZCompensation * unpackedNormalYPositive;
-            let normal = vec3.normalize(unpackedNormal, unpackedNormal); // Get final normal by normalizing it onto the unit sphere
+            const normal = vec3.normalize(unpackedNormal, unpackedNormal); // Get final normal by normalizing it onto the unit sphere
             normals = normal;
             // Invert tangent when normal Z is negative
-            let tangentSign = (normal[2] >= 0.0) ? 1.0 : -1.0;
+            const tangentSign = (normal[2] >= 0.0) ? 1.0 : -1.0;
             // equal to tangentSign * (1.0 + abs(normal.z))
-            let rcpTangentZ = 1.0 / (tangentSign + normal[2]);
+            const rcpTangentZ = 1.0 / (tangentSign + normal[2]);
             // Be careful of rearranging ops here, could lead to differences in float precision, especially when dealing with compressed data.
             const unalignedTangent = vec3.create();
             // Unoptimized (but clean) form:
@@ -20840,25 +20840,25 @@ class Source2FileBlock {
             // This establishes a single direction on the tangent plane that derived from only the normal (has no texcoord info).
             // But it doesn't line up with the texcoords. For that, it uses nPackedFrameT, which is the rotation.
             // Angle to use to rotate tangent
-            var nPackedFrameT = Tbits / 2047.0 * TWO_PI;
+            const nPackedFrameT = Tbits / 2047.0 * TWO_PI;
             // Rotate tangent to the correct angle that aligns with texcoords.
             //let tangent = unalignedTangent * Math.cos(nPackedFrameT) + Vector3.Cross(normal, unalignedTangent) * Math.sin(nPackedFrameT);
-            let tangent = vec3.scale(vec3.create(), unalignedTangent, Math.cos(nPackedFrameT));
+            const tangent = vec3.scale(vec3.create(), unalignedTangent, Math.cos(nPackedFrameT));
             const c = vec3.cross(vec3.create(), normal, unalignedTangent);
             vec3.scale(c, c, Math.sin(nPackedFrameT));
             vec3.add(tangent, tangent, c);
             tangents = vec4.fromValues(tangent[0], tangent[1], tangent[2], (SignBit == 0) ? -1.0 : 1.0); // Bitangent sign bit... inverted (0 = negative
             return [normals, tangents];
         }
-        let vertexBuffer = this.vertices[bufferId];
-        let normals = new Float32Array(vertexBuffer.normals);
-        var normalArray = [];
-        var tangentArray = [];
+        const vertexBuffer = this.vertices[bufferId];
+        const normals = new Float32Array(vertexBuffer.normals);
+        const normalArray = [];
+        const tangentArray = [];
         const compressedNormal = vec2.create();
         const compressedTangent = vec2.create();
         let normalTemp = vec3.create();
         let tangentTemp = vec3.create();
-        for (var i = 0, l = normals.length; i < l; i += 4) {
+        for (let i = 0, l = normals.length; i < l; i += 4) {
             if (!vertexBuffer.decompressTangentV2) {
                 compressedNormal[0] = normals[i + 0] * 255.0;
                 compressedNormal[1] = normals[i + 1] * 255.0;
@@ -20881,23 +20881,23 @@ class Source2FileBlock {
         return [normalArray, tangentArray];
     }
     getCoords(bufferId) {
-        let vertexBuffer = this.vertices[bufferId];
+        const vertexBuffer = this.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.coords : [];
     }
     getNormal(bufferId) {
-        let vertexBuffer = this.vertices[bufferId];
+        const vertexBuffer = this.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.normals : [];
     }
     getTangent(bufferId) {
-        let vertexBuffer = this.vertices[bufferId];
+        const vertexBuffer = this.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.tangents : [];
     }
     getBoneIndices(bufferId) {
-        let vertexBuffer = this.vertices[bufferId];
+        const vertexBuffer = this.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.boneIndices : [];
     }
     getBoneWeight(bufferId) {
-        let vertexBuffer = this.vertices[bufferId];
+        const vertexBuffer = this.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.boneWeight : [];
     }
 }
@@ -20906,7 +20906,7 @@ function decodeLz4(reader, decompressBlobArray, compressedSize, uncompressedSize
     reader.tell() + compressedSize;
     //let outputIndex = 0;
     let decodedeBytes = 0;
-    let decodeMask = reader.getUint8();
+    const decodeMask = reader.getUint8();
     let readBytes = (decodeMask & 0xF0) >> 4;
     if (readBytes == 0xF) {
         let a = 0;
@@ -20927,7 +20927,7 @@ function decodeLz4(reader, decompressBlobArray, compressedSize, uncompressedSize
         if (decodedeBytes >= uncompressedSize) {
             break decodeLoop;
         }
-        let decodeOffset = reader.getUint16(offset);
+        const decodeOffset = reader.getUint16(offset);
         if (decodeLen == 0xF) {
             let a = 0;
             do {
@@ -20935,8 +20935,8 @@ function decodeLz4(reader, decompressBlobArray, compressedSize, uncompressedSize
                 decodeLen += a;
             } while (a == 0xFF);
         }
-        let decodeMask = reader.getUint8();
-        let nextLen = decodeMask & 0xF;
+        const decodeMask = reader.getUint8();
+        const nextLen = decodeMask & 0xF;
         readBytes = (decodeMask & 0xF0) >> 4;
         if (readBytes == 0xF) {
             let a = 0;
@@ -20988,13 +20988,13 @@ class Kv3Element {
         this[property] = value;
     }
     exportAsText(linePrefix) {
-        var out = [];
-        var keys = Object.keys(this);
-        var linePrefix2 = linePrefix + '\t';
+        const out = [];
+        const keys = Object.keys(this);
+        const linePrefix2 = linePrefix + '\t';
         out.push(linePrefix);
         out.push('{\r\n');
-        for (var i = 0; i < keys.length; i++) {
-            var val = this[keys[i]];
+        for (let i = 0; i < keys.length; i++) {
+            const val = this[keys[i]];
             //console.log(keys[i]);
             // use val
             out.push(linePrefix2);
@@ -21037,14 +21037,14 @@ class Kv3Array {
         this.properties.push(value);
     }
     exportAsText(linePrefix) {
-        var out = [];
-        var keys = this.properties;
-        var linePrefix2 = linePrefix + '\t';
+        const out = [];
+        const keys = this.properties;
+        const linePrefix2 = linePrefix + '\t';
         out.push('\r\n');
         out.push(linePrefix);
         out.push('[\r\n');
-        for (var i = 0; i < keys.length; i++) {
-            var val = keys[i];
+        for (let i = 0; i < keys.length; i++) {
+            const val = keys[i];
             out.push(val.exportAsText(linePrefix2));
             out.push(',\r\n');
         }
@@ -21069,13 +21069,13 @@ class Kv3File {
         return null;
     }
     getValue(path) {
-        var arr = path.split('.');
-        var data = this.root;
+        const arr = path.split('.');
+        let data = this.root;
         if (!data) {
             return null;
         }
-        var sub;
-        for (var i = 0; i < arr.length; i++) {
+        let sub;
+        for (let i = 0; i < arr.length; i++) {
             sub = data[arr[i]];
             if (!sub) {
                 return null;
@@ -21122,15 +21122,15 @@ const DATA_TYPE_RESOURCE = 0x86;
 const BinaryKv3Loader = new (function () {
     class BinaryKv3Loader {
         getBinaryVkv3(binaryString) {
-            let reader = new BinaryReader(binaryString);
-            let binaryKv3 = new Kv3File();
-            let stringDictionary = [];
+            const reader = new BinaryReader(binaryString);
+            const binaryKv3 = new Kv3File();
+            const stringDictionary = [];
             readStringDictionary(reader, stringDictionary);
             binaryKv3.setRoot(readElement(reader, stringDictionary));
             return binaryKv3;
         }
         getBinaryKv3(version, binaryString, singleByteCount, doubleByteCount, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, bufferId, stringDictionary, objectCount, arrayCount, buffer0) {
-            let reader = new BinaryReader(binaryString);
+            const reader = new BinaryReader(binaryString);
             if (!stringDictionary) {
                 stringDictionary = [];
             }
@@ -21140,8 +21140,8 @@ const BinaryKv3Loader = new (function () {
             if (version >= 5 && bufferId == 1) {
                 byteCursor = objectCount * 4;
             }
-            let doubleCursor = Math.ceil((byteCursor + singleByteCount[bufferId]) / 2) * 2; //Math.ceil(byteCursor + singleByteCount[bufferId] / 2) * 2;
-            let quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId] * 2) / 4) * 4; //Math.ceil(singleByteCount / 4) * 4;
+            const doubleCursor = Math.ceil((byteCursor + singleByteCount[bufferId]) / 2) * 2; //Math.ceil(byteCursor + singleByteCount[bufferId] / 2) * 2;
+            const quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId] * 2) / 4) * 4; //Math.ceil(singleByteCount / 4) * 4;
             let eightCursor = Math.ceil((quadCursor + quadByteCount[bufferId] * 4) / 8) * 8;
             if (version >= 5 && eightByteCount[bufferId] == 0) {
                 // In this case, don't align cursor
@@ -21156,7 +21156,7 @@ const BinaryKv3Loader = new (function () {
             const blobOffset = dictionaryOffset + dictionaryTypeLength;
             if (version >= 2 && blobCount != 0) {
                 if (compressedBlobReader) {
-                    let uncompressedLength = blobCount * 4;
+                    const uncompressedLength = blobCount * 4;
                     uncompressedBlobSizeReader = new BinaryReader(reader, blobOffset, uncompressedLength);
                     compressedBlobSizeReader = new BinaryReader(reader, blobOffset + 4 + uncompressedLength);
                 }
@@ -21172,12 +21172,12 @@ const BinaryKv3Loader = new (function () {
             else if (version < 5) { //v2-v4
                 offset = blobOffset;
             }
-            let typeArray = [];
-            let valueArray = [];
+            const typeArray = [];
+            const valueArray = [];
             if (version < 5) {
                 do {
                     --offset;
-                    let type = reader.getUint8(offset);
+                    const type = reader.getUint8(offset);
                     //typeArray.unshift(type);
                     if (type) {
                         typeArray.unshift(type);
@@ -21191,17 +21191,17 @@ const BinaryKv3Loader = new (function () {
                 if (bufferId == 1) {
                     reader.seek(dictionaryOffset);
                     for (let i = 0; i < dictionaryTypeLength; i++) {
-                        let type = reader.getUint8();
+                        const type = reader.getUint8();
                         if (type) {
                             typeArray.push(type);
                         }
                     }
                 }
             }
-            let byteReader = new BinaryReader(reader);
-            let doubleReader = new BinaryReader(reader);
-            let quadReader = new BinaryReader(reader);
-            let eightReader = new BinaryReader(reader);
+            const byteReader = new BinaryReader(reader);
+            const doubleReader = new BinaryReader(reader);
+            const quadReader = new BinaryReader(reader);
+            const eightReader = new BinaryReader(reader);
             let byteReaderBuf0;
             let doubleReaderBuf0;
             let quadReaderBuf0;
@@ -21215,7 +21215,7 @@ const BinaryKv3Loader = new (function () {
             let objectsSizeReader = quadReader;
             if (bufferId == 0) {
                 // In v5, strings are in buffer 0
-                let stringCount = quadReader.getUint32();
+                const stringCount = quadReader.getUint32();
                 reader.seek(dictionaryOffset);
                 readStringDictionary(reader, stringDictionary, stringCount);
                 if (version >= 5) {
@@ -21224,11 +21224,11 @@ const BinaryKv3Loader = new (function () {
             }
             else {
                 objectsSizeReader = new BinaryReader(reader);
-                let reader0 = new BinaryReader(buffer0);
-                let byteCursorBuf0 = 0;
-                let doubleCursorBuf0 = Math.ceil(singleByteCount[0] / 2) * 2;
-                let quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0] * 2) / 4) * 4;
-                let eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0] * 4) / 8) * 8;
+                const reader0 = new BinaryReader(buffer0);
+                const byteCursorBuf0 = 0;
+                const doubleCursorBuf0 = Math.ceil(singleByteCount[0] / 2) * 2;
+                const quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0] * 2) / 4) * 4;
+                const eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0] * 4) / 8) * 8;
                 //console.info('cursor buff 0', byteCursorBuf0, doubleCursorBuf0, quadCursorBuf0, eightCursorBuf0)
                 byteReaderBuf0 = new BinaryReader(reader0);
                 doubleReaderBuf0 = new BinaryReader(reader0);
@@ -21250,9 +21250,9 @@ const BinaryKv3Loader = new (function () {
                 decompressBlobArray = new Uint8Array(decompressBlobBuffer);
                 decompressBlobArray.decompressOffset = 0;
             }
-            let rootElement = readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers);
+            const rootElement = readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers);
             // return it in a suitable format
-            let binaryKv3 = new Kv3File();
+            const binaryKv3 = new Kv3File();
             binaryKv3.setRoot(binaryKv32KV3(rootElement, stringDictionary));
             return binaryKv3;
         }
@@ -21261,13 +21261,13 @@ const BinaryKv3Loader = new (function () {
 }());
 function readStringDictionary(reader, stringDictionary, stringCount) {
     stringCount = stringCount ?? reader.getUint32();
-    for (var i = 0; i < stringCount; i++) {
+    for (let i = 0; i < stringCount; i++) {
         stringDictionary.push(reader.getNullString());
     }
 }
 function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, elementType, isArray, compressionFrameSize, readers0) {
     function shiftArray() {
-        let elementType = typeArray.shift();
+        const elementType = typeArray.shift();
         if (elementType == DATA_TYPE_RESOURCE) {
             typeArray.shift();
         }
@@ -21287,7 +21287,7 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                 return byteReader.getUint8() ? true : false;
             }
             else {
-                let value = new SourceKv3Value(elementType);
+                const value = new SourceKv3Value(elementType);
                 valueArray.push(value);
                 value.value = byteReader.getUint8() ? true : false;
                 return value;
@@ -21297,7 +21297,7 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                 return eightReader.getBigInt64();
             }
             else {
-                let value = new SourceKv3Value(elementType);
+                const value = new SourceKv3Value(elementType);
                 value.value = eightReader.getBigInt64();
                 valueArray.push(value);
                 return value;
@@ -21307,7 +21307,7 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                 return eightReader.getBigUint64();
             }
             else {
-                let value = new SourceKv3Value(elementType);
+                const value = new SourceKv3Value(elementType);
                 value.value = eightReader.getBigUint64();
                 valueArray.push(value);
                 return value;
@@ -21317,7 +21317,7 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                 return eightReader.getFloat64();
             }
             else {
-                let value = new SourceKv3Value(elementType);
+                const value = new SourceKv3Value(elementType);
                 value.value = eightReader.getFloat64();
                 valueArray.push(value);
                 return value;
@@ -21327,7 +21327,7 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                 return byteReader.getInt8();
             }
             else {
-                let value = new SourceKv3Value(elementType);
+                const value = new SourceKv3Value(elementType);
                 value.value = byteReader.getInt8();
                 valueArray.push(value);
                 return value;
@@ -21347,7 +21347,7 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                 if (compressedBlobReader) { //if we have a decompress buffer, that means we have to decompress the blobs
                     let uncompressedBlobSize = uncompressedBlobSizeReader.getUint32();
                     //let decompressBuffer = new ArrayBuffer(uncompressedBlobSize);
-                    var decompressArray = new Uint8Array(decompressBlobBuffer, decompressBlobArray.decompressOffset, uncompressedBlobSize);
+                    const decompressArray = new Uint8Array(decompressBlobBuffer, decompressBlobArray.decompressOffset, uncompressedBlobSize);
                     /*
                     TODO: test blobs version 5 compression method 1 (lz4)
                     let compressedBlobSize: number;
@@ -21357,7 +21357,7 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                         compressedBlobSize = quadReader.getUint32();
                     }*/
                     while (true) {
-                        let compressedBlobSize = compressedBlobSizeReader.getUint16();
+                        const compressedBlobSize = compressedBlobSizeReader.getUint16();
                         if (uncompressedBlobSize > compressionFrameSize) {
                             const uncompressedFrameSize = decodeLz4(compressedBlobReader, decompressBlobArray, compressedBlobSize, compressionFrameSize, decompressBlobArray.decompressOffset);
                             decompressBlobArray.decompressOffset += uncompressedFrameSize;
@@ -21384,7 +21384,7 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                 }
                 else {
                     if (uncompressedBlobReader) { //blobs have already been uncompressed
-                        let uncompressedBlobSize = uncompressedBlobSizeReader.getUint32();
+                        const uncompressedBlobSize = uncompressedBlobSizeReader.getUint32();
                         return uncompressedBlobReader.getBytes(uncompressedBlobSize);
                     }
                     else {
@@ -21405,15 +21405,15 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
             //elements = new Kv3Element();
             elements = new Map();
             for (let i = 0; i < count; i++) {
-                let nameId = quadReader.getUint32();
-                let element = readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
+                const nameId = quadReader.getUint32();
+                const element = readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
                 elements.set(nameId, element);
                 //elements.setProperty(nameId, element);
             }
             return elements;
         case DATA_TYPE_TYPED_ARRAY:
             count = quadReader.getUint32();
-            let subType = shiftArray() /*typeArray.shift()*/;
+            const subType = shiftArray() /*typeArray.shift()*/;
             elements = [];
             for (let i = 0; i < count; i++) {
                 elements.push(readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType, true, compressionFrameSize, readers0));
@@ -21440,7 +21440,7 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                 return quadReader.getFloat32();
             }
             else {
-                let value = new SourceKv3Value(elementType);
+                const value = new SourceKv3Value(elementType);
                 value.value = quadReader.getFloat32();
                 valueArray.push(value);
                 return value;
@@ -21505,7 +21505,7 @@ function binaryKv32KV3(elementKv3, stringDictionary) {
     return element;
 }
 function readElement(reader, stringDictionary, occurences) {
-    var type = reader.getUint8();
+    const type = reader.getUint8();
     //console.log(type);
     switch (type) {
         /*
@@ -21529,7 +21529,7 @@ function readElement(reader, stringDictionary, occurences) {
             return null;
         case 2: // Bool
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
                     arr.push(reader.getUint8() ? true : false);
                 }
@@ -21540,20 +21540,20 @@ function readElement(reader, stringDictionary, occurences) {
             }
         case 3: // Int 64
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
-                    let int64 = reader.getBigInt64(); //TODO: handle int64
+                    const int64 = reader.getBigInt64(); //TODO: handle int64
                     arr.push(int64 /*(int64.hi << 32) + int64.lo*/);
                 }
                 return arr; //new SE2Kv3Value(type, arr);
             }
             else {
-                let int64 = reader.getBigInt64(); //TODO: handle int64
+                const int64 = reader.getBigInt64(); //TODO: handle int64
                 return int64; //(int64.hi << 32) + int64.lo;//new SE2Kv3Value(type, (int64.hi << 32) + int64.lo);
             }
         case 5: // Float 64
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
                     arr.push(reader.getFloat64());
                 }
@@ -21564,7 +21564,7 @@ function readElement(reader, stringDictionary, occurences) {
             }
         case 6: // String
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
                     propertyIndex = reader.getUint32();
                     propertyName = stringDictionary[propertyIndex];
@@ -21600,14 +21600,14 @@ function readElement(reader, stringDictionary, occurences) {
             return element;
         case 9: // Element
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
                     var propertiesCount = reader.getUint32();
-                    let element = new Kv3Element();
+                    const element = new Kv3Element();
                     var propertyName = null;
                     var propertyIndex = null;
                     var property = null;
-                    for (var ii = 0; ii < propertiesCount; ii++) {
+                    for (let ii = 0; ii < propertiesCount; ii++) {
                         propertyIndex = reader.getUint32();
                         propertyName = stringDictionary[propertyIndex];
                         property = readElement(reader, stringDictionary);
@@ -21619,7 +21619,7 @@ function readElement(reader, stringDictionary, occurences) {
             }
             else {
                 var propertiesCount = reader.getUint32();
-                let element = new Kv3Element();
+                const element = new Kv3Element();
                 var propertyName = null;
                 var propertyIndex = null;
                 var property = null;
@@ -21633,20 +21633,20 @@ function readElement(reader, stringDictionary, occurences) {
             }
         case 0x0A: // vector
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
-                    let count = reader.getUint32();
+                    const count = reader.getUint32();
                     arr.push(readElement(reader, stringDictionary, count));
                 }
                 return arr; //new SE2Kv3Value(type, arr);
             }
             else {
-                let count = reader.getUint32();
+                const count = reader.getUint32();
                 return readElement(reader, stringDictionary, count);
             }
         case 0x0B: // int32
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
                     arr.push(reader.getInt32());
                 }
@@ -21658,7 +21658,7 @@ function readElement(reader, stringDictionary, occurences) {
         case 0x10: // ????
         case 0x12: // ????
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
                     arr.push(1);
                 }
@@ -21670,7 +21670,7 @@ function readElement(reader, stringDictionary, occurences) {
         case 0x11: // ????
         case 0x0F: // ????
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
                     arr.push(0);
                 }
@@ -21682,7 +21682,7 @@ function readElement(reader, stringDictionary, occurences) {
         case 0x0D: // ????
             //reader.skip(4);//????
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
                     arr.push(true);
                 }
@@ -21694,7 +21694,7 @@ function readElement(reader, stringDictionary, occurences) {
         case 0x0E: // ????
             //reader.skip(4);//????
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 for (let i = 0; i < occurences; i++) {
                     arr.push(false);
                 }
@@ -21705,7 +21705,7 @@ function readElement(reader, stringDictionary, occurences) {
             }
         case 134: // Resource
             if (occurences) {
-                let arr = [];
+                const arr = [];
                 reader.getUint8(); //todo: rename variable
                 for (let i = 0; i < occurences; i++) {
                     propertyIndex = reader.getUint32();
@@ -21734,7 +21734,7 @@ class Source2SpriteSheetSequence {
     duration = 0;
     frames = [];
     addFrame() {
-        let frame = new Source2SpriteSheetFrame();
+        const frame = new Source2SpriteSheetFrame();
         this.frames.push(frame);
         return frame;
     }
@@ -21742,12 +21742,12 @@ class Source2SpriteSheetSequence {
 class Source2SpriteSheet {
     sequences = [];
     addSequence() {
-        let sequence = new Source2SpriteSheetSequence();
+        const sequence = new Source2SpriteSheetSequence();
         this.sequences.push(sequence);
         return sequence;
     }
     getFrame(sequenceId, frame) {
-        let sequence = this.sequences[sequenceId] ?? this.sequences[0];
+        const sequence = this.sequences[sequenceId] ?? this.sequences[0];
         if (sequence) {
             frame = (frame % sequence.frames.length) << 0;
             return sequence.frames[frame];
@@ -21771,14 +21771,14 @@ const Zstd = new (function () {
                 return null;
             }
             const api = wa.instance.exports;
-            let srcSize = compressedDatas.length;
+            const srcSize = compressedDatas.length;
             const src = api.create_buffer(srcSize);
             this.#HEAPU8.set(compressedDatas, src);
-            let result = api.decompress(src, srcSize);
+            const result = api.decompress(src, srcSize);
             api.destroy_buffer(src);
             if (result >= 0) {
                 const resultPointer = api.get_result_pointer();
-                let temp = new Uint8Array(new Uint8Array(this.#HEAPU8.buffer, resultPointer, api.get_result_size()));
+                const temp = new Uint8Array(new Uint8Array(this.#HEAPU8.buffer, resultPointer, api.get_result_size()));
                 api.destroy_buffer(resultPointer);
                 return temp;
             }
@@ -21790,12 +21790,12 @@ const Zstd = new (function () {
             }
             const wa = await this.getWebAssembly();
             const api = wa.instance.exports;
-            let srcSize = compressedDatas.length;
-            let dstSize = uncompressedDatas.length;
+            const srcSize = compressedDatas.length;
+            const dstSize = uncompressedDatas.length;
             const src = api.create_buffer(srcSize);
             const dst = api.create_buffer(dstSize);
             this.#HEAPU8.set(compressedDatas, src);
-            let result = api.decompress_ZSTD(dst, dstSize, src, srcSize);
+            const result = api.decompress_ZSTD(dst, dstSize, src, srcSize);
             console.error(result);
             const resultView = new Uint8ClampedArray(this.#HEAPU8.buffer, dst, dstSize);
             uncompressedDatas.set(resultView);
@@ -21865,8 +21865,8 @@ const Source2BlockLoader = new (function () {
         constructor() {
         }
         async parseBlock(reader, file, block, parseVtex) {
-            let introspection = file.blocks['NTRO'];
-            let reference = file.blocks['RERL'];
+            const introspection = file.blocks['NTRO'];
+            const reference = file.blocks['RERL'];
             switch (block.type) {
                 case 'RERL':
                     loadRerl(reader, block);
@@ -21909,7 +21909,7 @@ const Source2BlockLoader = new (function () {
             }
         }
         async loadData(reader, reference, block, introspection, parseVtex) {
-            var bytes = reader.getUint32(block.offset);
+            const bytes = reader.getUint32(block.offset);
             switch (bytes) {
                 case 0x03564B56: // VKV3
                     return loadDataVkv(reader, block);
@@ -21933,10 +21933,10 @@ const Source2BlockLoader = new (function () {
                 return null;
             }
             block.structs = {};
-            let structList = introspection.structsArray;
-            var startOffset = block.offset;
-            for (var structIndex = 0; structIndex < 1 /*removeme*/ /*structList.length*/; structIndex++) {
-                var struct = structList[structIndex]; //introspection.firstStruct;
+            const structList = introspection.structsArray;
+            let startOffset = block.offset;
+            for (let structIndex = 0; structIndex < 1 /*removeme*/ /*structList.length*/; structIndex++) {
+                const struct = structList[structIndex]; //introspection.firstStruct;
                 block.structs[struct.name] = loadStruct(reader, reference, struct, block, startOffset, introspection);
                 startOffset += struct.discSize;
             }
@@ -21945,34 +21945,34 @@ const Source2BlockLoader = new (function () {
     return Source2BlockLoader;
 }());
 function ab2str(arrayBuf) {
-    var s = '';
-    for (var i = 0; i < arrayBuf.length; i++) {
+    let s = '';
+    for (let i = 0; i < arrayBuf.length; i++) {
         s += String.fromCharCode(arrayBuf[i]);
     }
     return s;
 }
 function loadRerl(reader, block) {
     reader.seek(block.offset);
-    var resOffset = reader.getInt32(); // Seems to be always 0x00000008
-    var resCount = reader.getInt32();
+    const resOffset = reader.getInt32(); // Seems to be always 0x00000008
+    const resCount = reader.getInt32();
     block.externalFiles = {};
     block.externalFiles2 = [];
     reader.seek(block.offset + resOffset);
-    for (var resIndex = 0; resIndex < resCount; resIndex++) {
+    for (let resIndex = 0; resIndex < resCount; resIndex++) {
         reader.seek(block.offset + resOffset + 16 * resIndex);
-        var handle = readHandle(reader); //reader.getUint64(fieldOffset);
-        var strOffset = reader.getInt32();
+        const handle = readHandle(reader); //reader.getUint64(fieldOffset);
+        const strOffset = reader.getInt32();
         reader.skip(strOffset - 4);
-        var s = reader.getNullString();
+        const s = reader.getNullString();
         block.externalFiles[handle] = s;
         block.externalFiles2[resIndex] = s;
     }
 }
 function readHandle(reader) {
-    var str = '';
-    var c;
-    var hex;
-    for (var i = 0; i < 8; i++) {
+    let str = '';
+    let c;
+    let hex;
+    for (let i = 0; i < 8; i++) {
         c = reader.getUint8();
         hex = c.toString(16); // convert to hex
         hex = (hex.length == 1 ? '0' + hex : hex);
@@ -21981,19 +21981,19 @@ function readHandle(reader) {
     return str;
 }
 function loadNtro(reader, block) {
-    var _NTRO_STRUCT_LENGTH_ = 40;
-    var _NTRO_FIELD_LENGTH_ = 24;
+    const _NTRO_STRUCT_LENGTH_ = 40;
+    const _NTRO_FIELD_LENGTH_ = 24;
     reader.seek(block.offset);
     // NTRO header
     reader.getInt32(); //TODO: check version
-    var ntroOffset = reader.getInt32();
-    var structCount = reader.getInt32();
+    const ntroOffset = reader.getInt32();
+    const structCount = reader.getInt32();
     block.structs = {};
     block.structsArray = [];
     block.firstStruct = null;
-    for (var structIndex = 0; structIndex < structCount; structIndex++) {
+    for (let structIndex = 0; structIndex < structCount; structIndex++) {
         reader.seek(block.offset + ntroOffset + 4 + _NTRO_STRUCT_LENGTH_ * structIndex);
-        var ntroStruct = {};
+        const ntroStruct = {};
         ntroStruct.version = reader.getInt32();
         //console.log(ntroStruct.version);
         ntroStruct._offset = reader.tell();
@@ -22005,24 +22005,24 @@ function loadNtro(reader, block) {
         ntroStruct.discSize = reader.getInt16();
         ntroStruct.unknown = reader.getInt16(); //TODO
         ntroStruct.baseId = reader.getUint32();
-        var fieldStart = reader.tell();
-        var fieldOffset = reader.getInt32();
-        var fieldCount = reader.getInt32();
+        const fieldStart = reader.tell();
+        const fieldOffset = reader.getInt32();
+        const fieldCount = reader.getInt32();
         ntroStruct.flags = reader.getInt32();
         // Read struct Name
         reader.seek(strStart + strOffset);
         ntroStruct.name = reader.getNullString();
         //Read struct fields
         ntroStruct.fields = [];
-        for (var fieldIndex = 0; fieldIndex < fieldCount; fieldIndex++) {
+        for (let fieldIndex = 0; fieldIndex < fieldCount; fieldIndex++) {
             reader.seek(fieldStart + fieldOffset + _NTRO_FIELD_LENGTH_ * fieldIndex);
-            var field = {};
+            const field = {};
             field._offset = fieldStart + fieldOffset + _NTRO_FIELD_LENGTH_ * fieldIndex;
             var strStart = reader.tell();
             var strOffset = reader.getInt32();
             field.count = reader.getInt16();
             field.offset = reader.getInt16();
-            var indStart = reader.tell();
+            const indStart = reader.tell();
             field.indirectionOffset = reader.getInt32();
             field.level = reader.getInt32();
             field.typeOffset = reader.tell();
@@ -22064,20 +22064,20 @@ const BYTES_PER_VERTEX_BONE_INDICE = VERTEX_BONE_INDICE_LEN * 4;
 const BYTES_PER_VERTEX_BONE_WEIGHT = VERTEX_BONE_WEIGHT_LEN * 4;
 const BYTES_PER_INDEX = 1 * 4;
 function loadVbib(reader, block) {
-    var VERTEX_HEADER_SIZE = 24;
-    var INDEX_HEADER_SIZE = 24;
-    var DESC_HEADER_SIZE = 56;
-    var DESC_HEADER_NAME_SIZE = 36;
+    const VERTEX_HEADER_SIZE = 24;
+    const INDEX_HEADER_SIZE = 24;
+    const DESC_HEADER_SIZE = 56;
+    const DESC_HEADER_NAME_SIZE = 36;
     reader.seek(block.offset);
-    var vertexOffset = reader.tell() + reader.getInt32();
-    var vertexCount = reader.getInt32();
-    var indexOffset = reader.tell() + reader.getInt32();
-    var indexCount = reader.getInt32();
+    const vertexOffset = reader.tell() + reader.getInt32();
+    const vertexCount = reader.getInt32();
+    const indexOffset = reader.tell() + reader.getInt32();
+    const indexCount = reader.getInt32();
     block.vertices = [];
     block.indices = [];
     for (var i = 0; i < vertexCount; i++) { // header size: 24 bytes
         reader.seek(vertexOffset + i * VERTEX_HEADER_SIZE);
-        var s1 = {};
+        const s1 = {};
         s1.vertexCount = reader.getInt32();
         s1.bytesPerVertex = reader.getInt16();
         reader.skip(2); // TODO: figure out what it is. Used to be 0, now 1024 for pudge model spring 2025
@@ -22085,19 +22085,19 @@ function loadVbib(reader, block) {
         s1.headerCount = reader.getInt32();
         s1.dataOffset = reader.tell() + reader.getInt32();
         s1.dataLength = reader.getInt32();
-        let vertexDataSize = s1.vertexCount * s1.bytesPerVertex;
+        const vertexDataSize = s1.vertexCount * s1.bytesPerVertex;
         let vertexReader = reader;
         if (vertexDataSize != s1.dataLength) {
-            let vertexBuffer = new Uint8Array(new ArrayBuffer(vertexDataSize));
+            const vertexBuffer = new Uint8Array(new ArrayBuffer(vertexDataSize));
             MeshoptDecoder.decodeVertexBuffer(vertexBuffer, s1.vertexCount, s1.bytesPerVertex, new Uint8Array(reader.buffer.slice(s1.dataOffset, s1.dataOffset + s1.dataLength)));
             //SaveFile('sa.obj', new Blob([vertexBuffer]));
             vertexReader = new BinaryReader(vertexBuffer);
             s1.dataOffset = 0;
         }
         s1.headers = [];
-        for (var j = 0; j < s1.headerCount; j++) { // header size: 24 bytes
-            var header = {};
-            var headerOffset = s1.headerOffset + j * DESC_HEADER_SIZE;
+        for (let j = 0; j < s1.headerCount; j++) { // header size: 24 bytes
+            const header = {};
+            const headerOffset = s1.headerOffset + j * DESC_HEADER_SIZE;
             reader.seek(headerOffset);
             header.name = reader.getNullString();
             reader.seek(headerOffset + DESC_HEADER_NAME_SIZE);
@@ -22111,23 +22111,23 @@ function loadVbib(reader, block) {
         s1.coords = new ArrayBuffer(s1.vertexCount * BYTES_PER_VERTEX_COORD);
         s1.boneIndices = new ArrayBuffer(s1.vertexCount * BYTES_PER_VERTEX_BONE_INDICE);
         s1.boneWeight = new ArrayBuffer(s1.vertexCount * BYTES_PER_VERTEX_BONE_WEIGHT);
-        let s1Vertices = new Float32Array(s1.vertices);
-        let s1Normals = new Float32Array(s1.normals);
-        let s1Tangents = new Float32Array(s1.tangents);
-        let s1Coords = new Float32Array(s1.coords);
-        let s1BoneIndices = new Float32Array(s1.boneIndices);
-        let s1BoneWeight = new Float32Array(s1.boneWeight);
-        for (var vertexIndex = 0; vertexIndex < s1.vertexCount; vertexIndex++) {
+        const s1Vertices = new Float32Array(s1.vertices);
+        const s1Normals = new Float32Array(s1.normals);
+        const s1Tangents = new Float32Array(s1.tangents);
+        const s1Coords = new Float32Array(s1.coords);
+        const s1BoneIndices = new Float32Array(s1.boneIndices);
+        const s1BoneWeight = new Float32Array(s1.boneWeight);
+        for (let vertexIndex = 0; vertexIndex < s1.vertexCount; vertexIndex++) {
             vertexReader.seek(s1.dataOffset + vertexIndex * s1.bytesPerVertex);
-            var positionFilled = false; //TODOv3: remove this
-            var normalFilled = false;
-            var tangentFilled = false;
-            var texCoordFilled = false;
-            var blendIndicesFilled = false;
-            var blendWeightFilled = false;
-            for (var headerIndex = 0; headerIndex < s1.headers.length; headerIndex++) {
-                var headerName = s1.headers[headerIndex].name;
-                var headerType = s1.headers[headerIndex].type;
+            let positionFilled = false; //TODOv3: remove this
+            let normalFilled = false;
+            let tangentFilled = false;
+            let texCoordFilled = false;
+            let blendIndicesFilled = false;
+            let blendWeightFilled = false;
+            for (let headerIndex = 0; headerIndex < s1.headers.length; headerIndex++) {
+                const headerName = s1.headers[headerIndex].name;
+                const headerType = s1.headers[headerIndex].type;
                 let tempValue; // = vec4.create();//TODO: optimize
                 vertexReader.seek(s1.dataOffset + vertexIndex * s1.bytesPerVertex + s1.headers[headerIndex].offset);
                 switch (headerType) {
@@ -22219,7 +22219,7 @@ function loadVbib(reader, block) {
                         break;
                     case 'TEXCOORD':
                         if (!texCoordFilled) { //TODO: handle 2 TEXCOORD
-                            let test = vec2.clone(tempValue); //todov3: fixme see //./Alyx/models/props_industrial/hideout_doorway.vmdl_c
+                            const test = vec2.clone(tempValue); //todov3: fixme see //./Alyx/models/props_industrial/hideout_doorway.vmdl_c
                             s1Coords.set(test /*tempValue*/, vertexIndex * VERTEX_COORD_LEN);
                             texCoordFilled = true;
                         }
@@ -22285,24 +22285,24 @@ function loadVbib(reader, block) {
     //console.log(block.vertices);
     for (var i = 0; i < indexCount; i++) { // header size: 24 bytes
         reader.seek(indexOffset + i * INDEX_HEADER_SIZE);
-        var s2 = {};
+        const s2 = {};
         s2.indexCount = reader.getInt32();
         s2.bytesPerIndex = reader.getInt32();
         s2.headerOffset = reader.tell() + reader.getInt32();
         s2.headerCount = reader.getInt32();
         s2.dataOffset = reader.tell() + reader.getInt32();
         s2.dataLength = reader.getInt32();
-        let indexDataSize = s2.indexCount * s2.bytesPerIndex;
+        const indexDataSize = s2.indexCount * s2.bytesPerIndex;
         let indexReader = reader;
         if (indexDataSize != s2.dataLength) {
-            let indexBuffer = new Uint8Array(new ArrayBuffer(indexDataSize));
+            const indexBuffer = new Uint8Array(new ArrayBuffer(indexDataSize));
             MeshoptDecoder.decodeIndexBuffer(indexBuffer, s2.indexCount, s2.bytesPerIndex, new Uint8Array(reader.buffer.slice(s2.dataOffset, s2.dataOffset + s2.dataLength)));
             indexReader = new BinaryReader(indexBuffer);
             s2.dataOffset = 0;
         }
         s2.indices = new ArrayBuffer(s2.indexCount * BYTES_PER_INDEX);
-        let s2Indices = new Uint32Array(s2.indices);
-        for (var indicesIndex = 0; indicesIndex < s2.indexCount; indicesIndex++) {
+        const s2Indices = new Uint32Array(s2.indices);
+        for (let indicesIndex = 0; indicesIndex < s2.indexCount; indicesIndex++) {
             indexReader.seek(s2.dataOffset + indicesIndex * s2.bytesPerIndex);
             //s2.indices.push(indexReader.getUint16());
             if (s2.bytesPerIndex == 2) {
@@ -22319,20 +22319,20 @@ function getStruct(block, structId) {
     return block.structs[structId];
 }
 function loadStruct(reader, reference, struct, block, startOffset, introspection, depth) {
-    var dataStruct = {};
+    let dataStruct = {};
     if (struct.baseId) {
-        var baseStruct = getStruct(introspection, struct.baseId);
+        const baseStruct = getStruct(introspection, struct.baseId);
         if (baseStruct) {
             dataStruct = loadStruct(reader, reference, baseStruct, block, startOffset, introspection);
         }
     }
-    var fieldList = struct.fields;
-    for (var fieldIndex = 0; fieldIndex < fieldList.length; fieldIndex++) {
-        var field = fieldList[fieldIndex];
+    const fieldList = struct.fields;
+    for (let fieldIndex = 0; fieldIndex < fieldList.length; fieldIndex++) {
+        const field = fieldList[fieldIndex];
         if (field.count) {
             dataStruct[field.name] = [];
             FIELD_SIZE[field.type2];
-            for (var i = 0; i < field.count; i++) {
+            for (let i = 0; i < field.count; i++) {
                 dataStruct[field.name].push(255); //TODOv3 dafuck ?
             }
         }
@@ -22347,7 +22347,7 @@ const FIELD_SIZE = [0, 0 /*STRUCT*/, 0 /*ENUM*/, 8 /*HANDLE*/, 0, 0, 0, 0, 0, 0,
     1 /*BYTE*/, 1 /*BYTE*/, 2 /*SHORT*/, 2 /*SHORT*/, 4 /*INTEGER*/, 4 /*INTEGER*/, 8 /*INT64*/, 8 /*INT64*/,
     4 /*FLOAT*/, 0, 0, 0, 12 /*VECTOR3*/, 0, 0, 16 /*QUATERNION*/, 0, 16, 4, 0, 1, 4];
 function loadField(reader, reference, field, block, startOffset, introspection, field_offset, field_indirectionByte, field_level, depth) {
-    var fieldOffset = startOffset + field_offset;
+    const fieldOffset = startOffset + field_offset;
     if (field_level > 0) {
         reader.getInt8(fieldOffset);
         if (field_indirectionByte == 3) { // Pointer
@@ -22364,10 +22364,10 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
         }
         else if (field_indirectionByte == 4) { // Array
             //console.log("indirect type 4", reader.getUint32(fieldOffset));
-            var arrayOffset2 = reader.getUint32(fieldOffset);
+            const arrayOffset2 = reader.getUint32(fieldOffset);
             if (arrayOffset2) {
-                var arrayOffset = fieldOffset + arrayOffset2;
-                var arrayCount = reader.getUint32();
+                const arrayOffset = fieldOffset + arrayOffset2;
+                const arrayCount = reader.getUint32();
                 var values = [];
                 if (field.type) {
                     if (field.type2 == DATA_TYPE_STRUCT) { // STRUCT
@@ -22405,7 +22405,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 else {
                     // single field
                     var values = [];
-                    var fieldSize = FIELD_SIZE[field.type2];
+                    const fieldSize = FIELD_SIZE[field.type2];
                     if (field.type2 == 11) ;
                     for (var i = 0; i < arrayCount; i++) {
                         var pos = arrayOffset + fieldSize * i;
@@ -22453,10 +22453,10 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
             case DATA_TYPE_UINTEGER: //15
                 return reader.getUint32(fieldOffset);
             case DATA_TYPE_INT64: //16
-                let i64 = reader.getBigInt64(fieldOffset);
+                const i64 = reader.getBigInt64(fieldOffset);
                 return i64; //i64.lo + i64.hi * 4294967295;
             case DATA_TYPE_UINT64: //17
-                let ui64 = reader.getBigUint64(fieldOffset);
+                const ui64 = reader.getBigUint64(fieldOffset);
                 return ui64; //ui64.lo + ui64.hi * 4294967295;
             case DATA_TYPE_FLOAT: //18
                 return reader.getFloat32(fieldOffset);
@@ -22501,13 +22501,13 @@ function loadDataVtex(reader, block) {
     block.numMipLevels = reader.getUint8();
     block.picmip0Res = reader.getUint32();
     reader.tell() + reader.getUint32();
-    let extraDataCount = reader.getUint32();
+    const extraDataCount = reader.getUint32();
     let compressedMips = null; //new Uint32Array(mips);
     if (extraDataCount) {
         /* read headers */
-        let headers = [];
+        const headers = [];
         for (let i = 0; i < extraDataCount; i++) {
-            let h = {
+            const h = {
                 type: reader.getUint32(),
                 offset: reader.tell() + reader.getUint32(),
                 size: reader.getUint32(),
@@ -22515,10 +22515,10 @@ function loadDataVtex(reader, block) {
             headers.push(h);
         }
         for (let i = 0; i < extraDataCount; i++) {
-            let h = headers[i];
-            let type = h.type;
-            let offset = h.offset;
-            let size = h.size;
+            const h = headers[i];
+            const type = h.type;
+            const offset = h.offset;
+            const size = h.size;
             reader.seek(offset);
             switch (type) {
                 case DATA_FALLBACK_BITS:
@@ -22526,16 +22526,16 @@ function loadDataVtex(reader, block) {
                     break;
                 case DATA_FILL_TO_POWER_OF_TWO:
                     reader.getUint16();
-                    let nw = reader.getUint16();
-                    let nh = reader.getUint16();
+                    const nw = reader.getUint16();
+                    const nh = reader.getUint16();
                     if (nw > 0 && nh > 0 && block.width >= nw && block.height >= nh) {
                         console.error('code me');
                     }
                     break;
                 case DATA_COMPRESSED_MIP_SIZE:
-                    let unk1 = reader.getUint32();
-                    let unk2 = reader.getUint32();
-                    let mips = reader.getUint32();
+                    const unk1 = reader.getUint32();
+                    const unk2 = reader.getUint32();
+                    const mips = reader.getUint32();
                     compressedMips = new Array(mips); // we can't upe pop() on a Uint32Array
                     for (let i = 0; i < mips; i++) {
                         compressedMips[i] = reader.getUint32();
@@ -22562,20 +22562,20 @@ function loadDataVtex(reader, block) {
     loadDataVtexImageData(reader, block, compressedMips);
 }
 function loadDataVtexImageData(reader, block, compressedMips) {
-    var faceCount = 1;
+    let faceCount = 1;
     if ((block.flags & VTEX_FLAG_CUBE_TEXTURE) == VTEX_FLAG_CUBE_TEXTURE) { // Handle cube texture
         faceCount = 6;
     }
     // Goto
     reader.seek(block.file.fileLength);
-    var mipmapWidth = block.width * Math.pow(0.5, block.numMipLevels - 1);
-    var mipmapHeight = block.height * Math.pow(0.5, block.numMipLevels - 1);
+    let mipmapWidth = block.width * Math.pow(0.5, block.numMipLevels - 1);
+    let mipmapHeight = block.height * Math.pow(0.5, block.numMipLevels - 1);
     block.imageData = [];
     // Only keep last (biggest) mipmap
-    for (var mipmapIndex = 0; mipmapIndex < block.numMipLevels; mipmapIndex++) {
+    for (let mipmapIndex = 0; mipmapIndex < block.numMipLevels; mipmapIndex++) {
         // Todo : add frame support + depth support
-        for (var faceIndex = 0; faceIndex < faceCount; faceIndex++) {
-            let compressedLength = compressedMips ? compressedMips.pop() : null; //TODO: check how this actually works with depth / frames
+        for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
+            const compressedLength = compressedMips ? compressedMips.pop() : null; //TODO: check how this actually works with depth / frames
             block.imageData[faceIndex] = getImage(reader, mipmapWidth, mipmapHeight, block.imageFormat, compressedLength);
         }
         mipmapWidth *= 2;
@@ -22601,7 +22601,7 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
             break;
         case VTEX_FORMAT_PNG_R8G8B8A8_UINT:
             entrySize = reader.byteLength - reader.tell();
-            let a = reader.tell();
+            const a = reader.tell();
             //SaveFile('loadout.obj', b64toBlob(encode64(reader.getString(entrySize))));//TODOv3: removeme
             reader.seek(a);
             break;
@@ -22617,14 +22617,14 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
     }
     let imageDatas;
     if (compressedLength === null || compressedLength === entrySize) {
-        let start = reader.tell();
+        const start = reader.tell();
         //return reader.getString(entrySize);
         imageDatas = new Uint8Array(reader.buffer, reader.tell(), entrySize);
         reader.seek(start + entrySize);
     }
     else {
-        let start = reader.tell();
-        var buf = new ArrayBuffer(entrySize);
+        const start = reader.tell();
+        const buf = new ArrayBuffer(entrySize);
         imageDatas = new Uint8Array(buf);
         decodeLz4(reader, imageDatas, compressedLength, entrySize);
         reader.seek(start + compressedLength); // decoder may overread, place the reader at the start of the next image block
@@ -22634,7 +22634,7 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
     }
     if (imageDatas && imageFormat == VTEX_FORMAT_BGRA8888) {
         for (let i = 0, l = imageDatas.length; i < l; i += 4) {
-            let b = imageDatas[i];
+            const b = imageDatas[i];
             imageDatas[i] = imageDatas[i + 2];
             imageDatas[i + 2] = b;
         }
@@ -22648,7 +22648,7 @@ function loadDataVkv(reader, block) {
     //const KV3_ENCODING_BLOCK_COMPRESSED_UNKNOWN = '\x7C\x16\x12\x74\xE9\x06\x98\x46\xAF\xF2\xE6\x3E\xB5\x90\x37\xE7';
     reader.seek(block.offset);
     reader.skip(4); //TODO: improve detection
-    let encoding = reader.getString(16);
+    const encoding = reader.getString(16);
     reader.getString(16);
     let decodeLength, sa;
     decodeLength = reader.getUint32();
@@ -22705,7 +22705,7 @@ async function loadDataKv3(reader, block, version) {
     const arrayCount = [];
     reader.skip(4);
     reader.getString(16);
-    let compressionMethod = reader.getUint32();
+    const compressionMethod = reader.getUint32();
     let compressionFrameSize;
     let dictionaryTypeLength, blobCount = 0, totalUncompressedBlobSize;
     if (version >= 2) {
@@ -22723,7 +22723,7 @@ async function loadDataKv3(reader, block, version) {
         objectCount.push(reader.getUint16());
         arrayCount.push(reader.getUint16());
     }
-    var decodeLength = reader.getUint32();
+    const decodeLength = reader.getUint32();
     if (version >= 2) {
         compressedLength = reader.getUint32();
         blobCount = reader.getUint32();
@@ -22765,7 +22765,7 @@ async function loadDataKv3(reader, block, version) {
                 sa = reader.getBytes(uncompressedBufferSize[i]);
                 break;
             case 1:
-                let buf = new ArrayBuffer(uncompressedBufferSize[i]);
+                const buf = new ArrayBuffer(uncompressedBufferSize[i]);
                 sa = new Uint8Array(buf);
                 if (blobCount > 0) {
                     compressedBlobReader = new BinaryReader(reader, reader.tell() + compressedBufferSize[i]);
@@ -22774,9 +22774,9 @@ async function loadDataKv3(reader, block, version) {
                 break;
             case 2: //new since spectre arcana
                 //SaveFile(new File([new Blob([reader.getBytes(block.length, block.offset)])], 'block_' + block.offset + '_' + block.length));
-                let compressedBytes = reader.getBytes(compressedBufferSize[i]);
+                const compressedBytes = reader.getBytes(compressedBufferSize[i]);
                 //SaveFile(new File([new Blob([compressedBytes])], 'block_' + block.offset + '_' + block.length));
-                let decompressedBytes = await Zstd.decompress(compressedBytes);
+                const decompressedBytes = await Zstd.decompress(compressedBytes);
                 sa = new Uint8Array(new Uint8Array(decompressedBytes.buffer, 0, uncompressedBufferSize[i]));
                 if (blobCount > 0) {
                     if (version < 5) {
@@ -22785,9 +22785,9 @@ async function loadDataKv3(reader, block, version) {
                     else {
                         if (i == 1) {
                             const compressedBlobSize = compressedLength - (compressedBufferSize[0] + compressedBufferSize[1]);
-                            let compressedBlobBytes = reader.getBytes(compressedBlobSize);
+                            const compressedBlobBytes = reader.getBytes(compressedBlobSize);
                             //SaveFile(new File([new Blob([compressedBlobBytes])], 'compressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
-                            let decompressedBlobBytes = await Zstd.decompress(compressedBlobBytes);
+                            const decompressedBlobBytes = await Zstd.decompress(compressedBlobBytes);
                             //console.info(decompressedBlobBytes);
                             uncompressedBlobReader = new BinaryReader(decompressedBlobBytes);
                             //SaveFile(new File([new Blob([decompressedBlobBytes])], 'decompressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
@@ -22830,11 +22830,11 @@ function decodeMethod1(reader, sa, decodeLength) {
         }
         else {
             for (let j = 0; j < 16; j++) {
-                let decode = mask & (1 << j);
+                const decode = mask & (1 << j);
                 if (decode) {
-                    let decodeMask = reader.getUint16(); // offset 12 bits, len 4 bits
-                    let decodeOffset = (decodeMask & 0xFFF0) >> 4;
-                    let decodeLen = (decodeMask & 0xF) + 3; // Min len is 3
+                    const decodeMask = reader.getUint16(); // offset 12 bits, len 4 bits
+                    const decodeOffset = (decodeMask & 0xFFF0) >> 4;
+                    const decodeLen = (decodeMask & 0xF) + 3; // Min len is 3
                     for (let k = 0; k < decodeLen; k++) {
                         sa[outputIndex] = sa[outputIndex - decodeOffset - 1];
                         ++decodedeBytes;
@@ -22860,15 +22860,15 @@ function loadVtexSpriteSheet(reader, block, offset, size) {
     reader.getUint32();
     let sequenceCount = reader.getUint32();
     let headerOffset = reader.tell();
-    let spriteSheet = new Source2SpriteSheet();
+    const spriteSheet = new Source2SpriteSheet();
     block.spriteSheet = spriteSheet;
     while (sequenceCount--) {
-        let spriteSheetSequence = spriteSheet.addSequence();
+        const spriteSheetSequence = spriteSheet.addSequence();
         reader.getUint32(headerOffset);
         reader.getUint32(); //1 ? probably some flag -> clamp //0 in materials/particle/water_ripples/allripples
         //unknown1 is most likely 2 uint16 -> see dota2 texture materials/particle/smoke3/smoke3b
-        let sequenceDataOffset = reader.tell() + reader.getUint32();
-        let frameCount = reader.getUint32();
+        const sequenceDataOffset = reader.tell() + reader.getUint32();
+        const frameCount = reader.getUint32();
         spriteSheetSequence.duration = reader.getFloat32();
         reader.getUint32(); //offset to 'CDmeSheetSequence'
         reader.getUint32(); //0
@@ -22878,9 +22878,9 @@ function loadVtexSpriteSheet(reader, block, offset, size) {
         let frameHeaderOffset = reader.tell();
         let frameIndex = frameCount;
         while (frameIndex--) {
-            let spriteSheetFrame = spriteSheetSequence.addFrame();
+            const spriteSheetFrame = spriteSheetSequence.addFrame();
             spriteSheetFrame.duration = reader.getFloat32(frameHeaderOffset);
-            let frameOffset = reader.tell() + reader.getUint32();
+            const frameOffset = reader.tell() + reader.getUint32();
             reader.getUint32();
             frameHeaderOffset = reader.tell();
             reader.seek(frameOffset);
@@ -22917,8 +22917,8 @@ class Source2FileLoader extends SourceBinaryLoader {
         this.vtex = vtex;
     }
     async parse(repository, fileName, arrayBuffer) {
-        let reader = new BinaryReader(arrayBuffer);
-        let file = new Source2File(repository, fileName);
+        const reader = new BinaryReader(arrayBuffer);
+        const file = new Source2File(repository, fileName);
         await this.#parseHeader(reader, file, this.vtex);
         return file;
     }
@@ -22927,8 +22927,8 @@ class Source2FileLoader extends SourceBinaryLoader {
         file.fileLength = reader.getUint32();
         file.versionMaj = reader.getUint16();
         file.versionMin = reader.getUint16();
-        let headerOffset = reader.tell() + reader.getUint32();
-        let resCount = reader.getUint32();
+        const headerOffset = reader.tell() + reader.getUint32();
+        const resCount = reader.getUint32();
         let resType, resOffset, resLength, block;
         file.maxBlockOffset = 0;
         reader.seek(headerOffset); //Should already be at the right place, but just in case
@@ -22940,7 +22940,7 @@ class Source2FileLoader extends SourceBinaryLoader {
             block = new Source2FileBlock(file, resType, resOffset, resLength);
             file.addBlock(block);
         }
-        for (let block of file.blocksArray) {
+        for (const block of file.blocksArray) {
             if (block.length > 0) {
                 await Source2BlockLoader.parseBlock(reader, file, block, parseVtex);
             }
@@ -22953,14 +22953,14 @@ class Source2FileLoader extends SourceBinaryLoader {
  * Mesh manager
  */
 const MeshManager = new function () {
-    var meshList = {};
+    const meshList = {};
     //this.renderMode = 2;
     //TODO
-    var getMesh = async function (repository, meshName) {
+    const getMesh = async function (repository, meshName) {
         meshName = meshName.toLowerCase();
         meshName = meshName.replace(/.vmesh_c$/, '');
         meshName = meshName.replace(/.vmesh$/, '');
-        var mesh = meshList[meshName];
+        let mesh = meshList[meshName];
         if (!mesh) {
             mesh = await new Source2FileLoader().load(repository, meshName + '.vmesh_c');
         }
@@ -22974,7 +22974,7 @@ const MeshManager = new function () {
         return mesh;
     };
     //TODO
-    var removeMesh = function (meshName) {
+    const removeMesh = function (meshName) {
         meshList[meshName] = null;
     };
     this.getMesh = getMesh;
@@ -23009,7 +23009,7 @@ class Source2ModelAttachementInstance extends Entity {
     }
     //TODO: compute with all bones, not only the first one
     getWorldPosition(vec = vec3.create()) {
-        let bone = this.#getBone(this.attachement.influenceNames[0]);
+        const bone = this.#getBone(this.attachement.influenceNames[0]);
         if (bone) {
             bone.getWorldPosition(vec);
             bone.getWorldQuaternion(tempQuat$6);
@@ -23022,7 +23022,7 @@ class Source2ModelAttachementInstance extends Entity {
         return vec;
     }
     getWorldQuaternion(q = quat.create()) {
-        let bone = this.#getBone(this.attachement.influenceNames[0]);
+        const bone = this.#getBone(this.attachement.influenceNames[0]);
         if (bone) {
             bone.getWorldQuaternion(q);
             quat.mul(q, q, this.attachement.influenceRotations[0]);
@@ -23037,11 +23037,11 @@ class Source2ModelAttachementInstance extends Entity {
 class Source2MaterialLoader {
     static #materials = new Map();
     static load(repository, fileName) {
-        let promise = new Promise((resolve, reject) => {
+        const promise = new Promise((resolve, reject) => {
             fileName = fileName.replace(/.vmat_c$/, '');
-            let vmatPromise = new Source2FileLoader().load(repository, fileName + '.vmat_c');
+            const vmatPromise = new Source2FileLoader().load(repository, fileName + '.vmat_c');
             vmatPromise.then((source2File) => {
-                let material = this.#loadMaterial(repository, source2File);
+                const material = this.#loadMaterial(repository, source2File);
                 if (material) {
                     resolve(material);
                 }
@@ -23053,9 +23053,9 @@ class Source2MaterialLoader {
         return promise;
     }
     static #loadMaterial(repository, file) {
-        let shaderName = file.getBlockStruct('DATA.keyValue.root.m_shaderName') || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
+        const shaderName = file.getBlockStruct('DATA.keyValue.root.m_shaderName') || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
         let material;
-        let materialClass = this.#materials.get(shaderName.toLowerCase());
+        const materialClass = this.#materials.get(shaderName.toLowerCase());
         if (materialClass !== undefined) {
             material = new materialClass(repository, file);
         }
@@ -23087,13 +23087,13 @@ class Source2MaterialManager {
         console.assert(searchPaths == null, 'searchPaths must be null'); //TODOv3 remove searchPaths
         fileName = cleanSource2MaterialName(fileName);
         if (searchPaths) {
-            let promises = [];
-            for (let searchPath of searchPaths) {
+            const promises = [];
+            for (const searchPath of searchPaths) {
                 promises.push(this.#getMaterial(repository, 'materials/' + searchPath + fileName));
             }
-            let promise = new Promise(resolve => {
+            const promise = new Promise(resolve => {
                 Promise.allSettled(promises).then((promises) => {
-                    for (let promise of promises) {
+                    for (const promise of promises) {
                         if (promise.status == 'fulfilled') {
                             resolve(promise.value);
                         }
@@ -23108,11 +23108,11 @@ class Source2MaterialManager {
         }
     }
     static #getMaterial(repository, fileName) {
-        let material = this.#materialList.get(fileName);
+        const material = this.#materialList.get(fileName);
         if (material instanceof Promise) {
-            let promise = new Promise((resolve, reject) => {
+            const promise = new Promise((resolve, reject) => {
                 material.then((material) => {
-                    let newMaterial = material.clone();
+                    const newMaterial = material.clone();
                     this.#materialList2.add(newMaterial);
                     resolve(newMaterial);
                 }).catch((value) => reject(value));
@@ -23121,16 +23121,16 @@ class Source2MaterialManager {
         }
         if (material !== undefined) {
             return new Promise((resolve, reject) => {
-                let newMaterial = material.clone();
+                const newMaterial = material.clone();
                 this.#materialList2.add(newMaterial);
                 resolve(newMaterial);
             });
         }
         else {
-            let promise = new Promise((resolve, reject) => {
+            const promise = new Promise((resolve, reject) => {
                 Source2MaterialLoader.load(repository, fileName).then((material) => {
                     this.#materialList.set(fileName, material);
-                    let newMaterial = material.clone();
+                    const newMaterial = material.clone();
                     this.#materialList2.add(newMaterial);
                     resolve(newMaterial);
                 }).catch((value) => reject(value));
@@ -23236,7 +23236,7 @@ class Source2ModelInstance extends Entity {
         if (!child) {
             return;
         }
-        let ret = super.addChild(child);
+        const ret = super.addChild(child);
         if (child.skeleton) {
             child.skeleton.setParentSkeleton(this.#skeleton);
         }
@@ -23289,7 +23289,7 @@ class Source2ModelInstance extends Entity {
     }
     setActivityModifiers(activityModifiers = []) {
         this.activityModifiers.clear();
-        for (let modifier of activityModifiers) {
+        for (const modifier of activityModifiers) {
             if (modifier) {
                 this.activityModifiers.add(modifier);
             }
@@ -23300,7 +23300,7 @@ class Source2ModelInstance extends Entity {
             this.#playSequences(delta * animSpeed$1 * this.animationSpeed);
             this.#skeleton.setBonesMatrix();
         }
-        for (let mesh of this.meshes) {
+        for (const mesh of this.meshes) {
             mesh.skeleton?.setBonesMatrix();
         }
     }
@@ -23319,9 +23319,9 @@ class Source2ModelInstance extends Entity {
             const posArray = animDesc.getFrame(Math.floor(this.mainAnimFrame % (animDesc.lastFrame + 1)));
             this.mainAnimFrame += delta * animDesc.fps;
             for (let i = 0; i < posArray.length; ++i) {
-                var pos = posArray[i];
-                let boneName = pos.name.toLowerCase();
-                let propBone = this.#skeleton.getBoneByName(boneName);
+                const pos = posArray[i];
+                const boneName = pos.name.toLowerCase();
+                const propBone = this.#skeleton.getBoneByName(boneName);
                 if (propBone) {
                     if (!propBone.locked) {
                         propBone.quaternion = pos.Angle || identityQuat;
@@ -23331,7 +23331,7 @@ class Source2ModelInstance extends Entity {
             }
         }
         else {
-            for (let bone of this.#skeleton.bones) {
+            for (const bone of this.#skeleton.bones) {
                 if (!bone.locked) {
                     bone.quaternion = bone.refQuaternion;
                     bone.position = bone.refPosition;
@@ -23341,17 +23341,17 @@ class Source2ModelInstance extends Entity {
     }
     #updateMaterials() {
         //console.error(this);
-        let materials0 = this.sourceModel.getSkinMaterials(0);
-        let materials = this.sourceModel.getSkinMaterials(this.#skin);
+        const materials0 = this.sourceModel.getSkinMaterials(0);
+        const materials = this.sourceModel.getSkinMaterials(this.#skin);
         /*if (!materials) {
             return;
         }*/
         //console.error(materials, this);
-        for (let mesh of this.meshes) {
+        for (const mesh of this.meshes) {
             if (materials0 && materials) {
-                for (let i in materials0) {
+                for (const i in materials0) {
                     if (materials0[i] == mesh.geometry.properties.get('materialPath')) {
-                        let materialPath = materials[i];
+                        const materialPath = materials[i];
                         if (materialPath) {
                             mesh.properties.set('materialPath', materialPath);
                         }
@@ -23374,13 +23374,13 @@ class Source2ModelInstance extends Entity {
         }
     }
     #init() {
-        let sourceModel = this.sourceModel;
-        for (let [bodyPartName, bodyPart] of sourceModel.bodyParts) {
-            let newBodyPart = [];
-            for (let model of bodyPart) {
+        const sourceModel = this.sourceModel;
+        for (const [bodyPartName, bodyPart] of sourceModel.bodyParts) {
+            const newBodyPart = [];
+            for (const model of bodyPart) {
                 if (model) {
-                    let newModel = [];
-                    for (let geometry of model) {
+                    const newModel = [];
+                    for (const geometry of model) {
                         let mesh;
                         if (this.#skeleton) {
                             mesh = new SkeletalMesh(geometry, defaultMaterial$2, this.#skeleton);
@@ -23409,16 +23409,16 @@ class Source2ModelInstance extends Entity {
         this.#initDefaultBodyGroups();
     }
     #initSkeleton() {
-        let bones = this.sourceModel.getBones();
+        const bones = this.sourceModel.getBones();
         if (bones) {
-            let bonesName = bones.m_boneName;
-            let bonePosParent = bones.m_bonePosParent;
-            let boneRotParent = bones.m_boneRotParent;
-            let boneParent = bones.m_nParent;
+            const bonesName = bones.m_boneName;
+            const bonePosParent = bones.m_bonePosParent;
+            const boneRotParent = bones.m_boneRotParent;
+            const boneParent = bones.m_nParent;
             if (bonesName && bonePosParent && boneRotParent && boneParent) {
                 for (let modelBoneIndex = 0, m = bonesName.length; modelBoneIndex < m; ++modelBoneIndex) {
-                    let boneName = bonesName[modelBoneIndex];
-                    let bone = this.#skeleton.addBone(modelBoneIndex, boneName);
+                    const boneName = bonesName[modelBoneIndex];
+                    const bone = this.#skeleton.addBone(modelBoneIndex, boneName);
                     //bone.name = boneName;
                     bone.quaternion = boneRotParent[modelBoneIndex];
                     bone.position = bonePosParent[modelBoneIndex];
@@ -23426,10 +23426,10 @@ class Source2ModelInstance extends Entity {
                     bone.refPosition = bonePosParent[modelBoneIndex];
                     //const poseToBone = mat4.fromRotationTranslation(mat4.create(), bone.refQuaternion, bone.refPosition);//TODO: optimize
                     //mat4.invert(poseToBone, poseToBone);
-                    let parent = Number(boneParent[modelBoneIndex]);
+                    const parent = Number(boneParent[modelBoneIndex]);
                     if (parent >= 0) {
                         //bone.parent = this.#skeleton.getBoneByName(bonesName[parent]);
-                        let parentBone = this.#skeleton.getBoneByName(bonesName[parent]);
+                        const parentBone = this.#skeleton.getBoneByName(bonesName[parent]);
                         if (parentBone) {
                             parentBone.addChild(bone);
                             bone.getTotalRefQuaternion(initSkeletonTempQuat);
@@ -23450,10 +23450,10 @@ class Source2ModelInstance extends Entity {
         }
     }
     #initAttachements() {
-        let attachements = new Group({ name: 'Attachements' });
+        const attachements = new Group({ name: 'Attachements' });
         this.addChild(attachements);
-        for (let attachement of this.sourceModel.attachements.values()) {
-            let attachementInstance = new Source2ModelAttachementInstance(this, attachement);
+        for (const attachement of this.sourceModel.attachements.values()) {
+            const attachementInstance = new Source2ModelAttachementInstance(this, attachement);
             this.attachements.set(attachement.name, attachementInstance);
             attachements.addChild(attachementInstance);
         }
@@ -23462,10 +23462,10 @@ class Source2ModelInstance extends Entity {
         return this.sourceModel.getAnimations();
     }
     buildContextMenu() {
-        let skins = this.sourceModel.getSkinList();
-        let skinMenu = [];
-        for (let skin of skins) {
-            let item = {};
+        const skins = this.sourceModel.getSkinList();
+        const skinMenu = [];
+        for (const skin of skins) {
+            const item = {};
             item.name = skin;
             item.f = () => this.skin = skin;
             skinMenu.push(item);
@@ -23473,12 +23473,12 @@ class Source2ModelInstance extends Entity {
         return Object.assign(super.buildContextMenu(), {
             Source2ModelInstance_1: null,
             skin: { i18n: '#skin', submenu: skinMenu },
-            animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(0, 0, await entity.sourceModel.getAnimations()); if (animation) {
+            animation: { i18n: '#animation', f: async (entity) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.getAnimations()); if (animation) {
                     entity.playAnimation(animation);
                 } } },
             Source2ModelInstance_2: null,
             animate: { i18n: '#animate', selected: this.animationSpeed != 0.0, f: () => this.animationSpeed == 0 ? this.animationSpeed = 1 : this.animationSpeed = 0 },
-            frame: { i18n: '#frame', f: () => { let frame = prompt('Frame', String(this.mainAnimFrame)); if (frame) {
+            frame: { i18n: '#frame', f: () => { const frame = prompt('Frame', String(this.mainAnimFrame)); if (frame) {
                     this.animationSpeed = 0;
                     this.mainAnimFrame = Number(frame);
                 } } },
@@ -23488,8 +23488,8 @@ class Source2ModelInstance extends Entity {
         return this;
     }
     getRandomPointOnModel(vec, initialVec, bones) {
-        let meshes = this.meshes;
-        for (let mesh of meshes) {
+        const meshes = this.meshes;
+        for (const mesh of meshes) {
             mesh.getRandomPointOnModel(vec, initialVec, bones);
             return vec;
         }
@@ -23499,7 +23499,7 @@ class Source2ModelInstance extends Entity {
         return this.attachements.get(name.toLowerCase());
     }
     static set animSpeed(speed) {
-        let s = Number(speed);
+        const s = Number(speed);
         animSpeed$1 = Number.isNaN(s) ? 1 : s;
     }
     dispose() {
@@ -23519,7 +23519,7 @@ class Source2ModelInstance extends Entity {
 
 const BASE_BYTES_PER_BONE = 4 * 3;
 const DELTA_BYTES_PER_BONE = 2 * 3;
-var baseX, baseY, baseZ, deltaX, deltaY, deltaZ;
+let baseX, baseY, baseZ, deltaX, deltaY, deltaZ;
 function decodeCCompressedDeltaVector3(reader, elementCount, elementIndex, frame) {
     baseX = reader.getFloat32(8 + elementCount * 2 + elementIndex * BASE_BYTES_PER_BONE);
     baseY = reader.getFloat32();
@@ -23557,14 +23557,14 @@ class Source2AnimationDesc {
         return this.#getActualAnimDesc()?.lastFrame ?? this.#lastFrame;
     }
     #getActualAnimDesc() {
-        let fetch = this.data?.m_fetch;
+        const fetch = this.data?.m_fetch;
         if (fetch) {
-            let localReferenceArray = fetch.m_localReferenceArray;
+            const localReferenceArray = fetch.m_localReferenceArray;
             //TODO: mix multiple anims
             if (localReferenceArray[0] !== undefined) {
-                let animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
+                const animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
                 if (animName) {
-                    let animDesc = this.#source2Model.getAnimationByName(animName);
+                    const animDesc = this.#source2Model.getAnimationByName(animName);
                     if (animDesc) {
                         return animDesc;
                     }
@@ -23574,12 +23574,12 @@ class Source2AnimationDesc {
     }
     getFrame(frameIndex) {
         frameIndex = clamp(frameIndex, 0, this.lastFrame);
-        var frameBlockArray = this.frameBlockArray;
-        var segmentIndexArray = null;
-        var frameBlock = null;
-        var decodeKey = this.animationResource.getDecodeKey();
-        var decodeArray = this.animationResource.getDecoderArray();
-        var boneArray = [];
+        const frameBlockArray = this.frameBlockArray;
+        let segmentIndexArray = null;
+        let frameBlock = null;
+        const decodeKey = this.animationResource.getDecodeKey();
+        const decodeArray = this.animationResource.getDecoderArray();
+        const boneArray = [];
         /*
         let fetch = this.data?.m_fetch;
         if (fetch) {
@@ -23597,7 +23597,7 @@ class Source2AnimationDesc {
                 return [];
             }
         }*/
-        let actualAnimDesc = this.#getActualAnimDesc();
+        const actualAnimDesc = this.#getActualAnimDesc();
         if (actualAnimDesc) {
             return actualAnimDesc.getFrame(frameIndex);
         }
@@ -23611,8 +23611,8 @@ class Source2AnimationDesc {
                     segmentIndexArray = frameBlock.m_segmentIndexArray;
                     //console.log(this);
                     //console.log(decodeKey);
-                    for (var j = 0; j < segmentIndexArray.length; j++) {
-                        var segment = this.animationResource.getSegment(segmentIndexArray[j]);
+                    for (let j = 0; j < segmentIndexArray.length; j++) {
+                        const segment = this.animationResource.getSegment(segmentIndexArray[j]);
                         //console.log(frameIndex, frameIndex - frameBlock.m_nStartFrame);
                         //console.log(frameIndex);
                         this.readSegment(frameIndex - frameBlock.m_nStartFrame, segment, boneArray, decodeKey.m_dataChannelArray, decodeArray);
@@ -23625,24 +23625,24 @@ class Source2AnimationDesc {
     }
     readSegment(frameIndex, segment, boneArray, dataChannelArray, decodeArray) {
         //console.log(segment);
-        var channel = dataChannelArray[segment.m_nLocalChannel];
-        var segmentToBoneIndex = {};
-        var channelVar = channel.m_szVariableName;
-        var container = segment.m_container;
-        var reader = segment.dataReader;
+        const channel = dataChannelArray[segment.m_nLocalChannel];
+        const segmentToBoneIndex = {};
+        const channelVar = channel.m_szVariableName;
+        const container = segment.m_container;
+        let reader = segment.dataReader;
         if (!reader) {
             reader = new BinaryReader(container);
             segment.dataReader = reader;
         }
-        var decoderId = container[0] + (container[1] << 8);
-        var bytesPerBone = container[2] + (container[3] << 8);
-        var boneCount = container[4] + (container[5] << 8);
+        const decoderId = container[0] + (container[1] << 8);
+        let bytesPerBone = container[2] + (container[3] << 8);
+        const boneCount = container[4] + (container[5] << 8);
         container[6] + (container[7] << 8);
         bytesPerBone = 0;
-        var segmentBoneArray = [];
+        const segmentBoneArray = [];
         if (channel.m_nElementIndexArray) {
-            var elementIndexArray = channel.m_nElementIndexArray;
-            for (var i = 0; i < elementIndexArray.length; i++) {
+            const elementIndexArray = channel.m_nElementIndexArray;
+            for (let i = 0; i < elementIndexArray.length; i++) {
                 segmentToBoneIndex[elementIndexArray[i]] = i;
             }
         }
@@ -23650,10 +23650,10 @@ class Source2AnimationDesc {
             //TODO
             return;
         }
-        var decoder = decodeArray[decoderId];
+        const decoder = decodeArray[decoderId];
         //console.log(decoderId, bytesPerBone, boneCount, dataLength);
         if (decoder && decoder.m_szName) {
-            var decoderName = decoder.m_szName;
+            const decoderName = decoder.m_szName;
             //console.log(decoderName);
             switch (decoderName) {
                 case 'CCompressedStaticFullVector3':
@@ -23692,16 +23692,16 @@ class Source2AnimationDesc {
             }
             var byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
             for (var boneIndex = 0; boneIndex < boneCount; boneIndex++) {
-                var boneIndex2 = segmentToBoneIndex[segmentBoneArray[boneIndex]];
+                const boneIndex2 = segmentToBoneIndex[segmentBoneArray[boneIndex]];
                 /*if (boneIndex2 === undefined) {//removeme
                     return;
                 }*/
-                var bytes = [];
-                var byteIndex2 = byteIndex + boneIndex * bytesPerBone;
-                for (var j = 0; j < bytesPerBone; j++) {
+                const bytes = [];
+                const byteIndex2 = byteIndex + boneIndex * bytesPerBone;
+                for (let j = 0; j < bytesPerBone; j++) {
                     bytes.push(container[byteIndex2 + j]);
                 }
-                var tmpValue = null;
+                let tmpValue = null;
                 switch (decoderName) {
                     case 'CCompressedFullFloat':
                     case 'CCompressedStaticFloat':
@@ -23736,9 +23736,9 @@ class Source2AnimationDesc {
         }
     }
     matchActivity(activityName) {
-        let activityArray = this.data?.m_activityArray;
+        const activityArray = this.data?.m_activityArray;
         if (activityArray) {
-            for (let activity of activityArray) {
+            for (const activity of activityArray) {
                 if (activity.m_name == activityName) {
                     return true;
                 }
@@ -23752,7 +23752,7 @@ class Source2AnimationDesc {
         return this.data?.m_activityArray?.length > 1;
     }
     modifiersScore(activityName, modifiers) {
-        let activityArray = this.data?.m_activityArray;
+        const activityArray = this.data?.m_activityArray;
         if (activityArray && activityArray.length > 0) {
             if (activityArray[0].m_name != activityName) {
                 return -1;
@@ -23778,7 +23778,7 @@ class Source2AnimationDesc {
         return -1;
     }
     matchModifiers(activityName, modifiers) {
-        let activityArray = this.data?.m_activityArray;
+        const activityArray = this.data?.m_activityArray;
         if (activityArray && activityArray.length > 0) {
             if (activityArray[0].m_name != activityName) {
                 return false;
@@ -23808,9 +23808,9 @@ class Source2AnimationDesc {
     }
 }
 function _getFloat16(b, offset) {
-    var sign = b[1 + offset] >> 7;
-    var exponent = ((b[1 + offset] & 0x7C) >> 2);
-    var mantissa = ((b[1 + offset] & 0x03) << 8) | b[0 + offset];
+    const sign = b[1 + offset] >> 7;
+    const exponent = ((b[1 + offset] & 0x7C) >> 2);
+    const mantissa = ((b[1 + offset] & 0x03) << 8) | b[0 + offset];
     if (exponent == 0) {
         return (sign ? -1 : 1) * Math.pow(2, -14) * (mantissa / Math.pow(2, 10));
     }
@@ -23820,7 +23820,7 @@ function _getFloat16(b, offset) {
     return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / Math.pow(2, 10)));
 }
 function _getFloat32(b, offset) {
-    let sign = 1 - (2 * (b[3 + offset] >> 7)), exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127, mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
+    const sign = 1 - (2 * (b[3 + offset] >> 7)), exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127, mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
     if (exponent === 128) {
         if (mantissa !== 0) {
             return NaN;
@@ -23834,19 +23834,19 @@ function _getFloat32(b, offset) {
     }
     return sign * (1 + mantissa * pow2(-23)) * pow2(exponent);
 }
-let QUATERNION48_SCALE = Math.SQRT1_2 / 0x4000;
+const QUATERNION48_SCALE = Math.SQRT1_2 / 0x4000;
 function _readQuaternion48(bytes, boneIndexRemoveMe, boneNameRemoveMe) {
     // Values
-    let i1 = bytes[0] + ((bytes[1] & 127) << 8) - 0x4000;
-    let i2 = bytes[2] + ((bytes[3] & 127) << 8) - 0x4000;
-    let i3 = bytes[4] + ((bytes[5] & 127) << 8) - 0x4000;
+    const i1 = bytes[0] + ((bytes[1] & 127) << 8) - 0x4000;
+    const i2 = bytes[2] + ((bytes[3] & 127) << 8) - 0x4000;
+    const i3 = bytes[4] + ((bytes[5] & 127) << 8) - 0x4000;
     // Signs
-    let s1 = bytes[1] & 128;
-    let s2 = bytes[3] & 128;
-    let s3 = bytes[5] & 128;
-    let x = QUATERNION48_SCALE * i1;
-    let y = QUATERNION48_SCALE * i2;
-    let z = QUATERNION48_SCALE * i3;
+    const s1 = bytes[1] & 128;
+    const s2 = bytes[3] & 128;
+    const s3 = bytes[5] & 128;
+    const x = QUATERNION48_SCALE * i1;
+    const y = QUATERNION48_SCALE * i2;
+    const z = QUATERNION48_SCALE * i3;
     let w = Math.sqrt(1 - (x * x) - (y * y) - (z * z));
     // Apply sign 3
     if (s3 == 128) {
@@ -23890,7 +23890,7 @@ class Source2Animation {
             this.frameData = data.m_frameData;
             if (this.#animArray) {
                 for (let i = 0; i < this.#animArray.length; i++) {
-                    let anim = this.#animArray[i];
+                    const anim = this.#animArray[i];
                     this.#animNames.set(anim.m_name, new Source2AnimationDesc(this.animGroup.source2Model, anim, this));
                 }
             }
@@ -23911,9 +23911,9 @@ class Source2Animation {
     }
     async getAnimations(animations = new Set()) {
         for (let i = 0; i < this.#animArray.length; i++) {
-            let anim = this.#animArray[i];
+            const anim = this.#animArray[i];
             animations.add(anim.m_name);
-            for (let activity of anim.m_activityArray ?? []) {
+            for (const activity of anim.m_activityArray ?? []) {
                 animations.add(activity.m_name);
             }
         }
@@ -23925,18 +23925,18 @@ class Source2Animation {
         }
         let bestMatch;
         let bestScore = Infinity;
-        for (let anim of this.#animArray) {
+        for (const anim of this.#animArray) {
             if (!anim.m_activityArray) {
                 continue;
             }
             let matchingActivity = false;
             let unmatchingModifiers = 0;
-            for (let activity of anim.m_activityArray ?? []) {
+            for (const activity of anim.m_activityArray ?? []) {
                 if (activity.m_name == activityName) {
                     matchingActivity = true;
                 }
                 let modifierMatching = false;
-                for (let activityModifier of activityModifiers) {
+                for (const activityModifier of activityModifiers) {
                     if (activity.m_name == activityModifier) {
                         modifierMatching = true;
                         break;
@@ -23947,9 +23947,9 @@ class Source2Animation {
                 }
             }
             if (matchingActivity) {
-                for (let activityModifier of activityModifiers) {
+                for (const activityModifier of activityModifiers) {
                     let modifierMatching = false;
-                    for (let activity of anim.m_activityArray ?? []) {
+                    for (const activity of anim.m_activityArray ?? []) {
                         if (activity.m_name == activityModifier) {
                             modifierMatching = true;
                             break;
@@ -23960,7 +23960,7 @@ class Source2Animation {
                     }
                 }
                 if (unmatchingModifiers < bestScore) {
-                    let animDesc = this.#animNames.get(anim.m_name);
+                    const animDesc = this.#animNames.get(anim.m_name);
                     if (animDesc) {
                         bestMatch = animDesc;
                         bestScore = unmatchingModifiers;
@@ -23971,8 +23971,8 @@ class Source2Animation {
         return [bestMatch, bestScore];
     }
     getAnimationsByActivity(activityName) {
-        let anims = [];
-        for (let [animName, animDesc] of this.#animNames) {
+        const anims = [];
+        for (const [animName, animDesc] of this.#animNames) {
             if (animDesc.matchActivity(activityName)) {
                 anims.push(animDesc);
             }
@@ -24036,7 +24036,7 @@ class Source2Sequence {
                 if (this.activities[0].name == activity) {
                     let matchCount = 0;
                     for (let i = 1; i < this.activities.length; i++) {
-                        for (let modifier of modifiers) {
+                        for (const modifier of modifiers) {
                             if (this.activities[i] == modifier) {
                                 ++matchCount;
                             }
@@ -24071,7 +24071,7 @@ class Source2SeqGroup {
     }
     setFile(sourceFile) {
         this.file = sourceFile;
-        let sequenceGroupResourceData_t = sourceFile.getBlockStruct('DATA.structs.SequenceGroupResourceData_t');
+        const sequenceGroupResourceData_t = sourceFile.getBlockStruct('DATA.structs.SequenceGroupResourceData_t');
         let localSequenceNameArray;
         if (sequenceGroupResourceData_t) {
             this.m_localS1SeqDescArray = sequenceGroupResourceData_t.m_localS1SeqDescArray;
@@ -24086,13 +24086,13 @@ class Source2SeqGroup {
         this.animArray = this.m_localS1SeqDescArray;
         if (this.animArray) {
             for (let i = 0; i < this.animArray.length; i++) {
-                let anim = this.animArray[i];
+                const anim = this.animArray[i];
                 this.#animNames.set(anim.m_sName, new Source2AnimationDesc(this.#animGroup.source2Model, anim, this));
             }
         }
-        let anims = sourceFile.getBlockStruct('DATA.keyValue.root') ?? sourceFile.getBlockStruct('DATA.structs.SequenceGroupResourceData_t');
+        const anims = sourceFile.getBlockStruct('DATA.keyValue.root') ?? sourceFile.getBlockStruct('DATA.structs.SequenceGroupResourceData_t');
         if (anims) {
-            let loadedAnim = new Source2Animation(this, '');
+            const loadedAnim = new Source2Animation(this, '');
             loadedAnim.setAnimDatas(anims);
             this.#animGroup._changemyname = this.#animGroup._changemyname || [];
             this.#animGroup._changemyname.push(loadedAnim);
@@ -24105,22 +24105,22 @@ class Source2SeqGroup {
     #processSeqDesc(m_localS1SeqDescArray, localSequenceNameArray) {
         if (m_localS1SeqDescArray) {
             for (let i = 0; i < m_localS1SeqDescArray.length; ++i) {
-                let sequence = m_localS1SeqDescArray[i];
-                let activities = [];
+                const sequence = m_localS1SeqDescArray[i];
+                const activities = [];
                 if (sequence.m_activityArray) {
                     for (let j = 0; j < sequence.m_activityArray.length; ++j) {
-                        let activity = sequence.m_activityArray[j];
+                        const activity = sequence.m_activityArray[j];
                         activities.push(new Source2Activity(activity.m_name, activity.m_nWeight, activity.m_nFlags, activity.m_nActivity));
                     }
                 }
-                let localReferenceArray = sequence?.m_fetch?.m_localReferenceArray;
-                let animNames = [];
+                const localReferenceArray = sequence?.m_fetch?.m_localReferenceArray;
+                const animNames = [];
                 if (localReferenceArray) {
-                    for (let localReference of localReferenceArray) {
+                    for (const localReference of localReferenceArray) {
                         animNames.push(localSequenceNameArray[localReference]);
                     }
                 }
-                let s2Seq = new Source2Sequence(sequence.m_sName, { activities: activities, animNames: animNames });
+                const s2Seq = new Source2Sequence(sequence.m_sName, { activities: activities, animNames: animNames });
                 //console.error(s2Seq);
                 this.sequences.push(s2Seq);
             }
@@ -24128,7 +24128,7 @@ class Source2SeqGroup {
     }
     matchActivity(activity, modifiers) {
         for (let i = 0; i < this.sequences.length; i++) {
-            let sequence = this.sequences[i];
+            const sequence = this.sequences[i];
             if (sequence.matchActivity(activity, modifiers)) {
                 return sequence.animNames[0]; //TODO
             }
@@ -24136,8 +24136,8 @@ class Source2SeqGroup {
         return null;
     }
     getAnimationsByActivity(activityName) {
-        let anims = [];
-        for (let [animName, animDesc] of this.#animNames) {
+        const anims = [];
+        for (const [animName, animDesc] of this.#animNames) {
             if (animDesc.matchActivity(activityName)) {
                 anims.push(animDesc);
             }
@@ -24174,7 +24174,7 @@ class Source2AnimGroup {
         this.file = sourceFile;
         let localAnimArray;
         let decodeKey;
-        let animationGroupData = sourceFile.getBlockStruct('DATA.structs.AnimationGroupResourceData_t');
+        const animationGroupData = sourceFile.getBlockStruct('DATA.structs.AnimationGroupResourceData_t');
         let directHSeqGroup;
         if (animationGroupData) {
             localAnimArray = animationGroupData.m_localHAnimArray;
@@ -24193,9 +24193,9 @@ class Source2AnimGroup {
             })();
         }
         this.setAnimationGroupResourceData(localAnimArray, decodeKey);
-        let anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
+        const anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
         if (anims) {
-            let loadedAnim = new Source2Animation(this, '');
+            const loadedAnim = new Source2Animation(this, '');
             loadedAnim.setAnimDatas(anims);
             this._changemyname = this._changemyname || [];
             this._changemyname.push(loadedAnim);
@@ -24237,16 +24237,16 @@ class Source2AnimGroup {
         }
     }
     getAnims() {
-        let anims = new Set();
-        for (let anim of this._changemyname) {
+        const anims = new Set();
+        for (const anim of this._changemyname) {
             if (anim) {
                 anims.add(anim);
             }
         }
         if (this.localAnimArray) {
-            for (let animName of this.localAnimArray) {
+            for (const animName of this.localAnimArray) {
                 if (animName) {
-                    let anim = getAnim(this.repository, animName, this);
+                    const anim = getAnim(this.repository, animName, this);
                     if (anim) {
                         anims.add(anim);
                     }
@@ -24256,16 +24256,16 @@ class Source2AnimGroup {
         return anims;
     }
     getAnimationsByActivity(activityName) {
-        let anims = [];
-        for (let anim of this._changemyname) {
+        const anims = [];
+        for (const anim of this._changemyname) {
             if (anim) {
                 anims.push(...anim.getAnimationsByActivity(activityName));
             }
         }
         if (this.localAnimArray) {
-            for (let animName of this.localAnimArray) {
+            for (const animName of this.localAnimArray) {
                 if (animName) {
-                    let anim = getAnim(this.repository, animName, this);
+                    const anim = getAnim(this.repository, animName, this);
                     if (anim) {
                         anims.push(...anim.getAnimationsByActivity(activityName));
                     }
@@ -24285,8 +24285,8 @@ class Source2AnimGroup {
     }
     getAnimationByName(animName) {
         //return this.#internalAnimGroup?.getAnimationByName(animName);
-        for (let source2Animation of this.getAnims()) {
-            let anim = source2Animation.getAnimationByName(animName);
+        for (const source2Animation of this.getAnims()) {
+            const anim = source2Animation.getAnimationByName(animName);
             if (anim) {
                 return anim;
             }
@@ -24300,9 +24300,9 @@ class Source2AnimGroup {
         return this.#_changemyname;
     }
 }
-let seqGroupList = {};
+const seqGroupList = {};
 function getSequenceGroup(repository, seqGroupName, animGroup) {
-    var seqGroup = seqGroupList[seqGroupName];
+    let seqGroup = seqGroupList[seqGroupName];
     if (!seqGroup) {
         seqGroup = loadSequenceGroup(repository, seqGroupName, animGroup);
     }
@@ -24319,13 +24319,13 @@ async function loadSequenceGroup(repository, seqGroupName, animGroup) {
     repository = repository.toLowerCase();
     seqGroupName = seqGroupName.replace(/\.(vseq_c$|vseq)/, '');
     //seqGroupName = repository + seqGroupName;
-    let seqGroup = new Source2SeqGroup(animGroup);
+    const seqGroup = new Source2SeqGroup(animGroup);
     await getVseq(repository, seqGroupName, seqGroup);
     return seqGroup;
 }
 const pending$1 = {};
 async function getVseq(repository, seqGroupName, seqGroup) {
-    var seqFile = seqGroupName + '.vseq_c';
+    const seqFile = seqGroupName + '.vseq_c';
     if (pending$1[seqFile]) {
         return true;
     }
@@ -24345,17 +24345,17 @@ async function getVseq(repository, seqGroupName, seqGroup) {
     return true;
 }
 async function loadVseq(repository, fileName, seqGroup) {
-    let vseq = await new Source2FileLoader().load(repository, fileName);
+    const vseq = await new Source2FileLoader().load(repository, fileName);
     if (vseq) {
         seqGroup.setFile(vseq);
     }
 }
-let animList = {};
+const animList = {};
 function getAnim(repository, animName, animGroup) {
     if (!animName) {
         return "";
     }
-    let anim = animList[animName];
+    const anim = animList[animName];
     if (anim === undefined) {
         loadAnim(repository, animName, animGroup).then(anim => {
             animList[animName] = anim;
@@ -24373,12 +24373,12 @@ async function loadAnim(repository, animName, animGroup) {
     //this.fileName = animName;
     //animName = repository + animName;
     //this.animName = animName;
-    let anim = new Source2Animation(animGroup, animName);
+    const anim = new Source2Animation(animGroup, animName);
     await getVanim(repository, animName, anim);
     return anim;
 }
 async function getVanim(repository, animName, anim) {
-    var animFile = animName + '.vanim_c';
+    const animFile = animName + '.vanim_c';
     if (pending$1[animFile]) {
         return true;
     }
@@ -24405,10 +24405,10 @@ async function getVanim(repository, animName, anim) {
     return true;
 }
 async function loadVanim(repository, fileName, anim) {
-    let vanim = await new Source2FileLoader().load(repository, fileName);
+    const vanim = await new Source2FileLoader().load(repository, fileName);
     if (vanim) {
         anim.setFile(vanim);
-        let dataBlock = vanim.blocks.DATA;
+        const dataBlock = vanim.blocks.DATA;
         if (dataBlock) {
             anim.setAnimDatas(vanim.getBlockStruct('DATA.structs.AnimationResourceData_t') || vanim.getBlockStruct('DATA.keyValue.root'));
         }
@@ -24420,12 +24420,12 @@ const pending = {};
 async function loadAnimGroup(source2Model, repository, animGroupName) {
     animGroupName = animGroupName.toLowerCase();
     animGroupName = animGroupName.replace(/\.(vagrp_c$|vagrp$)/, '');
-    let animGroup = new Source2AnimGroup(source2Model, repository);
+    const animGroup = new Source2AnimGroup(source2Model, repository);
     await getVagrp(repository, animGroupName, animGroup);
     return animGroup;
 }
 async function getVagrp(repository, animGroupName, animGroup) {
-    var agrpFile = animGroupName + '.vagrp_c';
+    const agrpFile = animGroupName + '.vagrp_c';
     if (pending[agrpFile]) {
         return true;
     }
@@ -24445,10 +24445,10 @@ async function getVagrp(repository, animGroupName, animGroup) {
     return true;
 }
 async function loadVagrp(repository, fileName, animGroup) {
-    let vagrp = await new Source2FileLoader().load(repository, fileName);
+    const vagrp = await new Source2FileLoader().load(repository, fileName);
     if (vagrp) {
         animGroup.setFile(vagrp);
-        var dataBlock = vagrp.blocks.DATA;
+        const dataBlock = vagrp.blocks.DATA;
         if (dataBlock) {
             //animGroup.meshesNames = vagrp.getPermModelData('m_meshGroups');
             vagrp.getPermModelData('m_refMeshes');
@@ -24458,7 +24458,7 @@ async function loadVagrp(repository, fileName, animGroup) {
 }
 
 const AnimManager = new (function () {
-    let animGroupList = {};
+    const animGroupList = {};
     class AnimManager {
         async getAnimGroup(source2Model, repository, animGroupName) {
             let animGroup = animGroupList[animGroupName];
@@ -24506,7 +24506,7 @@ class Source2Animations {
     getBestAnimation(activityName, activityModifiers) {
         let bestMatch = this.getAnimation(activityName);
         let bestScore = bestMatch ? 0 : -1;
-        for (let animDesc of this.#animations) {
+        for (const animDesc of this.#animations) {
             /*if (animDesc.matchModifiers(activityName, activityModifiers)) {
                 return animDesc;
             }*/
@@ -24547,14 +24547,14 @@ class Source2Model {
         this.#createBodyGroups();
     }
     #createAnimGroup() {
-        let aseq = this.vmdl.getBlockByType('ASEQ');
+        const aseq = this.vmdl.getBlockByType('ASEQ');
         if (aseq) {
             this.#seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
             this.#seqGroup.setFile(this.vmdl);
         }
     }
     #createBodyGroups() {
-        let meshGroups = this.vmdl.getPermModelData('m_meshGroups');
+        const meshGroups = this.vmdl.getPermModelData('m_meshGroups');
         if (meshGroups) {
             let bodyGroupId = 0;
             let bodyGroup;
@@ -24616,7 +24616,7 @@ class Source2Model {
         return bodyPartNumber;
     }
     getBones() {
-        let skeleton = this.vmdl.getPermModelData('m_modelSkeleton');
+        const skeleton = this.vmdl.getPermModelData('m_modelSkeleton');
         if (skeleton) {
             return skeleton;
         }
@@ -24673,9 +24673,9 @@ class Source2Model {
     }
 */
     getSkinMaterials(skin) {
-        let materialGroups = this.vmdl.getPermModelData('m_materialGroups');
+        const materialGroups = this.vmdl.getPermModelData('m_materialGroups');
         if (materialGroups) {
-            let materials = materialGroups[skin];
+            const materials = materialGroups[skin];
             if (materials) {
                 return materials.m_materials;
             }
@@ -24684,7 +24684,7 @@ class Source2Model {
     }
     getSkinList() {
         const skinList = [];
-        let materialGroups = this.vmdl.getPermModelData('m_materialGroups');
+        const materialGroups = this.vmdl.getPermModelData('m_materialGroups');
         if (materialGroups) {
             for (let skinIndex = 0; skinIndex < materialGroups.length; skinIndex++) {
                 skinList.push(materialGroups[skinIndex].m_name);
@@ -24694,11 +24694,11 @@ class Source2Model {
     }
     async loadAnimGroups() {
         if (this.vmdl) {
-            var m_refAnimGroups = this.vmdl.getPermModelData('m_refAnimGroups');
+            const m_refAnimGroups = this.vmdl.getPermModelData('m_refAnimGroups');
             if (m_refAnimGroups) {
-                for (var meshIndex = 0; meshIndex < m_refAnimGroups.length; meshIndex++) {
-                    var meshName = m_refAnimGroups[meshIndex];
-                    let animGroup = await AnimManager.getAnimGroup(this, this.repository, meshName);
+                for (let meshIndex = 0; meshIndex < m_refAnimGroups.length; meshIndex++) {
+                    const meshName = m_refAnimGroups[meshIndex];
+                    const animGroup = await AnimManager.getAnimGroup(this, this.repository, meshName);
                     this.animGroups.add(animGroup);
                 }
             }
@@ -24707,17 +24707,17 @@ class Source2Model {
     #loadInternalAnimGroup() {
         //TODOv3: make a common code where external and internal group are loaded
         if (this.vmdl) {
-            let sourceFile = this.vmdl;
-            let localAnimArray = sourceFile.getBlockStruct('AGRP.keyValue.root.m_localHAnimArray');
-            let decodeKey = sourceFile.getBlockStruct('AGRP.keyValue.root.m_decodeKey');
+            const sourceFile = this.vmdl;
+            const localAnimArray = sourceFile.getBlockStruct('AGRP.keyValue.root.m_localHAnimArray');
+            const decodeKey = sourceFile.getBlockStruct('AGRP.keyValue.root.m_decodeKey');
             if (localAnimArray && decodeKey) {
-                let animGroup = new Source2AnimGroup(this, this.repository);
+                const animGroup = new Source2AnimGroup(this, this.repository);
                 animGroup.setFile(this.vmdl);
                 animGroup.setAnimationGroupResourceData(localAnimArray, decodeKey);
                 this.#internalAnimGroup = animGroup;
-                let anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
+                const anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
                 if (anims) {
-                    let loadedAnim = new Source2Animation(animGroup, '');
+                    const loadedAnim = new Source2Animation(animGroup, '');
                     loadedAnim.setAnimDatas(anims);
                     animGroup._changemyname = animGroup._changemyname || [];
                     animGroup._changemyname.push(loadedAnim);
@@ -24764,21 +24764,21 @@ class Source2Model {
         }
     }
     getAnimationsByActivity(activityName, animations = new Source2Animations()) {
-        let anims = [];
+        const anims = [];
         if (this.#seqGroup) {
             anims.push(...this.#seqGroup.getAnimationsByActivity(activityName));
         }
-        for (let animGroup of this.animGroups) {
+        for (const animGroup of this.animGroups) {
             anims.push(...animGroup.getAnimationsByActivity(activityName));
         }
         animations.addAnimations(anims);
         return animations;
     }
     async getAnimations() {
-        let animations = new Set();
-        for (let animGroup of this.animGroups) {
+        const animations = new Set();
+        for (const animGroup of this.animGroups) {
             if (animGroup.localAnimArray) {
-                for (var localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {
+                for (let localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {
                     const animRemoveMe = await animGroup.getAnim(localAnimIndex);
                     if (animRemoveMe) {
                         animRemoveMe.getAnimations(animations);
@@ -24786,7 +24786,7 @@ class Source2Model {
                 }
             }
             if (animGroup._changemyname) {
-                for (var animResIndex = 0; animResIndex < animGroup._changemyname.length; animResIndex++) {
+                for (let animResIndex = 0; animResIndex < animGroup._changemyname.length; animResIndex++) {
                     const animRemoveMe = animGroup._changemyname[animResIndex];
                     if (animRemoveMe) {
                         animRemoveMe.getAnimations(animations);
@@ -24797,15 +24797,15 @@ class Source2Model {
         return animations;
     }
     _addAttachements(attachements) {
-        for (let attachement of attachements) {
-            let attachementValue = attachement.value;
+        for (const attachement of attachements) {
+            const attachementValue = attachement.value;
             if (attachementValue) {
-                let name = attachementValue.m_name.toLowerCase();
-                let source2ModelAttachement = new Source2ModelAttachement(name);
+                const name = attachementValue.m_name.toLowerCase();
+                const source2ModelAttachement = new Source2ModelAttachement(name);
                 this.attachements.set(name, source2ModelAttachement);
                 source2ModelAttachement.ignoreRotation = attachementValue.m_bIgnoreRotation;
                 for (let influenceIndex = 0; influenceIndex < attachementValue.m_nInfluences; ++influenceIndex) {
-                    let influenceName = attachementValue.m_influenceNames[influenceIndex];
+                    const influenceName = attachementValue.m_influenceNames[influenceIndex];
                     if (influenceName) {
                         source2ModelAttachement.influenceNames.push(influenceName.toLowerCase());
                         source2ModelAttachement.influenceWeights.push(attachementValue.m_influenceWeights[influenceIndex]);
@@ -24818,8 +24818,8 @@ class Source2Model {
     }
     getAnimationByName(animName) {
         //return this.#internalAnimGroup?.getAnimationByName(animName);
-        for (let animGroup of this.animGroups) {
-            let anim = animGroup.getAnimationByName(animName);
+        for (const animGroup of this.animGroups) {
+            const anim = animGroup.getAnimationByName(animName);
             if (anim) {
                 return anim;
             }
@@ -24847,9 +24847,9 @@ class Source2ModelLoader {
             return promise;
         }
         promise = new Promise((resolve, reject) => {
-            let vmdlPromise = new Source2FileLoader().load(repositoryName, fileName + '.vmdl_c');
+            const vmdlPromise = new Source2FileLoader().load(repositoryName, fileName + '.vmdl_c');
             vmdlPromise.then(async (source2File) => {
-                let newSourceModel = new Source2Model(repositoryName, source2File);
+                const newSourceModel = new Source2Model(repositoryName, source2File);
                 this.#loadIncludeModels(newSourceModel);
                 await this.testProcess2(source2File, newSourceModel, repositoryName);
                 newSourceModel.loadAnimGroups();
@@ -24861,16 +24861,16 @@ class Source2ModelLoader {
         return promise;
     }
     async testProcess2(vmdl, model, repository) {
-        let group = new Entity();
-        let ctrlRoot = vmdl.getBlockStruct('CTRL.keyValue.root');
-        let m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
-        let m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
+        const group = new Entity();
+        const ctrlRoot = vmdl.getBlockStruct('CTRL.keyValue.root');
+        const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
+        const m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
         if (ctrlRoot && m_refLODGroupMasks) {
-            let embeddedMeshes = ctrlRoot.embedded_meshes;
+            const embeddedMeshes = ctrlRoot.embedded_meshes;
             for (let meshIndex = 0; meshIndex < embeddedMeshes.length; ++meshIndex) {
-                let lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
-                let meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
-                let embeddedMesh = embeddedMeshes[meshIndex];
+                const lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
+                const meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
+                const embeddedMesh = embeddedMeshes[meshIndex];
                 this.#loadMesh(repository, model, group, vmdl.getBlockById(embeddedMesh.data_block), vmdl.getBlockById(embeddedMesh.vbib_block), lodGroupMask, vmdl, meshIndex, meshGroupMask);
                 /*data_block: 1
                 mesh_index: 0
@@ -24886,21 +24886,21 @@ class Source2ModelLoader {
     #loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask) {
         const remappingTable = vmdl.getRemappingTable(meshIndex);
         model._addAttachements(dataBlock.getKeyValue('m_attachments'));
-        let drawCalls = dataBlock.getKeyValue('m_sceneObjects.0.m_drawCalls') || dataBlock.getKeyValue('root.m_drawCalls');
+        const drawCalls = dataBlock.getKeyValue('m_sceneObjects.0.m_drawCalls') || dataBlock.getKeyValue('root.m_drawCalls');
         if (drawCalls) {
             for (let drawCallIndex = 0, l = drawCalls.length; drawCallIndex < l; ++drawCallIndex) { //TODOv3: mutualize buffer if used by multiple drawcalls
-                let drawCall = drawCalls[drawCallIndex];
-                let useCompressedNormalTangent = drawCall.m_bUseCompressedNormalTangent ?? drawCall.m_nFlags?.includes('MESH_DRAW_FLAGS_USE_COMPRESSED_NORMAL_TANGENT');
-                let vertexBuffers = drawCall.m_vertexBuffers[0]; //TODOv3 why 0 ?
+                const drawCall = drawCalls[drawCallIndex];
+                const useCompressedNormalTangent = drawCall.m_bUseCompressedNormalTangent ?? drawCall.m_nFlags?.includes('MESH_DRAW_FLAGS_USE_COMPRESSED_NORMAL_TANGENT');
+                const vertexBuffers = drawCall.m_vertexBuffers[0]; //TODOv3 why 0 ?
                 if (!vertexBuffers) {
                     continue;
                 }
-                let bufferIndex = vertexBuffers.m_hBuffer;
-                let indices = new Uint32BufferAttribute(vbibBlock.getIndices(bufferIndex), 1, Number(drawCall.m_nStartIndex) * 4, Number(drawCall.m_nIndexCount)); //NOTE: number is here to convert bigint TODO: see if we can do better
-                let vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(bufferIndex), 3);
+                const bufferIndex = vertexBuffers.m_hBuffer;
+                const indices = new Uint32BufferAttribute(vbibBlock.getIndices(bufferIndex), 1, Number(drawCall.m_nStartIndex) * 4, Number(drawCall.m_nIndexCount)); //NOTE: number is here to convert bigint TODO: see if we can do better
+                const vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(bufferIndex), 3);
                 let vertexNormal, vertexTangent;
                 if (useCompressedNormalTangent) {
-                    let [normal, tangent] = vbibBlock.getNormalsTangents(bufferIndex);
+                    const [normal, tangent] = vbibBlock.getNormalsTangents(bufferIndex);
                     vertexNormal = new Float32BufferAttribute(normal, 3);
                     vertexTangent = new Float32BufferAttribute(tangent, 4);
                 }
@@ -24908,10 +24908,10 @@ class Source2ModelLoader {
                     vertexNormal = new Float32BufferAttribute(vbibBlock.getNormal(bufferIndex), 4);
                     vertexTangent = new Float32BufferAttribute(vbibBlock.getTangent(bufferIndex), 4);
                 }
-                let textureCoord = new Float32BufferAttribute(vbibBlock.getCoords(bufferIndex), 2);
-                let vertexWeights = new Float32BufferAttribute(vbibBlock.getBoneWeight(bufferIndex), 4);
-                let vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(bufferIndex), remappingTable), 4);
-                let geometry = new BufferGeometry();
+                const textureCoord = new Float32BufferAttribute(vbibBlock.getCoords(bufferIndex), 2);
+                const vertexWeights = new Float32BufferAttribute(vbibBlock.getBoneWeight(bufferIndex), 4);
+                const vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(bufferIndex), remappingTable), 4);
+                const geometry = new BufferGeometry();
                 geometry.properties.set('lodGroupMask', lodGroupMask);
                 geometry.properties.set('mesh_group_mask', meshGroupMask ?? 0xffffffffffffffffn);
                 geometry.setIndex(indices);
@@ -24924,8 +24924,8 @@ class Source2ModelLoader {
                 geometry.count = Number(drawCall.m_nIndexCount); //NOTE: number is here to convert bigint TODO: see if we can do better
                 geometry.properties.set('materialPath', drawCall.m_material);
                 geometry.properties.set('bones', dataBlock.getKeyValue('m_skeleton.m_bones'));
-                let material = defaultMaterial$1;
-                let staticMesh = new Mesh(geometry, material);
+                const material = defaultMaterial$1;
+                const staticMesh = new Mesh(geometry, material);
                 group.addChild(staticMesh);
                 const materialPath = geometry.properties.get('materialPath');
                 Source2MaterialManager.getMaterial(repository, materialPath).then((material) => staticMesh.setMaterial(material)).catch((error) => console.error('unable to find material ' + materialPath, error));
@@ -24934,24 +24934,24 @@ class Source2ModelLoader {
         }
     }
     async _loadExternalMeshes(group, vmdl, model, repository) {
-        let callback = (mesh, lodGroupMask, meshIndex, meshGroupMask) => {
+        const callback = (mesh, lodGroupMask, meshIndex, meshGroupMask) => {
             //TODO: only load highest LOD
             this.#loadMesh(repository, model, group, mesh.getBlockByType('DATA'), mesh.getBlockByType('VBIB'), lodGroupMask, vmdl, meshIndex, meshGroupMask);
         };
         await this.loadMeshes(vmdl, callback);
     }
     async loadMeshes(vmdl, callback) {
-        let promises = new Set();
-        let m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
-        let m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
-        let m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
+        const promises = new Set();
+        const m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
+        const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
+        const m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
         if (m_refMeshes && m_refLODGroupMasks) {
             for (let meshIndex = 0; meshIndex < m_refMeshes.length; meshIndex++) { //TODOv3
-                let meshName = m_refMeshes[meshIndex];
-                let lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
-                let meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
+                const meshName = m_refMeshes[meshIndex];
+                const lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
+                const meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
                 if (meshName) {
-                    let promise = MeshManager.getMesh(vmdl.repository, meshName);
+                    const promise = MeshManager.getMesh(vmdl.repository, meshName);
                     promises.add(promise);
                     promise.then((mesh) => {
                         callback(mesh, lodGroupMask, meshIndex, meshGroupMask);
@@ -25018,7 +25018,7 @@ class Source2ModelManager {
     static async createInstance(repository, fileName, dynamic) {
         if (!repository) {
             //try to get repository from filename
-            for (let repo in this.#modelListPerRepository) {
+            for (const repo in this.#modelListPerRepository) {
                 if (fileName.startsWith(repo)) {
                     repository = repo;
                     fileName = fileName.replace(repo, '');
@@ -25026,9 +25026,9 @@ class Source2ModelManager {
                 }
             }
         }
-        let model = await this.#createModel(repository, fileName);
+        const model = await this.#createModel(repository, fileName);
         if (model) {
-            let instance = model.createInstance(dynamic);
+            const instance = model.createInstance(dynamic);
             return instance;
         }
         return null;
@@ -25041,8 +25041,8 @@ class Source2ModelManager {
     }
     static async getModelList() {
         const repoList = [];
-        let modelListPerRepository = this.#modelListPerRepository;
-        for (let repositoryName in modelListPerRepository) {
+        const modelListPerRepository = this.#modelListPerRepository;
+        for (const repositoryName in modelListPerRepository) {
             let repo = modelListPerRepository[repositoryName];
             if (repo === null) {
                 //let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable
@@ -25073,7 +25073,7 @@ class Source2ParticleManagerClass {
         });
     }
     async #getVpcf(repository, vpcfPath) {
-        let fullPath = repository + vpcfPath;
+        const fullPath = repository + vpcfPath;
         let vpcf = this.#vpcfs[fullPath];
         if (vpcf === undefined) {
             vpcf = await getLoader('Source2ParticleLoader').load(repository, vpcfPath);
@@ -25084,7 +25084,7 @@ class Source2ParticleManagerClass {
     async getSystem(repository, vpcfPath, snapshotModifiers) {
         vpcfPath = vpcfPath.replace(/.vpcf_c/, '').replace(/.vpcf/, '');
         vpcfPath = vpcfPath + '.vpcf_c';
-        let vpcf = await this.#getVpcf(repository, vpcfPath);
+        const vpcf = await this.#getVpcf(repository, vpcfPath);
         if (vpcf) {
             return getLoader('Source2ParticleLoader').getSystem(repository, vpcf, snapshotModifiers);
         }
@@ -25093,7 +25093,7 @@ class Source2ParticleManagerClass {
         if (elapsedTime) {
             elapsedTime *= this.speed;
             elapsedTime = Math.min(elapsedTime, 0.1);
-            for (let system of this.activeSystemList.values()) {
+            for (const system of this.activeSystemList.values()) {
                 if (system.parentSystem === undefined) {
                     system.step(elapsedTime);
                 }
@@ -25111,7 +25111,7 @@ class Source2ParticleManagerClass {
     }
     async getSystemList() {
         const repoList = [];
-        for (let repoName in this.#fileList) {
+        for (const repoName in this.#fileList) {
             if (this.#fileList[repoName]) {
                 continue;
             }
@@ -25382,7 +25382,7 @@ class SceneExplorerEntity extends HTMLElement {
         switch (detail.name) {
             case 'visible':
                 this.#updateEntityVisibility(entity);
-                for (let child of entity.children) {
+                for (const child of entity.children) {
                     this.#updateEntityVisibility(child);
                 }
                 break;
@@ -25396,13 +25396,13 @@ class SceneExplorerEntity extends HTMLElement {
         //console.log('deleted entity', detail.entity);
     }
     static #updateEntity(entity) {
-        let entityElement = _a$1.#entitiesHTML.get(entity);
+        const entityElement = _a$1.#entitiesHTML.get(entity);
         if (entityElement) {
             entityElement.#update();
         }
     }
     static #expandEntityChilds(entity) {
-        let entityElement = _a$1.#entitiesHTML.get(entity);
+        const entityElement = _a$1.#entitiesHTML.get(entity);
         if (entityElement) {
             entityElement.#expandChilds();
         }
@@ -25453,7 +25453,7 @@ class SceneExplorerEntity extends HTMLElement {
         if (!entity) {
             return;
         }
-        for (let child of entity.children) {
+        for (const child of entity.children) {
             const childHtml = _a$1.getEntityElement(child);
             if (childHtml) {
                 this.#htmlChilds.append(childHtml);
@@ -25492,7 +25492,7 @@ class SceneExplorerEntity extends HTMLElement {
             return;
         }
         this.#htmlInputDataList.innerText = '';
-        for (let value of animList) {
+        for (const value of animList) {
             createElement('option', {
                 innerText: value,
                 parent: this.#htmlInputDataList,
@@ -25543,7 +25543,7 @@ if (window.customElements) {
 }
 
 function FormatArray(array) {
-    let arr = [];
+    const arr = [];
     array.forEach((element) => arr.push(element.toFixed(2)));
     return arr.join(' ');
 }
@@ -25606,8 +25606,8 @@ class SceneExplorer {
         SceneExplorerEntity.setExplorer(this);
         this.#manipulator = new Manipulator({ visible: false });
         new IntersectionObserver((entries, observer) => {
-            let isVisible = this.#isVisible;
-            for (let e of entries) {
+            const isVisible = this.#isVisible;
+            for (const e of entries) {
                 this.#isVisible = e.isIntersecting;
             }
             if (this.#isVisible && (this.#isVisible != isVisible)) {
@@ -25836,8 +25836,8 @@ class SceneExplorer {
         this.#populateTypeFilter();
     }
     #populateTypeFilter() {
-        for (let type of ENTITIES) {
-            let option = createElement('option', { innerText: type, value: type });
+        for (const type of ENTITIES) {
+            const option = createElement('option', { innerText: type, value: type });
             this.#htmlTypeFilter.append(option);
         }
     }
@@ -25848,9 +25848,9 @@ class SceneExplorer {
             }
             else {
                 if (this.#scene) {
-                    let allEntities = this.#scene.getChildList();
+                    const allEntities = this.#scene.getChildList();
                     this.#htmlScene.innerText = '';
-                    for (let entity of allEntities) {
+                    for (const entity of allEntities) {
                         if (this.#matchFilter(entity, this.#filterName, this.#filterType)) {
                             const htmlEntityElement = this.#createEntityElement(entity);
                             if (htmlEntityElement) {
@@ -25895,7 +25895,7 @@ class SceneExplorer {
         this.#htmlProperties.append(this.#htmlName, htmlIdLabel, this.#htmlId, htmlPosLabel, this.#htmlPos, htmlQuatLabel, this.#htmlQuat, htmlScaleLabel, this.#htmlScale, htmlWorldPosLabel, this.#htmlWorldPos, htmlWorldQuatLabel, this.#htmlWorldQuat, htmlWorldScaleLabel, this.#htmlWorldScale /*, htmlVisibleLabel, this.#htmlVisible*/);
     }
     #createEntityElement(entity, createExpanded = false) {
-        let htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
+        const htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
         if (createExpanded) {
             htmlEntityElement?.expand();
         }
@@ -26003,8 +26003,8 @@ function initEntitySubmenu() {
             i18n: '#control', submenu: [
                 {
                     i18n: '#rotation_control', f: (entity) => {
-                        let control = new RotationControl();
-                        let parent = entity.parent;
+                        const control = new RotationControl();
+                        const parent = entity.parent;
                         if (parent) {
                             parent.addChild(control);
                         }
@@ -26013,8 +26013,8 @@ function initEntitySubmenu() {
                 },
                 {
                     i18n: '#translation_control', f: (entity) => {
-                        let control = new TranslationControl();
-                        let parent = entity.parent;
+                        const control = new TranslationControl();
+                        const parent = entity.parent;
                         if (parent) {
                             parent.addChild(control);
                         }
@@ -26023,7 +26023,7 @@ function initEntitySubmenu() {
                 },
             ]
         },
-        { i18n: '#helper', f: (entity) => { let helper = getHelper(entity); if (helper) {
+        { i18n: '#helper', f: (entity) => { const helper = getHelper(entity); if (helper) {
                 entity.addChild(helper);
             } } },
         { i18n: '#wireframe', f: (entity) => entity.addChild(new WireframeHelper()) },
@@ -26037,12 +26037,12 @@ function initEntitySubmenu() {
                         new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
                             console.error(modelName);
                             //let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
-                            let instance = await Source1ModelManager.createInstance(repository, modelName, true);
+                            const instance = await Source1ModelManager.createInstance(repository, modelName, true);
                             if (!instance) {
                                 return;
                             }
                             (new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
-                            let seq = instance.sourceModel.mdl.getSequenceById(0);
+                            const seq = instance.sourceModel.mdl.getSequenceById(0);
                             if (seq) {
                                 instance.playSequence(seq.name);
                             }
@@ -26053,8 +26053,8 @@ function initEntitySubmenu() {
                     i18n: '#particle_system', f: async (entity) => {
                         show(new SceneExplorer().htmlFileSelector);
                         new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
-                            let systemName = systemPath.split('/');
-                            let sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
+                            const systemName = systemPath.split('/');
+                            const sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
                             sys.start();
                             (new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);
                         });
@@ -26069,7 +26069,7 @@ function initEntitySubmenu() {
                         show(new SceneExplorer().htmlFileSelector);
                         new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
                             console.error(modelName);
-                            let instance = await Source2ModelManager.createInstance(repository, modelName, true);
+                            const instance = await Source2ModelManager.createInstance(repository, modelName, true);
                             (new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
                             /*let seq = instance.sourceModel.mdl.getSequenceById(0);
                             if (seq) {
@@ -26082,8 +26082,8 @@ function initEntitySubmenu() {
                     i18n: '#particle_system', f: async (entity) => {
                         show(new SceneExplorer().htmlFileSelector);
                         new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
-                            let systemName = systemPath.split('/');
-                            let sys = await Source2ParticleManager.getSystem(repository, systemPath);
+                            const systemName = systemPath.split('/');
+                            const sys = await Source2ParticleManager.getSystem(repository, systemPath);
                             sys.name = systemName[systemName.length - 1];
                             sys.start();
                             (new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);
@@ -29391,12 +29391,12 @@ class ShaderEditor extends HTMLElement {
         }
         this.#shadowRoot = this.attachShadow({ mode: 'closed' });
         I18n.observeElement(this.#shadowRoot);
-        let aceScript = options.aceUrl ?? ACE_EDITOR_URI;
+        const aceScript = options.aceUrl ?? ACE_EDITOR_URI;
         this.#initialized = true;
         this.style.cssText = 'display: flex;flex-direction: column;height: 100%;width: 100%;';
         this.#htmlShaderNameSelect = createElement('select');
         this.#htmlShaderNameSelect.addEventListener('input', (event) => {
-            let selectedOption = event.target.selectedOptions[0];
+            const selectedOption = event.target.selectedOptions[0];
             if (selectedOption) {
                 if (selectedOption.getAttribute('data-shader')) {
                     this.editorShaderName = event.target.value;
@@ -29408,7 +29408,7 @@ class ShaderEditor extends HTMLElement {
         });
         this.#htmlShaderRenderMode = createElement('input');
         this.#htmlShaderRenderMode.addEventListener('input', (event) => {
-            let n = Number(event.target.value);
+            const n = Number(event.target.value);
             if (Number.isNaN(n)) {
                 new Graphics().setIncludeCode('RENDER_MODE', '#undef RENDER_MODE');
             }
@@ -29416,18 +29416,18 @@ class ShaderEditor extends HTMLElement {
                 new Graphics().setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
             }
         });
-        let htmlCustomShaderButtons = createElement('div');
+        const htmlCustomShaderButtons = createElement('div');
         if (options.displayCustomShaderButtons) {
-            let htmlButtonSaveCustomShader = createElement('button', { i18n: '#save_custom_shader' });
-            let htmlButtonLoadCustomShader = createElement('button', { i18n: '#load_custom_shader' });
-            let htmlButtonRemoveCustomShader = createElement('button', { i18n: '#remove_custom_shader' });
+            const htmlButtonSaveCustomShader = createElement('button', { i18n: '#save_custom_shader' });
+            const htmlButtonLoadCustomShader = createElement('button', { i18n: '#load_custom_shader' });
+            const htmlButtonRemoveCustomShader = createElement('button', { i18n: '#remove_custom_shader' });
             htmlCustomShaderButtons.append(htmlButtonSaveCustomShader, htmlButtonLoadCustomShader, htmlButtonRemoveCustomShader);
             this.#shadowRoot.append(htmlCustomShaderButtons);
             htmlButtonSaveCustomShader.addEventListener('click', () => this.#saveCustomShader());
             htmlButtonLoadCustomShader.addEventListener('click', () => this.#loadCustomShader());
             htmlButtonRemoveCustomShader.addEventListener('click', () => this.#removeCustomShader());
         }
-        let c = createElement('div', { style: 'flex:1;' });
+        const c = createElement('div', { style: 'flex:1;' });
         {
             hide(this.#htmlShaderRenderMode);
         }
@@ -29465,9 +29465,9 @@ class ShaderEditor extends HTMLElement {
             return;
         }
         this.#htmlShaderNameSelect.innerText = '';
-        let shaderGroup = createElement('optgroup', { i18n: { label: '#shader_editor_shaders', }, parent: this.#htmlShaderNameSelect });
+        const shaderGroup = createElement('optgroup', { i18n: { label: '#shader_editor_shaders', }, parent: this.#htmlShaderNameSelect });
         const shaderList = [...ShaderManager.shaderList].sort();
-        for (let shaderName of shaderList) {
+        for (const shaderName of shaderList) {
             const option = createElement('option', {
                 class: 'shader-editor-shader-list-shader',
                 value: shaderName,
@@ -29479,9 +29479,9 @@ class ShaderEditor extends HTMLElement {
                 option.selected = true;
             }
         }
-        let includeGroup = createElement('optgroup', { i18n: { label: '#shader_editor_includes', }, parent: this.#htmlShaderNameSelect });
+        const includeGroup = createElement('optgroup', { i18n: { label: '#shader_editor_includes', }, parent: this.#htmlShaderNameSelect });
         const includeList = [...getIncludeList()].sort();
-        for (let includeName of includeList) {
+        for (const includeName of includeList) {
             const option = createElement('option', {
                 class: 'shader-editor-shader-list-include',
                 value: includeName,
@@ -29494,7 +29494,7 @@ class ShaderEditor extends HTMLElement {
             }
         }
         if (!this.editorShaderName && !this.editorIncludeName) {
-            let selectedOption = this.#htmlShaderNameSelect.selectedOptions[0];
+            const selectedOption = this.#htmlShaderNameSelect.selectedOptions[0];
             if (selectedOption) {
                 if (selectedOption.getAttribute('data-shader')) {
                     this.editorShaderName = selectedOption.value;
@@ -29572,20 +29572,20 @@ class ShaderEditor extends HTMLElement {
         this.#annotationsDelay = delay;
     }
     #saveCustomShader() {
-        let type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
-        let name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
+        const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
+        const name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
         this.dispatchEvent(new CustomEvent('save-custom-shader', { detail: { type: type, name: name, source: this.#shaderEditor.getValue() } }));
     }
     #loadCustomShader() {
-        let type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
-        let name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
-        let shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
+        const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
+        const name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
+        const shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
         this.dispatchEvent(new CustomEvent('load-custom-shader', { detail: { type: type, name: name, shaderType: shaderType } }));
     }
     #removeCustomShader() {
-        let type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
-        let name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
-        let shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
+        const type = this.#editMode == EDIT_MODE_SHADER ? 'shader' : 'include';
+        const name = this.#editMode == EDIT_MODE_SHADER ? this.editorShaderName : this.editorIncludeName;
+        const shaderType = this.#editMode == EDIT_MODE_SHADER ? this.#shaderType : null;
         this.dispatchEvent(new CustomEvent('remove-custom-shader', { detail: { type: type, name: name, shaderType: shaderType } }));
     }
 }
@@ -29617,7 +29617,7 @@ vec3.create(); //TODO: use IDENTITY_VEC3
 quat.create();
 const tempVec3$k = vec3.create();
 const tempQuat$5 = quat.create();
-let mat$2 = mat4.create();
+const mat$2 = mat4.create();
 class ControlPoint extends Entity {
     isControlPoint = true;
     #parentControlPoint;
@@ -29656,7 +29656,7 @@ class ControlPoint extends Entity {
         return q;
     }
     parentChanged(parent) {
-        let parentModel = this.getParentModel();
+        const parentModel = this.getParentModel();
         this.forEach(entity => {
             if (entity.isControlPoint) {
                 entity.parentModel = parentModel;
@@ -29938,7 +29938,7 @@ class Actor {
     toString(indent) {
         indent = indent || '';
         const subindent = indent + '\t';
-        let arr = [indent + 'Actor ' + this.name];
+        const arr = [indent + 'Actor ' + this.name];
         for (let i = 0; i < this.channels.length; ++i) {
             arr.push(this.channels[i].toString(subindent));
         }
@@ -30015,7 +30015,7 @@ class Channel {
     toString(indent) {
         indent = indent || '';
         const subindent = indent + '\t';
-        let arr = [indent + 'Channel ' + this.name];
+        const arr = [indent + 'Channel ' + this.name];
         for (let i = 0; i < this.events.length; ++i) {
             arr.push(this.events[i].toString(subindent));
         }
@@ -30100,7 +30100,7 @@ class Choreography {
      * toString
      */
     toString(indent = '') {
-        let arr = [];
+        const arr = [];
         for (let i = 0; i < this.#events.length; ++i) {
             arr.push(this.#events[i].toString(indent));
         }
@@ -30196,7 +30196,7 @@ class CurveData {
     }
     getValue(time) {
         let previous = null;
-        for (let current of this.ramp) {
+        for (const current of this.ramp) {
             if (time <= current.time) {
                 if (previous) {
                     return RemapValClamped(time, previous.time, current.time, previous.value, current.value);
@@ -30217,9 +30217,9 @@ class CurveData {
         }
         indent = indent || '';
         const subindent = indent + '\t';
-        let arr = [indent + 'event_ramp'];
+        const arr = [indent + 'event_ramp'];
         for (let i = 0; i < this.ramp.length; ++i) {
-            let rampData = this.ramp[i];
+            const rampData = this.ramp[i];
             arr.push(subindent + rampData.time + ' ' + rampData.value);
         }
         return arr.join('\n');
@@ -30282,11 +30282,11 @@ class FlexAnimationTrack {
     toString(indent) {
         indent = indent || '';
         const subindent = indent + '\t';
-        let arr = [indent + this.controllerName];
+        const arr = [indent + this.controllerName];
         for (let sampleType = 0; sampleType < 2; ++sampleType) {
             const samples = this.samples[sampleType];
             for (let i = 0; i < samples.length; ++i) {
-                let sample = samples[i];
+                const sample = samples[i];
                 arr.push(subindent + sample.toString());
             }
         }
@@ -30346,8 +30346,8 @@ class KvElement {
     }
     toString(linePrefix) {
         linePrefix = linePrefix || '';
-        let s = [linePrefix, '"' /*, this.type, '"\n'*/, linePrefix, '{\n'];
-        for (let i in this) {
+        const s = [linePrefix, '"' /*, this.type, '"\n'*/, linePrefix, '{\n'];
+        for (const i in this) {
             s.push(this.toString(linePrefix + '\t'));
         }
         s.push(linePrefix);
@@ -30441,7 +30441,7 @@ class KvReader {
         this.pushKey();
     }
     popElement() {
-        let a = this.currentElement;
+        const a = this.currentElement;
         this.currentElement = this.elementStack.pop();
         if (!this.currentElement) {
             //this.rootElements.push(a);
@@ -30695,7 +30695,7 @@ class Source1SoundManager {
         }
         let promiseResolve;
         this.#promisePerRepository.set(repositoryName, new Promise(resolve => promiseResolve = resolve));
-        let manifests = this.#manifestsPerRepository.get(repositoryName);
+        const manifests = this.#manifestsPerRepository.get(repositoryName);
         if (manifests) {
             this.#manifestsPerRepository.delete(repositoryName);
             for (const manifest of manifests) {
@@ -30916,7 +30916,7 @@ class Event {
      * Add a flex animation track
      */
     addTrack(controllerName) {
-        let track = new FlexAnimationTrack(this);
+        const track = new FlexAnimationTrack(this);
         track.setFlexControllerName(controllerName);
         this.flexAnimTracks[controllerName] = track;
         return track;
@@ -30927,7 +30927,7 @@ class Event {
     toString(indent) {
         indent = indent || '';
         const subindent = indent + '\t';
-        let arr = [];
+        const arr = [];
         arr.push(indent + 'Event ' + EventType[this.type] + ' ' + this.name);
         arr.push(subindent + 'time ' + this.startTime + ' ' + this.endTime);
         if (this.param1) {
@@ -30945,7 +30945,7 @@ class Event {
         if (this.getType() == EventType.Flexanimation) {
             arr.push(subindent + 'flexanimations');
         }
-        for (let i in this.flexAnimTracks) {
+        for (const i in this.flexAnimTracks) {
             arr.push(this.flexAnimTracks[i].toString(subindent + '\t'));
         }
         if (this.getType() == EventType.Speak) {
@@ -30958,7 +30958,7 @@ class Event {
      * Step
      */
     step(previousTime, currentTime) {
-        let actor = this.getActor();
+        const actor = this.getActor();
         if (actor) {
             actor.frame = currentTime;
         }
@@ -31154,13 +31154,13 @@ class OutWindow {
         this.#streamPos = 0;
     }
     flush() {
-        var size = this.#pos - this.#streamPos;
+        const size = this.#pos - this.#streamPos;
         if (size !== 0) {
             if (this.#stream.writeBytes) {
                 this.#stream.writeBytes(this.#buffer, size);
             }
             else {
-                for (var i = 0; i < size; i++) {
+                for (let i = 0; i < size; i++) {
                     this.#stream.writeByte(this.#buffer[i]);
                 }
             }
@@ -31185,7 +31185,7 @@ class OutWindow {
         }
     }
     copyBlock(distance, len) {
-        var pos = this.#pos - distance - 1;
+        let pos = this.#pos - distance - 1;
         if (pos < 0) {
             pos += this.#windowSize;
         }
@@ -31206,7 +31206,7 @@ class OutWindow {
         }
     }
     getByte(distance) {
-        var pos = this.#pos - distance - 1;
+        let pos = this.#pos - distance - 1;
         if (pos < 0) {
             pos += this.#windowSize;
         }
@@ -31224,7 +31224,7 @@ class RangeDecoder {
         this.#stream = null;
     }
     init() {
-        var i = 5;
+        let i = 5;
         this.#code = 0;
         this.#range = -1;
         while (i--) {
@@ -31232,7 +31232,7 @@ class RangeDecoder {
         }
     }
     decodeDirectBits(numTotalBits) {
-        var result = 0, i = numTotalBits, t;
+        let result = 0, i = numTotalBits, t;
         while (i--) {
             this.#range >>>= 1;
             t = (this.#code - this.#range) >>> 31;
@@ -31246,7 +31246,7 @@ class RangeDecoder {
         return result;
     }
     decodeBit(probs, index) {
-        var prob = probs[index], newBound = (this.#range >>> 11) * prob;
+        const prob = probs[index], newBound = (this.#range >>> 11) * prob;
         if ((this.#code ^ 0x80000000) < (newBound ^ 0x80000000)) {
             this.#range = newBound;
             probs[index] += (2048 - prob) >>> 5;
@@ -31273,7 +31273,7 @@ class LZMA {
         }
     }
     static reverseDecode2(models, startIndex, rangeDecoder, numBitLevels) {
-        var m = 1, symbol = 0, i = 0, bit;
+        let m = 1, symbol = 0, i = 0, bit;
         for (; i < numBitLevels; ++i) {
             bit = rangeDecoder.decodeBit(models, startIndex + m);
             m = (m << 1) | bit;
@@ -31282,7 +31282,7 @@ class LZMA {
         return symbol;
     }
     static decompress(properties, inStream, outStream, outSize) {
-        var decoder = new Decoder();
+        const decoder = new Decoder();
         if (!decoder.setDecoderProperties(properties)) {
             throw Error("Incorrect lzma stream properties");
         }
@@ -31302,14 +31302,14 @@ class BitTreeDecoder {
         LZMA.initBitModels(this.#models, 1 << this.#numBitLevels);
     }
     decode(rangeDecoder) {
-        var m = 1, i = this.#numBitLevels;
+        let m = 1, i = this.#numBitLevels;
         while (i--) {
             m = (m << 1) | rangeDecoder.decodeBit(this.#models, m);
         }
         return m - (1 << this.#numBitLevels);
     }
     reverseDecode(rangeDecoder) {
-        var m = 1, symbol = 0, i = 0, bit;
+        let m = 1, symbol = 0, i = 0, bit;
         for (; i < this.#numBitLevels; ++i) {
             bit = rangeDecoder.decodeBit(this.#models, m);
             m = (m << 1) | bit;
@@ -31331,7 +31331,7 @@ class LenDecoder {
         }
     }
     init() {
-        var i = this.#numPosStates;
+        let i = this.#numPosStates;
         LZMA.initBitModels(this.#choice, 2);
         while (i--) {
             this.#lowCoder[i].init();
@@ -31355,14 +31355,14 @@ class Decoder2 {
         LZMA.initBitModels(this.#decoders, 0x300);
     }
     decodeNormal(rangeDecoder) {
-        var symbol = 1;
+        let symbol = 1;
         do {
             symbol = (symbol << 1) | rangeDecoder.decodeBit(this.#decoders, symbol);
         } while (symbol < 0x100);
         return symbol & 0xff;
     }
     decodeWithMatchByte(rangeDecoder, matchByte) {
-        var symbol = 1, matchBit, bit;
+        let symbol = 1, matchBit, bit;
         do {
             matchBit = (matchByte >> 7) & 1;
             matchByte <<= 1;
@@ -31384,7 +31384,7 @@ class LiteralDecoder {
     #numPosBits;
     #posMask;
     create(numPosBits, numPrevBits) {
-        var i;
+        let i;
         if (this.#coders
             && (this.#numPrevBits === numPrevBits)
             && (this.#numPosBits === numPosBits)) {
@@ -31400,7 +31400,7 @@ class LiteralDecoder {
         }
     }
     init() {
-        var i = 1 << (this.#numPrevBits + this.#numPosBits);
+        let i = 1 << (this.#numPrevBits + this.#numPosBits);
         while (i--) {
             this.#coders[i].init();
         }
@@ -31440,7 +31440,7 @@ class Decoder {
         return true;
     }
     setLcLpPb(lc, lp, pb) {
-        var numPosStates = 1 << pb;
+        const numPosStates = 1 << pb;
         if (lc > 8 || lp > 4 || pb > 4) {
             return false;
         }
@@ -31459,7 +31459,7 @@ class Decoder {
         }
     }
     decodeHeader(inStream) {
-        var properties, lc, lp, pb, uncompressedSize, dictionarySize;
+        let properties, lc, lp, pb, uncompressedSize, dictionarySize;
         if (inStream.size < 13) {
             return false;
         }
@@ -31505,7 +31505,7 @@ class Decoder {
         };
     }
     init() {
-        var i = 4;
+        let i = 4;
         this.#outWindow.init(false);
         LZMA.initBitModels(this.#isMatchDecoders, 192);
         LZMA.initBitModels(this.#isRep0LongDecoders, 192);
@@ -31524,7 +31524,7 @@ class Decoder {
         this.#rangeDecoder.init();
     }
     decodeBody(inStream, outStream, maxSize) {
-        var state = 0, rep0 = 0, rep1 = 0, rep2 = 0, rep3 = 0, nowPos64 = 0, prevByte = 0, posState, decoder2, len, distance, posSlot, numDirectBits;
+        let state = 0, rep0 = 0, rep1 = 0, rep2 = 0, rep3 = 0, nowPos64 = 0, prevByte = 0, posState, decoder2, len, distance, posSlot, numDirectBits;
         this.#rangeDecoder.setStream(inStream);
         this.#outWindow.setStream(outStream);
         this.init();
@@ -31614,7 +31614,7 @@ class Decoder {
         return true;
     }
     setDecoderProperties(properties) {
-        var value, lc, lp, pb, dictionarySize;
+        let value, lc, lp, pb, dictionarySize;
         if (properties.size < 5) {
             return false;
         }
@@ -31749,9 +31749,9 @@ class Choreographies {
                 this.#reader.seek(this.scenesOffset);
                 for (let i = 0; i < this.scenesCount; i++) {
                     const sceneCRC = this.#reader.getUint32();
-                    let doo = this.#reader.getUint32();
-                    let dl = this.#reader.getUint32();
-                    let sso = this.#reader.getUint32();
+                    const doo = this.#reader.getUint32();
+                    const dl = this.#reader.getUint32();
+                    const sso = this.#reader.getUint32();
                     const sceneEntry = { 'do': doo, 'dl': dl, 'sso': sso };
                     this.#sceneEntries.set(sceneCRC, sceneEntry);
                 }
@@ -31952,7 +31952,7 @@ class Choreographies {
     */
     async #loadCurveData(reader) {
         const curveData = new CurveData();
-        let count = await reader.getUint8();
+        const count = await reader.getUint8();
         /*if (count == 3) {
             //	TODO: there is an issue with choreo 'scenes/workshop/player/engineer/low/taunt_jackhammer_rodeo.vcd'
             count is stored as an unsigned char but actual count is 259
@@ -31989,7 +31989,7 @@ class Choreographies {
 }
 const makeCRCTable = function () {
     let c;
-    let crcTable = [];
+    const crcTable = [];
     for (let n = 0; n < 256; n++) {
         c = n;
         for (let k = 0; k < 8; k++) {
@@ -32001,7 +32001,7 @@ const makeCRCTable = function () {
 };
 let CacheCrcTable;
 const crc32 = function (str) {
-    let crcTable = CacheCrcTable ?? (CacheCrcTable = makeCRCTable());
+    const crcTable = CacheCrcTable ?? (CacheCrcTable = makeCRCTable());
     let crc = 0 ^ (-1);
     for (let i = 0; i < str.length; i++) {
         crc = (crc >>> 8) ^ crcTable[(crc ^ str.charCodeAt(i)) & 0xFF];
@@ -32058,19 +32058,19 @@ class ChoreographiesManager {
             return;
         }
         elapsed = elapsed * this.#playbackSpeed;
-        for (let choreography of this.#choreographies) {
+        for (const choreography of this.#choreographies) {
             if (!choreography.step(elapsed)) {
                 this.#choreographies.delete(choreography);
             }
         }
     }
     reset() {
-        for (let choreography of this.#choreographies) {
+        for (const choreography of this.#choreographies) {
             choreography.reset();
         }
     }
     stopAll() {
-        for (let choreography of this.#choreographies) {
+        for (const choreography of this.#choreographies) {
             choreography.stop();
             this.#choreographies.delete(choreography);
         }
@@ -32204,8 +32204,8 @@ class SourceEngineVTXLoader extends SourceBinaryLoader {
         return super.load(repository, path);
     }
     parse(repository, fileName, arrayBuffer) {
-        let vtx = new SourceVtx();
-        let reader = new BinaryReader(arrayBuffer);
+        const vtx = new SourceVtx();
+        const reader = new BinaryReader(arrayBuffer);
         this.#parseHeader(reader, vtx);
         this.#parseBodyParts(reader, vtx);
         return vtx;
@@ -32228,7 +32228,7 @@ class SourceEngineVTXLoader extends SourceBinaryLoader {
         for (let i = 0; i < vtx.numBodyParts; ++i) {
             // seek the start of body part
             reader.seek(vtx.bodyPartOffset + i * BODYPART_HEADER_SIZE);
-            let bodypart = this.#parseBodyPartHeader(reader, vtx);
+            const bodypart = this.#parseBodyPartHeader(reader, vtx);
             if (bodypart) {
                 bodyparts.push(bodypart);
             }
@@ -32422,8 +32422,8 @@ class SourceEngineVVDLoader extends SourceBinaryLoader {
         return super.load(repository, path);
     }
     parse(repository, fileName, arrayBuffer) {
-        let vvd = new SourceVvd();
-        let reader = new BinaryReader(arrayBuffer);
+        const vvd = new SourceVvd();
+        const reader = new BinaryReader(arrayBuffer);
         this.#parseHeader(reader, vvd);
         this.#parseVertices(reader, vvd);
         this.#parseFixups(reader, vvd);
@@ -32894,8 +32894,8 @@ class MdlStudioSeqDesc {
             case (event.event === 0 && event.name == 'AE_CL_CREATE_PARTICLE_EFFECT'):
                 options = event.options.split(' ');
                 //TODOV2
-                let f = async () => {
-                    let sys = await Source1ParticleControler.createSystem(dynamicProp.sourceModel.repository, options[0]);
+                const f = async () => {
+                    const sys = await Source1ParticleControler.createSystem(dynamicProp.sourceModel.repository, options[0]);
                     sys.autoKill = true;
                     sys.start();
                     //console.log(options[0], options[1], options[2]);
@@ -32995,22 +32995,22 @@ class MdlStudioAnim {
      * TODO
      */
     getRot(rot, mdl, bone, frame) {
-        let fromEuler5 = function (out, q, i, j, k, h, parity, repeat, frame) {
-            var M = tempMat4$1; //Dim M(,) As Double = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
-            var Nq;
-            var s;
-            var xs;
-            var ys;
-            var zs;
-            var wx;
-            var wy;
-            var wz;
-            var xx;
-            var xy;
-            var xz;
-            var yy;
-            var yz;
-            var zz;
+        const fromEuler5 = function (out, q, i, j, k, h, parity, repeat, frame) {
+            const M = tempMat4$1; //Dim M(,) As Double = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
+            let Nq;
+            let s;
+            let xs;
+            let ys;
+            let zs;
+            let wx;
+            let wy;
+            let wz;
+            let xx;
+            let xy;
+            let xz;
+            let yy;
+            let yz;
+            let zz;
             Nq = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3];
             if (Nq > 0) {
                 s = 2.0 / Nq;
@@ -33042,7 +33042,7 @@ class MdlStudioAnim {
             M[14] = 1.0;
             return Eul_FromHMatrix(out, M, i, j, k, h, parity, repeat, frame);
         };
-        let fromEuler4 = function (out, q) {
+        const fromEuler4 = function (out, q) {
             fromEuler5(out, q, 0, 1, 2, 0, 'even', 'no', 'S');
             const temp = out[0];
             out[0] = out[2];
@@ -33050,9 +33050,9 @@ class MdlStudioAnim {
             return out;
         };
         var Eul_FromHMatrix = function (out, M, i, j, k, h, parity, repeat, frame) {
-            var ea = tempvec3;
+            const ea = tempvec3;
             if (repeat == 'yes') {
-                var sy = Math.sqrt(M[i * 4 + j] * M[i * 4 + j] + M[i * 4 + k] * M[i * 4 + k]);
+                const sy = Math.sqrt(M[i * 4 + j] * M[i * 4 + j] + M[i * 4 + k] * M[i * 4 + k]);
                 if (sy > 16 * FLT_EPSILON) {
                     ea[0] = Math.atan2(M[i * 4 + j], M[i * 4 + k]);
                     ea[1] = Math.atan2(sy, M[i * 4 + i]);
@@ -33065,7 +33065,7 @@ class MdlStudioAnim {
                 }
             }
             else {
-                var cy = Math.sqrt(M[i * 4 + i] * M[i * 4 + i] + M[j * 4 + i] * M[j * 4 + i]);
+                const cy = Math.sqrt(M[i * 4 + i] * M[i * 4 + i] + M[j * 4 + i] * M[j * 4 + i]);
                 if (cy > 16 * FLT_EPSILON) {
                     ea[0] = Math.atan2(M[k * 4 + j], M[k * 4 + k]);
                     ea[1] = Math.atan2(-M[k * 4 + i], cy);
@@ -33083,7 +33083,7 @@ class MdlStudioAnim {
                 ea[2] = -ea[2];
             }
             if (frame == 'R') {
-                var t = ea[0];
+                const t = ea[0];
                 ea[0] = ea[2];
                 ea[2] = t;
             }
@@ -34175,7 +34175,7 @@ s, //float s,
 boneMask //int boneMask
 ) {
     let i, j; //int			i, j;
-    let seqdesc = pStudioHdr.getSequenceById(sequence); //mstudioseqdesc_t & seqdesc = ((CStudioHdr *)pStudioHdr) -> pSeqdesc(sequence);
+    const seqdesc = pStudioHdr.getSequenceById(sequence); //mstudioseqdesc_t & seqdesc = ((CStudioHdr *)pStudioHdr) -> pSeqdesc(sequence);
     /*
     virtualmodel_t * pVModel = pStudioHdr -> GetVirtualModel();
     const virtualgroup_t * pSeqGroup = NULL;
@@ -34183,8 +34183,8 @@ boneMask //int boneMask
         pSeqGroup = pVModel -> pSeqGroup(sequence);
     }
         */
-    let s2 = s;
-    let s1 = 1.0 - s2;
+    const s2 = s;
+    const s1 = 1.0 - s2;
     for (i = 0; i < pStudioHdr.getBoneCount(); i++) {
         // skip unused bones
         if (!(pStudioHdr.boneFlags(i) & boneMask)) {
@@ -34460,7 +34460,7 @@ class FlexController {
         }
     }
     setAllValues(value) {
-        for (let i in this.controllers) {
+        for (const i in this.controllers) {
             this.setControllerValue(i, value);
         }
     }
@@ -34697,9 +34697,9 @@ class SourceMdl {
         }
         const modelGroup = this.modelGroups[externalId];
         if (modelGroup) {
-            let p = new Promise(async (resolve) => {
-                let mdlLoader = getLoader('SourceEngineMDLLoader');
-                let mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
+            const p = new Promise(async (resolve) => {
+                const mdlLoader = getLoader('SourceEngineMDLLoader');
+                const mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
                 if (mdl) {
                     //this.externalMdlsV2[externalId] = mdl;
                     resolve(mdl);
@@ -34965,9 +34965,9 @@ class SourceMdl {
     */
     getSequences() {
         const list = this.sequences;
-        let animList = [];
+        const animList = [];
         for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
-            let seq = list[seqIndex];
+            const seq = list[seqIndex];
             animList.push(seq.name);
         }
         return animList;
@@ -34976,7 +34976,7 @@ class SourceMdl {
         const list = this.sequences;
         const animList = [];
         for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
-            let seq = list[seqIndex];
+            const seq = list[seqIndex];
             //if ((seq.activity != -1) && (seq.activityName != '')) {
             //if (seq.activityName != '') {
             //if (seq.name == 'run_melee') {
@@ -34996,7 +34996,7 @@ class SourceMdl {
             const section = this.loader._parseAnimSection(this.reader, animDesc, frameIndex); //TODOv3
             //const section = animDesc.animSections[0];
             animDesc.frames = [];
-            let frame = dynamicProp.frameframe; // = dynamicProp.frameframe || Object.create(null);
+            const frame = dynamicProp.frameframe; // = dynamicProp.frameframe || Object.create(null);
             //frame.bones = Object.create(null);
             //for (let frameIndex=0; frameIndex < animDesc.numframes; ++frameIndex)
             {
@@ -35136,7 +35136,7 @@ class Animations {
         return this.#animations[id];
     }
     setWeight(id, weight) {
-        let animation = this.#animations[id];
+        const animation = this.#animations[id];
         if (!animation) {
             return false;
         }
@@ -35175,13 +35175,13 @@ class SourceEngineMaterialManager {
     static getMaterial(repositoryName, fileName, searchPaths) {
         fileName = cleanSource1MaterialName(fileName);
         if (searchPaths) {
-            let promises = [];
-            for (let searchPath of searchPaths) {
+            const promises = [];
+            for (const searchPath of searchPaths) {
                 promises.push(this.#getMaterial(repositoryName, 'materials/' + searchPath + fileName));
             }
-            let promise = new Promise((resolve, reject) => {
+            const promise = new Promise((resolve, reject) => {
                 Promise.allSettled(promises).then((promises) => {
-                    for (let promise of promises) {
+                    for (const promise of promises) {
                         if (promise.status == 'fulfilled') {
                             resolve(promise.value);
                             return;
@@ -35197,11 +35197,11 @@ class SourceEngineMaterialManager {
         }
     }
     static #getMaterial(repositoryName, fileName) {
-        let material = this.#materialList.get(fileName);
+        const material = this.#materialList.get(fileName);
         if (material instanceof Promise) {
-            let promise = new Promise((resolve, reject) => {
+            const promise = new Promise((resolve, reject) => {
                 material.then((material) => {
-                    let newMaterial = material.clone();
+                    const newMaterial = material.clone();
                     this.#materialList2.add(newMaterial);
                     resolve(newMaterial);
                 }).catch((value) => reject(value));
@@ -35210,17 +35210,17 @@ class SourceEngineMaterialManager {
         }
         if (material !== undefined) {
             return new Promise((resolve, reject) => {
-                let newMaterial = material.clone();
+                const newMaterial = material.clone();
                 this.#materialList2.add(newMaterial);
                 resolve(newMaterial);
             });
         }
         else {
-            let promise = new Promise((resolve, reject) => {
-                let vmtLoader = getLoader('SourceEngineVMTLoader');
+            const promise = new Promise((resolve, reject) => {
+                const vmtLoader = getLoader('SourceEngineVMTLoader');
                 vmtLoader.load(repositoryName, fileName).then((material) => {
                     this.#materialList.set(fileName, material);
-                    let newMaterial = material.clone();
+                    const newMaterial = material.clone();
                     this.#materialList2.add(newMaterial);
                     resolve(newMaterial);
                 }).catch((value) => reject(value));
@@ -35230,21 +35230,21 @@ class SourceEngineMaterialManager {
         }
     }
     static async copyMaterial(repositoryName, sourcePath, destPath, searchPaths) {
-        let material = await this.getMaterial(repositoryName, sourcePath, searchPaths);
+        const material = await this.getMaterial(repositoryName, sourcePath, searchPaths);
         this.#materialList.set(destPath, material.clone());
     }
     static addRepository(repositoryPath) {
         this.#fileListPerRepository.set(repositoryPath, null);
     }
     static async getMaterialList() {
-        let repoList = [];
+        const repoList = [];
         for (let [repositoryName, repository] of this.#fileListPerRepository) {
             console.error(repositoryName, repository);
             if (repository == null) {
                 repository = new Promise(async (resolve) => {
                     try {
-                        let manifestUrl = repositoryName + 'materials_manifest.json'; //todo variable
-                        let response = await customFetch(manifestUrl);
+                        const manifestUrl = repositoryName + 'materials_manifest.json'; //todo variable
+                        const response = await customFetch(manifestUrl);
                         resolve(await response.json());
                     }
                     catch (e) {
@@ -36470,7 +36470,7 @@ s, //float s,
 boneMask //int boneMask
 ) {
     let i, j; //int			i, j;
-    let seqdesc = pStudioHdr.getSequenceById(sequence); //mstudioseqdesc_t & seqdesc = ((CStudioHdr *)pStudioHdr) -> pSeqdesc(sequence);
+    const seqdesc = pStudioHdr.getSequenceById(sequence); //mstudioseqdesc_t & seqdesc = ((CStudioHdr *)pStudioHdr) -> pSeqdesc(sequence);
     /*
     virtualmodel_t * pVModel = pStudioHdr -> GetVirtualModel();
     const virtualgroup_t * pSeqGroup = NULL;
@@ -36478,8 +36478,8 @@ boneMask //int boneMask
         pSeqGroup = pVModel -> pSeqGroup(sequence);
     }
         */
-    let s2 = s;
-    let s1 = 1.0 - s2;
+    const s2 = s;
+    const s1 = 1.0 - s2;
     for (i = 0; i < pStudioHdr.getBoneCount(); i++) {
         // skip unused bones
         if (!(pStudioHdr.boneFlags(i) & boneMask)) {
@@ -36796,7 +36796,7 @@ class SourceAnimation {
             //let pbone = modelBones[i];
             //quatRemoveMeTemp[i] = quat.copy(quat.create(), pbone.quaternion);//removeme
             //posRemoveMeTemp[i] = vec3.copy(vec3.create(), pbone.position);
-            let boneIndex = i;
+            const boneIndex = i;
             const bone = modelBones[i];
             vec3.zero(this.boneRot);
             vec3.zero(this.position);
@@ -36818,7 +36818,7 @@ class SourceAnimation {
             bone.lowcasename;
             //const parentMergedBone = bone.parentMergedBone;
             const dynamicPropBones = dynamicProp.skeleton._bones; //dynamicProp.bones;
-            let dynamicPropBone = dynamicPropBones[boneIndex];
+            const dynamicPropBone = dynamicPropBones[boneIndex];
             if (dynamicPropBone === undefined) {
                 //dynamicPropBone = {worldPos:vec3.create(), worldQuat:quat.create()};//TODO: optimize
                 //dynamicPropBones[boneNameLowerCase] = dynamicPropBone;
@@ -36924,7 +36924,7 @@ class Source1ModelInstance extends Entity {
         return super.addChild(this.#skeleton);
     }
     addChild(child) {
-        let ret = super.addChild(child);
+        const ret = super.addChild(child);
         if (child.skeleton) {
             child.skeleton.setParentSkeleton(this.#skeleton);
         }
@@ -36974,8 +36974,8 @@ class Source1ModelInstance extends Entity {
         this.materialsParams['SheenMaskOffsetX'] = offsetX;
         this.materialsParams['SheenMaskOffsetY'] = offsetX; //TODOv3: set y offset
         this.materialsParams['SheenMaskDirection'] = direction;
-        let min = vec3.create();
-        let max = vec3.create();
+        const min = vec3.create();
+        const max = vec3.create();
         this.getBoundsModelSpace(min, max);
         //console.error(min, max);
         scaleX = max[0] - min[0];
@@ -37031,7 +37031,7 @@ class Source1ModelInstance extends Entity {
     }
     playSequence(sequenceName) {
         sequenceName = sequenceName.toLowerCase();
-        let existingSequence = this.sequences[sequenceName];
+        const existingSequence = this.sequences[sequenceName];
         this.sequences = Object.create(null); //TODOv2
         this.sequences[sequenceName] = existingSequence ?? {};
         /*{
@@ -37053,7 +37053,7 @@ class Source1ModelInstance extends Entity {
             this._playSequences(delta * animSpeed * this.animationSpeed);
             this.#skeleton.setBonesMatrix();
         }
-        for (let mesh of this.meshes) {
+        for (const mesh of this.meshes) {
             if (mesh.skeleton) {
                 mesh.skeleton.setBonesMatrix();
             }
@@ -37206,7 +37206,7 @@ class Source1ModelInstance extends Entity {
         await this.#updateMaterials();
     }
     async #updateMaterials() {
-        for (let mesh of this.meshes) {
+        for (const mesh of this.meshes) {
             let material;
             let materialName;
             if (!material) {
@@ -37229,25 +37229,25 @@ class Source1ModelInstance extends Entity {
         }
     }
     #init() {
-        let sourceModel = this.sourceModel;
-        for (let [bodyPartName, bodyPart] of sourceModel.bodyParts) {
+        const sourceModel = this.sourceModel;
+        for (const [bodyPartName, bodyPart] of sourceModel.bodyParts) {
             //let newBodyPart = [];
             //let defaul = undefined;//TODOv3: change variable name;
-            let group = new Entity({ name: bodyPartName });
+            const group = new Entity({ name: bodyPartName });
             this.addChild(group);
             group.serializable = false;
-            for (let modelId in bodyPart) {
-                let model = bodyPart[modelId];
+            for (const modelId in bodyPart) {
+                const model = bodyPart[modelId];
                 if (model) {
-                    let group2 = new Entity();
+                    const group2 = new Entity();
                     group2.properties.set('modelId', modelId);
                     group2.name = `${bodyPartName} ${modelId}`;
                     if (Number(modelId) != 0) {
                         group2.setVisible(false);
                     }
                     group.addChild(group2);
-                    for (let modelMesh of model) {
-                        let geometry = modelMesh.geometry;
+                    for (const modelMesh of model) {
+                        const geometry = modelMesh.geometry;
                         let mesh;
                         if (this.#skeleton) {
                             mesh = new SkeletalMesh(geometry.clone(), defaultMaterial, this.#skeleton);
@@ -37279,16 +37279,16 @@ class Source1ModelInstance extends Entity {
         }
     }
     #initSkeleton() {
-        let bones = this.sourceModel.getBones();
+        const bones = this.sourceModel.getBones();
         if (bones) {
-            for (let bone of bones) {
-                let skeletonBone = this.#skeleton.addBone(bone.boneId, bone.name);
+            for (const bone of bones) {
+                const skeletonBone = this.#skeleton.addBone(bone.boneId, bone.name);
                 skeletonBone._initialQuaternion = quat.copy(quat.create(), bone.quaternion);
                 skeletonBone._initialPosition = vec3.copy(vec3.create(), bone.position);
-                let parentBoneId = bone.parentBone;
+                const parentBoneId = bone.parentBone;
                 skeletonBone.poseToBone = bone.poseToBone;
                 if (parentBoneId >= 0) {
-                    let parentBone = this.#skeleton._bones[parentBoneId];
+                    const parentBone = this.#skeleton._bones[parentBoneId];
                     parentBone.addChild(skeletonBone);
                     //skeletonBone.parent = this.#skeleton._bones[parentBone];
                     if (!skeletonBone.parent) {
@@ -37302,11 +37302,11 @@ class Source1ModelInstance extends Entity {
         }
     }
     #initAttachements() {
-        let attachements = this.sourceModel.getAttachments();
-        let localMat3 = mat3.create(); //todo: optimize
+        const attachements = this.sourceModel.getAttachments();
+        const localMat3 = mat3.create(); //todo: optimize
         if (attachements) {
-            for (let attachement of attachements) {
-                let attachementBone = new Bone({ name: attachement.name });
+            for (const attachement of attachements) {
+                const attachementBone = new Bone({ name: attachement.name });
                 localMat3[0] = attachement.local[0];
                 localMat3[3] = attachement.local[1];
                 localMat3[6] = attachement.local[2];
@@ -37318,7 +37318,7 @@ class Source1ModelInstance extends Entity {
                 localMat3[8] = attachement.local[10];
                 vec3.set(attachementBone._position, attachement.local[3], attachement.local[7], attachement.local[11]);
                 quat.fromMat3(attachementBone._quaternion, localMat3);
-                let bone = this.#skeleton.getBoneById(attachement.localbone);
+                const bone = this.#skeleton.getBoneById(attachement.localbone);
                 bone.addChild(attachementBone);
                 this.#attachements[attachement.lowcasename] = attachementBone;
             }
@@ -37345,7 +37345,7 @@ class Source1ModelInstance extends Entity {
     }
     */
     renderBodyParts(render) {
-        for (let bodyPartName in this.bodyParts) {
+        for (const bodyPartName in this.bodyParts) {
             this.renderBodyPart(bodyPartName, render);
             /*let bodyPart = this.bodyParts[bodyPartName];
             if (bodyPart) {
@@ -37358,7 +37358,7 @@ class Source1ModelInstance extends Entity {
         }
     }
     renderBodyPart(bodyPartName, render) {
-        let bodyPart = this.bodyParts[bodyPartName];
+        const bodyPart = this.bodyParts[bodyPartName];
         if (bodyPart) {
             bodyPart.setVisible(render ? undefined : false);
             /*for (let model of bodyPart) {
@@ -37369,7 +37369,7 @@ class Source1ModelInstance extends Entity {
         }
     }
     resetBodyPartModels() {
-        for (let bodyPartName in this.bodyParts) {
+        for (const bodyPartName in this.bodyParts) {
             this.setBodyPartModel(bodyPartName, 0);
         }
     }
@@ -37380,10 +37380,10 @@ class Source1ModelInstance extends Entity {
         }
     }
     setBodyPartModel(bodyPartName, modelId) {
-        let bodyPart = this.bodyParts[bodyPartName];
+        const bodyPart = this.bodyParts[bodyPartName];
         if (bodyPart) {
             //let id = 0;
-            for (let bodyPartModel of bodyPart.children) {
+            for (const bodyPartModel of bodyPart.children) {
                 //let bodyPartModel = bodyPart.children.get(id);
                 bodyPartModel.setVisible((bodyPartModel.properties.get('modelId') == modelId) ? undefined : false);
                 //++id;
@@ -37402,9 +37402,9 @@ class Source1ModelInstance extends Entity {
     }
     attachSystem(system, attachementName = '', cpIndex = 0, offset) {
         this.addChild(system);
-        let attachement = this.getAttachement(attachementName);
+        const attachement = this.getAttachement(attachementName);
         if (attachement) {
-            let controlPoint = system.getControlPoint(cpIndex);
+            const controlPoint = system.getControlPoint(cpIndex);
             attachement.addChild(controlPoint);
         }
         else {
@@ -37419,8 +37419,8 @@ class Source1ModelInstance extends Entity {
             return;
         }
         this.addChild(system);
-        let controlPoint = system.getControlPoint(0);
-        let bone = this.#skeleton.getBoneByName(boneName);
+        const controlPoint = system.getControlPoint(0);
+        const bone = this.#skeleton.getBoneByName(boneName);
         if (bone) {
             bone.addChild(controlPoint);
         }
@@ -37438,15 +37438,15 @@ class Source1ModelInstance extends Entity {
         return this.#skeleton.getBoneByName(boneName);
     }
     set material(material) {
-        for (let bodyPartName in this.bodyParts) {
-            let bodyPart = this.bodyParts[bodyPartName];
-            let meshes = bodyPart.getChildList('Mesh');
-            for (let mesh of meshes) {
+        for (const bodyPartName in this.bodyParts) {
+            const bodyPart = this.bodyParts[bodyPartName];
+            const meshes = bodyPart.getChildList('Mesh');
+            for (const mesh of meshes) {
                 mesh.setMaterial(material);
             }
         }
-        let subModels = this.getChildList('Source1ModelInstance');
-        for (let subModel of subModels) {
+        const subModels = this.getChildList('Source1ModelInstance');
+        for (const subModel of subModels) {
             if (subModel !== this) {
                 subModel.material = material;
             }
@@ -37454,10 +37454,10 @@ class Source1ModelInstance extends Entity {
     }
     buildContextMenu() {
         //console.error();
-        let skins = this.sourceModel.mdl.getSkinList();
-        let skinMenu = [];
-        for (let skin of skins) {
-            let item = Object.create(null);
+        const skins = this.sourceModel.mdl.getSkinList();
+        const skinMenu = [];
+        for (const skin of skins) {
+            const item = Object.create(null);
             item.name = skin;
             item.f = () => this.skin = skin;
             skinMenu.push(item);
@@ -37467,15 +37467,15 @@ class Source1ModelInstance extends Entity {
             skin: { i18n: '#skin', submenu: skinMenu },
             tint: { i18n: '#tint', f: async (entity) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.tint = tint; }, (tint = entity.tint) => { entity.tint = tint; }) },
             reset_tint: { i18n: '#reset_tint', f: (entity) => entity.tint = undefined, disabled: this.#tint === undefined },
-            animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) {
+            animation: { i18n: '#animation', f: async (entity) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) {
                     entity.playSequence(animation);
                 } } },
-            overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { let material = await new Interaction().getString(0, 0, Object.keys(Material.materialList)); if (material) {
+            overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { const material = await new Interaction().getString(0, 0, Object.keys(Material.materialList)); if (material) {
                     entity.material = new Material.materialList[material];
                 } } },
             Source1ModelInstance_2: null,
             animate: { i18n: '#animate', selected: this.animationSpeed != 0.0, f: () => this.animationSpeed == 0 ? this.animationSpeed = 1 : this.animationSpeed = 0 },
-            frame: { i18n: '#frame', f: () => { let frame = prompt('Frame', String(this.frame)); if (frame) {
+            frame: { i18n: '#frame', f: () => { const frame = prompt('Frame', String(this.frame)); if (frame) {
                     this.animationSpeed = 0;
                     this.frame = Number(frame);
                 } } },
@@ -37487,9 +37487,9 @@ class Source1ModelInstance extends Entity {
         return this;
     }
     getRandomPointOnModel(vec, initialVec, bones) {
-        let hitboxes = this.getHitboxes();
-        let hitbox = hitboxes[getRandomInt(hitboxes.length)];
-        let bone = hitbox.parent; //this.getBoneById(hitbox.boneId);
+        const hitboxes = this.getHitboxes();
+        const hitbox = hitboxes[getRandomInt(hitboxes.length)];
+        const bone = hitbox.parent; //this.getBoneById(hitbox.boneId);
         if (bone) {
             bones.push([bone, 1]);
             vec3RandomBox(vec, hitbox.boundingBoxMin, hitbox.boundingBoxMax);
@@ -37518,7 +37518,7 @@ class Source1ModelInstance extends Entity {
         return quat.clone(this._quaternion);
     }
     static set animSpeed(speed) {
-        let s = Number(speed);
+        const s = Number(speed);
         animSpeed = Number.isNaN(s) ? 1 : s;
     }
     setFlexes(flexes = {}) {
@@ -37531,10 +37531,10 @@ class Source1ModelInstance extends Entity {
     }
     #refreshFlexes() {
         this.sourceModel.mdl.runFlexesRules(this.#flexParameters, this.#flexesWeight);
-        for (let mesh of this.meshes) {
+        for (const mesh of this.meshes) {
             if (mesh && mesh.geometry) {
-                let attribute = mesh.geometry.getAttribute('aVertexPosition');
-                let newAttribute = attribute.clone();
+                const attribute = mesh.geometry.getAttribute('aVertexPosition');
+                const newAttribute = attribute.clone();
                 mesh.geometry.setAttribute('aVertexPosition', newAttribute);
                 const sourceModelMesh = mesh.properties.get('sourceModelMesh');
                 this.#updateArray(newAttribute._array, sourceModelMesh.flexes, sourceModelMesh.vertexoffset);
@@ -37542,7 +37542,7 @@ class Source1ModelInstance extends Entity {
         }
     }
     #updateArray(vertexPositionArray, flexes, vertexoffset) {
-        let flexesWeight = this.#flexesWeight;
+        const flexesWeight = this.#flexesWeight;
         if (flexes && flexes.length) {
             for (let flexIndex = 0; flexIndex < flexes.length; ++flexIndex) {
                 const flex = flexes[flexIndex];
@@ -37565,7 +37565,7 @@ class Source1ModelInstance extends Entity {
                         vertAnim.flNDelta;
                         //const vertexIndex = vertAnim.index * 3;
                         //const vertexIndexArray = this.verticesPositionToto[vertAnim.index];
-                        let vertexIndex = (vertexoffset + vertAnim.index) * 3;
+                        const vertexIndex = (vertexoffset + vertAnim.index) * 3;
                         vertexPositionArray[vertexIndex + 0] += flDelta[0] * w;
                         vertexPositionArray[vertexIndex + 1] += flDelta[1] * w;
                         vertexPositionArray[vertexIndex + 2] += flDelta[2] * w;
@@ -37594,18 +37594,18 @@ class Source1ModelInstance extends Entity {
         }
     }
     async playDefaultAnim() {
-        let animList = await this.sourceModel.mdl.getAnimList();
+        const animList = await this.sourceModel.mdl.getAnimList();
         if (animList && animList.size > 0) {
             this.playSequence(animList.keys().next().value);
         }
     }
     getHitboxes() {
-        let mdlHitboxSets = this.sourceModel.mdl.hitboxSets;
-        let hitboxes = [];
+        const mdlHitboxSets = this.sourceModel.mdl.hitboxSets;
+        const hitboxes = [];
         if (mdlHitboxSets) {
-            for (let mdlHitboxSet of mdlHitboxSets) {
-                let mdlHitboxes = mdlHitboxSet.hitboxes;
-                for (let mdlHitbox of mdlHitboxes) {
+            for (const mdlHitboxSet of mdlHitboxSets) {
+                const mdlHitboxes = mdlHitboxSet.hitboxes;
+                for (const mdlHitbox of mdlHitboxes) {
                     hitboxes.push(new Hitbox(mdlHitbox.name, mdlHitbox.bbmin, mdlHitbox.bbmax, this.getBoneById(mdlHitbox.boneId)));
                 }
             }
@@ -37614,7 +37614,7 @@ class Source1ModelInstance extends Entity {
     }
     replaceMaterial(material, recursive = true) {
         super.replaceMaterial(material, recursive);
-        for (let mesh of this.meshes) {
+        for (const mesh of this.meshes) {
             mesh.material = material;
         }
     }
@@ -37626,7 +37626,7 @@ class Source1ModelInstance extends Entity {
         return this.sourceModel.mdl.getAnimList();
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.skin = this.skin;
         json.repository = this.sourceModel.repository;
         json.filename = this.sourceModel.fileName;
@@ -37637,7 +37637,7 @@ class Source1ModelInstance extends Entity {
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
-        let entity = await Source1ModelManager.createInstance(json.repository, json.filename, false /*dynamic*/, true);
+        const entity = await Source1ModelManager.createInstance(json.repository, json.filename, false /*dynamic*/, true);
         loadedPromise.then(() => {
             if (json.dynamic) {
                 if (json.skeletonid) {
@@ -37717,7 +37717,7 @@ class SourceModel {
         //this.geometries = new Set();
     }
     addGeometry(mesh, geometry, bodyPartName, bodyPartModelId) {
-        let modelMesh = new SourceModelMesh(mesh, geometry);
+        const modelMesh = new SourceModelMesh(mesh, geometry);
         if (bodyPartName !== undefined) {
             let bodyPart = this.bodyParts.get(bodyPartName);
             if (bodyPart === undefined) {
@@ -37843,13 +37843,13 @@ class SourceModelMesh {
 
 class ModelLoader {
     load(repositoryName, fileName) {
-        let promise = new Promise(async (resolve) => {
+        const promise = new Promise(async (resolve) => {
             fileName = fileName.toLowerCase().replace(/.mdl$/, '');
             // First load mdl. We need the mdl version to load the vtx
-            let mdlLoader = getLoader('SourceEngineMDLLoader');
+            const mdlLoader = getLoader('SourceEngineMDLLoader');
             const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
-            let vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
-            let vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
+            const vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
+            const vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
             Promise.all([vvdPromise, vtxPromise]).then(([vvd, vtx]) => {
                 if (vvd && vtx) {
                     this.#fileLoaded(resolve, repositoryName, fileName, mdl, vvd, vtx);
@@ -37859,7 +37859,7 @@ class ModelLoader {
         return promise;
     }
     #fileLoaded(resolve, repositoryName, fileName, mdl, vvd, vtx) {
-        let requiredLod = 0;
+        const requiredLod = 0;
         const vertices = [];
         const normals = [];
         const tangents = [];
@@ -37872,8 +37872,8 @@ class ModelLoader {
             resolve(null);
             return;
         }
-        let newSourceModel = new SourceModel(repositoryName, fileName, mdl, vvd, vtx);
-        for (let i of vertexArray) {
+        const newSourceModel = new SourceModel(repositoryName, fileName, mdl, vvd, vtx);
+        for (const i of vertexArray) {
             vertices.push(...i.m_vecPosition);
             normals.push(...i.m_vecNormal);
             tangents.push(...i.m_vecTangent);
@@ -37881,12 +37881,12 @@ class ModelLoader {
             boneWeights.push(...i.m_BoneWeights.weight);
             boneIds.push(...i.m_BoneWeights.bone);
         }
-        let vertexPosition = new Float32BufferAttribute(vertices, 3);
-        let vertexNormal = new Float32BufferAttribute(normals, 3);
-        let vertexTangent = new Float32BufferAttribute(tangents, 4);
-        let textureCoord = new Float32BufferAttribute(uvs, 2);
-        let vertexWeights = new Float32BufferAttribute(boneWeights, 3);
-        let vertexBones = new Float32BufferAttribute(boneIds, 3);
+        const vertexPosition = new Float32BufferAttribute(vertices, 3);
+        const vertexNormal = new Float32BufferAttribute(normals, 3);
+        const vertexTangent = new Float32BufferAttribute(tangents, 4);
+        const textureCoord = new Float32BufferAttribute(uvs, 2);
+        const vertexWeights = new Float32BufferAttribute(boneWeights, 3);
+        const vertexBones = new Float32BufferAttribute(boneIds, 3);
         //let material = new MeshBasicMaterial({map: 'texture'});//removeme
         //console.info('Vertex array :')
         //console.info(vertexArray);
@@ -37898,7 +37898,7 @@ class ModelLoader {
         let modelsname = '';
         // Iterate body parts
         for (let bodypartIndex = 0; bodypartIndex < bodyparts.length; ++bodypartIndex) {
-            let bodyPart = /*bodyparts[bodypartIndex];//*/ mdl.getBodyPart(bodypartIndex);
+            const bodyPart = /*bodyparts[bodypartIndex];//*/ mdl.getBodyPart(bodypartIndex);
             if (bodyPart) {
                 bodypart = bodyparts[bodypartIndex];
                 // iterate models
@@ -37906,19 +37906,19 @@ class ModelLoader {
                     model = bodypart.models[modelIndex];
                     modelsname += bodyPart.models[modelIndex].name + ', '; //TODOV2
                     lod = model.lods[requiredLod];
-                    let modelTest = bodyPart.models[modelIndex];
+                    const modelTest = bodyPart.models[modelIndex];
                     // iterate meshes
                     for (let meshIndex = 0; meshIndex < lod.meshes.length; ++meshIndex) {
-                        let mesh = lod.meshes[meshIndex];
-                        let msh = modelTest.meshArray[meshIndex]; //new SourceModel.MeshTest();
+                        const mesh = lod.meshes[meshIndex];
+                        const msh = modelTest.meshArray[meshIndex]; //new SourceModel.MeshTest();
                         if (!msh.initialized) {
                             //msh.setMaterialId(bodyPart.models[modelIndex].meshArray[meshIndex].material);
-                            let vertexOffset = cumulateVertexOffset + bodyPart.models[modelIndex].meshArray[meshIndex].vertexoffset; //TODO
+                            const vertexOffset = cumulateVertexOffset + bodyPart.models[modelIndex].meshArray[meshIndex].vertexoffset; //TODO
                             const indices = [];
                             for (let stripgroupIndex = 0; stripgroupIndex < mesh.stripGroups.length; ++stripgroupIndex) {
                                 stripgroup = mesh.stripGroups[stripgroupIndex];
-                                let indexArray = stripgroup.indexes;
-                                let stripVertexArray = stripgroup.vertices;
+                                const indexArray = stripgroup.indexes;
+                                const stripVertexArray = stripgroup.vertices;
                                 //if (this.drawBodyPart[bodyPartName])
                                 for (let k = 0; k < indexArray.length; ++k) {
                                     const j = indexArray[k];
@@ -37931,11 +37931,11 @@ class ModelLoader {
                             } // stripgroup
                             // reverse triangles from CW to CCW
                             for (let i = 0, l = indices.length; i < l; i += 3) { //TODOv3: optimize
-                                let a = indices[i + 1];
+                                const a = indices[i + 1];
                                 indices[i + 1] = indices[i + 2];
                                 indices[i + 2] = a;
                             }
-                            let geometry = new BufferGeometry();
+                            const geometry = new BufferGeometry();
                             geometry.setIndex(new Uint32BufferAttribute(indices, 1));
                             geometry.setAttribute('aVertexPosition', vertexPosition);
                             geometry.setAttribute('aVertexNormal', vertexNormal);
@@ -38629,7 +38629,7 @@ class SourceEngineBspTree {
         const lumpLeafFaces = map.getLumpData(LUMP_LEAFFACES);
         const lumpVisibility = map.getLumpData(LUMP_VISIBILITY);
         if (lumpModels && lumpPlanes && lumpNodes && lumpLeafs && lumpLeafFaces && lumpVisibility) {
-            let model = lumpModels[0];
+            const model = lumpModels[0];
             let index = model.headnode;
             let node = null;
             let plane = null;
@@ -38658,10 +38658,10 @@ class SourceEngineBspTree {
         if (fromLeafId == toLeafId) {
             return true;
         } // Leaves are always visible from themselves
-        let lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
+        const lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
         if (lumpLeafs && this.visibilityClusters) {
-            let fromLeaf = lumpLeafs[fromLeafId];
-            let toLeaf = lumpLeafs[toLeafId];
+            const fromLeaf = lumpLeafs[fromLeafId];
+            const toLeaf = lumpLeafs[toLeafId];
             if (fromLeaf.cluster == -1 || toLeaf.cluster != -1) {
                 return false;
             }
@@ -38670,9 +38670,9 @@ class SourceEngineBspTree {
         return false;
     }
     isVisLeaf(leafId) {
-        let lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
+        const lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
         if (lumpLeafs) {
-            let lumpLeaf = lumpLeafs[leafId];
+            const lumpLeaf = lumpLeafs[leafId];
             if (lumpLeaf) {
                 return lumpLeaf.cluster != -1;
             }
@@ -38703,8 +38703,8 @@ function ParseVector2(out, str) {
     return null;
 }
 function parseLightColorIntensity(value, light, intensityMultiplier = 1) {
-    let colorValue = vec3.create();
-    let arrayValue = value.split(' ');
+    const colorValue = vec3.create();
+    const arrayValue = value.split(' ');
     colorValue[0] = Math.pow(arrayValue[0] / 255.0, 2.2);
     colorValue[1] = Math.pow(arrayValue[1] / 255.0, 2.2);
     colorValue[2] = Math.pow(arrayValue[2] / 255.0, 2.2);
@@ -38779,9 +38779,9 @@ class MapEntity extends Entity {
             if (kvElement.spawnflags) {
                 this.f = kvElement.spawnflags * 1;
             }
-            let entityParams = Object.keys(kvElement);
+            const entityParams = Object.keys(kvElement);
             for (let i = 0, l = entityParams.length; i < l; i++) {
-                let key = entityParams[i];
+                const key = entityParams[i];
                 this.setKeyValue(key, kvElement[key]);
             }
         }
@@ -38812,7 +38812,7 @@ class MapEntity extends Entity {
         return this.keys.get(key);
     }
     addOutput(outputName, outputValue) {
-        let output = new MapEntityConnection(outputName);
+        const output = new MapEntityConnection(outputName);
         this.m.addConnection(output);
         this.outputs.push(output);
         output.fromString(outputValue);
@@ -38862,7 +38862,7 @@ class MapEntity extends Entity {
     update(map, delta) {
         this.m_flLocalTime += delta;
         if (this.parentName) {
-            let parent = map.getEntityByTargetName(this.parentName);
+            const parent = map.getEntityByTargetName(this.parentName);
             if (parent) {
                 this.setParent(parent);
                 delete this.parentName;
@@ -38872,7 +38872,7 @@ class MapEntity extends Entity {
     }
     setParent(parent) {
         //void CBaseEntity::SetParent(CBaseEntity *pParentEntity, int iAttachment)
-        let oldParent = this.parent;
+        const oldParent = this.parent;
         this.parent = parent;
         if (parent == this) {
             this.parent = null;
@@ -38910,10 +38910,10 @@ class MapEntity extends Entity {
         return this.m_flLocalTime;
     }
     fireOutput(outputName) {
-        let outputs = this.outputs;
-        let result = [];
+        const outputs = this.outputs;
+        const result = [];
         for (let i = 0, l = outputs.length; i < l; i++) {
-            let output = outputs[i];
+            const output = outputs[i];
             if (outputName == output.outputName) {
                 //result.push(connection);
                 output.fire(this.m);
@@ -38938,7 +38938,7 @@ class MapEntityConnection {
         this.p = null;
     }
     fromString(stringDatas) {
-        let parameters = stringDatas.split(',');
+        const parameters = stringDatas.split(',');
         if (parameters && parameters.length == 5) {
             this.p = parameters;
         }
@@ -38947,37 +38947,37 @@ class MapEntityConnection {
         return this.n;
     }
     getTargetName() {
-        let parameters = this.p;
+        const parameters = this.p;
         if (parameters) {
             return parameters[0];
         }
     }
     getTargetInput() {
-        let parameters = this.p;
+        const parameters = this.p;
         if (parameters) {
             return parameters[1];
         }
     }
     getTargetParameter() {
-        let parameters = this.p;
+        const parameters = this.p;
         if (parameters) {
             return parameters[2];
         }
     }
     getDelay() {
-        let parameters = this.p;
+        const parameters = this.p;
         if (parameters) {
             return parameters[3];
         }
     }
     getFireOnlyOnce() {
-        let parameters = this.p;
+        const parameters = this.p;
         if (parameters) {
             return parameters[4];
         }
     }
     fire(map) {
-        let parameters = this.p;
+        const parameters = this.p;
         if (parameters) {
             map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
         }
@@ -39066,11 +39066,11 @@ class SourceBSP extends World {
     _createStaticProps() {
         const lumpGameDatas = this.getLumpData(LUMP_GAME_LUMP);
         if (lumpGameDatas && lumpGameDatas.prps && lumpGameDatas.prps.lumpData) {
-            let propsStatic = lumpGameDatas.prps.lumpData;
-            let propNames = propsStatic.name;
-            let props = propsStatic.props;
+            const propsStatic = lumpGameDatas.prps.lumpData;
+            const propNames = propsStatic.name;
+            const props = propsStatic.props;
             const tempQuaternion = quat.create();
-            for (let prop of props) {
+            for (const prop of props) {
                 Source1ModelManager.createInstance(this.repository, propNames[prop.propType], true).then((model) => {
                     this.staticProps.addChild(model);
                     model.position = prop.position;
@@ -39083,9 +39083,9 @@ class SourceBSP extends World {
     createDynamicEntities(kv) {
         const list = Object.keys(kv.rootElements);
         for (let i = 0; i < list.length; ++i) {
-            let entity = kv.rootElements[list[i]];
+            const entity = kv.rootElements[list[i]];
             if (entity.classname) {
-                let e = MapEntities.createEntity(this, entity.classname);
+                const e = MapEntities.createEntity(this, entity.classname);
                 if (e) {
                     e.setKeyValues(entity);
                     this.addEntity(e);
@@ -39131,9 +39131,9 @@ class SourceBSP extends World {
         const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
         const lumpEdges = this.getLumpData(LUMP_EDGES);
         const lumpVertices = this.getLumpData(LUMP_VERTEXES);
-        let texInfo = lumpTexInfo[face.texinfo];
-        let texData = lumpTexData[texInfo.texdata];
-        let texName = lumpTexDataStringData[texData.nameStringTableID];
+        const texInfo = lumpTexInfo[face.texinfo];
+        const texData = lumpTexData[texInfo.texdata];
+        const texName = lumpTexDataStringData[texData.nameStringTableID];
         //console.log(face);
         let buffer = this.#geometries[texName];
         if (!buffer) {
@@ -39144,11 +39144,11 @@ class SourceBSP extends World {
             }; //TODOv3
             this.#geometries[texName] = buffer;
         }
-        let textureVecsU = texInfo.textureVecs[0];
-        let textureVecsV = texInfo.textureVecs[1];
+        const textureVecsU = texInfo.textureVecs[0];
+        const textureVecsV = texInfo.textureVecs[1];
         const firstEdge = face.firstedge;
         const lastEdge = firstEdge + face.numedges;
-        let firstIndice = buffer.lastIndice;
+        const firstIndice = buffer.lastIndice;
         for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
             const surfedge = lumpSurfEdges[surfEdgeIndex];
             const edge = lumpEdges[Math.abs(surfedge)]; //TODOv3 ? why abs
@@ -39200,9 +39200,9 @@ class SourceBSP extends World {
         const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
         const lumpEdges = this.getLumpData(LUMP_EDGES);
         const lumpVertices = this.getLumpData(LUMP_VERTEXES);
-        let texInfo = lumpTexInfo[face.texinfo];
-        let texData = lumpTexData[texInfo.texdata];
-        let texName = lumpTexDataStringData[texData.nameStringTableID];
+        const texInfo = lumpTexInfo[face.texinfo];
+        const texData = lumpTexData[texInfo.texdata];
+        const texName = lumpTexDataStringData[texData.nameStringTableID];
         //console.log(face);
         let buffer = this.#geometries[texName];
         if (!buffer) {
@@ -39213,8 +39213,8 @@ class SourceBSP extends World {
             }; //TODOv3
             this.#geometries[texName] = buffer;
         }
-        let textureVecsU = texInfo.textureVecs[0];
-        let textureVecsV = texInfo.textureVecs[1];
+        const textureVecsU = texInfo.textureVecs[0];
+        const textureVecsV = texInfo.textureVecs[1];
         const firstEdge = face.firstedge;
         const lastEdge = firstEdge + face.numedges;
         const origVertices = [];
@@ -39260,7 +39260,7 @@ class SourceBSP extends World {
         let subdiv = Math.pow(2, dispInfo.power);
         for (let level = 0; level < dispInfo.power; ++level) {
             const squares = Math.pow(2, level);
-            let subdiv2 = subdiv / 2;
+            const subdiv2 = subdiv / 2;
             for (let i = 0; i < squares; ++i) {
                 for (let j = 0; j < squares; ++j) {
                     const iMin = subdiv * i;
@@ -39308,7 +39308,7 @@ class SourceBSP extends World {
         subdiv = Math.pow(2, dispInfo.power);
         for (let i = 0; i < subdiv; ++i) {
             for (let j = 0; j < subdiv; ++j) {
-                let firstIndice = buffer.lastIndice;
+                const firstIndice = buffer.lastIndice;
                 const v1 = tesselateVertices[i][j];
                 const v2 = tesselateVertices[i + 1][j];
                 const v3 = tesselateVertices[i + 1][j + 1];
@@ -39375,8 +39375,8 @@ class SourceBSP extends World {
             /* Init displacement buffer */
             if (lumpDispInfos) {
                 for (let i = 0; i < lumpDispInfos.length; ++i) { //TODO
-                    let dispInfo = lumpDispInfos[i];
-                    let face = lumpFaces[dispInfo.mapFace];
+                    const dispInfo = lumpDispInfos[i];
+                    const face = lumpFaces[dispInfo.mapFace];
                     if (face) {
                         this.initDispGeometry(dispInfo, face);
                     }
@@ -39387,27 +39387,27 @@ class SourceBSP extends World {
                 const firstFace = leaf.firstleafface;
                 const lastFace = leaf.firstleafface + leaf.numleaffaces;
                 for (let faceIndex = firstFace; faceIndex < lastFace; ++faceIndex) {
-                    let face = lumpFaces[lumpLeafFaces[faceIndex]];
+                    const face = lumpFaces[lumpLeafFaces[faceIndex]];
                     this.initFaceGeometry(face);
                 }
             }
         }
-        for (let textureName in this.#geometries) {
-            let geometry = this.#geometries[textureName];
+        for (const textureName in this.#geometries) {
+            const geometry = this.#geometries[textureName];
             if (textureName.toLowerCase().substring(0, 5) == 'tools') { //TODOV3
                 continue;
                 //continue;
             }
-            let bufferGeometry = new BufferGeometry();
-            let vertexPosition = new Float32BufferAttribute(geometry.vertices, 3);
-            let vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1);
-            let textureCoord = new Float32BufferAttribute(geometry.coords, 2);
+            const bufferGeometry = new BufferGeometry();
+            const vertexPosition = new Float32BufferAttribute(geometry.vertices, 3);
+            const vertexAlpha = new Float32BufferAttribute(geometry.alphas, 1);
+            const textureCoord = new Float32BufferAttribute(geometry.coords, 2);
             bufferGeometry.setIndex(new Uint16BufferAttribute(geometry.indices, 1));
             bufferGeometry.setAttribute('aVertexPosition', vertexPosition);
             bufferGeometry.setAttribute('aVertexAlpha', vertexAlpha);
             bufferGeometry.setAttribute('aTextureCoord', textureCoord);
             bufferGeometry.count = geometry.indices.length;
-            let staticMesh = new Mesh(bufferGeometry, null);
+            const staticMesh = new Mesh(bufferGeometry, null);
             staticMesh.name = textureName;
             SourceEngineMaterialManager.getMaterial(this.repository, textureName).then((material) => staticMesh.setMaterial(material)).catch(() => console.error('unable to find material ' + textureName));
             this.mapFaces.addChild(staticMesh);
@@ -39424,13 +39424,13 @@ class SourceBSP extends World {
         }
     }
     getOBBSize(modelIndex) {
-        let lumpModels = this.getLumpData(LUMP_MODELS);
-        let lumpFaces = this.getLumpData(LUMP_FACES);
-        let lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
-        let lumpEdges = this.getLumpData(LUMP_EDGES);
-        let lumpVertices = this.getLumpData(LUMP_VERTEXES);
+        const lumpModels = this.getLumpData(LUMP_MODELS);
+        const lumpFaces = this.getLumpData(LUMP_FACES);
+        const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
+        const lumpEdges = this.getLumpData(LUMP_EDGES);
+        const lumpVertices = this.getLumpData(LUMP_VERTEXES);
         if (lumpModels && lumpFaces && lumpSurfEdges && lumpEdges && lumpVertices) {
-            let model = lumpModels[modelIndex];
+            const model = lumpModels[modelIndex];
             if (model) {
                 if (model.numfaces == 0) {
                     return vec3.create();
@@ -39445,20 +39445,20 @@ class SourceBSP extends World {
                         }
                     }
                 }
-                let min = vec3.fromValues(Infinity, Infinity, Infinity);
-                let max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
-                let firstFace = model.firstface;
-                let lastFace = firstFace + model.numfaces;
+                const min = vec3.fromValues(Infinity, Infinity, Infinity);
+                const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
+                const firstFace = model.firstface;
+                const lastFace = firstFace + model.numfaces;
                 for (let j = firstFace; j < lastFace; j++) {
-                    let face = lumpFaces[j];
+                    const face = lumpFaces[j];
                     if (face) {
-                        let firstEdge = face.firstedge;
-                        let lastEdge = firstEdge + face.numedges;
+                        const firstEdge = face.firstedge;
+                        const lastEdge = firstEdge + face.numedges;
                         for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; surfEdgeIndex++) {
-                            let surfedge = lumpSurfEdges[surfEdgeIndex];
-                            let edge = lumpEdges[Math.abs(surfedge)];
-                            let vertice1 = lumpVertices[edge.f];
-                            let vertice2 = lumpVertices[edge.s];
+                            const surfedge = lumpSurfEdges[surfEdgeIndex];
+                            const edge = lumpEdges[Math.abs(surfedge)];
+                            const vertice1 = lumpVertices[edge.f];
+                            const vertice2 = lumpVertices[edge.s];
                             compare(vertice1);
                             compare(vertice2);
                         }
@@ -39622,8 +39622,8 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
         return super.load(repository, path);
     }
     parse(repository, fileName, arrayBuffer) {
-        let mdl = new SourceMdl(repository);
-        let reader = new BinaryReader(arrayBuffer);
+        const mdl = new SourceMdl(repository);
+        const reader = new BinaryReader(arrayBuffer);
         mdl.reader = reader; //TODOv3//removeme
         mdl.loader = this; //TODOv3//removeme
         this.#parseHeader(reader, mdl);
@@ -39916,7 +39916,7 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
     #parseTextures(reader, mdl) {
         const textures = [];
         for (let i = 0; i < mdl.textureCount; ++i) {
-            let texture = this.#parseTexture(reader, mdl, mdl.textureOffset + i * TEXTURE_STRUCT_SIZE);
+            const texture = this.#parseTexture(reader, mdl, mdl.textureOffset + i * TEXTURE_STRUCT_SIZE);
             texture.name = texture.name;
             textures.push(texture);
         }
@@ -40017,7 +40017,7 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
         }
         numSection = 0;
         for (let i = 0; i < numSection; i++) {
-            let section = this._parseAnimSection(reader, animDesc, i); //TODOv3
+            const section = this._parseAnimSection(reader, animDesc, i); //TODOv3
             animDesc.animSections.push(section);
         }
         animDesc.name = reader.getNullString(nameOffset);
@@ -40158,7 +40158,7 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
         const nameOffset = reader.getInt32() + startOffset;
         const bone = new MdlBone();
         bone.parentBone = reader.getInt32();
-        bone.bonecontroller = new Array();
+        bone.bonecontroller = [];
         for (let i = 0; i < 6; ++i) {
             bone.bonecontroller.push(reader.getInt32());
         }
@@ -40167,7 +40167,7 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
         reader.getVector3(undefined, undefined, bone.rot);
         reader.getVector3(undefined, undefined, bone.posscale);
         reader.getVector3(undefined, undefined, bone.rotscale);
-        let poseToBone = readMatrix3x4(reader);
+        const poseToBone = readMatrix3x4(reader);
         bone.poseToBone = poseToBone;
         bone.initPoseToBone = poseToBone;
         //bone.invPoseToBone = mat4.invert(mat4.create(), bone.poseToBone);
@@ -40193,8 +40193,8 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
             const sectionIndex = Math.floor(frameIndex / animDesc.sectionframes); //TODOv3
             const sectionOffset1 = animDesc.startOffset + animDesc.sectionOffset + sectionIndex * 8; //TODOv2: name
             reader.seek(sectionOffset1);
-            let block = reader.getInt32(); //block;//TODOv2
-            let sectionOffset = reader.getInt32();
+            const block = reader.getInt32(); //block;//TODOv2
+            const sectionOffset = reader.getInt32();
             if (block == 0) {
                 const section = [];
                 let blockOffset = 0;
@@ -40346,7 +40346,7 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
 }
 registerLoader('SourceEngineMDLLoader', SourceEngineMDLLoader);
 function readMatrix3x4(reader) {
-    let matrix = mat4.create();
+    const matrix = mat4.create();
     matrix[0] = reader.getFloat32();
     matrix[4] = reader.getFloat32();
     matrix[8] = reader.getFloat32();
@@ -40362,7 +40362,7 @@ function readMatrix3x4(reader) {
     return matrix;
 }
 function parseHitBoxSets(reader, mdl) {
-    let hitboxSetCount = mdl.hitboxCount;
+    const hitboxSetCount = mdl.hitboxCount;
     let hitboxSetOffset = mdl.hitboxOffset;
     if (hitboxSetCount && hitboxSetOffset) {
         for (let i = 0; i < hitboxSetCount; ++i) {
@@ -40375,7 +40375,7 @@ function parseHitBoxSets(reader, mdl) {
 function parseHitboxSet(reader, mdl, startOffset) {
     const hitboxSet = new MdlStudioHitboxSet();
     const nameOffset = reader.getInt32(startOffset) + startOffset;
-    let hitboxCount = reader.getInt32();
+    const hitboxCount = reader.getInt32();
     let hitboxOffset = reader.getInt32() + startOffset;
     hitboxSet.name = reader.getNullString(nameOffset);
     const hitboxes = [];
@@ -40432,7 +40432,7 @@ class SourceEngineVMTLoaderClass {
     #materials = new Map();
     #extraMaterials = new Map();
     load(repositoryName, fileName) {
-        let promise = new Promise(async (resolve, reject) => {
+        const promise = new Promise(async (resolve, reject) => {
             /*
             const requestCallback = async response => {
                 if (response.ok) {
@@ -40472,7 +40472,7 @@ class SourceEngineVMTLoaderClass {
         this.#loadMaterial(repositoryName, fileName, fileContent).then((value) => resolve(value));
     }
     #loadMaterial(repositoryName, fileName, file /*, repository, texturesDir*/) {
-        let loadMaterialPromise = new Promise((resolve, reject) => {
+        const loadMaterialPromise = new Promise((resolve, reject) => {
             fileName = fileName.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '');
             fileName = fileName.replace(/\\/g, '/').toLowerCase();
             const kv = new KvReader();
@@ -40484,23 +40484,23 @@ class SourceEngineVMTLoaderClass {
             const shaderName = kv.getRootName().toLowerCase();
             let material;
             if (shaderName === 'patch') {
-                let include = vmt['include'];
-                let insert = vmt['insert'];
-                let patchResolve = function (material) {
-                    for (let insertIndex in insert) {
+                const include = vmt['include'];
+                const insert = vmt['insert'];
+                const patchResolve = function (material) {
+                    for (const insertIndex in insert) {
                         material.variables.set(insertIndex, insert[insertIndex]);
                         material.parameters[insertIndex] = insert[insertIndex];
                     }
                     //materialList[fileNameRemoveMe] = material;removeme
                     resolve(material);
                 };
-                let patchReject = function () {
+                const patchReject = function () {
                 };
-                let promise = SourceEngineMaterialManager.getMaterial(repositoryName, include);
+                const promise = SourceEngineMaterialManager.getMaterial(repositoryName, include);
                 promise.then(patchResolve, patchReject);
             }
             else {
-                let materialClass = this.#materials.get(shaderName);
+                const materialClass = this.#materials.get(shaderName);
                 if (materialClass !== undefined) {
                     vmt.repository = repositoryName;
                     vmt.filename = fileName;
@@ -41092,9 +41092,9 @@ class SourceEngineParticleSystem extends Entity {
     radius = 1;
     attachementBone = null;
     // List of living particles
-    livingParticles = new Array();
+    livingParticles = [];
     // List of dead but reusable particles
-    poolParticles = new Array();
+    poolParticles = [];
     currentOrientation = quat.create();
     prevOrientation = quat.create();
     emitters = {}; //new Array();//todo transform to map
@@ -41202,18 +41202,18 @@ class SourceEngineParticleSystem extends Entity {
         }
     }
     #resetEmitters() {
-        for (let i in this.emitters) { //TODOv3
+        for (const i in this.emitters) { //TODOv3
             const emitter = this.emitters[i];
             emitter.reset();
         }
     }
     #resetInitializers() {
-        for (let i in this.initializers) {
+        for (const i in this.initializers) {
             this.initializers[i].reset();
         }
     }
     updateChilds() {
-        for (let i in this.tempChildren) {
+        for (const i in this.tempChildren) {
             const ps = this.pcf?.getSystem(this.tempChildren[i]);
             if (ps) {
                 this.addChildSystem(ps);
@@ -41272,7 +41272,7 @@ class SourceEngineParticleSystem extends Entity {
         }
     }
     #stepEmitters() {
-        for (let i in this.emitters) {
+        for (const i in this.emitters) {
             const emitter = this.emitters[i];
             emitter.doEmit(this.elapsedTime);
         }
@@ -41285,7 +41285,7 @@ class SourceEngineParticleSystem extends Entity {
             const particle = this.livingParticles[i];
             particle.step(this.elapsedTime);
             this.operatorRandomSampleOffset = 0;
-            for (let j in this.operators) {
+            for (const j in this.operators) {
                 const operator = this.operators[j];
                 operator.operateParticle(particle, this.elapsedTime);
                 // break the loop if the particle is dead
@@ -41301,7 +41301,7 @@ class SourceEngineParticleSystem extends Entity {
             }
         }
         if (this.livingParticles.length == 0) {
-            for (let j in this.operators) {
+            for (const j in this.operators) {
                 const operator = this.operators[j];
                 switch (operator.functionName) {
                     case 'set control point positions':
@@ -41329,13 +41329,13 @@ class SourceEngineParticleSystem extends Entity {
         if (Object.keys(this.tempChildren).length) {
             return false;
         }
-        for (let i in this.emitters) {
+        for (const i in this.emitters) {
             const emitter = this.emitters[i];
             if (!emitter.finished()) {
                 return false;
             }
         }
-        for (let child of this.childrenSystems) {
+        for (const child of this.childrenSystems) {
             if ((child.livingParticles.length > 0) || !child.#finished()) {
                 return false;
             }
@@ -41344,7 +41344,7 @@ class SourceEngineParticleSystem extends Entity {
     }
     #stepOperators1() {
         if (this.livingParticles.length == 0) {
-            for (let j in this.operators) {
+            for (const j in this.operators) {
                 const operator = this.operators[j];
                 switch (operator.functionName) {
                     case 'set control point positions':
@@ -41360,7 +41360,7 @@ class SourceEngineParticleSystem extends Entity {
     stepForces() {
         for (let i = 0; i < this.livingParticles.length; ++i) {
             const particle = this.livingParticles[i];
-            for (let force of this.forces.values()) {
+            for (const force of this.forces.values()) {
                 //const force = this.forces[j];
                 force.forceParticle(particle, this.elapsedTime);
             }
@@ -41368,7 +41368,7 @@ class SourceEngineParticleSystem extends Entity {
     }
     stepConstraints(particle) {
         //TODOv3: multiple passes
-        for (let j in this.constraints) {
+        for (const j in this.constraints) {
             const constraint = this.constraints[j];
             constraint.constraintParticle(particle);
         }
@@ -41379,7 +41379,7 @@ class SourceEngineParticleSystem extends Entity {
         }
     }
     #stepChildren(elapsedTime) {
-        for (let j in this.childrenSystems) { //TODOv3
+        for (const j in this.childrenSystems) { //TODOv3
             const child = this.childrenSystems[j];
             child.#step(elapsedTime);
         }
@@ -41413,13 +41413,13 @@ class SourceEngineParticleSystem extends Entity {
         particle.previousElapsedTime = elapsedTime;
         particle.start();
         // Init modifiers in a 2nd loop
-        for (let i in this.initializers) {
+        for (const i in this.initializers) {
             const initializer = this.initializers[i];
             if (!initializer.initMultipleOverride()) {
                 initializer.initializeParticle(particle, elapsedTime);
             }
         }
-        for (let i in this.initializers) {
+        for (const i in this.initializers) {
             const initializer = this.initializers[i];
             if (initializer.initMultipleOverride()) {
                 initializer.initializeParticle(particle, elapsedTime);
@@ -41632,7 +41632,7 @@ class SourceEngineParticleSystem extends Entity {
         if (controlPointId < 0 || controlPointId >= MAX_PARTICLE_CONTROL_POINTS) {
             return null;
         }
-        let parentSystem = this.parentSystem;
+        const parentSystem = this.parentSystem;
         if (parentSystem !== undefined) {
             return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
         }
@@ -41646,7 +41646,7 @@ class SourceEngineParticleSystem extends Entity {
         return this.controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
     }
     #createControlPoint(controlPointId) {
-        let controlPoint = new ControlPoint();
+        const controlPoint = new ControlPoint();
         controlPoint.name = String(controlPointId);
         if (controlPointId == 0) {
             this.addChild(controlPoint);
@@ -41660,9 +41660,9 @@ class SourceEngineParticleSystem extends Entity {
         vec3.set(controlPoint.fVector, 0, 1, 0);
         vec3.set(controlPoint.uVector, 0, 0, 1);
         vec3.set(controlPoint.rVector, 1, 0, 0);
-        let parentSystem = this.parentSystem;
+        const parentSystem = this.parentSystem;
         if (parentSystem !== undefined) {
-            let parentControlPoint = parentSystem.getControlPoint(controlPointId);
+            const parentControlPoint = parentSystem.getControlPoint(controlPointId);
             if (parentControlPoint) {
                 controlPoint.parentControlPoint = parentControlPoint;
             }
@@ -41804,7 +41804,7 @@ class SourceEngineParticleSystem extends Entity {
         else {
             vec3.set(min, Infinity, Infinity, Infinity);
             vec3.set(max, -Infinity, -Infinity, -Infinity);
-            for (let particle of this.livingParticles) {
+            for (const particle of this.livingParticles) {
                 vec3.min(min, min, particle.position);
                 vec3.max(max, max, particle.position);
             }
@@ -41820,7 +41820,7 @@ class SourceEngineParticleSystem extends Entity {
         }
     }
     buildContextMenu() {
-        let startStop = this.isRunning ? { i18n: '#stop', f: () => this.stop() } : { i18n: '#start', f: () => this.start() };
+        const startStop = this.isRunning ? { i18n: '#stop', f: () => this.stop() } : { i18n: '#start', f: () => this.start() };
         return Object.assign(super.buildContextMenu(), {
             SourceEngineParticleSystem_1: null,
             startStop: startStop,
@@ -41828,25 +41828,25 @@ class SourceEngineParticleSystem extends Entity {
         });
     }
     toJSON() {
-        let json = super.toJSON();
+        const json = super.toJSON();
         json.repository = this.repository;
         if (!this.isRunning) {
             json.isrunning = false;
         }
-        let jControlPoint = [];
+        const jControlPoint = [];
         this.controlPoints.forEach((element, index) => jControlPoint[index] = element.id);
         json.controlpoints = jControlPoint;
         return json;
     }
     static async constructFromJSON(json /*TODO: better type*/, entities, loadedPromise) {
-        let entity = await Source1ParticleControler.createSystem(json.repository, json.name);
+        const entity = await Source1ParticleControler.createSystem(json.repository, json.name);
         if (entity) {
             loadedPromise.then(() => {
                 console.error(entities);
-                let jControlPoint = json.controlpoints;
+                const jControlPoint = json.controlpoints;
                 if (jControlPoint) {
                     for (let i = 0; i < jControlPoint.length; ++i) {
-                        let cpEntity = entities.get(jControlPoint[i]);
+                        const cpEntity = entities.get(jControlPoint[i]);
                         if (cpEntity) {
                             entity.controlPoints[i] = cpEntity;
                         }
@@ -41924,7 +41924,7 @@ class SourcePCF {
         ps.pcf = this; // Store PCF to load children
         ps.repository = this.repository;
         for (let attributeIndex = 0; attributeIndex < attributes.length; ++attributeIndex) {
-            let attribute = attributes[attributeIndex];
+            const attribute = attributes[attributeIndex];
             switch (attribute.typeName) {
                 case 'renderers':
                 case 'operators':
@@ -41952,7 +41952,7 @@ class SourcePCF {
         system.pcf = this; // Store PCF to load children
         system.repository = this.repository;
         for (let attributeIndex = 0; attributeIndex < attributes.length; ++attributeIndex) {
-            let attribute = attributes[attributeIndex];
+            const attribute = attributes[attributeIndex];
             switch (attribute.typeName) {
                 case 'renderers':
                 case 'operators':
@@ -41996,7 +41996,7 @@ class SourcePCF {
     }
     addAttributes(operator, list) {
         for (let i = 0; i < list.length; ++i) {
-            let attrib = list[i];
+            const attrib = list[i];
             operator.setParameter(attrib.typeName, ELEMENT_TYPES[attrib.type], attrib.value);
         }
     }
@@ -42010,9 +42010,9 @@ const data_size = [
 const BINARY_FORMAT_POS = 25;
 class SourceEnginePCFLoader extends SourceBinaryLoader {
     parse(repositoryName, fileName, arrayBuffer) {
-        let pcf = new SourcePCF(repositoryName);
-        let reader = new BinaryReader(arrayBuffer);
-        let str = reader.getString(Math.min(1000, arrayBuffer.byteLength));
+        const pcf = new SourcePCF(repositoryName);
+        const reader = new BinaryReader(arrayBuffer);
+        const str = reader.getString(Math.min(1000, arrayBuffer.byteLength));
         let startOffset = str.indexOf('-->');
         if (startOffset === 0) {
             return null;
@@ -42213,9 +42213,9 @@ function InitLZMALump(reader, lump) {
 }
 class SourceEngineBSPLoader extends SourceBinaryLoader {
     parse(repository, fileName, arrayBuffer) {
-        let bsp = new SourceBSP({ repository: repository, name: fileName });
+        const bsp = new SourceBSP({ repository: repository, name: fileName });
         bsp.loader = this;
-        let reader = new BinaryReader(arrayBuffer);
+        const reader = new BinaryReader(arrayBuffer);
         this.#parseHeader(reader, bsp);
         this.#parseLumps(reader, bsp);
         return bsp;
@@ -42244,7 +42244,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
     #parseLumps(reader, bsp) {
         const lumps = bsp.lumps;
         for (let i = 0, l = lumps.length; i < l; i++) {
-            let lump = bsp.lumps[i];
+            const lump = bsp.lumps[i];
             this.#parseLump(reader, lump, bsp); //TODOv3: lzma
             //console.error(lump);
         }
@@ -42362,7 +42362,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const planesCount = lump.getLumpLen() / BYTES_PER_PLANE;
         const lumpData = [];
         for (let planeIndex = 0; planeIndex < planesCount; planeIndex++) {
-            let plane = new SourceBSPLumpPlane();
+            const plane = new SourceBSPLumpPlane();
             plane.normal = reader.getVector3();
             plane.dist = reader.getFloat32();
             plane.type = reader.getInt32();
@@ -42376,7 +42376,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const texdataCount = lump.getLumpLen() / BYTES_PER_TEXDATA;
         const lumpData = [];
         for (let texdataIndex = 0; texdataIndex < texdataCount; ++texdataIndex) {
-            let texdata = new SourceBSPLumpTexData();
+            const texdata = new SourceBSPLumpTexData();
             texdata.reflectivity = reader.getVector3();
             texdata.nameStringTableID = reader.getInt32();
             texdata.width = reader.getInt32();
@@ -42399,17 +42399,17 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
     }
     #parseLumpVisibility(reader, lump) {
         reader.seek(lump.lumpOffset);
-        let offset = reader.tell();
-        let clusterCount = reader.getInt32();
-        let visOffsets = [];
+        const offset = reader.tell();
+        const clusterCount = reader.getInt32();
+        const visOffsets = [];
         for (let clusterIndex = 0; clusterIndex < clusterCount; clusterIndex++) {
             visOffsets.push([reader.getInt32(), reader.getInt32()]);
         }
-        let numBytes = Math.ceil(clusterCount / 8);
-        let clusterVis = new Uint8Array(clusterCount * clusterCount);
+        const numBytes = Math.ceil(clusterCount / 8);
+        const clusterVis = new Uint8Array(clusterCount * clusterCount);
         for (let i = 0; i < clusterCount; ++i) {
-            let rleVis = new Uint8Array(reader.buffer, offset + visOffsets[i][0], numBytes); //TODOv3 ???
-            let clusterOfs = i * clusterCount;
+            const rleVis = new Uint8Array(reader.buffer, offset + visOffsets[i][0], numBytes); //TODOv3 ???
+            const clusterOfs = i * clusterCount;
             let v = 0;
             // Unpack the RLE visibility bitfield
             // See code at: http://www.flipcode.com/archives/Quake_2_BSP_File_Format.shtml
@@ -42427,7 +42427,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
                 }
             }
         }
-        let lumpData = { clusterCount: clusterCount, clusterVis: clusterVis };
+        const lumpData = { clusterCount: clusterCount, clusterVis: clusterVis };
         lump.setLumpData(lumpData);
     }
     #parseLumpNodes(reader, lump) {
@@ -42436,7 +42436,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const nodeCount = lump.getLumpLen() / BYTES_PER_NODE;
         const lumpData = [];
         for (let nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
-            let node = new SourceBSPLumpNode();
+            const node = new SourceBSPLumpNode();
             node.planenum = reader.getInt32();
             node.children = [reader.getInt32(), reader.getInt32()];
             node.mins = [reader.getInt16(), reader.getInt16(), reader.getInt16()];
@@ -42456,7 +42456,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const texInfoCount = lump.getLumpLen() / BYTES_PER_TEXINFO;
         const lumpData = [];
         for (let texinfoIndex = 0; texinfoIndex < texInfoCount; ++texinfoIndex) {
-            let texinfo = new SourceBSPLumpTexInfo();
+            const texinfo = new SourceBSPLumpTexInfo();
             texinfo.textureVecs.push(reader.getVector4());
             texinfo.textureVecs.push(reader.getVector4());
             texinfo.lightmapVecs.push(reader.getVector4());
@@ -42473,7 +42473,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const faceCount = lump.getLumpLen() / BYTES_PER_FACE;
         const lumpData = [];
         for (let faceIndex = 0; faceIndex < faceCount; ++faceIndex) {
-            let face = new SourceBSPLumpFace();
+            const face = new SourceBSPLumpFace();
             face.planenum = reader.getInt16();
             face.side = reader.getInt8();
             face.onNode = reader.getInt8();
@@ -42506,9 +42506,9 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         reader.seek(lump.lumpOffset);
         const BYTES_PER_LIGHTING = 4;
         const lightingCount = lump.getLumpLen() / BYTES_PER_LIGHTING;
-        let lumpData = [];
+        const lumpData = [];
         for (let lightingIndex = 0; lightingIndex < lightingCount; ++lightingIndex) {
-            let lighting = new SourceBSPLumpColorRGBExp32();
+            const lighting = new SourceBSPLumpColorRGBExp32();
             lighting.r = reader.getUint8();
             lighting.g = reader.getUint8();
             lighting.b = reader.getUint8();
@@ -42523,7 +42523,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const brushSidesCount = lump.getLumpLen() / BYTES_PER_LEAF;
         const lumpData = [];
         for (let brushSideIndex = 0; brushSideIndex < brushSidesCount; ++brushSideIndex) {
-            let brushSide = new SourceBSPLumpLeaf();
+            const brushSide = new SourceBSPLumpLeaf();
             brushSide.contents = reader.getInt32();
             brushSide.cluster = reader.getInt16();
             brushSide.areaflags = reader.getInt16();
@@ -42538,7 +42538,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
             lumpData.push(brushSide);
         }
         for (let brushSideIndex = 0; brushSideIndex < brushSidesCount; ++brushSideIndex) {
-            let leaf = lumpData[brushSideIndex];
+            const leaf = lumpData[brushSideIndex];
             if (leaf.numleaffaces) ;
         }
         lump.setLumpData(lumpData);
@@ -42549,7 +42549,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const edgesCount = lump.getLumpLen() / BYTES_PER_EDGE;
         const lumpData = [];
         for (let edgeIndex = 0; edgeIndex < edgesCount; ++edgeIndex) {
-            let edge = new SourceBSPLumpEdge();
+            const edge = new SourceBSPLumpEdge();
             edge.f = reader.getUint16();
             edge.s = reader.getUint16();
             lumpData.push(edge);
@@ -42611,7 +42611,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const brushesCount = lump.getLumpLen() / BYTES_PER_BRUSH;
         const lumpData = [];
         for (let brushIndex = 0; brushIndex < brushesCount; ++brushIndex) {
-            let brush = new SourceBSPLumpBrush();
+            const brush = new SourceBSPLumpBrush();
             brush.firstside = reader.getInt32();
             brush.numsides = reader.getInt32();
             brush.contents = reader.getInt32();
@@ -42625,7 +42625,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const brushSidesCount = lump.getLumpLen() / BYTES_PER_BRUSH_SIDE;
         const lumpData = [];
         for (let brushSideIndex = 0; brushSideIndex < brushSidesCount; ++brushSideIndex) {
-            let brushSide = new SourceBSPLumpBrushSide();
+            const brushSide = new SourceBSPLumpBrushSide();
             brushSide.planenum = reader.getUint16();
             brushSide.texinfo = reader.getInt16();
             brushSide.dispinfo = reader.getInt16();
@@ -42647,9 +42647,9 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
             gamelump.lumpLen = reader.getInt32();
             lumpData[gamelump.id] = gamelump;
         }
-        for (let gameIndex in lumpData) {
-            let lump = lumpData[gameIndex];
-            let lumpReader = InitLZMALump(reader, lump);
+        for (const gameIndex in lumpData) {
+            const lump = lumpData[gameIndex];
+            const lumpReader = InitLZMALump(reader, lump);
             this.#parseLumpGame(lumpReader, lump);
         }
         lump.setLumpData(lumpData);
@@ -42670,7 +42670,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const lumpVersion = lump.version;
         const nameCount = reader.getInt32();
         for (let nameIndex = 0; nameIndex < nameCount; ++nameIndex) {
-            let name = StringStrip(reader.getString(STATIC_PROP_NAME_LENGTH));
+            const name = StringStrip(reader.getString(STATIC_PROP_NAME_LENGTH));
             staticDir.name.push(name);
         }
         const leafCount = reader.getInt32();
@@ -42770,9 +42770,9 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
             const file = { cs: compressedSize, fp: filepos, cm: compressionMethod, us: uncompressedSize };
             lumpData.set(fileName, file);
         }
-        for (let [fileName, file] of lumpData) {
+        for (const [fileName, file] of lumpData) {
             if (fileName.match(/^materials\/.*\.vmt$/)) {
-                let fileContent = this.#getFileData(reader, file);
+                const fileContent = this.#getFileData(reader, file);
                 SourceEngineVMTLoader.setMaterial(fileName, fileContent);
             }
         }
@@ -42783,7 +42783,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
             if (file.cm == 14) { //LZMA
                 const lzmaProperties = reader.getBytes(5, file.fp + 4);
                 const compressedDatas = reader.getBytes(file.cs, file.fp + 9);
-                let lzmaReader = new BinaryReader(DecompressLZMA(lzmaProperties, compressedDatas, file.us));
+                const lzmaReader = new BinaryReader(DecompressLZMA(lzmaProperties, compressedDatas, file.us));
                 return lzmaReader.getString(file.us);
             }
             return reader.getString(file.cs, file.fp);
@@ -42842,7 +42842,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const dispInfoCount = lump.getLumpLen() / BYTES_PER_DISPINFO;
         const lumpData = [];
         for (let dispinfoIndex = 0; dispinfoIndex < dispInfoCount; ++dispinfoIndex) {
-            let dispinfo = new SourceBSPLumpDispInfo();
+            const dispinfo = new SourceBSPLumpDispInfo();
             dispinfo.startPosition = reader.getVector3();
             dispinfo.dispVertStart = reader.getInt32();
             dispinfo.dispTriStart = reader.getInt32();
@@ -42884,7 +42884,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const dispVertCount = lump.getLumpLen() / BYTES_PER_DISPVERT;
         const lumpData = [];
         for (let dispvertIndex = 0; dispvertIndex < dispVertCount; ++dispvertIndex) {
-            let dispvert = new SourceBSPLumpDispVertex();
+            const dispvert = new SourceBSPLumpDispVertex();
             dispvert.vec = reader.getVector3();
             dispvert.dist = reader.getFloat32();
             dispvert.alpha = reader.getFloat32();
@@ -43029,11 +43029,11 @@ class FuncDoor extends MapEntity {
             this.speed = kvElement.speed;
             vec3.zero(this.moveDir);
             AngleVectors(ParseAngles(kvElement.movedir), this.moveDir);
-            let vecOBB = this.m.getOBBSize(this.model.model);
+            const vecOBB = this.m.getOBBSize(this.model.model);
             this.pos1 = this.getAbsOrigin(); //vec3.scaleAndAdd(vec3.create(), this.getAbsOrigin(), this.moveDir, -movedistance * kvElement.startposition);
-            let a = this.moveDir;
-            let b = vecOBB;
-            let dotProductAbs = Math.abs(a[0] * b[0]) + Math.abs(a[1] * b[1]) + Math.abs(a[2] * b[2]); //vec3.dot(vec3.create(), this.moveDir, vecOBB);
+            const a = this.moveDir;
+            const b = vecOBB;
+            const dotProductAbs = Math.abs(a[0] * b[0]) + Math.abs(a[1] * b[1]) + Math.abs(a[2] * b[2]); //vec3.dot(vec3.create(), this.moveDir, vecOBB);
             this.pos2 = vec3.scaleAndAdd(this.pos2, this.pos1, this.moveDir, dotProductAbs); //todo : lip
             vec3.copy(this.finalDest, this.getAbsOrigin());
         }
@@ -43123,7 +43123,7 @@ class MapEntityAmbientLight extends MapEntity {
         this.#ambientLight.position = this._position;
     }
     setKeyValue(key, value) {
-        let ambientLight = this.#ambientLight;
+        const ambientLight = this.#ambientLight;
         //pointLight.range = 1000;
         switch (key) {
             case '_ambient':
@@ -43166,7 +43166,7 @@ class MapEntityLight extends MapEntity {
         this.pointLight.position = this._position;
     }
     setKeyValue(key, value) {
-        let pointLight = this.pointLight;
+        const pointLight = this.pointLight;
         pointLight.range = 1000;
         switch (key) {
             case '_zero_percent_distance':
@@ -43196,7 +43196,7 @@ class PropDynamic extends MapEntity {
     async setupModel(kvElement) {
         const entity = kvElement;
         if (entity && entity.model) {
-            let model = await this.setModel(entity.model);
+            const model = await this.setModel(entity.model);
             const skin = entity.skin || 0;
             if (model) {
                 model.skin = skin;
@@ -43240,7 +43240,7 @@ class PropDynamic extends MapEntity {
         }*/
     async setModel(modelName) {
         modelName = modelName.replace(/.mdl$/g, '');
-        let model = await Source1ModelManager.createInstance(this.map.repository, modelName, true);
+        const model = await Source1ModelManager.createInstance(this.map.repository, modelName, true);
         /*model.position = this.position;
         model.quaternion = this._quaternion;*/
         this.model = model;
@@ -43295,7 +43295,7 @@ class PropLightSpot extends MapEntity {
         this.spotLight.quaternion = this._quaternion;
     }
     setKeyValue(key, value) {
-        let spotLight = this.spotLight;
+        const spotLight = this.spotLight;
         spotLight.range = 1000;
         switch (key) {
             case '_zero_percent_distance':
@@ -43449,7 +43449,7 @@ class Proxy {
         if (resultVarName) {
             resultVarName = resultVarName.toLowerCase();
             if (resultVarName.indexOf('[') != -1) {
-                let result = (/([^\[]*)\[(\d*)\]/g).exec(resultVarName);
+                const result = (/([^\[]*)\[(\d*)\]/g).exec(resultVarName);
                 if (result && result.length == 3) {
                     const v = variables.get(result[1].toLowerCase());
                     if (v) {
@@ -43614,7 +43614,7 @@ class BenefactorLevel extends Proxy {
         this.#resultVar = this.#datas['resultvar'];
     }
     execute(variables) {
-        let value = 1.0;
+        const value = 1.0;
         variables.set(this.#resultVar, minValue + (maxValue - minValue) * value);
     }
 }
@@ -43743,9 +43743,9 @@ class BuildingRescueLevel extends Proxy {
     execute(variables) {
         const v = variables.get(this.#r);
         if (v) {
-            let iAmmo = 200;
-            let maxAmmo = 200;
-            let iIncreasedRangeCost = 100;
+            const iAmmo = 200;
+            const maxAmmo = 200;
+            const iIncreasedRangeCost = 100;
             let scale = 1.0;
             {
                 scale = (3.0 - ((iAmmo - iIncreasedRangeCost) / (maxAmmo - iIncreasedRangeCost) * 3.0) + 1.0);
@@ -43800,8 +43800,8 @@ class Clamp extends Proxy {
             super.setResult(variables, Math.min(Math.max(v1, this.#minVal), this.#maxVal));
         }
         else { //array
-            let clampedArray = [];
-            for (let i in v1) {
+            const clampedArray = [];
+            for (const i in v1) {
                 clampedArray[i] = Math.min(Math.max(v1[i], this.#minVal), this.#maxVal);
             }
             super.setResult(variables, clampedArray);
@@ -43937,8 +43937,8 @@ class HeartbeatScale extends Proxy {
         s2 = clamp(s2, 0.5, 1.0);
         s2 -= 0.5;
         s2 *= 2.0;
-        let beat = Math.max(s1, s2);
-        let scaledBeat = loBeat + (hiBeat - loBeat) * beat;
+        const beat = Math.max(s1, s2);
+        const scaledBeat = loBeat + (hiBeat - loBeat) * beat;
         variables.set(this.#resultVar, scaledBeat);
     }
 }
@@ -44195,7 +44195,7 @@ class StatTrakIllum extends Proxy {
     }
     execute(variables, proxyParams) {
         const glowMultiplier = proxyParams.GlowMultiplier ?? 0.5;
-        let value = lerp(this.#minVal, this.#maxVal, glowMultiplier);
+        const value = lerp(this.#minVal, this.#maxVal, glowMultiplier);
         variables.set(this.#resultVar, vec3.fromValues(value, value, value));
     }
 }
@@ -44213,7 +44213,7 @@ class StickybombGlowColor extends Proxy {
 ProxyManager.registerProxy('StickybombGlowColor', StickybombGlowColor);
 
 function toNumber(string) {
-    let num = Number(string);
+    const num = Number(string);
     if (!Number.isNaN(num)) {
         return num;
     }
@@ -44617,7 +44617,7 @@ class SourceEngineVTF {
      */
     getResource(type) {
         for (let i = 0; i < this.resEntries.length; ++i) {
-            let entry = this.resEntries[i];
+            const entry = this.resEntries[i];
             if (entry.type == type) {
                 return entry;
             }
@@ -44675,7 +44675,7 @@ class SourceEngineVTF {
             //TODO: show error
             return;
         }
-        let webGLTexture = texture.texture;
+        const webGLTexture = texture.texture;
         glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         glContext.bindTexture(GL_TEXTURE_2D, webGLTexture);
         const clampS = (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
@@ -44707,7 +44707,7 @@ class SourceEngineVTF {
         else {
             mipmapLvl = Math.min(mipmapLvl, this.mipmapCount - 1);
         }
-        let frame = 0;
+        const frame = 0;
         //TODOv3: removeme
         /*if (delta!=undefined) {
             this.currentFrame += delta / 100.0;
@@ -44731,7 +44731,7 @@ class SourceEngineVTF {
         const clampS = (this.flags & TEXTUREFLAGS_CLAMPS) == TEXTUREFLAGS_CLAMPS;
         const clampT = (this.flags & TEXTUREFLAGS_CLAMPT) == TEXTUREFLAGS_CLAMPT;
         if (this.isDxtCompressed()) {
-            let isSRGB = srgb && this.isSRGB();
+            const isSRGB = srgb && this.isSRGB();
             fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][0], clampS, clampT, isSRGB);
             fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][1], clampS, clampT, isSRGB);
             fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][2], clampS, clampT, isSRGB);
@@ -44864,7 +44864,7 @@ const IMAGE_FORMAT_DXT3 = 14;
 const IMAGE_FORMAT_DXT5 = 15;
 const IMAGE_FORMAT_RGBA16161616F = 24;
 async function decompressDxt(dxtLevel, width, height, datas) {
-    let uncompressedData = new Uint8ClampedArray(width * height * 4);
+    const uncompressedData = new Uint8ClampedArray(width * height * 4);
     let decompressFunc = null;
     switch (dxtLevel) {
         case 1:
@@ -44905,7 +44905,7 @@ function fillTextureDxt(graphics, glContext, texture, target, width, height, dxt
     else {
         glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
         (async () => {
-            let uncompressedData = await decompressDxt(dxtLevel, width, height, datas); //new Uint8Array(width * height * 4);
+            const uncompressedData = await decompressDxt(dxtLevel, width, height, datas); //new Uint8Array(width * height * 4);
             glContext.bindTexture(GL_TEXTURE_2D, texture);
             glContext.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData); //TODO: params
             glContext.bindTexture(GL_TEXTURE_2D, null);
@@ -44971,7 +44971,7 @@ class SheetSequenceSample_t {
 }
 function GetInterpolationData(pKnotPositions, pKnotValues, nNumValuesinList, nInterpolationRange, flPositionToInterpolateAt, bWrap) {
     // first, find the bracketting knots by looking for the first knot >= our index
-    let result = Object.create(null);
+    const result = Object.create(null);
     let idx;
     for (idx = 0; idx < nNumValuesinList; idx++) {
         if (pKnotPositions[idx] >= flPositionToInterpolateAt) {
@@ -45030,9 +45030,9 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
         return super.load(repositoryName, path);
     }
     parse(repository, fileName, arrayBuffer) {
-        let vtf = new SourceEngineVTF(repository, fileName);
+        const vtf = new SourceEngineVTF(repository, fileName);
         try {
-            let reader = new BinaryReader(arrayBuffer);
+            const reader = new BinaryReader(arrayBuffer);
             this.#parseHeader(reader, vtf);
             if (vtf.isHigherThan72()) {
                 for (let i = 0; i < vtf.numResources; ++i) {
@@ -45132,8 +45132,8 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
         const sheet = Object.create(null);
         vtf.sheet = sheet;
         sheet.length = reader.getUint32();
-        let nVersion = reader.getUint32();
-        let nNumCoordsPerFrame = (nVersion) ? MAX_IMAGES_PER_FRAME_ON_DISK : 1;
+        const nVersion = reader.getUint32();
+        const nNumCoordsPerFrame = (nVersion) ? MAX_IMAGES_PER_FRAME_ON_DISK : 1;
         let nNumSequences = reader.getUint32();
         sheet.sequences = [];
         if (sheet.format == 0) ;
@@ -45147,21 +45147,21 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
             reader.getUint32();
             group.clamp = reader.getUint32() != 0;
             group.frameCount = reader.getUint32();
-            let bSingleFrameSequence = (group.frameCount == 1);
-            let nTimeSamples = bSingleFrameSequence ? 1 : SEQUENCE_SAMPLE_COUNT;
+            const bSingleFrameSequence = (group.frameCount == 1);
+            const nTimeSamples = bSingleFrameSequence ? 1 : SEQUENCE_SAMPLE_COUNT;
             //let m_pSample = [];
             //sheet.m_pSamples[nSequenceNumber] = m_pSample;
             for (let i = 0; i < nTimeSamples; i++) {
                 group.m_pSamples[i] = new SheetSequenceSample_t();
             }
-            let Samples = [];
+            const Samples = [];
             for (let i = 0; i < SEQUENCE_SAMPLE_COUNT; i++) {
                 Samples[i] = new SheetSequenceSample_t();
             }
             //group.frames = [];
-            let fTotalSequenceTime = reader.getFloat32();
-            let InterpKnot = new Float32Array(SEQUENCE_SAMPLE_COUNT);
-            let InterpValue = new Float32Array(SEQUENCE_SAMPLE_COUNT);
+            const fTotalSequenceTime = reader.getFloat32();
+            const InterpKnot = new Float32Array(SEQUENCE_SAMPLE_COUNT);
+            const InterpValue = new Float32Array(SEQUENCE_SAMPLE_COUNT);
             let fCurTime = 0.;
             for (let frameIndex = 0; frameIndex < group.frameCount; ++frameIndex) {
                 const frameSample = new SheetSequenceSample_t();
@@ -45170,7 +45170,7 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
                 //group.frames.push(frame);
                 //frame.values = [];
                 //frame.duration = reader.getFloat32();
-                let fThisDuration = reader.getFloat32();
+                const fThisDuration = reader.getFloat32();
                 InterpValue[frameIndex] = frameIndex;
                 InterpKnot[frameIndex] = SEQUENCE_SAMPLE_COUNT * (fCurTime / fTotalSequenceTime);
                 fCurTime += fThisDuration;
@@ -45178,10 +45178,10 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
                 /*for (let i = 0; i < valuesCount; ++i) {
                     frame.values.push(reader.getFloat32());
                 }*/
-                let seq = Samples[frameIndex];
+                const seq = Samples[frameIndex];
                 for (let nImage = 0; nImage < nNumCoordsPerFrame; nImage++) {
-                    let s = seq.m_TextureCoordData[nImage];
-                    let s2 = frameSample.m_TextureCoordData[nImage];
+                    const s = seq.m_TextureCoordData[nImage];
+                    const s2 = frameSample.m_TextureCoordData[nImage];
                     if (s) {
                         s.m_fLeft_U0 = reader.getFloat32();
                         s.m_fTop_V0 = reader.getFloat32();
@@ -45207,16 +45207,16 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
             // now, fill in the whole table
             for (let nIdx = 0; nIdx < nTimeSamples; ++nIdx) {
                 //float flIdxA, flIdxB, flInterp;
-                let result = GetInterpolationData(InterpKnot, InterpValue, group.frameCount, SEQUENCE_SAMPLE_COUNT, nIdx, !group.clamp /*,
+                const result = GetInterpolationData(InterpKnot, InterpValue, group.frameCount, SEQUENCE_SAMPLE_COUNT, nIdx, !group.clamp /*,
                                 &flIdxA, &flIdxB, &flInterp */);
-                let sA = Samples[result.pValueA];
-                let sB = Samples[result.pValueB];
-                let oseq = group.m_pSamples[nIdx];
+                const sA = Samples[result.pValueA];
+                const sB = Samples[result.pValueB];
+                const oseq = group.m_pSamples[nIdx];
                 oseq.m_fBlendFactor = result.pInterpolationValue;
                 for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
-                    let src0 = sA.m_TextureCoordData[nImage];
-                    let src1 = sB.m_TextureCoordData[nImage];
-                    let o = oseq.m_TextureCoordData[nImage];
+                    const src0 = sA.m_TextureCoordData[nImage];
+                    const src1 = sB.m_TextureCoordData[nImage];
+                    const o = oseq.m_TextureCoordData[nImage];
                     o.m_fLeft_U0 = src0.m_fLeft_U0;
                     o.m_fTop_V0 = src0.m_fTop_V0;
                     o.m_fRight_U0 = src0.m_fRight_U0;
@@ -45240,7 +45240,7 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
         let faceIndex;
         let face;
         for (let frameIndex = 0; frameIndex < vtf.frames; ++frameIndex) {
-            let frame = [];
+            const frame = [];
             mipmap.frames.push(frame);
             for (faceIndex = 0; faceIndex < vtf.faceCount; faceIndex++) {
                 if (vtf.faceCount == 1) {
@@ -45317,7 +45317,7 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
     }
 }
 function str2abRGBA16F(str) {
-    let len = str.length / 2;
+    const len = str.length / 2;
     const buf = new ArrayBuffer(str.length * 2);
     const bufView = new Float32Array(buf);
     let j;
@@ -45329,9 +45329,9 @@ function str2abRGBA16F(str) {
 }
 function float16(byte1, byte2) {
     const b = new Uint8Array([byte1, byte2]);
-    let sign = b[1] >> 7;
-    let exponent = ((b[1] & 0x7C) >> 2);
-    let mantissa = ((b[1] & 0x03) << 8) | b[0];
+    const sign = b[1] >> 7;
+    const exponent = ((b[1] & 0x7C) >> 2);
+    const mantissa = ((b[1] & 0x03) << 8) | b[0];
     if (exponent == 0) {
         return (sign ? -1 : 1) * TWO_POW_MINUS_14 * (mantissa / TWO_POW_10);
     }
@@ -45380,9 +45380,9 @@ function str2abABGR(reader, start, length) {
     return bufView;
 }*/
 function str2abABGR(reader, start, length) {
-    let arr = new Uint8Array(reader.buffer.slice(start, start + length));
+    const arr = new Uint8Array(reader.buffer.slice(start, start + length));
     for (let i = 0; i < length; i += 4) {
-        let a = arr[i];
+        const a = arr[i];
         arr[i] = arr[i + 3];
         arr[i + 1] = arr[i + 2];
         arr[i + 2] = arr[i + 1];
@@ -45445,7 +45445,7 @@ class Source1TextureManagerClass extends EventTarget {
     }
     getTexture(repository, path, frame, needCubeMap = false, srgb = true) {
         frame = Math.floor(frame);
-        let animatedTexture = this.#getTexture(repository, path, needCubeMap, srgb);
+        const animatedTexture = this.#getTexture(repository, path, needCubeMap, srgb);
         return (animatedTexture?.getFrame ? animatedTexture.getFrame(frame) : animatedTexture) ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
     }
     async getVtf(repository, path) {
@@ -45467,10 +45467,10 @@ class Source1TextureManagerClass extends EventTarget {
         if (texture !== undefined) {
             return texture;
         }
-        let pathWithMaterials = 'materials/' + path + '.vtf'; //TODOv3
-        let fullPath = repository + pathWithMaterials;
+        const pathWithMaterials = 'materials/' + path + '.vtf'; //TODOv3
+        const fullPath = repository + pathWithMaterials;
         if (!this.#texturesList.has(fullPath)) {
-            let animatedTexture = allocatedTexture ?? new AnimatedTexture(); //TODOv3: merge with TextureManager.createTexture(); below
+            const animatedTexture = allocatedTexture ?? new AnimatedTexture(); //TODOv3: merge with TextureManager.createTexture(); below
             this.setTexture(fullPath, animatedTexture);
             this.getVtf(repository, pathWithMaterials).then((vtf) => {
                 if (vtf) {
@@ -45491,12 +45491,12 @@ class Source1TextureManagerClass extends EventTarget {
         if (this.#texturesList.has(path)) { //Internal texture
             return this.#texturesList.get(path); //.getFrame(frame);//TODOv3: add frame back
         }
-        let pathWithMaterials = 'materials/' + path + '.vtf'; //TODOv3
-        let fullPath = repository + pathWithMaterials;
+        const pathWithMaterials = 'materials/' + path + '.vtf'; //TODOv3
+        const fullPath = repository + pathWithMaterials;
         if (!this.#texturesList.has(fullPath)) {
-            let animatedTexture = new AnimatedTexture(); //TODOv3: merge with TextureManager.createTexture(); below
+            const animatedTexture = new AnimatedTexture(); //TODOv3: merge with TextureManager.createTexture(); below
             this.setTexture(fullPath, animatedTexture);
-            let vtf = await this.getVtf(repository, pathWithMaterials);
+            const vtf = await this.getVtf(repository, pathWithMaterials);
             if (vtf) {
                 vtfToTexture(vtf, animatedTexture, srgb);
             }
@@ -45511,7 +45511,7 @@ class Source1TextureManagerClass extends EventTarget {
         return 'source1texturemanager_' + (++internalTextureId);
     }
     addInternalTexture(texture) {
-        let textureName = this.getInternalTextureName();
+        const textureName = this.getInternalTextureName();
         texture = texture ?? TextureManager.createTexture(); //TODOv3: add params + create animated texture
         this.setTexture(textureName, texture);
         return { name: textureName, texture: texture };
@@ -45540,9 +45540,9 @@ function vtfToTexture(vtf, animatedTexture, srgb) {
     const alphaBits = vtf.getAlphaBits();
     //animatedTexture.vtf = vtf;
     animatedTexture.setAlphaBits(alphaBits);
-    let glContext = new Graphics().glContext;
+    const glContext = new Graphics().glContext;
     for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
-        let texture = TextureManager.createTexture(); //TODOv3: add params
+        const texture = TextureManager.createTexture(); //TODOv3: add params
         texture.properties.set('vtf', vtf);
         texture.setAlphaBits(alphaBits);
         const currentMipMap = vtf.mipmapCount; //TODOv3: choose mipmap
@@ -45606,9 +45606,9 @@ const VMT_PARAMETERS = {
 };
 function initDefaultParameters(defaultParameters, parameters, variables) {
     if (defaultParameters) {
-        for (let parameterName in defaultParameters) {
+        for (const parameterName in defaultParameters) {
             if (parameters[parameterName] === undefined) {
-                let defaultParam = defaultParameters[parameterName];
+                const defaultParam = defaultParameters[parameterName];
                 //variables.set(parameterName, defaultParam[1]);
                 switch (defaultParam[0]) {
                     case SHADER_PARAM_TYPE_COLOR:
@@ -45650,19 +45650,19 @@ class SourceEngineMaterial extends Material {
         this.proxies = [];
         this.variables = new Map();
         this.#initUniforms();
-        let variables = this.variables;
+        const variables = this.variables;
         initDefaultParameters(VMT_PARAMETERS, params, variables);
         initDefaultParameters(this.getDefaultParameters(), params, variables);
-        let readParameters = (parameters) => {
-            for (let parameterName in parameters) {
+        const readParameters = (parameters) => {
+            for (const parameterName in parameters) {
                 const value = parameters[parameterName];
-                let sanitized = this.sanitizeValue(parameterName, value);
+                const sanitized = this.sanitizeValue(parameterName, value);
                 if (sanitized) {
                     this.variables.set(parameterName, sanitized);
                 }
                 else if ((typeof value) == 'string') {
                     //try a single number
-                    let n = Number(value);
+                    const n = Number(value);
                     if (!Number.isNaN(n)) {
                         this.variables.set(parameterName, n);
                     }
@@ -45696,7 +45696,7 @@ class SourceEngineMaterial extends Material {
         if (params['>=dx90']) {
             readParameters(params['>=dx90']);
         }
-        let baseTexture = variables.get('$basetexture');
+        const baseTexture = variables.get('$basetexture');
         if (baseTexture) {
             this.setColorMap(Source1TextureManager.getTexture(this.repository, baseTexture, params['$frame'] || 0, false, params.useSrgb ?? true));
         }
@@ -45746,7 +45746,7 @@ class SourceEngineMaterial extends Material {
         if (params['$vertexcolor'] == 1) {
             this.setDefine('VERTEX_COLOR');
         }
-        let envmaptint = variables.get('$envmaptint');
+        const envmaptint = variables.get('$envmaptint');
         if (envmaptint) {
             this.uniforms['uCubeMapTint'] = envmaptint;
         }
@@ -45761,7 +45761,7 @@ class SourceEngineMaterial extends Material {
         }
         this.uniforms['uTextureTransform'] = IDENTITY_MAT4$3;
         if (params['$basetexturetransform']) {
-            let textureTransform = GetTextureTransform(params['$basetexturetransform']);
+            const textureTransform = GetTextureTransform(params['$basetexturetransform']);
             if (textureTransform) {
                 this.variables.set('$basetexturetransform', textureTransform);
                 this.uniforms['uTextureTransform'] = textureTransform;
@@ -45770,12 +45770,12 @@ class SourceEngineMaterial extends Material {
         if (params['$nocull'] == 1) {
             this.renderFace(RenderFace.Both);
         }
-        let lightWarpTexture = params['$lightwarptexture'];
+        const lightWarpTexture = params['$lightwarptexture'];
         this.setTexture('lightWarpMap', lightWarpTexture ? Source1TextureManager.getTexture(this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
         if (params['$phong'] == 1) {
             this.setDefine('USE_PHONG_SHADING');
             // The $phongexponenttexture is overrided by $phongexponent
-            let phongExponentTexture = params['$phongexponenttexture'];
+            const phongExponentTexture = params['$phongexponenttexture'];
             this.setTexture('phongExponentMap', phongExponentTexture ? Source1TextureManager.getTexture(this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
             if (phongExponentTexture) {
                 this.uniforms['uPhongExponentFactor'] = variables.get('$phongexponentfactor');
@@ -45805,22 +45805,22 @@ class SourceEngineMaterial extends Material {
             if (variables.get('$selfillum_envmapmask_alpha') == 1) {
                 this.setDefine('USE_SELF_ILLUM_ENVMAPMASK_ALPHA');
             }
-            let selfIllumTint = variables.get('$selfillumtint');
+            const selfIllumTint = variables.get('$selfillumtint');
             if (selfIllumTint) {
                 this.uniforms['uSelfIllumTint'] = selfIllumTint;
             }
             else {
                 this.uniforms['uSelfIllumTint'] = vec3.fromValues(1.0, 1.0, 1.0);
             }
-            let selfIllumMask = variables.get('$selfillummask');
+            const selfIllumMask = variables.get('$selfillummask');
             this.setTexture('uSelfIllumMaskMap', selfIllumMask ? Source1TextureManager.getTexture(this.repository, selfIllumMask, 0) : null, 'USE_SELF_ILLUM_MASK_MAP');
             if (variables.get('$selfillumfresnel') == 1) {
                 this.setDefine('USE_SELF_ILLUM_FRESNEL');
-                let selfIllumFresnelMinMaxExp = variables.get('$selfillumfresnelminmaxexp') ?? vec3.fromValues(0.0, 1.0, 1.0);
-                let constScaleBiasExp = vec4.fromValues(1.0, 0.0, 1.0, 0.0);
-                let flMin = selfIllumFresnelMinMaxExp[0];
-                let flMax = selfIllumFresnelMinMaxExp[1];
-                let flExp = selfIllumFresnelMinMaxExp[2];
+                const selfIllumFresnelMinMaxExp = variables.get('$selfillumfresnelminmaxexp') ?? vec3.fromValues(0.0, 1.0, 1.0);
+                const constScaleBiasExp = vec4.fromValues(1.0, 0.0, 1.0, 0.0);
+                const flMin = selfIllumFresnelMinMaxExp[0];
+                const flMax = selfIllumFresnelMinMaxExp[1];
+                const flExp = selfIllumFresnelMinMaxExp[2];
                 constScaleBiasExp[1] = (flMax != 0.0) ? (flMin / flMax) : 0.0; // Bias
                 constScaleBiasExp[0] = 1.0 - constScaleBiasExp[1]; // Scale
                 constScaleBiasExp[2] = flExp; // Exp
@@ -45926,7 +45926,7 @@ class SourceEngineMaterial extends Material {
         if (!proxies) {
             return;
         }
-        for (let proxyIndex in proxies) {
+        for (const proxyIndex in proxies) {
             if (proxies.hasOwnProperty(proxyIndex)) {
                 const proxyName = proxyIndex.replace(/#\d+$/, '');
                 const proxy = ProxyManager.getProxy(proxyName);
@@ -45945,7 +45945,7 @@ class SourceEngineMaterial extends Material {
      * @param proxyParams {Object} Param passed to proxies
      */
     processProxies(time, proxyParams = {}) {
-        let proxies = this.proxies;
+        const proxies = this.proxies;
         for (let proxyIndex = 0, l = proxies.length; proxyIndex < l; ++proxyIndex) {
             proxies[proxyIndex].execute(this.variables, proxyParams, time);
         }
@@ -45953,16 +45953,16 @@ class SourceEngineMaterial extends Material {
         this.afterProcessProxies(proxyParams);
     }
     _afterProcessProxies(proxyParams) {
-        let variables = this.variables;
-        let parameters = this.parameters;
-        let baseTexture = variables.get('$basetexture');
+        const variables = this.variables;
+        const parameters = this.parameters;
+        const baseTexture = variables.get('$basetexture');
         if (baseTexture) {
             const texture = Source1TextureManager.getTexture(this.repository, baseTexture, parameters['$frame'] || variables.get('$frame') || 0);
             this.setColorMap(texture);
             // Disable self illum if texture doesn't have alpha channel (fix for D-eye-monds)
             this.setDefine('COLOR_MAP_ALPHA_BITS', String(texture?.getAlphaBits() ?? 0));
         }
-        let normalMap = variables.get('$bumpmap') ?? variables.get('$normalmap');
+        const normalMap = variables.get('$bumpmap') ?? variables.get('$normalmap');
         if (normalMap) {
             this.setNormalMap(Source1TextureManager.getTexture(this.repository, normalMap, 0));
         }
@@ -45976,24 +45976,24 @@ class SourceEngineMaterial extends Material {
             }
             this.setCubeMap(Source1TextureManager.getTexture(this.repository, envmap, 0, true));
         }
-        let baseTextureTransform = variables.get('$basetexturetransform');
+        const baseTextureTransform = variables.get('$basetexturetransform');
         if (baseTextureTransform) {
             this.uniforms['uTextureTransform'] = baseTextureTransform;
             this.setDefine('USE_TEXTURE_TRANSFORM');
         }
         //TODO: remove this
-        let phongExponentTexture = variables.get('$phongexponenttexture');
+        const phongExponentTexture = variables.get('$phongexponenttexture');
         if (phongExponentTexture) {
             this.setTexture('phongExponentMap', Source1TextureManager.getTexture(this.repository, phongExponentTexture, 0), 'USE_PHONG_EXPONENT_MAP');
         }
-        let lightWarpTexture = parameters['$lightwarptexture'];
+        const lightWarpTexture = parameters['$lightwarptexture'];
         this.setTexture('lightWarpMap', lightWarpTexture ? Source1TextureManager.getTexture(this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
         if (variables.get('$selfillum') == 1) {
-            let selfIllumTint = variables.get('$selfillumtint');
+            const selfIllumTint = variables.get('$selfillumtint');
             if (selfIllumTint) {
                 this.uniforms['uSelfIllumTint'] = selfIllumTint;
             }
-            let selfIllumMask = variables.get('$selfillummask');
+            const selfIllumMask = variables.get('$selfillummask');
             if (selfIllumMask) {
                 this.setTexture('uSelfIllumMaskMap', Source1TextureManager.getTexture(this.repository, selfIllumMask, 0));
             }
@@ -46003,7 +46003,7 @@ class SourceEngineMaterial extends Material {
             this.setDetailMap(Source1TextureManager.getTexture(this.repository, detailTexture, variables.get('$detailframe') ?? 0));
             const detailTextureTransform = variables.get('$detailtexturetransform');
             if (detailTextureTransform) {
-                let textureTransform = GetTextureTransform(detailTextureTransform, this.#detailTextureTransform);
+                const textureTransform = GetTextureTransform(detailTextureTransform, this.#detailTextureTransform);
                 if (textureTransform) {
                     this.variables.set('$detailtexturetransform', textureTransform);
                 }
@@ -46033,8 +46033,8 @@ class SourceEngineMaterial extends Material {
         return clamp(this.variables.get('$alpha'), 0.0, 1.0);
     }
     computeModulationColor(out) {
-        let color = this.variables.get('$color'); //TODOv3: check variable type
-        let color2 = this.variables.get('$color2'); //TODOv3: check variable type
+        const color = this.variables.get('$color'); //TODOv3: check variable type
+        const color2 = this.variables.get('$color2'); //TODOv3: check variable type
         if (color2) {
             out[0] = color[0] * color2[0];
             out[1] = color[1] * color2[1];
@@ -46053,13 +46053,13 @@ class SourceEngineMaterial extends Material {
         return {};
     }
     sanitizeValue(parameterName, value) {
-        let param = VMT_PARAMETERS[parameterName] ?? this.getDefaultParameters()[parameterName];
+        const param = VMT_PARAMETERS[parameterName] ?? this.getDefaultParameters()[parameterName];
         if (param) {
             switch (param[0]) {
                 case SHADER_PARAM_TYPE_COLOR:
                     return readColor(value);
                 case SHADER_PARAM_TYPE_FLOAT:
-                    let fl = Number(value);
+                    const fl = Number(value);
                     if (!Number.isNaN(fl)) {
                         return fl;
                     }
@@ -46081,7 +46081,7 @@ class SourceEngineMaterial extends Material {
         return null;
     }
     setKeyValue(key, value) {
-        let sanitized = this.sanitizeValue(key, value);
+        const sanitized = this.sanitizeValue(key, value);
         if (sanitized) {
             this.variables.set(key, sanitized);
         }
@@ -46116,7 +46116,7 @@ function readColor(value, color) {
         return color;
     }
     //try a single number
-    let n = Number(value);
+    const n = Number(value);
     if (!Number.isNaN(n)) {
         vec3.set(color, n, n, n);
         return color;
@@ -46125,8 +46125,8 @@ function readColor(value, color) {
 }
 function readVec2(value, vec) {
     vec = vec || vec2.create();
-    let regex = /\[ *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *\]/i;
-    let result = regex.exec(value);
+    const regex = /\[ *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *\]/i;
+    const result = regex.exec(value);
     if (result) {
         return vec2.set(vec, Number(result[1]), Number(result[3]));
     }
@@ -46223,10 +46223,10 @@ class CharacterMaterial extends SourceEngineMaterial {
     constructor(params = {}) {
         super(params);
         this.setValues(params);
-        let variables = this.variables;
+        const variables = this.variables;
         //"$masks1"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks1
         //"$masks2"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks2
-        let masks1Texture = variables.get('$masks1');
+        const masks1Texture = variables.get('$masks1');
         if (masks1Texture) {
             this.uniforms['mask1Map'] = Source1TextureManager.getTexture(this.repository, masks1Texture, 0);
             this.setDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
@@ -46234,7 +46234,7 @@ class CharacterMaterial extends SourceEngineMaterial {
         else {
             this.removeDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
         }
-        let masks2Texture = variables.get('$masks2');
+        const masks2Texture = variables.get('$masks2');
         if (masks2Texture) {
             this.uniforms['mask2Map'] = Source1TextureManager.getTexture(this.repository, masks2Texture, 0);
             this.setDefine('USE_MASK2_MAP'); //TODOv3: set this automaticaly
@@ -46265,8 +46265,8 @@ class CharacterMaterial extends SourceEngineMaterial {
         this.variables.set('$SheenMaskDirection', 0.0);
     }
     afterProcessProxies(proxyParams) {
-        let variables = this.variables;
-        let parameters = this.parameters;
+        const variables = this.variables;
+        const parameters = this.parameters;
         const sheenMapMaskFrame = variables.get('$sheenmapmaskframe'); //variables.get('$sheenmapmaskframe')
         if (parameters['$sheenmapmask']) {
             this.uniforms['sheenMaskMap'] = Source1TextureManager.getTexture(this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
@@ -46282,17 +46282,17 @@ class CharacterMaterial extends SourceEngineMaterial {
             this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
         }
         else {
-            let sheenmaptint = variables.get('$sheenmaptint');
+            const sheenmaptint = variables.get('$sheenmaptint');
             if (sheenmaptint) {
                 this.uniforms['g_cCloakColorTint'] = sheenmaptint;
             }
         }
-        let masks1Texture = variables.get('$masks1');
+        const masks1Texture = variables.get('$masks1');
         if (masks1Texture) {
             this.uniforms['mask1Map'] = Source1TextureManager.getTexture(this.repository, masks1Texture, 0);
             this.setDefine('USE_MASK1_MAP'); //TODOv3: set this automaticaly
         }
-        let masks2Texture = variables.get('$masks2');
+        const masks2Texture = variables.get('$masks2');
         if (masks2Texture) {
             this.uniforms['mask2Map'] = Source1TextureManager.getTexture(this.repository, masks2Texture, 0);
             this.setDefine('USE_MASK2_MAP'); //TODOv3: set this automaticaly
@@ -46342,8 +46342,8 @@ class CustomWeaponMaterial extends SourceEngineMaterial {
         this.variables.set('$SheenMaskDirection', 0.0);
     }
     afterProcessProxies(proxyParams) {
-        let variables = this.variables;
-        let parameters = this.parameters;
+        const variables = this.variables;
+        const parameters = this.parameters;
         const sheenMapMaskFrame = variables.get('$sheenmapmaskframe'); //variables.get('$sheenmapmaskframe')
         if (parameters['$sheenmapmask']) {
             this.uniforms['sheenMaskMap'] = Source1TextureManager.getTexture(this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
@@ -46375,17 +46375,17 @@ class CustomWeaponMaterial extends SourceEngineMaterial {
             this.uniforms['grungeMap'] = Source1TextureManager.getTexture(this.repository, parameters['$grungetexture'], 0);
             this.setDefine('USE_GRUNGE_MAP'); //TODOv3: set this automaticaly
         }
-        let expTexture = parameters['$exptexture'];
+        const expTexture = parameters['$exptexture'];
         if (expTexture) {
             this.uniforms['exponentMap'] = Source1TextureManager.getTexture(this.repository, expTexture, 0);
             this.setDefine('USE_EXPONENT_MAP'); //TODOv3: set this automaticaly
         }
-        let surfaceTexture = parameters['$surfacetexture'];
+        const surfaceTexture = parameters['$surfacetexture'];
         if (surfaceTexture) {
             this.uniforms['surfaceMap'] = Source1TextureManager.getTexture(this.repository, surfaceTexture, 0);
             this.setDefine('USE_SURFACE_MAP'); //TODOv3: set this automaticaly
         }
-        let posTexture = parameters['$postexture'];
+        const posTexture = parameters['$postexture'];
         if (posTexture) {
             this.uniforms['posMap'] = Source1TextureManager.getTexture(this.repository, posTexture, 0);
             this.setDefine('USE_POS_MAP'); //TODOv3: set this automaticaly
@@ -46432,12 +46432,12 @@ class CustomWeaponMaterial extends SourceEngineMaterial {
             this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
         }
         else {
-            let sheenmaptint = variables.get('$sheenmaptint');
+            const sheenmaptint = variables.get('$sheenmaptint');
             if (sheenmaptint) {
                 this.uniforms['g_cCloakColorTint'] = sheenmaptint;
             }
         }
-        let wearProgress = proxyParams['WearProgress'] ?? 0;
+        const wearProgress = proxyParams['WearProgress'] ?? 0;
         if (wearProgress !== undefined) {
             this.uniforms['uWearProgress'] = wearProgress;
         }
@@ -46453,7 +46453,7 @@ class CustomWeaponMaterial extends SourceEngineMaterial {
         this.setDefine('PAINT_STYLE', style);
     }
     setColorUniform(uniformName, value) {
-        let color = readColor(value);
+        const color = readColor(value);
         if (color) {
             //vec3.scale(color, color, 1 / 255.0);
             this.uniforms[uniformName] = color;
@@ -46550,7 +46550,7 @@ class EyeRefractMaterial extends SourceEngineMaterial {
     }
     afterProcessProxies() {
         this.variables;
-        let parameters = this.parameters;
+        const parameters = this.parameters;
         if (parameters['$iris']) {
             this.setColorMap(Source1TextureManager.getTexture(this.repository, parameters['$iris'], parameters['$frame'] || 0));
         }
@@ -46576,9 +46576,9 @@ class EyeRefractMaterial extends SourceEngineMaterial {
         const eyeballArray = this.properties.get('eyeballArray');
         const skeleton = this.properties.get('skeleton');
         if (eyeballArray && skeleton) { //TODOv3: do this only once
-            let eyeBall = eyeballArray[this.properties.get('materialParam')];
+            const eyeBall = eyeballArray[this.properties.get('materialParam')];
             if (eyeBall) {
-                let bone = skeleton._bones[eyeBall.bone];
+                const bone = skeleton._bones[eyeBall.bone];
                 if (bone) {
                     bone.getWorldPosOffset(eyeBall.org, this.#eyeOrigin);
                     vec3.transformQuat(this.#eyeUp, eyeBall.up, bone.worldQuat);
@@ -46591,7 +46591,7 @@ class EyeRefractMaterial extends SourceEngineMaterial {
                     vec3.normalize(this.#eyeRight, this.#eyeRight);
                     vec3.cross(this.#eyeUp, this.#eyeRight, this.#eyeForward); //TODOv3: fix this bullshit
                     vec3.normalize(this.#eyeUp, this.#eyeUp);
-                    let scale = eyeBall.irisScale; //(1 / eyeBall.irisScale);TODOv3
+                    const scale = eyeBall.irisScale; //(1 / eyeBall.irisScale);TODOv3
                     vec3.scale(this.#irisProjectionU, this.#eyeRight, -scale);
                     vec3.scale(this.#irisProjectionV, this.#eyeUp, -scale);
                     this.#irisProjectionU[3] = -vec3.dot(this.#eyeOrigin, this.#irisProjectionU) + 0.5;
@@ -46674,7 +46674,7 @@ class SpriteCardMaterial extends SourceEngineMaterial {
             //this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         }
         //this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        let overbrightFactor = this.variables.get('$overbrightfactor') ?? this.variables.get('srgb?$overbrightfactor'); //TODO: improve this
+        const overbrightFactor = this.variables.get('$overbrightfactor') ?? this.variables.get('srgb?$overbrightfactor'); //TODO: improve this
         this.uniforms['uOverbrightFactor'] = overbrightFactor ?? 1.0;
         //this.modeRGB = GL_MAX;
         this.modeAlpha = GL_MAX;
@@ -46741,7 +46741,7 @@ class SpriteMaterial extends SourceEngineMaterial {
             //this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         }
         //this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        let overbrightFactor = this.variables.get('$overbrightfactor') ?? this.variables.get('srgb?$overbrightfactor'); //TODO: improve this
+        const overbrightFactor = this.variables.get('$overbrightfactor') ?? this.variables.get('srgb?$overbrightfactor'); //TODO: improve this
         this.uniforms['uOverbrightFactor'] = overbrightFactor ?? 1.0;
         //this.modeRGB = GL_MAX;
         this.modeAlpha = GL_MAX;
@@ -46805,8 +46805,8 @@ class UnlitTwoTextureMaterial extends SourceEngineMaterial {
         return 'source1_unlittwotexture';
     }
     afterProcessProxies() {
-        let variables = this.variables;
-        let parameters = this.parameters;
+        const variables = this.variables;
+        const parameters = this.parameters;
         const texture2Transform = variables.get('$texture2transform');
         if (texture2Transform) {
             this.uniforms['uTexture2Transform'] = texture2Transform;
@@ -46863,8 +46863,8 @@ class VertexLitGenericMaterial extends SourceEngineMaterial {
         this.variables.set('$SheenMaskDirection', 0.0);
     }
     afterProcessProxies(proxyParams) {
-        let variables = this.variables;
-        let parameters = this.parameters;
+        const variables = this.variables;
+        const parameters = this.parameters;
         const sheenMapMaskFrame = variables.get('$sheenmapmaskframe'); //variables.get('$sheenmapmaskframe')
         if (parameters['$sheenmapmask']) {
             this.setTexture('sheenMaskMap', Source1TextureManager.getTexture(this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame), 'USE_SHEEN_MASK_MAP');
@@ -46878,7 +46878,7 @@ class VertexLitGenericMaterial extends SourceEngineMaterial {
             this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
         }
         else {
-            let sheenmaptint = variables.get('$sheenmaptint');
+            const sheenmaptint = variables.get('$sheenmaptint');
             if (sheenmaptint) {
                 this.uniforms['g_cCloakColorTint'] = sheenmaptint;
             }
@@ -46921,7 +46921,7 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
     constructor(params = {}) {
         super(params);
         this.setValues(params);
-        let variables = this.variables;
+        const variables = this.variables;
         this.setDefine('MIRROR', variables.get('$mirrorhorizontal') ?? 0);
         this.setDefine('DESATBASETINT', variables.get('$desatbasetint') ? '1' : '0');
         this.uniforms['uTintLerpBase'] = variables.get('$desatbasetint');
@@ -46931,10 +46931,10 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
         this.setPatternTexCoordTransform(vec2.fromValues(1, 1), vec2.create(), 0);
     }
     afterProcessProxies(proxyParams) {
-        let variables = this.variables;
-        let parameters = this.parameters;
+        const variables = this.variables;
+        const parameters = this.parameters;
         this.setDefine('DECALSTYLE', variables.get('$decalstyle') ?? 0); //TODO: set this on variable change
-        let baseTexture = variables.get('$basetexture');
+        const baseTexture = variables.get('$basetexture');
         if (baseTexture) {
             this.uniforms['colorMap'] = Source1TextureManager.getTexture(this.repository, baseTexture, 0);
             this.setDefine('USE_COLOR_MAP'); //TODOv3: set this automaticaly
@@ -46958,32 +46958,32 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
             this.uniforms['patternMap'] = Source1TextureManager.getTexture(this.repository, parameters['$pattern'], 0);
             this.setDefine('USE_PATTERN_MAP'); //TODOv3: set this automaticaly
         }
-        let aoTexture = variables.get('$aotexture');
+        const aoTexture = variables.get('$aotexture');
         if (aoTexture) {
             this.uniforms['aoMap'] = Source1TextureManager.getTexture(this.repository, aoTexture, 0);
             this.setDefine('USE_AO_MAP'); //TODOv3: set this automaticaly
         }
-        let wearTexture = variables.get('$weartexture');
+        const wearTexture = variables.get('$weartexture');
         if (wearTexture) {
             this.uniforms['scratchesMap'] = Source1TextureManager.getTexture(this.repository, wearTexture, 0);
             this.setDefine('USE_SCRATCHES_MAP'); //TODOv3: set this automaticaly
         }
-        let grungeTexture = variables.get('$grungetexture');
+        const grungeTexture = variables.get('$grungetexture');
         if (grungeTexture) {
             this.uniforms['grungeMap'] = Source1TextureManager.getTexture(this.repository, grungeTexture, 0);
             this.setDefine('USE_GRUNGE_MAP'); //TODOv3: set this automaticaly
         }
-        let expTexture = parameters['$exptexture'];
+        const expTexture = parameters['$exptexture'];
         if (expTexture) {
             this.uniforms['exponentMap'] = Source1TextureManager.getTexture(this.repository, expTexture, 0);
             this.setDefine('USE_EXPONENT_MAP'); //TODOv3: set this automaticaly
         }
-        let holoMaskTexture = variables.get('$holomask');
+        const holoMaskTexture = variables.get('$holomask');
         if (holoMaskTexture) {
             this.uniforms['holoMaskMap'] = Source1TextureManager.getTexture(this.repository, holoMaskTexture, 0);
             this.setDefine('USE_HOLO_MASK_MAP'); //TODOv3: set this automaticaly
         }
-        let holoSpectrumTexture = variables.get('$holospectrum');
+        const holoSpectrumTexture = variables.get('$holospectrum');
         if (holoSpectrumTexture) {
             this.uniforms['holoSpectrumMap'] = Source1TextureManager.getTexture(this.repository, holoSpectrumTexture, 0);
             this.setDefine('USE_HOLO_SPECTRUM_MAP'); //TODOv3: set this automaticaly
@@ -47033,10 +47033,10 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
         // Todo: optimize
         this.uniforms['uPhongParams'] = vec4.fromValues(4.0, 1.0, 1.0, 2.0); //TODO: set actual values
         this.uniforms['uPhongFresnel'] = vec4.fromValues(1.0, 1.0, 1.0, 0.0); //TODO: set actual values
-        let wearProgress = proxyParams['WearProgress'] ?? 0.0; //TODO
+        const wearProgress = proxyParams['WearProgress'] ?? 0.0; //TODO
         variables.get('$wearremapmid');
-        let flX = wearProgress;
-        let flP = variables.get('$wearremapmid');
+        const flX = wearProgress;
+        const flP = variables.get('$wearremapmid');
         let flRemappedWear = 2.0 * (1.0 - flX) * flX * flP + (flX * flX);
         //remap wear to custom min/max bounds
         flRemappedWear *= (variables.get('$wearremapmax') - variables.get('$wearremapmin'));
@@ -47046,14 +47046,14 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
         flRemappedWear += flX * flX * variables.get('$wearbias');
         //lerp wear width along wear progress
         //float flLerpedWearWidth = Lerp( variables[info.m_nWearProgress]->GetFloatValue(), variables[info.m_nWearWidthMin]->GetFloatValue(), variables[info.m_nWearWidthMax]->GetFloatValue() );
-        let flLerpedWearWidth = lerp(variables.get('$wearwidthmin'), variables.get('$wearwidthmax'), wearProgress);
+        const flLerpedWearWidth = lerp(variables.get('$wearwidthmin'), variables.get('$wearwidthmax'), wearProgress);
         this.uniforms['uWearParams'] = vec4.fromValues(wearProgress, flLerpedWearWidth, flRemappedWear, variables.get('$unwearstrength'));
     }
     set style(style) {
         this.setDefine('PAINT_STYLE', style);
     }
     setColorUniform(uniformName, value) {
-        let color = readColor(value);
+        const color = readColor(value);
         if (color) {
             //vec3.scale(color, color, 1 / 255.0);
             this.uniforms[uniformName] = color;
@@ -47072,16 +47072,16 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
         this.setColorUniform('uCamoColor3', color);
     }
     setPatternTexCoordTransform(scale, translation, rotation) {
-        let transformMatrix = this.getTexCoordTransform(scale, translation, rotation);
+        const transformMatrix = this.getTexCoordTransform(scale, translation, rotation);
         this.uniforms['g_patternTexCoordTransform[0]'] = new Float32Array([
             transformMatrix[0], transformMatrix[4], transformMatrix[8], transformMatrix[12],
             transformMatrix[1], transformMatrix[5], transformMatrix[9], transformMatrix[13]
         ]);
     }
     getTexCoordTransform(scale, translation, rotation) {
-        let transformMatrix = mat4.create();
-        let tempMatrix = mat4.create();
-        let tempVec3 = vec3.create();
+        const transformMatrix = mat4.create();
+        const tempMatrix = mat4.create();
+        const tempVec3 = vec3.create();
         tempVec3[0] = translation[0] - 0.5;
         tempVec3[1] = translation[1] - 0.5;
         tempVec3[2] = 0.0;
@@ -47093,7 +47093,7 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
         mat4.multiply(transformMatrix, transformMatrix, tempMatrix);
         mat4.fromZRotation(tempMatrix, rotation);
         mat4.multiply(transformMatrix, transformMatrix, tempMatrix);
-        let offset = vec2.fromValues(0.5 / scale[0], 0.5 / scale[1]);
+        const offset = vec2.fromValues(0.5 / scale[0], 0.5 / scale[1]);
         vec2.rotate(offset, offset, vec2.create(), -rotation);
         tempVec3[0] = offset[0];
         tempVec3[1] = offset[1];
@@ -47140,9 +47140,9 @@ class WorldVertexTransitionMaterial extends SourceEngineMaterial {
     afterProcessProxies(proxyParams) {
         this.variables;
         this.parameters;
-        let baseTexture2 = this.variables.get('$basetexture2');
+        const baseTexture2 = this.variables.get('$basetexture2');
         this.setColor2Map(baseTexture2 ? Source1TextureManager.getTexture(this.repository, baseTexture2, 0, true) : null);
-        let blendModulateTexture = this.variables.get('$blendmodulatetexture');
+        const blendModulateTexture = this.variables.get('$blendmodulatetexture');
         if (blendModulateTexture) {
             this.setTexture('blendModulateMap', Source1TextureManager.getTexture(this.repository, blendModulateTexture, 0, true), 'USE_BLEND_MODULATE_MAP');
         }
@@ -47254,7 +47254,7 @@ class SourceEngineParticleOperator {
         return this.#parameters;
     }
     setParameters(parameters) {
-        for (let i in parameters) {
+        for (const i in parameters) {
             const pair = parameters[i];
             this.setParameter(pair[0], pair[1], pair[2]);
         }
@@ -47473,11 +47473,11 @@ class CollisionViaTraces extends SourceEngineParticleOperator {
         vec3.normalize(rayDirection, rayDirection);
         // We probably already are on the surface, move back the ray origin to prevent falling thru
         const rayPosition = vec3.scaleAndAdd(tempVec3_2$8, particle.prevPosition, rayDirection, -0.001);
-        let intersections = this.#raycaster.castRay(rayPosition, rayDirection, [world], true);
+        const intersections = this.#raycaster.castRay(rayPosition, rayDirection, [world], true);
         if (intersections.length) {
             //console.error(intersections);
             let min = Infinity;
-            for (let intersection of intersections) {
+            for (const intersection of intersections) {
                 if (intersection.distance < min) {
                     vec3.copy(particle.position, intersection.position);
                     min = intersection.distance;
@@ -47487,7 +47487,7 @@ class CollisionViaTraces extends SourceEngineParticleOperator {
     }
     #getWorld() {
         const iterator = this.particleSystem.getParentIterator();
-        for (let e of iterator) {
+        for (const e of iterator) {
             if (e.is('Scene')) {
                 const world = e.getWorld();
                 if (world) {
@@ -47501,8 +47501,8 @@ class CollisionViaTraces extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(CollisionViaTraces);
 
-let cpPosition$1 = vec3.create();
-let tempVec3_2$7 = vec3.create();
+const cpPosition$1 = vec3.create();
+const tempVec3_2$7 = vec3.create();
 class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
     static functionName = 'Constrain distance to control point';
     constructor() {
@@ -47626,7 +47626,7 @@ class EmitContinuously extends SourceEngineParticleOperator {
     finished() {
         const emission_start_time = this.getParameter('emission_start_time') ?? 0;
         const emission_duration = this.getParameter('emission_duration') ?? 0;
-        let currentTime = this.particleSystem.currentTime;
+        const currentTime = this.particleSystem.currentTime;
         return emission_duration != 0 && (currentTime > emission_start_time + emission_duration);
     }
 }
@@ -47697,10 +47697,10 @@ class EmitNoise extends SourceEngineParticleOperator {
         this.addParam('world time noise coordinate scale', PARAM_TYPE_FLOAT, 0);
     }
     doEmit(elapsedTime) {
-        let emission_start_time = this.getParameter('emission_start_time');
-        let emissionMinimum = this.getParameter('emission minimum');
-        let emissionMaximum = this.getParameter('emission maximum');
-        let emission_duration = this.getParameter('emission_duration');
+        const emission_start_time = this.getParameter('emission_start_time');
+        const emissionMinimum = this.getParameter('emission minimum');
+        const emissionMaximum = this.getParameter('emission maximum');
+        const emission_duration = this.getParameter('emission_duration');
         let emission_rate = (emissionMinimum + emissionMaximum) / 2;
         const fade = this.getOperatorFade();
         emission_rate *= fade;
@@ -47725,7 +47725,7 @@ class EmitNoise extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(EmitNoise);
 
-let tempVec3$i = vec3.create();
+const tempVec3$i = vec3.create();
 class PullTowardsControlPoint extends SourceEngineParticleOperator {
     static functionName = 'Pull towards control point';
     constructor() {
@@ -48078,7 +48078,7 @@ class PositionOnModelRandom extends SourceEngineParticleOperator {
         const controllingModel = controlPoint.parentModel;
         if (controllingModel) {
             //TODOv3
-            let bones = [];
+            const bones = [];
             particle.bones = bones;
             particle.initialVec = vec3.create();
             const position = controllingModel.getRandomPointOnModel(vec3.create(), particle.initialVec, bones);
@@ -48099,7 +48099,7 @@ class PositionOnModelRandom extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(PositionOnModelRandom);
 
-let tempVec3$f = vec3.create();
+const tempVec3$f = vec3.create();
 class PositionWithinBoxRandom extends SourceEngineParticleOperator {
     static functionName = 'Position Within Box Random';
     constructor() {
@@ -48127,7 +48127,7 @@ class PositionWithinBoxRandom extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(PositionWithinBoxRandom);
 
-let tempVec3$e = vec3.create();
+const tempVec3$e = vec3.create();
 class PositionWithinSphereRandom extends SourceEngineParticleOperator {
     static functionName = 'Position Within Sphere Random';
     constructor() {
@@ -48343,11 +48343,11 @@ class RemapControlPointToScalar extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(RemapControlPointToScalar);
 
-let tempVec3_1 = vec3.create();
-let tempVec3_2$4 = vec3.create();
-let tempVec3_3$1 = vec3.create();
-let tempVec3_4 = vec3.create();
-let tempVec3_5 = vec3.create();
+const tempVec3_1 = vec3.create();
+const tempVec3_2$4 = vec3.create();
+const tempVec3_3$1 = vec3.create();
+const tempVec3_4 = vec3.create();
+const tempVec3_5 = vec3.create();
 const a$3 = vec3.create();
 class RemapControlPointToVector extends SourceEngineParticleOperator {
     static functionName = 'remap control point to vector';
@@ -48434,7 +48434,7 @@ class RemapInitialScalar extends SourceEngineParticleOperator {
         //const v = this.getInputValue(inputField, particle);
         const v = particle.getField(inputField);
         const d = (v - inputMinimum) / (inputMaximum - inputMinimum);
-        let out = d * (outputMaximum - outputMinimum) + outputMinimum;
+        const out = d * (outputMaximum - outputMinimum) + outputMinimum;
         //out = clamp(out, outputMinimum, outputMaximum);
         //this.setOutputValue(outputField, out, particle);
         particle.setField(outputField, out, init);
@@ -49129,7 +49129,7 @@ VelocityNoise.prototype.getNoise = function (particle, time) {
 //TODO: place somewhere else
 const g_SIMD_clear_signmask = 0x7fffffff;
 
-let identityVec3 = vec3.create();
+const identityVec3 = vec3.create();
 const tempVec3$c = vec3.create();
 let VelocityRandom$1 = class VelocityRandom extends SourceEngineParticleOperator {
     static functionName = 'Velocity Random';
@@ -49387,13 +49387,13 @@ let LockToBone$1 = class LockToBone extends SourceEngineParticleOperator {
         this.addParam('control_point_number', PARAM_TYPE_INT, 0);
     }
     doOperate(particle, elapsedTime) {
-        let controlPoint = particle.system.getControlPoint(this.getParameter('control_point_number'));
+        const controlPoint = particle.system.getControlPoint(this.getParameter('control_point_number'));
         if (controlPoint) {
             // TODO : Actually we should get the model parenting the control point
-            let controllingModel = controlPoint.parentModel;
+            const controllingModel = controlPoint.parentModel;
             if (controllingModel) {
-                let bones = particle.bones;
-                let initialVec = particle.initialVec;
+                const bones = particle.bones;
+                const initialVec = particle.initialVec;
                 if (bones && initialVec) {
                     tempMat4[0] = 0;
                     tempMat4[1] = 0;
@@ -49408,7 +49408,7 @@ let LockToBone$1 = class LockToBone extends SourceEngineParticleOperator {
                     tempMat4[13] = 0;
                     tempMat4[14] = 0;
                     vec3.copy(tempVec3$b, initialVec);
-                    for (let [bone, boneWeight] of bones) {
+                    for (const [bone, boneWeight] of bones) {
                         let boneMat;
                         if (bone) {
                             boneMat = mat4.fromRotationTranslationScale(mat4.create(), bone.worldQuat, bone.worldPos, bone.worldScale);
@@ -49461,7 +49461,7 @@ class MovementBasic extends SourceEngineParticleOperator {
         this.getParameter('max constraint passes'); //TODO
         //ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));
         //fltx4 adj_dt = ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));
-        let adj_dt = (elapsedTime / this.particleSystem.previousElapsedTime) * ExponentialDecay((1.0 - Math.max(0.0, drag)), (1.0 / 30.0), elapsedTime);
+        const adj_dt = (elapsedTime / this.particleSystem.previousElapsedTime) * ExponentialDecay((1.0 - Math.max(0.0, drag)), (1.0 / 30.0), elapsedTime);
         /*if (particle.previousElapsedTime) {
             adj_dt *= (elapsedTime / particle.previousElapsedTime);
         }
@@ -49471,7 +49471,7 @@ class MovementBasic extends SourceEngineParticleOperator {
         /*if (elapsedTime) {
             vec3.scale(accumulatedForces, accumulatedForces, 1/elapsedTime);
         }*/
-        for (let force of this.particleSystem.forces.values()) {
+        for (const force of this.particleSystem.forces.values()) {
             //const force = this.particleSystem.forces[j];
             force.forceParticle(particle, elapsedTime, accumulatedForces);
         }
@@ -49546,7 +49546,7 @@ class MovementLocktoControlPoint extends SourceEngineParticleOperator {
             }
             particle.cpPosition = cp.getWorldPosition();
             particle.cpOrientation = cp.getWorldQuaternion();
-            let invertQuat = quat.invert(quat.create(), particle.initialCPQuaternion); //TODO: optimize
+            const invertQuat = quat.invert(quat.create(), particle.initialCPQuaternion); //TODO: optimize
             const delta = vec3.subtract(vec3.create(), particle.cpPosition, particle.initialCPPosition); //TODO: optimize
             const deltaQuaternion = quat.mul(quat.create(), particle.cpOrientation, invertQuat);
             quat.normalize(deltaQuaternion, deltaQuaternion);
@@ -49558,8 +49558,8 @@ class MovementLocktoControlPoint extends SourceEngineParticleOperator {
                 particle.posLockedToCP = -1;
             }
             vec3.clone(particle.position);
-            let delta2 = vec3.sub(vec3.create(), particle.position, particle.cpPosition);
-            let delta3 = vec3.sub(vec3.create(), particle.prevPosition, particle.cpPosition);
+            const delta2 = vec3.sub(vec3.create(), particle.position, particle.cpPosition);
+            const delta3 = vec3.sub(vec3.create(), particle.prevPosition, particle.cpPosition);
             vec3.transformQuat(delta2, delta2, deltaQuaternion);
             vec3.transformQuat(delta3, delta3, deltaQuaternion);
             vec3.add(particle.position, particle.cpPosition, delta2);
@@ -49623,7 +49623,7 @@ class MovementMaxVelocity extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(MovementMaxVelocity);
 
-let tempVec3$8 = vec3.create();
+const tempVec3$8 = vec3.create();
 let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis extends SourceEngineParticleOperator {
     static functionName = 'Movement Rotate Particle Around Axis';
     once = true;
@@ -49847,14 +49847,14 @@ let OscillateVector$1 = class OscillateVector extends SourceEngineParticleOperat
             if ((fl4LifeTime >= fl4StartTime) && (fl4LifeTime < fl4EndTime)) {
                 //TODO: use random table
                 //let fvFrequency = vec3.fromValues(Math.random(), Math.random(), Math.random());
-                let fvFrequency = ParticleRandomVec3(tempVec3Freq, particle.id + particle.system.operatorRandomSampleOffset, 8, 12, 15);
+                const fvFrequency = ParticleRandomVec3(tempVec3Freq, particle.id + particle.system.operatorRandomSampleOffset, 8, 12, 15);
                 //fvFrequency[0] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 8);
                 //fvFrequency[1] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 12);
                 //fvFrequency[2] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 15);
                 vec3.mul(fvFrequency, fvFrequency, fvFrequencyWidth);
                 vec3.add(fvFrequency, fvFrequency, fvFrequencyMin);
                 //let fvRate = vec3.fromValues(Math.random(), Math.random(), Math.random());
-                let fvRate = ParticleRandomVec3(tempVec3Rate, particle.id + particle.system.operatorRandomSampleOffset, 3, 7, 9);
+                const fvRate = ParticleRandomVec3(tempVec3Rate, particle.id + particle.system.operatorRandomSampleOffset, 3, 7, 9);
                 //fvRate[0] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 3);
                 //fvRate[1] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 7);
                 //fvRate[2] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 9);
@@ -49873,7 +49873,7 @@ let OscillateVector$1 = class OscillateVector extends SourceEngineParticleOperat
                 }
                 const fvOscMultiplier = vec3.create(); //todov3optimize
                 vec3.scale(fvOscMultiplier, fvRate, fl4ScaleFactor);
-                let fvOutput = vec3.create(); //TODO: perf//todov3optimize
+                const fvOutput = vec3.create(); //TODO: perf//todov3optimize
                 this.getInputValueAsVector(m_nField, particle, fvOutput); //*pOscField;
                 fvOscVal[0] = AddSIMD(fvOutput[0], MulSIMD(fvOscMultiplier[0], SinEst01SIMD(fvCos[0])));
                 fvOscVal[1] = AddSIMD(fvOutput[1], MulSIMD(fvOscMultiplier[1], SinEst01SIMD(fvCos[1])));
@@ -49985,7 +49985,7 @@ class RemapCPSpeedToCP extends SourceEngineParticleOperator {
         const outcp = this.particleSystem.getControlPoint(outCPNumber);
         if (incp && outcp && (outputField == 0 || outputField == 1 || outputField == 2)) {
             vec3.length(incp.getWorldPosition(a$2));
-            let position = outcp.position; //TODO optimize
+            const position = outcp.position; //TODO optimize
             position[outputField] = RemapValClamped(200, inputMinimum, inputMaximum, outputMinimum, outputMaximum);
             outcp.position = position;
         }
@@ -50316,7 +50316,7 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends SourceEn
             else {
                 this.particleSystem.setControlPointPosition(cpNumber, cpLocation);
             }
-            let controlPoint = this.particleSystem.getControlPoint(cpNumber);
+            const controlPoint = this.particleSystem.getControlPoint(cpNumber);
             if (controlPoint) {
                 controlPoint.setWorldQuaternion(quat.create());
             }
@@ -50382,13 +50382,13 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
         const rate = this.getParameter('animation rate');
         const useAnimRate = this.getParameter('use animation rate as FPS');
         this.geometry.count = particleList.length * 6;
-        let maxParticles = this.#maxParticles;
+        const maxParticles = this.#maxParticles;
         this.setupParticlesTexture(particleList, maxParticles);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setUniform('uVisibilityCameraDepthBias', this.getParameter('Visibility Camera Depth Bias')); //TODOv3:optimize
         this.mesh.setVisible(Source1ParticleControler.visible);
-        let orientationControlPointNumber = this.getParameter('orientation control point');
-        let orientationControlPoint = this.particleSystem.getControlPoint(orientationControlPointNumber);
+        const orientationControlPointNumber = this.getParameter('orientation control point');
+        const orientationControlPoint = this.particleSystem.getControlPoint(orientationControlPointNumber);
         if (orientationControlPoint) {
             this.mesh.setUniform('uOrientationControlPoint', orientationControlPoint.getWorldQuaternion(tempQuat$3));
         }
@@ -50398,11 +50398,11 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
         const uvs = this.geometry.attributes.get('aTextureCoord')._array;
         let index = 0;
         for (let i = 0; i < particleList.length; i++) {
-            let particle = particleList[i];
+            const particle = particleList[i];
             const sequence = particle.sequence;
             let flAgeScale;
             if (m_bFitCycleToLifetime) {
-                let flLifetime = particle.timeToLive; //SubFloat(pLifeDuration[ nGroup * ld_stride ], nOffset);
+                const flLifetime = particle.timeToLive; //SubFloat(pLifeDuration[ nGroup * ld_stride ], nOffset);
                 flAgeScale = (flLifetime > 0.0) ? (1.0 / flLifetime) * SEQUENCE_SAMPLE_COUNT : 0.0;
             }
             else {
@@ -50418,10 +50418,10 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
             let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, flAgeScale, sequence);
             if (coords) {
                 coords = coords.m_TextureCoordData[0];
-                let uMin = coords.m_fLeft_U0;
-                let vMin = coords.m_fTop_V0;
-                let uMax = coords.m_fRight_U0;
-                let vMax = coords.m_fBottom_V0;
+                const uMin = coords.m_fLeft_U0;
+                const vMin = coords.m_fTop_V0;
+                const uMax = coords.m_fRight_U0;
+                const vMax = coords.m_fBottom_V0;
                 uvs[index++] = uMin;
                 uvs[index++] = vMin;
                 uvs[index++] = uMax;
@@ -50444,13 +50444,13 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
         this.#initBuffers();
     }
     #initBuffers() {
-        let geometry = this.geometry;
+        const geometry = this.geometry;
         const vertices = [];
         const uvs = [];
         const indices = [];
         const id = [];
         for (let i = 0; i < this.#maxParticles; i++) {
-            let indiceBase = i * 4;
+            const indiceBase = i * 4;
             if (this.#orientationType == 2 || this.#orientationType == 3) {
                 indices.push(indiceBase, indiceBase + 1, indiceBase + 2, indiceBase + 2, indiceBase + 1, indiceBase + 3);
             }
@@ -50525,7 +50525,7 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
     setupParticlesTexture(particleList, maxParticles) {
         const a = this.imgData;
         let index = 0;
-        for (let particle of particleList) { //TODOv3
+        for (const particle of particleList) { //TODOv3
             vec3.subtract(vecDelta, particle.prevPosition, particle.position);
             /*let pose = bone.boneMat;
             for (let k = 0; k < 16; ++k) {
@@ -50593,15 +50593,15 @@ class RenderRope extends SourceEngineParticleOperator {
         const m_flTextureScrollRate = this.getParameter('texture_scroll_rate');
         const m_flTextureScale = 1.0 / (this.particleSystem.material.getColorMapSize(tempVec2$1)[1] * m_flTexelSizeInUnits);
         const flTexOffset = m_flTextureScrollRate * particleSystem.currentTime;
-        let geometry = this.geometry;
-        let segments = [];
+        const geometry = this.geometry;
+        const segments = [];
         let particle;
         let ropeLength = 0.0;
         let previousSegment = null;
         for (let i = 0, l = particleList.length; i < l; i++) {
             //for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
             particle = particleList[i];
-            let segment = new BeamSegment(particle.position, [particle.color.r, particle.color.g, particle.color.b, particle.alpha], 0.0, particle.radius);
+            const segment = new BeamSegment(particle.position, [particle.color.r, particle.color.g, particle.color.b, particle.alpha], 0.0, particle.radius);
             if (previousSegment) {
                 ropeLength += segment.distanceTo(previousSegment);
             }
@@ -50674,7 +50674,7 @@ class RenderRope extends SourceEngineParticleOperator {
     setupParticlesTexture(particleList, maxParticles) {
         const a = this.imgData;
         let index = 0;
-        for (let particle of particleList) { //TODOv3
+        for (const particle of particleList) { //TODOv3
             /*let pose = bone.boneMat;
             for (let k = 0; k < 16; ++k) {
                 a[index++] = pose[k];
@@ -50726,7 +50726,7 @@ class RenderScreenVelocityRotate extends SourceEngineParticleOperator {
         const m_flRotateRate = this.getParameter('rotate_rate(dps)') * DEG_TO_RAD;
         const m_flForward = this.getParameter('forward_angle') * DEG_TO_RAD;
         for (let i = 0; i < particleList.length; i++) {
-            let particle = particleList[i];
+            const particle = particleList[i];
             particle.renderScreenVelocityRotate = true;
             particle.m_flRotateRate = m_flRotateRate;
             particle.m_flForward = m_flForward;
@@ -50763,7 +50763,7 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
     updateParticles(particleSystem, particleList, elapsedTime) {
         const rate = this.getParameter('animation rate') ?? 30;
         this.geometry.count = particleList.length * 6;
-        let maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+        const maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
         this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source1ParticleControler.visible);
@@ -50773,10 +50773,10 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
             if (coords) {
                 const uvs = this.geometry.attributes.get('aTextureCoord')._array;
                 coords = coords.m_TextureCoordData[0];
-                let uMin = coords.m_fLeft_U0;
-                let vMin = coords.m_fTop_V0;
-                let uMax = coords.m_fRight_U0;
-                let vMax = coords.m_fBottom_V0;
+                const uMin = coords.m_fLeft_U0;
+                const vMin = coords.m_fTop_V0;
+                const uMax = coords.m_fRight_U0;
+                const vMax = coords.m_fBottom_V0;
                 uvs[index++] = uMin;
                 uvs[index++] = vMin;
                 uvs[index++] = uMax;
@@ -50793,7 +50793,7 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
         this.geometry.attributes.get('aTextureCoord').dirty = true;
     }
     initRenderer(particleSystem) {
-        let maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+        const maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
         this.createParticlesArray(maxParticles);
         this.#createParticlesTexture();
         const vertices = [];
@@ -50801,16 +50801,16 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
         const indices = [];
         const id = [];
         for (let i = 0; i < maxParticles; i++) {
-            let indiceBase = i * 4;
+            const indiceBase = i * 4;
             indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
             vertices.push(-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0);
             uvs.push(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0);
             id.push(i, i, i, i);
         }
-        let vertexPosition = new Float32BufferAttribute(vertices, 3);
-        let textureCoord = new Float32BufferAttribute(uvs, 2);
-        let particleId = new Float32BufferAttribute(id, 1);
-        let geometry = new BufferGeometry();
+        const vertexPosition = new Float32BufferAttribute(vertices, 3);
+        const textureCoord = new Float32BufferAttribute(uvs, 2);
+        const particleId = new Float32BufferAttribute(id, 1);
+        const geometry = new BufferGeometry();
         geometry.setIndex(new Uint32BufferAttribute(indices, 1));
         geometry.setAttribute('aVertexPosition', vertexPosition);
         geometry.setAttribute('aTextureCoord', textureCoord);
@@ -50864,7 +50864,7 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
                     */
         const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
         let index = 0;
-        for (let particle of particleList) {
+        for (const particle of particleList) {
             const flAge = particle.currentTime;
             const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
             const vecDelta = vec3.subtract(vec3.create(), particle.prevPosition, particle.position); //TODOv3: optimize
@@ -50915,7 +50915,7 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
         */
         const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
         let index = 0;
-        for (let particle of particleList) {
+        for (const particle of particleList) {
             const flAge = particle.currentTime;
             const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
             const vecDelta = vec3.subtract(vec3.create(), particle.prevPosition, particle.position); //TODOv3: optimize
@@ -54326,7 +54326,7 @@ class Source2Particle {
         this.isAlive = true;
         this.currentTime = 0;
         this.proportionOfLife = 0;
-        this.trail = new Array();
+        this.trail = [];
     }
     die() {
         this.isAlive = false;
@@ -54758,7 +54758,7 @@ const Source2SnapshotLoader = new (function () {
     class Source2SnapshotLoader {
         async load(repository, filename) {
             filename = filename.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
-            let snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
+            const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
             if (snapFile) {
                 return this.loadSnapshot(snapFile);
             }
@@ -54767,20 +54767,20 @@ const Source2SnapshotLoader = new (function () {
             }
         }
         loadSnapshot(snapFile) {
-            let snapShot = new Source2Snapshot();
+            const snapShot = new Source2Snapshot();
             snapShot.file = snapFile;
-            let dataBlock = snapFile.getBlockByType('DATA');
-            let snapBlock = snapFile.getBlockByType('SNAP');
+            const dataBlock = snapFile.getBlockByType('DATA');
+            const snapBlock = snapFile.getBlockByType('SNAP');
             if (dataBlock && snapBlock) {
-                let particleCount = Number(dataBlock.getKeyValue('num_particles'));
+                const particleCount = Number(dataBlock.getKeyValue('num_particles'));
                 snapShot.setParticleCount(particleCount);
-                let snapshotAttributes = dataBlock.getKeyValue('attributes') ?? [];
-                let snapshotStringList = dataBlock.getKeyValue('string_list') ?? [];
-                let reader = new BinaryReader(snapBlock.datas);
+                const snapshotAttributes = dataBlock.getKeyValue('attributes') ?? [];
+                const snapshotStringList = dataBlock.getKeyValue('string_list') ?? [];
+                const reader = new BinaryReader(snapBlock.datas);
                 let attributeValue;
                 let bones;
                 let weights;
-                for (let snapshotAttribute of snapshotAttributes) {
+                for (const snapshotAttribute of snapshotAttributes) {
                     reader.seek(Number(snapshotAttribute.data_offset));
                     switch (snapshotAttribute.type) {
                         case 'float3':
@@ -54793,7 +54793,7 @@ const Source2SnapshotLoader = new (function () {
                         case 'skinning':
                             attributeValue = [];
                             for (let i = 0; i < particleCount; ++i) {
-                                let skinning = Object.create(null);
+                                const skinning = Object.create(null);
                                 bones = [];
                                 weights = [];
                                 for (let i = 0; i < 4; ++i) {
@@ -54833,7 +54833,7 @@ const Source2SnapshotLoader = new (function () {
 }());
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
-let vec$8 = vec3.create();
+const vec$8 = vec3.create();
 class Source2ParticleSystem extends Entity {
     isParticleSystem = true;
     isSource2ParticleSystem = true;
@@ -54884,10 +54884,10 @@ class Source2ParticleSystem extends Entity {
     }
     async init(snapshotModifiers) {
         await this.#initSnapshot(snapshotModifiers);
-        for (let child of this.childSystems) {
+        for (const child of this.childSystems) {
             this.addChild(child);
         }
-        for (let renderer of this.renderers) {
+        for (const renderer of this.renderers) {
             renderer.initRenderer(this);
         }
     }
@@ -54898,9 +54898,9 @@ class Source2ParticleSystem extends Entity {
             snapshotFile = snapshotModifiers.get(snapshotFile);
         }
         if (snapshotFile) {
-            let snapshot = await Source2SnapshotLoader.load(this.repository, snapshotFile);
+            const snapshot = await Source2SnapshotLoader.load(this.repository, snapshotFile);
             console.debug(snapshot);
-            let cp = this.getControlPoint(this.baseProperties.snapshotControlPoint);
+            const cp = this.getControlPoint(this.baseProperties.snapshotControlPoint);
             if (cp && snapshot) {
                 //TODO : what happens when this controlPoint is inherited and has already a snapshot ?
                 cp.snapshot = snapshot;
@@ -54964,12 +54964,12 @@ class Source2ParticleSystem extends Entity {
         }
     }
     #resetEmitters() {
-        for (let emitter of this.emitters) {
+        for (const emitter of this.emitters) {
             emitter.reset();
         }
     }
     #preEmission() {
-        for (let operator of this.preEmissionOperators) {
+        for (const operator of this.preEmissionOperators) {
             operator.operateParticle(null, this.elapsedTime);
         }
     }
@@ -55003,7 +55003,7 @@ class Source2ParticleSystem extends Entity {
         }
     }
     stepControlPoint() {
-        for (let i in this.controlPoints) {
+        for (const i in this.controlPoints) {
             const cp = this.controlPoints[i];
             cp.step();
             /*if (i == 0) {
@@ -55020,7 +55020,7 @@ class Source2ParticleSystem extends Entity {
         }*/
     }
     #stepEmitters() {
-        for (let emitter of this.emitters) {
+        for (const emitter of this.emitters) {
             emitter.doEmit(this.elapsedTime);
         }
     }
@@ -55028,7 +55028,7 @@ class Source2ParticleSystem extends Entity {
         for (let i = 0; i < this.livingParticles.length; ++i) {
             const particle = this.livingParticles[i];
             particle.step(this.elapsedTime);
-            for (let operator of this.operators) {
+            for (const operator of this.operators) {
                 //const operator = this.operators[j];
                 if (operator.operateAllParticlesRemoveme) {
                     if (i == 0) { //do it only once
@@ -55051,14 +55051,14 @@ class Source2ParticleSystem extends Entity {
     }
     #stepRenderers(elapsedTime) {
         //TODOv3: multiple passes
-        for (let renderer of this.renderers) {
+        for (const renderer of this.renderers) {
             if (!renderer.disableOperator) {
                 renderer.updateParticles(this, this.livingParticles, elapsedTime);
             }
         }
     }
     #stepChildren(elapsedTime) {
-        for (let child of this.childSystems) {
+        for (const child of this.childSystems) {
             if (!child.endCap) {
                 child.step(elapsedTime);
             }
@@ -55091,13 +55091,13 @@ class Source2ParticleSystem extends Entity {
         particle.previousElapsedTime = elapsedTime;
         particle.start();
         // Init modifiers in a 2nd loop
-        for (let i in this.initializers) {
+        for (const i in this.initializers) {
             const initializer = this.initializers[i];
             if (!initializer.initMultipleOverride()) {
                 initializer.initializeParticle(particle, elapsedTime);
             }
         }
-        for (let i in this.initializers) {
+        for (const i in this.initializers) {
             const initializer = this.initializers[i];
             if (initializer.initMultipleOverride()) {
                 initializer.initializeParticle(particle, elapsedTime);
@@ -55124,7 +55124,7 @@ class Source2ParticleSystem extends Entity {
         return quat.identity(q);
     }
     getControlPoint(controlPointId) {
-        let parentSystem = this.parentSystem;
+        const parentSystem = this.parentSystem;
         if (parentSystem) {
             return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId); //TODO: remove recursion
         }
@@ -55135,7 +55135,7 @@ class Source2ParticleSystem extends Entity {
         return controlPoint;
     }
     getControlPointForScale(controlPointId) {
-        let parentSystem = this.parentSystem;
+        const parentSystem = this.parentSystem;
         if (parentSystem) {
             return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
         }
@@ -55151,7 +55151,7 @@ class Source2ParticleSystem extends Entity {
         return this.controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
     }
     #createControlPoint(controlPointId) {
-        let controlPoint = new ControlPoint();
+        const controlPoint = new ControlPoint();
         controlPoint.name = String(controlPointId);
         this.addChild(controlPoint);
         this.controlPoints[controlPointId] = controlPoint;
@@ -55178,18 +55178,18 @@ class Source2ParticleSystem extends Entity {
     }
     stepConstraints(particle) {
         //TODOv3: multiple passes
-        for (let j in this.constraints) {
+        for (const j in this.constraints) {
             const constraint = this.constraints[j];
             constraint.constraintParticle(particle);
         }
     }
     #recomputeBounds() {
-        let minBounds = this.minBounds;
-        let maxBounds = this.maxBounds;
+        const minBounds = this.minBounds;
+        const maxBounds = this.maxBounds;
         vec3.set(minBounds, Infinity, Infinity, Infinity);
         vec3.set(maxBounds, -Infinity, -Infinity, -Infinity);
         this.isBounded = false;
-        for (let particle of this.livingParticles) {
+        for (const particle of this.livingParticles) {
             vec3.min(minBounds, minBounds, particle.position);
             vec3.max(maxBounds, maxBounds, particle.position);
             this.isBounded = true;
@@ -55224,12 +55224,12 @@ class Source2ParticleSystem extends Entity {
         this.#parentModel = model;
         this.getControlPoint(0).model = model;
         if (this.baseProperties.controlPointConfigurations) {
-            for (let controlPointConfiguration of this.baseProperties.controlPointConfigurations) {
+            for (const controlPointConfiguration of this.baseProperties.controlPointConfigurations) {
                 /*if (controlPointConfiguration.m_name == 'point_follow')*/ {
-                    let drivers = controlPointConfiguration.m_drivers;
+                    const drivers = controlPointConfiguration.m_drivers;
                     if (drivers) {
                         let i = 0;
-                        for (let driver of drivers) {
+                        for (const driver of drivers) {
                             const attachmentName = driver.m_attachmentName;
                             if (attachmentName) {
                                 let attachementInstance = model?.getAttachement(attachmentName);
@@ -55237,7 +55237,7 @@ class Source2ParticleSystem extends Entity {
                                     attachementInstance = model?.parent?.getAttachement?.(attachmentName) ?? attachementInstance;
                                 }
                                 if (attachementInstance) {
-                                    let cp = this.getOwnControlPoint(driver.m_iControlPoint ?? i);
+                                    const cp = this.getOwnControlPoint(driver.m_iControlPoint ?? i);
                                     attachementInstance.addChild(cp);
                                     cp.step();
                                 }
@@ -55275,7 +55275,7 @@ class Source2ParticleSystem extends Entity {
         this.controlPoints.length = 0;
     }
     buildContextMenu() {
-        let startStop = this.isRunning ? { i18n: '#stop', f: () => this.stop() } : { i18n: '#start', f: () => this.start() };
+        const startStop = this.isRunning ? { i18n: '#stop', f: () => this.stop() } : { i18n: '#start', f: () => this.start() };
         return Object.assign(super.buildContextMenu(), {
             Source2ParticleSystem_1: null,
             startStop: startStop,
@@ -55291,9 +55291,9 @@ Source2ParticleSystem.prototype.isSource2ParticleSystem = true;
 
 const CParticleSystemDefinition = 'CParticleSystemDefinition';
 function _initProperties(system, systemDefinition) {
-    let keys = Object.keys(systemDefinition);
-    for (let key of keys) {
-        let value = systemDefinition[key];
+    const keys = Object.keys(systemDefinition);
+    for (const key of keys) {
+        const value = systemDefinition[key];
         switch (key) {
             case 'm_nMaxParticles':
                 system.setMaxParticles(Number(value));
@@ -55330,20 +55330,20 @@ function _initProperties(system, systemDefinition) {
 }
 function _initOperators(system, systemArray, kv3Array) {
     if (kv3Array) {
-        let properties = kv3Array;
+        const properties = kv3Array;
         if (properties) {
-            for (let property of properties) {
+            for (const property of properties) {
                 if (property._class) {
-                    let operatorClass = GetSource2ParticleOperator(property._class);
+                    const operatorClass = GetSource2ParticleOperator(property._class);
                     if (operatorClass) {
-                        let operator = new operatorClass(system);
+                        const operator = new operatorClass(system);
                         if (operator.isPreEmission()) {
                             system.preEmissionOperators.push(operator);
                         }
                         else {
                             systemArray.push(operator);
                         }
-                        for (let param of Object.keys(property)) {
+                        for (const param of Object.keys(property)) {
                             if (param != '_class') {
                                 operator.setParam(param, property[param]);
                             }
@@ -55359,17 +55359,17 @@ function _initOperators(system, systemArray, kv3Array) {
     }
 }
 async function _initChildren(repository, systemArray, kv3Array, snapshotModifiers) {
-    let promises = [];
+    const promises = [];
     if (kv3Array) {
-        let properties = kv3Array;
+        const properties = kv3Array;
         if (properties) {
             for (let childIndex = 0; childIndex < properties.length; ++childIndex) {
-                let property = properties[childIndex];
-                let m_ChildRef = property.m_ChildRef;
-                let m_flDelay = property.m_flDelay || 0;
+                const property = properties[childIndex];
+                const m_ChildRef = property.m_ChildRef;
+                const m_flDelay = property.m_flDelay || 0;
                 if (m_ChildRef) {
-                    let p = new Promise(async (resolve, reject) => {
-                        let system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
+                    const p = new Promise(async (resolve, reject) => {
+                        const system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
                         system.disabled = property.m_bDisableChild ?? false;
                         if (system) {
                             system.endCap = property.m_bEndCap ?? false;
@@ -55391,9 +55391,9 @@ async function _initChildren(repository, systemArray, kv3Array, snapshotModifier
 const Source2ParticleLoader = new (function () {
     class Source2ParticleLoader {
         load(repository, fileName) {
-            let promise = new Promise(resolve => {
+            const promise = new Promise(resolve => {
                 fileName = fileName.replace(/.vpcf_c/, '');
-                let vpcfPromise = new Source2FileLoader().load(repository, fileName + '.vpcf_c');
+                const vpcfPromise = new Source2FileLoader().load(repository, fileName + '.vpcf_c');
                 vpcfPromise.then((source2File) => {
                     resolve(source2File);
                 });
@@ -55403,8 +55403,8 @@ const Source2ParticleLoader = new (function () {
         async getSystem(repository, vpcf, snapshotModifiers) {
             const fileName = vpcf.fileName;
             const result = /[ \w-]+?(?=\.)/.exec(fileName);
-            let system = new Source2ParticleSystem(repository, fileName, result ? result[0] : fileName);
-            let systemDefinition = vpcf.getBlockStruct('DATA.keyValue.root');
+            const system = new Source2ParticleSystem(repository, fileName, result ? result[0] : fileName);
+            const systemDefinition = vpcf.getBlockStruct('DATA.keyValue.root');
             if (systemDefinition._class == CParticleSystemDefinition) {
                 _initOperators(system, system.preEmissionOperators, systemDefinition.m_PreEmissionOperators);
                 _initOperators(system, system.emitters, systemDefinition.m_Emitters);
@@ -55433,13 +55433,13 @@ const HASH_SEED = 0x31415926;
 hashes[murmurhash2_32_gc('time', HASH_SEED)] = 'time';
 function executeDynamicExpression(byteCode, renderAttributes = []) {
     let pointer = -1;
-    let storage = {};
+    const storage = {};
     stack = [];
     let storeAddress;
     let location;
     while (pointer < byteCode.length) {
         ++pointer;
-        let opcode = byteCode[pointer];
+        const opcode = byteCode[pointer];
         switch (opcode) {
             case 0: // stop
                 return stack.pop();
@@ -55454,7 +55454,7 @@ function executeDynamicExpression(byteCode, renderAttributes = []) {
                 }
                 break;
             case 4: // ?
-                let conditionalValue = stack.pop();
+                const conditionalValue = stack.pop();
                 // Only the first value is tested
                 location = conditionalValue[0] ? getlocation(byteCode, pointer + 1) : getlocation(byteCode, pointer + 3);
                 if ((location >= 0) && (location < byteCode.length)) {
@@ -55466,7 +55466,7 @@ function executeDynamicExpression(byteCode, renderAttributes = []) {
                 }
                 break;
             case 6: // function
-                let functionCode = getlocation(byteCode, pointer + 1);
+                const functionCode = getlocation(byteCode, pointer + 1);
                 if (functionCode >= 0) {
                     processFunction(functionCode);
                     pointer += 2;
@@ -55542,7 +55542,7 @@ function executeDynamicExpression(byteCode, renderAttributes = []) {
                 negation();
                 break;
             case 25: // get value
-                let intValue = (byteCode[pointer + 1] + (byteCode[pointer + 2] << 8) + (byteCode[pointer + 3] << 16) + (byteCode[pointer + 4] << 24)) >>> 0;
+                const intValue = (byteCode[pointer + 1] + (byteCode[pointer + 2] << 8) + (byteCode[pointer + 3] << 16) + (byteCode[pointer + 4] << 24)) >>> 0;
                 let stringValue = hashes[intValue];
                 if (!stringValue) {
                     for (let renderAttribute of renderAttributes) {
@@ -55614,9 +55614,9 @@ function processFunction(functionCode) {
             stack.push(a);
             break;
         case 8: // lerp
-            let factor = stack.pop();
-            let second = stack.pop();
-            let first = stack.pop();
+            const factor = stack.pop();
+            const second = stack.pop();
+            const first = stack.pop();
             first[0] = first[0] + factor[0] * (second[0] - first[0]);
             first[1] = first[1] + factor[1] * (second[1] - first[1]);
             first[2] = first[2] + factor[2] * (second[2] - first[2]);
@@ -55687,7 +55687,7 @@ function processFunction(functionCode) {
             stack.push(vec4.fromValues(b[0], a[0], a[0], a[0]));
             break;
         case 27: // time
-            let time = performance.now() * 0.001;
+            const time = performance.now() * 0.001;
             stack.push(vec4.fromValues(time, time, time, time));
             break;
         case 28: // min
@@ -55720,7 +55720,7 @@ function getByte(b, offset) {
     return (offset > b.length - 1) ? -1 : b[0 + offset];
 }
 function getFloat32(b, offset) {
-    let sign = 1 - (2 * (b[3 + offset] >> 7)), exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127, mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
+    const sign = 1 - (2 * (b[3 + offset] >> 7)), exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127, mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
     let ret;
     if (exponent === 128) {
         if (mantissa !== 0) {
@@ -55745,7 +55745,7 @@ function getRandomArbitrary(min, max) {
     return Math.random() * (max - min) + min;
 }
 function not() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = !a[0];
     a[1] = !a[1];
     a[2] = !a[2];
@@ -55753,8 +55753,8 @@ function not() {
     stack.push(a);
 }
 function equality() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] == a[0];
     a[1] = b[1] == a[1];
     a[2] = b[2] == a[2];
@@ -55762,8 +55762,8 @@ function equality() {
     stack.push(a);
 }
 function inequality() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] != a[0];
     a[1] = b[1] != a[1];
     a[2] = b[2] != a[2];
@@ -55771,8 +55771,8 @@ function inequality() {
     stack.push(a);
 }
 function greater() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] > a[0];
     a[1] = b[1] > a[1];
     a[2] = b[2] > a[2];
@@ -55780,8 +55780,8 @@ function greater() {
     stack.push(a);
 }
 function greaterEqual() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] >= a[0];
     a[1] = b[1] >= a[1];
     a[2] = b[2] >= a[2];
@@ -55789,8 +55789,8 @@ function greaterEqual() {
     stack.push(a);
 }
 function less() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] < a[0];
     a[1] = b[1] < a[1];
     a[2] = b[2] < a[2];
@@ -55798,8 +55798,8 @@ function less() {
     stack.push(a);
 }
 function lessEqual() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] <= a[0];
     a[1] = b[1] <= a[1];
     a[2] = b[2] <= a[2];
@@ -55807,8 +55807,8 @@ function lessEqual() {
     stack.push(a);
 }
 function add() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] + a[0];
     a[1] = b[1] + a[1];
     a[2] = b[2] + a[2];
@@ -55816,8 +55816,8 @@ function add() {
     stack.push(a);
 }
 function subtract() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] - a[0];
     a[1] = b[1] - a[1];
     a[2] = b[2] - a[2];
@@ -55825,8 +55825,8 @@ function subtract() {
     stack.push(a);
 }
 function multiply() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] * a[0];
     a[1] = b[1] * a[1];
     a[2] = b[2] * a[2];
@@ -55834,8 +55834,8 @@ function multiply() {
     stack.push(a);
 }
 function divide() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] / a[0];
     a[1] = b[1] / a[1];
     a[2] = b[2] / a[2];
@@ -55843,8 +55843,8 @@ function divide() {
     stack.push(a);
 }
 function modulo() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] % a[0];
     a[1] = b[1] % a[1];
     a[2] = b[2] % a[2];
@@ -55852,7 +55852,7 @@ function modulo() {
     stack.push(a);
 }
 function negation() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = -a[0];
     a[1] = -a[1];
     a[2] = -a[2];
@@ -55860,7 +55860,7 @@ function negation() {
     stack.push(a);
 }
 function swizzle(code) {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = a[(code >> 0) & 3];
     a[1] = a[(code >> 2) & 3];
     a[2] = a[(code >> 4) & 3];
@@ -55869,7 +55869,7 @@ function swizzle(code) {
 }
 // Functions
 function sin() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.sin(a[0]);
     a[1] = Math.sin(a[1]);
     a[2] = Math.sin(a[2]);
@@ -55877,7 +55877,7 @@ function sin() {
     stack.push(a);
 }
 function cos() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.cos(a[0]);
     a[1] = Math.cos(a[1]);
     a[2] = Math.cos(a[2]);
@@ -55885,7 +55885,7 @@ function cos() {
     stack.push(a);
 }
 function tan() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.tan(a[0]);
     a[1] = Math.tan(a[1]);
     a[2] = Math.tan(a[2]);
@@ -55893,7 +55893,7 @@ function tan() {
     stack.push(a);
 }
 function frac() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = a[0] % 1;
     a[1] = a[1] % 1;
     a[2] = a[2] % 1;
@@ -55901,7 +55901,7 @@ function frac() {
     stack.push(a);
 }
 function floor() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.floor(a[0]);
     a[1] = Math.floor(a[1]);
     a[2] = Math.floor(a[2]);
@@ -55909,7 +55909,7 @@ function floor() {
     stack.push(a);
 }
 function ceil() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.ceil(a[0]);
     a[1] = Math.ceil(a[1]);
     a[2] = Math.ceil(a[2]);
@@ -55917,7 +55917,7 @@ function ceil() {
     stack.push(a);
 }
 function saturate() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = clamp(a[0], 0, 1);
     a[1] = clamp(a[1], 0, 1);
     a[2] = clamp(a[2], 0, 1);
@@ -55925,25 +55925,25 @@ function saturate() {
     stack.push(a);
 }
 function dot4() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = a[1] = a[2] = a[3] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
     stack.push(a);
 }
 function dot3() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = a[1] = a[2] = a[3] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
     stack.push(a);
 }
 function dot2() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = a[1] = a[2] = a[3] = a[0] * b[0] + a[1] * b[1];
     stack.push(a);
 }
 function log() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.log(a[0]);
     a[1] = Math.log(a[1]);
     a[2] = Math.log(a[2]);
@@ -55951,7 +55951,7 @@ function log() {
     stack.push(a);
 }
 function log2() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.log2(a[0]);
     a[1] = Math.log2(a[1]);
     a[2] = Math.log2(a[2]);
@@ -55959,7 +55959,7 @@ function log2() {
     stack.push(a);
 }
 function log10() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.log10(a[0]);
     a[1] = Math.log10(a[1]);
     a[2] = Math.log10(a[2]);
@@ -55967,7 +55967,7 @@ function log10() {
     stack.push(a);
 }
 function exp() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.exp(a[0]);
     a[1] = Math.exp(a[1]);
     a[2] = Math.exp(a[2]);
@@ -55975,7 +55975,7 @@ function exp() {
     stack.push(a);
 }
 function exp2() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = 2 ** a[0];
     a[1] = 2 ** a[1];
     a[2] = 2 ** a[2];
@@ -55983,7 +55983,7 @@ function exp2() {
     stack.push(a);
 }
 function sqrt() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.sqrt(a[0]);
     a[1] = Math.sqrt(a[1]);
     a[2] = Math.sqrt(a[2]);
@@ -55991,7 +55991,7 @@ function sqrt() {
     stack.push(a);
 }
 function rsqrt() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = 1 / Math.sqrt(a[0]);
     a[1] = 1 / Math.sqrt(a[1]);
     a[2] = 1 / Math.sqrt(a[2]);
@@ -55999,7 +55999,7 @@ function rsqrt() {
     stack.push(a);
 }
 function sign() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.sign(a[0]);
     a[1] = Math.sign(a[1]);
     a[2] = Math.sign(a[2]);
@@ -56007,7 +56007,7 @@ function sign() {
     stack.push(a);
 }
 function abs() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = Math.abs(a[0]);
     a[1] = Math.abs(a[1]);
     a[2] = Math.abs(a[2]);
@@ -56015,8 +56015,8 @@ function abs() {
     stack.push(a);
 }
 function pow() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] ** a[0];
     a[1] = b[1] ** a[1];
     a[2] = b[2] ** a[2];
@@ -56024,8 +56024,8 @@ function pow() {
     stack.push(a);
 }
 function step$1() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = b[0] >= a[0] ? 1 : 0;
     a[1] = b[1] >= a[1] ? 1 : 0;
     a[2] = b[2] >= a[2] ? 1 : 0;
@@ -56037,9 +56037,9 @@ function _smoothstep(min, max, x) {
     return x * x * (3 - 2 * x);
 }
 function smoothstep() {
-    let x = stack.pop();
-    let max = stack.pop();
-    let min = stack.pop();
+    const x = stack.pop();
+    const max = stack.pop();
+    const min = stack.pop();
     x[0] = _smoothstep(min[0], max[0], x[0]);
     x[1] = _smoothstep(min[1], max[1], x[1]);
     x[2] = _smoothstep(min[2], max[2], x[2]);
@@ -56047,8 +56047,8 @@ function smoothstep() {
     stack.push(x);
 }
 function min$1() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = Math.min(b[0], a[0]);
     a[1] = Math.min(b[1], a[1]);
     a[2] = Math.min(b[2], a[2]);
@@ -56056,8 +56056,8 @@ function min$1() {
     stack.push(a);
 }
 function max$1() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = Math.max(b[0], a[0]);
     a[1] = Math.max(b[1], a[1]);
     a[2] = Math.max(b[2], a[2]);
@@ -56065,7 +56065,7 @@ function max$1() {
     stack.push(a);
 }
 function SrgbLinearToGamma() {
-    let a = stack.pop();
+    const a = stack.pop();
     //saturate
     a[0] = Math.min(Math.max(a[0], 0), 1);
     a[1] = Math.min(Math.max(a[1], 0), 1);
@@ -56078,7 +56078,7 @@ function SrgbLinearToGamma() {
     stack.push(a);
 }
 function SrgbGammaToLinear() {
-    let a = stack.pop();
+    const a = stack.pop();
     //saturate
     a[0] = Math.min(Math.max(a[0], 0), 1);
     a[1] = Math.min(Math.max(a[1], 0), 1);
@@ -56091,8 +56091,8 @@ function SrgbGammaToLinear() {
     stack.push(a);
 }
 function random$1() {
-    let a = stack.pop();
-    let b = stack.pop();
+    const a = stack.pop();
+    const b = stack.pop();
     a[0] = getRandomArbitrary(b[0], a[0]);
     a[1] = getRandomArbitrary(b[1], a[1]);
     a[2] = getRandomArbitrary(b[2], a[2]);
@@ -56100,17 +56100,17 @@ function random$1() {
     stack.push(a);
 }
 function normalize$1() {
-    let a = stack.pop();
+    const a = stack.pop();
     vec3.normalize(a, a);
     stack.push(a);
 }
 function length$1() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = a[1] = a[2] = a[3] = Math.hypot(a[0], a[1], a[2]);
     stack.push(a);
 }
 function sqr() {
-    let a = stack.pop();
+    const a = stack.pop();
     a[0] = a[0] * a[0];
     a[1] = a[1] * a[1];
     a[2] = a[2] * a[2];
@@ -56123,9 +56123,9 @@ const Source2TextureLoader = new (function () {
         constructor() {
         }
         load(repository, fileName) {
-            let promise = new Promise((resolve, reject) => {
+            const promise = new Promise((resolve, reject) => {
                 fileName = fileName.replace(/.vtex_c/, '');
-                let vtexPromise = new Source2FileLoader(true).load(repository, fileName + '.vtex_c');
+                const vtexPromise = new Source2FileLoader(true).load(repository, fileName + '.vtex_c');
                 vtexPromise.then((source2File) => {
                     resolve(source2File);
                     /*if (texture) {
@@ -56164,26 +56164,26 @@ class Source2TextureManagerClass extends EventTarget {
     }
     async getTexture(repository, path, frame) {
         frame = Math.floor(frame);
-        let texture = await this.#getTexture(repository, path);
+        const texture = await this.#getTexture(repository, path);
         return texture ? texture.getFrame(frame) : this.#defaultTexture; //TODOv3
     }
     async getTextureSheet(repository, path) {
-        let texture = await this.#getTexture(repository, path);
+        const texture = await this.#getTexture(repository, path);
         return texture?.properties.get('vtex')?.getBlockByType('DATA')?.spriteSheet;
     }
     async #getTexture(repository, path) {
         path = path.replace(/.vtex_c$/, '').replace(/.vtex$/, '');
         path = path + '.vtex_c';
-        let fullPath = repository + path;
+        const fullPath = repository + path;
         if (this.#loadingTexturesList.has(fullPath)) {
             await this.#loadingTexturesList.get(fullPath);
         }
         if (!this.#texturesList.has(fullPath)) {
             const animatedTexture = new AnimatedTexture();
-            let promise = new Promise(async (resolve, reject) => {
-                let vtex = await Source2TextureLoader.load(repository, path);
+            const promise = new Promise(async (resolve, reject) => {
+                const vtex = await Source2TextureLoader.load(repository, path);
                 animatedTexture.properties.set('vtex', vtex);
-                let texture = TextureManager.createTexture(); //TODOv3: add params
+                const texture = TextureManager.createTexture(); //TODOv3: add params
                 this.#initTexture(texture.texture, vtex);
                 animatedTexture.addFrame(0, texture);
                 resolve(animatedTexture);
@@ -56202,8 +56202,8 @@ class Source2TextureManagerClass extends EventTarget {
         if (!texture || !vtexFile) {
             return;
         }
-        var imageData = vtexFile.blocks.DATA.imageData;
-        let imageFormat = vtexFile.imageFormat;
+        const imageData = vtexFile.blocks.DATA.imageData;
+        const imageFormat = vtexFile.imageFormat;
         if (imageData) {
             if (vtexFile.isCubeTexture()) {
                 this.#initCubeTexture(texture, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
@@ -56287,12 +56287,12 @@ class Source2TextureManagerClass extends EventTarget {
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     fillTextureDxt(texture, imageFormat, width, height, datas, target) {
-        var gl = new Graphics().glContext;
-        var s3tc = this.WEBGL_compressed_texture_s3tc; //gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
+        const gl = new Graphics().glContext;
+        const s3tc = this.WEBGL_compressed_texture_s3tc; //gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         if (s3tc) {
             gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, true);
-            var dxtFormat = 0;
+            let dxtFormat = 0;
             switch (imageFormat) {
                 case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1:
                     dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT1_EXT;
@@ -56313,7 +56313,7 @@ class Source2TextureManagerClass extends EventTarget {
             var uncompressedData = decompress(datas, width, height, dxtflag);
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData);//TODO: params*/
             gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-            let uncompressedData = new Uint8Array(width * height * 4);
+            const uncompressedData = new Uint8Array(width * height * 4);
             Detex.decode(imageFormat, width, height, datas, uncompressedData).then(() => {
                 // TODO: fix target in the 3 lines below
                 gl.bindTexture(GL_TEXTURE_2D, texture);
@@ -56324,18 +56324,18 @@ class Source2TextureManagerClass extends EventTarget {
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     #fillTextureBptc(texture, width, height, datas) {
-        var gl = new Graphics().glContext;
-        var bptc = this.EXT_texture_compression_bptc;
+        const gl = new Graphics().glContext;
+        const bptc = this.EXT_texture_compression_bptc;
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         gl.bindTexture(GL_TEXTURE_2D, texture);
         if (bptc) {
             gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, true);
-            var bptcFormat = bptc.COMPRESSED_RGBA_BPTC_UNORM_EXT; //COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT;
+            const bptcFormat = bptc.COMPRESSED_RGBA_BPTC_UNORM_EXT; //COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT;
             gl.compressedTexImage2D(GL_TEXTURE_2D, 0, bptcFormat, width, height, 0, datas);
         }
         else {
             gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-            let uncompressedData = new Uint8Array(width * height * 4);
+            const uncompressedData = new Uint8Array(width * height * 4);
             Detex.decodeBC7(width, height, datas, uncompressedData).then(() => {
                 gl.bindTexture(GL_TEXTURE_2D, texture);
                 gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData); //TODO: params
@@ -56352,18 +56352,18 @@ class Source2TextureManagerClass extends EventTarget {
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     #fillTextureRgtc(texture, width, height, datas) {
-        var gl = new Graphics().glContext;
-        var rgtc = this.EXT_texture_compression_rgtc;
+        const gl = new Graphics().glContext;
+        const rgtc = this.EXT_texture_compression_rgtc;
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         gl.bindTexture(GL_TEXTURE_2D, texture);
         if (rgtc) {
             gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, true);
-            var bptcFormat = rgtc.COMPRESSED_RED_RGTC1_EXT; //COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT;
+            const bptcFormat = rgtc.COMPRESSED_RED_RGTC1_EXT; //COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT;
             gl.compressedTexImage2D(GL_TEXTURE_2D, 0, bptcFormat, width, height, 0, datas);
         }
         else {
             gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-            let uncompressedData = new Uint8Array(width * height * 4);
+            const uncompressedData = new Uint8Array(width * height * 4);
             Detex.decodeBC4(width, height, datas, uncompressedData).then(() => {
                 gl.bindTexture(GL_TEXTURE_2D, texture);
                 gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData); //TODO: params
@@ -56496,7 +56496,7 @@ class Source2Material extends Material {
         if (this.getIntParam('F_SEPARATE_NORMAL_TRANSFORM')) {
             this.setDefine('USE_SEPARATE_NORMAL_TRANSFORM');
         }
-        let detailBlendMode = this.getIntParam('F_DETAIL');
+        const detailBlendMode = this.getIntParam('F_DETAIL');
         if (detailBlendMode !== null) {
             this.setDefine('DETAIL_BLEND_MODE', detailBlendMode);
         }
@@ -56543,9 +56543,9 @@ class Source2Material extends Material {
         */
     }
     setupUniforms() {
-        for (let [paramName, uniformName] of UNIFORMS) {
+        for (const [paramName, uniformName] of UNIFORMS) {
             //console.error(uniformName);
-            let paramValue = this.getParam(paramName);
+            const paramValue = this.getParam(paramName);
             if (paramValue) {
                 this.setUniform(uniformName, paramValue);
             }
@@ -56556,10 +56556,10 @@ class Source2Material extends Material {
     }
     getTextureByName(textureName) {
         if (this.#source2File) {
-            var textures = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_textureParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_textureParams');
+            const textures = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_textureParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_textureParams');
             if (textures) {
-                for (var textureIndex = 0; textureIndex < textures.length; textureIndex++) {
-                    var texture = textures[textureIndex];
+                for (let textureIndex = 0; textureIndex < textures.length; textureIndex++) {
+                    const texture = textures[textureIndex];
                     if (texture.m_name == textureName) {
                         return texture.m_pValue;
                     }
@@ -56621,7 +56621,7 @@ class Source2Material extends Material {
         //this.setDynamicUniform('g_vNormalTexCoordOffset');
     }
     setDynamicUniform(uniformName) {
-        let value = this.getDynamicParam(uniformName);
+        const value = this.getDynamicParam(uniformName);
         if (value) {
             if (uniformName.startsWith('g_fl')) {
                 this.uniforms[uniformName] = value[0];
@@ -56638,9 +56638,9 @@ class Source2Material extends Material {
     }
     initFloatUniforms() {
         if (this.#source2File) {
-            var floats = this.#source2File.getMaterialResourceData('m_floatParams');
+            const floats = this.#source2File.getMaterialResourceData('m_floatParams');
             if (floats) {
-                for (let fl of floats) {
+                for (const fl of floats) {
                     this.setUniform(fl.m_name, fl.m_flValue);
                 }
             }
@@ -56648,9 +56648,9 @@ class Source2Material extends Material {
     }
     initVectorUniforms() {
         if (this.#source2File) {
-            var vectors = this.#source2File.getMaterialResourceData('m_vectorParams');
+            const vectors = this.#source2File.getMaterialResourceData('m_vectorParams');
             if (vectors) {
-                for (let vector of vectors) {
+                for (const vector of vectors) {
                     this.setUniform(vector.m_name, vector.m_value);
                 }
             }
@@ -56664,8 +56664,8 @@ class Source2Material extends Material {
     }
     async initTextureUniforms() {
         for (const map of this.getTextureUniforms()) {
-            for (let [paramName, [uniformName, defineName]] of map) {
-                let paramValue = this.getTextureByName(paramName);
+            for (const [paramName, [uniformName, defineName]] of map) {
+                const paramValue = this.getTextureByName(paramName);
                 if (paramValue) {
                     this.setTexture(uniformName, paramValue ? await Source2TextureManager.getTexture(this.repository, paramValue, 0) : null, defineName);
                 }
@@ -56693,10 +56693,10 @@ class Source2Material extends Material {
     }
     getIntParam(intName) {
         if (this.#source2File) {
-            var ints = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_intParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_intParams');
+            const ints = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_intParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_intParams');
             if (ints) {
-                for (var intIndex = 0; intIndex < ints.length; intIndex++) {
-                    var fl = ints[intIndex];
+                for (let intIndex = 0; intIndex < ints.length; intIndex++) {
+                    const fl = ints[intIndex];
                     if (fl.m_name == intName) {
                         return fl.m_nValue;
                     }
@@ -56707,10 +56707,10 @@ class Source2Material extends Material {
     }
     getFloatParam(floatName) {
         if (this.#source2File) {
-            var floats = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_floatParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_floatParams');
+            const floats = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_floatParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_floatParams');
             if (floats) {
-                for (var floatIndex = 0; floatIndex < floats.length; floatIndex++) {
-                    var fl = floats[floatIndex];
+                for (let floatIndex = 0; floatIndex < floats.length; floatIndex++) {
+                    const fl = floats[floatIndex];
                     if (fl.m_name == floatName) {
                         return fl.m_flValue;
                     }
@@ -56721,10 +56721,10 @@ class Source2Material extends Material {
     }
     getVectorParam(vectorName) {
         if (this.#source2File) {
-            var vectors = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_vectorParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_vectorParams');
+            const vectors = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_vectorParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_vectorParams');
             if (vectors) {
-                for (var vectorIndex = 0; vectorIndex < vectors.length; vectorIndex++) {
-                    var vector = vectors[vectorIndex];
+                for (let vectorIndex = 0; vectorIndex < vectors.length; vectorIndex++) {
+                    const vector = vectors[vectorIndex];
                     if (vector.m_name == vectorName) {
                         return vector.m_value;
                     }
@@ -56735,10 +56735,10 @@ class Source2Material extends Material {
     }
     getDynamicParam(dynamicName) {
         if (this.#source2File) {
-            var dynamicParams = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_dynamicParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
+            const dynamicParams = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_dynamicParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
             if (dynamicParams) {
-                for (var dynamicIndex = 0; dynamicIndex < dynamicParams.length; dynamicIndex++) {
-                    var dynamicParam = dynamicParams[dynamicIndex];
+                for (let dynamicIndex = 0; dynamicIndex < dynamicParams.length; dynamicIndex++) {
+                    const dynamicParam = dynamicParams[dynamicIndex];
                     if (dynamicParam.m_name == dynamicName) {
                         return executeDynamicExpression(dynamicParam.m_value, this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_renderAttributesUsed') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_renderAttributesUsed'));
                     }
@@ -57570,10 +57570,10 @@ function vec4Scale(out, a, b) {
     return out;
 }
 function vec4Lerp(out, a, b, t) {
-    let ax = Number(a[0]);
-    let ay = Number(a[1]);
-    let az = Number(a[2]);
-    let aw = Number(a[3]);
+    const ax = Number(a[0]);
+    const ay = Number(a[1]);
+    const az = Number(a[2]);
+    const aw = Number(a[3]);
     out[0] = ax + t * (Number(b[0]) - ax);
     out[1] = ay + t * (Number(b[1]) - ay);
     out[2] = az + t * (Number(b[2]) - az);
@@ -57605,8 +57605,8 @@ class Operator {
     }
     setParam(paramName, value) {
         if (value instanceof Kv3Array) {
-            let arr = [];
-            for (let v of value.properties) {
+            const arr = [];
+            for (const v of value.properties) {
                 if (typeof v == 'bigint') {
                     arr.push(Number(v));
                 }
@@ -57630,13 +57630,13 @@ class Operator {
         return this.#parameters[paramName];
     }
     getParamScalarValue(paramName, particle) {
-        let parameter = this.#parameters[paramName];
+        const parameter = this.#parameters[paramName];
         return this.#getParamScalarValue(parameter, particle);
     }
     #getParamScalarValue(parameter, particle) {
         if (parameter) {
             let inputValue;
-            let type = parameter.m_nType;
+            const type = parameter.m_nType;
             if (type) {
                 switch (type) {
                     case 'PF_TYPE_LITERAL':
@@ -57645,7 +57645,7 @@ class Operator {
                         return parameter.m_vLiteralValue;
                     case 'PF_TYPE_PARTICLE_NUMBER_NORMALIZED':
                         if (this.normalizePerLiving) {
-                            let max = this.system.livingParticles.length;
+                            const max = this.system.livingParticles.length;
                             inputValue = (particle?.id ?? 0) % max / max;
                         }
                         else {
@@ -57667,7 +57667,7 @@ class Operator {
                     case 'PF_TYPE_PARTICLE_NOISE':
                         return this.#getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin, parameter.m_flNoiseOutputMax)); //TODO
                     case 'PF_TYPE_CONTROL_POINT_COMPONENT':
-                        let cp = this.system.getControlPoint(parameter.m_nControlPoint);
+                        const cp = this.system.getControlPoint(parameter.m_nControlPoint);
                         if (cp) {
                             return cp.position[parameter.m_nVectorComponent];
                         }
@@ -57685,7 +57685,7 @@ class Operator {
         }
     }
     #getParamScalarValue2(parameter /*TODO: improve type*/, inputValue) {
-        let mapType = parameter.m_nMapType;
+        const mapType = parameter.m_nMapType;
         switch (mapType) {
             case 'PF_MAP_TYPE_DIRECT':
                 return inputValue;
@@ -57701,9 +57701,9 @@ class Operator {
         }
     }
     #getParamScalarValueCurve(parameter /*TODO: improve type*/, inputValue) {
-        let curve = parameter.m_Curve /*TODO: improve type*/;
-        let inputMin = curve.m_vDomainMins[0];
-        let inputMax = curve.m_vDomainMaxs[0];
+        const curve = parameter.m_Curve /*TODO: improve type*/;
+        const inputMin = curve.m_vDomainMins[0];
+        const inputMax = curve.m_vDomainMaxs[0];
         curve.m_vDomainMins[1];
         curve.m_vDomainMaxs[1];
         parameter.m_nInputMode;
@@ -57720,7 +57720,7 @@ class Operator {
     }
     #getCurveValue(curve /*TODO: improve type*/, x) {
         //TODO: do a real curve
-        let spline = curve.m_spline;
+        const spline = curve.m_spline;
         let previousKey = spline[0];
         let key = previousKey;
         if (x < previousKey.x) {
@@ -57737,9 +57737,9 @@ class Operator {
         //export function lerp(min, max, v) {
     }
     getParamVectorValue(paramName, particle, outVec = vec4.create()) {
-        let parameter = this.#parameters[paramName];
+        const parameter = this.#parameters[paramName];
         if (parameter) {
-            let type = parameter.m_nType;
+            const type = parameter.m_nType;
             if (type) {
                 switch (type) {
                     case 'PVEC_TYPE_LITERAL':
@@ -57783,11 +57783,11 @@ class Operator {
         }
     }
     #getParamVectorValueFloatInterpGradient(parameter /*TODO: improve type*/, particle, outVec) {
-        let interpInput0 = parameter.m_flInterpInput0;
-        let interpInput1 = parameter.m_flInterpInput1;
+        const interpInput0 = parameter.m_flInterpInput0;
+        const interpInput1 = parameter.m_flInterpInput1;
         let inputValue = this.#getParamScalarValue(parameter.m_FloatInterp, particle);
         inputValue = RemapValClamped(inputValue, interpInput0, interpInput1, 0.0, 1.0);
-        let stops = parameter.m_Gradient?.m_Stops;
+        const stops = parameter.m_Gradient?.m_Stops;
         if (stops) {
             //m_Color
             let previousStop = stops[0];
@@ -57851,7 +57851,7 @@ class Operator {
                 //TODO
                 break;
             case 'm_ColorScale':
-                let colorScale = vec3.create();
+                const colorScale = vec3.create();
                 colorScale[0] = Number(value[0]) * COLOR_SCALE;
                 colorScale[1] = Number(value[1]) * COLOR_SCALE;
                 colorScale[2] = Number(value[2]) * COLOR_SCALE;
@@ -57921,7 +57921,7 @@ class Operator {
         this.doRender(particleList, elapsedTime, material);
     }
     checkIfOperatorShouldRun() {
-        let strength = this.fadeInOut();
+        const strength = this.fadeInOut();
         return strength > 0;
     }
     fadeInOut() {
@@ -57971,7 +57971,7 @@ class Operator {
         return this.#parameters;
     }
     setParameters(parameters) {
-        for (let i in parameters) {
+        for (const i in parameters) {
             const pair = parameters[i];
             this.setParameter(pair[0], pair[1], pair[2]);
         }
@@ -58133,7 +58133,7 @@ class Operator {
     updateParticles(particleSystem, particleList, elapsedTime) { }
 }
 
-let vec$7 = vec3.create();
+const vec$7 = vec3.create();
 class ConstrainDistance extends Operator {
     minDistance = 0;
     maxDistance = 100;
@@ -58166,12 +58166,12 @@ class ConstrainDistance extends Operator {
         this.getParameter('maximum distance');
         this.getParameter('offset of center');
         this.getParameter('control point number');
-        let cp = this.system.getControlPoint(this.controlPointNumber);
-        let v = vec3.clone(particle.position);
+        const cp = this.system.getControlPoint(this.controlPointNumber);
+        const v = vec3.clone(particle.position);
         if (cp) {
             vec3.sub(v, v, cp.getWorldPosition(vec$7));
         }
-        let distance = vec3.length(v);
+        const distance = vec3.length(v);
         if (distance > 0) {
             vec3.scale(v, v, 1 / distance);
             if (distance < this.minDistance) {
@@ -58254,9 +58254,9 @@ class InstantaneousEmitter extends Operator {
         //todo: use snapshotControlPoint
         let particlesToEmit = this.getParamScalarValue('m_nParticlesToEmit') ?? 100;
         this.getParamScalarValue('m_flStartTime') ?? 0;
-        let system = this.system;
+        const system = this.system;
         if (this.snapshotControlPoint != -1) {
-            let snapshot = system.getControlPoint(this.snapshotControlPoint)?.snapshot;
+            const snapshot = system.getControlPoint(this.snapshotControlPoint)?.snapshot;
             if (snapshot) {
                 particlesToEmit = snapshot.particleCount;
             }
@@ -58298,7 +58298,7 @@ class MaintainEmitter extends Operator {
         }
     }
     doEmit(elapsedTime) {
-        let nToEmit = this.particlesToMaintain - this.system.livingParticles.length;
+        const nToEmit = this.particlesToMaintain - this.system.livingParticles.length;
         if (nToEmit > 0) {
             let currentTime = this.system.currentTime;
             const timeStampStep = elapsedTime / nToEmit;
@@ -58406,7 +58406,7 @@ class NoiseEmitter extends Operator {
 RegisterSource2ParticleOperator('C_OP_NoiseEmitter', NoiseEmitter);
 
 const vecCenter = vec3.create();
-let vec$6 = vec3.create();
+const vec$6 = vec3.create();
 class AttractToControlPoint extends Operator {
     componentScale = vec3.fromValues(1, 1, 1);
     falloffPower = 0;
@@ -58434,7 +58434,7 @@ class AttractToControlPoint extends Operator {
         }
     }
     doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
-        let forceAmount = this.getParamScalarValue('m_fForceAmount') ?? 100;
+        const forceAmount = this.getParamScalarValue('m_fForceAmount') ?? 100;
         this.getParamScalarValue('m_fForceAmountMin') ?? 0;
         (-4.0 * this.falloffPower) << 0; // convert to what pow_fixedpoint_exponent_simd wants
         const fForceScale = -forceAmount * strength /*flStrength*/;
@@ -58491,8 +58491,8 @@ class RandomForce extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_RandomForce', RandomForce);
 
-let va$2 = vec3.create();
-let vb$1 = vec3.create();
+const va$2 = vec3.create();
+const vb$1 = vec3.create();
 class AddVectorToVector extends Operator {
     fieldOutput = PARTICLE_FIELD_POSITION;
     fieldInput = PARTICLE_FIELD_POSITION;
@@ -58576,7 +58576,7 @@ class CreateFromParentParticles extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_CreateFromParentParticles', CreateFromParentParticles);
 
-let vec$5 = vec3.create();
+const vec$5 = vec3.create();
 class CreateOnModel extends Operator {
     forceInModel = 0;
     desiredHitbox = -1;
@@ -58624,11 +58624,11 @@ class CreateOnModel extends Operator {
     }
     doInit(particle, elapsedTime) {
         this.getParamVectorValue('m_vecHitBoxScale');
-        let controlPoint = this.system.getControlPoint(this.controlPointNumber);
+        const controlPoint = this.system.getControlPoint(this.controlPointNumber);
         if (controlPoint) {
-            let controllingModel = controlPoint.parentModel;
+            const controllingModel = controlPoint.parentModel;
             if (controllingModel?.getRandomPointOnModel) {
-                let bones = [];
+                const bones = [];
                 particle.bones = bones;
                 particle.initialVec = vec3.create();
                 const position = controllingModel.getRandomPointOnModel(vec3.create(), particle.initialVec, bones);
@@ -58648,7 +58648,7 @@ class CreateOnModel extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_CreateOnModel', CreateOnModel);
 
-let vec$4 = vec3.create();
+const vec$4 = vec3.create();
 class CreateSequentialPath extends Operator {
     numToAssign = 100;
     step = 0.01;
@@ -58675,7 +58675,7 @@ class CreateSequentialPath extends Operator {
                 this.loop = value;
                 break;
             case 'm_PathParams':
-                for (let subName of Object.keys(value)) {
+                for (const subName of Object.keys(value)) {
                     this._paramChanged(subName, value[subName]);
                 }
                 break;
@@ -58718,13 +58718,13 @@ class CreateSequentialPath extends Operator {
     }
     doInit(particle, elapsedTime) {
         //TODO: use other parameters
-        let startControlPointNumber = this.startControlPointNumber;
-        let endControlPointNumber = this.endControlPointNumber;
-        let startControlPoint = this.system.getControlPoint(startControlPointNumber);
-        let endControlPoint = this.system.getControlPoint(endControlPointNumber);
+        const startControlPointNumber = this.startControlPointNumber;
+        const endControlPointNumber = this.endControlPointNumber;
+        const startControlPoint = this.system.getControlPoint(startControlPointNumber);
+        const endControlPoint = this.system.getControlPoint(endControlPointNumber);
         if (startControlPoint && endControlPoint) {
             this.numToAssign;
-            let delta = startControlPoint.deltaPosFrom(endControlPoint, vec$4);
+            const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$4);
             vec3.scale(delta, delta, this.t);
             vec3.add(particle.position, startControlPoint.currentWorldPosition, delta);
             vec3.copy(particle.prevPosition, particle.position);
@@ -58740,9 +58740,9 @@ class CreateSequentialPath extends Operator {
 RegisterSource2ParticleOperator('C_INIT_CreateSequentialPath', CreateSequentialPath);
 RegisterSource2ParticleOperator('C_INIT_CreateSequentialPathV2', CreateSequentialPath);
 
-let tempQuat$2 = quat.create();
-let tempVec3$4 = vec3.create();
-let tempVec3_2$1 = vec3.create();
+const tempQuat$2 = quat.create();
+const tempVec3$4 = vec3.create();
+const tempVec3_2$1 = vec3.create();
 class CreateWithinBox extends Operator {
     vecMin = vec3.create();
     vecMax = vec3.create();
@@ -58775,7 +58775,7 @@ class CreateWithinBox extends Operator {
                 vec3.scale(tempVec3$4, tempVec3$4, tempVec3_2$1[0]); //x position of the scale cp is used as scaling
             }
         }
-        let controlPoint = this.system.getControlPoint(this.controlPointNumber);
+        const controlPoint = this.system.getControlPoint(this.controlPointNumber);
         if (controlPoint) {
             controlPoint.getWorldPosition(tempVec3_2$1);
             if (this.localSpace) {
@@ -58824,13 +58824,13 @@ class CreateWithinSphere extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        let localCoordinateSystemSpeedMin = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin') ?? DEFAULT_SPEED$1;
-        let localCoordinateSystemSpeedMax = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax') ?? DEFAULT_SPEED$1;
-        let m_vecDistanceBias = this.getParamVectorValue('m_vecDistanceBias') ?? DEFAULT_DISTANCE_BIAS;
-        let radiusMin = this.getParamScalarValue('m_fRadiusMin') ?? 0;
-        let radiusMax = this.getParamScalarValue('m_fRadiusMax') ?? 0;
-        let speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
-        let speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
+        const localCoordinateSystemSpeedMin = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin') ?? DEFAULT_SPEED$1;
+        const localCoordinateSystemSpeedMax = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax') ?? DEFAULT_SPEED$1;
+        const m_vecDistanceBias = this.getParamVectorValue('m_vecDistanceBias') ?? DEFAULT_DISTANCE_BIAS;
+        const radiusMin = this.getParamScalarValue('m_fRadiusMin') ?? 0;
+        const radiusMax = this.getParamScalarValue('m_fRadiusMax') ?? 0;
+        const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
+        const speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
         const m_vecDistanceBiasAbs = this.distanceBiasAbs;
         //const controlPointNumber = this.getParameter('control_point_number');
         const m_bDistanceBias = (m_vecDistanceBias[0] != 1.0) || (m_vecDistanceBias[1] != 1.0) || (m_vecDistanceBias[2] != 1.0);
@@ -58951,7 +58951,7 @@ class CreationNoise extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        let fieldOutput = this.fieldOutput;
+        const fieldOutput = this.fieldOutput;
         //let nAbsVal = 0xffffffff;
         let flAbsScale = 0.5;
         if (this.absVal) {
@@ -58964,20 +58964,20 @@ class CreationNoise extends Operator {
             fMin *= DEG_TO_RAD;
             fMax *= DEG_TO_RAD;
         }
-        let CoordScaleLoc = this.noiseScaleLoc;
+        const CoordScaleLoc = this.noiseScaleLoc;
         let ValueScale, ValueBase;
         ValueScale = (flAbsScale * (fMax - fMin));
         ValueBase = (fMin + ((1.0 - flAbsScale) * (fMax - fMin)));
         let CoordLoc, CoordBase;
         //let pCreationTime = particle.cTime;//pParticles->GetFloatAttributePtr( PARTICLE_ATTRIBUTE_CREATION_TIME, start_p );
-        let Offset = this.offset;
-        let a = (particle.cTime + Offset) * this.noiseScale + performance.now() * this.worldTimeScale;
+        const Offset = this.offset;
+        const a = (particle.cTime + Offset) * this.noiseScale + performance.now() * this.worldTimeScale;
         CoordBase = vec3.fromValues(a, a, a);
         CoordLoc = vec3.create();
         //CoordBase *= this.noiseScale;
         //CoordWorldTime = Vector( (Plat_MSTime() * m_flWorldTimeScale), (Plat_MSTime() * m_flWorldTimeScale), (Plat_MSTime() * m_flWorldTimeScale) );
         //CoordBase += CoordWorldTime;
-        let Coord = vec3.create();
+        const Coord = vec3.create();
         //for( ; nParticleCount--; start_p++ )
         {
             vec3.copy(Coord, CoordBase);
@@ -59002,7 +59002,7 @@ class CreationNoise extends Operator {
             if (this.absValInv) {
                 flNoise = 1.0 - flNoise;
             }
-            let flInitialNoise = (ValueBase + (ValueScale * flNoise));
+            const flInitialNoise = (ValueBase + (ValueScale * flNoise));
             /*
             //TODO
             if ( ATTRIBUTES_WHICH_ARE_0_TO_1 & (1 << m_nFieldOutput ) )
@@ -59042,9 +59042,9 @@ class InheritFromParentParticles extends Operator {
     }
     doInit(particle, elapsedTime) {
         //TODO: use m_flScale m_nIncrement m_bRandomDistribution m_nRandomSeed
-        let parentSystem = this.system.parentSystem;
+        const parentSystem = this.system.parentSystem;
         if (parentSystem) {
-            let parentParticle = parentSystem.getParticle(particle.id - 1);
+            const parentParticle = parentSystem.getParticle(particle.id - 1);
             if (parentParticle) {
                 particle.setField(this.fieldOutput, parentParticle.getField(this.fieldOutput));
             }
@@ -59074,7 +59074,7 @@ class InitFloat extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        let value = this.getParamScalarValue('m_InputValue', particle);
+        const value = this.getParamScalarValue('m_InputValue', particle);
         //TODO: use setMethod
         particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE', true);
         //setField(field = 0, value, mulInitial = false, setInitial = false, additive = false) {
@@ -59120,7 +59120,7 @@ export const PARTICLE_FIELD_MANUAL_ANIMATION_FRAME = 38;
 export const PARTICLE_FIELD_SHADER_EXTRA_DATA_1 = 39;
 export const PARTICLE_FIELD_SHADER_EXTRA_DATA_2 = 40;
 */
-let v$f = vec3.create();
+const v$f = vec3.create();
 class InitFromCPSnapshot extends Operator {
     attributeToRead = -1;
     attributeToWrite = PARTICLE_FIELD_POSITION;
@@ -59160,11 +59160,11 @@ class InitFromCPSnapshot extends Operator {
         if (this.attributeToRead == -1) {
             return;
         }
-        let system = this.system;
-        let snapshot = system.getControlPoint(this.controlPointNumber)?.snapshot;
+        const system = this.system;
+        const snapshot = system.getControlPoint(this.controlPointNumber)?.snapshot;
         if (snapshot) {
-            let attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.attributeToRead];
-            let attributeToRead = snapshot.attributes[attributeToReadName];
+            const attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.attributeToRead];
+            const attributeToRead = snapshot.attributes[attributeToReadName];
             if (attributeToRead) {
                 let id;
                 if (this.random) {
@@ -59174,7 +59174,7 @@ class InitFromCPSnapshot extends Operator {
                     id = (particle.id - 1) % snapshot.particleCount;
                 }
                 if (this.attributeToWrite == PARTICLE_FIELD_POSITION) {
-                    let localSpaceCP = system.getControlPoint(this.localSpaceCP);
+                    const localSpaceCP = system.getControlPoint(this.localSpaceCP);
                     if (localSpaceCP) {
                         //TODO: check attributeToRead[id] is actually a vector
                         //TODO: only transform position when this.localSpaceAngles = true
@@ -59239,8 +59239,8 @@ class InitialVelocityNoise extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_InitialVelocityNoise', InitialVelocityNoise);
 
-let mat$1 = mat4.create();
-let nmat$2 = mat3.create();
+const mat$1 = mat4.create();
+const nmat$2 = mat3.create();
 const IDENTITY_MAT4$1 = mat4.create();
 class InitSkinnedPositionFromCPSnapshot extends Operator {
     #rigidOnce = false;
@@ -59316,12 +59316,12 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
     }
     doInit(particle, elapsedTime) {
         //TODO: use all parameters
-        let system = this.system;
-        let snapshot = system.getControlPoint(this.snapshotControlPointNumber)?.snapshot;
+        const system = this.system;
+        const snapshot = system.getControlPoint(this.snapshotControlPointNumber)?.snapshot;
         if (!snapshot) {
             return;
         }
-        let cp = system.getControlPoint(this.controlPointNumber);
+        const cp = system.getControlPoint(this.controlPointNumber);
         if (!cp) {
             return;
         }
@@ -59336,22 +59336,22 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
         else {
             attributeId = (particle.id - 1) % snapshot.particleCount;
         }
-        let positionAttribute = snapshot.attributes['position'];
+        const positionAttribute = snapshot.attributes['position'];
         if (!positionAttribute) {
             return;
         }
-        let position = positionAttribute[attributeId];
+        const position = positionAttribute[attributeId];
         particle.setInitialField(PARTICLE_FIELD_POSITION, position);
         particle.initialSkinnedPosition = position;
-        let skinningAttribute = snapshot.attributes['skinning'];
+        const skinningAttribute = snapshot.attributes['skinning'];
         if (skinningAttribute) {
             particle.skinning = skinningAttribute[attributeId];
         }
-        let hitboxAttribute = snapshot.attributes['hitbox'];
+        const hitboxAttribute = snapshot.attributes['hitbox'];
         if (hitboxAttribute) {
             particle.snapHitbox = hitboxAttribute[attributeId];
         }
-        let hitboxOffsetAttribute = snapshot.attributes['hitbox_offset'];
+        const hitboxOffsetAttribute = snapshot.attributes['hitbox_offset'];
         if (hitboxOffsetAttribute) {
             particle.snapHitboxOffset = hitboxOffsetAttribute[attributeId];
         }
@@ -59359,17 +59359,17 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
             return;
         }
         let bone, boneName, boneWeight, boneMat;
-        let model = cp.model;
+        const model = cp.model;
         if (!model) {
             return;
         }
-        let skeleton = model.skeleton;
+        const skeleton = model.skeleton;
         if (!skeleton) {
             return;
         }
-        let particleSkinning = particle.skinning;
-        let particleInitialPosition = particle.initialSkinnedPosition;
-        let particleInitialNormal = particle.initialSkinnedNormal ?? DEFAULT_PARTICLE_NORMAL;
+        const particleSkinning = particle.skinning;
+        const particleInitialPosition = particle.initialSkinnedPosition;
+        const particleInitialNormal = particle.initialSkinnedNormal ?? DEFAULT_PARTICLE_NORMAL;
         if (particleSkinning && particleInitialPosition) {
             mat$1[0] = 0;
             mat$1[1] = 0;
@@ -59413,7 +59413,7 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
         }
         else {
             //Probably should do it better, but it just works
-            let particleHitbox = particle.snapHitbox;
+            const particleHitbox = particle.snapHitbox;
             particle.snapHitboxOffset;
             if (particleHitbox) {
                 bone = skeleton.getBoneByName(particleHitbox);
@@ -59431,7 +59431,7 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
 RegisterSource2ParticleOperator('C_INIT_InitSkinnedPositionFromCPSnapshot', InitSkinnedPositionFromCPSnapshot);
 
 const DEFAULT_INPUT_VALUE = vec3.create();
-let v$e = vec4.create();
+const v$e = vec4.create();
 class InitVec extends Operator {
     setMethod = null;
     scaleInitialRange = false;
@@ -59454,7 +59454,7 @@ class InitVec extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        let inputValue = this.getParamVectorValue('m_InputValue', particle, v$e) ?? DEFAULT_INPUT_VALUE;
+        const inputValue = this.getParamVectorValue('m_InputValue', particle, v$e) ?? DEFAULT_INPUT_VALUE;
         particle.setField(this.fieldOutput, inputValue, this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
     }
 }
@@ -59472,7 +59472,7 @@ class NormalAlignToCP extends Operator {
     }
     doInit(particle, elapsedTime) {
         //This operator overrides the normal
-        let cp = this.system.getControlPoint(this.controlPointNumber);
+        const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
             //cp.getWorldTransformation(particle.cpPreviousTransform);
             vec3.transformQuat(particle.normal, DEFAULT_NORMAL, cp.currentWorldQuaternion);
@@ -59508,7 +59508,7 @@ class NormalOffset extends Operator {
     doInit(particle, elapsedTime) {
         vec3RandomBox(v$d, this.offsetMin, this.offsetMax);
         if (this.localCoords) {
-            let cp = this.system.getControlPoint(this.controlPointNumber);
+            const cp = this.system.getControlPoint(this.controlPointNumber);
             vec3.transformQuat(v$d, v$d, cp.currentWorldQuaternion);
         }
         vec3.add(particle.normal, particle.normal, v$d);
@@ -59522,7 +59522,7 @@ class NormalOffset extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_NormalOffset', NormalOffset);
 
-let v$c = vec3.create();
+const v$c = vec3.create();
 class OffsetVectorToVector extends Operator {
     outputMin = vec3.create();
     outputMax = vec3.fromValues(1, 1, 1);
@@ -59574,8 +59574,8 @@ class PositionOffset extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        let offsetMin = this.getParamVectorValue('m_OffsetMin') ?? DEFAULT_OFFSET;
-        let offsetMax = this.getParamVectorValue('m_OffsetMax') ?? DEFAULT_OFFSET;
+        const offsetMin = this.getParamVectorValue('m_OffsetMin') ?? DEFAULT_OFFSET;
+        const offsetMax = this.getParamVectorValue('m_OffsetMax') ?? DEFAULT_OFFSET;
         vec3RandomBox(offset$1, offsetMin, offsetMax);
         if (this.localCoords) {
             const cp = particle.system.getControlPoint(this.controlPointNumber);
@@ -59592,7 +59592,7 @@ class PositionOffset extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_PositionOffset', PositionOffset);
 
-let v$b = vec3.create();
+const v$b = vec3.create();
 class PositionWarp extends Operator {
     warpMin = vec3.fromValues(1, 1, 1);
     warpMax = vec3.fromValues(1, 1, 1);
@@ -59640,7 +59640,7 @@ class PositionWarp extends Operator {
         //TODO: use time parameters, m_bUseCount
         vec3RandomBox(v$b, this.warpMin, this.warpMax);
         if (this.scaleControlPointNumber != -1) {
-            let scaleCp = this.system.getControlPoint(this.scaleControlPointNumber);
+            const scaleCp = this.system.getControlPoint(this.scaleControlPointNumber);
             if (scaleCp) {
                 vec3.mul(v$b, v$b, scaleCp._position); //Not sure if it's position or world position
             }
@@ -59701,7 +59701,7 @@ class RandomAlpha extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        let alpha = RandomFloatExp(this.alphaMin, this.alphaMax, this.alphaRandExponent) / 255.0;
+        const alpha = RandomFloatExp(this.alphaMin, this.alphaMax, this.alphaRandExponent) / 255.0;
         particle.alpha = alpha;
         particle.startAlpha = alpha;
         //TODO: use fieldOutput
@@ -59754,7 +59754,7 @@ class RandomColor extends Operator {
     }
     doInit(particle, elapsedTime) {
         //TODO: use tint
-        let rand = Math.random();
+        const rand = Math.random();
         vec3.lerp(particle.color, this.colorMin, this.colorMax, rand);
         vec3.copy(particle.initialColor, particle.color);
     }
@@ -59983,7 +59983,7 @@ class RandomTrailLength extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_RandomTrailLength', RandomTrailLength);
 
-let tempVec3$3 = vec3.create();
+const tempVec3$3 = vec3.create();
 class RandomVector extends Operator {
     vecMin = vec3.create();
     vecMax = vec3.create();
@@ -60035,7 +60035,7 @@ class RandomYaw extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        let rotation = this.radians + RandomFloatExp(this.radiansMin, this.radiansMax, this.rotationRandExponent);
+        const rotation = this.radians + RandomFloatExp(this.radiansMin, this.radiansMax, this.rotationRandExponent);
         if (this.randomlyFlipDirection && (RandomFloat(-1, 1) >= 0)) {
             particle.rotationYaw -= rotation;
         }
@@ -60119,10 +60119,10 @@ let RemapCPtoScalar$1 = class RemapCPtoScalar extends Operator {
         }
     }
     doInit(particle, elapsedTime, strength) {
-        let cpInputPos = this.system.getControlPoint(this.cpInput).currentWorldPosition;
+        const cpInputPos = this.system.getControlPoint(this.cpInput).currentWorldPosition;
         let value = cpInputPos[this.field];
         value = RemapValClampedBias(value, this.inputMin, this.inputMax, this.outputMin, this.outputMax, this.remapBias);
-        let scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
+        const scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
         if (scaleInitial) {
             value = lerp(1, value, strength);
         }
@@ -60134,8 +60134,8 @@ let RemapCPtoScalar$1 = class RemapCPtoScalar extends Operator {
 };
 RegisterSource2ParticleOperator('C_INIT_RemapCPtoScalar', RemapCPtoScalar$1);
 
-let v$a = vec3.create();
-let v1 = vec3.fromValues(1, 1, 1);
+const v$a = vec3.create();
+const v1 = vec3.fromValues(1, 1, 1);
 class RemapCPtoVector extends Operator {
     cpInput = 0;
     inputMin = vec3.create();
@@ -60197,15 +60197,15 @@ class RemapCPtoVector extends Operator {
         }
     }
     doInit(particle, elapsedTime, strength) {
-        let inputMin = this.inputMin;
-        let inputMax = this.inputMax;
-        let outputMin = this.outputMin;
-        let outputMax = this.outputMax;
-        let input = this.system.getControlPoint(this.cpInput).currentWorldPosition;
+        const inputMin = this.inputMin;
+        const inputMax = this.inputMax;
+        const outputMin = this.outputMin;
+        const outputMax = this.outputMax;
+        const input = this.system.getControlPoint(this.cpInput).currentWorldPosition;
         v$a[0] = RemapValClampedBias(input[0], inputMin[0], inputMax[0], outputMin[0], outputMax[0], this.remapBias);
         v$a[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.remapBias);
         v$a[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.remapBias);
-        let scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
+        const scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
         if (scaleInitial) {
             vec3.lerp(v$a, v1, v$a, strength);
         }
@@ -60284,8 +60284,8 @@ class RemapParticleCountToScalar extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_RemapParticleCountToScalar', RemapParticleCountToScalar);
 
-let va$1 = vec3.create();
-let o = vec3.create();
+const va$1 = vec3.create();
+const o = vec3.create();
 class RingWave extends Operator {
     evenDistribution = false;
     xyVelocityOnly = true;
@@ -60313,17 +60313,17 @@ class RingWave extends Operator {
     }
     doInit(particle, elapsedTime) {
         //TODO: use all parameters
-        let particlesPerOrbit = this.getParamScalarValue('m_flParticlesPerOrbit') ?? -1; //even distribution count
-        let initialRadius = this.getParamScalarValue('m_flInitialRadius') ?? 0;
+        const particlesPerOrbit = this.getParamScalarValue('m_flParticlesPerOrbit') ?? -1; //even distribution count
+        const initialRadius = this.getParamScalarValue('m_flInitialRadius') ?? 0;
         this.getParamScalarValue('m_flThickness') ?? 0;
         this.getParamScalarValue('m_flInitialSpeedMin') ?? 0;
         this.getParamScalarValue('m_flInitialSpeedMax') ?? 0;
-        let roll = this.getParamScalarValue('m_flRoll') ?? 0;
-        let pitch = this.getParamScalarValue('m_flPitch') ?? 0;
-        let yaw = this.getParamScalarValue('m_flYaw') ?? 0;
+        const roll = this.getParamScalarValue('m_flRoll') ?? 0;
+        const pitch = this.getParamScalarValue('m_flPitch') ?? 0;
+        const yaw = this.getParamScalarValue('m_flYaw') ?? 0;
         let theta;
         if (this.evenDistribution) {
-            let step = particlesPerOrbit == -1 ? TWO_PI / this.system.livingParticles.length : TWO_PI / particlesPerOrbit;
+            const step = particlesPerOrbit == -1 ? TWO_PI / this.system.livingParticles.length : TWO_PI / particlesPerOrbit;
             this.t += step;
             theta = this.t;
         }
@@ -60340,7 +60340,7 @@ class RingWave extends Operator {
         if (yaw) {
             vec3.rotateZ(va$1, va$1, o, yaw * DEG_TO_RAD);
         }
-        let controlPoint = this.system.getControlPoint(this.controlPointNumber);
+        const controlPoint = this.system.getControlPoint(this.controlPointNumber);
         if (controlPoint) {
             vec3.transformMat4(va$1, va$1, controlPoint.currentWorldTransformation);
         }
@@ -60350,7 +60350,7 @@ class RingWave extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_RingWave', RingWave);
 
-let v$9 = vec3.create();
+const v$9 = vec3.create();
 class SetRigidAttachment extends Operator {
     localSpace = true;
     fieldOutput = PARTICLE_FIELD_POSITION_PREVIOUS;
@@ -60395,10 +60395,10 @@ class VelocityRandom extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        let localCoordinateSystemSpeedMin = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin') ?? DEFAULT_SPEED;
-        let localCoordinateSystemSpeedMax = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax') ?? DEFAULT_SPEED;
-        let speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
-        let speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
+        const localCoordinateSystemSpeedMin = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin') ?? DEFAULT_SPEED;
+        const localCoordinateSystemSpeedMax = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax') ?? DEFAULT_SPEED;
+        const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
+        const speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
         const randomSpeed = (speedMax - speedMin) * Math.random() + speedMin;
         if (vec3.exactEquals(localCoordinateSystemSpeedMin, DEFAULT_SPEED) &&
             vec3.exactEquals(localCoordinateSystemSpeedMax, DEFAULT_SPEED)) {
@@ -60449,13 +60449,13 @@ class BasicMovement extends Operator {
         /*if (particle.id == 5) {
             console.error(particle.prevPosition, particle.position);
         }*/
-        let adj_dt = (elapsedTime / this.system.previousElapsedTime) * ExponentialDecay((1.0 - Math.max(0.0, this.drag)), (1.0 / 30.0), elapsedTime);
+        const adj_dt = (elapsedTime / this.system.previousElapsedTime) * ExponentialDecay((1.0 - Math.max(0.0, this.drag)), (1.0 / 30.0), elapsedTime);
         const accumulatedForces = vec3.clone(this.gravity);
-        for (let force of this.system.forces.values()) {
+        for (const force of this.system.forces.values()) {
             force.forceParticle(particle, elapsedTime, accumulatedForces);
         }
         const accFactor = vec3.scale(vec3.create(), accumulatedForces, elapsedTime * elapsedTime);
-        let vecTemp = vec3.sub(vec3.create(), particle.position, particle.prevPosition);
+        const vecTemp = vec3.sub(vec3.create(), particle.position, particle.prevPosition);
         vec3.scale(vecTemp, vecTemp, adj_dt);
         vec3.add(vecTemp, vecTemp, accFactor);
         vec3.copy(particle.prevPosition, particle.position);
@@ -60504,7 +60504,7 @@ class ColorInterpolate extends Operator {
     }
     doOperate(particle, elapsedTime) {
         vec3.clone(particle.initialColor);
-        let proportionOfLife = Math.min(particle.currentTime / particle.timeToLive, 1.0);
+        const proportionOfLife = Math.min(particle.currentTime / particle.timeToLive, 1.0);
         if (proportionOfLife < this.fadeStartTime) {
             return;
         }
@@ -60518,7 +60518,7 @@ class ColorInterpolate extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_ColorInterpolate', ColorInterpolate);
 
-let v$8 = vec3.create();
+const v$8 = vec3.create();
 class DampenToCP extends Operator {
     range = 100;
     scale = 1;
@@ -60535,13 +60535,13 @@ class DampenToCP extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let cp = this.system.getControlPoint(this.controlPointNumber);
-        let distance = vec3.distance(particle.position, cp.currentWorldPosition);
+        const cp = this.system.getControlPoint(this.controlPointNumber);
+        const distance = vec3.distance(particle.position, cp.currentWorldPosition);
         if (distance > this.range) {
             return;
         }
         else {
-            let dampenAmount = distance / this.range;
+            const dampenAmount = distance / this.range;
             vec3.sub(v$8, particle.position, particle.prevPosition);
             vec3.scale(v$8, v$8, dampenAmount);
             vec3.add(particle.position, particle.prevPosition, v$8);
@@ -60593,13 +60593,13 @@ class DistanceBetweenCPs extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let inputMin = this.getParamScalarValue('m_flInputMin') ?? 0;
-        let inputMax = this.getParamScalarValue('m_flInputMax') ?? 128;
-        let outputMin = this.getParamScalarValue('m_flOutputMin') ?? 0;
-        let outputMax = this.getParamScalarValue('m_flOutputMax') ?? 1;
+        const inputMin = this.getParamScalarValue('m_flInputMin') ?? 0;
+        const inputMax = this.getParamScalarValue('m_flInputMax') ?? 128;
+        const outputMin = this.getParamScalarValue('m_flOutputMin') ?? 0;
+        const outputMax = this.getParamScalarValue('m_flOutputMax') ?? 1;
         //TODO: los and other parameters
-        let startCpPos = this.system.getControlPoint(this.startCP).currentWorldPosition;
-        let endCPPos = this.system.getControlPoint(this.endCP).currentWorldPosition;
+        const startCpPos = this.system.getControlPoint(this.startCP).currentWorldPosition;
+        const endCPPos = this.system.getControlPoint(this.endCP).currentWorldPosition;
         let value = vec3.distance(startCpPos, endCPPos);
         value = RemapValClamped(value, inputMin, inputMax, outputMin, outputMax);
         particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
@@ -60607,7 +60607,7 @@ class DistanceBetweenCPs extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_DistanceBetweenCPs', DistanceBetweenCPs);
 
-let vec$3 = vec3.create();
+const vec$3 = vec3.create();
 class DistanceCull extends Operator {
     pointOffset = vec3.create();
     distance = 0;
@@ -60631,9 +60631,9 @@ class DistanceCull extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let cp = this.system.getControlPoint(this.controlPointNumber);
+        const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
-            let origin = cp.getWorldPosition(vec$3);
+            const origin = cp.getWorldPosition(vec$3);
             vec3.add(origin, origin, this.pointOffset);
             if (this.cullInside) { //TODO: improve this
                 if (vec3.distance(particle.position, origin) < this.distance) {
@@ -60734,8 +60734,8 @@ class DistanceToCP extends Operator {
     }
     doOperate(particle, elapsedTime, flStrength = 1) {
         this.getParamVectorValue('m_vecComponentScale') ?? DEFAULT_COMPONENT_SCALE;
-        let flMin = this.outputMin1;
-        let flMax = this.outputMax1;
+        const flMin = this.outputMin1;
+        const flMax = this.outputMax1;
         /*if ( ATTRIBUTES_WHICH_ARE_0_TO_1 & ( 1 << m_nFieldOutput ) )
         {
             flMin = clamp(m_flOutputMin, 0.0f, 1.0f );
@@ -60744,8 +60744,8 @@ class DistanceToCP extends Operator {
         //Vector vecControlPoint1 = pParticles->GetControlPointAtCurrentTime( m_nStartCP );
         const vecControlPoint1 = this.system.getControlPointPosition(this.startCP);
         //let vecPosition2 = vec3.create();
-        let vecDelta = vec3.create();
-        let vecEndPoint = vec3.create();
+        const vecDelta = vec3.create();
+        const vecEndPoint = vec3.create();
         // FIXME: SSE-ize
         //for ( int i = 0; i < pParticles->m_nActiveParticles; ++i )
         {
@@ -60755,7 +60755,7 @@ class DistanceToCP extends Operator {
             //vec3.copy(vecPosition2, particle.position);
             //Vector vecDelta = vecControlPoint1 - vecPosition2;
             vec3.sub(vecDelta, vecControlPoint1, particle.position);
-            let flDistance = vec3.length(vecDelta); //vecDelta.Length();
+            const flDistance = vec3.length(vecDelta); //vecDelta.Length();
             if (this.activeRange && (flDistance < this.inputMin || flDistance > this.inputMax)) {
                 return; //continue;
             }
@@ -60778,7 +60778,7 @@ class DistanceToCP extends Operator {
                 }*/
                 //TODO
             }
-            let flOutput = RemapValClamped(flDistance, this.inputMin, this.inputMax, flMin, flMax);
+            const flOutput = RemapValClamped(flDistance, this.inputMin, this.inputMax, flMin, flMax);
             /*if ( m_bScaleInitialRange )
             {
                 const float *pInitialOutput = pParticles->GetInitialFloatAttributePtr( m_nFieldOutput, i );
@@ -60934,7 +60934,7 @@ class FadeInSimple extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let proportionOfLife = particle.currentTime / particle.timeToLive;
+        const proportionOfLife = particle.currentTime / particle.timeToLive;
         particle.alpha = SimpleSplineRemapValWithDeltasClamped(proportionOfLife, 0, this.fadeInTime, this.invFadeInTime, 0, particle.startAlpha);
         //TODO: use fieldOutput
     }
@@ -61161,7 +61161,7 @@ class LockToBone extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_LockToBone', LockToBone);
 
-let vec$2 = vec3.create();
+const vec$2 = vec3.create();
 class MaintainSequentialPath extends Operator {
     numToAssign = 100;
     assignedSoFar = 0;
@@ -61190,7 +61190,7 @@ class MaintainSequentialPath extends Operator {
                 this.loop = value;
                 break;
             case 'm_PathParams':
-                for (let subName of Object.keys(value)) {
+                for (const subName of Object.keys(value)) {
                     this._paramChanged(subName, value[subName]);
                 }
                 break;
@@ -61232,17 +61232,17 @@ class MaintainSequentialPath extends Operator {
         }
     }
     doOperate(particles, elapsedTime) {
-        let t = vec3.create();
+        const t = vec3.create();
         //TODO: use other parameters
-        let startControlPointNumber = this.startControlPointNumber;
-        let endControlPointNumber = this.endControlPointNumber;
-        let startControlPoint = this.system.getControlPoint(startControlPointNumber);
-        let endControlPoint = this.system.getControlPoint(endControlPointNumber);
+        const startControlPointNumber = this.startControlPointNumber;
+        const endControlPointNumber = this.endControlPointNumber;
+        const startControlPoint = this.system.getControlPoint(startControlPointNumber);
+        const endControlPoint = this.system.getControlPoint(endControlPointNumber);
         if (startControlPoint && endControlPoint) {
-            let numToAssign = this.numToAssign;
+            const numToAssign = this.numToAssign;
             let assignedSoFar = this.assignedSoFar;
             let particle;
-            let delta = startControlPoint.deltaPosFrom(endControlPoint, vec$2);
+            const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$2);
             for (let i = 0; i < particles.length; ++i) {
                 particle = particles[i];
                 vec3.scale(t, delta, assignedSoFar * this.step);
@@ -61268,7 +61268,7 @@ RegisterSource2ParticleOperator('C_OP_MaintainSequentialPath', MaintainSequentia
 //const tempMat4 = mat4.create();
 vec3.create();
 vec3.create();
-let v$7 = vec3.create();
+const v$7 = vec3.create();
 let MovementRigidAttachToCP$1 = class MovementRigidAttachToCP extends Operator {
     scaleControlPoint = -1;
     scaleCPField = 0; //-1: disabled, 0: X, 1: Y, 2 :Z
@@ -61343,10 +61343,10 @@ let MovementRigidAttachToCP$1 = class MovementRigidAttachToCP extends Operator {
 };
 RegisterSource2ParticleOperator('C_OP_MovementRigidAttachToCP', MovementRigidAttachToCP$1);
 
-let m4 = mat4.create();
-let q$1 = quat.create();
-let v$6 = vec3.create();
-let a$1 = vec4.create();
+const m4 = mat4.create();
+const q$1 = quat.create();
+const v$6 = vec3.create();
+const a$1 = vec4.create();
 const DEFAULT_AXIS = vec3.fromValues(0, 0, 1);
 class MovementRotateParticleAroundAxis extends Operator {
     localSpace = false;
@@ -61366,9 +61366,9 @@ class MovementRotateParticleAroundAxis extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let axis = vec3.normalize(a$1, this.getParamVectorValue('m_vecRotAxis', particle, a$1) ?? DEFAULT_AXIS);
-        let rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
-        let cp = this.system.getControlPoint(this.controlPointNumber);
+        const axis = vec3.normalize(a$1, this.getParamVectorValue('m_vecRotAxis', particle, a$1) ?? DEFAULT_AXIS);
+        const rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
+        const cp = this.system.getControlPoint(this.controlPointNumber);
         if (this.localSpace) {
             quat.copy(q$1, cp.currentWorldQuaternion);
         }
@@ -61443,14 +61443,14 @@ class Noise extends Operator {
     }
     doOperate(particle, elapsedTime) {
         vec3.scale(Coord$1, particle.position, this.noiseScale);
-        let noise = NoiseSIMD(Coord$1, 0, 0) * this.valueScale + this.valueBase;
+        const noise = NoiseSIMD(Coord$1, 0, 0) * this.valueScale + this.valueBase;
         particle.setField(this.fieldOutput, noise);
         //TODO: use m_fl4NoiseScale m_bAdditive m_flNoiseAnimationTimeScale
     }
 }
 RegisterSource2ParticleOperator('C_OP_Noise', Noise);
 
-let v$5 = vec3.create();
+const v$5 = vec3.create();
 class NormalizeVector extends Operator {
     fieldOutput = PARTICLE_FIELD_POSITION;
     scale = 1;
@@ -61482,7 +61482,7 @@ class NormalLock extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let cp = this.system.getControlPoint(this.controlPointNumber);
+        const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
             //mat4.invert(mat, particle.cpPreviousTransform);
             //let currentTransform = cp.getWorldTransformation(particle.cpPreviousTransform);//store the current tranform in the previous transform since we won't use it further
@@ -61554,12 +61554,12 @@ class OscillateScalar extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let fl4StartTimeWidth = this.startTimeMax - this.startTimeMin;
-        let fl4EndTimeWidth = this.endTimeMax - this.endTimeMin;
-        let fl4FrequencyWidth = this.frequencyMax - this.frequencyMin;
-        let fl4RateWidth = this.rateMax - this.rateMin;
-        let fl4ScaleFactor = /*flStrength * */ elapsedTime;
-        let fl4CosFactor = this.oscMult * particle.currentTime + this.oscAdd;
+        const fl4StartTimeWidth = this.startTimeMax - this.startTimeMin;
+        const fl4EndTimeWidth = this.endTimeMax - this.endTimeMin;
+        const fl4FrequencyWidth = this.frequencyMax - this.frequencyMin;
+        const fl4RateWidth = this.rateMax - this.rateMin;
+        const fl4ScaleFactor = /*flStrength * */ elapsedTime;
+        const fl4CosFactor = this.oscMult * particle.currentTime + this.oscAdd;
         if (particle.timeToLive) {
             let fl4LifeTime;
             if (this.proportionalOp) {
@@ -61589,7 +61589,7 @@ class OscillateScalar extends Operator {
                 else {
                     fl4Cos = fl4CosFactor * fl4Frequency;
                 }
-                let fl4OscMultiplier = fl4Rate * fl4ScaleFactor;
+                const fl4OscMultiplier = fl4Rate * fl4ScaleFactor;
                 let fl4OscVal = particle.getField(this.field) + fl4OscMultiplier * Math.sin(fl4Cos * Math.PI);
                 if (this.field == PARTICLE_FIELD_ALPHA) {
                     fl4OscVal = clamp(fl4OscVal, 0.0, 1.0);
@@ -61629,8 +61629,8 @@ class OscillateScalarSimple extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let currentTime = this.system.currentTime;
-        let sinFactor = (this.oscMult * currentTime + this.oscAdd) * this.frequency;
+        const currentTime = this.system.currentTime;
+        const sinFactor = (this.oscMult * currentTime + this.oscAdd) * this.frequency;
         let value = particle.getField(this.field) + this.rate * Math.sin(sinFactor * Math.PI) * DEG_TO_RAD; //DEG_TO_RAD seems to apply to all field even radius, alpha and so on. Valve style
         if (this.field == PARTICLE_FIELD_ALPHA) {
             value = clamp(value, 0.0, 1.0);
@@ -61744,13 +61744,13 @@ class OscillateVector extends Operator {
             fl4EndTime = this.endTimeMin + fl4EndTimeWidth * fl4EndTime;
             if ((fl4LifeTime >= fl4StartTime) && (fl4LifeTime < fl4EndTime)) {
                 //TODO: use random table
-                let fvFrequency = vec3.fromValues(Math.random(), Math.random(), Math.random());
+                const fvFrequency = vec3.fromValues(Math.random(), Math.random(), Math.random());
                 //fvFrequency[0] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 8);
                 //fvFrequency[1] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 12);
                 //fvFrequency[2] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 15);
                 vec3.mul(fvFrequency, fvFrequency, fvFrequencyWidth);
                 vec3.add(fvFrequency, fvFrequency, fvFrequencyMin);
-                let fvRate = vec3.fromValues(Math.random(), Math.random(), Math.random());
+                const fvRate = vec3.fromValues(Math.random(), Math.random(), Math.random());
                 //fvRate[0] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 3);
                 //fvRate[1] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 7);
                 //fvRate[2] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 9);
@@ -61769,7 +61769,7 @@ class OscillateVector extends Operator {
                 }
                 const fvOscMultiplier = vec3.create(); //todov3optimize
                 vec3.scale(fvOscMultiplier, fvRate, fl4ScaleFactor);
-                let fvOutput = vec4.create(); //TODO: perf//todov3optimize
+                const fvOutput = vec4.create(); //TODO: perf//todov3optimize
                 this.getInputValueAsVector(m_nField, particle, fvOutput); //*pOscField;
                 fvOscVal[0] = AddSIMD(fvOutput[0], MulSIMD(fvOscMultiplier[0], SinEst01SIMD(fvCos[0])));
                 fvOscVal[1] = AddSIMD(fvOutput[1], MulSIMD(fvOscMultiplier[1], SinEst01SIMD(fvCos[1])));
@@ -61800,8 +61800,8 @@ class OscillateVector extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_OscillateVector', OscillateVector);
 
-let va = vec3.create();
-let vb = vec3.create();
+const va = vec3.create();
+const vb = vec3.create();
 class PercentageBetweenCPs extends Operator {
     fieldOutput = PARTICLE_FIELD_RADIUS;
     inputMin = 0;
@@ -61851,12 +61851,12 @@ class PercentageBetweenCPs extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let startCpPos = this.system.getControlPoint(this.startCP).currentWorldPosition;
-        let endCPPos = this.system.getControlPoint(this.endCP).currentWorldPosition;
+        const startCpPos = this.system.getControlPoint(this.startCP).currentWorldPosition;
+        const endCPPos = this.system.getControlPoint(this.endCP).currentWorldPosition;
         let percentage;
-        let dist = vec3.distance(startCpPos, endCPPos);
+        const dist = vec3.distance(startCpPos, endCPPos);
         if (this.radialCheck) {
-            let dist2 = vec3.distance(startCpPos, particle.position);
+            const dist2 = vec3.distance(startCpPos, particle.position);
             percentage = dist2 / dist;
         }
         else {
@@ -61868,7 +61868,7 @@ class PercentageBetweenCPs extends Operator {
         if (percentage < this.inputMin || percentage > this.inputMax) {
             return;
         }
-        let value = RemapValClamped(percentage, this.inputMin, this.inputMax, this.outputMin, this.outputMax);
+        const value = RemapValClamped(percentage, this.inputMin, this.inputMax, this.outputMin, this.outputMax);
         particle.setField(this.fieldOutput, value, this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
     }
 }
@@ -61914,7 +61914,7 @@ class PinParticleToCP extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_PinParticleToCP', PinParticleToCP);
 
-let vec$1 = vec3.create();
+const vec$1 = vec3.create();
 class PlaneCull extends Operator {
     planeControlPoint = 0;
     planeDirection = vec3.fromValues(0, 0, 1);
@@ -61949,9 +61949,9 @@ class PlaneCull extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let cp = this.system.getControlPoint(this.planeControlPoint);
+        const cp = this.system.getControlPoint(this.planeControlPoint);
         if (cp) {
-            let origin = cp.getWorldPosition(vec$1);
+            const origin = cp.getWorldPosition(vec$1);
             vec3.sub(origin, origin, this.planeDirectionOffset);
             vec3.sub(origin, particle.position, origin);
             if (vec3.dot(this.planeDirection, origin) < 0) {
@@ -62031,7 +62031,7 @@ class PositionLock extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let proportionOfLife = clamp(particle.proportionOfLife, 0, 1);
+        const proportionOfLife = clamp(particle.proportionOfLife, 0, 1);
         if (proportionOfLife > this.endFadeOutTime) {
             return;
         }
@@ -62113,7 +62113,7 @@ class RampScalarLinear extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let context = particle.context.get(this);
+        const context = particle.context.get(this);
         let rate, startTime, endTime;
         if (context == undefined) {
             //Init per particle parameters
@@ -62127,11 +62127,11 @@ class RampScalarLinear extends Operator {
             startTime = context.s;
             endTime = context.e;
         }
-        let particleTime = this.proportionalOp ? particle.proportionOfLife : particle.currentTime;
+        const particleTime = this.proportionalOp ? particle.proportionOfLife : particle.currentTime;
         if (particleTime < startTime || particleTime > endTime) {
             return;
         }
-        let value = particle.getField(this.field) + rate * elapsedTime;
+        const value = particle.getField(this.field) + rate * elapsedTime;
         particle.setField(this.field, value);
     }
 }
@@ -62161,11 +62161,11 @@ class RampScalarLinearSimple extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let particleTime = particle.proportionOfLife;
+        const particleTime = particle.proportionOfLife;
         if (particleTime < this.startTime || particleTime > this.endTime) {
             return;
         }
-        let value = particle.getField(this.field) + this.rate * elapsedTime;
+        const value = particle.getField(this.field) + this.rate * elapsedTime;
         particle.setField(this.field, value);
     }
 }
@@ -62220,7 +62220,7 @@ class RampScalarSpline extends Operator {
     }
     doOperate(particle, elapsedTime) {
         //TODO : use m_flBias m_bEaseOut
-        let context = particle.context.get(this);
+        const context = particle.context.get(this);
         let rate, startTime, endTime;
         if (context == undefined) {
             //Init per particle parameters
@@ -62234,18 +62234,18 @@ class RampScalarSpline extends Operator {
             startTime = context.s;
             endTime = context.e;
         }
-        let particleTime = this.proportionalOp ? particle.proportionOfLife : particle.currentTime;
+        const particleTime = this.proportionalOp ? particle.proportionOfLife : particle.currentTime;
         if (particleTime < startTime || particleTime > endTime) {
             return;
         }
-        let value = particle.getField(this.field) + rate * elapsedTime;
+        const value = particle.getField(this.field) + rate * elapsedTime;
         particle.setField(this.field, value);
     }
 }
 RegisterSource2ParticleOperator('C_OP_RampScalarSpline', RampScalarSpline);
 
 const DEFAULT_VECTOR = vec3.fromValues(1, 0, 0);
-let v$4 = vec3.create();
+const v$4 = vec3.create();
 class RemapControlPointDirectionToVector extends Operator {
     fieldOutput = PARTICLE_FIELD_POSITION;
     scale = 1;
@@ -62258,7 +62258,7 @@ class RemapControlPointDirectionToVector extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let cp = this.system.getControlPoint(this.controlPointNumber);
+        const cp = this.system.getControlPoint(this.controlPointNumber);
         vec3.transformQuat(v$4, DEFAULT_VECTOR, cp.currentWorldQuaternion);
         vec3.scale(v$4, v$4, this.scale);
         particle.setField(this.fieldOutput, v$4);
@@ -62344,10 +62344,10 @@ class RemapCPtoScalar extends Operator {
     }
     doOperate(particle, elapsedTime, strength) {
         //TODO: use m_flInterpRate
-        let cpInputPos = this.system.getControlPoint(this.cpInput).currentWorldPosition;
+        const cpInputPos = this.system.getControlPoint(this.cpInput).currentWorldPosition;
         let value = cpInputPos[this.field];
         value = RemapValClamped(value, this.inputMin, this.inputMax, this.outputMin, this.outputMax);
-        let scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
+        const scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
         if (scaleInitial) {
             value = lerp(1, value, strength);
         }
@@ -62376,7 +62376,7 @@ class SetControlPointFromObjectScale extends Operator {
     }
     doOperate(particle, elapsedTime) {
         this.system.getControlPoint(this.cpInput);
-        let cpOutput = this.system.getControlPoint(this.cpOutput);
+        const cpOutput = this.system.getControlPoint(this.cpOutput);
         //TODO: use the actual scale
         cpOutput.position = vec3.fromValues(1, 1, 1);
     }
@@ -62489,11 +62489,11 @@ class SetControlPointPositions extends Operator {
         this.system.getControlPointPosition(this.headLocation);
         let cpNumber;
         let cpLocation;
-        let headLocation = this.system.getControlPoint(this.headLocation);
+        const headLocation = this.system.getControlPoint(this.headLocation);
         for (let cpIndex = 0; cpIndex < 4; ++cpIndex) {
             cpNumber = this.cp[cpIndex];
             cpLocation = this.cpPos[cpIndex];
-            let cp = this.system.getControlPoint(cpNumber);
+            const cp = this.system.getControlPoint(cpNumber);
             if (!useWorldLocation) {
                 vec3.transformQuat(v$3, cpLocation, headLocation.currentWorldQuaternion);
                 vec3.add(v$3, v$3, headLocation.currentWorldPosition);
@@ -62548,14 +62548,14 @@ class SetControlPointsToModelParticles extends Operator {
     }
     doOperate(particle, elapsedTime) {
         //todo: use m_bSkin m_bAttachment m_HitboxSetName m_AttachmentName
-        let children = this.system.childSystems;
-        let firstControlPoint = this.firstControlPoint;
-        let firstSourcePoint = this.firstSourcePoint;
+        const children = this.system.childSystems;
+        const firstControlPoint = this.firstControlPoint;
+        const firstSourcePoint = this.firstSourcePoint;
         for (let i = 0; i < this.numControlPoints; ++i) {
-            let particle = this.system.livingParticles[firstSourcePoint + i];
+            const particle = this.system.livingParticles[firstSourcePoint + i];
             if (particle) {
-                for (let child of children) {
-                    let childCp = child.getOwnControlPoint(firstControlPoint + i);
+                for (const child of children) {
+                    const childCp = child.getOwnControlPoint(firstControlPoint + i);
                     childCp.position = particle.position;
                     if (this.#followAttachement) {
                         const model = this.system.getParentModel();
@@ -62607,7 +62607,7 @@ RegisterSource2ParticleOperator('C_OP_SetControlPointToCenter', SetControlPointT
 
 const UNIT_VEC3_X = vec3.fromValues(1, 0, 0);
 const UNIT_VEC3_Z = vec3.fromValues(0, 0, 1);
-let q = quat.create();
+const q = quat.create();
 class SetCPOrientationToGroundNormal extends Operator {
     m_flInterpRate = 0;
     maxTraceLength = 128;
@@ -62649,7 +62649,7 @@ class SetCPOrientationToGroundNormal extends Operator {
     }
     doOperate(particle, elapsedTime) {
         //TODO: do it properly
-        let outputCP = this.system.getControlPoint(this.outputCP);
+        const outputCP = this.system.getControlPoint(this.outputCP);
         if (outputCP) {
             quat.rotationTo(q, UNIT_VEC3_X, UNIT_VEC3_Z);
             outputCP.quaternion = q;
@@ -62678,7 +62678,7 @@ class SetFloat extends Operator {
     }
     doOperate(particle, elapsedTime) {
         //TODO: use lerp
-        let value = this.getParamScalarValue('m_InputValue', particle);
+        const value = this.getParamScalarValue('m_InputValue', particle);
         //TODO: use setMethod
         particle.setField(this.outputField, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
         //particle.setField(this.outputField, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
@@ -62714,15 +62714,15 @@ class SetParentControlPointsToChildCP extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let children = this.system.childSystems;
+        const children = this.system.childSystems;
         let childId = this.childGroupID;
         let cpId = this.firstSourcePoint;
         let count = this.numControlPoints;
         while (count--) {
-            let child = children[childId];
-            let cp = this.system.getControlPoint(cpId);
+            const child = children[childId];
+            const cp = this.system.getControlPoint(cpId);
             if (child && cp) {
-                let childCp = child.getOwnControlPoint(this.childControlPoint);
+                const childCp = child.getOwnControlPoint(this.childControlPoint);
                 childCp.position = cp.currentWorldPosition;
             }
             ++childId;
@@ -62767,16 +62767,16 @@ class SetPerChildControlPoint extends Operator {
     }
     doOperate(particle, elapsedTime) {
         //TODO: set m_bSetOrientation
-        let particleIncrement = this.getParamScalarValue('m_nParticleIncrement') ?? 1;
+        const particleIncrement = this.getParamScalarValue('m_nParticleIncrement') ?? 1;
         let particleId = this.getParamScalarValue('m_nFirstSourcePoint') ?? 0;
-        let children = this.system.childSystems;
+        const children = this.system.childSystems;
         let childId = this.childGroupID;
         let count = this.numBasedOnParticleCount ? this.system.livingParticles.length : this.numControlPoints;
         while (count--) {
-            let child = children[childId];
-            let sourceParticle = this.system.livingParticles[particleId];
+            const child = children[childId];
+            const sourceParticle = this.system.livingParticles[particleId];
             if (child && sourceParticle) {
-                let childCp = child.getOwnControlPoint(this.firstControlPoint);
+                const childCp = child.getOwnControlPoint(this.firstControlPoint);
                 childCp.position = sourceParticle.position;
             }
             ++childId;
@@ -62823,14 +62823,14 @@ class SetRandomControlPointPosition extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let reRandomRate = this.getParamScalarValue('m_flReRandomRate') ?? -1;
+        const reRandomRate = this.getParamScalarValue('m_flReRandomRate') ?? -1;
         this.getParamScalarValue('m_flInterpolation') ?? 1;
         //TODO: do interpolation
         if ((reRandomRate >= 0 || this.lastRandomTime < 0) && (this.system.currentTime - this.lastRandomTime > reRandomRate)) {
             this.lastRandomTime = this.system.currentTime;
             vec3RandomBox(v$2, this.cpMinPos, this.cpMaxPos);
-            let headLocation = this.system.getControlPoint(this.headLocation);
-            let cp1 = this.system.getControlPoint(this.cp1);
+            const headLocation = this.system.getControlPoint(this.headLocation);
+            const cp1 = this.system.getControlPoint(this.cp1);
             vec3.transformQuat(v$2, v$2, headLocation.currentWorldQuaternion);
             vec3.add(v$2, v$2, headLocation.currentWorldPosition);
             cp1.position = v$2;
@@ -62846,8 +62846,8 @@ class SetRandomControlPointPosition extends Operator {
 RegisterSource2ParticleOperator('C_OP_SetRandomControlPointPosition', SetRandomControlPointPosition);
 
 const DEFAULT_POSITION = vec3.fromValues(128, 0, 0);
-let v$1 = vec3.create();
-let tempVec4 = vec4.create();
+const v$1 = vec3.create();
+const tempVec4 = vec4.create();
 class SetSingleControlPointPosition extends Operator {
     useWorldLocation = false;
     setOnce = false;
@@ -62881,12 +62881,12 @@ class SetSingleControlPointPosition extends Operator {
         const cp1Pos = this.getParamVectorValue('m_vecCP1Pos', particle, tempVec4) ?? DEFAULT_POSITION;
         //TODO
         if (!this.setOnce || !this.set) {
-            let cp = this.system.getOwnControlPoint(this.cp1);
+            const cp = this.system.getOwnControlPoint(this.cp1);
             if (this.useWorldLocation) {
                 cp.position = cp1Pos;
             }
             else {
-                let headCp = this.system.getControlPoint(this.headLocation);
+                const headCp = this.system.getControlPoint(this.headLocation);
                 vec3.transformQuat(v$1, cp1Pos, headCp.currentWorldQuaternion);
                 vec3.add(v$1, v$1, headCp.currentWorldPosition);
                 cp.position = v$1;
@@ -62900,9 +62900,9 @@ class SetSingleControlPointPosition extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_SetSingleControlPointPosition', SetSingleControlPointPosition);
 
-let tempQuat = quat.create();
-let tempVec3$1 = vec3.create();
-let tempVec3_2 = vec3.create();
+const tempQuat = quat.create();
+const tempVec3$1 = vec3.create();
+const tempVec3_2 = vec3.create();
 class SetToCP extends Operator {
     offset = vec3.create();
     offsetLocal = false;
@@ -62919,7 +62919,7 @@ class SetToCP extends Operator {
         }
     }
     doOperate(particle, elapsedTime) {
-        let cp = this.system.getControlPoint(this.controlPointNumber);
+        const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
             cp.getWorldPosition(tempVec3_2);
             if (this.offsetLocal) {
@@ -62936,8 +62936,8 @@ class SetToCP extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_SetToCP', SetToCP);
 
-let DEFAULT_VECTOR_VALUE = vec4.create();
-let vec = vec4.create();
+const DEFAULT_VECTOR_VALUE = vec4.create();
+const vec = vec4.create();
 class SetVec extends Operator {
     outputField = PARTICLE_FIELD_COLOR;
     setMethod = 'PARTICLE_SET_VALUE';
@@ -62959,15 +62959,15 @@ class SetVec extends Operator {
     }
     doOperate(particle, elapsedTime) {
         //TODO: use lerp
-        let inputValue = this.getParamVectorValue('m_InputValue', particle, vec) ?? DEFAULT_VECTOR_VALUE;
+        const inputValue = this.getParamVectorValue('m_InputValue', particle, vec) ?? DEFAULT_VECTOR_VALUE;
         this.getParamScalarValue('m_Lerp', particle) ?? 1;
         particle.setField(this.outputField, inputValue, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
     }
 }
 RegisterSource2ParticleOperator('C_OP_SetVec', SetVec);
 
-let mat = mat4.create();
-let nmat = mat3.create();
+const mat = mat4.create();
+const nmat = mat3.create();
 const IDENTITY_MAT4 = mat4.create();
 class SnapshotRigidSkinToBones extends Operator {
     transformNormals = false;
@@ -62983,21 +62983,21 @@ class SnapshotRigidSkinToBones extends Operator {
     }
     doOperate(particle, elapsedTime) {
         let bone, boneName, boneWeight, boneMat;
-        let cp = this.system.getControlPoint(this.controlPointNumber);
+        const cp = this.system.getControlPoint(this.controlPointNumber);
         if (!cp) {
             return;
         }
-        let model = cp.model;
+        const model = cp.model;
         if (!model) {
             return;
         }
-        let skeleton = model.skeleton;
+        const skeleton = model.skeleton;
         if (!skeleton) {
             return;
         }
-        let particleSkinning = particle.skinning;
-        let particleInitialPosition = particle.initialSkinnedPosition;
-        let particleInitialNormal = particle.initialSkinnedNormal ?? DEFAULT_PARTICLE_NORMAL;
+        const particleSkinning = particle.skinning;
+        const particleInitialPosition = particle.initialSkinnedPosition;
+        const particleInitialNormal = particle.initialSkinnedNormal ?? DEFAULT_PARTICLE_NORMAL;
         if (particleSkinning && particleInitialPosition) {
             mat[0] = 0;
             mat[1] = 0;
@@ -63041,7 +63041,7 @@ class SnapshotRigidSkinToBones extends Operator {
         }
         else {
             //Probably should do it better, but it just works
-            let particleHitbox = particle.snapHitbox;
+            const particleHitbox = particle.snapHitbox;
             particle.snapHitboxOffset;
             if (particleHitbox) {
                 bone = skeleton.getBoneByName(particleHitbox);
@@ -63080,14 +63080,14 @@ class Spin extends Operator {
     }
     doOperate(particle, elapsedTime) {
         //particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
-        let m_fSpinRateStopTime = this.spinRateStopTime;
-        let m_fSpinRateRadians = (this.spinRateDegrees) * DEG_TO_RAD;
-        let m_fSpinRateMinRadians = (this.spinRateMinDegrees) * DEG_TO_RAD;
-        let fCurSpinRate = m_fSpinRateRadians /* * flStrength*/; //TODO
+        const m_fSpinRateStopTime = this.spinRateStopTime;
+        const m_fSpinRateRadians = (this.spinRateDegrees) * DEG_TO_RAD;
+        const m_fSpinRateMinRadians = (this.spinRateMinDegrees) * DEG_TO_RAD;
+        const fCurSpinRate = m_fSpinRateRadians /* * flStrength*/; //TODO
         if (fCurSpinRate == 0.0) {
             return;
         }
-        let dt = elapsedTime;
+        const dt = elapsedTime;
         let drot = dt * Math.abs(fCurSpinRate * TWO_PI);
         if (m_fSpinRateStopTime == 0.0) {
             drot = drot % TWO_PI; //fmod(drot, (float)(2.0f * M_PI));
@@ -63096,32 +63096,32 @@ class Spin extends Operator {
             drot = -drot;
         }
         //fltx4 Rot_Add = ReplicateX4(drot);
-        let Rot_Add = drot;
+        const Rot_Add = drot;
         //fltx4 Pi_2 = ReplicateX4(2.0*M_PI);
         //fltx4 nPi_2 = ReplicateX4(-2.0*M_PI);
         // FIXME: This is wrong
-        let minSpeedRadians = dt * Math.abs(m_fSpinRateMinRadians * TWO_PI); //fltx4 minSpeedRadians = ReplicateX4(dt * fabs(m_fSpinRateMinRadians * 2.0f * M_PI));
-        let now = this.system.currentTime;
-        let SpinRateStopTime = m_fSpinRateStopTime;
+        const minSpeedRadians = dt * Math.abs(m_fSpinRateMinRadians * TWO_PI); //fltx4 minSpeedRadians = ReplicateX4(dt * fabs(m_fSpinRateMinRadians * 2.0f * M_PI));
+        const now = this.system.currentTime;
+        const SpinRateStopTime = m_fSpinRateStopTime;
         //CM128AttributeIterator pCreationTimeStamp(PARTICLE_ATTRIBUTE_CREATION_TIME, pParticles);
         //CM128AttributeIterator pLifeDuration(PARTICLE_ATTRIBUTE_LIFE_DURATION, pParticles);
         //CM128AttributeWriteIterator pRot(GetAttributeToSpin(), pParticles);
         // HACK: Rather than redo this, I'm simply remapping the stop time into the percentage of lifetime, rather than seconds
-        let LifeSpan = particle.timeToLive;
+        const LifeSpan = particle.timeToLive;
         let SpinFadePerc = 0;
         let OOSpinFadeRate = 0;
         if (m_fSpinRateStopTime) {
             SpinFadePerc = LifeSpan * SpinRateStopTime;
             OOSpinFadeRate = 1.0 / SpinFadePerc;
         }
-        let Age = now - particle.cTime;
-        let RScale = Math.max(0, 1.0 - (Age * OOSpinFadeRate));
+        const Age = now - particle.cTime;
+        const RScale = Math.max(0, 1.0 - (Age * OOSpinFadeRate));
         // Cap the rotation at a minimum speed
         let deltaRot = Rot_Add * RScale;
         //fltx4 Tooslow = CmpLeSIMD(deltaRot, minSpeedRadians);
         //deltaRot = OrSIMD(AndSIMD(Tooslow, minSpeedRadians), AndNotSIMD(Tooslow, deltaRot));
         deltaRot = Math.max(minSpeedRadians, deltaRot);
-        let NewRot = particle.rotationRoll + deltaRot;
+        const NewRot = particle.rotationRoll + deltaRot;
         // now, cap at +/- 2*pi
         /*fltx4 Toobig =CmpGeSIMD(NewRot, Pi_2);
         fltx4 Toosmall = CmpLeSIMD(NewRot, nPi_2);
@@ -63253,11 +63253,11 @@ class RenderBlobs extends Operator {
     }
     updateParticles(particleSystem, particleList, elapsedTime) {
         this.metaballs.cubeWidth = this.getParamScalarValue('m_cubeWidth') ?? 1;
-        let renderRadius = this.getParamScalarValue('m_renderRadius') ?? 1.3;
+        const renderRadius = this.getParamScalarValue('m_renderRadius') ?? 1.3;
         this.getParamScalarValue('m_cutoffRadius') ?? 3.3;
-        let balls = [];
+        const balls = [];
         for (let i = 0; i < Math.min(particleList.length, 500); i++) {
-            let particle = particleList[i];
+            const particle = particleList[i];
             let ball = this.balls[i];
             if (!ball) {
                 ball = new Metaball();
@@ -63494,18 +63494,18 @@ class RenderRopes extends Operator {
     updateParticles(particleSystem, particleList, elapsedTime) {
         this.textureScroll += elapsedTime * this.textureVScrollRate;
         this.getParameter('subdivision_count') ?? 3;
-        let geometry = this.geometry;
-        let segments = [];
+        const geometry = this.geometry;
+        const segments = [];
         let particle;
         let ropeLength = 0.0;
         let previousSegment = null;
-        let textureVWorldSize = 1 / this.textureVWorldSize;
-        let textureScroll = this.textureScroll;
-        let alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
+        const textureVWorldSize = 1 / this.textureVWorldSize;
+        const textureScroll = this.textureScroll;
+        const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
         for (let i = 0, l = particleList.length; i < l; i++) {
             //for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
             particle = particleList[i];
-            let segment = new BeamSegment(particle.position, [particle.color[0], particle.color[1], particle.color[2], particle.alpha * alphaScale], 0.0, particle.radius);
+            const segment = new BeamSegment(particle.position, [particle.color[0], particle.color[1], particle.color[2], particle.alpha * alphaScale], 0.0, particle.radius);
             vec3.copy(segment.normal, particle.normal);
             if (previousSegment) {
                 ropeLength += segment.distanceTo(previousSegment);
@@ -63563,7 +63563,7 @@ class RenderRopes extends Operator {
             return;
         }
         let index = 0;
-        for (let particle of particleList) { //TODOv3
+        for (const particle of particleList) { //TODOv3
             /*let pose = bone.boneMat;
             for (let k = 0; k < 16; ++k) {
                 a[index++] = pose[k];
@@ -63670,7 +63670,7 @@ class RenderSprites extends RenderBase {
         const rate = this.getParameter('animation rate');
         const useAnimRate = this.getParameter('use animation rate as FPS');
         this.geometry.count = particleList.length * 6;
-        let maxParticles = this.#maxParticles;
+        const maxParticles = this.#maxParticles;
         this.setupParticlesTexture(particleList, maxParticles);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source2ParticleManager.visible);
@@ -63680,7 +63680,7 @@ class RenderSprites extends RenderBase {
         let index = 0;
         let index2 = 0;
         for (let i = 0; i < particleList.length; i++) {
-            let particle = particleList[i];
+            const particle = particleList[i];
             const sequence = particle.sequence;
             if (m_bFitCycleToLifetime) {
                 particle.timeToLive; //SubFloat(pLifeDuration[ nGroup * ld_stride ], nOffset);
@@ -63692,15 +63692,15 @@ class RenderSprites extends RenderBase {
                 }
             }
             particle.frame += elapsedTime;
-            let spriteSheet = this.spriteSheet;
+            const spriteSheet = this.spriteSheet;
             if (spriteSheet) {
                 let coords = spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords; //sequences[particle.sequence].frames[particle.frame].coords;
                 //coords = coords.m_TextureCoordData[0];
                 if (coords) {
-                    let uMin = coords[0];
-                    let vMin = coords[1];
-                    let uMax = coords[2];
-                    let vMax = coords[3];
+                    const uMin = coords[0];
+                    const vMin = coords[1];
+                    const uMax = coords[2];
+                    const vMax = coords[3];
                     uvs[index++] = uMin;
                     uvs[index++] = vMin;
                     uvs[index++] = uMax;
@@ -63713,10 +63713,10 @@ class RenderSprites extends RenderBase {
                 coords = spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0)?.coords; //sequences[particle.sequence].frames[particle.frame].coords;
                 //coords = coords.m_TextureCoordData[0];
                 if (coords) {
-                    let uMin = coords[0];
-                    let vMin = coords[1];
-                    let uMax = coords[2];
-                    let vMax = coords[3];
+                    const uMin = coords[0];
+                    const vMin = coords[1];
+                    const uMax = coords[2];
+                    const vMax = coords[3];
                     uvs2[index2++] = uMin;
                     uvs2[index2++] = vMin;
                     uvs2[index2++] = uMax;
@@ -63741,14 +63741,14 @@ class RenderSprites extends RenderBase {
         this._initBuffers();
     }
     _initBuffers() {
-        let geometry = this.geometry;
+        const geometry = this.geometry;
         const vertices = [];
         const uvs = [];
         const uvs2 = [];
         const indices = [];
         const id = [];
         for (let i = 0; i < this.#maxParticles; i++) {
-            let indiceBase = i * 4;
+            const indiceBase = i * 4;
             indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
             vertices.push(-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0);
             uvs.push(0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0);
@@ -63797,8 +63797,8 @@ class RenderSprites extends RenderBase {
     setupParticlesTexture(particleList, maxParticles) {
         const a = this.imgData;
         let index = 0;
-        let alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
-        for (let particle of particleList) { //TODOv3
+        const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
+        for (const particle of particleList) { //TODOv3
             /*let pose = bone.boneMat;
             for (let k = 0; k < 16; ++k) {
                 a[index++] = pose[k];
@@ -63916,9 +63916,9 @@ class RenderTrails extends Operator {
         const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
         const rate = this.getParameter('animation rate');
         const useAnimRate = this.getParameter('use animation rate as FPS');
-        let geometry = this.geometry;
+        const geometry = this.geometry;
         geometry.count = particleList.length * 6;
-        let maxParticles = this.#maxParticles;
+        const maxParticles = this.#maxParticles;
         this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source2ParticleManager.visible);
@@ -63927,7 +63927,7 @@ class RenderTrails extends Operator {
         geometry.attributes.get('aTextureCoord')._array;
         geometry.attributes.get('aTextureCoord2')._array;
         for (let i = 0; i < particleList.length; i++) {
-            let particle = particleList[i];
+            const particle = particleList[i];
             const sequence = particle.sequence;
             if (m_bFitCycleToLifetime) {
                 particle.timeToLive; //SubFloat(pLifeDuration[ nGroup * ld_stride ], nOffset);
@@ -63950,14 +63950,14 @@ class RenderTrails extends Operator {
         this._initBuffers();
     }
     _initBuffers() {
-        let geometry = this.geometry;
+        const geometry = this.geometry;
         const vertices = [];
         const uvs = [];
         const uvs2 = [];
         const indices = [];
         const id = [];
         for (let i = 0; i < this.#maxParticles; i++) {
-            let indiceBase = i * 4;
+            const indiceBase = i * 4;
             indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
             vertices.push(-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0);
             uvs.push(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0);
@@ -64019,9 +64019,9 @@ class RenderTrails extends Operator {
         else {
             flOODt = (elapsedTime != 0.0) ? (1.0 / elapsedTime) : 1.0;
         }
-        let radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
-        let alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
-        for (let particle of particleList) {
+        const radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
+        const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
+        for (const particle of particleList) {
             const flAge = particle.currentTime;
             const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
             const vecDelta = vec3.subtract(vec3.create(), particle.prevPosition, particle.position); //TODOv3: optimize
@@ -66729,7 +66729,7 @@ function createPlanes(lodMax) {
         const positionSize = 3;
         const uvSize = 2;
         const faceIndexSize = 1;
-        var indices = [];
+        const indices = [];
         const position = new Float32Array(positionSize * vertices * cubeFaces);
         const uv = new Float32Array(uvSize * vertices * cubeFaces);
         const faceIndex = new Float32Array(faceIndexSize * vertices * cubeFaces);
@@ -67125,15 +67125,15 @@ class ObjExporter {
         this.scene.addChild(this.#fullScreenQuadMesh);
     }
     async #renderMeshes(files, meshes) {
-        let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024); //TODOv3: constant
+        const [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024); //TODOv3: constant
         new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
         new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
         new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
-        let previousClearColor = new Graphics().getClearColor();
+        const previousClearColor = new Graphics().getClearColor();
         new Graphics().clearColor(vec4.fromValues(0, 0, 0, 0));
         let meshId = 0;
-        let promises = [];
-        for (let mesh of meshes) {
+        const promises = [];
+        for (const mesh of meshes) {
             if (!mesh.is('Mesh')) {
                 continue;
             }
@@ -67146,7 +67146,7 @@ class ObjExporter {
             //let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
             /*				let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
                         files.add(file);*/
-            let promise = new Graphics().savePictureAsFile(`mat_${meshId}.png`);
+            const promise = new Graphics().savePictureAsFile(`mat_${meshId}.png`);
             promise.then((file) => files.add(file));
             promises.push(promise);
             ++meshId;
@@ -67162,22 +67162,22 @@ class ObjExporter {
         this.#lines.push(line + '\n');
     }
     async exportMeshes({ meshes = new Set(), exportTexture = false, singleMesh = false, digits = 4, subdivisions = 0, mergeTolerance = 0.0001 } = {}) {
-        let files = new Set();
+        const files = new Set();
         const loopSubdivision = new LoopSubdivision();
         if (exportTexture && subdivisions == 0) {
             await this.#renderMeshes(files, meshes);
         }
         this.#lines = [];
-        let mtlLines = [];
+        const mtlLines = [];
         this.#addLine('mtllib export.mtl');
         let objectId = 0;
         this.#startIndex = 1;
-        for (let mesh of meshes) {
+        for (const mesh of meshes) {
             if (mesh.parent.isParticleSystem) {
                 continue;
             }
             if (mesh.exportObj) {
-                let m = mesh.exportObj();
+                const m = mesh.exportObj();
                 let faces;
                 let vertices;
                 let normals;
@@ -67212,14 +67212,14 @@ class ObjExporter {
         return files;
     }
     async #exportMesh(digits, indices, vertices, normals, uvs) {
-        let attributes = [
+        const attributes = [
             { name: 'v', stride: 3, arr: vertices },
             { name: 'vn', stride: 3, arr: normals },
             { name: 'vt', stride: 2, arr: uvs },
         ];
         let line;
         let verticeCount = 0;
-        let startIndex = this.#startIndex;
+        const startIndex = this.#startIndex;
         for (const attribute of attributes) {
             const attributesLength = attribute.stride;
             const arr = attribute.arr;
@@ -67238,9 +67238,9 @@ class ObjExporter {
             }
         }
         for (let i = 0; i < indices.length; i += 3) {
-            let i0 = startIndex + indices[i];
-            let i1 = startIndex + indices[i + 1];
-            let i2 = startIndex + indices[i + 2];
+            const i0 = startIndex + indices[i];
+            const i1 = startIndex + indices[i + 1];
+            const i2 = startIndex + indices[i + 2];
             let uv0 = '';
             let uv1 = '';
             let uv2 = '';

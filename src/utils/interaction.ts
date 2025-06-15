@@ -93,7 +93,7 @@ export class Interaction {
 
 		let promiseResolve: (value: vec4) => void;
 
-		let promise = new Promise<vec4>((resolve, reject) => {
+		const promise = new Promise<vec4>((resolve, reject) => {
 			promiseResolve = resolve;
 		});
 		/*
@@ -106,8 +106,8 @@ export class Interaction {
 		};
 		*/
 		this.#htmlColorPickeronChange = (color) => {
-			let rgba = color.rgba;
-			let c = vec4.fromValues(rgba[0], rgba[1], rgba[2], rgba[3]);
+			const rgba = color.rgba;
+			const c = vec4.fromValues(rgba[0], rgba[1], rgba[2], rgba[3]);
 			if (onChange) {
 				onChange(c);
 			}
@@ -121,15 +121,15 @@ export class Interaction {
 		return promise;
 	}
 
-	getString(x: number, y: number, list: Set<string> | Array<string> | Map<string, string> | MapIterator<string>, defaultValue?: string): Promise<string> {
+	getString(x: number, y: number, list: Set<string> | string[] | Map<string, string> | MapIterator<string>, defaultValue?: string): Promise<string> {
 		this.show();
 		show(this.#htmlInput);
 		(this.#htmlInput as HTMLInputElement).value = defaultValue ? defaultValue : '';
 		if (list) {
-			let isMap = list.constructor.name == 'Map';
+			const isMap = list.constructor.name == 'Map';
 			(this.#htmlInputDataList as HTMLDataListElement).innerText = '';
-			for (let value of list) {
-				let animOption = document.createElement('option');
+			for (const value of list) {
+				const animOption = document.createElement('option');
 				(this.#htmlInputDataList as HTMLDataListElement).append(animOption);
 				if (isMap) {
 					animOption.innerHTML = value[0];
@@ -142,7 +142,7 @@ export class Interaction {
 
 		let promiseResolve: (value: string) => void;
 		(this.#htmlInput as HTMLInputElement).onchange = (event) => {
-			for (let option of (this.#htmlInputDataList as HTMLDataListElement).options) {
+			for (const option of (this.#htmlInputDataList as HTMLDataListElement).options) {
 				if (option.value == (event.target as HTMLInputElement).value) {
 					promiseResolve(option.value);
 				}
@@ -151,7 +151,7 @@ export class Interaction {
 		}
 
 
-		let promise = new Promise<string>(resolve => {
+		const promise = new Promise<string>(resolve => {
 			promiseResolve = resolve;
 		});
 		return promise;
@@ -229,11 +229,11 @@ export class Interaction {
 		//this.#htmlFileSelector.style.display = 'none';
 		//this.hide();
 		//return value;
-		let fileSelector: FileSelector = document.createElement('file-selector') as FileSelector;//TODO: create only once
+		const fileSelector: FileSelector = document.createElement('file-selector') as FileSelector;//TODO: create only once
 		htmlContainer.append(fileSelector);
 		fileSelector.fileList = fileList;
 		fileSelector.addEventListener('fileSelected', event => {
-			let file = (event as CustomEvent).detail.file;
+			const file = (event as CustomEvent).detail.file;
 			callback(file.root, file.path + file.name);
 		});
 	}

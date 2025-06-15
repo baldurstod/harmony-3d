@@ -42,8 +42,8 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 	}
 
 	afterProcessProxies(proxyParams) {
-		let variables = this.variables;
-		let parameters = this.parameters;
+		const variables = this.variables;
+		const parameters = this.parameters;
 
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
@@ -83,19 +83,19 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 			this.setDefine('USE_GRUNGE_MAP');//TODOv3: set this automaticaly
 		}
 
-		let expTexture = parameters['$exptexture'];
+		const expTexture = parameters['$exptexture'];
 		if (expTexture) {
 			this.uniforms['exponentMap'] = Source1TextureManager.getTexture(this.repository, expTexture, 0);
 			this.setDefine('USE_EXPONENT_MAP');//TODOv3: set this automaticaly
 		}
 
-		let surfaceTexture = parameters['$surfacetexture'];
+		const surfaceTexture = parameters['$surfacetexture'];
 		if (surfaceTexture) {
 			this.uniforms['surfaceMap'] = Source1TextureManager.getTexture(this.repository, surfaceTexture, 0);
 			this.setDefine('USE_SURFACE_MAP');//TODOv3: set this automaticaly
 		}
 
-		let posTexture = parameters['$postexture'];
+		const posTexture = parameters['$postexture'];
 		if (posTexture) {
 			this.uniforms['posMap'] = Source1TextureManager.getTexture(this.repository, posTexture, 0);
 			this.setDefine('USE_POS_MAP');//TODOv3: set this automaticaly
@@ -144,13 +144,13 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 		if (proxyParams['SheenTintColor']) {
 			this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
 		} else {
-			let sheenmaptint = variables.get('$sheenmaptint');
+			const sheenmaptint = variables.get('$sheenmaptint');
 			if (sheenmaptint) {
 				this.uniforms['g_cCloakColorTint'] = sheenmaptint;
 			}
 		}
 
-		let wearProgress = proxyParams['WearProgress'] ?? 0;
+		const wearProgress = proxyParams['WearProgress'] ?? 0;
 		if (wearProgress !== undefined) {
 			this.uniforms['uWearProgress'] = wearProgress;
 		} else {
@@ -171,7 +171,7 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 	}
 
 	setColorUniform(uniformName, value) {
-		let color = readColor(value);
+		const color = readColor(value);
 		if (color) {
 			//vec3.scale(color, color, 1 / 255.0);
 			this.uniforms[uniformName] = color;

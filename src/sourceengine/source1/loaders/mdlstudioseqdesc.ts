@@ -22,8 +22,8 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 	previousTime: number;
 	currentTime: number;
 	posekeyindex: number;
-	autolayer: Array<MdlStudioAutoLayer> = [];
-	events: Array<MdlStudioEvent> = [];
+	autolayer: MdlStudioAutoLayer[] = [];
+	events: MdlStudioEvent[] = [];
 	name: string;
 	flags: number;
 	activity;
@@ -147,8 +147,8 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 			case (event.event === 0 && event.name == 'AE_CL_CREATE_PARTICLE_EFFECT'):
 				options = event.options.split(' ');
 				//TODOV2
-				let f = async () => {
-					let sys = await Source1ParticleControler.createSystem(dynamicProp.sourceModel.repository, options[0]);
+				const f = async () => {
+					const sys = await Source1ParticleControler.createSystem(dynamicProp.sourceModel.repository, options[0]);
 					sys.autoKill = true;
 					sys.start();
 					//console.log(options[0], options[1], options[2]);

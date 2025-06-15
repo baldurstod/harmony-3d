@@ -8,7 +8,7 @@ import { RenderFace } from '../../../materials/constants';
 import { Source2File } from '../loaders/source2file';
 
 export class Source2SpriteCard extends Source2Material {
-	#texturePath: string = '';
+	#texturePath = '';
 
 	constructor(repository: string, source2File?: Source2File) {
 		super(repository, source2File);

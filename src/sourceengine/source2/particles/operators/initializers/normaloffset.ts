@@ -34,7 +34,7 @@ export class NormalOffset extends Operator {
 		vec3RandomBox(v, this.offsetMin, this.offsetMax);
 
 		if (this.localCoords) {
-			let cp = this.system.getControlPoint(this.controlPointNumber);
+			const cp = this.system.getControlPoint(this.controlPointNumber);
 			vec3.transformQuat(v, v, cp.currentWorldQuaternion);
 		}
 

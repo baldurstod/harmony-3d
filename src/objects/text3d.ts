@@ -55,16 +55,16 @@ export class Text3D extends Mesh {
 	}
 
 	async #updateGeometry() {
-		let font = await FontManager.getFont(this.#font);
+		const font = await FontManager.getFont(this.#font);
 		if (font) {
-			let shapes = font.generateShapes(this.#text, this.#size);
+			const shapes = font.generateShapes(this.#text, this.#size);
 
 			(this.geometry as ExtrudeGeometry).createGeometry(shapes, { depth: this.#depth, bevelThickness: 2, bevelSize: 0.5 });
 		}
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.text = this.#text;
 		json.size = this.#size;
 		json.depth = this.#depth;
@@ -89,19 +89,19 @@ export class Text3D extends Mesh {
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			Text3D_1: null,
-			text: { i18n: '#text', f: () => { let text = prompt('Text', this.#text); this.text = text; } },
+			text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.text = text; } },
 			font: {
 				i18n: '#font', f: async () => {
-					let fontList = await FontManager.getFontList();
-					let fontList2 = new Map();
-					for (let font of fontList) {
+					const fontList = await FontManager.getFontList();
+					const fontList2 = new Map();
+					for (const font of fontList) {
 						if (font[1] == 'normal') {
 							fontList2.set(font[0], font);
 						} else {
 							fontList2.set(font.join(' '), font);
 						}
 					}
-					let font = await new Interaction().getString(0, 0, fontList2);
+					const font = await new Interaction().getString(0, 0, fontList2);
 					if (font) {
 						this.#font = font[0];
 						this.#style = font[1];
@@ -109,8 +109,8 @@ export class Text3D extends Mesh {
 					}
 				}
 			},
-			font_size: { i18n: '#font_size', f: () => { let size = prompt('Size', String(this.#size)); this.size = Number(size); } },
-			font_depth: { i18n: '#font_depth', f: () => { let depth = prompt('Depth', String(this.#depth)); this.depth = Number(depth); } }
+			font_size: { i18n: '#font_size', f: () => { const size = prompt('Size', String(this.#size)); this.size = Number(size); } },
+			font_depth: { i18n: '#font_depth', f: () => { const depth = prompt('Depth', String(this.#depth)); this.depth = Number(depth); } }
 		});
 	}
 

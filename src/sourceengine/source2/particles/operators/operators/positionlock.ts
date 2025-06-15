@@ -6,7 +6,7 @@ import { RandomFloatExp, clamp } from '../../../../../math/functions';
 const tempPrevPos = vec3.create();
 const tempPos = vec3.create();
 //const tempQuat = quat.create();
-let vec = vec3.create();
+const vec = vec3.create();
 
 export class PositionLock extends Operator {
 	startTimeMin = 1;
@@ -76,7 +76,7 @@ export class PositionLock extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let proportionOfLife = clamp(particle.proportionOfLife, 0, 1);
+		const proportionOfLife = clamp(particle.proportionOfLife, 0, 1);
 		if (proportionOfLife > this.endFadeOutTime) {
 			return;
 		}

@@ -4,7 +4,7 @@ import { Operator } from '../operator';
 import { FLT_EPSILON } from '../../../../../math/constants';
 
 const vecCenter = vec3.create();
-let vec = vec3.create();
+const vec = vec3.create();
 
 export class AttractToControlPoint extends Operator {
 	componentScale = vec3.fromValues(1, 1, 1);
@@ -35,8 +35,8 @@ export class AttractToControlPoint extends Operator {
 	}
 
 	doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
-		let forceAmount = this.getParamScalarValue('m_fForceAmount') ?? 100;
-		let forceAmountMin = this.getParamScalarValue('m_fForceAmountMin') ?? 0;
+		const forceAmount = this.getParamScalarValue('m_fForceAmount') ?? 100;
+		const forceAmountMin = this.getParamScalarValue('m_fForceAmountMin') ?? 0;
 
 		const power_frac = (-4.0 * this.falloffPower) << 0;					// convert to what pow_fixedpoint_exponent_simd wants
 		const fForceScale = -forceAmount * strength/*flStrength*/;

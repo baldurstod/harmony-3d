@@ -2,7 +2,7 @@ import { quat, vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
-let q = quat.create();
+const q = quat.create();
 
 export class SetControlPointOrientation extends Operator {
 	useWorldLocation = false;
@@ -47,14 +47,14 @@ export class SetControlPointOrientation extends Operator {
 	doOperate(particle, elapsedTime) {
 		return;
 		//TODO: randomize parameter + interpolation
-		let cp = this.system.getControlPoint(this.cp);
+		const cp = this.system.getControlPoint(this.cp);
 		if (cp) {
-			let rotation = this.rotation;
+			const rotation = this.rotation;
 
 			quat.fromEuler(q, rotation[2], rotation[0], rotation[1]);//order is pitch yaw roll
 			quat.fromEuler(q, rotation[1], rotation[0], rotation[2]);//order is pitch yaw roll
 			if (!this.useWorldLocation) {
-				let headControlPoint = this.system.getControlPoint(this.headLocation);
+				const headControlPoint = this.system.getControlPoint(this.headLocation);
 				if (headControlPoint) {
 					quat.mul(q, q, headControlPoint.currentWorldQuaternion);
 				}

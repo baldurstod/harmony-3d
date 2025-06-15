@@ -4,7 +4,7 @@ import { ShaderEventTarget } from './shadereventtarget';
 const includeSources = new Map<string, string>();
 const customIncludeSources = new Map<string, string>();
 
-export function addIncludeSource(name: string, source: string = '') {
+export function addIncludeSource(name: string, source = '') {
 	includeSources.set(name, source);
 	ShaderEventTarget.dispatchEvent(new CustomEvent('includeadded'));
 }

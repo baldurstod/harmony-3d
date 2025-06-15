@@ -89,10 +89,10 @@ export class DistanceToCP extends Operator {
 	}
 
 	doOperate(particle, elapsedTime, flStrength = 1) {
-		let componentScale = this.getParamVectorValue('m_vecComponentScale') ?? DEFAULT_COMPONENT_SCALE;
+		const componentScale = this.getParamVectorValue('m_vecComponentScale') ?? DEFAULT_COMPONENT_SCALE;
 
-		let flMin = this.outputMin1;
-		let flMax = this.outputMax1;
+		const flMin = this.outputMin1;
+		const flMax = this.outputMax1;
 		/*if ( ATTRIBUTES_WHICH_ARE_0_TO_1 & ( 1 << m_nFieldOutput ) )
 		{
 			flMin = clamp(m_flOutputMin, 0.0f, 1.0f );
@@ -102,8 +102,8 @@ export class DistanceToCP extends Operator {
 		const vecControlPoint1 = this.system.getControlPointPosition(this.startCP);
 
 		//let vecPosition2 = vec3.create();
-		let vecDelta = vec3.create();
-		let vecEndPoint = vec3.create();
+		const vecDelta = vec3.create();
+		const vecEndPoint = vec3.create();
 		// FIXME: SSE-ize
 		//for ( int i = 0; i < pParticles->m_nActiveParticles; ++i )
 		{
@@ -114,7 +114,7 @@ export class DistanceToCP extends Operator {
 			//Vector vecDelta = vecControlPoint1 - vecPosition2;
 			vec3.sub(vecDelta, vecControlPoint1, particle.position);
 
-			let flDistance = vec3.length(vecDelta);//vecDelta.Length();
+			const flDistance = vec3.length(vecDelta);//vecDelta.Length();
 			if ( this.activeRange && ( flDistance < this.inputMin || flDistance > this.inputMax ) )
 			{
 				return;//continue;
@@ -141,7 +141,7 @@ export class DistanceToCP extends Operator {
 
 			}
 
-			let flOutput = RemapValClamped( flDistance, this.inputMin, this.inputMax, flMin, flMax  );
+			const flOutput = RemapValClamped( flDistance, this.inputMin, this.inputMax, flMin, flMax  );
 			/*if ( m_bScaleInitialRange )
 			{
 				const float *pInitialOutput = pParticles->GetInitialFloatAttributePtr( m_nFieldOutput, i );

@@ -1,13 +1,13 @@
 import { BinaryReader } from 'harmony-binary-reader';
 
 export function decodeLz4(reader: BinaryReader, decompressBlobArray: Uint8Array, compressedSize: number, uncompressedSize: number, outputIndex = 0) {
-	let mask = null;
-	let lastOffset = reader.tell() + compressedSize;
+	const mask = null;
+	const lastOffset = reader.tell() + compressedSize;
 
 	//let outputIndex = 0;
 	let decodedeBytes = 0;
 
-	let decodeMask = reader.getUint8();
+	const decodeMask = reader.getUint8();
 	let readBytes = (decodeMask & 0xF0) >> 4;
 	if (readBytes == 0xF) {
 		let a = 0;
@@ -34,7 +34,7 @@ export function decodeLz4(reader: BinaryReader, decompressBlobArray: Uint8Array,
 			break decodeLoop;
 		}
 
-		let decodeOffset = reader.getUint16(offset);
+		const decodeOffset = reader.getUint16(offset);
 
 		if (decodeLen == 0xF) {
 			let a = 0;
@@ -44,8 +44,8 @@ export function decodeLz4(reader: BinaryReader, decompressBlobArray: Uint8Array,
 			} while (a == 0xFF)
 		}
 
-		let decodeMask = reader.getUint8();
-		let nextLen = decodeMask & 0xF;
+		const decodeMask = reader.getUint8();
+		const nextLen = decodeMask & 0xF;
 
 		readBytes = (decodeMask & 0xF0) >> 4;
 		if (readBytes == 0xF) {

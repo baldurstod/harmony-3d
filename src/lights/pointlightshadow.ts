@@ -48,8 +48,8 @@ export class PointLightShadow extends LightShadow {
 	}
 
 	computeShadowMatrix(mapIndex) {
-		let shadowCamera = this.camera;
-		let shadowMatrix = this.shadowMatrix;
+		const shadowCamera = this.camera;
+		const shadowMatrix = this.shadowMatrix;
 
 		shadowCamera.setWorldQuaternion(DIRECTIONS[mapIndex]);
 		shadowCamera.dirty();

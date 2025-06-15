@@ -7,7 +7,7 @@ export class FileSelectorDirectory extends HTMLElement {
 	#initialized = false;
 	#expanded = false;
 	#name = '';
-	#childs: Array<FileSelectorDirectory | HTMLFileSelectorFileElement> = [];
+	#childs: (FileSelectorDirectory | HTMLFileSelectorFileElement)[] = [];
 	#sortingDirection = 1;
 	#visible = true;
 	#header;
@@ -34,7 +34,7 @@ export class FileSelectorDirectory extends HTMLElement {
 	}
 
 	#childExpanded(child: FileSelectorDirectory) {
-		for (let enumeratedChild of this.#content.children) {
+		for (const enumeratedChild of this.#content.children) {
 			if (enumeratedChild.tagName == 'FILE-SELECTOR-DIRECTORY' && enumeratedChild != child) {
 				(enumeratedChild as FileSelectorDirectory).collapse();
 			}
@@ -81,12 +81,12 @@ export class FileSelectorDirectory extends HTMLElement {
 	sort() {
 		this.#childs.sort(
 			(a: HTMLElement, b: HTMLElement): number => {
-				let aIsDir = a.tagName == 'FILE-SELECTOR-DIRECTORY';
-				let bIsDir = b.tagName == 'FILE-SELECTOR-DIRECTORY';
+				const aIsDir = a.tagName == 'FILE-SELECTOR-DIRECTORY';
+				const bIsDir = b.tagName == 'FILE-SELECTOR-DIRECTORY';
 				if (aIsDir) {
 					if (bIsDir) {
-						let aname = (a as FileSelectorDirectory).file?.name;
-						let bname = (b as FileSelectorDirectory).file?.name;
+						const aname = (a as FileSelectorDirectory).file?.name;
+						const bname = (b as FileSelectorDirectory).file?.name;
 						if (aname && bname) {
 							return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
 						}
@@ -97,8 +97,8 @@ export class FileSelectorDirectory extends HTMLElement {
 					if (bIsDir) {
 						return this.#sortingDirection;
 					} else {
-						let aname = (a as HTMLFileSelectorFileElement).file?.name;
-						let bname = (b as HTMLFileSelectorFileElement).file?.name;
+						const aname = (a as HTMLFileSelectorFileElement).file?.name;
+						const bname = (b as HTMLFileSelectorFileElement).file?.name;
 						if (aname && bname) {
 							return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
 						}
@@ -107,7 +107,7 @@ export class FileSelectorDirectory extends HTMLElement {
 				return 0;
 			}
 		);
-		for (let child of this.#childs) {
+		for (const child of this.#childs) {
 			this.#content.append(child);
 		}
 	}
@@ -116,7 +116,7 @@ export class FileSelectorDirectory extends HTMLElement {
 		let visible = false;
 
 		if (this.#expanded) {
-			for (let child of this.#childs) {
+			for (const child of this.#childs) {
 				visible = child.refreshFilter() || visible;
 			}
 		} else {
@@ -131,13 +131,13 @@ export class FileSelectorDirectory extends HTMLElement {
 
 	#matchFilter(file: FileSelectorFile) {
 		if (file.files) {
-			for (let child of file.files) {
+			for (const child of file.files) {
 				if (this.#matchFilter(child)) {
 					return true;
 				}
 			}
 		} else {
-			let filterName = this.#selector?.filter.name ?? '';
+			const filterName = this.#selector?.filter.name ?? '';
 			return file.name.toLowerCase().includes(filterName) || file.path?.toLowerCase().includes(filterName) || false;
 		}
 		return false;
@@ -152,11 +152,11 @@ export class FileSelectorDirectory extends HTMLElement {
 				this.#childs = [];
 
 				if (this.#file && this.#file.files) {
-					let files = this.#file.files;
-					let l = files.length == 1;
+					const files = this.#file.files;
+					const l = files.length == 1;
 
-					for (let file of files) {
-						let fileChilds = file.files;
+					for (const file of files) {
+						const fileChilds = file.files;
 						let child: FileSelectorDirectory | HTMLFileSelectorFileElement;
 						if (fileChilds) {
 							child = document.createElement('file-selector-directory') as FileSelectorDirectory;

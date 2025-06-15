@@ -7,11 +7,11 @@ import { Mesh } from '../objects/mesh';
 import { PI, TAU } from '../math/constants';
 import { registerEntity } from '../entities/entities';
 
-let intersectionPoint1 = vec3.create();
-let intersectionPoint2 = vec3.create();
-let intersectionNormal = vec3.create();
+const intersectionPoint1 = vec3.create();
+const intersectionPoint2 = vec3.create();
+const intersectionNormal = vec3.create();
 const tempVec3 = vec3.create();
-let v = vec3.create();
+const v = vec3.create();
 
 export class Sphere extends Mesh {
 	radius: number;
@@ -49,16 +49,16 @@ export class Sphere extends Mesh {
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			Sphere_1: null,
-			radius: { i18n: '#radius', f: () => { let radius = prompt('Radius', String(this.radius)); if (radius) { this.radius = Number(radius); this.updateGeometry(); } } },
-			segments: { i18n: '#segments', f: () => { let segments = prompt('Segments', String(this.segments)); if (segments) { this.segments = Number(segments); this.updateGeometry(); } } },
-			rings: { i18n: '#rings', f: () => { let rings = prompt('Rings', String(this.rings)); if (rings) { this.rings = Number(rings); this.updateGeometry(); } } }
+			radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.radius)); if (radius) { this.radius = Number(radius); this.updateGeometry(); } } },
+			segments: { i18n: '#segments', f: () => { const segments = prompt('Segments', String(this.segments)); if (segments) { this.segments = Number(segments); this.updateGeometry(); } } },
+			rings: { i18n: '#rings', f: () => { const rings = prompt('Rings', String(this.rings)); if (rings) { this.rings = Number(rings); this.updateGeometry(); } } }
 		});
 	}
 
 	raycast(raycaster, intersections) {
-		let ray = raycaster.ray;
-		let worldPosition = this.getWorldPosition(v);
-		let inverseRadius = 1 / this.radius;
+		const ray = raycaster.ray;
+		const worldPosition = this.getWorldPosition(v);
+		const inverseRadius = 1 / this.radius;
 		if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3), intersectionPoint1, intersectionPoint2)) {
 			//return super.raycast(raycaster, intersections);//TODO: improve
 			//TODO: case when the ray spawn from inside the sphere
@@ -72,7 +72,7 @@ export class Sphere extends Mesh {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.radius = this.radius;
 		json.segments = this.segments;
 		json.rings = this.rings;
@@ -85,7 +85,7 @@ export class Sphere extends Mesh {
 	}
 
 	static async constructFromJSON(json, entities, loadedPromise) {
-		let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
 		return new Sphere({ radius: json.radius, material: material, segments: json.segments, rings: json.rings, phiStart: json.phistart, phiLength: json.philength, thetaStart: json.thetastart, thetaLength: json.thetalength });
 	}
 

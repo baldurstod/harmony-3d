@@ -7,15 +7,15 @@ import { DEBUG, TESTING } from '../../../buildoptions';
 
 export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make singleton ???
 	vtex: boolean;
-	constructor(vtex: boolean = false) {
+	constructor(vtex = false) {
 		super();
 		this.vtex = vtex;
 	}
 
 	async parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File> {
-		let reader = new BinaryReader(arrayBuffer);
+		const reader = new BinaryReader(arrayBuffer);
 
-		let file = new Source2File(repository, fileName);
+		const file = new Source2File(repository, fileName);
 
 		await this.#parseHeader(reader, file, this.vtex);
 		if (false && TESTING) {
@@ -25,13 +25,13 @@ export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make single
 	}
 
 	async #parseHeader(reader: BinaryReader, file: Source2File, parseVtex: boolean) {
-		let startOffset = reader.tell();
+		const startOffset = reader.tell();
 		file.fileLength = reader.getUint32();
 		file.versionMaj = reader.getUint16();
 		file.versionMin = reader.getUint16();
 
-		let headerOffset = reader.tell() + reader.getUint32();
-		let resCount = reader.getUint32();
+		const headerOffset = reader.tell() + reader.getUint32();
+		const resCount = reader.getUint32();
 
 		let resType, resOffset, resLength, block;
 		file.maxBlockOffset = 0;
@@ -46,7 +46,7 @@ export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make single
 			block = new Source2FileBlock(file, resType, resOffset, resLength);
 			file.addBlock(block);
 		}
-		for (let block of file.blocksArray) {
+		for (const block of file.blocksArray) {
 			if (block.length > 0) {
 				await Source2BlockLoader.parseBlock(reader, file, block, parseVtex);
 			}

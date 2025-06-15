@@ -28,7 +28,7 @@ class ContextObserverClass {
 		const subject = event.target;
 		const dependents = this.#observed.get(subject);
 		if (dependents) {
-			for (let dependent of dependents) {
+			for (const dependent of dependents) {
 				ContextObserverClass.#processEvent(subject, dependent, event);
 			}
 		}
@@ -84,7 +84,7 @@ class ContextObserverClass {
 		const size = this.#observed.get(subject).size;
 		if (size == 0) {
 			const types = this.#listeners.get(subject);
-			for (let type of types) {
+			for (const type of types) {
 				//console.log(listener);
 				this.#removeListener(subject, type);
 			}

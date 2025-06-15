@@ -3,11 +3,11 @@ import { vec3 } from 'gl-matrix';
 // From http://paulbourke.net/geometry/polygonise/
 
 export class TRIANGLE {
-	p: Array<vec3> = [vec3.create(), vec3.create(), vec3.create()];
+	p: [vec3, vec3, vec3] = [vec3.create(), vec3.create(), vec3.create()];
 }
 
 export class GRIDCELL {
-	p: Array<vec3> = [];
+	p: vec3[] = [];
 	val: Float32Array;
 	constructor() {
 		for (let i = 0; i < 8; ++i) {
@@ -17,7 +17,7 @@ export class GRIDCELL {
 	}
 }
 
-let edgeTable = new Uint16Array([
+const edgeTable = new Uint16Array([
 	0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
 	0x80c, 0x905, 0xa0f, 0xb06, 0xc0a, 0xd03, 0xe09, 0xf00,
 	0x190, 0x99, 0x393, 0x29a, 0x596, 0x49f, 0x795, 0x69c,
@@ -52,7 +52,7 @@ let edgeTable = new Uint16Array([
 	0x70c, 0x605, 0x50f, 0x406, 0x30a, 0x203, 0x109, 0x0]);
 
 
-let triTable = new Int8Array([
+const triTable = new Int8Array([
 	-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	0, 8, 3, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
 	0, 1, 9, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -318,11 +318,9 @@ let triTable = new Int8Array([
 	0 will be returned if the grid cell is either totally above
 	of totally below the isolevel.
 */
-export function Polygonise(/*GRIDCELL */grid,/*double */isolevel,/*TRIANGLE **/triangles) {
-	let i, ntriang;
-	let cubeindex;
+export function Polygonise(/*GRIDCELL */grid,/*double */isolevel,/*TRIANGLE **/triangles): number {
 	//XYZ vertlist[12];
-	let vertlist = [];
+	const vertlist = [];
 	for (let i = 0; i < 12; ++i) {
 		vertlist.push(vec3.create());
 	}
@@ -332,7 +330,7 @@ export function Polygonise(/*GRIDCELL */grid,/*double */isolevel,/*TRIANGLE **/t
 		Determine the index into the edge table which
 		tells us which vertices are inside of the surface
 	*/
-	cubeindex = 0;
+	let cubeindex = 0;
 	if (grid.val[0] < isolevel) cubeindex |= 1;
 	if (grid.val[1] < isolevel) cubeindex |= 2;
 	if (grid.val[2] < isolevel) cubeindex |= 4;
@@ -385,10 +383,10 @@ export function Polygonise(/*GRIDCELL */grid,/*double */isolevel,/*TRIANGLE **/t
 			VertexInterp(isolevel, grid.p[3], grid.p[7], grid.val[3], grid.val[7]);
 
 	/* Create the triangle */
-	ntriang = 0;
+	let ntriang = 0;
 	cubeindex <<= 4;
 	for (let i = 0; triTable[cubeindex] != -1; i += 3) {
-		let triangle = triangles[ntriang] ?? new TRIANGLE();
+		const triangle = triangles[ntriang] ?? new TRIANGLE();
 		triangles[ntriang] = triangle;
 
 		triangle.p[0] = vertlist[triTable[cubeindex]];
@@ -398,19 +396,18 @@ export function Polygonise(/*GRIDCELL */grid,/*double */isolevel,/*TRIANGLE **/t
 		cubeindex += 3;
 	}
 
-	return (ntriang);
+	return ntriang;
 }
 
 /*
 	Linearly interpolate the position where an isosurface cuts
 	an edge between two vertices, each with their own scalar value
 */
-function VertexInterp(isolevel, p1, p2, valp1, valp2)
+function VertexInterp(isolevel, p1, p2, valp1, valp2): vec3
 /*double isolevel;
 XYZ p1,p2;
 double valp1,valp2;*/ {
-	let mu;
-	let p = vec3.create();
+	const p = vec3.create();
 
 	if (Math.abs(isolevel - valp1) < 0.00001)
 		return (p1);
@@ -418,10 +415,10 @@ double valp1,valp2;*/ {
 		return (p2);
 	if (Math.abs(valp1 - valp2) < 0.00001)
 		return (p1);
-	mu = (isolevel - valp1) / (valp2 - valp1);
+	const mu = (isolevel - valp1) / (valp2 - valp1);
 	p[0] = p1[0] + mu * (p2[0] - p1[0]);
 	p[1] = p1[1] + mu * (p2[1] - p1[1]);
 	p[2] = p1[2] + mu * (p2[2] - p1[2]);
 
-	return (p);
+	return p;
 }

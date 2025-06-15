@@ -1,1 +1,1 @@
-export const Includes: { [key: string]: string } = {}
+export const Includes: Record<string, string> = {}

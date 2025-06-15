@@ -93,8 +93,8 @@ export class Input extends InputOutput {
 	}
 
 	async toString(tabs = ''): Promise<string> {
-		let ret = [];
-		let tabs1 = tabs + '\t';
+		const ret = [];
+		const tabs1 = tabs + '\t';
 		ret.push(tabs + 'id : ' + this.id);
 		if (this.#predecessor) {
 			ret.push(await this.#predecessor.toString(tabs1));

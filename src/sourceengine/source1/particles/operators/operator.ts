@@ -13,7 +13,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 	particleSystem: SourceEngineParticleSystem;
 	material: Material;
 	materialLoaded = false;
-	paramList: Array<ParamType> = [];
+	paramList: ParamType[] = [];
 	endCapState = -1;
 	mesh: Mesh;//for renderers
 	constructor() {
@@ -130,7 +130,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 	}
 
 	setParameters(parameters) {
-		for (let i in parameters) {
+		for (const i in parameters) {
 			const pair = parameters[i];
 			this.setParameter(pair[0], pair[1], pair[2]);
 		}

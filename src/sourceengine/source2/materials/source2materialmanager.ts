@@ -19,18 +19,18 @@ export class Source2MaterialManager {
 		this.#materialList2.delete(material);
 	}
 
-	static getMaterial(repository: string, fileName: string, searchPaths?: Array<string>): Promise<Source2Material | null> {//TODO: remove searchPaths ?
+	static getMaterial(repository: string, fileName: string, searchPaths?: string[]): Promise<Source2Material | null> {//TODO: remove searchPaths ?
 		console.assert(searchPaths == null, 'searchPaths must be null');//TODOv3 remove searchPaths
 		fileName = cleanSource2MaterialName(fileName);
 		if (searchPaths) {
-			let promises = [];
-			for (let searchPath of searchPaths) {
+			const promises = [];
+			for (const searchPath of searchPaths) {
 				promises.push(this.#getMaterial(repository, 'materials/' + searchPath + fileName));
 			}
-			let promise = new Promise<Source2Material | null>(resolve => {
+			const promise = new Promise<Source2Material | null>(resolve => {
 				Promise.allSettled(promises).then(
 					(promises) => {
-						for (let promise of promises) {
+						for (const promise of promises) {
 							if (promise.status == 'fulfilled') {
 								resolve(promise.value);
 							}
@@ -46,11 +46,11 @@ export class Source2MaterialManager {
 	}
 
 	static #getMaterial(repository: string, fileName: string): Promise<Source2Material> {
-		let material = this.#materialList.get(fileName);
+		const material = this.#materialList.get(fileName);
 		if (material instanceof Promise) {
-			let promise = new Promise<Source2Material>((resolve, reject) => {
+			const promise = new Promise<Source2Material>((resolve, reject) => {
 				material.then((material) => {
-					let newMaterial = material.clone();
+					const newMaterial = material.clone();
 					this.#materialList2.add(newMaterial);
 					resolve(newMaterial);
 				}
@@ -63,16 +63,16 @@ export class Source2MaterialManager {
 
 		if (material !== undefined) {
 			return new Promise((resolve, reject) => {
-				let newMaterial = material.clone();
+				const newMaterial = material.clone();
 				this.#materialList2.add(newMaterial);
 				resolve(newMaterial);
 			});
 		} else {
-			let promise = new Promise<Source2Material>((resolve, reject) => {
+			const promise = new Promise<Source2Material>((resolve, reject) => {
 				Source2MaterialLoader.load(repository, fileName).then(
 					(material) => {
 						this.#materialList.set(fileName, material);
-						let newMaterial = material.clone();
+						const newMaterial = material.clone();
 						this.#materialList2.add(newMaterial);
 						resolve(newMaterial);
 					}

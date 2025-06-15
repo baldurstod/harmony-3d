@@ -3,7 +3,7 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { vec3RandomBox } from '../../../../../math/functions';
 
-let v = vec3.create();
+const v = vec3.create();
 
 export class PositionWarp extends Operator {
 	warpMin = vec3.fromValues(1, 1, 1);
@@ -55,7 +55,7 @@ export class PositionWarp extends Operator {
 		vec3RandomBox(v, this.warpMin, this.warpMax);
 		let scale;
 		if (this.scaleControlPointNumber != -1) {
-			let scaleCp = this.system.getControlPoint(this.scaleControlPointNumber);
+			const scaleCp = this.system.getControlPoint(this.scaleControlPointNumber);
 			if (scaleCp) {
 				vec3.mul(v, v, scaleCp._position);//Not sure if it's position or world position
 			}

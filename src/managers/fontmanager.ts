@@ -20,24 +20,24 @@ export class FontManager {
 			if (!this.#fontsPath) {
 				throw 'No manifest set';
 			}
-			let response = await customFetch(this.#fontsPath + 'manifest.json');
+			const response = await customFetch(this.#fontsPath + 'manifest.json');
 			resolve(await response.json());
 		});
 		return this.#manifestPromise;
 	}
 
 	static async #loadFont(name: string, style: string) {
-		let manifest = await this.#getManifest();
+		const manifest = await this.#getManifest();
 
-		let fonts = manifest?.fonts;
+		const fonts = manifest?.fonts;
 		if (fonts) {
-			let font = fonts[name];
+			const font = fonts[name];
 			if (font && font.styles) {
-				let s = font.styles[style];
+				const s = font.styles[style];
 				if (s) {
-					let response = await customFetch(this.#fontsPath + s);
-					let fontFile = await response.json();
-					let font = new Font(fontFile);
+					const response = await customFetch(this.#fontsPath + s);
+					const fontFile = await response.json();
+					const font = new Font(fontFile);
 					this.#fontList.get(name).set(style, font);
 					return font;
 				}
@@ -48,9 +48,9 @@ export class FontManager {
 	static async getFont(name: string, style = 'normal') {
 		name = name.toLowerCase();
 		style = style.toLowerCase();
-		let fontFamilly = this.#fontList.get(name);
+		const fontFamilly = this.#fontList.get(name);
 		if (fontFamilly) {
-			let font = fontFamilly.get(style);
+			const font = fontFamilly.get(style);
 			if (font) {
 				return font;
 			}
@@ -61,14 +61,14 @@ export class FontManager {
 	}
 
 	static async getFontList() {
-		let list: Array<Array<string>> = [];
-		let manifest = await this.#getManifest();
+		const list: string[][] = [];
+		const manifest = await this.#getManifest();
 
-		let fonts = manifest?.fonts;
+		const fonts = manifest?.fonts;
 		if (fonts) {
-			for (let fontName in fonts) {
-				let font = fonts[fontName];
-				for (let styleName in font.styles) {
+			for (const fontName in fonts) {
+				const font = fonts[fontName];
+				for (const styleName in font.styles) {
 					list.push([fontName, styleName]);
 				}
 			}

@@ -12,8 +12,8 @@ export class FileSelector extends HTMLElement {
 	#tileView = false;
 	#filter = { name: '' };
 	#sortingDirection = 1;
-	#htmlTiles: Array<HTMLFileSelectorTileElement> = [];
-	#htmlDirectories: Array<FileSelectorDirectory> = [];
+	#htmlTiles: HTMLFileSelectorTileElement[] = [];
+	#htmlDirectories: FileSelectorDirectory[] = [];
 	#header: HTMLElement;
 	#content: HTMLElement;
 	#filterNameTimeout?: ReturnType<typeof setTimeout>;
@@ -24,10 +24,10 @@ export class FileSelector extends HTMLElement {
 		this.#header = createElement('div', { class: 'file-selector-header' });
 		this.#content = createElement('div', { class: 'file-selector-content' });
 
-		let htmlDisplayPropertiesSpan = createElement('span', { parent: this.#header });
+		const htmlDisplayPropertiesSpan = createElement('span', { parent: this.#header });
 
-		let treeViewId = 'display_tree_view';
-		let htmlTreeView = createElement('input', {
+		const treeViewId = 'display_tree_view';
+		const htmlTreeView = createElement('input', {
 			parent: htmlDisplayPropertiesSpan,
 			type: 'checkbox',
 			id: treeViewId,
@@ -36,11 +36,11 @@ export class FileSelector extends HTMLElement {
 				change: () => this.tileView = !this.#tileView
 			}
 		});
-		let htmlDisplayPropertiesLabel = createElement('label', { i18n: '#display_tree_view', parent: htmlDisplayPropertiesSpan, htmlFor: treeViewId });
+		const htmlDisplayPropertiesLabel = createElement('label', { i18n: '#display_tree_view', parent: htmlDisplayPropertiesSpan, htmlFor: treeViewId });
 
-		let htmlFilter = createElement('div', { class: 'file-selector-filter', parent: this.#header });
+		const htmlFilter = createElement('div', { class: 'file-selector-filter', parent: this.#header });
 
-		let htmlFilterName = createElement('input', {
+		const htmlFilterName = createElement('input', {
 			parent: htmlFilter,
 			events: {
 				input: (event: Event) => {
@@ -74,18 +74,18 @@ export class FileSelector extends HTMLElement {
 	}
 
 	#getFileList(root: FileSelectorFile) {
-		let list = [];
-		let stack = [root];
+		const list = [];
+		const stack = [root];
 		root.path = '';
-		let rootName = root.name;//.replace(/\/$/g, '');
+		const rootName = root.name;//.replace(/\/$/g, '');
 		let current;
 		do {
 			current = stack.pop();
 			if (current) {
 				if (current.files) {
-					for (let file of current.files) {
-						let path2 = current.path?.replace(/\/$/g, '');//remove trailing /
-						let name2 = current.name?.replace(/\/$/g, '');//remove trailing /
+					for (const file of current.files) {
+						const path2 = current.path?.replace(/\/$/g, '');//remove trailing /
+						const name2 = current.name?.replace(/\/$/g, '');//remove trailing /
 						if (current == root) {
 							file.path = '/';
 						} else {
@@ -107,11 +107,11 @@ export class FileSelector extends HTMLElement {
 
 	refreshFilter() {
 		if (this.#tileView) {
-			for (let tile of this.#htmlTiles) {
+			for (const tile of this.#htmlTiles) {
 				tile.visible = this.#matchFilter(tile.file);
 			}
 		} else {
-			for (let directory of this.#htmlDirectories) {
+			for (const directory of this.#htmlDirectories) {
 				directory.refreshFilter();
 			}
 		}
@@ -121,15 +121,15 @@ export class FileSelector extends HTMLElement {
 		if (this.#tileView) {
 			this.#htmlTiles.sort(
 				(a, b) => {
-					let aname = a.file?.name;
-					let bname = b.file?.name;
+					const aname = a.file?.name;
+					const bname = b.file?.name;
 					if (aname && bname) {
 						return aname < bname ? -this.#sortingDirection : this.#sortingDirection;
 					}
 					return 0;
 				}
 			);
-			for (let tile of this.#htmlTiles) {
+			for (const tile of this.#htmlTiles) {
 				this.#content.append(tile);
 			}
 		}
@@ -157,9 +157,9 @@ export class FileSelector extends HTMLElement {
 		this.#htmlDirectories = [];
 		if (this.#tileView) {
 			if (this.#fileList) {
-				for (let rootFile of this.#fileList.files) {
-					let fileList = this.#getFileList(rootFile);
-					for (let file of fileList) {
+				for (const rootFile of this.#fileList.files) {
+					const fileList = this.#getFileList(rootFile);
+					for (const file of fileList) {
 						const tile = createElement('file-selector-tile', { parent: this.#content }) as HTMLFileSelectorTileElement;
 						tile.selector = this;
 						tile.setFile(file);
@@ -170,8 +170,8 @@ export class FileSelector extends HTMLElement {
 			}
 		} else {
 			if (this.#fileList) {
-				let expandDirectory = this.#fileList.files.length == 1;
-				for (let rootFile of this.#fileList.files) {
+				const expandDirectory = this.#fileList.files.length == 1;
+				for (const rootFile of this.#fileList.files) {
 					this.#getFileList(rootFile);//Just add path
 					const root = createElement('file-selector-directory', { parent: this.#content }) as FileSelectorDirectory;
 					root.selector = this;

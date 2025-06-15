@@ -14,7 +14,7 @@ export class MapEntityLight extends MapEntity {
 	}
 
 	setKeyValue(key, value) {
-		let pointLight = this.pointLight;
+		const pointLight = this.pointLight;
 		pointLight.range = 1000;
 		switch (key) {
 			case '_zero_percent_distance':

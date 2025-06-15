@@ -15,7 +15,7 @@ export class StatTrakIllum extends Proxy {
 
 	execute(variables, proxyParams) {
 		const glowMultiplier = proxyParams.GlowMultiplier ?? 0.5;
-		let value = lerp(this.#minVal, this.#maxVal, glowMultiplier);
+		const value = lerp(this.#minVal, this.#maxVal, glowMultiplier);
 		variables.set(this.#resultVar, vec3.fromValues(value, value, value));
 	}
 }

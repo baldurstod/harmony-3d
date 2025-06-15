@@ -12,7 +12,7 @@ const identityQuat = quat.create();
 const tempVec3 = vec3.create();
 const tempQuat = quat.create();
 
-let mat = mat4.create();
+const mat = mat4.create();
 
 export class ControlPoint extends Entity {
 	isControlPoint = true;
@@ -59,7 +59,7 @@ export class ControlPoint extends Entity {
 	}
 
 	parentChanged(parent: Entity | null) {
-		let parentModel = this.getParentModel();
+		const parentModel = this.getParentModel();
 		this.forEach(entity => {
 			if ((entity as ControlPoint).isControlPoint) {
 				(entity as ControlPoint).parentModel = parentModel;

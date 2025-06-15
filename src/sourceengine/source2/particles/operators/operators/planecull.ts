@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
-let vec = vec3.create();
+const vec = vec3.create();
 
 export class PlaneCull extends Operator {
 	planeControlPoint = 0;
@@ -41,9 +41,9 @@ export class PlaneCull extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let cp = this.system.getControlPoint(this.planeControlPoint);
+		const cp = this.system.getControlPoint(this.planeControlPoint);
 		if (cp) {
-			let origin = cp.getWorldPosition(vec);
+			const origin = cp.getWorldPosition(vec);
 			vec3.sub(origin, origin, this.planeDirectionOffset);
 			vec3.sub(origin, particle.position, origin);
 			if (vec3.dot(this.planeDirection, origin) < 0) {

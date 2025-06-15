@@ -4,7 +4,7 @@ import { Proxy } from './proxy';
 import { DEG_TO_RAD } from '../../../../math/constants';
 
 function toNumber(string) {
-	let num = Number(string);
+	const num = Number(string);
 	if (!Number.isNaN(num)) {
 		return num;
 	}

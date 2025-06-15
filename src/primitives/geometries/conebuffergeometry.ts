@@ -35,20 +35,20 @@ export class ConeBufferGeometry extends BufferGeometry {
 	}
 
 	#generateCone(radius, height, segments) {
-		var normal = vec3.create();
-		var vertex = vec3.create();
+		const normal = vec3.create();
+		const vertex = vec3.create();
 
-		let thetaPerSegment = TWO_PI / segments;
-		let vPerSegment = 1 / segments;
+		const thetaPerSegment = TWO_PI / segments;
+		const vPerSegment = 1 / segments;
 		//let halfHeight = height / 2.0;
 
 		for (let segmentId = 0; segmentId <= segments; ++segmentId) {
-			let theta = thetaPerSegment * segmentId;
-			let sinTheta = Math.sin(theta);
-			let cosTheta = Math.cos(theta);
+			const theta = thetaPerSegment * segmentId;
+			const sinTheta = Math.sin(theta);
+			const cosTheta = Math.cos(theta);
 			vertex[0] = radius * cosTheta;
 			vertex[1] = radius * sinTheta;
-			let u = segmentId / segments;
+			const u = segmentId / segments;
 
 			normal[0] = cosTheta;
 			normal[1] = sinTheta;
@@ -65,14 +65,14 @@ export class ConeBufferGeometry extends BufferGeometry {
 			this.#normals.push(...normal);
 			this.#uvs.push(u, 1);
 
-			let indexStart = segmentId * 2;
+			const indexStart = segmentId * 2;
 			this.#indices.push(indexStart, indexStart + 2, indexStart + 1);
 			this.#indices.push(indexStart + 1, indexStart + 2, indexStart + 3);
 		}
 	}
 
 	#generateCap(radius, z, segments) {
-		let middlePointIndex = this.#vertices.length / 3;
+		const middlePointIndex = this.#vertices.length / 3;
 
 		// Push middle vertex
 		this.#vertices.push(0, 0, z);

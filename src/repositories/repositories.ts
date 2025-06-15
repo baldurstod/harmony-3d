@@ -1,7 +1,7 @@
 import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class Repositories {
-	static #repositories: { [key: string]: Repository } = {};
+	static #repositories: Record<string, Repository> = {};
 
 	static addRepository(repo: Repository) {
 		this.#repositories[repo.name] = repo;
@@ -11,7 +11,7 @@ export class Repositories {
 		return this.#repositories[name];
 	}
 
-	static getRepositoryList(): Array<string> {
+	static getRepositoryList(): string[] {
 		return Object.keys(this.#repositories);
 	}
 

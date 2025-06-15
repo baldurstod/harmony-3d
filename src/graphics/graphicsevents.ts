@@ -14,32 +14,32 @@ export enum GraphicsEvent {
 	TouchCancel = 'touchcancel',
 }
 
-export type GraphicTickEvent = {
+export interface GraphicTickEvent {
 	delta: number,
 	time: number,
 	speed: number,
 }
 
-export type GraphicMouseEventData = {
+export interface GraphicMouseEventData {
 	x: number,
 	y: number,
 	entity: Entity | null,
 	mouseEvent: MouseEvent,
 }
 
-export type GraphicWheelEventData = {
+export interface GraphicWheelEventData {
 	x: number,
 	y: number,
 	entity: Entity | null,
 	wheelEvent: WheelEvent,
 }
 
-export type GraphicTouchEventData = {
+export interface GraphicTouchEventData {
 	entity: Entity | null,
 	touchEvent: TouchEvent,
 }
 
-export type GraphicKeyboardEventData = {
+export interface GraphicKeyboardEventData {
 	keyboardEvent: KeyboardEvent,
 }
 

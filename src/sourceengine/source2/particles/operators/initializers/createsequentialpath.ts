@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
-let vec = vec3.create();
+const vec = vec3.create();
 
 export class CreateSequentialPath extends Operator {
 	numToAssign = 100;
@@ -31,7 +31,7 @@ export class CreateSequentialPath extends Operator {
 				this.loop = value;
 				break;
 			case 'm_PathParams':
-				for (let subName of Object.keys(value)) {
+				for (const subName of Object.keys(value)) {
 					this._paramChanged(subName, value[subName]);
 				}
 				break;
@@ -75,15 +75,15 @@ export class CreateSequentialPath extends Operator {
 
 	doInit(particle, elapsedTime) {
 		//TODO: use other parameters
-		let startControlPointNumber = this.startControlPointNumber;
-		let endControlPointNumber = this.endControlPointNumber;
+		const startControlPointNumber = this.startControlPointNumber;
+		const endControlPointNumber = this.endControlPointNumber;
 
-		let startControlPoint = this.system.getControlPoint(startControlPointNumber);
-		let endControlPoint = this.system.getControlPoint(endControlPointNumber);
+		const startControlPoint = this.system.getControlPoint(startControlPointNumber);
+		const endControlPoint = this.system.getControlPoint(endControlPointNumber);
 
 		if (startControlPoint && endControlPoint) {
-			let numToAssign = this.numToAssign;
-			let delta = startControlPoint.deltaPosFrom(endControlPoint, vec);
+			const numToAssign = this.numToAssign;
+			const delta = startControlPoint.deltaPosFrom(endControlPoint, vec);
 
 			vec3.scale(delta, delta, this.t);
 			vec3.add(particle.position, startControlPoint.currentWorldPosition, delta);

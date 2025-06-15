@@ -25,7 +25,7 @@ export class RenderScreenVelocityRotate extends SourceEngineParticleOperator {
 		const m_flForward = this.getParameter('forward_angle') * DEG_TO_RAD;
 
 		for (let i = 0; i < particleList.length; i++) {
-			let particle = particleList[i];
+			const particle = particleList[i];
 			particle.renderScreenVelocityRotate = true;
 			particle.m_flRotateRate = m_flRotateRate;
 			particle.m_flForward = m_flForward;

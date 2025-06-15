@@ -22,14 +22,14 @@ export class WebGLShaderSource {
 	static isWebGL2: boolean;
 	#includes = new Set<string>();
 	#type: ShaderType;
-	#source: string = '';
-	#extensions: string = '';
+	#source = '';
+	#extensions = '';
 	#sizeOfSourceRow: number[] = [];
 	#sourceRowToInclude = new Map<number, any>();
-	#compileSource: string = '';
-	#isErroneous: boolean = false;
-	#error: string = '';
-	#lineDelta: number = 0;
+	#compileSource = '';
+	#isErroneous = false;
+	#error = '';
+	#lineDelta = 0;
 	constructor(type: ShaderType, source: string) {
 		if (DEBUG && type === undefined) {
 			throw 'error : type must be defined in WebGLShaderSource';
@@ -44,15 +44,15 @@ export class WebGLShaderSource {
 		this.#sizeOfSourceRow = [];
 		this.#sourceRowToInclude.clear();
 		this.#includes.clear();
-		let allIncludes = new Set();
+		const allIncludes = new Set();
 
-		let sourceLineArray = source.split('\n');
+		const sourceLineArray = source.split('\n');
 		sourceLineArray.unshift(getHeader(this.#type) ?? '');
 		let compileRow = 1;
 		//TODOv3: use regexp to do a better job
-		let outArray: string[] = [];
+		const outArray: string[] = [];
 		for (let i = 0; i < sourceLineArray.length; ++i) {
-			let line = sourceLineArray[i];
+			const line = sourceLineArray[i];
 			let actualSize = 1;
 			if (line.startsWith('#extension')) {
 				this.#extensions += line + '\n';
@@ -60,8 +60,8 @@ export class WebGLShaderSource {
 				actualSize = 0;
 			} else if (line.trim().startsWith('#include')) {
 				//this.extensions += line + '\n';
-				let includeName = line.replace('#include', '').trim();
-				let include = this.getInclude(includeName, compileRow, new Set(), allIncludes);
+				const includeName = line.replace('#include', '').trim();
+				const include = this.getInclude(includeName, compileRow, new Set(), allIncludes);
 				if (include) {
 					this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
 					outArray.push(...include);
@@ -101,19 +101,19 @@ export class WebGLShaderSource {
 			return undefined;
 		}
 		recursion.add(includeName);
-		let include = getIncludeSource(includeName);
+		const include = getIncludeSource(includeName);
 		if (include == undefined) {
 			return undefined;
 		}
 
-		let includeLineArray = include.trim().split('\n');
+		const includeLineArray = include.trim().split('\n');
 		includeLineArray.unshift('');//Add an empty line to insure nested include won't occupy the same line #
-		let outArray: string[] = [];
+		const outArray: string[] = [];
 		for (let i = 0, l = includeLineArray.length; i < l; ++i) {
-			let line = includeLineArray[i];
+			const line = includeLineArray[i];
 			if (line.trim().startsWith('#include')) {
-				let includeName = line.replace('#include', '').trim();
-				let include = this.getInclude(includeName, compileRow + i, recursion, allIncludes);
+				const includeName = line.replace('#include', '').trim();
+				const include = this.getInclude(includeName, compileRow + i, recursion, allIncludes);
 				if (include) {
 					this.#sourceRowToInclude.set(compileRow, [includeName, include.length]);
 					outArray.push(...include);
@@ -122,7 +122,7 @@ export class WebGLShaderSource {
 				continue;
 			}
 			if (line.trim().startsWith('#pragma')) {
-				let result = PRAGMA_REGEX.exec(line);
+				const result = PRAGMA_REGEX.exec(line);
 				if (result && result[1] == 'once') {
 					if (allIncludes.has(includeName)) {
 						return null;
@@ -138,13 +138,13 @@ export class WebGLShaderSource {
 	}
 
 	getCompileSource(includeCode = '') {
-		function getDefineValue(defineName: string, includeCode: string = '') {
-			let sourceLineArray = includeCode.split('\n');
+		function getDefineValue(defineName: string, includeCode = '') {
+			const sourceLineArray = includeCode.split('\n');
 			const definePattern = /\s*#define\s+(\S+)\s+(\S+)/;
 			for (let i = 0, l = sourceLineArray.length; i < l; ++i) {
-				let line = sourceLineArray[i];
+				const line = sourceLineArray[i];
 
-				let regexResult = definePattern.exec(line);
+				const regexResult = definePattern.exec(line);
 				if (regexResult && defineName) {
 					if (regexResult[1] == defineName) {
 						return regexResult[2];
@@ -153,7 +153,7 @@ export class WebGLShaderSource {
 			}
 			return defineName;
 		}
-		function unrollLoops(source: string, includeCode: string = '') {
+		function unrollLoops(source: string, includeCode = '') {
 			let nextUnroll = Infinity;
 			let unrollSubstring;
 			const forPattern = /for\s*\(\s*int\s+(\S+)\s*=\s*(\S+)\s*;\s*(\S+)\s*<\s*(\S+)\s*;\s*(\S+)\s*\+\+\s*\)\s*{/g;
@@ -161,9 +161,9 @@ export class WebGLShaderSource {
 			while ((nextUnroll = source.lastIndexOf('#pragma unroll', nextUnroll - 1)) != -1) {
 				forPattern.lastIndex = 0;
 				unrollSubstring = source.substring(nextUnroll);
-				let regexResult = forPattern.exec(unrollSubstring);
+				const regexResult = forPattern.exec(unrollSubstring);
 				if (regexResult && regexResult.length == 6) {
-					let loopVariable = regexResult[1];
+					const loopVariable = regexResult[1];
 					if ((loopVariable == regexResult[3]) && (loopVariable == regexResult[5])) {//Check the variable name is the same everywhere
 						let startIndex = forPattern.lastIndex;
 						let curlyCount = 1;//we already ate one
@@ -222,15 +222,15 @@ export class WebGLShaderSource {
 	}
 
 	getCompileSourceLineNumber(includeCode: string) {
-		let source = this.getCompileSource(includeCode);
-		let sourceLineArray = source.split('\n');
+		const source = this.getCompileSource(includeCode);
+		const sourceLineArray = source.split('\n');
 		for (let i = sourceLineArray.length - 1; i >= 0; i--) {
 			sourceLineArray[i] = (i + 1).toString().padStart(4) + ' ' + sourceLineArray[i];
 		}
 		return sourceLineArray.join('\n');
 	}
 
-	setCompileError(error: string, includeCode: string = '') {
+	setCompileError(error: string, includeCode = '') {
 		let lineDelta = ((includeCode).match(/\n/g) || []).length;
 		lineDelta += 1;//#version line
 
@@ -256,10 +256,10 @@ export class WebGLShaderSource {
 
 		const arr = this.#error.replace('\n', '').split(splitRegex);
 		while (arr.length) {
-			let errorType = consumeLine(arr);
-			let errorCol = consumeLine(arr);
-			let errorRow = Number(consumeLine(arr));
-			let errorText = consumeLine(arr);
+			const errorType = consumeLine(arr);
+			const errorCol = consumeLine(arr);
+			const errorRow = Number(consumeLine(arr));
+			const errorText = consumeLine(arr);
 			if (errorType && errorCol && errorRow && errorText) {
 				let row = Math.max(errorRow - this.#lineDelta, 0);
 				if (convertRows) {
@@ -275,13 +275,13 @@ export class WebGLShaderSource {
 	getIncludeAnnotations() {
 		const annotations: any[] = [];
 
-		let sourceLineArray = this.#source.split('\n');
+		const sourceLineArray = this.#source.split('\n');
 		sourceLineArray.unshift(getHeader(this.#type) ?? '');
 
 		for (let i = sourceLineArray.length - 1; i >= 0; i--) {
-			let line = sourceLineArray[i];
+			const line = sourceLineArray[i];
 			if (line.trim().startsWith('#include')) {
-				let include = this.getInclude(line.replace('#include', '').trim());
+				const include = this.getInclude(line.replace('#include', '').trim());
 				if (include) {
 					include.shift();//Remove the first empty line
 					annotations.push({ type: 'info', column: 0, row: Math.max(i - 1, 0), text: include.join('\n') });

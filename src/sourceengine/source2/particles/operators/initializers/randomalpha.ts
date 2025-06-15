@@ -24,7 +24,7 @@ export class RandomAlpha extends Operator {
 	}
 
 	doInit(particle, elapsedTime) {
-		let alpha = RandomFloatExp(this.alphaMin, this.alphaMax, this.alphaRandExponent) / 255.0;
+		const alpha = RandomFloatExp(this.alphaMin, this.alphaMax, this.alphaRandExponent) / 255.0;
 		particle.alpha = alpha;
 		particle.startAlpha = alpha;
 		//TODO: use fieldOutput

@@ -18,13 +18,13 @@ export class JSONLoader {
 		if (jsonEntity) {
 			const constructor = getEntity(jsonEntity.constructor);
 			if (constructor) {
-				let entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
+				const entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
 				entity.fromJSON(jsonEntity);
 				entities.set(entity.id, entity);
 
 				if (jsonEntity.children) {
-					for (let child of jsonEntity.children) {
-						let childEntity = await this.loadEntity(child, entities, loadedPromise);
+					for (const child of jsonEntity.children) {
+						const childEntity = await this.loadEntity(child, entities, loadedPromise);
 						if (childEntity && entity['addChild']) {
 							entity['addChild'](childEntity);
 						}

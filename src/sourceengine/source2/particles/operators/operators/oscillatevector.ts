@@ -122,14 +122,14 @@ export class OscillateVector extends Operator {
 
 			if ((fl4LifeTime >= fl4StartTime) && (fl4LifeTime < fl4EndTime)) {
 				//TODO: use random table
-				let fvFrequency = vec3.fromValues(Math.random(), Math.random(), Math.random());
+				const fvFrequency = vec3.fromValues(Math.random(), Math.random(), Math.random());
 				//fvFrequency[0] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 8);
 				//fvFrequency[1] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 12);
 				//fvFrequency[2] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 15);
 				vec3.mul(fvFrequency, fvFrequency, fvFrequencyWidth);
 				vec3.add(fvFrequency, fvFrequency, fvFrequencyMin);
 
-				let fvRate = vec3.fromValues(Math.random(), Math.random(), Math.random());
+				const fvRate = vec3.fromValues(Math.random(), Math.random(), Math.random());
 				//fvRate[0] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 3);
 				//fvRate[1] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 7);
 				//fvRate[2] = pParticles->RandomFloat(*pParticleId, nRandomOffset + 9);
@@ -150,7 +150,7 @@ export class OscillateVector extends Operator {
 
 				const fvOscMultiplier = vec3.create();//todov3optimize
 				vec3.scale(fvOscMultiplier, fvRate, fl4ScaleFactor);
-				let fvOutput = vec4.create();//TODO: perf//todov3optimize
+				const fvOutput = vec4.create();//TODO: perf//todov3optimize
 				this.getInputValueAsVector(m_nField, particle, fvOutput);//*pOscField;
 
 				fvOscVal[0] = AddSIMD (fvOutput[0], MulSIMD (fvOscMultiplier[0], SinEst01SIMD(fvCos[0])));

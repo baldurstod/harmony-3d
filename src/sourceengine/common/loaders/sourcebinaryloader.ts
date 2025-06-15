@@ -8,12 +8,12 @@ import { SourceEngineVTF } from '../../source1/textures/sourceenginevtf';
 import { Source2File } from '../../source2/loaders/source2file';
 
 export class SourceBinaryLoader {
-	repository: string = '';
+	repository = '';
 
 	async load(repositoryName: string, fileName: string): Promise<Source2File | SourceMdl | SourceVvd | SourceVtx | SourceBSP | SourcePCF | SourceEngineVTF | null> {
 		this.repository = repositoryName;
 
-		let promise = new Promise<Source2File | any>(resolve => {
+		const promise = new Promise<Source2File | any>(resolve => {
 			const p = Repositories.getFileAsArrayBuffer(repositoryName, fileName);
 			p.then((response) => {
 				if (!response.error) {

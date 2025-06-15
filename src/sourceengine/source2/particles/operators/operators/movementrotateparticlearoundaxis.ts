@@ -3,10 +3,10 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { DEG_TO_RAD } from '../../../../../math/constants';
 
-let m4 = mat4.create();
-let q = quat.create();
-let v = vec3.create();
-let a = vec4.create();
+const m4 = mat4.create();
+const q = quat.create();
+const v = vec3.create();
+const a = vec4.create();
 
 const DEFAULT_AXIS = vec3.fromValues(0, 0, 1);
 
@@ -31,10 +31,10 @@ export class MovementRotateParticleAroundAxis extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let axis = vec3.normalize(a as vec3, this.getParamVectorValue('m_vecRotAxis', particle, a) ?? DEFAULT_AXIS);
-		let rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
+		const axis = vec3.normalize(a as vec3, this.getParamVectorValue('m_vecRotAxis', particle, a) ?? DEFAULT_AXIS);
+		const rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
 
-		let cp = this.system.getControlPoint(this.controlPointNumber);
+		const cp = this.system.getControlPoint(this.controlPointNumber);
 
 		if (this.localSpace) {
 			quat.copy(q, cp.currentWorldQuaternion);

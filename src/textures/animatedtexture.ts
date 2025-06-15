@@ -1,7 +1,7 @@
 import { Texture } from './texture';
 
 export class AnimatedTexture extends Texture {
-	frames: Array<Texture> = [];
+	frames: Texture[] = [];
 
 	addFrame(frame: number, texture: Texture) {
 		this.frames[frame] = texture;

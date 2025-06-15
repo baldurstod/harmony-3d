@@ -43,7 +43,7 @@ export class InputOutput {
 	type: InputOutputType;
 	size: number;
 	_value?: any | any[];
-	constructor(node: Node, id: string, type: InputOutputType, size: number = 1) {
+	constructor(node: Node, id: string, type: InputOutputType, size = 1) {
 		this.node = node;
 		this.id = id;
 		this.type = type;

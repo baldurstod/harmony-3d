@@ -48,13 +48,13 @@ export class RenderBlobs extends Operator {
 
 	updateParticles(particleSystem, particleList, elapsedTime) {
 		this.metaballs.cubeWidth = this.getParamScalarValue('m_cubeWidth') ?? 1;
-		let renderRadius = this.getParamScalarValue('m_renderRadius') ?? 1.3;
-		let m_cutoffRadius = this.getParamScalarValue('m_cutoffRadius') ?? 3.3;
+		const renderRadius = this.getParamScalarValue('m_renderRadius') ?? 1.3;
+		const m_cutoffRadius = this.getParamScalarValue('m_cutoffRadius') ?? 3.3;
 
-		let balls = [];
+		const balls = [];
 
 		for (let i = 0; i < Math.min(particleList.length, 500); i++) {
-			let particle = particleList[i];
+			const particle = particleList[i];
 			let ball = this.balls[i];
 			if (!ball) {
 				ball = new Metaball();

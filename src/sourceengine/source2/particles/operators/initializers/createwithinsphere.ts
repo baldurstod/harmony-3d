@@ -6,7 +6,7 @@ import { vec3RandomBox, lerp, RandomVectorInUnitSphere, RandomFloatExp } from '.
 const DEFAULT_SPEED = vec3.create();
 const DEFAULT_DISTANCE_BIAS = vec3.fromValues(1, 1, 1);
 
-let vec = vec3.create();
+const vec = vec3.create();
 
 export class CreateWithinSphere extends Operator {
 	distanceBias = vec3.fromValues(1, 1, 1);
@@ -39,13 +39,13 @@ export class CreateWithinSphere extends Operator {
 	}
 
 	doInit(particle, elapsedTime) {
-		let localCoordinateSystemSpeedMin = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin') ?? DEFAULT_SPEED;
-		let localCoordinateSystemSpeedMax = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax') ?? DEFAULT_SPEED;
-		let m_vecDistanceBias = this.getParamVectorValue('m_vecDistanceBias') ?? DEFAULT_DISTANCE_BIAS;
-		let radiusMin = this.getParamScalarValue('m_fRadiusMin') ?? 0;
-		let radiusMax = this.getParamScalarValue('m_fRadiusMax') ?? 0;
-		let speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
-		let speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
+		const localCoordinateSystemSpeedMin = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin') ?? DEFAULT_SPEED;
+		const localCoordinateSystemSpeedMax = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax') ?? DEFAULT_SPEED;
+		const m_vecDistanceBias = this.getParamVectorValue('m_vecDistanceBias') ?? DEFAULT_DISTANCE_BIAS;
+		const radiusMin = this.getParamScalarValue('m_fRadiusMin') ?? 0;
+		const radiusMax = this.getParamScalarValue('m_fRadiusMax') ?? 0;
+		const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
+		const speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
 
 		const m_vecDistanceBiasAbs = this.distanceBiasAbs;
 		//const controlPointNumber = this.getParameter('control_point_number');

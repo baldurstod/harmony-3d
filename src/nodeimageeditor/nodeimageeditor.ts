@@ -33,7 +33,7 @@ export class NodeImageEditor extends EventTarget {
 		if (!operationName) {
 			return null;
 		}
-		let node = getOperation(operationName, this, params);
+		const node = getOperation(operationName, this, params);
 		if (node) {
 			this.textureSize = params.textureSize;
 		}

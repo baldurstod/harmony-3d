@@ -5,7 +5,7 @@ import { PARTICLE_FIELD_POSITION, PARTICLE_FIELD_COLOR } from '../../../../commo
 import { vec3RandomBox } from '../../../../../math/functions';
 import { ONE_EPS } from '../../../../../math/constants';
 
-let v = vec3.create();
+const v = vec3.create();
 
 export class OffsetVectorToVector extends Operator {
 	outputMin = vec3.create();

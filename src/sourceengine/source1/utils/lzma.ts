@@ -46,12 +46,12 @@ class OutWindow {
 	}
 
 	flush() {
-		var size = this.#pos - this.#streamPos;
+		const size = this.#pos - this.#streamPos;
 		if (size !== 0) {
 			if (this.#stream.writeBytes) {
 				this.#stream.writeBytes(this.#buffer, size);
 			} else {
-				for (var i = 0; i < size; i++) {
+				for (let i = 0; i < size; i++) {
 					this.#stream.writeByte(this.#buffer[i]);
 				}
 			}
@@ -80,7 +80,7 @@ class OutWindow {
 	}
 
 	copyBlock(distance, len) {
-		var pos = this.#pos - distance - 1;
+		let pos = this.#pos - distance - 1;
 		if (pos < 0) {
 			pos += this.#windowSize;
 		}
@@ -103,7 +103,7 @@ class OutWindow {
 	}
 
 	getByte(distance) {
-		var pos = this.#pos - distance - 1;
+		let pos = this.#pos - distance - 1;
 		if (pos < 0) {
 			pos += this.#windowSize;
 		}
@@ -125,7 +125,7 @@ class RangeDecoder {
 	}
 
 	init() {
-		var i = 5;
+		let i = 5;
 
 		this.#code = 0;
 		this.#range = -1;
@@ -136,7 +136,7 @@ class RangeDecoder {
 	}
 
 	decodeDirectBits(numTotalBits) {
-		var result = 0, i = numTotalBits, t;
+		let result = 0, i = numTotalBits, t;
 
 		while (i--) {
 			this.#range >>>= 1;
@@ -154,7 +154,7 @@ class RangeDecoder {
 	}
 
 	decodeBit(probs, index) {
-		var prob = probs[index],
+		const prob = probs[index],
 			newBound = (this.#range >>> 11) * prob;
 
 		if ((this.#code ^ 0x80000000) < (newBound ^ 0x80000000)) {
@@ -185,7 +185,7 @@ export class LZMA {
 		}
 	}
 	static reverseDecode2(models, startIndex, rangeDecoder, numBitLevels) {
-		var m = 1, symbol = 0, i = 0, bit;
+		let m = 1, symbol = 0, i = 0, bit;
 
 		for (; i < numBitLevels; ++i) {
 			bit = rangeDecoder.decodeBit(models, startIndex + m);
@@ -196,7 +196,7 @@ export class LZMA {
 	}
 
 	static decompress(properties, inStream, outStream, outSize) {
-		var decoder = new Decoder();
+		const decoder = new Decoder();
 
 		if (!decoder.setDecoderProperties(properties)) {
 			throw Error("Incorrect lzma stream properties");
@@ -223,7 +223,7 @@ class BitTreeDecoder {
 	}
 
 	decode(rangeDecoder) {
-		var m = 1, i = this.#numBitLevels;
+		let m = 1, i = this.#numBitLevels;
 
 		while (i--) {
 			m = (m << 1) | rangeDecoder.decodeBit(this.#models, m);
@@ -232,7 +232,7 @@ class BitTreeDecoder {
 	}
 
 	reverseDecode(rangeDecoder) {
-		var m = 1, symbol = 0, i = 0, bit;
+		let m = 1, symbol = 0, i = 0, bit;
 
 		for (; i < this.#numBitLevels; ++i) {
 			bit = rangeDecoder.decodeBit(this.#models, m);
@@ -259,7 +259,7 @@ class LenDecoder {
 	}
 
 	init() {
-		var i = this.#numPosStates;
+		let i = this.#numPosStates;
 		LZMA.initBitModels(this.#choice, 2);
 		while (i--) {
 			this.#lowCoder[i].init();
@@ -288,7 +288,7 @@ class Decoder2 {
 	}
 
 	decodeNormal(rangeDecoder) {
-		var symbol = 1;
+		let symbol = 1;
 
 		do {
 			symbol = (symbol << 1) | rangeDecoder.decodeBit(this.#decoders, symbol);
@@ -298,7 +298,7 @@ class Decoder2 {
 	}
 
 	decodeWithMatchByte(rangeDecoder, matchByte) {
-		var symbol = 1, matchBit, bit;
+		let symbol = 1, matchBit, bit;
 
 		do {
 			matchBit = (matchByte >> 7) & 1;
@@ -323,7 +323,7 @@ class LiteralDecoder {
 	#numPosBits;
 	#posMask;
 	create(numPosBits, numPrevBits) {
-		var i;
+		let i;
 
 		if (this.#coders
 			&& (this.#numPrevBits === numPrevBits)
@@ -343,7 +343,7 @@ class LiteralDecoder {
 	}
 
 	init() {
-		var i = 1 << (this.#numPrevBits + this.#numPosBits);
+		let i = 1 << (this.#numPrevBits + this.#numPosBits);
 		while (i--) {
 			this.#coders[i].init();
 		}
@@ -387,7 +387,7 @@ class Decoder {
 	}
 
 	setLcLpPb(lc, lp, pb) {
-		var numPosStates = 1 << pb;
+		const numPosStates = 1 << pb;
 
 		if (lc > 8 || lp > 4 || pb > 4) {
 			return false;
@@ -413,7 +413,7 @@ class Decoder {
 
 	decodeHeader(inStream) {
 
-		var properties, lc, lp, pb,
+		let properties, lc, lp, pb,
 			uncompressedSize,
 			dictionarySize;
 
@@ -469,7 +469,7 @@ class Decoder {
 	}
 
 	init() {
-		var i = 4;
+		let i = 4;
 
 		this.#outWindow.init(false);
 
@@ -494,7 +494,7 @@ class Decoder {
 	}
 
 	decodeBody(inStream, outStream, maxSize) {
-		var state = 0, rep0 = 0, rep1 = 0, rep2 = 0, rep3 = 0, nowPos64 = 0, prevByte = 0,
+		let state = 0, rep0 = 0, rep1 = 0, rep2 = 0, rep3 = 0, nowPos64 = 0, prevByte = 0,
 			posState, decoder2, len, distance, posSlot, numDirectBits;
 
 		this.#rangeDecoder.setStream(inStream);
@@ -595,7 +595,7 @@ class Decoder {
 	}
 
 	setDecoderProperties(properties) {
-		var value, lc, lp, pb, dictionarySize;
+		let value, lc, lp, pb, dictionarySize;
 
 		if (properties.size < 5) {
 			return false;

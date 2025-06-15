@@ -44,9 +44,9 @@ export class HeartbeatScale extends Proxy {
 		s2 -= 0.5;
 		s2 *= 2.0;
 
-		let beat = Math.max(s1, s2);
+		const beat = Math.max(s1, s2);
 
-		let scaledBeat = loBeat + (hiBeat - loBeat) * beat;
+		const scaledBeat = loBeat + (hiBeat - loBeat) * beat;
 
 		variables.set(this.#resultVar, scaledBeat);
 	}

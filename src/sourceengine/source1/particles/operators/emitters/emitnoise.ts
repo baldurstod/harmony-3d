@@ -20,10 +20,10 @@ export class EmitNoise extends SourceEngineParticleOperator {
 	}
 
 	doEmit(elapsedTime) {
-		let emission_start_time = this.getParameter('emission_start_time');
-		let emissionMinimum = this.getParameter('emission minimum');
-		let emissionMaximum = this.getParameter('emission maximum');
-		let emission_duration = this.getParameter('emission_duration');
+		const emission_start_time = this.getParameter('emission_start_time');
+		const emissionMinimum = this.getParameter('emission minimum');
+		const emissionMaximum = this.getParameter('emission maximum');
+		const emission_duration = this.getParameter('emission_duration');
 
 		let emission_rate = (emissionMinimum + emissionMaximum) / 2;
 

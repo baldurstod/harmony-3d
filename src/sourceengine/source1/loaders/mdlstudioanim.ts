@@ -18,8 +18,8 @@ const tempvec3 = vec3.create();
  *	MdlStudioAnimValuePtr
  */
 export class MdlStudioAnimValuePtr { // mstudioanim_valueptr_t
-	offset: Array<number> = [];
-	base: number = 0;
+	offset: number[] = [];
+	base = 0;
 
 	getAnimValue2(i: number) {
 		return this.base + this.offset[i];
@@ -56,22 +56,22 @@ export class MdlStudioAnim {//mstudioanim_t
 	 * TODO
 	 */
 	getRot(rot: vec3, mdl: SourceMdl, bone: MdlBone, frame: number): vec3 {
-		let fromEuler5 = function (out: vec3, q: quat, i: number, j: number, k: number, h: number, parity: string, repeat: string, frame: string) {
-			var M = tempMat4;//Dim M(,) As Double = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
-			var Nq;
-			var s;
-			var xs;
-			var ys;
-			var zs;
-			var wx;
-			var wy;
-			var wz;
-			var xx;
-			var xy;
-			var xz;
-			var yy;
-			var yz;
-			var zz;
+		const fromEuler5 = function (out: vec3, q: quat, i: number, j: number, k: number, h: number, parity: string, repeat: string, frame: string) {
+			const M = tempMat4;//Dim M(,) As Double = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}}
+			let Nq;
+			let s;
+			let xs;
+			let ys;
+			let zs;
+			let wx;
+			let wy;
+			let wz;
+			let xx;
+			let xy;
+			let xz;
+			let yy;
+			let yz;
+			let zz;
 
 			Nq = q[0] * q[0] + q[1] * q[1] + q[2] * q[2] + q[3] * q[3]
 			if (Nq > 0) {
@@ -106,7 +106,7 @@ export class MdlStudioAnim {//mstudioanim_t
 
 			return Eul_FromHMatrix(out, M, i, j, k, h, parity, repeat, frame)
 		}
-		let fromEuler4 = function (out: vec3, q: quat) {
+		const fromEuler4 = function (out: vec3, q: quat) {
 			fromEuler5(out, q, 0, 1, 2, 0, 'even', 'no', 'S')
 			const temp = out[0];
 			out[0] = out[2];
@@ -116,10 +116,10 @@ export class MdlStudioAnim {//mstudioanim_t
 		}
 
 		var Eul_FromHMatrix = function (out: vec3, M: mat4, i: number, j: number, k: number, h: number, parity: string, repeat: string, frame: string) {
-			var ea = tempvec3;
+			const ea = tempvec3;
 
 			if (repeat == 'yes') {
-				var sy = Math.sqrt(M[i * 4 + j] * M[i * 4 + j] + M[i * 4 + k] * M[i * 4 + k])
+				const sy = Math.sqrt(M[i * 4 + j] * M[i * 4 + j] + M[i * 4 + k] * M[i * 4 + k])
 				if (sy > 16 * FLT_EPSILON) {
 					ea[0] = Math.atan2(M[i * 4 + j], M[i * 4 + k])
 					ea[1] = Math.atan2(sy, M[i * 4 + i])
@@ -130,7 +130,7 @@ export class MdlStudioAnim {//mstudioanim_t
 					ea[2] = 0
 				}
 			} else {
-				var cy = Math.sqrt(M[i * 4 + i] * M[i * 4 + i] + M[j * 4 + i] * M[j * 4 + i])
+				const cy = Math.sqrt(M[i * 4 + i] * M[i * 4 + i] + M[j * 4 + i] * M[j * 4 + i])
 				if (cy > 16 * FLT_EPSILON) {
 					ea[0] = Math.atan2(M[k * 4 + j], M[k * 4 + k])
 					ea[1] = Math.atan2(-M[k * 4 + i], cy)
@@ -149,7 +149,7 @@ export class MdlStudioAnim {//mstudioanim_t
 			}
 
 			if (frame == 'R') {
-				var t = ea[0]
+				const t = ea[0]
 				ea[0] = ea[2]
 				ea[2] = t
 			}

@@ -11,9 +11,9 @@ export enum AnimationFrameDataType {
 
 export class AnimationFrameData {
 	type: AnimationFrameDataType;
-	datas: Array<AnimationFrameDataTypes> = [];
+	datas: AnimationFrameDataTypes[] = [];
 
-	constructor(type: AnimationFrameDataType, datas?: Array<AnimationFrameDataTypes>) {
+	constructor(type: AnimationFrameDataType, datas?: AnimationFrameDataTypes[]) {
 		this.type = type;
 
 		if (datas) {

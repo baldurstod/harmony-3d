@@ -18,7 +18,7 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 	constructor(params: any = {}) {
 		super(params);
 		this.setValues(params);
-		let variables = this.variables;
+		const variables = this.variables;
 
 		this.setDefine('MIRROR', variables.get('$mirrorhorizontal') ?? 0);
 		this.setDefine('DESATBASETINT', variables.get('$desatbasetint') ? '1' : '0');
@@ -33,11 +33,11 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 	}
 
 	afterProcessProxies(proxyParams) {
-		let variables = this.variables;
-		let parameters = this.parameters;
+		const variables = this.variables;
+		const parameters = this.parameters;
 		this.setDefine('DECALSTYLE', variables.get('$decalstyle') ?? 0);//TODO: set this on variable change
 
-		let baseTexture = variables.get('$basetexture');
+		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
 			this.uniforms['colorMap'] = Source1TextureManager.getTexture(this.repository, baseTexture, 0);
 			this.setDefine('USE_COLOR_MAP');//TODOv3: set this automaticaly
@@ -65,37 +65,37 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 			this.setDefine('USE_PATTERN_MAP');//TODOv3: set this automaticaly
 		}
 
-		let aoTexture = variables.get('$aotexture');
+		const aoTexture = variables.get('$aotexture');
 		if (aoTexture) {
 			this.uniforms['aoMap'] = Source1TextureManager.getTexture(this.repository, aoTexture, 0);
 			this.setDefine('USE_AO_MAP');//TODOv3: set this automaticaly
 		}
 
-		let wearTexture = variables.get('$weartexture');
+		const wearTexture = variables.get('$weartexture');
 		if (wearTexture) {
 			this.uniforms['scratchesMap'] = Source1TextureManager.getTexture(this.repository, wearTexture, 0);
 			this.setDefine('USE_SCRATCHES_MAP');//TODOv3: set this automaticaly
 		}
 
-		let grungeTexture = variables.get('$grungetexture');
+		const grungeTexture = variables.get('$grungetexture');
 		if (grungeTexture) {
 			this.uniforms['grungeMap'] = Source1TextureManager.getTexture(this.repository, grungeTexture, 0);
 			this.setDefine('USE_GRUNGE_MAP');//TODOv3: set this automaticaly
 		}
 
-		let expTexture = parameters['$exptexture'];
+		const expTexture = parameters['$exptexture'];
 		if (expTexture) {
 			this.uniforms['exponentMap'] = Source1TextureManager.getTexture(this.repository, expTexture, 0);
 			this.setDefine('USE_EXPONENT_MAP');//TODOv3: set this automaticaly
 		}
 
-		let holoMaskTexture = variables.get('$holomask');
+		const holoMaskTexture = variables.get('$holomask');
 		if (holoMaskTexture) {
 			this.uniforms['holoMaskMap'] = Source1TextureManager.getTexture(this.repository, holoMaskTexture, 0);
 			this.setDefine('USE_HOLO_MASK_MAP');//TODOv3: set this automaticaly
 		}
 
-		let holoSpectrumTexture = variables.get('$holospectrum');
+		const holoSpectrumTexture = variables.get('$holospectrum');
 		if (holoSpectrumTexture) {
 			this.uniforms['holoSpectrumMap'] = Source1TextureManager.getTexture(this.repository, holoSpectrumTexture, 0);
 			this.setDefine('USE_HOLO_SPECTRUM_MAP');//TODOv3: set this automaticaly
@@ -149,10 +149,10 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 		this.uniforms['uPhongParams'] = vec4.fromValues(4.0, 1.0, 1.0, 2.0);//TODO: set actual values
 		this.uniforms['uPhongFresnel'] = vec4.fromValues(1.0, 1.0, 1.0, 0.0);//TODO: set actual values
 
-		let wearProgress = proxyParams['WearProgress'] ?? 0.0;//TODO
-		let wearRemapMid = variables.get('$wearremapmid');
-		let flX = wearProgress;
-		let flP = variables.get('$wearremapmid');
+		const wearProgress = proxyParams['WearProgress'] ?? 0.0;//TODO
+		const wearRemapMid = variables.get('$wearremapmid');
+		const flX = wearProgress;
+		const flP = variables.get('$wearremapmid');
 		let flRemappedWear = 2.0 * (1.0 - flX) * flX * flP + (flX * flX);
 
 		//remap wear to custom min/max bounds
@@ -165,7 +165,7 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 
 		//lerp wear width along wear progress
 		//float flLerpedWearWidth = Lerp( variables[info.m_nWearProgress]->GetFloatValue(), variables[info.m_nWearWidthMin]->GetFloatValue(), variables[info.m_nWearWidthMax]->GetFloatValue() );
-		let flLerpedWearWidth = lerp(variables.get('$wearwidthmin'), variables.get('$wearwidthmax'), wearProgress);
+		const flLerpedWearWidth = lerp(variables.get('$wearwidthmin'), variables.get('$wearwidthmax'), wearProgress);
 
 
 		this.uniforms['uWearParams'] = vec4.fromValues(wearProgress, flLerpedWearWidth, flRemappedWear, variables.get('$unwearstrength'));
@@ -176,7 +176,7 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 	}
 
 	setColorUniform(uniformName, value) {
-		let color = readColor(value);
+		const color = readColor(value);
 		if (color) {
 			//vec3.scale(color, color, 1 / 255.0);
 			this.uniforms[uniformName] = color;
@@ -200,7 +200,7 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 	}
 
 	setPatternTexCoordTransform(scale, translation, rotation) {
-		let transformMatrix = this.getTexCoordTransform(scale, translation, rotation);
+		const transformMatrix = this.getTexCoordTransform(scale, translation, rotation);
 		this.uniforms['g_patternTexCoordTransform[0]'] = new Float32Array([
 			transformMatrix[0], transformMatrix[4], transformMatrix[8], transformMatrix[12],
 			transformMatrix[1], transformMatrix[5], transformMatrix[9], transformMatrix[13]
@@ -208,9 +208,9 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 	}
 
 	getTexCoordTransform(scale, translation, rotation) {
-		let transformMatrix = mat4.create();
-		let tempMatrix = mat4.create();
-		let tempVec3 = vec3.create();
+		const transformMatrix = mat4.create();
+		const tempMatrix = mat4.create();
+		const tempVec3 = vec3.create();
 
 		tempVec3[0] = translation[0] - 0.5;
 		tempVec3[1] = translation[1] - 0.5;
@@ -226,7 +226,7 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 		mat4.fromZRotation(tempMatrix, rotation);
 		mat4.multiply(transformMatrix, transformMatrix, tempMatrix);
 
-		let offset = vec2.fromValues(0.5 / scale[0], 0.5 / scale[1]);
+		const offset = vec2.fromValues(0.5 / scale[0], 0.5 / scale[1]);
 		vec2.rotate(offset, offset, vec2.create(), -rotation);
 
 		tempVec3[0] = offset[0];

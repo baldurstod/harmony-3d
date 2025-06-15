@@ -22,8 +22,8 @@ export class Grid extends Mesh {
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			Grid_1: null,
-			size: { i18n: '#size', f: () => { let size = prompt('Size', String(this.#size)); if (size) { this.#size = Number(size); this.#updateGeometry(); } } },
-			spacing: { i18n: '#spacing', f: () => { let spacing = prompt('Spacing', String(this.#spacing)); if (spacing) { this.#spacing = (this.material as GridMaterial).spacing = Number(spacing); } } }
+			size: { i18n: '#size', f: () => { const size = prompt('Size', String(this.#size)); if (size) { this.#size = Number(size); this.#updateGeometry(); } } },
+			spacing: { i18n: '#spacing', f: () => { const spacing = prompt('Spacing', String(this.#spacing)); if (spacing) { this.#spacing = (this.material as GridMaterial).spacing = Number(spacing); } } }
 		});
 	}
 }

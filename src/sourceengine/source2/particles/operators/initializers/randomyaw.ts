@@ -33,7 +33,7 @@ export class RandomYaw extends Operator {
 	}
 
 	doInit(particle, elapsedTime) {
-		let rotation = this.radians + RandomFloatExp(this.radiansMin, this.radiansMax, this.rotationRandExponent);
+		const rotation = this.radians + RandomFloatExp(this.radiansMin, this.radiansMax, this.rotationRandExponent);
 		if (this.randomlyFlipDirection && (RandomFloat(-1, 1) >= 0)) {
 			particle.rotationYaw -= rotation;
 		} else {

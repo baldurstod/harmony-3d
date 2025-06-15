@@ -2,23 +2,23 @@ import { vec3 } from 'gl-matrix';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
 import { BufferGeometry } from '../../geometry/buffergeometry';
 
-let a = vec3.create();
-let b = vec3.create();
+const a = vec3.create();
+const b = vec3.create();
 
 export class TrianglesBufferGeometry extends BufferGeometry {
-	constructor(triangles?: Array<Array<vec3>>) {
+	constructor(triangles?: vec3[][]) {
 		super();
 		this.updateGeometry(triangles);
 	}
 
-	updateGeometry(triangles: Array<Array<vec3>> = []) {
-		var indices = [];
-		var vertices = [];
-		var normals = [];
-		var uvs = [];
+	updateGeometry(triangles: vec3[][] = []) {
+		const indices = [];
+		const vertices = [];
+		const normals = [];
+		const uvs = [];
 
 		let vertexIndex;
-		let normal = vec3.create();
+		const normal = vec3.create();
 		for (let triangleIndex = 0; triangleIndex < triangles.length; ++triangleIndex) {
 			vertexIndex = triangleIndex * 3;
 			indices.push(vertexIndex, vertexIndex + 1, vertexIndex + 2);

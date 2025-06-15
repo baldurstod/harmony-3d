@@ -2,9 +2,9 @@ import { quat, vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
-let tempQuat = quat.create();
-let tempVec3 = vec3.create();
-let tempVec3_2 = vec3.create();
+const tempQuat = quat.create();
+const tempVec3 = vec3.create();
+const tempVec3_2 = vec3.create();
 
 export class SetToCP extends Operator {
 	offset = vec3.create();
@@ -24,7 +24,7 @@ export class SetToCP extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let cp = this.system.getControlPoint(this.controlPointNumber);
+		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
 			cp.getWorldPosition(tempVec3_2);
 			if (this.offsetLocal) {

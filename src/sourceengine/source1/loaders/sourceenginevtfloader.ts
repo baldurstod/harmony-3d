@@ -11,9 +11,9 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 	}
 
 	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceEngineVTF | null {
-		let vtf = new SourceEngineVTF(repository, fileName);
+		const vtf = new SourceEngineVTF(repository, fileName);
 		try {
-			let reader = new BinaryReader(arrayBuffer);
+			const reader = new BinaryReader(arrayBuffer);
 			this.#parseHeader(reader, vtf);
 
 			if (vtf.isHigherThan72()) {
@@ -125,8 +125,8 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		vtf.sheet = sheet;
 
 		sheet.length = reader.getUint32();
-		let nVersion = reader.getUint32();
-		let nNumCoordsPerFrame = (nVersion) ? MAX_IMAGES_PER_FRAME_ON_DISK : 1;
+		const nVersion = reader.getUint32();
+		const nNumCoordsPerFrame = (nVersion) ? MAX_IMAGES_PER_FRAME_ON_DISK : 1;
 
 		let nNumSequences = reader.getUint32();
 		sheet.sequences = [];
@@ -142,12 +142,12 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 			group.m_pSamples = [];
 			group.m_pSamples2 = [];
 			sheet.sequences.push(group);
-			let nSequenceNumber = reader.getUint32();
+			const nSequenceNumber = reader.getUint32();
 			group.clamp = reader.getUint32() != 0;
 			group.frameCount = reader.getUint32();
 
-			let bSingleFrameSequence = (group.frameCount == 1);
-			let nTimeSamples = bSingleFrameSequence ? 1 : SEQUENCE_SAMPLE_COUNT;
+			const bSingleFrameSequence = (group.frameCount == 1);
+			const nTimeSamples = bSingleFrameSequence ? 1 : SEQUENCE_SAMPLE_COUNT;
 
 			//let m_pSample = [];
 			//sheet.m_pSamples[nSequenceNumber] = m_pSample;
@@ -155,15 +155,15 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 				group.m_pSamples[i] = new SheetSequenceSample_t();
 			}
 
-			let Samples = [];
+			const Samples = [];
 			for (let i = 0; i < SEQUENCE_SAMPLE_COUNT; i++) {
 				Samples[i] = new SheetSequenceSample_t();
 			}
 
 			//group.frames = [];
-			let fTotalSequenceTime = reader.getFloat32();
-			let InterpKnot = new Float32Array(SEQUENCE_SAMPLE_COUNT);
-			let InterpValue = new Float32Array(SEQUENCE_SAMPLE_COUNT);
+			const fTotalSequenceTime = reader.getFloat32();
+			const InterpKnot = new Float32Array(SEQUENCE_SAMPLE_COUNT);
+			const InterpValue = new Float32Array(SEQUENCE_SAMPLE_COUNT);
 
 			let fCurTime = 0.;
 			for (let frameIndex = 0; frameIndex < group.frameCount; ++frameIndex) {
@@ -173,7 +173,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 				//group.frames.push(frame);
 				//frame.values = [];
 				//frame.duration = reader.getFloat32();
-				let fThisDuration = reader.getFloat32();
+				const fThisDuration = reader.getFloat32();
 				InterpValue[frameIndex] = frameIndex;
 				InterpKnot[frameIndex] = SEQUENCE_SAMPLE_COUNT * (fCurTime / fTotalSequenceTime);
 				fCurTime += fThisDuration;
@@ -182,10 +182,10 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 				/*for (let i = 0; i < valuesCount; ++i) {
 					frame.values.push(reader.getFloat32());
 				}*/
-				let seq = Samples[frameIndex];
+				const seq = Samples[frameIndex];
 				for (let nImage = 0; nImage < nNumCoordsPerFrame; nImage++) {
-					let s = seq.m_TextureCoordData[nImage];
-					let s2 = frameSample.m_TextureCoordData[nImage];
+					const s = seq.m_TextureCoordData[nImage];
+					const s2 = frameSample.m_TextureCoordData[nImage];
 					if (s) {
 						s.m_fLeft_U0 = reader.getFloat32();
 						s.m_fTop_V0 = reader.getFloat32();
@@ -212,20 +212,20 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 			// now, fill in the whole table
 			for (let nIdx = 0; nIdx < nTimeSamples; ++nIdx) {
 				//float flIdxA, flIdxB, flInterp;
-				let result = GetInterpolationData(InterpKnot, InterpValue, group.frameCount,
+				const result = GetInterpolationData(InterpKnot, InterpValue, group.frameCount,
 					SEQUENCE_SAMPLE_COUNT,
 					nIdx,
 					!group.clamp/*,
 									&flIdxA, &flIdxB, &flInterp */);
-				let sA = Samples[result.pValueA];
-				let sB = Samples[result.pValueB];
-				let oseq = group.m_pSamples[nIdx];
+				const sA = Samples[result.pValueA];
+				const sB = Samples[result.pValueB];
+				const oseq = group.m_pSamples[nIdx];
 
 				oseq.m_fBlendFactor = result.pInterpolationValue;
 				for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
-					let src0 = sA.m_TextureCoordData[nImage];
-					let src1 = sB.m_TextureCoordData[nImage];
-					let o = oseq.m_TextureCoordData[nImage];
+					const src0 = sA.m_TextureCoordData[nImage];
+					const src1 = sB.m_TextureCoordData[nImage];
+					const o = oseq.m_TextureCoordData[nImage];
 					o.m_fLeft_U0 = src0.m_fLeft_U0;
 					o.m_fTop_V0 = src0.m_fTop_V0;
 					o.m_fRight_U0 = src0.m_fRight_U0;
@@ -253,7 +253,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		let faceIndex;
 		let face;
 		for (let frameIndex = 0; frameIndex < vtf.frames; ++frameIndex) {
-			let frame: Array<Uint8Array | Float32Array> = [];
+			const frame: (Uint8Array | Float32Array)[] = [];
 			mipmap.frames.push(frame);
 			for (faceIndex = 0; faceIndex < vtf.faceCount; faceIndex++) {
 				if (vtf.faceCount == 1) {
@@ -331,7 +331,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 }
 
 function str2abRGBA16F(str: string) {
-	let len = str.length / 2;
+	const len = str.length / 2;
 	const buf = new ArrayBuffer(str.length * 2);
 	const bufView = new Float32Array(buf);
 	let j;
@@ -345,9 +345,9 @@ function str2abRGBA16F(str: string) {
 function float16(byte1: number, byte2: number) {
 	const b = new Uint8Array([byte1, byte2]);
 
-	let sign = b[1] >> 7;
-	let exponent = ((b[1] & 0x7C) >> 2);
-	let mantissa = ((b[1] & 0x03) << 8) | b[0];
+	const sign = b[1] >> 7;
+	const exponent = ((b[1] & 0x7C) >> 2);
+	const mantissa = ((b[1] & 0x03) << 8) | b[0];
 
 
 	if (exponent == 0) {
@@ -415,9 +415,9 @@ function str2abABGR(reader, start, length) {
 }*/
 
 function str2abABGR(reader: BinaryReader, start: number, length: number) {
-	let arr = new Uint8Array(reader.buffer.slice(start, start + length));
+	const arr = new Uint8Array(reader.buffer.slice(start, start + length));
 	for (let i = 0; i < length; i += 4) {
-		let a = arr[i];
+		const a = arr[i];
 		arr[i] = arr[i + 3];
 		arr[i + 1] = arr[i + 2];
 		arr[i + 2] = arr[i + 1]

@@ -5,14 +5,14 @@ import { Curve } from './curve';
 import { LinearBezierCurve } from './linearbeziercurve';
 import { QuadraticBezierCurve } from './quadraticbeziercurve';
 
-let p0 = vec3.create();
-let p1 = vec3.create();
-let p2 = vec3.create();
-let p3 = vec3.create();
+const p0 = vec3.create();
+const p1 = vec3.create();
+const p2 = vec3.create();
+const p3 = vec3.create();
 
 export class Path extends Curve {
 	looping: boolean;
-	_curves: Array<Curve> = [];
+	_curves: Curve[] = [];
 	cursor = vec3.create();
 	constructor(looping = false) {
 		super();
@@ -35,20 +35,20 @@ export class Path extends Curve {
 
 	getArcLength(divisions?) {
 		let length = 0;
-		for (let curve of this._curves) {
+		for (const curve of this._curves) {
 			length += curve.getArcLength(divisions);
 		}
 		return length;
 	}
 
 	getPosition(t, out = vec3.create()) {
-		let l = this.arcLength * t;
+		const l = this.arcLength * t;
 		let accumulate = 0;
 		let accumulateTmp = 0;
-		for (let curve of this._curves) {
+		for (const curve of this._curves) {
 			accumulateTmp += curve.arcLength;
 			if (accumulateTmp > l) {
-				let t2 = (l - accumulate) / curve.arcLength;
+				const t2 = (l - accumulate) / curve.arcLength;
 				return curve.getPosition(t2, out);
 			}
 			accumulate = accumulateTmp;
@@ -76,16 +76,16 @@ export class Path extends Curve {
 	}
 
 	getPoints(divisions = 12) {
-		let points = [];
+		const points = [];
 		let last;
 
 		for (let i = 0, curves = this.curves; i < curves.length; i++) {
-			let curve = curves[i];
-			let resolution = curve.getAppropriateDivision(divisions);
-			let pts = curve.getPoints(resolution);
+			const curve = curves[i];
+			const resolution = curve.getAppropriateDivision(divisions);
+			const pts = curve.getPoints(resolution);
 
 			for (let j = 0; j < pts.length; j++) {
-				let point = pts[j];
+				const point = pts[j];
 				if (last && vec3.equals(last, point)) {
 					continue;
 				}

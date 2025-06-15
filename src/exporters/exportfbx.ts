@@ -18,13 +18,13 @@ const tempMat4 = mat4.create();
 
 export async function exportToBinaryFBX(entity) {
 	const fbxManager = new FBXManager();
-	let fbxFile = fbxSceneToFBXFile(await entityToFBXScene(fbxManager, entity));
+	const fbxFile = fbxSceneToFBXFile(await entityToFBXScene(fbxManager, entity));
 	return new FBXExporter().exportBinary(fbxFile);
 }
 
 export async function entityToFBXScene(fbxManager, entity) {
 	const fbxScene = fbxManager.createObject('FBXScene', 'Scene');
-	let playing = new Graphics().isRunning();
+	const playing = new Graphics().isRunning();
 	new Graphics().pause();
 
 	await createFBXSceneEntity(fbxScene, entity);
@@ -60,7 +60,7 @@ async function createFBXSceneEntity(fbxScene, entity, context: any = {}) {
 }
 
 async function createChildEntities(fbxScene, entity, context) {
-	for (let childEntity of entity.children) {
+	for (const childEntity of entity.children) {
 		await createFBXSceneEntity(fbxScene, childEntity, context);
 	}
 }
@@ -85,7 +85,7 @@ async function createSource1ModelInstance(fbxScene, entity, context) {
 
 	if (EXPORT_SKELETON && entity.skeleton) {
 		const bones = entity.skeleton.bones;
-		for (let bone of bones) {
+		for (const bone of bones) {
 			const limbNode = exportedBones.get(bone);
 			if (DEBUG && !limbNode) {
 				//throw 'Missing Limb node';
@@ -137,25 +137,25 @@ function createAnimCurveNode(fbxAnimLayer, limbNode) {
 
 async function createFBXMesh(fbxScene, mesh, context) {
 	const fbxManager = fbxScene.manager;
-	let meshPose = fbxManager.createObject('FBXPose', 'Pose ' + mesh.name);
+	const meshPose = fbxManager.createObject('FBXPose', 'Pose ' + mesh.name);
 	fbxScene.addObject(meshPose);
 	if (!mesh.exportObj || !mesh.visible || !mesh.is('Mesh') || mesh.parent?.isParticleSystem) {
 		return;
 	}
 
-	let fbxMeshNode = fbxManager.createObject('FBXNode', mesh.name);
+	const fbxMeshNode = fbxManager.createObject('FBXNode', mesh.name);
 	fbxMeshNode.localRotation.value = quatToEulerDeg([0, 0, 0], quat.mul(quat.create(), ROTATE_Z, mesh.getWorldQuaternion()));
 	fbxMeshNode.localTranslation.value = vec3.transformQuat(vec3.create(), mesh.getWorldPosition(), ROTATE_Z);
 	fbxMeshNode.localScaling.value = mesh.getWorldScale();
 
-	let fbxMaterial = fbxManager.createObject('FBXSurfacePhong');
+	const fbxMaterial = fbxManager.createObject('FBXSurfacePhong');
 	fbxMaterial.name = 'mat_' + fbxMaterial.id + '.png';
-	let fbxMesh = fbxManager.createObject('FBXMesh', 'Name me FBXMesh');
+	const fbxMesh = fbxManager.createObject('FBXMesh', 'Name me FBXMesh');
 	fbxMeshNode.nodeAttribute = fbxMesh;
 	fbxMeshNode.addMaterial(fbxMaterial);
 	fbxScene.rootNode.addChild(fbxMeshNode);
 
-	let meshMaterial = mesh.material;
+	const meshMaterial = mesh.material;
 	//console.log(meshMaterial);
 	if (meshMaterial) {
 		await configureMaterial(meshMaterial, fbxMaterial, mesh.materialsParams);
@@ -179,36 +179,36 @@ async function createFBXMesh(fbxScene, mesh, context) {
 		meshDatasBw = meshDatas.bw;
 	}
 
-	let boneIndexes = new Map();
-	let boneWeights = new Map();
+	const boneIndexes = new Map();
+	const boneWeights = new Map();
 
-	let polygons = [];
-	let edges = [];
-	let uvIndex = [];
-	let uv = [];
+	const polygons = [];
+	const edges = [];
+	const uvIndex = [];
+	const uv = [];
 
-	let vertexIndices = meshDatas.f;
+	const vertexIndices = meshDatas.f;
 	let vertexIndex1;
 	let vertexIndex2;
 	let vertexIndex3;
-	let remappedIndex = new Map();
+	const remappedIndex = new Map();
 	let currentIndex = 0;
-	let remappedVertices = [];
-	let remappedNormals = [];
-	let remappedUV = [];
-	let remappedBoneIndices = [];
-	let remappedBoneWeight = [];
+	const remappedVertices = [];
+	const remappedNormals = [];
+	const remappedUV = [];
+	const remappedBoneIndices = [];
+	const remappedBoneWeight = [];
 	const bonesPerVertex = mesh.bonesPerVertex;
 	function remapIndex(index) {
 		if (remappedIndex.has(index)) {
 			return remappedIndex.get(index);
 		}
 
-		let newIndex = currentIndex++;
+		const newIndex = currentIndex++;
 		remappedIndex.set(index, newIndex);
 
-		let vIndex = index * 3;
-		let uvIndex = index * 2;
+		const vIndex = index * 3;
+		const uvIndex = index * 2;
 		if (meshDatas.v) {
 			remappedVertices.push(meshDatas.v[vIndex], meshDatas.v[vIndex + 1], meshDatas.v[vIndex + 2]);
 		}
@@ -244,9 +244,9 @@ async function createFBXMesh(fbxScene, mesh, context) {
 	if (EXPORT_SKELETON) {
 		for (let vertexIndex = 0, l = remappedBoneIndices.length / bonesPerVertex; vertexIndex < l; ++vertexIndex) {
 			for (let j = 0; j < bonesPerVertex; ++j) {
-				let k = vertexIndex * bonesPerVertex + j;
-				let boneIndex = remappedBoneIndices[k];
-				let boneWeight = remappedBoneWeight[k];
+				const k = vertexIndex * bonesPerVertex + j;
+				const boneIndex = remappedBoneIndices[k];
+				const boneWeight = remappedBoneWeight[k];
 				if (boneWeight != 0) {
 					if (!boneIndexes.has(boneIndex)) {
 						boneIndexes.set(boneIndex, []);
@@ -275,7 +275,7 @@ async function createFBXMesh(fbxScene, mesh, context) {
 	fbxModel.name = mesh.name;*/
 	//fbxFile.addModel(fbxModel);
 	if (mesh.skeleton) {
-		let boneDatas = { bi: boneIndexes, bw: boneWeights };
+		const boneDatas = { bi: boneIndexes, bw: boneWeights };
 		//for (let i = 0; i < )
 		if (EXPORT_SKELETON) {
 			exportSkeleton(fbxScene, mesh.skeleton, context, fbxMesh, boneDatas, meshPose);
@@ -286,13 +286,13 @@ async function createFBXMesh(fbxScene, mesh, context) {
 async function createFBXCamera(fbxScene, camera) {
 	const fbxManager = fbxScene.manager;
 	console.log(camera);
-	let fbxCameraNode = fbxManager.createObject('FBXNode', camera.name);
-	let fbxCamera = fbxManager.createObject('FBXCamera', camera.name);
+	const fbxCameraNode = fbxManager.createObject('FBXNode', camera.name);
+	const fbxCamera = fbxManager.createObject('FBXCamera', camera.name);
 	fbxCameraNode.nodeAttribute = fbxCamera;
 
 	//fbxCamera.position.value = camera.position;
 	fbxCameraNode.localTranslation.value = camera.position;
-	let angles = quatToEulerDeg([0, 0, 0], camera.quaternion);
+	const angles = quatToEulerDeg([0, 0, 0], camera.quaternion);
 	//fbxCameraNode.localRotation.value = angles;
 
 	fbxCameraNode.parent = fbxScene.rootNode;//TODO: set the actual parent
@@ -303,17 +303,17 @@ async function createFBXCamera(fbxScene, camera) {
 
 function exportSkeleton(fbxScene, skeleton, context, fbxMesh, boneDatas, meshPose) {
 	const fbxManager = fbxScene.manager;
-	let fbxSkin = fbxManager.createObject('FBXSkin', skeleton.name);
+	const fbxSkin = fbxManager.createObject('FBXSkin', skeleton.name);
 	const exportedClusters = new WeakMap();
 	fbxSkin.geometry = fbxMesh;
-	for (let bone of skeleton.bones) {
+	for (const bone of skeleton.bones) {
 		exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneDatas, meshPose);
 	}
 }
 
 function exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneDatas, meshPose) {
 	const fbxManager = fbxScene.manager;
-	let boneParent = bone.parent ?? bone.skeleton;
+	const boneParent = bone.parent ?? bone.skeleton;
 	const boneParentSkeletonBone = bone.parentSkeletonBone;
 	if (boneParent) {
 		if (boneParent.isBone) {
@@ -337,9 +337,9 @@ function exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneData
 	} else {
 		fbxBone = fbxManager.createObject('FBXNode', bone.name);//TODO
 
-		let angles = vec3.create();
-		let transformedQuat = quat.create();
-		let transformedVec = vec3.create();
+		const angles = vec3.create();
+		const transformedQuat = quat.create();
+		const transformedVec = vec3.create();
 
 		if (boneParentSkeletonBone) {
 			if (boneParent.isSkeleton) {
@@ -366,7 +366,7 @@ function exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneData
 		fbxBone.localRotation.value = angles;
 
 
-		let fbxLimb = fbxManager.createObject('FBXSkeleton', 'Name me FBXSkeleton', FBX_SKELETON_TYPE_LIMB);
+		const fbxLimb = fbxManager.createObject('FBXSkeleton', 'Name me FBXSkeleton', FBX_SKELETON_TYPE_LIMB);
 		fbxBone.nodeAttribute = fbxLimb;
 
 		fbxBone.parent = exportedBones.get(boneParent) ?? fbxScene.rootNode;
@@ -377,7 +377,7 @@ function exportBone(fbxScene, bone, context, exportedClusters, fbxSkin, boneData
 
 	if (!exportedClusters.has(bone)) {
 
-		let fbxCluster = fbxManager.createObject('FBXCluster', bone.name);
+		const fbxCluster = fbxManager.createObject('FBXCluster', bone.name);
 		fbxCluster.transformMatrix = bone.poseToBone;
 		fbxCluster.transformLinkMatrix = mat4.invert(tempMat4, bone.poseToBone);
 		fbxCluster.link = fbxBone;
@@ -483,8 +483,8 @@ export async function entitytoFBXFile(entity) {
 async function configureMaterial(material, fbxMaterial, materialsParams) {
 	const fbxManager = fbxMaterial.manager;
 	if (material.uniforms['colorMap']) {
-		let fbxTexture = fbxManager.createObject('FBXTexture');
-		let fbxVideo = fbxManager.createObject('FBXVideo');
+		const fbxTexture = fbxManager.createObject('FBXTexture');
+		const fbxVideo = fbxManager.createObject('FBXVideo');
 		fbxTexture.fbxMapping = 'DiffuseColor';
 		fbxTexture.media = fbxVideo;
 		fbxTexture.name = 'mat_' + fbxTexture.id + '.png';
@@ -511,8 +511,8 @@ async function renderMaterial(material, materialsParams) {
 		scene.addChild(fullScreenQuadMesh);
 	}
 
-	let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024);//TODOv3: constant
-	let previousClearColor = new Graphics().getClearColor();
+	const [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024);//TODOv3: constant
+	const previousClearColor = new Graphics().getClearColor();
 	new Graphics().clearColor(vec4.fromValues(0, 0, 0, 0));
 	new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
 	new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
@@ -522,7 +522,7 @@ async function renderMaterial(material, materialsParams) {
 	fullScreenQuadMesh.materialsParams = materialsParams;
 	new Graphics().render(scene, camera, 0, { DisableToolRendering: true });
 
-	let imgContent = await new Graphics().toBlob();
+	const imgContent = await new Graphics().toBlob();
 
 	new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
 	new Graphics().setIncludeCode('SKIP_PROJECTION', '');

@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
-let v = vec3.create();
+const v = vec3.create();
 
 export class DampenToCP extends Operator {
 	range = 100;
@@ -22,13 +22,13 @@ export class DampenToCP extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let cp = this.system.getControlPoint(this.controlPointNumber);
+		const cp = this.system.getControlPoint(this.controlPointNumber);
 
-		let distance = vec3.distance(particle.position, cp.currentWorldPosition);
+		const distance = vec3.distance(particle.position, cp.currentWorldPosition);
 		if (distance > this.range) {
 			return;
 		} else {
-			let dampenAmount = distance / this.range;
+			const dampenAmount = distance / this.range;
 			vec3.sub(v, particle.position, particle.prevPosition);
 			vec3.scale(v, v, dampenAmount);
 			vec3.add(particle.position, particle.prevPosition, v);

@@ -31,27 +31,27 @@ export enum MaterialColorMode {
 export const DEFAULT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 export const DEFAULT_CULLING_MODE = MATERIAL_CULLING_BACK;
 
-export type UniformValue = boolean | number | Array<number> | vec2 | vec3 | vec4 | Texture | Array<Texture> | null;
+export type UniformValue = boolean | number | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;
 //export type BlendFuncSeparateFactor = typeof GL_ZERO | typeof GL_ONE | typeof GL_SRC_COLOR | typeof GL_ONE_MINUS_SRC_COLOR | typeof GL_DST_COLOR | typeof GL_ONE_MINUS_DST_COLOR | typeof GL_SRC_ALPHA | typeof GL_ONE_MINUS_SRC_ALPHA | typeof GL_DST_ALPHA | typeof GL_ONE_MINUS_DST_ALPHA | typeof GL_CONSTANT_COLOR | typeof GL_ONE_MINUS_CONSTANT_COLOR | typeof GL_CONSTANT_ALPHA | typeof GL_ONE_MINUS_CONSTANT_ALPHA | typeof GL_SRC_ALPHA_SATURATE;
 
 export class Material {
-	id: string = '';
-	name: string = '';
+	id = '';
+	name = '';
 	#renderFace = RenderFace.Front;
 	#renderLights = true;
 	#color = vec4.create();
-	#alphaTest: boolean = false;
-	#alphaTestReference: number = 0;
-	#users: Set<any> = new Set();
-	#parameters: Map<string, MateriaParameter> = new Map();
-	uniforms: { [key: string]: UniformValue } = {};// TODO: transform to map ?
-	defines: { [key: string]: any/*TODO: create a define type ?*/ } = {};//TODOv3: put defines in meshes too ?
+	#alphaTest = false;
+	#alphaTestReference = 0;
+	#users = new Set<any>();
+	#parameters = new Map<string, MateriaParameter>();
+	uniforms: Record<string, UniformValue> = {};// TODO: transform to map ?
+	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ?
 	parameters: any;
 	depthTest: boolean;
 	depthFunc: any;
 	depthMask: boolean;
 	colorMask: vec4;
-	blend: boolean = false;
+	blend = false;
 	srcRGB: BlendingFactor = BlendingFactor.One;
 	dstRGB: BlendingFactor = BlendingFactor.Zero;
 	srcAlpha: BlendingFactor = BlendingFactor.One;
@@ -65,7 +65,7 @@ export class Material {
 	#colorMode: MaterialColorMode = MaterialColorMode.None;
 	colorMap?: Texture;
 	properties = new Map<string, any>();
-	static materialList: { [key: string]: typeof Material } = {};
+	static materialList: Record<string, typeof Material> = {};
 
 	constructor(params: any = {}) {
 		this.parameters = params;
@@ -103,7 +103,7 @@ export class Material {
 		return this.#renderLights;
 	}
 
-	setDefine(define: string, value: string = '') {
+	setDefine(define: string, value = '') {
 		if (this.defines[define] !== value) {
 			this.defines[define] = value;
 			this._dirtyProgram = true;//TODOv3: invalidate program here ?
@@ -120,7 +120,7 @@ export class Material {
 	setValues(values: any) {// TODO: remove, seems to be useless
 		if (values === undefined) return;
 
-		for (var key in values) {
+		for (const key in values) {
 
 		}
 
@@ -140,7 +140,7 @@ export class Material {
 		this.dstAlpha = dstAlpha ?? dstRGB;
 	}
 
-	setBlending(mode: BlendingMode, premultipliedAlpha: boolean = false) {
+	setBlending(mode: BlendingMode, premultipliedAlpha = false) {
 		if (premultipliedAlpha) {
 			switch (mode) {
 				case BlendingMode.None:
@@ -284,7 +284,7 @@ export class Material {
 	}
 
 	setTexture(uniformName: string, texture: Texture | null, shaderDefine?: string) {
-		let previousTexture = this.uniforms[uniformName] as Texture;
+		const previousTexture = this.uniforms[uniformName] as Texture;
 		if (previousTexture != texture) {
 			if (previousTexture) {
 				previousTexture.removeUser(this);
@@ -304,9 +304,9 @@ export class Material {
 		}
 	}
 
-	setTextureArray(uniformName: string, textureArray: Array<Texture>) {
-		let previousTextureArray: Array<Texture> | undefined = this.uniforms[uniformName] as Array<Texture>;
-		let keepMe: Set<Texture> = new Set();
+	setTextureArray(uniformName: string, textureArray: Texture[]) {
+		const previousTextureArray: Texture[] | undefined = this.uniforms[uniformName] as Texture[];
+		const keepMe = new Set<Texture>();
 		if (textureArray) {
 			textureArray.forEach(texture => {
 				if (texture) {
@@ -416,7 +416,7 @@ export class Material {
 	}
 
 	toJSON() {
-		let json: any = {
+		const json: any = {
 			constructor: (this.constructor as typeof Material).getEntityName(),
 		};
 		//TODO
@@ -472,10 +472,10 @@ export class Material {
 			if (TESTING) {
 				console.info('Material has no more users, deleting', this);
 			}
-			let uniforms = this.uniforms;
-			let uniformArray = Object.keys(uniforms);
-			for (let uniformName of uniformArray) {
-				let uniform = uniforms[uniformName];
+			const uniforms = this.uniforms;
+			const uniformArray = Object.keys(uniforms);
+			for (const uniformName of uniformArray) {
+				const uniform = uniforms[uniformName];
 				this.#disposeUniform(uniform);
 			}
 		}

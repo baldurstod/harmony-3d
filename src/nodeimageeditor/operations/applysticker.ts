@@ -44,13 +44,13 @@ export class ApplySticker extends Node {
 	}
 
 	async operate(context: any = {}) {
-		let params = this.params;
+		const params = this.params;
 		this.material.setTexture('uSticker', this.inputTexture);
 		this.material.setTexture('uStickerSpecular', await this.getInput('specular').value);
 		this.material.setTexture('uInput', await this.getInput('input').value);
 		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
 
-		let texTransform = mat3.create();
+		const texTransform = mat3.create();
 		ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left'), this.getValue('top left'), this.getValue('top right'));
 		this.material.uniforms['uTransformTexCoord0'] = texTransform;
 
@@ -98,10 +98,10 @@ export class ApplySticker extends Node {
 	}
 
 	async toString(tabs = '') {
-		let ret = [];
-		let tabs1 = tabs + '\t';
+		const ret = [];
+		const tabs1 = tabs + '\t';
 		ret.push(tabs + this.constructor.name);
-		for (let input of this.inputs.values()) {
+		for (const input of this.inputs.values()) {
 			if (input.getPredecessor()) {
 				ret.push(await input.toString(tabs1));
 			}
@@ -125,23 +125,23 @@ registerOperation('apply_sticker', ApplySticker);
 //void ComputeTextureMatrixFromRectangle( VMatrix* pOutMat, const Vector2D& bl, const Vector2D& tl, const Vector2D& tr )
 function ComputeTextureMatrixFromRectangle(out, bl, tl, tr) {
 	const tempVec2 = vec2.create();
-	let leftEdge = vec2.sub(vec2.create(), bl, tl);
-	let topEdge = vec2.sub(vec2.create(), tr, tl);
-	let topEdgePerpLeft = vec2.fromValues(-topEdge[1], topEdge[0]);
+	const leftEdge = vec2.sub(vec2.create(), bl, tl);
+	const topEdge = vec2.sub(vec2.create(), tr, tl);
+	const topEdgePerpLeft = vec2.fromValues(-topEdge[1], topEdge[0]);
 
-	let magLeftEdge = vec2.length(leftEdge);
-	let magTopEdge = vec2.length(topEdge);
+	const magLeftEdge = vec2.length(leftEdge);
+	const magTopEdge = vec2.length(topEdge);
 
-	let xScalar = (vec2.dot(topEdgePerpLeft, leftEdge) > 0) ? 1 : -1;
+	const xScalar = (vec2.dot(topEdgePerpLeft, leftEdge) > 0) ? 1 : -1;
 
 
 	// Simplification of acos( ( A . L ) / ( mag( A ) * mag( L ) )
 	// Because A is ( 0, 1), which means A . L is just L.y
 	// and mag( A ) * mag( L ) is just mag( L )
-	let rotationD = Math.acos(leftEdge[1] / magLeftEdge)
+	const rotationD = Math.acos(leftEdge[1] / magLeftEdge)
 		* (leftEdge[0] < 0 ? 1 : -1);
 
-	let texTransform = mat3.create();
+	const texTransform = mat3.create();
 	mat3.translate(texTransform, texTransform, tl);
 	mat3.rotate(texTransform, texTransform, rotationD);
 	mat3.scale(texTransform, texTransform, vec2.set(tempVec2, xScalar * magTopEdge, magLeftEdge));

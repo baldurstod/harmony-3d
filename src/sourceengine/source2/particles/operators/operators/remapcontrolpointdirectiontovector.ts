@@ -4,7 +4,7 @@ import { Operator } from '../operator';
 import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
 
 const DEFAULT_VECTOR = vec3.fromValues(1, 0, 0);
-let v = vec3.create();
+const v = vec3.create();
 
 export class RemapControlPointDirectionToVector extends Operator {
 	fieldOutput = PARTICLE_FIELD_POSITION;
@@ -20,7 +20,7 @@ export class RemapControlPointDirectionToVector extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let cp = this.system.getControlPoint(this.controlPointNumber);
+		const cp = this.system.getControlPoint(this.controlPointNumber);
 		vec3.transformQuat(v, DEFAULT_VECTOR, cp.currentWorldQuaternion);
 		vec3.scale(v, v, this.scale);
 		particle.setField(this.fieldOutput, v);

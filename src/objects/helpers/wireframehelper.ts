@@ -12,11 +12,11 @@ export class WireframeHelper extends Entity {
 
 	parentChanged(parent) {
 		if (parent instanceof Entity) {
-			let meshes = parent.getChildList('Mesh');
-			for (let mesh of meshes) {
+			const meshes = parent.getChildList('Mesh');
+			for (const mesh of meshes) {
 				if ((mesh as Mesh).renderMode !== GL_LINES) {//TODO: improve wireframe detection
-					let wireframeGeometry = (mesh as Mesh).geometry.clone();
-					let wireframeMesh = new Mesh(wireframeGeometry, (mesh as Mesh).material);
+					const wireframeGeometry = (mesh as Mesh).geometry.clone();
+					const wireframeMesh = new Mesh(wireframeGeometry, (mesh as Mesh).material);
 					wireframeMesh.renderMode = GL_LINES;
 					this.#meshToWireframe.set(mesh, wireframeMesh)
 					this.#wireframeToMesh.set(wireframeMesh, mesh);
@@ -37,12 +37,12 @@ export class WireframeHelper extends Entity {
 	}
 
 	static updateWireframeIndex(geometry) {
-		let attribute = geometry.attributes.get('index');
+		const attribute = geometry.attributes.get('index');
 		if (attribute) {
-			let indexArray = attribute._array;
+			const indexArray = attribute._array;
 			let wireframeArray;
-			let arraySize = indexArray.length * 2;
-			let wireframeAttribute = (geometry.elementArrayType == GL_UNSIGNED_INT) ? new Uint32BufferAttribute(new Array(arraySize), 1) : new Uint16BufferAttribute(new Array(arraySize), 1);
+			const arraySize = indexArray.length * 2;
+			const wireframeAttribute = (geometry.elementArrayType == GL_UNSIGNED_INT) ? new Uint32BufferAttribute(new Array(arraySize), 1) : new Uint16BufferAttribute(new Array(arraySize), 1);
 
 			wireframeAttribute.target = GL_ELEMENT_ARRAY_BUFFER;
 			geometry.setAttribute('index', wireframeAttribute);
@@ -50,9 +50,9 @@ export class WireframeHelper extends Entity {
 			wireframeArray = wireframeAttribute._array;
 
 			for (let i = 0, j = 0, l = indexArray.length; i < l; i += 3, j += 6) {
-				let i1 = indexArray[i];
-				let i2 = indexArray[i + 1];
-				let i3 = indexArray[i + 2];
+				const i1 = indexArray[i];
+				const i2 = indexArray[i + 1];
+				const i3 = indexArray[i + 2];
 
 				wireframeArray[j + 0] = i1;
 				wireframeArray[j + 1] = i2;

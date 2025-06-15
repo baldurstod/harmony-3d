@@ -7,9 +7,9 @@ class FullScreenQuadGeometry extends BufferGeometry {
 	constructor() {
 		super();
 
-		let indices = [0, 2, 1, 2, 3, 1];
-		let vertices = [-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0];
-		let uvs = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0];
+		const indices = [0, 2, 1, 2, 3, 1];
+		const vertices = [-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0];
+		const uvs = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0];
 
 		this.setIndex(new Uint16BufferAttribute(indices, 1));
 		this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3));

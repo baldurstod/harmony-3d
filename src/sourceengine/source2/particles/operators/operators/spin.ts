@@ -25,16 +25,16 @@ export class Spin extends Operator {
 
 	doOperate(particle, elapsedTime) {
 		//particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
-		let m_fSpinRateStopTime = this.spinRateStopTime;
-		let m_fSpinRateRadians = (this.spinRateDegrees) * DEG_TO_RAD;
-		let m_fSpinRateMinRadians = (this.spinRateMinDegrees) * DEG_TO_RAD;
-		let fCurSpinRate = m_fSpinRateRadians /* * flStrength*/;//TODO
+		const m_fSpinRateStopTime = this.spinRateStopTime;
+		const m_fSpinRateRadians = (this.spinRateDegrees) * DEG_TO_RAD;
+		const m_fSpinRateMinRadians = (this.spinRateMinDegrees) * DEG_TO_RAD;
+		const fCurSpinRate = m_fSpinRateRadians /* * flStrength*/;//TODO
 
 		if (fCurSpinRate == 0.0) {
 			return;
 		}
 
-		let dt = elapsedTime;
+		const dt = elapsedTime;
 		let drot = dt * Math.abs(fCurSpinRate * TWO_PI);
 		if (m_fSpinRateStopTime == 0.0) {
 			drot = drot % TWO_PI;//fmod(drot, (float)(2.0f * M_PI));
@@ -43,15 +43,15 @@ export class Spin extends Operator {
 			drot = -drot;
 		}
 		//fltx4 Rot_Add = ReplicateX4(drot);
-		let Rot_Add = drot;
+		const Rot_Add = drot;
 		//fltx4 Pi_2 = ReplicateX4(2.0*M_PI);
 		//fltx4 nPi_2 = ReplicateX4(-2.0*M_PI);
 
 		// FIXME: This is wrong
-		let minSpeedRadians = dt * Math.abs(m_fSpinRateMinRadians * TWO_PI);//fltx4 minSpeedRadians = ReplicateX4(dt * fabs(m_fSpinRateMinRadians * 2.0f * M_PI));
+		const minSpeedRadians = dt * Math.abs(m_fSpinRateMinRadians * TWO_PI);//fltx4 minSpeedRadians = ReplicateX4(dt * fabs(m_fSpinRateMinRadians * 2.0f * M_PI));
 
-		let now = this.system.currentTime;
-		let SpinRateStopTime = m_fSpinRateStopTime;
+		const now = this.system.currentTime;
+		const SpinRateStopTime = m_fSpinRateStopTime;
 
 		//CM128AttributeIterator pCreationTimeStamp(PARTICLE_ATTRIBUTE_CREATION_TIME, pParticles);
 
@@ -61,7 +61,7 @@ export class Spin extends Operator {
 
 
 		// HACK: Rather than redo this, I'm simply remapping the stop time into the percentage of lifetime, rather than seconds
-		let LifeSpan = particle.timeToLive;
+		const LifeSpan = particle.timeToLive;
 		let SpinFadePerc = 0;
 		let OOSpinFadeRate = 0;
 		if (m_fSpinRateStopTime) {
@@ -69,8 +69,8 @@ export class Spin extends Operator {
 			OOSpinFadeRate = 1.0 / SpinFadePerc;
 		}
 
-		let Age = now - particle.cTime;
-		let RScale = Math.max(0, 1.0 - (Age * OOSpinFadeRate));
+		const Age = now - particle.cTime;
+		const RScale = Math.max(0, 1.0 - (Age * OOSpinFadeRate));
 
 		// Cap the rotation at a minimum speed
 		let deltaRot = Rot_Add * RScale;
@@ -78,7 +78,7 @@ export class Spin extends Operator {
 		//deltaRot = OrSIMD(AndSIMD(Tooslow, minSpeedRadians), AndNotSIMD(Tooslow, deltaRot));
 		deltaRot = Math.max(minSpeedRadians, deltaRot);
 
-		let NewRot = particle.rotationRoll + deltaRot;
+		const NewRot = particle.rotationRoll + deltaRot;
 
 		// now, cap at +/- 2*pi
 		/*fltx4 Toobig =CmpGeSIMD(NewRot, Pi_2);

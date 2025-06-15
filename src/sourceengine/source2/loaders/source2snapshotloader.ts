@@ -10,7 +10,7 @@ export const Source2SnapshotLoader = new (function () {
 
 		async load(repository: string, filename: string) {
 			filename = filename.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
-			let snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
+			const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
 			if (snapFile) {
 				return this.loadSnapshot(snapFile as Source2File);
 			} else {
@@ -22,26 +22,26 @@ export const Source2SnapshotLoader = new (function () {
 		}
 
 		loadSnapshot(snapFile: Source2File) {
-			let snapShot = new Source2Snapshot();
+			const snapShot = new Source2Snapshot();
 			snapShot.file = snapFile;
 
-			let dataBlock = snapFile.getBlockByType('DATA');
-			let snapBlock = snapFile.getBlockByType('SNAP');
+			const dataBlock = snapFile.getBlockByType('DATA');
+			const snapBlock = snapFile.getBlockByType('SNAP');
 			if (dataBlock && snapBlock) {
 				if (LOG) {
 					console.log(dataBlock);
 					console.log(snapBlock);
 				}
-				let particleCount = Number(dataBlock.getKeyValue('num_particles'));
+				const particleCount = Number(dataBlock.getKeyValue('num_particles'));
 				snapShot.setParticleCount(particleCount);
-				let snapshotAttributes = dataBlock.getKeyValue('attributes') ?? [];
-				let snapshotStringList = dataBlock.getKeyValue('string_list') ?? [];
+				const snapshotAttributes = dataBlock.getKeyValue('attributes') ?? [];
+				const snapshotStringList = dataBlock.getKeyValue('string_list') ?? [];
 
-				let reader = new BinaryReader(snapBlock.datas);
+				const reader = new BinaryReader(snapBlock.datas);
 				let attributeValue;
 				let bones;
 				let weights;
-				for (let snapshotAttribute of snapshotAttributes) {
+				for (const snapshotAttribute of snapshotAttributes) {
 					reader.seek(Number(snapshotAttribute.data_offset));
 					switch (snapshotAttribute.type) {
 						case 'float3':
@@ -54,7 +54,7 @@ export const Source2SnapshotLoader = new (function () {
 						case 'skinning':
 							attributeValue = [];
 							for (let i = 0; i < particleCount; ++i) {
-								let skinning = Object.create(null);
+								const skinning = Object.create(null);
 								bones = [];
 								weights = [];
 								for (let i = 0; i < 4; ++i) {

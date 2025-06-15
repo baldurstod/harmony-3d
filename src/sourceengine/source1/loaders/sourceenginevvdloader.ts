@@ -17,8 +17,8 @@ export class SourceEngineVVDLoader extends SourceBinaryLoader {
 	}
 
 	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVvd {
-		let vvd = new SourceVvd()
-		let reader = new BinaryReader(arrayBuffer);
+		const vvd = new SourceVvd()
+		const reader = new BinaryReader(arrayBuffer);
 		this.#parseHeader(reader, vvd);
 		this.#parseVertices(reader, vvd);
 		this.#parseFixups(reader, vvd);

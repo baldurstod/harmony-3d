@@ -43,7 +43,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 	updateParticles(particleSystem, particleList, elapsedTime) {//TODOv3
 		const rate = this.getParameter('animation rate') ?? 30;
 		this.geometry.count = particleList.length * 6;
-		let maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+		const maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
 		this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh.setVisible(Source1ParticleControler.visible);
@@ -54,10 +54,10 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 			if (coords) {
 				const uvs = this.geometry.attributes.get('aTextureCoord')._array;
 				coords = coords.m_TextureCoordData[0];
-				let uMin = coords.m_fLeft_U0;
-				let vMin = coords.m_fTop_V0;
-				let uMax = coords.m_fRight_U0;
-				let vMax = coords.m_fBottom_V0;
+				const uMin = coords.m_fLeft_U0;
+				const vMin = coords.m_fTop_V0;
+				const uMax = coords.m_fRight_U0;
+				const vMax = coords.m_fBottom_V0;
 				uvs[index++] = uMin;
 				uvs[index++] = vMin;
 				uvs[index++] = uMax;
@@ -79,7 +79,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 	}
 
 	initRenderer(particleSystem) {
-		let maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+		const maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
 		this.createParticlesArray(maxParticles);
 		this.#createParticlesTexture();
 		const vertices = [];
@@ -88,17 +88,17 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		const id = [];
 
 		for (let i = 0; i < maxParticles; i++) {
-			let indiceBase = i * 4;
+			const indiceBase = i * 4;
 			indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
 			vertices.push(-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0);
 			uvs.push(0.0, 0.0, 0.0, 1.0, 1.0, 0.0, 1.0, 1.0);
 			id.push(i, i, i, i);
 		}
 
-		let vertexPosition = new Float32BufferAttribute(vertices, 3);
-		let textureCoord = new Float32BufferAttribute(uvs, 2);
-		let particleId = new Float32BufferAttribute(id, 1);
-		let geometry = new BufferGeometry();
+		const vertexPosition = new Float32BufferAttribute(vertices, 3);
+		const textureCoord = new Float32BufferAttribute(uvs, 2);
+		const particleId = new Float32BufferAttribute(id, 1);
+		const geometry = new BufferGeometry();
 		geometry.setIndex(new Uint32BufferAttribute(indices, 1));
 		geometry.setAttribute('aVertexPosition', vertexPosition);
 		geometry.setAttribute('aTextureCoord', textureCoord);
@@ -149,7 +149,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		const m_flMaxLength = this.getParameter('max length');
 		const m_flMinLength = this.getParameter('min length');
 		const m_flLengthFadeInTime = this.getParameter('length fade in time');
-		let rate = this.getParameter('animation rate') ?? 30;
+		const rate = this.getParameter('animation rate') ?? 30;
 		const fit = this.getParameter('animation_fit_lifetime') ?? 0;
 		/*
 				if (fit) {
@@ -161,8 +161,8 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
 		let index = 0;
 
-		let len = 0;
-		for (let particle of particleList) {
+		const len = 0;
+		for (const particle of particleList) {
 			const flAge = particle.currentTime;
 			const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
 			const vecDelta = vec3.subtract(vec3.create(), particle.prevPosition, particle.position);//TODOv3: optimize
@@ -220,7 +220,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
 		let index = 0;
 
-		for (let particle of particleList) {
+		for (const particle of particleList) {
 			const flAge = particle.currentTime;
 			const flLengthScale = (flAge >= m_flLengthFadeInTime) ? 1.0 : (flAge / m_flLengthFadeInTime);
 			const vecDelta = vec3.subtract(vec3.create(), particle.prevPosition, particle.position);//TODOv3: optimize

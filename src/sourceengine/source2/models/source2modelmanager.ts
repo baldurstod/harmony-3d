@@ -53,7 +53,7 @@ export class Source2ModelManager {
 	static async createInstance(repository, fileName, dynamic) {
 		if (!repository) {
 			//try to get repository from filename
-			for (let repo in this.#modelListPerRepository) {
+			for (const repo in this.#modelListPerRepository) {
 				if (fileName.startsWith(repo)) {
 					repository = repo;
 					fileName = fileName.replace(repo, '');
@@ -61,9 +61,9 @@ export class Source2ModelManager {
 				}
 			}
 		}
-		let model = await this.#createModel(repository, fileName);
+		const model = await this.#createModel(repository, fileName);
 		if (model) {
-			let instance = model.createInstance(dynamic);
+			const instance = model.createInstance(dynamic);
 			return instance;
 		}
 		return null;
@@ -79,8 +79,8 @@ export class Source2ModelManager {
 
 	static async getModelList(): Promise<FileSelectorFile> {
 		const repoList = [];
-		let modelListPerRepository = this.#modelListPerRepository;
-		for (let repositoryName in modelListPerRepository) {
+		const modelListPerRepository = this.#modelListPerRepository;
+		for (const repositoryName in modelListPerRepository) {
 			let repo = modelListPerRepository[repositoryName];
 			if (repo === null) {
 				//let response = await customFetch(new URL('models_manifest.json', repository.base));//todo variable

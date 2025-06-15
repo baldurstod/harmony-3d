@@ -4,24 +4,24 @@
 
 
 export class VTXBodyPart {
-	models: Array<VTXModel> = [];
-	numModels: number = 0;
+	models: VTXModel[] = [];
+	numModels = 0;
 }
 
 export class VTXModel {
-	lods: Array<VTXLod> = [];
-	numLODs: number = 0;
+	lods: VTXLod[] = [];
+	numLODs = 0;
 }
 
 export class VTXLod {
-	meshes: Array<VTXMesh> = [];
-	numMeshes: number = 0;
-	switchPoint: number = 0;
+	meshes: VTXMesh[] = [];
+	numMeshes = 0;
+	switchPoint = 0;
 }
 
 export class VTXMesh {
-	stripGroups: Array<VTXStripGroupHeader> = [];
-	numStripGroups: number = 0;
+	stripGroups: VTXStripGroupHeader[] = [];
+	numStripGroups = 0;
 }
 /*
 export class VTXStripGroup {
@@ -30,51 +30,51 @@ export class VTXStripGroup {
 	*/
 
 export class VTXStripGroupHeader {
-	vertices: Array<MdlVertex> = [];
-	indexes: Array<number> = [];
-	strips: Array<MdlStripHeader> = [];
+	vertices: MdlVertex[] = [];
+	indexes: number[] = [];
+	strips: MdlStripHeader[] = [];
 
-	numVerts: number = 0;
-	numIndices: number = 0;
-	numStrips: number = 0;
-	flags: number = 0;
+	numVerts = 0;
+	numIndices = 0;
+	numStrips = 0;
+	flags = 0;
 }
 
 
 export class MdlVertex {
-	boneWeightIndex: Array<number> = [];
-	boneID: Array<number> = [];
-	numBones: number = 0;
-	origMeshVertID: number = 0;
+	boneWeightIndex: number[] = [];
+	boneID: number[] = [];
+	numBones = 0;
+	origMeshVertID = 0;
 }
 
 export class MdlStripHeader {
 	vertices = [];
 	indexes = [];
-	numIndices: number = 0;
-	indexOffset: number = 0;
-	numVerts: number = 0;
-	vertOffset: number = 0;
-	numBones: number = 0;
-	flags: number = 0;
-	numBoneStateChanges: number = 0;
-	boneStateChangeOffset: number = 0;
+	numIndices = 0;
+	indexOffset = 0;
+	numVerts = 0;
+	vertOffset = 0;
+	numBones = 0;
+	flags = 0;
+	numBoneStateChanges = 0;
+	boneStateChangeOffset = 0;
 }
 
 
 
 export class SourceVtx {
-	bodyparts: Array<VTXBodyPart> = [];
-	version: number = 0;
-	vertCacheSize: number = 0;
-	maxBonesPerStrip: number = 0;
-	maxBonesPerFace: number = 0;
-	maxBonesPerVert: number = 0;
-	checkSum: number = 0;
-	numLODs: number = 0;
-	materialReplacementListOffset: number = 0;
-	numBodyParts: number = 0;
-	bodyPartOffset: number = 0;
+	bodyparts: VTXBodyPart[] = [];
+	version = 0;
+	vertCacheSize = 0;
+	maxBonesPerStrip = 0;
+	maxBonesPerFace = 0;
+	maxBonesPerVert = 0;
+	checkSum = 0;
+	numLODs = 0;
+	materialReplacementListOffset = 0;
+	numBodyParts = 0;
+	bodyPartOffset = 0;
 
 	getBodyparts() {//removeme//TODOv3
 		return this.bodyparts;

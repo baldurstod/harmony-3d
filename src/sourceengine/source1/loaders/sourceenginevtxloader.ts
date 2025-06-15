@@ -22,8 +22,8 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 	}
 
 	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVtx {
-		let vtx = new SourceVtx()
-		let reader = new BinaryReader(arrayBuffer);
+		const vtx = new SourceVtx()
+		const reader = new BinaryReader(arrayBuffer);
 		this.#parseHeader(reader, vtx);
 		this.#parseBodyParts(reader, vtx);
 		return vtx;
@@ -49,7 +49,7 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		for (let i = 0; i < vtx.numBodyParts; ++i) {
 			// seek the start of body part
 			reader.seek(vtx.bodyPartOffset + i * BODYPART_HEADER_SIZE);
-			let bodypart = this.#parseBodyPartHeader(reader, vtx);
+			const bodypart = this.#parseBodyPartHeader(reader, vtx);
 			if (bodypart) {
 				bodyparts.push(bodypart);
 			}

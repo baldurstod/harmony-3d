@@ -11,7 +11,7 @@ export class Source1SoundManager {
 	static #soundList = {};
 	static #soundsPerRepository = new Map<string, Map<string, Sound>>();
 	static #soundListPerRepository = {};
-	static #manifestsPerRepository = new Map<string, Array<string>>();
+	static #manifestsPerRepository = new Map<string, string[]>();
 	static #promisePerRepository = new Map<string, Promise<boolean>>();
 
 
@@ -73,7 +73,7 @@ export class Source1SoundManager {
 		let promiseResolve: (value: boolean) => void;
 		this.#promisePerRepository.set(repositoryName, new Promise(resolve => promiseResolve = resolve));
 
-		let manifests = this.#manifestsPerRepository.get(repositoryName);
+		const manifests = this.#manifestsPerRepository.get(repositoryName);
 
 		if (manifests) {
 			this.#manifestsPerRepository.delete(repositoryName);
@@ -97,7 +97,7 @@ export class Source1SoundManager {
 
 		const kv = new KvReader();
 		kv.readText(manifestTxt);
-		const list = kv.rootElements as { [key: string]: KvElement /*TODO: improve type*/ };
+		const list = kv.rootElements as Record<string, KvElement>;
 		const keyArray = Object.keys(list);
 		for (let i = 0; i < keyArray.length; ++i) {
 			const soundKey = keyArray[i];

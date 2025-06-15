@@ -6,7 +6,7 @@ export class World extends Entity {
 	parentChanged(parent: Entity | null) {
 		const iterator = this.getParentIterator();
 
-		for (let p of iterator) {
+		for (const p of iterator) {
 			if (p.is('Scene')) {
 				(p as Scene).setWorld(this);
 				iterator.return(null);

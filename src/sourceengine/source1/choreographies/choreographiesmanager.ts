@@ -57,7 +57,7 @@ export class ChoreographiesManager {
 			return;
 		}
 		elapsed = elapsed * this.#playbackSpeed;
-		for (let choreography of this.#choreographies) {
+		for (const choreography of this.#choreographies) {
 			if (!choreography.step(elapsed)) {
 				this.#choreographies.delete(choreography);
 			}
@@ -65,13 +65,13 @@ export class ChoreographiesManager {
 	}
 
 	reset() {
-		for (let choreography of this.#choreographies) {
+		for (const choreography of this.#choreographies) {
 			choreography.reset();
 		}
 	}
 
 	stopAll() {
-		for (let choreography of this.#choreographies) {
+		for (const choreography of this.#choreographies) {
 			choreography.stop();
 			this.#choreographies.delete(choreography);
 		}

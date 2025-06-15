@@ -4,13 +4,13 @@ import { RenderTarget } from '../textures/rendertarget';
 import { Pass } from './pass';
 import { Graphics, RenderContext } from '../graphics/graphics';
 
-let tempVec2 = vec2.create();
+const tempVec2 = vec2.create();
 
 export class Composer {
 	#width = 0;
 	#height = 0;
 	enabled = true;
-	passes: Array<Pass> = [];
+	passes: Pass[] = [];
 	renderTarget1: RenderTarget;
 	renderTarget2: RenderTarget;
 	readBuffer: RenderTarget;
@@ -18,7 +18,7 @@ export class Composer {
 
 	constructor(renderTarget?: RenderTarget) {
 		if (!renderTarget) {
-			let rendererSize = new Graphics().getSize();
+			const rendererSize = new Graphics().getSize();
 			renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
 		}
 		this.#setRenderTarget(renderTarget);

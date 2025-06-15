@@ -46,14 +46,14 @@ export class Plane extends Mesh {
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			Plane_1: null,
-			width: { i18n: '#width', f: () => { let width = prompt(); if (width) { this.#width = Number(width); this.#updateGeometry(); } } },
-			height: { i18n: '#height', f: () => { let height = prompt(); if (height) { this.#height = Number(height); this.#updateGeometry(); } } },
-			square: { i18n: '#square', f: () => { let size = Number(prompt('Square size')); if (size) { this.#width = size; this.#height = size; this.#updateGeometry(); } } },
+			width: { i18n: '#width', f: () => { const width = prompt(); if (width) { this.#width = Number(width); this.#updateGeometry(); } } },
+			height: { i18n: '#height', f: () => { const height = prompt(); if (height) { this.#height = Number(height); this.#updateGeometry(); } } },
+			square: { i18n: '#square', f: () => { const size = Number(prompt('Square size')); if (size) { this.#width = size; this.#height = size; this.#updateGeometry(); } } },
 		});
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.width = this.#width;
 		json.height = this.#height;
 		json.widthSegments = this.#widthSegments;
@@ -63,7 +63,7 @@ export class Plane extends Mesh {
 	}
 
 	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
-		let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
 		return new Plane({ width: json.width, height: json.height, material: material, widthSegments: json.widthSegments, heightSegments: json.heightSegments });
 	}
 

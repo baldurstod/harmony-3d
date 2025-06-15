@@ -4,8 +4,8 @@ import { Operator } from '../operator';
 import { DEFAULT_PARTICLE_NORMAL } from '../../source2particle';
 import { TESTING } from '../../../../../buildoptions';
 
-let mat = mat4.create();
-let nmat = mat3.create();
+const mat = mat4.create();
+const nmat = mat3.create();
 const IDENTITY_MAT4 = mat4.create();
 
 export class SnapshotRigidSkinToBones extends Operator {
@@ -24,7 +24,7 @@ export class SnapshotRigidSkinToBones extends Operator {
 
 	doOperate(particle, elapsedTime) {
 		let bone, boneName, boneWeight, boneMat;
-		let cp = this.system.getControlPoint(this.controlPointNumber);
+		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (!cp) {
 			if (TESTING) {
 				console.warn(`Missing cp ${this.controlPointNumber} in system ${this.system.name}`, this.system);
@@ -32,7 +32,7 @@ export class SnapshotRigidSkinToBones extends Operator {
 			return;
 		}
 
-		let model = cp.model;
+		const model = cp.model;
 		if (!model) {
 			if (TESTING) {
 				console.warn(`Cannot find cp model in system ${this.system.name}`, cp);
@@ -40,7 +40,7 @@ export class SnapshotRigidSkinToBones extends Operator {
 			return;
 		}
 
-		let skeleton = model.skeleton;
+		const skeleton = model.skeleton;
 		if (!skeleton) {
 			if (TESTING) {
 				console.warn(`Model doesnot have a skeleton in system ${this.system.name}`, model);
@@ -48,9 +48,9 @@ export class SnapshotRigidSkinToBones extends Operator {
 			return;
 		}
 
-		let particleSkinning = particle.skinning;
-		let particleInitialPosition = particle.initialSkinnedPosition;
-		let particleInitialNormal = particle.initialSkinnedNormal ?? DEFAULT_PARTICLE_NORMAL;
+		const particleSkinning = particle.skinning;
+		const particleInitialPosition = particle.initialSkinnedPosition;
+		const particleInitialNormal = particle.initialSkinnedNormal ?? DEFAULT_PARTICLE_NORMAL;
 
 		if (particleSkinning && particleInitialPosition) {
 			mat[ 0] = 0;mat[ 1] = 0;mat[ 2] = 0;
@@ -90,8 +90,8 @@ export class SnapshotRigidSkinToBones extends Operator {
 			vec3.copy(particle.prevPosition, particle.position);
 		} else {
 			//Probably should do it better, but it just works
-			let particleHitbox = particle.snapHitbox;
-			let particleHitboxOffset = particle.snapHitboxOffset;
+			const particleHitbox = particle.snapHitbox;
+			const particleHitboxOffset = particle.snapHitboxOffset;
 			if (particleHitbox) {
 				bone = skeleton.getBoneByName(particleHitbox);
 				if (bone) {

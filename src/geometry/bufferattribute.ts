@@ -25,10 +25,10 @@ export class BufferAttribute {
 	itemSize: number;
 	dirty: boolean;
 	_array: typeof TypedArrayProto;
-	count: number = 0;
+	count = 0;
 	_buffer?: WebGLBuffer;
 	#source: any;
-	divisor: number = 0;
+	divisor = 0;
 	constructor(array: typeof TypedArrayProto, itemSize: number) {
 		this.itemSize = itemSize;
 		if (isNaN(this.itemSize)) {
@@ -130,10 +130,10 @@ export class BufferAttribute {
 				this._buffer = glContext.createBuffer();//TODOv3: createBuffer in graphics
 			}
 
-			let lineArray = new Uint32Array(2 * this._array.length);
+			const lineArray = new Uint32Array(2 * this._array.length);
 
 			let a, b, c;
-			let arr = this._array;
+			const arr = this._array;
 			let j = 0;
 			for (let i = 0; i < arr.length; i += 3) {
 				a = arr[i + 0];

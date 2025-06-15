@@ -12,7 +12,7 @@ export class Program {
 	#fs: WebGLShader;
 	#vertexShaderName: string
 	#fragmentShaderName: string
-	#valid: boolean = false;
+	#valid = false;
 	attributes = new Map<string, GLint>();
 	uniforms = new Map<string, Uniform>();
 	#linkError: string | null = '';
@@ -39,11 +39,11 @@ export class Program {
 	}
 
 	setUniformValue(name: string, value: any) {
-		let uniform = this.uniforms.get(name);
+		const uniform = this.uniforms.get(name);
 		if (uniform !== undefined) {
 			uniform.setValue(this.#glContext, value);
 			if (ENABLE_GET_ERROR && DEBUG) {
-				let error = this.#glContext.getError();
+				const error = this.#glContext.getError();
 				if (error) {
 					console.error('Error setting uniform : ', error, name, value);
 				}
@@ -62,7 +62,7 @@ export class Program {
 				this.#glContext.linkProgram(this.#program);
 
 				if (!this.#glContext.getProgramParameter(this.#program, this.#glContext.LINK_STATUS)) {
-					let linkError = this.#glContext.getProgramInfoLog(this.#program);
+					const linkError = this.#glContext.getProgramInfoLog(this.#program);
 					if (this.#linkError != linkError) {
 						console.error(`Failed linking program for ${this.#vertexShaderName} and ${this.#fragmentShaderName}`);
 						console.error('Reason : ' + linkError);
@@ -95,7 +95,7 @@ export class Program {
 		this.uniforms.clear();
 		const activeAttributes = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_ATTRIBUTES);
 		for (let i = 0; i < activeAttributes; i++) {
-			let attribInfo = this.#glContext.getActiveAttrib(this.#program, i);
+			const attribInfo = this.#glContext.getActiveAttrib(this.#program, i);
 			if (attribInfo) {
 				this.#setProgramAttribute(attribInfo.name);
 			}
@@ -103,14 +103,14 @@ export class Program {
 
 		const activeUniforms = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_UNIFORMS);
 		for (let i = 0; i < activeUniforms; i++) {
-			let uniformInfo = this.#glContext.getActiveUniform(this.#program, i);
+			const uniformInfo = this.#glContext.getActiveUniform(this.#program, i);
 			if (uniformInfo) {
 				this.#setProgramUniform(uniformInfo);
 			}
 		}
 
 		let samplerId = 0;
-		for (let [uniformName, uniform] of this.uniforms) {
+		for (const [uniformName, uniform] of this.uniforms) {
 			if (uniform.isTextureSampler()) {
 				uniform.setTextureUnit(samplerId);//setValue(this.#glContext, samplerId);
 				samplerId += uniform.getSize();
@@ -135,13 +135,13 @@ export class Program {
 			return null;
 		}
 
-		let compileSource = shaderSource.getCompileSource(includeCode);
+		const compileSource = shaderSource.getCompileSource(includeCode);
 		this.#glContext.shaderSource(shader, compileSource);
 		this.#glContext.compileShader(shader);
 
 		if (!this.#glContext.getShaderParameter(shader, this.#glContext.COMPILE_STATUS)) {
-			let shaderInfoLog = this.#glContext.getShaderInfoLog(shader);
-			let m = 'Compile error in ' + shaderName + '. Reason : ' + shaderInfoLog;
+			const shaderInfoLog = this.#glContext.getShaderInfoLog(shader);
+			const m = 'Compile error in ' + shaderName + '. Reason : ' + shaderInfoLog;
 			console.warn(m, shaderSource.getCompileSourceLineNumber(includeCode), m);
 
 			ShaderManager.setCompileError(shaderName, shaderInfoLog as string);

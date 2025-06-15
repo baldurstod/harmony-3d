@@ -40,11 +40,11 @@ export class SourceEngineBspTree {
 		const lumpVisibility = map.getLumpData(LUMP_VISIBILITY);
 
 		if (lumpModels && lumpPlanes && lumpNodes && lumpLeafs && lumpLeafFaces && lumpVisibility) {
-			let model = lumpModels[0];
+			const model = lumpModels[0];
 			let index = model.headnode;
 			let node = null;
 			let plane = null;
-			let normal = vec3.create();
+			const normal = vec3.create();
 			let dist = 0;
 
 			while (index >= 0) {
@@ -72,10 +72,10 @@ export class SourceEngineBspTree {
 			return true;
 		} // Leaves are always visible from themselves
 
-		let lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
+		const lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
 		if (lumpLeafs && this.visibilityClusters) {
-			let fromLeaf = lumpLeafs[fromLeafId];
-			let toLeaf = lumpLeafs[toLeafId];
+			const fromLeaf = lumpLeafs[fromLeafId];
+			const toLeaf = lumpLeafs[toLeafId];
 
 			if (fromLeaf.cluster == -1 || toLeaf.cluster != -1) {
 				return false;
@@ -87,9 +87,9 @@ export class SourceEngineBspTree {
 	}
 
 	isVisLeaf(leafId) {
-		let lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
+		const lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
 		if (lumpLeafs) {
-			let lumpLeaf = lumpLeafs[leafId];
+			const lumpLeaf = lumpLeafs[leafId];
 			if (lumpLeaf) {
 				return lumpLeaf.cluster != -1;
 			}

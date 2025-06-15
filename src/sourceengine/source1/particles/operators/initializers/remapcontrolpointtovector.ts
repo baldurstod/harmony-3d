@@ -4,11 +4,11 @@ import { SourceEngineParticleOperators } from '../../sourceengineparticleoperato
 import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 
-let tempVec3_1 = vec3.create();
-let tempVec3_2 = vec3.create();
-let tempVec3_3 = vec3.create();
-let tempVec3_4 = vec3.create();
-let tempVec3_5 = vec3.create();
+const tempVec3_1 = vec3.create();
+const tempVec3_2 = vec3.create();
+const tempVec3_3 = vec3.create();
+const tempVec3_4 = vec3.create();
+const tempVec3_5 = vec3.create();
 
 const a = vec3.create();
 

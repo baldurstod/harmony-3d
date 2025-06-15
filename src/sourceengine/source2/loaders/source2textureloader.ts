@@ -7,9 +7,9 @@ export const Source2TextureLoader = new (function () {
 		}
 
 		load(repository: string, fileName: string) {
-			let promise = new Promise((resolve, reject) => {
+			const promise = new Promise((resolve, reject) => {
 				fileName = fileName.replace(/.vtex_c/, '');
-				let vtexPromise = new Source2FileLoader(true).load(repository, fileName + '.vtex_c');
+				const vtexPromise = new Source2FileLoader(true).load(repository, fileName + '.vtex_c');
 				vtexPromise.then(
 					(source2File) => {
 						//let texture = this._loadTexture(repository, source2File);

@@ -8,7 +8,7 @@ import { Scene } from '../../scenes/scene';
 export class SketchPass extends Pass {
 	constructor(camera) {//TODO: camera is not really needed
 		super();
-		let material = new ShaderMaterial({ shaderSource: 'sketch' });
+		const material = new ShaderMaterial({ shaderSource: 'sketch' });
 		material.addUser(this);
 		material.depthTest = false;
 		this.scene = new Scene();

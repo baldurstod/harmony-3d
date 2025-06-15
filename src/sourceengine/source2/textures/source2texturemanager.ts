@@ -38,19 +38,19 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 
 	async getTexture(repository: string, path: string, frame: number) {
 		frame = Math.floor(frame);
-		let texture = await this.#getTexture(repository, path);
+		const texture = await this.#getTexture(repository, path);
 		return texture ? texture.getFrame(frame) : this.#defaultTexture;//TODOv3
 	}
 
 	async getTextureSheet(repository: string, path: string): Promise<Source2SpriteSheet | undefined> {
-		let texture = await this.#getTexture(repository, path);
+		const texture = await this.#getTexture(repository, path);
 		return texture?.properties.get('vtex')?.getBlockByType('DATA')?.spriteSheet;
 	}
 
 	async #getTexture(repository: string, path: string): Promise<AnimatedTexture> {
 		path = path.replace(/.vtex_c$/, '').replace(/.vtex$/, '');
 		path = path + '.vtex_c';
-		let fullPath = repository + path;
+		const fullPath = repository + path;
 
 		if (this.#loadingTexturesList.has(fullPath)) {
 			await this.#loadingTexturesList.get(fullPath);
@@ -58,10 +58,10 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 
 		if (!this.#texturesList.has(fullPath)) {
 			const animatedTexture = new AnimatedTexture();
-			let promise = new Promise<AnimatedTexture>(async (resolve, reject) => {
-				let vtex = await Source2TextureLoader.load(repository, path);
+			const promise = new Promise<AnimatedTexture>(async (resolve, reject) => {
+				const vtex = await Source2TextureLoader.load(repository, path);
 				animatedTexture.properties.set('vtex', vtex);
-				let texture = TextureManager.createTexture();//TODOv3: add params
+				const texture = TextureManager.createTexture();//TODOv3: add params
 				this.#initTexture(texture.texture!, vtex);
 				animatedTexture.addFrame(0, texture);
 				resolve(animatedTexture);
@@ -83,8 +83,8 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		if (!texture || !vtexFile) {
 			return;
 		}
-		var imageData = vtexFile.blocks.DATA.imageData;
-		let imageFormat = vtexFile.imageFormat;
+		const imageData = vtexFile.blocks.DATA.imageData;
+		const imageFormat = vtexFile.imageFormat;
 		if (imageData) {
 			if (vtexFile.isCubeTexture()) {
 				this.#initCubeTexture(texture, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
@@ -100,7 +100,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		}
 	}
 
-	#initCubeTexture(texture: WebGLTexture, imageFormat: number, width: number, height: number, imageData: Array<Uint8Array>) {
+	#initCubeTexture(texture: WebGLTexture, imageFormat: number, width: number, height: number, imageData: Uint8Array[]) {
 		const glContext = new Graphics().glContext;
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 		switch (true) {
@@ -140,7 +140,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
 	}
 
-	#initFlatTexture(texture: WebGLTexture, imageFormat: number/*TODO create an imageformat enum*/, width: number, height: number, imageData: Array<Uint8Array>) {
+	#initFlatTexture(texture: WebGLTexture, imageFormat: number/*TODO create an imageformat enum*/, width: number, height: number, imageData: Uint8Array[]) {
 		const glContext = new Graphics().glContext;
 		if (TESTING) {
 			new Graphics().cleanupGLError();
@@ -194,14 +194,14 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	fillTextureDxt(texture: WebGLTexture, imageFormat: number, width: number, height: number, datas: Uint8Array, target: GLenum) {
-		var gl = new Graphics().glContext;
-		var s3tc = this.WEBGL_compressed_texture_s3tc;//gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
+		const gl = new Graphics().glContext;
+		const s3tc = this.WEBGL_compressed_texture_s3tc;//gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
 
 		gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 
 		if (ENABLE_S3TC && s3tc) {
 			gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, true);
-			var dxtFormat = 0;
+			let dxtFormat = 0;
 			switch (imageFormat) {
 				case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1: dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT1_EXT; break;
 				case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3: dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT3_EXT; break;
@@ -216,7 +216,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 			var uncompressedData = decompress(datas, width, height, dxtflag);
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, uncompressedData);//TODO: params*/
 			gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-			let uncompressedData = new Uint8Array(width * height * 4);
+			const uncompressedData = new Uint8Array(width * height * 4);
 
 			Detex.decode(imageFormat, width, height, datas, uncompressedData).then(
 				() => {
@@ -231,19 +231,19 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	#fillTextureBptc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array) {
-		var gl = new Graphics().glContext;
-		var bptc = this.EXT_texture_compression_bptc;
+		const gl = new Graphics().glContext;
+		const bptc = this.EXT_texture_compression_bptc;
 
 		gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 		gl.bindTexture(GL_TEXTURE_2D, texture);
 
 		if (bptc) {
 			gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, true);
-			var bptcFormat = bptc.COMPRESSED_RGBA_BPTC_UNORM_EXT;//COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT;
+			const bptcFormat = bptc.COMPRESSED_RGBA_BPTC_UNORM_EXT;//COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT;
 			gl.compressedTexImage2D(GL_TEXTURE_2D, 0, bptcFormat, width, height, 0, datas);
 		} else {
 			gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-			let uncompressedData = new Uint8Array(width * height * 4);
+			const uncompressedData = new Uint8Array(width * height * 4);
 			Detex.decodeBC7(width, height, datas, uncompressedData).then(
 				() => {
 					gl.bindTexture(GL_TEXTURE_2D, texture);
@@ -265,19 +265,19 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	#fillTextureRgtc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array) {
-		var gl = new Graphics().glContext;
-		var rgtc = this.EXT_texture_compression_rgtc;
+		const gl = new Graphics().glContext;
+		const rgtc = this.EXT_texture_compression_rgtc;
 
 		gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 		gl.bindTexture(GL_TEXTURE_2D, texture);
 
 		if (rgtc) {
 			gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, true);
-			var bptcFormat = rgtc.COMPRESSED_RED_RGTC1_EXT;//COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT;
+			const bptcFormat = rgtc.COMPRESSED_RED_RGTC1_EXT;//COMPRESSED_SRGB_ALPHA_BPTC_UNORM_EXT;
 			gl.compressedTexImage2D(GL_TEXTURE_2D, 0, bptcFormat, width, height, 0, datas);
 		} else {
 			gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
-			let uncompressedData = new Uint8Array(width * height * 4);
+			const uncompressedData = new Uint8Array(width * height * 4);
 			Detex.decodeBC4(width, height, datas, uncompressedData).then(
 				() => {
 					gl.bindTexture(GL_TEXTURE_2D, texture);

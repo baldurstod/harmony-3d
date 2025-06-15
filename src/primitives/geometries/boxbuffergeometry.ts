@@ -41,30 +41,30 @@ export class BoxBufferGeometry extends BufferGeometry {
 	}
 
 	#buildPlane(u, v, w, udir, vdir, width, height, depth, gridX, gridY) {
-		var segmentWidth = width / gridX;
-		var segmentHeight = height / gridY;
+		const segmentWidth = width / gridX;
+		const segmentHeight = height / gridY;
 
-		var widthHalf = width / 2;
-		var heightHalf = height / 2;
-		var depthHalf = depth / 2;
+		const widthHalf = width / 2;
+		const heightHalf = height / 2;
+		const depthHalf = depth / 2;
 
-		var gridX1 = gridX + 1;
-		var gridY1 = gridY + 1;
+		const gridX1 = gridX + 1;
+		const gridY1 = gridY + 1;
 
-		var vertexCounter = 0;
+		let vertexCounter = 0;
 
-		var ix, iy;
+		let ix, iy;
 
-		var vector = vec3.create();
+		const vector = vec3.create();
 
 		// generate vertices, normals and uvs
 
 		for (iy = 0; iy < gridY1; iy++) {
-			var y = iy * segmentHeight - heightHalf;
+			const y = iy * segmentHeight - heightHalf;
 
 			for (ix = 0; ix < gridX1; ix++) {
 
-				var x = ix * segmentWidth - widthHalf;
+				const x = ix * segmentWidth - widthHalf;
 
 				// set values to correct vector component
 
@@ -104,10 +104,10 @@ export class BoxBufferGeometry extends BufferGeometry {
 		// 3. so we need to generate six (2*3) indices per segment
 		for (iy = 0; iy < gridY; iy++) {
 			for (ix = 0; ix < gridX; ix++) {
-				var a = this.#numberOfVertices + ix + gridX1 * iy;
-				var b = this.#numberOfVertices + ix + gridX1 * (iy + 1);
-				var c = this.#numberOfVertices + (ix + 1) + gridX1 * (iy + 1);
-				var d = this.#numberOfVertices + (ix + 1) + gridX1 * iy;
+				const a = this.#numberOfVertices + ix + gridX1 * iy;
+				const b = this.#numberOfVertices + ix + gridX1 * (iy + 1);
+				const c = this.#numberOfVertices + (ix + 1) + gridX1 * (iy + 1);
+				const d = this.#numberOfVertices + (ix + 1) + gridX1 * iy;
 
 				// faces
 				this.#indices.push(a, b, d);

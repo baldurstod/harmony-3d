@@ -4,7 +4,7 @@ import { TimelinePropertyType } from './property';
 export class TimelineClip extends TimelineElement {
 	type: TimelineElementType.Clip = TimelineElementType.Clip;
 
-	constructor(name: string = 'Clip', startTime: number = 0, endTime: number = Infinity) {
+	constructor(name = 'Clip', startTime = 0, endTime = Infinity) {
 		super(name);
 
 		this.addProperty('start', TimelinePropertyType.Time, startTime);

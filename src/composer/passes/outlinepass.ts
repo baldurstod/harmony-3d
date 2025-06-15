@@ -11,7 +11,7 @@ import { Graphics, RenderContext } from '../../graphics/graphics';
 
 const CLEAR_COLOR = vec4.fromValues(0, 0, 0, 0);
 
-let tempVec2 = vec2.create();
+const tempVec2 = vec2.create();
 
 export class OutlinePass extends Pass {
 	#edgedetectionMaterial;
@@ -102,8 +102,8 @@ export class OutlinePass extends Pass {
 
 	render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		renderer.getSize(tempVec2);
-		let width = tempVec2[0];
-		let height = tempVec2[1];
+		const width = tempVec2[0];
+		const height = tempVec2[1];
 
 
 		renderer.clearColor(CLEAR_COLOR);

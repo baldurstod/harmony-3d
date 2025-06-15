@@ -26,7 +26,7 @@ export class MovementBasic extends SourceEngineParticleOperator {
 
 			//ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));
 		//fltx4 adj_dt = ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));
-		let adj_dt = (elapsedTime / this.particleSystem.previousElapsedTime) * ExponentialDecay((1.0 - Math.max(0.0, drag)), (1.0 / 30.0), elapsedTime);
+		const adj_dt = (elapsedTime / this.particleSystem.previousElapsedTime) * ExponentialDecay((1.0 - Math.max(0.0, drag)), (1.0 / 30.0), elapsedTime);
 		/*if (particle.previousElapsedTime) {
 			adj_dt *= (elapsedTime / particle.previousElapsedTime);
 		}
@@ -37,7 +37,7 @@ export class MovementBasic extends SourceEngineParticleOperator {
 		/*if (elapsedTime) {
 			vec3.scale(accumulatedForces, accumulatedForces, 1/elapsedTime);
 		}*/
-		for (let force of this.particleSystem.forces.values()) {
+		for (const force of this.particleSystem.forces.values()) {
 			//const force = this.particleSystem.forces[j];
 			force.forceParticle(particle, elapsedTime, accumulatedForces);
 		}

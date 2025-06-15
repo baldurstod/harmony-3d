@@ -86,9 +86,9 @@ const VMT_PARAMETERS = {
 
 function initDefaultParameters(defaultParameters, parameters, variables) {
 	if (defaultParameters) {
-		for (let parameterName in defaultParameters) {
+		for (const parameterName in defaultParameters) {
 			if (parameters[parameterName] === undefined) {
-				let defaultParam = defaultParameters[parameterName];
+				const defaultParam = defaultParameters[parameterName];
 				//variables.set(parameterName, defaultParam[1]);
 				switch (defaultParam[0]) {
 					case SHADER_PARAM_TYPE_COLOR:
@@ -118,7 +118,7 @@ export class SourceEngineMaterial extends Material {
 	repository: string;
 	fileName: string;
 	proxyParams: any;
-	proxies: Array<Proxy>;
+	proxies: Proxy[];
 	variables: Map<string, any>;
 	numFrames: number;
 	frameX: number;
@@ -142,20 +142,20 @@ export class SourceEngineMaterial extends Material {
 
 		this.#initUniforms();
 
-		let variables = this.variables;
+		const variables = this.variables;
 		initDefaultParameters(VMT_PARAMETERS, params, variables);
 		initDefaultParameters(this.getDefaultParameters(), params, variables);
 
-		let readParameters = (parameters) => {
-			for (let parameterName in parameters) {
+		const readParameters = (parameters) => {
+			for (const parameterName in parameters) {
 				const value = parameters[parameterName];
 
-				let sanitized = this.sanitizeValue(parameterName, value);
+				const sanitized = this.sanitizeValue(parameterName, value);
 				if (sanitized) {
 					this.variables.set(parameterName, sanitized);
 				} else if ((typeof value) == 'string') {
 					//try a single number
-					let n = Number(value);
+					const n = Number(value);
 					if (!Number.isNaN(n)) {
 						this.variables.set(parameterName, n);
 					} else {
@@ -185,7 +185,7 @@ export class SourceEngineMaterial extends Material {
 			readParameters(params['>=dx90']);
 		}
 
-		let baseTexture = variables.get('$basetexture');
+		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
 			this.setColorMap(Source1TextureManager.getTexture(this.repository, baseTexture, params['$frame'] || 0, false, params.useSrgb ?? true));
 		} else {
@@ -239,7 +239,7 @@ export class SourceEngineMaterial extends Material {
 			this.setDefine('VERTEX_COLOR');
 		}
 
-		let envmaptint = variables.get('$envmaptint');
+		const envmaptint = variables.get('$envmaptint');
 		if (envmaptint) {
 			this.uniforms['uCubeMapTint'] = envmaptint;
 		} else {
@@ -256,7 +256,7 @@ export class SourceEngineMaterial extends Material {
 
 		this.uniforms['uTextureTransform'] = IDENTITY_MAT4;
 		if (params['$basetexturetransform']) {
-			let textureTransform = GetTextureTransform(params['$basetexturetransform']);
+			const textureTransform = GetTextureTransform(params['$basetexturetransform']);
 			if (textureTransform) {
 				this.variables.set('$basetexturetransform', textureTransform);
 				this.uniforms['uTextureTransform'] = textureTransform;
@@ -267,14 +267,14 @@ export class SourceEngineMaterial extends Material {
 			this.renderFace(RenderFace.Both);
 		}
 
-		let lightWarpTexture = params['$lightwarptexture'];
+		const lightWarpTexture = params['$lightwarptexture'];
 		this.setTexture('lightWarpMap', lightWarpTexture ? Source1TextureManager.getTexture(this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
 
 		if (params['$phong'] == 1) {
 			this.setDefine('USE_PHONG_SHADING');
 
 			// The $phongexponenttexture is overrided by $phongexponent
-			let phongExponentTexture = params['$phongexponenttexture'];
+			const phongExponentTexture = params['$phongexponenttexture'];
 			this.setTexture('phongExponentMap', phongExponentTexture ? Source1TextureManager.getTexture(this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
 			if (phongExponentTexture) {
 				this.uniforms['uPhongExponentFactor'] = variables.get('$phongexponentfactor');
@@ -311,26 +311,26 @@ export class SourceEngineMaterial extends Material {
 				this.setDefine('USE_SELF_ILLUM_ENVMAPMASK_ALPHA');
 			}
 
-			let selfIllumTint = variables.get('$selfillumtint');
+			const selfIllumTint = variables.get('$selfillumtint');
 			if (selfIllumTint) {
 				this.uniforms['uSelfIllumTint'] = selfIllumTint;
 			} else {
 				this.uniforms['uSelfIllumTint'] = vec3.fromValues(1.0, 1.0, 1.0);
 			}
 
-			let selfIllumMask = variables.get('$selfillummask');
+			const selfIllumMask = variables.get('$selfillummask');
 			this.setTexture('uSelfIllumMaskMap', selfIllumMask ? Source1TextureManager.getTexture(this.repository, selfIllumMask, 0) : null, 'USE_SELF_ILLUM_MASK_MAP');
 
 
 			if (variables.get('$selfillumfresnel') == 1) {
 				this.setDefine('USE_SELF_ILLUM_FRESNEL');
 
-				let selfIllumFresnelMinMaxExp = variables.get('$selfillumfresnelminmaxexp') ?? vec3.fromValues(0.0, 1.0, 1.0);
+				const selfIllumFresnelMinMaxExp = variables.get('$selfillumfresnelminmaxexp') ?? vec3.fromValues(0.0, 1.0, 1.0);
 
-				let constScaleBiasExp = vec4.fromValues(1.0, 0.0, 1.0, 0.0);
-				let flMin = selfIllumFresnelMinMaxExp[0];
-				let flMax = selfIllumFresnelMinMaxExp[1];
-				let flExp = selfIllumFresnelMinMaxExp[2];
+				const constScaleBiasExp = vec4.fromValues(1.0, 0.0, 1.0, 0.0);
+				const flMin = selfIllumFresnelMinMaxExp[0];
+				const flMax = selfIllumFresnelMinMaxExp[1];
+				const flExp = selfIllumFresnelMinMaxExp[2];
 
 				constScaleBiasExp[1] = (flMax != 0.0) ? (flMin / flMax) : 0.0; // Bias
 				constScaleBiasExp[0] = 1.0 - constScaleBiasExp[1]; // Scale
@@ -453,7 +453,7 @@ export class SourceEngineMaterial extends Material {
 	initProxies(proxies) {
 		if (!proxies) { return; }
 
-		for (let proxyIndex in proxies) {
+		for (const proxyIndex in proxies) {
 			if (proxies.hasOwnProperty(proxyIndex)) {
 				const proxyName = proxyIndex.replace(/#\d+$/, '');
 				const proxy = ProxyManager.getProxy(proxyName);
@@ -481,7 +481,7 @@ export class SourceEngineMaterial extends Material {
 		if (false && DEBUG) {
 			this.proxyParams.ItemTintColor = vec3.fromValues(Math.cos(time * 2) * 0.5 + 0.5, Math.cos(time * 3) * 0.5 + 0.5, Math.cos(time * 5) * 0.5 + 0.5);
 		}
-		let proxies = this.proxies;
+		const proxies = this.proxies;
 		for (let proxyIndex = 0, l = proxies.length; proxyIndex < l; ++proxyIndex) {
 			proxies[proxyIndex].execute(this.variables, proxyParams, time);
 		}
@@ -490,10 +490,10 @@ export class SourceEngineMaterial extends Material {
 	}
 
 	_afterProcessProxies(proxyParams) {
-		let variables = this.variables;
-		let parameters = this.parameters;
+		const variables = this.variables;
+		const parameters = this.parameters;
 
-		let baseTexture = variables.get('$basetexture');
+		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
 			const texture = Source1TextureManager.getTexture(this.repository, baseTexture, parameters['$frame'] || variables.get('$frame') || 0);
 			this.setColorMap(texture);
@@ -501,7 +501,7 @@ export class SourceEngineMaterial extends Material {
 			this.setDefine('COLOR_MAP_ALPHA_BITS', String(texture?.getAlphaBits() ?? 0));
 		}
 
-		let normalMap = variables.get('$bumpmap') ?? variables.get('$normalmap');
+		const normalMap = variables.get('$bumpmap') ?? variables.get('$normalmap');
 		if (normalMap) {
 			this.setNormalMap(Source1TextureManager.getTexture(this.repository, normalMap, 0));
 		} else {
@@ -516,29 +516,29 @@ export class SourceEngineMaterial extends Material {
 			this.setCubeMap(Source1TextureManager.getTexture(this.repository, envmap, 0, true));
 		}
 
-		let baseTextureTransform = variables.get('$basetexturetransform');
+		const baseTextureTransform = variables.get('$basetexturetransform');
 		if (baseTextureTransform) {
 			this.uniforms['uTextureTransform'] = baseTextureTransform;
 			this.setDefine('USE_TEXTURE_TRANSFORM');
 		}
 
 		//TODO: remove this
-		let phongExponentTexture = variables.get('$phongexponenttexture');
+		const phongExponentTexture = variables.get('$phongexponenttexture');
 		if (phongExponentTexture) {
 			this.setTexture('phongExponentMap', Source1TextureManager.getTexture(this.repository, phongExponentTexture, 0), 'USE_PHONG_EXPONENT_MAP');
 		}
 
-		let lightWarpTexture = parameters['$lightwarptexture'];
+		const lightWarpTexture = parameters['$lightwarptexture'];
 		this.setTexture('lightWarpMap', lightWarpTexture ? Source1TextureManager.getTexture(this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
 
 
 		if (variables.get('$selfillum') == 1) {
-			let selfIllumTint = variables.get('$selfillumtint');
+			const selfIllumTint = variables.get('$selfillumtint');
 			if (selfIllumTint) {
 				this.uniforms['uSelfIllumTint'] = selfIllumTint;
 			}
 
-			let selfIllumMask = variables.get('$selfillummask');
+			const selfIllumMask = variables.get('$selfillummask');
 			if (selfIllumMask) {
 				this.setTexture('uSelfIllumMaskMap', Source1TextureManager.getTexture(this.repository, selfIllumMask, 0));
 			}
@@ -550,7 +550,7 @@ export class SourceEngineMaterial extends Material {
 
 			const detailTextureTransform = variables.get('$detailtexturetransform');
 			if (detailTextureTransform) {
-				let textureTransform = GetTextureTransform(detailTextureTransform, this.#detailTextureTransform);
+				const textureTransform = GetTextureTransform(detailTextureTransform, this.#detailTextureTransform);
 				if (textureTransform) {
 					this.variables.set('$detailtexturetransform', textureTransform);
 				}
@@ -585,8 +585,8 @@ export class SourceEngineMaterial extends Material {
 		return clamp(this.variables.get('$alpha'), 0.0, 1.0);
 	}
 	computeModulationColor(out) {
-		let color = this.variables.get('$color');//TODOv3: check variable type
-		let color2 = this.variables.get('$color2');//TODOv3: check variable type
+		const color = this.variables.get('$color');//TODOv3: check variable type
+		const color2 = this.variables.get('$color2');//TODOv3: check variable type
 		if (color2) {
 			out[0] = color[0] * color2[0];
 			out[1] = color[1] * color2[1];
@@ -606,14 +606,14 @@ export class SourceEngineMaterial extends Material {
 	}
 
 	sanitizeValue(parameterName, value) {
-		let param = VMT_PARAMETERS[parameterName] ?? this.getDefaultParameters()[parameterName];
+		const param = VMT_PARAMETERS[parameterName] ?? this.getDefaultParameters()[parameterName];
 		if (param) {
 			switch (param[0]) {
 				case SHADER_PARAM_TYPE_COLOR:
 					return readColor(value);
 					break;
 				case SHADER_PARAM_TYPE_FLOAT:
-					let fl = Number(value);
+					const fl = Number(value);
 					if (!Number.isNaN(fl)) {
 						return fl;
 					}
@@ -641,7 +641,7 @@ export class SourceEngineMaterial extends Material {
 	}
 
 	setKeyValue(key, value) {
-		let sanitized = this.sanitizeValue(key, value);
+		const sanitized = this.sanitizeValue(key, value);
 		if (sanitized) {
 			this.variables.set(key, sanitized);
 		} else {
@@ -682,7 +682,7 @@ export function readColor(value, color?: vec3) {
 	}
 
 	//try a single number
-	let n = Number(value);
+	const n = Number(value);
 	if (!Number.isNaN(n)) {
 		vec3.set(color, n, n, n);
 		return color;
@@ -692,9 +692,9 @@ export function readColor(value, color?: vec3) {
 
 export function readVec2(value, vec?: vec2) {
 	vec = vec || vec2.create();
-	let regex = /\[ *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *\]/i;
+	const regex = /\[ *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *\]/i;
 
-	let result = regex.exec(value);
+	const result = regex.exec(value);
 	if (result) {
 		return vec2.set(vec, Number(result[1]), Number(result[3]));
 	}

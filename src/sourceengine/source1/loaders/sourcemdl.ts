@@ -38,19 +38,19 @@ const STUDIO_FLEX_OP_DME_UPPER_EYELID = 21;
 export const MAX_STUDIO_FLEX_DESC = 1024;
 export const MAX_STUDIO_FLEX_CTRL = 96;
 
-export type FlexWeight = { [key: string]: number };
+export type FlexWeight = Record<string, number>;
 
 export class MdlAttachment {
-	name: string = '';
-	lowcasename: string = '';
+	name = '';
+	lowcasename = '';
 	mdl: SourceMdl | null = null;
-	flags: number = 0;
-	localbone: number = 0;
-	local: Array<number> = [];
+	flags = 0;
+	localbone = 0;
+	local: number[] = [];
 }
 
 export class MdlStudioAnimDesc {//removeme
-	name: string = '';
+	name = '';
 	animSections = [];
 	mdl: SourceMdl | null = null;
 	startOffset = 0;
@@ -69,9 +69,9 @@ export class MdlStudioAnimDesc {//removeme
 	zeroframespan = 0;
 	zeroframecount = 0;
 	zeroframeOffset = 0;
-	readonly frames:Array<never> = [];
+	readonly frames:never[] = [];
 
-	pAnim(frameIndex: number/*, flStall TODOv2*/): Array<MdlStudioAnim> | null {
+	pAnim(frameIndex: number/*, flStall TODOv2*/): MdlStudioAnim[] | null {
 		if (this.mdl) {
 			return this.mdl.loader._parseAnimSection(this.mdl.reader, this, frameIndex);
 		}
@@ -90,12 +90,12 @@ export class MdlStudioAnimDesc {//removeme
 }
 
 export class MdlStudioFlexRule { // mstudioflexrule_t
-	readonly ops: Array<MdlStudioFlexOp> = [];
+	readonly ops: MdlStudioFlexOp[] = [];
 	flex: number;
 }
 
 export class MdlStudioFlexOp { // mstudioflexop_t
-	op: number = 0;//TODO: create op enum
+	op = 0;//TODO: create op enum
 	index = 0;
 	value = 0;
 }
@@ -111,28 +111,28 @@ export class MdlStudioPoseParam { // mstudioposeparamdesc_t
 
 export class SourceMdl {
 	repository: string;
-	readonly externalMdlsV2: Array<Promise<SourceMdl | null>> = [];
+	readonly externalMdlsV2: Promise<SourceMdl | null>[] = [];
 	readonly attachmentNames = new Map<string, MdlAttachment>();
 	readonly flexController = new FlexController();
-	readonly skinReferences: Array<Array<any>> = [];
-	readonly textures: Array<MdlTexture>;
-	readonly modelGroups: Array<MdlStudioModelGroup>;
+	readonly skinReferences: any[][] = [];
+	readonly textures: MdlTexture[];
+	readonly modelGroups: MdlStudioModelGroup[];
 	header;
-	readonly bodyParts: Array<MdlBodyPart>;
-	readonly sequences: Array<MdlStudioSeqDesc> = [];
+	readonly bodyParts: MdlBodyPart[];
+	readonly sequences: MdlStudioSeqDesc[] = [];
 	readonly texturesDir: string[] = [];
-	readonly flexRules: Array<MdlStudioFlexRule> = [];
-	readonly flexControllers: Array<MdlStudioFlexController> = [];
+	readonly flexRules: MdlStudioFlexRule[] = [];
+	readonly flexControllers: MdlStudioFlexController[] = [];
 	boneCount: number;
-	readonly bones: Array<MdlBone> = [];
+	readonly bones: MdlBone[] = [];
 	readonly boneNames = new Map<string, number>();
 	numflexdesc = 0;
-	readonly attachments: Array<MdlAttachment> = [];
+	readonly attachments: MdlAttachment[] = [];
 	readonly animDesc = [];
 	loader: SourceEngineMDLLoader;
 	reader: BinaryReader;
-	readonly poseParameters: Array<MdlStudioPoseParam> = [];
-	readonly hitboxSets: Array<MdlStudioHitboxSet> = [];
+	readonly poseParameters: MdlStudioPoseParam[] = [];
+	readonly hitboxSets: MdlStudioHitboxSet[] = [];
 	boneOffset = 0;
 	boneControllerCount = 0;
 	boneControllerOffset = 0;
@@ -212,7 +212,7 @@ export class SourceMdl {
 		return /*materialOverride[textureId] ? materialOverride[textureId].name : */this.textures[textureId].name;
 	}
 
-	getSkinList(): Array<number> {
+	getSkinList(): number[] {
 		const skinReferences = this.skinReferences;
 		const skinList = [];
 		for (let skinIndex = 0; skinIndex < skinReferences.length; ++skinIndex) {
@@ -225,7 +225,7 @@ export class SourceMdl {
 		return this.bodyParts[bodyPartId];
 	}
 
-	getBodyParts(): Array<MdlBodyPart> {
+	getBodyParts(): MdlBodyPart[] {
 		return this.bodyParts;
 	}
 
@@ -257,7 +257,7 @@ export class SourceMdl {
 		return this.modelGroups[modelGroupId];
 	}
 
-	getModelGroups(): Array<MdlStudioModelGroup> {
+	getModelGroups(): MdlStudioModelGroup[] {
 		return this.modelGroups;
 	}
 
@@ -272,9 +272,9 @@ export class SourceMdl {
 
 		const modelGroup = this.modelGroups[externalId];
 		if (modelGroup) {
-			let p = new Promise<SourceMdl | null>(async resolve => {
-				let mdlLoader = getLoader('SourceEngineMDLLoader') as typeof SourceEngineMDLLoader;
-				let mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
+			const p = new Promise<SourceMdl | null>(async resolve => {
+				const mdlLoader = getLoader('SourceEngineMDLLoader') as typeof SourceEngineMDLLoader;
+				const mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
 				if (mdl) {
 					//this.externalMdlsV2[externalId] = mdl;
 					resolve(mdl);
@@ -290,7 +290,7 @@ export class SourceMdl {
 		return null;
 	}
 
-	getTextureDir(): Array<string> {
+	getTextureDir(): string[] {
 		return this.texturesDir;
 	}
 
@@ -334,11 +334,11 @@ export class SourceMdl {
 		return animList;
 	}
 
-	getFlexRules(): Array<MdlStudioFlexRule> {
+	getFlexRules(): MdlStudioFlexRule[] {
 		return this.flexRules;
 	}
 
-	getFlexControllers(): Array<MdlStudioFlexController> {
+	getFlexControllers(): MdlStudioFlexController[] {
 		return this.flexControllers;
 	}
 
@@ -625,7 +625,7 @@ export class SourceMdl {
 		return this.boneCount;
 	}
 
-	getBones(): Array<MdlBone> {
+	getBones(): MdlBone[] {
 		return this.bones;
 	}
 
@@ -652,11 +652,11 @@ export class SourceMdl {
 		return boneIndex ?? -1;
 	}
 
-	getAttachments(): Array<MdlAttachment> {
+	getAttachments(): MdlAttachment[] {
 		return this.attachments;
 	}
 
-	getAttachmentsNames(out?: Array<string>): Array<MdlAttachment> {
+	getAttachmentsNames(out?: string[]): MdlAttachment[] {
 		return Array.from(this.getAttachments());
 	}
 
@@ -704,21 +704,21 @@ export class SourceMdl {
 	}
 	*/
 
-	getSequences(): Array<string> {
+	getSequences(): string[] {
 		const list = this.sequences;
-		let animList: Array<string> = [];
+		const animList: string[] = [];
 		for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
-			let seq = list[seqIndex];
+			const seq = list[seqIndex];
 			animList.push(seq.name);
 		}
 		return animList;
 	}
 
-	getSequences2(): Array<string> {
+	getSequences2(): string[] {
 		const list = this.sequences;
 		const animList = [];
 		for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
-			let seq = list[seqIndex];
+			const seq = list[seqIndex];
 			//if ((seq.activity != -1) && (seq.activityName != '')) {
 			//if (seq.activityName != '') {
 			//if (seq.name == 'run_melee') {
@@ -741,7 +741,7 @@ export class SourceMdl {
 			//const section = animDesc.animSections[0];
 
 			animDesc.frames = [];
-			let frame = dynamicProp.frameframe;// = dynamicProp.frameframe || Object.create(null);
+			const frame = dynamicProp.frameframe;// = dynamicProp.frameframe || Object.create(null);
 			//frame.bones = Object.create(null);
 
 			//for (let frameIndex=0; frameIndex < animDesc.numframes; ++frameIndex)
@@ -794,7 +794,7 @@ export class SourceMdl {
 		return this.poseParameters[poseIndex];
 	}
 
-	getPoseParameters(): Array<MdlStudioPoseParam> {
+	getPoseParameters(): MdlStudioPoseParam[] {
 		return this.poseParameters;
 	}
 

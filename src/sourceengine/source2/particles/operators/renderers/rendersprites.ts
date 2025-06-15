@@ -30,7 +30,7 @@ export class RenderSprites extends RenderBase {
 	#minSize = 0.0;
 	#maxSize = 5000.0;
 	spriteSheet: Source2SpriteSheet;
-	#maxParticles: number = 1000;//TODO: default value
+	#maxParticles = 1000;//TODO: default value
 	texture: Texture;//TODO: set private ?
 	imgData: Float32Array;//TODO: set private ?
 	constructor(system) {
@@ -98,7 +98,7 @@ export class RenderSprites extends RenderBase {
 		const rate = this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
 		this.geometry.count = particleList.length * 6;
-		let maxParticles = this.#maxParticles;
+		const maxParticles = this.#maxParticles;
 		this.setupParticlesTexture(particleList, maxParticles);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh.setVisible(Source2ParticleManager.visible);
@@ -112,11 +112,11 @@ export class RenderSprites extends RenderBase {
 		let index = 0;
 		let index2 = 0;
 		for (let i = 0; i < particleList.length; i++) {
-			let particle = particleList[i];
+			const particle = particleList[i];
 			const sequence = particle.sequence;
 			let flAgeScale;
 			if (m_bFitCycleToLifetime) {
-				let flLifetime = particle.timeToLive;//SubFloat(pLifeDuration[ nGroup * ld_stride ], nOffset);
+				const flLifetime = particle.timeToLive;//SubFloat(pLifeDuration[ nGroup * ld_stride ], nOffset);
 				flAgeScale = (flLifetime > 0.0) ? (1.0 / flLifetime) * SEQUENCE_SAMPLE_COUNT : 0.0;
 			} else {
 				flAgeScale = rate * SEQUENCE_SAMPLE_COUNT;
@@ -131,15 +131,15 @@ export class RenderSprites extends RenderBase {
 
 			particle.frame += elapsedTime;
 
-			let spriteSheet = this.spriteSheet;
+			const spriteSheet = this.spriteSheet;
 			if (spriteSheet) {
 				let coords = spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
 				if (coords) {
-					let uMin = coords[0];
-					let vMin = coords[1];
-					let uMax = coords[2];
-					let vMax = coords[3];
+					const uMin = coords[0];
+					const vMin = coords[1];
+					const uMax = coords[2];
+					const vMax = coords[3];
 					uvs[index++] = uMin;
 					uvs[index++] = vMin;
 					uvs[index++] = uMax;
@@ -153,10 +153,10 @@ export class RenderSprites extends RenderBase {
 				coords = spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
 				if (coords) {
-					let uMin = coords[0];
-					let vMin = coords[1];
-					let uMax = coords[2];
-					let vMax = coords[3];
+					const uMin = coords[0];
+					const vMin = coords[1];
+					const uMax = coords[2];
+					const vMax = coords[3];
 					uvs2[index2++] = uMin;
 					uvs2[index2++] = vMin;
 					uvs2[index2++] = uMax;
@@ -182,7 +182,7 @@ export class RenderSprites extends RenderBase {
 	}
 
 	_initBuffers() {
-		let geometry = this.geometry;
+		const geometry = this.geometry;
 		const vertices = [];
 		const uvs = [];
 		const uvs2 = [];
@@ -190,7 +190,7 @@ export class RenderSprites extends RenderBase {
 		const id = [];
 
 		for (let i = 0; i < this.#maxParticles; i++) {
-			let indiceBase = i * 4;
+			const indiceBase = i * 4;
 			indices.push(indiceBase, indiceBase + 2, indiceBase + 1, indiceBase + 2, indiceBase + 3, indiceBase + 1);
 			vertices.push(-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0);
 			uvs.push(0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0);
@@ -246,8 +246,8 @@ export class RenderSprites extends RenderBase {
 		const a = this.imgData;
 
 		let index = 0;
-		let alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
-		for (let particle of particleList) {//TODOv3
+		const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
+		for (const particle of particleList) {//TODOv3
 			/*let pose = bone.boneMat;
 			for (let k = 0; k < 16; ++k) {
 				a[index++] = pose[k];

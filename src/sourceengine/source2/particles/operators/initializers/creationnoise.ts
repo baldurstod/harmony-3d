@@ -52,7 +52,7 @@ export class CreationNoise extends Operator {
 	}
 
 	doInit(particle, elapsedTime) {
-		let fieldOutput = this.fieldOutput;
+		const fieldOutput = this.fieldOutput;
 		//let nAbsVal = 0xffffffff;
 		let flAbsScale = 0.5;
 		if (this.absVal) {
@@ -68,7 +68,7 @@ export class CreationNoise extends Operator {
 			fMax *= DEG_TO_RAD;
 		}
 
-		let CoordScaleLoc = this.noiseScaleLoc;
+		const CoordScaleLoc = this.noiseScaleLoc;
 
 		let ValueScale, ValueBase;
 		ValueScale = ( flAbsScale *( fMax - fMin ) );
@@ -76,14 +76,14 @@ export class CreationNoise extends Operator {
 
 		let CoordLoc, CoordWorldTime, CoordBase;
 		//let pCreationTime = particle.cTime;//pParticles->GetFloatAttributePtr( PARTICLE_ATTRIBUTE_CREATION_TIME, start_p );
-		let Offset = this.offset;
-		let a = (particle.cTime + Offset) * this.noiseScale +  performance.now() * this.worldTimeScale;
+		const Offset = this.offset;
+		const a = (particle.cTime + Offset) * this.noiseScale +  performance.now() * this.worldTimeScale;
 		CoordBase = vec3.fromValues (a, a, a);
 		CoordLoc = vec3.create();
 		//CoordBase *= this.noiseScale;
 		//CoordWorldTime = Vector( (Plat_MSTime() * m_flWorldTimeScale), (Plat_MSTime() * m_flWorldTimeScale), (Plat_MSTime() * m_flWorldTimeScale) );
 		//CoordBase += CoordWorldTime;
-		let Coord = vec3.create();
+		const Coord = vec3.create();
 		//for( ; nParticleCount--; start_p++ )
 		{
 			vec3.copy(Coord, CoordBase);
@@ -115,7 +115,7 @@ export class CreationNoise extends Operator {
 				flNoise = 1.0 - flNoise;
 			}
 
-			let flInitialNoise = ( ValueBase + ( ValueScale * flNoise ) );
+			const flInitialNoise = ( ValueBase + ( ValueScale * flNoise ) );
 
 			/*
 			//TODO

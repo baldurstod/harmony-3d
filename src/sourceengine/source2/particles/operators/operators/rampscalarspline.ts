@@ -54,7 +54,7 @@ export class RampScalarSpline extends Operator {
 
 	doOperate(particle, elapsedTime) {
 		//TODO : use m_flBias m_bEaseOut
-		let context = particle.context.get(this);
+		const context = particle.context.get(this);
 		let rate, startTime, endTime;
 		if (context == undefined) {
 			//Init per particle parameters
@@ -68,12 +68,12 @@ export class RampScalarSpline extends Operator {
 			endTime = context.e;
 		}
 
-		let particleTime = this.proportionalOp ? particle.proportionOfLife : particle.currentTime;
+		const particleTime = this.proportionalOp ? particle.proportionOfLife : particle.currentTime;
 		if (particleTime < startTime || particleTime > endTime) {
 			return;
 		}
 
-		let value = particle.getField(this.field) + rate * elapsedTime;
+		const value = particle.getField(this.field) + rate * elapsedTime;
 		particle.setField(this.field, value);
 
 	}

@@ -37,14 +37,14 @@ export class Source2AnimationDesc {
 	}
 
 	#getActualAnimDesc(): Source2AnimationDesc {
-		let fetch = this.data?.m_fetch;
+		const fetch = this.data?.m_fetch;
 		if (fetch) {
-			let localReferenceArray = fetch.m_localReferenceArray;
+			const localReferenceArray = fetch.m_localReferenceArray;
 			//TODO: mix multiple anims
 			if (localReferenceArray[0] !== undefined) {
-				let animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
+				const animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
 				if (animName) {
-					let animDesc = this.#source2Model.getAnimationByName(animName);
+					const animDesc = this.#source2Model.getAnimationByName(animName);
 					if (animDesc) {
 						return animDesc;
 					}
@@ -56,12 +56,12 @@ export class Source2AnimationDesc {
 
 	getFrame(frameIndex) {
 		frameIndex = clamp(frameIndex, 0, this.lastFrame);
-		var frameBlockArray = this.frameBlockArray;
-		var segmentIndexArray = null;
-		var frameBlock = null;
-		var decodeKey = this.animationResource.getDecodeKey();
-		var decodeArray = this.animationResource.getDecoderArray();
-		var boneArray = [];
+		const frameBlockArray = this.frameBlockArray;
+		let segmentIndexArray = null;
+		let frameBlock = null;
+		const decodeKey = this.animationResource.getDecodeKey();
+		const decodeArray = this.animationResource.getDecoderArray();
+		const boneArray = [];
 
 		/*
 		let fetch = this.data?.m_fetch;
@@ -80,7 +80,7 @@ export class Source2AnimationDesc {
 				return [];
 			}
 		}*/
-		let actualAnimDesc = this.#getActualAnimDesc();
+		const actualAnimDesc = this.#getActualAnimDesc();
 		if (actualAnimDesc) {
 			return actualAnimDesc.getFrame(frameIndex);
 		}
@@ -97,8 +97,8 @@ export class Source2AnimationDesc {
 					segmentIndexArray = frameBlock.m_segmentIndexArray;
 					//console.log(this);
 					//console.log(decodeKey);
-					for (var j = 0; j < segmentIndexArray.length; j++) {
-						var segment = this.animationResource.getSegment(segmentIndexArray[j]);
+					for (let j = 0; j < segmentIndexArray.length; j++) {
+						const segment = this.animationResource.getSegment(segmentIndexArray[j]);
 						if (TESTING && !segment) {
 							//console.error('missing segment : ', segmentIndexArray[j]);
 							continue;
@@ -115,26 +115,26 @@ export class Source2AnimationDesc {
 	}
 	readSegment(frameIndex, segment, boneArray, dataChannelArray, decodeArray) {
 		//console.log(segment);
-		var channel = dataChannelArray[segment.m_nLocalChannel];
-		var segmentToBoneIndex = {};
-		var channelVar = channel.m_szVariableName;
-		var container = segment.m_container;
-		var reader = segment.dataReader;
+		const channel = dataChannelArray[segment.m_nLocalChannel];
+		const segmentToBoneIndex = {};
+		const channelVar = channel.m_szVariableName;
+		const container = segment.m_container;
+		let reader = segment.dataReader;
 		if (!reader) {
 			reader = new BinaryReader(container);
 			segment.dataReader = reader;
 		}
 
-		var decoderId = container[0] + (container[1] << 8);
-		var bytesPerBone = container[2] + (container[3] << 8);
-		var boneCount = container[4] + (container[5] << 8);
-		var dataLength = container[6] + (container[7] << 8);
+		const decoderId = container[0] + (container[1] << 8);
+		let bytesPerBone = container[2] + (container[3] << 8);
+		const boneCount = container[4] + (container[5] << 8);
+		const dataLength = container[6] + (container[7] << 8);
 		bytesPerBone = 0;
-		var segmentBoneArray = [];
+		const segmentBoneArray = [];
 
 		if (channel.m_nElementIndexArray) {
-			var elementIndexArray = channel.m_nElementIndexArray;
-			for (var i = 0; i < elementIndexArray.length; i++) {
+			const elementIndexArray = channel.m_nElementIndexArray;
+			for (let i = 0; i < elementIndexArray.length; i++) {
 				segmentToBoneIndex[elementIndexArray[i]] = i;
 			}
 		} else {
@@ -142,10 +142,10 @@ export class Source2AnimationDesc {
 			return;
 		}
 
-		var decoder = decodeArray[decoderId];
+		const decoder = decodeArray[decoderId];
 		//console.log(decoderId, bytesPerBone, boneCount, dataLength);
 		if (decoder && decoder.m_szName) {
-			var decoderName = decoder.m_szName;
+			const decoderName = decoder.m_szName;
 			//console.log(decoderName);
 			switch (decoderName) {
 				case 'CCompressedStaticFullVector3':
@@ -192,17 +192,17 @@ export class Source2AnimationDesc {
 
 			var byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
 			for (var boneIndex = 0; boneIndex < boneCount; boneIndex++) {
-				var boneIndex2 = segmentToBoneIndex[segmentBoneArray[boneIndex]];
+				const boneIndex2 = segmentToBoneIndex[segmentBoneArray[boneIndex]];
 				/*if (boneIndex2 === undefined) {//removeme
 					return;
 				}*/
-				var bytes = [];
-				var byteIndex2 = byteIndex + boneIndex * bytesPerBone;
-				for (var j = 0; j < bytesPerBone; j++) {
+				const bytes = [];
+				const byteIndex2 = byteIndex + boneIndex * bytesPerBone;
+				for (let j = 0; j < bytesPerBone; j++) {
 					bytes.push(container[byteIndex2 + j]);
 				}
 
-				var tmpValue = null;
+				let tmpValue = null;
 				switch (decoderName) {
 					case 'CCompressedFullFloat':
 					case 'CCompressedStaticFloat':
@@ -247,9 +247,9 @@ export class Source2AnimationDesc {
 	}
 
 	matchActivity(activityName) {
-		let activityArray = this.data?.m_activityArray;
+		const activityArray = this.data?.m_activityArray;
 		if (activityArray) {
-			for (let activity of activityArray) {
+			for (const activity of activityArray) {
 				if (activity.m_name == activityName) {
 					return true;
 				}
@@ -267,7 +267,7 @@ export class Source2AnimationDesc {
 
 
 	modifiersScore(activityName, modifiers) {
-		let activityArray = this.data?.m_activityArray;
+		const activityArray = this.data?.m_activityArray;
 		if (activityArray && activityArray.length > 0) {
 			if (activityArray[0].m_name != activityName) {
 				return -1;
@@ -296,7 +296,7 @@ export class Source2AnimationDesc {
 	}
 
 	matchModifiers(activityName, modifiers) {
-		let activityArray = this.data?.m_activityArray;
+		const activityArray = this.data?.m_activityArray;
 		if (activityArray && activityArray.length > 0) {
 			if (activityArray[0].m_name != activityName) {
 				return false;
@@ -333,9 +333,9 @@ export class Source2AnimationDesc {
 
 
 function _getFloat16(b, offset) {//TODOv3: optimize this function
-	var sign = b[1 + offset] >> 7;
-	var exponent = ((b[1 + offset] & 0x7C) >> 2);
-	var mantissa = ((b[1 + offset] & 0x03) << 8) | b[0 + offset];
+	const sign = b[1 + offset] >> 7;
+	const exponent = ((b[1 + offset] & 0x7C) >> 2);
+	const mantissa = ((b[1 + offset] & 0x03) << 8) | b[0 + offset];
 
 	if (exponent == 0) {
 		return (sign ? -1 : 1) * Math.pow(2, -14) * (mantissa / Math.pow(2, 10));
@@ -346,7 +346,7 @@ function _getFloat16(b, offset) {//TODOv3: optimize this function
 	return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / Math.pow(2, 10)));
 }
 function _getFloat32(b, offset) {//TODOv3: remove these functions or something
-	let sign = 1 - (2 * (b[3 + offset] >> 7)),
+	const sign = 1 - (2 * (b[3 + offset] >> 7)),
 		exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127,
 		mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
 
@@ -365,21 +365,21 @@ function _getFloat32(b, offset) {//TODOv3: remove these functions or something
 	return sign * (1 + mantissa * pow2(-23)) * pow2(exponent);
 }
 
-let QUATERNION48_SCALE = Math.SQRT1_2 / 0x4000;
+const QUATERNION48_SCALE = Math.SQRT1_2 / 0x4000;
 function _readQuaternion48(bytes, boneIndexRemoveMe, boneNameRemoveMe) {
 	// Values
-	let i1 = bytes[0] + ((bytes[1] & 127) << 8) - 0x4000;
-	let i2 = bytes[2] + ((bytes[3] & 127) << 8) - 0x4000;
-	let i3 = bytes[4] + ((bytes[5] & 127) << 8) - 0x4000;
+	const i1 = bytes[0] + ((bytes[1] & 127) << 8) - 0x4000;
+	const i2 = bytes[2] + ((bytes[3] & 127) << 8) - 0x4000;
+	const i3 = bytes[4] + ((bytes[5] & 127) << 8) - 0x4000;
 
 	// Signs
-	let s1 = bytes[1] & 128;
-	let s2 = bytes[3] & 128;
-	let s3 = bytes[5] & 128;
+	const s1 = bytes[1] & 128;
+	const s2 = bytes[3] & 128;
+	const s3 = bytes[5] & 128;
 
-	let x = QUATERNION48_SCALE * i1;
-	let y = QUATERNION48_SCALE * i2;
-	let z = QUATERNION48_SCALE * i3;
+	const x = QUATERNION48_SCALE * i1;
+	const y = QUATERNION48_SCALE * i2;
+	const z = QUATERNION48_SCALE * i3;
 
 	let w = Math.sqrt(1 - (x * x) - (y * y) - (z * z));
 

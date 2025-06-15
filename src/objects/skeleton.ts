@@ -17,7 +17,7 @@ export class Skeleton extends Entity {
 	isSkeleton = true;
 	#bonesByName = new Map();
 	#rootBone = new Bone({ name: 'root', boneId: 0, skeleton: this });
-	_bones: Array<Bone> = [];//TODOv3: rename set private
+	_bones: Bone[] = [];//TODOv3: rename set private
 	_dirty = true;
 	#imgData!: Float32Array;
 	#texture!: Texture;
@@ -34,7 +34,7 @@ export class Skeleton extends Entity {
 
 	dirty() {
 		this._dirty = true;
-		for (let bone of this._bones) {
+		for (const bone of this._bones) {
 			bone.dirty = true;
 		}
 		/*if (this._bones[0]) {
@@ -49,7 +49,7 @@ export class Skeleton extends Entity {
 	#createBoneMatrixArray() {
 		this.#imgData = new Float32Array(MAX_HARDWARE_BONES * 4 * 4);
 		mat4.identity(this.#imgData);
-		let index = 0;
+		const index = 0;
 		for (let i = 1; i < MAX_HARDWARE_BONES; ++i) {
 			this.#imgData.copyWithin(i * 16, 0, 16);
 		}
@@ -77,8 +77,8 @@ export class Skeleton extends Entity {
 
 	setBonesMatrix() {
 		let index = 0;
-		let bones = this._bones;
-		let imgData = this.#imgData;
+		const bones = this._bones;
+		const imgData = this.#imgData;
 
 		let pose;
 		if (bones.length == 0) {
@@ -88,7 +88,7 @@ export class Skeleton extends Entity {
 			}
 		}
 
-		for (let bone of bones) {
+		for (const bone of bones) {
 			pose = bone.boneMat;
 			for (let k = 0; k < 16; ++k) {
 				imgData[index++] = pose[k];
@@ -123,16 +123,16 @@ export class Skeleton extends Entity {
 	}
 
 	addBone(boneId: number, boneName: string) {
-		let boneNameLowerCase = boneName.toLowerCase();
+		const boneNameLowerCase = boneName.toLowerCase();
 		if (!this.#bonesByName.has(boneNameLowerCase)) {
-			let bone = new Bone({ name: boneName, boneId: boneId });
+			const bone = new Bone({ name: boneName, boneId: boneId });
 			bone.skeleton = this;
 			//this.addChild(bone);
 			this._bones[boneId] = bone;
 			this.#bonesByName.set(boneNameLowerCase, bone);
 			return bone;
 		} else {
-			let bone = this.#bonesByName.get(boneNameLowerCase);
+			const bone = this.#bonesByName.get(boneNameLowerCase);
 			this._bones[boneId] = bone;
 			return bone;
 		}
@@ -143,8 +143,8 @@ export class Skeleton extends Entity {
 		if (skeleton) {
 			await skeleton.loadedPromise;
 		}
-		let bones = this.#bonesByName;
-		for (let [boneName, bone] of bones) {
+		const bones = this.#bonesByName;
+		for (const [boneName, bone] of bones) {
 			bone.parentSkeletonBone = skeleton?.getBoneByName(boneName) ?? null;
 		}
 	}
@@ -177,9 +177,9 @@ export class Skeleton extends Entity {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
-		let jBones = [];
-		let bones = this._bones;
+		const json = super.toJSON();
+		const jBones = [];
+		const bones = this._bones;
 		for (let i = 0; i < bones.length; ++i) {
 			jBones.push(bones[i].id);
 		}
@@ -188,14 +188,14 @@ export class Skeleton extends Entity {
 	}
 
 	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
-		let entity = new Skeleton({ name: json.name });
+		const entity = new Skeleton({ name: json.name });
 		let loadedPromiseResolve: (value: any) => void;
 		entity.loadedPromise = new Promise((resolve) => loadedPromiseResolve = resolve);
 		loadedPromise.then(() => {
-			let jBones = json.bones as Array<string>;
+			const jBones = json.bones as string[];
 			if (jBones) {
 				for (let i = 0; i < jBones.length; ++i) {
-					let boneEntity = entities.get(jBones[i]) as Bone | undefined;
+					const boneEntity = entities.get(jBones[i]) as Bone | undefined;
 					if (boneEntity) {
 						entity._bones[i] = boneEntity;
 						entity.#bonesByName.set(boneEntity.name.toLowerCase(), boneEntity);

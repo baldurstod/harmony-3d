@@ -43,9 +43,9 @@ export class ColorInterpolate extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let color = vec3.clone(particle.initialColor);
+		const color = vec3.clone(particle.initialColor);
 
-		let proportionOfLife = Math.min(particle.currentTime / particle.timeToLive, 1.0);
+		const proportionOfLife = Math.min(particle.currentTime / particle.timeToLive, 1.0);
 
 		if (proportionOfLife < this.fadeStartTime) {
 			return;

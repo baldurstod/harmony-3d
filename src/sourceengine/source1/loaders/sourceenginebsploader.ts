@@ -39,9 +39,9 @@ function InitLZMALump(reader, lump) {
 
 export class SourceEngineBSPLoader extends SourceBinaryLoader {
 	parse(repository, fileName, arrayBuffer) {
-		let bsp = new SourceBSP({ repository: repository, name: fileName });
+		const bsp = new SourceBSP({ repository: repository, name: fileName });
 		bsp.loader = this;
-		let reader = new BinaryReader(arrayBuffer);
+		const reader = new BinaryReader(arrayBuffer);
 
 		this.#parseHeader(reader, bsp);
 		this.#parseLumps(reader, bsp);
@@ -79,14 +79,14 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 	#parseLumps(reader, bsp) {
 		const lumps = bsp.lumps;
 		for (let i = 0, l = lumps.length; i < l; i++) {
-			let lump = bsp.lumps[i];
+			const lump = bsp.lumps[i];
 			this.#parseLump(reader, lump, bsp);//TODOv3: lzma
 			//console.error(lump);
 		}
 	}
 
 	#parseLump(reader, lump, bsp) {
-		let lumpData = null;
+		const lumpData = null;
 		if (lump.lumpLen === 0) {
 			lump.lumpData = Object.create(null);
 		} else {
@@ -210,7 +210,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		const planesCount = lump.getLumpLen() / BYTES_PER_PLANE;
 		const lumpData = [];
 		for (let planeIndex = 0; planeIndex < planesCount; planeIndex++) {
-			let plane = new SourceBSPLumpPlane();
+			const plane = new SourceBSPLumpPlane();
 			plane.normal = reader.getVector3();
 			plane.dist = reader.getFloat32();
 			plane.type = reader.getInt32();
@@ -226,7 +226,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 
 		const lumpData = [];
 		for (let texdataIndex = 0; texdataIndex < texdataCount; ++texdataIndex) {
-			let texdata = new SourceBSPLumpTexData();
+			const texdata = new SourceBSPLumpTexData();
 			texdata.reflectivity = reader.getVector3();
 			texdata.nameStringTableID = reader.getInt32();
 			texdata.width = reader.getInt32();
@@ -254,19 +254,19 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 
 	#parseLumpVisibility(reader, lump) {
 		reader.seek(lump.lumpOffset);
-		let offset = reader.tell();
-		let clusterCount = reader.getInt32();
-		let visOffsets = [];
+		const offset = reader.tell();
+		const clusterCount = reader.getInt32();
+		const visOffsets = [];
 
 		for (let clusterIndex = 0; clusterIndex < clusterCount; clusterIndex++) {
 			visOffsets.push([reader.getInt32(), reader.getInt32()]);
 		}
 
-		let numBytes = Math.ceil(clusterCount / 8);
-		let clusterVis = new Uint8Array(clusterCount * clusterCount);
+		const numBytes = Math.ceil(clusterCount / 8);
+		const clusterVis = new Uint8Array(clusterCount * clusterCount);
 		for (let i = 0; i < clusterCount; ++i) {
-			let rleVis = new Uint8Array(reader.buffer, offset + visOffsets[i][0], numBytes);//TODOv3 ???
-			let clusterOfs = i * clusterCount;
+			const rleVis = new Uint8Array(reader.buffer, offset + visOffsets[i][0], numBytes);//TODOv3 ???
+			const clusterOfs = i * clusterCount;
 			let v = 0;
 
 			// Unpack the RLE visibility bitfield
@@ -285,7 +285,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 			}
 		}
 
-		let lumpData = { clusterCount: clusterCount, clusterVis: clusterVis };
+		const lumpData = { clusterCount: clusterCount, clusterVis: clusterVis };
 		lump.setLumpData(lumpData);
 	}
 
@@ -296,7 +296,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		const lumpData = [];
 
 		for (let nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
-			let node = new SourceBSPLumpNode();
+			const node = new SourceBSPLumpNode();
 			node.planenum = reader.getInt32();
 			node.children = [reader.getInt32(), reader.getInt32()];
 			node.mins = [reader.getInt16(), reader.getInt16(), reader.getInt16()];
@@ -320,7 +320,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		const lumpData = [];
 
 		for (let texinfoIndex = 0; texinfoIndex < texInfoCount; ++texinfoIndex) {
-			let texinfo = new SourceBSPLumpTexInfo();
+			const texinfo = new SourceBSPLumpTexInfo();
 			texinfo.textureVecs.push(reader.getVector4());
 			texinfo.textureVecs.push(reader.getVector4());
 			texinfo.lightmapVecs.push(reader.getVector4());
@@ -342,7 +342,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		const lumpData = [];
 
 		for (let faceIndex = 0; faceIndex < faceCount; ++faceIndex) {
-			let face = new SourceBSPLumpFace();
+			const face = new SourceBSPLumpFace();
 			face.planenum = reader.getInt16();
 			face.side = reader.getInt8();
 			face.onNode = reader.getInt8();
@@ -386,9 +386,9 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		const BYTES_PER_LIGHTING = 4;
 		const lightingCount = lump.getLumpLen() / BYTES_PER_LIGHTING;
 
-		let lumpData = [];
+		const lumpData = [];
 		for (let lightingIndex = 0; lightingIndex < lightingCount; ++lightingIndex) {
-			let lighting = new SourceBSPLumpColorRGBExp32();
+			const lighting = new SourceBSPLumpColorRGBExp32();
 			lighting.r = reader.getUint8();
 			lighting.g = reader.getUint8();
 			lighting.b = reader.getUint8();
@@ -406,7 +406,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		const lumpData = [];
 
 		for (let brushSideIndex = 0; brushSideIndex < brushSidesCount; ++brushSideIndex) {
-			let brushSide = new SourceBSPLumpLeaf();
+			const brushSide = new SourceBSPLumpLeaf();
 			brushSide.contents = reader.getInt32();
 			brushSide.cluster = reader.getInt16();
 			brushSide.areaflags = reader.getInt16();
@@ -422,7 +422,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		}
 
 		for (let brushSideIndex = 0; brushSideIndex < brushSidesCount; ++brushSideIndex) {
-			let leaf = lumpData[brushSideIndex];
+			const leaf = lumpData[brushSideIndex];
 			if (leaf.numleaffaces) {
 				//console.log(brushSideIndex, leaf.firstleafface, leaf.numleaffaces);
 				///TODOv3
@@ -439,7 +439,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 
 		const lumpData = [];
 		for (let edgeIndex = 0; edgeIndex < edgesCount; ++edgeIndex) {
-			let edge = new SourceBSPLumpEdge();
+			const edge = new SourceBSPLumpEdge();
 			edge.f = reader.getUint16();
 			edge.s = reader.getUint16();
 			lumpData.push(edge);
@@ -514,7 +514,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		const lumpData = [];
 
 		for (let brushIndex = 0; brushIndex < brushesCount; ++brushIndex) {
-			let brush = new SourceBSPLumpBrush();
+			const brush = new SourceBSPLumpBrush();
 			brush.firstside = reader.getInt32();
 			brush.numsides = reader.getInt32();
 			brush.contents = reader.getInt32();
@@ -531,7 +531,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		const lumpData = [];
 
 		for (let brushSideIndex = 0; brushSideIndex < brushSidesCount; ++brushSideIndex) {
-			let brushSide = new SourceBSPLumpBrushSide();
+			const brushSide = new SourceBSPLumpBrushSide();
 			brushSide.planenum = reader.getUint16();
 			brushSide.texinfo = reader.getInt16();
 			brushSide.dispinfo = reader.getInt16();
@@ -557,9 +557,9 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 			gamelump.lumpLen = reader.getInt32();
 			lumpData[gamelump.id] = gamelump;
 		}
-		for (let gameIndex in lumpData) {
-			let lump = lumpData[gameIndex];
-			let lumpReader = InitLZMALump(reader, lump);
+		for (const gameIndex in lumpData) {
+			const lump = lumpData[gameIndex];
+			const lumpReader = InitLZMALump(reader, lump);
 			this.#parseLumpGame(lumpReader, lump);
 		}
 
@@ -593,7 +593,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 
 		const nameCount = reader.getInt32();
 		for (let nameIndex = 0; nameIndex < nameCount; ++nameIndex) {
-			let name = StringStrip(reader.getString(STATIC_PROP_NAME_LENGTH));
+			const name = StringStrip(reader.getString(STATIC_PROP_NAME_LENGTH));
 			staticDir.name.push(name);
 		}
 
@@ -655,7 +655,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 			staticDir.props.push(prop);
 		}
 
-		let q = quat.create();
+		const q = quat.create();
 		/*
 		for (let propIndex = 0; propIndex < propCount * 0; ++propIndex) {//todov3removeme
 			const prop = staticDir.props[propIndex];
@@ -741,9 +741,9 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 			lumpData.set(fileName, file);
 		}
 
-		for (let [fileName, file] of lumpData) {
+		for (const [fileName, file] of lumpData) {
 			if (fileName.match(/^materials\/.*\.vmt$/)) {
-				let fileContent = this.#getFileData(reader, file);
+				const fileContent = this.#getFileData(reader, file);
 				SourceEngineVMTLoader.setMaterial(fileName, fileContent);
 			}
 		}
@@ -755,7 +755,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 			if (file.cm == 14) {//LZMA
 				const lzmaProperties = reader.getBytes(5, file.fp + 4);
 				const compressedDatas = reader.getBytes(file.cs, file.fp + 9);
-				let lzmaReader = new BinaryReader(DecompressLZMA(lzmaProperties, compressedDatas, file.us));
+				const lzmaReader = new BinaryReader(DecompressLZMA(lzmaProperties, compressedDatas, file.us));
 				return lzmaReader.getString(file.us);
 			}
 			return reader.getString(file.cs, file.fp);
@@ -829,7 +829,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		const lumpData = [];
 
 		for (let dispinfoIndex = 0; dispinfoIndex < dispInfoCount; ++dispinfoIndex) {
-			let dispinfo = new SourceBSPLumpDispInfo();
+			const dispinfo = new SourceBSPLumpDispInfo();
 			dispinfo.startPosition = reader.getVector3();
 			dispinfo.dispVertStart = reader.getInt32();
 			dispinfo.dispTriStart = reader.getInt32();
@@ -880,7 +880,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		const lumpData = [];
 
 		for (let dispvertIndex = 0; dispvertIndex < dispVertCount; ++dispvertIndex) {
-			let dispvert = new SourceBSPLumpDispVertex();
+			const dispvert = new SourceBSPLumpDispVertex();
 			dispvert.vec = reader.getVector3();
 			dispvert.dist = reader.getFloat32();
 			dispvert.alpha = reader.getFloat32();

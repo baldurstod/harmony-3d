@@ -8,8 +8,8 @@ class VTFResource {
 	#type;
 	#flag;
 	#data: any;
-	#length: number = 0;
-	constructor(type: number, flag: number = 0) {
+	#length = 0;
+	constructor(type: number, flag = 0) {
 		this.#type = type;
 		this.#flag = flag;
 		this.data = null;
@@ -47,10 +47,10 @@ export class VTFFile {
 	#slices;
 	#hasThumbnail = false;
 	#hasMipMaps = false;
-	#mipMaps: Array<Array<Array<Array<Uint8ClampedArray>>>> = [[[[]]]];
+	#mipMaps: Uint8ClampedArray[][][][] = [[[[]]]];
 	#bumpmapScale = 1.0;//todo
 	#highResImageFormat = 0;//todo
-	#resources: Array<VTFResource> = [];
+	#resources: VTFResource[] = [];
 	#highResResource = new VTFResource(HIGH_RES_IMAGE);
 	constructor(width = 512, height = 512, imageFormat = 0/*TODO*/, frames = 1, faces = 1, slices = 1) {
 		this.#width = width;
@@ -139,8 +139,8 @@ export class VTFFile {
 
 export class VTFWriter {
 	static writeAndSave(vtffile: VTFFile, filename: string) {
-		let arrayBuffer = this.write(vtffile);
-		var dataView = new DataView(arrayBuffer);
+		const arrayBuffer = this.write(vtffile);
+		const dataView = new DataView(arrayBuffer);
 
 		//saveFile(filename, new Blob([dataView]));
 		saveFile(new File([new Blob([dataView])], filename));
@@ -148,7 +148,7 @@ export class VTFWriter {
 
 	static write(vtffile: VTFFile) {
 		//TODO: check vtffile
-		let writer = new BinaryReader(new Uint8Array(this.#computeLength(vtffile)));
+		const writer = new BinaryReader(new Uint8Array(this.#computeLength(vtffile)));
 		this.#writeHeader(writer, vtffile);
 		return writer.buffer;
 	}
@@ -156,9 +156,9 @@ export class VTFWriter {
 	static #computeLength(vtffile: VTFFile) {
 		let result = 80 + vtffile.numResources * 8;
 
-		let resArray = vtffile.resources;
-		for (let i in resArray) {
-			let resource = resArray[i];
+		const resArray = vtffile.resources;
+		for (const i in resArray) {
+			const resource = resArray[i];
 			if (resource.flag != 2) {
 				result += resource.length;
 			}
@@ -168,12 +168,12 @@ export class VTFWriter {
 	}
 
 	static #writeHeader(writer: BinaryReader, vtffile: VTFFile) {
-		let fixedHeaderLength = 80;
+		const fixedHeaderLength = 80;
 		writer.seek(0);
 		writer.setUint32(0x00465456);//VTF\0
 		writer.setUint32(VTFWriter.majorVersion);
 		writer.setUint32(VTFWriter.minorVersion);
-		let headerLength = fixedHeaderLength + vtffile.numResources * 8;
+		const headerLength = fixedHeaderLength + vtffile.numResources * 8;
 		writer.setUint32(headerLength);
 		writer.setUint16(vtffile.width);
 		writer.setUint16(vtffile.height);
@@ -199,12 +199,12 @@ export class VTFWriter {
 		writer.setUint32(vtffile.numResources);
 		writer.skip(8);
 
-		let resArray = vtffile.resources;
+		const resArray = vtffile.resources;
 		let dataOffset = headerLength;
 		let resHeaderOffset = fixedHeaderLength;
-		for (let i in resArray) {
+		for (const i in resArray) {
 			writer.seek(resHeaderOffset);
-			let resource = resArray[i];
+			const resource = resArray[i];
 			writer.setUint32(resource.type);
 			/*writer.skip(-1);
 			writer.setUint8(resource.flag);*/

@@ -4,8 +4,8 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { TWO_PI, DEG_TO_RAD } from '../../../../../math/constants';
 
-let va = vec3.create();
-let o = vec3.create();
+const va = vec3.create();
+const o = vec3.create();
 
 export class RingWave extends Operator {
 	evenDistribution = false;
@@ -36,18 +36,18 @@ export class RingWave extends Operator {
 
 	doInit(particle, elapsedTime) {
 		//TODO: use all parameters
-		let particlesPerOrbit = this.getParamScalarValue('m_flParticlesPerOrbit') ?? -1;//even distribution count
-		let initialRadius = this.getParamScalarValue('m_flInitialRadius') ?? 0;
-		let thickness = this.getParamScalarValue('m_flThickness') ?? 0;
-		let initialSpeedMin = this.getParamScalarValue('m_flInitialSpeedMin') ?? 0;
-		let initialSpeedMax = this.getParamScalarValue('m_flInitialSpeedMax') ?? 0;
-		let roll = this.getParamScalarValue('m_flRoll') ?? 0;
-		let pitch = this.getParamScalarValue('m_flPitch') ?? 0;
-		let yaw = this.getParamScalarValue('m_flYaw') ?? 0;
+		const particlesPerOrbit = this.getParamScalarValue('m_flParticlesPerOrbit') ?? -1;//even distribution count
+		const initialRadius = this.getParamScalarValue('m_flInitialRadius') ?? 0;
+		const thickness = this.getParamScalarValue('m_flThickness') ?? 0;
+		const initialSpeedMin = this.getParamScalarValue('m_flInitialSpeedMin') ?? 0;
+		const initialSpeedMax = this.getParamScalarValue('m_flInitialSpeedMax') ?? 0;
+		const roll = this.getParamScalarValue('m_flRoll') ?? 0;
+		const pitch = this.getParamScalarValue('m_flPitch') ?? 0;
+		const yaw = this.getParamScalarValue('m_flYaw') ?? 0;
 
 		let theta;
 		if (this.evenDistribution) {
-			let step = particlesPerOrbit == -1 ? TWO_PI / this.system.livingParticles.length : TWO_PI / particlesPerOrbit;
+			const step = particlesPerOrbit == -1 ? TWO_PI / this.system.livingParticles.length : TWO_PI / particlesPerOrbit;
 			this.t += step;
 			theta = this.t;
 		} else {
@@ -65,7 +65,7 @@ export class RingWave extends Operator {
 			vec3.rotateZ(va, va, o, yaw * DEG_TO_RAD);
 		}
 
-		let controlPoint = this.system.getControlPoint(this.controlPointNumber);
+		const controlPoint = this.system.getControlPoint(this.controlPointNumber);
 		if (controlPoint) {
 			vec3.transformMat4(va, va, controlPoint.currentWorldTransformation);
 		}

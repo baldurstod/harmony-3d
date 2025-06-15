@@ -63,7 +63,7 @@ export class Bone extends Entity implements Lockable {
 	}
 
 	getTotalRefPosition(position = vec3.create()) {
-		let parent = this._parent;
+		const parent = this._parent;
 		if (parent && (parent as Bone).isBone) {
 			(parent as Bone).getTotalRefPosition(position);
 			(parent as Bone).getTotalRefQuaternion(tempQuat1);
@@ -77,7 +77,7 @@ export class Bone extends Entity implements Lockable {
 	}
 
 	getTotalRefQuaternion(quaternion = quat.create()) {
-		let parent = this._parent;
+		const parent = this._parent;
 		if (parent && (parent as Bone).isBone) {
 			(parent as Bone).getTotalRefQuaternion(tempQuat1);
 			quat.multiply(quaternion, tempQuat1, this.#refQuaternion);
@@ -221,11 +221,11 @@ export class Bone extends Entity implements Lockable {
 	}
 
 	#compute() {
-		let parent = this._parent;
-		let _parentSkeletonBone = this.#parentSkeletonBone;
+		const parent = this._parent;
+		const _parentSkeletonBone = this.#parentSkeletonBone;
 		if (!this.#parentSkeletonBone) {
 			if (parent) {
-				let parentWorldQuaternion = parent.getWorldQuaternion(tempWorldQuat);
+				const parentWorldQuaternion = parent.getWorldQuaternion(tempWorldQuat);
 
 				vec3.mul(this.#worldScale, parent.getWorldScale(tempWorldScale), this._scale);
 
@@ -314,7 +314,7 @@ export class Bone extends Entity implements Lockable {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.posetobone = mat4.clone(this.#poseToBone);
 		json.refposition = vec3.clone(this.#refPosition);
 		json.refquaternion = quat.clone(this.#refQuaternion);

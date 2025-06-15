@@ -6,20 +6,20 @@ import { Source2File } from './source2file';
 import { Source2Model } from '../models/source2model';
 
 const loadingSlot = 100;//TODO
-const pending: { [key: string]: boolean } = {};
+const pending: Record<string, boolean> = {};
 
 export async function loadAnimGroup(source2Model: Source2Model, repository: string, animGroupName: string): Promise<Source2AnimGroup> {
 	animGroupName = animGroupName.toLowerCase();
 	animGroupName = animGroupName.replace(/\.(vagrp_c$|vagrp$)/, '');
 
-	let animGroup = new Source2AnimGroup(source2Model, repository);
+	const animGroup = new Source2AnimGroup(source2Model, repository);
 	await getVagrp(repository, animGroupName, animGroup);
 
 	return animGroup;
 }
 
 async function getVagrp(repository: string, animGroupName: string, animGroup: Source2AnimGroup) {
-	var agrpFile = animGroupName + '.vagrp_c';
+	const agrpFile = animGroupName + '.vagrp_c';
 	if (pending[agrpFile]) {
 		return true;
 	}
@@ -42,13 +42,13 @@ async function getVagrp(repository: string, animGroupName: string, animGroup: So
 }
 
 async function loadVagrp(repository: string, fileName: string, animGroup: Source2AnimGroup) {
-	let vagrp = await new Source2FileLoader().load(repository, fileName) as Source2File;
+	const vagrp = await new Source2FileLoader().load(repository, fileName) as Source2File;
 	if (vagrp) {
 		animGroup.setFile(vagrp);
-		var dataBlock = vagrp.blocks.DATA;
+		const dataBlock = vagrp.blocks.DATA;
 		if (dataBlock) {
 			//animGroup.meshesNames = vagrp.getPermModelData('m_meshGroups');
-			var m_refMeshes = vagrp.getPermModelData('m_refMeshes');
+			const m_refMeshes = vagrp.getPermModelData('m_refMeshes');
 			if (m_refMeshes) {
 
 				/*for (var meshIndex = 0; meshIndex < meshes.length; meshIndex++) {

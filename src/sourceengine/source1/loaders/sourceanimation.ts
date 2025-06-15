@@ -132,7 +132,7 @@ export class SourceAnimation {
 			//quatRemoveMeTemp[i] = quat.copy(quat.create(), pbone.quaternion);//removeme
 			//posRemoveMeTemp[i] = vec3.copy(vec3.create(), pbone.position);
 
-			let boneIndex = i;
+			const boneIndex = i;
 			const bone = modelBones[i];
 
 			vec3.zero(this.boneRot);
@@ -167,9 +167,9 @@ export class SourceAnimation {
 
 								frameBone = frameTODOV2.bones[bone.name];
 								if (frameBone) {
-									let pos = frameBone.pos;
-									let rot = frameBone.rot;
-									let found = true;
+									const pos = frameBone.pos;
+									const rot = frameBone.rot;
+									const found = true;
 								} else {
 									//console.info(bone.name + ' not found in ' + layer.name);
 								}
@@ -228,7 +228,7 @@ export class SourceAnimation {
 			//const parentMergedBone = bone.parentMergedBone;
 
 			const dynamicPropBones = dynamicProp.skeleton._bones;//dynamicProp.bones;
-			let dynamicPropBone = dynamicPropBones[boneIndex];
+			const dynamicPropBone = dynamicPropBones[boneIndex];
 			if (dynamicPropBone === undefined) {
 				//dynamicPropBone = {worldPos:vec3.create(), worldQuat:quat.create()};//TODO: optimize
 				//dynamicPropBones[boneNameLowerCase] = dynamicPropBone;

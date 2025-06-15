@@ -11,9 +11,9 @@ import { Source2File } from './source2file';
 export const CParticleSystemDefinition = 'CParticleSystemDefinition';
 
 function _initProperties(system, systemDefinition) {
-	let keys = Object.keys(systemDefinition);
-	for (let key of keys) {
-		let value = systemDefinition[key];
+	const keys = Object.keys(systemDefinition);
+	for (const key of keys) {
+		const value = systemDefinition[key];
 		switch (key) {
 			case 'm_nMaxParticles':
 				system.setMaxParticles(Number(value));
@@ -68,19 +68,19 @@ function _initProperties(system, systemDefinition) {
 
 function _initOperators(system, systemArray, kv3Array) {
 	if (kv3Array) {
-		let properties = kv3Array;
+		const properties = kv3Array;
 		if (properties) {
-			for (let property of properties) {
+			for (const property of properties) {
 				if (property._class) {
-					let operatorClass = GetSource2ParticleOperator(property._class);
+					const operatorClass = GetSource2ParticleOperator(property._class);
 					if (operatorClass) {
-						let operator = new operatorClass(system);
+						const operator = new operatorClass(system);
 						if (operator.isPreEmission()) {
 							system.preEmissionOperators.push(operator);
 						} else {
 							systemArray.push(operator);
 						}
-						for (let param of Object.keys(property)) {
+						for (const param of Object.keys(property)) {
 							if (param != '_class') {
 								operator.setParam(param, property[param]);
 							}
@@ -96,17 +96,17 @@ function _initOperators(system, systemArray, kv3Array) {
 }
 
 async function _initChildren(repository, systemArray, kv3Array, snapshotModifiers) {
-	let promises = [];
+	const promises = [];
 	if (kv3Array) {
-		let properties = kv3Array;
+		const properties = kv3Array;
 		if (properties) {
 			for (let childIndex = 0; childIndex < properties.length; ++childIndex) {
-				let property = properties[childIndex];
-				let m_ChildRef = property.m_ChildRef;
-				let m_flDelay = property.m_flDelay || 0;
+				const property = properties[childIndex];
+				const m_ChildRef = property.m_ChildRef;
+				const m_flDelay = property.m_flDelay || 0;
 				if (m_ChildRef) {
-					let p = new Promise(async (resolve, reject) => {
-						let system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
+					const p = new Promise(async (resolve, reject) => {
+						const system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
 						system.disabled = property.m_bDisableChild ?? false;
 						if (system) {
 							system.endCap = property.m_bEndCap ?? false;
@@ -128,9 +128,9 @@ async function _initChildren(repository, systemArray, kv3Array, snapshotModifier
 export const Source2ParticleLoader = new (function () {
 	class Source2ParticleLoader {
 		load(repository, fileName): Promise<Source2File> {
-			let promise = new Promise<Source2File>(resolve => {
+			const promise = new Promise<Source2File>(resolve => {
 				fileName = fileName.replace(/.vpcf_c/, '');
-				let vpcfPromise = new Source2FileLoader().load(repository, fileName + '.vpcf_c');
+				const vpcfPromise = new Source2FileLoader().load(repository, fileName + '.vpcf_c');
 				vpcfPromise.then(
 					(source2File: Source2File) => {
 						if (VERBOSE) {
@@ -151,9 +151,9 @@ export const Source2ParticleLoader = new (function () {
 			const fileName = vpcf.fileName;
 			const result = /[ \w-]+?(?=\.)/.exec(fileName);
 
-			let system = new Source2ParticleSystem(repository, fileName, result ? result[0] : fileName);
+			const system = new Source2ParticleSystem(repository, fileName, result ? result[0] : fileName);
 
-			let systemDefinition = vpcf.getBlockStruct('DATA.keyValue.root');
+			const systemDefinition = vpcf.getBlockStruct('DATA.keyValue.root');
 			if (systemDefinition._class == CParticleSystemDefinition) {
 				_initOperators(system, system.preEmissionOperators, systemDefinition.m_PreEmissionOperators);
 				_initOperators(system, system.emitters, systemDefinition.m_Emitters);

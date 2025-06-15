@@ -65,7 +65,7 @@ export class SpriteMaterial extends SourceEngineMaterial {
 		//this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
 
-		let overbrightFactor = this.variables.get('$overbrightfactor') ?? this.variables.get('srgb?$overbrightfactor');//TODO: improve this
+		const overbrightFactor = this.variables.get('$overbrightfactor') ?? this.variables.get('srgb?$overbrightfactor');//TODO: improve this
 		this.uniforms['uOverbrightFactor'] = overbrightFactor ?? 1.0;
 
 		//this.modeRGB = GL_MAX;

@@ -35,7 +35,7 @@ export class MeshBasicMaterial extends Material {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.skinning = this.skinning;
 		return json;
 	}

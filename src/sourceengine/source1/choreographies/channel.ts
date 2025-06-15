@@ -6,7 +6,7 @@ import { Event } from './event';
 
 export class Channel {
 	active = false;
-	events: Array<Event> = [];
+	events: Event[] = [];
 	name: string;
 	actor: Actor;
 	constructor(name: string) {
@@ -50,7 +50,7 @@ export class Channel {
 	toString(indent) {
 		indent = indent || '';
 		const subindent = indent + '\t';
-		let arr = [indent + 'Channel ' + this.name];
+		const arr = [indent + 'Channel ' + this.name];
 		for (let i = 0; i < this.events.length; ++i) {
 			arr.push(this.events[i].toString(subindent));
 		}

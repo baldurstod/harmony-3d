@@ -14,10 +14,10 @@ const ATTACHMENT_TYPE_TEXTURE_LAYER = 3;
 export class Framebuffer {
 	#target: FrameBufferTarget;
 	#frameBuffer: WebGLFramebuffer;
-	#width: number = 1;
-	#height: number = 1;
-	#attachments: Map<GLenum, any> = new Map();
-	#dirty: boolean = true;
+	#width = 1;
+	#height = 1;
+	#attachments = new Map<GLenum, any>();
+	#dirty = true;
 	constructor(target: FrameBufferTarget) {
 		this.#target = target;
 		this.#frameBuffer = new Graphics().createFramebuffer() as WebGLFramebuffer;
@@ -56,7 +56,7 @@ export class Framebuffer {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			new Graphics().cleanupGLError();
 		}
-		for (let [attachmentPoint, attachmentParams] of this.#attachments) {
+		for (const [attachmentPoint, attachmentParams] of this.#attachments) {
 			switch (attachmentParams.type) {
 				case ATTACHMENT_TYPE_RENDER_BUFFER:
 					//new Graphics().glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
@@ -69,7 +69,7 @@ export class Framebuffer {
 					break;
 				case ATTACHMENT_TYPE_TEXTURE2D:
 					//console.error(new Graphics().getError());
-					let webGLTexture = attachmentParams.texture.texture;
+					const webGLTexture = attachmentParams.texture.texture;
 					new Graphics().glContext!.bindTexture(attachmentParams.target, null);
 					new Graphics().glContext!.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
 					if (ENABLE_GET_ERROR && DEBUG) {
@@ -102,7 +102,7 @@ export class Framebuffer {
 
 	dispose() {
 		new Graphics().deleteFramebuffer(this.#frameBuffer);
-		for (let [attachmentPoint, attachment] of this.#attachments) {
+		for (const [attachmentPoint, attachment] of this.#attachments) {
 			switch (attachment.type) {
 				case ATTACHMENT_TYPE_RENDER_BUFFER:
 					attachment.renderbuffer.dispose();

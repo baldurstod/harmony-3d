@@ -29,12 +29,12 @@ export class Multiply extends Node {
 		if (false && DEBUG) {
 			console.log('Multiply operate');
 		}
-		let textureArray = [];
-		let usedArray = [];
+		const textureArray = [];
+		const usedArray = [];
 		for (let i = 0; i < 8; ++i) {
 			//let inputName = 'uInput' + i;
 			//this.material.uniforms['uInput' + i] = await this.getInput('input' + i).value;
-			let texture = await this.getInput('input' + i).value;
+			const texture = await this.getInput('input' + i).value;
 			textureArray.push(texture);
 			usedArray.push(texture != undefined);
 		}

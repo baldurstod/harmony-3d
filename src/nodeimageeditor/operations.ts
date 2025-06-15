@@ -1,7 +1,7 @@
 import { Node } from './node';
 import { NodeImageEditor } from './nodeimageeditor';
 
-const operations = new Map<String, typeof Node>();
+const operations = new Map<string, typeof Node>();
 
 export function registerOperation(name: string, ope: typeof Node) {
 	operations.set(name, ope);

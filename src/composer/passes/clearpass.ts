@@ -29,9 +29,9 @@ export class ClearPass extends Pass {
 	}
 
 	render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
-		let clearColor = this.#clearColor != null;
-		let clearDepth = this.#clearDepth != null;
-		let clearStencil = this.#clearStencil != null;
+		const clearColor = this.#clearColor != null;
+		const clearDepth = this.#clearDepth != null;
+		const clearStencil = this.#clearStencil != null;
 
 		if (clearColor) {
 			renderer.clearColor(this.#clearColor);

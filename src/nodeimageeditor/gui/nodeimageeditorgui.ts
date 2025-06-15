@@ -12,7 +12,7 @@ export class NodeImageEditorGui {
 	#filter: { node?: string } = {};
 	#shadowRoot: ShadowRoot;
 	#imageEditorChanged: () => void;
-	#refreshTimeout: number = 0;
+	#refreshTimeout = 0;
 	#nodesGui = new Map<Node, NodeGui>();
 	#nodeImageEditor: NodeImageEditor | undefined;
 	#htmlNodeFilter: HTMLInputElement;
@@ -106,7 +106,7 @@ export class NodeImageEditorGui {
 		this.#htmlNodes.innerText = '';
 		this.#htmlNodes.append(this.#canvas);
 		if (this.#nodeImageEditor) {
-			for (let node of this.#nodeImageEditor.getNodes()) {
+			for (const node of this.#nodeImageEditor.getNodes()) {
 				let nodeGui = this.#nodesGui.get(node);
 				if (!nodeGui) {
 					nodeGui = new NodeGui(this, node);
@@ -122,13 +122,13 @@ export class NodeImageEditorGui {
 	#organizeNodes() {
 		this.#htmlNodes.innerText = '';
 		this.#htmlNodes.append(this.#canvas);
-		let nodes = new Map<number, Array<NodeGui>>();
-		let maxHeight = 0;
+		const nodes = new Map<number, NodeGui[]>();
+		const maxHeight = 0;
 		if (this.#nodeImageEditor) {
-			for (let node of this.#nodeImageEditor.getNodes()) {
-				let nodeGui = this.#nodesGui.get(node);
+			for (const node of this.#nodeImageEditor.getNodes()) {
+				const nodeGui = this.#nodesGui.get(node);
 
-				let l = node.successorsLength();
+				const l = node.successorsLength();
 				//nodeGui.html.style.right = l * WIDTH + 'px';
 
 				let s = nodes.get(l);
@@ -142,7 +142,7 @@ export class NodeImageEditorGui {
 			}
 		}
 
-		nodes[Symbol.iterator] = function* (): MapIterator<[number, Array<NodeGui>]> {
+		nodes[Symbol.iterator] = function* (): MapIterator<[number, NodeGui[]]> {
 			yield* [...this.entries()].sort(
 				(a, b) => {
 					return a[0] < b[0] ? -1 : 1;
@@ -150,13 +150,13 @@ export class NodeImageEditorGui {
 			);
 		}
 
-		for (let [s, n] of nodes) {
-			let column = createElement('div', { class: 'node-image-editor-nodes-column' });
+		for (const [s, n] of nodes) {
+			const column = createElement('div', { class: 'node-image-editor-nodes-column' });
 			this.#htmlNodes.prepend(column);
 			for (let i = 0; i < n.length; ++i) {
-				let nodeGui = n[i];
+				const nodeGui = n[i];
 				//nodeGui.html.style.top = i * HEIGHT + 'px';
-				let rect = nodeGui.html.getBoundingClientRect();
+				const rect = nodeGui.html.getBoundingClientRect();
 				//maxHeight = Math.max(maxHeight, rect.bottom);
 				column.append(nodeGui.html);
 			}
@@ -166,7 +166,7 @@ export class NodeImageEditorGui {
 
 	#drawLink(p1: HTMLElement, p2: HTMLElement) {
 		if (p1 && p2) {
-			let context = this.#context;
+			const context = this.#context;
 			let p1BoundingRect = p1.getBoundingClientRect();
 			let p2BoundingRect = p2.getBoundingClientRect();
 			let p1Weight = 1;
@@ -180,15 +180,15 @@ export class NodeImageEditorGui {
 				p2Weight = 0;
 			}
 
-			let panelBoundingRect = this.#canvas.getBoundingClientRect();
+			const panelBoundingRect = this.#canvas.getBoundingClientRect();
 
-			let x1 = p1BoundingRect.left + p1BoundingRect.width / 2 * p1Weight - panelBoundingRect.left;
-			let y1 = p1BoundingRect.top + p1BoundingRect.height / 2 - panelBoundingRect.top;
-			let x2 = p2BoundingRect.left + p2BoundingRect.width / 2 * p2Weight - panelBoundingRect.left;
-			let y2 = p2BoundingRect.top + p2BoundingRect.height / 2 - panelBoundingRect.top;
+			const x1 = p1BoundingRect.left + p1BoundingRect.width / 2 * p1Weight - panelBoundingRect.left;
+			const y1 = p1BoundingRect.top + p1BoundingRect.height / 2 - panelBoundingRect.top;
+			const x2 = p2BoundingRect.left + p2BoundingRect.width / 2 * p2Weight - panelBoundingRect.left;
+			const y2 = p2BoundingRect.top + p2BoundingRect.height / 2 - panelBoundingRect.top;
 			context.beginPath();
 			context.moveTo(x1, y1);
-			let max = Math.max(Math.abs(y2 - y1), Math.abs(x2 - x1))
+			const max = Math.max(Math.abs(y2 - y1), Math.abs(x2 - x1))
 			//context.bezierCurveTo(Math.max(x2, x1 + max),y1,Math.min(x1, x2 - max),y2,x2,y2);
 
 			let xa, xb;
@@ -211,19 +211,19 @@ export class NodeImageEditorGui {
 		this.#context.clearRect(0, 0, this.#canvas.clientWidth, this.#canvas.clientHeight)
 
 		if (this.#nodeImageEditor) {
-			for (let node of this.#nodeImageEditor.getNodes()) {
-				let nodeGui = this.#nodesGui.get(node);
-				let inputs = node.inputs;
-				for (let input of inputs.values()) {
+			for (const node of this.#nodeImageEditor.getNodes()) {
+				const nodeGui = this.#nodesGui.get(node);
+				const inputs = node.inputs;
+				for (const input of inputs.values()) {
 					if (input.getPredecessor()) {
 						const predecessorNode = input.getPredecessor()?.node;
 						if (!predecessorNode) {
 							continue;
 						}
-						let nodeGui2 = this.#nodesGui.get(predecessorNode);
+						const nodeGui2 = this.#nodesGui.get(predecessorNode);
 						if (nodeGui && nodeGui2) {
-							let inputGui = nodeGui._ioGui.get(input);
-							let outputGui = nodeGui2._ioGui.get(input.getPredecessor());
+							const inputGui = nodeGui._ioGui.get(input);
+							const outputGui = nodeGui2._ioGui.get(input.getPredecessor());
 
 							this.#drawLink(outputGui, inputGui);
 						}
@@ -235,8 +235,8 @@ export class NodeImageEditorGui {
 
 	#refreshFilter() {
 		if (this.#nodeImageEditor) {
-			for (let node of this.#nodeImageEditor.getNodes()) {
-				let nodeGui = this.#nodesGui.get(node);
+			for (const node of this.#nodeImageEditor.getNodes()) {
+				const nodeGui = this.#nodesGui.get(node);
 				if (nodeGui) {
 					this.#matchFilter(nodeGui);
 				}

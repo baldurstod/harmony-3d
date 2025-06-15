@@ -12,15 +12,15 @@ import { SourceVvd } from './sourcevvd';
 
 export class ModelLoader {
 	load(repositoryName: string, fileName: string): Promise<SourceModel | null> {
-		let promise: Promise<SourceModel | null> = new Promise(async (resolve) => {
+		const promise = new Promise<SourceModel | null>(async (resolve) => {
 			fileName = fileName.toLowerCase().replace(/.mdl$/, '');
 
 			// First load mdl. We need the mdl version to load the vtx
-			let mdlLoader = getLoader('SourceEngineMDLLoader') as typeof SourceEngineMDLLoader;
+			const mdlLoader = getLoader('SourceEngineMDLLoader') as typeof SourceEngineMDLLoader;
 			const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
 
-			let vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
-			let vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
+			const vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
+			const vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
 
 			Promise.all([vvdPromise, vtxPromise]).then(([vvd, vtx]) => {
 				if (vvd && vtx) {
@@ -33,7 +33,7 @@ export class ModelLoader {
 	}
 
 	#fileLoaded(resolve: (value: SourceModel | null) => void, repositoryName: string, fileName: string, mdl: SourceMdl, vvd: SourceVvd, vtx: SourceVtx): void {
-		let requiredLod = 0;
+		const requiredLod = 0;
 		const vertices = [];
 		const normals = [];
 		const tangents = [];
@@ -47,9 +47,9 @@ export class ModelLoader {
 			resolve(null);
 			return;
 		}
-		let newSourceModel = new SourceModel(repositoryName, fileName, mdl, vvd, vtx);
+		const newSourceModel = new SourceModel(repositoryName, fileName, mdl, vvd, vtx);
 
-		for (let i of vertexArray) {
+		for (const i of vertexArray) {
 			vertices.push(...i.m_vecPosition);
 			normals.push(...i.m_vecNormal);
 			tangents.push(...i.m_vecTangent);
@@ -58,12 +58,12 @@ export class ModelLoader {
 			boneIds.push(...i.m_BoneWeights.bone);
 		}
 
-		let vertexPosition = new Float32BufferAttribute(vertices, 3);
-		let vertexNormal = new Float32BufferAttribute(normals, 3);
-		let vertexTangent = new Float32BufferAttribute(tangents, 4);
-		let textureCoord = new Float32BufferAttribute(uvs, 2);
-		let vertexWeights = new Float32BufferAttribute(boneWeights, 3);
-		let vertexBones = new Float32BufferAttribute(boneIds, 3);
+		const vertexPosition = new Float32BufferAttribute(vertices, 3);
+		const vertexNormal = new Float32BufferAttribute(normals, 3);
+		const vertexTangent = new Float32BufferAttribute(tangents, 4);
+		const textureCoord = new Float32BufferAttribute(uvs, 2);
+		const vertexWeights = new Float32BufferAttribute(boneWeights, 3);
+		const vertexBones = new Float32BufferAttribute(boneIds, 3);
 		//let material = new MeshBasicMaterial({map: 'texture'});//removeme
 		//console.info('Vertex array :')
 		//console.info(vertexArray);
@@ -76,14 +76,14 @@ export class ModelLoader {
 		let modelsname = '';
 		// Iterate body parts
 		for (let bodypartIndex = 0; bodypartIndex < bodyparts.length; ++bodypartIndex) {
-			let bodyPart = /*bodyparts[bodypartIndex];//*/mdl.getBodyPart(bodypartIndex);
+			const bodyPart = /*bodyparts[bodypartIndex];//*/mdl.getBodyPart(bodypartIndex);
 			if (bodyPart) {
 				bodypart = bodyparts[bodypartIndex];
 				if (VERBOSE) {
 					console.info('Bodypart : ' + bodypartIndex);
 				}
 
-				let bp = bodyPart;
+				const bp = bodyPart;
 
 				// iterate models
 				for (let modelIndex = 0; modelIndex < bodypart.models.length; ++modelIndex) {
@@ -93,21 +93,21 @@ export class ModelLoader {
 						console.info('	Model : ' + modelIndex);
 					}
 					lod = model.lods[requiredLod];
-					let modelTest = bodyPart.models[modelIndex];
+					const modelTest = bodyPart.models[modelIndex];
 
 					// iterate meshes
 					for (let meshIndex = 0; meshIndex < lod.meshes.length; ++meshIndex) {
-						let mesh = lod.meshes[meshIndex];
+						const mesh = lod.meshes[meshIndex];
 						if (VERBOSE) {
 							console.info('		Mesh : ' + meshIndex);
 						}
 
-						let msh = modelTest.meshArray[meshIndex]//new SourceModel.MeshTest();
+						const msh = modelTest.meshArray[meshIndex]//new SourceModel.MeshTest();
 
 						if (!msh.initialized) {
 
 							//msh.setMaterialId(bodyPart.models[modelIndex].meshArray[meshIndex].material);
-							let vertexOffset = cumulateVertexOffset + bodyPart.models[modelIndex].meshArray[meshIndex].vertexoffset; //TODO
+							const vertexOffset = cumulateVertexOffset + bodyPart.models[modelIndex].meshArray[meshIndex].vertexoffset; //TODO
 							const indices = [];
 							for (let stripgroupIndex = 0; stripgroupIndex < mesh.stripGroups.length; ++stripgroupIndex) {
 								stripgroup = mesh.stripGroups[stripgroupIndex];
@@ -115,8 +115,8 @@ export class ModelLoader {
 									console.info('			Stripgroup : ' + stripgroupIndex + ' index : ' + stripgroup.indexes.length + ' vertices : ' + stripgroup.vertices.length);
 								}
 
-								let indexArray = stripgroup.indexes
-								let stripVertexArray = stripgroup.vertices
+								const indexArray = stripgroup.indexes
+								const stripVertexArray = stripgroup.vertices
 
 								if (VERBOSE) {
 									console.info('Offset : ' + vertexOffset);
@@ -134,12 +134,12 @@ export class ModelLoader {
 
 							// reverse triangles from CW to CCW
 							for (let i = 0, l = indices.length; i < l; i += 3) {//TODOv3: optimize
-								let a: number = indices[i + 1];
+								const a: number = indices[i + 1];
 								indices[i + 1] = indices[i + 2];
 								indices[i + 2] = a;
 							}
 
-							let geometry = new BufferGeometry();
+							const geometry = new BufferGeometry();
 							geometry.setIndex(new Uint32BufferAttribute(indices, 1));
 							geometry.setAttribute('aVertexPosition', vertexPosition);
 							geometry.setAttribute('aVertexNormal', vertexNormal);

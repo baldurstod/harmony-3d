@@ -19,12 +19,12 @@ export class Circle extends LineSegments {
 	}
 
 	#update() {
-		let startEnd = [];
-		let a = (this.#endAngle - this.#startAngle) / this.#segments;
+		const startEnd = [];
+		const a = (this.#endAngle - this.#startAngle) / this.#segments;
 		for (let i = 0; i < this.#segments + 1; i++) {
-			let theta = a * i + this.#startAngle;
-			let x = this.#radius * Math.cos(theta);
-			let y = this.#radius * Math.sin(theta);
+			const theta = a * i + this.#startAngle;
+			const x = this.#radius * Math.cos(theta);
+			const y = this.#radius * Math.sin(theta);
 			startEnd.push(x);
 			startEnd.push(y);
 			startEnd.push(0);
@@ -34,7 +34,7 @@ export class Circle extends LineSegments {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.radius = this.#radius;
 		json.segments = this.#segments;
 		json.startAngle = this.#startAngle;
@@ -44,7 +44,7 @@ export class Circle extends LineSegments {
 	}
 
 	static async constructFromJSON(json, entities, loadedPromise) {
-		let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
 		return new Circle({ radius: json.radius, segments: json.segments, material: material, startAngle: json.startAngle, endAngle: json.endAngle });
 	}
 

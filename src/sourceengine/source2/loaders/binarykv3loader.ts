@@ -30,7 +30,7 @@ const DATA_TYPE_TYPED_ARRAY2 = 0x18;
 const DATA_TYPE_TYPED_ARRAY3 = 0x19;
 const DATA_TYPE_RESOURCE = 0x86;
 
-type Readers = {
+interface Readers {
 	reader1: BinaryReader;
 	reader2: BinaryReader;
 	reader4: BinaryReader;
@@ -41,17 +41,17 @@ export const BinaryKv3Loader = new (function () {
 	class BinaryKv3Loader {
 
 		getBinaryVkv3(binaryString) {
-			let reader = new BinaryReader(binaryString);
-			let binaryKv3 = new Kv3File();
-			let stringDictionary = [];
+			const reader = new BinaryReader(binaryString);
+			const binaryKv3 = new Kv3File();
+			const stringDictionary = [];
 
 			readStringDictionary(reader, stringDictionary);
 			binaryKv3.setRoot(readElement(reader, stringDictionary));
 			return binaryKv3;
 		}
 
-		getBinaryKv3(version, binaryString, singleByteCount: Array<number>, doubleByteCount: Array<number>, quadByteCount: Array<number>, eightByteCount: Array<number>, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, bufferId: number, stringDictionary: Array<string> | undefined, objectCount: number, arrayCount: number, buffer0: Uint8Array | undefined) {
-			let reader = new BinaryReader(binaryString);
+		getBinaryKv3(version, binaryString, singleByteCount: number[], doubleByteCount: number[], quadByteCount: number[], eightByteCount: number[], dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, bufferId: number, stringDictionary: string[] | undefined, objectCount: number, arrayCount: number, buffer0: Uint8Array | undefined) {
+			const reader = new BinaryReader(binaryString);
 			if (!stringDictionary) {
 				stringDictionary = [];
 			}
@@ -62,8 +62,8 @@ export const BinaryKv3Loader = new (function () {
 			if (version >= 5 && bufferId == 1) {
 				byteCursor = objectCount * 4;
 			}
-			let doubleCursor = Math.ceil((byteCursor + singleByteCount[bufferId]) / 2) * 2;//Math.ceil(byteCursor + singleByteCount[bufferId] / 2) * 2;
-			let quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId] * 2) / 4) * 4;//Math.ceil(singleByteCount / 4) * 4;
+			const doubleCursor = Math.ceil((byteCursor + singleByteCount[bufferId]) / 2) * 2;//Math.ceil(byteCursor + singleByteCount[bufferId] / 2) * 2;
+			const quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId] * 2) / 4) * 4;//Math.ceil(singleByteCount / 4) * 4;
 			let eightCursor = Math.ceil((quadCursor + quadByteCount[bufferId] * 4) / 8) * 8;
 
 			if (version >= 5 && eightByteCount[bufferId] == 0) {
@@ -81,7 +81,7 @@ export const BinaryKv3Loader = new (function () {
 			const blobOffset = dictionaryOffset + dictionaryTypeLength;
 			if (version >= 2 && blobCount != 0) {
 				if (compressedBlobReader) {
-					let uncompressedLength = blobCount * 4;
+					const uncompressedLength = blobCount * 4;
 					uncompressedBlobSizeReader = new BinaryReader(reader, blobOffset, uncompressedLength);
 					compressedBlobSizeReader = new BinaryReader(reader, blobOffset + 4 + uncompressedLength);
 
@@ -98,13 +98,13 @@ export const BinaryKv3Loader = new (function () {
 				offset = blobOffset;
 			}
 
-			let typeArray = [];
-			let valueArray = [];
+			const typeArray = [];
+			const valueArray = [];
 
 			if (version < 5) {
 				do {
 					--offset;
-					let type = reader.getUint8(offset);
+					const type = reader.getUint8(offset);
 					//typeArray.unshift(type);
 					if (type) {
 						typeArray.unshift(type);
@@ -116,7 +116,7 @@ export const BinaryKv3Loader = new (function () {
 				if (bufferId == 1) {
 					reader.seek(dictionaryOffset);
 					for (let i = 0; i < dictionaryTypeLength; i++) {
-						let type = reader.getUint8();
+						const type = reader.getUint8();
 						if (type) {
 							typeArray.push(type);
 						}
@@ -124,10 +124,10 @@ export const BinaryKv3Loader = new (function () {
 				}
 			}
 
-			let byteReader = new BinaryReader(reader);
-			let doubleReader = new BinaryReader(reader);
-			let quadReader = new BinaryReader(reader);
-			let eightReader = new BinaryReader(reader);
+			const byteReader = new BinaryReader(reader);
+			const doubleReader = new BinaryReader(reader);
+			const quadReader = new BinaryReader(reader);
+			const eightReader = new BinaryReader(reader);
 
 			let byteReaderBuf0: BinaryReader;
 			let doubleReaderBuf0: BinaryReader;
@@ -147,7 +147,7 @@ export const BinaryKv3Loader = new (function () {
 
 			if (bufferId == 0) {
 				// In v5, strings are in buffer 0
-				let stringCount = quadReader.getUint32();
+				const stringCount = quadReader.getUint32();
 				reader.seek(dictionaryOffset);
 				readStringDictionary(reader, stringDictionary, stringCount);
 
@@ -156,12 +156,12 @@ export const BinaryKv3Loader = new (function () {
 				}
 			} else {
 				objectsSizeReader = new BinaryReader(reader);
-				let reader0 = new BinaryReader(buffer0);
+				const reader0 = new BinaryReader(buffer0);
 
-				let byteCursorBuf0 = 0;
-				let doubleCursorBuf0 = Math.ceil(singleByteCount[0] / 2) * 2;
-				let quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0] * 2) / 4) * 4;
-				let eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0] * 4) / 8) * 8;
+				const byteCursorBuf0 = 0;
+				const doubleCursorBuf0 = Math.ceil(singleByteCount[0] / 2) * 2;
+				const quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0] * 2) / 4) * 4;
+				const eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0] * 4) / 8) * 8;
 				//console.info('cursor buff 0', byteCursorBuf0, doubleCursorBuf0, quadCursorBuf0, eightCursorBuf0)
 
 				byteReaderBuf0 = new BinaryReader(reader0);
@@ -189,11 +189,11 @@ export const BinaryKv3Loader = new (function () {
 				decompressBlobArray.decompressOffset = 0;
 			}
 
-			let rootElement = readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers);
+			const rootElement = readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers);
 
 
 			// return it in a suitable format
-			let binaryKv3 = new Kv3File();
+			const binaryKv3 = new Kv3File();
 			binaryKv3.setRoot(binaryKv32KV3(rootElement, stringDictionary));
 			return binaryKv3;
 		}
@@ -203,14 +203,14 @@ export const BinaryKv3Loader = new (function () {
 
 function readStringDictionary(reader, stringDictionary, stringCount?) {
 	stringCount = stringCount ?? reader.getUint32();
-	for (var i = 0; i < stringCount; i++) {
+	for (let i = 0; i < stringCount; i++) {
 		stringDictionary.push(reader.getNullString());
 	}
 }
 
 function readBinaryKv3Element(version: number, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader: BinaryReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, elementType, isArray, compressionFrameSize, readers0: Readers) {
 	function shiftArray() {
-		let elementType = typeArray.shift();
+		const elementType = typeArray.shift();
 		if (elementType == DATA_TYPE_RESOURCE) {
 			typeArray.shift();
 		}
@@ -231,7 +231,7 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 			if (isArray) {
 				return byteReader.getUint8() ? true : false;
 			} else {
-				let value = new SourceKv3Value(elementType);
+				const value = new SourceKv3Value(elementType);
 				valueArray.push(value);
 				value.value = byteReader.getUint8() ? true : false;
 				return value;
@@ -240,7 +240,7 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 			if (isArray) {
 				return eightReader.getBigInt64();
 			} else {
-				let value = new SourceKv3Value(elementType);
+				const value = new SourceKv3Value(elementType);
 				value.value = eightReader.getBigInt64();
 				valueArray.push(value);
 				return value;
@@ -249,7 +249,7 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 			if (isArray) {
 				return eightReader.getBigUint64();
 			} else {
-				let value = new SourceKv3Value(elementType);
+				const value = new SourceKv3Value(elementType);
 				value.value = eightReader.getBigUint64();
 				valueArray.push(value);
 				return value;
@@ -258,7 +258,7 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 			if (isArray) {
 				return eightReader.getFloat64();
 			} else {
-				let value = new SourceKv3Value(elementType);
+				const value = new SourceKv3Value(elementType);
 				value.value = eightReader.getFloat64();
 				valueArray.push(value);
 				return value;
@@ -267,7 +267,7 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 			if (isArray) {
 				return byteReader.getInt8();
 			} else {
-				let value = new SourceKv3Value(elementType);
+				const value = new SourceKv3Value(elementType);
 				value.value = byteReader.getInt8();
 				valueArray.push(value);
 				return value;
@@ -287,7 +287,7 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 					let uncompressedBlobSize = uncompressedBlobSizeReader.getUint32();
 
 					//let decompressBuffer = new ArrayBuffer(uncompressedBlobSize);
-					var decompressArray = new Uint8Array(decompressBlobBuffer, decompressBlobArray.decompressOffset, uncompressedBlobSize);
+					const decompressArray = new Uint8Array(decompressBlobBuffer, decompressBlobArray.decompressOffset, uncompressedBlobSize);
 
 
 					/*
@@ -300,7 +300,7 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 					}*/
 
 					while (true) {
-						let compressedBlobSize = compressedBlobSizeReader.getUint16();
+						const compressedBlobSize = compressedBlobSizeReader.getUint16();
 						if (uncompressedBlobSize > compressionFrameSize) {
 							const uncompressedFrameSize = decodeLz4(compressedBlobReader, decompressBlobArray, compressedBlobSize, compressionFrameSize, decompressBlobArray.decompressOffset);
 							decompressBlobArray.decompressOffset += uncompressedFrameSize;
@@ -325,7 +325,7 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 					return decompressArray;
 				} else {
 					if (uncompressedBlobReader) {//blobs have already been uncompressed
-						let uncompressedBlobSize = uncompressedBlobSizeReader.getUint32();
+						const uncompressedBlobSize = uncompressedBlobSizeReader.getUint32();
 						return uncompressedBlobReader.getBytes(uncompressedBlobSize);
 					} else {
 						//should not happend
@@ -345,8 +345,8 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 			//elements = new Kv3Element();
 			elements = new Map();
 			for (let i = 0; i < count; i++) {
-				let nameId = quadReader.getUint32();
-				let element = readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
+				const nameId = quadReader.getUint32();
+				const element = readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
 				elements.set(nameId, element);
 				//elements.setProperty(nameId, element);
 			}
@@ -358,7 +358,7 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 				console.error(count, quadReader.tell(), quadReader.byteLength);
 				count = 0;
 			}
-			let subType = shiftArray()/*typeArray.shift()*/;
+			const subType = shiftArray()/*typeArray.shift()*/;
 			elements = [];
 			for (let i = 0; i < count; i++) {
 				elements.push(readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType, true, compressionFrameSize, readers0));
@@ -384,7 +384,7 @@ function readBinaryKv3Element(version: number, byteReader, doubleReader, quadRea
 			if (isArray) {
 				return quadReader.getFloat32();
 			} else {
-				let value = new SourceKv3Value(elementType);
+				const value = new SourceKv3Value(elementType);
 				value.value = quadReader.getFloat32();
 				valueArray.push(value);
 				return value;
@@ -454,7 +454,7 @@ function binaryKv32KV3(elementKv3, stringDictionary) {
 }
 
 function readElement(reader, stringDictionary, occurences?) {
-	var type = reader.getUint8();
+	const type = reader.getUint8();
 	//console.log(type);
 	switch (type) {
 		/*
@@ -478,7 +478,7 @@ function readElement(reader, stringDictionary, occurences?) {
 		case 1:
 			return null;
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
 					arr.push(reader.getInt32());
 				}
@@ -489,7 +489,7 @@ function readElement(reader, stringDictionary, occurences?) {
 			break;
 		case 2: // Bool
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
 					arr.push(reader.getUint8() ? true : false);
 				}
@@ -500,20 +500,20 @@ function readElement(reader, stringDictionary, occurences?) {
 			break;
 		case 3: // Int 64
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
-					let int64 = reader.getBigInt64();//TODO: handle int64
+					const int64 = reader.getBigInt64();//TODO: handle int64
 					arr.push(int64/*(int64.hi << 32) + int64.lo*/);
 				}
 				return arr;//new SE2Kv3Value(type, arr);
 			} else {
-				let int64 = reader.getBigInt64();//TODO: handle int64
+				const int64 = reader.getBigInt64();//TODO: handle int64
 				return int64;//(int64.hi << 32) + int64.lo;//new SE2Kv3Value(type, (int64.hi << 32) + int64.lo);
 			}
 			break;
 		case 5: // Float 64
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
 					arr.push(reader.getFloat64());
 				}
@@ -524,7 +524,7 @@ function readElement(reader, stringDictionary, occurences?) {
 			break;
 		case 6: // String
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
 					propertyIndex = reader.getUint32();
 					propertyName = stringDictionary[propertyIndex];
@@ -562,14 +562,14 @@ function readElement(reader, stringDictionary, occurences?) {
 			break;
 		case 9: // Element
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
 					var propertiesCount = reader.getUint32();
-					let element = new Kv3Element();
+					const element = new Kv3Element();
 					var propertyName = null;
 					var propertyIndex = null;
 					var property = null;
-					for (var ii = 0; ii < propertiesCount; ii++) {
+					for (let ii = 0; ii < propertiesCount; ii++) {
 						propertyIndex = reader.getUint32();
 						propertyName = stringDictionary[propertyIndex];
 						property = readElement(reader, stringDictionary);
@@ -580,7 +580,7 @@ function readElement(reader, stringDictionary, occurences?) {
 				return arr;
 			} else {
 				var propertiesCount = reader.getUint32();
-				let element = new Kv3Element();
+				const element = new Kv3Element();
 				var propertyName = null;
 				var propertyIndex = null;
 				var property = null;
@@ -595,20 +595,20 @@ function readElement(reader, stringDictionary, occurences?) {
 			break;
 		case 0x0A: // vector
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
-					let count = reader.getUint32();
+					const count = reader.getUint32();
 					arr.push(readElement(reader, stringDictionary, count));
 				}
 				return arr;//new SE2Kv3Value(type, arr);
 			} else {
-				let count = reader.getUint32();
+				const count = reader.getUint32();
 				return readElement(reader, stringDictionary, count);
 			}
 			break;
 		case 0x0B: // int32
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
 					arr.push(reader.getInt32());
 				}
@@ -620,7 +620,7 @@ function readElement(reader, stringDictionary, occurences?) {
 		case 0x10: // ????
 		case 0x12: // ????
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
 					arr.push(1);
 				}
@@ -632,7 +632,7 @@ function readElement(reader, stringDictionary, occurences?) {
 		case 0x11: // ????
 		case 0x0F: // ????
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
 					arr.push(0);
 				}
@@ -644,7 +644,7 @@ function readElement(reader, stringDictionary, occurences?) {
 		case 0x0D: // ????
 			//reader.skip(4);//????
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
 					arr.push(true);
 				}
@@ -656,7 +656,7 @@ function readElement(reader, stringDictionary, occurences?) {
 		case 0x0E: // ????
 			//reader.skip(4);//????
 			if (occurences) {
-				let arr = [];
+				const arr = [];
 				for (let i = 0; i < occurences; i++) {
 					arr.push(false);
 				}
@@ -667,8 +667,8 @@ function readElement(reader, stringDictionary, occurences?) {
 			break;
 		case 134: // Resource
 			if (occurences) {
-				let arr = [];
-				let test = reader.getUint8();//todo: rename variable
+				const arr = [];
+				const test = reader.getUint8();//todo: rename variable
 				for (let i = 0; i < occurences; i++) {
 					propertyIndex = reader.getUint32();
 					propertyName = stringDictionary[propertyIndex];
@@ -676,7 +676,7 @@ function readElement(reader, stringDictionary, occurences?) {
 				}
 				return arr;//new SE2Kv3Value(type, arr);
 			} else {
-				let test = reader.getUint8();//todo: rename variable
+				const test = reader.getUint8();//todo: rename variable
 				propertyIndex = reader.getUint32();
 				propertyName = stringDictionary[propertyIndex];
 				//console.error(propertyName, test);

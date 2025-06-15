@@ -54,14 +54,14 @@ export class Node extends EventTarget {
 	}
 
 	addInput(inputId, inputType, size = 1) {
-		let input = new Input(this, inputId, inputType, size);
+		const input = new Input(this, inputId, inputType, size);
 		this.inputs.set(inputId, input);
 		this.invalidate();
 		return input;
 	}
 
 	addOutput(outputId, outputType) {
-		let output = new Output(this, outputId, outputType);
+		const output = new Output(this, outputId, outputType);
 		this.outputs.set(outputId, output);
 		this.invalidate();
 		return output;
@@ -89,7 +89,7 @@ export class Node extends EventTarget {
 	}
 
 	getValue(paramName: string) {
-		let p = this.params.get(paramName);
+		const p = this.params.get(paramName);
 		if (p) {
 			return p.value;
 		}
@@ -98,9 +98,9 @@ export class Node extends EventTarget {
 
 	setParams(params?: any) {
 		if (params) {
-			for (let paramName in params) {
-				let param = params[paramName];
-				let p = this.params.get(paramName);
+			for (const paramName in params) {
+				const param = params[paramName];
+				const p = this.params.get(paramName);
 				if (p) {
 					p.value = param;
 				}
@@ -110,7 +110,7 @@ export class Node extends EventTarget {
 	}
 
 	setParam(paramName, paramValue, paramIndex?) {
-		let p = this.params.get(paramName);
+		const p = this.params.get(paramName);
 		if (p) {
 			if (paramIndex != undefined) {
 				p.value[paramIndex] = paramValue;
@@ -122,8 +122,8 @@ export class Node extends EventTarget {
 	}
 
 	setPredecessor(inputId, predecessor, predecessorOutputId) {
-		let input = this.inputs.get(inputId);
-		let output = predecessor.outputs.get(predecessorOutputId);
+		const input = this.inputs.get(inputId);
+		const output = predecessor.outputs.get(predecessorOutputId);
 
 		if (input && output) {
 			input.setPredecessor(output);
@@ -141,7 +141,7 @@ export class Node extends EventTarget {
 		// Invalidate only if valid to avoid recursion
 		if (this.#redrawState != DrawState.Invalid) {
 			this.#redrawState = DrawState.Invalid;
-			for (let output of this.outputs.values()) {
+			for (const output of this.outputs.values()) {
 				output.invalidate();
 			}
 		}
@@ -176,9 +176,9 @@ export class Node extends EventTarget {
 	}
 
 	ready() {
-		let node = this;
-		let promiseFunction = function (resolve, reject) {
-			let callback = function () {
+		const node = this;
+		const promiseFunction = function (resolve, reject) {
+			const callback = function () {
 				if (node.isValid()) {
 					resolve(true);
 				} else {
@@ -199,8 +199,8 @@ export class Node extends EventTarget {
 			if (this.#operation && this.#operation.isValid) {
 				return this.#operation.isValid(startingPoint);
 			} else {
-				let inputs = this.inputs;
-				for (let i of inputs.values()) {
+				const inputs = this.inputs;
+				for (const i of inputs.values()) {
 					if (!i.isValid(startingPoint)) {
 						return false;
 					}
@@ -212,7 +212,7 @@ export class Node extends EventTarget {
 	}
 
 	hasSuccessor() {
-		for (let output of this.outputs.values()) {
+		for (const output of this.outputs.values()) {
 			if (output.hasSuccessor()) {
 				return true;
 			}
@@ -222,8 +222,8 @@ export class Node extends EventTarget {
 
 	successorsLength() {
 		let max = 0;
-		for (let output of this.outputs.values()) {
-			let l = output.successorsLength();
+		for (const output of this.outputs.values()) {
+			const l = output.successorsLength();
 			if (l > max) {
 				max = l;
 			}
@@ -241,8 +241,8 @@ export class Node extends EventTarget {
 	}
 
 	updatePreview(context: any = {}) {
-		let previewSize = context.previewSize ?? this.previewSize;
-		let renderTarget2 = this.#previewRenderTarget ?? new RenderTarget({ width: previewSize, height: previewSize, depthBuffer: false, stencilBuffer: false });
+		const previewSize = context.previewSize ?? this.previewSize;
+		const renderTarget2 = this.#previewRenderTarget ?? new RenderTarget({ width: previewSize, height: previewSize, depthBuffer: false, stencilBuffer: false });
 		if (this.#previewRenderTarget) {
 			renderTarget2.resize(previewSize, previewSize);
 		}
@@ -250,7 +250,7 @@ export class Node extends EventTarget {
 		new Graphics().pushRenderTarget(renderTarget2);
 		this.editor.render(this.material);
 
-		let pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
+		const pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
 		new Graphics().glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		this.#pixelArray = new Uint8ClampedArray(pixelArray);
 
@@ -259,7 +259,7 @@ export class Node extends EventTarget {
 			pixelArray[i] = 255;
 		}
 
-		let imageData = new ImageData(pixelArray, previewSize, previewSize);
+		const imageData = new ImageData(pixelArray, previewSize, previewSize);
 		try {
 			imageDataToImage(imageData, this.previewPic);
 		} catch (e) { }
@@ -272,7 +272,7 @@ export class Node extends EventTarget {
 	async savePicture() {
 		await this.redraw({ previewSize: 2048 });
 
-		let image = this.previewPic;
+		const image = this.previewPic;
 
 		const canvas = createElement('canvas', { width: image.width, height: image.height }) as HTMLCanvasElement;
 		const ctx = canvas.getContext('2d');
@@ -287,7 +287,7 @@ export class Node extends EventTarget {
 		if (!this.#pixelArray) {
 			return;
 		}
-		let vtfFile = new VTFFile(2048, 2048);
+		const vtfFile = new VTFFile(2048, 2048);
 		vtfFile.setFlag(TEXTUREFLAGS_EIGHTBITALPHA | TEXTUREFLAGS_NOMIP);
 		await this.redraw({ previewSize: 2048 });
 
@@ -298,10 +298,10 @@ export class Node extends EventTarget {
 	}
 
 	async toString(tabs = '') {
-		let ret = [];
-		let tabs1 = tabs + '\t';
+		const ret = [];
+		const tabs1 = tabs + '\t';
 		ret.push(tabs + this.constructor.name);
-		for (let input of this.inputs.values()) {
+		for (const input of this.inputs.values()) {
 			if (input.getPredecessor()) {
 				ret.push(await input.toString(tabs1));
 			}

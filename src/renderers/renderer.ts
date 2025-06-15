@@ -20,8 +20,8 @@ const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
 
 function getDefinesAsString(material) {//TODOv3 rename var material
-	let defines = [];
-	for (let [name, value] of Object.entries(material.defines)) {
+	const defines = [];
+	for (const [name, value] of Object.entries(material.defines)) {
 		if (value === false) {
 			defines.push('#undef ' + name);
 		} else {
@@ -74,10 +74,10 @@ export class Renderer {
 
 	#setupVertexAttributes(program, geometry, wireframe) {
 		WebGLRenderingState.initUsedAttributes();
-		let geometryAttributes = geometry.attributes;
-		let programAttributes = program.attributes;
-		for (let [attributeName, attribute] of geometryAttributes) {
-			let attributeLocation = programAttributes.get(attributeName);
+		const geometryAttributes = geometry.attributes;
+		const programAttributes = program.attributes;
+		for (const [attributeName, attribute] of geometryAttributes) {
+			const attributeLocation = programAttributes.get(attributeName);
 			if (attributeName == 'index') {
 				if (wireframe == 1) {
 					attribute.updateWireframe(this.#glContext);//TODO: put somewhere else
@@ -96,7 +96,7 @@ export class Renderer {
 	}
 
 	#setupVertexUniforms(program, mesh) {
-		for (let uniform in mesh.uniforms) {
+		for (const uniform in mesh.uniforms) {
 			program.setUniformValue(uniform, mesh.uniforms[uniform]);
 		}
 	}
@@ -105,17 +105,17 @@ export class Renderer {
 	}
 
 	setupLights(renderList: RenderList, camera, program, viewMatrix) {
-		let lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
-		let lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
-		let colorIntensity = vec3.create();//TODO: do not create a vec3
-		let pointLights = renderList.pointLights;//scene.getChildList(PointLight);
-		let spotLights = renderList.spotLights;
+		const lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
+		const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
+		const colorIntensity = vec3.create();//TODO: do not create a vec3
+		const pointLights = renderList.pointLights;//scene.getChildList(PointLight);
+		const spotLights = renderList.spotLights;
 
 		let shadow;
 		let pointLightId = 0;
-		let pointShadowMap = [];
-		let pointShadowMatrix = [];
-		for (let pointLight of pointLights) {
+		const pointShadowMap = [];
+		const pointShadowMatrix = [];
+		for (const pointLight of pointLights) {
 			if (pointLight.isVisible()) {
 				pointLight.getWorldPosition(lightPositionWorldSpace);;
 				vec3.transformMat4(lightPositionCameraSpace, lightPositionWorldSpace, viewMatrix);
@@ -144,9 +144,9 @@ export class Renderer {
 
 
 		let spotLightId = 0;
-		let spotShadowMap = [];
-		let spotShadowMatrix = [];
-		for (let spotLight of spotLights) {
+		const spotShadowMap = [];
+		const spotShadowMatrix = [];
+		for (const spotLight of spotLights) {
 			if (spotLight.visible) {
 				spotLight.getWorldPosition(lightPositionCameraSpace);
 				vec3.transformMat4(lightPositionCameraSpace, lightPositionCameraSpace, viewMatrix);
@@ -159,10 +159,10 @@ export class Renderer {
 				//program.setUniformValue('uSpotLights[' + spotLightId + '].direction', [0, 0, -1]);
 
 				spotLight.getDirection(lightDirection);
-				let m = viewMatrix;
-				let x = lightDirection[0];
-				let y = lightDirection[1];
-				let z = lightDirection[2];
+				const m = viewMatrix;
+				const x = lightDirection[0];
+				const y = lightDirection[1];
+				const z = lightDirection[2];
 				lightDirection[0] = m[0] * x + m[4] * y + m[8] * z;
 				lightDirection[1] = m[1] * x + m[5] * y + m[9] * z;
 				lightDirection[2] = m[2] * x + m[6] * y + m[10] * z;
@@ -181,9 +181,9 @@ export class Renderer {
 		program.setUniformValue('uSpotShadowMap[0]', spotShadowMap);
 		program.setUniformValue('uSpotShadowMatrix[0]', spotShadowMatrix);
 
-		let ambientLights = renderList.ambientLights;//scene.getChildList(AmbientLight);
-		let ambientAccumulator = vec3.create();//TODO: do not create a vec3
-		for (let ambientLight of ambientLights) {
+		const ambientLights = renderList.ambientLights;//scene.getChildList(AmbientLight);
+		const ambientAccumulator = vec3.create();//TODO: do not create a vec3
+		for (const ambientLight of ambientLights) {
 			if (ambientLight.isVisible()) {
 				vec3.scaleAndAdd(ambientAccumulator, ambientAccumulator, ambientLight.color, ambientLight.intensity);
 			}
@@ -230,8 +230,8 @@ export class Renderer {
 
 		material.updateMaterial(this.#graphics.getTime(), object);//TODO: frame delta
 
-		let cameraMatrix = camera.cameraMatrix;
-		let projectionMatrix = camera.projectionMatrix;
+		const cameraMatrix = camera.cameraMatrix;
+		const projectionMatrix = camera.projectionMatrix;
 		mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
 		//object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
 		mat3.normalFromMat4(object._normalMatrix, cameraMatrix);//TODO: fixme
@@ -254,7 +254,7 @@ export class Renderer {
 			this.#graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
 		}
 
-		let program = this.getProgram(object, material);
+		const program = this.getProgram(object, material);
 		if (program.isValid()) {
 			WebGLRenderingState.useProgram(program.getProgram());
 			if (renderLights) {
@@ -270,7 +270,7 @@ export class Renderer {
 			program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
 			program.setUniformValue('uNormalMatrix', object._normalMatrix);
 			program.setUniformValue('uCameraPosition', camera.position);
-			let pickingColor = object.pickingColor;
+			const pickingColor = object.pickingColor;
 			if (pickingColor) {
 				program.setUniformValue('uPickingColor', pickingColor);
 			}
@@ -312,7 +312,7 @@ export class Renderer {
 			}
 
 			if (ENABLE_GET_ERROR && DEBUG) {
-				let glError = this.#glContext.getError();
+				const glError = this.#glContext.getError();
 				if (glError) {
 					console.error('GL Error in drawElements : ', glError);
 				}
@@ -326,7 +326,7 @@ export class Renderer {
 	_prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: RenderContext) {
 		renderList.reset();
 		let currentObject = scene;
-		let objectStack = [];
+		const objectStack = [];
 		//scene.pointLights = scene.getChildList(PointLight);
 		//scene.ambientLights = scene.getChildList(AmbientLight);
 
@@ -337,7 +337,7 @@ export class Renderer {
 			}
 
 			//objectStack.push(currentObject);
-			for (let child of currentObject.children) {
+			for (const child of currentObject.children) {
 				if (true || child.constructor.name !== 'Skeleton') {
 					objectStack.push(child);
 				}
@@ -353,12 +353,12 @@ export class Renderer {
 	}
 
 	_renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: RenderContext, lightPos?: vec3) {
-		for (let child of renderList.opaqueList) {
+		for (const child of renderList.opaqueList) {
 			this.renderObject(renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
 		}
 
 		if (renderLights) {
-			for (let child of renderList.transparentList) {
+			for (const child of renderList.transparentList) {
 				this.renderObject(renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
 			}
 		}
@@ -380,7 +380,7 @@ export class Renderer {
 	 * Invalidate all shader (force recompile)
 	 */
 	invalidateShaders() {
-		for (let shader of this.#materialsProgram.values()) {
+		for (const shader of this.#materialsProgram.values()) {
 			shader.invalidate();
 		}
 	}

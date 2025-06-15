@@ -5,7 +5,7 @@ export class Color {
 	g: number;
 	b: number;
 	a: number;
-	constructor(r: number = 0, g: number = 0, b: number = 0, a: number = 255) {
+	constructor(r = 0, g = 0, b = 0, a = 255) {
 		// TODO: move / 255 in caller
 		this.r = r / 255.0;
 		this.g = g / 255.0;

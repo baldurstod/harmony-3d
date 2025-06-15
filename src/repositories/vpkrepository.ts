@@ -6,7 +6,7 @@ export class VpkRepository implements Repository {
 	#vpk: Vpk;
 	#initPromiseResolve?: (value: boolean) => void;
 	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
-	constructor(name: string, files: Array<File>) {
+	constructor(name: string, files: File[]) {
 		this.#name = name;
 		this.#vpk = new Vpk();
 

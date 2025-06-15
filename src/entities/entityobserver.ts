@@ -7,11 +7,11 @@ export const ENTITY_DELETED = 'entitydeleted';
 export const PROPERTY_CHANGED = 'propertychanged';
 export const ATTRIBUTE_CHANGED = 'attributechanged';
 
-export type ParentChangedEventData = { child: Entity, oldParent: Entity | null, newParent: Entity | null };
-export type ChildAddedEventData = { child: Entity, parent: Entity | null };
+export interface ParentChangedEventData { child: Entity, oldParent: Entity | null, newParent: Entity | null }
+export interface ChildAddedEventData { child: Entity, parent: Entity | null }
 export type ChildRemovedEventData = ChildAddedEventData;
-export type EntityDeletedEventData = { entity: Entity };
-export type PropertyChangedEventData = { entity: Entity, name: string, value: any, oldValue: any };
+export interface EntityDeletedEventData { entity: Entity }
+export interface PropertyChangedEventData { entity: Entity, name: string, value: any, oldValue: any }
 export type AttributeChangedEventData = PropertyChangedEventData;
 
 export type EntityObserverEventsData = ParentChangedEventData | ChildAddedEventData | ChildRemovedEventData |

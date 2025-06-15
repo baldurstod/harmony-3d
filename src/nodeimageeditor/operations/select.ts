@@ -38,7 +38,7 @@ export class Select extends Node {
 		new Graphics().pushRenderTarget(this.#renderTarget);
 		this.editor.render(this.material);
 
-		let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
+		const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
 		new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		new Graphics().popRenderTarget();
 
@@ -56,19 +56,19 @@ export class Select extends Node {
 	}
 
 	async toString(tabs = '') {
-		let ret = [];
-		let tabs1 = tabs + '\t';
+		const ret = [];
+		const tabs1 = tabs + '\t';
 		ret.push(tabs + this.constructor.name);
 
-		for (let input of this.inputs.values()) {
+		for (const input of this.inputs.values()) {
 			if (input.getPredecessor()) {
 				ret.push(await input.toString(tabs1));
 			}
 		}
 
-		let selectvalues = await this.getInput('selectvalues').value;
-		let a = [];
-		for (let v of selectvalues) {
+		const selectvalues = await this.getInput('selectvalues').value;
+		const a = [];
+		for (const v of selectvalues) {
 			if (v) {
 				a.push(v);
 			}

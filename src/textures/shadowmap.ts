@@ -25,11 +25,11 @@ export class ShadowMap {
 	}
 
 	render(renderer: Renderer, renderList: RenderList, camera: Camera, context: RenderContext) {
-		let lights = renderList.lights;
+		const lights = renderList.lights;
 
-		let blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
-		let scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
-		let depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
+		const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
+		const scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
+		const depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
 		WebGLRenderingState.getClearColor(a);
 
 		WebGLRenderingState.disable(GL_BLEND);

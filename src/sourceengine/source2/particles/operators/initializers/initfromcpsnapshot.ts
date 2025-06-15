@@ -40,7 +40,7 @@ export const PARTICLE_FIELD_MANUAL_ANIMATION_FRAME = 38;
 export const PARTICLE_FIELD_SHADER_EXTRA_DATA_1 = 39;
 export const PARTICLE_FIELD_SHADER_EXTRA_DATA_2 = 40;
 */
-let v = vec3.create();
+const v = vec3.create();
 
 export class InitFromCPSnapshot extends Operator {
 	attributeToRead = -1;
@@ -84,14 +84,14 @@ export class InitFromCPSnapshot extends Operator {
 			return;
 		}
 
-		let system = this.system;
-		let snapshot = system.getControlPoint(this.controlPointNumber)?.snapshot;
+		const system = this.system;
+		const snapshot = system.getControlPoint(this.controlPointNumber)?.snapshot;
 		if (snapshot) {
-			let attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.attributeToRead];
+			const attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.attributeToRead];
 			if (TESTING && attributeToReadName === undefined) {
 				throw 'Unknown field';
 			}
-			let attributeToRead = snapshot.attributes[attributeToReadName];
+			const attributeToRead = snapshot.attributes[attributeToReadName];
 			if (attributeToRead) {
 				let id;
 				if (this.random) {
@@ -100,7 +100,7 @@ export class InitFromCPSnapshot extends Operator {
 					id = (particle.id - 1) % snapshot.particleCount;
 				}
 				if (this.attributeToWrite == PARTICLE_FIELD_POSITION) {
-					let localSpaceCP = system.getControlPoint(this.localSpaceCP);
+					const localSpaceCP = system.getControlPoint(this.localSpaceCP);
 					if (localSpaceCP) {
 						//TODO: check attributeToRead[id] is actually a vector
 						//TODO: only transform position when this.localSpaceAngles = true

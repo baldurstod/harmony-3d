@@ -3,15 +3,15 @@ import { Source2FileLoader } from '../loaders/source2fileloader';
  * Mesh manager
  */
 export const MeshManager = new function() {
-	var meshList = {};
+	const meshList = {};
 	//this.renderMode = 2;
 
 	//TODO
-	var getMesh = async function(repository, meshName) {
+	const getMesh = async function(repository, meshName) {
 		meshName = meshName.toLowerCase();
 		meshName = meshName.replace(/.vmesh_c$/, '');
 		meshName = meshName.replace(/.vmesh$/, '');
-		var mesh = meshList[meshName];
+		let mesh = meshList[meshName];
 		if (!mesh) {
 			mesh = await new Source2FileLoader().load(repository, meshName + '.vmesh_c');
 		}
@@ -25,7 +25,7 @@ export const MeshManager = new function() {
 	}
 
 	//TODO
-	var removeMesh = function(meshName) {
+	const removeMesh = function(meshName) {
 		meshList[meshName] = null;
 	}
 

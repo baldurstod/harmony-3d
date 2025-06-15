@@ -1,7 +1,7 @@
 import { Material } from '../materials/material';
 
 export class NodeImageEditorMaterial extends Material {
-	shaderName: string = '';
+	shaderName = '';
 	constructor(params: any) {
 		super(params);
 		this.shaderName = params?.shaderName;

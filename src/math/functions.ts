@@ -68,7 +68,7 @@ export function SimpleSpline(value: number): number {//TODOv3
  * @returns {vec3} out
  */
 export function vec3RandomBox(out: vec3, a: vec3, b: vec3): vec3 {
-	let ax = a[0], ay = a[1], az = a[2],
+	const ax = a[0], ay = a[1], az = a[2],
 		bx = b[0], by = b[1], bz = b[2];
 
 	out[0] = (bx - ax) * Math.random() + ax;
@@ -98,7 +98,7 @@ export function RandomFloat(min: number, max: number): number {
 }
 
 export function RandomFloatExp(min: number, max: number, exponent: number): number {
-	let rand = Math.pow(Math.random(), exponent);
+	const rand = Math.pow(Math.random(), exponent);
 	return rand * (max - min) + min;
 }
 
@@ -111,7 +111,7 @@ export function RandomFloatExp(min: number, max: number, exponent: number): numb
  * @returns {vec3} out
  */
 export function Vec3Middle(out: vec3, a: vec3, b: vec3): vec3 {
-	var ax = a[0], ay = a[1], az = a[2],
+	const ax = a[0], ay = a[1], az = a[2],
 		bx = b[0], by = b[1], bz = b[2];
 
 	out[0] = (bx + ax) * 0.5;
@@ -124,17 +124,17 @@ export function Vec3Middle(out: vec3, a: vec3, b: vec3): vec3 {
  * Same as quat.fromEuler with angles in radians
  */
 export function quatFromEulerRad(out: quat, x: number, y: number, z: number): quat {
-	let halfToRad = 0.5;
+	const halfToRad = 0.5;
 	x *= halfToRad;
 	y *= halfToRad;
 	z *= halfToRad;
 
-	let sx = Math.sin(x);
-	let cx = Math.cos(x);
-	let sy = Math.sin(y);
-	let cy = Math.cos(y);
-	let sz = Math.sin(z);
-	let cz = Math.cos(z);
+	const sx = Math.sin(x);
+	const cx = Math.cos(x);
+	const sy = Math.sin(y);
+	const cy = Math.cos(y);
+	const sz = Math.sin(z);
+	const cz = Math.cos(z);
 
 	out[0] = sx * cy * cz - cx * sy * sz;
 	out[1] = cx * sy * cz + sx * cy * sz;

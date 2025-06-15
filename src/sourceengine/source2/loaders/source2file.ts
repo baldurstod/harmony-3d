@@ -5,7 +5,7 @@ import { VTEX_FORMAT_DXT1, VTEX_FORMAT_DXT5, VTEX_FORMAT_R8G8B8A8_UINT, VTEX_FOR
 import { DEBUG } from '../../../buildoptions';
 import { Source2FileBlock } from './source2fileblock';
 
-const VTEX_TO_INTERNAL_IMAGE_FORMAT: { [key: number]: number } = {};
+const VTEX_TO_INTERNAL_IMAGE_FORMAT: Record<number, number> = {};
 VTEX_TO_INTERNAL_IMAGE_FORMAT[VTEX_FORMAT_DXT1] = TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1;
 VTEX_TO_INTERNAL_IMAGE_FORMAT[VTEX_FORMAT_DXT5] = TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5;
 VTEX_TO_INTERNAL_IMAGE_FORMAT[VTEX_FORMAT_R8] = TEXTURE_FORMAT_UNCOMPRESSED_R8;
@@ -47,11 +47,11 @@ export class Source2File {
 	// blocks stores the first occurence of a block type
 	// some blocks (MBUF, MDAT) may have multiple occurences that can be accessed via blocksArray
 	blocks: any = {};
-	blocksArray: Array<Source2FileBlock> = [];
-	fileLength: number = 0;
-	versionMaj: number = 0;
-	versionMin: number = 0;
-	maxBlockOffset: number = 0;
+	blocksArray: Source2FileBlock[] = [];
+	fileLength = 0;
+	versionMaj = 0;
+	versionMin = 0;
+	maxBlockOffset = 0;
 
 	constructor(repository: string, fileName: string) {
 		this.repository = repository;
@@ -74,7 +74,7 @@ export class Source2File {
 	}
 
 	getVertexCount(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return 0;
 		}
@@ -82,37 +82,37 @@ export class Source2File {
 		return block.indices[bufferId].indices.length;
 	}
 	getIndices(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		let indexBuffer = block.indices[bufferId];
+		const indexBuffer = block.indices[bufferId];
 
 		return indexBuffer ? indexBuffer.indices : [];
 	}
 	getVertices(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		let vertexBuffer = block.vertices[bufferId];
+		const vertexBuffer = block.vertices[bufferId];
 
 		return vertexBuffer ? vertexBuffer.vertices : [];
 	}
 	getNormals(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		let vertexBuffer = block.vertices[bufferId];
-		let normals = vertexBuffer.normals;
-		var ret = [];
+		const vertexBuffer = block.vertices[bufferId];
+		const normals = vertexBuffer.normals;
+		const ret = [];
 		const normalVec4 = vec4.create();
 		let normalVec3;
-		for (var i = 0, l = normals.length; i < l; i += 4) {
+		for (let i = 0, l = normals.length; i < l; i += 4) {
 			normalVec4[0] = normals[i + 0];
 			normalVec4[1] = normals[i + 1];
 			normalVec4[2] = normals[i + 2];
@@ -126,51 +126,51 @@ export class Source2File {
 		return ret;//vertexBuffer ? vertexBuffer.normals : [];
 	}
 	getCoords(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		let vertexBuffer = block.vertices[bufferId];
+		const vertexBuffer = block.vertices[bufferId];
 
 		return vertexBuffer ? vertexBuffer.coords : [];
 	}
 	getBoneIndices(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		let vertexBuffer = block.vertices[bufferId];
+		const vertexBuffer = block.vertices[bufferId];
 
 		return vertexBuffer ? vertexBuffer.boneIndices : [];
 	}
 	getBoneWeight(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		let vertexBuffer = block.vertices[bufferId];
+		const vertexBuffer = block.vertices[bufferId];
 
 		return vertexBuffer ? vertexBuffer.boneWeight : [];
 	}
 	getPositionArray(bufferId) {//TODOv3 :removeme
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		var vertexBuffer = block.vertices[bufferId];
-		var indexBuffer = block.indices[bufferId];
+		const vertexBuffer = block.vertices[bufferId];
+		const indexBuffer = block.indices[bufferId];
 
-		var vertices = vertexBuffer ? vertexBuffer.vertices : [];
-		var indices = indexBuffer ? indexBuffer.indices : [];
+		const vertices = vertexBuffer ? vertexBuffer.vertices : [];
+		const indices = indexBuffer ? indexBuffer.indices : [];
 
-		var ret = [];
-		var indicesLength = indices.length;
-		for (var i = 0; i < indicesLength; i++) {
-			var vertexId = indices[i] * 3;
+		const ret = [];
+		const indicesLength = indices.length;
+		for (let i = 0; i < indicesLength; i++) {
+			const vertexId = indices[i] * 3;
 			ret.push(vertices[vertexId + 0]);
 			ret.push(vertices[vertexId + 1]);
 			ret.push(vertices[vertexId + 2]);
@@ -190,7 +190,7 @@ export class Source2File {
 
 		function DecompressNormal(inputNormal) {				// {nX, nY, nZ}//_DecompressUByte4Normal
 			const fOne = 1.0;
-			let outputNormal = vec3.create();
+			const outputNormal = vec3.create();
 
 			//float2 ztSigns		= (inputNormal.xy - 128.0) < 0;				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
 			const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0));				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
@@ -214,22 +214,22 @@ export class Source2File {
 			return vec3.normalize(outputNormal, outputNormal);
 		}
 
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		var vertexBuffer = block.vertices[bufferId];
-		var indexBuffer = block.indices[bufferId];
-		var normals = vertexBuffer ? vertexBuffer.normals : [];
-		var indices = indexBuffer ? indexBuffer.indices : [];
+		const vertexBuffer = block.vertices[bufferId];
+		const indexBuffer = block.indices[bufferId];
+		const normals = vertexBuffer ? vertexBuffer.normals : [];
+		const indices = indexBuffer ? indexBuffer.indices : [];
 
-		var ret = [];
-		var indicesLength = indices.length;
+		const ret = [];
+		const indicesLength = indices.length;
 		const normalVec4 = vec4.create();
 		let normalVec3;
-		for (var i = 0; i < indicesLength; i++) {
-			var vertexId = indices[i] * 4;
+		for (let i = 0; i < indicesLength; i++) {
+			const vertexId = indices[i] * 4;
 			normalVec4[0] = normals[vertexId + 0];
 			normalVec4[1] = normals[vertexId + 1];
 			normalVec4[2] = normals[vertexId + 2];
@@ -250,45 +250,45 @@ export class Source2File {
 	}
 
 	getCoordArray(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		var vertexBuffer = block.vertices[bufferId];
-		var indexBuffer = block.indices[bufferId];
-		var coords = vertexBuffer ? vertexBuffer.coords : [];
-		var indices = indexBuffer ? indexBuffer.indices : [];
+		const vertexBuffer = block.vertices[bufferId];
+		const indexBuffer = block.indices[bufferId];
+		const coords = vertexBuffer ? vertexBuffer.coords : [];
+		const indices = indexBuffer ? indexBuffer.indices : [];
 		//var coords = block.vertices[bufferId].coords;
 		//var indices = block.indices[bufferId].indices;
 
-		var ret = [];
-		var indicesLength = indices.length;
-		for (var i = 0; i < indicesLength; i++) {
-			var vertexId = indices[i] * 2;
+		const ret = [];
+		const indicesLength = indices.length;
+		for (let i = 0; i < indicesLength; i++) {
+			const vertexId = indices[i] * 2;
 			ret.push(coords[vertexId + 0]);
 			ret.push(coords[vertexId + 1]);
 		}
 		return ret;
 	}
 	getBoneIndiceArray(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
 
-		var vertexBuffer = block.vertices[bufferId];
-		var indexBuffer = block.indices[bufferId];
-		var vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
-		var indices = indexBuffer ? indexBuffer.indices : [];
+		const vertexBuffer = block.vertices[bufferId];
+		const indexBuffer = block.indices[bufferId];
+		const vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
+		const indices = indexBuffer ? indexBuffer.indices : [];
 		//var vertices = block.vertices[bufferId].boneIndices;
 		//var indices = block.indices[bufferId].indices;
 
-		var ret = [];
-		var indicesLength = indices.length;
-		for (var i = 0; i < indicesLength; i++) {
-			var vertexId = indices[i] * 4;
+		const ret = [];
+		const indicesLength = indices.length;
+		for (let i = 0; i < indicesLength; i++) {
+			const vertexId = indices[i] * 4;
 			ret.push(vertices[vertexId + 0]);
 			ret.push(vertices[vertexId + 1]);
 			ret.push(vertices[vertexId + 2]);
@@ -297,22 +297,22 @@ export class Source2File {
 		return ret;
 	}
 	getBoneWeightArray(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		var vertexBuffer = block.vertices[bufferId];
-		var indexBuffer = block.indices[bufferId];
-		var vertices = vertexBuffer ? vertexBuffer.boneWeight : [];
-		var indices = indexBuffer ? indexBuffer.indices : [];
+		const vertexBuffer = block.vertices[bufferId];
+		const indexBuffer = block.indices[bufferId];
+		const vertices = vertexBuffer ? vertexBuffer.boneWeight : [];
+		const indices = indexBuffer ? indexBuffer.indices : [];
 		//var vertices = block.vertices[bufferId].boneWeight;
 		//var indices = block.indices[bufferId].indices;
 
-		var ret = [];
-		var indicesLength = indices.length;
-		for (var i = 0; i < indicesLength; i++) {
-			var vertexId = indices[i] * 4;
+		const ret = [];
+		const indicesLength = indices.length;
+		for (let i = 0; i < indicesLength; i++) {
+			const vertexId = indices[i] * 4;
 			ret.push(vertices[vertexId + 0] / 255);//TODO: optimise
 			ret.push(vertices[vertexId + 1] / 255);
 			ret.push(vertices[vertexId + 2] / 255);
@@ -321,21 +321,21 @@ export class Source2File {
 		return ret;
 	}
 	getTangentArray(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
-		var vertexBuffer = block.vertices[bufferId];
-		var indexBuffer = block.indices[bufferId];
-		var vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
-		var indices = indexBuffer ? indexBuffer.indices : [];
+		const vertexBuffer = block.vertices[bufferId];
+		const indexBuffer = block.indices[bufferId];
+		const vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
+		const indices = indexBuffer ? indexBuffer.indices : [];
 		//var vertices = block.vertices[bufferId].boneIndices;
 		//var indices = block.indices[bufferId].indices;
 
-		var ret = [];
-		var indicesLength = indices.length;
-		for (var i = 0; i < indicesLength; i++) {
-			var vertexId = indices[i] * 4;
+		const ret = [];
+		const indicesLength = indices.length;
+		for (let i = 0; i < indicesLength; i++) {
+			const vertexId = indices[i] * 4;
 			ret.push(vertices[vertexId + 0]);
 			ret.push(vertices[vertexId + 1]);
 			ret.push(vertices[vertexId + 2]);
@@ -344,22 +344,22 @@ export class Source2File {
 		return ret;
 	}
 	getBinormalArray(bufferId) {
-		var block = this.blocks.VBIB || this.blocks.MBUF;
+		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
 
-		var vertexBuffer = block.vertices[bufferId];
-		var indexBuffer = block.indices[bufferId];
-		var vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
-		var indices = indexBuffer ? indexBuffer.indices : [];
+		const vertexBuffer = block.vertices[bufferId];
+		const indexBuffer = block.indices[bufferId];
+		const vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
+		const indices = indexBuffer ? indexBuffer.indices : [];
 		//var vertices = block.vertices[bufferId].boneIndices;
 		//var indices = block.indices[bufferId].indices;
 
-		var ret = [];
-		var indicesLength = indices.length;
-		for (var i = 0; i < indicesLength; i++) {
-			var vertexId = indices[i] * 4;
+		const ret = [];
+		const indicesLength = indices.length;
+		for (let i = 0; i < indicesLength; i++) {
+			const vertexId = indices[i] * 4;
 			ret.push(vertices[vertexId + 0]);
 			ret.push(vertices[vertexId + 1]);
 			ret.push(vertices[vertexId + 2]);
@@ -368,21 +368,21 @@ export class Source2File {
 		return ret;
 	}
 	getWidth() {
-		var block = this.blocks.DATA;
+		const block = this.blocks.DATA;
 		if (!block) {
 			return 0;
 		}
 		return block.width;
 	}
 	getHeight() {
-		var block = this.blocks.DATA;
+		const block = this.blocks.DATA;
 		if (!block) {
 			return 0;
 		}
 		return block.height;
 	}
 	getDxtLevel() {
-		var block = this.blocks.DATA;
+		const block = this.blocks.DATA;
 		if (!block) {
 			return 0;
 		}
@@ -396,7 +396,7 @@ export class Source2File {
 		return 0;
 	}
 	isCompressed() {
-		var block = this.blocks.DATA;
+		const block = this.blocks.DATA;
 		if (!block) {
 			return false;
 		}
@@ -404,7 +404,7 @@ export class Source2File {
 		return block.imageFormat <= 2;//DXT1 or DXT5
 	}
 	isCubeTexture() {
-		var block = this.blocks.DATA;
+		const block = this.blocks.DATA;
 		if (!block) {
 			return false;
 		}
@@ -413,14 +413,14 @@ export class Source2File {
 	}
 
 	getBlockStruct(path) {
-		var arr = path.split('.');
-		var data = this.blocks;
+		const arr = path.split('.');
+		let data = this.blocks;
 		if (!data) {
 			return null;
 		}
 
-		var sub;
-		for (var i = 0; i < arr.length; i++) {
+		let sub;
+		for (let i = 0; i < arr.length; i++) {
 			sub = data[arr[i]];
 			if (!sub) {
 				return null;
@@ -440,20 +440,20 @@ export class Source2File {
 	}
 
 	getExternalFiles() {
-		var externalFiles = this.getBlockStruct('RERL.externalFiles2');
+		const externalFiles = this.getBlockStruct('RERL.externalFiles2');
 		return externalFiles;
 	}
 	getExternalFile(fileIndex) {
-		var externalFiles = this.getBlockStruct('RERL.externalFiles2');
+		const externalFiles = this.getBlockStruct('RERL.externalFiles2');
 		if (externalFiles) {
 			return externalFiles[fileIndex];
 		}
 		return null;
 	}
 	getKeyValue(path) {
-		var dataBlock = this.blocks['DATA'];
+		const dataBlock = this.blocks['DATA'];
 		if (dataBlock) {
-			var keyValue = dataBlock.keyValue;
+			const keyValue = dataBlock.keyValue;
 			if (keyValue) {
 				return keyValue.getValue(path);
 			}
@@ -462,13 +462,13 @@ export class Source2File {
 	}
 
 	get imageFormat() {//TODOv3 improve this
-		var block = this.blocks.DATA;
+		const block = this.blocks.DATA;
 		if (!block) {
 			return TEXTURE_FORMAT_UNKNOWN;
 		}
-		let imageFormat = block.imageFormat;
+		const imageFormat = block.imageFormat;
 		if (DEBUG) {
-			let internalFormat = VTEX_TO_INTERNAL_IMAGE_FORMAT[imageFormat];
+			const internalFormat = VTEX_TO_INTERNAL_IMAGE_FORMAT[imageFormat];
 			if (internalFormat === undefined) {
 				throw 'Unknown vtex format : ' + imageFormat;
 			} else {
@@ -480,9 +480,9 @@ export class Source2File {
 	}
 
 	get displayName() {
-		let fileName = this.fileName;
+		const fileName = this.fileName;
 		if (fileName) {
-			let result = /(\w+)\.\w+$/.exec(fileName);
+			const result = /(\w+)\.\w+$/.exec(fileName);
 			if (result && result.length == 2) {
 				return result[1];
 			}
@@ -528,7 +528,7 @@ export class Source2File {
 
 function DecompressNormal(inputNormal) {				// {nX, nY, nZ}//_DecompressUByte4Normal
 	const fOne = 1.0;
-	let outputNormal = vec3.create();
+	const outputNormal = vec3.create();
 
 	//float2 ztSigns		= (inputNormal.xy - 128.0) < 0;				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
 	const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0));				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction

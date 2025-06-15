@@ -4,7 +4,7 @@ import { Operator } from '../operator';
 import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
 import { vec3RandomBox } from '../../../../../math/functions';
 
-let tempVec3 = vec3.create();
+const tempVec3 = vec3.create();
 
 export class RandomVector extends Operator {
 	vecMin = vec3.create();

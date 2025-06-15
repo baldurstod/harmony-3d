@@ -24,7 +24,7 @@ export class SetFloat extends Operator {
 
 	doOperate(particle, elapsedTime) {
 		//TODO: use lerp
-		let value = this.getParamScalarValue('m_InputValue', particle);
+		const value = this.getParamScalarValue('m_InputValue', particle);
 		//TODO: use setMethod
 		particle.setField(this.outputField, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
 		//particle.setField(this.outputField, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');

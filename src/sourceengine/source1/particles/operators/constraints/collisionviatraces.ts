@@ -77,11 +77,11 @@ export class CollisionViaTraces extends SourceEngineParticleOperator {
 		// We probably already are on the surface, move back the ray origin to prevent falling thru
 		const rayPosition = vec3.scaleAndAdd(tempVec3_2, particle.prevPosition, rayDirection, -0.001);
 
-		let intersections = this.#raycaster.castRay(rayPosition, rayDirection, [world], true);
+		const intersections = this.#raycaster.castRay(rayPosition, rayDirection, [world], true);
 		if (intersections.length) {
 			//console.error(intersections);
 			let min = Infinity;
-			for (let intersection of intersections) {
+			for (const intersection of intersections) {
 				if (intersection.distance < min) {
 					vec3.copy(particle.position, intersection.position);
 					min = intersection.distance;
@@ -97,7 +97,7 @@ export class CollisionViaTraces extends SourceEngineParticleOperator {
 	#getWorld() {
 		const iterator = this.particleSystem.getParentIterator();
 
-		for (let e of iterator) {
+		for (const e of iterator) {
 			if (e.is('Scene')) {
 				const world = (e as Scene).getWorld();
 				if (world) {

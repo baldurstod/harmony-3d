@@ -8,12 +8,12 @@ export class Source2MaterialLoader {
 	static #materials = new Map<string, typeof Source2Material>();
 
 	static load(repository: string, fileName: string): Promise<Source2Material> {
-		let promise = new Promise<Source2Material>((resolve, reject) => {
+		const promise = new Promise<Source2Material>((resolve, reject) => {
 			fileName = fileName.replace(/.vmat_c$/, '');
-			let vmatPromise = new Source2FileLoader().load(repository, fileName + '.vmat_c');
+			const vmatPromise = new Source2FileLoader().load(repository, fileName + '.vmat_c');
 			vmatPromise.then(
 				(source2File: Source2File) => {
-					let material = this.#loadMaterial(repository, source2File);
+					const material = this.#loadMaterial(repository, source2File);
 					if (VERBOSE) {
 						console.log(source2File);
 					}
@@ -31,9 +31,9 @@ export class Source2MaterialLoader {
 	}
 
 	static #loadMaterial(repository: string, file: Source2File) {
-		let shaderName = file.getBlockStruct('DATA.keyValue.root.m_shaderName') || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
+		const shaderName = file.getBlockStruct('DATA.keyValue.root.m_shaderName') || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
 		let material;
-		let materialClass = this.#materials.get(shaderName.toLowerCase());
+		const materialClass = this.#materials.get(shaderName.toLowerCase());
 		if (materialClass !== undefined) {
 			material = new materialClass(repository, file);
 		} else {

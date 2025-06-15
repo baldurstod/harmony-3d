@@ -72,7 +72,7 @@ export class MeshBasicPbrMaterial extends Material {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		return json;
 	}
 

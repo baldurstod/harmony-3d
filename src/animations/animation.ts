@@ -6,14 +6,14 @@ import { quatToEuler } from '../math/quaternion';
 
 export class Animation {
 	#name;
-	weight: number = 1;
+	weight = 1;
 	#frame = 0;
 	#frameCount = 0;
-	#looping: boolean = false;
+	#looping = false;
 	//#sequence;
 	#fps = 30;
-	#frames: Array<AnimationFrame> = [];
-	#bones: Array<AnimationBone> = [];
+	#frames: AnimationFrame[] = [];
+	#bones: AnimationBone[] = [];
 	#bonesByName = new Map<string, AnimationBone>;
 
 	constructor(name: string) {
@@ -60,7 +60,7 @@ export class Animation {
 	}
 
 	toSMD(header: string = SMD_HEADER): string {
-		const lines: Array<string> = [];
+		const lines: string[] = [];
 
 		lines.push(header);
 		lines.push('version 1');

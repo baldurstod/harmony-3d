@@ -2,16 +2,16 @@ import { mat4, vec2, vec3 } from 'gl-matrix';
 
 export function getTexCoordTransform(scale, translation, rotation) {
 	function Vector2DRotate(vIn, angle, vOut) {
-		let c = Math.cos(angle);
-		let s = Math.sin(angle);
+		const c = Math.cos(angle);
+		const s = Math.sin(angle);
 
 		vOut[0] = vIn[0] * c - vIn[1] * s;
 		vOut[1] = vIn[0] * s + vIn[1] * c;
 	}
 
-	let transformMatrix = mat4.create();
-	let tempMatrix = mat4.create();
-	let tempVec3 = vec3.create();
+	const transformMatrix = mat4.create();
+	const tempMatrix = mat4.create();
+	const tempVec3 = vec3.create();
 
 	tempVec3[0] = translation[0] - 0.5;
 	tempVec3[1] = translation[1] - 0.5;
@@ -27,7 +27,7 @@ export function getTexCoordTransform(scale, translation, rotation) {
 	mat4.fromZRotation(tempMatrix, rotation);
 	mat4.multiply(transformMatrix, transformMatrix, tempMatrix);
 
-	let offset = vec2.fromValues(0.5 / scale[0], 0.5 / scale[1]);
+	const offset = vec2.fromValues(0.5 / scale[0], 0.5 / scale[1]);
 	//vec2.rotate(offset, offset, vec2.create(), -rotation);
 	Vector2DRotate(offset, -rotation, offset);//Vector2DRotate is bugged in CSGO, we have to replicate the bug
 

@@ -34,7 +34,7 @@ export class RenderRopes extends Operator {
 	textureVScrollRate = 10;
 	textureScroll = 0;
 	#spriteSheet?: Source2SpriteSheet;
-	#maxParticles: number = 1000;//TODO: default value
+	#maxParticles = 1000;//TODO: default value
 	#texture?: Texture;
 	#imgData?: Float32Array;
 
@@ -101,27 +101,27 @@ export class RenderRopes extends Operator {
 		this.#spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
 	}
 
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Array<Source2Particle>, elapsedTime: number) {//TODOv3
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {//TODOv3
 		this.textureScroll += elapsedTime * this.textureVScrollRate;
 		const subdivCount = this.getParameter('subdivision_count') ?? 3;
 
-		let geometry = this.geometry;
+		const geometry = this.geometry;
 		const vertices = [];
 		const indices = [];
 		const id = [];
 
-		let segments = [];
+		const segments = [];
 
 		let particle;
 		let ropeLength = 0.0;
 		let previousSegment = null;
-		let textureVWorldSize = 1 / this.textureVWorldSize;
-		let textureScroll = this.textureScroll;
-		let alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
+		const textureVWorldSize = 1 / this.textureVWorldSize;
+		const textureScroll = this.textureScroll;
+		const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
 		for (let i = 0, l = particleList.length; i < l; i++) {
 			//for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
 			particle = particleList[i];
-			let segment = new BeamSegment(particle.position, [particle.color[0], particle.color[1], particle.color[2], particle.alpha * alphaScale], 0.0, particle.radius);
+			const segment = new BeamSegment(particle.position, [particle.color[0], particle.color[1], particle.color[2], particle.alpha * alphaScale], 0.0, particle.radius);
 			vec3.copy(segment.normal, particle.normal);
 			if (previousSegment) {
 				ropeLength += segment.distanceTo(previousSegment);
@@ -181,7 +181,7 @@ export class RenderRopes extends Operator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	setupParticlesTexture(particleList: Array<Source2Particle>, maxParticles: number) {
+	setupParticlesTexture(particleList: Source2Particle[], maxParticles: number) {
 		const a = this.#imgData;
 
 		if (!a) {
@@ -189,7 +189,7 @@ export class RenderRopes extends Operator {
 		}
 
 		let index = 0;
-		for (let particle of particleList) {//TODOv3
+		for (const particle of particleList) {//TODOv3
 			/*let pose = bone.boneMat;
 			for (let k = 0; k < 16; ++k) {
 				a[index++] = pose[k];

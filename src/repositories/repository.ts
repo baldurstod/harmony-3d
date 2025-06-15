@@ -5,14 +5,14 @@ export enum RepositoryError {
 	RepoNotFound,
 }
 
-export type RepositoryFileResponse = { file?: File | null, error?: RepositoryError };
-export type RepositoryArrayBufferResponse = { buffer?: ArrayBuffer | null, error?: RepositoryError };
-export type RepositoryTextResponse = { text?: string | null, error?: RepositoryError };
-export type RepositoryBlobResponse = { blob?: Blob | null, error?: RepositoryError };
-export type RepositoryJsonResponse = { json?: JSON | null, error?: RepositoryError };
-export type RepositoryFileListResponse = { root?: RepositoryEntry, error?: RepositoryError };
+export interface RepositoryFileResponse { file?: File | null, error?: RepositoryError }
+export interface RepositoryArrayBufferResponse { buffer?: ArrayBuffer | null, error?: RepositoryError }
+export interface RepositoryTextResponse { text?: string | null, error?: RepositoryError }
+export interface RepositoryBlobResponse { blob?: Blob | null, error?: RepositoryError }
+export interface RepositoryJsonResponse { json?: JSON | null, error?: RepositoryError }
+export interface RepositoryFileListResponse { root?: RepositoryEntry, error?: RepositoryError }
 
-export type RepositoryFilter = { name?: string | RegExp, extension?: string | RegExp, directories?: boolean, files?: boolean };
+export interface RepositoryFilter { name?: string | RegExp, extension?: string | RegExp, directories?: boolean, files?: boolean }
 
 export interface Repository {
 	name: string;
@@ -40,7 +40,7 @@ export class RepositoryEntry {
 	addEntry(filename: string): void {
 		const splittedPath = filename.split(/[\/\\]+/);
 		let current: RepositoryEntry = this;
-		let len = splittedPath.length - 1;
+		const len = splittedPath.length - 1;
 
 		for (const [i, p] of splittedPath.entries()) {
 			if (!current.#childs.has(p)) {
@@ -93,7 +93,7 @@ export class RepositoryEntry {
 	getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry> {
 		const childs = new Set<RepositoryEntry>();
 		let current: RepositoryEntry | undefined;
-		const stack: Array<RepositoryEntry> = [this];
+		const stack: RepositoryEntry[] = [this];
 		do {
 			current = stack.pop();
 			if (current && !childs.has(current)) {
@@ -138,7 +138,7 @@ export class RepositoryEntry {
 	toJSON(): JSON {
 		const json: any/*TODO:improve type*/ = { name: this.#name };
 		if (this.#isDirectory) {
-			const files: Array<any/*TODO:improve type*/> = [];
+			const files: any[] = [];
 			for (const [_, child] of this.#childs) {
 				files.push(child.toJSON());
 			}

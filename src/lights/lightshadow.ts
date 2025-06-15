@@ -4,14 +4,14 @@ import { RenderTarget } from '../textures/rendertarget';
 import { Camera } from '../cameras/camera';
 import { Light } from './light';
 
-let tempMat4 = mat4.create();
+const tempMat4 = mat4.create();
 
 export class LightShadow {
 	#textureSize: vec2 = vec2.create();
 	light: Light;
 	camera: Camera;
 	shadowMatrix: mat4 = mat4.create();
-	viewPorts: Array<vec4>;
+	viewPorts: vec4[];
 	viewPortsLength: number;
 	renderTarget: RenderTarget;
 	constructor(light: Light, camera: Camera) {
@@ -41,8 +41,8 @@ export class LightShadow {
 	}
 
 	computeShadowMatrix(mapIndex) {
-		let shadowCamera = this.camera;
-		let shadowMatrix = this.shadowMatrix;
+		const shadowCamera = this.camera;
+		const shadowMatrix = this.shadowMatrix;
 
 		mat4.set(shadowMatrix,
 			0.5, 0.0, 0.0, 0.0,

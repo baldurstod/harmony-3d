@@ -16,15 +16,15 @@ export class Kv3File {
 		return null;
 	}
 	getValue(path) {
-		var arr = path.split('.');
-		var data = this.root;
+		const arr = path.split('.');
+		let data = this.root;
 		if (!data) {
 			return null;
 		}
 
 
-		var sub;
-		for (var i = 0; i < arr.length; i++) {
+		let sub;
+		for (let i = 0; i < arr.length; i++) {
 			sub = data[arr[i]];
 			if (!sub) {
 				return null;

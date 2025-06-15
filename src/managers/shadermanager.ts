@@ -15,7 +15,7 @@ export class ShaderManager {
 
 	static getShaderSource(type: ShaderType, name: string, invalidCustomShaders = false): WebGLShaderSource | undefined {
 		if (this.#shaderList.get(name) === undefined) {
-			let source = Shaders[name];
+			const source = Shaders[name];
 			if (source) {
 				this.addSource(type, name, source);
 			} else {
@@ -47,13 +47,13 @@ export class ShaderManager {
 
 	static getIncludeAnnotations(includeName: string) {
 		let annotations;
-		for (let [shaderName, shaderSource] of this.#shaderList) {
+		for (const [shaderName, shaderSource] of this.#shaderList) {
 			annotations = this.#getIncludeAnnotations(includeName, shaderName, shaderSource);
 			if (annotations.length) {
 				return annotations;
 			}
 		}
-		for (let [shaderName, shaderSource] of this.#customShaderList) {
+		for (const [shaderName, shaderSource] of this.#customShaderList) {
 			annotations = this.#getIncludeAnnotations(includeName, shaderName, shaderSource);
 			if (annotations.length) {
 				return annotations;
@@ -62,13 +62,13 @@ export class ShaderManager {
 	}
 
 	static #getIncludeAnnotations(includeName: string, shaderName: string, shaderSource: WebGLShaderSource) {
-		let errorArray = [];
+		const errorArray = [];
 		if (shaderSource.isErroneous()) {
 			if (shaderSource.containsInclude(includeName)) {
-				let errors = shaderSource.getCompileError(false);
-				for (let error of errors) {
+				const errors = shaderSource.getCompileError(false);
+				for (const error of errors) {
 					const sourceRowToInclude = shaderSource.getSourceRowToInclude();
-					for (let [startLine, [includeName2, includeLength]] of sourceRowToInclude) {
+					for (const [startLine, [includeName2, includeLength]] of sourceRowToInclude) {
 						//let [includeName2, includeLength] = shaderSource.sourceRowToInclude[startLine];
 						if (startLine <= error.row && (startLine + includeLength) > error.row && includeName == includeName2) {
 							errorArray.push({ type: error.type, column: error.column, row: error.row - startLine, text: error.text });
@@ -85,10 +85,10 @@ export class ShaderManager {
 	}
 
 	static resetShadersSource() {
-		for (let source of this.#shaderList.values()) {
+		for (const source of this.#shaderList.values()) {
 			source.reset();
 		}
-		for (let source of this.#customShaderList.values()) {
+		for (const source of this.#customShaderList.values()) {
 			source.reset();
 		}
 	}

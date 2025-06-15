@@ -11,7 +11,7 @@ export class Curve {
 	}
 
 	getArcLength(divisions = 100) {
-		let pos = vec3.create();
+		const pos = vec3.create();
 
 		let last = vec3.create();
 		let current = vec3.create();
@@ -31,7 +31,7 @@ export class Curve {
 	}
 
 	getPoints(divisions = 5) {
-		let points = [];
+		const points = [];
 
 		for (let i = 0; i <= divisions; i++) {
 			points.push(this.getPosition(i / divisions));

@@ -1,1 +1,1 @@
-export const Shaders: { [key: string]: string } = {}
+export const Shaders: Record<string, string> = {}

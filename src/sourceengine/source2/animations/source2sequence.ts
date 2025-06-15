@@ -23,7 +23,7 @@ export class Source2Sequence {
 				if (this.activities[0].name == activity) {
 					let matchCount = 0;
 					for (let i = 1; i < this.activities.length; i++) {
-						for (let modifier of modifiers) {
+						for (const modifier of modifiers) {
 							if (this.activities[i] == modifier) {
 								++matchCount;
 							}

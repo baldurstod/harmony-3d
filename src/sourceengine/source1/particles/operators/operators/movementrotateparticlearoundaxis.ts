@@ -5,7 +5,7 @@ import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { DEG_TO_RAD } from '../../../../../math/constants';
 
-let tempVec3 = vec3.create();
+const tempVec3 = vec3.create();
 
 export class MovementRotateParticleAroundAxis extends SourceEngineParticleOperator {
 	static functionName = 'Movement Rotate Particle Around Axis';

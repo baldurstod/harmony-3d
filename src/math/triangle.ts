@@ -1,24 +1,24 @@
 import { vec2, vec3 } from 'gl-matrix';
 
-let v0 = vec3.create();
-let v1 = vec3.create();
-let v2 = vec3.create();
-let v3 = vec3.create();
+const v0 = vec3.create();
+const v1 = vec3.create();
+const v2 = vec3.create();
+const v3 = vec3.create();
 
 export function getBarycentricCoordinates(out: vec3, position: vec3, a: vec3, b: vec3, c: vec3) {
 	vec3.sub(v0, c, a);
 	vec3.sub(v1, b, a);
 	vec3.sub(v2, position, a);
 
-	let dot00 = vec3.dot(v0, v0);
-	let dot01 = vec3.dot(v0, v1);
-	let dot02 = vec3.dot(v0, v2);
-	let dot11 = vec3.dot(v1, v1);
-	let dot12 = vec3.dot(v1, v2);
+	const dot00 = vec3.dot(v0, v0);
+	const dot01 = vec3.dot(v0, v1);
+	const dot02 = vec3.dot(v0, v2);
+	const dot11 = vec3.dot(v1, v1);
+	const dot12 = vec3.dot(v1, v2);
 
-	let invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
-	let u = (dot11 * dot02 - dot01 * dot12) * invDenom;
-	let v = (dot00 * dot12 - dot01 * dot02) * invDenom;
+	const invDenom = 1 / (dot00 * dot11 - dot01 * dot01);
+	const u = (dot11 * dot02 - dot01 * dot12) * invDenom;
+	const v = (dot00 * dot12 - dot01 * dot02) * invDenom;
 
 	// barycentric coordinates must always sum to 1
 	return vec3.set(out, 1 - u - v, v, u);

@@ -49,7 +49,7 @@ export class Decal extends Mesh {
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			StaticDecal_1: null,
-			size: { i18n: '#size', f: () => { let v = prompt('Size', this.size.join(' ')); if (v !== null) { this.setSize(stringToVec3(v)); } } },
+			size: { i18n: '#size', f: () => { const v = prompt('Size', this.size.join(' ')); if (v !== null) { this.setSize(stringToVec3(v)); } } },
 			refresh: { i18n: '#refresh', f: () => this.refreshGeometry() },
 		});
 	}
@@ -66,10 +66,10 @@ registerEntity(Decal);
 
 class DecalGeometry extends BufferGeometry {
 	applyTo(mesh, projectorMatrix, size) {
-		let indices = [];
-		let vertices = [];
-		let normals = [];
-		let uvs = [];
+		const indices = [];
+		const vertices = [];
+		const normals = [];
+		const uvs = [];
 
 		this.#generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs);
 		//console.log(uvs);
@@ -86,8 +86,8 @@ class DecalGeometry extends BufferGeometry {
 
 		const projectorMatrixInverse = mat4.invert(mat4.create(), projectorMatrix);
 
-		let vertex = vec3.create();
-		let normal = vec3.create();
+		const vertex = vec3.create();
+		const normal = vec3.create();
 
 		const geometry = mesh.geometry;
 		if (!geometry) {
@@ -108,7 +108,7 @@ class DecalGeometry extends BufferGeometry {
 		}
 
 		for (let i = 0, l = indexAttribute.count; i < l; ++i) {
-			let index = indexArray[i];
+			const index = indexArray[i];
 			vertex[0] = posArray[index * 3];
 			vertex[1] = posArray[index * 3 + 1];
 			vertex[2] = posArray[index * 3 + 2];
@@ -141,7 +141,7 @@ class DecalGeometry extends BufferGeometry {
 			);
 
 			// transform the vertex back to world space
-			let v = decalVertex[0];
+			const v = decalVertex[0];
 			//vec3.transformMat4(v, v, projectorMatrix);
 
 			vertices.push(...decalVertex[0]);

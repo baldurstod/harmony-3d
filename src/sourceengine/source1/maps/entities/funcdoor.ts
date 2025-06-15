@@ -34,11 +34,11 @@ export class FuncDoor extends MapEntity {
 			vec3.zero(this.moveDir);
 			AngleVectors(ParseAngles(kvElement.movedir), this.moveDir);
 
-			let vecOBB = this.m.getOBBSize(this.model.model);
+			const vecOBB = this.m.getOBBSize(this.model.model);
 			this.pos1 = this.getAbsOrigin();//vec3.scaleAndAdd(vec3.create(), this.getAbsOrigin(), this.moveDir, -movedistance * kvElement.startposition);
-			let a = this.moveDir;
-			let b = vecOBB;
-			let dotProductAbs = Math.abs(a[0] * b[0]) + Math.abs(a[1] * b[1]) + Math.abs(a[2] * b[2]);//vec3.dot(vec3.create(), this.moveDir, vecOBB);
+			const a = this.moveDir;
+			const b = vecOBB;
+			const dotProductAbs = Math.abs(a[0] * b[0]) + Math.abs(a[1] * b[1]) + Math.abs(a[2] * b[2]);//vec3.dot(vec3.create(), this.moveDir, vecOBB);
 			this.pos2 = vec3.scaleAndAdd(this.pos2, this.pos1, this.moveDir, dotProductAbs);//todo : lip
 			vec3.copy(this.finalDest, this.getAbsOrigin());
 

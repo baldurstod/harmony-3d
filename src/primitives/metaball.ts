@@ -18,7 +18,7 @@ export class Metaball extends Entity {
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			Metaball_1: null,
-			radius: { i18n: '#radius', f: () => { let radius = prompt('Radius', String(this.radius)); if (radius) { this.setRadius(Number(radius)); } } }
+			radius: { i18n: '#radius', f: () => { const radius = prompt('Radius', String(this.radius)); if (radius) { this.setRadius(Number(radius)); } } }
 		});
 	}
 }

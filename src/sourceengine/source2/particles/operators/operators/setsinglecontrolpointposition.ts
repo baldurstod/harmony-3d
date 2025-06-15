@@ -3,8 +3,8 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
 const DEFAULT_POSITION = vec3.fromValues(128, 0, 0);
-let v = vec3.create();
-let tempVec4 = vec4.create();
+const v = vec3.create();
+const tempVec4 = vec4.create();
 
 export class SetSingleControlPointPosition extends Operator {
 	useWorldLocation = false;
@@ -42,11 +42,11 @@ export class SetSingleControlPointPosition extends Operator {
 		const cp1Pos = this.getParamVectorValue('m_vecCP1Pos', particle, tempVec4) ?? DEFAULT_POSITION;
 		//TODO
 		if (!this.setOnce || !this.set) {
-			let cp = this.system.getOwnControlPoint(this.cp1);
+			const cp = this.system.getOwnControlPoint(this.cp1);
 			if (this.useWorldLocation) {
 				cp.position = cp1Pos;
 			} else {
-				let headCp = this.system.getControlPoint(this.headLocation);
+				const headCp = this.system.getControlPoint(this.headLocation);
 				vec3.transformQuat(v, cp1Pos, headCp.currentWorldQuaternion);
 				vec3.add(v, v, headCp.currentWorldPosition);
 				cp.position = v;

@@ -4,7 +4,7 @@ import { Operator } from '../operator';
 import { PARTICLE_FIELD_COLOR } from '../../../../common/particles/particlefields';
 
 const DEFAULT_INPUT_VALUE = vec3.create();
-let v = vec4.create();
+const v = vec4.create();
 
 export class InitVec extends Operator {
 	setMethod = null;
@@ -30,7 +30,7 @@ export class InitVec extends Operator {
 	}
 
 	doInit(particle, elapsedTime) {
-		let inputValue = this.getParamVectorValue('m_InputValue', particle, v) ?? DEFAULT_INPUT_VALUE;
+		const inputValue = this.getParamVectorValue('m_InputValue', particle, v) ?? DEFAULT_INPUT_VALUE;
 
 		particle.setField(this.fieldOutput, inputValue, this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
 	}

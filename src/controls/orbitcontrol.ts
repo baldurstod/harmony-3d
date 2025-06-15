@@ -175,7 +175,7 @@ export class OrbitControl extends CameraControl {
 		if (this.enabled === false) {
 			return;
 		}
-		var position = this.camera._position;
+		const position = this.camera._position;
 
 		//offset.copy(position).sub(this.target);
 		vec3.sub(tempVec3, position, this.#target.getWorldPosition());//TODO: optimise
@@ -309,10 +309,10 @@ export class OrbitControl extends CameraControl {
 		if (this.camera.isPerspective) {
 
 			// perspective
-			var position = this.camera.position;
+			const position = this.camera.position;
 			//offset.copy(position).sub(this.target);
 			vec3.sub(tempVec3, position, this.#target.getWorldPosition());//todo // OPTIMIZE:
-			var targetDistance = vec3.len(tempVec3);
+			let targetDistance = vec3.len(tempVec3);
 
 			// half of the fov is center to top of screen
 			targetDistance *= this.camera.getTanHalfVerticalFov();//Math.tan((this.camera.fov / 2)* Math.PI / 180.0);
@@ -455,7 +455,7 @@ export class OrbitControl extends CameraControl {
 		}
 		const keyboardEvent = event.detail.keyboardEvent;
 
-		var needsUpdate = false;
+		let needsUpdate = false;
 		if (keyboardEvent.ctrlKey || keyboardEvent.metaKey || keyboardEvent.altKey) {
 			return;
 		}
@@ -562,8 +562,8 @@ export class OrbitControl extends CameraControl {
 
 		} else {
 
-			var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-			var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+			const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
+			const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
 
 			vec2.set(this.#rotateStart, x, y);
 
@@ -579,8 +579,8 @@ export class OrbitControl extends CameraControl {
 
 		} else {
 
-			var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-			var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+			const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
+			const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
 
 			vec2.set(this.#panStart, x, y);
 
@@ -590,10 +590,10 @@ export class OrbitControl extends CameraControl {
 
 	#handleTouchStartDolly(event: TouchEvent) {
 
-		var dx = event.touches[0].pageX - event.touches[1].pageX;
-		var dy = event.touches[0].pageY - event.touches[1].pageY;
+		const dx = event.touches[0].pageX - event.touches[1].pageX;
+		const dy = event.touches[0].pageY - event.touches[1].pageY;
 
-		var distance = Math.sqrt(dx * dx + dy * dy);
+		const distance = Math.sqrt(dx * dx + dy * dy);
 
 		vec2.set(this.#dollyStart, 0, distance);
 
@@ -623,8 +623,8 @@ export class OrbitControl extends CameraControl {
 
 		} else {
 
-			var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-			var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+			const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
+			const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
 
 			vec2.set(this.#rotateEnd, x, y);
 
@@ -652,8 +652,8 @@ export class OrbitControl extends CameraControl {
 
 		} else {
 
-			var x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-			var y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+			const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
+			const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
 
 			//panEnd.set(x, y);
 			vec2.set(this.#panEnd, x, y);
@@ -670,10 +670,10 @@ export class OrbitControl extends CameraControl {
 
 	#handleTouchMoveDolly(event: TouchEvent) {
 
-		var dx = event.touches[0].pageX - event.touches[1].pageX;
-		var dy = event.touches[0].pageY - event.touches[1].pageY;
+		const dx = event.touches[0].pageX - event.touches[1].pageX;
+		const dy = event.touches[0].pageY - event.touches[1].pageY;
 
-		var distance = Math.sqrt(dx * dx + dy * dy);
+		const distance = Math.sqrt(dx * dx + dy * dy);
 
 		//dollyEnd.set(0, distance);
 		vec2.set(this.#dollyEnd, 0, distance);
@@ -721,7 +721,7 @@ export class OrbitControl extends CameraControl {
 
 		//this.htmlElement.focus ? this.htmlElement.focus(): window.focus();
 
-		let action = this.#mouseButtons[mouseEvent.button];
+		const action = this.#mouseButtons[mouseEvent.button];
 
 		const MOUSE = { LEFT: 0, MIDDLE: 1, RIGHT: 2, ROTATE: 0, DOLLY: 1, PAN: 2, NONE: -1 };
 		const mouseButtons = { LEFT: MOUSE.ROTATE, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN };

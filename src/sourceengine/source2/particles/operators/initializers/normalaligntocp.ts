@@ -17,7 +17,7 @@ export class NormalAlignToCP extends Operator {
 
 	doInit(particle, elapsedTime) {
 		//This operator overrides the normal
-		let cp = this.system.getControlPoint(this.controlPointNumber);
+		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
 			//cp.getWorldTransformation(particle.cpPreviousTransform);
 			vec3.transformQuat(particle.normal, DEFAULT_NORMAL, cp.currentWorldQuaternion);

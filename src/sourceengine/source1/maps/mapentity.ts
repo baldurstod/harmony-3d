@@ -32,8 +32,8 @@ export function ParseVec4(out, str) {
 }
 
 export function parseLightColorIntensity(value, light, intensityMultiplier = 1) {
-	let colorValue = vec3.create();
-	let arrayValue = value.split(' ');
+	const colorValue = vec3.create();
+	const arrayValue = value.split(' ');
 
 	colorValue[0] = Math.pow(arrayValue[0] / 255.0, 2.2);
 	colorValue[1] = Math.pow(arrayValue[1] / 255.0, 2.2);
@@ -120,9 +120,9 @@ export class MapEntity extends Entity {
 				this.f = kvElement.spawnflags * 1;
 			}
 
-			let entityParams = Object.keys(kvElement);
+			const entityParams = Object.keys(kvElement);
 			for (let i = 0, l = entityParams.length; i < l; i++) {
-				let key = entityParams[i];
+				const key = entityParams[i];
 				this.setKeyValue(key, kvElement[key]);
 			}
 		}
@@ -156,7 +156,7 @@ export class MapEntity extends Entity {
 	}
 
 	addOutput(outputName, outputValue) {
-		let output = new MapEntityConnection(outputName);
+		const output = new MapEntityConnection(outputName);
 		this.m.addConnection(output);
 		this.outputs.push(output);
 		output.fromString(outputValue);
@@ -217,7 +217,7 @@ export class MapEntity extends Entity {
 	update(map, delta) {
 		this.m_flLocalTime += delta
 		if (this.parentName) {
-			let parent = map.getEntityByTargetName(this.parentName);
+			const parent = map.getEntityByTargetName(this.parentName);
 			if (parent) {
 				this.setParent(parent);
 				delete this.parentName;
@@ -228,7 +228,7 @@ export class MapEntity extends Entity {
 
 	setParent(parent) {
 		//void CBaseEntity::SetParent(CBaseEntity *pParentEntity, int iAttachment)
-		let oldParent = this.parent;
+		const oldParent = this.parent;
 		this.parent = parent;
 		if (parent == this) {
 			this.parent = null;
@@ -270,10 +270,10 @@ export class MapEntity extends Entity {
 	}
 
 	fireOutput(outputName) {
-		let outputs = this.outputs;
-		let result = [];
+		const outputs = this.outputs;
+		const result = [];
 		for (let i = 0, l = outputs.length; i < l; i++) {
-			let output = outputs[i];
+			const output = outputs[i];
 			if (outputName == output.outputName) {
 				//result.push(connection);
 				output.fire(this.m);
@@ -300,7 +300,7 @@ class MapEntityConnection {
 		this.p = null;
 	}
 	fromString(stringDatas) {
-		let parameters = stringDatas.split(',');
+		const parameters = stringDatas.split(',');
 		if (parameters && parameters.length == 5) {
 			this.p = parameters;
 		}
@@ -309,38 +309,38 @@ class MapEntityConnection {
 		return this.n;
 	}
 	getTargetName() {
-		let parameters = this.p;
+		const parameters = this.p;
 		if (parameters) {
 			return parameters[0];
 		}
 	}
 	getTargetInput() {
-		let parameters = this.p;
+		const parameters = this.p;
 		if (parameters) {
 			return parameters[1];
 		}
 	}
 	getTargetParameter() {
-		let parameters = this.p;
+		const parameters = this.p;
 		if (parameters) {
 			return parameters[2];
 		}
 	}
 	getDelay() {
-		let parameters = this.p;
+		const parameters = this.p;
 		if (parameters) {
 			return parameters[3];
 		}
 	}
 	getFireOnlyOnce() {
-		let parameters = this.p;
+		const parameters = this.p;
 		if (parameters) {
 			return parameters[4];
 		}
 	}
 
 	fire(map) {//TODO: delay, fire once
-		let parameters = this.p;
+		const parameters = this.p;
 		if (parameters) {
 			map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
 		}

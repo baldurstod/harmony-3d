@@ -25,8 +25,8 @@ export class Texture {
 	premultiplyAlpha = false;
 	dirty = true;
 	texture: WebGLTexture | null = null;
-	width: number = 0;
-	height: number = 0;
+	width = 0;
+	height = 0;
 	isTexture = true;
 	name = '';
 	#colorSpace: ColorSpace;
@@ -78,7 +78,7 @@ export class Texture {
 		glContext.bindTexture(target, null);
 	}
 
-	texImage2D(glContext: WebGLAnyRenderingContext, target: TextureTarget, width: number, height: number, format: TextureFormat, type: TextureType, pixels: ArrayBufferView | null = null, level: number = 0) {
+	texImage2D(glContext: WebGLAnyRenderingContext, target: TextureTarget, width: number, height: number, format: TextureFormat, type: TextureType, pixels: ArrayBufferView | null = null, level = 0) {
 		glContext.bindTexture(target, this.texture);
 		glContext.texImage2D(target, level, this.internalFormat, width, height, 0, format, type, pixels);
 		glContext.bindTexture(target, null);

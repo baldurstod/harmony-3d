@@ -4,7 +4,7 @@ import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
 
 export class Triangles extends Mesh {
-	#triangles?: Array<Array<vec3>>;
+	#triangles?: vec3[][];
 	//constructor(triangles, material = ) {
 	constructor(params: any = {}) {
 		super(params);

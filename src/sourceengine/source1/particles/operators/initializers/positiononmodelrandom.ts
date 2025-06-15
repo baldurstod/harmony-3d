@@ -32,7 +32,7 @@ export class PositionOnModelRandom extends SourceEngineParticleOperator {
 		const controllingModel = controlPoint.parentModel;
 		if (controllingModel) {
 			//TODOv3
-			let bones = [];
+			const bones = [];
 			particle.bones = bones;
 			particle.initialVec = vec3.create();
 			const position = controllingModel.getRandomPointOnModel(vec3.create(), particle.initialVec, bones);

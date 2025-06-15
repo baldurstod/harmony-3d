@@ -8,7 +8,7 @@ export class SetControlPointPositions extends Operator {
 	useWorldLocation = false;
 	orient = false;
 	cp = [1, 2, 3, 4];
-	cpPos: Array<vec3> = [vec3.fromValues(128, 0, 0), vec3.fromValues(0, 128, 0), vec3.fromValues(-128, 0, 0), vec3.fromValues(0, -128, 0)];
+	cpPos: vec3[] = [vec3.fromValues(128, 0, 0), vec3.fromValues(0, 128, 0), vec3.fromValues(-128, 0, 0), vec3.fromValues(0, -128, 0)];
 	headLocation = 0;
 	setOnce: boolean;
 
@@ -65,13 +65,13 @@ export class SetControlPointPositions extends Operator {
 		let cpNumber;
 		let cpLocation;
 
-		let headLocation = this.system.getControlPoint(this.headLocation);
+		const headLocation = this.system.getControlPoint(this.headLocation);
 
 		for (let cpIndex = 0; cpIndex < 4; ++cpIndex) {
 			cpNumber = this.cp[cpIndex];
 			cpLocation = this.cpPos[cpIndex];
 
-			let cp = this.system.getControlPoint(cpNumber);
+			const cp = this.system.getControlPoint(cpNumber);
 			if (!useWorldLocation) {
 				vec3.transformQuat(v, cpLocation, headLocation.currentWorldQuaternion);
 				vec3.add(v, v, headLocation.currentWorldPosition);

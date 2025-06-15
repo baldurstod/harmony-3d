@@ -3,7 +3,7 @@ import { FileSelectorFile } from './file';
 import { FileSelector } from './fileselector';
 
 export class HTMLFileSelectorTileElement extends HTMLElement {
-	#visible: boolean = true;
+	#visible = true;
 	#selector?: FileSelector;
 	#file?: FileSelectorFile;
 

@@ -13,7 +13,7 @@ export class CPVelocityForce extends Operator {
 	}
 
 	doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
-		let scale = this.getParamScalarValue('m_flScale') ?? 1;
+		const scale = this.getParamScalarValue('m_flScale') ?? 1;
 		//TODO
 	}
 }

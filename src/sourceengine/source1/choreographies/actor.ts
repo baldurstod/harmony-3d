@@ -5,7 +5,7 @@ import { Choreography } from './choreography';
 
 export class Actor {
 	name: string;
-	channels: Array<Channel> = [];
+	channels: Channel[] = [];
 	choreography: Choreography;
 	active = false;
 
@@ -33,7 +33,7 @@ export class Actor {
 	toString(indent: string) {
 		indent = indent || '';
 		const subindent = indent + '\t';
-		let arr = [indent + 'Actor ' + this.name];
+		const arr = [indent + 'Actor ' + this.name];
 		for (let i = 0; i < this.channels.length; ++i) {
 			arr.push(this.channels[i].toString(subindent));
 		}

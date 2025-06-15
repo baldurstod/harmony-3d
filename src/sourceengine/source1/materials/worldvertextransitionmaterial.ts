@@ -8,13 +8,13 @@ export class WorldVertexTransitionMaterial extends SourceEngineMaterial {
 	}
 
 	afterProcessProxies(proxyParams) {
-		let variables = this.variables;
-		let parameters = this.parameters;
+		const variables = this.variables;
+		const parameters = this.parameters;
 
-		let baseTexture2 = this.variables.get('$basetexture2');
+		const baseTexture2 = this.variables.get('$basetexture2');
 		this.setColor2Map(baseTexture2 ? Source1TextureManager.getTexture(this.repository, baseTexture2, 0, true) : null);
 
-		let blendModulateTexture = this.variables.get('$blendmodulatetexture');
+		const blendModulateTexture = this.variables.get('$blendmodulatetexture');
 		if (blendModulateTexture) {
 			this.setTexture('blendModulateMap', Source1TextureManager.getTexture(this.repository, blendModulateTexture, 0, true), 'USE_BLEND_MODULATE_MAP');
 		}

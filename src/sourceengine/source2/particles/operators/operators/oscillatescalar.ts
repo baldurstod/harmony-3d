@@ -65,15 +65,15 @@ export class OscillateScalar extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let fl4StartTimeWidth = this.startTimeMax - this.startTimeMin;
-		let fl4EndTimeWidth = this.endTimeMax - this.endTimeMin;
+		const fl4StartTimeWidth = this.startTimeMax - this.startTimeMin;
+		const fl4EndTimeWidth = this.endTimeMax - this.endTimeMin;
 
-		let fl4FrequencyWidth = this.frequencyMax - this.frequencyMin;
-		let fl4RateWidth = this.rateMax - this.rateMin;
+		const fl4FrequencyWidth = this.frequencyMax - this.frequencyMin;
+		const fl4RateWidth = this.rateMax - this.rateMin;
 
-		let fl4ScaleFactor = /*flStrength * */elapsedTime;
+		const fl4ScaleFactor = /*flStrength * */elapsedTime;
 
-		let fl4CosFactor = this.oscMult * particle.currentTime + this.oscAdd;
+		const fl4CosFactor = this.oscMult * particle.currentTime + this.oscAdd;
 
 		if (particle.timeToLive) {
 			let fl4LifeTime;
@@ -107,7 +107,7 @@ export class OscillateScalar extends Operator {
 				} else {
 					fl4Cos = fl4CosFactor * fl4Frequency;
 				}
-				let fl4OscMultiplier = fl4Rate * fl4ScaleFactor;
+				const fl4OscMultiplier = fl4Rate * fl4ScaleFactor;
 				let fl4OscVal = particle.getField(this.field) + fl4OscMultiplier * Math.sin(fl4Cos * Math.PI);
 				if (this.field == PARTICLE_FIELD_ALPHA) {
 					fl4OscVal = clamp(fl4OscVal, 0.0, 1.0);

@@ -28,12 +28,12 @@ export class RampScalarLinearSimple extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let particleTime = particle.proportionOfLife;
+		const particleTime = particle.proportionOfLife;
 		if (particleTime < this.startTime || particleTime > this.endTime) {
 			return;
 		}
 
-		let value = particle.getField(this.field) + this.rate * elapsedTime;
+		const value = particle.getField(this.field) + this.rate * elapsedTime;
 		particle.setField(this.field, value);
 	}
 }

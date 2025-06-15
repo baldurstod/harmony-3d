@@ -9,7 +9,7 @@ class SourceEngineVMTLoaderClass {
 	#extraMaterials = new Map<string, string>();
 
 	load(repositoryName, fileName) {
-		let promise = new Promise(async (resolve, reject) => {
+		const promise = new Promise(async (resolve, reject) => {
 			/*
 			const requestCallback = async response => {
 				if (response.ok) {
@@ -51,8 +51,8 @@ class SourceEngineVMTLoaderClass {
 	}
 
 	#loadMaterial(repositoryName, fileName, file/*, repository, texturesDir*/) {//todov3
-		let loadMaterialPromise = new Promise((resolve, reject) => {
-			let fileNameRemoveMe = fileName;
+		const loadMaterialPromise = new Promise((resolve, reject) => {
+			const fileNameRemoveMe = fileName;
 			fileName = fileName.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '');
 			fileName = fileName.replace(/\\/g, '/').toLowerCase();
 
@@ -69,11 +69,11 @@ class SourceEngineVMTLoaderClass {
 			const shaderName = kv.getRootName().toLowerCase();
 			let material;
 			if (shaderName === 'patch') {
-				let include = vmt['include'];
-				let insert = vmt['insert'];
+				const include = vmt['include'];
+				const insert = vmt['insert'];
 
-				let patchResolve = function (material) {
-					for (let insertIndex in insert) {
+				const patchResolve = function (material) {
+					for (const insertIndex in insert) {
 						material.variables.set(insertIndex, insert[insertIndex]);
 						material.parameters[insertIndex] = insert[insertIndex];
 					}
@@ -81,23 +81,23 @@ class SourceEngineVMTLoaderClass {
 					resolve(material);
 				};
 
-				let patchReject = function () {
+				const patchReject = function () {
 					//TODOv3: handle error
 					let rejectionCount = 0;
-					let patchResolve2 = function (material) {
+					const patchResolve2 = function (material) {
 						rejectionCount = Infinity;
 						patchResolve(material);
 					};
-					let patchReject2 = function (fileName) {
+					const patchReject2 = function (fileName) {
 						if (rejectionCount == 0) {
 							reject(fileName);
 						}
 					};
 				}
-				let promise = SourceEngineMaterialManager.getMaterial(repositoryName, include);
+				const promise = SourceEngineMaterialManager.getMaterial(repositoryName, include);
 				promise.then(patchResolve, patchReject);
 			} else {
-				let materialClass = this.#materials.get(shaderName);
+				const materialClass = this.#materials.get(shaderName);
 				if (materialClass !== undefined) {
 					vmt.repository = repositoryName;
 					vmt.filename = fileName;

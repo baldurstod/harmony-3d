@@ -29,11 +29,11 @@ export class DrawCircle extends Node {
 	}
 
 	async operate(context: any = {}) {
-		let center = await this.getInput('center').value;
-		let radius = await this.getInput('radius').value;
-		let borderColor = await this.getInput('bordercolor').value;
-		let fillColor = await this.getInput('fillcolor').value;
-		let border = await this.getInput('border').value;
+		const center = await this.getInput('center').value;
+		const radius = await this.getInput('radius').value;
+		const borderColor = await this.getInput('bordercolor').value;
+		const fillColor = await this.getInput('fillcolor').value;
+		const border = await this.getInput('border').value;
 
 		this.getOutput('perimeter')._value = Math.PI * radius * 2;
 		this.getOutput('area')._value = Math.PI * radius ** 2;
@@ -50,7 +50,7 @@ export class DrawCircle extends Node {
 		new Graphics().pushRenderTarget(this.#renderTarget);
 		this.editor.render(this.material);
 
-		let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
+		const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
 		new Graphics().glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		new Graphics().popRenderTarget();
 

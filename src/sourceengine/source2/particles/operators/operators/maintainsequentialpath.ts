@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
-let vec = vec3.create();
+const vec = vec3.create();
 
 export class MaintainSequentialPath extends Operator {
 	numToAssign = 100;
@@ -33,7 +33,7 @@ export class MaintainSequentialPath extends Operator {
 				this.loop = value;
 				break;
 			case 'm_PathParams':
-				for (let subName of Object.keys(value)) {
+				for (const subName of Object.keys(value)) {
 					this._paramChanged(subName, value[subName]);
 				}
 				break;
@@ -76,20 +76,20 @@ export class MaintainSequentialPath extends Operator {
 	}
 
 	doOperate(particles, elapsedTime) {
-		let t = vec3.create();
+		const t = vec3.create();
 		//TODO: use other parameters
-		let startControlPointNumber = this.startControlPointNumber;
-		let endControlPointNumber = this.endControlPointNumber;
+		const startControlPointNumber = this.startControlPointNumber;
+		const endControlPointNumber = this.endControlPointNumber;
 
-		let startControlPoint = this.system.getControlPoint(startControlPointNumber);
-		let endControlPoint = this.system.getControlPoint(endControlPointNumber);
+		const startControlPoint = this.system.getControlPoint(startControlPointNumber);
+		const endControlPoint = this.system.getControlPoint(endControlPointNumber);
 
 		if (startControlPoint && endControlPoint) {
-			let numToAssign = this.numToAssign;
+			const numToAssign = this.numToAssign;
 			let assignedSoFar = this.assignedSoFar;
 
 			let particle;
-			let delta = startControlPoint.deltaPosFrom(endControlPoint, vec);
+			const delta = startControlPoint.deltaPosFrom(endControlPoint, vec);
 			for (let i = 0; i < particles.length; ++i) {
 				particle = particles[i];
 

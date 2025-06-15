@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 
-let EPSILON = 0.000001;
+const EPSILON = 0.000001;
 
 export class Spherical {
 	theta!: number;
@@ -47,7 +47,7 @@ export class Spherical {
 	}
 
 	toCartesian(v: vec3) {
-		let sinPhiRadius = Math.sin(this.phi) * this.radius;
+		const sinPhiRadius = Math.sin(this.phi) * this.radius;
 		v[0] = sinPhiRadius * Math.cos(this.theta);
 		v[1] = sinPhiRadius * Math.sin(this.theta);
 		v[2] = Math.cos(this.phi) * this.radius;

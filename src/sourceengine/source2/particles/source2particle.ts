@@ -34,7 +34,7 @@ export class Source2Particle {
 	timeToLive = 0;
 	initialTimeToLive = 0;
 	proportionOfLife = 0;
-	trail: Array<any> = [];//TODO: remove ?
+	trail: any[] = [];//TODO: remove ?
 	modelName = '';
 	u = 0;//TODO: remove ?
 	v = 0;//TODO: remove ?
@@ -56,7 +56,7 @@ export class Source2Particle {
 	rotLockedToCP = false;
 	trailLength = 0.1;
 	MovementRigidAttachToCP = false;
-	previousElapsedTime: number = 0;
+	previousElapsedTime = 0;
 
 
 	static consoleAlphaAlternate = false;
@@ -102,7 +102,7 @@ export class Source2Particle {
 		this.isAlive = true;
 		this.currentTime = 0;
 		this.proportionOfLife = 0;
-		this.trail = new Array();
+		this.trail = [];
 	}
 
 	die() {
@@ -153,7 +153,7 @@ export class Source2Particle {
 		//mat4.identity(this.cpPreviousTransform);
 	}
 
-	setInitialField(field: number/*TODO: create a field enum*/, value: any, mulInitial: boolean = false) {
+	setInitialField(field: number/*TODO: create a field enum*/, value: any, mulInitial = false) {
 		this.setField(field, value, mulInitial, true);
 	}
 

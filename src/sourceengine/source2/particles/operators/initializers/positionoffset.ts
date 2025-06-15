@@ -28,8 +28,8 @@ export class PositionOffset extends Operator {
 	}
 
 	doInit(particle, elapsedTime) {
-		let offsetMin = this.getParamVectorValue('m_OffsetMin') ?? DEFAULT_OFFSET;
-		let offsetMax = this.getParamVectorValue('m_OffsetMax') ?? DEFAULT_OFFSET;
+		const offsetMin = this.getParamVectorValue('m_OffsetMin') ?? DEFAULT_OFFSET;
+		const offsetMax = this.getParamVectorValue('m_OffsetMax') ?? DEFAULT_OFFSET;
 
 		vec3RandomBox(offset, offsetMin, offsetMax);
 

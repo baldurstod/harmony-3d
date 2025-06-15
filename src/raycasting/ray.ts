@@ -43,9 +43,9 @@ export class Ray {
 		mat4.invert(m, worldMatrix);
 		vec3.transformMat4(this.origin, other.origin, m);
 
-		let x = other.direction[0];
-		let y = other.direction[1];
-		let z = other.direction[2];
+		const x = other.direction[0];
+		const y = other.direction[1];
+		const z = other.direction[2];
 		this.direction[0] = m[0] * x + m[4] * y + m[8] * z;
 		this.direction[1] = m[1] * x + m[5] * y + m[9] * z;
 		this.direction[2] = m[2] * x + m[6] * y + m[10] * z;
@@ -68,24 +68,24 @@ export class Ray {
 		vec3.sub(edge1, v1, v0);
 		vec3.sub(edge2, v2, v0);
 		vec3.cross(h, this.direction, edge2);
-		let a = vec3.dot(edge1, h);
+		const a = vec3.dot(edge1, h);
 		if (a > -EPSILON && a < EPSILON) {
 			return false;
 		}
-		let f = 1.0 / a;
+		const f = 1.0 / a;
 		vec3.sub(s, this.origin, v0);
 
-		let u = f * vec3.dot(s, h);
+		const u = f * vec3.dot(s, h);
 		if (u < 0.0 || u > 1.0) {
 			return false;
 		}
 		vec3.cross(q, s, edge1);
-		let v = f * vec3.dot(this.direction, q);
+		const v = f * vec3.dot(this.direction, q);
 		if (v < 0.0 || u + v > 1.0) {
 			return false;
 		}
 		// At this stage we can compute t to find out where the intersection point is on the line.
-		let t = f * vec3.dot(edge2, q);
+		const t = f * vec3.dot(edge2, q);
 		if (t > EPSILON) { // ray intersection
 			this.positionAt(t, intersectionPoint);
 			return true;
@@ -99,17 +99,17 @@ export class Ray {
 		vec3.div(h, h, scale);
 		vec3.div(h2, this.direction, scale);
 		vec3.normalize(h2, h2);
-		let p = vec3.dot(h2, h);
-		let q = vec3.dot(h, h) - (radius * radius);
+		const p = vec3.dot(h2, h);
+		const q = vec3.dot(h, h) - (radius * radius);
 
-		let discriminant = (p * p) - q;
+		const discriminant = (p * p) - q;
 		if (discriminant < 0.0) {
 			return false;
 		}
 
-		let dRoot = Math.sqrt(discriminant);
-		let dist1 = -p - dRoot;
-		let dist2 = -p + dRoot;
+		const dRoot = Math.sqrt(discriminant);
+		const dist1 = -p - dRoot;
+		const dist2 = -p + dRoot;
 
 		vec3.scaleAndAdd(intersectionPoint1, h, h2, dist1);
 		vec3.scaleAndAdd(intersectionPoint2, h, h2, dist2);

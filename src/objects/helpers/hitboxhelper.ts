@@ -25,10 +25,10 @@ export class HitboxHelper extends Entity {
 	parentChanged(parent) {
 		this.removeBoxes();
 		if (parent && parent.getHitboxes) {
-			let hitboxes = parent.getHitboxes();
-			for (let hitbox of hitboxes) {
+			const hitboxes = parent.getHitboxes();
+			for (const hitbox of hitboxes) {
 				vec3.sub(tempVec3, hitbox.boundingBoxMax, hitbox.boundingBoxMin);
-				let box = new Box({width: tempVec3[0], height: tempVec3[1], depth: tempVec3[2], material: boxMaterial});
+				const box = new Box({width: tempVec3[0], height: tempVec3[1], depth: tempVec3[2], material: boxMaterial});
 				box.serializable = false;
 				vec3.lerp(tempVec3, hitbox.boundingBoxMin, hitbox.boundingBoxMax, 0.5);
 				box.position = tempVec3;

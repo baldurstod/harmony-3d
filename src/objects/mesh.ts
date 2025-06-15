@@ -13,19 +13,19 @@ import { Intersection } from '../raycasting/intersection';
 
 const tempVec3 = vec3.create();
 
-let v1 = vec3.create();
-let v2 = vec3.create();
-let v3 = vec3.create();
-let n1 = vec3.create();
-let n2 = vec3.create();
-let n3 = vec3.create();
-let uv1 = vec2.create();
-let uv2 = vec2.create();
-let uv3 = vec2.create();
-let intersectionPoint = vec3.create();
-let intersectionNormal = vec3.create();
-let ray = new Ray();
-let uv = vec2.create();
+const v1 = vec3.create();
+const v2 = vec3.create();
+const v3 = vec3.create();
+const n1 = vec3.create();
+const n2 = vec3.create();
+const n3 = vec3.create();
+const uv1 = vec2.create();
+const uv2 = vec2.create();
+const uv3 = vec2.create();
+const intersectionPoint = vec3.create();
+const intersectionNormal = vec3.create();
+const ray = new Ray();
+const uv = vec2.create();
 
 export class Mesh extends Entity {
 	#geometry?: BufferGeometry;
@@ -33,7 +33,7 @@ export class Mesh extends Entity {
 	#dirtyProgram = true;//TODOv3 use another method
 	renderMode = GL_TRIANGLES;
 	isRenderable = true;
-	uniforms: { [key: string]: any } = {};
+	uniforms: Record<string, any> = {};
 	defines = Object.create(null);
 	isMesh = true;
 
@@ -106,13 +106,13 @@ export class Mesh extends Entity {
 	}
 
 	exportObj() {
-		let ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
-		let attributes: { [key: string]: string } = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
-		let geometry = this.geometry;
-		for (let objAttribute in attributes) {
-			let geometryAttribute = attributes[objAttribute];
+		const ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
+		const attributes: Record<string, string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
+		const geometry = this.geometry;
+		for (const objAttribute in attributes) {
+			const geometryAttribute = attributes[objAttribute];
 			if (geometry?.getAttribute(geometryAttribute)) {
-				let webglAttrib = geometry.getAttribute(geometryAttribute);
+				const webglAttrib = geometry.getAttribute(geometryAttribute);
 				if (webglAttrib) {
 					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = webglAttrib._array;
 				}
@@ -145,7 +145,7 @@ export class Mesh extends Entity {
 		max[1] = -Infinity;
 		max[2] = -Infinity;
 
-		let vertexPosition = this.geometry?.getAttribute('aVertexPosition')?._array;
+		const vertexPosition = this.geometry?.getAttribute('aVertexPosition')?._array;
 		for (let i = 0, l = vertexPosition.length; i < l; i += 3) {
 			tempVec3[0] = vertexPosition[i + 0];
 			tempVec3[1] = vertexPosition[i + 1];
@@ -176,14 +176,14 @@ export class Mesh extends Entity {
 	}
 
 	buildContextMenu() {
-		let contextMenu = super.buildContextMenu();
+		const contextMenu = super.buildContextMenu();
 
 		Object.assign(contextMenu.material.submenu, {
 			Mesh_1: null,
 			set_material: {
 				i18n: '#set_material', f: async () => {
-					let materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList()); if (materialName) {
-						let material = await MaterialManager.getMaterial(materialName, (material) => { if (material) { this.setMaterial(material); } });
+					const materialName = await new Interaction().getString(0, 0, MaterialManager.getMaterialList()); if (materialName) {
+						const material = await MaterialManager.getMaterial(materialName, (material) => { if (material) { this.setMaterial(material); } });
 					}
 				}
 			},
@@ -191,13 +191,13 @@ export class Mesh extends Entity {
 		return contextMenu;
 	}
 
-	raycast(raycaster: Raycaster, intersections: Array<Intersection>) {
-		let geometry = this.geometry;
-		let indices = geometry?.getAttribute('index')?._array;
-		let vertices = geometry?.getAttribute('aVertexPosition')?._array;
-		let textureCoords = geometry?.getAttribute('aTextureCoord')?._array;
+	raycast(raycaster: Raycaster, intersections: Intersection[]) {
+		const geometry = this.geometry;
+		const indices = geometry?.getAttribute('index')?._array;
+		const vertices = geometry?.getAttribute('aVertexPosition')?._array;
+		const textureCoords = geometry?.getAttribute('aTextureCoord')?._array;
 		let normals = geometry?.getAttribute('aVertexNormal')?._array;
-		let worldMatrix = this.worldMatrix;
+		const worldMatrix = this.worldMatrix;
 		ray.copyTransform(raycaster.ray, worldMatrix);
 		if (normals) {
 			for (let i = 0, l = indices.length; i < l; i += 3) {
@@ -225,9 +225,9 @@ export class Mesh extends Entity {
 					getUV(uv, intersectionPoint, v1, v2, v3, uv1, uv2, uv3);
 					getNormal(intersectionNormal, intersectionPoint, v1, v2, v3, n1, n2, n3);
 
-					let x = intersectionNormal[0];
-					let y = intersectionNormal[1];
-					let z = intersectionNormal[2];
+					const x = intersectionNormal[0];
+					const y = intersectionNormal[1];
+					const z = intersectionNormal[2];
 
 					//Tranform the normal with the world matrix
 					intersectionNormal[0] = worldMatrix[0] * x + worldMatrix[4] * y + worldMatrix[8] * z;
@@ -265,9 +265,9 @@ export class Mesh extends Entity {
 					getUV(uv, intersectionPoint, v1, v2, v3, uv1, uv2, uv3);
 					getNormal(intersectionNormal, intersectionPoint, v1, v2, v3, n1, n2, n3);
 
-					let x = intersectionNormal[0];
-					let y = intersectionNormal[1];
-					let z = intersectionNormal[2];
+					const x = intersectionNormal[0];
+					const y = intersectionNormal[1];
+					const z = intersectionNormal[2];
 
 					//Tranform the normal with the world matrix
 					intersectionNormal[0] = worldMatrix[0] * x + worldMatrix[4] * y + worldMatrix[8] * z;

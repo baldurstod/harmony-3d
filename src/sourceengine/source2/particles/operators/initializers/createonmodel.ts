@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
-let vec = vec3.create();
+const vec = vec3.create();
 
 export class CreateOnModel extends Operator {
 	forceInModel = 0;
@@ -52,13 +52,13 @@ export class CreateOnModel extends Operator {
 	}
 
 	doInit(particle, elapsedTime) {
-		let hitBoxScale = this.getParamVectorValue('m_vecHitBoxScale');
+		const hitBoxScale = this.getParamVectorValue('m_vecHitBoxScale');
 
-		let controlPoint = this.system.getControlPoint(this.controlPointNumber);
+		const controlPoint = this.system.getControlPoint(this.controlPointNumber);
 		if (controlPoint) {
-			let controllingModel = controlPoint.parentModel;
+			const controllingModel = controlPoint.parentModel;
 			if ((controllingModel as any)?.getRandomPointOnModel) {
-				let bones = [];
+				const bones = [];
 				particle.bones = bones;
 				particle.initialVec = vec3.create();
 				const position = (controllingModel as any).getRandomPointOnModel(vec3.create(), particle.initialVec, bones);

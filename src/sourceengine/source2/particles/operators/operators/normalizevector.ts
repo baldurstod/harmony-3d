@@ -3,7 +3,7 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
 
-let v = vec3.create();
+const v = vec3.create();
 
 export class NormalizeVector extends Operator {
 	fieldOutput = PARTICLE_FIELD_POSITION;

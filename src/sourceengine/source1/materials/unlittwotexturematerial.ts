@@ -43,8 +43,8 @@ export class UnlitTwoTextureMaterial extends SourceEngineMaterial {
 	}
 
 	afterProcessProxies() {
-		let variables = this.variables;
-		let parameters = this.parameters;
+		const variables = this.variables;
+		const parameters = this.parameters;
 		const texture2Transform = variables.get('$texture2transform');
 		if (texture2Transform) {
 			this.uniforms['uTexture2Transform'] = texture2Transform;

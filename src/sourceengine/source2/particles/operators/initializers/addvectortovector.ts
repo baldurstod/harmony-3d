@@ -5,8 +5,8 @@ import { PARTICLE_FIELD_POSITION, PARTICLE_FIELD_COLOR } from '../../../../commo
 import { vec3RandomBox } from '../../../../../math/functions';
 import { ONE_EPS } from '../../../../../math/constants';
 
-let va = vec3.create();
-let vb = vec3.create();
+const va = vec3.create();
+const vb = vec3.create();
 
 export class AddVectorToVector extends Operator {
 	fieldOutput = PARTICLE_FIELD_POSITION;

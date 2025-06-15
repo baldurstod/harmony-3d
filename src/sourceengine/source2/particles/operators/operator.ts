@@ -24,10 +24,10 @@ function vec4Scale(out: vec4, a: vec4, b: number) {
 }
 
 function vec4Lerp(out: vec4, a: vec4, b: vec4, t: number) {
-	let ax = Number(a[0]);
-	let ay = Number(a[1]);
-	let az = Number(a[2]);
-	let aw = Number(a[3]);
+	const ax = Number(a[0]);
+	const ay = Number(a[1]);
+	const az = Number(a[2]);
+	const aw = Number(a[3]);
 	out[0] = ax + t * (Number(b[0]) - ax);
 	out[1] = ay + t * (Number(b[1]) - ay);
 	out[2] = az + t * (Number(b[2]) - az);
@@ -39,7 +39,7 @@ export type Source2OperatorParamValue = any;/*TODO: improve type */
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
-	#parameters: { [key: string]: any/*TODO: better type*/ } = {};
+	#parameters: Record<string, any> = {};
 	system: Source2ParticleSystem
 	opStartFadeInTime = 0;
 	opEndFadeInTime = 0;
@@ -48,14 +48,14 @@ export class Operator {//TODOv3: rename this class ?
 	opFadeOscillatePeriod = 0;
 	normalizePerLiving = false;
 	disableOperator = false;
-	controlPointNumber: number = 0;
+	controlPointNumber = 0;
 	fieldInput = -1;
 	fieldOutput = -1;
 	scaleCp?: number;
 	mesh?: Mesh;
 	material?: Source2SpriteCard;
 	endCapState?: number;
-	currentTime: number = 0;
+	currentTime = 0;
 	operateAllParticlesRemoveme = false;
 
 	constructor(system: Source2ParticleSystem) {
@@ -64,8 +64,8 @@ export class Operator {//TODOv3: rename this class ?
 
 	setParam(paramName: string, value: Source2OperatorParamValue) {
 		if (value instanceof Kv3Array) {
-			let arr = [];
-			for (let v of value.properties) {
+			const arr = [];
+			for (const v of value.properties) {
 				if (typeof v == 'bigint') {
 					arr.push(Number(v));
 				} else {
@@ -88,14 +88,14 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 	getParamScalarValue(paramName: string, particle?: Source2Particle) {
-		let parameter = this.#parameters[paramName];
+		const parameter = this.#parameters[paramName];
 		return this.#getParamScalarValue(parameter, particle);
 	}
 
 	#getParamScalarValue(parameter: JSONObject, particle?: Source2Particle) {
 		if (parameter) {
 			let inputValue;
-			let type = parameter.m_nType;
+			const type = parameter.m_nType;
 			if (type) {
 				switch (type) {
 					case 'PF_TYPE_LITERAL':
@@ -106,7 +106,7 @@ export class Operator {//TODOv3: rename this class ?
 						break;
 					case 'PF_TYPE_PARTICLE_NUMBER_NORMALIZED':
 						if (this.normalizePerLiving) {
-							let max = this.system.livingParticles.length;
+							const max = this.system.livingParticles.length;
 							inputValue = (particle?.id ?? 0) % max / max;
 						} else {
 							inputValue = (particle?.id ?? 0) / this.system.maxParticles;
@@ -134,7 +134,7 @@ export class Operator {//TODOv3: rename this class ?
 						return this.#getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin as number, parameter.m_flNoiseOutputMax as number));//TODO
 						break;
 					case 'PF_TYPE_CONTROL_POINT_COMPONENT':
-						let cp = this.system.getControlPoint(parameter.m_nControlPoint as number);
+						const cp = this.system.getControlPoint(parameter.m_nControlPoint as number);
 						if (cp) {
 							return cp.position[parameter.m_nVectorComponent as number];
 						}
@@ -159,7 +159,7 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 	#getParamScalarValue2(parameter: any/*TODO: improve type*/, inputValue: number) {
-		let mapType = parameter.m_nMapType;
+		const mapType = parameter.m_nMapType;
 
 		switch (mapType) {
 			case 'PF_MAP_TYPE_DIRECT':
@@ -181,12 +181,12 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 	#getParamScalarValueCurve(parameter: JSONObject/*TODO: improve type*/, inputValue: number) {
-		let curve = parameter.m_Curve as any/*TODO: improve type*/;
-		let inputMin = curve.m_vDomainMins[0];
-		let inputMax = curve.m_vDomainMaxs[0];
-		let outputMin = curve.m_vDomainMins[1];
-		let outputMax = curve.m_vDomainMaxs[1];
-		let inputMode = parameter.m_nInputMode;
+		const curve = parameter.m_Curve as any/*TODO: improve type*/;
+		const inputMin = curve.m_vDomainMins[0];
+		const inputMax = curve.m_vDomainMaxs[0];
+		const outputMin = curve.m_vDomainMins[1];
+		const outputMax = curve.m_vDomainMaxs[1];
+		const inputMode = parameter.m_nInputMode;
 		//let modeClamped = parameter.m_nInputMode == "PF_INPUT_MODE_CLAMPED" ? true : false;
 		if (parameter.m_nInputMode == 'PF_INPUT_MODE_CLAMPED') {
 			inputValue = clamp(inputValue, inputMin, inputMax);
@@ -201,7 +201,7 @@ export class Operator {//TODOv3: rename this class ?
 
 	#getCurveValue(curve: any/*TODO: improve type*/, x: number) {
 		//TODO: do a real curve
-		let spline = curve.m_spline;
+		const spline = curve.m_spline;
 		let previousKey = spline[0];
 		let key = previousKey;
 		if (x < previousKey.x) {
@@ -222,9 +222,9 @@ export class Operator {//TODOv3: rename this class ?
 
 
 	getParamVectorValue(paramName: string, particle?: Source2Particle, outVec: vec4 = vec4.create()) {
-		let parameter = this.#parameters[paramName];
+		const parameter = this.#parameters[paramName];
 		if (parameter) {
-			let type = parameter.m_nType;
+			const type = parameter.m_nType;
 			if (type) {
 				switch (type) {
 					case 'PVEC_TYPE_LITERAL':
@@ -270,13 +270,13 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 	#getParamVectorValueFloatInterpGradient(parameter: any/*TODO: improve type*/, particle: Source2Particle | undefined, outVec: vec4) {
-		let interpInput0 = parameter.m_flInterpInput0;
-		let interpInput1 = parameter.m_flInterpInput1;
+		const interpInput0 = parameter.m_flInterpInput0;
+		const interpInput1 = parameter.m_flInterpInput1;
 		let inputValue = this.#getParamScalarValue(parameter.m_FloatInterp, particle);
 
 		inputValue = RemapValClamped(inputValue, interpInput0, interpInput1, 0.0, 1.0);
 
-		let stops = parameter.m_Gradient?.m_Stops;
+		const stops = parameter.m_Gradient?.m_Stops;
 		if (stops) {
 			//m_Color
 			let previousStop = stops[0];
@@ -352,7 +352,7 @@ export class Operator {//TODOv3: rename this class ?
 				//TODO
 				break;
 			case 'm_ColorScale':
-				let colorScale = vec3.create();
+				const colorScale = vec3.create();
 				colorScale[0] = Number(value[0]) * COLOR_SCALE;
 				colorScale[1] = Number(value[1]) * COLOR_SCALE;
 				colorScale[2] = Number(value[2]) * COLOR_SCALE;
@@ -387,7 +387,7 @@ export class Operator {//TODOv3: rename this class ?
 		this.doInit(particles, elapsedTime, strength);
 	}
 
-	operateParticle(particle: Source2Particle | null | Array<Source2Particle>, elapsedTime: number) {
+	operateParticle(particle: Source2Particle | null | Source2Particle[], elapsedTime: number) {
 		if (this.disableOperator) {
 			return;
 		}
@@ -429,7 +429,7 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 	checkIfOperatorShouldRun() {
-		let strength = this.fadeInOut();
+		const strength = this.fadeInOut();
 		return strength > 0;
 	}
 
@@ -485,8 +485,8 @@ export class Operator {//TODOv3: rename this class ?
 		return this.#parameters;
 	}
 
-	setParameters(parameters: { [key: string]: any }) {
-		for (let i in parameters) {
+	setParameters(parameters: Record<string, any>) {
+		for (const i in parameters) {
 			const pair = parameters[i];
 			this.setParameter(pair[0], pair[1], pair[2]);
 		}
@@ -661,10 +661,10 @@ export class Operator {//TODOv3: rename this class ?
 
 	doInit(particle: Source2Particle, elapsedTime: number, strength: number) { }
 	doEmit(elapsedTime: number) { }
-	doOperate(particle: Source2Particle | null | Array<Source2Particle>, elapsedTime: number, strength: number) { }
+	doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number) { }
 	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number) { }
 	applyConstraint(particle: Source2Particle) { }
 	doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material) { }
 	initRenderer(particleSystem: Source2ParticleSystem) { }
-	updateParticles(particleSystem: Source2ParticleSystem, particleList: Array<Source2Particle>, elapsedTime: number) { }
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) { }
 }

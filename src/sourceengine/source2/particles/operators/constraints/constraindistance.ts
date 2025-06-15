@@ -3,7 +3,7 @@ import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 
-let vec = vec3.create();
+const vec = vec3.create();
 
 export class ConstrainDistance extends Operator {
 	minDistance = 0;
@@ -40,13 +40,13 @@ export class ConstrainDistance extends Operator {
 		const offsetOfCenter = this.getParameter('offset of center');
 		const cpNumber = this.getParameter('control point number');
 
-		let cp = this.system.getControlPoint(this.controlPointNumber);
-		let v = vec3.clone(particle.position);
+		const cp = this.system.getControlPoint(this.controlPointNumber);
+		const v = vec3.clone(particle.position);
 		if (cp) {
 			vec3.sub(v, v, cp.getWorldPosition(vec));
 		}
 
-		let distance = vec3.length(v);
+		const distance = vec3.length(v);
 		if (distance > 0) {
 			vec3.scale(v, v, 1 / distance);
 			if (distance < this.minDistance) {

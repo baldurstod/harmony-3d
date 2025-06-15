@@ -12,14 +12,14 @@ export class Kv3Element {
 		}
 	}
 	exportAsText(linePrefix) {
-		var out = [];
-		var keys = Object.keys(this);
-		var linePrefix2 = linePrefix + '\t';
+		const out = [];
+		const keys = Object.keys(this);
+		const linePrefix2 = linePrefix + '\t';
 
 		out.push(linePrefix);
 		out.push('{\r\n');
-		for (var i = 0; i < keys.length; i++) {
-			var val = this[keys[i]];
+		for (let i = 0; i < keys.length; i++) {
+			const val = this[keys[i]];
 			//console.log(keys[i]);
 			// use val
 			out.push(linePrefix2);

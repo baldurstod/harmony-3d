@@ -6,7 +6,7 @@ import { PARTICLE_FIELD_POSITION_PREVIOUS, PARTICLE_FIELD_POSITION } from '../..
 //const tempMat4 = mat4.create();
 const tempPrevPos = vec3.create();
 const tempPos = vec3.create();
-let v = vec3.create();
+const v = vec3.create();
 
 export class MovementRigidAttachToCP extends Operator {
 	scaleControlPoint = -1;

@@ -20,10 +20,10 @@ export class MaterialManager {
 	}
 
 	static getMaterial(materialName: string, callback: (material: Material) => void) {
-		let material = this.#materials.get(materialName);
+		const material = this.#materials.get(materialName);
 		if (material) {
-			let manager = material.manager;
-			let materialClass = material.materialClass
+			const manager = material.manager;
+			const materialClass = material.materialClass
 			if (manager) {
 				manager.pickMaterial(materialName, materialClass, callback);
 			} else {

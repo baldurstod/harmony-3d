@@ -30,9 +30,9 @@ const MAX_SAMPLES = 20;
 
 const flatCamera = new Camera({ projection: CameraProjection.Orthographic, position: vec3.fromValues(0, 0, 1) });
 const clearColor = vec4.create();
-let _oldTarget = null;
-let _oldActiveCubeFace = 0;
-let _oldActiveMipmapLevel = 0;
+const _oldTarget = null;
+const _oldActiveCubeFace = 0;
+const _oldActiveMipmapLevel = 0;
 
 // Golden Ratio
 const PHI = (1 + Math.sqrt(5)) / 2;
@@ -311,7 +311,7 @@ export class RemGenerator {
 		const scene2 = new Scene();
 		const backgroundBox = new Box({ material: backgroundMaterial, parent: scene2 });
 
-		let useSolidColor = false;
+		const useSolidColor = false;
 		const background = scene.background;
 		/*
 				if (background) {
@@ -593,7 +593,7 @@ function createPlanes(lodMax: number) {
 		const faceIndexSize = 1;
 
 
-		var indices: number[] = [];
+		const indices: number[] = [];
 		const position = new Float32Array(positionSize * vertices * cubeFaces);
 		const uv = new Float32Array(uvSize * vertices * cubeFaces);
 		const faceIndex = new Float32Array(faceIndexSize * vertices * cubeFaces);

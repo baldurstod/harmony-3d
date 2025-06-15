@@ -4,28 +4,28 @@ import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bu
 import { BufferGeometry } from '../../geometry/buffergeometry';
 import { Metaball } from './../metaball';
 
-let a = vec3.create();
-let b = vec3.create();
+const a = vec3.create();
+const b = vec3.create();
 
 const THRESHOLD = 0.99;
 
 export class MetaballsBufferGeometry extends BufferGeometry {
-	constructor(balls?: Array<Metaball>) {
+	constructor(balls?: Metaball[]) {
 		super();
 		this.updateGeometry(balls);
 	}
 
 	updateGeometry(balls = [], cubeWidth = 1) {
 		// build geometry
-		let triangles = this.TestMarchingCubes(balls, cubeWidth);
+		const triangles = this.TestMarchingCubes(balls, cubeWidth);
 
-		var indices = [];
-		var vertices = [];
-		var normals = [];
-		var uvs = [];
+		const indices = [];
+		const vertices = [];
+		const normals = [];
+		const uvs = [];
 
 		let vertexIndex;
-		let normal = vec3.create();
+		const normal = vec3.create();
 		for (let triangleIndex = 0; triangleIndex < triangles.length; ++triangleIndex) {
 			vertexIndex = triangleIndex * 3;
 			indices.push(vertexIndex, vertexIndex + 1, vertexIndex + 2);
@@ -53,9 +53,9 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 	}
 
 	static getBoundingBox(balls) {
-		let min = vec3.fromValues(+Infinity, +Infinity, +Infinity);
-		let max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
-		for (let ball of balls) {
+		const min = vec3.fromValues(+Infinity, +Infinity, +Infinity);
+		const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
+		for (const ball of balls) {
 			vec3.set(b, ball.radius, ball.radius, ball.radius);
 			vec3.min(min, min, vec3.sub(a, ball.currentWorldPosition, b));
 			vec3.max(max, max, vec3.add(a, ball.currentWorldPosition, b));
@@ -66,16 +66,16 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 
 	static computeValue(balls, position) {
 		let value = 0;
-		let value2 = 0;
-		for (let ball of balls) {
-			let a = 1 / vec3.squaredDistance(ball.currentWorldPosition, position);
+		const value2 = 0;
+		for (const ball of balls) {
+			const a = 1 / vec3.squaredDistance(ball.currentWorldPosition, position);
 			value += ball.radius2 * a;
 		}
 
 		if (value < THRESHOLD) {
-			for (let ball of balls) {
-				for (let ball2 of balls) {
-					let a = 1 / (vec3.squaredDistance(ball.currentWorldPosition, position) + vec3.squaredDistance(ball2.currentWorldPosition, position));
+			for (const ball of balls) {
+				for (const ball2 of balls) {
+					const a = 1 / (vec3.squaredDistance(ball.currentWorldPosition, position) + vec3.squaredDistance(ball2.currentWorldPosition, position));
 					value += 20 * a;
 				}
 			}
@@ -84,34 +84,34 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 	}
 
 	TestMarchingCubes(balls, cubeWidth) {
-		let [min, max] = MetaballsBufferGeometry.getBoundingBox(balls);
-		for (let ball of balls) {
+		const [min, max] = MetaballsBufferGeometry.getBoundingBox(balls);
+		for (const ball of balls) {
 			ball.getWorldPosition(ball.currentWorldPosition);
 		}
 
 		vec3.floor(min, min);
 		vec3.ceil(max, max);
 
-		let grid = new GRIDCELL();
+		const grid = new GRIDCELL();
 		let i, j, k;
 		i = j = k = 0;
 
-		let radius = 3;
-		let join = 4;
-		let join2 = join * join;
-		let doSphere2 = 1;
+		const radius = 3;
+		const join = 4;
+		const join2 = join * join;
+		const doSphere2 = 1;
 
-		let isolevel = THRESHOLD;//1 / (radius * radius - 0.01);
-		let sphereRadius = 1;
-		let triangles = [];
-		let center = vec3.fromValues(3, 3, 3);
-		let center2 = vec3.fromValues(7, 7, 7);
+		const isolevel = THRESHOLD;//1 / (radius * radius - 0.01);
+		const sphereRadius = 1;
+		const triangles = [];
+		const center = vec3.fromValues(3, 3, 3);
+		const center2 = vec3.fromValues(7, 7, 7);
 
 
 		for (let i = min[0] - 1; i <= max[0]; i += cubeWidth) {
 			for (let j = min[1] - 1; j <= max[1]; j += cubeWidth) {
 				for (let k = min[2] - 1; k <= max[2]; k += cubeWidth) {
-					let tris = [];
+					const tris = [];
 
 
 					grid.p[0][0] = i;
@@ -155,9 +155,9 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 			}
 		}
 
-		let tris = [];
+		const tris = [];
 		for (let i = 0; i < triangles.length; ++i) {
-			let triangle = [];
+			const triangle = [];
 			if (triangles[i].p[0] && triangles[i].p[1] && triangles[i].p[2]) {
 				triangle.push(triangles[i].p[0]);
 				triangle.push(triangles[i].p[1]);

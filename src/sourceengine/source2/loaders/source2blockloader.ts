@@ -48,8 +48,8 @@ export const Source2BlockLoader = new (function () {
 		}
 
 		async parseBlock(reader, file, block, parseVtex) {//TODOv3 parseVtex
-			let introspection = file.blocks['NTRO'];
-			let reference = file.blocks['RERL'];
+			const introspection = file.blocks['NTRO'];
+			const reference = file.blocks['RERL'];
 			switch (block.type) {
 				case 'RERL':
 					loadRerl(reader, block);
@@ -92,7 +92,7 @@ export const Source2BlockLoader = new (function () {
 		}
 
 		async loadData(reader, reference, block, introspection, parseVtex) {
-			var bytes = reader.getUint32(block.offset);
+			const bytes = reader.getUint32(block.offset);
 			switch (bytes) {
 				case 0x03564B56: // VKV3
 					return loadDataVkv(reader, block);
@@ -117,10 +117,10 @@ export const Source2BlockLoader = new (function () {
 			}
 			block.structs = {};
 
-			let structList = introspection.structsArray;
-			var startOffset = block.offset;
-			for (var structIndex = 0; structIndex < 1/*removeme*//*structList.length*/; structIndex++) {
-				var struct = structList[structIndex];//introspection.firstStruct;
+			const structList = introspection.structsArray;
+			let startOffset = block.offset;
+			for (let structIndex = 0; structIndex < 1/*removeme*//*structList.length*/; structIndex++) {
+				const struct = structList[structIndex];//introspection.firstStruct;
 				block.structs[struct.name] = loadStruct(reader, reference, struct, block, startOffset, introspection, 0);
 				startOffset += struct.discSize;
 			}
@@ -133,38 +133,38 @@ export const Source2BlockLoader = new (function () {
 }());
 
 function ab2str(arrayBuf) {
-	var s = '';
-	for (var i = 0; i < arrayBuf.length; i++) {
+	let s = '';
+	for (let i = 0; i < arrayBuf.length; i++) {
 		s += String.fromCharCode(arrayBuf[i]);
 	}
 	return s;
 }
 function loadRerl(reader, block) {
 	reader.seek(block.offset);
-	var resOffset = reader.getInt32();// Seems to be always 0x00000008
-	var resCount = reader.getInt32();
+	const resOffset = reader.getInt32();// Seems to be always 0x00000008
+	const resCount = reader.getInt32();
 	block.externalFiles = {};
 	block.externalFiles2 = [];
 
 	reader.seek(block.offset + resOffset);
 
 
-	for (var resIndex = 0; resIndex < resCount; resIndex++) {
+	for (let resIndex = 0; resIndex < resCount; resIndex++) {
 		reader.seek(block.offset + resOffset + 16 * resIndex);
-		var handle = readHandle(reader);//reader.getUint64(fieldOffset);
-		var strOffset = reader.getInt32();
+		const handle = readHandle(reader);//reader.getUint64(fieldOffset);
+		const strOffset = reader.getInt32();
 		reader.skip(strOffset - 4);
-		var s = reader.getNullString();
+		const s = reader.getNullString();
 		block.externalFiles[handle] = s;
 		block.externalFiles2[resIndex] = s;
 	}
 }
 
 function readHandle(reader) {
-	var str = '';
-	var c;
-	var hex;
-	for (var i = 0; i < 8; i++) {
+	let str = '';
+	let c;
+	let hex;
+	for (let i = 0; i < 8; i++) {
 		c = reader.getUint8();
 		hex = c.toString(16); // convert to hex
 		hex = (hex.length == 1 ? '0' + hex : hex);
@@ -174,20 +174,20 @@ function readHandle(reader) {
 }
 
 function loadNtro(reader, block) {
-	var _NTRO_STRUCT_LENGTH_ = 40;
-	var _NTRO_FIELD_LENGTH_ = 24;
+	const _NTRO_STRUCT_LENGTH_ = 40;
+	const _NTRO_FIELD_LENGTH_ = 24;
 	reader.seek(block.offset);
 	// NTRO header
-	var ntroVersion = reader.getInt32();//TODO: check version
-	var ntroOffset = reader.getInt32();
-	var structCount = reader.getInt32();
+	const ntroVersion = reader.getInt32();//TODO: check version
+	const ntroOffset = reader.getInt32();
+	const structCount = reader.getInt32();
 	block.structs = {};
 	block.structsArray = [];
 	block.firstStruct = null;
 
-	for (var structIndex = 0; structIndex < structCount; structIndex++) {
+	for (let structIndex = 0; structIndex < structCount; structIndex++) {
 		reader.seek(block.offset + ntroOffset + 4 + _NTRO_STRUCT_LENGTH_ * structIndex);
-		var ntroStruct: any = {};
+		const ntroStruct: any = {};
 		ntroStruct.version = reader.getInt32();
 		//console.log(ntroStruct.version);
 		ntroStruct._offset = reader.tell();
@@ -200,9 +200,9 @@ function loadNtro(reader, block) {
 		ntroStruct.unknown = reader.getInt16();//TODO
 
 		ntroStruct.baseId = reader.getUint32();
-		var fieldStart = reader.tell();
-		var fieldOffset = reader.getInt32();
-		var fieldCount = reader.getInt32();
+		const fieldStart = reader.tell();
+		const fieldOffset = reader.getInt32();
+		const fieldCount = reader.getInt32();
 		ntroStruct.flags = reader.getInt32();
 
 		// Read struct Name
@@ -211,15 +211,15 @@ function loadNtro(reader, block) {
 
 		//Read struct fields
 		ntroStruct.fields = [];
-		for (var fieldIndex = 0; fieldIndex < fieldCount; fieldIndex++) {
+		for (let fieldIndex = 0; fieldIndex < fieldCount; fieldIndex++) {
 			reader.seek(fieldStart + fieldOffset + _NTRO_FIELD_LENGTH_ * fieldIndex);
-			var field: any = {};
+			const field: any = {};
 			field._offset = fieldStart + fieldOffset + _NTRO_FIELD_LENGTH_ * fieldIndex;
 			var strStart = reader.tell();
 			var strOffset = reader.getInt32();
 			field.count = reader.getInt16();
 			field.offset = reader.getInt16();
-			var indStart = reader.tell();
+			const indStart = reader.tell();
 			field.indirectionOffset = reader.getInt32();
 			field.level = reader.getInt32();
 			field.typeOffset = reader.tell();
@@ -268,22 +268,22 @@ const BYTES_PER_VERTEX_BONE_WEIGHT = VERTEX_BONE_WEIGHT_LEN * 4;
 const BYTES_PER_INDEX = 1 * 4;
 function loadVbib(reader: BinaryReader, block) {
 
-	var VERTEX_HEADER_SIZE = 24;
-	var INDEX_HEADER_SIZE = 24;
-	var DESC_HEADER_SIZE = 56;
-	var DESC_HEADER_NAME_SIZE = 36;
+	const VERTEX_HEADER_SIZE = 24;
+	const INDEX_HEADER_SIZE = 24;
+	const DESC_HEADER_SIZE = 56;
+	const DESC_HEADER_NAME_SIZE = 36;
 	reader.seek(block.offset);
-	var vertexOffset = reader.tell() + reader.getInt32();
-	var vertexCount = reader.getInt32();
-	var indexOffset = reader.tell() + reader.getInt32();
-	var indexCount = reader.getInt32();
+	const vertexOffset = reader.tell() + reader.getInt32();
+	const vertexCount = reader.getInt32();
+	const indexOffset = reader.tell() + reader.getInt32();
+	const indexCount = reader.getInt32();
 
 	block.vertices = [];
 	block.indices = [];
 
 	for (var i = 0; i < vertexCount; i++) { // header size: 24 bytes
 		reader.seek(vertexOffset + i * VERTEX_HEADER_SIZE);
-		var s1: any = {};
+		const s1: any = {};
 		s1.vertexCount = reader.getInt32();
 		s1.bytesPerVertex = reader.getInt16();
 		reader.skip(2);// TODO: figure out what it is. Used to be 0, now 1024 for pudge model spring 2025
@@ -292,11 +292,11 @@ function loadVbib(reader: BinaryReader, block) {
 		s1.dataOffset = reader.tell() + reader.getInt32();
 		s1.dataLength = reader.getInt32();
 
-		let vertexDataSize = s1.vertexCount * s1.bytesPerVertex;
+		const vertexDataSize = s1.vertexCount * s1.bytesPerVertex;
 
 		let vertexReader = reader;
 		if (vertexDataSize != s1.dataLength) {
-			let vertexBuffer = new Uint8Array(new ArrayBuffer(vertexDataSize));
+			const vertexBuffer = new Uint8Array(new ArrayBuffer(vertexDataSize));
 			MeshoptDecoder.decodeVertexBuffer(vertexBuffer, s1.vertexCount, s1.bytesPerVertex, new Uint8Array(reader.buffer.slice(s1.dataOffset, s1.dataOffset + s1.dataLength)));
 			//SaveFile('sa.obj', new Blob([vertexBuffer]));
 			vertexReader = new BinaryReader(vertexBuffer);
@@ -304,9 +304,9 @@ function loadVbib(reader: BinaryReader, block) {
 		}
 
 		s1.headers = [];
-		for (var j = 0; j < s1.headerCount; j++) { // header size: 24 bytes
-			var header: any = {};
-			var headerOffset = s1.headerOffset + j * DESC_HEADER_SIZE;
+		for (let j = 0; j < s1.headerCount; j++) { // header size: 24 bytes
+			const header: any = {};
+			const headerOffset = s1.headerOffset + j * DESC_HEADER_SIZE;
 			reader.seek(headerOffset);
 			header.name = reader.getNullString();
 			reader.seek(headerOffset + DESC_HEADER_NAME_SIZE);
@@ -323,25 +323,25 @@ function loadVbib(reader: BinaryReader, block) {
 		s1.boneIndices = new ArrayBuffer(s1.vertexCount * BYTES_PER_VERTEX_BONE_INDICE);
 		s1.boneWeight = new ArrayBuffer(s1.vertexCount * BYTES_PER_VERTEX_BONE_WEIGHT);
 
-		let s1Vertices = new Float32Array(s1.vertices);
-		let s1Normals = new Float32Array(s1.normals);
-		let s1Tangents = new Float32Array(s1.tangents);
-		let s1Coords = new Float32Array(s1.coords);
-		let s1BoneIndices = new Float32Array(s1.boneIndices);
-		let s1BoneWeight = new Float32Array(s1.boneWeight);
-		for (var vertexIndex = 0; vertexIndex < s1.vertexCount; vertexIndex++) {
+		const s1Vertices = new Float32Array(s1.vertices);
+		const s1Normals = new Float32Array(s1.normals);
+		const s1Tangents = new Float32Array(s1.tangents);
+		const s1Coords = new Float32Array(s1.coords);
+		const s1BoneIndices = new Float32Array(s1.boneIndices);
+		const s1BoneWeight = new Float32Array(s1.boneWeight);
+		for (let vertexIndex = 0; vertexIndex < s1.vertexCount; vertexIndex++) {
 			vertexReader.seek(s1.dataOffset + vertexIndex * s1.bytesPerVertex);
 			var vertex = {};
 
-			var positionFilled = false;//TODOv3: remove this
-			var normalFilled = false;
-			var tangentFilled = false;
-			var texCoordFilled = false;
-			var blendIndicesFilled = false;
-			var blendWeightFilled = false;
-			for (var headerIndex = 0; headerIndex < s1.headers.length; headerIndex++) {
-				var headerName = s1.headers[headerIndex].name;
-				var headerType = s1.headers[headerIndex].type;
+			let positionFilled = false;//TODOv3: remove this
+			let normalFilled = false;
+			let tangentFilled = false;
+			let texCoordFilled = false;
+			let blendIndicesFilled = false;
+			let blendWeightFilled = false;
+			for (let headerIndex = 0; headerIndex < s1.headers.length; headerIndex++) {
+				const headerName = s1.headers[headerIndex].name;
+				const headerType = s1.headers[headerIndex].type;
 				let tempValue;// = vec4.create();//TODO: optimize
 
 
@@ -436,7 +436,7 @@ function loadVbib(reader: BinaryReader, block) {
 						break;
 					case 'TEXCOORD':
 						if (!texCoordFilled) {//TODO: handle 2 TEXCOORD
-							let test = vec2.clone(tempValue);//todov3: fixme see //./Alyx/models/props_industrial/hideout_doorway.vmdl_c
+							const test = vec2.clone(tempValue);//todov3: fixme see //./Alyx/models/props_industrial/hideout_doorway.vmdl_c
 							s1Coords.set(test/*tempValue*/, vertexIndex * VERTEX_COORD_LEN);
 							texCoordFilled = true;
 						}
@@ -509,7 +509,7 @@ function loadVbib(reader: BinaryReader, block) {
 
 	for (var i = 0; i < indexCount; i++) { // header size: 24 bytes
 		reader.seek(indexOffset + i * INDEX_HEADER_SIZE);
-		var s2: any = {};
+		const s2: any = {};
 		s2.indexCount = reader.getInt32();
 		s2.bytesPerIndex = reader.getInt32();
 		s2.headerOffset = reader.tell() + reader.getInt32();
@@ -517,19 +517,19 @@ function loadVbib(reader: BinaryReader, block) {
 		s2.dataOffset = reader.tell() + reader.getInt32();
 		s2.dataLength = reader.getInt32();
 
-		let indexDataSize = s2.indexCount * s2.bytesPerIndex;
+		const indexDataSize = s2.indexCount * s2.bytesPerIndex;
 
 		let indexReader = reader;
 		if (indexDataSize != s2.dataLength) {
-			let indexBuffer = new Uint8Array(new ArrayBuffer(indexDataSize));
+			const indexBuffer = new Uint8Array(new ArrayBuffer(indexDataSize));
 			MeshoptDecoder.decodeIndexBuffer(indexBuffer, s2.indexCount, s2.bytesPerIndex, new Uint8Array(reader.buffer.slice(s2.dataOffset, s2.dataOffset + s2.dataLength)));
 			indexReader = new BinaryReader(indexBuffer);
 			s2.dataOffset = 0;
 		}
 
 		s2.indices = new ArrayBuffer(s2.indexCount * BYTES_PER_INDEX);
-		let s2Indices = new Uint32Array(s2.indices);
-		for (var indicesIndex = 0; indicesIndex < s2.indexCount; indicesIndex++) {
+		const s2Indices = new Uint32Array(s2.indices);
+		for (let indicesIndex = 0; indicesIndex < s2.indexCount; indicesIndex++) {
 			indexReader.seek(s2.dataOffset + indicesIndex * s2.bytesPerIndex);
 			var vertex = {};
 			//s2.indices.push(indexReader.getUint16());
@@ -548,22 +548,22 @@ function getStruct(block, structId) {
 	return block.structs[structId];
 }
 function loadStruct(reader, reference, struct, block, startOffset, introspection, depth) {
-	var dataStruct: any = {};
+	let dataStruct: any = {};
 	if (struct.baseId) {
-		var baseStruct = getStruct(introspection, struct.baseId);
+		const baseStruct = getStruct(introspection, struct.baseId);
 		if (baseStruct) {
 			dataStruct = loadStruct(reader, reference, baseStruct, block, startOffset, introspection, depth);
 		}
 	}
 
-	var fieldList = struct.fields;
+	const fieldList = struct.fields;
 
-	for (var fieldIndex = 0; fieldIndex < fieldList.length; fieldIndex++) {
-		var field = fieldList[fieldIndex];
+	for (let fieldIndex = 0; fieldIndex < fieldList.length; fieldIndex++) {
+		const field = fieldList[fieldIndex];
 		if (field.count) {
 			dataStruct[field.name] = []
-			var fieldSize = FIELD_SIZE[field.type2];
-			for (var i = 0; i < field.count; i++) {
+			const fieldSize = FIELD_SIZE[field.type2];
+			for (let i = 0; i < field.count; i++) {
 				dataStruct[field.name].push(255);//TODOv3 dafuck ?
 			}
 		} else {
@@ -579,10 +579,10 @@ const FIELD_SIZE = [0, 0/*STRUCT*/, 0/*ENUM*/, 8/*HANDLE*/, 0, 0, 0, 0, 0, 0,
 	4/*FLOAT*/, 0, 0, 0, 12/*VECTOR3*/, 0, 0, 16/*QUATERNION*/, 0, 16, 4, 0, 1, 4];
 
 function loadField(reader, reference, field, block, startOffset, introspection, field_offset, field_indirectionByte, field_level, depth) {
-	var fieldOffset = startOffset + field_offset;
+	const fieldOffset = startOffset + field_offset;
 
 	if (field_level > 0) {
-		var indirectionType = reader.getInt8(fieldOffset);
+		const indirectionType = reader.getInt8(fieldOffset);
 		if (field_indirectionByte == 3) { // Pointer
 			if (INFO) {
 				console.log('indirect type 3', fieldOffset);
@@ -598,10 +598,10 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
 			return fieldOffset;
 		} else if (field_indirectionByte == 4) { // Array
 			//console.log("indirect type 4", reader.getUint32(fieldOffset));
-			var arrayOffset2 = reader.getUint32(fieldOffset);
+			const arrayOffset2 = reader.getUint32(fieldOffset);
 			if (arrayOffset2) {
-				var arrayOffset = fieldOffset + arrayOffset2;
-				var arrayCount = reader.getUint32();
+				const arrayOffset = fieldOffset + arrayOffset2;
+				const arrayCount = reader.getUint32();
 				var values = [];
 				if (field.type) {
 					if (field.type2 == DATA_TYPE_STRUCT) { // STRUCT
@@ -635,7 +635,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
 				} else {
 					// single field
 					var values = [];
-					var fieldSize = FIELD_SIZE[field.type2];
+					const fieldSize = FIELD_SIZE[field.type2];
 					if (field.type2 == 11) {
 						//console.log(field.type2);//TODOV2
 					}
@@ -685,10 +685,10 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
 			case DATA_TYPE_UINTEGER://15
 				return reader.getUint32(fieldOffset);
 			case DATA_TYPE_INT64://16
-				let i64 = reader.getBigInt64(fieldOffset);
+				const i64 = reader.getBigInt64(fieldOffset);
 				return i64;//i64.lo + i64.hi * 4294967295;
 			case DATA_TYPE_UINT64://17
-				let ui64 = reader.getBigUint64(fieldOffset);
+				const ui64 = reader.getBigUint64(fieldOffset);
 				return ui64;//ui64.lo + ui64.hi * 4294967295;
 			case DATA_TYPE_FLOAT://18
 				return reader.getFloat32(fieldOffset);
@@ -738,8 +738,8 @@ function loadDataVtex(reader, block) {
 	block.numMipLevels = reader.getUint8();
 	block.picmip0Res = reader.getUint32();
 
-	let extraDataOffset = reader.tell() + reader.getUint32();
-	let extraDataCount = reader.getUint32();
+	const extraDataOffset = reader.tell() + reader.getUint32();
+	const extraDataCount = reader.getUint32();
 
 	let nonPow2Width = 0;
 	let nonPow2Height = 0;
@@ -747,9 +747,9 @@ function loadDataVtex(reader, block) {
 
 	if (extraDataCount) {
 		/* read headers */
-		let headers = [];
+		const headers = [];
 		for (let i = 0; i < extraDataCount; i++) {
-			let h = {
+			const h = {
 				type: reader.getUint32(),
 				offset: reader.tell() + reader.getUint32(),
 				size: reader.getUint32(),
@@ -759,10 +759,10 @@ function loadDataVtex(reader, block) {
 
 
 		for (let i = 0; i < extraDataCount; i++) {
-			let h = headers[i];
-			let type = h.type;
-			let offset = h.offset;
-			let size = h.size;
+			const h = headers[i];
+			const type = h.type;
+			const offset = h.offset;
+			const size = h.size;
 			reader.seek(offset);
 
 			switch (type) {
@@ -770,9 +770,9 @@ function loadDataVtex(reader, block) {
 					reader.seek(offset + size);
 					break;
 				case DATA_FILL_TO_POWER_OF_TWO:
-					let unk = reader.getUint16();
-					let nw = reader.getUint16();
-					let nh = reader.getUint16();
+					const unk = reader.getUint16();
+					const nw = reader.getUint16();
+					const nh = reader.getUint16();
 					if (nw > 0 && nh > 0 && block.width >= nw && block.height >= nh) {
 						console.error('code me');
 						nonPow2Width = nw;
@@ -780,9 +780,9 @@ function loadDataVtex(reader, block) {
 					}
 					break;
 				case DATA_COMPRESSED_MIP_SIZE:
-					let unk1 = reader.getUint32();
-					let unk2 = reader.getUint32();
-					let mips = reader.getUint32();
+					const unk1 = reader.getUint32();
+					const unk2 = reader.getUint32();
+					const mips = reader.getUint32();
 					compressedMips = new Array(mips);// we can't upe pop() on a Uint32Array
 
 					for (let i = 0; i < mips; i++) {
@@ -811,25 +811,25 @@ function loadDataVtex(reader, block) {
 	loadDataVtexImageData(reader, block, compressedMips);
 }
 function loadDataVtexImageData(reader, block, compressedMips) {
-	var faceCount = 1;
+	let faceCount = 1;
 	if ((block.flags & VTEX_FLAG_CUBE_TEXTURE) == VTEX_FLAG_CUBE_TEXTURE) { // Handle cube texture
 		faceCount = 6;
 	}
 
 	// Goto
 	reader.seek(block.file.fileLength);
-	var mipmapWidth = block.width * Math.pow(0.5, block.numMipLevels - 1);
-	var mipmapHeight = block.height * Math.pow(0.5, block.numMipLevels - 1);
+	let mipmapWidth = block.width * Math.pow(0.5, block.numMipLevels - 1);
+	let mipmapHeight = block.height * Math.pow(0.5, block.numMipLevels - 1);
 	block.imageData = [];
 
 	// Only keep last (biggest) mipmap
-	for (var mipmapIndex = 0; mipmapIndex < block.numMipLevels; mipmapIndex++) {
+	for (let mipmapIndex = 0; mipmapIndex < block.numMipLevels; mipmapIndex++) {
 		// Todo : add frame support + depth support
-		for (var faceIndex = 0; faceIndex < faceCount; faceIndex++) {
-			let compressedLength = compressedMips ? compressedMips.pop() : null; //TODO: check how this actually works with depth / frames
+		for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
+			const compressedLength = compressedMips ? compressedMips.pop() : null; //TODO: check how this actually works with depth / frames
 			block.imageData[faceIndex] = getImage(reader, mipmapWidth, mipmapHeight, block.imageFormat, compressedLength);
 			if (false && block.imageFormat == VTEX_FORMAT_BC4) {//TODOv3: removeme
-				let str = block.imageData[faceIndex];
+				const str = block.imageData[faceIndex];
 				if (str.length >= 512 * 512) {
 					/*const buf = new ArrayBuffer(str.length);
 					const bufView = new Uint8Array(buf);
@@ -864,7 +864,7 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
 			break;
 		case VTEX_FORMAT_PNG_R8G8B8A8_UINT:
 			entrySize = reader.byteLength - reader.tell();
-			let a = reader.tell();
+			const a = reader.tell();
 			//SaveFile('loadout.obj', b64toBlob(encode64(reader.getString(entrySize))));//TODOv3: removeme
 			reader.seek(a);
 			break;
@@ -880,13 +880,13 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
 	}
 	let imageDatas;
 	if (compressedLength === null || compressedLength === entrySize) {
-		let start = reader.tell();
+		const start = reader.tell();
 		//return reader.getString(entrySize);
 		imageDatas = new Uint8Array(reader.buffer, reader.tell(), entrySize);
 		reader.seek(start + entrySize);
 	} else {
-		let start = reader.tell();
-		var buf = new ArrayBuffer(entrySize);
+		const start = reader.tell();
+		const buf = new ArrayBuffer(entrySize);
 		imageDatas = new Uint8Array(buf);
 		decodeLz4(reader, imageDatas, compressedLength, entrySize);
 		reader.seek(start + compressedLength);// decoder may overread, place the reader at the start of the next image block
@@ -897,7 +897,7 @@ function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLeng
 
 	if (imageDatas && imageFormat == VTEX_FORMAT_BGRA8888) {
 		for (let i = 0, l = imageDatas.length; i < l; i += 4) {
-			let b = imageDatas[i];
+			const b = imageDatas[i];
 			imageDatas[i] = imageDatas[i + 2];
 			imageDatas[i + 2] = b;
 		}
@@ -914,8 +914,8 @@ function loadDataVkv(reader, block) {
 
 	reader.seek(block.offset);
 	reader.skip(4);//TODO: improve detection
-	let encoding = reader.getString(16);
-	let format = reader.getString(16);
+	const encoding = reader.getString(16);
+	const format = reader.getString(16);
 
 	let decodeLength, sa;
 	decodeLength = reader.getUint32();
@@ -972,20 +972,20 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 
 	reader.seek(block.offset);
 
-	let method = 1;
+	const method = 1;
 	let bufferCount = 1;
-	const uncompressedBufferSize: Array<number> = [];
-	const compressedBufferSize: Array<number> = [];
-	const bytesBufferSize1: Array<number> = [];
-	const bytesBufferSize2: Array<number> = [];
-	const bytesBufferSize4: Array<number> = [];
-	const bytesBufferSize8: Array<number> = [];
-	const objectCount: Array<number> = [];
-	const arrayCount: Array<number> = [];
+	const uncompressedBufferSize: number[] = [];
+	const compressedBufferSize: number[] = [];
+	const bytesBufferSize1: number[] = [];
+	const bytesBufferSize2: number[] = [];
+	const bytesBufferSize4: number[] = [];
+	const bytesBufferSize8: number[] = [];
+	const objectCount: number[] = [];
+	const arrayCount: number[] = [];
 
 	reader.skip(4);
-	let format = reader.getString(16);
-	let compressionMethod = reader.getUint32();
+	const format = reader.getString(16);
+	const compressionMethod = reader.getUint32();
 	let compressionDictionaryId;
 	let compressionFrameSize;
 	let dictionaryTypeLength, unknown3, unknown4, blobCount = 0, totalUncompressedBlobSize;
@@ -1010,7 +1010,7 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 		}
 	}
 
-	var decodeLength = reader.getUint32();
+	const decodeLength = reader.getUint32();
 	if (version >= 2) {
 		compressedLength = reader.getUint32();
 		blobCount = reader.getUint32();
@@ -1048,7 +1048,7 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 	let sa: Uint8Array;
 	let compressedBlobReader;
 	let uncompressedBlobReader;
-	let stringDictionary: Array<string>;
+	let stringDictionary: string[];
 	let buffer0: Uint8Array;
 	for (let i = 0; i < bufferCount; i++) {
 		switch (compressionMethod) {
@@ -1059,7 +1059,7 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 				sa = reader.getBytes(uncompressedBufferSize[i]);
 				break;
 			case 1:
-				let buf = new ArrayBuffer(uncompressedBufferSize[i]);
+				const buf = new ArrayBuffer(uncompressedBufferSize[i]);
 				sa = new Uint8Array(buf);
 				if (blobCount > 0) {
 					compressedBlobReader = new BinaryReader(reader, reader.tell() + compressedBufferSize[i]);
@@ -1077,9 +1077,9 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 				break;
 			case 2://new since spectre arcana
 				//SaveFile(new File([new Blob([reader.getBytes(block.length, block.offset)])], 'block_' + block.offset + '_' + block.length));
-				let compressedBytes = reader.getBytes(compressedBufferSize[i]);
+				const compressedBytes = reader.getBytes(compressedBufferSize[i]);
 				//SaveFile(new File([new Blob([compressedBytes])], 'block_' + block.offset + '_' + block.length));
-				let decompressedBytes = await Zstd.decompress(compressedBytes);
+				const decompressedBytes = await Zstd.decompress(compressedBytes);
 				sa = new Uint8Array(new Uint8Array(decompressedBytes.buffer, 0, uncompressedBufferSize[i]));
 				if (blobCount > 0) {
 					if (version < 5) {
@@ -1087,9 +1087,9 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 					} else {
 						if (i == 1) {
 							const compressedBlobSize = compressedLength - (compressedBufferSize[0] + compressedBufferSize[1]);
-							let compressedBlobBytes = reader.getBytes(compressedBlobSize);
+							const compressedBlobBytes = reader.getBytes(compressedBlobSize);
 							//SaveFile(new File([new Blob([compressedBlobBytes])], 'compressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
-							let decompressedBlobBytes = await Zstd.decompress(compressedBlobBytes);
+							const decompressedBlobBytes = await Zstd.decompress(compressedBlobBytes);
 							//console.info(decompressedBlobBytes);
 							uncompressedBlobReader = new BinaryReader(decompressedBlobBytes);
 							//SaveFile(new File([new Blob([decompressedBlobBytes])], 'decompressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
@@ -1111,7 +1111,7 @@ async function loadDataKv3(reader: BinaryReader, block, version) {
 
 		const result = BinaryKv3Loader.getBinaryKv3(version, sa, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, i, stringDictionary, objectCount[i], arrayCount[i], buffer0);
 		if (version >= 5 && i == 0) {
-			stringDictionary = result as Array<string>;
+			stringDictionary = result as string[];
 			buffer0 = sa;
 		} else {
 			//console.log(block.type, result);
@@ -1140,11 +1140,11 @@ function decodeMethod1(reader, sa, decodeLength) {
 			}
 		} else {
 			for (let j = 0; j < 16; j++) {
-				let decode = mask & (1 << j);
+				const decode = mask & (1 << j);
 				if (decode) {
-					let decodeMask = reader.getUint16();// offset 12 bits, len 4 bits
-					let decodeOffset = (decodeMask & 0xFFF0) >> 4;
-					let decodeLen = (decodeMask & 0xF) + 3; // Min len is 3
+					const decodeMask = reader.getUint16();// offset 12 bits, len 4 bits
+					const decodeOffset = (decodeMask & 0xFFF0) >> 4;
+					const decodeLen = (decodeMask & 0xF) + 3; // Min len is 3
 					for (let k = 0; k < decodeLen; k++) {
 						sa[outputIndex] = sa[outputIndex - decodeOffset - 1];
 						++decodedeBytes;
@@ -1168,24 +1168,24 @@ function decodeMethod1(reader, sa, decodeLength) {
 
 function loadVtexSpriteSheet(reader, block, offset, size) {
 	reader.seek(offset);
-	let version = reader.getUint32();
+	const version = reader.getUint32();
 	let sequenceCount = reader.getUint32();
 
 	let headerOffset = reader.tell();
-	let spriteSheet = new Source2SpriteSheet();
+	const spriteSheet = new Source2SpriteSheet();
 	block.spriteSheet = spriteSheet;
 
 	while (sequenceCount--) {
-		let spriteSheetSequence = spriteSheet.addSequence();
-		let sequenceId = reader.getUint32(headerOffset);
-		let unknown1 = reader.getUint32();//1 ? probably some flag -> clamp //0 in materials/particle/water_ripples/allripples
+		const spriteSheetSequence = spriteSheet.addSequence();
+		const sequenceId = reader.getUint32(headerOffset);
+		const unknown1 = reader.getUint32();//1 ? probably some flag -> clamp //0 in materials/particle/water_ripples/allripples
 		//unknown1 is most likely 2 uint16 -> see dota2 texture materials/particle/smoke3/smoke3b
-		let sequenceDataOffset = reader.tell() + reader.getUint32();
-		let frameCount = reader.getUint32();
+		const sequenceDataOffset = reader.tell() + reader.getUint32();
+		const frameCount = reader.getUint32();
 		spriteSheetSequence.duration = reader.getFloat32();
-		let unknown2 = reader.getUint32();//offset to 'CDmeSheetSequence'
-		let unknown3 = reader.getUint32();//0
-		let unknown4 = reader.getUint32();//0
+		const unknown2 = reader.getUint32();//offset to 'CDmeSheetSequence'
+		const unknown3 = reader.getUint32();//0
+		const unknown4 = reader.getUint32();//0
 		headerOffset = reader.tell();
 
 		reader.seek(sequenceDataOffset);
@@ -1193,10 +1193,10 @@ function loadVtexSpriteSheet(reader, block, offset, size) {
 		let frameHeaderOffset = reader.tell();
 		let frameIndex = frameCount;
 		while (frameIndex--) {
-			let spriteSheetFrame = spriteSheetSequence.addFrame();
+			const spriteSheetFrame = spriteSheetSequence.addFrame();
 			spriteSheetFrame.duration = reader.getFloat32(frameHeaderOffset);
-			let frameOffset = reader.tell() + reader.getUint32();
-			let frameCoords = reader.getUint32();
+			const frameOffset = reader.tell() + reader.getUint32();
+			const frameCoords = reader.getUint32();
 			frameHeaderOffset = reader.tell();
 
 			reader.seek(frameOffset);

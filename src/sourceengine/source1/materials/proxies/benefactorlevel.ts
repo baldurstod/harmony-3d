@@ -17,7 +17,7 @@ export class BenefactorLevel extends Proxy {
 	}
 
 	execute(variables) {
-		let value = 1.0;
+		const value = 1.0;
 		variables.set(this.#resultVar, minValue + ( maxValue - minValue ) * value);
 	}
 }

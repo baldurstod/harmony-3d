@@ -10,13 +10,13 @@ export class CharacterMaterial extends SourceEngineMaterial {
 	constructor(params: any = {}) {//fixme
 		super(params);
 		this.setValues(params);
-		let variables = this.variables;
+		const variables = this.variables;
 
 
 
 		//"$masks1"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks1
 		//"$masks2"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks2
-		let masks1Texture = variables.get('$masks1');
+		const masks1Texture = variables.get('$masks1');
 		if (masks1Texture) {
 			this.uniforms['mask1Map'] = Source1TextureManager.getTexture(this.repository, masks1Texture, 0);
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
@@ -24,7 +24,7 @@ export class CharacterMaterial extends SourceEngineMaterial {
 			this.removeDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		}
 
-		let masks2Texture = variables.get('$masks2');
+		const masks2Texture = variables.get('$masks2');
 		if (masks2Texture) {
 			this.uniforms['mask2Map'] = Source1TextureManager.getTexture(this.repository, masks2Texture, 0);
 			this.setDefine('USE_MASK2_MAP');//TODOv3: set this automaticaly
@@ -61,8 +61,8 @@ export class CharacterMaterial extends SourceEngineMaterial {
 	}
 
 	afterProcessProxies(proxyParams) {
-		let variables = this.variables;
-		let parameters = this.parameters;
+		const variables = this.variables;
+		const parameters = this.parameters;
 
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
@@ -80,19 +80,19 @@ export class CharacterMaterial extends SourceEngineMaterial {
 		if (proxyParams['SheenTintColor']) {
 			this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
 		} else {
-			let sheenmaptint = variables.get('$sheenmaptint');
+			const sheenmaptint = variables.get('$sheenmaptint');
 			if (sheenmaptint) {
 				this.uniforms['g_cCloakColorTint'] = sheenmaptint;
 			}
 		}
 
-		let masks1Texture = variables.get('$masks1');
+		const masks1Texture = variables.get('$masks1');
 		if (masks1Texture) {
 			this.uniforms['mask1Map'] = Source1TextureManager.getTexture(this.repository, masks1Texture, 0);
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		}
 
-		let masks2Texture = variables.get('$masks2');
+		const masks2Texture = variables.get('$masks2');
 		if (masks2Texture) {
 			this.uniforms['mask2Map'] = Source1TextureManager.getTexture(this.repository, masks2Texture, 0);
 			this.setDefine('USE_MASK2_MAP');//TODOv3: set this automaticaly

@@ -27,7 +27,7 @@ export class PropLightSpot extends MapEntity {
 	}
 
 	setKeyValue(key, value) {
-		let spotLight = this.spotLight;
+		const spotLight = this.spotLight;
 		spotLight.range = 1000;
 		switch (key) {
 			case '_zero_percent_distance':

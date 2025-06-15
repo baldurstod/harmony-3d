@@ -11,7 +11,7 @@ import { Mesh } from '../objects/mesh';
 
 export class ObjExporter {
 	static #instance: ObjExporter;
-	#lines: Array<string> = [];
+	#lines: string[] = [];
 	#startIndex = 1;
 	#fullScreenQuadMesh = new FullScreenQuad();
 	scene = new Scene();
@@ -25,17 +25,17 @@ export class ObjExporter {
 	}
 
 	async #renderMeshes(files: Set<File>, meshes: Set<Entity>) {
-		let [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024);//TODOv3: constant
+		const [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024);//TODOv3: constant
 		new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
 		new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
 		new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
 
-		let previousClearColor = new Graphics().getClearColor();
+		const previousClearColor = new Graphics().getClearColor();
 		new Graphics().clearColor(vec4.fromValues(0, 0, 0, 0));
 
 		let meshId = 0;
-		let promises = [];
-		for (let mesh of meshes) {
+		const promises = [];
+		for (const mesh of meshes) {
 			if (!mesh.is('Mesh')) {
 				continue;
 			}
@@ -49,7 +49,7 @@ export class ObjExporter {
 			//let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
 			/*				let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
 						files.add(file);*/
-			let promise = new Graphics().savePictureAsFile(`mat_${meshId}.png`);
+			const promise = new Graphics().savePictureAsFile(`mat_${meshId}.png`);
 			promise.then((file) => files.add(file));
 			promises.push(promise);
 
@@ -68,7 +68,7 @@ export class ObjExporter {
 	}
 
 	async exportMeshes({ meshes = new Set<Entity>(), exportTexture = false, singleMesh = false, digits = 4, subdivisions = 0, mergeTolerance = 0.0001 } = {}) {
-		let files = new Set<File>();
+		const files = new Set<File>();
 		const loopSubdivision = new LoopSubdivision();
 
 		if (exportTexture && subdivisions == 0) {
@@ -76,16 +76,16 @@ export class ObjExporter {
 		}
 
 		this.#lines = [];
-		let mtlLines = [];
+		const mtlLines = [];
 		this.#addLine('mtllib export.mtl');
 		let objectId = 0;
 		this.#startIndex = 1;
-		for (let mesh of meshes) {
+		for (const mesh of meshes) {
 			if ((mesh.parent as Source2ParticleSystem).isParticleSystem) {
 				continue;
 			}
 			if ((mesh as Mesh).exportObj) {
-				let m = (mesh as Mesh).exportObj();
+				const m = (mesh as Mesh).exportObj();
 
 				let faces: Uint8Array | Uint32Array | undefined;
 				let vertices: Float32Array | undefined;
@@ -125,7 +125,7 @@ export class ObjExporter {
 	}
 
 	async #exportMesh(digits: number, indices: Uint8Array | Uint32Array, vertices: Float32Array, normals?: Float32Array, uvs?: Float32Array) {
-		let attributes = [
+		const attributes = [
 			{ name: 'v', stride: 3, arr: vertices },
 			{ name: 'vn', stride: 3, arr: normals },
 			{ name: 'vt', stride: 2, arr: uvs },
@@ -133,7 +133,7 @@ export class ObjExporter {
 		let line;
 		let verticeCount = 0;
 
-		let startIndex = this.#startIndex;
+		const startIndex = this.#startIndex;
 		for (const attribute of attributes) {
 			const attributesLength = attribute.stride;
 			const arr = attribute.arr;
@@ -153,9 +153,9 @@ export class ObjExporter {
 		}
 
 		for (let i = 0; i < indices.length; i += 3) {
-			let i0 = startIndex + indices[i];
-			let i1 = startIndex + indices[i + 1];
-			let i2 = startIndex + indices[i + 2];
+			const i0 = startIndex + indices[i];
+			const i1 = startIndex + indices[i + 1];
+			const i2 = startIndex + indices[i + 2];
 			let uv0 = '';
 			let uv1 = '';
 			let uv2 = '';

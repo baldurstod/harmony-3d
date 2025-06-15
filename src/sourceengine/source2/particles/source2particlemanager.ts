@@ -7,8 +7,8 @@ import { Source2File } from '../loaders/source2file';
 import { Source2ParticleSystem } from './source2particlesystem';
 
 class Source2ParticleManagerClass {// TODO: turn into a proper singleton
-	#vpcfs: { [key: string]: Source2File } = {};//TODO: turn to map
-	#fileList: { [key: string]: undefined | Array<FileSelectorFile> } = {};//TODO: turn to map and improve type
+	#vpcfs: Record<string, Source2File> = {};//TODO: turn to map
+	#fileList: Record<string, undefined | FileSelectorFile[]> = {};//TODO: turn to map and improve type
 	speed = 1.0;
 	activeSystemList = new Set<Source2ParticleSystem>();
 	visible?: boolean;
@@ -20,7 +20,7 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 	}
 
 	async #getVpcf(repository: string, vpcfPath: string) {
-		let fullPath = repository + vpcfPath;
+		const fullPath = repository + vpcfPath;
 
 		let vpcf = this.#vpcfs[fullPath];
 		if (vpcf === undefined) {
@@ -33,7 +33,7 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 	async getSystem(repository: string, vpcfPath: string, snapshotModifiers?: Map<string, string>) {
 		vpcfPath = vpcfPath.replace(/.vpcf_c/, '').replace(/.vpcf/, '');
 		vpcfPath = vpcfPath + '.vpcf_c';
-		let vpcf = await this.#getVpcf(repository, vpcfPath);
+		const vpcf = await this.#getVpcf(repository, vpcfPath);
 		if (vpcf) {
 			return getLoader('Source2ParticleLoader').getSystem(repository, vpcf, snapshotModifiers);
 		}
@@ -43,7 +43,7 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 		if (elapsedTime) {
 			elapsedTime *= this.speed;
 			elapsedTime = Math.min(elapsedTime, 0.1);
-			for (let system of this.activeSystemList.values()) {
+			for (const system of this.activeSystemList.values()) {
 				if (system.parentSystem === undefined) {
 					system.step(elapsedTime);
 				}
@@ -64,8 +64,8 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 	}
 
 	async getSystemList(): Promise<FileSelectorFile> {
-		const repoList: Array<FileSelectorFile> = [];
-		for (let repoName in this.#fileList) {
+		const repoList: FileSelectorFile[] = [];
+		for (const repoName in this.#fileList) {
 			if (this.#fileList[repoName]) {
 				continue;
 			}
@@ -77,7 +77,7 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 		return { name: '', path: '', files: repoList };
 	}
 
-	async loadManifests(...repositories: Array<string>) {
+	async loadManifests(...repositories: string[]) {
 		for (const repository of repositories) {
 			this.#fileList[repository] = undefined;
 		}

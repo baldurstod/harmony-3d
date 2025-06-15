@@ -23,7 +23,7 @@ export class RgbeImporter {
 	}
 
 	import(reader: BinaryReader) {
-		let rgbe = decodeRGBE(reader.getDataView());
+		const rgbe = decodeRGBE(reader.getDataView());
 		console.info(rgbe);
 		if (!rgbe) {
 			return null;

@@ -18,10 +18,10 @@ const BINARY_FORMAT_POS = 25;
 
 export class SourceEnginePCFLoader extends SourceBinaryLoader {
 	parse(repositoryName, fileName, arrayBuffer) {
-		let pcf = new SourcePCF(repositoryName);
-		let reader = new BinaryReader(arrayBuffer);
+		const pcf = new SourcePCF(repositoryName);
+		const reader = new BinaryReader(arrayBuffer);
 
-		let str = reader.getString(Math.min(1000, arrayBuffer.byteLength));
+		const str = reader.getString(Math.min(1000, arrayBuffer.byteLength));
 
 		let startOffset = str.indexOf('-->');
 		if (startOffset === 0) {

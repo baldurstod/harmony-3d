@@ -85,7 +85,7 @@ export enum ManipulatorAxis {
 }
 
 export class Manipulator extends Entity {
-	#entityAxis: Map<Entity, ManipulatorAxis> = new Map();
+	#entityAxis = new Map<Entity, ManipulatorAxis>();
 	#xMaterial = new MeshBasicMaterial();
 	#yMaterial = new MeshBasicMaterial();
 	#zMaterial = new MeshBasicMaterial();
@@ -128,13 +128,13 @@ export class Manipulator extends Entity {
 	#startPosition: vec3 = vec3.create();
 	#startQuaternion: quat = quat.create();
 	#startLocalQuaternion: quat = quat.create();
-	#startDragVector: number = 0//vec3 = vec3.create();
+	#startDragVector = 0//vec3 = vec3.create();
 	#translationManipulator = new Entity({ name: 'Translation manipulator' });
 	#rotationManipulator = new Entity({ name: 'Rotation manipulator' });
 	#scaleManipulator = new Entity({ name: 'Scale manipulator' });
-	#enableX: boolean = false;
-	#enableY: boolean = false;
-	#enableZ: boolean = false;
+	#enableX = false;
+	#enableY = false;
+	#enableZ = false;
 
 	constructor(params?: any) {
 		super(params);
@@ -314,11 +314,11 @@ export class Manipulator extends Entity {
 		this.#yArrow.translateZ(ARROW_LENGTH / 2);
 		this.#zArrow.translateZ(ARROW_LENGTH / 2);
 
-		let xTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#xMaterial, name: 'Manipulator X tip' });
+		const xTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#xMaterial, name: 'Manipulator X tip' });
 		xTip.translateZ(ARROW_LENGTH / 2);
-		let yTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#yMaterial, name: 'Manipulator Y tip' });
+		const yTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#yMaterial, name: 'Manipulator Y tip' });
 		yTip.translateZ(ARROW_LENGTH / 2);
-		let zTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#zMaterial, name: 'Manipulator Z tip' });
+		const zTip = new Cone({ radius: ARROW_RADIUS * 2, height: TIP_LENGTH, material: this.#zMaterial, name: 'Manipulator Z tip' });
 		zTip.translateZ(ARROW_LENGTH / 2);
 
 		this.#xyPlane.translateOnAxis([1, 1, 0], HALF_PLANE_LENGTH);
@@ -377,11 +377,11 @@ export class Manipulator extends Entity {
 		this.#yScale.translateZ(ARROW_LENGTH / 2);
 		this.#zScale.translateZ(ARROW_LENGTH / 2);
 
-		let xScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#xMaterial });
+		const xScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#xMaterial });
 		xScaleTip.translateZ(ARROW_LENGTH / 2);
-		let yScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#yMaterial });
+		const yScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#yMaterial });
 		yScaleTip.translateZ(ARROW_LENGTH / 2);
-		let zScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#zMaterial });
+		const zScaleTip = new Box({ width: TIP_LENGTH, height: TIP_LENGTH, depth: TIP_LENGTH, material: this.#zMaterial });
 		zScaleTip.translateZ(ARROW_LENGTH / 2);
 
 		/*this.#xyPlane = new Plane(PLANE_LENGTH, PLANE_LENGTH, this.#xyMaterial);
@@ -436,7 +436,7 @@ export class Manipulator extends Entity {
 	}
 
 	startScale(x: number, y: number) {
-		let startScalePosition = this.#startScalePosition;
+		const startScalePosition = this.#startScalePosition;
 		if (this._parent) {
 			this._parent.getWorldPosition(this.#startPosition);
 		} else {
@@ -532,7 +532,7 @@ export class Manipulator extends Entity {
 	}
 
 	#scaleMoveHandler(x: number, y: number) {
-		let v3 = this.#computeTranslationPosition(tempVec3, x, y);
+		const v3 = this.#computeTranslationPosition(tempVec3, x, y);
 		if (!v3) {
 			return;
 		}
@@ -570,16 +570,16 @@ export class Manipulator extends Entity {
 	}
 
 	#computeTranslationPosition(out: vec3, x: number, y: number) {
-		let camera = this.camera;
+		const camera = this.camera;
 		if (camera) {
-			let projectionMatrix = camera.projectionMatrix;
-			let viewMatrix = camera.cameraMatrix;
-			let nearPlane = camera.nearPlane;
-			let farPlane = camera.farPlane;
-			let aspectRatio = camera.aspectRatio;
+			const projectionMatrix = camera.projectionMatrix;
+			const viewMatrix = camera.cameraMatrix;
+			const nearPlane = camera.nearPlane;
+			const farPlane = camera.farPlane;
+			const aspectRatio = camera.aspectRatio;
 
-			let invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
-			let invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
+			const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
+			const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
 
 			// transform the screen coordinates to normalized coordinates
 			this.#cursorPos[0] = (x / new Graphics().getWidth()) * 2.0 - 1.0;
@@ -601,7 +601,7 @@ export class Manipulator extends Entity {
 					return vec3.create();//TODO: optimize
 				}
 
-				let t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
+				const t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
 				return vec3.scaleAndAdd(out, linePoint, lineDirection, t);
 			}
 
@@ -632,14 +632,14 @@ export class Manipulator extends Entity {
 			}
 
 			/********************/
-			let worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
-			let A = worldPos;//vec3.clone(this._parent.position) : vec3.clone(this.position);
-			let B = vec3.add(vec3.create(), A, planeNormal);
-			let P = camera.position;
-			let AP = vec3.sub(vec3.create(), P, A);//P-A;
-			let AB = vec3.sub(vec3.create(), B, A);//B-A;
+			const worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
+			const A = worldPos;//vec3.clone(this._parent.position) : vec3.clone(this.position);
+			const B = vec3.add(vec3.create(), A, planeNormal);
+			const P = camera.position;
+			const AP = vec3.sub(vec3.create(), P, A);//P-A;
+			const AB = vec3.sub(vec3.create(), B, A);//B-A;
 
-			let projPoint = vec3.add(vec3.create(), A, vec3.scale(AB, AB, vec3.dot(AP, AB) / vec3.dot(AB, AB)));
+			const projPoint = vec3.add(vec3.create(), A, vec3.scale(AB, AB, vec3.dot(AP, AB) / vec3.dot(AB, AB)));
 
 
 			planeNormal = vec3.sub(vec3.create(), projPoint, camera.position);
@@ -676,16 +676,16 @@ export class Manipulator extends Entity {
 	}
 
 	#computeQuaternion_removeme(x: number, y: number) {
-		let camera = this.camera;
+		const camera = this.camera;
 		if (camera) {
-			let projectionMatrix = camera.projectionMatrix;
-			let viewMatrix = camera.cameraMatrix;
-			let nearPlane = camera.nearPlane;
-			let farPlane = camera.farPlane;
-			let aspectRatio = camera.aspectRatio;
+			const projectionMatrix = camera.projectionMatrix;
+			const viewMatrix = camera.cameraMatrix;
+			const nearPlane = camera.nearPlane;
+			const farPlane = camera.farPlane;
+			const aspectRatio = camera.aspectRatio;
 
-			let invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
-			let invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
+			const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
+			const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
 
 			this.#cursorPos[0] = (x / new Graphics().getWidth()) * 2.0 - 1.0;
 			this.#cursorPos[1] = 1.0 - (y / new Graphics().getHeight()) * 2.0;
@@ -706,7 +706,7 @@ export class Manipulator extends Entity {
 					return vec3.create();//TODO: optimize
 				}
 
-				let t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
+				const t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
 				return vec3.scaleAndAdd(vec3.create(), linePoint, lineDirection, t);//TODO: optimize pass vec3 as param
 			}
 
@@ -747,7 +747,7 @@ export class Manipulator extends Entity {
 				}
 			}
 
-			let worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
+			const worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
 			v4 = lineIntersection(worldPos, planeNormal, this.#near, vec3.sub(vec3.create(), this.#far, this.#near));
 			if (!v4) {
 				return vec3.create();//TODO: optimize
@@ -829,7 +829,7 @@ export class Manipulator extends Entity {
 
 	set enableX(enableX) {
 		this.#enableX = enableX;
-		let enable = enableX ? undefined : false;
+		const enable = enableX ? undefined : false;
 		this.#xArrow.setVisible(enable);
 		this.#xCircle.setVisible(enable);
 		this.#xScale.setVisible(enable);
@@ -841,7 +841,7 @@ export class Manipulator extends Entity {
 
 	set enableY(enableY) {
 		this.#enableY = enableY;
-		let enable = enableY ? undefined : false;
+		const enable = enableY ? undefined : false;
 		this.#yArrow.setVisible(enable);
 		this.#yCircle.setVisible(enable);
 		this.#yScale.setVisible(enable);
@@ -853,7 +853,7 @@ export class Manipulator extends Entity {
 
 	set enableZ(enableZ) {
 		this.#enableZ = enableZ;
-		let enable = enableZ ? undefined : false;
+		const enable = enableZ ? undefined : false;
 		this.#zArrow.setVisible(enable);
 		this.#zCircle.setVisible(enable);
 		this.#zScale.setVisible(enable);

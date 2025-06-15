@@ -44,12 +44,12 @@ export class RenderRope extends SourceEngineParticleOperator {
 		const m_flTextureScale = 1.0 / (this.particleSystem.material.getColorMapSize(tempVec2)[1] * m_flTexelSizeInUnits);
 		const flTexOffset = m_flTextureScrollRate * particleSystem.currentTime;
 
-		let geometry = this.geometry;
+		const geometry = this.geometry;
 		const vertices = [];
 		const indices = [];
 		const id = [];
 
-		let segments = [];
+		const segments = [];
 
 		let particle;
 		let ropeLength = 0.0;
@@ -57,7 +57,7 @@ export class RenderRope extends SourceEngineParticleOperator {
 		for (let i = 0, l = particleList.length; i < l; i++) {
 		//for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
 			particle = particleList[i];
-			let segment = new BeamSegment(particle.position, [particle.color.r, particle.color.g, particle.color.b, particle.alpha], 0.0, particle.radius);
+			const segment = new BeamSegment(particle.position, [particle.color.r, particle.color.g, particle.color.b, particle.alpha], 0.0, particle.radius);
 			if (previousSegment) {
 				ropeLength += segment.distanceTo(previousSegment);
 			}
@@ -71,7 +71,7 @@ export class RenderRope extends SourceEngineParticleOperator {
 		const rate = this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
 		this.geometry.count = particleList.length * 6;
-		let maxParticles = particleSystem.maxParticles;
+		const maxParticles = particleSystem.maxParticles;
 		this.setupParticlesTexture(particleList, maxParticles);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh.setVisible(Source1ParticleControler.visible);
@@ -81,11 +81,11 @@ export class RenderRope extends SourceEngineParticleOperator {
 		const uvs = this.geometry.attributes.get('aTextureCoord')._array;
 		let index = 0;
 		for (let i = 0; i < particleList.length; i++) {
-			let particle = particleList[i];
+			const particle = particleList[i];
 			const sequence = particle.sequence;
 			let flAgeScale;
 			if (m_bFitCycleToLifetime) {
-				let flLifetime = particle.timeToLive;//SubFloat(pLifeDuration[ nGroup * ld_stride ], nOffset);
+				const flLifetime = particle.timeToLive;//SubFloat(pLifeDuration[ nGroup * ld_stride ], nOffset);
 				flAgeScale = (flLifetime > 0.0) ? (1.0 / flLifetime) * SEQUENCE_SAMPLE_COUNT : 0.0;
 			} else {
 				flAgeScale = rate * SEQUENCE_SAMPLE_COUNT;
@@ -100,10 +100,10 @@ export class RenderRope extends SourceEngineParticleOperator {
 			let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, flAgeScale, sequence);
 			if (coords) {
 				coords = coords.m_TextureCoordData[0];
-				let uMin = coords.m_fLeft_U0;
-				let vMin = coords.m_fTop_V0;
-				let uMax = coords.m_fRight_U0;
-				let vMax = coords.m_fBottom_V0;
+				const uMin = coords.m_fLeft_U0;
+				const vMin = coords.m_fTop_V0;
+				const uMax = coords.m_fRight_U0;
+				const vMax = coords.m_fBottom_V0;
 				uvs[index++] = uMin;
 				uvs[index++] = vMin;
 				uvs[index++] = uMax;
@@ -190,7 +190,7 @@ export class RenderRope extends SourceEngineParticleOperator {
 		const a = this.imgData;
 
 		let index = 0;
-		for (let particle of particleList) {//TODOv3
+		for (const particle of particleList) {//TODOv3
 			/*let pose = bone.boneMat;
 			for (let k = 0; k < 16; ++k) {
 				a[index++] = pose[k];

@@ -2,7 +2,7 @@ import { loadAnimGroup } from '../loaders/source2animloader';
 import { Source2AnimGroup } from './source2animgroup';
 
 export const AnimManager = new (function () {
-	let animGroupList: { [key: string]: Source2AnimGroup } = {};
+	const animGroupList: Record<string, Source2AnimGroup> = {};
 	class AnimManager {
 
 		async getAnimGroup(source2Model, repository, animGroupName) {

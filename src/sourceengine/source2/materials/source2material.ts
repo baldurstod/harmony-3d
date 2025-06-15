@@ -66,7 +66,7 @@ const TEXTURE_UNIFORMS = new Map([
 
 const DEFAULT_ALPHA_TEST_REFERENCE = 0.7;
 
-type ProxyParams = { [key: string]: any };
+type ProxyParams = Record<string, any>;
 
 export class Source2Material extends Material {
 	#source2File?: Source2File;
@@ -138,7 +138,7 @@ export class Source2Material extends Material {
 			this.setDefine('USE_SEPARATE_NORMAL_TRANSFORM');
 		}
 
-		let detailBlendMode = this.getIntParam('F_DETAIL');
+		const detailBlendMode = this.getIntParam('F_DETAIL');
 		if (detailBlendMode !== null) {
 			this.setDefine('DETAIL_BLEND_MODE', detailBlendMode);
 		} else {
@@ -191,9 +191,9 @@ export class Source2Material extends Material {
 	}
 
 	setupUniforms() {
-		for (let [paramName, uniformName] of UNIFORMS) {
+		for (const [paramName, uniformName] of UNIFORMS) {
 			//console.error(uniformName);
-			let paramValue = this.getParam(paramName);
+			const paramValue = this.getParam(paramName);
 			if (paramValue) {
 				this.setUniform(uniformName, paramValue);
 			}
@@ -206,10 +206,10 @@ export class Source2Material extends Material {
 
 	getTextureByName(textureName: string) {
 		if (this.#source2File) {
-			var textures = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_textureParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_textureParams');
+			const textures = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_textureParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_textureParams');
 			if (textures) {
-				for (var textureIndex = 0; textureIndex < textures.length; textureIndex++) {
-					var texture = textures[textureIndex];
+				for (let textureIndex = 0; textureIndex < textures.length; textureIndex++) {
+					const texture = textures[textureIndex];
 					if (texture.m_name == textureName) {
 						return texture.m_pValue;
 					}
@@ -279,7 +279,7 @@ export class Source2Material extends Material {
 	}
 
 	setDynamicUniform(uniformName: string) {
-		let value = this.getDynamicParam(uniformName);
+		const value = this.getDynamicParam(uniformName);
 		if (value) {
 			if (uniformName.startsWith('g_fl')) {
 				this.uniforms[uniformName] = value[0];
@@ -299,9 +299,9 @@ export class Source2Material extends Material {
 
 	initFloatUniforms() {
 		if (this.#source2File) {
-			var floats = this.#source2File.getMaterialResourceData('m_floatParams');
+			const floats = this.#source2File.getMaterialResourceData('m_floatParams');
 			if (floats) {
-				for (let fl of floats) {
+				for (const fl of floats) {
 					this.setUniform(fl.m_name, fl.m_flValue);
 				}
 			}
@@ -310,27 +310,27 @@ export class Source2Material extends Material {
 
 	initVectorUniforms() {
 		if (this.#source2File) {
-			var vectors = this.#source2File.getMaterialResourceData('m_vectorParams');
+			const vectors = this.#source2File.getMaterialResourceData('m_vectorParams');
 			if (vectors) {
-				for (let vector of vectors) {
+				for (const vector of vectors) {
 					this.setUniform(vector.m_name, vector.m_value);
 				}
 			}
 		}
 	}
 
-	getUniforms(): Array<Map<string, string>> {
+	getUniforms(): Map<string, string>[] {
 		return [UNIFORMS];
 	}
 
-	getTextureUniforms(): Array<Map<string, Array<string>>> {
+	getTextureUniforms(): Map<string, string[]>[] {
 		return [TEXTURE_UNIFORMS];
 	}
 
 	async initTextureUniforms() {
 		for (const map of this.getTextureUniforms()) {
-			for (let [paramName, [uniformName, defineName]] of map) {
-				let paramValue = this.getTextureByName(paramName);
+			for (const [paramName, [uniformName, defineName]] of map) {
+				const paramValue = this.getTextureByName(paramName);
 				if (paramValue) {
 					this.setTexture(uniformName, paramValue ? await Source2TextureManager.getTexture(this.repository, paramValue, 0) : null, defineName);
 				}
@@ -358,10 +358,10 @@ export class Source2Material extends Material {
 
 	getIntParam(intName: string) {
 		if (this.#source2File) {
-			var ints = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_intParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_intParams');
+			const ints = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_intParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_intParams');
 			if (ints) {
-				for (var intIndex = 0; intIndex < ints.length; intIndex++) {
-					var fl = ints[intIndex];
+				for (let intIndex = 0; intIndex < ints.length; intIndex++) {
+					const fl = ints[intIndex];
 					if (fl.m_name == intName) {
 						return fl.m_nValue;
 					}
@@ -372,10 +372,10 @@ export class Source2Material extends Material {
 	}
 	getFloatParam(floatName: string) {
 		if (this.#source2File) {
-			var floats = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_floatParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_floatParams');
+			const floats = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_floatParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_floatParams');
 			if (floats) {
-				for (var floatIndex = 0; floatIndex < floats.length; floatIndex++) {
-					var fl = floats[floatIndex];
+				for (let floatIndex = 0; floatIndex < floats.length; floatIndex++) {
+					const fl = floats[floatIndex];
 					if (fl.m_name == floatName) {
 						return fl.m_flValue;
 					}
@@ -386,10 +386,10 @@ export class Source2Material extends Material {
 	}
 	getVectorParam(vectorName: string) {
 		if (this.#source2File) {
-			var vectors = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_vectorParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_vectorParams');
+			const vectors = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_vectorParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_vectorParams');
 			if (vectors) {
-				for (var vectorIndex = 0; vectorIndex < vectors.length; vectorIndex++) {
-					var vector = vectors[vectorIndex];
+				for (let vectorIndex = 0; vectorIndex < vectors.length; vectorIndex++) {
+					const vector = vectors[vectorIndex];
 					if (vector.m_name == vectorName) {
 						return vector.m_value;
 					}
@@ -400,10 +400,10 @@ export class Source2Material extends Material {
 	}
 	getDynamicParam(dynamicName: string) {
 		if (this.#source2File) {
-			var dynamicParams = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_dynamicParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
+			const dynamicParams = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_dynamicParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
 			if (dynamicParams) {
-				for (var dynamicIndex = 0; dynamicIndex < dynamicParams.length; dynamicIndex++) {
-					var dynamicParam = dynamicParams[dynamicIndex];
+				for (let dynamicIndex = 0; dynamicIndex < dynamicParams.length; dynamicIndex++) {
+					const dynamicParam = dynamicParams[dynamicIndex];
 					if (dynamicParam.m_name == dynamicName) {
 						return executeDynamicExpression(dynamicParam.m_value, this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_renderAttributesUsed') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_renderAttributesUsed'));
 					}

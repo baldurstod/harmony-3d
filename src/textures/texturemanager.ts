@@ -9,7 +9,7 @@ export class TextureManager {
 	}
 
 	static createTexture(textureParams?: TextureParams) {
-		let texture = new Texture(textureParams);
+		const texture = new Texture(textureParams);
 		texture.texture = createTexture();
 		//TODOv3: init texture parameters
 		//texture.setParameters(Graphics.glContext, target);
@@ -20,26 +20,26 @@ export class TextureManager {
 		deleteTexture(texture.texture);
 	}
 
-	static createFlatTexture(color = [255, 0, 255], needCubeMap: boolean = false) {
-		let texture = this.createTexture();
+	static createFlatTexture(color = [255, 0, 255], needCubeMap = false) {
+		const texture = this.createTexture();
 		fillFlatTexture(texture, color, needCubeMap);
 		return texture;
 	}
 
-	static createCheckerTexture(color = [255, 0, 255], width: number = 64, height: number = 64, needCubeMap: boolean = false) {
-		let texture = this.createTexture();
+	static createCheckerTexture(color = [255, 0, 255], width = 64, height = 64, needCubeMap = false) {
+		const texture = this.createTexture();
 		fillCheckerTexture(texture, color, width, height, needCubeMap);
 		return texture;
 	}
 
-	static createNoiseTexture(width: number, height: number, needCubeMap: boolean = false) {
-		let texture = this.createTexture();
+	static createNoiseTexture(width: number, height: number, needCubeMap = false) {
+		const texture = this.createTexture();
 		fillNoiseTexture(texture, width, height, needCubeMap);
 		return texture;
 	}
 
 	static createTextureFromImage(image: HTMLImageElement, textureParams?: TextureParams) {
-		let texture = this.createTexture(textureParams);
+		const texture = this.createTexture(textureParams);
 		fillTextureWithImage(texture, image);
 		return texture;
 	}

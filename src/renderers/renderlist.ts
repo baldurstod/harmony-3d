@@ -13,12 +13,12 @@ function sortLights(first: Light, second: Light) {
 }
 
 export class RenderList {
-	lights: Array<Light> = [];
-	pointLights: Array<PointLight> = [];
-	spotLights: Array<SpotLight> = [];
-	ambientLights: Array<AmbientLight> = [];
-	transparentList: Array<Mesh> = [];
-	opaqueList: Array<Mesh> = [];
+	lights: Light[] = [];
+	pointLights: PointLight[] = [];
+	spotLights: SpotLight[] = [];
+	ambientLights: AmbientLight[] = [];
+	transparentList: Mesh[] = [];
+	opaqueList: Mesh[] = [];
 	pointLightShadows = 0;
 	spotLightShadows = 0;
 

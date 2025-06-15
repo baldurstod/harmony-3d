@@ -50,11 +50,11 @@ export class FlexAnimationTrack {
 	toString(indent) {
 		indent = indent || '';
 		const subindent = indent + '\t';
-		let arr = [indent + this.controllerName];
+		const arr = [indent + this.controllerName];
 		for (let sampleType = 0; sampleType < 2; ++sampleType) {
 			const samples = this.samples[sampleType];
 			for (let i = 0; i < samples.length; ++i) {
-				let sample = samples[i];
+				const sample = samples[i];
 				arr.push(subindent + sample.toString());
 			}
 		}

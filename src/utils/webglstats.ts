@@ -5,17 +5,17 @@ import { USE_STATS } from '../buildoptions';
 import { GL_POINTS, GL_LINE_STRIP, GL_LINE_LOOP, GL_LINES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_TRIANGLES } from '../webgl/constants';
 
 export class WebGLStats {
-	static #frames: number = 0;
-	static #totalFrames: number = 0;
-	static #fps: number = 0;
-	static #drawElements: number = 0;
-	static #renderTime: number = 0;
-	static #renderTimeMean: number = 0;
-	static #textures: number = 0;
-	static #startTime: number = 0;
-	static #endTime: number = 0;
-	static #startRender: number = 0;
-	static #primitivePerMode: Map<GLenum, number> = new Map();
+	static #frames = 0;
+	static #totalFrames = 0;
+	static #fps = 0;
+	static #drawElements = 0;
+	static #renderTime = 0;
+	static #renderTimeMean = 0;
+	static #textures = 0;
+	static #startTime = 0;
+	static #endTime = 0;
+	static #startRender = 0;
+	static #primitivePerMode = new Map<GLenum, number>();
 	static #htmlElement: HTMLElement;
 	static {
 		this.#initHtml();
@@ -54,7 +54,7 @@ export class WebGLStats {
 		this.#endTime = performance.now();
 		++this.#frames;
 
-		let timeSinceReset = this.#endTime - this.#startTime;
+		const timeSinceReset = this.#endTime - this.#startTime;
 		this.#updateHtml();
 
 		if (timeSinceReset > 1000) {

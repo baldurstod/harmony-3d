@@ -42,8 +42,8 @@ import { Scene } from './scene';
 import { SceneExplorerEntity } from './sceneexplorerentity';
 import { SceneExplorerEvents } from './sceneexplorerevents';
 
-function FormatArray(array: Array<number> | vec3): string {
-	let arr: Array<string> = [];
+function FormatArray(array: number[] | vec3): string {
+	const arr: string[] = [];
 	array.forEach((element) =>
 		arr.push(element.toFixed(2))
 	);
@@ -113,8 +113,8 @@ export class SceneExplorer {
 		this.#manipulator = new Manipulator({ visible: false });
 
 		new IntersectionObserver((entries, observer) => {
-			let isVisible = this.#isVisible;
-			for (let e of entries) {
+			const isVisible = this.#isVisible;
+			for (const e of entries) {
 				this.#isVisible = e.isIntersecting;
 			}
 			if (this.#isVisible && (this.#isVisible != isVisible)) {
@@ -362,8 +362,8 @@ export class SceneExplorer {
 	}
 
 	#populateTypeFilter() {
-		for (let type of ENTITIES) {
-			let option = createElement('option', { innerText: type, value: type });
+		for (const type of ENTITIES) {
+			const option = createElement('option', { innerText: type, value: type });
 			this.#htmlTypeFilter.append(option);
 		}
 	}
@@ -374,9 +374,9 @@ export class SceneExplorer {
 				this.#refreshScene();
 			} else {
 				if (this.#scene) {
-					let allEntities = this.#scene.getChildList();
+					const allEntities = this.#scene.getChildList();
 					this.#htmlScene.innerText = '';
-					for (let entity of allEntities) {
+					for (const entity of allEntities) {
 						if (this.#matchFilter(entity, this.#filterName, this.#filterType)) {
 							const htmlEntityElement = this.#createEntityElement(entity);
 							if (htmlEntityElement) {
@@ -424,7 +424,7 @@ export class SceneExplorer {
 	}
 
 	#createEntityElement(entity: Entity, createExpanded = false) {
-		let htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
+		const htmlEntityElement = SceneExplorerEntity.getEntityElement(entity);
 
 		if (createExpanded) {
 			htmlEntityElement?.expand();
@@ -550,8 +550,8 @@ function initEntitySubmenu() {
 				[
 					{
 						i18n: '#rotation_control', f: (entity: Entity) => {
-							let control = new RotationControl();
-							let parent = entity.parent;
+							const control = new RotationControl();
+							const parent = entity.parent;
 							if (parent) {
 								parent.addChild(control);
 							}
@@ -560,8 +560,8 @@ function initEntitySubmenu() {
 					},
 					{
 						i18n: '#translation_control', f: (entity: Entity) => {
-							let control = new TranslationControl();
-							let parent = entity.parent;
+							const control = new TranslationControl();
+							const parent = entity.parent;
 							if (parent) {
 								parent.addChild(control);
 							}
@@ -570,7 +570,7 @@ function initEntitySubmenu() {
 					},
 				]
 		},
-		{ i18n: '#helper', f: (entity: Entity) => { let helper = getHelper(entity); if (helper) { entity.addChild(helper); }; } },
+		{ i18n: '#helper', f: (entity: Entity) => { const helper = getHelper(entity); if (helper) { entity.addChild(helper); }; } },
 		{ i18n: '#wireframe', f: (entity: Entity) => entity.addChild(new WireframeHelper()) },
 		{ i18n: '#wireframe2', f: (entity: Entity) => entity.addChild(new Wireframe()) },
 		{ i18n: '#hitboxes', f: (entity: Entity) => entity.addChild(new HitboxHelper()) },
@@ -583,12 +583,12 @@ function initEntitySubmenu() {
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ModelManager.getModelList(), async (repository, modelName) => {
 								console.error(modelName);
 								//let instance = await Source1ModelManager.createInstance(modelName.repository, modelName.path + modelName.name, true);
-								let instance = await Source1ModelManager.createInstance(repository, modelName, true);
+								const instance = await Source1ModelManager.createInstance(repository, modelName, true);
 								if (!instance) {
 									return;
 								}
 								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
-								let seq = instance.sourceModel.mdl.getSequenceById(0);
+								const seq = instance.sourceModel.mdl.getSequenceById(0);
 								if (seq) {
 									instance.playSequence(seq.name);
 								}
@@ -599,8 +599,8 @@ function initEntitySubmenu() {
 						i18n: '#particle_system', f: async (entity: Entity) => {
 							show(new SceneExplorer().htmlFileSelector);
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
-								let systemName = systemPath.split('/');
-								let sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
+								const systemName = systemPath.split('/');
+								const sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
 								sys.start();
 								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);
 							});
@@ -616,7 +616,7 @@ function initEntitySubmenu() {
 							show(new SceneExplorer().htmlFileSelector);
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ModelManager.getModelList(), async (repository, modelName) => {
 								console.error(modelName);
-								let instance = await Source2ModelManager.createInstance(repository, modelName, true);
+								const instance = await Source2ModelManager.createInstance(repository, modelName, true);
 								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(instance);
 								/*let seq = instance.sourceModel.mdl.getSequenceById(0);
 								if (seq) {
@@ -629,8 +629,8 @@ function initEntitySubmenu() {
 						i18n: '#particle_system', f: async (entity: Entity) => {
 							show(new SceneExplorer().htmlFileSelector);
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source2ParticleManager.getSystemList(), async (repository, systemPath) => {
-								let systemName = systemPath.split('/');
-								let sys = await Source2ParticleManager.getSystem(repository, systemPath);
+								const systemName = systemPath.split('/');
+								const sys = await Source2ParticleManager.getSystem(repository, systemPath);
 								sys.name = systemName[systemName.length - 1];
 								sys.start();
 								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);

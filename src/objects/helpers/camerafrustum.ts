@@ -111,12 +111,12 @@ export class CameraFrustum extends Mesh {
 		const vertices = [];
 		const colors = [];
 
-		for (let point of Points) {
+		for (const point of Points) {
 			vertices.push(...point.p);
 			colors.push(...point.c);
 		}
 
-		let geometry = this.geometry;
+		const geometry = this.geometry;
 		geometry.setIndex(new Uint16BufferAttribute(indices, 1));
 		this.#vertexPositionAttribute = new Float32BufferAttribute(vertices, 3);
 		geometry.setAttribute('aVertexPosition', this.#vertexPositionAttribute);
@@ -127,8 +127,8 @@ export class CameraFrustum extends Mesh {
 	update() {
 		if (this.#camera) {
 			let index = 0;
-			let verticesArray = this.#vertexPositionAttribute._array;
-			for (let point of Points) {
+			const verticesArray = this.#vertexPositionAttribute._array;
+			for (const point of Points) {
 				if (index > 3) {//Skip the base point
 					vec3.copy(tempVec3, point.p)
 					this.#camera.invertProjection(tempVec3);

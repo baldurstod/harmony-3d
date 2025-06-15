@@ -11,7 +11,7 @@ import { Source2AnimationDesc } from './source2animationdesc';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
-export type BodyGroupChoice = {
+export interface BodyGroupChoice {
 	choice: string,
 	bodyGroup: string,
 	bodyGroupId: number,
@@ -47,7 +47,7 @@ export class Source2Model {
 	}
 
 	#createAnimGroup() {
-		let aseq = this.vmdl.getBlockByType('ASEQ');
+		const aseq = this.vmdl.getBlockByType('ASEQ');
 		if (aseq) {
 			this.#seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
 			this.#seqGroup.setFile(this.vmdl);
@@ -55,7 +55,7 @@ export class Source2Model {
 	}
 
 	#createBodyGroups() {
-		let meshGroups = this.vmdl.getPermModelData('m_meshGroups') as Array<string>;
+		const meshGroups = this.vmdl.getPermModelData('m_meshGroups') as string[];
 		if (meshGroups) {
 
 			let bodyGroupId = 0;
@@ -122,7 +122,7 @@ export class Source2Model {
 	}
 
 	getBones() {
-		let skeleton = this.vmdl.getPermModelData('m_modelSkeleton');
+		const skeleton = this.vmdl.getPermModelData('m_modelSkeleton');
 		if (skeleton) {
 			return skeleton;
 		}
@@ -180,9 +180,9 @@ export class Source2Model {
 */
 
 	getSkinMaterials(skin) {
-		let materialGroups = this.vmdl.getPermModelData('m_materialGroups');
+		const materialGroups = this.vmdl.getPermModelData('m_materialGroups');
 		if (materialGroups) {
-			let materials = materialGroups[skin];
+			const materials = materialGroups[skin];
 			if (materials) {
 				return materials.m_materials;
 			}
@@ -192,7 +192,7 @@ export class Source2Model {
 
 	getSkinList() {
 		const skinList = [];
-		let materialGroups = this.vmdl.getPermModelData('m_materialGroups');
+		const materialGroups = this.vmdl.getPermModelData('m_materialGroups');
 		if (materialGroups) {
 			for (let skinIndex = 0; skinIndex < materialGroups.length; skinIndex++) {
 				skinList.push(materialGroups[skinIndex].m_name);
@@ -203,11 +203,11 @@ export class Source2Model {
 
 	async loadAnimGroups() {
 		if (this.vmdl) {
-			var m_refAnimGroups = this.vmdl.getPermModelData('m_refAnimGroups');
+			const m_refAnimGroups = this.vmdl.getPermModelData('m_refAnimGroups');
 			if (m_refAnimGroups) {
-				for (var meshIndex = 0; meshIndex < m_refAnimGroups.length; meshIndex++) {
-					var meshName = m_refAnimGroups[meshIndex];
-					let animGroup = await AnimManager.getAnimGroup(this, this.repository, meshName);
+				for (let meshIndex = 0; meshIndex < m_refAnimGroups.length; meshIndex++) {
+					const meshName = m_refAnimGroups[meshIndex];
+					const animGroup = await AnimManager.getAnimGroup(this, this.repository, meshName);
 					this.animGroups.add(animGroup);
 				}
 			}
@@ -217,18 +217,18 @@ export class Source2Model {
 	#loadInternalAnimGroup() {
 		//TODOv3: make a common code where external and internal group are loaded
 		if (this.vmdl) {
-			let sourceFile = this.vmdl;
-			let localAnimArray = sourceFile.getBlockStruct('AGRP.keyValue.root.m_localHAnimArray');
-			let decodeKey = sourceFile.getBlockStruct('AGRP.keyValue.root.m_decodeKey');
+			const sourceFile = this.vmdl;
+			const localAnimArray = sourceFile.getBlockStruct('AGRP.keyValue.root.m_localHAnimArray');
+			const decodeKey = sourceFile.getBlockStruct('AGRP.keyValue.root.m_decodeKey');
 			if (localAnimArray && decodeKey) {
-				let animGroup = new Source2AnimGroup(this, this.repository);
+				const animGroup = new Source2AnimGroup(this, this.repository);
 				animGroup.setFile(this.vmdl);
 				animGroup.setAnimationGroupResourceData(localAnimArray, decodeKey);
 				this.#internalAnimGroup = animGroup;
 
-				let anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
+				const anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
 				if (anims) {
-					let loadedAnim = new Source2Animation(animGroup, '');
+					const loadedAnim = new Source2Animation(animGroup, '');
 					loadedAnim.setAnimDatas(anims);
 					animGroup._changemyname = animGroup._changemyname || [];
 					animGroup._changemyname.push(loadedAnim);
@@ -262,7 +262,7 @@ export class Source2Model {
 		let bestMatch = animations.getAnimation(activityName);
 		let bestScore = bestMatch ? 0 : -1;
 		animations.getAnimation(activityName);
-		for (let animDesc of animations.getAnimations()) {
+		for (const animDesc of animations.getAnimations()) {
 
 			/*if (animDesc.matchModifiers(activityName, activityModifiers)) {
 				return animDesc;
@@ -299,12 +299,12 @@ export class Source2Model {
 	}
 
 	getAnimationsByActivity(activityName, animations = new Source2Animations()) {
-		let anims = [];
+		const anims = [];
 		if (this.#seqGroup) {
 			anims.push(...this.#seqGroup.getAnimationsByActivity(activityName));
 		}
 
-		for (let animGroup of this.animGroups) {
+		for (const animGroup of this.animGroups) {
 			anims.push(...animGroup.getAnimationsByActivity(activityName));
 		}
 
@@ -313,10 +313,10 @@ export class Source2Model {
 	}
 
 	async getAnimations() {
-		let animations = new Set<string>();
-		for (let animGroup of this.animGroups) {
+		const animations = new Set<string>();
+		for (const animGroup of this.animGroups) {
 			if (animGroup.localAnimArray) {
-				for (var localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {
+				for (let localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {
 					const animRemoveMe = await animGroup.getAnim(localAnimIndex);
 					if (animRemoveMe) {
 						animRemoveMe.getAnimations(animations);
@@ -324,7 +324,7 @@ export class Source2Model {
 				}
 			}
 			if (animGroup._changemyname) {
-				for (var animResIndex = 0; animResIndex < animGroup._changemyname.length; animResIndex++) {
+				for (let animResIndex = 0; animResIndex < animGroup._changemyname.length; animResIndex++) {
 					const animRemoveMe = animGroup._changemyname[animResIndex];
 					if (animRemoveMe) {
 						animRemoveMe.getAnimations(animations);
@@ -336,15 +336,15 @@ export class Source2Model {
 	}
 
 	_addAttachements(attachements) {
-		for (let attachement of attachements) {
-			let attachementValue = attachement.value;
+		for (const attachement of attachements) {
+			const attachementValue = attachement.value;
 			if (attachementValue) {
-				let name = attachementValue.m_name.toLowerCase();
-				let source2ModelAttachement = new Source2ModelAttachement(name);
+				const name = attachementValue.m_name.toLowerCase();
+				const source2ModelAttachement = new Source2ModelAttachement(name);
 				this.attachements.set(name, source2ModelAttachement);
 				source2ModelAttachement.ignoreRotation = attachementValue.m_bIgnoreRotation;
 				for (let influenceIndex = 0; influenceIndex < attachementValue.m_nInfluences; ++influenceIndex) {
-					let influenceName = attachementValue.m_influenceNames[influenceIndex];
+					const influenceName = attachementValue.m_influenceNames[influenceIndex];
 					if (influenceName) {
 						source2ModelAttachement.influenceNames.push(influenceName.toLowerCase());
 						source2ModelAttachement.influenceWeights.push(attachementValue.m_influenceWeights[influenceIndex]);
@@ -358,8 +358,8 @@ export class Source2Model {
 
 	getAnimationByName(animName) {
 		//return this.#internalAnimGroup?.getAnimationByName(animName);
-		for (let animGroup of this.animGroups) {
-			let anim = animGroup.getAnimationByName(animName);
+		for (const animGroup of this.animGroups) {
+			const anim = animGroup.getAnimationByName(animName);
 			if (anim) {
 				return anim;
 			}

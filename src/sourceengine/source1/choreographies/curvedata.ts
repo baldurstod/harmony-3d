@@ -15,7 +15,7 @@ export class CurveData {
 	getValue(time) {
 		let previous = null;
 		let current;
-		for (let current of this.ramp) {
+		for (const current of this.ramp) {
 			if (time <= current.time) {
 				if (previous) {
 					return RemapValClamped(time, previous.time, current.time, previous.value, current.value);
@@ -36,9 +36,9 @@ export class CurveData {
 		}
 		indent = indent || '';
 		const subindent = indent + '\t';
-		let arr = [indent + 'event_ramp'];
+		const arr = [indent + 'event_ramp'];
 		for (let i = 0; i < this.ramp.length; ++i) {
-			let rampData = this.ramp[i];
+			const rampData = this.ramp[i];
 			arr.push(subindent + rampData.time + ' ' + rampData.value);
 		}
 		return arr.join('\n');

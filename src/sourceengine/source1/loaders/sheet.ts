@@ -16,7 +16,7 @@ class SequenceSampleTextureCoords_t {
 
 export class SheetSequenceSample_t {
 	m_fBlendFactor = 0;
-	m_TextureCoordData: Array<SequenceSampleTextureCoords_t> = [];
+	m_TextureCoordData: SequenceSampleTextureCoords_t[] = [];
 	constructor() {
 		for (let i = 0; i < MAX_IMAGES_PER_FRAME_IN_MEMORY; ++i) {
 			this.m_TextureCoordData[i] = new SequenceSampleTextureCoords_t();
@@ -30,7 +30,7 @@ export function GetInterpolationData(pKnotPositions: Float32Array, pKnotValues: 
 	flPositionToInterpolateAt: number,
 	bWrap: boolean) {
 	// first, find the bracketting knots by looking for the first knot >= our index
-	let result = Object.create(null);
+	const result = Object.create(null);
 	let idx;
 	for (idx = 0; idx < nNumValuesinList; idx++) {
 		if (pKnotPositions[idx] >= flPositionToInterpolateAt) {

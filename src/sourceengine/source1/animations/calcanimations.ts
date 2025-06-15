@@ -170,7 +170,7 @@ function InitPose(dynamicProp, pStudioHdr, pos, q, boneMask) {
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
 //function CalcPose(pStudioHdr, pIKContext, pos, q, sequence, cycle, poseParameter, boneMask, flWeight = 1.0, flTime = 0.0) {
-export function CalcPose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: Array<number>, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+export function CalcPose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
 	cycle = cycle % 1;//TODOv2
 	const seqdesc = pStudioHdr.getSequenceById(sequence);
 	if (seqdesc) {
@@ -236,7 +236,7 @@ for (let i = 0; i < SOURCE_MODEL_MAX_BONES; i++) {
 	CalcPoseSingle_pos3[i] = vec3.create();
 	CalcPoseSingle_q3[i] = quat.create();
 }
-function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneFlags: Array<number>, seqdesc, sequence, cycle, poseParameter, boneMask, flTime) {
+function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameter, boneMask, flTime) {
 	let bResult = true;
 
 	const pos2 = CalcPoseSingle_pos2;//[];//vec3.create();//TODOv2: optimize (see source)
@@ -394,7 +394,7 @@ function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneFlags: Array<number
 //-----------------------------------------------------------------------------
 // Purpose: Find and decode a sub-frame of animation
 //-----------------------------------------------------------------------------
-function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags: Array<number>, seqdesc, sequence, animation, cycle, boneMask) {
+function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], seqdesc, sequence, animation, cycle, boneMask) {
 	/*virtualmodel_t *pVModel = pStudioHdr->GetVirtualModel();TODOV2
 	if (pVModel)
 	{
@@ -936,7 +936,7 @@ function Calc3WayBlendIndices(i0, i1, s0, s1, seqdesc, pAnimIndices, pWeight) {
 // Purpose: calculate a pose for a single sequence //TODOv2
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
-const AddSequenceLayers = function (dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: Array<number>, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+const AddSequenceLayers = function (dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
 	//return;
 	for (let i = 0; i < seqdesc.numautolayers; ++i) {
 		const pLayer = seqdesc.getAutoLayer(i);
@@ -1018,7 +1018,7 @@ for (let i = 0; i < SOURCE_MODEL_MAX_BONES; i++) {
 	AccumulatePose_pos2[i] = vec3.create();
 	AccumulatePose_q2[i] = quat.create();
 }
-function AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: Array<number>, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+function AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
 	//const pos2 = [];
 	//const q2 = [];
 	const pos2 = AccumulatePose_pos2;
@@ -1068,7 +1068,7 @@ function AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: 
 // Purpose: calculate a pose for a single sequence
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
-function AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: Array<number>, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+function AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
 	if (!(seqdesc.flags & STUDIO_LOCAL)) {
 		return;
 	}
@@ -1168,7 +1168,7 @@ function SlerpBones(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneMa
 			continue;
 		}
 
-		let j = i;//pSeqGroup.boneMap[i];TODOv2
+		const j = i;//pSeqGroup.boneMap[i];TODOv2
 		if (j >= 0) {
 			pS2[i] = s * seqdesc.weight(j);	// blend in based on this bones weight
 		}
@@ -1541,8 +1541,8 @@ function Studio_LocalPoseParameter(pStudioHdr, poseParameter, seqdesc, iSequence
 
 function ScaleBones(
 	pStudioHdr: SourceMdl,//const CStudioHdr *pStudioHdr,
-	q1: Array<quat>,//Quaternion q1[MAXSTUDIOBONES],
-	pos1: Array<vec3>,//Vector pos1[MAXSTUDIOBONES],
+	q1: quat[],//Quaternion q1[MAXSTUDIOBONES],
+	pos1: vec3[],//Vector pos1[MAXSTUDIOBONES],
 	sequence: number,//int sequence,
 	s: number,//float s,
 	boneMask: number//int boneMask
@@ -1550,9 +1550,9 @@ function ScaleBones(
 	let i: number, j: number;//int			i, j;
 	let q3: quat;//Quaternion		q3;
 
-	let seqdesc = pStudioHdr.getSequenceById(sequence)//mstudioseqdesc_t & seqdesc = ((CStudioHdr *)pStudioHdr) -> pSeqdesc(sequence);
+	const seqdesc = pStudioHdr.getSequenceById(sequence)//mstudioseqdesc_t & seqdesc = ((CStudioHdr *)pStudioHdr) -> pSeqdesc(sequence);
 
-	let pSeqGroup = null;
+	const pSeqGroup = null;
 	/*
 	virtualmodel_t * pVModel = pStudioHdr -> GetVirtualModel();
 	const virtualgroup_t * pSeqGroup = NULL;
@@ -1561,8 +1561,8 @@ function ScaleBones(
 	}
 		*/
 
-	let s2: number = s;
-	let s1: number = 1.0 - s2;
+	const s2: number = s;
+	const s1: number = 1.0 - s2;
 
 	for (i = 0; i < pStudioHdr.getBoneCount(); i++) {
 

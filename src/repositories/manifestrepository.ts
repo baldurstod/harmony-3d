@@ -65,7 +65,7 @@ export class ManifestRepository implements Repository {
 			const pcfLoader = getLoader('SourceEnginePCFLoader') as typeof SourceEnginePCFLoader;
 			const pcf = await new pcfLoader().load(this.name, file.getFullName()) as SourcePCF;
 
-			const systems: Array<string> = [];
+			const systems: string[] = [];
 			for (const name in pcf.systems) {
 				systems.push(name);
 			}

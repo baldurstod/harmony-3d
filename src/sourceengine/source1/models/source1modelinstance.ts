@@ -39,8 +39,8 @@ export class Source1ModelInstance extends Entity implements Animated {
 	animable = true;
 	hasAnimations: true = true;
 	sourceModel: SourceModel;
-	bodyParts: { [key: string]: Entity } = {};
-	sequences: { [key: string]: { frame?: number, startTime?: any, s?: any } } = {};
+	bodyParts: Record<string, Entity> = {};
+	sequences: Record<string, { frame?: number, startTime?: any, s?: any }> = {};
 	meshes = new Set<Mesh | SkeletalMesh>();
 	frame = 0;
 	anim = new SourceAnimation();//TODO: removeme
@@ -52,7 +52,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	useNewAnimSystem = false;
 	#animationList = [];
 	#bodyGroups = new Map<string, number>();
-	readonly frameframe: { bones: { [key: string]: any/*TODO: improve type*/ } } = { bones: {} };
+	readonly frameframe: { bones: Record<string, any> } = { bones: {} };
 
 	static {
 		defaultMaterial.addUser(Source1ModelInstance);
@@ -91,7 +91,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	addChild(child) {
-		let ret = super.addChild(child);
+		const ret = super.addChild(child);
 		if (child.skeleton) {
 			child.skeleton.setParentSkeleton(this.#skeleton);
 		}
@@ -147,8 +147,8 @@ export class Source1ModelInstance extends Entity implements Animated {
 		this.materialsParams['SheenMaskOffsetY'] = offsetX;//TODOv3: set y offset
 		this.materialsParams['SheenMaskDirection'] = direction;
 
-		let min = vec3.create();
-		let max = vec3.create();
+		const min = vec3.create();
+		const max = vec3.create();
 		this.getBoundsModelSpace(min, max);
 		//console.error(min, max);
 
@@ -222,7 +222,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 
 	playSequence(sequenceName: string) { //TODO
 		sequenceName = sequenceName.toLowerCase();
-		let existingSequence = this.sequences[sequenceName];
+		const existingSequence = this.sequences[sequenceName];
 		this.sequences = Object.create(null);//TODOv2
 
 		this.sequences[sequenceName] = existingSequence ?? {};
@@ -247,7 +247,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 			this._playSequences(delta * animSpeed * this.animationSpeed);
 			this.#skeleton.setBonesMatrix();
 		}
-		for (let mesh of this.meshes) {
+		for (const mesh of this.meshes) {
 			if ((mesh as SkeletalMesh).skeleton) {
 				(mesh as SkeletalMesh).skeleton.setBonesMatrix();
 			}
@@ -428,7 +428,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	async #updateMaterials() {
-		for (let mesh of this.meshes) {
+		for (const mesh of this.meshes) {
 			let material: Material;
 			let materialName;
 			if (!material) {
@@ -452,26 +452,26 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	#init() {
-		let sourceModel = this.sourceModel;
-		for (let [bodyPartName, bodyPart] of sourceModel.bodyParts) {
+		const sourceModel = this.sourceModel;
+		for (const [bodyPartName, bodyPart] of sourceModel.bodyParts) {
 			//let newBodyPart = [];
 			//let defaul = undefined;//TODOv3: change variable name;
-			let group = new Entity({ name: bodyPartName });
+			const group = new Entity({ name: bodyPartName });
 			this.addChild(group);
 			group.serializable = false;
-			for (let modelId in bodyPart) {
-				let model = bodyPart[modelId];
+			for (const modelId in bodyPart) {
+				const model = bodyPart[modelId];
 				if (model) {
-					let group2 = new Entity();
+					const group2 = new Entity();
 					group2.properties.set('modelId', modelId);
 					group2.name = `${bodyPartName} ${modelId}`;
 					if (Number(modelId) != 0) {
 						group2.setVisible(false);
 					}
 					group.addChild(group2);
-					let newModel = [];
-					for (let modelMesh of model) {
-						let geometry = modelMesh.geometry;
+					const newModel = [];
+					for (const modelMesh of model) {
+						const geometry = modelMesh.geometry;
 						let mesh: Mesh | SkeletalMesh;
 						if (this.#skeleton) {
 							mesh = new SkeletalMesh(geometry.clone(), defaultMaterial, this.#skeleton);
@@ -504,18 +504,18 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	#initSkeleton() {
-		let bones = this.sourceModel.getBones();
+		const bones = this.sourceModel.getBones();
 		if (bones) {
-			for (let bone of bones) {
-				let skeletonBone = this.#skeleton.addBone(bone.boneId, bone.name);
+			for (const bone of bones) {
+				const skeletonBone = this.#skeleton.addBone(bone.boneId, bone.name);
 				skeletonBone._initialQuaternion = quat.copy(quat.create(), bone.quaternion);
 				skeletonBone._initialPosition = vec3.copy(vec3.create(), bone.position);
-				let parentBoneId = bone.parentBone;
+				const parentBoneId = bone.parentBone;
 
 				skeletonBone.poseToBone = bone.poseToBone;
 
 				if (parentBoneId >= 0) {
-					let parentBone = this.#skeleton._bones[parentBoneId];
+					const parentBone = this.#skeleton._bones[parentBoneId];
 					parentBone.addChild(skeletonBone);
 					//skeletonBone.parent = this.#skeleton._bones[parentBone];
 					if (!skeletonBone.parent) {
@@ -529,11 +529,11 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	#initAttachements() {
-		let attachements = this.sourceModel.getAttachments();
-		let localMat3 = mat3.create();//todo: optimize
+		const attachements = this.sourceModel.getAttachments();
+		const localMat3 = mat3.create();//todo: optimize
 		if (attachements) {
-			for (let attachement of attachements) {
-				let attachementBone = new Bone({ name: attachement.name });
+			for (const attachement of attachements) {
+				const attachementBone = new Bone({ name: attachement.name });
 				localMat3[0] = attachement.local[0];
 				localMat3[3] = attachement.local[1];
 				localMat3[6] = attachement.local[2];
@@ -547,7 +547,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 				vec3.set(attachementBone._position, attachement.local[3], attachement.local[7], attachement.local[11]);
 				quat.fromMat3(attachementBone._quaternion, localMat3);
 
-				let bone = this.#skeleton.getBoneById(attachement.localbone);
+				const bone = this.#skeleton.getBoneById(attachement.localbone);
 				bone.addChild(attachementBone);
 				this.#attachements[attachement.lowcasename] = attachementBone;
 			}
@@ -577,7 +577,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	*/
 
 	renderBodyParts(render) {
-		for (let bodyPartName in this.bodyParts) {
+		for (const bodyPartName in this.bodyParts) {
 			this.renderBodyPart(bodyPartName, render);
 			/*let bodyPart = this.bodyParts[bodyPartName];
 			if (bodyPart) {
@@ -591,7 +591,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	renderBodyPart(bodyPartName, render) {
-		let bodyPart = this.bodyParts[bodyPartName];
+		const bodyPart = this.bodyParts[bodyPartName];
 		if (bodyPart) {
 			bodyPart.setVisible(render ? undefined : false);
 			/*for (let model of bodyPart) {
@@ -603,7 +603,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	resetBodyPartModels() {
-		for (let bodyPartName in this.bodyParts) {
+		for (const bodyPartName in this.bodyParts) {
 			this.setBodyPartModel(bodyPartName, 0);
 		}
 	}
@@ -616,10 +616,10 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	setBodyPartModel(bodyPartName: string, modelId: number) {
-		let bodyPart = this.bodyParts[bodyPartName];
+		const bodyPart = this.bodyParts[bodyPartName];
 		if (bodyPart) {
 			//let id = 0;
-			for (let bodyPartModel of bodyPart.children) {
+			for (const bodyPartModel of bodyPart.children) {
 				//let bodyPartModel = bodyPart.children.get(id);
 				bodyPartModel.setVisible((bodyPartModel.properties.get('modelId') == modelId) ? undefined : false);
 				//++id;
@@ -642,9 +642,9 @@ export class Source1ModelInstance extends Entity implements Animated {
 	attachSystem(system, attachementName = '', cpIndex = 0, offset?: vec3) {
 		this.addChild(system);
 
-		let attachement = this.getAttachement(attachementName);
+		const attachement = this.getAttachement(attachementName);
 		if (attachement) {
-			let controlPoint = system.getControlPoint(cpIndex);
+			const controlPoint = system.getControlPoint(cpIndex);
 			attachement.addChild(controlPoint);
 		} else {
 			this.attachSystemToBone(system, attachementName, offset);
@@ -661,9 +661,9 @@ export class Source1ModelInstance extends Entity implements Animated {
 		}
 
 		this.addChild(system);
-		let controlPoint = system.getControlPoint(0);
+		const controlPoint = system.getControlPoint(0);
 
-		let bone = this.#skeleton.getBoneByName(boneName);
+		const bone = this.#skeleton.getBoneByName(boneName);
 		if (bone) {
 			bone.addChild(controlPoint);
 		} else {
@@ -683,15 +683,15 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	set material(material) {
-		for (let bodyPartName in this.bodyParts) {
-			let bodyPart = this.bodyParts[bodyPartName];
-			let meshes = bodyPart.getChildList('Mesh') as Set<Mesh>;
-			for (let mesh of meshes) {
+		for (const bodyPartName in this.bodyParts) {
+			const bodyPart = this.bodyParts[bodyPartName];
+			const meshes = bodyPart.getChildList('Mesh') as Set<Mesh>;
+			for (const mesh of meshes) {
 				mesh.setMaterial(material);
 			}
 		}
-		let subModels = this.getChildList('Source1ModelInstance');
-		for (let subModel of subModels) {
+		const subModels = this.getChildList('Source1ModelInstance');
+		for (const subModel of subModels) {
 			if (subModel !== this) {
 				(subModel as Source1ModelInstance).material = material;
 			}
@@ -700,10 +700,10 @@ export class Source1ModelInstance extends Entity implements Animated {
 
 	buildContextMenu() {
 		//console.error();
-		let skins = this.sourceModel.mdl.getSkinList();
-		let skinMenu = [];
-		for (let skin of skins) {
-			let item = Object.create(null);
+		const skins = this.sourceModel.mdl.getSkinList();
+		const skinMenu = [];
+		for (const skin of skins) {
+			const item = Object.create(null);
 			item.name = skin;
 			item.f = () => this.skin = skin;
 			skinMenu.push(item);
@@ -714,11 +714,11 @@ export class Source1ModelInstance extends Entity implements Animated {
 			skin: { i18n: '#skin', submenu: skinMenu },
 			tint: { i18n: '#tint', f: async (entity) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.tint = tint; }, (tint = entity.tint) => { entity.tint = tint; }) },
 			reset_tint: { i18n: '#reset_tint', f: (entity) => entity.tint = undefined, disabled: this.#tint === undefined },
-			animation: { i18n: '#animation', f: async (entity) => { let animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) { entity.playSequence(animation); } } },
-			overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { let material = await new Interaction().getString(0, 0, Object.keys(Material.materialList)); if (material) { entity.material = new Material.materialList[material]; } } },
+			animation: { i18n: '#animation', f: async (entity) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) { entity.playSequence(animation); } } },
+			overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity) => { const material = await new Interaction().getString(0, 0, Object.keys(Material.materialList)); if (material) { entity.material = new Material.materialList[material]; } } },
 			Source1ModelInstance_2: null,
 			animate: { i18n: '#animate', selected: this.animationSpeed != 0.0, f: () => this.animationSpeed == 0 ? this.animationSpeed = 1 : this.animationSpeed = 0 },
-			frame: { i18n: '#frame', f: () => { let frame = prompt('Frame', String(this.frame)); if (frame) { this.animationSpeed = 0; this.frame = Number(frame); } } },
+			frame: { i18n: '#frame', f: () => { const frame = prompt('Frame', String(this.frame)); if (frame) { this.animationSpeed = 0; this.frame = Number(frame); } } },
 			Source1ModelInstance_3: null,
 			copy_filename: { i18n: '#copy_filename', f: () => navigator.clipboard.writeText(this?.sourceModel?.fileName) },
 		});
@@ -729,9 +729,9 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	getRandomPointOnModel(vec, initialVec, bones) {
-		let hitboxes = this.getHitboxes();
-		let hitbox = hitboxes[getRandomInt(hitboxes.length)];
-		let bone = hitbox.parent//this.getBoneById(hitbox.boneId);
+		const hitboxes = this.getHitboxes();
+		const hitbox = hitboxes[getRandomInt(hitboxes.length)];
+		const bone = hitbox.parent//this.getBoneById(hitbox.boneId);
 		if (bone) {
 			bones.push([bone, 1]);
 			vec3RandomBox(vec, hitbox.boundingBoxMin, hitbox.boundingBoxMax);
@@ -765,7 +765,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	static set animSpeed(speed) {
-		let s = Number(speed);
+		const s = Number(speed);
 		animSpeed = Number.isNaN(s) ? 1 : s;
 	}
 
@@ -782,10 +782,10 @@ export class Source1ModelInstance extends Entity implements Animated {
 	#refreshFlexes() {
 		this.sourceModel.mdl.runFlexesRules(this.#flexParameters, this.#flexesWeight);
 
-		for (let mesh of this.meshes) {
+		for (const mesh of this.meshes) {
 			if (mesh && mesh.geometry) {
-				let attribute = mesh.geometry.getAttribute('aVertexPosition');
-				let newAttribute = attribute.clone();
+				const attribute = mesh.geometry.getAttribute('aVertexPosition');
+				const newAttribute = attribute.clone();
 				mesh.geometry.setAttribute('aVertexPosition', newAttribute);
 				const sourceModelMesh = mesh.properties.get('sourceModelMesh');
 				this.#updateArray(newAttribute._array, sourceModelMesh.flexes, sourceModelMesh.vertexoffset);
@@ -794,7 +794,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	#updateArray(vertexPositionArray, flexes, vertexoffset) {
-		let flexesWeight = this.#flexesWeight;
+		const flexesWeight = this.#flexesWeight;
 		if (flexes && flexes.length) {
 			for (let flexIndex = 0; flexIndex < flexes.length; ++flexIndex) {
 				const flex = flexes[flexIndex];
@@ -823,7 +823,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 						//const vertexIndex = vertAnim.index * 3;
 						//const vertexIndexArray = this.verticesPositionToto[vertAnim.index];
 
-						let vertexIndex = (vertexoffset + vertAnim.index) * 3;
+						const vertexIndex = (vertexoffset + vertAnim.index) * 3;
 
 						vertexPositionArray[vertexIndex + 0] += flDelta[0] * w;
 						vertexPositionArray[vertexIndex + 1] += flDelta[1] * w;
@@ -855,19 +855,19 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	async playDefaultAnim() {
-		let animList = await this.sourceModel.mdl.getAnimList();
+		const animList = await this.sourceModel.mdl.getAnimList();
 		if (animList && animList.size > 0) {
 			this.playSequence(animList.keys().next().value);
 		}
 	}
 
 	getHitboxes() {
-		let mdlHitboxSets = this.sourceModel.mdl.hitboxSets;
-		let hitboxes = [];
+		const mdlHitboxSets = this.sourceModel.mdl.hitboxSets;
+		const hitboxes = [];
 		if (mdlHitboxSets) {
-			for (let mdlHitboxSet of mdlHitboxSets) {
-				let mdlHitboxes = mdlHitboxSet.hitboxes;
-				for (let mdlHitbox of mdlHitboxes) {
+			for (const mdlHitboxSet of mdlHitboxSets) {
+				const mdlHitboxes = mdlHitboxSet.hitboxes;
+				for (const mdlHitbox of mdlHitboxes) {
 					hitboxes.push(new Hitbox(mdlHitbox.name, mdlHitbox.bbmin, mdlHitbox.bbmax, this.getBoneById(mdlHitbox.boneId)));
 				}
 			}
@@ -877,7 +877,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 
 	replaceMaterial(material, recursive = true) {
 		super.replaceMaterial(material, recursive);
-		for (let mesh of this.meshes) {
+		for (const mesh of this.meshes) {
 			mesh.material = material;
 		}
 	}
@@ -892,7 +892,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.skin = this.skin;
 		json.repository = this.sourceModel.repository;
 		json.filename = this.sourceModel.fileName;
@@ -904,7 +904,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	}
 
 	static async constructFromJSON(json, entities, loadedPromise): Promise<Entity> {
-		let entity = await Source1ModelManager.createInstance(json.repository, json.filename, false/*dynamic*/, true);
+		const entity = await Source1ModelManager.createInstance(json.repository, json.filename, false/*dynamic*/, true);
 		loadedPromise.then(() => {
 			if (json.dynamic) {
 				if (json.skeletonid) {

@@ -28,7 +28,7 @@ export class Source2Animations {
 	getBestAnimation(activityName, activityModifiers) {
 		let bestMatch = this.getAnimation(activityName);
 		let bestScore = bestMatch ? 0 : -1;
-		for (let animDesc of this.#animations) {
+		for (const animDesc of this.#animations) {
 
 			/*if (animDesc.matchModifiers(activityName, activityModifiers)) {
 				return animDesc;

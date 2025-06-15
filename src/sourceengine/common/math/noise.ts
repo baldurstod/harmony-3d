@@ -16,9 +16,9 @@ function GetLatticePointValue(idx_x, idx_y, idx_z) {
 /**
  * TODO
  */
-let arrayBuffer = new ArrayBuffer(4);
-let uint32Array = new Uint32Array(arrayBuffer);
-let float32Array = new Float32Array(arrayBuffer);
+const arrayBuffer = new ArrayBuffer(4);
+const uint32Array = new Uint32Array(arrayBuffer);
+const float32Array = new Float32Array(arrayBuffer);
 
 export function NoiseSIMD_old(pos, timeOffset) {
 	const x = pos[0] + timeOffset;

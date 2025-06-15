@@ -7,26 +7,26 @@ class Source2SpriteSheetFrame {
 
 class Source2SpriteSheetSequence {
 	duration = 0;
-	frames: Array<Source2SpriteSheetFrame> = [];
+	frames: Source2SpriteSheetFrame[] = [];
 
 	addFrame() {
-		let frame = new Source2SpriteSheetFrame();
+		const frame = new Source2SpriteSheetFrame();
 		this.frames.push(frame);
 		return frame;
 	}
 }
 
 export class Source2SpriteSheet {
-	sequences: Array<Source2SpriteSheetSequence> = [];
+	sequences: Source2SpriteSheetSequence[] = [];
 
 	addSequence(): Source2SpriteSheetSequence {
-		let sequence = new Source2SpriteSheetSequence();
+		const sequence = new Source2SpriteSheetSequence();
 		this.sequences.push(sequence);
 		return sequence;
 	}
 
 	getFrame(sequenceId: number, frame: number): Source2SpriteSheetFrame | null {
-		let sequence = this.sequences[sequenceId] ?? this.sequences[0];
+		const sequence = this.sequences[sequenceId] ?? this.sequences[0];
 		if (sequence) {
 			frame = (frame % sequence.frames.length) << 0;
 			return sequence.frames[frame];

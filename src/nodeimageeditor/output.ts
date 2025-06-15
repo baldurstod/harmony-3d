@@ -10,7 +10,7 @@ export class Output extends InputOutput {
 	}
 
 	getValue() {
-		let valuePromise = new Promise(async (resolve, reject) => {
+		const valuePromise = new Promise(async (resolve, reject) => {
 			await this.node.validate();
 			if (this.type == IO_TYPE_TEXTURE_2D) {
 				resolve(this._value);
@@ -27,7 +27,7 @@ export class Output extends InputOutput {
 	}
 
 	getPixelArray(): Promise<Uint8Array | null> {
-		let valuePromise = new Promise<Uint8Array | null>(async (resolve, reject) => {
+		const valuePromise = new Promise<Uint8Array | null>(async (resolve, reject) => {
 			await this.node.validate();
 			if (this.type == InputOutputType.Texture2D) {
 				resolve(this.#pixelArray ?? null);
@@ -54,8 +54,8 @@ export class Output extends InputOutput {
 
 	successorsLength() {
 		let max = 0;
-		for (let successor of this.#successors) {
-			let l = successor.node.successorsLength() + 1;
+		for (const successor of this.#successors) {
+			const l = successor.node.successorsLength() + 1;
 			if (l > max) {
 				max = l;
 			}
@@ -64,7 +64,7 @@ export class Output extends InputOutput {
 	}
 
 	invalidate() {
-		for (let successor of this.#successors) {
+		for (const successor of this.#successors) {
 			successor.node.invalidate();
 		}
 	}

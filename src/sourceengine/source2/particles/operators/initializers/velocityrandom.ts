@@ -27,10 +27,10 @@ export class VelocityRandom extends Operator {
 	}
 
 	doInit(particle, elapsedTime) {
-		let localCoordinateSystemSpeedMin = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin') ?? DEFAULT_SPEED;
-		let localCoordinateSystemSpeedMax = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax') ?? DEFAULT_SPEED;
-		let speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
-		let speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
+		const localCoordinateSystemSpeedMin = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin') ?? DEFAULT_SPEED;
+		const localCoordinateSystemSpeedMax = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax') ?? DEFAULT_SPEED;
+		const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
+		const speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
 
 		const randomSpeed = (speedMax - speedMin) * Math.random() + speedMin;
 

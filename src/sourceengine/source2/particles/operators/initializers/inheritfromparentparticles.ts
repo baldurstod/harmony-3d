@@ -30,9 +30,9 @@ export class InheritFromParentParticles extends Operator {
 
 	doInit(particle, elapsedTime) {
 		//TODO: use m_flScale m_nIncrement m_bRandomDistribution m_nRandomSeed
-		let parentSystem = this.system.parentSystem;
+		const parentSystem = this.system.parentSystem;
 		if (parentSystem) {
-			let parentParticle = parentSystem.getParticle(particle.id - 1);
+			const parentParticle = parentSystem.getParticle(particle.id - 1);
 			if (parentParticle) {
 				particle.setField(this.fieldOutput, parentParticle.getField(this.fieldOutput));
 			}

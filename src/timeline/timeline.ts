@@ -6,7 +6,7 @@ export class Timeline extends TimelineElement {
 	name = '';
 	#root: TimelineGroup = new TimelineGroup('');
 
-	constructor(name: string = 'Timeline') {
+	constructor(name = 'Timeline') {
 		super(name);
 
 	}

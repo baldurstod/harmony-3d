@@ -58,8 +58,8 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 	}
 
 	afterProcessProxies(proxyParams) {
-		let variables = this.variables;
-		let parameters = this.parameters;
+		const variables = this.variables;
+		const parameters = this.parameters;
 
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
@@ -75,7 +75,7 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 		if (proxyParams['SheenTintColor']) {
 			this.uniforms['g_cCloakColorTint'] = proxyParams['SheenTintColor'];
 		} else {
-			let sheenmaptint = variables.get('$sheenmaptint');
+			const sheenmaptint = variables.get('$sheenmaptint');
 			if (sheenmaptint) {
 				this.uniforms['g_cCloakColorTint'] = sheenmaptint;
 			}

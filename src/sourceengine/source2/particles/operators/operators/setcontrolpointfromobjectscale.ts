@@ -20,8 +20,8 @@ export class SetControlPointFromObjectScale extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		let cpInput = this.system.getControlPoint(this.cpInput);
-		let cpOutput = this.system.getControlPoint(this.cpOutput);
+		const cpInput = this.system.getControlPoint(this.cpInput);
+		const cpOutput = this.system.getControlPoint(this.cpOutput);
 
 		//TODO: use the actual scale
 		cpOutput.position = vec3.fromValues(1, 1, 1);

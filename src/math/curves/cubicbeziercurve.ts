@@ -18,9 +18,9 @@ export class CubicBezierCurve extends Curve {
 
 	getPosition(t, out = vec3.create()) {
 		//P = (1 - t)³ * P0 + 3 * (1 - t)² * t * P1 + 3 * (1 - t) * t² * P2 + t³ * P3
-		let oneMinusT = 1 - t;
-		let oneMinusTSqr = oneMinusT * oneMinusT;
-		let tSqr = t * t;
+		const oneMinusT = 1 - t;
+		const oneMinusTSqr = oneMinusT * oneMinusT;
+		const tSqr = t * t;
 		vec3.scale(out, this.p0, oneMinusTSqr * oneMinusT);
 		vec3.scaleAndAdd(out, out, this.p1, 3 * oneMinusTSqr * t);
 		vec3.scaleAndAdd(out, out, this.p2, 3 * oneMinusT * tSqr);

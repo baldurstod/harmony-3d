@@ -58,7 +58,7 @@ export class Proxy {
 		if (resultVarName) {
 			resultVarName = resultVarName.toLowerCase();
 			if (resultVarName.indexOf('[') != -1) {
-				let result = (/([^\[]*)\[(\d*)\]/g).exec(resultVarName);
+				const result = (/([^\[]*)\[(\d*)\]/g).exec(resultVarName);
 				if (result && result.length == 3) {
 					const v = variables.get(result[1].toLowerCase());
 					if (v) {

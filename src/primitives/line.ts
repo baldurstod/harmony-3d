@@ -56,7 +56,7 @@ export class Line extends Mesh {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.start = vec3.clone(this.start);
 		json.end = vec3.clone(this.end);
 		json.material = this.material.toJSON();
@@ -64,7 +64,7 @@ export class Line extends Mesh {
 	}
 
 	static async constructFromJSON(json, entities, loadedPromise) {
-		let material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
 		return new Line({ start: json.start, end: json.end, material: material });
 	}
 

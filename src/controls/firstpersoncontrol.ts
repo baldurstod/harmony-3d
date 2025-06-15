@@ -239,15 +239,15 @@ export class FirstPersonControl extends CameraControl {
 		}
 
 		if (this.heightSpeed) {
-			var y = clamp(this.camera?.position[1] ?? 0, this.heightMin, this.heightMax);//TODO
-			var heightDelta = y - this.heightMin;
+			const y = clamp(this.camera?.position[1] ?? 0, this.heightMin, this.heightMax);//TODO
+			const heightDelta = y - this.heightMin;
 
 			this.#autoSpeedFactor = delta * (heightDelta * this.heightCoef);
 		} else {
 			this.#autoSpeedFactor = 0.0;
 		}
 
-		var actualMoveSpeed = delta * this.movementSpeed;
+		const actualMoveSpeed = delta * this.movementSpeed;
 
 		if (this.#moveForward || (this.autoForward && !this.#moveBackward)) {
 			this.camera?.translateZ(-(actualMoveSpeed + this.#autoSpeedFactor));
@@ -270,7 +270,7 @@ export class FirstPersonControl extends CameraControl {
 			this.camera?.translateY(- actualMoveSpeed);
 		}
 
-		var actualLookSpeed = this.lookSpeed;
+		let actualLookSpeed = this.lookSpeed;
 
 		if (!this.activeLook) {
 			actualLookSpeed = 0;
@@ -282,7 +282,7 @@ export class FirstPersonControl extends CameraControl {
 
 		}
 
-		var verticalLookRatio = 1;
+		let verticalLookRatio = 1;
 
 		if (this.constrainVertical) {
 
@@ -314,8 +314,8 @@ export class FirstPersonControl extends CameraControl {
 		//this.#lat = Math.max(- 85, Math.min(85, this.#lat));
 		//this.#lat = 90;//removeme
 
-		var phi = DEG_TO_RAD * (90 - this.#lat);
-		var theta = DEG_TO_RAD * (this.#lon);
+		let phi = DEG_TO_RAD * (90 - this.#lat);
+		const theta = DEG_TO_RAD * (this.#lon);
 
 
 		if (this.#click) {
@@ -329,7 +329,7 @@ export class FirstPersonControl extends CameraControl {
 			phi = mapLinear(phi, 0, Math.PI, this.verticalMin, this.verticalMax);
 		}
 
-		var position = this.camera?.position ?? vec3.create()/*TODO: optimize*/;
+		const position = this.camera?.position ?? vec3.create()/*TODO: optimize*/;
 
 		spherical.toCartesian(tempVec3);
 

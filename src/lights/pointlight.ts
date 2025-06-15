@@ -29,7 +29,7 @@ export class PointLight extends Light {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.range = this.range;
 		return json;
 	}
@@ -45,7 +45,7 @@ export class PointLight extends Light {
 
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
-			range: { i18n: '#range', f: () => { let range = prompt('Range', this.range); if (range !== null) { this.range = range; } } },
+			range: { i18n: '#range', f: () => { const range = prompt('Range', this.range); if (range !== null) { this.range = range; } } },
 		});
 	}
 

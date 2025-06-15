@@ -4,8 +4,8 @@ import { Operator } from '../operator';
 import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
 import { RemapValClampedBias } from '../../../../../math/functions';
 
-let v = vec3.create();
-let v1 = vec3.fromValues(1, 1, 1);
+const v = vec3.create();
+const v1 = vec3.fromValues(1, 1, 1);
 
 export class RemapCPtoVector extends Operator {
 	cpInput = 0;
@@ -70,18 +70,18 @@ export class RemapCPtoVector extends Operator {
 	}
 
 	doInit(particle, elapsedTime, strength) {
-		let inputMin = this.inputMin;
-		let inputMax = this.inputMax;
-		let outputMin = this.outputMin;
-		let outputMax = this.outputMax;
+		const inputMin = this.inputMin;
+		const inputMax = this.inputMax;
+		const outputMin = this.outputMin;
+		const outputMax = this.outputMax;
 
-		let input = this.system.getControlPoint(this.cpInput).currentWorldPosition;
+		const input = this.system.getControlPoint(this.cpInput).currentWorldPosition;
 
 		v[0] = RemapValClampedBias(input[0], inputMin[0], inputMax[0], outputMin[0], outputMax[0], this.remapBias);
 		v[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.remapBias);
 		v[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.remapBias);
 
-		let scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE';//TODO: optimize
+		const scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE';//TODO: optimize
 
 		if (scaleInitial) {
 			vec3.lerp(v, v1, v, strength);

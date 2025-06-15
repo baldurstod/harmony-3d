@@ -3,7 +3,7 @@ import { registerEntity } from '../entities/entities';
 import { JSONObject } from '../types';
 
 export class LineMaterial extends Material {
-	#lineWidth: number = 1;
+	#lineWidth = 1;
 	constructor(params: any = {}) {
 		super(params);
 		this.lineWidth = params?.lineWidth ?? 10;
@@ -20,7 +20,7 @@ export class LineMaterial extends Material {
 	}
 
 	toJSON() {
-		let json = super.toJSON();
+		const json = super.toJSON();
 		json.linewidth = this.#lineWidth;
 		return json;
 	}
