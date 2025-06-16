@@ -12,5 +12,6 @@
     "declarationMap": true,
     "outDir": "dist",
     "declarationDir": "dist/dts",
+    //"noImplicitAny": true,
   }
 }

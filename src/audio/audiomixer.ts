@@ -3,19 +3,19 @@ import { AudioGroup } from './audiogroup';
 export class AudioMixer {
 	static master = new AudioGroup('master');
 
-	static muteGroup(groupName: string, mute = true) {
+	static muteGroup(groupName: string, mute = true): void {
 		this.getGroup(groupName).mute(mute);
 	}
 
-	static mute(mute = true) {
+	static mute(mute = true): void {
 		this.master.mute(mute);
 	}
 
-	static getGroup(groupName = '') {
+	static getGroup(groupName = ''): AudioGroup {
 		return this.master.getGroup(groupName.split('.'));
 	}
 
-	static playAudio(groupName, audio) {
-		this.getGroup(groupName).playAudio(audio);
+	static async playAudio(groupName: string, audio: HTMLMediaElement): Promise<void> {
+		await this.getGroup(groupName).playAudio(audio);
 	}
 }
