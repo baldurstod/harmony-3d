@@ -179,8 +179,8 @@ async function createFBXMesh(fbxScene, mesh, context) {
 		meshDatasBw = meshDatas.bw;
 	}
 
-	const boneIndexes = new Map();
-	const boneWeights = new Map();
+	const boneIndexes = new Map<number, number[]>();
+	const boneWeights = new Map<number, number[]>();
 
 	const polygons = [];
 	const edges = [];
@@ -191,14 +191,15 @@ async function createFBXMesh(fbxScene, mesh, context) {
 	let vertexIndex1;
 	let vertexIndex2;
 	let vertexIndex3;
-	const remappedIndex = new Map();
+	const remappedIndex = new Map<number, number>();
 	let currentIndex = 0;
-	const remappedVertices = [];
-	const remappedNormals = [];
-	const remappedUV = [];
-	const remappedBoneIndices = [];
-	const remappedBoneWeight = [];
+	const remappedVertices:number[] = [];
+	const remappedNormals:number[] = [];
+	const remappedUV:number[] = [];
+	const remappedBoneIndices:number[] = [];
+	const remappedBoneWeight:number[] = [];
 	const bonesPerVertex = mesh.bonesPerVertex;
+
 	function remapIndex(index) {
 		if (remappedIndex.has(index)) {
 			return remappedIndex.get(index);

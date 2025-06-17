@@ -1,22 +1,22 @@
+import { Source2File } from '../loaders/source2file';
 import { Source2FileLoader } from '../loaders/source2fileloader';
 /**
  * Mesh manager
  */
-export const MeshManager = new function() {
-	const meshList = {};
+export class MeshManager {
+	static meshList = {};//TODO: create map
 	//this.renderMode = 2;
 
-	//TODO
-	const getMesh = async function(repository, meshName) {
+	static async getMesh(repository: string, meshName: string): Promise<Source2File> {
 		meshName = meshName.toLowerCase();
 		meshName = meshName.replace(/.vmesh_c$/, '');
 		meshName = meshName.replace(/.vmesh$/, '');
-		let mesh = meshList[meshName];
+		let mesh = this.meshList[meshName];
 		if (!mesh) {
 			mesh = await new Source2FileLoader().load(repository, meshName + '.vmesh_c');
 		}
 		if (mesh) {
-			meshList[meshName] = mesh;
+			this.meshList[meshName] = mesh;
 		} else {
 			//TODO; create a dummy mesh
 			console.error('No mesh loaded');
@@ -24,11 +24,7 @@ export const MeshManager = new function() {
 		return mesh;
 	}
 
-	//TODO
-	const removeMesh = function(meshName) {
-		meshList[meshName] = null;
+	static removeMesh(meshName: string): void {
+		this.meshList[meshName] = null;
 	}
-
-	this.getMesh = getMesh;
-	this.removeMesh = removeMesh;
 }

@@ -10,13 +10,16 @@ import { Material } from '../materials/material';
 
 export const DEFAULT_TEXTURE_SIZE = 512;
 
+export type NodeImageVariableType = number;
+
 export class NodeImageEditor extends EventTarget {
-	#variables = new Map();
+	#variables = new Map<string, NodeImageVariableType>();
 	#scene = new Scene();
 	#nodes = new Set<Node>();
 	#camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
 	#fullScreenQuadMesh = new FullScreenQuad();
 	textureSize = DEFAULT_TEXTURE_SIZE;
+
 	constructor() {
 		super();
 		this.#scene.addChild(this.#fullScreenQuadMesh);
@@ -51,7 +54,7 @@ export class NodeImageEditor extends EventTarget {
 	#dispatchEvent(eventName, eventDetail) {
 		this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
 		this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
-	}
+	}NodeImageEditor
 
 	/*addNode(node) {
 		if (node instanceof Node && node.editor == this) {

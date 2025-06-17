@@ -326,8 +326,6 @@ const triTable = new Int8Array([
     of totally below the isolevel.
 */
 function Polygonise(/*GRIDCELL */ grid, /*double */ isolevel, /*TRIANGLE **/ triangles) {
-    let ntriang;
-    let cubeindex;
     //XYZ vertlist[12];
     const vertlist = [];
     for (let i = 0; i < 12; ++i) {
@@ -337,7 +335,7 @@ function Polygonise(/*GRIDCELL */ grid, /*double */ isolevel, /*TRIANGLE **/ tri
         Determine the index into the edge table which
         tells us which vertices are inside of the surface
     */
-    cubeindex = 0;
+    let cubeindex = 0;
     if (grid.val[0] < isolevel)
         cubeindex |= 1;
     if (grid.val[1] < isolevel)
@@ -395,7 +393,7 @@ function Polygonise(/*GRIDCELL */ grid, /*double */ isolevel, /*TRIANGLE **/ tri
         vertlist[11] =
             VertexInterp(isolevel, grid.p[3], grid.p[7], grid.val[3], grid.val[7]);
     /* Create the triangle */
-    ntriang = 0;
+    let ntriang = 0;
     cubeindex <<= 4;
     for (let i = 0; triTable[cubeindex] != -1; i += 3) {
         const triangle = triangles[ntriang] ?? new TRIANGLE();
@@ -406,14 +404,13 @@ function Polygonise(/*GRIDCELL */ grid, /*double */ isolevel, /*TRIANGLE **/ tri
         ntriang++;
         cubeindex += 3;
     }
-    return (ntriang);
+    return ntriang;
 }
 /*
     Linearly interpolate the position where an isosurface cuts
     an edge between two vertices, each with their own scalar value
 */
 function VertexInterp(isolevel, p1, p2, valp1, valp2) {
-    let mu;
     const p = vec3.create();
     if (Math.abs(isolevel - valp1) < 0.00001)
         return (p1);
@@ -421,40 +418,40 @@ function VertexInterp(isolevel, p1, p2, valp1, valp2) {
         return (p2);
     if (Math.abs(valp1 - valp2) < 0.00001)
         return (p1);
-    mu = (isolevel - valp1) / (valp2 - valp1);
+    const mu = (isolevel - valp1) / (valp2 - valp1);
     p[0] = p1[0] + mu * (p2[0] - p1[0]);
     p[1] = p1[1] + mu * (p2[1] - p1[1]);
     p[2] = p1[2] + mu * (p2[2] - p1[2]);
-    return (p);
+    return p;
 }
 
 class AudioGroup {
     name;
-    muted = false;
+    #muted = false;
     groups = new Map();
     audioList = new Set();
     constructor(name) {
         this.name = name;
     }
     mute(mute) {
-        this.muted = (mute == true);
+        this.#muted = (mute == true);
         for (const audio of this.audioList) {
-            audio.muted = this.muted;
+            audio.muted = this.#muted;
         }
     }
+    isMute() {
+        return this.#muted;
+    }
     getGroup(groupPath) {
-        if (groupPath[0] = this.name) {
+        if (groupPath[0] == this.name) {
             if (groupPath.length == 1) {
                 return this;
             }
-            let group;
-            if (this.groups.has(groupPath[1])) {
-                group = this.groups.get(groupPath[1]);
-            }
-            else {
+            let group = this.groups.get(groupPath[1]);
+            if (!group) {
                 group = this.createSubGroup(groupPath[1]);
             }
-            return group.getGroup(groupPath.shift());
+            return group.getGroup(groupPath.slice(1));
         }
     }
     createSubGroup(name) {
@@ -463,13 +460,15 @@ class AudioGroup {
         this.groups.set(name, subGroup);
         return subGroup;
     }
-    playAudio(audio) {
-        audio.muted = this.muted;
+    async playAudio(audio) {
+        audio.muted = this.#muted;
         audio.currentTime = 0;
         try {
-            audio.play();
+            await audio.play();
         }
-        catch (e) { }
+        catch (e) {
+            console.error(e);
+        }
         this.audioList.add(audio);
     }
 }
@@ -485,8 +484,8 @@ class AudioMixer {
     static getGroup(groupName = '') {
         return this.master.getGroup(groupName.split('.'));
     }
-    static playAudio(groupName, audio) {
-        this.getGroup(groupName).playAudio(audio);
+    static async playAudio(groupName, audio) {
+        await this.getGroup(groupName).playAudio(audio);
     }
 }
 
@@ -1515,7 +1514,7 @@ class Material {
             return;
     }
     clone() {
-        console.error('cant\'t clone Material, missing clone() in ' + this.constructor.name);
+        throw 'cant\'t clone Material, missing clone() in ' + this.constructor.name;
         //return new this.constructor(this.parameters);
     }
     setTransparency(srcRGB, dstRGB, srcAlpha, dstAlpha) {
@@ -13471,15 +13470,17 @@ class FontManager {
         return await this.#loadFont(name, style);
     }
     static async getFontList() {
-        const list = [];
+        const list = new Map();
         const manifest = await this.#getManifest();
         const fonts = manifest?.fonts;
         if (fonts) {
             for (const fontName in fonts) {
                 const font = fonts[fontName];
+                const styles = new Set;
                 for (const styleName in font.styles) {
-                    list.push([fontName, styleName]);
+                    styles.add(styleName);
                 }
+                list.set(fontName, styles);
             }
         }
         return list;
@@ -13791,6 +13792,31 @@ class LoopSubdivision {
     }
 }
 
+var NodeParamType;
+(function (NodeParamType) {
+    NodeParamType[NodeParamType["Unknown"] = 0] = "Unknown";
+    NodeParamType[NodeParamType["Int"] = 1] = "Int";
+    NodeParamType[NodeParamType["Bool"] = 2] = "Bool";
+    NodeParamType[NodeParamType["Float"] = 3] = "Float";
+    NodeParamType[NodeParamType["Radian"] = 4] = "Radian";
+    NodeParamType[NodeParamType["Degree"] = 5] = "Degree";
+    NodeParamType[NodeParamType["String"] = 6] = "String";
+    NodeParamType[NodeParamType["Vec2"] = 7] = "Vec2";
+    NodeParamType[NodeParamType["StickerAdjust"] = 8] = "StickerAdjust";
+})(NodeParamType || (NodeParamType = {}));
+class NodeParam {
+    name;
+    type;
+    value;
+    length;
+    constructor(name, type, value, length) {
+        this.name = name;
+        this.type = type;
+        this.value = value;
+        this.length = length;
+    }
+}
+
 const IO_TYPE_FLOAT = 2;
 const IO_TYPE_VEC2 = 3;
 const IO_TYPE_COLOR = 7;
@@ -13826,6 +13852,7 @@ class InputOutput {
     type;
     size;
     _value;
+    _pixelArray;
     constructor(node, id, type, size = 1) {
         this.node = node;
         this.id = id;
@@ -13840,203 +13867,13 @@ class InputOutput {
     }
 }
 
-//const isUndefined = (element) => element == undefined;
-class Input extends InputOutput {
-    #predecessor;
-    constructor(node, id, type, size = 1) {
-        super(node, id, type, size);
-    }
-    set value(value) {
-        //TODO: check the value type
-        this._value = value;
-        this.node.invalidate();
-    }
-    /*
-    setArrayValue(value, index) {
-        if (index == undefined) {
-            index = this._value.findIndex(isUndefined)
-            if (index == -1) {
-                return;
-            }
-        }
-
-        //TODOv3 check type / index
-        this._value[index] = value;
-        this.node.invalidate();
-    }*/
-    get value() {
-        if (this.#predecessor) {
-            return this.#predecessor.value;
-        }
-        return Promise.resolve(this._value);
-    }
-    setPredecessor(predecessor) {
-        if (predecessor) {
-            predecessor.addSuccessor(this);
-        }
-        if (this.#predecessor && !predecessor) {
-            this.#predecessor.removeSuccessor(this);
-        }
-        this.#predecessor = predecessor;
-        this.node.invalidate();
-    }
-    getPredecessor() {
-        return this.#predecessor;
-    }
-    /* TODO:remove
-    draw(glContext) {
-        if (this.#predecessor) {
-            this.#predecessor.draw(glContext);
-        }
-    }
-
-    getInputTexture(defaultWhite) {
-        if (this.#predecessor) {
-            return this.#predecessor.outputTexture;
-        }
-    }
-    */
-    hasPredecessor() {
-        return this.#predecessor ? true : false;
-    }
-    getType() {
-        if (this.#predecessor) {
-            return this.#predecessor.getType();
-        }
-        return null;
-    }
-    getValue() {
-        if (this.#predecessor) {
-            return this.#predecessor.getValue();
-        }
-        return null;
-    }
-    isValid(startingPoint) {
-        if (this.#predecessor) {
-            return this.#predecessor.isValid(startingPoint);
-        }
-        return true; //TODO: check input mandatory
-    }
-    async toString(tabs = '') {
-        const ret = [];
-        const tabs1 = tabs + '\t';
-        ret.push(tabs + 'id : ' + this.id);
-        if (this.#predecessor) {
-            ret.push(await this.#predecessor.toString(tabs1));
-        }
-        else {
-            console.error('no predecessor : ', this);
-        }
-        return ret.join('\n');
-    }
-}
-
-class Output extends InputOutput {
-    #successors = new Set();
-    #pixelArray;
-    get value() {
-        return this.getValue();
-    }
-    getValue() {
-        const valuePromise = new Promise(async (resolve, reject) => {
-            await this.node.validate();
-            if (this.type == IO_TYPE_TEXTURE_2D) {
-                resolve(this._value);
-            }
-            else {
-                resolve(this._value);
-            }
-        });
-        return valuePromise;
-    }
-    get pixelArray() {
-        return this.getPixelArray();
-    }
-    getPixelArray() {
-        const valuePromise = new Promise(async (resolve, reject) => {
-            await this.node.validate();
-            if (this.type == InputOutputType.Texture2D) {
-                resolve(this.#pixelArray ?? null);
-            }
-            else {
-                //TODO: this should resolve to something else
-                resolve(this.#pixelArray ?? null);
-            }
-        });
-        return valuePromise;
-    }
-    addSuccessor(successor) {
-        this.#successors.add(successor);
-    }
-    removeSuccessor(successor) {
-        this.#successors.delete(successor);
-    }
-    hasSuccessor() {
-        return this.#successors.size > 0;
-    }
-    successorsLength() {
-        let max = 0;
-        for (const successor of this.#successors) {
-            const l = successor.node.successorsLength() + 1;
-            if (l > max) {
-                max = l;
-            }
-        }
-        return max;
-    }
-    invalidate() {
-        for (const successor of this.#successors) {
-            successor.node.invalidate();
-        }
-    }
-    /*
-    draw(glContext) {
-        if (this.node) {
-            this.node.draw(glContext);
-        }
-    }
-    */
-    getType() {
-        if (this.node) {
-            return this.node.getType();
-        }
-        return null;
-    }
-    isValid(startingPoint) {
-        if (this.node) {
-            return this.node.isValid(startingPoint);
-        }
-        return false;
-    }
-    async toString(tabs = '') {
-        return await this.node.toString(tabs);
-    }
-    dispose() {
-        this.#pixelArray = undefined;
-    }
-}
-
-function imageDataToImage(imagedata, image = new Image()) {
-    const canvas = createElement('canvas', { width: imagedata.width, height: imagedata.height });
-    const ctx = canvas.getContext('2d');
-    canvas.width = imagedata.width;
-    canvas.height = imagedata.height;
-    ctx.putImageData(imagedata, 0, 0);
-    image.src = canvas.toDataURL();
-    return image;
-}
-function flipPixelArray(pixelArray, width, height) {
-    const rowLength = width * 4;
-    const tempRow = new Uint8ClampedArray(rowLength);
-    const halfHeight = height * 0.5;
-    for (let row = 0; row < halfHeight; ++row) {
-        const topOffset = row * rowLength;
-        const bottomOffset = (height - row - 1) * rowLength;
-        tempRow.set(pixelArray.subarray(topOffset, topOffset + rowLength));
-        pixelArray.copyWithin(topOffset, bottomOffset, bottomOffset + rowLength);
-        pixelArray.set(tempRow, bottomOffset);
-    }
-}
+const TEXTUREFLAGS_CLAMPS = 0x00000004;
+const TEXTUREFLAGS_CLAMPT = 0x00000008;
+const TEXTUREFLAGS_SRGB = 0x00000040;
+const TEXTUREFLAGS_NOMIP = 0x00000100;
+const TEXTUREFLAGS_ONEBITALPHA = 0x00001000;
+const TEXTUREFLAGS_EIGHTBITALPHA = 0x00002000;
+const TEXTUREFLAGS_ENVMAP = 0x00004000;
 
 const LOW_RES_IMAGE = 0x01;
 const HIGH_RES_IMAGE = 0x30;
@@ -14244,13 +14081,203 @@ class VTFWriter {
     }
 }
 
-const TEXTUREFLAGS_CLAMPS = 0x00000004;
-const TEXTUREFLAGS_CLAMPT = 0x00000008;
-const TEXTUREFLAGS_SRGB = 0x00000040;
-const TEXTUREFLAGS_NOMIP = 0x00000100;
-const TEXTUREFLAGS_ONEBITALPHA = 0x00001000;
-const TEXTUREFLAGS_EIGHTBITALPHA = 0x00002000;
-const TEXTUREFLAGS_ENVMAP = 0x00004000;
+function imageDataToImage(imagedata, image = new Image()) {
+    const canvas = createElement('canvas', { width: imagedata.width, height: imagedata.height });
+    const ctx = canvas.getContext('2d');
+    canvas.width = imagedata.width;
+    canvas.height = imagedata.height;
+    ctx.putImageData(imagedata, 0, 0);
+    image.src = canvas.toDataURL();
+    return image;
+}
+function flipPixelArray(pixelArray, width, height) {
+    const rowLength = width * 4;
+    const tempRow = new Uint8ClampedArray(rowLength);
+    const halfHeight = height * 0.5;
+    for (let row = 0; row < halfHeight; ++row) {
+        const topOffset = row * rowLength;
+        const bottomOffset = (height - row - 1) * rowLength;
+        tempRow.set(pixelArray.subarray(topOffset, topOffset + rowLength));
+        pixelArray.copyWithin(topOffset, bottomOffset, bottomOffset + rowLength);
+        pixelArray.set(tempRow, bottomOffset);
+    }
+}
+
+//const isUndefined = (element) => element == undefined;
+class Input extends InputOutput {
+    #predecessor;
+    constructor(node, id, type, size = 1) {
+        super(node, id, type, size);
+    }
+    set value(value) {
+        //TODO: check the value type
+        this._value = value;
+        this.node.invalidate();
+    }
+    /*
+    setArrayValue(value, index) {
+        if (index == undefined) {
+            index = this._value.findIndex(isUndefined)
+            if (index == -1) {
+                return;
+            }
+        }
+
+        //TODOv3 check type / index
+        this._value[index] = value;
+        this.node.invalidate();
+    }*/
+    get value() {
+        if (this.#predecessor) {
+            return this.#predecessor.value;
+        }
+        return Promise.resolve(this._value);
+    }
+    setPredecessor(predecessor) {
+        if (predecessor) {
+            predecessor.addSuccessor(this);
+        }
+        if (this.#predecessor && !predecessor) {
+            this.#predecessor.removeSuccessor(this);
+        }
+        this.#predecessor = predecessor;
+        this.node.invalidate();
+    }
+    getPredecessor() {
+        return this.#predecessor;
+    }
+    /* TODO:remove
+    draw(glContext) {
+        if (this.#predecessor) {
+            this.#predecessor.draw(glContext);
+        }
+    }
+
+    getInputTexture(defaultWhite) {
+        if (this.#predecessor) {
+            return this.#predecessor.outputTexture;
+        }
+    }
+    */
+    hasPredecessor() {
+        return this.#predecessor ? true : false;
+    }
+    getType() {
+        if (this.#predecessor) {
+            return this.#predecessor.getType();
+        }
+        return null;
+    }
+    getValue() {
+        if (this.#predecessor) {
+            return this.#predecessor.getValue();
+        }
+        return null;
+    }
+    isValid(startingPoint) {
+        if (this.#predecessor) {
+            return this.#predecessor.isValid(startingPoint);
+        }
+        return true; //TODO: check input mandatory
+    }
+    async toString(tabs = '') {
+        const ret = [];
+        const tabs1 = tabs + '\t';
+        ret.push(tabs + 'id : ' + this.id);
+        if (this.#predecessor) {
+            ret.push(await this.#predecessor.toString(tabs1));
+        }
+        else {
+            console.error('no predecessor : ', this);
+        }
+        return ret.join('\n');
+    }
+}
+
+class Output extends InputOutput {
+    #successors = new Set();
+    #pixelArray;
+    get value() {
+        return this.getValue();
+    }
+    getValue() {
+        const valuePromise = new Promise(async (resolve, reject) => {
+            await this.node.validate();
+            if (this.type == IO_TYPE_TEXTURE_2D) {
+                resolve(this._value);
+            }
+            else {
+                resolve(this._value);
+            }
+        });
+        return valuePromise;
+    }
+    get pixelArray() {
+        return this.getPixelArray();
+    }
+    getPixelArray() {
+        const valuePromise = new Promise(async (resolve, reject) => {
+            await this.node.validate();
+            if (this.type == InputOutputType.Texture2D) {
+                resolve(this.#pixelArray ?? null);
+            }
+            else {
+                //TODO: this should resolve to something else
+                resolve(this.#pixelArray ?? null);
+            }
+        });
+        return valuePromise;
+    }
+    addSuccessor(successor) {
+        this.#successors.add(successor);
+    }
+    removeSuccessor(successor) {
+        this.#successors.delete(successor);
+    }
+    hasSuccessor() {
+        return this.#successors.size > 0;
+    }
+    successorsLength() {
+        let max = 0;
+        for (const successor of this.#successors) {
+            const l = successor.node.successorsLength() + 1;
+            if (l > max) {
+                max = l;
+            }
+        }
+        return max;
+    }
+    invalidate() {
+        for (const successor of this.#successors) {
+            successor.node.invalidate();
+        }
+    }
+    /*
+    draw(glContext) {
+        if (this.node) {
+            this.node.draw(glContext);
+        }
+    }
+    */
+    getType() {
+        if (this.node) {
+            return this.node.getType();
+        }
+        return null;
+    }
+    isValid(startingPoint) {
+        if (this.node) {
+            return this.node.isValid(startingPoint);
+        }
+        return false;
+    }
+    async toString(tabs = '') {
+        return await this.node.toString(tabs);
+    }
+    dispose() {
+        this.#pixelArray = undefined;
+    }
+}
 
 var DrawState;
 (function (DrawState) {
@@ -14540,31 +14567,6 @@ function getOperation(name, editor, params) {
     return new (operations.get(name))(editor, params);
 }
 
-var NodeParamType;
-(function (NodeParamType) {
-    NodeParamType[NodeParamType["Unknown"] = 0] = "Unknown";
-    NodeParamType[NodeParamType["Int"] = 1] = "Int";
-    NodeParamType[NodeParamType["Bool"] = 2] = "Bool";
-    NodeParamType[NodeParamType["Float"] = 3] = "Float";
-    NodeParamType[NodeParamType["Radian"] = 4] = "Radian";
-    NodeParamType[NodeParamType["Degree"] = 5] = "Degree";
-    NodeParamType[NodeParamType["String"] = 6] = "String";
-    NodeParamType[NodeParamType["Vec2"] = 7] = "Vec2";
-    NodeParamType[NodeParamType["StickerAdjust"] = 8] = "StickerAdjust";
-})(NodeParamType || (NodeParamType = {}));
-class NodeParam {
-    name;
-    type;
-    value;
-    length;
-    constructor(name, type, value, length) {
-        this.name = name;
-        this.type = type;
-        this.value = value;
-        this.length = length;
-    }
-}
-
 vec2.create();
 mat3.create();
 class ApplySticker extends Node {
@@ -14837,7 +14839,7 @@ class NodeGui {
     #htmlRectSelector;
     #drag;
     #htmlParamsContainer;
-    _ioGui = new Map();
+    _ioGui = new Map(); // TODO: set private
     #refreshTimeout;
     #nodeChanged;
     #node;
@@ -16305,6 +16307,7 @@ class NodeImageEditor extends EventTarget {
         this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
         this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
     }
+    NodeImageEditor;
     /*addNode(node) {
         if (node instanceof Node && node.editor == this) {
             this.#nodes.add(node);
@@ -16897,6 +16900,8 @@ class Bone extends Entity {
     lastComputed = 0;
     tempPosition = vec3.create();
     tempQuaternion = quat.create();
+    _initialQuaternion = quat.create();
+    _initialPosition = vec3.create();
     constructor(params /*TODO: improve type*/) {
         super(params);
         this.#boneId = params.boneId ?? -1;
@@ -18536,13 +18541,10 @@ class Text3D extends Mesh {
             font: {
                 i18n: '#font', f: async () => {
                     const fontList = await FontManager.getFontList();
-                    const fontList2 = new Map();
-                    for (const font of fontList) {
-                        if (font[1] == 'normal') {
-                            fontList2.set(font[0], font);
-                        }
-                        else {
-                            fontList2.set(font.join(' '), font);
+                    const fontList2 = new Set();
+                    for (const [fontName, font] of fontList) {
+                        for (const style of font) {
+                            fontList2.add(`${fontName}, ${style}`);
                         }
                     }
                     const font = await new Interaction().getString(0, 0, fontList2);
@@ -19868,9 +19870,6 @@ class MaterialEditor {
 class WireframeHelper extends Entity {
     #meshToWireframe = new Map();
     #wireframeToMesh = new Map();
-    constructor() {
-        super();
-    }
     parentChanged(parent) {
         if (parent instanceof Entity) {
             const meshes = parent.getChildList('Mesh');
@@ -22952,34 +22951,1033 @@ class Source2FileLoader extends SourceBinaryLoader {
 /**
  * Mesh manager
  */
-const MeshManager = new function () {
-    const meshList = {};
+class MeshManager {
+    static meshList = {}; //TODO: create map
     //this.renderMode = 2;
-    //TODO
-    const getMesh = async function (repository, meshName) {
+    static async getMesh(repository, meshName) {
         meshName = meshName.toLowerCase();
         meshName = meshName.replace(/.vmesh_c$/, '');
         meshName = meshName.replace(/.vmesh$/, '');
-        let mesh = meshList[meshName];
+        let mesh = this.meshList[meshName];
         if (!mesh) {
             mesh = await new Source2FileLoader().load(repository, meshName + '.vmesh_c');
         }
         if (mesh) {
-            meshList[meshName] = mesh;
+            this.meshList[meshName] = mesh;
         }
         else {
             //TODO; create a dummy mesh
             console.error('No mesh loaded');
         }
         return mesh;
-    };
-    //TODO
-    const removeMesh = function (meshName) {
-        meshList[meshName] = null;
-    };
-    this.getMesh = getMesh;
-    this.removeMesh = removeMesh;
-};
+    }
+    static removeMesh(meshName) {
+        this.meshList[meshName] = null;
+    }
+}
+
+const EMPTY_MODIFIERS = new Set();
+class Source2Animations {
+    #animations = [];
+    addAnimations(animations) {
+        this.#animations.push(...animations);
+    }
+    getAnimations() {
+        return this.#animations;
+    }
+    getAnimation(activityName, activityModifiers = EMPTY_MODIFIERS) {
+        for (const animation of this.#animations) {
+            if (animation.matchModifiers(activityName, activityModifiers)) {
+                return animation;
+            }
+        }
+        // Try without modifiers
+        for (const animation of this.#animations) {
+            if (animation.matchModifiers(activityName, EMPTY_MODIFIERS)) {
+                return animation;
+            }
+        }
+    }
+    getBestAnimation(activityName, activityModifiers) {
+        let bestMatch = this.getAnimation(activityName);
+        let bestScore = bestMatch ? 0 : -1;
+        for (const animDesc of this.#animations) {
+            /*if (animDesc.matchModifiers(activityName, activityModifiers)) {
+                return animDesc;
+            }*/
+            const score = animDesc.modifiersScore(activityName, activityModifiers);
+            if (score > bestScore) {
+                bestMatch = animDesc;
+                bestScore = score;
+            }
+        }
+        return bestMatch;
+    }
+}
+
+class Source2Activity {
+    name;
+    weight;
+    flags;
+    activity;
+    constructor(name, weight, flags, activity) {
+        this.name = name;
+        this.weight = weight;
+        this.flags = flags;
+        this.activity = activity;
+        if (flags != 0) {
+            throw 'Check this: flags != 0';
+        }
+        if (activity != 0) {
+            throw 'Check this: activity != 0';
+        }
+    }
+}
+
+class Source2Sequence {
+    name;
+    fps;
+    frameCount;
+    activities;
+    animNames;
+    constructor(name, params = {}) {
+        this.name = name;
+        this.fps = params.fps ?? 30;
+        this.frameCount = params.frameCount ?? 0;
+        if (params.activities) {
+            this.activities = params.activities;
+        }
+        if (params.animNames) {
+            this.animNames = params.animNames;
+        }
+    }
+    matchActivity(activity, modifiers) {
+        if (modifiers) {
+            if (this.activities.length == modifiers.size + 1) {
+                if (this.activities[0].name == activity) {
+                    let matchCount = 0;
+                    for (let i = 1; i < this.activities.length; i++) {
+                        for (const modifier of modifiers) {
+                            if (this.activities[i] == modifier) {
+                                ++matchCount;
+                            }
+                        }
+                    }
+                    if (matchCount == modifiers.size) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        else {
+            if (this.activities[0]?.name == activity) {
+                return true;
+            }
+        }
+    }
+}
+
+const BASE_BYTES_PER_BONE = 4 * 3;
+const DELTA_BYTES_PER_BONE = 2 * 3;
+let baseX, baseY, baseZ, deltaX, deltaY, deltaZ;
+function decodeCCompressedDeltaVector3(reader, elementCount, elementIndex, frame) {
+    baseX = reader.getFloat32(8 + elementCount * 2 + elementIndex * BASE_BYTES_PER_BONE);
+    baseY = reader.getFloat32();
+    baseZ = reader.getFloat32();
+    deltaX = reader.getFloat16(8 + elementCount * (2 + BASE_BYTES_PER_BONE) + elementCount * frame * DELTA_BYTES_PER_BONE + elementIndex * DELTA_BYTES_PER_BONE);
+    deltaY = reader.getFloat16();
+    deltaZ = reader.getFloat16();
+    return vec3.fromValues(baseX + deltaX, baseY + deltaY, baseZ + deltaZ);
+}
+
+class Source2AnimationDesc {
+    #source2Model;
+    #fps = 30;
+    #lastFrame = 0;
+    data;
+    animationResource;
+    frameBlockArray;
+    constructor(source2Model, data, animationResource) {
+        this.#source2Model = source2Model;
+        this.data = data;
+        this.animationResource = animationResource;
+        this.frameBlockArray = null;
+        if (data) {
+            this.#fps = data.fps ?? 30;
+            if (data.m_pData) {
+                this.#lastFrame = data.m_pData.m_nFrames - 1;
+                this.frameBlockArray = data.m_pData.m_frameblockArray;
+            }
+        }
+    }
+    get fps() {
+        return this.#getActualAnimDesc()?.fps ?? this.#fps;
+    }
+    get lastFrame() {
+        return this.#getActualAnimDesc()?.lastFrame ?? this.#lastFrame;
+    }
+    #getActualAnimDesc() {
+        const fetch = this.data?.m_fetch;
+        if (fetch) {
+            const localReferenceArray = fetch.m_localReferenceArray;
+            //TODO: mix multiple anims
+            if (localReferenceArray[0] !== undefined) {
+                const animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
+                if (animName) {
+                    const animDesc = this.#source2Model.getAnimationByName(animName);
+                    if (animDesc) {
+                        return animDesc;
+                    }
+                }
+            }
+        }
+    }
+    getFrame(frameIndex) {
+        frameIndex = clamp(frameIndex, 0, this.lastFrame);
+        const frameBlockArray = this.frameBlockArray;
+        let segmentIndexArray = null;
+        let frameBlock = null;
+        const decodeKey = this.animationResource.getDecodeKey();
+        const decodeArray = this.animationResource.getDecoderArray();
+        const boneArray = [];
+        /*
+        let fetch = this.data?.m_fetch;
+        if (fetch) {
+            let localReferenceArray = fetch.m_localReferenceArray;
+            //TODO: mix multiple anims
+            if (localReferenceArray[0] !== undefined) {
+                let animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
+                if (animName) {
+                    //console.log(localReference);
+                    let animDesc = this.#source2Model.getAnimationByName(animName);
+                    if (animDesc) {
+                        return animDesc.getFrame(frameIndex);
+                    }
+                }
+                return [];
+            }
+        }*/
+        const actualAnimDesc = this.#getActualAnimDesc();
+        if (actualAnimDesc) {
+            return actualAnimDesc.getFrame(frameIndex);
+        }
+        if (frameBlockArray && decodeArray && decodeKey && decodeKey.m_boneArray) {
+            for (var i = 0; i < decodeKey.m_boneArray.length; i++) {
+                boneArray.push({ name: decodeKey.m_boneArray[i].m_name });
+            }
+            for (var i = 0; i < frameBlockArray.length; i++) {
+                frameBlock = frameBlockArray[i];
+                if ((frameBlock.m_nStartFrame <= frameIndex) && (frameBlock.m_nEndFrame >= frameIndex)) {
+                    segmentIndexArray = frameBlock.m_segmentIndexArray;
+                    //console.log(this);
+                    //console.log(decodeKey);
+                    for (let j = 0; j < segmentIndexArray.length; j++) {
+                        const segment = this.animationResource.getSegment(segmentIndexArray[j]);
+                        //console.log(frameIndex, frameIndex - frameBlock.m_nStartFrame);
+                        //console.log(frameIndex);
+                        this.readSegment(frameIndex - frameBlock.m_nStartFrame, segment, boneArray, decodeKey.m_dataChannelArray, decodeArray);
+                    }
+                }
+            }
+        }
+        //console.log(boneArray);
+        return boneArray;
+    }
+    readSegment(frameIndex, segment, boneArray, dataChannelArray, decodeArray) {
+        //console.log(segment);
+        const channel = dataChannelArray[segment.m_nLocalChannel];
+        const segmentToBoneIndex = {};
+        const channelVar = channel.m_szVariableName;
+        const container = segment.m_container;
+        let reader = segment.dataReader;
+        if (!reader) {
+            reader = new BinaryReader(container);
+            segment.dataReader = reader;
+        }
+        const decoderId = container[0] + (container[1] << 8);
+        let bytesPerBone = container[2] + (container[3] << 8);
+        const boneCount = container[4] + (container[5] << 8);
+        container[6] + (container[7] << 8);
+        bytesPerBone = 0;
+        const segmentBoneArray = [];
+        if (channel.m_nElementIndexArray) {
+            const elementIndexArray = channel.m_nElementIndexArray;
+            for (let i = 0; i < elementIndexArray.length; i++) {
+                segmentToBoneIndex[elementIndexArray[i]] = i;
+            }
+        }
+        else {
+            //TODO
+            return;
+        }
+        const decoder = decodeArray[decoderId];
+        //console.log(decoderId, bytesPerBone, boneCount, dataLength);
+        if (decoder && decoder.m_szName) {
+            const decoderName = decoder.m_szName;
+            //console.log(decoderName);
+            switch (decoderName) {
+                case 'CCompressedStaticFullVector3':
+                    bytesPerBone = 12;
+                    frameIndex = 0;
+                    break;
+                case 'CCompressedAnimQuaternion':
+                    bytesPerBone = 6;
+                    break;
+                case 'CCompressedStaticVector3':
+                    bytesPerBone = 6;
+                    frameIndex = 0;
+                    break;
+                case 'CCompressedFullVector3':
+                    bytesPerBone = 12;
+                    break;
+                case 'CCompressedDeltaVector3':
+                    break;
+                case 'CCompressedAnimVector3':
+                    bytesPerBone = 12;
+                    frameIndex = 0;
+                    //TODO
+                    break;
+                case 'CCompressedFullFloat':
+                case 'CCompressedStaticFloat':
+                    bytesPerBone = 4;
+                    frameIndex = 0;
+                    //TODO
+                    break;
+                default:
+                    return;
+            }
+            var byteIndex = 8;
+            for (var boneIndex = 0; boneIndex < boneCount; boneIndex++, byteIndex += 2) {
+                segmentBoneArray.push(container[byteIndex + 0] + (container[byteIndex + 1] << 8));
+            }
+            var byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
+            for (var boneIndex = 0; boneIndex < boneCount; boneIndex++) {
+                const boneIndex2 = segmentToBoneIndex[segmentBoneArray[boneIndex]];
+                /*if (boneIndex2 === undefined) {//removeme
+                    return;
+                }*/
+                const bytes = [];
+                const byteIndex2 = byteIndex + boneIndex * bytesPerBone;
+                for (let j = 0; j < bytesPerBone; j++) {
+                    bytes.push(container[byteIndex2 + j]);
+                }
+                let tmpValue = null;
+                switch (decoderName) {
+                    case 'CCompressedFullFloat':
+                    case 'CCompressedStaticFloat':
+                        tmpValue = _getFloat32(bytes, 0);
+                        break;
+                    case 'CCompressedStaticFullVector3':
+                    case 'CCompressedFullVector3':
+                        //case 'CCompressedAnimVector3':
+                        var x = _getFloat32(bytes, 0);
+                        var y = _getFloat32(bytes, 4);
+                        var z = _getFloat32(bytes, 8);
+                        tmpValue = vec3.fromValues(x, y, z);
+                        break;
+                    case 'CCompressedDeltaVector3':
+                        tmpValue = decodeCCompressedDeltaVector3(reader, boneCount, boneIndex, frameIndex);
+                        break;
+                    case 'CCompressedStaticVector3':
+                        var x = _getFloat16(bytes, 0);
+                        var y = _getFloat16(bytes, 2);
+                        var z = _getFloat16(bytes, 4);
+                        tmpValue = vec3.fromValues(x, y, z);
+                        break;
+                    case 'CCompressedAnimQuaternion':
+                        tmpValue = _readQuaternion48(bytes, boneIndex2, boneArray[boneIndex2]?.name);
+                        break;
+                    //TODO
+                }
+                if (tmpValue && boneArray[boneIndex2]) {
+                    boneArray[boneIndex2][channelVar] = tmpValue;
+                }
+            }
+        }
+    }
+    matchActivity(activityName) {
+        const activityArray = this.data?.m_activityArray;
+        if (activityArray) {
+            for (const activity of activityArray) {
+                if (activity.m_name == activityName) {
+                    return true;
+                }
+            }
+        }
+    }
+    getActivityName() {
+        return this.data?.m_activityArray?.[0]?.m_name;
+    }
+    hasModifiers() {
+        return this.data?.m_activityArray?.length > 1;
+    }
+    modifiersScore(activityName, modifiers) {
+        const activityArray = this.data?.m_activityArray;
+        if (activityArray && activityArray.length > 0) {
+            if (activityArray[0].m_name != activityName) {
+                return -1;
+            }
+            if (activityArray.length == 1 && modifiers.size == 0) {
+                // We have no modifiers and activityArray only contains the activity
+                return 1;
+            }
+            const matchingModifiers = {};
+            for (const modifier of modifiers) {
+                for (const activity of activityArray) {
+                    if (activityName == activity.m_name) {
+                        continue;
+                    }
+                    if (modifier == activity.m_name) {
+                        matchingModifiers[modifier] = 1;
+                        break;
+                    }
+                }
+            }
+            return Object.keys(matchingModifiers).length;
+        }
+        return -1;
+    }
+    matchModifiers(activityName, modifiers) {
+        const activityArray = this.data?.m_activityArray;
+        if (activityArray && activityArray.length > 0) {
+            if (activityArray[0].m_name != activityName) {
+                return false;
+            }
+            if (activityArray.length == 1 && modifiers.size == 0) {
+                // We have no modifiers and activityArray only contains the activity
+                return true;
+            }
+            if (activityArray.length - 1 != modifiers.size) {
+                return false;
+            }
+            const matchingModifiers = {};
+            for (const modifier of modifiers) {
+                for (const activity of activityArray) {
+                    if (activityName == activity.m_name) {
+                        continue;
+                    }
+                    if (modifier == activity.m_name) {
+                        matchingModifiers[modifier] = 1;
+                        break;
+                    }
+                }
+            }
+            return (Object.keys(matchingModifiers).length == modifiers.size);
+        }
+        return false;
+    }
+}
+function _getFloat16(b, offset) {
+    const sign = b[1 + offset] >> 7;
+    const exponent = ((b[1 + offset] & 0x7C) >> 2);
+    const mantissa = ((b[1 + offset] & 0x03) << 8) | b[0 + offset];
+    if (exponent == 0) {
+        return (sign ? -1 : 1) * Math.pow(2, -14) * (mantissa / Math.pow(2, 10));
+    }
+    else if (exponent == 0x1F) {
+        return mantissa ? NaN : ((sign ? -1 : 1) * Infinity);
+    }
+    return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / Math.pow(2, 10)));
+}
+function _getFloat32(b, offset) {
+    const sign = 1 - (2 * (b[3 + offset] >> 7)), exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127, mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
+    if (exponent === 128) {
+        if (mantissa !== 0) {
+            return NaN;
+        }
+        else {
+            return sign * Infinity;
+        }
+    }
+    if (exponent === -127) { // Denormalized
+        return sign * mantissa * pow2(-126 - 23);
+    }
+    return sign * (1 + mantissa * pow2(-23)) * pow2(exponent);
+}
+const QUATERNION48_SCALE = Math.SQRT1_2 / 0x4000;
+function _readQuaternion48(bytes, boneIndexRemoveMe, boneNameRemoveMe) {
+    // Values
+    const i1 = bytes[0] + ((bytes[1] & 127) << 8) - 0x4000;
+    const i2 = bytes[2] + ((bytes[3] & 127) << 8) - 0x4000;
+    const i3 = bytes[4] + ((bytes[5] & 127) << 8) - 0x4000;
+    // Signs
+    const s1 = bytes[1] & 128;
+    const s2 = bytes[3] & 128;
+    const s3 = bytes[5] & 128;
+    const x = QUATERNION48_SCALE * i1;
+    const y = QUATERNION48_SCALE * i2;
+    const z = QUATERNION48_SCALE * i3;
+    let w = Math.sqrt(1 - (x * x) - (y * y) - (z * z));
+    // Apply sign 3
+    if (s3 == 128) {
+        w *= -1;
+    }
+    // Apply sign 1 and 2
+    if (s1 == 128) {
+        return s2 == 128 ? quat.fromValues(y, z, w, x) : quat.fromValues(z, w, x, y);
+    }
+    else {
+        return s2 == 128 ? quat.fromValues(w, x, y, z) : quat.fromValues(x, y, z, w);
+    }
+}
+
+class Source2Animation {
+    #animArray;
+    #animNames = new Map();
+    animGroup;
+    filePath;
+    file;
+    decoderArray;
+    segmentArray;
+    frameData;
+    constructor(animGroup, filePath) {
+        this.animGroup = animGroup;
+        this.filePath = filePath;
+    }
+    setFile(sourceFile) {
+        this.file = sourceFile;
+        this.setAnimDatas(sourceFile.getBlockStruct('DATA.structs.AnimationResourceData_t')
+            ?? sourceFile.getBlockStruct('DATA.keyValue.root')
+            ?? sourceFile.getBlockStruct('DATA.keyValue.root.m_localS1SeqDescArray')
+            ?? sourceFile.getBlockStruct('ANIM.keyValue.root'));
+    }
+    setAnimDatas(data) {
+        if (data) {
+            this.#animArray = data.m_animArray ?? [];
+            //console.error('data.m_animArray', data.m_animArray);
+            this.decoderArray = data.m_decoderArray;
+            this.segmentArray = data.m_segmentArray;
+            this.frameData = data.m_frameData;
+            if (this.#animArray) {
+                for (let i = 0; i < this.#animArray.length; i++) {
+                    const anim = this.#animArray[i];
+                    this.#animNames.set(anim.m_name, new Source2AnimationDesc(this.animGroup.source2Model, anim, this));
+                }
+            }
+        }
+    }
+    getAnimDesc(name) {
+        return this.#animNames.get(name);
+    }
+    getDecodeKey() {
+        return this.animGroup.decodeKey;
+    }
+    getDecoderArray() {
+        return this.decoderArray;
+    }
+    getSegment(segmentIndex) {
+        //TODO: check segement
+        return this.segmentArray[segmentIndex];
+    }
+    async getAnimations(animations = new Set()) {
+        for (let i = 0; i < this.#animArray.length; i++) {
+            const anim = this.#animArray[i];
+            animations.add(anim.m_name);
+            for (const activity of anim.m_activityArray ?? []) {
+                animations.add(activity.m_name);
+            }
+        }
+        return animations;
+    }
+    getAnimationByActivity(activityName, activityModifiers) {
+        if (!this.#animArray) {
+            return [,];
+        }
+        let bestMatch;
+        let bestScore = Infinity;
+        for (const anim of this.#animArray) {
+            if (!anim.m_activityArray) {
+                continue;
+            }
+            let matchingActivity = false;
+            let unmatchingModifiers = 0;
+            for (const activity of anim.m_activityArray ?? []) {
+                if (activity.m_name == activityName) {
+                    matchingActivity = true;
+                }
+                let modifierMatching = false;
+                for (const activityModifier of activityModifiers) {
+                    if (activity.m_name == activityModifier) {
+                        modifierMatching = true;
+                        break;
+                    }
+                }
+                if (!modifierMatching) {
+                    ++unmatchingModifiers;
+                }
+            }
+            if (matchingActivity) {
+                for (const activityModifier of activityModifiers) {
+                    let modifierMatching = false;
+                    for (const activity of anim.m_activityArray ?? []) {
+                        if (activity.m_name == activityModifier) {
+                            modifierMatching = true;
+                            break;
+                        }
+                    }
+                    if (!modifierMatching) {
+                        ++unmatchingModifiers;
+                    }
+                }
+                if (unmatchingModifiers < bestScore) {
+                    const animDesc = this.#animNames.get(anim.m_name);
+                    if (animDesc) {
+                        bestMatch = animDesc;
+                        bestScore = unmatchingModifiers;
+                    }
+                }
+            }
+        }
+        return [bestMatch, bestScore];
+    }
+    getAnimationsByActivity(activityName) {
+        const anims = [];
+        for (const [animName, animDesc] of this.#animNames) {
+            if (animDesc.matchActivity(activityName)) {
+                anims.push(animDesc);
+            }
+        }
+        return anims;
+    }
+    get animArray() {
+        return this.#animArray;
+    }
+    getAnimationByName(animName) {
+        return this.#animNames.get(animName);
+        //return this.#internalAnimGroup?.getAnimationByName(animName);
+        /*for (let source2Animation in this.#animArray) {
+            let anim = source2Animation.getAnimationByName(animName);
+            if (anim) {
+                return anim;
+            }
+        }*/
+    }
+}
+
+class Source2SeqGroup {
+    #animNames = new Map();
+    #animGroup;
+    #localSequenceNameArray;
+    sequences = [];
+    file;
+    m_localS1SeqDescArray;
+    animArray;
+    loaded = false;
+    constructor(animGroup) {
+        this.#animGroup = animGroup;
+    }
+    setFile(sourceFile) {
+        this.file = sourceFile;
+        const sequenceGroupResourceData_t = sourceFile.getBlockStruct('DATA.structs.SequenceGroupResourceData_t');
+        let localSequenceNameArray;
+        if (sequenceGroupResourceData_t) {
+            this.m_localS1SeqDescArray = sequenceGroupResourceData_t.m_localS1SeqDescArray;
+            localSequenceNameArray = sequenceGroupResourceData_t.m_localSequenceNameArray;
+        }
+        else {
+            this.m_localS1SeqDescArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localS1SeqDescArray') ?? sourceFile.getBlockStruct('ASEQ.keyValue.root.m_localS1SeqDescArray');
+            localSequenceNameArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localSequenceNameArray') ?? sourceFile.getBlockStruct('ASEQ.keyValue.root.m_localSequenceNameArray');
+        }
+        this.#localSequenceNameArray = localSequenceNameArray;
+        this.#processSeqDesc(this.m_localS1SeqDescArray, localSequenceNameArray);
+        this.animArray = this.m_localS1SeqDescArray;
+        if (this.animArray) {
+            for (let i = 0; i < this.animArray.length; i++) {
+                const anim = this.animArray[i];
+                this.#animNames.set(anim.m_sName, new Source2AnimationDesc(this.#animGroup.source2Model, anim, this));
+            }
+        }
+        const anims = sourceFile.getBlockStruct('DATA.keyValue.root') ?? sourceFile.getBlockStruct('DATA.structs.SequenceGroupResourceData_t');
+        if (anims) {
+            const loadedAnim = new Source2Animation(this, '');
+            loadedAnim.setAnimDatas(anims);
+            this.#animGroup._changemyname = this.#animGroup._changemyname || [];
+            this.#animGroup._changemyname.push(loadedAnim);
+        }
+        this.loaded = true;
+    }
+    getAnimDesc(name) {
+        return this.#animNames.get(name);
+    }
+    #processSeqDesc(m_localS1SeqDescArray, localSequenceNameArray) {
+        if (m_localS1SeqDescArray) {
+            for (let i = 0; i < m_localS1SeqDescArray.length; ++i) {
+                const sequence = m_localS1SeqDescArray[i];
+                const activities = [];
+                if (sequence.m_activityArray) {
+                    for (let j = 0; j < sequence.m_activityArray.length; ++j) {
+                        const activity = sequence.m_activityArray[j];
+                        activities.push(new Source2Activity(activity.m_name, activity.m_nWeight, activity.m_nFlags, activity.m_nActivity));
+                    }
+                }
+                const localReferenceArray = sequence?.m_fetch?.m_localReferenceArray;
+                const animNames = [];
+                if (localReferenceArray) {
+                    for (const localReference of localReferenceArray) {
+                        animNames.push(localSequenceNameArray[localReference]);
+                    }
+                }
+                const s2Seq = new Source2Sequence(sequence.m_sName, { activities: activities, animNames: animNames });
+                //console.error(s2Seq);
+                this.sequences.push(s2Seq);
+            }
+        }
+    }
+    matchActivity(activity, modifiers) {
+        for (let i = 0; i < this.sequences.length; i++) {
+            const sequence = this.sequences[i];
+            if (sequence.matchActivity(activity, modifiers)) {
+                return sequence.animNames[0]; //TODO
+            }
+        }
+        return null;
+    }
+    getAnimationsByActivity(activityName) {
+        const anims = [];
+        for (const [animName, animDesc] of this.#animNames) {
+            if (animDesc.matchActivity(activityName)) {
+                anims.push(animDesc);
+            }
+        }
+        return anims;
+    }
+    getDecodeKey() {
+        return this.#animGroup.getDecodeKey();
+    }
+    getDecoderArray() {
+        return this.#animGroup.decoderArray;
+    }
+    get localSequenceNameArray() {
+        return this.#localSequenceNameArray;
+    }
+}
+
+class Source2AnimGroup {
+    #source2Model;
+    #_changemyname = [];
+    repository;
+    file;
+    decoderArray;
+    localAnimArray;
+    decodeKey;
+    directHSeqGroup;
+    loaded = false;
+    constructor(source2Model, repository) {
+        //TODO: remove repository param. redundant with model
+        this.#source2Model = source2Model;
+        this.repository = repository;
+    }
+    setFile(sourceFile) {
+        this.file = sourceFile;
+        let localAnimArray;
+        let decodeKey;
+        const animationGroupData = sourceFile.getBlockStruct('DATA.structs.AnimationGroupResourceData_t');
+        let directHSeqGroup;
+        if (animationGroupData) {
+            localAnimArray = animationGroupData.m_localHAnimArray;
+            decodeKey = animationGroupData.m_decodeKey;
+            directHSeqGroup = animationGroupData.m_directHSeqGroup;
+        }
+        else {
+            localAnimArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localHAnimArray');
+            decodeKey = sourceFile.getBlockStruct('DATA.keyValue.root.m_decodeKey');
+            directHSeqGroup = sourceFile.getBlockStruct('DATA.keyValue.root.m_directHSeqGroup');
+        }
+        this.decoderArray = sourceFile.getBlockStruct('ANIM.keyValue.root.m_decoderArray');
+        if (directHSeqGroup) {
+            (async () => {
+                this.directHSeqGroup = await getSequenceGroup(this.repository, directHSeqGroup, this);
+            })();
+        }
+        this.setAnimationGroupResourceData(localAnimArray, decodeKey);
+        const anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
+        if (anims) {
+            const loadedAnim = new Source2Animation(this, '');
+            loadedAnim.setAnimDatas(anims);
+            this._changemyname = this._changemyname || [];
+            this._changemyname.push(loadedAnim);
+            /*let m_animArray = anims.m_animArray;
+            for (let i = 0; i < m_animArray.length; i++) {
+            }*/
+        }
+        this.loaded = true;
+    }
+    setAnimationGroupResourceData(localAnimArray, decodeKey) {
+        this.localAnimArray = localAnimArray;
+        this.decodeKey = decodeKey;
+        //this.getAnim(0);
+        if (localAnimArray) {
+            for (const localAnim of localAnimArray) {
+                getAnim(this.repository, localAnim, this);
+                //console.info(anim);
+            }
+        }
+    }
+    getAnim(animIndex) {
+        if (this.localAnimArray && this.localAnimArray[animIndex]) {
+            return getAnim(this.repository, this.localAnimArray[animIndex], this);
+        }
+        return null;
+    }
+    getAnimDesc(name) {
+        let animation;
+        for (const a of this.#_changemyname) {
+            animation = a.getAnimDesc(name);
+            if (animation) {
+                return animation;
+            }
+        }
+    }
+    matchActivity(activity, modifiers) {
+        if (this.directHSeqGroup) {
+            return this.directHSeqGroup.matchActivity(activity, modifiers);
+        }
+    }
+    getAnims() {
+        const anims = new Set();
+        for (const anim of this._changemyname) {
+            if (anim) {
+                anims.add(anim);
+            }
+        }
+        if (this.localAnimArray) {
+            for (const animName of this.localAnimArray) {
+                if (animName) {
+                    const anim = getAnim(this.repository, animName, this);
+                    if (anim) {
+                        anims.add(anim);
+                    }
+                }
+            }
+        }
+        return anims;
+    }
+    getAnimationsByActivity(activityName) {
+        const anims = [];
+        for (const anim of this._changemyname) {
+            if (anim) {
+                anims.push(...anim.getAnimationsByActivity(activityName));
+            }
+        }
+        if (this.localAnimArray) {
+            for (const animName of this.localAnimArray) {
+                if (animName) {
+                    const anim = getAnim(this.repository, animName, this);
+                    if (anim) {
+                        anims.push(...anim.getAnimationsByActivity(activityName));
+                    }
+                }
+            }
+        }
+        if (this.directHSeqGroup) {
+            anims.push(...this.directHSeqGroup.getAnimationsByActivity(activityName));
+        }
+        return anims;
+    }
+    getDecodeKey() {
+        return this.decodeKey;
+    }
+    get source2Model() {
+        return this.#source2Model;
+    }
+    getAnimationByName(animName) {
+        //return this.#internalAnimGroup?.getAnimationByName(animName);
+        for (const source2Animation of this.getAnims()) {
+            const anim = source2Animation.getAnimationByName(animName);
+            if (anim) {
+                return anim;
+            }
+        }
+    }
+    //TODO: remove setter and getter
+    set _changemyname(_changemyname) {
+        this.#_changemyname = _changemyname;
+    }
+    get _changemyname() {
+        return this.#_changemyname;
+    }
+}
+const seqGroupList = {};
+function getSequenceGroup(repository, seqGroupName, animGroup) {
+    let seqGroup = seqGroupList[seqGroupName];
+    if (!seqGroup) {
+        seqGroup = loadSequenceGroup(repository, seqGroupName, animGroup);
+    }
+    if (seqGroup) {
+        seqGroupList[seqGroupName] = seqGroup;
+    }
+    else {
+        //TODO; create dummy
+        console.error('No anim group loaded');
+    }
+    return seqGroup;
+}
+async function loadSequenceGroup(repository, seqGroupName, animGroup) {
+    repository = repository.toLowerCase();
+    seqGroupName = seqGroupName.replace(/\.(vseq_c$|vseq)/, '');
+    //seqGroupName = repository + seqGroupName;
+    const seqGroup = new Source2SeqGroup(animGroup);
+    await getVseq(repository, seqGroupName, seqGroup);
+    return seqGroup;
+}
+const pending$1 = {};
+async function getVseq(repository, seqGroupName, seqGroup) {
+    const seqFile = seqGroupName + '.vseq_c';
+    if (pending$1[seqFile]) {
+        return true;
+    }
+    pending$1[seqFile] = true;
+    await loadVseq(repository, seqFile, seqGroup);
+    /*
+    let promise = new Promise((resolve, reject) => {
+        fetch(new Request(seqFile)).then((response) => {
+            response.arrayBuffer().then(async (arrayBuffer) => {
+                await this.loadVseq(repository, seqFile, arrayBuffer, seqGroup);
+                pending[seqFile] = null;
+                resolve(true);
+            })
+        });
+    });
+    */
+    return true;
+}
+async function loadVseq(repository, fileName, seqGroup) {
+    const vseq = await new Source2FileLoader().load(repository, fileName);
+    if (vseq) {
+        seqGroup.setFile(vseq);
+    }
+}
+const animList = {};
+function getAnim(repository, animName, animGroup) {
+    if (!animName) {
+        return "";
+    }
+    const anim = animList[animName];
+    if (anim === undefined) {
+        loadAnim(repository, animName, animGroup).then(anim => {
+            animList[animName] = anim;
+            animGroup._changemyname.push(anim);
+        });
+        return null;
+    }
+    else {
+        return anim;
+    }
+}
+async function loadAnim(repository, animName, animGroup) {
+    animName = animName.toLowerCase();
+    animName = animName.replace(/\.(vanim_c$|vanim$)/, '');
+    //this.fileName = animName;
+    //animName = repository + animName;
+    //this.animName = animName;
+    const anim = new Source2Animation(animGroup, animName);
+    await getVanim(repository, animName, anim);
+    return anim;
+}
+async function getVanim(repository, animName, anim) {
+    const animFile = animName + '.vanim_c';
+    if (pending$1[animFile]) {
+        return true;
+    }
+    pending$1[animFile] = true;
+    /*
+                fetch(new Request(animFile)).then((response) => {
+                    response.arrayBuffer().then((arrayBuffer) => {
+                        this.loadVanim(repository, animFile, arrayBuffer, anim);
+                    })
+                });
+                */
+    loadVanim(repository, animFile, anim);
+    /*
+    let promise = new Promise((resolve, reject) => {
+        fetch(new Request(animFile)).then((response) => {
+            response.arrayBuffer().then(async (arrayBuffer) => {
+                this.loadVanim(repository, animFile, arrayBuffer, anim);
+                pending[animFile] = null;
+                resolve(true);
+            })
+        });
+    });
+    */
+    return true;
+}
+async function loadVanim(repository, fileName, anim) {
+    const vanim = await new Source2FileLoader().load(repository, fileName);
+    if (vanim) {
+        anim.setFile(vanim);
+        const dataBlock = vanim.blocks.DATA;
+        if (dataBlock) {
+            anim.setAnimDatas(vanim.getBlockStruct('DATA.structs.AnimationResourceData_t') || vanim.getBlockStruct('DATA.keyValue.root'));
+        }
+    }
+    //this.fileLoaded(model);TODOv3
+}
+
+const pending = {};
+async function loadAnimGroup(source2Model, repository, animGroupName) {
+    animGroupName = animGroupName.toLowerCase();
+    animGroupName = animGroupName.replace(/\.(vagrp_c$|vagrp$)/, '');
+    const animGroup = new Source2AnimGroup(source2Model, repository);
+    await getVagrp(repository, animGroupName, animGroup);
+    return animGroup;
+}
+async function getVagrp(repository, animGroupName, animGroup) {
+    const agrpFile = animGroupName + '.vagrp_c';
+    if (pending[agrpFile]) {
+        return true;
+    }
+    pending[agrpFile] = true;
+    await loadVagrp(repository, agrpFile, animGroup);
+    /*
+    let promise = new Promise((resolve, reject) => {
+        fetch(new Request(agrpFile)).then((response) => {
+            response.arrayBuffer().then(async (arrayBuffer) => {
+                await this.#loadVagrp(repository, agrpFile, arrayBuffer, animGroup);
+                pending[agrpFile] = null;
+                resolve(true);
+            })
+        });
+    });
+    0*/
+    return true;
+}
+async function loadVagrp(repository, fileName, animGroup) {
+    const vagrp = await new Source2FileLoader().load(repository, fileName);
+    if (vagrp) {
+        animGroup.setFile(vagrp);
+        const dataBlock = vagrp.blocks.DATA;
+        if (dataBlock) {
+            //animGroup.meshesNames = vagrp.getPermModelData('m_meshGroups');
+            vagrp.getPermModelData('m_refMeshes');
+        }
+    }
+    //this.fileLoaded(model);TODOv3
+}
+
+const AnimManager = new (function () {
+    const animGroupList = {};
+    class AnimManager {
+        async getAnimGroup(source2Model, repository, animGroupName) {
+            let animGroup = animGroupList[animGroupName];
+            if (!animGroup) {
+                animGroup = await loadAnimGroup(source2Model, repository, animGroupName);
+            }
+            if (animGroup) {
+                animGroupList[animGroupName] = animGroup;
+            }
+            else {
+                //TODO; create dummy
+                console.error('No anim group loaded');
+            }
+            return animGroup;
+        }
+        removeAnimGroup(animGroupName) {
+            animGroupList[animGroupName] = null;
+        }
+    }
+    return AnimManager;
+}());
 
 const tempPos$1 = vec3.create();
 const tempQuat$6 = quat.create();
@@ -23517,1009 +24515,6 @@ class Source2ModelInstance extends Entity {
     }
 }
 
-const BASE_BYTES_PER_BONE = 4 * 3;
-const DELTA_BYTES_PER_BONE = 2 * 3;
-let baseX, baseY, baseZ, deltaX, deltaY, deltaZ;
-function decodeCCompressedDeltaVector3(reader, elementCount, elementIndex, frame) {
-    baseX = reader.getFloat32(8 + elementCount * 2 + elementIndex * BASE_BYTES_PER_BONE);
-    baseY = reader.getFloat32();
-    baseZ = reader.getFloat32();
-    deltaX = reader.getFloat16(8 + elementCount * (2 + BASE_BYTES_PER_BONE) + elementCount * frame * DELTA_BYTES_PER_BONE + elementIndex * DELTA_BYTES_PER_BONE);
-    deltaY = reader.getFloat16();
-    deltaZ = reader.getFloat16();
-    return vec3.fromValues(baseX + deltaX, baseY + deltaY, baseZ + deltaZ);
-}
-
-class Source2AnimationDesc {
-    #source2Model;
-    #fps = 30;
-    #lastFrame = 0;
-    data;
-    animationResource;
-    frameBlockArray;
-    constructor(source2Model, data, animationResource) {
-        this.#source2Model = source2Model;
-        this.data = data;
-        this.animationResource = animationResource;
-        this.frameBlockArray = null;
-        if (data) {
-            this.#fps = data.fps ?? 30;
-            if (data.m_pData) {
-                this.#lastFrame = data.m_pData.m_nFrames - 1;
-                this.frameBlockArray = data.m_pData.m_frameblockArray;
-            }
-        }
-    }
-    get fps() {
-        return this.#getActualAnimDesc()?.fps ?? this.#fps;
-    }
-    get lastFrame() {
-        return this.#getActualAnimDesc()?.lastFrame ?? this.#lastFrame;
-    }
-    #getActualAnimDesc() {
-        const fetch = this.data?.m_fetch;
-        if (fetch) {
-            const localReferenceArray = fetch.m_localReferenceArray;
-            //TODO: mix multiple anims
-            if (localReferenceArray[0] !== undefined) {
-                const animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
-                if (animName) {
-                    const animDesc = this.#source2Model.getAnimationByName(animName);
-                    if (animDesc) {
-                        return animDesc;
-                    }
-                }
-            }
-        }
-    }
-    getFrame(frameIndex) {
-        frameIndex = clamp(frameIndex, 0, this.lastFrame);
-        const frameBlockArray = this.frameBlockArray;
-        let segmentIndexArray = null;
-        let frameBlock = null;
-        const decodeKey = this.animationResource.getDecodeKey();
-        const decodeArray = this.animationResource.getDecoderArray();
-        const boneArray = [];
-        /*
-        let fetch = this.data?.m_fetch;
-        if (fetch) {
-            let localReferenceArray = fetch.m_localReferenceArray;
-            //TODO: mix multiple anims
-            if (localReferenceArray[0] !== undefined) {
-                let animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
-                if (animName) {
-                    //console.log(localReference);
-                    let animDesc = this.#source2Model.getAnimationByName(animName);
-                    if (animDesc) {
-                        return animDesc.getFrame(frameIndex);
-                    }
-                }
-                return [];
-            }
-        }*/
-        const actualAnimDesc = this.#getActualAnimDesc();
-        if (actualAnimDesc) {
-            return actualAnimDesc.getFrame(frameIndex);
-        }
-        if (frameBlockArray && decodeArray && decodeKey && decodeKey.m_boneArray) {
-            for (var i = 0; i < decodeKey.m_boneArray.length; i++) {
-                boneArray.push({ name: decodeKey.m_boneArray[i].m_name });
-            }
-            for (var i = 0; i < frameBlockArray.length; i++) {
-                frameBlock = frameBlockArray[i];
-                if ((frameBlock.m_nStartFrame <= frameIndex) && (frameBlock.m_nEndFrame >= frameIndex)) {
-                    segmentIndexArray = frameBlock.m_segmentIndexArray;
-                    //console.log(this);
-                    //console.log(decodeKey);
-                    for (let j = 0; j < segmentIndexArray.length; j++) {
-                        const segment = this.animationResource.getSegment(segmentIndexArray[j]);
-                        //console.log(frameIndex, frameIndex - frameBlock.m_nStartFrame);
-                        //console.log(frameIndex);
-                        this.readSegment(frameIndex - frameBlock.m_nStartFrame, segment, boneArray, decodeKey.m_dataChannelArray, decodeArray);
-                    }
-                }
-            }
-        }
-        //console.log(boneArray);
-        return boneArray;
-    }
-    readSegment(frameIndex, segment, boneArray, dataChannelArray, decodeArray) {
-        //console.log(segment);
-        const channel = dataChannelArray[segment.m_nLocalChannel];
-        const segmentToBoneIndex = {};
-        const channelVar = channel.m_szVariableName;
-        const container = segment.m_container;
-        let reader = segment.dataReader;
-        if (!reader) {
-            reader = new BinaryReader(container);
-            segment.dataReader = reader;
-        }
-        const decoderId = container[0] + (container[1] << 8);
-        let bytesPerBone = container[2] + (container[3] << 8);
-        const boneCount = container[4] + (container[5] << 8);
-        container[6] + (container[7] << 8);
-        bytesPerBone = 0;
-        const segmentBoneArray = [];
-        if (channel.m_nElementIndexArray) {
-            const elementIndexArray = channel.m_nElementIndexArray;
-            for (let i = 0; i < elementIndexArray.length; i++) {
-                segmentToBoneIndex[elementIndexArray[i]] = i;
-            }
-        }
-        else {
-            //TODO
-            return;
-        }
-        const decoder = decodeArray[decoderId];
-        //console.log(decoderId, bytesPerBone, boneCount, dataLength);
-        if (decoder && decoder.m_szName) {
-            const decoderName = decoder.m_szName;
-            //console.log(decoderName);
-            switch (decoderName) {
-                case 'CCompressedStaticFullVector3':
-                    bytesPerBone = 12;
-                    frameIndex = 0;
-                    break;
-                case 'CCompressedAnimQuaternion':
-                    bytesPerBone = 6;
-                    break;
-                case 'CCompressedStaticVector3':
-                    bytesPerBone = 6;
-                    frameIndex = 0;
-                    break;
-                case 'CCompressedFullVector3':
-                    bytesPerBone = 12;
-                    break;
-                case 'CCompressedDeltaVector3':
-                    break;
-                case 'CCompressedAnimVector3':
-                    bytesPerBone = 12;
-                    frameIndex = 0;
-                    //TODO
-                    break;
-                case 'CCompressedFullFloat':
-                case 'CCompressedStaticFloat':
-                    bytesPerBone = 4;
-                    frameIndex = 0;
-                    //TODO
-                    break;
-                default:
-                    return;
-            }
-            var byteIndex = 8;
-            for (var boneIndex = 0; boneIndex < boneCount; boneIndex++, byteIndex += 2) {
-                segmentBoneArray.push(container[byteIndex + 0] + (container[byteIndex + 1] << 8));
-            }
-            var byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
-            for (var boneIndex = 0; boneIndex < boneCount; boneIndex++) {
-                const boneIndex2 = segmentToBoneIndex[segmentBoneArray[boneIndex]];
-                /*if (boneIndex2 === undefined) {//removeme
-                    return;
-                }*/
-                const bytes = [];
-                const byteIndex2 = byteIndex + boneIndex * bytesPerBone;
-                for (let j = 0; j < bytesPerBone; j++) {
-                    bytes.push(container[byteIndex2 + j]);
-                }
-                let tmpValue = null;
-                switch (decoderName) {
-                    case 'CCompressedFullFloat':
-                    case 'CCompressedStaticFloat':
-                        tmpValue = _getFloat32(bytes, 0);
-                        break;
-                    case 'CCompressedStaticFullVector3':
-                    case 'CCompressedFullVector3':
-                        //case 'CCompressedAnimVector3':
-                        var x = _getFloat32(bytes, 0);
-                        var y = _getFloat32(bytes, 4);
-                        var z = _getFloat32(bytes, 8);
-                        tmpValue = vec3.fromValues(x, y, z);
-                        break;
-                    case 'CCompressedDeltaVector3':
-                        tmpValue = decodeCCompressedDeltaVector3(reader, boneCount, boneIndex, frameIndex);
-                        break;
-                    case 'CCompressedStaticVector3':
-                        var x = _getFloat16(bytes, 0);
-                        var y = _getFloat16(bytes, 2);
-                        var z = _getFloat16(bytes, 4);
-                        tmpValue = vec3.fromValues(x, y, z);
-                        break;
-                    case 'CCompressedAnimQuaternion':
-                        tmpValue = _readQuaternion48(bytes, boneIndex2, boneArray[boneIndex2]?.name);
-                        break;
-                    //TODO
-                }
-                if (tmpValue && boneArray[boneIndex2]) {
-                    boneArray[boneIndex2][channelVar] = tmpValue;
-                }
-            }
-        }
-    }
-    matchActivity(activityName) {
-        const activityArray = this.data?.m_activityArray;
-        if (activityArray) {
-            for (const activity of activityArray) {
-                if (activity.m_name == activityName) {
-                    return true;
-                }
-            }
-        }
-    }
-    getActivityName() {
-        return this.data?.m_activityArray?.[0]?.m_name;
-    }
-    hasModifiers() {
-        return this.data?.m_activityArray?.length > 1;
-    }
-    modifiersScore(activityName, modifiers) {
-        const activityArray = this.data?.m_activityArray;
-        if (activityArray && activityArray.length > 0) {
-            if (activityArray[0].m_name != activityName) {
-                return -1;
-            }
-            if (activityArray.length == 1 && modifiers.size == 0) {
-                // We have no modifiers and activityArray only contains the activity
-                return 1;
-            }
-            const matchingModifiers = {};
-            for (const modifier of modifiers) {
-                for (const activity of activityArray) {
-                    if (activityName == activity.m_name) {
-                        continue;
-                    }
-                    if (modifier == activity.m_name) {
-                        matchingModifiers[modifier] = 1;
-                        break;
-                    }
-                }
-            }
-            return Object.keys(matchingModifiers).length;
-        }
-        return -1;
-    }
-    matchModifiers(activityName, modifiers) {
-        const activityArray = this.data?.m_activityArray;
-        if (activityArray && activityArray.length > 0) {
-            if (activityArray[0].m_name != activityName) {
-                return false;
-            }
-            if (activityArray.length == 1 && modifiers.size == 0) {
-                // We have no modifiers and activityArray only contains the activity
-                return true;
-            }
-            if (activityArray.length - 1 != modifiers.size) {
-                return false;
-            }
-            const matchingModifiers = {};
-            for (const modifier of modifiers) {
-                for (const activity of activityArray) {
-                    if (activityName == activity.m_name) {
-                        continue;
-                    }
-                    if (modifier == activity.m_name) {
-                        matchingModifiers[modifier] = 1;
-                        break;
-                    }
-                }
-            }
-            return (Object.keys(matchingModifiers).length == modifiers.size);
-        }
-        return false;
-    }
-}
-function _getFloat16(b, offset) {
-    const sign = b[1 + offset] >> 7;
-    const exponent = ((b[1 + offset] & 0x7C) >> 2);
-    const mantissa = ((b[1 + offset] & 0x03) << 8) | b[0 + offset];
-    if (exponent == 0) {
-        return (sign ? -1 : 1) * Math.pow(2, -14) * (mantissa / Math.pow(2, 10));
-    }
-    else if (exponent == 0x1F) {
-        return mantissa ? NaN : ((sign ? -1 : 1) * Infinity);
-    }
-    return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / Math.pow(2, 10)));
-}
-function _getFloat32(b, offset) {
-    const sign = 1 - (2 * (b[3 + offset] >> 7)), exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127, mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
-    if (exponent === 128) {
-        if (mantissa !== 0) {
-            return NaN;
-        }
-        else {
-            return sign * Infinity;
-        }
-    }
-    if (exponent === -127) { // Denormalized
-        return sign * mantissa * pow2(-126 - 23);
-    }
-    return sign * (1 + mantissa * pow2(-23)) * pow2(exponent);
-}
-const QUATERNION48_SCALE = Math.SQRT1_2 / 0x4000;
-function _readQuaternion48(bytes, boneIndexRemoveMe, boneNameRemoveMe) {
-    // Values
-    const i1 = bytes[0] + ((bytes[1] & 127) << 8) - 0x4000;
-    const i2 = bytes[2] + ((bytes[3] & 127) << 8) - 0x4000;
-    const i3 = bytes[4] + ((bytes[5] & 127) << 8) - 0x4000;
-    // Signs
-    const s1 = bytes[1] & 128;
-    const s2 = bytes[3] & 128;
-    const s3 = bytes[5] & 128;
-    const x = QUATERNION48_SCALE * i1;
-    const y = QUATERNION48_SCALE * i2;
-    const z = QUATERNION48_SCALE * i3;
-    let w = Math.sqrt(1 - (x * x) - (y * y) - (z * z));
-    // Apply sign 3
-    if (s3 == 128) {
-        w *= -1;
-    }
-    // Apply sign 1 and 2
-    if (s1 == 128) {
-        return s2 == 128 ? quat.fromValues(y, z, w, x) : quat.fromValues(z, w, x, y);
-    }
-    else {
-        return s2 == 128 ? quat.fromValues(w, x, y, z) : quat.fromValues(x, y, z, w);
-    }
-}
-
-class Source2Animation {
-    #animArray;
-    #animNames = new Map();
-    animGroup;
-    filePath;
-    file;
-    decoderArray;
-    segmentArray;
-    frameData;
-    constructor(animGroup, filePath) {
-        this.animGroup = animGroup;
-        this.filePath = filePath;
-    }
-    setFile(sourceFile) {
-        this.file = sourceFile;
-        this.setAnimDatas(sourceFile.getBlockStruct('DATA.structs.AnimationResourceData_t')
-            ?? sourceFile.getBlockStruct('DATA.keyValue.root')
-            ?? sourceFile.getBlockStruct('DATA.keyValue.root.m_localS1SeqDescArray')
-            ?? sourceFile.getBlockStruct('ANIM.keyValue.root'));
-    }
-    setAnimDatas(data) {
-        if (data) {
-            this.#animArray = data.m_animArray ?? [];
-            //console.error('data.m_animArray', data.m_animArray);
-            this.decoderArray = data.m_decoderArray;
-            this.segmentArray = data.m_segmentArray;
-            this.frameData = data.m_frameData;
-            if (this.#animArray) {
-                for (let i = 0; i < this.#animArray.length; i++) {
-                    const anim = this.#animArray[i];
-                    this.#animNames.set(anim.m_name, new Source2AnimationDesc(this.animGroup.source2Model, anim, this));
-                }
-            }
-        }
-    }
-    getAnimDesc(name) {
-        return this.#animNames.get(name);
-    }
-    getDecodeKey() {
-        return this.animGroup.decodeKey;
-    }
-    getDecoderArray() {
-        return this.decoderArray;
-    }
-    getSegment(segmentIndex) {
-        //TODO: check segement
-        return this.segmentArray[segmentIndex];
-    }
-    async getAnimations(animations = new Set()) {
-        for (let i = 0; i < this.#animArray.length; i++) {
-            const anim = this.#animArray[i];
-            animations.add(anim.m_name);
-            for (const activity of anim.m_activityArray ?? []) {
-                animations.add(activity.m_name);
-            }
-        }
-        return animations;
-    }
-    getAnimationByActivity(activityName, activityModifiers) {
-        if (!this.#animArray) {
-            return [,];
-        }
-        let bestMatch;
-        let bestScore = Infinity;
-        for (const anim of this.#animArray) {
-            if (!anim.m_activityArray) {
-                continue;
-            }
-            let matchingActivity = false;
-            let unmatchingModifiers = 0;
-            for (const activity of anim.m_activityArray ?? []) {
-                if (activity.m_name == activityName) {
-                    matchingActivity = true;
-                }
-                let modifierMatching = false;
-                for (const activityModifier of activityModifiers) {
-                    if (activity.m_name == activityModifier) {
-                        modifierMatching = true;
-                        break;
-                    }
-                }
-                if (!modifierMatching) {
-                    ++unmatchingModifiers;
-                }
-            }
-            if (matchingActivity) {
-                for (const activityModifier of activityModifiers) {
-                    let modifierMatching = false;
-                    for (const activity of anim.m_activityArray ?? []) {
-                        if (activity.m_name == activityModifier) {
-                            modifierMatching = true;
-                            break;
-                        }
-                    }
-                    if (!modifierMatching) {
-                        ++unmatchingModifiers;
-                    }
-                }
-                if (unmatchingModifiers < bestScore) {
-                    const animDesc = this.#animNames.get(anim.m_name);
-                    if (animDesc) {
-                        bestMatch = animDesc;
-                        bestScore = unmatchingModifiers;
-                    }
-                }
-            }
-        }
-        return [bestMatch, bestScore];
-    }
-    getAnimationsByActivity(activityName) {
-        const anims = [];
-        for (const [animName, animDesc] of this.#animNames) {
-            if (animDesc.matchActivity(activityName)) {
-                anims.push(animDesc);
-            }
-        }
-        return anims;
-    }
-    get animArray() {
-        return this.#animArray;
-    }
-    getAnimationByName(animName) {
-        return this.#animNames.get(animName);
-        //return this.#internalAnimGroup?.getAnimationByName(animName);
-        /*for (let source2Animation in this.#animArray) {
-            let anim = source2Animation.getAnimationByName(animName);
-            if (anim) {
-                return anim;
-            }
-        }*/
-    }
-}
-
-class Source2Activity {
-    name;
-    weight;
-    flags;
-    activity;
-    constructor(name, weight, flags, activity) {
-        this.name = name;
-        this.weight = weight;
-        this.flags = flags;
-        this.activity = activity;
-        if (flags != 0) {
-            throw 'Check this: flags != 0';
-        }
-        if (activity != 0) {
-            throw 'Check this: activity != 0';
-        }
-    }
-}
-
-class Source2Sequence {
-    name;
-    fps;
-    frameCount;
-    activities;
-    animNames;
-    constructor(name, params = {}) {
-        this.name = name;
-        this.fps = params.fps ?? 30;
-        this.frameCount = params.frameCount ?? 0;
-        if (params.activities) {
-            this.activities = params.activities;
-        }
-        if (params.animNames) {
-            this.animNames = params.animNames;
-        }
-    }
-    matchActivity(activity, modifiers) {
-        if (modifiers) {
-            if (this.activities.length == modifiers.size + 1) {
-                if (this.activities[0].name == activity) {
-                    let matchCount = 0;
-                    for (let i = 1; i < this.activities.length; i++) {
-                        for (const modifier of modifiers) {
-                            if (this.activities[i] == modifier) {
-                                ++matchCount;
-                            }
-                        }
-                    }
-                    if (matchCount == modifiers.size) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-        else {
-            if (this.activities[0]?.name == activity) {
-                return true;
-            }
-        }
-    }
-}
-
-class Source2SeqGroup {
-    #animNames = new Map();
-    #animGroup;
-    #localSequenceNameArray;
-    sequences = [];
-    file;
-    m_localS1SeqDescArray;
-    animArray;
-    loaded = false;
-    constructor(animGroup) {
-        this.#animGroup = animGroup;
-    }
-    setFile(sourceFile) {
-        this.file = sourceFile;
-        const sequenceGroupResourceData_t = sourceFile.getBlockStruct('DATA.structs.SequenceGroupResourceData_t');
-        let localSequenceNameArray;
-        if (sequenceGroupResourceData_t) {
-            this.m_localS1SeqDescArray = sequenceGroupResourceData_t.m_localS1SeqDescArray;
-            localSequenceNameArray = sequenceGroupResourceData_t.m_localSequenceNameArray;
-        }
-        else {
-            this.m_localS1SeqDescArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localS1SeqDescArray') ?? sourceFile.getBlockStruct('ASEQ.keyValue.root.m_localS1SeqDescArray');
-            localSequenceNameArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localSequenceNameArray') ?? sourceFile.getBlockStruct('ASEQ.keyValue.root.m_localSequenceNameArray');
-        }
-        this.#localSequenceNameArray = localSequenceNameArray;
-        this.#processSeqDesc(this.m_localS1SeqDescArray, localSequenceNameArray);
-        this.animArray = this.m_localS1SeqDescArray;
-        if (this.animArray) {
-            for (let i = 0; i < this.animArray.length; i++) {
-                const anim = this.animArray[i];
-                this.#animNames.set(anim.m_sName, new Source2AnimationDesc(this.#animGroup.source2Model, anim, this));
-            }
-        }
-        const anims = sourceFile.getBlockStruct('DATA.keyValue.root') ?? sourceFile.getBlockStruct('DATA.structs.SequenceGroupResourceData_t');
-        if (anims) {
-            const loadedAnim = new Source2Animation(this, '');
-            loadedAnim.setAnimDatas(anims);
-            this.#animGroup._changemyname = this.#animGroup._changemyname || [];
-            this.#animGroup._changemyname.push(loadedAnim);
-        }
-        this.loaded = true;
-    }
-    getAnimDesc(name) {
-        return this.#animNames.get(name);
-    }
-    #processSeqDesc(m_localS1SeqDescArray, localSequenceNameArray) {
-        if (m_localS1SeqDescArray) {
-            for (let i = 0; i < m_localS1SeqDescArray.length; ++i) {
-                const sequence = m_localS1SeqDescArray[i];
-                const activities = [];
-                if (sequence.m_activityArray) {
-                    for (let j = 0; j < sequence.m_activityArray.length; ++j) {
-                        const activity = sequence.m_activityArray[j];
-                        activities.push(new Source2Activity(activity.m_name, activity.m_nWeight, activity.m_nFlags, activity.m_nActivity));
-                    }
-                }
-                const localReferenceArray = sequence?.m_fetch?.m_localReferenceArray;
-                const animNames = [];
-                if (localReferenceArray) {
-                    for (const localReference of localReferenceArray) {
-                        animNames.push(localSequenceNameArray[localReference]);
-                    }
-                }
-                const s2Seq = new Source2Sequence(sequence.m_sName, { activities: activities, animNames: animNames });
-                //console.error(s2Seq);
-                this.sequences.push(s2Seq);
-            }
-        }
-    }
-    matchActivity(activity, modifiers) {
-        for (let i = 0; i < this.sequences.length; i++) {
-            const sequence = this.sequences[i];
-            if (sequence.matchActivity(activity, modifiers)) {
-                return sequence.animNames[0]; //TODO
-            }
-        }
-        return null;
-    }
-    getAnimationsByActivity(activityName) {
-        const anims = [];
-        for (const [animName, animDesc] of this.#animNames) {
-            if (animDesc.matchActivity(activityName)) {
-                anims.push(animDesc);
-            }
-        }
-        return anims;
-    }
-    getDecodeKey() {
-        return this.#animGroup.getDecodeKey();
-    }
-    getDecoderArray() {
-        return this.#animGroup.decoderArray;
-    }
-    get localSequenceNameArray() {
-        return this.#localSequenceNameArray;
-    }
-}
-
-class Source2AnimGroup {
-    #source2Model;
-    #_changemyname = [];
-    repository;
-    file;
-    decoderArray;
-    localAnimArray;
-    decodeKey;
-    directHSeqGroup;
-    loaded = false;
-    constructor(source2Model, repository) {
-        //TODO: remove repository param. redundant with model
-        this.#source2Model = source2Model;
-        this.repository = repository;
-    }
-    setFile(sourceFile) {
-        this.file = sourceFile;
-        let localAnimArray;
-        let decodeKey;
-        const animationGroupData = sourceFile.getBlockStruct('DATA.structs.AnimationGroupResourceData_t');
-        let directHSeqGroup;
-        if (animationGroupData) {
-            localAnimArray = animationGroupData.m_localHAnimArray;
-            decodeKey = animationGroupData.m_decodeKey;
-            directHSeqGroup = animationGroupData.m_directHSeqGroup;
-        }
-        else {
-            localAnimArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localHAnimArray');
-            decodeKey = sourceFile.getBlockStruct('DATA.keyValue.root.m_decodeKey');
-            directHSeqGroup = sourceFile.getBlockStruct('DATA.keyValue.root.m_directHSeqGroup');
-        }
-        this.decoderArray = sourceFile.getBlockStruct('ANIM.keyValue.root.m_decoderArray');
-        if (directHSeqGroup) {
-            (async () => {
-                this.directHSeqGroup = await getSequenceGroup(this.repository, directHSeqGroup, this);
-            })();
-        }
-        this.setAnimationGroupResourceData(localAnimArray, decodeKey);
-        const anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
-        if (anims) {
-            const loadedAnim = new Source2Animation(this, '');
-            loadedAnim.setAnimDatas(anims);
-            this._changemyname = this._changemyname || [];
-            this._changemyname.push(loadedAnim);
-            /*let m_animArray = anims.m_animArray;
-            for (let i = 0; i < m_animArray.length; i++) {
-            }*/
-        }
-        this.loaded = true;
-    }
-    setAnimationGroupResourceData(localAnimArray, decodeKey) {
-        this.localAnimArray = localAnimArray;
-        this.decodeKey = decodeKey;
-        //this.getAnim(0);
-        if (localAnimArray) {
-            for (const localAnim of localAnimArray) {
-                getAnim(this.repository, localAnim, this);
-                //console.info(anim);
-            }
-        }
-    }
-    getAnim(animIndex) {
-        if (this.localAnimArray && this.localAnimArray[animIndex]) {
-            return getAnim(this.repository, this.localAnimArray[animIndex], this);
-        }
-        return null;
-    }
-    getAnimDesc(name) {
-        let animation;
-        for (const a of this.#_changemyname) {
-            animation = a.getAnimDesc(name);
-            if (animation) {
-                return animation;
-            }
-        }
-    }
-    matchActivity(activity, modifiers) {
-        if (this.directHSeqGroup) {
-            return this.directHSeqGroup.matchActivity(activity, modifiers);
-        }
-    }
-    getAnims() {
-        const anims = new Set();
-        for (const anim of this._changemyname) {
-            if (anim) {
-                anims.add(anim);
-            }
-        }
-        if (this.localAnimArray) {
-            for (const animName of this.localAnimArray) {
-                if (animName) {
-                    const anim = getAnim(this.repository, animName, this);
-                    if (anim) {
-                        anims.add(anim);
-                    }
-                }
-            }
-        }
-        return anims;
-    }
-    getAnimationsByActivity(activityName) {
-        const anims = [];
-        for (const anim of this._changemyname) {
-            if (anim) {
-                anims.push(...anim.getAnimationsByActivity(activityName));
-            }
-        }
-        if (this.localAnimArray) {
-            for (const animName of this.localAnimArray) {
-                if (animName) {
-                    const anim = getAnim(this.repository, animName, this);
-                    if (anim) {
-                        anims.push(...anim.getAnimationsByActivity(activityName));
-                    }
-                }
-            }
-        }
-        if (this.directHSeqGroup) {
-            anims.push(...this.directHSeqGroup.getAnimationsByActivity(activityName));
-        }
-        return anims;
-    }
-    getDecodeKey() {
-        return this.decodeKey;
-    }
-    get source2Model() {
-        return this.#source2Model;
-    }
-    getAnimationByName(animName) {
-        //return this.#internalAnimGroup?.getAnimationByName(animName);
-        for (const source2Animation of this.getAnims()) {
-            const anim = source2Animation.getAnimationByName(animName);
-            if (anim) {
-                return anim;
-            }
-        }
-    }
-    //TODO: remove setter and getter
-    set _changemyname(_changemyname) {
-        this.#_changemyname = _changemyname;
-    }
-    get _changemyname() {
-        return this.#_changemyname;
-    }
-}
-const seqGroupList = {};
-function getSequenceGroup(repository, seqGroupName, animGroup) {
-    let seqGroup = seqGroupList[seqGroupName];
-    if (!seqGroup) {
-        seqGroup = loadSequenceGroup(repository, seqGroupName, animGroup);
-    }
-    if (seqGroup) {
-        seqGroupList[seqGroupName] = seqGroup;
-    }
-    else {
-        //TODO; create dummy
-        console.error('No anim group loaded');
-    }
-    return seqGroup;
-}
-async function loadSequenceGroup(repository, seqGroupName, animGroup) {
-    repository = repository.toLowerCase();
-    seqGroupName = seqGroupName.replace(/\.(vseq_c$|vseq)/, '');
-    //seqGroupName = repository + seqGroupName;
-    const seqGroup = new Source2SeqGroup(animGroup);
-    await getVseq(repository, seqGroupName, seqGroup);
-    return seqGroup;
-}
-const pending$1 = {};
-async function getVseq(repository, seqGroupName, seqGroup) {
-    const seqFile = seqGroupName + '.vseq_c';
-    if (pending$1[seqFile]) {
-        return true;
-    }
-    pending$1[seqFile] = true;
-    await loadVseq(repository, seqFile, seqGroup);
-    /*
-    let promise = new Promise((resolve, reject) => {
-        fetch(new Request(seqFile)).then((response) => {
-            response.arrayBuffer().then(async (arrayBuffer) => {
-                await this.loadVseq(repository, seqFile, arrayBuffer, seqGroup);
-                pending[seqFile] = null;
-                resolve(true);
-            })
-        });
-    });
-    */
-    return true;
-}
-async function loadVseq(repository, fileName, seqGroup) {
-    const vseq = await new Source2FileLoader().load(repository, fileName);
-    if (vseq) {
-        seqGroup.setFile(vseq);
-    }
-}
-const animList = {};
-function getAnim(repository, animName, animGroup) {
-    if (!animName) {
-        return "";
-    }
-    const anim = animList[animName];
-    if (anim === undefined) {
-        loadAnim(repository, animName, animGroup).then(anim => {
-            animList[animName] = anim;
-            animGroup._changemyname.push(anim);
-        });
-        return null;
-    }
-    else {
-        return anim;
-    }
-}
-async function loadAnim(repository, animName, animGroup) {
-    animName = animName.toLowerCase();
-    animName = animName.replace(/\.(vanim_c$|vanim$)/, '');
-    //this.fileName = animName;
-    //animName = repository + animName;
-    //this.animName = animName;
-    const anim = new Source2Animation(animGroup, animName);
-    await getVanim(repository, animName, anim);
-    return anim;
-}
-async function getVanim(repository, animName, anim) {
-    const animFile = animName + '.vanim_c';
-    if (pending$1[animFile]) {
-        return true;
-    }
-    pending$1[animFile] = true;
-    /*
-                fetch(new Request(animFile)).then((response) => {
-                    response.arrayBuffer().then((arrayBuffer) => {
-                        this.loadVanim(repository, animFile, arrayBuffer, anim);
-                    })
-                });
-                */
-    loadVanim(repository, animFile, anim);
-    /*
-    let promise = new Promise((resolve, reject) => {
-        fetch(new Request(animFile)).then((response) => {
-            response.arrayBuffer().then(async (arrayBuffer) => {
-                this.loadVanim(repository, animFile, arrayBuffer, anim);
-                pending[animFile] = null;
-                resolve(true);
-            })
-        });
-    });
-    */
-    return true;
-}
-async function loadVanim(repository, fileName, anim) {
-    const vanim = await new Source2FileLoader().load(repository, fileName);
-    if (vanim) {
-        anim.setFile(vanim);
-        const dataBlock = vanim.blocks.DATA;
-        if (dataBlock) {
-            anim.setAnimDatas(vanim.getBlockStruct('DATA.structs.AnimationResourceData_t') || vanim.getBlockStruct('DATA.keyValue.root'));
-        }
-    }
-    //this.fileLoaded(model);TODOv3
-}
-
-const pending = {};
-async function loadAnimGroup(source2Model, repository, animGroupName) {
-    animGroupName = animGroupName.toLowerCase();
-    animGroupName = animGroupName.replace(/\.(vagrp_c$|vagrp$)/, '');
-    const animGroup = new Source2AnimGroup(source2Model, repository);
-    await getVagrp(repository, animGroupName, animGroup);
-    return animGroup;
-}
-async function getVagrp(repository, animGroupName, animGroup) {
-    const agrpFile = animGroupName + '.vagrp_c';
-    if (pending[agrpFile]) {
-        return true;
-    }
-    pending[agrpFile] = true;
-    await loadVagrp(repository, agrpFile, animGroup);
-    /*
-    let promise = new Promise((resolve, reject) => {
-        fetch(new Request(agrpFile)).then((response) => {
-            response.arrayBuffer().then(async (arrayBuffer) => {
-                await this.#loadVagrp(repository, agrpFile, arrayBuffer, animGroup);
-                pending[agrpFile] = null;
-                resolve(true);
-            })
-        });
-    });
-    0*/
-    return true;
-}
-async function loadVagrp(repository, fileName, animGroup) {
-    const vagrp = await new Source2FileLoader().load(repository, fileName);
-    if (vagrp) {
-        animGroup.setFile(vagrp);
-        const dataBlock = vagrp.blocks.DATA;
-        if (dataBlock) {
-            //animGroup.meshesNames = vagrp.getPermModelData('m_meshGroups');
-            vagrp.getPermModelData('m_refMeshes');
-        }
-    }
-    //this.fileLoaded(model);TODOv3
-}
-
-const AnimManager = new (function () {
-    const animGroupList = {};
-    class AnimManager {
-        async getAnimGroup(source2Model, repository, animGroupName) {
-            let animGroup = animGroupList[animGroupName];
-            if (!animGroup) {
-                animGroup = await loadAnimGroup(source2Model, repository, animGroupName);
-            }
-            if (animGroup) {
-                animGroupList[animGroupName] = animGroup;
-            }
-            else {
-                //TODO; create dummy
-                console.error('No anim group loaded');
-            }
-            return animGroup;
-        }
-        removeAnimGroup(animGroupName) {
-            animGroupList[animGroupName] = null;
-        }
-    }
-    return AnimManager;
-}());
-
-const EMPTY_MODIFIERS = new Set();
-class Source2Animations {
-    #animations = [];
-    addAnimations(animations) {
-        this.#animations.push(...animations);
-    }
-    getAnimations() {
-        return this.#animations;
-    }
-    getAnimation(activityName, activityModifiers = EMPTY_MODIFIERS) {
-        for (const animation of this.#animations) {
-            if (animation.matchModifiers(activityName, activityModifiers)) {
-                return animation;
-            }
-        }
-        // Try without modifiers
-        for (const animation of this.#animations) {
-            if (animation.matchModifiers(activityName, EMPTY_MODIFIERS)) {
-                return animation;
-            }
-        }
-    }
-    getBestAnimation(activityName, activityModifiers) {
-        let bestMatch = this.getAnimation(activityName);
-        let bestScore = bestMatch ? 0 : -1;
-        for (const animDesc of this.#animations) {
-            /*if (animDesc.matchModifiers(activityName, activityModifiers)) {
-                return animDesc;
-            }*/
-            const score = animDesc.modifiersScore(activityName, activityModifiers);
-            if (score > bestScore) {
-                bestMatch = animDesc;
-                bestScore = score;
-            }
-        }
-        return bestMatch;
-    }
-}
-
 class Source2Model {
     #internalAnimGroup;
     #includeModels = [];
@@ -24600,20 +24595,6 @@ class Source2Model {
     }
     createInstance(isDynamic) {
         return new Source2ModelInstance(this, isDynamic);
-    }
-    getBodyNumber(bodygroups) {
-        let bodyPartCount = 1;
-        let bodyPartNumber = 0;
-        //for (let bodyPartIndex = 0; bodyPartIndex < this.bodyParts.size; ++bodyPartIndex) {
-        //			const bodyPart = this.bodyParts[bodyPartIndex];
-        for (const [_, bodyPart] of this.bodyParts) {
-            if (bodyPart && bodyPart.models && (bodyPart.models.length > 1)) {
-                const bodyPartModel = bodygroups[bodyPart.name];
-                bodyPartNumber += (bodyPartModel ? bodyPartModel.modelId : 0) * bodyPartCount;
-                bodyPartCount *= (bodyPart.models.length);
-            }
-        }
-        return bodyPartNumber;
     }
     getBones() {
         const skeleton = this.vmdl.getPermModelData('m_modelSkeleton');
@@ -32499,7 +32480,6 @@ class SourceEngineVVDLoader extends SourceBinaryLoader {
 class Animation {
     #name;
     weight = 1;
-    #frame = 0;
     #frameCount = 0;
     #looping = false;
     //#sequence;
@@ -32539,6 +32519,12 @@ class Animation {
     getFrame(id) {
         id = Math.round(id) % Math.max(this.#frameCount, 1);
         return this.#frames[id];
+    }
+    setLooping(looping) {
+        this.#looping = looping;
+    }
+    isLooping() {
+        return this.#looping;
     }
     toSMD(header = SMD_HEADER) {
         const lines = [];
@@ -35105,6 +35091,9 @@ class AnimationDescription {
     set frame(frame) {
         this.#frame = Math.floor(frame % this.#animation.frameCount);
     }
+    get frame() {
+        return this.#frame;
+    }
     get name() {
         return this.#animation.name;
     }
@@ -35145,6 +35134,7 @@ class Animations {
         return true;
     }
     #computeWeights() {
+        // do nothing.
     }
 }
 
@@ -37283,8 +37273,8 @@ class Source1ModelInstance extends Entity {
         if (bones) {
             for (const bone of bones) {
                 const skeletonBone = this.#skeleton.addBone(bone.boneId, bone.name);
-                skeletonBone._initialQuaternion = quat.copy(quat.create(), bone.quaternion);
-                skeletonBone._initialPosition = vec3.copy(vec3.create(), bone.position);
+                quat.copy(skeletonBone._initialQuaternion, bone.quaternion);
+                vec3.copy(skeletonBone._initialPosition, bone.position);
                 const parentBoneId = bone.parentBone;
                 skeletonBone.poseToBone = bone.poseToBone;
                 if (parentBoneId >= 0) {
@@ -40526,28 +40516,14 @@ class SourceEngineVMTLoaderClass {
 const SourceEngineVMTLoader = new SourceEngineVMTLoaderClass();
 registerLoader('SourceEngineVMTLoader', SourceEngineVMTLoader);
 
-const PARAM_TYPE_INT = 'int';
-const PARAM_TYPE_FLOAT = 'float';
-const PARAM_TYPE_VECTOR = 'vector3';
-const PARAM_TYPE_VECTOR3 = 'vector3';
-const PARAM_TYPE_COLOR = 'color';
-const PARAM_TYPE_BOOL = 'bool';
-const PARAM_TYPE_STRING = 'string';
-const PARAM_TYPE_ID = 'elementid';
-const PARAM_TYPE_UNKNOWN = 'unknown';
-const ELEMENT_TYPES = [
-    PARAM_TYPE_UNKNOWN,
-    PARAM_TYPE_ID,
-    PARAM_TYPE_INT,
-    PARAM_TYPE_FLOAT,
-    PARAM_TYPE_BOOL,
-    PARAM_TYPE_STRING,
-    '', //TODO	time
-    '', //TODO color
-    '', //TODO verctor2
-    PARAM_TYPE_VECTOR,
-    '', //TODO verctor4
-];
+const DEFAULT_MAX_PARTICLES = 1000;
+const HARD_MAX_PARTICLES = 5000;
+const PARTICLE_ORIENTATION_SCREEN_ALIGNED = 0; //Point towards camera
+const PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED = 1; //parallel to camera axis
+const PARTICLE_ORIENTATION_WORLD_Z_ALIGNED = 2;
+const PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL = 3;
+const PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL = 4;
+const PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION = 5;
 
 class Color {
     r;
@@ -40626,6 +40602,29 @@ class Color {
 }
 const BLACK = new Color();
 const WHITE = new Color(255, 255, 255, 255);
+
+const PARAM_TYPE_INT = 'int';
+const PARAM_TYPE_FLOAT = 'float';
+const PARAM_TYPE_VECTOR = 'vector3';
+const PARAM_TYPE_VECTOR3 = 'vector3';
+const PARAM_TYPE_COLOR = 'color';
+const PARAM_TYPE_BOOL = 'bool';
+const PARAM_TYPE_STRING = 'string';
+const PARAM_TYPE_ID = 'elementid';
+const PARAM_TYPE_UNKNOWN = 'unknown';
+const ELEMENT_TYPES = [
+    PARAM_TYPE_UNKNOWN,
+    PARAM_TYPE_ID,
+    PARAM_TYPE_INT,
+    PARAM_TYPE_FLOAT,
+    PARAM_TYPE_BOOL,
+    PARAM_TYPE_STRING,
+    '', //TODO	time
+    '', //TODO color
+    '', //TODO verctor2
+    PARAM_TYPE_VECTOR,
+    '', //TODO verctor4
+];
 
 /**
  * TODO
@@ -41041,15 +41040,6 @@ DEFPARTICLE_ATTRIBUTE(HITBOX_RELATIVE_XYZ, 15);
  * TODO
  */
 
-const DEFAULT_MAX_PARTICLES = 1000;
-const HARD_MAX_PARTICLES = 5000;
-const PARTICLE_ORIENTATION_SCREEN_ALIGNED = 0; //Point towards camera
-const PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED = 1; //parallel to camera axis
-const PARTICLE_ORIENTATION_WORLD_Z_ALIGNED = 2;
-const PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL = 3;
-const PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL = 4;
-const PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION = 5;
-
 var _a;
 const MAX_PARTICLE_CONTROL_POINTS = 64;
 let systemNumber = 0;
@@ -41100,7 +41090,7 @@ class SourceEngineParticleSystem extends Entity {
     emitters = {}; //new Array();//todo transform to map
     initializers = {}; // = new Array();//todo transform to map
     operators = {}; //new Array();//todo transform to map
-    forces = new Map(); //new Array();//todo transform to map
+    forces = new Map();
     constraints = {}; //new Array();//todo transform to map
     controlPoints = [];
     childrenSystems = []; //todo transform to map
@@ -46089,6 +46079,9 @@ class SourceEngineMaterial extends Material {
             this.variables.set(key, value);
         }
     }
+    clone() {
+        return new SourceEngineMaterial(this.parameters);
+    }
 }
 //TODO: store regexes
 function readColor(value, color) {
@@ -47206,6 +47199,7 @@ class SourceEngineParticleOperator {
     applyConstraint(particle) { }
     doRender(particle, elapsedTime, material) { }
     initRenderer(particleSystem) { }
+    updateParticles(particleSystem, particleList, elapsedTime) { }
     emitParticle(creationTime, elapsedTime) {
         if (!this.particleSystem) {
             return;
@@ -54217,6 +54211,93 @@ function GetSource2ParticleOperator(operatorName) {
     return Source2ParticleOperators.get(operatorName);
 }
 
+class Source2Snapshot {
+    particleCount = 0;
+    attributes = {};
+    file;
+    setParticleCount(particleCount) {
+        this.particleCount = particleCount;
+    }
+}
+
+const Source2SnapshotLoader = new (function () {
+    class Source2SnapshotLoader {
+        async load(repository, filename) {
+            filename = filename.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
+            const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
+            if (snapFile) {
+                return this.loadSnapshot(snapFile);
+            }
+            else {
+                return null;
+            }
+        }
+        loadSnapshot(snapFile) {
+            const snapShot = new Source2Snapshot();
+            snapShot.file = snapFile;
+            const dataBlock = snapFile.getBlockByType('DATA');
+            const snapBlock = snapFile.getBlockByType('SNAP');
+            if (dataBlock && snapBlock) {
+                const particleCount = Number(dataBlock.getKeyValue('num_particles'));
+                snapShot.setParticleCount(particleCount);
+                const snapshotAttributes = dataBlock.getKeyValue('attributes') ?? [];
+                const snapshotStringList = dataBlock.getKeyValue('string_list') ?? [];
+                const reader = new BinaryReader(snapBlock.datas);
+                let attributeValue;
+                let bones;
+                let weights;
+                for (const snapshotAttribute of snapshotAttributes) {
+                    reader.seek(Number(snapshotAttribute.data_offset));
+                    switch (snapshotAttribute.type) {
+                        case 'float3':
+                        case 'vector':
+                            attributeValue = [];
+                            for (let i = 0; i < particleCount; ++i) {
+                                attributeValue.push(reader.getVector3());
+                            }
+                            break;
+                        case 'skinning':
+                            attributeValue = [];
+                            for (let i = 0; i < particleCount; ++i) {
+                                const skinning = Object.create(null);
+                                bones = [];
+                                weights = [];
+                                for (let i = 0; i < 4; ++i) {
+                                    bones.push(snapshotStringList[reader.getUint16()]);
+                                }
+                                for (let i = 0; i < 4; ++i) {
+                                    weights.push(reader.getFloat32());
+                                }
+                                skinning.bones = bones;
+                                skinning.weights = weights;
+                                attributeValue.push(skinning);
+                            }
+                            break;
+                        case 'string':
+                            attributeValue = [];
+                            for (let i = 0; i < particleCount; ++i) {
+                                attributeValue.push(snapshotStringList[reader.getUint32()]);
+                            }
+                            break;
+                        case 'float':
+                            attributeValue = [];
+                            for (let i = 0; i < particleCount; ++i) {
+                                attributeValue.push(reader.getFloat32());
+                            }
+                            break;
+                        default:
+                            attributeValue = null;
+                            console.error('Unknow snapshot attribute type', snapshotAttribute.type, snapshotAttribute, snapFile, Number(snapshotAttribute.data_size) / particleCount);
+                    }
+                    snapShot.attributes[snapshotAttribute.name] = attributeValue;
+                }
+            }
+            return snapShot;
+        }
+    }
+    return Source2SnapshotLoader;
+}());
+
 const PARTICLE_FIELD_POSITION = 0;
 const PARTICLE_FIELD_POSITION_PREVIOUS = 2;
 const PARTICLE_FIELD_RADIUS = 3;
@@ -54744,93 +54825,6 @@ DEFPARTICLE_ATTRIBUTE(HITBOX_RELATIVE_XYZ, 15);
 /**
  * TODO
  */
-
-class Source2Snapshot {
-    particleCount = 0;
-    attributes = {};
-    file;
-    setParticleCount(particleCount) {
-        this.particleCount = particleCount;
-    }
-}
-
-const Source2SnapshotLoader = new (function () {
-    class Source2SnapshotLoader {
-        async load(repository, filename) {
-            filename = filename.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
-            const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
-            if (snapFile) {
-                return this.loadSnapshot(snapFile);
-            }
-            else {
-                return null;
-            }
-        }
-        loadSnapshot(snapFile) {
-            const snapShot = new Source2Snapshot();
-            snapShot.file = snapFile;
-            const dataBlock = snapFile.getBlockByType('DATA');
-            const snapBlock = snapFile.getBlockByType('SNAP');
-            if (dataBlock && snapBlock) {
-                const particleCount = Number(dataBlock.getKeyValue('num_particles'));
-                snapShot.setParticleCount(particleCount);
-                const snapshotAttributes = dataBlock.getKeyValue('attributes') ?? [];
-                const snapshotStringList = dataBlock.getKeyValue('string_list') ?? [];
-                const reader = new BinaryReader(snapBlock.datas);
-                let attributeValue;
-                let bones;
-                let weights;
-                for (const snapshotAttribute of snapshotAttributes) {
-                    reader.seek(Number(snapshotAttribute.data_offset));
-                    switch (snapshotAttribute.type) {
-                        case 'float3':
-                        case 'vector':
-                            attributeValue = [];
-                            for (let i = 0; i < particleCount; ++i) {
-                                attributeValue.push(reader.getVector3());
-                            }
-                            break;
-                        case 'skinning':
-                            attributeValue = [];
-                            for (let i = 0; i < particleCount; ++i) {
-                                const skinning = Object.create(null);
-                                bones = [];
-                                weights = [];
-                                for (let i = 0; i < 4; ++i) {
-                                    bones.push(snapshotStringList[reader.getUint16()]);
-                                }
-                                for (let i = 0; i < 4; ++i) {
-                                    weights.push(reader.getFloat32());
-                                }
-                                skinning.bones = bones;
-                                skinning.weights = weights;
-                                attributeValue.push(skinning);
-                            }
-                            break;
-                        case 'string':
-                            attributeValue = [];
-                            for (let i = 0; i < particleCount; ++i) {
-                                attributeValue.push(snapshotStringList[reader.getUint32()]);
-                            }
-                            break;
-                        case 'float':
-                            attributeValue = [];
-                            for (let i = 0; i < particleCount; ++i) {
-                                attributeValue.push(reader.getFloat32());
-                            }
-                            break;
-                        default:
-                            attributeValue = null;
-                            console.error('Unknow snapshot attribute type', snapshotAttribute.type, snapshotAttribute, snapFile, Number(snapshotAttribute.data_size) / particleCount);
-                    }
-                    snapShot.attributes[snapshotAttribute.name] = attributeValue;
-                }
-            }
-            return snapShot;
-        }
-    }
-    return Source2SnapshotLoader;
-}());
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
 const vec$8 = vec3.create();

@@ -100,12 +100,14 @@ declare class Animation_2 {
     [Symbol.iterator]: () => ArrayIterator<[number, AnimationFrame]>;
     addFrame(animationFrame: AnimationFrame): void;
     addBone(bone: AnimationBone): void;
-    get name(): any;
+    get name(): string;
     get frameCount(): number;
     set fps(fps: number);
     get fps(): number;
     get bones(): AnimationBone[];
     getFrame(id: number): AnimationFrame | undefined;
+    setLooping(looping: boolean): void;
+    isLooping(): boolean;
     toSMD(header?: string): string;
 }
 
@@ -170,13 +172,14 @@ export declare const ATTRIBUTE_CHANGED = "attributechanged";
 export declare type AttributeChangedEventData = PropertyChangedEventData;
 
 export declare class AudioGroup {
+    #private;
     name: string;
-    muted: boolean;
     groups: Map<any, any>;
     audioList: Set<HTMLMediaElement>;
     constructor(name: string);
-    mute(mute: any): void;
-    getGroup(groupPath: any): any;
+    mute(mute: boolean): void;
+    isMute(): boolean;
+    getGroup(groupPath: string[]): AudioGroup;
     createSubGroup(name: any): AudioGroup;
     playAudio(audio: any): void;
 }
@@ -185,7 +188,7 @@ export declare class AudioMixer {
     static master: AudioGroup;
     static muteGroup(groupName: string, mute?: boolean): void;
     static mute(mute?: boolean): void;
-    static getGroup(groupName?: string): any;
+    static getGroup(groupName?: string): AudioGroup;
     static playAudio(groupName: any, audio: any): void;
 }
 
@@ -574,7 +577,7 @@ export declare class BufferAttribute {
     _buffer?: WebGLBuffer;
     divisor: number;
     constructor(array: typeof TypedArrayProto, itemSize: number);
-    get type(): any;
+    get type(): number;
     set usage(usage: BufferUsage);
     set target(target: GLenum);
     set array(array: typeof TypedArrayProto);
@@ -905,7 +908,7 @@ declare class Choreography {
     sceneLength: number;
     onStop: () => void;
     constructor(repository: string, name?: string);
-    getRepository(): any;
+    getRepository(): string;
     /**
      * Add an event
      * @param {Object ChoreographyEvent} event The event to add
@@ -1387,7 +1390,7 @@ declare class Choreography {
          arcLength: number;
          getPosition(t: any, out?: vec3): vec3;
          getArcLength(divisions?: number): number;
-         getPoints(divisions?: number): any[];
+         getPoints(divisions?: number): ([number, number, number] | Float32Array<ArrayBufferLike>)[];
          getAppropriateDivision(division: any): any;
      }
 
@@ -2245,7 +2248,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | Grid | CameraFrustum;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -3099,6 +3102,14 @@ declare class Choreography {
              execute(variables: any, proxyParams: any, time: any): void;
          }
 
+         declare class Hitbox {
+             name: string;
+             boundingBoxMin: vec3;
+             boundingBoxMax: vec3;
+             parent: Entity;
+             constructor(name: string, boundingBoxMin: vec3, boundingBoxMax: vec3, parent: Entity);
+         }
+
          export declare class HitboxHelper extends Entity {
              #private;
              constructor();
@@ -3862,7 +3873,7 @@ declare class Choreography {
              surfacepropidx: number;
              contents: number;
              constructor(skeleton?: Skeleton);
-             get skeleton(): any;
+             get skeleton(): Skeleton;
              set quaternion(quaternion: quat);
              get quaternion(): quat;
              set position(position: vec3);
@@ -3901,6 +3912,36 @@ declare class Choreography {
              flags: number;
              numBoneStateChanges: number;
              boneStateChangeOffset: number;
+         }
+
+         declare class MdlStudioAnim {
+             readonly animValuePtrRot: MdlStudioAnimValuePtr;
+             readonly animValuePtrPos: MdlStudioAnimValuePtr;
+             readonly rawpos: vec3;
+             readonly rawrot: quat;
+             readonly rawrot2: quat;
+             flags: number;
+             bone: number;
+             nextOffset: number;
+             getRotValue(): MdlStudioAnimValuePtr | null;
+             getPosValue(): MdlStudioAnimValuePtr | null;
+             getQuaternion48(): quat;
+             getQuaternion64(): quat;
+             /**
+              * TODO
+              */
+             getRot(rot: vec3, mdl: SourceMdl, bone: MdlBone, frame: number): vec3;
+             getPos(pos: vec3, mdl: SourceMdl, bone: MdlBone, frame: number): vec3;
+             readValue(mdl: SourceMdl, frame: number, offset: number): number;
+         }
+
+         /**
+          *	MdlStudioAnimValuePtr
+          */
+         declare class MdlStudioAnimValuePtr {
+             offset: number[];
+             base: number;
+             getAnimValue2(i: number): number;
          }
 
          declare class MdlStudioAutoLayer {
@@ -4778,7 +4819,7 @@ declare class Choreography {
              doNothing(): void;
              reset(): void;
              getOperatorFade(): number;
-             getInputValue(inputField: number, particle: Source2Particle): any;
+             getInputValue(inputField: number, particle: Source2Particle): number | vec3;
              getInputValueAsVector(inputField: number, particle: Source2Particle, v: vec4): void;
              setOutputValue(outputField: number, value: any, particle: Source2Particle): void;
              initMultipleOverride(): boolean;
@@ -4936,7 +4977,7 @@ declare class Choreography {
              lineTo(p1: any): void;
              quadraticCurveTo(p1: any, p2: any): void;
              cubicCurveTo(p1: any, p2: any, p3: any): void;
-             getPoints(divisions?: number): any[];
+             getPoints(divisions?: number): ([number, number, number] | Float32Array<ArrayBufferLike>)[];
              fromSvgPath(path: any): void;
          }
 
@@ -5230,7 +5271,7 @@ declare class Choreography {
              range?: number;
          };
 
-         export declare function Polygonise(/*GRIDCELL */ grid: any, /*double */ isolevel: any, /*TRIANGLE **/ triangles: any): any;
+         export declare function Polygonise(/*GRIDCELL */ grid: any, /*double */ isolevel: any, /*TRIANGLE **/ triangles: any): number;
 
          export declare class PositionAlongPathRandom extends SourceEngineParticleOperator {
              static functionName: string;
@@ -5602,7 +5643,7 @@ declare class Choreography {
              positionAt(distance: number, position: vec3): void;
              intersectTriangle(v0: vec3, v1: vec3, v2: vec3, intersectionPoint: vec3): boolean;
              intersectSphere(position: any, radius: any, scale: any, intersectionPoint1: any, intersectionPoint2: any): boolean;
-             distanceSqToSegment(v0: any, v1: any, optionalPointOnRay: any, optionalPointOnSegment: any): any;
+             distanceSqToSegment(v0: any, v1: any, optionalPointOnRay: any, optionalPointOnSegment: any): number;
              createIntersection(position: any, normal: any, uv: any, entity: any, distanceFromRay: any): Intersection;
          }
 
@@ -6580,7 +6621,12 @@ declare class Choreography {
              static getShaderSource(type: ShaderType, name: string, invalidCustomShaders?: boolean): WebGLShaderSource | undefined;
              static setCustomSource(type: ShaderType, name: string, source: string): void;
              static getCustomSourceAnnotations(name: string): any[];
-             static getIncludeAnnotations(includeName: string): any;
+             static getIncludeAnnotations(includeName: string): {
+                 type: any;
+                 column: any;
+                 row: number;
+                 text: any;
+             }[];
              static get shaderList(): MapIterator<string>;
              static resetShadersSource(): void;
              static set displayCompileError(displayCompileError: boolean);
@@ -6898,7 +6944,7 @@ declare class Choreography {
              setFlexes(flexes?: {}): void;
              resetFlexParameters(): void;
              playDefaultAnim(): Promise<void>;
-             getHitboxes(): any[];
+             getHitboxes(): Hitbox[];
              replaceMaterial(material: any, recursive?: boolean): void;
              resetMaterial(recursive?: boolean): void;
              getAnimations(): Promise<Set<string>>;
@@ -7021,8 +7067,8 @@ declare class Choreography {
              getDecoderArray(): any;
              getSegment(segmentIndex: any): any;
              getAnimations(animations?: Set<unknown>): Promise<Set<unknown>>;
-             getAnimationByActivity(activityName: any, activityModifiers: any): any[];
-             getAnimationsByActivity(activityName: any): any[];
+             getAnimationByActivity(activityName: any, activityModifiers: any): (number | Source2AnimationDesc)[];
+             getAnimationsByActivity(activityName: any): Source2AnimationDesc[];
              get animArray(): any;
              getAnimationByName(animName: any): Source2AnimationDesc;
          }
@@ -7165,15 +7211,15 @@ declare class Choreography {
              getVertexCount(bufferId: any): any;
              getIndices(bufferId: any): any;
              getVertices(bufferId: any): any;
-             getNormals(bufferId: any): any[];
+             getNormals(bufferId: any): number[];
              getCoords(bufferId: any): any;
              getBoneIndices(bufferId: any): any;
              getBoneWeight(bufferId: any): any;
              getPositionArray(bufferId: any): any[];
-             getNormalArray(bufferId: any): any[];
+             getNormalArray(bufferId: any): number[];
              getCoordArray(bufferId: any): any[];
              getBoneIndiceArray(bufferId: any): any[];
-             getBoneWeightArray(bufferId: any): any[];
+             getBoneWeightArray(bufferId: any): number[];
              getTangentArray(bufferId: any): any[];
              getBinormalArray(bufferId: any): any[];
              getWidth(): any;
@@ -7208,7 +7254,7 @@ declare class Choreography {
              getKeyValue(path: any): any;
              getIndices(bufferId: any): any;
              getVertices(bufferId: any): any;
-             getNormalsTangents(bufferId: any): any[][];
+             getNormalsTangents(bufferId: any): number[][];
              getCoords(bufferId: any): any;
              getNormal(bufferId: any): any;
              getTangent(bufferId: any): any;
@@ -7361,7 +7407,7 @@ declare class Choreography {
              hasAnimations: true;
              constructor(sourceModel: Source2Model, isDynamic: any);
              setBodyGroup(name: string, choice: number): void;
-             get skeleton(): any;
+             get skeleton(): Skeleton;
              set position(position: vec3);
              get position(): vec3;
              addChild(child: any): Entity;
@@ -8100,7 +8146,10 @@ declare class Choreography {
              static copyMaterial(repositoryName: any, sourcePath: any, destPath: any, searchPaths: any): Promise<void>;
              static addRepository(repositoryPath: any): void;
              static getMaterialList(): Promise<{
-                 files: any[];
+                 files: {
+                     name: any;
+                     files: any[];
+                 }[];
              }>;
          }
 
@@ -8108,7 +8157,7 @@ declare class Choreography {
              #private;
              load(repository: string, path: string): Promise<SourceMdl | null>;
              parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceMdl;
-             _parseAnimSection(reader: any, animDesc: any, frameIndex: any): any[];
+             _parseAnimSection(reader: any, animDesc: any, frameIndex: any): MdlStudioAnim[];
          }
 
          /**
@@ -8693,8 +8742,8 @@ declare class Choreography {
              fileName: string;
              name: string;
              mdl: SourceMdl;
-             vvd: any;
-             vtx: any;
+             vvd: SourceVvd;
+             vtx: SourceVtx;
              requiredLod: number;
              drawBodyPart: {};
              currentSkin: number;
@@ -8768,7 +8817,7 @@ declare class Choreography {
              fixupTableStart: number;
              vertexDataStart: number;
              tangentDataStart: number;
-             getVertices(lodLevel: number): any[];
+             getVertices(lodLevel: number): SourceVvdVertex[];
          }
 
          declare class SourceVvdBoneWeight {
@@ -9599,7 +9648,7 @@ declare class Choreography {
          }
 
          export declare class TRIANGLE {
-             p: vec3[];
+             p: [vec3, vec3, vec3];
          }
 
          export declare class Triangles extends Mesh {
@@ -9962,12 +10011,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#37656@#webAssembly"?: any;
-             "__#37656@#HEAPU8"?: Uint8Array;
+             "__#241@#webAssembly"?: any;
+             "__#241@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#37656@#initHeap"(): void;
+             "__#241@#initHeap"(): void;
          };
 
          export { }

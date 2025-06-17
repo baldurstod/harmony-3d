@@ -99,14 +99,15 @@ export class MapEntity extends Entity {
 	static incrementalId = 0;
 	classname: string;
 	outputs = [];
-	m_vecVelocity = vec3.create();
+	readonly m_vecVelocity = vec3.create();
 	m_flMoveDoneTime = -1;
 	m_flLocalTime = 0;
 	f = 0;
-	keys = new Map();
+	keys = new Map<string, any/*TODO: improve type*/>();
 	targetName;
 	parentName;
 	m;
+
 	constructor(classname: string) {
 		super({ name: classname });
 		this.classname = classname;

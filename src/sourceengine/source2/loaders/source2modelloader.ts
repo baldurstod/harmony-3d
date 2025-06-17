@@ -10,6 +10,7 @@ import { Entity } from '../../../entities/entity';
 import { FileNameFromPath } from '../../../utils/utils';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { VERBOSE } from '../../../buildoptions';
+import { Source2File } from './source2file';
 
 const defaultMaterial = new MeshBasicMaterial();
 
@@ -154,7 +155,7 @@ export class Source2ModelLoader {
 	}
 
 	async loadMeshes(vmdl, callback) {
-		const promises = new Set();
+		const promises = new Set<Promise<Source2File>>();
 		const m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
 		const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
 		const m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');

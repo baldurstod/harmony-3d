@@ -407,7 +407,7 @@ export class Entity {
 	parentChanged(parent: Entity | null) { }
 
 	*getParentIterator() {
-		const ws = new WeakSet();
+		const ws = new WeakSet<Entity>();
 
 		let current = this._parent;
 
@@ -646,7 +646,7 @@ export class Entity {
 
 	getMeshList(): Set<Entity> {
 		const meshList = new Set<Entity>();
-		const treated = new WeakSet();
+		const treated = new WeakSet<Entity>();
 
 		let currentEntity: Entity | undefined = this;
 		const objectStack: Entity[] = [];
@@ -680,8 +680,8 @@ export class Entity {
 	}
 
 	getAllChilds(includeSelf: boolean) {
-		const ws = new WeakSet();
-		const childs = new Set();
+		const ws = new WeakSet<Entity>();
+		const childs = new Set<Entity>();
 		const objectStack: Entity[] = [];
 
 		let currentEntity: Entity | undefined = this;
@@ -740,7 +740,7 @@ export class Entity {
 	}
 
 	getChildList(type?: string) {
-		const ws = new WeakSet();
+		const ws = new WeakSet<Entity>();
 		const childs = new Set<Entity>();
 		const objectStack: Entity[] = [];
 
