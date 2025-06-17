@@ -1,21 +1,20 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-
-import { Bone } from './bone';
-import { Graphics } from '../graphics/graphics';//TODOv3: removeme
-import { Entity } from '../entities/entity';
-import { TextureManager } from '../textures/texturemanager'
-import { GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_NEAREST, GL_FLOAT, GL_RGBA, GL_RGBA32F, } from '../webgl/constants';
-import { BoundingBox } from '../math/boundingbox';
 import { MAX_HARDWARE_BONES } from '../constants';
-import { Texture } from '../textures/texture';
 import { registerEntity } from '../entities/entities';
-import { JSONArray, JSONObject } from '../types';
+import { Entity } from '../entities/entity';
+import { Graphics } from '../graphics/graphics';
 import { Material } from '../materials/material';
+import { BoundingBox } from '../math/boundingbox';
+import { Texture } from '../textures/texture';
+import { TextureManager } from '../textures/texturemanager';
+import { JSONObject } from '../types';
+import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../webgl/constants';
+import { Bone } from './bone';
 
 const identityMatrix = mat4.create();
 export class Skeleton extends Entity {
 	isSkeleton = true;
-	#bonesByName = new Map();
+	#bonesByName = new Map<string, Bone>();
 	#rootBone = new Bone({ name: 'root', boneId: 0, skeleton: this });
 	_bones: Bone[] = [];//TODOv3: rename set private
 	_dirty = true;

@@ -1,7 +1,6 @@
 import { Repositories } from '../../../repositories/repositories';
-import { customFetch } from '../../../utils/customfetch';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
-import { Source2ModelLoader } from '../loaders/source2modelloader'
+import { Source2ModelLoader } from '../loaders/source2modelloader';
 
 export class Source2ModelManager {
 	static #modelListPerRepository = {};

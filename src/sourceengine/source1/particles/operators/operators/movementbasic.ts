@@ -1,9 +1,8 @@
 import { vec3 } from 'gl-matrix';
-
+import { ExponentialDecay } from '../../../../../math/functions';
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR, PARAM_TYPE_FLOAT } from '../../constants';
-import { ExponentialDecay } from '../../../../../math/functions';
 
 const gravity_const = 0.5;
 const tempVec3 = vec3.create();
@@ -24,7 +23,7 @@ export class MovementBasic extends SourceEngineParticleOperator {
 		const gravity = this.getParameter('gravity');
 		const maxConstraintPasses = this.getParameter('max constraint passes');//TODO
 
-			//ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));
+		//ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));
 		//fltx4 adj_dt = ReplicateX4((pParticles->m_flDt / pParticles->m_flPreviousDt) * ExponentialDecay((1.0f-max(0.0,m_fDrag)), (1.0f/30.0f), pParticles->m_flDt));
 		const adj_dt = (elapsedTime / this.particleSystem.previousElapsedTime) * ExponentialDecay((1.0 - Math.max(0.0, drag)), (1.0 / 30.0), elapsedTime);
 		/*if (particle.previousElapsedTime) {

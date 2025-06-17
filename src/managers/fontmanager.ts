@@ -2,7 +2,7 @@ import { Font } from '../misc/font';
 import { customFetch } from '../utils/customfetch';
 
 export class FontManager {
-	static #fontList = new Map();
+	static #fontList = new Map<string, Map<string, Font>>();
 	static #fontsPath: URL;
 	static #manifestPromise?: Promise<any>;
 
@@ -60,17 +60,19 @@ export class FontManager {
 		return await this.#loadFont(name, style);
 	}
 
-	static async getFontList() {
-		const list: string[][] = [];
+	static async getFontList(): Promise<Map<string, Set<string>>> {
+		const list = new Map<string, Set<string>>();
 		const manifest = await this.#getManifest();
 
 		const fonts = manifest?.fonts;
 		if (fonts) {
 			for (const fontName in fonts) {
 				const font = fonts[fontName];
+				const styles = new Set<string>;
 				for (const styleName in font.styles) {
-					list.push([fontName, styleName]);
+					styles.add(styleName);
 				}
+				list.set(fontName, styles);
 			}
 		}
 		return list;

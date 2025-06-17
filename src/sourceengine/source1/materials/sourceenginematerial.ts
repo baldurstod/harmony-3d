@@ -648,6 +648,10 @@ export class SourceEngineMaterial extends Material {
 			this.variables.set(key, value);
 		}
 	}
+
+	clone(): SourceEngineMaterial {
+		return new SourceEngineMaterial(this.parameters);
+	}
 }
 
 //TODO: store regexes

@@ -1,4 +1,4 @@
-import { GraphicsEvents, GraphicsEvent, GraphicTickEvent } from '../../../graphics/graphicsevents';
+import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
@@ -10,7 +10,7 @@ export class Source1ParticleControler {
 	static speed = 1.0;
 	static visible?: boolean = true;
 	static #systemList: Record<string, SourceEngineParticleSystem> = {};//TODOv3: make map
-	static #activeSystemList = new Map();
+	static #activeSystemList = new Map<string, SourceEngineParticleSystem>();
 	static #pcfList: Record<string, SourcePCF> = {};
 	static #systemNameToPcf: Record<string, Record<string, string> | null> = {};
 	static #sourceEngineParticleSystem: typeof SourceEngineParticleSystem;

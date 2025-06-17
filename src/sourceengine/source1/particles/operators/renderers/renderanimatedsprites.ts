@@ -1,20 +1,20 @@
 import { quat, vec3 } from 'gl-matrix';
 
-import { Graphics } from '../../../../../graphics/graphics';
-import { Mesh } from '../../../../../objects/mesh';
-import { BufferGeometry } from '../../../../../geometry/buffergeometry';
-import { TextureManager } from '../../../../../textures/texturemanager';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
+import { BufferGeometry } from '../../../../../geometry/buffergeometry';
+import { Graphics } from '../../../../../graphics/graphics';
+import { DEG_TO_RAD } from '../../../../../math/constants';
+import { ceilPowerOfTwo } from '../../../../../math/functions';
+import { Mesh } from '../../../../../objects/mesh';
+import { Texture } from '../../../../../textures/texture';
+import { TextureManager } from '../../../../../textures/texturemanager';
+import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER } from '../../../../../webgl/constants';
+import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
+import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { Source1ParticleControler } from '../../source1particlecontroler';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_FLOAT } from '../../constants';
-import { DEG_TO_RAD } from '../../../../../math/constants';
-import { ceilPowerOfTwo } from '../../../../../math/functions';
-import { GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_NEAREST, GL_FLOAT, GL_RGBA, GL_RGBA32F } from '../../../../../webgl/constants';
-import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
-import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
-import { Texture } from '../../../../../textures/texture';
 
 const tempQuat = quat.create()
 const IDENTITY_QUAT = quat.create()

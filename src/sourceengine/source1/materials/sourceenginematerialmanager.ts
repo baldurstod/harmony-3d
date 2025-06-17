@@ -1,4 +1,5 @@
 import { getLoader } from '../../../loaders/loaderfactory';
+import { JSONObject } from '../../../types';
 import { customFetch } from '../../../utils/customfetch';
 import { SourceEngineMaterial } from './sourceenginematerial';
 
@@ -11,9 +12,9 @@ function cleanSource1MaterialName(name) {
 }
 
 export class SourceEngineMaterialManager {
-	static #fileListPerRepository = new Map();
-	static #materialList = new Map();
-	static #materialList2 = new Set();
+	static #fileListPerRepository = new Map<string, JSONObject | Promise<JSONObject>/*TODO: remove alternative*/>();
+	static #materialList = new Map<string, SourceEngineMaterial | Promise<SourceEngineMaterial>/*TODO: remove alternative*/>();
+	static #materialList2 = new Set<SourceEngineMaterial>();
 	static #materialListPerRepository = {};
 
 	static getMaterial(repositoryName, fileName, searchPaths?): Promise<SourceEngineMaterial> {
@@ -100,7 +101,7 @@ export class SourceEngineMaterialManager {
 		for (let [repositoryName, repository] of this.#fileListPerRepository) {
 			console.error(repositoryName, repository);
 			if (repository == null) {
-				repository = new Promise(async resolve => {
+				repository = new Promise<JSONObject>(async resolve => {
 					try {
 						const manifestUrl = repositoryName + 'materials_manifest.json';//todo variable
 						const response = await customFetch(manifestUrl);

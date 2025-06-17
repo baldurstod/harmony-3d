@@ -1,19 +1,17 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-
-import { Source2ModelAttachementInstance } from './source2modelattachement';
 import { Entity } from '../../../entities/entity';
-import { Group } from '../../../objects/group';
-import { SkeletalMesh } from '../../../objects/skeletalmesh';
-import { Mesh } from '../../../objects/mesh';
-import { Skeleton } from '../../../objects/skeleton';
-import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
-import { Source2MaterialManager } from '../materials/source2materialmanager';
-import { Interaction } from '../../../utils/interaction';
-import { Source2Model } from './source2model';
-import { Material } from '../../../materials/material';
 import { Animated } from '../../../interfaces/animated';
-import { pow2 } from '../../../math/functions';
+import { Material } from '../../../materials/material';
+import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
+import { Group } from '../../../objects/group';
+import { Mesh } from '../../../objects/mesh';
+import { SkeletalMesh } from '../../../objects/skeletalmesh';
+import { Skeleton } from '../../../objects/skeleton';
+import { Interaction } from '../../../utils/interaction';
+import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { Source2AnimationDesc } from './source2animationdesc';
+import { Source2Model } from './source2model';
+import { Source2ModelAttachementInstance } from './source2modelattachement';
 
 
 const identityVec3 = vec3.create();
@@ -37,9 +35,9 @@ export class Source2ModelInstance extends Entity implements Animated {
 	bodyParts = {};
 	poseParameters = {};
 	meshes = new Set<Mesh>();
-	attachements = new Map();
+	attachements = new Map<string, Source2ModelAttachementInstance>();
 	activity = '';
-	activityModifiers = new Set();
+	activityModifiers = new Set<string>();
 	sequences = {};
 	mainAnimFrame = 0;
 	animationSpeed = 1.0;
@@ -370,7 +368,6 @@ export class Source2ModelInstance extends Entity implements Animated {
 			this.attachements.set(attachement.name, attachementInstance);
 			attachements.addChild(attachementInstance);
 		}
-
 	}
 
 	getAnimations() {

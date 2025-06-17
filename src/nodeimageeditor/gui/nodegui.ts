@@ -1,16 +1,18 @@
 import { vec2, vec3 } from 'gl-matrix';
-import { createElement, defineHarmony2dManipulator, defineHarmonyToggleButton, hide, HTMLHarmony2dManipulatorElement, HTMLHarmonyToggleButtonElement, ManipulatorDirection } from 'harmony-ui';
+import { contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, zoomInSVG, zoomOutSVG } from 'harmony-svg';
+import { createElement, defineHarmony2dManipulator, defineHarmonyToggleButton, HTMLHarmony2dManipulatorElement, HTMLHarmonyToggleButtonElement, ManipulatorDirection } from 'harmony-ui';
+import { setTimeoutPromise } from 'harmony-utils';
 import { Graphics } from '../../graphics/graphics';
+import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
+import { TextureManager } from '../../textures/texturemanager';
+import { GL_CLAMP_TO_EDGE, GL_LINEAR, GL_TEXTURE_2D } from '../../webgl/constants';
+import { Input } from '../input';
 import { Node } from '../node';
+import { NodeParam, NodeParamType } from '../nodeparam';
 import { ApplySticker } from '../operations/applysticker';
 import { TextureLookup } from '../operations/texturelookup';
-import { TextureManager } from '../../textures/texturemanager';
-import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
-import { GL_TEXTURE_2D, GL_LINEAR, GL_CLAMP_TO_EDGE } from '../../webgl/constants';
+import { Output } from '../output';
 import { NodeImageEditorGui } from './nodeimageeditorgui';
-import { NodeParam, NodeParamType } from '../nodeparam';
-import { contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, zoomInSVG, zoomOutSVG } from 'harmony-svg';
-import { setTimeoutPromise } from 'harmony-utils';
 
 export const DELAY_BEFORE_REFRESH = 100;
 const FLOAT_VALUE_DECIMALS = 3;
@@ -109,7 +111,7 @@ export class NodeGui {
 	#htmlRectSelector: HTMLHarmony2dManipulatorElement;
 	#drag: string;
 	#htmlParamsContainer: HTMLElement;
-	_ioGui = new Map();
+	_ioGui = new Map<Input | Output, HTMLElement>();// TODO: set private
 	#refreshTimeout: number;
 	#nodeChanged: () => void;
 	#node: Node;
@@ -573,7 +575,7 @@ export class NodeGui {
 		node.revalidate();
 	}
 
-	#createIo(io) {
+	#createIo(io: Input | Output) {
 		const html = createElement('div', { class: 'node-image-editor-node-io' });
 		this._ioGui.set(io, html);
 		return html;

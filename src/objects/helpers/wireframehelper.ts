@@ -1,14 +1,11 @@
-import { Mesh } from '../mesh';
 import { Entity } from '../../entities/entity';
 import { Uint16BufferAttribute, Uint32BufferAttribute } from '../../geometry/bufferattribute';
-import { GL_LINES, GL_UNSIGNED_INT, GL_ELEMENT_ARRAY_BUFFER } from '../../webgl/constants';
+import { GL_ELEMENT_ARRAY_BUFFER, GL_LINES, GL_UNSIGNED_INT } from '../../webgl/constants';
+import { Mesh } from '../mesh';
 
 export class WireframeHelper extends Entity {
-	#meshToWireframe = new Map();
-	#wireframeToMesh = new Map();
-	constructor() {
-		super();
-	}
+	#meshToWireframe = new Map<Entity, Mesh>();
+	#wireframeToMesh = new Map<Mesh, Entity>();
 
 	parentChanged(parent) {
 		if (parent instanceof Entity) {

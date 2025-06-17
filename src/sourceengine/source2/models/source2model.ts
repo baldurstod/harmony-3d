@@ -1,13 +1,13 @@
 import { vec3, vec4 } from 'gl-matrix';
-
-import { Source2ModelInstance } from './source2modelinstance';
-import { Source2Animation } from './source2animation';
-import { Source2AnimGroup } from './source2animgroup';
-import { AnimManager } from './animmanager';
-import { Source2ModelAttachement } from './source2modelattachement';
-import { Source2SeqGroup } from '../animations/source2seqgroup';
+import { BufferGeometry } from '../../../geometry/buffergeometry';
 import { Source2Animations } from '../animations/source2animations';
+import { Source2SeqGroup } from '../animations/source2seqgroup';
+import { AnimManager } from './animmanager';
+import { Source2Animation } from './source2animation';
 import { Source2AnimationDesc } from './source2animationdesc';
+import { Source2AnimGroup } from './source2animgroup';
+import { Source2ModelAttachement } from './source2modelattachement';
+import { Source2ModelInstance } from './source2modelinstance';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
@@ -16,6 +16,9 @@ export interface BodyGroupChoice {
 	bodyGroup: string,
 	bodyGroupId: number,
 }
+
+export type BodyPart = BodyPartMesh[];
+export type BodyPartMesh = BufferGeometry[];
 
 export class Source2Model {
 	#internalAnimGroup;
@@ -30,9 +33,9 @@ export class Source2Model {
 	animGroups = new Set<Source2AnimGroup>();
 	materialRepository = null;
 	dirty = true;
-	geometries = new Set();
-	bodyParts = new Map();
-	attachements = new Map();
+	geometries = new Set<BufferGeometry>();
+	bodyParts = new Map<string, BodyPart>();
+	attachements = new Map<string, Source2ModelAttachement>();
 	#seqGroup?: Source2SeqGroup;
 	bodyGroups = new Set<string>();
 	bodyGroupsChoices = new Set<BodyGroupChoice>();
@@ -83,7 +86,7 @@ export class Source2Model {
 		return null;
 	}
 
-	addGeometry(geometry, bodyPartName, bodyPartModelId) {
+	addGeometry(geometry: BufferGeometry, bodyPartName: string, bodyPartModelId: number) {
 		if (bodyPartName !== undefined) {
 			let bodyPart = this.bodyParts.get(bodyPartName);
 			if (bodyPart === undefined) {
@@ -104,21 +107,6 @@ export class Source2Model {
 
 	createInstance(isDynamic) {
 		return new Source2ModelInstance(this, isDynamic);
-	}
-
-	getBodyNumber(bodygroups) {
-		let bodyPartCount = 1;
-		let bodyPartNumber = 0;
-		//for (let bodyPartIndex = 0; bodyPartIndex < this.bodyParts.size; ++bodyPartIndex) {
-		//			const bodyPart = this.bodyParts[bodyPartIndex];
-		for (const [_, bodyPart] of this.bodyParts) {
-			if (bodyPart && bodyPart.models && (bodyPart.models.length > 1)) {
-				const bodyPartModel = bodygroups[bodyPart.name];
-				bodyPartNumber += (bodyPartModel ? bodyPartModel.modelId : 0) * bodyPartCount;
-				bodyPartCount *= (bodyPart.models.length);
-			}
-		}
-		return bodyPartNumber;
 	}
 
 	getBones() {

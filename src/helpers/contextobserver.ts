@@ -1,6 +1,8 @@
-import { FirstPersonControl } from '../controls/firstpersoncontrol'
-import { OrbitControl } from '../controls/orbitcontrol'
-import { Graphics } from '../graphics/graphics'
+import { Camera } from '../cameras/camera';
+import { FirstPersonControl } from '../controls/firstpersoncontrol';
+import { OrbitControl } from '../controls/orbitcontrol';
+import { Graphics } from '../graphics/graphics';
+import { RenderTargetViewer } from '../utils/rendertargetviewer';
 
 function resizeCamera(context, camera) {
 	const w = context.getWidth() / 2.0;
@@ -13,11 +15,13 @@ function resizeCamera(context, camera) {
 	camera.aspectRatio = w / h;
 }
 
+export type ContextObserverTarget = Camera | FirstPersonControl | OrbitControl | RenderTargetViewer;
 
 class ContextObserverClass {
-	#observed = new Map();
-	#listeners = new Map();
+	#observed = new Map<EventTarget, Set<ContextObserverTarget>>();
+	#listeners = new Map<EventTarget, Set<string>>();
 	static #instance: ContextObserverClass;
+
 	constructor() {
 		if (ContextObserverClass.#instance) {
 			return ContextObserverClass.#instance;
@@ -50,7 +54,7 @@ class ContextObserverClass {
 		}
 	}
 
-	#addObserver(subject, dependent) {
+	#addObserver(subject: EventTarget, dependent: ContextObserverTarget) {
 		if (!this.#observed.has(subject)) {
 			this.#observed.set(subject, new Set());
 		}
@@ -67,7 +71,7 @@ class ContextObserverClass {
 
 	}
 
-	#createListeners(subject, dependent) {
+	#createListeners(subject: EventTarget, dependent) {
 		switch (true) {
 			case dependent.is('Camera'):
 			case dependent instanceof FirstPersonControl://TODO do it for any CameraControl?
@@ -91,7 +95,7 @@ class ContextObserverClass {
 		}
 	}
 
-	#addListener(target, type) {
+	#addListener(target: EventTarget, type: string) {
 		if (!this.#listeners.has(target)) {
 			this.#listeners.set(target, new Set());
 		}
@@ -113,7 +117,7 @@ class ContextObserverClass {
 		}
 	}
 
-	observe(subject, dependent) {
+	observe(subject: EventTarget, dependent) {
 		this.#addObserver(subject, dependent);
 
 		switch (true) {

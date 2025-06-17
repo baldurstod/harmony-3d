@@ -1,12 +1,11 @@
 import { vec3 } from 'gl-matrix';
-
-import { ParamType, SourceEngineParticleSystem } from '../sourceengineparticlesystem';
-import { PARAM_TYPE_STRING, PARAM_TYPE_ID } from '../constants';
-import { PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED, PARTICLE_ORIENTATION_WORLD_Z_ALIGNED } from '../../../common/particles/particleconsts';
-import { generateRandomUUID } from '../../../../math/functions';
 import { Material } from '../../../../materials/material';
-import { SourceEngineParticle } from '../particle';
+import { generateRandomUUID } from '../../../../math/functions';
 import { Mesh } from '../../../../objects/mesh';
+import { PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED, PARTICLE_ORIENTATION_WORLD_Z_ALIGNED } from '../../../common/particles/particleconsts';
+import { PARAM_TYPE_ID, PARAM_TYPE_STRING } from '../constants';
+import { SourceEngineParticle } from '../particle';
+import { ParamType, SourceEngineParticleSystem } from '../sourceengineparticlesystem';
 
 export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 	#parameters = {};
@@ -45,7 +44,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		}
 	}
 
-	forceParticle(particle, elapsedTime, accumulatedForces) {
+	forceParticle(particle, elapsedTime, accumulatedForces?) {
 		if (!particle) {
 			return;
 		}
@@ -72,6 +71,8 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 	doRender(particle: SourceEngineParticle[], elapsedTime: number, material: Material) { }
 
 	initRenderer(particleSystem: SourceEngineParticleSystem) { }
+
+	updateParticles(particleSystem, particleList, elapsedTime) { }
 
 	emitParticle(creationTime, elapsedTime) {
 		if (!this.particleSystem) {

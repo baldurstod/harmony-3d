@@ -1,22 +1,22 @@
 import { quat, vec3 } from 'gl-matrix';
 
-import { Source1ParticleControler } from './source1particlecontroler';
-import { Entity } from '../../../entities/entity';
-import { PARAM_TYPE_INT, PARAM_TYPE_STRING, PARAM_TYPE_COLOR, PARAM_TYPE_FLOAT, PARAM_TYPE_ID } from './constants';
-import { SourceEngineParticle } from './particle';
-import { Color, WHITE } from './color';
-import { DEFAULT_MAX_PARTICLES, HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
-import { ControlPoint } from '../../common/particles/controlpoint';
-import { ERROR, WARN, LOG } from '../../../buildoptions';
-import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
-import { BoundingBox } from '../../../math/boundingbox';
-import { MAX_FLOATS } from '../../common/particles/randomfloats';
-import { SourcePCF } from '../loaders/sourcepcf';
+import { ERROR, WARN } from '../../../buildoptions';
 import { registerEntity } from '../../../entities/entities';
-import { SourceEngineMaterial } from '../materials/sourceenginematerial';
-import { SourceEngineParticleOperator } from './operators/operator';
-import { CDmxAttribute } from '../loaders/sourceenginepcfloader';
+import { Entity } from '../../../entities/entity';
 import { Loopable } from '../../../interfaces/loopable';
+import { BoundingBox } from '../../../math/boundingbox';
+import { ControlPoint } from '../../common/particles/controlpoint';
+import { DEFAULT_MAX_PARTICLES, HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
+import { MAX_FLOATS } from '../../common/particles/randomfloats';
+import { CDmxAttribute } from '../loaders/sourceenginepcfloader';
+import { SourcePCF } from '../loaders/sourcepcf';
+import { SourceEngineMaterial } from '../materials/sourceenginematerial';
+import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
+import { Color, WHITE } from './color';
+import { PARAM_TYPE_COLOR, PARAM_TYPE_FLOAT, PARAM_TYPE_ID, PARAM_TYPE_INT, PARAM_TYPE_STRING } from './constants';
+import { SourceEngineParticleOperator } from './operators/operator';
+import { SourceEngineParticle } from './particle';
+import { Source1ParticleControler } from './source1particlecontroler';
 
 export const MAX_PARTICLE_CONTROL_POINTS = 64;
 const RESET_DELAY = 0;
@@ -40,7 +40,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	#sequenceNumber = 0;
 	#materialPromiseResolve?: (value: SourceEngineMaterial) => void;
 	#materialPromise?: Promise<SourceEngineMaterial>;
-	#renderers = new Map();
+	#renderers = new Map<string, SourceEngineParticleOperator>();
 	#particleCount = 0;
 	#randomSeed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 	#maximumTimeStep = 0.1;
@@ -73,7 +73,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	emitters: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
 	initializers: Record<string, SourceEngineParticleOperator> = {};// = new Array();//todo transform to map
 	operators: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
-	forces = new Map();//new Array();//todo transform to map
+	forces = new Map<string, SourceEngineParticleOperator>();
 	constraints: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
 	controlPoints: ControlPoint[] = [];
 

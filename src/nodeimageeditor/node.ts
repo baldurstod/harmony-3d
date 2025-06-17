@@ -1,20 +1,17 @@
-import { createElement } from 'harmony-ui';
 import { saveFile } from 'harmony-browser-utils';
-
-import { Input } from './input';
-import { Output } from './output';
-
-import { RenderTarget } from '../textures/rendertarget';
-import { imageDataToImage } from '../utils/imagedata';
-import { generateRandomUUID } from '../math/functions';
-import { VTFWriter, VTFFile } from '../sourceengine/source1/textures/vtfwriter'
-import { TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_NOMIP } from '../sourceengine/source1/textures/vtfconstants'
-
-import { GL_UNSIGNED_BYTE, GL_RGBA } from '../webgl/constants';
-import { NodeImageEditor } from './nodeimageeditor';
+import { createElement } from 'harmony-ui';
 import { Graphics } from '../graphics/graphics';
 import { Material } from '../materials/material';
+import { generateRandomUUID } from '../math/functions';
+import { TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_NOMIP } from '../sourceengine/source1/textures/vtfconstants';
+import { VTFFile, VTFWriter } from '../sourceengine/source1/textures/vtfwriter';
+import { RenderTarget } from '../textures/rendertarget';
+import { imageDataToImage } from '../utils/imagedata';
+import { GL_RGBA, GL_UNSIGNED_BYTE } from '../webgl/constants';
+import { Input } from './input';
+import { NodeImageEditor } from './nodeimageeditor';
 import { NodeParam } from './nodeparam';
+import { Output } from './output';
 
 enum DrawState {
 	Invalid = 0,
@@ -37,7 +34,7 @@ export class Node extends EventTarget {
 	id = generateRandomUUID();
 	editor: NodeImageEditor;
 	inputs = new Map<string, Input>();
-	outputs = new Map();
+	outputs = new Map<string, Output>();
 	params = new Map<string, NodeParam>();
 	previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
 	previewSize: number = PREVIEW_PICTURE_SIZE;

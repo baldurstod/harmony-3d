@@ -1,14 +1,12 @@
-import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, isVisible, show, toggle } from 'harmony-ui';
 import { lockOpenRightSVG, lockSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, restartSVG, runSVG, visibilityOffSVG, visibilityOnSVG, walkSVG } from 'harmony-svg';
-
-import { EntityObserver, CHILD_ADDED, CHILD_REMOVED, PROPERTY_CHANGED, ENTITY_DELETED } from '../entities/entityobserver';
-
+import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, show, toggle } from 'harmony-ui';
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
-import { SceneExplorer } from './sceneexplorer';
+import { CHILD_ADDED, CHILD_REMOVED, ENTITY_DELETED, EntityObserver, PROPERTY_CHANGED } from '../entities/entityobserver';
 import { Animated } from '../interfaces/animated';
-import { Loopable } from '../interfaces/loopable';
 import { Lockable } from '../interfaces/lockable';
+import { Loopable } from '../interfaces/loopable';
+import { SceneExplorer } from './sceneexplorer';
 
 const MAX_ANIMATIONS = 2;
 
@@ -33,7 +31,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	#htmlLockedButton?: HTMLHarmonyToggleButtonElement;
 	#htmlReset;
 
-	static #entitiesHTML = new Map();
+	static #entitiesHTML = new Map<Entity, SceneExplorerEntity>();
 	static #selectedEntity?: SceneExplorerEntity;
 	static #explorer?: SceneExplorer;
 	static #draggedEntity?: Entity;

@@ -1,10 +1,10 @@
-import { Mesh } from './mesh';
+import { registerEntity } from '../entities/entities';
 import { ExtrudeGeometry } from '../geometry/extrudegeometry';
 import { FontManager } from '../managers/fontmanager';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
-import { Interaction } from '../utils/interaction';
 import { DEG_TO_RAD } from '../math/constants';
-import { registerEntity } from '../entities/entities';
+import { Interaction } from '../utils/interaction';
+import { Mesh } from './mesh';
 
 export class Text3D extends Mesh {
 	isText3D = true;
@@ -93,12 +93,10 @@ export class Text3D extends Mesh {
 			font: {
 				i18n: '#font', f: async () => {
 					const fontList = await FontManager.getFontList();
-					const fontList2 = new Map();
-					for (const font of fontList) {
-						if (font[1] == 'normal') {
-							fontList2.set(font[0], font);
-						} else {
-							fontList2.set(font.join(' '), font);
+					const fontList2 = new Set<string>();
+					for (const [fontName, font] of fontList) {
+						for (const style of font) {
+							fontList2.add(`${fontName}, ${style}`);
 						}
 					}
 					const font = await new Interaction().getString(0, 0, fontList2);

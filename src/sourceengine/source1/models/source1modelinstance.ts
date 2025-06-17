@@ -508,8 +508,8 @@ export class Source1ModelInstance extends Entity implements Animated {
 		if (bones) {
 			for (const bone of bones) {
 				const skeletonBone = this.#skeleton.addBone(bone.boneId, bone.name);
-				skeletonBone._initialQuaternion = quat.copy(quat.create(), bone.quaternion);
-				skeletonBone._initialPosition = vec3.copy(vec3.create(), bone.position);
+				quat.copy(skeletonBone._initialQuaternion, bone.quaternion);
+				vec3.copy(skeletonBone._initialPosition, bone.position);
 				const parentBoneId = bone.parentBone;
 
 				skeletonBone.poseToBone = bone.poseToBone;

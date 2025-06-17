@@ -1,13 +1,13 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
-import { Source2Particle } from './source2particle';
-import { Source2ParticleManager } from './source2particlemanager';
-import { Source2SnapshotLoader } from '../loaders/source2snapshotloader';
+import { TESTING } from '../../../buildoptions';
+import { Entity } from '../../../entities/entity';
 import { ControlPoint } from '../../common/particles/controlpoint';
 import { DEFAULT_MAX_PARTICLES, HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
-import { Entity } from '../../../entities/entity';
-import { TESTING } from '../../../buildoptions';
-import { Operator } from './operators/operator';
 import { Source2ModelInstance } from '../export';
+import { Source2SnapshotLoader } from '../loaders/source2snapshotloader';
+import { Operator } from './operators/operator';
+import { Source2Particle } from './source2particle';
+import { Source2ParticleManager } from './source2particlemanager';
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
 

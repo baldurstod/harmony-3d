@@ -1,18 +1,19 @@
 import { vec3 } from 'gl-matrix';
-
+import { Source2ModelInstance } from '../../../export';
 import { Source2ModelManager } from '../../../models/source2modelmanager';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const tempVec3 = vec3.create();
 
 export class RenderModels extends Operator {
-	#modelList = new Map();
-	#models = new Map();
+	#modelList = new Map<string, number>();
+	#models = new Map<Source2Particle, Source2ModelInstance>();
 	#skin;
 	#totalProbability;
 	//#modelPool = new Map();
-	#allModels = new Map();
+	#allModels = new Map<Source2ModelInstance, { repository: string, modelName: string, used: boolean }/*TODO:create a type*/>();
 	#animated = false;
 
 	_paramChanged(paramName, value) {

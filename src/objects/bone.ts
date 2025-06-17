@@ -33,6 +33,8 @@ export class Bone extends Entity implements Lockable {
 	lastComputed = 0;
 	tempPosition = vec3.create();
 	tempQuaternion = quat.create();
+	readonly _initialQuaternion = quat.create();
+	readonly _initialPosition = vec3.create();
 
 	constructor(params?: any/*TODO: improve type*/) {
 		super(params);

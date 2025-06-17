@@ -94,7 +94,7 @@ export class WebGLShaderSource {
 		return this.#source;
 	}
 
-	getInclude(includeName: string, compileRow = 0, recursion = new Set(), allIncludes = new Set()): string[] | undefined | null {
+	getInclude(includeName: string, compileRow = 0, recursion = new Set<string>(), allIncludes = new Set<string>()): string[] | undefined | null {
 		this.#includes.add(includeName);
 		if (recursion.has(includeName)) {
 			console.error('Include recursion in ' + includeName);

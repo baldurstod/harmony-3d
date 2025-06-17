@@ -1,11 +1,12 @@
-import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
-import { registerLoader } from '../../../loaders/loaderfactory';
-import { KvReader } from './kvreader';
 import { DEBUG } from '../../../buildoptions';
+import { registerLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
+import { SourceEngineMaterial } from '../materials/sourceenginematerial';
+import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
+import { KvReader } from './kvreader';
 
 class SourceEngineVMTLoaderClass {
-	#materials = new Map();
+	#materials = new Map<string, typeof SourceEngineMaterial>();
 	#extraMaterials = new Map<string, string>();
 
 	load(repositoryName, fileName) {

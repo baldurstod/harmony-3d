@@ -43,6 +43,8 @@ export class InputOutput {
 	type: InputOutputType;
 	size: number;
 	_value?: any | any[];
+	_pixelArray?: Uint8Array<ArrayBuffer>;
+
 	constructor(node: Node, id: string, type: InputOutputType, size = 1) {
 		this.node = node;
 		this.id = id;

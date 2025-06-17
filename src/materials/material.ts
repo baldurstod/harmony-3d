@@ -126,8 +126,8 @@ export class Material {
 
 	}
 
-	clone() {
-		console.error('cant\'t clone Material, missing clone() in ' + this.constructor.name);
+	clone(): unknown {
+		throw 'cant\'t clone Material, missing clone() in ' + this.constructor.name;
 		//return new this.constructor(this.parameters);
 	}
 

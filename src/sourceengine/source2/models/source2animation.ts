@@ -54,7 +54,7 @@ export class Source2Animation {
 		return this.segmentArray[segmentIndex];
 	}
 
-	async getAnimations(animations = new Set()) {
+	async getAnimations(animations = new Set<string>()) {
 		for (let i = 0; i < this.#animArray.length; i++) {
 			const anim = this.#animArray[i];
 			animations.add(anim.m_name);
