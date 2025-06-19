@@ -22,7 +22,9 @@ export class ChoreographiesManager {
 			this.#sceneImage = new Choreographies();
 			await this.#sceneImage.loadFile(repositoryName, fileName);
 			GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: CustomEvent) => {
-				this.step(event.detail.delta);
+				if (event.detail.delta) {
+					this.step(event.detail.delta);
+				}
 			});
 		}
 	}

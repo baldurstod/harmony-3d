@@ -16,6 +16,7 @@ export class Choreography {
 	shouldLoop = false;
 	sceneLength: number;
 	onStop: () => void;
+
 	constructor(repository: string, name?: string) {
 		this.#repository = repository;
 	}

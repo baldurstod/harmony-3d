@@ -26,6 +26,7 @@ export class Event {
 	choreography: Choreography;
 	channel: Channel;
 	m_nNumLoops;
+
 	constructor(repository, eventType, name, startTime, endTime, param1, param2, param3, flags, distanceToTarget) {
 		this.#repository = repository;
 		this.type = eventType;
