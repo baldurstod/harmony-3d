@@ -71,6 +71,10 @@ scene-explorer-entity.selected>.scene-explorer-entity-header {
 	background-color: var(--theme-scene-explorer-entity-selected-bg-color);
 }
 
+scene-explorer-entity .animation input {
+	width: 100%;
+}
+
 .scene-explorer-entity-buttons {
 	display: flex;
 }
