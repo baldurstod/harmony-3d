@@ -107,9 +107,9 @@ export class SourceModel {
 		return null;
 	}
 
-	getAttachementById(attachementIndex): MdlAttachment | null {
+	getAttachmentById(attachmentIndex): MdlAttachment | null {
 		if (this.mdl) {
-			return this.mdl.getAttachmentById(attachementIndex);
+			return this.mdl.getAttachmentById(attachmentIndex);
 		}
 		return null;
 	}
@@ -121,9 +121,9 @@ export class SourceModel {
 		return null;
 	}
 
-	getAttachement(attachementName): MdlAttachment | null {
+	getAttachment(attachmentName): MdlAttachment | null {
 		if (this.mdl) {
-			return this.mdl.getAttachment(attachementName);
+			return this.mdl.getAttachment(attachmentName);
 		}
 		return null;
 	}

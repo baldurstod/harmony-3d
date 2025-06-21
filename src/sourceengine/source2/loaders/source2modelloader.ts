@@ -88,7 +88,7 @@ export class Source2ModelLoader {
 	#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask: number | undefined) {
 		const remappingTable = vmdl.getRemappingTable(meshIndex);
 
-		model._addAttachements(dataBlock.getKeyValue('m_attachments'));
+		model._addAttachments(dataBlock.getKeyValue('m_attachments'));
 		const drawCalls = dataBlock.getKeyValue('m_sceneObjects.0.m_drawCalls') || dataBlock.getKeyValue('root.m_drawCalls');
 		if (drawCalls) {
 			for (let drawCallIndex = 0, l = drawCalls.length; drawCallIndex < l; ++drawCallIndex) {//TODOv3: mutualize buffer if used by multiple drawcalls

@@ -1,25 +1,25 @@
 import { mat3, mat4, quat, vec3, vec4 } from 'gl-matrix';
-import { MAX_STUDIO_FLEX_DESC } from '../loaders/sourcemdl';
-import { Source1ModelManager } from '../models/source1modelmanager';
 import { AnimationDescription } from '../../../animations/animationdescription';
 import { Animations } from '../../../animations/animations';
-import { Entity } from '../../../entities/entity';
-import { Bone } from '../../../objects/bone';
-import { Hitbox } from '../../../misc/hitbox';
-import { SkeletalMesh } from '../../../objects/skeletalmesh';
-import { Mesh } from '../../../objects/mesh';
-import { Skeleton } from '../../../objects/skeleton';
-import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
-import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
-import { SourceAnimation } from '../loaders/sourceanimation';
-import { Material } from '../../../materials/material';
-import { Interaction } from '../../../utils/interaction';
-import { vec3RandomBox } from '../../../math/functions';
-import { getRandomInt } from '../../../utils/random';
 import { registerEntity } from '../../../entities/entities';
+import { Entity } from '../../../entities/entity';
 import { Animated } from '../../../interfaces/animated';
+import { Material } from '../../../materials/material';
+import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
+import { vec3RandomBox } from '../../../math/functions';
+import { Hitbox } from '../../../misc/hitbox';
+import { Bone } from '../../../objects/bone';
+import { Mesh } from '../../../objects/mesh';
+import { SkeletalMesh } from '../../../objects/skeletalmesh';
+import { Skeleton } from '../../../objects/skeleton';
+import { Interaction } from '../../../utils/interaction';
+import { getRandomInt } from '../../../utils/random';
+import { STUDIO_ANIM_DELTA } from '../loaders/mdlstudioanim';
+import { SourceAnimation } from '../loaders/sourceanimation';
+import { MAX_STUDIO_FLEX_DESC } from '../loaders/sourcemdl';
 import { SourceModel } from '../loaders/sourcemodel';
-import { STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_RAWROT2 } from '../loaders/mdlstudioanim';
+import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
+import { Source1ModelManager } from '../models/source1modelmanager';
 
 let animSpeed = 1.0;
 
@@ -34,7 +34,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 	#animations = new Animations();
 	#skeleton?: Skeleton;
 	#skin = 0;
-	#attachements = {};
+	#attachments = {};
 	#materialsUsed = new Set<Material>();
 	animable = true;
 	hasAnimations: true = true;
@@ -72,7 +72,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 		}
 		if (params.isDynamic) {
 			this.#initSkeleton();
-			this.#initAttachements();
+			this.#initAttachments();
 		}
 		this.#updateMaterials();
 	}
@@ -528,28 +528,28 @@ export class Source1ModelInstance extends Entity implements Animated {
 		}
 	}
 
-	#initAttachements() {
-		const attachements = this.sourceModel.getAttachments();
+	#initAttachments() {
+		const attachments = this.sourceModel.getAttachments();
 		const localMat3 = mat3.create();//todo: optimize
-		if (attachements) {
-			for (const attachement of attachements) {
-				const attachementBone = new Bone({ name: attachement.name });
-				localMat3[0] = attachement.local[0];
-				localMat3[3] = attachement.local[1];
-				localMat3[6] = attachement.local[2];
-				localMat3[1] = attachement.local[4];
-				localMat3[4] = attachement.local[5];
-				localMat3[7] = attachement.local[6];
-				localMat3[2] = attachement.local[8];
-				localMat3[5] = attachement.local[9];
-				localMat3[8] = attachement.local[10];
+		if (attachments) {
+			for (const attachment of attachments) {
+				const attachmentBone = new Bone({ name: attachment.name });
+				localMat3[0] = attachment.local[0];
+				localMat3[3] = attachment.local[1];
+				localMat3[6] = attachment.local[2];
+				localMat3[1] = attachment.local[4];
+				localMat3[4] = attachment.local[5];
+				localMat3[7] = attachment.local[6];
+				localMat3[2] = attachment.local[8];
+				localMat3[5] = attachment.local[9];
+				localMat3[8] = attachment.local[10];
 
-				vec3.set(attachementBone._position, attachement.local[3], attachement.local[7], attachement.local[11]);
-				quat.fromMat3(attachementBone._quaternion, localMat3);
+				vec3.set(attachmentBone._position, attachment.local[3], attachment.local[7], attachment.local[11]);
+				quat.fromMat3(attachmentBone._quaternion, localMat3);
 
-				const bone = this.#skeleton.getBoneById(attachement.localbone);
-				bone.addChild(attachementBone);
-				this.#attachements[attachement.lowcasename] = attachementBone;
+				const bone = this.#skeleton.getBoneById(attachment.localbone);
+				bone.addChild(attachmentBone);
+				this.#attachments[attachment.lowcasename] = attachmentBone;
 			}
 		}
 	}
@@ -639,15 +639,15 @@ export class Source1ModelInstance extends Entity implements Animated {
 		return 'Source1ModelInstance ' + super.toString();
 	}
 
-	attachSystem(system, attachementName = '', cpIndex = 0, offset?: vec3) {
+	attachSystem(system, attachmentName = '', cpIndex = 0, offset?: vec3) {
 		this.addChild(system);
 
-		const attachement = this.getAttachement(attachementName);
-		if (attachement) {
+		const attachment = this.getAttachment(attachmentName);
+		if (attachment) {
 			const controlPoint = system.getControlPoint(cpIndex);
-			attachement.addChild(controlPoint);
+			attachment.addChild(controlPoint);
 		} else {
-			this.attachSystemToBone(system, attachementName, offset);
+			this.attachSystemToBone(system, attachmentName, offset);
 		}
 
 		if (offset) {
@@ -671,8 +671,8 @@ export class Source1ModelInstance extends Entity implements Animated {
 		}
 	}
 
-	getAttachement(attachementName) {
-		return this.#attachements[attachementName.toLowerCase()];
+	getAttachment(attachmentName) {
+		return this.#attachments[attachmentName.toLowerCase()];
 	}
 
 	getBoneByName(boneName) {
@@ -913,7 +913,7 @@ export class Source1ModelInstance extends Entity implements Animated {
 				if (!entity.skeleton) {
 					entity.#createSkeleton();
 					entity.#initSkeleton();
-					entity.#initAttachements();
+					entity.#initAttachments();
 				}
 				entity.isDynamic = true;
 			}

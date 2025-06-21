@@ -6,7 +6,7 @@ import { AnimManager } from './animmanager';
 import { Source2Animation } from './source2animation';
 import { Source2AnimationDesc } from './source2animationdesc';
 import { Source2AnimGroup } from './source2animgroup';
-import { Source2ModelAttachement } from './source2modelattachement';
+import { Source2ModelAttachment } from './source2modelattachment';
 import { Source2ModelInstance } from './source2modelinstance';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
@@ -35,7 +35,7 @@ export class Source2Model {
 	dirty = true;
 	geometries = new Set<BufferGeometry>();
 	bodyParts = new Map<string, BodyPart>();
-	attachements = new Map<string, Source2ModelAttachement>();
+	attachments = new Map<string, Source2ModelAttachment>();
 	#seqGroup?: Source2SeqGroup;
 	bodyGroups = new Set<string>();
 	bodyGroupsChoices = new Set<BodyGroupChoice>();
@@ -131,9 +131,9 @@ export class Source2Model {
 		return null;
 	}
 
-	getAttachementById(attachementIndex) {
+	getAttachmentById(attachmentIndex) {
 		if (this.mdl) {
-			return this.mdl.getAttachementById(attachementIndex);
+			return this.mdl.getAttachmentById(attachmentIndex);
 		}
 		return null;
 	}
@@ -145,9 +145,9 @@ export class Source2Model {
 		return null;
 	}
 
-	getAttachement(attachementName) {
+	getAttachment(attachmentName) {
 		if (this.mdl) {
-			return this.mdl.getAttachement(attachementName);
+			return this.mdl.getAttachment(attachmentName);
 		}
 		return null;
 	}
@@ -323,21 +323,21 @@ export class Source2Model {
 		return animations;
 	}
 
-	_addAttachements(attachements) {
-		for (const attachement of attachements) {
-			const attachementValue = attachement.value;
-			if (attachementValue) {
-				const name = attachementValue.m_name.toLowerCase();
-				const source2ModelAttachement = new Source2ModelAttachement(name);
-				this.attachements.set(name, source2ModelAttachement);
-				source2ModelAttachement.ignoreRotation = attachementValue.m_bIgnoreRotation;
-				for (let influenceIndex = 0; influenceIndex < attachementValue.m_nInfluences; ++influenceIndex) {
-					const influenceName = attachementValue.m_influenceNames[influenceIndex];
+	_addAttachments(attachments) {
+		for (const attachment of attachments) {
+			const attachmentValue = attachment.value;
+			if (attachmentValue) {
+				const name = attachmentValue.m_name.toLowerCase();
+				const source2ModelAttachment = new Source2ModelAttachment(name);
+				this.attachments.set(name, source2ModelAttachment);
+				source2ModelAttachment.ignoreRotation = attachmentValue.m_bIgnoreRotation;
+				for (let influenceIndex = 0; influenceIndex < attachmentValue.m_nInfluences; ++influenceIndex) {
+					const influenceName = attachmentValue.m_influenceNames[influenceIndex];
 					if (influenceName) {
-						source2ModelAttachement.influenceNames.push(influenceName.toLowerCase());
-						source2ModelAttachement.influenceWeights.push(attachementValue.m_influenceWeights[influenceIndex]);
-						source2ModelAttachement.influenceOffsets.push(vec3.clone(attachementValue.m_vInfluenceOffsets[influenceIndex]));
-						source2ModelAttachement.influenceRotations.push(vec4.clone(attachementValue.m_vInfluenceRotations[influenceIndex]));
+						source2ModelAttachment.influenceNames.push(influenceName.toLowerCase());
+						source2ModelAttachment.influenceWeights.push(attachmentValue.m_influenceWeights[influenceIndex]);
+						source2ModelAttachment.influenceOffsets.push(vec3.clone(attachmentValue.m_vInfluenceOffsets[influenceIndex]));
+						source2ModelAttachment.influenceRotations.push(vec4.clone(attachmentValue.m_vInfluenceRotations[influenceIndex]));
 					}
 				}
 			}

@@ -208,7 +208,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		this.#parseSequences(reader, mdl);
 		this.#parseBones(reader, mdl);
 		parsePoseParameters(reader, mdl);
-		this.#parseAttachements(reader, mdl);
+		this.#parseAttachments(reader, mdl);
 		this.#parseFlexRules(reader, mdl);
 		this.#parseFlexControllers(reader, mdl);
 		parseHitBoxSets(reader, mdl);
@@ -266,8 +266,8 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		mdl.bodyPartCount = reader.getInt32();
 		mdl.bodyPartOffset = reader.getInt32();
 
-		mdl.attachementCount = reader.getInt32();
-		mdl.attachementOffset = reader.getInt32();
+		mdl.attachmentCount = reader.getInt32();
+		mdl.attachmentOffset = reader.getInt32();
 
 		mdl.localNodeCount = reader.getInt32();
 		mdl.localNodeIndex = reader.getInt32();
@@ -1026,19 +1026,19 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		return anim;
 	}
 
-	#parseAttachements(reader, mdl) {
-		const attachements = [];
-		const attachementNames = {};
-		mdl.attachements = attachements;
-		mdl.attachementNames = attachementNames;
-		if (mdl.attachementCount && mdl.attachementOffset) {
-			//const size = mdl.attachementCount * ATTACHMENT_STRUCT_SIZE;
+	#parseAttachments(reader, mdl) {
+		const attachments = [];
+		const attachmentNames = {};
+		mdl.attachments = attachments;
+		mdl.attachmentNames = attachmentNames;
+		if (mdl.attachmentCount && mdl.attachmentOffset) {
+			//const size = mdl.attachmentCount * ATTACHMENT_STRUCT_SIZE;
 
-			for (let i = 0; i < mdl.attachementCount; ++i) {
-				const attachement = this.#parseAttachement(reader, mdl, mdl.attachementOffset + i * ATTACHMENT_STRUCT_SIZE);
-				if (attachement !== null) {
-					attachements.push(attachement);
-					attachementNames[attachement.name.toLowerCase()] = attachement;
+			for (let i = 0; i < mdl.attachmentCount; ++i) {
+				const attachment = this.#parseAttachment(reader, mdl, mdl.attachmentOffset + i * ATTACHMENT_STRUCT_SIZE);
+				if (attachment !== null) {
+					attachments.push(attachment);
+					attachmentNames[attachment.name.toLowerCase()] = attachment;
 				} else {
 					return;// More data awaiting
 				}
@@ -1046,24 +1046,24 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseAttachement(reader, mdl, startOffset): MdlAttachment {
+	#parseAttachment(reader, mdl, startOffset): MdlAttachment {
 		const nameOffset = reader.getInt32(startOffset) + startOffset;
 
-		const attachement = new MdlAttachment();
-		attachement.mdl = mdl;
+		const attachment = new MdlAttachment();
+		attachment.mdl = mdl;
 
-		attachement.flags = reader.getInt32();
-		attachement.localbone = reader.getInt32();
-		attachement.local = [];
+		attachment.flags = reader.getInt32();
+		attachment.localbone = reader.getInt32();
+		attachment.local = [];
 
 		for (let i = 0; i < 12; ++i) { //local
-			attachement.local.push(reader.getFloat32());
+			attachment.local.push(reader.getFloat32());
 		}
 
-		attachement.name = reader.getNullString(nameOffset);
-		attachement.lowcasename = attachement.name.toLowerCase();
+		attachment.name = reader.getNullString(nameOffset);
+		attachment.lowcasename = attachment.name.toLowerCase();
 
-		return attachement;
+		return attachment;
 	}
 
 	#parseFlexRules(reader: BinaryReader, mdl: SourceMdl) {

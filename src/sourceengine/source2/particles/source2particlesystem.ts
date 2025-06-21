@@ -223,8 +223,8 @@ export class Source2ParticleSystem extends Entity {
 			const cp = this.controlPoints[i];
 			cp.step();
 			/*if (i == 0) {
-				if (cp.attachementProp) {
-					const atta = cp.attachementProp;
+				if (cp.attachmentProp) {
+					const atta = cp.attachmentProp;
 					if (atta) {
 						this.setOrientation(atta.getWorldQuat());
 					}
@@ -481,18 +481,18 @@ export class Source2ParticleSystem extends Entity {
 						for (const driver of drivers) {
 							const attachmentName = driver.m_attachmentName;
 							if (attachmentName) {
-								let attachementInstance = (model as Source2ModelInstance)?.getAttachement(attachmentName);
+								let attachmentInstance = (model as Source2ModelInstance)?.getAttachment(attachmentName);
 								if (driver.m_entityName == 'parent') {
-									attachementInstance = (model?.parent as any)?.getAttachement?.(attachmentName) ?? attachementInstance;
+									attachmentInstance = (model?.parent as any)?.getAttachment?.(attachmentName) ?? attachmentInstance;
 								}
 
-								if (attachementInstance) {
+								if (attachmentInstance) {
 									const cp = this.getOwnControlPoint(driver.m_iControlPoint ?? i);
-									attachementInstance.addChild(cp);
+									attachmentInstance.addChild(cp);
 									cp.step();
 								} else {
 									if (TESTING) {
-										console.warn(`Cannot find attachement ${attachmentName}`);
+										console.warn(`Cannot find attachment ${attachmentName}`);
 									}
 								}
 							}

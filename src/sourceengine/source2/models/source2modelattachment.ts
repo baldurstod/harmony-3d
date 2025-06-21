@@ -5,7 +5,7 @@ import { Entity } from '../../../entities/entity';
 const tempPos = vec3.create();
 const tempQuat = quat.create();
 
-export class Source2ModelAttachement {
+export class Source2ModelAttachment {
 	name: string;
 	ignoreRotation = false;
 	influenceNames = [];
@@ -16,13 +16,13 @@ export class Source2ModelAttachement {
 		this.name = name;
 	}
 }
-export class Source2ModelAttachementInstance extends Entity {
+export class Source2ModelAttachmentInstance extends Entity {
 	model;
-	attachement;
-	constructor(model, attachement) {
-		super({ name: attachement.name });
+	attachment;
+	constructor(model, attachment) {
+		super({ name: attachment.name });
 		this.model = model;
-		this.attachement = attachement;
+		this.attachment = attachment;
 	}
 
 	#getBone(boneName) {
@@ -33,11 +33,11 @@ export class Source2ModelAttachementInstance extends Entity {
 
 	//TODO: compute with all bones, not only the first one
 	getWorldPosition(vec = vec3.create()) {
-		const bone = this.#getBone(this.attachement.influenceNames[0]);
+		const bone = this.#getBone(this.attachment.influenceNames[0]);
 		if (bone) {
 			bone.getWorldPosition(vec);
 			bone.getWorldQuaternion(tempQuat);
-			vec3.transformQuat(tempPos, this.attachement.influenceOffsets[0], tempQuat);
+			vec3.transformQuat(tempPos, this.attachment.influenceOffsets[0], tempQuat);
 			vec3.add(vec, vec, tempPos);
 		} else {
 			vec3.copy(vec, this._position);
@@ -46,10 +46,10 @@ export class Source2ModelAttachementInstance extends Entity {
 	}
 
 	getWorldQuaternion(q = quat.create()) {
-		const bone = this.#getBone(this.attachement.influenceNames[0]);
+		const bone = this.#getBone(this.attachment.influenceNames[0]);
 		if (bone) {
 			bone.getWorldQuaternion(q);
-			quat.mul(q, q, this.attachement.influenceRotations[0]);
+			quat.mul(q, q, this.attachment.influenceRotations[0]);
 		} else {
 			quat.copy(q, this._quaternion);
 		}

@@ -60,7 +60,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	speed = 1;
 	isRunning = false;
 	radius = 1;
-	attachementBone = null;
+	attachmentBone = null;
 
 	// List of living particles
 	livingParticles = [];

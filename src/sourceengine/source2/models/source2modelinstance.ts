@@ -11,7 +11,7 @@ import { Interaction } from '../../../utils/interaction';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { Source2AnimationDesc } from './source2animationdesc';
 import { Source2Model } from './source2model';
-import { Source2ModelAttachementInstance } from './source2modelattachement';
+import { Source2ModelAttachmentInstance } from './source2modelattachment';
 
 
 const identityVec3 = vec3.create();
@@ -35,7 +35,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 	bodyParts = {};
 	poseParameters = {};
 	meshes = new Set<Mesh>();
-	attachements = new Map<string, Source2ModelAttachementInstance>();
+	attachments = new Map<string, Source2ModelAttachmentInstance>();
 	activity = '';
 	activityModifiers = new Set<string>();
 	sequences = {};
@@ -58,7 +58,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 
 		if (isDynamic) {
 			this.#initSkeleton();
-			this.#initAttachements();
+			this.#initAttachments();
 		}
 		this.#init();
 		this.#updateMaterials();
@@ -360,13 +360,13 @@ export class Source2ModelInstance extends Entity implements Animated {
 		}
 	}
 
-	#initAttachements() {
-		const attachements = new Group({ name: 'Attachements' });
-		this.addChild(attachements);
-		for (const attachement of this.sourceModel.attachements.values()) {
-			const attachementInstance = new Source2ModelAttachementInstance(this, attachement);
-			this.attachements.set(attachement.name, attachementInstance);
-			attachements.addChild(attachementInstance);
+	#initAttachments() {
+		const attachments = new Group({ name: 'Attachments' });
+		this.addChild(attachments);
+		for (const attachment of this.sourceModel.attachments.values()) {
+			const attachmentInstance = new Source2ModelAttachmentInstance(this, attachment);
+			this.attachments.set(attachment.name, attachmentInstance);
+			attachments.addChild(attachmentInstance);
 		}
 	}
 
@@ -406,8 +406,8 @@ export class Source2ModelInstance extends Entity implements Animated {
 		return vec;
 	}
 
-	getAttachement(name) {
-		return this.attachements.get(name.toLowerCase());
+	getAttachment(name) {
+		return this.attachments.get(name.toLowerCase());
 	}
 
 	static set animSpeed(speed) {

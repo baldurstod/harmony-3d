@@ -23981,7 +23981,7 @@ const AnimManager = new (function () {
 
 const tempPos$1 = vec3.create();
 const tempQuat$6 = quat.create();
-class Source2ModelAttachement {
+class Source2ModelAttachment {
     name;
     ignoreRotation = false;
     influenceNames = [];
@@ -23992,13 +23992,13 @@ class Source2ModelAttachement {
         this.name = name;
     }
 }
-class Source2ModelAttachementInstance extends Entity {
+class Source2ModelAttachmentInstance extends Entity {
     model;
-    attachement;
-    constructor(model, attachement) {
-        super({ name: attachement.name });
+    attachment;
+    constructor(model, attachment) {
+        super({ name: attachment.name });
         this.model = model;
-        this.attachement = attachement;
+        this.attachment = attachment;
     }
     #getBone(boneName) {
         if (this.model) {
@@ -24007,11 +24007,11 @@ class Source2ModelAttachementInstance extends Entity {
     }
     //TODO: compute with all bones, not only the first one
     getWorldPosition(vec = vec3.create()) {
-        const bone = this.#getBone(this.attachement.influenceNames[0]);
+        const bone = this.#getBone(this.attachment.influenceNames[0]);
         if (bone) {
             bone.getWorldPosition(vec);
             bone.getWorldQuaternion(tempQuat$6);
-            vec3.transformQuat(tempPos$1, this.attachement.influenceOffsets[0], tempQuat$6);
+            vec3.transformQuat(tempPos$1, this.attachment.influenceOffsets[0], tempQuat$6);
             vec3.add(vec, vec, tempPos$1);
         }
         else {
@@ -24020,10 +24020,10 @@ class Source2ModelAttachementInstance extends Entity {
         return vec;
     }
     getWorldQuaternion(q = quat.create()) {
-        const bone = this.#getBone(this.attachement.influenceNames[0]);
+        const bone = this.#getBone(this.attachment.influenceNames[0]);
         if (bone) {
             bone.getWorldQuaternion(q);
-            quat.mul(q, q, this.attachement.influenceRotations[0]);
+            quat.mul(q, q, this.attachment.influenceRotations[0]);
         }
         else {
             quat.copy(q, this._quaternion);
@@ -24156,7 +24156,7 @@ class Source2ModelInstance extends Entity {
     bodyParts = {};
     poseParameters = {};
     meshes = new Set();
-    attachements = new Map();
+    attachments = new Map();
     activity = '';
     activityModifiers = new Set();
     sequences = {};
@@ -24176,7 +24176,7 @@ class Source2ModelInstance extends Entity {
         }
         if (isDynamic) {
             this.#initSkeleton();
-            this.#initAttachements();
+            this.#initAttachments();
         }
         this.#init();
         this.#updateMaterials();
@@ -24447,13 +24447,13 @@ class Source2ModelInstance extends Entity {
             }
         }
     }
-    #initAttachements() {
-        const attachements = new Group({ name: 'Attachements' });
-        this.addChild(attachements);
-        for (const attachement of this.sourceModel.attachements.values()) {
-            const attachementInstance = new Source2ModelAttachementInstance(this, attachement);
-            this.attachements.set(attachement.name, attachementInstance);
-            attachements.addChild(attachementInstance);
+    #initAttachments() {
+        const attachments = new Group({ name: 'Attachments' });
+        this.addChild(attachments);
+        for (const attachment of this.sourceModel.attachments.values()) {
+            const attachmentInstance = new Source2ModelAttachmentInstance(this, attachment);
+            this.attachments.set(attachment.name, attachmentInstance);
+            attachments.addChild(attachmentInstance);
         }
     }
     getAnimations() {
@@ -24493,8 +24493,8 @@ class Source2ModelInstance extends Entity {
         }
         return vec;
     }
-    getAttachement(name) {
-        return this.attachements.get(name.toLowerCase());
+    getAttachment(name) {
+        return this.attachments.get(name.toLowerCase());
     }
     static set animSpeed(speed) {
         const s = Number(speed);
@@ -24530,7 +24530,7 @@ class Source2Model {
     dirty = true;
     geometries = new Set();
     bodyParts = new Map();
-    attachements = new Map();
+    attachments = new Map();
     #seqGroup;
     bodyGroups = new Set();
     bodyGroupsChoices = new Set();
@@ -24618,9 +24618,9 @@ class Source2Model {
         return null;
     }
 
-    getAttachementById(attachementIndex) {
+    getAttachmentById(attachmentIndex) {
         if (this.mdl) {
-            return this.mdl.getAttachementById(attachementIndex);
+            return this.mdl.getAttachmentById(attachmentIndex);
         }
         return null;
     }
@@ -24632,9 +24632,9 @@ class Source2Model {
         return null;
     }
 
-    getAttachement(attachementName) {
+    getAttachment(attachmentName) {
         if (this.mdl) {
-            return this.mdl.getAttachement(attachementName);
+            return this.mdl.getAttachment(attachmentName);
         }
         return null;
     }
@@ -24777,21 +24777,21 @@ class Source2Model {
         }
         return animations;
     }
-    _addAttachements(attachements) {
-        for (const attachement of attachements) {
-            const attachementValue = attachement.value;
-            if (attachementValue) {
-                const name = attachementValue.m_name.toLowerCase();
-                const source2ModelAttachement = new Source2ModelAttachement(name);
-                this.attachements.set(name, source2ModelAttachement);
-                source2ModelAttachement.ignoreRotation = attachementValue.m_bIgnoreRotation;
-                for (let influenceIndex = 0; influenceIndex < attachementValue.m_nInfluences; ++influenceIndex) {
-                    const influenceName = attachementValue.m_influenceNames[influenceIndex];
+    _addAttachments(attachments) {
+        for (const attachment of attachments) {
+            const attachmentValue = attachment.value;
+            if (attachmentValue) {
+                const name = attachmentValue.m_name.toLowerCase();
+                const source2ModelAttachment = new Source2ModelAttachment(name);
+                this.attachments.set(name, source2ModelAttachment);
+                source2ModelAttachment.ignoreRotation = attachmentValue.m_bIgnoreRotation;
+                for (let influenceIndex = 0; influenceIndex < attachmentValue.m_nInfluences; ++influenceIndex) {
+                    const influenceName = attachmentValue.m_influenceNames[influenceIndex];
                     if (influenceName) {
-                        source2ModelAttachement.influenceNames.push(influenceName.toLowerCase());
-                        source2ModelAttachement.influenceWeights.push(attachementValue.m_influenceWeights[influenceIndex]);
-                        source2ModelAttachement.influenceOffsets.push(vec3.clone(attachementValue.m_vInfluenceOffsets[influenceIndex]));
-                        source2ModelAttachement.influenceRotations.push(vec4.clone(attachementValue.m_vInfluenceRotations[influenceIndex]));
+                        source2ModelAttachment.influenceNames.push(influenceName.toLowerCase());
+                        source2ModelAttachment.influenceWeights.push(attachmentValue.m_influenceWeights[influenceIndex]);
+                        source2ModelAttachment.influenceOffsets.push(vec3.clone(attachmentValue.m_vInfluenceOffsets[influenceIndex]));
+                        source2ModelAttachment.influenceRotations.push(vec4.clone(attachmentValue.m_vInfluenceRotations[influenceIndex]));
                     }
                 }
             }
@@ -24866,7 +24866,7 @@ class Source2ModelLoader {
     }
     #loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask) {
         const remappingTable = vmdl.getRemappingTable(meshIndex);
-        model._addAttachements(dataBlock.getKeyValue('m_attachments'));
+        model._addAttachments(dataBlock.getKeyValue('m_attachments'));
         const drawCalls = dataBlock.getKeyValue('m_sceneObjects.0.m_drawCalls') || dataBlock.getKeyValue('root.m_drawCalls');
         if (drawCalls) {
             for (let drawCallIndex = 0, l = drawCalls.length; drawCallIndex < l; ++drawCallIndex) { //TODOv3: mutualize buffer if used by multiple drawcalls
@@ -34405,677 +34405,6 @@ function WorldSpaceSlerp(
 }
 */
 
-class FlexController {
-    controllers = {};
-    controllers2 = {};
-    controllerIndex = 0;
-    getController(name, min, max) {
-        if (!this.controllers[name]) {
-            this.controllers2[this.controllerIndex] = 0;
-            this.controllers[name] = { i: this.controllerIndex++, min: min, max: max };
-            /*
-            if (typeof AddController !== 'undefined') {
-                AddController(name, min, max);
-            }
-                */
-            this.setControllerValue(name, 0);
-        }
-        return this.controllers[name].i;
-    }
-    getControllers() {
-        return this.controllers;
-    }
-    getControllerValue(name) {
-        const index = this.controllers[name].i;
-        if (index !== undefined) {
-            return this.controllers2[index];
-        }
-        return 0;
-    }
-    getControllerRealValue(name) {
-        const controller = this.controllers[name];
-        if (controller !== undefined) {
-            const index = this.controllers[name].i;
-            return RemapValClamped(this.controllers2[index], 0.0, 1.0, controller.min, controller.max);
-        }
-        return 0;
-    }
-    setControllerValue(name, value) {
-        const controller = this.controllers[name];
-        if (controller !== undefined) {
-            value = RemapValClamped(value, controller.min, controller.max, 0.0, 1.0);
-            this.controllers2[controller.i] = value;
-        }
-    }
-    setAllValues(value) {
-        for (const i in this.controllers) {
-            this.setControllerValue(i, value);
-        }
-    }
-    removeAllControllers() {
-        this.controllers = {};
-        this.controllers2 = {};
-        this.controllerIndex = 0;
-    }
-}
-
-/**
- * MDL Model
- */
-//TODOv3 remove parse* function
-const STUDIO_FLEX_OP_CONST = 1;
-const STUDIO_FLEX_OP_FETCH1 = 2;
-const STUDIO_FLEX_OP_ADD = 4;
-const STUDIO_FLEX_OP_SUB = 5;
-const STUDIO_FLEX_OP_MUL = 6;
-const STUDIO_FLEX_OP_DIV = 7;
-const STUDIO_FLEX_OP_NEG = 8;
-const STUDIO_FLEX_OP_MAX = 13;
-const STUDIO_FLEX_OP_MIN = 14;
-const STUDIO_FLEX_OP_DME_LOWER_EYELID = 20;
-const STUDIO_FLEX_OP_DME_UPPER_EYELID = 21;
-const MAX_STUDIO_FLEX_DESC = 1024;
-const MAX_STUDIO_FLEX_CTRL = 96;
-class MdlAttachment {
-    name = '';
-    lowcasename = '';
-    mdl = null;
-    flags = 0;
-    localbone = 0;
-    local = [];
-}
-class MdlStudioAnimDesc {
-    name = '';
-    animSections = [];
-    mdl = null;
-    startOffset = 0;
-    fps = 0;
-    flags = 0;
-    numframes = 0;
-    nummovements = 0;
-    animblock = 0;
-    animIndex = 0;
-    numikrules = 0;
-    animblockikruleOffset = 0;
-    numlocalhierarchy = 0;
-    localhierarchyOffset = 0;
-    sectionOffset = 0;
-    sectionframes = 0;
-    zeroframespan = 0;
-    zeroframecount = 0;
-    zeroframeOffset = 0;
-    frames = [];
-    pAnim(frameIndex /*, flStall TODOv2*/) {
-        if (this.mdl) {
-            return this.mdl.loader._parseAnimSection(this.mdl.reader, this, frameIndex);
-        }
-        return null;
-    }
-    pZeroFrameData() {
-        return null;
-        /*
-        short				zeroframespan;	// frames per span
-            short				zeroframecount; // number of spans
-            int					zeroframeindex;
-            byte				*pZeroFrameData() const { if (zeroframeindex) return (((byte *)this) + zeroframeindex); else return NULL; };
-            */
-    }
-}
-class MdlStudioFlexRule {
-    ops = [];
-    flex;
-}
-class MdlStudioFlexOp {
-    op = 0; //TODO: create op enum
-    index = 0;
-    value = 0;
-}
-class MdlStudioPoseParam {
-    name = '';
-    flags = 0;
-    start = 0;
-    end = 0;
-    loop = 0;
-    midpoint = 0;
-}
-class SourceMdl {
-    repository;
-    externalMdlsV2 = [];
-    attachmentNames = new Map();
-    flexController = new FlexController();
-    skinReferences = [];
-    textures;
-    modelGroups;
-    header;
-    bodyParts;
-    sequences = [];
-    texturesDir = [];
-    flexRules = [];
-    flexControllers = [];
-    boneCount;
-    bones = [];
-    boneNames = new Map();
-    numflexdesc = 0;
-    attachments = [];
-    animDesc = [];
-    loader;
-    reader;
-    poseParameters = [];
-    hitboxSets = [];
-    boneOffset = 0;
-    boneControllerCount = 0;
-    boneControllerOffset = 0;
-    hitboxCount = 0;
-    hitboxOffset = 0;
-    localAnimCount = 0;
-    localAnimOffset = 0;
-    localSeqCount = 0;
-    localSeqOffset = 0;
-    numFlexRules = 0;
-    flexRulesIndex = 0;
-    textureCount = 0;
-    textureOffset = 0;
-    textureDirCount = 0;
-    textureDirOffset = 0;
-    skinReferenceCount = 0;
-    skinFamilyCount = 0;
-    skinReferenceOffset = 0;
-    bodyPartCount = 0;
-    bodyPartOffset = 0;
-    attachementCount = 0;
-    attachementOffset = 0;
-    localNodeCount = 0;
-    localNodeIndex = 0;
-    localNodeNameIndex = 0;
-    flexDescIndex = 0;
-    flexControllerCount = 0;
-    flexControllerIndex = 0;
-    ikChainCount = 0;
-    ikChainIndex = 0;
-    mouthsCount = 0;
-    mouthsIndex = 0;
-    localPoseParamCount = 0;
-    localPoseParamOffset = 0;
-    surfacePropIndex = 0;
-    keyValueIndex = 0;
-    keyValueCount = 0;
-    ikLockCount = 0;
-    ikLockIndex = 0;
-    includeModelCount = 0;
-    includeModelOffset = 0;
-    animBlocksNameIndex = 0;
-    boneTableByNameIndex = 0;
-    vertexBase = 0;
-    offsetBase = 0;
-    flexControllerUICount = 0;
-    flexControllerUIIndex = 0;
-    studiohdr2index = 0;
-    srcbonetransform_count = 0;
-    srcbonetransform_index = 0;
-    illumpositionattachmentindex = 0;
-    flMaxEyeDeflection = 0;
-    linearboneOffset = 0;
-    constructor(repository) {
-        this.repository = repository;
-    }
-    getMaterialName(skinId, materialId /*, materialOverride = []*/) {
-        if (skinId >= this.skinReferences.length) {
-            skinId = 0; // default to 0
-        }
-        const skinRef = this.skinReferences[skinId];
-        if (!skinRef) {
-            return '';
-        }
-        if (materialId >= skinRef.length) {
-            materialId = skinRef.length - 1;
-        }
-        let textureId = skinRef[materialId];
-        if (textureId >= this.textures.length) {
-            textureId = 0;
-        }
-        return /*materialOverride[textureId] ? materialOverride[textureId].name : */ this.textures[textureId].name;
-    }
-    getSkinList() {
-        const skinReferences = this.skinReferences;
-        const skinList = [];
-        for (let skinIndex = 0; skinIndex < skinReferences.length; ++skinIndex) {
-            skinList.push(skinIndex);
-        }
-        return skinList;
-    }
-    getBodyPart(bodyPartId) {
-        return this.bodyParts[bodyPartId];
-    }
-    getBodyParts() {
-        return this.bodyParts;
-    }
-    async getSequence(sequenceName) {
-        const list = this.sequences;
-        for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
-            const seq = list[seqIndex];
-            if ((seq.name == sequenceName) && seq.flags != 0x800) { //TODOV2: const
-                return seq;
-            }
-        }
-        // Seek in external Mdl's
-        const extCount = this.getExternalMdlCount();
-        for (let extIndex = 0; extIndex < extCount; ++extIndex) {
-            const mdl = await this.getExternalMdl(extIndex);
-            if (mdl) {
-                const seq = await mdl.getSequence(sequenceName);
-                if (seq) {
-                    return seq;
-                }
-            }
-        }
-        return null;
-    }
-    getModelGroup(modelGroupId) {
-        return this.modelGroups[modelGroupId];
-    }
-    getModelGroups() {
-        return this.modelGroups;
-    }
-    getExternalMdlCount() {
-        return this.modelGroups.length;
-    }
-    async getExternalMdl(externalId) {
-        if (this.externalMdlsV2[externalId] !== undefined) {
-            return this.externalMdlsV2[externalId];
-        }
-        const modelGroup = this.modelGroups[externalId];
-        if (modelGroup) {
-            const p = new Promise(async (resolve) => {
-                const mdlLoader = getLoader('SourceEngineMDLLoader');
-                const mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
-                if (mdl) {
-                    //this.externalMdlsV2[externalId] = mdl;
-                    resolve(mdl);
-                }
-                else {
-                    resolve(null);
-                }
-            });
-            this.externalMdlsV2[externalId] = p;
-            return p;
-        }
-        return null;
-    }
-    getTextureDir() {
-        return this.texturesDir;
-    }
-    getDimensions(out = vec3.create()) {
-        if (this.header) {
-            vec3.sub(out, this.header.hull_max, this.header.hull_min);
-        }
-        return out;
-    }
-    getBBoxMin(out = vec3.create()) {
-        if (this.header) {
-            vec3.copy(out, this.header.hull_min);
-        }
-        return out;
-    }
-    getBBoxMax(out = vec3.create()) {
-        if (this.header) {
-            vec3.copy(out, this.header.hull_max);
-        }
-        return out;
-    }
-    async getAnimList() {
-        const animList = new Set;
-        //animList = animList.concat(this.getSequences());
-        for (const seq of this.getSequences()) {
-            animList.add(seq);
-        }
-        const extCount = this.getExternalMdlCount();
-        for (let extIndex = 0; extIndex < extCount; ++extIndex) {
-            const mdl = await this.getExternalMdl(extIndex);
-            if (mdl) {
-                for (const seq of mdl.getSequences()) {
-                    animList.add(seq);
-                }
-            }
-        }
-        return animList;
-    }
-    getFlexRules() {
-        return this.flexRules;
-    }
-    getFlexControllers() {
-        return this.flexControllers;
-    }
-    runFlexesRules(flexesWeight, g_flexdescweight) {
-        //this.g_flexdescweight = this.g_flexdescweight || new Float32Array(MAX_STUDIO_FLEX_DESC);
-        const src = new Float32Array(MAX_STUDIO_FLEX_CTRL * 4); //TODO: optimize
-        const flexControllers = this.getFlexControllers();
-        if (flexControllers) {
-            for (let controllerIndex = 0, l = flexControllers.length; controllerIndex < l; ++controllerIndex) {
-                const flexController = flexControllers[controllerIndex];
-                //console.error(controllerIndex, flexController.name);
-                const j = flexController.localToGlobal;
-                // remap m_flexweights to full dynamic range, global flexcontroller indexes
-                if (j >= 0 && j < MAX_STUDIO_FLEX_CTRL * 4) {
-                    const flexWeight = flexesWeight[flexController.name] ?? this.flexController.getControllerValue(flexController.name);
-                    src[j] = flexWeight /*m_flexweight[controllerIndex]*/ * (flexController.max - flexController.min) + flexController.min;
-                }
-            }
-            this.#runFlexesRules(src, g_flexdescweight);
-        }
-        //return g_flexdescweight;
-    }
-    #runFlexesRules(src, dest) {
-        for (let i = 0; i < this.numflexdesc; ++i) {
-            dest[i] = 0;
-        }
-        const flexRules = this.getFlexRules();
-        if (flexRules) {
-            for (let i = 0, l = flexRules.length; i < l; ++i) {
-                const stack = new Float32Array(32);
-                let k = 0;
-                const rule = flexRules[i];
-                const numops = rule.ops.length;
-                for (let j = 0; j < numops; j++) {
-                    const op = rule.ops[j];
-                    let pCloseLidV;
-                    let flCloseLidV;
-                    let pCloseLid;
-                    let flCloseLid;
-                    let nEyeUpDownIndex;
-                    let flEyeUpDown;
-                    switch (op.op) {
-                        case STUDIO_FLEX_OP_ADD:
-                            stack[k - 2] = stack[k - 2] + stack[k - 1];
-                            k--;
-                            break;
-                        case STUDIO_FLEX_OP_SUB:
-                            stack[k - 2] = stack[k - 2] - stack[k - 1];
-                            k--;
-                            break;
-                        case STUDIO_FLEX_OP_MUL:
-                            stack[k - 2] = stack[k - 2] * stack[k - 1];
-                            k--;
-                            break;
-                        case STUDIO_FLEX_OP_DIV:
-                            if (stack[k - 1] > 0.0001) {
-                                stack[k - 2] = stack[k - 2] / stack[k - 1];
-                            }
-                            else {
-                                stack[k - 2] = 0;
-                            }
-                            k--;
-                            break;
-                        case STUDIO_FLEX_OP_NEG:
-                            stack[k - 1] = -stack[k - 1];
-                            break;
-                        case STUDIO_FLEX_OP_MAX:
-                            stack[k - 2] = Math.max(stack[k - 2], stack[k - 1]);
-                            k--;
-                            break;
-                        case STUDIO_FLEX_OP_MIN:
-                            stack[k - 2] = Math.min(stack[k - 2], stack[k - 1]);
-                            k--;
-                            break;
-                        case STUDIO_FLEX_OP_CONST:
-                            stack[k] = op.value;
-                            k++;
-                            break;
-                        case STUDIO_FLEX_OP_FETCH1:
-                            const m = this.flexControllers[op.index].localToGlobal;
-                            stack[k] = src[m];
-                            ++k;
-                            break;
-                        case STUDIO_FLEX_OP_DME_LOWER_EYELID:
-                            pCloseLidV = this.flexControllers[op.index];
-                            flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal], pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
-                            pCloseLid = this.flexControllers[stack[k - 1]];
-                            flCloseLid = RemapValClamped(src[pCloseLid.localToGlobal], pCloseLid.min, pCloseLid.max, 0.0, 1.0);
-                            nEyeUpDownIndex = stack[k - 3];
-                            flEyeUpDown = 0.0;
-                            if (nEyeUpDownIndex >= 0) {
-                                const pEyeUpDown = this.flexControllers[stack[k - 3]];
-                                flEyeUpDown = RemapValClamped(src[pEyeUpDown.localToGlobal], pEyeUpDown.min, pEyeUpDown.max, -1.0, 1.0);
-                            }
-                            if (flEyeUpDown > 0.0) {
-                                stack[k - 3] = (1.0 - flEyeUpDown) * (1.0 - flCloseLidV) * flCloseLid;
-                            }
-                            else {
-                                stack[k - 3] = (1.0 - flCloseLidV) * flCloseLid;
-                            }
-                            //console.error(stack [k - 3]);
-                            k -= 2;
-                            break;
-                        case STUDIO_FLEX_OP_DME_UPPER_EYELID:
-                            pCloseLidV = this.flexControllers[op.index];
-                            flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal], pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
-                            pCloseLid = this.flexControllers[stack[k - 1]];
-                            flCloseLid = RemapValClamped(src[pCloseLid.localToGlobal], pCloseLid.min, pCloseLid.max, 0.0, 1.0);
-                            nEyeUpDownIndex = stack[k - 3];
-                            flEyeUpDown = 0.0;
-                            if (nEyeUpDownIndex >= 0) {
-                                const pEyeUpDown = this.flexControllers[stack[k - 3]];
-                                flEyeUpDown = RemapValClamped(src[pEyeUpDown.localToGlobal], pEyeUpDown.min, pEyeUpDown.max, -1.0, 1.0);
-                            }
-                            if (flEyeUpDown < 0.0) {
-                                stack[k - 3] = (1.0 + flEyeUpDown) * flCloseLidV * flCloseLid;
-                            }
-                            else {
-                                stack[k - 3] = flCloseLidV * flCloseLid;
-                            }
-                            //stack [k - 3] = Math.random();
-                            k -= 2;
-                            break;
-                        //console.error('Unknown op ' + op.op)//TODOV2
-                    }
-                    //pops++;
-                }
-                dest[rule.flex] = stack[0];
-            }
-        }
-        //console.log(stack);
-    }
-    addExternalMdl(mdlName) {
-        //TODOV2: check name exists
-        const modelgroup = new MdlStudioModelGroup();
-        modelgroup.label = '';
-        modelgroup.name = mdlName;
-        this.modelGroups.push(modelgroup);
-    }
-    getBoneCount() {
-        return this.boneCount;
-    }
-    getBones() {
-        return this.bones;
-    }
-    getBone(boneIndex) {
-        const bones = this.getBones();
-        if (bones) {
-            return bones[boneIndex];
-        }
-        return null;
-    }
-    getBoneByName(boneName) {
-        const bones = this.getBones();
-        const boneIndex = this.boneNames.get(boneName);
-        if (bones && boneIndex !== undefined) {
-            return bones[boneIndex];
-        }
-        return null;
-    }
-    getBoneId(boneName) {
-        const boneIndex = this.boneNames.get(boneName);
-        return boneIndex ?? -1;
-    }
-    getAttachments() {
-        return this.attachments;
-    }
-    getAttachmentsNames(out) {
-        return Array.from(this.getAttachments());
-    }
-    getAttachmentById(attachmentId) {
-        const list = this.getAttachments();
-        if (list) {
-            return list[attachmentId];
-        }
-        return null;
-    }
-    getAttachment(attachmentName) {
-        attachmentName = attachmentName.toLowerCase();
-        return this.attachmentNames.get(attachmentName) ?? null;
-    }
-    getSequenceById(sequenceId) {
-        return this.sequences[sequenceId];
-    }
-    /*
-    getSequencesList() {
-        let sequencesList = [];
-        sequencesList = sequencesList.concat(this.getSequences());
-
-        const list = this.externalMdlsV2;
-        for (let i = 0; i < list.length; ++i) {
-            let mdl = list[i];
-            sequencesList = sequencesList.concat(mdl.getSequences());
-        }
-        return sequencesList;
-    }
-
-    getSequencesList2() {
-        let sequencesList = [];
-        sequencesList = sequencesList.concat(this.getSequences2());
-
-        const list = this.externalMdlsV2;
-        for (let i = 0; i < list.length; ++i) {
-            let mdl = list[i];
-            sequencesList = sequencesList.concat(mdl.getSequences2());
-        }
-        return sequencesList;
-    }
-    */
-    getSequences() {
-        const list = this.sequences;
-        const animList = [];
-        for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
-            const seq = list[seqIndex];
-            animList.push(seq.name);
-        }
-        return animList;
-    }
-    getSequences2() {
-        const list = this.sequences;
-        const animList = [];
-        for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
-            const seq = list[seqIndex];
-            //if ((seq.activity != -1) && (seq.activityName != '')) {
-            //if (seq.activityName != '') {
-            //if (seq.name == 'run_melee') {
-            if ((seq.activity == 0)) {
-                animList.push(seq.name);
-            }
-        }
-        return animList;
-    }
-    getAnimDescription(animIndex) {
-        return this.animDesc[animIndex];
-    }
-    getAnimFrame(dynamicProp, animDesc, frameIndex) {
-        //console.info(frameIndex);
-        //const animDesc = this.getAnimDescription(animIndex);
-        if (animDesc && this.getBones()) {
-            const section = this.loader._parseAnimSection(this.reader, animDesc, frameIndex); //TODOv3
-            //const section = animDesc.animSections[0];
-            animDesc.frames = [];
-            const frame = dynamicProp.frameframe; // = dynamicProp.frameframe || Object.create(null);
-            //frame.bones = Object.create(null);
-            //for (let frameIndex=0; frameIndex < animDesc.numframes; ++frameIndex)
-            {
-                //frame = Object.create(null);
-                //frame.bones = frame.bones || Object.create(null);
-                //const sectionIndex = 0;
-                let frameIndex2 = frameIndex;
-                if (animDesc.sectionframes != 0) {
-                    //sectionIndex = Math.floor(frameIndex / animDesc.sectionframes);
-                    frameIndex2 = frameIndex % animDesc.sectionframes;
-                }
-                //frameIndex % animDesc.sectionframes;
-                const blockList = section; //animDesc.animSections[sectionIndex];
-                if (blockList) {
-                    for (let blockIndex = 0; blockIndex < blockList.length; ++blockIndex) {
-                        const block = blockList[blockIndex];
-                        const bone = this.bones[block.bone];
-                        if (bone != undefined) {
-                            //const fb1 = (this.frame && this.frame.bones) ? this.frame.bones[bone.name] || Object.create(null) : Object.create(null);
-                            //const fb = Object.create(null);
-                            let fb = frame.bones[bone.name];
-                            if (fb === undefined) {
-                                fb = Object.create(null);
-                                frame.bones[bone.name] = fb;
-                                fb.rot = vec3.create();
-                                fb.pos = vec3.create();
-                                fb.boneId = bone.boneId; //TODOv2
-                            }
-                            //frame.bones[bone.name] = fb;
-                            //frame.bones[bone.boneId] = fb;
-                            block.getRot(fb.rot, this, bone, frameIndex2);
-                            block.getPos(fb.pos, this, bone, frameIndex2);
-                            fb.valid = true;
-                            //console.log(bone.name, fb.pos, fb.rot);
-                        }
-                    }
-                    //animDesc.frames.push(frame);
-                    //this.frame = frame;
-                    return frame;
-                }
-            }
-        }
-        return null;
-    }
-    getLocalPoseParameter(poseIndex) {
-        return this.poseParameters[poseIndex];
-    }
-    getPoseParameters() {
-        return this.poseParameters;
-    }
-    /*
-    getAllPoseParameters() {
-        const poseList = Object.create(null);
-        //poseList = poseList.concat(this.getPoseParameters());
-
-        const list = this.externalMdlsV2.concat(this);
-        for (let i = 0; i < list.length; ++i) {
-            let mdl = list[i];
-            let pp = mdl.getPoseParameters();
-            if (!pp) {
-                return null;
-            }
-            for (let j = 0; j < pp.length; j++) {
-                poseList[pp[j].name] = 1;
-            }
-        }
-        return poseList;
-    }
-    */
-    boneFlags(boneIndex) {
-        const bone = this.getBone(boneIndex);
-        if (bone) {
-            return bone.flags;
-        }
-        return 0;
-    }
-}
-class MdlStudioModelGroup {
-    name;
-    label;
-}
-class MdlTexture {
-    name;
-    originalName;
-}
-class MdlBodyPart {
-    name;
-    base;
-    models;
-}
-
 class AnimationDescription {
     #animation;
     #weight;
@@ -35153,102 +34482,8 @@ class Hitbox {
     }
 }
 
-function cleanSource1MaterialName(name) {
-    name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '').replace(/^materials\//g, '');
-    name = name + '.vmt';
-    //name = 'materials/' + name;
-    return name;
-}
-class SourceEngineMaterialManager {
-    static #fileListPerRepository = new Map();
-    static #materialList = new Map();
-    static #materialList2 = new Set();
-    static #materialListPerRepository = {};
-    static getMaterial(repositoryName, fileName, searchPaths) {
-        fileName = cleanSource1MaterialName(fileName);
-        if (searchPaths) {
-            const promises = [];
-            for (const searchPath of searchPaths) {
-                promises.push(this.#getMaterial(repositoryName, 'materials/' + searchPath + fileName));
-            }
-            const promise = new Promise((resolve, reject) => {
-                Promise.allSettled(promises).then((promises) => {
-                    for (const promise of promises) {
-                        if (promise.status == 'fulfilled') {
-                            resolve(promise.value);
-                            return;
-                        }
-                    }
-                    this.#getMaterial(repositoryName, 'materials/' + fileName).then((material) => resolve(material), () => reject(null));
-                });
-            });
-            return promise;
-        }
-        else {
-            return this.#getMaterial(repositoryName, 'materials/' + fileName);
-        }
-    }
-    static #getMaterial(repositoryName, fileName) {
-        const material = this.#materialList.get(fileName);
-        if (material instanceof Promise) {
-            const promise = new Promise((resolve, reject) => {
-                material.then((material) => {
-                    const newMaterial = material.clone();
-                    this.#materialList2.add(newMaterial);
-                    resolve(newMaterial);
-                }).catch((value) => reject(value));
-            });
-            return promise;
-        }
-        if (material !== undefined) {
-            return new Promise((resolve, reject) => {
-                const newMaterial = material.clone();
-                this.#materialList2.add(newMaterial);
-                resolve(newMaterial);
-            });
-        }
-        else {
-            const promise = new Promise((resolve, reject) => {
-                const vmtLoader = getLoader('SourceEngineVMTLoader');
-                vmtLoader.load(repositoryName, fileName).then((material) => {
-                    this.#materialList.set(fileName, material);
-                    const newMaterial = material.clone();
-                    this.#materialList2.add(newMaterial);
-                    resolve(newMaterial);
-                }).catch((value) => reject(value));
-            });
-            this.#materialList.set(fileName, promise);
-            return promise;
-        }
-    }
-    static async copyMaterial(repositoryName, sourcePath, destPath, searchPaths) {
-        const material = await this.getMaterial(repositoryName, sourcePath, searchPaths);
-        this.#materialList.set(destPath, material.clone());
-    }
-    static addRepository(repositoryPath) {
-        this.#fileListPerRepository.set(repositoryPath, null);
-    }
-    static async getMaterialList() {
-        const repoList = [];
-        for (let [repositoryName, repository] of this.#fileListPerRepository) {
-            console.error(repositoryName, repository);
-            if (repository == null) {
-                repository = new Promise(async (resolve) => {
-                    try {
-                        const manifestUrl = repositoryName + 'materials_manifest.json'; //todo variable
-                        const response = await customFetch(manifestUrl);
-                        resolve(await response.json());
-                    }
-                    catch (e) {
-                        resolve({ files: [] });
-                    }
-                });
-                this.#fileListPerRepository.set(repositoryName, repository);
-            }
-            repoList.push({ name: repositoryName, files: [await repository] });
-        }
-        return { files: repoList };
-    }
+function getRandomInt(max) {
+    return Math.floor(Math.random() * max);
 }
 
 //-----------------------------------------------------------------------------
@@ -36851,8 +36086,773 @@ class SourceAnimation {
     }
 }
 
-function getRandomInt(max) {
-    return Math.floor(Math.random() * max);
+class FlexController {
+    controllers = {};
+    controllers2 = {};
+    controllerIndex = 0;
+    getController(name, min, max) {
+        if (!this.controllers[name]) {
+            this.controllers2[this.controllerIndex] = 0;
+            this.controllers[name] = { i: this.controllerIndex++, min: min, max: max };
+            /*
+            if (typeof AddController !== 'undefined') {
+                AddController(name, min, max);
+            }
+                */
+            this.setControllerValue(name, 0);
+        }
+        return this.controllers[name].i;
+    }
+    getControllers() {
+        return this.controllers;
+    }
+    getControllerValue(name) {
+        const index = this.controllers[name].i;
+        if (index !== undefined) {
+            return this.controllers2[index];
+        }
+        return 0;
+    }
+    getControllerRealValue(name) {
+        const controller = this.controllers[name];
+        if (controller !== undefined) {
+            const index = this.controllers[name].i;
+            return RemapValClamped(this.controllers2[index], 0.0, 1.0, controller.min, controller.max);
+        }
+        return 0;
+    }
+    setControllerValue(name, value) {
+        const controller = this.controllers[name];
+        if (controller !== undefined) {
+            value = RemapValClamped(value, controller.min, controller.max, 0.0, 1.0);
+            this.controllers2[controller.i] = value;
+        }
+    }
+    setAllValues(value) {
+        for (const i in this.controllers) {
+            this.setControllerValue(i, value);
+        }
+    }
+    removeAllControllers() {
+        this.controllers = {};
+        this.controllers2 = {};
+        this.controllerIndex = 0;
+    }
+}
+
+/**
+ * MDL Model
+ */
+//TODOv3 remove parse* function
+const STUDIO_FLEX_OP_CONST = 1;
+const STUDIO_FLEX_OP_FETCH1 = 2;
+const STUDIO_FLEX_OP_ADD = 4;
+const STUDIO_FLEX_OP_SUB = 5;
+const STUDIO_FLEX_OP_MUL = 6;
+const STUDIO_FLEX_OP_DIV = 7;
+const STUDIO_FLEX_OP_NEG = 8;
+const STUDIO_FLEX_OP_MAX = 13;
+const STUDIO_FLEX_OP_MIN = 14;
+const STUDIO_FLEX_OP_DME_LOWER_EYELID = 20;
+const STUDIO_FLEX_OP_DME_UPPER_EYELID = 21;
+const MAX_STUDIO_FLEX_DESC = 1024;
+const MAX_STUDIO_FLEX_CTRL = 96;
+class MdlAttachment {
+    name = '';
+    lowcasename = '';
+    mdl = null;
+    flags = 0;
+    localbone = 0;
+    local = [];
+}
+class MdlStudioAnimDesc {
+    name = '';
+    animSections = [];
+    mdl = null;
+    startOffset = 0;
+    fps = 0;
+    flags = 0;
+    numframes = 0;
+    nummovements = 0;
+    animblock = 0;
+    animIndex = 0;
+    numikrules = 0;
+    animblockikruleOffset = 0;
+    numlocalhierarchy = 0;
+    localhierarchyOffset = 0;
+    sectionOffset = 0;
+    sectionframes = 0;
+    zeroframespan = 0;
+    zeroframecount = 0;
+    zeroframeOffset = 0;
+    frames = [];
+    pAnim(frameIndex /*, flStall TODOv2*/) {
+        if (this.mdl) {
+            return this.mdl.loader._parseAnimSection(this.mdl.reader, this, frameIndex);
+        }
+        return null;
+    }
+    pZeroFrameData() {
+        return null;
+        /*
+        short				zeroframespan;	// frames per span
+            short				zeroframecount; // number of spans
+            int					zeroframeindex;
+            byte				*pZeroFrameData() const { if (zeroframeindex) return (((byte *)this) + zeroframeindex); else return NULL; };
+            */
+    }
+}
+class MdlStudioFlexRule {
+    ops = [];
+    flex;
+}
+class MdlStudioFlexOp {
+    op = 0; //TODO: create op enum
+    index = 0;
+    value = 0;
+}
+class MdlStudioPoseParam {
+    name = '';
+    flags = 0;
+    start = 0;
+    end = 0;
+    loop = 0;
+    midpoint = 0;
+}
+class SourceMdl {
+    repository;
+    externalMdlsV2 = [];
+    attachmentNames = new Map();
+    flexController = new FlexController();
+    skinReferences = [];
+    textures;
+    modelGroups;
+    header;
+    bodyParts;
+    sequences = [];
+    texturesDir = [];
+    flexRules = [];
+    flexControllers = [];
+    boneCount;
+    bones = [];
+    boneNames = new Map();
+    numflexdesc = 0;
+    attachments = [];
+    animDesc = [];
+    loader;
+    reader;
+    poseParameters = [];
+    hitboxSets = [];
+    boneOffset = 0;
+    boneControllerCount = 0;
+    boneControllerOffset = 0;
+    hitboxCount = 0;
+    hitboxOffset = 0;
+    localAnimCount = 0;
+    localAnimOffset = 0;
+    localSeqCount = 0;
+    localSeqOffset = 0;
+    numFlexRules = 0;
+    flexRulesIndex = 0;
+    textureCount = 0;
+    textureOffset = 0;
+    textureDirCount = 0;
+    textureDirOffset = 0;
+    skinReferenceCount = 0;
+    skinFamilyCount = 0;
+    skinReferenceOffset = 0;
+    bodyPartCount = 0;
+    bodyPartOffset = 0;
+    attachmentCount = 0;
+    attachmentOffset = 0;
+    localNodeCount = 0;
+    localNodeIndex = 0;
+    localNodeNameIndex = 0;
+    flexDescIndex = 0;
+    flexControllerCount = 0;
+    flexControllerIndex = 0;
+    ikChainCount = 0;
+    ikChainIndex = 0;
+    mouthsCount = 0;
+    mouthsIndex = 0;
+    localPoseParamCount = 0;
+    localPoseParamOffset = 0;
+    surfacePropIndex = 0;
+    keyValueIndex = 0;
+    keyValueCount = 0;
+    ikLockCount = 0;
+    ikLockIndex = 0;
+    includeModelCount = 0;
+    includeModelOffset = 0;
+    animBlocksNameIndex = 0;
+    boneTableByNameIndex = 0;
+    vertexBase = 0;
+    offsetBase = 0;
+    flexControllerUICount = 0;
+    flexControllerUIIndex = 0;
+    studiohdr2index = 0;
+    srcbonetransform_count = 0;
+    srcbonetransform_index = 0;
+    illumpositionattachmentindex = 0;
+    flMaxEyeDeflection = 0;
+    linearboneOffset = 0;
+    constructor(repository) {
+        this.repository = repository;
+    }
+    getMaterialName(skinId, materialId /*, materialOverride = []*/) {
+        if (skinId >= this.skinReferences.length) {
+            skinId = 0; // default to 0
+        }
+        const skinRef = this.skinReferences[skinId];
+        if (!skinRef) {
+            return '';
+        }
+        if (materialId >= skinRef.length) {
+            materialId = skinRef.length - 1;
+        }
+        let textureId = skinRef[materialId];
+        if (textureId >= this.textures.length) {
+            textureId = 0;
+        }
+        return /*materialOverride[textureId] ? materialOverride[textureId].name : */ this.textures[textureId].name;
+    }
+    getSkinList() {
+        const skinReferences = this.skinReferences;
+        const skinList = [];
+        for (let skinIndex = 0; skinIndex < skinReferences.length; ++skinIndex) {
+            skinList.push(skinIndex);
+        }
+        return skinList;
+    }
+    getBodyPart(bodyPartId) {
+        return this.bodyParts[bodyPartId];
+    }
+    getBodyParts() {
+        return this.bodyParts;
+    }
+    async getSequence(sequenceName) {
+        const list = this.sequences;
+        for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
+            const seq = list[seqIndex];
+            if ((seq.name == sequenceName) && seq.flags != 0x800) { //TODOV2: const
+                return seq;
+            }
+        }
+        // Seek in external Mdl's
+        const extCount = this.getExternalMdlCount();
+        for (let extIndex = 0; extIndex < extCount; ++extIndex) {
+            const mdl = await this.getExternalMdl(extIndex);
+            if (mdl) {
+                const seq = await mdl.getSequence(sequenceName);
+                if (seq) {
+                    return seq;
+                }
+            }
+        }
+        return null;
+    }
+    getModelGroup(modelGroupId) {
+        return this.modelGroups[modelGroupId];
+    }
+    getModelGroups() {
+        return this.modelGroups;
+    }
+    getExternalMdlCount() {
+        return this.modelGroups.length;
+    }
+    async getExternalMdl(externalId) {
+        if (this.externalMdlsV2[externalId] !== undefined) {
+            return this.externalMdlsV2[externalId];
+        }
+        const modelGroup = this.modelGroups[externalId];
+        if (modelGroup) {
+            const p = new Promise(async (resolve) => {
+                const mdlLoader = getLoader('SourceEngineMDLLoader');
+                const mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
+                if (mdl) {
+                    //this.externalMdlsV2[externalId] = mdl;
+                    resolve(mdl);
+                }
+                else {
+                    resolve(null);
+                }
+            });
+            this.externalMdlsV2[externalId] = p;
+            return p;
+        }
+        return null;
+    }
+    getTextureDir() {
+        return this.texturesDir;
+    }
+    getDimensions(out = vec3.create()) {
+        if (this.header) {
+            vec3.sub(out, this.header.hull_max, this.header.hull_min);
+        }
+        return out;
+    }
+    getBBoxMin(out = vec3.create()) {
+        if (this.header) {
+            vec3.copy(out, this.header.hull_min);
+        }
+        return out;
+    }
+    getBBoxMax(out = vec3.create()) {
+        if (this.header) {
+            vec3.copy(out, this.header.hull_max);
+        }
+        return out;
+    }
+    async getAnimList() {
+        const animList = new Set;
+        //animList = animList.concat(this.getSequences());
+        for (const seq of this.getSequences()) {
+            animList.add(seq);
+        }
+        const extCount = this.getExternalMdlCount();
+        for (let extIndex = 0; extIndex < extCount; ++extIndex) {
+            const mdl = await this.getExternalMdl(extIndex);
+            if (mdl) {
+                for (const seq of mdl.getSequences()) {
+                    animList.add(seq);
+                }
+            }
+        }
+        return animList;
+    }
+    getFlexRules() {
+        return this.flexRules;
+    }
+    getFlexControllers() {
+        return this.flexControllers;
+    }
+    runFlexesRules(flexesWeight, g_flexdescweight) {
+        //this.g_flexdescweight = this.g_flexdescweight || new Float32Array(MAX_STUDIO_FLEX_DESC);
+        const src = new Float32Array(MAX_STUDIO_FLEX_CTRL * 4); //TODO: optimize
+        const flexControllers = this.getFlexControllers();
+        if (flexControllers) {
+            for (let controllerIndex = 0, l = flexControllers.length; controllerIndex < l; ++controllerIndex) {
+                const flexController = flexControllers[controllerIndex];
+                //console.error(controllerIndex, flexController.name);
+                const j = flexController.localToGlobal;
+                // remap m_flexweights to full dynamic range, global flexcontroller indexes
+                if (j >= 0 && j < MAX_STUDIO_FLEX_CTRL * 4) {
+                    const flexWeight = flexesWeight[flexController.name] ?? this.flexController.getControllerValue(flexController.name);
+                    src[j] = flexWeight /*m_flexweight[controllerIndex]*/ * (flexController.max - flexController.min) + flexController.min;
+                }
+            }
+            this.#runFlexesRules(src, g_flexdescweight);
+        }
+        //return g_flexdescweight;
+    }
+    #runFlexesRules(src, dest) {
+        for (let i = 0; i < this.numflexdesc; ++i) {
+            dest[i] = 0;
+        }
+        const flexRules = this.getFlexRules();
+        if (flexRules) {
+            for (let i = 0, l = flexRules.length; i < l; ++i) {
+                const stack = new Float32Array(32);
+                let k = 0;
+                const rule = flexRules[i];
+                const numops = rule.ops.length;
+                for (let j = 0; j < numops; j++) {
+                    const op = rule.ops[j];
+                    let pCloseLidV;
+                    let flCloseLidV;
+                    let pCloseLid;
+                    let flCloseLid;
+                    let nEyeUpDownIndex;
+                    let flEyeUpDown;
+                    switch (op.op) {
+                        case STUDIO_FLEX_OP_ADD:
+                            stack[k - 2] = stack[k - 2] + stack[k - 1];
+                            k--;
+                            break;
+                        case STUDIO_FLEX_OP_SUB:
+                            stack[k - 2] = stack[k - 2] - stack[k - 1];
+                            k--;
+                            break;
+                        case STUDIO_FLEX_OP_MUL:
+                            stack[k - 2] = stack[k - 2] * stack[k - 1];
+                            k--;
+                            break;
+                        case STUDIO_FLEX_OP_DIV:
+                            if (stack[k - 1] > 0.0001) {
+                                stack[k - 2] = stack[k - 2] / stack[k - 1];
+                            }
+                            else {
+                                stack[k - 2] = 0;
+                            }
+                            k--;
+                            break;
+                        case STUDIO_FLEX_OP_NEG:
+                            stack[k - 1] = -stack[k - 1];
+                            break;
+                        case STUDIO_FLEX_OP_MAX:
+                            stack[k - 2] = Math.max(stack[k - 2], stack[k - 1]);
+                            k--;
+                            break;
+                        case STUDIO_FLEX_OP_MIN:
+                            stack[k - 2] = Math.min(stack[k - 2], stack[k - 1]);
+                            k--;
+                            break;
+                        case STUDIO_FLEX_OP_CONST:
+                            stack[k] = op.value;
+                            k++;
+                            break;
+                        case STUDIO_FLEX_OP_FETCH1:
+                            const m = this.flexControllers[op.index].localToGlobal;
+                            stack[k] = src[m];
+                            ++k;
+                            break;
+                        case STUDIO_FLEX_OP_DME_LOWER_EYELID:
+                            pCloseLidV = this.flexControllers[op.index];
+                            flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal], pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
+                            pCloseLid = this.flexControllers[stack[k - 1]];
+                            flCloseLid = RemapValClamped(src[pCloseLid.localToGlobal], pCloseLid.min, pCloseLid.max, 0.0, 1.0);
+                            nEyeUpDownIndex = stack[k - 3];
+                            flEyeUpDown = 0.0;
+                            if (nEyeUpDownIndex >= 0) {
+                                const pEyeUpDown = this.flexControllers[stack[k - 3]];
+                                flEyeUpDown = RemapValClamped(src[pEyeUpDown.localToGlobal], pEyeUpDown.min, pEyeUpDown.max, -1.0, 1.0);
+                            }
+                            if (flEyeUpDown > 0.0) {
+                                stack[k - 3] = (1.0 - flEyeUpDown) * (1.0 - flCloseLidV) * flCloseLid;
+                            }
+                            else {
+                                stack[k - 3] = (1.0 - flCloseLidV) * flCloseLid;
+                            }
+                            //console.error(stack [k - 3]);
+                            k -= 2;
+                            break;
+                        case STUDIO_FLEX_OP_DME_UPPER_EYELID:
+                            pCloseLidV = this.flexControllers[op.index];
+                            flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal], pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
+                            pCloseLid = this.flexControllers[stack[k - 1]];
+                            flCloseLid = RemapValClamped(src[pCloseLid.localToGlobal], pCloseLid.min, pCloseLid.max, 0.0, 1.0);
+                            nEyeUpDownIndex = stack[k - 3];
+                            flEyeUpDown = 0.0;
+                            if (nEyeUpDownIndex >= 0) {
+                                const pEyeUpDown = this.flexControllers[stack[k - 3]];
+                                flEyeUpDown = RemapValClamped(src[pEyeUpDown.localToGlobal], pEyeUpDown.min, pEyeUpDown.max, -1.0, 1.0);
+                            }
+                            if (flEyeUpDown < 0.0) {
+                                stack[k - 3] = (1.0 + flEyeUpDown) * flCloseLidV * flCloseLid;
+                            }
+                            else {
+                                stack[k - 3] = flCloseLidV * flCloseLid;
+                            }
+                            //stack [k - 3] = Math.random();
+                            k -= 2;
+                            break;
+                        //console.error('Unknown op ' + op.op)//TODOV2
+                    }
+                    //pops++;
+                }
+                dest[rule.flex] = stack[0];
+            }
+        }
+        //console.log(stack);
+    }
+    addExternalMdl(mdlName) {
+        //TODOV2: check name exists
+        const modelgroup = new MdlStudioModelGroup();
+        modelgroup.label = '';
+        modelgroup.name = mdlName;
+        this.modelGroups.push(modelgroup);
+    }
+    getBoneCount() {
+        return this.boneCount;
+    }
+    getBones() {
+        return this.bones;
+    }
+    getBone(boneIndex) {
+        const bones = this.getBones();
+        if (bones) {
+            return bones[boneIndex];
+        }
+        return null;
+    }
+    getBoneByName(boneName) {
+        const bones = this.getBones();
+        const boneIndex = this.boneNames.get(boneName);
+        if (bones && boneIndex !== undefined) {
+            return bones[boneIndex];
+        }
+        return null;
+    }
+    getBoneId(boneName) {
+        const boneIndex = this.boneNames.get(boneName);
+        return boneIndex ?? -1;
+    }
+    getAttachments() {
+        return this.attachments;
+    }
+    getAttachmentsNames(out) {
+        return Array.from(this.getAttachments());
+    }
+    getAttachmentById(attachmentId) {
+        const list = this.getAttachments();
+        if (list) {
+            return list[attachmentId];
+        }
+        return null;
+    }
+    getAttachment(attachmentName) {
+        attachmentName = attachmentName.toLowerCase();
+        return this.attachmentNames.get(attachmentName) ?? null;
+    }
+    getSequenceById(sequenceId) {
+        return this.sequences[sequenceId];
+    }
+    /*
+    getSequencesList() {
+        let sequencesList = [];
+        sequencesList = sequencesList.concat(this.getSequences());
+
+        const list = this.externalMdlsV2;
+        for (let i = 0; i < list.length; ++i) {
+            let mdl = list[i];
+            sequencesList = sequencesList.concat(mdl.getSequences());
+        }
+        return sequencesList;
+    }
+
+    getSequencesList2() {
+        let sequencesList = [];
+        sequencesList = sequencesList.concat(this.getSequences2());
+
+        const list = this.externalMdlsV2;
+        for (let i = 0; i < list.length; ++i) {
+            let mdl = list[i];
+            sequencesList = sequencesList.concat(mdl.getSequences2());
+        }
+        return sequencesList;
+    }
+    */
+    getSequences() {
+        const list = this.sequences;
+        const animList = [];
+        for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
+            const seq = list[seqIndex];
+            animList.push(seq.name);
+        }
+        return animList;
+    }
+    getSequences2() {
+        const list = this.sequences;
+        const animList = [];
+        for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
+            const seq = list[seqIndex];
+            //if ((seq.activity != -1) && (seq.activityName != '')) {
+            //if (seq.activityName != '') {
+            //if (seq.name == 'run_melee') {
+            if ((seq.activity == 0)) {
+                animList.push(seq.name);
+            }
+        }
+        return animList;
+    }
+    getAnimDescription(animIndex) {
+        return this.animDesc[animIndex];
+    }
+    getAnimFrame(dynamicProp, animDesc, frameIndex) {
+        //console.info(frameIndex);
+        //const animDesc = this.getAnimDescription(animIndex);
+        if (animDesc && this.getBones()) {
+            const section = this.loader._parseAnimSection(this.reader, animDesc, frameIndex); //TODOv3
+            //const section = animDesc.animSections[0];
+            animDesc.frames = [];
+            const frame = dynamicProp.frameframe; // = dynamicProp.frameframe || Object.create(null);
+            //frame.bones = Object.create(null);
+            //for (let frameIndex=0; frameIndex < animDesc.numframes; ++frameIndex)
+            {
+                //frame = Object.create(null);
+                //frame.bones = frame.bones || Object.create(null);
+                //const sectionIndex = 0;
+                let frameIndex2 = frameIndex;
+                if (animDesc.sectionframes != 0) {
+                    //sectionIndex = Math.floor(frameIndex / animDesc.sectionframes);
+                    frameIndex2 = frameIndex % animDesc.sectionframes;
+                }
+                //frameIndex % animDesc.sectionframes;
+                const blockList = section; //animDesc.animSections[sectionIndex];
+                if (blockList) {
+                    for (let blockIndex = 0; blockIndex < blockList.length; ++blockIndex) {
+                        const block = blockList[blockIndex];
+                        const bone = this.bones[block.bone];
+                        if (bone != undefined) {
+                            //const fb1 = (this.frame && this.frame.bones) ? this.frame.bones[bone.name] || Object.create(null) : Object.create(null);
+                            //const fb = Object.create(null);
+                            let fb = frame.bones[bone.name];
+                            if (fb === undefined) {
+                                fb = Object.create(null);
+                                frame.bones[bone.name] = fb;
+                                fb.rot = vec3.create();
+                                fb.pos = vec3.create();
+                                fb.boneId = bone.boneId; //TODOv2
+                            }
+                            //frame.bones[bone.name] = fb;
+                            //frame.bones[bone.boneId] = fb;
+                            block.getRot(fb.rot, this, bone, frameIndex2);
+                            block.getPos(fb.pos, this, bone, frameIndex2);
+                            fb.valid = true;
+                            //console.log(bone.name, fb.pos, fb.rot);
+                        }
+                    }
+                    //animDesc.frames.push(frame);
+                    //this.frame = frame;
+                    return frame;
+                }
+            }
+        }
+        return null;
+    }
+    getLocalPoseParameter(poseIndex) {
+        return this.poseParameters[poseIndex];
+    }
+    getPoseParameters() {
+        return this.poseParameters;
+    }
+    /*
+    getAllPoseParameters() {
+        const poseList = Object.create(null);
+        //poseList = poseList.concat(this.getPoseParameters());
+
+        const list = this.externalMdlsV2.concat(this);
+        for (let i = 0; i < list.length; ++i) {
+            let mdl = list[i];
+            let pp = mdl.getPoseParameters();
+            if (!pp) {
+                return null;
+            }
+            for (let j = 0; j < pp.length; j++) {
+                poseList[pp[j].name] = 1;
+            }
+        }
+        return poseList;
+    }
+    */
+    boneFlags(boneIndex) {
+        const bone = this.getBone(boneIndex);
+        if (bone) {
+            return bone.flags;
+        }
+        return 0;
+    }
+}
+class MdlStudioModelGroup {
+    name;
+    label;
+}
+class MdlTexture {
+    name;
+    originalName;
+}
+class MdlBodyPart {
+    name;
+    base;
+    models;
+}
+
+function cleanSource1MaterialName(name) {
+    name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '').replace(/^materials\//g, '');
+    name = name + '.vmt';
+    //name = 'materials/' + name;
+    return name;
+}
+class SourceEngineMaterialManager {
+    static #fileListPerRepository = new Map();
+    static #materialList = new Map();
+    static #materialList2 = new Set();
+    static #materialListPerRepository = {};
+    static getMaterial(repositoryName, fileName, searchPaths) {
+        fileName = cleanSource1MaterialName(fileName);
+        if (searchPaths) {
+            const promises = [];
+            for (const searchPath of searchPaths) {
+                promises.push(this.#getMaterial(repositoryName, 'materials/' + searchPath + fileName));
+            }
+            const promise = new Promise((resolve, reject) => {
+                Promise.allSettled(promises).then((promises) => {
+                    for (const promise of promises) {
+                        if (promise.status == 'fulfilled') {
+                            resolve(promise.value);
+                            return;
+                        }
+                    }
+                    this.#getMaterial(repositoryName, 'materials/' + fileName).then((material) => resolve(material), () => reject(null));
+                });
+            });
+            return promise;
+        }
+        else {
+            return this.#getMaterial(repositoryName, 'materials/' + fileName);
+        }
+    }
+    static #getMaterial(repositoryName, fileName) {
+        const material = this.#materialList.get(fileName);
+        if (material instanceof Promise) {
+            const promise = new Promise((resolve, reject) => {
+                material.then((material) => {
+                    const newMaterial = material.clone();
+                    this.#materialList2.add(newMaterial);
+                    resolve(newMaterial);
+                }).catch((value) => reject(value));
+            });
+            return promise;
+        }
+        if (material !== undefined) {
+            return new Promise((resolve, reject) => {
+                const newMaterial = material.clone();
+                this.#materialList2.add(newMaterial);
+                resolve(newMaterial);
+            });
+        }
+        else {
+            const promise = new Promise((resolve, reject) => {
+                const vmtLoader = getLoader('SourceEngineVMTLoader');
+                vmtLoader.load(repositoryName, fileName).then((material) => {
+                    this.#materialList.set(fileName, material);
+                    const newMaterial = material.clone();
+                    this.#materialList2.add(newMaterial);
+                    resolve(newMaterial);
+                }).catch((value) => reject(value));
+            });
+            this.#materialList.set(fileName, promise);
+            return promise;
+        }
+    }
+    static async copyMaterial(repositoryName, sourcePath, destPath, searchPaths) {
+        const material = await this.getMaterial(repositoryName, sourcePath, searchPaths);
+        this.#materialList.set(destPath, material.clone());
+    }
+    static addRepository(repositoryPath) {
+        this.#fileListPerRepository.set(repositoryPath, null);
+    }
+    static async getMaterialList() {
+        const repoList = [];
+        for (let [repositoryName, repository] of this.#fileListPerRepository) {
+            console.error(repositoryName, repository);
+            if (repository == null) {
+                repository = new Promise(async (resolve) => {
+                    try {
+                        const manifestUrl = repositoryName + 'materials_manifest.json'; //todo variable
+                        const response = await customFetch(manifestUrl);
+                        resolve(await response.json());
+                    }
+                    catch (e) {
+                        resolve({ files: [] });
+                    }
+                });
+                this.#fileListPerRepository.set(repositoryName, repository);
+            }
+            repoList.push({ name: repositoryName, files: [await repository] });
+        }
+        return { files: repoList };
+    }
 }
 
 let animSpeed = 1.0;
@@ -36866,7 +36866,7 @@ class Source1ModelInstance extends Entity {
     #animations = new Animations();
     #skeleton;
     #skin = 0;
-    #attachements = {};
+    #attachments = {};
     #materialsUsed = new Set();
     animable = true;
     hasAnimations = true;
@@ -36901,7 +36901,7 @@ class Source1ModelInstance extends Entity {
         }
         if (params.isDynamic) {
             this.#initSkeleton();
-            this.#initAttachements();
+            this.#initAttachments();
         }
         this.#updateMaterials();
     }
@@ -37293,26 +37293,26 @@ class Source1ModelInstance extends Entity {
             }
         }
     }
-    #initAttachements() {
-        const attachements = this.sourceModel.getAttachments();
+    #initAttachments() {
+        const attachments = this.sourceModel.getAttachments();
         const localMat3 = mat3.create(); //todo: optimize
-        if (attachements) {
-            for (const attachement of attachements) {
-                const attachementBone = new Bone({ name: attachement.name });
-                localMat3[0] = attachement.local[0];
-                localMat3[3] = attachement.local[1];
-                localMat3[6] = attachement.local[2];
-                localMat3[1] = attachement.local[4];
-                localMat3[4] = attachement.local[5];
-                localMat3[7] = attachement.local[6];
-                localMat3[2] = attachement.local[8];
-                localMat3[5] = attachement.local[9];
-                localMat3[8] = attachement.local[10];
-                vec3.set(attachementBone._position, attachement.local[3], attachement.local[7], attachement.local[11]);
-                quat.fromMat3(attachementBone._quaternion, localMat3);
-                const bone = this.#skeleton.getBoneById(attachement.localbone);
-                bone.addChild(attachementBone);
-                this.#attachements[attachement.lowcasename] = attachementBone;
+        if (attachments) {
+            for (const attachment of attachments) {
+                const attachmentBone = new Bone({ name: attachment.name });
+                localMat3[0] = attachment.local[0];
+                localMat3[3] = attachment.local[1];
+                localMat3[6] = attachment.local[2];
+                localMat3[1] = attachment.local[4];
+                localMat3[4] = attachment.local[5];
+                localMat3[7] = attachment.local[6];
+                localMat3[2] = attachment.local[8];
+                localMat3[5] = attachment.local[9];
+                localMat3[8] = attachment.local[10];
+                vec3.set(attachmentBone._position, attachment.local[3], attachment.local[7], attachment.local[11]);
+                quat.fromMat3(attachmentBone._quaternion, localMat3);
+                const bone = this.#skeleton.getBoneById(attachment.localbone);
+                bone.addChild(attachmentBone);
+                this.#attachments[attachment.lowcasename] = attachmentBone;
             }
         }
     }
@@ -37392,15 +37392,15 @@ class Source1ModelInstance extends Entity {
     toString() {
         return 'Source1ModelInstance ' + super.toString();
     }
-    attachSystem(system, attachementName = '', cpIndex = 0, offset) {
+    attachSystem(system, attachmentName = '', cpIndex = 0, offset) {
         this.addChild(system);
-        const attachement = this.getAttachement(attachementName);
-        if (attachement) {
+        const attachment = this.getAttachment(attachmentName);
+        if (attachment) {
             const controlPoint = system.getControlPoint(cpIndex);
-            attachement.addChild(controlPoint);
+            attachment.addChild(controlPoint);
         }
         else {
-            this.attachSystemToBone(system, attachementName, offset);
+            this.attachSystemToBone(system, attachmentName, offset);
         }
         if (offset) {
             system.getControlPoint(0).position = offset;
@@ -37420,8 +37420,8 @@ class Source1ModelInstance extends Entity {
             this.addChild(controlPoint);
         }
     }
-    getAttachement(attachementName) {
-        return this.#attachements[attachementName.toLowerCase()];
+    getAttachment(attachmentName) {
+        return this.#attachments[attachmentName.toLowerCase()];
     }
     getBoneByName(boneName) {
         if (!this.#skeleton) {
@@ -37638,7 +37638,7 @@ class Source1ModelInstance extends Entity {
                 if (!entity.skeleton) {
                     entity.#createSkeleton();
                     entity.#initSkeleton();
-                    entity.#initAttachements();
+                    entity.#initAttachments();
                 }
                 entity.isDynamic = true;
             }
@@ -37760,9 +37760,9 @@ class SourceModel {
         }
         return null;
     }
-    getAttachementById(attachementIndex) {
+    getAttachmentById(attachmentIndex) {
         if (this.mdl) {
-            return this.mdl.getAttachmentById(attachementIndex);
+            return this.mdl.getAttachmentById(attachmentIndex);
         }
         return null;
     }
@@ -37772,9 +37772,9 @@ class SourceModel {
         }
         return null;
     }
-    getAttachement(attachementName) {
+    getAttachment(attachmentName) {
         if (this.mdl) {
-            return this.mdl.getAttachment(attachementName);
+            return this.mdl.getAttachment(attachmentName);
         }
         return null;
     }
@@ -39628,7 +39628,7 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
         this.#parseSequences(reader, mdl);
         this.#parseBones(reader, mdl);
         parsePoseParameters(reader, mdl);
-        this.#parseAttachements(reader, mdl);
+        this.#parseAttachments(reader, mdl);
         this.#parseFlexRules(reader, mdl);
         this.#parseFlexControllers(reader, mdl);
         parseHitBoxSets(reader, mdl);
@@ -39671,8 +39671,8 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
         mdl.skinReferenceOffset = reader.getInt32();
         mdl.bodyPartCount = reader.getInt32();
         mdl.bodyPartOffset = reader.getInt32();
-        mdl.attachementCount = reader.getInt32();
-        mdl.attachementOffset = reader.getInt32();
+        mdl.attachmentCount = reader.getInt32();
+        mdl.attachmentOffset = reader.getInt32();
         mdl.localNodeCount = reader.getInt32();
         mdl.localNodeIndex = reader.getInt32();
         mdl.localNodeNameIndex = reader.getInt32();
@@ -40250,18 +40250,18 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
         }
         return anim;
     }
-    #parseAttachements(reader, mdl) {
-        const attachements = [];
-        const attachementNames = {};
-        mdl.attachements = attachements;
-        mdl.attachementNames = attachementNames;
-        if (mdl.attachementCount && mdl.attachementOffset) {
-            //const size = mdl.attachementCount * ATTACHMENT_STRUCT_SIZE;
-            for (let i = 0; i < mdl.attachementCount; ++i) {
-                const attachement = this.#parseAttachement(reader, mdl, mdl.attachementOffset + i * ATTACHMENT_STRUCT_SIZE);
-                if (attachement !== null) {
-                    attachements.push(attachement);
-                    attachementNames[attachement.name.toLowerCase()] = attachement;
+    #parseAttachments(reader, mdl) {
+        const attachments = [];
+        const attachmentNames = {};
+        mdl.attachments = attachments;
+        mdl.attachmentNames = attachmentNames;
+        if (mdl.attachmentCount && mdl.attachmentOffset) {
+            //const size = mdl.attachmentCount * ATTACHMENT_STRUCT_SIZE;
+            for (let i = 0; i < mdl.attachmentCount; ++i) {
+                const attachment = this.#parseAttachment(reader, mdl, mdl.attachmentOffset + i * ATTACHMENT_STRUCT_SIZE);
+                if (attachment !== null) {
+                    attachments.push(attachment);
+                    attachmentNames[attachment.name.toLowerCase()] = attachment;
                 }
                 else {
                     return; // More data awaiting
@@ -40269,19 +40269,19 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
             }
         }
     }
-    #parseAttachement(reader, mdl, startOffset) {
+    #parseAttachment(reader, mdl, startOffset) {
         const nameOffset = reader.getInt32(startOffset) + startOffset;
-        const attachement = new MdlAttachment();
-        attachement.mdl = mdl;
-        attachement.flags = reader.getInt32();
-        attachement.localbone = reader.getInt32();
-        attachement.local = [];
+        const attachment = new MdlAttachment();
+        attachment.mdl = mdl;
+        attachment.flags = reader.getInt32();
+        attachment.localbone = reader.getInt32();
+        attachment.local = [];
         for (let i = 0; i < 12; ++i) { //local
-            attachement.local.push(reader.getFloat32());
+            attachment.local.push(reader.getFloat32());
         }
-        attachement.name = reader.getNullString(nameOffset);
-        attachement.lowcasename = attachement.name.toLowerCase();
-        return attachement;
+        attachment.name = reader.getNullString(nameOffset);
+        attachment.lowcasename = attachment.name.toLowerCase();
+        return attachment;
     }
     #parseFlexRules(reader, mdl) {
         if (mdl.numFlexRules && mdl.flexRulesIndex) {
@@ -41082,7 +41082,7 @@ class SourceEngineParticleSystem extends Entity {
     speed = 1;
     isRunning = false;
     radius = 1;
-    attachementBone = null;
+    attachmentBone = null;
     // List of living particles
     livingParticles = [];
     // List of dead but reusable particles
@@ -55003,8 +55003,8 @@ class Source2ParticleSystem extends Entity {
             const cp = this.controlPoints[i];
             cp.step();
             /*if (i == 0) {
-                if (cp.attachementProp) {
-                    const atta = cp.attachementProp;
+                if (cp.attachmentProp) {
+                    const atta = cp.attachmentProp;
                     if (atta) {
                         this.setOrientation(atta.getWorldQuat());
                     }
@@ -55228,13 +55228,13 @@ class Source2ParticleSystem extends Entity {
                         for (const driver of drivers) {
                             const attachmentName = driver.m_attachmentName;
                             if (attachmentName) {
-                                let attachementInstance = model?.getAttachement(attachmentName);
+                                let attachmentInstance = model?.getAttachment(attachmentName);
                                 if (driver.m_entityName == 'parent') {
-                                    attachementInstance = model?.parent?.getAttachement?.(attachmentName) ?? attachementInstance;
+                                    attachmentInstance = model?.parent?.getAttachment?.(attachmentName) ?? attachmentInstance;
                                 }
-                                if (attachementInstance) {
+                                if (attachmentInstance) {
                                     const cp = this.getOwnControlPoint(driver.m_iControlPoint ?? i);
-                                    attachementInstance.addChild(cp);
+                                    attachmentInstance.addChild(cp);
                                     cp.step();
                                 }
                             }
@@ -62508,7 +62508,7 @@ class SetControlPointPositions extends Operator {
 RegisterSource2ParticleOperator('C_OP_SetControlPointPositions', SetControlPointPositions);
 
 class SetControlPointsToModelParticles extends Operator {
-    #followAttachement = false;
+    #followAttachment = false;
     #attachmentName = '';
     hitboxSetName = 'default';
     firstControlPoint = 0;
@@ -62536,7 +62536,7 @@ class SetControlPointsToModelParticles extends Operator {
                 this.skin = value;
                 break;
             case 'm_bAttachment':
-                this.#followAttachement = value;
+                this.#followAttachment = value;
                 break;
             default:
                 super._paramChanged(paramName, value);
@@ -62553,12 +62553,12 @@ class SetControlPointsToModelParticles extends Operator {
                 for (const child of children) {
                     const childCp = child.getOwnControlPoint(firstControlPoint + i);
                     childCp.position = particle.position;
-                    if (this.#followAttachement) {
+                    if (this.#followAttachment) {
                         const model = this.system.getParentModel();
                         if (model) {
-                            const attachement = model.getAttachement?.(this.#attachmentName);
-                            if (attachement) {
-                                childCp.quaternion = attachement.getWorldQuaternion();
+                            const attachment = model.getAttachment?.(this.#attachmentName);
+                            if (attachment) {
+                                childCp.quaternion = attachment.getWorldQuaternion();
                                 childCp.quaternion = particle.quaternion;
                             }
                         }

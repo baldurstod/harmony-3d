@@ -153,8 +153,8 @@ export class SourceMdl {
 	skinReferenceOffset = 0;
 	bodyPartCount = 0;
 	bodyPartOffset = 0;
-	attachementCount = 0;
-	attachementOffset = 0;
+	attachmentCount = 0;
+	attachmentOffset = 0;
 	localNodeCount = 0;
 	localNodeIndex = 0;
 	localNodeNameIndex = 0;
