@@ -43,10 +43,11 @@ export class RepositoryEntry {
 		const len = splittedPath.length - 1;
 
 		for (const [i, p] of splittedPath.entries()) {
-			if (!current.#childs.has(p)) {
+			const currentChild = current.#childs.get(p);
+			if (!currentChild) {
 				current = current.#addFile(p, i != len);
 			} else {
-				current = current.#childs.get(p) as RepositoryEntry;
+				current = currentChild as RepositoryEntry;
 			}
 		}
 	}

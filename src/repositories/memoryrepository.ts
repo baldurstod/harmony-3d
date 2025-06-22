@@ -13,36 +13,41 @@ export class MemoryRepository implements Repository {
 	}
 
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
-		if (this.#files.has(filename)) {
-			return { file: this.#files.get(filename) };
+		const file = this.#files.get(filename);
+		if (file) {
+			return { file: file };
 		}
 		return { error: RepositoryError.FileNotFound };
 	}
 
 	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
-		if (this.#files.has(filename)) {
-			return { buffer: await this.#files.get(filename)!.arrayBuffer() };
+		const file = this.#files.get(filename);
+		if (file) {
+			return { buffer: await file.arrayBuffer() };
 		}
 		return { error: RepositoryError.FileNotFound };
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
-		if (this.#files.has(filename)) {
-			return { text: await this.#files.get(filename)!.text() };
+		const file = this.#files.get(filename);
+		if (file) {
+			return { text: await file.text() };
 		}
 		return { error: RepositoryError.FileNotFound };
 	}
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
-		if (this.#files.has(filename)) {
-			return { blob: this.#files.get(filename) };
+		const file = this.#files.get(filename);
+		if (file) {
+			return { blob: file };
 		}
 		return { error: RepositoryError.FileNotFound };
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
-		if (this.#files.has(filename)) {
-			return { json: JSON.parse(await this.#files.get(filename)!.text()) };
+		const file = this.#files.get(filename);
+		if (file) {
+			return { json: JSON.parse(await file.text()) };
 		}
 		return { error: RepositoryError.FileNotFound };
 	}

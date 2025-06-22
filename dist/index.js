@@ -18996,32 +18996,37 @@ class OverrideRepository {
         return this.#base.name;
     }
     async getFile(filename) {
-        if (this.#overrides.has(filename)) {
-            return { file: this.#overrides.get(filename) };
+        const file = this.#overrides.get(filename);
+        if (file) {
+            return { file: file };
         }
         return this.#base.getFile(filename);
     }
     async getFileAsArrayBuffer(filename) {
-        if (this.#overrides.has(filename)) {
-            return { buffer: await this.#overrides.get(filename).arrayBuffer() };
+        const file = this.#overrides.get(filename);
+        if (file) {
+            return { buffer: await file.arrayBuffer() };
         }
         return this.#base.getFileAsArrayBuffer(filename);
     }
     async getFileAsText(filename) {
-        if (this.#overrides.has(filename)) {
-            return { text: await this.#overrides.get(filename).text() };
+        const file = this.#overrides.get(filename);
+        if (file) {
+            return { text: await file.text() };
         }
         return this.#base.getFileAsText(filename);
     }
     async getFileAsBlob(filename) {
-        if (this.#overrides.has(filename)) {
-            return { blob: this.#overrides.get(filename) };
+        const file = this.#overrides.get(filename);
+        if (file) {
+            return { blob: file };
         }
         return this.#base.getFileAsBlob(filename);
     }
     async getFileAsJson(filename) {
-        if (this.#overrides.has(filename)) {
-            return { json: JSON.parse(await this.#overrides.get(filename).text()) };
+        const file = this.#overrides.get(filename);
+        if (file) {
+            return { json: JSON.parse(await file.text()) };
         }
         return this.#base.getFileAsJson(filename);
     }
@@ -19177,11 +19182,12 @@ class RepositoryEntry {
         let current = this;
         const len = splittedPath.length - 1;
         for (const [i, p] of splittedPath.entries()) {
-            if (!current.#childs.has(p)) {
+            const currentChild = current.#childs.get(p);
+            if (!currentChild) {
                 current = current.#addFile(p, i != len);
             }
             else {
-                current = current.#childs.get(p);
+                current = currentChild;
             }
         }
     }
@@ -19307,32 +19313,37 @@ class MemoryRepository {
         return this.#name;
     }
     async getFile(filename) {
-        if (this.#files.has(filename)) {
-            return { file: this.#files.get(filename) };
+        const file = this.#files.get(filename);
+        if (file) {
+            return { file: file };
         }
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsArrayBuffer(filename) {
-        if (this.#files.has(filename)) {
-            return { buffer: await this.#files.get(filename).arrayBuffer() };
+        const file = this.#files.get(filename);
+        if (file) {
+            return { buffer: await file.arrayBuffer() };
         }
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsText(filename) {
-        if (this.#files.has(filename)) {
-            return { text: await this.#files.get(filename).text() };
+        const file = this.#files.get(filename);
+        if (file) {
+            return { text: await file.text() };
         }
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsBlob(filename) {
-        if (this.#files.has(filename)) {
-            return { blob: this.#files.get(filename) };
+        const file = this.#files.get(filename);
+        if (file) {
+            return { blob: file };
         }
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsJson(filename) {
-        if (this.#files.has(filename)) {
-            return { json: JSON.parse(await this.#files.get(filename).text()) };
+        const file = this.#files.get(filename);
+        if (file) {
+            return { json: JSON.parse(await file.text()) };
         }
         return { error: RepositoryError.FileNotFound };
     }
