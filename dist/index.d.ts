@@ -6114,7 +6114,7 @@ declare class Choreography {
 
          export declare class Repositories {
              #private;
-             static addRepository(repo: Repository): void;
+             static addRepository(repo: Repository): Repository;
              static getRepository(name: string): Repository | undefined;
              static getRepositoryList(): string[];
              static getFile(repositoryName: string, filepath: string): Promise<RepositoryFileResponse>;

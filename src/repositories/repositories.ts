@@ -3,8 +3,9 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
 export class Repositories {
 	static #repositories: Record<string, Repository> = {};
 
-	static addRepository(repo: Repository) {
+	static addRepository(repo: Repository): Repository {
 		this.#repositories[repo.name] = repo;
+		return repo;
 	}
 
 	static getRepository(name: string): Repository | undefined {

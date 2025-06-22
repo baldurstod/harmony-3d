@@ -19426,6 +19426,7 @@ class Repositories {
     static #repositories = {};
     static addRepository(repo) {
         this.#repositories[repo.name] = repo;
+        return repo;
     }
     static getRepository(name) {
         return this.#repositories[name];
