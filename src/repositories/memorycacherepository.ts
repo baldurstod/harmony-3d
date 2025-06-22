@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 /**
  * Cache the result of the underlying repository
@@ -22,7 +22,7 @@ export class MemoryCacheRepository implements Repository {
 			return response;
 		}
 
-		 response = this.#base.getFile(filename);
+		response = this.#base.getFile(filename);
 		this.#files.set(filename, response);
 		return response;
 	}

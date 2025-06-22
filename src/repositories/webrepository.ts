@@ -4,6 +4,7 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
 export class WebRepository implements Repository {
 	#name: string;
 	#base: string;
+
 	constructor(name: string, base: string) {
 		this.#name = name;
 		this.#base = base;
