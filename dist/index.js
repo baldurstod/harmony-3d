@@ -2223,7 +2223,7 @@ class Entity {
     _mvMatrix = mat4.create();
     _normalMatrix = mat3.create();
     _parent = null;
-    materialsParams = {};
+    materialsParams = {}; //TODO: create a map
     isRenderable = false;
     lockPos = false;
     lockRot = false;
@@ -3144,6 +3144,9 @@ class Entity {
         else {
             return this.#layer;
         }
+    }
+    setMaterialParam(name, value) {
+        this.materialsParams[name] = value;
     }
     toJSON() {
         const children = [];

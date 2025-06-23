@@ -53,6 +53,8 @@ export interface EntityParameters {
 	visible?: boolean;
 }
 
+export type MaterialParam = any/*TODO: create an actual type*/;
+
 export class Entity {
 	static addSubMenu: any;
 	id = generateRandomUUID();
@@ -77,7 +79,7 @@ export class Entity {
 	_mvMatrix = mat4.create();
 	_normalMatrix = mat3.create();
 	_parent: Entity | null = null;
-	materialsParams: any = {};
+	materialsParams: { [key: string]: MaterialParam } = {};//TODO: create a map
 	isRenderable = false;
 	lockPos = false;
 	lockRot = false;
@@ -1080,6 +1082,10 @@ export class Entity {
 		}
 	}
 
+	setMaterialParam(name: string, value: MaterialParam) {
+		this.materialsParams[name] = value;
+	}
+
 	toJSON() {
 		const children: any[] = [];
 		for (const child of this.#children) {
@@ -1162,7 +1168,7 @@ export class Entity {
 		}
 		this.castShadow = json.castshadow as boolean;
 		this.receiveShadow = json.receiveshadow as boolean;
-		this.materialsParams = json.materialsparams;
+		this.materialsParams = json.materialsparams as { [key: string]: MaterialParam };
 		this.#hideInExplorer = json.hideinexplorer as boolean ?? false;
 		this.wireframe = json.wireframe as number;
 		this.#layer = json.layer as number;

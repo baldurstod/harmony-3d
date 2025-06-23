@@ -1791,7 +1791,9 @@ declare class Choreography {
          _mvMatrix: mat4;
          _normalMatrix: mat3;
          _parent: Entity | null;
-         materialsParams: any;
+         materialsParams: {
+             [key: string]: MaterialParam;
+         };
          isRenderable: boolean;
          lockPos: boolean;
          lockRot: boolean;
@@ -2017,6 +2019,7 @@ declare class Choreography {
           setProperty(name: string, value: any): Map<string, any>;
           setLayer(layer?: number): void;
           getLayer(): number | undefined;
+          setMaterialParam(name: string, value: MaterialParam): void;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
           createChild(entityName: string, parameters: any): Promise<Entity | Material>;
@@ -3805,6 +3808,8 @@ declare class Choreography {
              PerVertex = 1,
              PerMesh = 2
          }
+
+         declare type MaterialParam = any;
 
          export declare class MateriaParameter {
              #private;
