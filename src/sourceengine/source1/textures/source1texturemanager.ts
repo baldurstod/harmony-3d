@@ -81,7 +81,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		return this.#texturesList.get(repository, path) ?? null;
 	}
 
-	async getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture: Texture, srgb = true) {
+	async getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb = true) {
 		frame = Math.floor(frame);
 		path = path.replace(/.vtf$/, '');
 		path = path.replace(/.psd/, '');

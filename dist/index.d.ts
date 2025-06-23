@@ -7042,7 +7042,7 @@ declare class Choreography {
              constructor();
              getTexture(repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture | null;
              getVtf(repository: string, path: string): Promise<SourceEngineVTF | null>;
-             getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture: Texture, srgb?: boolean): Promise<Texture>;
+             getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture>;
              getInternalTextureName(): string;
              addInternalTexture(repository: string, texture?: Texture): {
                  name: string;
