@@ -7044,12 +7044,12 @@ declare class Choreography {
              getVtf(repository: string, path: string): Promise<SourceEngineVTF | null>;
              getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture: Texture, srgb?: boolean): Promise<Texture>;
              getInternalTextureName(): string;
-             addInternalTexture(texture?: Texture): {
+             addInternalTexture(repository: string, texture?: Texture): {
                  name: string;
                  texture: Texture;
              };
-             setTexture(path: string, texture: Texture): void;
-             removeTexture(path: string): void;
+             setTexture(repository: string, path: string, texture: Texture): void;
+             removeTexture(repository: string, path: string): void;
          }
 
          declare class Source2Animation {
@@ -10029,12 +10029,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#242@#webAssembly"?: any;
-             "__#242@#HEAPU8"?: Uint8Array;
+             "__#243@#webAssembly"?: any;
+             "__#243@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#242@#initHeap"(): void;
+             "__#243@#initHeap"(): void;
          };
 
          export { }

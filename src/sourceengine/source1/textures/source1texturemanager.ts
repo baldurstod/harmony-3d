@@ -1,17 +1,17 @@
-import { SourceEngineVTFLoader } from '../loaders/sourceenginevtfloader';
-import { Graphics } from '../../../graphics/graphics';
-import { AnimatedTexture } from '../../../textures/animatedtexture';
-import { TextureManager } from '../../../textures/texturemanager';
-
+import { Map2 } from 'harmony-utils';
 import { TESTING } from '../../../buildoptions';
 import { TEXTURE_CLEANUP_DELAY } from '../../../constants';
+import { Graphics } from '../../../graphics/graphics';
+import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Texture } from '../../../textures/texture';
+import { TextureManager } from '../../../textures/texturemanager';
+import { SourceEngineVTFLoader } from '../loaders/sourceenginevtfloader';
 import { SourceEngineVTF } from './sourceenginevtf';
 
 let internalTextureId = 0;
 class Source1TextureManagerClass extends EventTarget {//TODO: keep event target ?
-	#texturesList = new Map<string, Texture>();
-	#vtfList = new Map<string, SourceEngineVTF>();
+	#texturesList = new Map2<string, string, Texture>();
+	#vtfList = new Map2<string, string, SourceEngineVTF>();
 	#defaultTexture!: Texture;
 	#defaultTextureCube!: Texture;
 	fallbackRepository = '';
@@ -36,14 +36,14 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	async getVtf(repository: string, path: string): Promise<SourceEngineVTF | null> {
-		let vtf: SourceEngineVTF | null | undefined = this.#vtfList.get(path);
+		let vtf: SourceEngineVTF | null | undefined = this.#vtfList.get(repository, path);
 		if (vtf !== undefined) {
 			return vtf;
 		}
 
 		vtf = await new SourceEngineVTFLoader().load(repository, path);
 		if (vtf) {
-			this.#vtfList.set(path, vtf);
+			this.#vtfList.set(repository, path, vtf);
 		}
 		return vtf;
 	}
@@ -56,28 +56,29 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		path = path.replace(/.psd/, '');
 		path = path.toLowerCase();
 
-		const texture = this.#texturesList.get(path);
+		const texture = this.#texturesList.get(repository, path);
 		if (texture !== undefined) {
 			return texture;
 		}
 
 		const pathWithMaterials = 'materials/' + path + '.vtf';//TODOv3
-		const fullPath = repository + pathWithMaterials;
-		if (!this.#texturesList.has(fullPath)) {
+		//const fullPath = repository + pathWithMaterials;
+		if (!this.#texturesList.has(repository, path)) {
 			const animatedTexture = allocatedTexture ?? new AnimatedTexture();//TODOv3: merge with TextureManager.createTexture(); below
-			this.setTexture(fullPath, animatedTexture);
+			this.setTexture(repository, path, animatedTexture);
 
 			this.getVtf(repository, pathWithMaterials).then(
 				(vtf: SourceEngineVTF | null) => {
 					if (vtf) {
 						vtfToTexture(vtf as SourceEngineVTF, animatedTexture, srgb);
 					} else {
-						this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture);
+						//this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture);
+						this.setTexture(repository, path, this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture));
 					}
 				}
 			);
 		}
-		return this.#texturesList.get(fullPath) ?? null;
+		return this.#texturesList.get(repository, path) ?? null;
 	}
 
 	async getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture: Texture, srgb = true) {
@@ -86,54 +87,56 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		path = path.replace(/.psd/, '');
 		path = path.toLowerCase();
 
-		if (this.#texturesList.has(path)) {//Internal texture
-			return this.#texturesList.get(path);//.getFrame(frame);//TODOv3: add frame back
+		const texture = this.#texturesList.get(repository, path);
+		if (texture) {
+			return texture;//.getFrame(frame);//TODOv3: add frame back
 		}
 		const pathWithMaterials = 'materials/' + path + '.vtf';//TODOv3
-		const fullPath = repository + pathWithMaterials;
-		if (!this.#texturesList.has(fullPath)) {
-			const animatedTexture = new AnimatedTexture();//TODOv3: merge with TextureManager.createTexture(); below
-			this.setTexture(fullPath, animatedTexture);
-			const vtf = await this.getVtf(repository, pathWithMaterials);
+		//const fullPath = repository + pathWithMaterials;
 
-			if (vtf) {
-				vtfToTexture(vtf, animatedTexture, srgb);
-			} else {
-				this.removeTexture(fullPath);
-				return null;
-			}
+		const animatedTexture = new AnimatedTexture();//TODOv3: merge with TextureManager.createTexture(); below
+		this.setTexture(repository, path, animatedTexture);
+		const vtf = await this.getVtf(repository, pathWithMaterials);
+
+		if (vtf) {
+			vtfToTexture(vtf, animatedTexture, srgb);
+		} else {
+			this.removeTexture(repository, path);
+			return null;
 		}
-		return (this.#texturesList.get(fullPath) as AnimatedTexture)?.getFrame(frame) ?? defaultTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);//TODOv3
+
+		return (this.#texturesList.get(repository, path) as AnimatedTexture)?.getFrame(frame) ?? defaultTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);//TODOv3
 	}
 
 	getInternalTextureName() {
 		return 'source1texturemanager_' + (++internalTextureId);
 	}
 
-	addInternalTexture(texture?: Texture) {
+	addInternalTexture(repository: string, texture?: Texture) {
 		const textureName = this.getInternalTextureName();
 		texture = texture ?? TextureManager.createTexture();//TODOv3: add params + create animated texture
-		this.setTexture(textureName, texture);
+		this.setTexture(repository, textureName, texture);
 		return { name: textureName, texture: texture };
 	}
 
-	setTexture(path: string, texture: Texture) {
+	setTexture(repository: string, path: string, texture: Texture) {
 		texture.addUser(this);
-		this.#texturesList.set(path, texture);
+		this.#texturesList.set(repository, path, texture);
 	}
 
-	removeTexture(path: string) {
-		if (this.#texturesList.has(path)) {
-			this.#texturesList.get(path)?.removeUser(this);
-			this.#texturesList.delete(path);
+	removeTexture(repository: string, path: string) {
+		const texture = this.#texturesList.get(repository, path);
+		if (texture) {
+			texture.removeUser(this);
+			this.#texturesList.delete(repository, path);
 		}
 	}
 
 	#cleanup() {
-		for (const [texturePath, texture] of this.#texturesList) {
+		for (const [repo, path, texture] of this.#texturesList) {
 			if (texture.hasOnlyUser(this)) {
 				texture.removeUser(this);
-				this.#texturesList.delete(texturePath);
+				this.#texturesList.delete(repo, path);
 			}
 		}
 	}
