@@ -19,30 +19,9 @@ export class Source2MaterialManager {
 		this.#materialList2.delete(material);
 	}
 
-	static getMaterial(repository: string, fileName: string, searchPaths?: string[]): Promise<Source2Material | null> {//TODO: remove searchPaths ?
-		console.assert(searchPaths == null, 'searchPaths must be null');//TODOv3 remove searchPaths
+	static getMaterial(repository: string, fileName: string): Promise<Source2Material> {
 		fileName = cleanSource2MaterialName(fileName);
-		if (searchPaths) {
-			const promises = [];
-			for (const searchPath of searchPaths) {
-				promises.push(this.#getMaterial(repository, 'materials/' + searchPath + fileName));
-			}
-			const promise = new Promise<Source2Material | null>(resolve => {
-				Promise.allSettled(promises).then(
-					(promises) => {
-						for (const promise of promises) {
-							if (promise.status == 'fulfilled') {
-								resolve(promise.value);
-							}
-						}
-						resolve(null);
-					}
-				)
-			});
-			return promise;
-		} else {
-			return this.#getMaterial(repository, fileName);
-		}
+		return this.#getMaterial(repository, fileName);
 	}
 
 	static #getMaterial(repository: string, fileName: string): Promise<Source2Material> {
