@@ -1,28 +1,23 @@
 import { vec2, vec4 } from 'gl-matrix';
-import { saveFile } from 'harmony-browser-utils';
-import { ShortcutHandler } from 'harmony-browser-utils';
-
-import { GraphicsEvents } from './graphicsevents';
+import { saveFile, ShortcutHandler } from 'harmony-browser-utils';
+import { createElement } from 'harmony-ui';
+import { DEBUG, DISABLE_WEBGL2, ENABLE_GET_ERROR, MEASURE_PERFORMANCE, TESTING, USE_OFF_SCREEN_CANVAS, USE_STATS, VERBOSE } from '../buildoptions';
+import { Camera } from '../cameras/camera';
 import { MAX_HARDWARE_BONES, RECORDER_DEFAULT_FILENAME, RECORDER_MIME_TYPE } from '../constants';
+import { Entity } from '../entities/entity';
 import { pickList } from '../entities/picklist';
-import { GL_COLOR_BUFFER_BIT, GL_CULL_FACE, GL_DEPTH_BUFFER_BIT, GL_STENCIL_BUFFER_BIT, GL_FRAMEBUFFER, GL_UNSIGNED_BYTE, GL_RGBA } from '../webgl/constants';
-import { GL_SCISSOR_TEST } from '../webgl/constants';
+import { Material } from '../materials/material';
+import { isNumeric } from '../math/functions';
+import { ForwardRenderer } from '../renderers/forwardrenderer';
+import { Scene } from '../scenes/scene';
+import { RenderTarget } from '../textures/rendertarget';
+import { setTextureFactoryContext } from '../textures/texturefactory';
+import { WebGLAnyRenderingContext } from '../types';
+import { WebGLStats } from '../utils/webglstats';
+import { GL_COLOR_BUFFER_BIT, GL_CULL_FACE, GL_DEPTH_BUFFER_BIT, GL_FRAMEBUFFER, GL_RGBA, GL_SCISSOR_TEST, GL_STENCIL_BUFFER_BIT, GL_UNSIGNED_BYTE } from '../webgl/constants';
 import { WebGLRenderingState } from '../webgl/renderingstate';
 import { WebGLShaderSource } from '../webgl/shadersource';
-import { WebGLStats } from '../utils/webglstats';
-import { setTextureFactoryContext } from '../textures/texturefactory';
-import { ForwardRenderer } from '../renderers/forwardrenderer';
-
-import { isNumeric } from '../math/functions';
-
-import { DISABLE_WEBGL2, MEASURE_PERFORMANCE, USE_STATS, TESTING, DEBUG, VERBOSE, USE_OFF_SCREEN_CANVAS, ENABLE_GET_ERROR } from '../buildoptions';
-import { RenderTarget } from '../textures/rendertarget';
-import { WebGLAnyRenderingContext } from '../types';
-import { Entity } from '../entities/entity';
-import { Material } from '../materials/material';
-import { Scene } from '../scenes/scene';
-import { Camera } from '../cameras/camera';
-import { createElement } from 'harmony-ui';
+import { GraphicsEvents } from './graphicsevents';
 
 const FULL_PATATE = false;
 

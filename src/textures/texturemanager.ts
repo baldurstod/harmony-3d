@@ -1,4 +1,4 @@
-import { createTexture, deleteTexture, fillFlatTexture, fillTextureWithImage, fillCheckerTexture, fillNoiseTexture } from '../textures/texturefactory';
+import { createTexture, deleteTexture, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage } from '../textures/texturefactory';
 import { Texture, TextureParams } from './texture';
 
 export class TextureManager {

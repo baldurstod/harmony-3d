@@ -1,9 +1,10 @@
-import { BufferAttribute, Uint16BufferAttribute, Uint32BufferAttribute } from './bufferattribute';
-import { GL_ELEMENT_ARRAY_BUFFER, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT } from '../webgl/constants';
 import { DEBUG, TESTING } from '../buildoptions';
+import { WebGLAnyRenderingContext } from '../types';
+import { GL_ELEMENT_ARRAY_BUFFER, GL_UNSIGNED_INT, GL_UNSIGNED_SHORT } from '../webgl/constants';
+import { BufferAttribute, Uint16BufferAttribute, Uint32BufferAttribute } from './bufferattribute';
 
 export class BufferGeometry {
-	#elementArrayType: GLenum;
+	#elementArrayType: GLenum = GL_UNSIGNED_INT;
 	#users = new Set<any>();
 	attributes = new Map<string, BufferAttribute>();
 	dirty = true;
@@ -65,7 +66,7 @@ export class BufferGeometry {
 */
 	}
 
-	update(glContext) {
+	update(glContext: WebGLAnyRenderingContext) {
 		throw 'error';
 		if (this.dirty) {
 			for (const [name, attribute] of this.attributes) {

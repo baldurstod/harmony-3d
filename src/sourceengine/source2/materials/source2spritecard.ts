@@ -1,11 +1,10 @@
 import { vec2, vec3 } from 'gl-matrix';
-
-import { Source2Material } from './source2material';
+import { RenderFace } from '../../../materials/constants';
+import { GL_DST_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
+import { Source2File } from '../loaders/source2file';
 import { Source2MaterialLoader } from '../loaders/source2materialloader';
 import { Source2TextureManager } from '../textures/source2texturemanager';
-import { GL_ONE, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_DST_ALPHA } from '../../../webgl/constants';
-import { RenderFace } from '../../../materials/constants';
-import { Source2File } from '../loaders/source2file';
+import { Source2Material } from './source2material';
 
 export class Source2SpriteCard extends Source2Material {
 	#texturePath = '';

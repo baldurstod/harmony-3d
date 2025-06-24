@@ -53,7 +53,7 @@ export class Operator {//TODOv3: rename this class ?
 	fieldOutput = -1;
 	scaleCp?: number;
 	mesh?: Mesh;
-	material?: Source2SpriteCard;
+	material = new Source2SpriteCard('');
 	endCapState?: number;
 	currentTime = 0;
 	operateAllParticlesRemoveme = false;
@@ -298,7 +298,7 @@ export class Operator {//TODOv3: rename this class ?
 
 	}
 
-	_paramChanged(paramName: string, value: any) {
+	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
 		switch (paramName) {
 			case 'm_bDisableOperator':
 				this.disableOperator = value;

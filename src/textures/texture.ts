@@ -1,9 +1,8 @@
-import { deleteTexture } from './texturefactory';
-import { GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_LINEAR, GL_NEAREST_MIPMAP_LINEAR, GL_REPEAT, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_RGBA, GL_UNSIGNED_BYTE } from '../webgl/constants';
 import { TESTING } from '../buildoptions';
-import { ColorSpace, TextureFormat, TextureMapping, TextureTarget, TextureType } from './constants';
 import { WebGLAnyRenderingContext } from '../types';
-
+import { GL_LINEAR, GL_NEAREST_MIPMAP_LINEAR, GL_REPEAT, GL_RGBA, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL } from '../webgl/constants';
+import { ColorSpace, TextureFormat, TextureMapping, TextureTarget, TextureType } from './constants';
+import { deleteTexture } from './texturefactory';
 
 export type TextureParams = any/*TODO:create a proper type*/;
 

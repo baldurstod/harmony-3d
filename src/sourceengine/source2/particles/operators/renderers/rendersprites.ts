@@ -1,24 +1,25 @@
-import { RenderBase } from './renderbase';
-import { OPERATOR_PARAM_TEXTURE } from '../operatorparams';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
-import { Source2ParticleManager } from '../../source2particlemanager';
-import { Source2MaterialManager } from '../../../materials/source2materialmanager';
-import { Source2TextureManager } from '../../../textures/source2texturemanager';
-import { Source2SpriteCard } from '../../../materials/source2spritecard';
-import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
 import { TESTING } from '../../../../../buildoptions';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 import { Graphics } from '../../../../../graphics/graphics';
+import { ceilPowerOfTwo, clamp } from '../../../../../math/functions';
 import { Mesh } from '../../../../../objects/mesh';
 import { TextureManager } from '../../../../../textures/texturemanager';
-import { ceilPowerOfTwo, clamp } from '../../../../../math/functions';
-import { GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_NEAREST, GL_FLOAT, GL_RGBA, GL_RGBA32F } from '../../../../../webgl/constants';
+import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER } from '../../../../../webgl/constants';
 import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
-import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
+import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
+import { Source2MaterialManager } from '../../../materials/source2materialmanager';
 import { Source2SpriteSheet } from '../../../textures/source2spritesheet';
-import { Texture } from '../../../../../textures/texture';
+import { Source2TextureManager } from '../../../textures/source2texturemanager';
+import { Source2ParticleSystem } from '../../export';
+import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
+import { Source2Particle } from '../../source2particle';
+import { Source2ParticleManager } from '../../source2particlemanager';
+import { Source2OperatorParamValue } from '../operator';
+import { OPERATOR_PARAM_TEXTURE } from '../operatorparams';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
+import { RenderBase } from './renderbase';
 
 const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
@@ -29,25 +30,26 @@ export class RenderSprites extends RenderBase {
 	setDefaultTexture = true;//TODO: remove this property
 	#minSize = 0.0;
 	#maxSize = 5000.0;
-	spriteSheet: Source2SpriteSheet;
-	#maxParticles = 1000;//TODO: default value
-	texture: Texture;//TODO: set private ?
-	imgData: Float32Array;//TODO: set private ?
-	constructor(system) {
+	spriteSheet?: Source2SpriteSheet;
+	#maxParticles = 0;
+	texture = TextureManager.createTexture();
+	imgData!: Float32Array;//TODO: set private ?
+
+	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this.material = new Source2SpriteCard(system.repository);
+		this.setMaxParticles(1000);//TODO: default value
+		this.material.repository = system.repository;
 		this.geometry = new BufferGeometry();
 		this.mesh = new Mesh(this.geometry, this.material);
 		this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
 		Source2MaterialManager.addMaterial(this.material);
-		this.setDefaultTexture = true;
 		//this.setParam(OPERATOR_PARAM_TEXTURE, 'materials/particle/base_sprite');//TODOv3: make a const
 		//this.setParam(OPERATOR_PARAM_MOD_2X, false);
 		//this.setParam(OPERATOR_PARAM_ORIENTATION_TYPE, ORIENTATION_TYPE_SCREEN_ALIGN);
 		//this.setParam(OPERATOR_PARAM_SEQUENCE_COMBINE_MODE, SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0);//TODOv3: get the actual default value
 	}
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
 		switch (paramName) {
 			case 'm_vecTexturesInput':
 				if (TESTING) {
@@ -75,7 +77,7 @@ export class RenderSprites extends RenderBase {
 		}
 	}
 
-	setSequenceCombineMode(sequenceCombineMode) {
+	setSequenceCombineMode(sequenceCombineMode: string/*TODO: create enum*/) {
 		this.material.removeDefine('USE_TEXTURE_COORD_2');
 		switch (sequenceCombineMode) {
 			case 'SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1':
@@ -87,28 +89,25 @@ export class RenderSprites extends RenderBase {
 		}
 	}
 
-	async setTexture(texturePath) {
-		delete this.setDefaultTexture;
+	async setTexture(texturePath: string) {
+		this.setDefaultTexture = false;
 		this.material.setTexturePath(texturePath);
 		this.spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
 	}
 
-	updateParticles(particleSystem, particleList, elapsedTime) {//TODOv3
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
 		this.geometry.count = particleList.length * 6;
 		const maxParticles = this.#maxParticles;
-		this.setupParticlesTexture(particleList, maxParticles);
-		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
-		this.mesh.setVisible(Source2ParticleManager.visible);
+		this.#setupParticlesTexture(particleList);
+		this.mesh!.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
+		this.mesh!.setVisible(Source2ParticleManager.visible);
+		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 
-		this.mesh.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
-
-
-
-		const uvs = this.geometry.attributes.get('aTextureCoord')._array;
-		const uvs2 = this.geometry.attributes.get('aTextureCoord2')._array;
+		const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
+		const uvs2 = this.geometry.attributes.get('aTextureCoord2')!._array;
 		let index = 0;
 		let index2 = 0;
 		for (let i = 0; i < particleList.length; i++) {
@@ -171,14 +170,21 @@ export class RenderSprites extends RenderBase {
 				index2 += 8;
 			}
 		}
-		this.geometry.attributes.get('aTextureCoord').dirty = true;
-		this.geometry.attributes.get('aTextureCoord2').dirty = true;
+		this.geometry.attributes.get('aTextureCoord')!.dirty = true;
+		this.geometry.attributes.get('aTextureCoord2')!.dirty = true;
 	}
 
-	set maxParticles(maxParticles) {
+	setMaxParticles(maxParticles: number): void {
 		this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
 		this.#createParticlesArray();
 		this._initBuffers();
+	}
+
+	/**
+	 * @deprecated Please use `setPosition` instead.
+	 */
+	set maxParticles(maxParticles: number) {
+		this.setMaxParticles(maxParticles);
 	}
 
 	_initBuffers() {
@@ -203,17 +209,17 @@ export class RenderSprites extends RenderBase {
 		geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2));
 		geometry.setAttribute('aTextureCoord2', new Float32BufferAttribute(uvs2, 2));
 		geometry.setAttribute('aParticleId', new Float32BufferAttribute(id, 1));
-		this.mesh.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
+		this.mesh!.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 
-	initRenderer(particleSystem) {
-		this.mesh.serializable = false;
-		this.mesh.hideInExplorer = true;
-		this.mesh.setDefine('HARDWARE_PARTICLES');
-		this.createParticlesTexture();
-		this.mesh.setUniform('uParticles', this.texture);
+	initRenderer(particleSystem: Source2ParticleSystem) {
+		this.mesh!.serializable = false;
+		this.mesh!.hideInExplorer = true;
+		this.mesh!.setDefine('HARDWARE_PARTICLES');
+		this.#initParticlesTexture();
+		this.mesh!.setUniform('uParticles', this.texture);
 
-		this.maxParticles = particleSystem.maxParticles;
+		this.setMaxParticles(particleSystem.maxParticles);
 		particleSystem.addChild(this.mesh);
 	}
 
@@ -221,8 +227,7 @@ export class RenderSprites extends RenderBase {
 		this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 	}
 
-	createParticlesTexture() {
-		this.texture = TextureManager.createTexture();
+	#initParticlesTexture() {
 		const gl = new Graphics().glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -242,7 +247,7 @@ export class RenderSprites extends RenderBase {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	setupParticlesTexture(particleList, maxParticles) {
+	#setupParticlesTexture(particleList: Source2Particle[]): void {
 		const a = this.imgData;
 
 		let index = 0;

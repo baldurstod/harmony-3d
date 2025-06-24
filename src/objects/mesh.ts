@@ -1,15 +1,15 @@
 import { vec2, vec3 } from 'gl-matrix';
 import { Entity } from '../entities/entity';
-import { MaterialManager } from '../materials/materialmanager';
-import { BoundingBox } from '../math/boundingbox';
-import { getUV, getNormal } from '../math/triangle';
-import { Ray } from '../raycasting/ray';
-import { Interaction } from '../utils/interaction';
-import { GL_TRIANGLES } from '../webgl/constants';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { Material, UniformValue } from '../materials/material';
-import { Raycaster } from '../raycasting/raycaster';
+import { MaterialManager } from '../materials/materialmanager';
+import { BoundingBox } from '../math/boundingbox';
+import { getNormal, getUV } from '../math/triangle';
 import { Intersection } from '../raycasting/intersection';
+import { Ray } from '../raycasting/ray';
+import { Raycaster } from '../raycasting/raycaster';
+import { Interaction } from '../utils/interaction';
+import { GL_TRIANGLES } from '../webgl/constants';
 
 const tempVec3 = vec3.create();
 

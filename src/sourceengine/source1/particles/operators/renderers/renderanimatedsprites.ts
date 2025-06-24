@@ -52,7 +52,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 		const useAnimRate = this.getParameter('use animation rate as FPS');
 		this.geometry.count = particleList.length * 6;
 		const maxParticles = this.#maxParticles;
-		this.setupParticlesTexture(particleList, maxParticles);
+		this.#setupParticlesTexture(particleList, maxParticles);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh.setUniform('uVisibilityCameraDepthBias', this.getParameter('Visibility Camera Depth Bias'));//TODOv3:optimize
 		this.mesh.setVisible(Source1ParticleControler.visible);
@@ -198,7 +198,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	setupParticlesTexture(particleList, maxParticles) {
+	#setupParticlesTexture(particleList, maxParticles) {
 		const a = this.imgData;
 
 		let index = 0;

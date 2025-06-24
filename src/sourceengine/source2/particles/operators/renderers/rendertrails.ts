@@ -120,7 +120,7 @@ export class RenderTrails extends Operator {
 		const geometry = this.geometry;
 		geometry.count = particleList.length * 6;
 		const maxParticles = this.#maxParticles;
-		this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
+		this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
 		this.mesh!.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh!.setVisible(Source2ParticleManager.visible);
 
@@ -232,7 +232,7 @@ export class RenderTrails extends Operator {
 		this.mesh!.serializable = false;
 		this.mesh!.hideInExplorer = true;
 		this.mesh!.setDefine('HARDWARE_PARTICLES');
-		this.createParticlesTexture();
+		this.#createParticlesTexture();
 		this.mesh!.setUniform('uParticles', this.texture!);
 
 		this.maxParticles = particleSystem.maxParticles;
@@ -243,7 +243,7 @@ export class RenderTrails extends Operator {
 		this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 	}
 
-	createParticlesTexture() {
+	#createParticlesTexture() {
 		this.texture = TextureManager.createTexture();
 		const gl = new Graphics().glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
@@ -264,7 +264,7 @@ export class RenderTrails extends Operator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	setupParticlesTexture(particleList: Source2Particle[], maxParticles: number, elapsedTime: number) {
+	#setupParticlesTexture(particleList: Source2Particle[], maxParticles: number, elapsedTime: number) {
 		const a = this.imgData!;
 		const m_flMaxLength = this.maxLength;
 		const m_flMinLength = this.minLength;

@@ -144,7 +144,7 @@ export class RenderRopes extends Operator {
 			this.mesh.hideInExplorer = true;
 			this.mesh.setDefine('IS_ROPE');
 			this.mesh.setDefine('USE_VERTEX_COLOR');
-			this.createParticlesTexture();
+			this.#createParticlesTexture();
 			this.mesh.setUniform('uParticles', this.#texture!);
 		}
 
@@ -156,7 +156,7 @@ export class RenderRopes extends Operator {
 		this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 	}
 
-	createParticlesTexture() {
+	#createParticlesTexture() {
 		this.#texture = TextureManager.createTexture();
 		const gl = new Graphics().glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
@@ -181,7 +181,7 @@ export class RenderRopes extends Operator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	setupParticlesTexture(particleList: Source2Particle[], maxParticles: number) {
+	#setupParticlesTexture(particleList: Source2Particle[], maxParticles: number) {
 		const a = this.#imgData;
 
 		if (!a) {

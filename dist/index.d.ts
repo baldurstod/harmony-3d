@@ -4,6 +4,7 @@ import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import { quat } from 'gl-matrix';
+import { Shape } from './shape';
 import { Texture as Texture_2 } from '../..';
 import { vec2 } from 'gl-matrix';
 import { vec3 } from 'gl-matrix';
@@ -311,12 +312,12 @@ export declare class Bone extends Entity implements Lockable {
     get refQuaternion(): vec4;
     set scale(scale: vec3);
     get scale(): vec3;
-    set parent(parent: Entity);
-    get parent(): Entity;
+    set parent(parent: Entity | null);
+    get parent(): Entity | null;
     set skeleton(skeleton: Skeleton);
     get skeleton(): Skeleton;
-    set parentSkeletonBone(parentSkeletonBone: Bone);
-    get parentSkeletonBone(): Bone;
+    set parentSkeletonBone(parentSkeletonBone: Bone | undefined);
+    get parentSkeletonBone(): Bone | undefined;
     get boneMat(): mat4;
     get worldPos(): vec3;
     get worldQuat(): quat;
@@ -362,7 +363,7 @@ export declare class Bone extends Entity implements Lockable {
             i18n: string;
             submenu: any;
         };
-        entitynull_1: any;
+        entitynull_1: null;
         position: {
             i18n: string;
             f: () => void;
@@ -375,7 +376,7 @@ export declare class Bone extends Entity implements Lockable {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_2: any;
+        entitynull_2: null;
         quaternion: {
             i18n: string;
             f: () => void;
@@ -391,7 +392,7 @@ export declare class Bone extends Entity implements Lockable {
             i18n: string;
             f: () => quat;
         };
-        entitynull_3: any;
+        entitynull_3: null;
         scale: {
             i18n: string;
             f: () => void;
@@ -400,7 +401,7 @@ export declare class Bone extends Entity implements Lockable {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_4: any;
+        entitynull_4: null;
         wireframe: {
             i18n: string;
             selected: boolean;
@@ -408,7 +409,7 @@ export declare class Bone extends Entity implements Lockable {
         };
         cast_shadows: {
             i18n: string;
-            selected: boolean;
+            selected: boolean | undefined;
             f: () => void;
         };
         receive_shadows: {
@@ -421,7 +422,7 @@ export declare class Bone extends Entity implements Lockable {
             submenu: {};
         };
     } & {
-        Bone_1: any;
+        Bone_1: null;
         unlock: {
             i18n: string;
             f: (entity: Bone) => false;
@@ -488,7 +489,7 @@ export declare class Box extends Mesh {
             i18n: string;
             submenu: any;
         };
-        entitynull_1: any;
+        entitynull_1: null;
         position: {
             i18n: string;
             f: () => void;
@@ -501,7 +502,7 @@ export declare class Box extends Mesh {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_2: any;
+        entitynull_2: null;
         quaternion: {
             i18n: string;
             f: () => void;
@@ -517,7 +518,7 @@ export declare class Box extends Mesh {
             i18n: string;
             f: () => quat;
         };
-        entitynull_3: any;
+        entitynull_3: null;
         scale: {
             i18n: string;
             f: () => void;
@@ -526,7 +527,7 @@ export declare class Box extends Mesh {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_4: any;
+        entitynull_4: null;
         wireframe: {
             i18n: string;
             selected: boolean;
@@ -534,7 +535,7 @@ export declare class Box extends Mesh {
         };
         cast_shadows: {
             i18n: string;
-            selected: boolean;
+            selected: boolean | undefined;
             f: () => void;
         };
         receive_shadows: {
@@ -547,7 +548,7 @@ export declare class Box extends Mesh {
             submenu: {};
         };
     } & {
-        Box_1: any;
+        Box_1: null;
         width: {
             i18n: string;
             f: () => void;
@@ -583,7 +584,7 @@ export declare class BufferAttribute {
     _buffer?: WebGLBuffer;
     divisor: number;
     constructor(array: typeof TypedArrayProto, itemSize: number);
-    get type(): any;
+    get type(): number;
     set usage(usage: BufferUsage);
     set target(target: GLenum);
     set array(array: typeof TypedArrayProto);
@@ -592,7 +593,7 @@ export declare class BufferAttribute {
     updateWireframe(glContext: WebGLAnyRenderingContext): void;
     clone(): BufferAttribute;
     setSource(source: any): void;
-    getBuffer(): WebGLBuffer;
+    getBuffer(): WebGLBuffer | undefined;
 }
 
 export declare class BufferGeometry {
@@ -601,7 +602,7 @@ export declare class BufferGeometry {
     dirty: boolean;
     count: number;
     properties: Map<string, any>;
-    getAttribute(name: string): BufferAttribute;
+    getAttribute(name: string): BufferAttribute | undefined;
     setAttribute(name: string, attribute: BufferAttribute): void;
     hasAttribute(name: string): boolean;
     deleteAttribute(name: string): void;
@@ -723,7 +724,7 @@ export declare class Camera extends Entity {
             i18n: string;
             submenu: any;
         };
-        entitynull_1: any;
+        entitynull_1: null;
         position: {
             i18n: string;
             f: () => void;
@@ -736,7 +737,7 @@ export declare class Camera extends Entity {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_2: any;
+        entitynull_2: null;
         quaternion: {
             i18n: string;
             f: () => void;
@@ -752,7 +753,7 @@ export declare class Camera extends Entity {
             i18n: string;
             f: () => quat;
         };
-        entitynull_3: any;
+        entitynull_3: null;
         scale: {
             i18n: string;
             f: () => void;
@@ -761,7 +762,7 @@ export declare class Camera extends Entity {
             i18n: string;
             f: () => vec3;
         };
-        entitynull_4: any;
+        entitynull_4: null;
         wireframe: {
             i18n: string;
             selected: boolean;
@@ -769,7 +770,7 @@ export declare class Camera extends Entity {
         };
         cast_shadows: {
             i18n: string;
-            selected: boolean;
+            selected: boolean | undefined;
             f: () => void;
         };
         receive_shadows: {
@@ -782,7 +783,7 @@ export declare class Camera extends Entity {
             submenu: {};
         };
     } & {
-        camera1: any;
+        camera1: null;
         cameraPerspective: {
             i18n: string;
             selected: boolean;
@@ -906,7 +907,7 @@ export declare class ChoreographiesManager {
 
 declare class Choreography {
     #private;
-    actors2: any[];
+    actors2: never[];
     previousTime: number;
     currentTime: number;
     animsSpeed: number;
@@ -914,7 +915,7 @@ declare class Choreography {
     sceneLength: number;
     onStop: () => void;
     constructor(repository: string, name?: string);
-    getRepository(): any;
+    getRepository(): string;
     /**
      * Add an event
      * @param {Object ChoreographyEvent} event The event to add
@@ -1033,7 +1034,7 @@ declare class Choreography {
          fadeStartTime: number;
          fadeEndTime: number;
          easeInAndOut: boolean;
-         fieldOutput: any;
+         fieldOutput: null;
          invTime: number;
          constructor(system: any);
          _update(): void;
@@ -1120,7 +1121,7 @@ declare class Choreography {
                  i18n: string;
                  submenu: any;
              };
-             entitynull_1: any;
+             entitynull_1: null;
              position: {
                  i18n: string;
                  f: () => void;
@@ -1133,7 +1134,7 @@ declare class Choreography {
                  i18n: string;
                  f: () => vec3;
              };
-             entitynull_2: any;
+             entitynull_2: null;
              quaternion: {
                  i18n: string;
                  f: () => void;
@@ -1149,7 +1150,7 @@ declare class Choreography {
                  i18n: string;
                  f: () => quat;
              };
-             entitynull_3: any;
+             entitynull_3: null;
              scale: {
                  i18n: string;
                  f: () => void;
@@ -1158,7 +1159,7 @@ declare class Choreography {
                  i18n: string;
                  f: () => vec3;
              };
-             entitynull_4: any;
+             entitynull_4: null;
              wireframe: {
                  i18n: string;
                  selected: boolean;
@@ -1166,7 +1167,7 @@ declare class Choreography {
              };
              cast_shadows: {
                  i18n: string;
-                 selected: boolean;
+                 selected: boolean | undefined;
                  f: () => void;
              };
              receive_shadows: {
@@ -1179,7 +1180,7 @@ declare class Choreography {
                  submenu: {};
              };
          } & {
-             Cone_1: any;
+             Cone_1: null;
              radius: {
                  i18n: string;
                  f: () => void;
@@ -1252,8 +1253,8 @@ declare class Choreography {
          getWorldTransformation(mat?: mat4): mat4;
          getWorldQuaternion(q?: quat): quat;
          parentChanged(parent: Entity | null): void;
-         set parentControlPoint(parentControlPoint: ControlPoint);
-         get parentControlPoint(): ControlPoint;
+         set parentControlPoint(parentControlPoint: ControlPoint | undefined);
+         get parentControlPoint(): ControlPoint | undefined;
          step(): void;
          resetDelta(): void;
          deltaPosFrom(other: ControlPoint, out?: vec3): vec3;
@@ -1392,11 +1393,11 @@ declare class Choreography {
      }
 
      declare class Curve {
-         controlPoints: any[];
+         controlPoints: never[];
          arcLength: number;
          getPosition(t: any, out?: vec3): vec3;
          getArcLength(divisions?: number): number;
-         getPoints(divisions?: number): any[];
+         getPoints(divisions?: number): ([number, number, number] | Float32Array<ArrayBufferLike>)[];
          getAppropriateDivision(division: any): any;
      }
 
@@ -1460,7 +1461,7 @@ declare class Choreography {
                  i18n: string;
                  submenu: any;
              };
-             entitynull_1: any;
+             entitynull_1: null;
              position: {
                  i18n: string;
                  f: () => void;
@@ -1473,7 +1474,7 @@ declare class Choreography {
                  i18n: string;
                  f: () => vec3;
              };
-             entitynull_2: any;
+             entitynull_2: null;
              quaternion: {
                  i18n: string;
                  f: () => void;
@@ -1489,7 +1490,7 @@ declare class Choreography {
                  i18n: string;
                  f: () => quat;
              };
-             entitynull_3: any;
+             entitynull_3: null;
              scale: {
                  i18n: string;
                  f: () => void;
@@ -1498,7 +1499,7 @@ declare class Choreography {
                  i18n: string;
                  f: () => vec3;
              };
-             entitynull_4: any;
+             entitynull_4: null;
              wireframe: {
                  i18n: string;
                  selected: boolean;
@@ -1506,7 +1507,7 @@ declare class Choreography {
              };
              cast_shadows: {
                  i18n: string;
-                 selected: boolean;
+                 selected: boolean | undefined;
                  f: () => void;
              };
              receive_shadows: {
@@ -1519,7 +1520,7 @@ declare class Choreography {
                  submenu: {};
              };
          } & {
-             Cylinder_1: any;
+             Cylinder_1: null;
              radius: {
                  i18n: string;
                  f: () => void;
@@ -1587,7 +1588,7 @@ declare class Choreography {
                  i18n: string;
                  submenu: any;
              };
-             entitynull_1: any;
+             entitynull_1: null;
              position: {
                  i18n: string;
                  f: () => void;
@@ -1600,7 +1601,7 @@ declare class Choreography {
                  i18n: string;
                  f: () => vec3;
              };
-             entitynull_2: any;
+             entitynull_2: null;
              quaternion: {
                  i18n: string;
                  f: () => void;
@@ -1616,7 +1617,7 @@ declare class Choreography {
                  i18n: string;
                  f: () => quat;
              };
-             entitynull_3: any;
+             entitynull_3: null;
              scale: {
                  i18n: string;
                  f: () => void;
@@ -1625,7 +1626,7 @@ declare class Choreography {
                  i18n: string;
                  f: () => vec3;
              };
-             entitynull_4: any;
+             entitynull_4: null;
              wireframe: {
                  i18n: string;
                  selected: boolean;
@@ -1633,7 +1634,7 @@ declare class Choreography {
              };
              cast_shadows: {
                  i18n: string;
-                 selected: boolean;
+                 selected: boolean | undefined;
                  f: () => void;
              };
              receive_shadows: {
@@ -1646,7 +1647,7 @@ declare class Choreography {
                  submenu: {};
              };
          } & {
-             StaticDecal_1: any;
+             StaticDecal_1: null;
              size: {
                  i18n: string;
                  f: () => void;
@@ -1689,7 +1690,7 @@ declare class Choreography {
          losScale: number;
          collisionGroupName: string;
          los: boolean;
-         setMethod: any;
+         setMethod: null;
          _paramChanged(paramName: any, value: any): void;
          doOperate(particle: any, elapsedTime: any): void;
      }
@@ -1713,7 +1714,7 @@ declare class Choreography {
          collisionGroupName: string;
          maxTraceLength: number;
          losScale: number;
-         setMethod: any;
+         setMethod: null;
          activeRange: boolean;
          additive: boolean;
          scaleInitialRange: boolean;
@@ -1850,14 +1851,14 @@ declare class Choreography {
          /**
           * @deprecated Please use `isVisibleSelf` instead.
           */
-         get visibleSelf(): boolean;
+         get visibleSelf(): boolean | undefined;
          toggleVisibility(): void;
          setPlaying(playing: boolean): void;
          isPlaying(): boolean;
          togglePlaying(): void;
          do(action: string, params?: any): void;
          parentChanged(parent: Entity | null): void;
-         getParentIterator(): Generator<Entity, any, unknown>;
+         getParentIterator(): Generator<Entity, null | undefined, unknown>;
          remove(): void;
          removeThis(): void;
          removeChildren(): void;
@@ -1867,7 +1868,7 @@ declare class Choreography {
          set parent(parent: Entity | null);
          get parent(): Entity | null;
          get root(): Entity;
-         addChild(child?: Entity | null): Entity;
+         addChild(child?: Entity | null): Entity | undefined;
          addChilds(...childs: Entity[]): void;
          isParent(parent: Entity): boolean;
          removeChild(child?: Entity | null): void;
@@ -1890,7 +1891,7 @@ declare class Choreography {
               *
               * @return {void}.
               */
-          lookAt(target: vec3, upVector?: any): void;
+          lookAt(target: vec3, upVector?: undefined): void;
           getMeshList(): Set<Entity>;
           showOutline(show: boolean, color?: vec4): void;
           getAllChilds(includeSelf: boolean): Set<Entity>;
@@ -1943,7 +1944,7 @@ declare class Choreography {
                   i18n: string;
                   submenu: any;
               };
-              entitynull_1: any;
+              entitynull_1: null;
               position: {
                   i18n: string;
                   f: () => void;
@@ -1956,7 +1957,7 @@ declare class Choreography {
                   i18n: string;
                   f: () => vec3;
               };
-              entitynull_2: any;
+              entitynull_2: null;
               quaternion: {
                   i18n: string;
                   f: () => void;
@@ -1972,7 +1973,7 @@ declare class Choreography {
                   i18n: string;
                   f: () => quat;
               };
-              entitynull_3: any;
+              entitynull_3: null;
               scale: {
                   i18n: string;
                   f: () => void;
@@ -1981,7 +1982,7 @@ declare class Choreography {
                   i18n: string;
                   f: () => vec3;
               };
-              entitynull_4: any;
+              entitynull_4: null;
               wireframe: {
                   i18n: string;
                   selected: boolean;
@@ -1989,7 +1990,7 @@ declare class Choreography {
               };
               cast_shadows: {
                   i18n: string;
-                  selected: boolean;
+                  selected: boolean | undefined;
                   f: () => void;
               };
               receive_shadows: {
@@ -2022,7 +2023,7 @@ declare class Choreography {
           setMaterialParam(name: string, value: MaterialParam): void;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
-          createChild(entityName: string, parameters: any): Promise<Entity | Material>;
+          createChild(entityName: string, parameters: any): Promise<Entity | Material | undefined>;
           fromJSON(json: JSONObject): void;
           static getEntityName(): string;
           is(s: string): boolean;
@@ -2152,9 +2153,9 @@ declare class Choreography {
              files?: FileSelectorFile[];
          }
 
-         export declare function fillCheckerTexture(texture: Texture, color: number[], width: number, height: number, needCubeMap: boolean): Texture;
+         export declare function fillCheckerTexture(texture: Texture, color: number[] | undefined, width: number | undefined, height: number | undefined, needCubeMap: boolean): Texture;
 
-         export declare function fillFlatTexture(texture: Texture, color: number[], needCubeMap: boolean): Texture;
+         export declare function fillFlatTexture(texture: Texture, color: number[] | undefined, needCubeMap: boolean): Texture;
 
          export declare function fillNoiseTexture(texture: Texture, width?: number, height?: number, needCubeMap?: boolean): Texture;
 
@@ -2222,8 +2223,8 @@ declare class Choreography {
          declare class Font {
              json: any;
              constructor(json: any);
-             generateShapes(text: any, size?: number): any[];
-             createPaths(text?: string, size?: number): any[];
+             generateShapes(text: any, size?: number): Shape[];
+             createPaths(text?: string, size?: number): ShapePath[];
              createPath(char: any, scale: any, offsetX: any, offsetY: any): {
                  offsetX: number;
                  path: ShapePath;
@@ -2233,7 +2234,7 @@ declare class Choreography {
          export declare class FontManager {
              #private;
              static setFontsPath(url: URL): void;
-             static getFont(name: string, style?: string): Promise<Font>;
+             static getFont(name: string, style?: string): Promise<Font | undefined>;
              static getFontList(): Promise<Map<string, Set<string>>>;
          }
 
@@ -2268,11 +2269,11 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid | undefined;
 
          export declare function getIncludeList(): MapIterator<string>;
 
-         export declare function getIncludeSource(name: string): string;
+         export declare function getIncludeSource(name: string): string | undefined;
 
          export declare function getRandomInt(max: any): number;
 
@@ -2866,7 +2867,7 @@ declare class Choreography {
              dragging: boolean;
              constructor();
              initCanvas(contextAttributes?: GraphicsInitOptions): this;
-             pickEntity(x: number, y: number): Entity;
+             pickEntity(x: number, y: number): Entity | null;
              getDefinesAsString(material: Material): string;
              render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
              renderBackground(): void;
@@ -2913,7 +2914,7 @@ declare class Choreography {
              savePictureAsFile(filename: string): Promise<File>;
              toBlob(): Promise<Blob | null>;
              _savePicture(filename: string): Promise<void>;
-             startRecording(frameRate: number, bitsPerSecond: number): void;
+             startRecording(frameRate: number | undefined, bitsPerSecond: number): void;
              stopRecording(fileName?: string): void;
              get ready(): Promise<boolean>;
              isReady(): Promise<void>;
@@ -2924,8 +2925,8 @@ declare class Choreography {
              getTime(): number;
              getWidth(): number;
              getHeight(): number;
-             getCanvas(): HTMLCanvasElement;
-             getForwardRenderer(): ForwardRenderer;
+             getCanvas(): HTMLCanvasElement | undefined;
+             getForwardRenderer(): ForwardRenderer | undefined;
          }
 
          export declare enum GraphicsEvent {
@@ -3025,7 +3026,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -3038,7 +3039,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -3054,7 +3055,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -3063,7 +3064,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -3071,7 +3072,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -3084,7 +3085,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Grid_1: any;
+                 Grid_1: null;
                  size: {
                      i18n: string;
                      f: () => void;
@@ -3122,6 +3123,14 @@ declare class Choreography {
              execute(variables: any, proxyParams: any, time: any): void;
          }
 
+         declare class Hitbox {
+             name: string;
+             boundingBoxMin: vec3;
+             boundingBoxMax: vec3;
+             parent: Entity;
+             constructor(name: string, boundingBoxMin: vec3, boundingBoxMax: vec3, parent: Entity);
+         }
+
          export declare class HitboxHelper extends Entity {
              #private;
              constructor();
@@ -3146,7 +3155,7 @@ declare class Choreography {
          }
 
          export declare class InitFloat extends Operator {
-             setMethod: any;
+             setMethod: null;
              constructor(system: any);
              _paramChanged(paramName: any, value: any): void;
              doInit(particle: any, elapsedTime: any): void;
@@ -3198,7 +3207,7 @@ declare class Choreography {
          }
 
          export declare class InitVec extends Operator {
-             setMethod: any;
+             setMethod: null;
              scaleInitialRange: boolean;
              fieldOutput: number;
              _paramChanged(paramName: any, value: any): void;
@@ -3211,10 +3220,10 @@ declare class Choreography {
              set value(value: any);
              get value(): any;
              setPredecessor(predecessor: Output): void;
-             getPredecessor(): Output;
+             getPredecessor(): Output | undefined;
              hasPredecessor(): boolean;
-             getType(): void;
-             getValue(): Promise<unknown>;
+             getType(): void | null;
+             getValue(): Promise<unknown> | null;
              isValid(startingPoint: Node_2): boolean;
              toString(tabs?: string): Promise<string>;
          }
@@ -3311,8 +3320,8 @@ declare class Choreography {
          }
 
          export declare class JSONLoader {
-             static fromJSON(rootEntity: object): Promise<Entity | Material>;
-             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material>;
+             static fromJSON(rootEntity: object): Promise<Entity | Material | undefined>;
+             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | undefined>;
              static registerEntity(ent: typeof Entity | typeof Material): void;
          }
 
@@ -3323,7 +3332,7 @@ declare class Choreography {
          declare type JSONValue = string | number | boolean | null | undefined | JSONValue[] | JSONObject;
 
          export declare class KeepOnlyLastChild extends Entity {
-             addChild(child: Entity): Entity;
+             addChild(child: Entity): Entity | undefined;
              static getEntityName(): string;
          }
 
@@ -3394,7 +3403,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -3407,7 +3416,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -3423,7 +3432,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -3432,7 +3441,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -3440,7 +3449,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -3453,7 +3462,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Light_1: any;
+                 Light_1: null;
                  color: {
                      i18n: string;
                      f: () => void;
@@ -3668,7 +3677,7 @@ declare class Choreography {
          declare class MapEntity extends Entity {
              static incrementalId: number;
              classname: string;
-             outputs: any[];
+             outputs: never[];
              readonly m_vecVelocity: vec3;
              m_flMoveDoneTime: number;
              m_flLocalTime: number;
@@ -3687,7 +3696,7 @@ declare class Choreography {
              set map(map: any);
              get map(): any;
              move(delta: any): void;
-             getAbsOrigin(): any;
+             getAbsOrigin(): null;
              getLocalOrigin(): vec3;
              getLocalVelocity(): vec3;
              update(map: any, delta: any): void;
@@ -3869,7 +3878,7 @@ declare class Choreography {
              _worldPos: vec3;
              _worldQuat: quat;
              _worldMat: mat4;
-             _parent: any;
+             _parent: null;
              dirty: boolean;
              lastComputed: number;
              parentBone: number;
@@ -3888,13 +3897,13 @@ declare class Choreography {
              surfacepropidx: number;
              contents: number;
              constructor(skeleton?: Skeleton);
-             get skeleton(): any;
+             get skeleton(): Skeleton | undefined;
              set quaternion(quaternion: quat);
              get quaternion(): quat;
              set position(position: vec3);
              get position(): vec3;
-             set parent(parent: any);
-             get parent(): any;
+             set parent(parent: null);
+             get parent(): null;
              set worldPos(worldPos: vec3);
              set worldQuat(worldQuat: quat);
              getWorldPos(offset: vec3, out?: vec3): vec3;
@@ -3917,8 +3926,8 @@ declare class Choreography {
          }
 
          declare class MdlStripHeader {
-             vertices: any[];
-             indexes: any[];
+             vertices: never[];
+             indexes: never[];
              numIndices: number;
              indexOffset: number;
              numVerts: number;
@@ -3927,6 +3936,36 @@ declare class Choreography {
              flags: number;
              numBoneStateChanges: number;
              boneStateChangeOffset: number;
+         }
+
+         declare class MdlStudioAnim {
+             readonly animValuePtrRot: MdlStudioAnimValuePtr;
+             readonly animValuePtrPos: MdlStudioAnimValuePtr;
+             readonly rawpos: vec3;
+             readonly rawrot: quat;
+             readonly rawrot2: quat;
+             flags: number;
+             bone: number;
+             nextOffset: number;
+             getRotValue(): MdlStudioAnimValuePtr | null;
+             getPosValue(): MdlStudioAnimValuePtr | null;
+             getQuaternion48(): quat;
+             getQuaternion64(): quat;
+             /**
+              * TODO
+              */
+             getRot(rot: vec3, mdl: SourceMdl, bone: MdlBone, frame: number): vec3;
+             getPos(pos: vec3, mdl: SourceMdl, bone: MdlBone, frame: number): vec3;
+             readValue(mdl: SourceMdl, frame: number, offset: number): number;
+         }
+
+         /**
+          *	MdlStudioAnimValuePtr
+          */
+         declare class MdlStudioAnimValuePtr {
+             offset: number[];
+             base: number;
+             getAnimValue2(i: number): number;
          }
 
          declare class MdlStudioAutoLayer {
@@ -3994,12 +4033,12 @@ declare class Choreography {
          }
 
          declare class MdlStudioSeqDesc {
-             paramindex: any[];
-             paramstart: any[];
-             paramend: any[];
-             blend: any[];
-             weightlist: any[];
-             groupsize: any[];
+             paramindex: never[];
+             paramstart: never[];
+             paramend: never[];
+             blend: never[];
+             weightlist: never[];
+             groupsize: never[];
              mdl: any;
              previousTime: number;
              currentTime: number;
@@ -4041,12 +4080,12 @@ declare class Choreography {
              cycleposeindex: any;
              activityName: any;
              keyvalueText: any;
-             pBoneweight(boneIndex: any): any;
-             getBlend(x: any, y: any): any;
+             pBoneweight(boneIndex: any): never;
+             getBlend(x: any, y: any): never;
              poseKey(iParam: any, iAnim: any): any;
              getAutoLayer(autoLayerIndex: any): MdlStudioAutoLayer;
              get length(): number;
-             play(dynamicProp: any): any;
+             play(dynamicProp: any): null | undefined;
              processEvent(event: any, dynamicProp: any): void;
          }
 
@@ -4112,12 +4151,12 @@ declare class Choreography {
              defines: any;
              isMesh: boolean;
              constructor(geometry?: BufferGeometry, material?: Material);
-             set material(material: Material);
-             get material(): Material;
+             set material(material: Material | undefined);
+             get material(): Material | undefined;
              setGeometry(geometry?: BufferGeometry): void;
-             get geometry(): BufferGeometry;
+             get geometry(): BufferGeometry | undefined;
              setMaterial(material?: Material): void;
-             getMaterial(): Material;
+             getMaterial(): Material | undefined;
              getUniform(name: string): any;
              setUniform(name: string, uniform: UniformValue): void;
              deleteUniform(name: string): void;
@@ -4163,7 +4202,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -4176,7 +4215,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -4192,7 +4231,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -4201,7 +4240,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -4209,7 +4248,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -4228,14 +4267,14 @@ declare class Choreography {
          }
 
          export declare class MeshBasicMaterial extends Material {
-             map: any;
-             lightMap: any;
+             map: null;
+             lightMap: null;
              lightMapIntensity: number;
-             aoMap: any;
+             aoMap: null;
              aoMapIntensity: number;
-             specularMap: any;
-             alphaMap: any;
-             envMap: any;
+             specularMap: null;
+             alphaMap: null;
+             envMap: null;
              combine: number;
              reflectivity: number;
              refractionRatio: number;
@@ -4276,14 +4315,14 @@ declare class Choreography {
          }
 
          export declare class MeshPhongMaterial extends Material {
-             map: any;
-             lightMap: any;
+             map: null;
+             lightMap: null;
              lightMapIntensity: number;
-             aoMap: any;
+             aoMap: null;
              aoMapIntensity: number;
-             specularMap: any;
-             alphaMap: any;
-             envMap: any;
+             specularMap: null;
+             alphaMap: null;
+             envMap: null;
              combine: number;
              reflectivity: number;
              refractionRatio: number;
@@ -4332,7 +4371,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -4345,7 +4384,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -4361,7 +4400,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -4370,7 +4409,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -4378,7 +4417,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -4391,7 +4430,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Metaball_1: any;
+                 Metaball_1: null;
                  radius: {
                      i18n: string;
                      f: () => void;
@@ -4435,7 +4474,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -4448,7 +4487,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -4464,7 +4503,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -4473,7 +4512,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -4481,7 +4520,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -4494,7 +4533,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Metaballs_1: any;
+                 Metaballs_1: null;
                  add_ball: {
                      i18n: string;
                      f: () => void;
@@ -4590,11 +4629,11 @@ declare class Choreography {
              constructor(editor: NodeImageEditor, params?: any);
              addInput(inputId: any, inputType: any, size?: number): Input;
              addOutput(outputId: any, outputType: any): Output;
-             getInput(inputId: any): Input;
-             getOutput(outputId: any): Output;
+             getInput(inputId: any): Input | undefined;
+             getOutput(outputId: any): Output | undefined;
              operate(context?: any): Promise<void>;
              addParam(param: NodeParam): void;
-             getParam(paramName: string): NodeParam;
+             getParam(paramName: string): NodeParam | undefined;
              getValue(paramName: string): any;
              setParams(params?: any): void;
              setParam(paramName: any, paramValue: any, paramIndex?: any): void;
@@ -4630,7 +4669,7 @@ declare class Choreography {
              NodeImageEditor: any;
              removeNode(node: any): void;
              removeAllNodes(): void;
-             getVariable(name: any): number;
+             getVariable(name: any): number | undefined;
              setVariable(name: any, value: any): Map<string, number>;
              deleteVariable(name: any): boolean;
              clearVariables(): void;
@@ -4747,12 +4786,12 @@ declare class Choreography {
              camera: Camera;
              constructor();
              exportMeshes({ meshes, exportTexture, singleMesh, digits, subdivisions, mergeTolerance }?: {
-                 meshes?: Set<Entity>;
-                 exportTexture?: boolean;
-                 singleMesh?: boolean;
-                 digits?: number;
-                 subdivisions?: number;
-                 mergeTolerance?: number;
+                 meshes?: Set<Entity> | undefined;
+                 exportTexture?: boolean | undefined;
+                 singleMesh?: boolean | undefined;
+                 digits?: number | undefined;
+                 subdivisions?: number | undefined;
+                 mergeTolerance?: number | undefined;
              }): Promise<Set<File>>;
          }
 
@@ -4806,7 +4845,7 @@ declare class Choreography {
              operateParticle(particle: Source2Particle | null | Source2Particle[], elapsedTime: number): void;
              forceParticle(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3): void;
              constraintParticle(particle: Source2Particle): void;
-             emitParticle(creationTime: number, elapsedTime: number): Source2Particle;
+             emitParticle(creationTime: number, elapsedTime: number): Source2Particle | undefined;
              renderParticle(particleList: Source2Particle, elapsedTime: number, material: Source2Material): void;
              checkIfOperatorShouldRun(): boolean;
              fadeInOut(): number;
@@ -4818,7 +4857,7 @@ declare class Choreography {
              doNothing(): void;
              reset(): void;
              getOperatorFade(): number;
-             getInputValue(inputField: number, particle: Source2Particle): any;
+             getInputValue(inputField: number, particle: Source2Particle): number | vec3 | undefined;
              getInputValueAsVector(inputField: number, particle: Source2Particle, v: vec4): void;
              setOutputValue(outputField: number, value: any, particle: Source2Particle): void;
              initMultipleOverride(): boolean;
@@ -4852,7 +4891,7 @@ declare class Choreography {
              set dampingFactor(dampingFactor: number);
              get dampingFactor(): number;
              setupCamera(): void;
-             update(delta?: number): boolean;
+             update(delta?: number): boolean | undefined;
              set autoRotateSpeed(speed: any);
              get zoomScale(): number;
              handleEnabled(): void;
@@ -4896,14 +4935,14 @@ declare class Choreography {
              #private;
              get value(): Promise<unknown>;
              getValue(): Promise<unknown>;
-             get pixelArray(): Promise<Uint8Array<ArrayBufferLike>>;
+             get pixelArray(): Promise<Uint8Array<ArrayBufferLike> | null>;
              getPixelArray(): Promise<Uint8Array | null>;
              addSuccessor(successor: InputOutput): void;
              removeSuccessor(successor: InputOutput): void;
              hasSuccessor(): boolean;
              successorsLength(): number;
              invalidate(): void;
-             getType(): void;
+             getType(): void | null;
              isValid(startingPoint: Node_2): any;
              toString(tabs?: string): Promise<string>;
              dispose(): void;
@@ -4976,7 +5015,7 @@ declare class Choreography {
              lineTo(p1: any): void;
              quadraticCurveTo(p1: any, p2: any): void;
              cubicCurveTo(p1: any, p2: any, p3: any): void;
-             getPoints(divisions?: number): any[];
+             getPoints(divisions?: number): ([number, number, number] | Float32Array<ArrayBufferLike>)[];
              fromSvgPath(path: any): void;
          }
 
@@ -4988,7 +5027,7 @@ declare class Choreography {
              outputMax: number;
              startCP: number;
              endCP: number;
-             setMethod: any;
+             setMethod: null;
              activeRange: boolean;
              radialCheck: boolean;
              scaleInitialRange: boolean;
@@ -5000,8 +5039,8 @@ declare class Choreography {
 
          export declare class PinParticleToCP extends Operator {
              offsetLocal: boolean;
-             particleSelection: any;
-             pinBreakType: any;
+             particleSelection: null;
+             pinBreakType: null;
              breakControlPointNumber: number;
              breakControlPointNumber2: number;
              _paramChanged(paramName: any, value: any): void;
@@ -5051,7 +5090,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -5064,7 +5103,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -5080,7 +5119,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -5089,7 +5128,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -5097,7 +5136,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -5110,7 +5149,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Plane_1: any;
+                 Plane_1: null;
                  width: {
                      i18n: string;
                      f: () => void;
@@ -5178,7 +5217,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -5191,7 +5230,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -5207,7 +5246,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -5216,7 +5255,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -5224,7 +5263,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -5237,7 +5276,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Light_1: any;
+                 Light_1: null;
                  color: {
                      i18n: string;
                      f: () => void;
@@ -5371,7 +5410,7 @@ declare class Choreography {
              get vs(): void;
              get fs(): void;
              setUniformValue(name: string, value: any): void;
-             validate(includeCode: string): boolean;
+             validate(includeCode: string): false | undefined;
              invalidate(): void;
              isValid(): boolean;
              getProgram(): WebGLProgram;
@@ -5519,7 +5558,7 @@ declare class Choreography {
              tintMax: vec3;
              updateThreshold: number;
              tintCP: number;
-             tintBlendMode: any;
+             tintBlendMode: null;
              lightAmplification: number;
              tintPerc: number;
              _paramChanged(paramName: any, value: any): void;
@@ -5642,7 +5681,7 @@ declare class Choreography {
              positionAt(distance: number, position: vec3): void;
              intersectTriangle(v0: vec3, v1: vec3, v2: vec3, intersectionPoint: vec3): boolean;
              intersectSphere(position: any, radius: any, scale: any, intersectionPoint1: any, intersectionPoint2: any): boolean;
-             distanceSqToSegment(v0: any, v1: any, optionalPointOnRay: any, optionalPointOnSegment: any): any;
+             distanceSqToSegment(v0: any, v1: any, optionalPointOnRay: any, optionalPointOnSegment: any): number;
              createIntersection(position: any, normal: any, uv: any, entity: any, distanceFromRay: any): Intersection;
          }
 
@@ -5707,7 +5746,7 @@ declare class Choreography {
              startTime: number;
              endTime: number;
              interpRate: number;
-             setMethod: any;
+             setMethod: null;
              scaleInitialRange: any;
              _paramChanged(paramName: any, value: any): void;
              doOperate(particle: any, elapsedTime: any, strength: any): void;
@@ -5721,7 +5760,7 @@ declare class Choreography {
              outputMax: vec3;
              startTime: number;
              endTime: number;
-             setMethod: any;
+             setMethod: null;
              offset: boolean;
              accelerate: boolean;
              localSpaceCP: number;
@@ -5764,7 +5803,7 @@ declare class Choreography {
              scaleControlPointField: number;
              outputMin: number;
              outputMax: number;
-             setMethod: any;
+             setMethod: null;
              activeRange: boolean;
              invert: boolean;
              wrap: boolean;
@@ -5844,7 +5883,7 @@ declare class Choreography {
          }
 
          export declare class RenderBlobs extends Operator {
-             balls: any[];
+             balls: never[];
              metaballs: Metaballs;
              constructor(system: any);
              _paramChanged(paramName: any, value: any): void;
@@ -5917,7 +5956,7 @@ declare class Choreography {
              setupLights(renderList: RenderList, camera: any, program: any, viewMatrix: any): void;
              setLights(pointLights: any, spotLights: any, pointLightShadows: any, spotLightShadows: any): void;
              unsetLights(): void;
-             renderObject(renderList: RenderList, object: Mesh, camera: any, geometry: any, material: any, renderLights: boolean, lightPos: any): void;
+             renderObject(renderList: RenderList, object: Mesh, camera: any, geometry: any, material: any, renderLights: boolean | undefined, lightPos: any): void;
              _prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
              _renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: RenderContext, lightPos?: vec3): void;
              render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
@@ -5987,7 +6026,7 @@ declare class Choreography {
          export declare class RenderRopes extends Operator {
              #private;
              geometry: BeamBufferGeometry;
-             setDefaultTexture?: boolean;
+             setDefaultTexture?: boolean | undefined;
              textureVWorldSize: number;
              textureVScrollRate: number;
              textureScroll: number;
@@ -6079,7 +6118,7 @@ declare class Choreography {
              set material(material: void);
              setRenderTarget(renderTarget: RenderTarget): void;
              setMaterial(material: Material): void;
-             getMaterial(): Material;
+             getMaterial(): Material | undefined;
              /**
               * @deprecated Please use `getMaterial` instead.
               */
@@ -6094,7 +6133,7 @@ declare class Choreography {
          export declare class RenderTrails extends Operator {
              #private;
              geometry: BufferGeometry;
-             setDefaultTexture?: boolean;
+             setDefaultTexture?: boolean | undefined;
              minLength: number;
              maxLength: number;
              lengthFadeInTime: number;
@@ -6202,8 +6241,8 @@ declare class Choreography {
          export declare class RgbeImporter {
              #private;
              constructor(context: WebGLAnyRenderingContext);
-             fetch(url: string): Promise<Texture_2 | "error while fetching resource">;
-             import(reader: BinaryReader): Texture_2;
+             fetch(url: string): Promise<Texture_2 | "error while fetching resource" | null>;
+             import(reader: BinaryReader): Texture_2 | null;
          }
 
          export declare class RingWave extends Operator {
@@ -6256,7 +6295,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -6269,7 +6308,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -6285,7 +6324,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -6294,7 +6333,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -6302,7 +6341,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -6315,7 +6354,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 RotationControl_1: any;
+                 RotationControl_1: null;
                  rotation_axis: {
                      i18n: string;
                      f: () => void;
@@ -6385,7 +6424,7 @@ declare class Choreography {
              addLayer(layer: any, index: number): any;
              removeLayer(layer: any): void;
              setWorld(world: World): void;
-             getWorld(): World;
+             getWorld(): World | undefined;
              toString(): string;
              static constructFromJSON(json: JSONObject): Promise<Scene>;
              static getEntityName(): string;
@@ -6405,7 +6444,7 @@ declare class Choreography {
              get htmlElement(): HTMLElement;
              applyFilter(): void;
              selectEntity(entity: Entity, scrollIntoView?: boolean): void;
-             getSelectedEntity(): Entity;
+             getSelectedEntity(): Entity | undefined;
              getEntityHtml(entity: Entity): void;
              showContextMenu(contextMenu: HarmonyMenuItems, x: number, y: number, entity: Entity): void;
              editMaterial(material: Material): void;
@@ -6619,8 +6658,13 @@ declare class Choreography {
              static addSource(type: ShaderType, name: string, source: string): void;
              static getShaderSource(type: ShaderType, name: string, invalidCustomShaders?: boolean): WebGLShaderSource | undefined;
              static setCustomSource(type: ShaderType, name: string, source: string): void;
-             static getCustomSourceAnnotations(name: string): any[];
-             static getIncludeAnnotations(includeName: string): any;
+             static getCustomSourceAnnotations(name: string): any[] | null;
+             static getIncludeAnnotations(includeName: string): {
+                 type: any;
+                 column: any;
+                 row: number;
+                 text: any;
+             }[] | undefined;
              static get shaderList(): MapIterator<string>;
              static resetShadersSource(): void;
              static set displayCompileError(displayCompileError: boolean);
@@ -6665,16 +6709,27 @@ declare class Choreography {
              render(renderer: Renderer, renderList: RenderList, camera: Camera, context: RenderContext): void;
          }
 
+         declare class Shape_2 extends Path {
+             uuid: string;
+             type: string;
+             holes: never[];
+             getPointsHoles(divisions: any): any[];
+             extractPoints(divisions: any): {
+                 shape: ([number, number, number] | Float32Array<ArrayBufferLike>)[];
+                 holes: any[];
+             };
+         }
+
          declare class ShapePath {
              type: string;
-             subPaths: any[];
-             currentPath: any;
+             subPaths: never[];
+             currentPath: null;
              moveTo(x: any, y: any): this;
              lineTo(x: any, y: any): this;
              quadraticCurveTo(aCPx: any, aCPy: any, aX: any, aY: any): this;
              bezierCurveTo(aCP1x: any, aCP1y: any, aCP2x: any, aCP2y: any, aX: any, aY: any): this;
              splineThru(pts: any): this;
-             toShapes(isCCW: any, noHoles: any): any[];
+             toShapes(isCCW: any, noHoles: any): Shape_2[];
          }
 
          export declare function SimpleSpline(value: number): number;
@@ -6722,9 +6777,9 @@ declare class Choreography {
              get position(): vec3;
              set quaternion(quaternion: vec4);
              get quaternion(): vec4;
-             addBone(boneId: number, boneName: string): Bone;
+             addBone(boneId: number, boneName: string): Bone | undefined;
              setParentSkeleton(skeleton: Skeleton | null): Promise<void>;
-             getBoneByName(boneName: string): Bone;
+             getBoneByName(boneName: string): Bone | undefined;
              getBoneById(boneId: number): Bone;
              toString(): string;
              getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
@@ -6783,9 +6838,9 @@ declare class Choreography {
                  bones: Record<string, any>;
              };
              constructor(params?: any);
-             get skeleton(): Skeleton;
-             set skeleton(skeleton: Skeleton);
-             addChild(child: any): Entity;
+             get skeleton(): Skeleton | undefined;
+             set skeleton(skeleton: Skeleton | undefined);
+             addChild(child: any): Entity | undefined;
              removeChild(child: any): void;
              set skin(skin: number);
              get skin(): number;
@@ -6812,7 +6867,7 @@ declare class Choreography {
              attachSystem(system: any, attachmentName?: string, cpIndex?: number, offset?: vec3): void;
              attachSystemToBone(system: any, boneName: any, offset: any): void;
              getAttachment(attachmentName: any): any;
-             getBoneByName(boneName: any): Bone;
+             getBoneByName(boneName: any): Bone | undefined;
              set material(material: any);
              buildContextMenu(): {
                  visibility: {
@@ -6843,7 +6898,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -6856,7 +6911,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -6872,7 +6927,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -6881,7 +6936,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -6889,7 +6944,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -6902,7 +6957,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Source1ModelInstance_1: any;
+                 Source1ModelInstance_1: null;
                  skin: {
                      i18n: string;
                      submenu: any[];
@@ -6913,7 +6968,7 @@ declare class Choreography {
                  };
                  reset_tint: {
                      i18n: string;
-                     f: (entity: any) => any;
+                     f: (entity: any) => undefined;
                      disabled: boolean;
                  };
                  animation: {
@@ -6924,7 +6979,7 @@ declare class Choreography {
                      i18n: string;
                      f: (entity: any) => Promise<void>;
                  };
-                 Source1ModelInstance_2: any;
+                 Source1ModelInstance_2: null;
                  animate: {
                      i18n: string;
                      selected: boolean;
@@ -6934,7 +6989,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => void;
                  };
-                 Source1ModelInstance_3: any;
+                 Source1ModelInstance_3: null;
                  copy_filename: {
                      i18n: string;
                      f: () => Promise<void>;
@@ -6950,7 +7005,7 @@ declare class Choreography {
              setFlexes(flexes?: {}): void;
              resetFlexParameters(): void;
              playDefaultAnim(): Promise<void>;
-             getHitboxes(): any[];
+             getHitboxes(): Hitbox[];
              replaceMaterial(material: any, recursive?: boolean): void;
              resetMaterial(recursive?: boolean): void;
              getAnimations(): Promise<Set<string>>;
@@ -7033,7 +7088,7 @@ declare class Choreography {
               * Play a sound
               * @param {String} soundName soundName
               */
-             static playSound(repositoryName: string, soundName: string): Promise<HTMLAudioElement>;
+             static playSound(repositoryName: string, soundName: string): Promise<HTMLAudioElement | undefined>;
              static loadManifest(repositoryName: string, fileName: string): void;
              static mute(): void;
              static unmute(): void;
@@ -7047,7 +7102,7 @@ declare class Choreography {
              constructor();
              getTexture(repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture | null;
              getVtf(repository: string, path: string): Promise<SourceEngineVTF | null>;
-             getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture>;
+             getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture | null>;
              getInternalTextureName(): string;
              addInternalTexture(repository: string, texture?: Texture): {
                  name: string;
@@ -7073,10 +7128,10 @@ declare class Choreography {
              getDecoderArray(): any;
              getSegment(segmentIndex: any): any;
              getAnimations(animations?: Set<string>): Promise<Set<string>>;
-             getAnimationByActivity(activityName: any, activityModifiers: any): any[];
-             getAnimationsByActivity(activityName: any): any[];
+             getAnimationByActivity(activityName: any, activityModifiers: any): (number | Source2AnimationDesc | undefined)[];
+             getAnimationsByActivity(activityName: any): Source2AnimationDesc[];
              get animArray(): any;
-             getAnimationByName(animName: any): Source2AnimationDesc;
+             getAnimationByName(animName: any): Source2AnimationDesc | undefined;
          }
 
          declare class Source2AnimationDesc {
@@ -7089,7 +7144,7 @@ declare class Choreography {
              get lastFrame(): any;
              getFrame(frameIndex: any): any;
              readSegment(frameIndex: any, segment: any, boneArray: any, dataChannelArray: any, decodeArray: any): void;
-             matchActivity(activityName: any): boolean;
+             matchActivity(activityName: any): true | undefined;
              getActivityName(): any;
              hasModifiers(): boolean;
              modifiersScore(activityName: any, modifiers: any): number;
@@ -7099,9 +7154,9 @@ declare class Choreography {
          declare class Source2Animations {
              #private;
              addAnimations(animations: any): void;
-             getAnimations(): any[];
-             getAnimation(activityName: any, activityModifiers?: Set<never>): any;
-             getBestAnimation(activityName: any, activityModifiers: any): any;
+             getAnimations(): never[];
+             getAnimation(activityName: any, activityModifiers?: Set<never>): undefined;
+             getBestAnimation(activityName: any, activityModifiers: any): undefined;
          }
 
          declare class Source2AnimGroup {
@@ -7217,17 +7272,17 @@ declare class Choreography {
              getVertexCount(bufferId: any): any;
              getIndices(bufferId: any): any;
              getVertices(bufferId: any): any;
-             getNormals(bufferId: any): any[];
+             getNormals(bufferId: any): number[] | null;
              getCoords(bufferId: any): any;
              getBoneIndices(bufferId: any): any;
              getBoneWeight(bufferId: any): any;
-             getPositionArray(bufferId: any): any[];
-             getNormalArray(bufferId: any): any[];
-             getCoordArray(bufferId: any): any[];
-             getBoneIndiceArray(bufferId: any): any[];
-             getBoneWeightArray(bufferId: any): any[];
-             getTangentArray(bufferId: any): any[];
-             getBinormalArray(bufferId: any): any[];
+             getPositionArray(bufferId: any): any[] | null;
+             getNormalArray(bufferId: any): number[] | null;
+             getCoordArray(bufferId: any): any[] | null;
+             getBoneIndiceArray(bufferId: any): any[] | null;
+             getBoneWeightArray(bufferId: any): number[] | null;
+             getTangentArray(bufferId: any): any[] | null;
+             getBinormalArray(bufferId: any): any[] | null;
              getWidth(): any;
              getHeight(): any;
              getDxtLevel(): 0 | 1 | 5;
@@ -7240,7 +7295,7 @@ declare class Choreography {
              getExternalFile(fileIndex: any): any;
              getKeyValue(path: any): any;
              get imageFormat(): number;
-             get displayName(): string;
+             get displayName(): string | undefined;
              getRemappingTable(meshIndex: any): any;
              remapBuffer(buffer: any, remappingTable: any): Float32Array<ArrayBuffer>;
          }
@@ -7260,7 +7315,7 @@ declare class Choreography {
              getKeyValue(path: any): any;
              getIndices(bufferId: any): any;
              getVertices(bufferId: any): any;
-             getNormalsTangents(bufferId: any): any[][];
+             getNormalsTangents(bufferId: any): number[][];
              getCoords(bufferId: any): any;
              getNormal(bufferId: any): any;
              getTangent(bufferId: any): any;
@@ -7300,7 +7355,7 @@ declare class Choreography {
              outputMax: number;
              startTime: number;
              endTime: number;
-             setMethod: any;
+             setMethod: null;
              remapBias: number;
              scaleInitialRange: any;
              fieldOutput: number;
@@ -7321,7 +7376,7 @@ declare class Choreography {
              prevPosScale: number;
              rigid: boolean;
              useBones: boolean;
-             rotationSetType: any;
+             rotationSetType: null;
              rigidRotationLock: boolean;
              _paramChanged(paramName: any, value: any): void;
              doOperate(particle: any, elapsedTime: any): void;
@@ -7367,10 +7422,10 @@ declare class Choreography {
              requiredLod: number;
              drawBodyPart: {};
              currentSkin: number;
-             currentSheen: any;
-             animLayers: any[];
+             currentSheen: null;
+             animLayers: never[];
              animGroups: Set<Source2AnimGroup>;
-             materialRepository: any;
+             materialRepository: null;
              dirty: boolean;
              geometries: Set<BufferGeometry>;
              bodyParts: Map<string, BodyPart>;
@@ -7387,21 +7442,21 @@ declare class Choreography {
              loadAnimGroups(): Promise<void>;
              getIncludeModels(): any;
              addIncludeModel(includeModel: any): void;
-             getAnim(activityName: any, activityModifiers: any): any;
+             getAnim(activityName: any, activityModifiers: any): undefined;
              getAnimation(name: string): Source2AnimationDesc | undefined;
              getAnimationsByActivity(activityName: any, animations?: Source2Animations): Source2Animations;
              getAnimations(): Promise<Set<string>>;
              _addAttachments(attachments: any): void;
-             getAnimationByName(animName: any): Source2AnimationDesc;
+             getAnimationByName(animName: any): Source2AnimationDesc | undefined;
          }
 
          declare class Source2ModelAttachment {
              name: string;
              ignoreRotation: boolean;
-             influenceNames: any[];
-             influenceWeights: any[];
-             influenceOffsets: any[];
-             influenceRotations: any[];
+             influenceNames: never[];
+             influenceWeights: never[];
+             influenceOffsets: never[];
+             influenceRotations: never[];
              constructor(name: string);
          }
 
@@ -7431,10 +7486,10 @@ declare class Choreography {
              hasAnimations: true;
              constructor(sourceModel: Source2Model, isDynamic: any);
              setBodyGroup(name: string, choice: number): void;
-             get skeleton(): any;
+             get skeleton(): Skeleton | undefined;
              set position(position: vec3);
              get position(): vec3;
-             addChild(child: any): Entity;
+             addChild(child: any): Entity | undefined;
              removeChild(child: any): void;
              set skin(skin: number);
              get skin(): number;
@@ -7475,7 +7530,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -7488,7 +7543,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -7504,7 +7559,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -7513,7 +7568,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -7521,7 +7576,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -7534,7 +7589,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Source2ModelInstance_1: any;
+                 Source2ModelInstance_1: null;
                  skin: {
                      i18n: string;
                      submenu: any[];
@@ -7543,7 +7598,7 @@ declare class Choreography {
                      i18n: string;
                      f: (entity: any) => Promise<void>;
                  };
-                 Source2ModelInstance_2: any;
+                 Source2ModelInstance_2: null;
                  animate: {
                      i18n: string;
                      selected: boolean;
@@ -7556,7 +7611,7 @@ declare class Choreography {
              };
              getParentModel(): this;
              getRandomPointOnModel(vec: any, initialVec: any, bones: any): any;
-             getAttachment(name: any): Source2ModelAttachmentInstance;
+             getAttachment(name: any): Source2ModelAttachmentInstance | undefined;
              static set animSpeed(speed: any);
              dispose(): void;
              static getEntityName(): string;
@@ -7680,7 +7735,7 @@ declare class Choreography {
              die(): void;
              reset(id: number): void;
              setInitialField(field: number, value: any, mulInitial?: boolean): void;
-             setField(field: number, value: any, mulInitial?: boolean, setInitial?: boolean, additive?: boolean): void;
+             setField(field: number | undefined, value: any, mulInitial?: boolean, setInitial?: boolean, additive?: boolean): void;
              /**
               * TODO
               */
@@ -7757,7 +7812,7 @@ declare class Choreography {
              emitters: Operator[];
              initializers: Operator[];
              operators: Operator[];
-             forces: any[];
+             forces: never[];
              constraints: Operator[];
              renderers: Operator[];
              controlPoints: ControlPoint[];
@@ -7789,7 +7844,7 @@ declare class Choreography {
              reset(): void;
              step(elapsedTime: number): void;
              stepControlPoint(): void;
-             createParticle(creationTime: number, elapsedTime: number): Source2Particle;
+             createParticle(creationTime: number, elapsedTime: number): Source2Particle | undefined;
              getWorldPosition(vec?: vec3): vec3;
              getWorldQuaternion(q?: quat): quat;
              getControlPoint(controlPointId: number): ControlPoint;
@@ -7835,7 +7890,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -7848,7 +7903,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -7864,7 +7919,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -7873,7 +7928,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -7881,7 +7936,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -7894,7 +7949,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Source2ParticleSystem_1: any;
+                 Source2ParticleSystem_1: null;
                  startStop: {
                      i18n: string;
                      f: () => void;
@@ -7938,7 +7993,7 @@ declare class Choreography {
          }
 
          export declare const Source2SnapshotLoader: {
-             load(repository: string, filename: string): Promise<Source2Snapshot>;
+             load(repository: string, filename: string): Promise<Source2Snapshot | null>;
              loadSnapshot(snapFile: Source2File): Source2Snapshot;
          };
 
@@ -8062,9 +8117,9 @@ declare class Choreography {
          export declare class SourceBSP extends World {
              #private;
              repository: string;
-             bspFileVersion: any;
-             lumps: any[];
-             mapRevision: any;
+             bspFileVersion: null;
+             lumps: never[];
+             mapRevision: null;
              loaded: boolean;
              bufferInitialized: boolean;
              staticGeometry: {};
@@ -8072,17 +8127,17 @@ declare class Choreography {
              skyboxGeometry: {};
              overlayVerticesByTexture: {};
              mainLightMap: any;
-             lightMapTexture: any;
-             skyCamera: any;
-             skyName: any;
-             entities: any[];
-             connections: any[];
+             lightMapTexture: null;
+             skyCamera: null;
+             skyName: null;
+             entities: never[];
+             connections: never[];
              mapSpawn: boolean;
-             lastLeaf: any;
+             lastLeaf: undefined;
              bspTree: SourceEngineBspTree;
              frameCount: number;
              mustParseHeader: boolean;
-             funcBrushesRemoveMe: any[];
+             funcBrushesRemoveMe: never[];
              partialLoading: boolean;
              eventTarget: EventTarget;
              staticProps: Group;
@@ -8102,7 +8157,7 @@ declare class Choreography {
              initGeometry(): void;
              addEntity(entity: any): void;
              addConnection(connection: any): void;
-             getOBBSize(modelIndex: any): vec3;
+             getOBBSize(modelIndex: any): vec3 | null;
              static getEntityName(): string;
          }
 
@@ -8117,14 +8172,14 @@ declare class Choreography {
           */
          declare class SourceEngineBspTree {
              map: SourceBSP;
-             visibilityClusters: any;
+             visibilityClusters: undefined;
              clustersCount: number;
              countRemoveMe: number;
-             leavesRemoveme: any[];
+             leavesRemoveme: never[];
              constructor(map: SourceBSP);
              set clusters(clusters: any);
-             getLeafId(pos: any): number;
-             isLeafVisible(fromLeafId: any, toLeafId: any): any;
+             getLeafId(pos: any): number | undefined;
+             isLeafVisible(fromLeafId: any, toLeafId: any): boolean;
              isVisLeaf(leafId: any): boolean;
              addPropToLeaf(leafId: any, propId: any): void;
          }
@@ -8171,7 +8226,10 @@ declare class Choreography {
              static copyMaterial(repositoryName: any, sourcePath: any, destPath: any, searchPaths: any): Promise<void>;
              static addRepository(repositoryPath: any): void;
              static getMaterialList(): Promise<{
-                 files: any[];
+                 files: {
+                     name: string;
+                     files: JSONObject[];
+                 }[];
              }>;
          }
 
@@ -8179,7 +8237,7 @@ declare class Choreography {
              #private;
              load(repository: string, path: string): Promise<SourceMdl | null>;
              parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceMdl;
-             _parseAnimSection(reader: any, animDesc: any, frameIndex: any): any[];
+             _parseAnimSection(reader: any, animDesc: any, frameIndex: any): MdlStudioAnim[] | null;
          }
 
          /**
@@ -8226,8 +8284,8 @@ declare class Choreography {
              posLockedToCP: boolean;
              rotLockedToCP: boolean;
              trailLength: number;
-             initialCPPosition: any;
-             initialCPQuaternion: any;
+             initialCPPosition: null;
+             initialCPQuaternion: null;
              renderScreenVelocityRotate: boolean;
              constructor(id: any, system: any);
              step(elapsedTime: any): void;
@@ -8235,7 +8293,7 @@ declare class Choreography {
              die(): void;
              reset(): void;
              setInitialField(field: any, value: any, mulInitial: any): void;
-             setField(field: number, value: any, mulInitial?: boolean, setInitial?: boolean): void;
+             setField(field: number | undefined, value: any, mulInitial?: boolean, setInitial?: boolean): void;
              /**
               * TODO
               */
@@ -8299,7 +8357,7 @@ declare class Choreography {
              doRender(particle: SourceEngineParticle[], elapsedTime: number, material: Material): void;
              initRenderer(particleSystem: SourceEngineParticleSystem): void;
              updateParticles(particleSystem: any, particleList: any, elapsedTime: any): void;
-             emitParticle(creationTime: any, elapsedTime: any): any;
+             emitParticle(creationTime: any, elapsedTime: any): SourceEngineParticle | null | undefined;
              renderParticle(particleList: any, elapsedTime: any, material: any): void;
              setMaterial(material: any): void;
              setParticleSystem(particleSystem: any): void;
@@ -8353,9 +8411,9 @@ declare class Choreography {
              speed: number;
              isRunning: boolean;
              radius: number;
-             attachmentBone: any;
-             livingParticles: any[];
-             poolParticles: any[];
+             attachmentBone: null;
+             livingParticles: never[];
+             poolParticles: never[];
              currentOrientation: quat;
              prevOrientation: quat;
              emitters: Record<string, SourceEngineParticleOperator>;
@@ -8388,12 +8446,12 @@ declare class Choreography {
               */
              stepForces(): void;
              stepConstraints(particle: SourceEngineParticle): void;
-             createParticle(creationTime: number, elapsedTime: number): any;
+             createParticle(creationTime: number, elapsedTime: number): SourceEngineParticle | null | undefined;
              getWorldPosition(vec?: vec3): vec3;
              stepControlPoint(): void;
-             setParam(element: CDmxAttribute): this;
+             setParam(element: CDmxAttribute): this | null | undefined;
              addParam(param: string, type: string, value: any): void;
-             setParameter(parameter: string, type: string, value: any): this;
+             setParameter(parameter: string, type: string, value: any): this | undefined;
              propertyChanged(name: string): void;
              getParameter(parameterName: string): any;
              setMaxParticles(max: number): void;
@@ -8426,7 +8484,7 @@ declare class Choreography {
               */
              setOrientation(orientation: quat): void;
              setChildControlPointPosition(first: number, last: number, position: vec3): void;
-             getParticle(index?: number): any;
+             getParticle(index?: number): never;
              getControlPointPosition(cpId: number): vec3;
              setControlPointPosition(cpId: number, position: vec3): void;
              setControlPointParent(controlPointId: number, parentControlPointId: number): void;
@@ -8469,7 +8527,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -8482,7 +8540,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -8498,7 +8556,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -8507,7 +8565,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -8515,7 +8573,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -8528,7 +8586,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 SourceEngineParticleSystem_1: any;
+                 SourceEngineParticleSystem_1: null;
                  startStop: {
                      i18n: string;
                      f: () => void;
@@ -8545,7 +8603,7 @@ declare class Choreography {
 
          export declare class SourceEnginePCFLoader extends SourceBinaryLoader {
              #private;
-             parse(repositoryName: any, fileName: any, arrayBuffer: any): SourcePCF;
+             parse(repositoryName: any, fileName: any, arrayBuffer: any): SourcePCF | null;
              getString(pcf: any, index: any): any;
              getElement(pcf: any, index: any): any;
          }
@@ -8662,7 +8720,7 @@ declare class Choreography {
              readonly boneNames: Map<string, number>;
              numflexdesc: number;
              readonly attachments: MdlAttachment[];
-             readonly animDesc: any[];
+             readonly animDesc: never[];
              loader: SourceEngineMDLLoader;
              reader: BinaryReader;
              readonly poseParameters: MdlStudioPoseParam[];
@@ -8754,7 +8812,7 @@ declare class Choreography {
              getAnimDescription(animIndex: number): null;
              getAnimFrame(dynamicProp: Source1ModelInstance, animDesc: any, frameIndex: number): {
                  bones: Record<string, any>;
-             };
+             } | null;
              getLocalPoseParameter(poseIndex: number): MdlStudioPoseParam;
              getPoseParameters(): MdlStudioPoseParam[];
              boneFlags(boneIndex: number): number;
@@ -8765,14 +8823,14 @@ declare class Choreography {
              fileName: string;
              name: string;
              mdl: SourceMdl;
-             vvd: any;
-             vtx: any;
+             vvd: SourceVvd;
+             vtx: SourceVtx;
              requiredLod: number;
              drawBodyPart: {};
              currentSkin: number;
-             currentSheen: any;
-             animLayers: any[];
-             materialRepository: any;
+             currentSheen: null;
+             animLayers: never[];
+             materialRepository: null;
              dirty: boolean;
              bodyParts: Map<string, SourceModelMesh[][]>;
              constructor(repository: string, fileName: string, mdl: SourceMdl, vvd: SourceVvd, vtx: SourceVtx);
@@ -8798,8 +8856,8 @@ declare class Choreography {
 
          declare class SourcePCF {
              repository: string;
-             stringDict: any[];
-             elementsDict: any[];
+             stringDict: never[];
+             elementsDict: never[];
              systems: {};
              systems2: {};
              binaryVersion: any;
@@ -8807,7 +8865,7 @@ declare class Choreography {
              constructor(repository: string);
              getSystemElement(systemName: any): any;
              addSystem(element: any): void;
-             getSystem(systemName: any): SourceEngineParticleSystem;
+             getSystem(systemName: any): SourceEngineParticleSystem | null;
              initSystem(system: any): any;
              addOperators(system: any, list: any, listType: any): void;
              addAttributes(operator: any, list: any): void;
@@ -8840,7 +8898,7 @@ declare class Choreography {
              fixupTableStart: number;
              vertexDataStart: number;
              tangentDataStart: number;
-             getVertices(lodLevel: number): any[];
+             getVertices(lodLevel: number): SourceVvdVertex[] | null;
          }
 
          declare class SourceVvdBoneWeight {
@@ -8907,7 +8965,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -8920,7 +8978,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -8936,7 +8994,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -8945,7 +9003,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -8953,7 +9011,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -8966,7 +9024,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Sphere_1: any;
+                 Sphere_1: null;
                  radius: {
                      i18n: string;
                      f: () => void;
@@ -9040,7 +9098,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -9053,7 +9111,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -9069,7 +9127,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -9078,7 +9136,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -9086,7 +9144,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -9099,7 +9157,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Light_1: any;
+                 Light_1: null;
                  color: {
                      i18n: string;
                      f: () => void;
@@ -9231,7 +9289,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -9244,7 +9302,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -9260,7 +9318,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -9269,7 +9327,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -9277,7 +9335,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -9290,7 +9348,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 Text3D_1: any;
+                 Text3D_1: null;
                  text: {
                      i18n: string;
                      f: () => void;
@@ -9595,7 +9653,7 @@ declare class Choreography {
                      i18n: string;
                      submenu: any;
                  };
-                 entitynull_1: any;
+                 entitynull_1: null;
                  position: {
                      i18n: string;
                      f: () => void;
@@ -9608,7 +9666,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_2: any;
+                 entitynull_2: null;
                  quaternion: {
                      i18n: string;
                      f: () => void;
@@ -9624,7 +9682,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => quat;
                  };
-                 entitynull_3: any;
+                 entitynull_3: null;
                  scale: {
                      i18n: string;
                      f: () => void;
@@ -9633,7 +9691,7 @@ declare class Choreography {
                      i18n: string;
                      f: () => vec3;
                  };
-                 entitynull_4: any;
+                 entitynull_4: null;
                  wireframe: {
                      i18n: string;
                      selected: boolean;
@@ -9641,7 +9699,7 @@ declare class Choreography {
                  };
                  cast_shadows: {
                      i18n: string;
-                     selected: boolean;
+                     selected: boolean | undefined;
                      f: () => void;
                  };
                  receive_shadows: {
@@ -9654,7 +9712,7 @@ declare class Choreography {
                      submenu: {};
                  };
              } & {
-                 TranslationControl_1: any;
+                 TranslationControl_1: null;
                  speed: {
                      i18n: string;
                      f: () => void;
@@ -10036,7 +10094,7 @@ declare class Choreography {
          export declare const Zstd: {
              "__#243@#webAssembly"?: any;
              "__#243@#HEAPU8"?: Uint8Array;
-             decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
+             decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer> | null>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
              "__#243@#initHeap"(): void;

@@ -38,7 +38,7 @@ export class RenderBlobs extends Operator {
 		/*this.geometry = new BufferGeometry();
 		this.mesh = new StaticMesh(this.geometry, this.material);
 		this.mesh.setDefine('HARDWARE_PARTICLES');
-		this.createParticlesTexture();
+		this.#createParticlesTexture();
 		this.mesh.setUniform('uParticles', this.texture);
 
 		this.maxParticles = particleSystem.maxParticles;*/

@@ -44,7 +44,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		const rate = this.getParameter('animation rate') ?? 30;
 		this.geometry.count = particleList.length * 6;
 		const maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
-		this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
+		this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh.setVisible(Source1ParticleControler.visible);
 
@@ -145,7 +145,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	setupParticlesTexture(particleList, maxParticles, elapsedTime) {
+	#setupParticlesTexture(particleList, maxParticles, elapsedTime) {
 		const m_flMaxLength = this.getParameter('max length');
 		const m_flMinLength = this.getParameter('min length');
 		const m_flLengthFadeInTime = this.getParameter('length fade in time');
