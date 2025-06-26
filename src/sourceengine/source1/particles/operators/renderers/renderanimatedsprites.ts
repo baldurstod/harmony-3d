@@ -23,10 +23,11 @@ const vecDelta = vec3.create()
 export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 	static functionName = 'render_animated_sprites';
 	#orientationType;
-	texture: Texture;
+	#texture: Texture;
 	geometry: BufferGeometry;
 	#maxParticles;
 	imgData;
+
 	constructor() {
 		super();
 		this.addParam('animation rate', PARAM_TYPE_FLOAT, 0.1);
@@ -145,7 +146,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
 		this.#createParticlesTexture();
-		this.mesh.setUniform('uParticles', this.texture);
+		this.mesh.setUniform('uParticles', this.#texture);
 
 		this.maxParticles = particleSystem.maxParticles;
 		particleSystem.addChild(this.mesh);
@@ -177,10 +178,10 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 	}
 
 	#createParticlesTexture() {
-		this.texture = TextureManager.createTexture();
-		this.texture.addUser(this);
+		this.#texture = TextureManager.createTexture();
+		this.#texture.addUser(this);
 		const gl = new Graphics().glContext;//TODO
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		gl.bindTexture(GL_TEXTURE_2D, null);
@@ -189,7 +190,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 	updateParticlesTexture() {
 		const gl = new Graphics().glContext;
 
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		if (new Graphics().isWebGL2) {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
 		} else {
@@ -242,7 +243,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 
 	dispose() {
 		this.mesh?.dispose();
-		this.texture?.removeUser(this);
+		this.#texture?.removeUser(this);
 	}
 }
 SourceEngineParticleOperators.registerOperator(RenderAnimatedSprites);
