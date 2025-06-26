@@ -1011,7 +1011,7 @@ class Float32BufferAttribute extends BufferAttribute {
 }
 
 class BufferGeometry {
-    #elementArrayType;
+    #elementArrayType = GL_UNSIGNED_INT;
     #users = new Set();
     attributes = new Map();
     dirty = true;
@@ -6067,67 +6067,6 @@ class TextureManager {
     }
 }
 
-var GraphicsEvent;
-(function (GraphicsEvent) {
-    GraphicsEvent["MouseMove"] = "mousemove";
-    GraphicsEvent["MouseDown"] = "mousedown";
-    GraphicsEvent["MouseUp"] = "mouseup";
-    GraphicsEvent["Wheel"] = "wheel";
-    GraphicsEvent["Resize"] = "resize";
-    GraphicsEvent["Tick"] = "tick";
-    GraphicsEvent["KeyDown"] = "keydown";
-    GraphicsEvent["KeyUp"] = "keyup";
-    GraphicsEvent["TouchStart"] = "touchstart";
-    GraphicsEvent["TouchMove"] = "touchmove";
-    GraphicsEvent["TouchCancel"] = "touchcancel";
-})(GraphicsEvent || (GraphicsEvent = {}));
-const GraphicsEvents = new (function () {
-    class GraphicsEvents extends EventTarget {
-        static #instance;
-        constructor() {
-            if (GraphicsEvents.#instance) {
-                return GraphicsEvents.#instance;
-            }
-            super();
-            GraphicsEvents.#instance = this;
-        }
-        tick(delta, time, speed) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
-        }
-        resize(width, height) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
-        }
-        mouseMove(x, y, pickedEntity, mouseEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-        }
-        mouseDown(x, y, pickedEntity, mouseEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-        }
-        mouseUp(x, y, pickedEntity, mouseEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-        }
-        wheel(x, y, pickedEntity, wheelEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
-        }
-        keyDown(keyboardEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
-        }
-        keyUp(keyboardEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
-        }
-        touchStart(pickedEntity, touchEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-        }
-        touchMove(pickedEntity, touchEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-        }
-        touchCancel(pickedEntity, touchEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-        }
-    }
-    return GraphicsEvents;
-}());
-
 const RECORDER_MIME_TYPE = 'video/webm';
 const RECORDER_DEFAULT_FILENAME = 'Harmony3D recording.webm';
 // Note : you can provide your own url when calling ShaderEditor.initEditor.
@@ -6135,304 +6074,6 @@ const ACE_EDITOR_URI = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js
 const MAX_HARDWARE_BONES = 256;
 const TEXTURE_CLEANUP_DELAY = 100000;
 const SMD_HEADER = '// Created by harmony-3d';
-
-class WebGLRenderingState {
-    static #viewport = vec4.create();
-    static #scissor = vec4.create();
-    static #enabledCapabilities = [];
-    // clear values
-    static #clearColor = vec4.create();
-    static #clearDepth = 1.0;
-    static #clearStencil = 0;
-    // Masking
-    static #colorMask = vec4.create();
-    static #depthMask = true;
-    static #stencilMask;
-    // Depth
-    static #depthFunc = GL_LESS;
-    // Blend
-    static #sourceFactor = GL_ONE;
-    static #destinationFactor = GL_ZERO;
-    static #srcRGB = GL_ONE;
-    static #dstRGB = GL_ZERO;
-    static #srcAlpha = GL_ONE;
-    static #dstAlpha = GL_ZERO;
-    static #modeRGB = GL_FUNC_ADD;
-    static #modeAlpha = GL_FUNC_ADD;
-    // Cull
-    static #cullFace = GL_BACK;
-    static #frontFace = GL_CCW;
-    //polygonOffset
-    static #polygonOffsetFactor = 0;
-    static #polygonOffsetUnits = 0;
-    static #lineWidth = 1;
-    static #program;
-    static #graphics;
-    static #glContext;
-    static #enabledVertexAttribArray;
-    static #usedVertexAttribArray;
-    static #vertexAttribDivisor;
-    static setGraphics(graphics) {
-        this.#graphics = graphics;
-        this.#glContext = graphics.glContext;
-        const maxVertexAttribs = this.#glContext.getParameter(GL_MAX_VERTEX_ATTRIBS);
-        this.#enabledVertexAttribArray = new Uint8Array(maxVertexAttribs);
-        this.#usedVertexAttribArray = new Uint8Array(maxVertexAttribs);
-        this.#vertexAttribDivisor = new Uint8Array(maxVertexAttribs);
-    }
-    static clearColor(clearColor) {
-        if (!vec4.exactEquals(clearColor, this.#clearColor)) {
-            this.#glContext.clearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
-            vec4.copy(this.#clearColor, clearColor);
-        }
-    }
-    static getClearColor(out = vec4.create()) {
-        return vec4.copy(out, this.#clearColor);
-    }
-    static clearDepth(clearDepth) {
-        if (clearDepth !== this.#clearDepth) {
-            this.#glContext.clearDepth(clearDepth);
-            this.#clearDepth = clearDepth;
-        }
-    }
-    static clearStencil(clearStencil) {
-        if (clearStencil !== this.#clearStencil) {
-            this.#glContext.clearStencil(clearStencil);
-            this.#clearStencil = clearStencil;
-        }
-    }
-    static clear(color, depth, stencil) {
-        let bits = 0;
-        if (color)
-            bits |= GL_COLOR_BUFFER_BIT;
-        if (depth)
-            bits |= GL_DEPTH_BUFFER_BIT;
-        if (stencil)
-            bits |= GL_STENCIL_BUFFER_BIT;
-        this.#glContext.clear(bits);
-    }
-    static colorMask(colorMask) {
-        if (!vec4.exactEquals(colorMask, this.#colorMask)) {
-            this.#glContext.colorMask(Boolean(colorMask[0]), Boolean(colorMask[1]), Boolean(colorMask[2]), Boolean(colorMask[3]));
-            vec4.copy(this.#colorMask, colorMask);
-        }
-    }
-    static depthMask(flag) {
-        if (flag !== this.#depthMask) {
-            this.#glContext.depthMask(flag);
-            this.#depthMask = flag;
-        }
-    }
-    static stencilMask(stencilMask) {
-        if (stencilMask !== this.#stencilMask) {
-            this.#glContext.stencilMask(stencilMask);
-            this.#stencilMask = stencilMask;
-        }
-    }
-    static lineWidth(width) {
-        if (width !== this.#lineWidth) {
-            this.#glContext.lineWidth(width);
-            this.#lineWidth = width;
-        }
-    }
-    static viewport(viewport) {
-        if (!vec4.exactEquals(viewport, this.#viewport)) {
-            this.#glContext.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-            vec4.copy(this.#viewport, viewport);
-        }
-    }
-    static scissor(scissor) {
-        if (!vec4.exactEquals(scissor, this.#scissor)) {
-            this.#glContext.scissor(scissor[0], scissor[1], scissor[2], scissor[3]);
-            vec4.copy(this.#scissor, scissor);
-        }
-    }
-    static enable(cap) {
-        if (this.#enabledCapabilities[cap] !== true) {
-            this.#glContext.enable(cap);
-            this.#enabledCapabilities[cap] = true;
-        }
-    }
-    static disable(cap) {
-        if (this.#enabledCapabilities[cap] !== false) {
-            this.#glContext.disable(cap);
-            this.#enabledCapabilities[cap] = false;
-        }
-    }
-    static isEnabled(cap) {
-        return this.#enabledCapabilities[cap] ?? this.#glContext.isEnabled(cap);
-    }
-    static useProgram(program) {
-        if (this.#program !== program) {
-            this.#glContext.useProgram(program);
-            this.#program = program;
-        }
-    }
-    static enableVertexAttribArray(index, divisor = 0) {
-        if (this.#enabledVertexAttribArray[index] === 0) {
-            this.#glContext.enableVertexAttribArray(index);
-            this.#enabledVertexAttribArray[index] = 1;
-        }
-        this.#usedVertexAttribArray[index] = 1;
-        if (this.#vertexAttribDivisor[index] !== divisor) {
-            this.#vertexAttribDivisor[index] = divisor;
-            if (this.#graphics.isWebGL2) {
-                this.#glContext.vertexAttribDivisor(index, divisor);
-            }
-            else {
-                this.#graphics.ANGLE_instanced_arrays?.vertexAttribDivisorANGLE(index, divisor);
-            }
-        }
-    }
-    static initUsedAttributes() {
-        const usedAttributes = this.#usedVertexAttribArray;
-        for (let i = 0, l = usedAttributes.length; i < l; i++) {
-            usedAttributes[i] = 0;
-        }
-    }
-    static disableUnusedAttributes() {
-        const usedAttributes = this.#usedVertexAttribArray;
-        const enabledAttributes = this.#enabledVertexAttribArray;
-        for (let i = 0, l = usedAttributes.length; i < l; i++) {
-            if (usedAttributes[i] !== enabledAttributes[i]) {
-                this.#glContext.disableVertexAttribArray(i);
-                enabledAttributes[i] = 0;
-            }
-        }
-    }
-    static depthFunc(func) {
-        if (this.#depthFunc !== func) {
-            this.#glContext.depthFunc(func);
-            this.#depthFunc = func;
-        }
-    }
-    static blendFunc(sourceFactor, destinationFactor) {
-        if ((this.#sourceFactor !== sourceFactor) || (this.#destinationFactor !== destinationFactor)) {
-            this.#glContext.blendFunc(sourceFactor, destinationFactor);
-            this.#sourceFactor = sourceFactor;
-            this.#destinationFactor = destinationFactor;
-        }
-    }
-    static blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha) {
-        if ((this.#srcRGB !== srcRGB) || (this.#dstRGB !== dstRGB) || (this.#srcAlpha !== srcAlpha) || (this.#dstAlpha !== dstAlpha)) {
-            this.#glContext.blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
-            this.#srcRGB = srcRGB;
-            this.#dstRGB = dstRGB;
-            this.#srcAlpha = srcAlpha;
-            this.#dstAlpha = dstAlpha;
-        }
-    }
-    static blendEquationSeparate(modeRGB, modeAlpha) {
-        if ((this.#modeRGB !== modeRGB) || (this.#modeAlpha !== modeAlpha)) {
-            this.#glContext.blendEquationSeparate(modeRGB, modeAlpha);
-            this.#modeRGB = modeRGB;
-            this.#modeAlpha = modeAlpha;
-        }
-    }
-    static cullFace(mode) {
-        if (this.#cullFace !== mode) {
-            this.#glContext.cullFace(mode);
-            this.#cullFace = mode;
-        }
-    }
-    static frontFace(mode) {
-        if (this.#frontFace !== mode) {
-            this.#glContext.frontFace(mode);
-            this.#frontFace = mode;
-        }
-    }
-    static polygonOffset(enable, factor, units) {
-        if (enable) {
-            this.enable(GL_POLYGON_OFFSET_FILL);
-            if (this.#polygonOffsetFactor !== factor && this.#polygonOffsetUnits !== units) {
-                this.#glContext.polygonOffset(factor, units);
-                this.#polygonOffsetFactor = factor;
-                this.#polygonOffsetUnits = units;
-            }
-        }
-        else {
-            this.disable(GL_POLYGON_OFFSET_FILL);
-        }
-    }
-}
-
-class WebGLStats {
-    static #frames = 0;
-    static #totalFrames = 0;
-    static #fps = 0;
-    static #drawElements = 0;
-    static #renderTime = 0;
-    static #renderTimeMean = 0;
-    static #textures = 0;
-    static #startTime = 0;
-    static #endTime = 0;
-    static #startRender = 0;
-    static #primitivePerMode = new Map();
-    static #htmlElement;
-    static {
-        this.#initHtml();
-        this.#reset();
-    }
-    static start() {
-        this.#startTime = performance.now();
-    }
-    static beginRender() {
-        this.#startRender = performance.now();
-    }
-    static endRender() {
-        this.#renderTime += performance.now() - this.#startRender;
-    }
-    static #reset() {
-        this.#drawElements = 0;
-        this.#primitivePerMode.set(GL_POINTS, 0);
-        this.#primitivePerMode.set(GL_LINE_STRIP, 0);
-        this.#primitivePerMode.set(GL_LINE_LOOP, 0);
-        this.#primitivePerMode.set(GL_LINES, 0);
-        this.#primitivePerMode.set(GL_TRIANGLE_STRIP, 0);
-        this.#primitivePerMode.set(GL_TRIANGLE_FAN, 0);
-        this.#primitivePerMode.set(GL_TRIANGLES, 0);
-    }
-    static tick() {
-        this.#endTime = performance.now();
-        ++this.#frames;
-        const timeSinceReset = this.#endTime - this.#startTime;
-        this.#updateHtml();
-        if (timeSinceReset > 1000) {
-            this.#fps = Math.round(this.#frames / timeSinceReset * 1000);
-            this.#renderTimeMean = this.#renderTime / this.#frames;
-            this.#frames = 0;
-            this.#startTime = this.#endTime;
-            this.#renderTime = 0;
-        }
-        this.#reset();
-    }
-    static drawElements(mode, count) {
-        this.#primitivePerMode.set(mode, count + (this.#primitivePerMode.get(mode) ?? 0));
-        ++this.#drawElements;
-    }
-    static #initHtml() {
-        this.#htmlElement = createElement('div');
-    }
-    static #updateHtml() {
-        this.#htmlElement.innerText = '';
-        this.#htmlElement.append(String(this.#fps));
-        this.#htmlElement.append(createElement('br'), `drawElements : ${this.#drawElements}`);
-        this.#htmlElement.append(createElement('br'), `renderTime : ${this.#renderTimeMean.toPrecision(3)}`);
-        this.#htmlElement.append(createElement('br'), `textures : ${this.#textures}`);
-        for (const [mode, count] of this.#primitivePerMode) {
-            //let count = this.primitivePerMode[mode];
-            if (count > 0) {
-                this.#htmlElement.append(createElement('br'), `${mode} : ${count}`);
-            }
-        }
-    }
-    static get htmlElement() {
-        return this.#htmlElement;
-    }
-    static getFps() {
-        return this.#fps;
-    }
-}
 
 function flattenArray(array, arrayCount, arraySize) {
     const out = new Float32Array(arrayCount * arraySize); //TODO: cache this
@@ -6742,6 +6383,304 @@ class Program {
             return false;
         }
         return true;
+    }
+}
+
+class WebGLStats {
+    static #frames = 0;
+    static #totalFrames = 0;
+    static #fps = 0;
+    static #drawElements = 0;
+    static #renderTime = 0;
+    static #renderTimeMean = 0;
+    static #textures = 0;
+    static #startTime = 0;
+    static #endTime = 0;
+    static #startRender = 0;
+    static #primitivePerMode = new Map();
+    static #htmlElement;
+    static {
+        this.#initHtml();
+        this.#reset();
+    }
+    static start() {
+        this.#startTime = performance.now();
+    }
+    static beginRender() {
+        this.#startRender = performance.now();
+    }
+    static endRender() {
+        this.#renderTime += performance.now() - this.#startRender;
+    }
+    static #reset() {
+        this.#drawElements = 0;
+        this.#primitivePerMode.set(GL_POINTS, 0);
+        this.#primitivePerMode.set(GL_LINE_STRIP, 0);
+        this.#primitivePerMode.set(GL_LINE_LOOP, 0);
+        this.#primitivePerMode.set(GL_LINES, 0);
+        this.#primitivePerMode.set(GL_TRIANGLE_STRIP, 0);
+        this.#primitivePerMode.set(GL_TRIANGLE_FAN, 0);
+        this.#primitivePerMode.set(GL_TRIANGLES, 0);
+    }
+    static tick() {
+        this.#endTime = performance.now();
+        ++this.#frames;
+        const timeSinceReset = this.#endTime - this.#startTime;
+        this.#updateHtml();
+        if (timeSinceReset > 1000) {
+            this.#fps = Math.round(this.#frames / timeSinceReset * 1000);
+            this.#renderTimeMean = this.#renderTime / this.#frames;
+            this.#frames = 0;
+            this.#startTime = this.#endTime;
+            this.#renderTime = 0;
+        }
+        this.#reset();
+    }
+    static drawElements(mode, count) {
+        this.#primitivePerMode.set(mode, count + (this.#primitivePerMode.get(mode) ?? 0));
+        ++this.#drawElements;
+    }
+    static #initHtml() {
+        this.#htmlElement = createElement('div');
+    }
+    static #updateHtml() {
+        this.#htmlElement.innerText = '';
+        this.#htmlElement.append(String(this.#fps));
+        this.#htmlElement.append(createElement('br'), `drawElements : ${this.#drawElements}`);
+        this.#htmlElement.append(createElement('br'), `renderTime : ${this.#renderTimeMean.toPrecision(3)}`);
+        this.#htmlElement.append(createElement('br'), `textures : ${this.#textures}`);
+        for (const [mode, count] of this.#primitivePerMode) {
+            //let count = this.primitivePerMode[mode];
+            if (count > 0) {
+                this.#htmlElement.append(createElement('br'), `${mode} : ${count}`);
+            }
+        }
+    }
+    static get htmlElement() {
+        return this.#htmlElement;
+    }
+    static getFps() {
+        return this.#fps;
+    }
+}
+
+class WebGLRenderingState {
+    static #viewport = vec4.create();
+    static #scissor = vec4.create();
+    static #enabledCapabilities = [];
+    // clear values
+    static #clearColor = vec4.create();
+    static #clearDepth = 1.0;
+    static #clearStencil = 0;
+    // Masking
+    static #colorMask = vec4.create();
+    static #depthMask = true;
+    static #stencilMask;
+    // Depth
+    static #depthFunc = GL_LESS;
+    // Blend
+    static #sourceFactor = GL_ONE;
+    static #destinationFactor = GL_ZERO;
+    static #srcRGB = GL_ONE;
+    static #dstRGB = GL_ZERO;
+    static #srcAlpha = GL_ONE;
+    static #dstAlpha = GL_ZERO;
+    static #modeRGB = GL_FUNC_ADD;
+    static #modeAlpha = GL_FUNC_ADD;
+    // Cull
+    static #cullFace = GL_BACK;
+    static #frontFace = GL_CCW;
+    //polygonOffset
+    static #polygonOffsetFactor = 0;
+    static #polygonOffsetUnits = 0;
+    static #lineWidth = 1;
+    static #program;
+    static #graphics;
+    static #glContext;
+    static #enabledVertexAttribArray;
+    static #usedVertexAttribArray;
+    static #vertexAttribDivisor;
+    static setGraphics(graphics) {
+        this.#graphics = graphics;
+        this.#glContext = graphics.glContext;
+        const maxVertexAttribs = this.#glContext.getParameter(GL_MAX_VERTEX_ATTRIBS);
+        this.#enabledVertexAttribArray = new Uint8Array(maxVertexAttribs);
+        this.#usedVertexAttribArray = new Uint8Array(maxVertexAttribs);
+        this.#vertexAttribDivisor = new Uint8Array(maxVertexAttribs);
+    }
+    static clearColor(clearColor) {
+        if (!vec4.exactEquals(clearColor, this.#clearColor)) {
+            this.#glContext.clearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+            vec4.copy(this.#clearColor, clearColor);
+        }
+    }
+    static getClearColor(out = vec4.create()) {
+        return vec4.copy(out, this.#clearColor);
+    }
+    static clearDepth(clearDepth) {
+        if (clearDepth !== this.#clearDepth) {
+            this.#glContext.clearDepth(clearDepth);
+            this.#clearDepth = clearDepth;
+        }
+    }
+    static clearStencil(clearStencil) {
+        if (clearStencil !== this.#clearStencil) {
+            this.#glContext.clearStencil(clearStencil);
+            this.#clearStencil = clearStencil;
+        }
+    }
+    static clear(color, depth, stencil) {
+        let bits = 0;
+        if (color)
+            bits |= GL_COLOR_BUFFER_BIT;
+        if (depth)
+            bits |= GL_DEPTH_BUFFER_BIT;
+        if (stencil)
+            bits |= GL_STENCIL_BUFFER_BIT;
+        this.#glContext.clear(bits);
+    }
+    static colorMask(colorMask) {
+        if (!vec4.exactEquals(colorMask, this.#colorMask)) {
+            this.#glContext.colorMask(Boolean(colorMask[0]), Boolean(colorMask[1]), Boolean(colorMask[2]), Boolean(colorMask[3]));
+            vec4.copy(this.#colorMask, colorMask);
+        }
+    }
+    static depthMask(flag) {
+        if (flag !== this.#depthMask) {
+            this.#glContext.depthMask(flag);
+            this.#depthMask = flag;
+        }
+    }
+    static stencilMask(stencilMask) {
+        if (stencilMask !== this.#stencilMask) {
+            this.#glContext.stencilMask(stencilMask);
+            this.#stencilMask = stencilMask;
+        }
+    }
+    static lineWidth(width) {
+        if (width !== this.#lineWidth) {
+            this.#glContext.lineWidth(width);
+            this.#lineWidth = width;
+        }
+    }
+    static viewport(viewport) {
+        if (!vec4.exactEquals(viewport, this.#viewport)) {
+            this.#glContext.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+            vec4.copy(this.#viewport, viewport);
+        }
+    }
+    static scissor(scissor) {
+        if (!vec4.exactEquals(scissor, this.#scissor)) {
+            this.#glContext.scissor(scissor[0], scissor[1], scissor[2], scissor[3]);
+            vec4.copy(this.#scissor, scissor);
+        }
+    }
+    static enable(cap) {
+        if (this.#enabledCapabilities[cap] !== true) {
+            this.#glContext.enable(cap);
+            this.#enabledCapabilities[cap] = true;
+        }
+    }
+    static disable(cap) {
+        if (this.#enabledCapabilities[cap] !== false) {
+            this.#glContext.disable(cap);
+            this.#enabledCapabilities[cap] = false;
+        }
+    }
+    static isEnabled(cap) {
+        return this.#enabledCapabilities[cap] ?? this.#glContext.isEnabled(cap);
+    }
+    static useProgram(program) {
+        if (this.#program !== program) {
+            this.#glContext.useProgram(program);
+            this.#program = program;
+        }
+    }
+    static enableVertexAttribArray(index, divisor = 0) {
+        if (this.#enabledVertexAttribArray[index] === 0) {
+            this.#glContext.enableVertexAttribArray(index);
+            this.#enabledVertexAttribArray[index] = 1;
+        }
+        this.#usedVertexAttribArray[index] = 1;
+        if (this.#vertexAttribDivisor[index] !== divisor) {
+            this.#vertexAttribDivisor[index] = divisor;
+            if (this.#graphics.isWebGL2) {
+                this.#glContext.vertexAttribDivisor(index, divisor);
+            }
+            else {
+                this.#graphics.ANGLE_instanced_arrays?.vertexAttribDivisorANGLE(index, divisor);
+            }
+        }
+    }
+    static initUsedAttributes() {
+        const usedAttributes = this.#usedVertexAttribArray;
+        for (let i = 0, l = usedAttributes.length; i < l; i++) {
+            usedAttributes[i] = 0;
+        }
+    }
+    static disableUnusedAttributes() {
+        const usedAttributes = this.#usedVertexAttribArray;
+        const enabledAttributes = this.#enabledVertexAttribArray;
+        for (let i = 0, l = usedAttributes.length; i < l; i++) {
+            if (usedAttributes[i] !== enabledAttributes[i]) {
+                this.#glContext.disableVertexAttribArray(i);
+                enabledAttributes[i] = 0;
+            }
+        }
+    }
+    static depthFunc(func) {
+        if (this.#depthFunc !== func) {
+            this.#glContext.depthFunc(func);
+            this.#depthFunc = func;
+        }
+    }
+    static blendFunc(sourceFactor, destinationFactor) {
+        if ((this.#sourceFactor !== sourceFactor) || (this.#destinationFactor !== destinationFactor)) {
+            this.#glContext.blendFunc(sourceFactor, destinationFactor);
+            this.#sourceFactor = sourceFactor;
+            this.#destinationFactor = destinationFactor;
+        }
+    }
+    static blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha) {
+        if ((this.#srcRGB !== srcRGB) || (this.#dstRGB !== dstRGB) || (this.#srcAlpha !== srcAlpha) || (this.#dstAlpha !== dstAlpha)) {
+            this.#glContext.blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
+            this.#srcRGB = srcRGB;
+            this.#dstRGB = dstRGB;
+            this.#srcAlpha = srcAlpha;
+            this.#dstAlpha = dstAlpha;
+        }
+    }
+    static blendEquationSeparate(modeRGB, modeAlpha) {
+        if ((this.#modeRGB !== modeRGB) || (this.#modeAlpha !== modeAlpha)) {
+            this.#glContext.blendEquationSeparate(modeRGB, modeAlpha);
+            this.#modeRGB = modeRGB;
+            this.#modeAlpha = modeAlpha;
+        }
+    }
+    static cullFace(mode) {
+        if (this.#cullFace !== mode) {
+            this.#glContext.cullFace(mode);
+            this.#cullFace = mode;
+        }
+    }
+    static frontFace(mode) {
+        if (this.#frontFace !== mode) {
+            this.#glContext.frontFace(mode);
+            this.#frontFace = mode;
+        }
+    }
+    static polygonOffset(enable, factor, units) {
+        if (enable) {
+            this.enable(GL_POLYGON_OFFSET_FILL);
+            if (this.#polygonOffsetFactor !== factor && this.#polygonOffsetUnits !== units) {
+                this.#glContext.polygonOffset(factor, units);
+                this.#polygonOffsetFactor = factor;
+                this.#polygonOffsetUnits = units;
+            }
+        }
+        else {
+            this.disable(GL_POLYGON_OFFSET_FILL);
+        }
     }
 }
 
@@ -7290,6 +7229,67 @@ class ForwardRenderer extends Renderer {
         }
     }
 }
+
+var GraphicsEvent;
+(function (GraphicsEvent) {
+    GraphicsEvent["MouseMove"] = "mousemove";
+    GraphicsEvent["MouseDown"] = "mousedown";
+    GraphicsEvent["MouseUp"] = "mouseup";
+    GraphicsEvent["Wheel"] = "wheel";
+    GraphicsEvent["Resize"] = "resize";
+    GraphicsEvent["Tick"] = "tick";
+    GraphicsEvent["KeyDown"] = "keydown";
+    GraphicsEvent["KeyUp"] = "keyup";
+    GraphicsEvent["TouchStart"] = "touchstart";
+    GraphicsEvent["TouchMove"] = "touchmove";
+    GraphicsEvent["TouchCancel"] = "touchcancel";
+})(GraphicsEvent || (GraphicsEvent = {}));
+const GraphicsEvents = new (function () {
+    class GraphicsEvents extends EventTarget {
+        static #instance;
+        constructor() {
+            if (GraphicsEvents.#instance) {
+                return GraphicsEvents.#instance;
+            }
+            super();
+            GraphicsEvents.#instance = this;
+        }
+        tick(delta, time, speed) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
+        }
+        resize(width, height) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
+        }
+        mouseMove(x, y, pickedEntity, mouseEvent) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+        }
+        mouseDown(x, y, pickedEntity, mouseEvent) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+        }
+        mouseUp(x, y, pickedEntity, mouseEvent) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+        }
+        wheel(x, y, pickedEntity, wheelEvent) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
+        }
+        keyDown(keyboardEvent) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
+        }
+        keyUp(keyboardEvent) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
+        }
+        touchStart(pickedEntity, touchEvent) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+        }
+        touchMove(pickedEntity, touchEvent) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+        }
+        touchCancel(pickedEntity, touchEvent) {
+            this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+        }
+    }
+    return GraphicsEvents;
+}());
 
 const VEC4_ALL_1 = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 var ShaderPrecision;
@@ -24144,29 +24144,9 @@ class Source2MaterialManager {
     static removeMaterial(material) {
         this.#materialList2.delete(material);
     }
-    static getMaterial(repository, fileName, searchPaths) {
-        console.assert(searchPaths == null, 'searchPaths must be null'); //TODOv3 remove searchPaths
+    static getMaterial(repository, fileName) {
         fileName = cleanSource2MaterialName(fileName);
-        if (searchPaths) {
-            const promises = [];
-            for (const searchPath of searchPaths) {
-                promises.push(this.#getMaterial(repository, 'materials/' + searchPath + fileName));
-            }
-            const promise = new Promise(resolve => {
-                Promise.allSettled(promises).then((promises) => {
-                    for (const promise of promises) {
-                        if (promise.status == 'fulfilled') {
-                            resolve(promise.value);
-                        }
-                    }
-                    resolve(null);
-                });
-            });
-            return promise;
-        }
-        else {
-            return this.#getMaterial(repository, fileName);
-        }
+        return this.#getMaterial(repository, fileName);
     }
     static #getMaterial(repository, fileName) {
         const material = this.#materialList.get(fileName);
@@ -45131,15 +45111,15 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
             }
             else {
                 if (vtf.lowResImageFormat == -1) {
-                    vtf.resEntries.push({ type: 48, resData: vtf.headerSize });
+                    vtf.resEntries.push({ type: VTF_ENTRY_IMAGE_DATAS, resData: vtf.headerSize });
                 }
                 else {
                     vtf.resEntries.push({ type: 1, resData: vtf.headerSize });
                     if (vtf.lowResImageWidth == 0 && vtf.lowResImageHeight == 0) {
-                        vtf.resEntries.push({ type: 48, resData: vtf.headerSize });
+                        vtf.resEntries.push({ type: VTF_ENTRY_IMAGE_DATAS, resData: vtf.headerSize });
                     }
                     else {
-                        vtf.resEntries.push({ type: 48, resData: vtf.headerSize + Math.max(2, vtf.lowResImageWidth * vtf.lowResImageHeight * 0.5) }); // 0.5 bytes per pixel
+                        vtf.resEntries.push({ type: VTF_ENTRY_IMAGE_DATAS, resData: vtf.headerSize + Math.max(2, vtf.lowResImageWidth * vtf.lowResImageHeight * 0.5) }); // 0.5 bytes per pixel
                     }
                 }
             }
@@ -45192,7 +45172,7 @@ class SourceEngineVTFLoader extends SourceBinaryLoader {
             case 1: // Low-res image data
                 //TODO
                 break;
-            case 48: // Image data
+            case VTF_ENTRY_IMAGE_DATAS:
                 //TODO
                 if (vtf.mipmapCount > 0) {
                     this.#parseImageData(reader, vtf, entry);
@@ -45472,11 +45452,12 @@ function str2abABGR(reader, start, length) {
 function str2abABGR(reader, start, length) {
     const arr = new Uint8Array(reader.buffer.slice(start, start + length));
     for (let i = 0; i < length; i += 4) {
-        const a = arr[i];
+        let temp = arr[i];
         arr[i] = arr[i + 3];
+        arr[i + 3] = temp;
+        temp = arr[i + 1];
         arr[i + 1] = arr[i + 2];
-        arr[i + 2] = arr[i + 1];
-        arr[i + 3] = a;
+        arr[i + 2] = temp;
     }
     return arr;
 }
@@ -50443,7 +50424,7 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
         const useAnimRate = this.getParameter('use animation rate as FPS');
         this.geometry.count = particleList.length * 6;
         const maxParticles = this.#maxParticles;
-        this.setupParticlesTexture(particleList, maxParticles);
+        this.#setupParticlesTexture(particleList, maxParticles);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setUniform('uVisibilityCameraDepthBias', this.getParameter('Visibility Camera Depth Bias')); //TODOv3:optimize
         this.mesh.setVisible(Source1ParticleControler.visible);
@@ -50582,7 +50563,7 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
         }
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
-    setupParticlesTexture(particleList, maxParticles) {
+    #setupParticlesTexture(particleList, maxParticles) {
         const a = this.imgData;
         let index = 0;
         for (const particle of particleList) { //TODOv3
@@ -50731,7 +50712,7 @@ class RenderRope extends SourceEngineParticleOperator {
         }
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
-    setupParticlesTexture(particleList, maxParticles) {
+    #setupParticlesTexture(particleList, maxParticles) {
         const a = this.imgData;
         let index = 0;
         for (const particle of particleList) { //TODOv3
@@ -50824,7 +50805,7 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
         const rate = this.getParameter('animation rate') ?? 30;
         this.geometry.count = particleList.length * 6;
         const maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
-        this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
+        this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source1ParticleControler.visible);
         let index = 0;
@@ -50911,7 +50892,7 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
         }
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
-    setupParticlesTexture(particleList, maxParticles, elapsedTime) {
+    #setupParticlesTexture(particleList, maxParticles, elapsedTime) {
         const m_flMaxLength = this.getParameter('max length');
         const m_flMinLength = this.getParameter('min length');
         const m_flLengthFadeInTime = this.getParameter('length fade in time');
@@ -57656,7 +57637,7 @@ class Operator {
     fieldOutput = -1;
     scaleCp;
     mesh;
-    material;
+    material = new Source2SpriteCard('');
     endCapState;
     currentTime = 0;
     operateAllParticlesRemoveme = false;
@@ -63304,7 +63285,7 @@ class RenderBlobs extends Operator {
         /*this.geometry = new BufferGeometry();
         this.mesh = new StaticMesh(this.geometry, this.material);
         this.mesh.setDefine('HARDWARE_PARTICLES');
-        this.createParticlesTexture();
+        this.#createParticlesTexture();
         this.mesh.setUniform('uParticles', this.texture);
 
         this.maxParticles = particleSystem.maxParticles;*/
@@ -63586,7 +63567,7 @@ class RenderRopes extends Operator {
             this.mesh.hideInExplorer = true;
             this.mesh.setDefine('IS_ROPE');
             this.mesh.setDefine('USE_VERTEX_COLOR');
-            this.createParticlesTexture();
+            this.#createParticlesTexture();
             this.mesh.setUniform('uParticles', this.#texture);
         }
         this.maxParticles = particleSystem.maxParticles;
@@ -63595,7 +63576,7 @@ class RenderRopes extends Operator {
     #createParticlesArray() {
         this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
-    createParticlesTexture() {
+    #createParticlesTexture() {
         this.#texture = TextureManager.createTexture();
         const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
@@ -63617,7 +63598,7 @@ class RenderRopes extends Operator {
         }
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
-    setupParticlesTexture(particleList, maxParticles) {
+    #setupParticlesTexture(particleList, maxParticles) {
         const a = this.#imgData;
         if (!a) {
             return;
@@ -63669,17 +63650,17 @@ class RenderSprites extends RenderBase {
     #minSize = 0.0;
     #maxSize = 5000.0;
     spriteSheet;
-    #maxParticles = 1000; //TODO: default value
-    texture; //TODO: set private ?
+    #maxParticles = 0;
+    texture = TextureManager.createTexture();
     imgData; //TODO: set private ?
     constructor(system) {
         super(system);
-        this.material = new Source2SpriteCard(system.repository);
+        this.setMaxParticles(1000); //TODO: default value
+        this.material.repository = system.repository;
         this.geometry = new BufferGeometry();
         this.mesh = new Mesh(this.geometry, this.material);
         this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
         Source2MaterialManager.addMaterial(this.material);
-        this.setDefaultTexture = true;
         //this.setParam(OPERATOR_PARAM_TEXTURE, 'materials/particle/base_sprite');//TODOv3: make a const
         //this.setParam(OPERATOR_PARAM_MOD_2X, false);
         //this.setParam(OPERATOR_PARAM_ORIENTATION_TYPE, ORIENTATION_TYPE_SCREEN_ALIGN);
@@ -63709,7 +63690,7 @@ class RenderSprites extends RenderBase {
                 super._paramChanged(paramName, value);
         }
     }
-    setSequenceCombineMode(sequenceCombineMode) {
+    setSequenceCombineMode(sequenceCombineMode /*TODO: create enum*/) {
         this.material.removeDefine('USE_TEXTURE_COORD_2');
         switch (sequenceCombineMode) {
             case 'SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1':
@@ -63721,7 +63702,7 @@ class RenderSprites extends RenderBase {
         }
     }
     async setTexture(texturePath) {
-        delete this.setDefaultTexture;
+        this.setDefaultTexture = false;
         this.material.setTexturePath(texturePath);
         this.spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
     }
@@ -63731,7 +63712,7 @@ class RenderSprites extends RenderBase {
         const useAnimRate = this.getParameter('use animation rate as FPS');
         this.geometry.count = particleList.length * 6;
         const maxParticles = this.#maxParticles;
-        this.setupParticlesTexture(particleList, maxParticles);
+        this.#setupParticlesTexture(particleList);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source2ParticleManager.visible);
         this.mesh.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
@@ -63795,10 +63776,16 @@ class RenderSprites extends RenderBase {
         this.geometry.attributes.get('aTextureCoord').dirty = true;
         this.geometry.attributes.get('aTextureCoord2').dirty = true;
     }
-    set maxParticles(maxParticles) {
+    setMaxParticles(maxParticles) {
         this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
         this.#createParticlesArray();
         this._initBuffers();
+    }
+    /**
+     * @deprecated Please use `setPosition` instead.
+     */
+    set maxParticles(maxParticles) {
+        this.setMaxParticles(maxParticles);
     }
     _initBuffers() {
         const geometry = this.geometry;
@@ -63827,16 +63814,15 @@ class RenderSprites extends RenderBase {
         this.mesh.serializable = false;
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('HARDWARE_PARTICLES');
-        this.createParticlesTexture();
+        this.#initParticlesTexture();
         this.mesh.setUniform('uParticles', this.texture);
-        this.maxParticles = particleSystem.maxParticles;
+        this.setMaxParticles(particleSystem.maxParticles);
         particleSystem.addChild(this.mesh);
     }
     #createParticlesArray() {
         this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
-    createParticlesTexture() {
-        this.texture = TextureManager.createTexture();
+    #initParticlesTexture() {
         const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
@@ -63854,7 +63840,7 @@ class RenderSprites extends RenderBase {
         }
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
-    setupParticlesTexture(particleList, maxParticles) {
+    #setupParticlesTexture(particleList) {
         const a = this.imgData;
         let index = 0;
         const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
@@ -63979,7 +63965,7 @@ class RenderTrails extends Operator {
         const geometry = this.geometry;
         geometry.count = particleList.length * 6;
         const maxParticles = this.#maxParticles;
-        this.setupParticlesTexture(particleList, maxParticles, elapsedTime);
+        this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source2ParticleManager.visible);
         vec2.set(tempVec2, this.getParamScalarValue('m_flFinalTextureScaleU') ?? 1, this.getParamScalarValue('m_flFinalTextureScaleV') ?? 1);
@@ -64036,7 +64022,7 @@ class RenderTrails extends Operator {
         this.mesh.serializable = false;
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('HARDWARE_PARTICLES');
-        this.createParticlesTexture();
+        this.#createParticlesTexture();
         this.mesh.setUniform('uParticles', this.texture);
         this.maxParticles = particleSystem.maxParticles;
         particleSystem.addChild(this.mesh);
@@ -64044,7 +64030,7 @@ class RenderTrails extends Operator {
     #createParticlesArray() {
         this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
-    createParticlesTexture() {
+    #createParticlesTexture() {
         this.texture = TextureManager.createTexture();
         const gl = new Graphics().glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
@@ -64063,7 +64049,7 @@ class RenderTrails extends Operator {
         }
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
-    setupParticlesTexture(particleList, maxParticles, elapsedTime) {
+    #setupParticlesTexture(particleList, maxParticles, elapsedTime) {
         const a = this.imgData;
         const m_flMaxLength = this.maxLength;
         const m_flMinLength = this.minLength;

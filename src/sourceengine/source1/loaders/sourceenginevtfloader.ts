@@ -1,7 +1,7 @@
 import { BinaryReader, TWO_POW_10, TWO_POW_MINUS_14 } from 'harmony-binary-reader';
 import { DEBUG } from '../../../buildoptions';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
-import { IMAGE_FORMAT_ABGR8888, IMAGE_FORMAT_BGR888, IMAGE_FORMAT_BGR888_BLUESCREEN, IMAGE_FORMAT_BGRA8888, IMAGE_FORMAT_DXT1, IMAGE_FORMAT_DXT3, IMAGE_FORMAT_DXT5, IMAGE_FORMAT_RGB888, IMAGE_FORMAT_RGB888_BLUESCREEN, IMAGE_FORMAT_RGBA16161616F, IMAGE_FORMAT_RGBA8888, SourceEngineVTF, VTFMipMap, VTFResourceEntry } from '../textures/sourceenginevtf';
+import { IMAGE_FORMAT_ABGR8888, IMAGE_FORMAT_BGR888, IMAGE_FORMAT_BGR888_BLUESCREEN, IMAGE_FORMAT_BGRA8888, IMAGE_FORMAT_DXT1, IMAGE_FORMAT_DXT3, IMAGE_FORMAT_DXT5, IMAGE_FORMAT_RGB888, IMAGE_FORMAT_RGB888_BLUESCREEN, IMAGE_FORMAT_RGBA16161616F, IMAGE_FORMAT_RGBA8888, SourceEngineVTF, VTF_ENTRY_IMAGE_DATAS, VTFMipMap, VTFResourceEntry } from '../textures/sourceenginevtf';
 import { GetInterpolationData, MAX_IMAGES_PER_FRAME_IN_MEMORY, MAX_IMAGES_PER_FRAME_ON_DISK, SEQUENCE_SAMPLE_COUNT, SheetSequenceSample_t } from './sheet';
 
 export class SourceEngineVTFLoader extends SourceBinaryLoader {
@@ -22,13 +22,13 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 				}
 			} else {
 				if (vtf.lowResImageFormat == -1) {
-					vtf.resEntries.push({ type: 48, resData: vtf.headerSize });
+					vtf.resEntries.push({ type: VTF_ENTRY_IMAGE_DATAS, resData: vtf.headerSize });
 				} else {
 					vtf.resEntries.push({ type: 1, resData: vtf.headerSize });
 					if (vtf.lowResImageWidth == 0 && vtf.lowResImageHeight == 0) {
-						vtf.resEntries.push({ type: 48, resData: vtf.headerSize });
+						vtf.resEntries.push({ type: VTF_ENTRY_IMAGE_DATAS, resData: vtf.headerSize });
 					} else {
-						vtf.resEntries.push({ type: 48, resData: vtf.headerSize + Math.max(2, vtf.lowResImageWidth * vtf.lowResImageHeight * 0.5) });// 0.5 bytes per pixel
+						vtf.resEntries.push({ type: VTF_ENTRY_IMAGE_DATAS, resData: vtf.headerSize + Math.max(2, vtf.lowResImageWidth * vtf.lowResImageHeight * 0.5) });// 0.5 bytes per pixel
 					}
 				}
 			}
@@ -90,7 +90,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 			case 1: // Low-res image data
 				//TODO
 				break;
-			case 48: // Image data
+			case VTF_ENTRY_IMAGE_DATAS:
 				//TODO
 				if (vtf.mipmapCount > 0) {
 					this.#parseImageData(reader, vtf, entry);
@@ -414,14 +414,16 @@ function str2abABGR(reader, start, length) {
 	return bufView;
 }*/
 
-function str2abABGR(reader: BinaryReader, start: number, length: number) {
+function str2abABGR(reader: BinaryReader, start: number, length: number): Uint8Array<ArrayBuffer> {
 	const arr = new Uint8Array(reader.buffer.slice(start, start + length));
 	for (let i = 0; i < length; i += 4) {
-		const a = arr[i];
+		let temp = arr[i];
 		arr[i] = arr[i + 3];
+		arr[i + 3] = temp;
+
+		temp = arr[i + 1];
 		arr[i + 1] = arr[i + 2];
-		arr[i + 2] = arr[i + 1]
-		arr[i + 3] = a;
+		arr[i + 2] = temp;
 	}
 	return arr;
 }

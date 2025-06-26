@@ -19,7 +19,7 @@ export interface VTFResourceEntry {
 	mipMaps?: VTFMipMap[];
 }
 
-const VTF_ENTRY_IMAGE_DATAS = 48;
+export const VTF_ENTRY_IMAGE_DATAS = 48;
 
 export class SourceEngineVTF {
 	repository: string;
