@@ -1,10 +1,12 @@
-import { GL_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_MAX } from '../../../webgl/constants';
-import { SourceEngineMaterial } from './sourceenginematerial';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { RenderFace } from '../../../materials/constants';
+import { GL_MAX, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
+import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
+import { SourceEngineMaterial, SourceEngineMaterialParams } from './sourceenginematerial';
 
 export class SpriteCardMaterial extends SourceEngineMaterial {
-	constructor(params: any = {}) {
+	#initialized = false;
+
+	constructor(params: SourceEngineMaterialParams) {
 		if (params['$color']) {
 			params.useSrgb = false;
 		}
@@ -16,6 +18,15 @@ export class SpriteCardMaterial extends SourceEngineMaterial {
 		this.setDefine('IS_TRANSLUCENT');
 		this.setDefine('IS_SPRITE_CARD_MATERIAL');
 		this.setDefine('USE_PARTICLE_YAW', '0');//This material never yaw
+	}
+
+	init(): void {
+		if (this.#initialized) {
+			return;
+		}
+		const params = this.parameters;
+		this.#initialized = true;
+		super.init();
 
 		if ( /*bAdditive2ndTexture || bAddOverBlend || */params['$addself'] !== undefined) {
 			this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);

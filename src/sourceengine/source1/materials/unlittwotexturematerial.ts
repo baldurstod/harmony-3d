@@ -1,19 +1,25 @@
 import { mat4 } from 'gl-matrix';
-
-import { GL_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_MAX } from '../../../webgl/constants';
-import { SourceEngineMaterial } from './sourceenginematerial';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { TextureManager } from '../../../textures/texturemanager';
-import { Source1TextureManager } from '../textures/source1texturemanager';
+import { GL_MAX, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
+import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
+import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
 
 const IDENTITY_MATRIX = mat4.create();
 const USE_FRAME2 = true;
 
 export class UnlitTwoTextureMaterial extends SourceEngineMaterial {
-	constructor(params: any = {}) {
-		super(params);
+	#initialized = false;
+
+	init(): void {
+		if (this.#initialized) {
+			return;
+		}
+		const params = this.parameters;
+		this.#initialized = true;
+		super.init();
+
 		if (params['$texture2']) {
-			this.setColor2Map(Source1TextureManager.getTexture(this.repository, params['$texture2'], params['$frame2'] || 0));
+			this.setColor2Map(this.getTexture(TextureRole.Color2, this.repository, params['$texture2'], params['$frame2'] as number ?? 0));
 		} else {
 			this.setColor2Map(TextureManager.createCheckerTexture());
 		}
@@ -53,7 +59,7 @@ export class UnlitTwoTextureMaterial extends SourceEngineMaterial {
 
 		if (USE_FRAME2) {
 			if (parameters['$texture2']) {
-				this.setColor2Map(Source1TextureManager.getTexture(this.repository, parameters['$texture2'], parameters['$frame2'] || variables.get('$frame2') || 0));
+				this.setColor2Map(this.getTexture(TextureRole.Color2, this.repository, parameters['$texture2'], parameters['$frame2'] as number ?? variables.get('$frame2') as number ?? 0));
 			}
 		}
 	}

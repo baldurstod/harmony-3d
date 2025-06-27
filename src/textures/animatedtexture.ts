@@ -9,7 +9,7 @@ export class AnimatedTexture extends Texture {
 	}
 
 	getFrame(frame: number) {
-		frame = frame % this.frames.length;
+		frame = Math.floor(frame) % this.frames.length;
 		return this.frames[frame];//TODOv3 handle missing textures
 	}
 

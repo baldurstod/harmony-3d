@@ -2084,6 +2084,7 @@ declare class Choreography {
          export declare class EyeRefractMaterial extends SourceEngineMaterial {
              #private;
              constructor(params?: any);
+             init(): void;
              afterProcessProxies(): void;
              beforeRender(camera: Camera): void;
              clone(): EyeRefractMaterial;
@@ -3725,7 +3726,7 @@ declare class Choreography {
              colorMap?: Texture;
              properties: Map<string, any>;
              static materialList: Record<string, typeof Material>;
-             constructor(params?: any);
+             constructor(params?: MaterialParams);
              get transparent(): boolean;
              set renderLights(renderLights: boolean);
              get renderLights(): boolean;
@@ -3811,6 +3812,14 @@ declare class Choreography {
          }
 
          declare type MaterialParam = any;
+
+         declare type MaterialParams = {
+             depthTest?: boolean;
+             renderFace?: RenderFace;
+             polygonOffset?: boolean;
+             polygonOffsetFactor?: number;
+             polygonOffsetUnits?: number;
+         };
 
          export declare class MateriaParameter {
              #private;
@@ -5829,7 +5838,6 @@ declare class Choreography {
          export declare class RenderAnimatedSprites extends SourceEngineParticleOperator {
              #private;
              static functionName: string;
-             texture: Texture;
              geometry: BufferGeometry;
              imgData: any;
              constructor();
@@ -7041,15 +7049,15 @@ declare class Choreography {
              #private;
              fallbackRepository: string;
              constructor();
-             getTexture(repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture | null;
+             getTexture(repository: string, path: string, needCubeMap?: boolean, srgb?: boolean): AnimatedTexture | null;
              getVtf(repository: string, path: string): Promise<SourceEngineVTF | null>;
              getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture>;
              getInternalTextureName(): string;
-             addInternalTexture(repository: string, texture?: Texture): {
+             addInternalTexture(repository: string, texture?: AnimatedTexture): {
                  name: string;
-                 texture: Texture;
+                 texture: AnimatedTexture;
              };
-             setTexture(repository: string, path: string, texture: Texture): void;
+             setTexture(repository: string, path: string, texture: AnimatedTexture): void;
              removeTexture(repository: string, path: string): void;
          }
 
@@ -8128,7 +8136,7 @@ declare class Choreography {
          declare class SourceEngineMaterial extends Material {
              #private;
              repository: string;
-             fileName: string;
+             path: string;
              proxyParams: any;
              proxies: Proxy_2[];
              variables: Map<string, any>;
@@ -8136,7 +8144,9 @@ declare class Choreography {
              frameX: number;
              frameY: number;
              sequenceLength: number;
-             constructor(params?: any);
+             constructor(params: SourceEngineMaterialParams);
+             init(): void;
+             getTexture(role: TextureRole, repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture;
              setNumFrames(frames: any, frameX: any, frameY: any, sequenceLength: any): void;
              getTexCoords(flCreationTime: any, flCurTime: any, flAgeScale: any, nSequence: any): any;
              getFrameSpan(sequence: any): any;
@@ -8159,6 +8169,7 @@ declare class Choreography {
              sanitizeValue(parameterName: any, value: any): any;
              setKeyValue(key: any, value: any): void;
              clone(): SourceEngineMaterial;
+             dispose(): void;
          }
 
          export declare class SourceEngineMaterialManager {
@@ -8170,6 +8181,12 @@ declare class Choreography {
                  files: any[];
              }>;
          }
+
+         declare type SourceEngineMaterialParams = MaterialParams & {
+             repository: string;
+             path: string;
+             useSrgb?: boolean;
+         };
 
          export declare class SourceEngineMDLLoader extends SourceBinaryLoader {
              #private;
@@ -8578,7 +8595,6 @@ declare class Choreography {
              depth: number;
              resEntries: VTFResourceEntry[];
              currentFrame: number;
-             filled: boolean;
              numResources: number;
              headerSize: number;
              sheet?: any;
@@ -9134,13 +9150,17 @@ declare class Choreography {
          }
 
          export declare class SpriteCardMaterial extends SourceEngineMaterial {
-             constructor(params?: any);
+             #private;
+             constructor(params: SourceEngineMaterialParams);
+             init(): void;
              clone(): SpriteCardMaterial;
              get shaderSource(): string;
          }
 
          export declare class SpriteMaterial extends SourceEngineMaterial {
+             #private;
              constructor(params?: any);
+             init(): void;
              clone(): SpriteMaterial;
              get shaderSource(): string;
          }
@@ -9426,6 +9446,34 @@ declare class Choreography {
          }
 
          declare type TextureParams = any;
+
+         declare enum TextureRole {
+             Color = 0,
+             Color2 = 0,
+             Normal = 1,
+             LightWarp = 2,
+             PhongExponent = 3,
+             SelfIllumMask = 4,
+             Env = 5,
+             Detail = 6,
+             SheenMask = 7,
+             Sheen = 8,
+             Mask = 9,
+             Mask2 = 10,
+             Iris = 11,
+             Cornea = 12,
+             Pattern = 13,
+             Ao = 14,
+             Wear = 15,
+             Grunge = 16,
+             Exponent = 17,
+             Surface = 18,
+             Pos = 19,
+             BlendModulate = 20,
+             Holo = 21,
+             HoloSpectrum = 22,
+             Scratches = 23
+         }
 
          export declare class TextureScroll extends Proxy_2 {
              #private;
@@ -9714,14 +9762,17 @@ declare class Choreography {
          declare type UniformValue = boolean | number | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;
 
          export declare class UnlitGenericMaterial extends SourceEngineMaterial {
+             #private;
              diffuseModulation: vec4;
              constructor(params?: any);
+             init(): void;
              clone(): UnlitGenericMaterial;
              get shaderSource(): string;
          }
 
          export declare class UnlitTwoTextureMaterial extends SourceEngineMaterial {
-             constructor(params?: any);
+             #private;
+             init(): void;
              clone(): UnlitTwoTextureMaterial;
              get shaderSource(): string;
              afterProcessProxies(): void;
@@ -9790,8 +9841,10 @@ declare class Choreography {
          }
 
          export declare class VertexLitGenericMaterial extends SourceEngineMaterial {
+             #private;
              diffuseModulation: vec4;
              constructor(params?: any);
+             init(): void;
              afterProcessProxies(proxyParams: any): void;
              clone(): VertexLitGenericMaterial;
              get shaderSource(): string;
@@ -9859,13 +9912,16 @@ declare class Choreography {
          }
 
          export declare class WaterMaterial extends SourceEngineMaterial {
-             constructor(params?: any);
+             #private;
+             init(): void;
              clone(): WaterMaterial;
              getShaderSource(): string;
          }
 
          export declare class WeaponDecalMaterial extends SourceEngineMaterial {
+             #private;
              constructor(params?: any);
+             init(): void;
              afterProcessProxies(proxyParams: any): void;
              set style(style: any);
              setColorUniform(uniformName: any, value: any): void;
@@ -10005,7 +10061,8 @@ declare class Choreography {
          }
 
          export declare class WorldVertexTransitionMaterial extends SourceEngineMaterial {
-             constructor(params?: any);
+             #private;
+             init(): void;
              afterProcessProxies(proxyParams: any): void;
              clone(): WorldVertexTransitionMaterial;
              getShaderSource(): string;
@@ -10030,12 +10087,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#243@#webAssembly"?: any;
-             "__#243@#HEAPU8"?: Uint8Array;
+             "__#251@#webAssembly"?: any;
+             "__#251@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#243@#initHeap"(): void;
+             "__#251@#initHeap"(): void;
          };
 
          export { }

@@ -1,11 +1,18 @@
-import { GL_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_MAX } from '../../../webgl/constants';
-import { SourceEngineMaterial } from './sourceenginematerial';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { RenderFace } from '../../../materials/constants';
+import { GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
+import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
+import { SourceEngineMaterial } from './sourceenginematerial';
 
 export class WaterMaterial extends SourceEngineMaterial {
-	constructor(params: any = {}) {
-		super(params);
+	#initialized = false;
+
+	init(): void {
+		if (this.#initialized) {
+			return;
+		}
+		const params = this.parameters;
+		this.#initialized = true;
+		super.init();
 
 		// Disable back face culling
 		this.renderFace(RenderFace.Both);

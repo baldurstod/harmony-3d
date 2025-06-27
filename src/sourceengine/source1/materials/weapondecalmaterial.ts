@@ -1,9 +1,6 @@
 import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
-
-import { SourceEngineMaterial, readColor } from './sourceenginematerial';
-import { SHADER_PARAM_TYPE_INTEGER, SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_STRING, SHADER_PARAM_TYPE_FLOAT } from './sourceenginematerial';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { Source1TextureManager } from '../textures/source1texturemanager';
+import { SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_FLOAT, SHADER_PARAM_TYPE_INTEGER, SHADER_PARAM_TYPE_STRING, SourceEngineMaterial, TextureRole, readColor } from './sourceenginematerial';
 
 import { lerp } from '../../../math/functions';
 
@@ -15,9 +12,20 @@ const DEFAULT_GRUNGE_TEXTURE = 'models/weapons/customization/shared/sticker_pape
 const DEFAULT_WEAR_TEXTURE = 'models/weapons/customization/shared/paint_wear';
 //TODO: deprecate
 export class WeaponDecalMaterial extends SourceEngineMaterial {
+	#initialized = false;
+
 	constructor(params: any = {}) {
 		super(params);
 		this.setValues(params);
+	}
+
+	init(): void {
+		if (this.#initialized) {
+			return;
+		}
+		const params = this.parameters;
+		this.#initialized = true;
+		super.init();
 		const variables = this.variables;
 
 		this.setDefine('MIRROR', variables.get('$mirrorhorizontal') ?? 0);
@@ -39,65 +47,65 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 
 		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
-			this.uniforms['colorMap'] = Source1TextureManager.getTexture(this.repository, baseTexture, 0);
+			this.uniforms['colorMap'] = this.getTexture(TextureRole.Color, this.repository, baseTexture, 0);
 			this.setDefine('USE_COLOR_MAP');//TODOv3: set this automaticaly
 		}
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
-			this.uniforms['sheenMaskMap'] = Source1TextureManager.getTexture(this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
+			this.uniforms['sheenMaskMap'] = this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
 			this.setDefine('USE_SHEEN_MASK_MAP');//TODOv3: set this automaticaly
 
 			this.uniforms['g_vPackedConst6'] = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
 			this.uniforms['g_vPackedConst7'] = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
 		}
 		if (parameters['$sheenmap']) {
-			this.uniforms['sheenMap'] = Source1TextureManager.getTexture(this.repository, parameters['$sheenmap'], 0, true);
+			this.uniforms['sheenMap'] = this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true);
 			this.setDefine('USE_SHEEN_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$maskstexture']) {
-			this.uniforms['mask1Map'] = Source1TextureManager.getTexture(this.repository, parameters['$maskstexture'], 0);
+			this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$pattern']) {
-			this.uniforms['patternMap'] = Source1TextureManager.getTexture(this.repository, parameters['$pattern'], 0);
+			this.uniforms['patternMap'] = this.getTexture(TextureRole.Pattern, this.repository, parameters['$pattern'], 0);
 			this.setDefine('USE_PATTERN_MAP');//TODOv3: set this automaticaly
 		}
 
 		const aoTexture = variables.get('$aotexture');
 		if (aoTexture) {
-			this.uniforms['aoMap'] = Source1TextureManager.getTexture(this.repository, aoTexture, 0);
+			this.uniforms['aoMap'] = this.getTexture(TextureRole.Ao, this.repository, aoTexture, 0);
 			this.setDefine('USE_AO_MAP');//TODOv3: set this automaticaly
 		}
 
 		const wearTexture = variables.get('$weartexture');
 		if (wearTexture) {
-			this.uniforms['scratchesMap'] = Source1TextureManager.getTexture(this.repository, wearTexture, 0);
+			this.uniforms['scratchesMap'] = this.getTexture(TextureRole.Scratches, this.repository, wearTexture, 0);
 			this.setDefine('USE_SCRATCHES_MAP');//TODOv3: set this automaticaly
 		}
 
 		const grungeTexture = variables.get('$grungetexture');
 		if (grungeTexture) {
-			this.uniforms['grungeMap'] = Source1TextureManager.getTexture(this.repository, grungeTexture, 0);
+			this.uniforms['grungeMap'] = this.getTexture(TextureRole.Grunge, this.repository, grungeTexture, 0);
 			this.setDefine('USE_GRUNGE_MAP');//TODOv3: set this automaticaly
 		}
 
 		const expTexture = parameters['$exptexture'];
 		if (expTexture) {
-			this.uniforms['exponentMap'] = Source1TextureManager.getTexture(this.repository, expTexture, 0);
+			this.uniforms['exponentMap'] = this.getTexture(TextureRole.Exponent, this.repository, expTexture, 0);
 			this.setDefine('USE_EXPONENT_MAP');//TODOv3: set this automaticaly
 		}
 
 		const holoMaskTexture = variables.get('$holomask');
 		if (holoMaskTexture) {
-			this.uniforms['holoMaskMap'] = Source1TextureManager.getTexture(this.repository, holoMaskTexture, 0);
+			this.uniforms['holoMaskMap'] = this.getTexture(TextureRole.Holo, this.repository, holoMaskTexture, 0);
 			this.setDefine('USE_HOLO_MASK_MAP');//TODOv3: set this automaticaly
 		}
 
 		const holoSpectrumTexture = variables.get('$holospectrum');
 		if (holoSpectrumTexture) {
-			this.uniforms['holoSpectrumMap'] = Source1TextureManager.getTexture(this.repository, holoSpectrumTexture, 0);
+			this.uniforms['holoSpectrumMap'] = this.getTexture(TextureRole.HoloSpectrum, this.repository, holoSpectrumTexture, 0);
 			this.setDefine('USE_HOLO_SPECTRUM_MAP');//TODOv3: set this automaticaly
 		}
 

@@ -1,8 +1,6 @@
 import { vec3, vec4 } from 'gl-matrix';
-
-import { SourceEngineMaterial, readColor } from './sourceenginematerial';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { Source1TextureManager } from '../textures/source1texturemanager';
+import { SourceEngineMaterial, TextureRole, readColor } from './sourceenginematerial';
 
 const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
 
@@ -47,57 +45,57 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
-			this.uniforms['sheenMaskMap'] = Source1TextureManager.getTexture(this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
+			this.uniforms['sheenMaskMap'] = this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
 			this.setDefine('USE_SHEEN_MASK_MAP');//TODOv3: set this automaticaly
 
 			this.uniforms['g_vPackedConst6'] = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
 			this.uniforms['g_vPackedConst7'] = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
 		}
 		if (parameters['$sheenmap']) {
-			this.uniforms['sheenMap'] = Source1TextureManager.getTexture(this.repository, parameters['$sheenmap'], 0, true);
+			this.uniforms['sheenMap'] = this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true);
 			this.setDefine('USE_SHEEN_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$maskstexture']) {
-			this.uniforms['mask1Map'] = Source1TextureManager.getTexture(this.repository, parameters['$maskstexture'], 0);
+			this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, parameters['$maskstexture'], 0);
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$pattern']) {
-			this.uniforms['patternMap'] = Source1TextureManager.getTexture(this.repository, parameters['$pattern'], 0);
+			this.uniforms['patternMap'] = this.getTexture(TextureRole.Pattern, this.repository, parameters['$pattern'], 0);
 			this.setDefine('USE_PATTERN_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$aotexture']) {
-			this.uniforms['aoMap'] = Source1TextureManager.getTexture(this.repository, parameters['$aotexture'], 0);
+			this.uniforms['aoMap'] = this.getTexture(TextureRole.Ao, this.repository, parameters['$aotexture'], 0);
 			this.setDefine('USE_AO_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$weartexture']) {
-			this.uniforms['scratchesMap'] = Source1TextureManager.getTexture(this.repository, parameters['$weartexture'], 0);
+			this.uniforms['scratchesMap'] = this.getTexture(TextureRole.Scratches, this.repository, parameters['$weartexture'], 0);
 			this.setDefine('USE_SCRATCHES_MAP');//TODOv3: set this automaticaly
 		}
 
 		if (parameters['$grungetexture']) {
-			this.uniforms['grungeMap'] = Source1TextureManager.getTexture(this.repository, parameters['$grungetexture'], 0);
+			this.uniforms['grungeMap'] = this.getTexture(TextureRole.Grunge, this.repository, parameters['$grungetexture'], 0);
 			this.setDefine('USE_GRUNGE_MAP');//TODOv3: set this automaticaly
 		}
 
 		const expTexture = parameters['$exptexture'];
 		if (expTexture) {
-			this.uniforms['exponentMap'] = Source1TextureManager.getTexture(this.repository, expTexture, 0);
+			this.uniforms['exponentMap'] = this.getTexture(TextureRole.Exponent, this.repository, expTexture, 0);
 			this.setDefine('USE_EXPONENT_MAP');//TODOv3: set this automaticaly
 		}
 
 		const surfaceTexture = parameters['$surfacetexture'];
 		if (surfaceTexture) {
-			this.uniforms['surfaceMap'] = Source1TextureManager.getTexture(this.repository, surfaceTexture, 0);
+			this.uniforms['surfaceMap'] = this.getTexture(TextureRole.Surface, this.repository, surfaceTexture, 0);
 			this.setDefine('USE_SURFACE_MAP');//TODOv3: set this automaticaly
 		}
 
 		const posTexture = parameters['$postexture'];
 		if (posTexture) {
-			this.uniforms['posMap'] = Source1TextureManager.getTexture(this.repository, posTexture, 0);
+			this.uniforms['posMap'] = this.getTexture(TextureRole.Pos, this.repository, posTexture, 0);
 			this.setDefine('USE_POS_MAP');//TODOv3: set this automaticaly
 		}
 

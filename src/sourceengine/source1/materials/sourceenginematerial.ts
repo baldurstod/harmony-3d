@@ -1,18 +1,18 @@
 import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
-
-import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL } from '../../../materials/material';
-import { TextureManager } from '../../../textures/texturemanager';
-import { Source1TextureManager } from '../textures/source1texturemanager';
-import { SEQUENCE_SAMPLE_COUNT } from '../loaders/sheet';
-import { GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA } from '../../../webgl/constants';
-import { ProxyManager } from './proxies/proxymanager';
 import { DEBUG, TESTING, WARN } from '../../../buildoptions';
+import { RenderFace } from '../../../materials/constants';
+import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL, MaterialParams } from '../../../materials/material';
 import { DEG_TO_RAD } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
-import { MatrixBuildScale, MatrixBuildTranslation } from './proxies/texturetransform';
-import { Proxy } from './proxies/proxy';
-import { RenderFace } from '../../../materials/constants';
+import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Texture } from '../../../textures/texture';
+import { TextureManager } from '../../../textures/texturemanager';
+import { GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
+import { SEQUENCE_SAMPLE_COUNT } from '../loaders/sheet';
+import { Source1TextureManager } from '../textures/source1texturemanager';
+import { Proxy } from './proxies/proxy';
+import { ProxyManager } from './proxies/proxymanager';
+import { MatrixBuildScale, MatrixBuildTranslation } from './proxies/texturetransform';
 
 const IDENTITY_MAT4 = mat4.create();
 
@@ -112,33 +112,73 @@ function getDefaultTexture(): Texture {
 	return defaultTexture;
 }
 
+export enum TextureRole {
+	Color = 0,
+	Color2 = 0,
+	Normal,
+	LightWarp,
+	PhongExponent,
+	SelfIllumMask,
+	Env,
+	Detail,
+	SheenMask,
+	Sheen,
+	Mask,
+	Mask2,
+	Iris,
+	Cornea,
+	Pattern,
+	Ao,
+	Wear,
+	Grunge,
+	Exponent,
+	Surface,
+	Pos,
+	BlendModulate,
+	Holo,
+	HoloSpectrum,
+	Scratches,
+}
+
+export type SourceEngineMaterialParams = MaterialParams & {
+	repository: string;
+	path: string;
+	useSrgb?: boolean;
+};
+
 export class SourceEngineMaterial extends Material {
+	#initialized = false;
 	#detailTextureTransform = mat4.create();
 	//static #defaultTexture;
 	repository: string;
-	fileName: string;
-	proxyParams: any;
-	proxies: Proxy[];
-	variables: Map<string, any>;
+	path: string;
+	proxyParams: any/*TODO: create type*/ = {};
+	proxies: Proxy[] = [];
+	variables = new Map<string, any/*TODO: create type*/>();
 	numFrames: number;
 	frameX: number;
 	frameY: number;
 	sequenceLength: number;
+	#textures = new Map<TextureRole, AnimatedTexture>();
 
-	constructor(params: any = {}/*repository, fileName, parameters = Object.create(null)*/) {
+	constructor(params: SourceEngineMaterialParams /*repository, fileName, parameters = Object.create(null)*/) {
 		super(params);
 		this.repository = params.repository;
-		this.fileName = params.filename;
-		this.proxyParams = {};
+		this.path = params.path;
 		if (DEBUG) {
 			//this.proxyParams.StatTrakNumber = 192837;//TODOv3 removeme
 			//this.proxyParams.WeaponLabelText = 'AVCDEFGHIJKLMONPQRSTU';//TODOv3 removeme
 			//this.proxyParams.ItemTintColor = vec3.fromValues(Math.random(), Math.random(), Math.random());
 			//this.proxyParams.ItemTintColor = vec3.fromValues(1.0, 105 / 255, 180 / 255);
 		}
+	}
 
-		this.proxies = [];
-		this.variables = new Map();
+	init(): void {
+		if (this.#initialized) {
+			return;
+		}
+		const params = this.parameters;
+		this.#initialized = true;
 
 		this.#initUniforms();
 
@@ -187,13 +227,13 @@ export class SourceEngineMaterial extends Material {
 
 		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
-			this.setColorMap(Source1TextureManager.getTexture(this.repository, baseTexture, params['$frame'] || 0, false, params.useSrgb ?? true));
+			this.setColorMap(this.getTexture(TextureRole.Color, this.repository, baseTexture, params['$frame'] ?? 0, false, params.useSrgb ?? true));
 		} else {
 			this.setColorMap(getDefaultTexture());
 		}
 
 		if (params['$bumpmap']) {
-			this.setNormalMap(Source1TextureManager.getTexture(this.repository, params['$bumpmap'], 0, false, false));
+			this.setNormalMap(this.getTexture(TextureRole.Normal, this.repository, params['$bumpmap'], 0, false, false));
 		} else {
 			this.setNormalMap(null);
 		}
@@ -268,14 +308,14 @@ export class SourceEngineMaterial extends Material {
 		}
 
 		const lightWarpTexture = params['$lightwarptexture'];
-		this.setTexture('lightWarpMap', lightWarpTexture ? Source1TextureManager.getTexture(this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
+		this.setTexture('lightWarpMap', lightWarpTexture ? this.getTexture(TextureRole.LightWarp, this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
 
 		if (params['$phong'] == 1) {
 			this.setDefine('USE_PHONG_SHADING');
 
 			// The $phongexponenttexture is overrided by $phongexponent
 			const phongExponentTexture = params['$phongexponenttexture'];
-			this.setTexture('phongExponentMap', phongExponentTexture ? Source1TextureManager.getTexture(this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
+			this.setTexture('phongExponentMap', phongExponentTexture ? this.getTexture(TextureRole.PhongExponent, this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
 			if (phongExponentTexture) {
 				this.uniforms['uPhongExponentFactor'] = variables.get('$phongexponentfactor');
 			}
@@ -319,7 +359,7 @@ export class SourceEngineMaterial extends Material {
 			}
 
 			const selfIllumMask = variables.get('$selfillummask');
-			this.setTexture('uSelfIllumMaskMap', selfIllumMask ? Source1TextureManager.getTexture(this.repository, selfIllumMask, 0) : null, 'USE_SELF_ILLUM_MASK_MAP');
+			this.setTexture('uSelfIllumMaskMap', selfIllumMask ? this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0) : null, 'USE_SELF_ILLUM_MASK_MAP');
 
 
 			if (variables.get('$selfillumfresnel') == 1) {
@@ -370,6 +410,19 @@ export class SourceEngineMaterial extends Material {
 		//this.blendFuncDestination = GL_ONE_MINUS_SRC_ALPHA;
 		//this.blendFuncDestination = GL_ONE;
 		//TODO: $ignorez
+	}
+
+	getTexture(role: TextureRole, repository: string, path: string, frame: number, needCubeMap = false, srgb = true): Texture {
+		const animated = Source1TextureManager.getTexture(repository, path, needCubeMap, srgb);
+
+		const previousTexture = this.#textures.get(role);
+		if (previousTexture != animated) {
+			previousTexture?.removeUser(this);
+			animated.addUser(this);
+			this.#textures.set(role, animated);
+		}
+
+		return animated.getFrame(frame);
 	}
 
 	#initUniforms() {
@@ -462,7 +515,7 @@ export class SourceEngineMaterial extends Material {
 					this.proxies.push(proxy);
 				} else {
 					if (WARN) {
-						console.warn('Unknown proxy %s in %s', proxyName, this.fileName);
+						console.warn('Unknown proxy %s in %s', proxyName, this.path);
 					}
 				}
 			}
@@ -495,7 +548,7 @@ export class SourceEngineMaterial extends Material {
 
 		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
-			const texture = Source1TextureManager.getTexture(this.repository, baseTexture, parameters['$frame'] || variables.get('$frame') || 0);
+			const texture = this.getTexture(TextureRole.Color, this.repository, baseTexture, parameters['$frame'] ?? variables.get('$frame') ?? 0);
 			this.setColorMap(texture);
 			// Disable self illum if texture doesn't have alpha channel (fix for D-eye-monds)
 			this.setDefine('COLOR_MAP_ALPHA_BITS', String(texture?.getAlphaBits() ?? 0));
@@ -503,7 +556,7 @@ export class SourceEngineMaterial extends Material {
 
 		const normalMap = variables.get('$bumpmap') ?? variables.get('$normalmap');
 		if (normalMap) {
-			this.setNormalMap(Source1TextureManager.getTexture(this.repository, normalMap, 0));
+			this.setNormalMap(this.getTexture(TextureRole.Normal, this.repository, normalMap, 0));
 		} else {
 			this.setNormalMap(null);
 		}
@@ -513,7 +566,7 @@ export class SourceEngineMaterial extends Material {
 			if (envmap == 'env_cubemap') {
 				envmap = 'editor/cubemap';//TODO: set default cubmap as a constant
 			}
-			this.setCubeMap(Source1TextureManager.getTexture(this.repository, envmap, 0, true));
+			this.setCubeMap(this.getTexture(TextureRole.Env, this.repository, envmap, 0, true));
 		}
 
 		const baseTextureTransform = variables.get('$basetexturetransform');
@@ -525,11 +578,11 @@ export class SourceEngineMaterial extends Material {
 		//TODO: remove this
 		const phongExponentTexture = variables.get('$phongexponenttexture');
 		if (phongExponentTexture) {
-			this.setTexture('phongExponentMap', Source1TextureManager.getTexture(this.repository, phongExponentTexture, 0), 'USE_PHONG_EXPONENT_MAP');
+			this.setTexture('phongExponentMap', this.getTexture(TextureRole.PhongExponent, this.repository, phongExponentTexture, 0), 'USE_PHONG_EXPONENT_MAP');
 		}
 
 		const lightWarpTexture = parameters['$lightwarptexture'];
-		this.setTexture('lightWarpMap', lightWarpTexture ? Source1TextureManager.getTexture(this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
+		this.setTexture('lightWarpMap', lightWarpTexture ? this.getTexture(TextureRole.LightWarp, this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
 
 
 		if (variables.get('$selfillum') == 1) {
@@ -540,13 +593,13 @@ export class SourceEngineMaterial extends Material {
 
 			const selfIllumMask = variables.get('$selfillummask');
 			if (selfIllumMask) {
-				this.setTexture('uSelfIllumMaskMap', Source1TextureManager.getTexture(this.repository, selfIllumMask, 0));
+				this.setTexture('uSelfIllumMaskMap', this.getTexture(TextureRole.SelfIllumMask, this.repository, selfIllumMask, 0));
 			}
 		}
 
 		const detailTexture = variables.get('$detail');
 		if (detailTexture) {
-			this.setDetailMap(Source1TextureManager.getTexture(this.repository, detailTexture, variables.get('$detailframe') ?? 0));
+			this.setDetailMap(this.getTexture(TextureRole.Detail, this.repository, detailTexture, variables.get('$detailframe') ?? 0));
 
 			const detailTextureTransform = variables.get('$detailtexturetransform');
 			if (detailTextureTransform) {
@@ -584,6 +637,7 @@ export class SourceEngineMaterial extends Material {
 	getAlpha() {
 		return clamp(this.variables.get('$alpha'), 0.0, 1.0);
 	}
+
 	computeModulationColor(out) {
 		const color = this.variables.get('$color');//TODOv3: check variable type
 		const color2 = this.variables.get('$color2');//TODOv3: check variable type
@@ -651,6 +705,15 @@ export class SourceEngineMaterial extends Material {
 
 	clone(): SourceEngineMaterial {
 		return new SourceEngineMaterial(this.parameters);
+	}
+
+	dispose() {
+		super.dispose();
+		if (this.hasNoUser()) {
+			for (const [_, texture] of this.#textures) {
+				texture.removeUser(this);
+			}
+		}
 	}
 }
 

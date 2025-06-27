@@ -1,7 +1,7 @@
-import { GL_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_MAX } from '../../../webgl/constants';
-import { SourceEngineMaterial } from './sourceenginematerial';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { RenderFace } from '../../../materials/constants';
+import { GL_MAX, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
+import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
+import { SourceEngineMaterial } from './sourceenginematerial';
 
 enum RenderMode {
 	Normal = 0,			// src
@@ -18,6 +18,8 @@ enum RenderMode {
 }
 
 export class SpriteMaterial extends SourceEngineMaterial {
+	#initialized = false;
+
 	constructor(params: any = {}) {
 		super(params);
 
@@ -25,6 +27,15 @@ export class SpriteMaterial extends SourceEngineMaterial {
 		this.renderFace(RenderFace.Both);
 		this.colorMask[3] = 0.0;
 		this.setDefine('IS_TRANSLUCENT');
+	}
+
+	init(): void {
+		if (this.#initialized) {
+			return;
+		}
+		const params = this.parameters;
+		this.#initialized = true;
+		super.init();
 
 		if ( /*bAdditive2ndTexture || bAddOverBlend || */params['$addself'] !== undefined) {
 			this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);

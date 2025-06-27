@@ -10,17 +10,17 @@ import { SourceEngineVTF } from './sourceenginevtf';
 
 let internalTextureId = 0;
 class Source1TextureManagerClass extends EventTarget {//TODO: keep event target ?
-	#texturesList = new Map2<string, string, Texture>();
+	#texturesList = new Map2<string, string, AnimatedTexture>();
 	#vtfList = new Map2<string, string, SourceEngineVTF>();
-	#defaultTexture!: Texture;
-	#defaultTextureCube!: Texture;
+	#defaultTexture = new AnimatedTexture();
+	#defaultTextureCube = new AnimatedTexture();
 	fallbackRepository = '';
 
 	constructor() {
 		super();
 		new Graphics().ready.then(() => {
-			this.#defaultTexture = TextureManager.createCheckerTexture([127, 190, 255]);
-			this.#defaultTextureCube = TextureManager.createCheckerTexture([127, 190, 255], undefined, undefined, true);
+			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255]));
+			this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255], undefined, undefined, true));
 			this.#defaultTexture.addUser(this);
 			this.#defaultTextureCube.addUser(this);
 		});
@@ -28,11 +28,10 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
 	}
 
-	getTexture(repository: string, path: string, frame: number, needCubeMap = false, srgb = true): Texture | null {
-		frame = Math.floor(frame);
+	getTexture(repository: string, path: string, needCubeMap = false, srgb = true): AnimatedTexture | null {
 		const animatedTexture = this.#getTexture(repository, path, needCubeMap, srgb);
 
-		return ((animatedTexture as AnimatedTexture)?.getFrame ? (animatedTexture as AnimatedTexture).getFrame(frame) : animatedTexture) ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
+		return animatedTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
 	}
 
 	async getVtf(repository: string, path: string): Promise<SourceEngineVTF | null> {
@@ -48,7 +47,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		return vtf;
 	}
 
-	#getTexture(repository: string, path: string, needCubeMap: boolean, srgb = true, allocatedTexture?: AnimatedTexture): Texture | null {
+	#getTexture(repository: string, path: string, needCubeMap: boolean, srgb = true, allocatedTexture?: AnimatedTexture): AnimatedTexture | null {
 		if (false && TESTING && needCubeMap) {
 			return this.#defaultTextureCube;
 		}
@@ -112,14 +111,14 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		return 'source1texturemanager_' + (++internalTextureId);
 	}
 
-	addInternalTexture(repository: string, texture?: Texture) {
+	addInternalTexture(repository: string, texture?: AnimatedTexture) {
 		const textureName = this.getInternalTextureName();
-		texture = texture ?? TextureManager.createTexture();//TODOv3: add params + create animated texture
+		texture = texture ?? new AnimatedTexture();//TODOv3: add params + create animated texture
 		this.setTexture(repository, textureName, texture);
 		return { name: textureName, texture: texture };
 	}
 
-	setTexture(repository: string, path: string, texture: Texture) {
+	setTexture(repository: string, path: string, texture: AnimatedTexture) {
 		texture.addUser(this);
 		this.#texturesList.set(repository, path, texture);
 	}

@@ -52,6 +52,7 @@ export class SourceEngineMaterialManager {
 			const promise = new Promise<SourceEngineMaterial>((resolve, reject) => {
 				material.then((material) => {
 					const newMaterial = material.clone();
+					newMaterial.init();
 					this.#materialList2.add(newMaterial);
 					resolve(newMaterial);
 				}
@@ -65,6 +66,7 @@ export class SourceEngineMaterialManager {
 		if (material !== undefined) {
 			return new Promise((resolve, reject) => {
 				const newMaterial = material.clone();
+				newMaterial.init();
 				this.#materialList2.add(newMaterial);
 				resolve(newMaterial);
 			});
@@ -75,6 +77,7 @@ export class SourceEngineMaterialManager {
 					(material) => {
 						this.#materialList.set(fileName, material);
 						const newMaterial = material.clone();
+						newMaterial.init();
 						this.#materialList2.add(newMaterial);
 						resolve(newMaterial);
 					}
@@ -90,6 +93,7 @@ export class SourceEngineMaterialManager {
 	static async copyMaterial(repositoryName, sourcePath, destPath, searchPaths) {
 		const material: SourceEngineMaterial = await this.getMaterial(repositoryName, sourcePath, searchPaths);
 		this.#materialList.set(destPath, material.clone());
+		material.init();
 	}
 
 	static addRepository(repositoryPath) {

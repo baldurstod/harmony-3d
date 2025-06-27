@@ -1,8 +1,6 @@
 import { vec3, vec4 } from 'gl-matrix';
-
-import { SourceEngineMaterial } from './sourceenginematerial';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { Source1TextureManager } from '../textures/source1texturemanager';
+import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
 
 //TODO: deprecate
 export class CharacterMaterial extends SourceEngineMaterial {
@@ -18,7 +16,7 @@ export class CharacterMaterial extends SourceEngineMaterial {
 		//"$masks2"                   models/weapons/v_models/arms/glove_bloodhound/glove_bloodhound_masks2
 		const masks1Texture = variables.get('$masks1');
 		if (masks1Texture) {
-			this.uniforms['mask1Map'] = Source1TextureManager.getTexture(this.repository, masks1Texture, 0);
+			this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		} else {
 			this.removeDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
@@ -26,7 +24,7 @@ export class CharacterMaterial extends SourceEngineMaterial {
 
 		const masks2Texture = variables.get('$masks2');
 		if (masks2Texture) {
-			this.uniforms['mask2Map'] = Source1TextureManager.getTexture(this.repository, masks2Texture, 0);
+			this.uniforms['mask2Map'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
 			this.setDefine('USE_MASK2_MAP');//TODOv3: set this automaticaly
 		} else {
 			this.removeDefine('USE_MASK2_MAP');//TODOv3: set this automaticaly
@@ -66,14 +64,14 @@ export class CharacterMaterial extends SourceEngineMaterial {
 
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
-			this.uniforms['sheenMaskMap'] = Source1TextureManager.getTexture(this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
+			this.uniforms['sheenMaskMap'] = this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame);
 			this.setDefine('USE_SHEEN_MASK_MAP');//TODOv3: set this automaticaly
 
 			this.uniforms['g_vPackedConst6'] = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
 			this.uniforms['g_vPackedConst7'] = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
 		}
 		if (parameters['$sheenmap']) {
-			this.uniforms['sheenMap'] = Source1TextureManager.getTexture(this.repository, parameters['$sheenmap'], 0, true);
+			this.uniforms['sheenMap'] = this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true);
 			this.setDefine('USE_SHEEN_MAP');//TODOv3: set this automaticaly
 		}
 
@@ -88,13 +86,13 @@ export class CharacterMaterial extends SourceEngineMaterial {
 
 		const masks1Texture = variables.get('$masks1');
 		if (masks1Texture) {
-			this.uniforms['mask1Map'] = Source1TextureManager.getTexture(this.repository, masks1Texture, 0);
+			this.uniforms['mask1Map'] = this.getTexture(TextureRole.Mask, this.repository, masks1Texture, 0);
 			this.setDefine('USE_MASK1_MAP');//TODOv3: set this automaticaly
 		}
 
 		const masks2Texture = variables.get('$masks2');
 		if (masks2Texture) {
-			this.uniforms['mask2Map'] = Source1TextureManager.getTexture(this.repository, masks2Texture, 0);
+			this.uniforms['mask2Map'] = this.getTexture(TextureRole.Mask2, this.repository, masks2Texture, 0);
 			this.setDefine('USE_MASK2_MAP');//TODOv3: set this automaticaly
 		}
 

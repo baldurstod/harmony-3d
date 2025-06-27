@@ -1,30 +1,40 @@
 import { vec3, vec4 } from 'gl-matrix';
-
-import { SourceEngineMaterial } from './sourceenginematerial';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { TextureManager } from '../../../textures/texturemanager';
-import { Source1TextureManager } from '../textures/source1texturemanager';
 import { Camera } from '../../../cameras/camera';
 import { Skeleton } from '../../../objects/skeleton';
+import { TextureManager } from '../../../textures/texturemanager';
+import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
+import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
 
 const tempVec3 = vec3.create();
 
 export class EyeRefractMaterial extends SourceEngineMaterial {
+	#initialized = false;
 	#eyeOrigin = vec3.create();
 	#eyeForward = vec3.create();
 	#eyeUp = vec3.create();
 	#eyeRight = vec3.create();
 	#irisProjectionU = vec4.create();
 	#irisProjectionV = vec4.create();
+
 	constructor(params: any = {}) {
 		params.useSrgb = false;
 		super(params);
 		this.setValues(params);
 
 		//this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
+	}
+
+	init(): void {
+		if (this.#initialized) {
+			return;
+		}
+		this.#initialized = true;
+
+		super.init();
+		const params = this.parameters;
 
 		if (params['$iris']) {
-			this.setColorMap(Source1TextureManager.getTexture(this.repository, params['$iris'], params['$frame'] || 0));
+			this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, params['$iris'], params['$frame'] || 0));
 		} else {
 			this.setColorMap(TextureManager.createCheckerTexture());
 		}
@@ -34,10 +44,10 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 		const variables = this.variables;
 		const parameters = this.parameters;
 		if (parameters['$iris']) {
-			this.setColorMap(Source1TextureManager.getTexture(this.repository, parameters['$iris'], parameters['$frame'] || 0));
+			this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, parameters['$iris'], parameters['$frame'] || 0));
 		}
 		if (parameters['$corneatexture']) {
-			this.setTexture('corneaMap', Source1TextureManager.getTexture(this.repository, parameters['$corneatexture'], 0));
+			this.setTexture('corneaMap', this.getTexture(TextureRole.Cornea, this.repository, parameters['$corneatexture'], 0));
 		}
 
 		/*

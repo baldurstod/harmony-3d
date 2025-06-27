@@ -1,18 +1,27 @@
 import { vec3, vec4 } from 'gl-matrix';
-
-import { SourceEngineMaterial } from './sourceenginematerial';
-import { SourceEngineMaterialManager } from './sourceenginematerialmanager';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { Source1TextureManager } from '../textures/source1texturemanager';
-import { MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_ADDITIVE } from '../../../materials/material';
+import { MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NONE } from '../../../materials/material';
 import { MaterialManager } from '../../../materials/materialmanager';
+import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
+import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
+import { SourceEngineMaterialManager } from './sourceenginematerialmanager';
 
 export class VertexLitGenericMaterial extends SourceEngineMaterial {
 	diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+	#initialized = false;
+
 	constructor(params: any = {}) {
 		params.useSrgb = false;
 		super(params/*repository, fileName, parameters*/);
 		this.setValues(params);
+	}
+
+	init(): void {
+		if (this.#initialized) {
+			return;
+		}
+		const params = this.parameters;
+		this.#initialized = true;
+		super.init();
 
 
 		//this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
@@ -63,13 +72,13 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
-			this.setTexture('sheenMaskMap', Source1TextureManager.getTexture(this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame), 'USE_SHEEN_MASK_MAP');
+			this.setTexture('sheenMaskMap', this.getTexture(TextureRole.SheenMask, this.repository, parameters['$sheenmapmask'], sheenMapMaskFrame), 'USE_SHEEN_MASK_MAP');
 
 			this.uniforms['g_vPackedConst6'] = vec4.fromValues(variables.get('$SheenMaskScaleX'), variables.get('$SheenMaskScaleY'), variables.get('$SheenMaskOffsetX'), variables.get('$SheenMaskOffsetY'));
 			this.uniforms['g_vPackedConst7'] = vec4.fromValues(variables.get('$SheenMaskDirection'), 0, 0, 0);
 		}
 		if (parameters['$sheenmap']) {
-			this.setTexture('sheenMap', Source1TextureManager.getTexture(this.repository, parameters['$sheenmap'], 0, true), 'USE_SHEEN_MAP');
+			this.setTexture('sheenMap', this.getTexture(TextureRole.Sheen, this.repository, parameters['$sheenmap'], 0, true), 'USE_SHEEN_MAP');
 		}
 
 		if (proxyParams['SheenTintColor']) {

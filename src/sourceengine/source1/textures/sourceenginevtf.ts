@@ -42,7 +42,7 @@ export class SourceEngineVTF {
 	depth = 0;
 	resEntries: VTFResourceEntry[] = [];
 	currentFrame = 0;
-	filled = false;
+	//filled = false;
 	numResources = 0;
 	headerSize = 0;
 	sheet?: any;//TODO: create proper type for sheet
@@ -164,12 +164,11 @@ export class SourceEngineVTF {
 	}
 
 	#fillTexture(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1 = 0, srgb: boolean): void {
+		/*
 		if (this.filled && (this.frames == 1)) {
 			return;
 		}
-		if (this.filled) {
-			//return;
-		}
+		*/
 
 		if (mipmapLvl == undefined) {
 			mipmapLvl = this.mipmapCount - 1;
@@ -233,7 +232,7 @@ export class SourceEngineVTF {
 		glContext.bindTexture(GL_TEXTURE_2D, null);
 		glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 
-		this.filled = true;
+		//this.filled = true;
 	}
 
 	/**
@@ -298,7 +297,7 @@ export class SourceEngineVTF {
 		glContext.texParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, clampT ? GL_CLAMP_TO_EDGE : GL_REPEAT);
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
 
-		this.filled = true;
+		//this.filled = true;
 	}
 
 	/*
