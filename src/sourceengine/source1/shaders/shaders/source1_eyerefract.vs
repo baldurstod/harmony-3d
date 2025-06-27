@@ -36,7 +36,6 @@ vec3 Vec3WorldToTangentNormalized( vec3 iWorldVector, vec3 iWorldNormal, vec3 iW
 /********************************************/
 
 #include source1_varying_eyerefract
-#include varying_standard
 
 void main(void) {
 	#include compute_vertex_uv

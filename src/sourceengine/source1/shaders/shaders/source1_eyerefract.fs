@@ -30,7 +30,6 @@ varying vec3 vWorldBinormal;
 /********************************************/
 
 #include source1_varying_eyerefract
-#include varying_standard
 
 void main(void) {
 	vec4 diffuseColor = vec4(1.0);
@@ -38,11 +37,11 @@ void main(void) {
 
 	#ifdef USE_COLOR_MAP
 		vec4 texelColor = texture2D(colorMap, mod(vTextureCoord.xy, 1.0));
-	#endif
 	diffuseColor *= texelColor;
+	#endif
 	#include compute_fragment_alpha_test
 		//texelColor.a = 1.0;
-		gl_FragColor = texelColor;
+		//gl_FragColor = texelColor;
 #ifndef IS_TRANSLUCENT
 	gl_FragColor.a = 1.0;
 #endif
@@ -66,7 +65,11 @@ void main(void) {
 	vParallaxVector = vec2(0.0);
 
 	vec2 vIrisUv = vSphereUv.xy - vParallaxVector.xy;
+#ifdef USE_COLOR_MAP
 	vec4 cIrisColor = texture2D(colorMap, vIrisUv);//tex2D( g_tIrisSampler, vIrisUv.xy );
+#else
+	vec4 cIrisColor = vec4(1.0);
+#endif
 	cIrisColor = pow(cIrisColor, vec4(1./2.2));
 	cIrisColor.a = 1.0;
 	gl_FragColor = cIrisColor;
@@ -91,7 +94,11 @@ void main(void) {
 	#include compute_fragment_standard
 
 #ifdef SKIP_PROJECTION
+#ifdef USE_COLOR_MAP
 	gl_FragColor = texture2D(colorMap, mod(vTextureCoord.xy, 1.0));
+#else
+	vec4 gl_FragColor = vec4(1.0);
+#endif
 	gl_FragColor.a = 1.;
 #endif
 }
