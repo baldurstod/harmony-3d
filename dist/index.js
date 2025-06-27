@@ -45550,6 +45550,7 @@ class Source1TextureManagerClass extends EventTarget {
         const textureName = this.getInternalTextureName();
         texture = texture ?? new AnimatedTexture(); //TODOv3: add params + create animated texture
         this.setTexture(repository, textureName, texture);
+        texture.addFrame(0, TextureManager.createTexture());
         return { name: textureName, texture: texture };
     }
     setTexture(repository, path, texture) {
