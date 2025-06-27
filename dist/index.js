@@ -6068,7 +6068,7 @@ const RECORDER_DEFAULT_FILENAME = 'Harmony3D recording.webm';
 // Note : you can provide your own url when calling ShaderEditor.initEditor.
 const ACE_EDITOR_URI = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js';
 const MAX_HARDWARE_BONES = 256;
-const TEXTURE_CLEANUP_DELAY = 1000;
+const TEXTURE_CLEANUP_DELAY = 100000;
 const SMD_HEADER = '// Created by harmony-3d';
 
 function flattenArray(array, arrayCount, arraySize) {
