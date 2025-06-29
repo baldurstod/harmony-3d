@@ -68,7 +68,7 @@ export class MergeRepository implements Repository {
 	}
 
 	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
-		const root = new RepositoryEntry(this, '', true);
+		const root = new RepositoryEntry(this, '', true, 0);
 		for (const repository of this.#repositories) {
 			const response = await repository.getFileList(filter);
 			if (!response.error) {

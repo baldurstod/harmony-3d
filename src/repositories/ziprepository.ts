@@ -78,7 +78,7 @@ export class ZipRepository implements Repository {
 
 	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
 		await this.#initPromise;
-		const root = new RepositoryEntry(this, '', true);
+		const root = new RepositoryEntry(this, '', true, 0);
 		for (const [filename, _] of this.#zipEntries) {
 			root.addEntry(filename);
 		}

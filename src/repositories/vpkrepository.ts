@@ -73,7 +73,7 @@ export class VpkRepository implements Repository {
 
 	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
 		await this.#initPromise;
-		const root = new RepositoryEntry(this, '', true);
+		const root = new RepositoryEntry(this, '', true, 0);
 		for (const filename of await this.#vpk.getFileList()) {
 			root.addEntry(filename);
 		}

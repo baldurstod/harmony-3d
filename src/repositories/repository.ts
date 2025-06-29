@@ -12,7 +12,7 @@ export interface RepositoryBlobResponse { blob?: Blob | null, error?: Repository
 export interface RepositoryJsonResponse { json?: JSON | null, error?: RepositoryError }
 export interface RepositoryFileListResponse { root?: RepositoryEntry, error?: RepositoryError }
 
-export interface RepositoryFilter { name?: string | RegExp, extension?: string | RegExp, directories?: boolean, files?: boolean }
+export interface RepositoryFilter { name?: string | RegExp, extension?: string | RegExp, directories?: boolean, files?: boolean, maxDepth?: number }
 
 export interface Repository {
 	name: string;
@@ -30,11 +30,13 @@ export class RepositoryEntry {
 	#childs = new Map<string, RepositoryEntry>;
 	#isDirectory: boolean;
 	#parent?: RepositoryEntry;
+	#depth: number;
 
-	constructor(repository: Repository, name: string, isDirectory: boolean) {
+	constructor(repository: Repository, name: string, isDirectory: boolean, depth: number) {
 		this.#repository = repository;
 		this.#name = name;
 		this.#isDirectory = isDirectory;
+		this.#depth = depth;
 	}
 
 	addEntry(filename: string): void {
@@ -45,15 +47,15 @@ export class RepositoryEntry {
 		for (const [i, p] of splittedPath.entries()) {
 			const currentChild = current.#childs.get(p);
 			if (!currentChild) {
-				current = current.#addFile(p, i != len);
+				current = current.#addFile(p, i != len, i);
 			} else {
 				current = currentChild as RepositoryEntry;
 			}
 		}
 	}
 
-	#addFile(name: string, isDirectory: boolean) {
-		const e = new RepositoryEntry(this.#repository, name, isDirectory);
+	#addFile(name: string, isDirectory: boolean, depth: number) {
+		const e = new RepositoryEntry(this.#repository, name, isDirectory, depth);
 		e.#parent = this;
 		this.#childs.set(name, e);
 		return e;
@@ -116,6 +118,10 @@ export class RepositoryEntry {
 		}
 
 		if (filter.files !== undefined && filter.files == this.#isDirectory) {
+			return false;
+		}
+
+		if (filter.maxDepth !== undefined && this.#depth > filter.maxDepth) {
 			return false;
 		}
 
