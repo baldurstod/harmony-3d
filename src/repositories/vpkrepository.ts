@@ -1,5 +1,5 @@
 import { Vpk } from 'harmony-vpk';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class VpkRepository implements Repository {
 	#name: string;
@@ -71,7 +71,7 @@ export class VpkRepository implements Repository {
 		return { json: JSON.parse(await response.file.text()) };
 	}
 
-	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
+	async getFileList(): Promise<RepositoryFileListResponse> {
 		await this.#initPromise;
 		const root = new RepositoryEntry(this, '', true, 0);
 		for (const filename of await this.#vpk.getFileList()) {

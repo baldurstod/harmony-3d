@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 /**
  * Cache the result of the underlying repository
@@ -63,12 +63,12 @@ export class MemoryCacheRepository implements Repository {
 		return { json: JSON.parse(await response.file!.text()) };
 	}
 
-	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
+	async getFileList(): Promise<RepositoryFileListResponse> {
 		if (this.#fileList) {
 			return this.#fileList;
 		}
 
-		this.#fileList = await this.#base.getFileList(filter);
+		this.#fileList = await this.#base.getFileList();
 
 		return this.#fileList;
 	}

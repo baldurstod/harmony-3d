@@ -2,7 +2,7 @@ import { getLoader } from '../loaders/loaderfactory';
 import { SourceEnginePCFLoader } from '../sourceengine/export';
 import { SourcePCF } from '../sourceengine/source1/loaders/sourcepcf';
 import { OverrideRepository } from './overriderepository';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class ManifestRepository implements Repository {
 	#base: OverrideRepository;
@@ -35,12 +35,12 @@ export class ManifestRepository implements Repository {
 		return this.#base.getFileAsJson(filename);
 	}
 
-	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
-		return this.#base.getFileList(filter);
+	async getFileList(): Promise<RepositoryFileListResponse> {
+		return this.#base.getFileList();
 	}
 
-	async generateModelManifest(name = 'models_manifest.json', filter?: RepositoryFilter): Promise<RepositoryError | null> {
-		const response = await this.#base.getFileList(filter);
+	async generateModelManifest(name = 'models_manifest.json'): Promise<RepositoryError | null> {
+		const response = await this.#base.getFileList();
 		if (response.error) {
 			return response.error;
 		}
@@ -52,8 +52,8 @@ export class ManifestRepository implements Repository {
 		return null;
 	}
 
-	async generateParticlesManifest(filename = 'particles/manifest.json', filter?: RepositoryFilter): Promise<RepositoryError | null> {
-		const response = await this.#base.getFileList(filter);
+	async generateParticlesManifest(filename = 'particles/manifest.json'): Promise<RepositoryError | null> {
+		const response = await this.#base.getFileList();
 		if (response.error) {
 			return response.error;
 		}

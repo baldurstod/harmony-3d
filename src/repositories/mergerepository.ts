@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class MergeRepository implements Repository {
 	#name: string;
@@ -67,10 +67,10 @@ export class MergeRepository implements Repository {
 		return { error: RepositoryError.FileNotFound };
 	}
 
-	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
+	async getFileList(): Promise<RepositoryFileListResponse> {
 		const root = new RepositoryEntry(this, '', true, 0);
 		for (const repository of this.#repositories) {
-			const response = await repository.getFileList(filter);
+			const response = await repository.getFileList();
 			if (!response.error) {
 				root.merge(response.root!);
 			}

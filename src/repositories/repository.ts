@@ -21,7 +21,7 @@ export interface Repository {
 	getFileAsText: (path: string) => Promise<RepositoryTextResponse>;
 	getFileAsBlob: (path: string) => Promise<RepositoryBlobResponse>;
 	getFileAsJson: (path: string) => Promise<RepositoryJsonResponse>;
-	getFileList: (filter?: RepositoryFilter) => Promise<RepositoryFileListResponse>;
+	getFileList: () => Promise<RepositoryFileListResponse>;
 }
 
 export class RepositoryEntry {

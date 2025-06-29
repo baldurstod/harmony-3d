@@ -1,5 +1,5 @@
-import { BlobReader, BlobWriter, ZipReader, ZipReaderGetEntriesOptions } from '@zip.js/zip.js';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryFilter, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { BlobReader, BlobWriter, ZipReader } from '@zip.js/zip.js';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 export class ZipRepository implements Repository {
 	#name: string;
@@ -76,7 +76,7 @@ export class ZipRepository implements Repository {
 		return { json: JSON.parse(await file.text()) };
 	}
 
-	async getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse> {
+	async getFileList(): Promise<RepositoryFileListResponse> {
 		await this.#initPromise;
 		const root = new RepositoryEntry(this, '', true, 0);
 		for (const [filename, _] of this.#zipEntries) {
