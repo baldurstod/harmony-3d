@@ -1,5 +1,4 @@
 import { quat, vec3 } from 'gl-matrix';
-
 import { ERROR, WARN } from '../../../buildoptions';
 import { registerEntity } from '../../../entities/entities';
 import { Entity } from '../../../entities/entity';
@@ -595,7 +594,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	#getMaterial() {
-		this.#materialPromise = this.#materialPromise ?? new Promise((resolve, reject) => {
+		this.#materialPromise = this.#materialPromise ?? new Promise(resolve => {
 			this.#materialPromiseResolve = resolve
 		});
 		return this.#materialPromise;

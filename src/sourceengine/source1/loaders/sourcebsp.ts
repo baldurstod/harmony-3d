@@ -1,24 +1,18 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
-
-import { Group } from '../../../objects/group';
-import { SELightMapNode } from './sourcelightmap';
-import { SourceEngineBspTree } from './sourceenginebsptree';
+import { ERROR, LOG } from '../../../buildoptions';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../geometry/buffergeometry';
+import { Vec3Middle } from '../../../math/functions';
+import { Group } from '../../../objects/group';
 import { Mesh } from '../../../objects/mesh';
+import { World } from '../../../objects/world';
+import { MapEntities } from '../maps/mapentities';
+import { AngleQuaternion } from '../maps/mapentity';
 import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
-import { AngleQuaternion } from '../maps/mapentity';
-import { MapEntities } from '../maps/mapentities';
-import { Vec3Middle } from '../../../math/functions';
-import { World } from '../../../objects/world';
-
-import { ERROR, LOG } from '../../../buildoptions';
-
-import {
-	LUMP_ENTITIES, LUMP_PLANES, LUMP_TEXDATA, LUMP_VERTEXES, LUMP_VISIBILITY, LUMP_NODES, LUMP_TEXINFO, LUMP_FACES, LUMP_LIGHTING, LUMP_OCCLUSION, LUMP_LEAFS, LUMP_FACEIDS, LUMP_EDGES, LUMP_SURFEDGES, LUMP_MODELS, LUMP_WORLDLIGHTS, LUMP_LEAFFACES, LUMP_LEAFBRUSHES, LUMP_BRUSHES, LUMP_BRUSHSIDES, LUMP_AREAS, LUMP_AREAPORTALS, LUMP_UNUSED0, LUMP_UNUSED1, LUMP_UNUSED2, LUMP_UNUSED3, LUMP_DISPINFO,
-	LUMP_ORIGINALFACES, LUMP_PHYSDISP, LUMP_PHYSCOLLIDE, LUMP_VERTNORMALS, LUMP_VERTNORMALINDICES, LUMP_DISP_LIGHTMAP_ALPHAS, LUMP_DISP_VERTS, LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS, LUMP_GAME_LUMP, LUMP_LEAFWATERDATA, LUMP_PRIMITIVES, LUMP_PRIMVERTS, LUMP_PRIMINDICES, LUMP_PAKFILE, LUMP_CLIPPORTALVERTS, LUMP_CUBEMAPS, LUMP_TEXDATA_STRING_DATA, LUMP_TEXDATA_STRING_TABLE, LUMP_OVERLAYS, LUMP_LEAFMINDISTTOWATER, LUMP_FACE_MACRO_TEXTURE_INFO, LUMP_DISP_TRIS, LUMP_PHYSCOLLIDESURFACE, LUMP_WATEROVERLAYS, LUMP_LEAF_AMBIENT_INDEX_HDR, LUMP_LEAF_AMBIENT_INDEX, LUMP_LIGHTING_HDR, LUMP_WORLDLIGHTS_HDR, LUMP_LEAF_AMBIENT_LIGHTING_HDR, LUMP_LEAF_AMBIENT_LIGHTING, LUMP_XZIPPAKFILE, LUMP_FACES_HDR, LUMP_MAP_FLAGS, LUMP_OVERLAY_FADES
-} from './sourcebsplump';
+import { LUMP_DISP_VERTS, LUMP_DISPINFO, LUMP_EDGES, LUMP_ENTITIES, LUMP_FACES, LUMP_GAME_LUMP, LUMP_LEAFFACES, LUMP_LEAFS, LUMP_LIGHTING, LUMP_MODELS, LUMP_SURFEDGES, LUMP_TEXDATA, LUMP_TEXDATA_STRING_DATA, LUMP_TEXINFO, LUMP_VERTEXES } from './sourcebsplump';
+import { SourceEngineBspTree } from './sourceenginebsptree';
+import { SELightMapNode } from './sourcelightmap';
 
 const DISPLACEMENT_DELTA = 1.0; // max distance from start position
 
@@ -43,7 +37,7 @@ export class SourceBSP extends World {
 	connections = [];
 	mapSpawn = true;
 	lastLeaf = undefined;
-	bspTree:SourceEngineBspTree;
+	bspTree: SourceEngineBspTree;
 	frameCount = 0;
 	mustParseHeader = true;
 	funcBrushesRemoveMe = [];
@@ -80,7 +74,7 @@ export class SourceBSP extends World {
 		const lumpEntities = this.getLumpData(LUMP_ENTITIES);
 		if (lumpEntities) {
 			this.createDynamicEntities(lumpEntities.kv);
-			/*new Promise((resolve, reject) => {
+			/*new Promise((resolve) => {
 				this.createDynamicEntities(entities.kv);
 				this.eventTarget.dispatchEvent(new CustomEvent('entitiescreated'));//TODOv3
 				resolve();

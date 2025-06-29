@@ -7,111 +7,87 @@ import { KvReader } from './kvreader';
 
 class SourceEngineVMTLoaderClass {
 	#materials = new Map<string, typeof SourceEngineMaterial>();
-	#extraMaterials = new Map<string, string>();
+	#extraMaterials = new Map<string, string>();//TODO: this is used for maps create a map repo instead
 
-	load(repositoryName, fileName) {
-		const promise = new Promise(async (resolve, reject) => {
-			/*
-			const requestCallback = async response => {
-				if (response.ok) {
-					this.parse(resolve, repositoryName, fileName, await response.text());
-				} else {
-					reject();
-				}
+	async load(repository: string, path: string): Promise<SourceEngineMaterial | null> {
+		const response = await Repositories.getFileAsText(repository, path);
+		if (!response.error) {
+			return this.parse(repository, path, response.text);
+		} else {
+			const fileContent = this.#extraMaterials.get(path);
+			if (fileContent) {
+				return this.parse(repository, path, fileContent);
 			}
-			const requestReject = () => {
-				let fileContent = this.#extraMaterials.get(fileName);
-				if (fileContent) {
-					this.parse(resolve, repositoryName, fileName, fileContent);
-				} else {
-					reject();
-				}
-				///() =>
-			}
-				*/
-			//let req = customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
-			const response = await Repositories.getFileAsText(repositoryName, fileName);
-			if (!response.error) {
-				this.parse(resolve, repositoryName, fileName, response.text);
-			} else {
-				const fileContent = this.#extraMaterials.get(fileName);
-				if (fileContent) {
-					this.parse(resolve, repositoryName, fileName, fileContent);
-				} else {
-					reject();
-				}
-			}
-		});
-		return promise;
+		}
+		return null;
 	}
 
-	parse(resolve, repositoryName, fileName, fileContent) {
-		this.#loadMaterial(repositoryName, fileName, fileContent).then(
-			(value) => resolve(value)
-		)
-	}
+	async parse(repository: string, path: string, content: string): Promise<SourceEngineMaterial | null> {
+		path = path.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '');
+		path = path.replace(/\\/g, '/').toLowerCase();
 
-	#loadMaterial(repositoryName, fileName, file/*, repository, texturesDir*/) {//todov3
-		const loadMaterialPromise = new Promise((resolve, reject) => {
-			const fileNameRemoveMe = fileName;
-			fileName = fileName.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '');
-			fileName = fileName.replace(/\\/g, '/').toLowerCase();
+		const kv = new KvReader();
+		kv.readText(content);
 
-			const kv = new KvReader();
-			kv.readText(file);
-
-			const vmt = kv.getRootElement();
-			if (!vmt) {
-				if (DEBUG) {
-					console.error('Error while parsing material ' + fileName);
-				}
-				return null;
+		const vmt = kv.getRootElement();
+		if (!vmt) {
+			if (DEBUG) {
+				console.error('Error while parsing material ' + path);
 			}
-			const shaderName = kv.getRootName().toLowerCase();
-			let material;
-			if (shaderName === 'patch') {
-				const include = vmt['include'];
-				const insert = vmt['insert'];
+			return null;
+		}
 
-				const patchResolve = function (material) {
-					for (const insertIndex in insert) {
-						material.variables.set(insertIndex, insert[insertIndex]);
-						material.parameters[insertIndex] = insert[insertIndex];
-					}
-					//materialList[fileNameRemoveMe] = material;removeme
-					resolve(material);
+		const shaderName = kv.getRootName().toLowerCase();
+		let material: SourceEngineMaterial | null = null;
+
+		if (shaderName === 'patch') {
+			//TODO: check patch
+
+			const include = vmt['include'];
+			const insert = vmt['insert'];
+
+			const patchResolve = (material) => {
+				for (const insertIndex in insert) {
+					material.variables.set(insertIndex, insert[insertIndex]);
+					material.parameters[insertIndex] = insert[insertIndex];
+				}
+				//materialList[fileNameRemoveMe] = material;removeme
+				return material;
+			};
+
+			const patchReject = function () {
+				//TODOv3: handle error
+				let rejectionCount = 0;
+				const patchResolve2 = function (material) {
+					rejectionCount = Infinity;
+					patchResolve(material);
 				};
+				const patchReject2 = function (fileName) {
+					if (rejectionCount == 0) {
+						return fileName;
+					}
+				};
+			}
+			const material = await SourceEngineMaterialManager.getMaterial(repository, include);
+			for (const insertIndex in insert) {
+				material.variables.set(insertIndex, insert[insertIndex]);
+				material.parameters[insertIndex] = insert[insertIndex];
+			}
+			//materialList[fileNameRemoveMe] = material;removeme
+			return (material);
 
-				const patchReject = function () {
-					//TODOv3: handle error
-					let rejectionCount = 0;
-					const patchResolve2 = function (material) {
-						rejectionCount = Infinity;
-						patchResolve(material);
-					};
-					const patchReject2 = function (fileName) {
-						if (rejectionCount == 0) {
-							reject(fileName);
-						}
-					};
-				}
-				const promise = SourceEngineMaterialManager.getMaterial(repositoryName, include);
-				promise.then(patchResolve, patchReject);
+			//promise.then(patchResolve);
+		} else {
+			const materialClass = this.#materials.get(shaderName);
+			if (materialClass) {
+				vmt.repository = repository;
+				vmt.filename = path;
+				material = new materialClass(vmt);
 			} else {
-				const materialClass = this.#materials.get(shaderName);
-				if (materialClass !== undefined) {
-					vmt.repository = repositoryName;
-					vmt.filename = fileName;
-					material = new materialClass(/*repositoryName, fileName, */vmt);
-				} else {
-					console.error('Unknown material : ' + shaderName);
-				}
+				console.error('Unknown material : ' + shaderName);
 			}
-			if (material) {
-				resolve(material);
-			}
-		});
-		return loadMaterialPromise;
+		}
+		return (material);
 	}
 
 	setMaterial(fileName, fileContent) {

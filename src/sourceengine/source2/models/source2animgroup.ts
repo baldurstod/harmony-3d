@@ -1,4 +1,3 @@
-
 import { Source2SeqGroup } from '../animations/source2seqgroup';
 import { Source2File } from '../loaders/source2file';
 import { Source2FileLoader } from '../loaders/source2fileloader';
@@ -215,7 +214,7 @@ async function getVseq(repository: string, seqGroupName: string, seqGroup: Sourc
 
 	await loadVseq(repository, seqFile, seqGroup);
 	/*
-	let promise = new Promise((resolve, reject) => {
+	let promise = new Promise((resolve) => {
 		fetch(new Request(seqFile)).then((response) => {
 			response.arrayBuffer().then(async (arrayBuffer) => {
 				await this.loadVseq(repository, seqFile, arrayBuffer, seqGroup);
@@ -287,7 +286,7 @@ async function getVanim(repository: string, animName: string, anim: Source2Anima
 
 	loadVanim(repository, animFile, anim);
 	/*
-	let promise = new Promise((resolve, reject) => {
+	let promise = new Promise((resolve) => {
 		fetch(new Request(animFile)).then((response) => {
 			response.arrayBuffer().then(async (arrayBuffer) => {
 				this.loadVanim(repository, animFile, arrayBuffer, anim);

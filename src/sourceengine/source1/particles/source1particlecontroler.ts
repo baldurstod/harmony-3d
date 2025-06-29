@@ -107,22 +107,6 @@ export class Source1ParticleControler {
 			return systemNameToPcfRepo[systemName];
 		}
 		return null;
-
-
-		/*
-
-					let promise = new Promise((resolve, reject) => {
-						let systemNameToPcfRepo = systemNameToPcf[repository];
-						if (systemNameToPcfRepo) {
-							resolve(systemNameToPcfRepo[systemName]);
-						} else {
-							let kallback = () => {
-								resolve(systemNameToPcf[repository][systemName]);
-							}
-							this.#loadManifest(repository).then(kallback, reject);//TODOv2: root
-						}
-					});
-					return promise;*/
 	}
 
 	static async loadManifest(repository: string) {
@@ -135,14 +119,14 @@ export class Source1ParticleControler {
 	 * TODO
 	 */
 	static async #loadManifest(repositoryName: string) {
-		this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
+		this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve) => {
 			const systemNameToPcfRepo: Record<string, string> = {};
 			this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
 
 
 			const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json');//TODO const
 			if (response.error) {
-				reject(false);
+				resolve(false);
 			}
 
 			const json: any/*TODO: change type*/ = response.json;
@@ -156,7 +140,7 @@ export class Source1ParticleControler {
 				}
 				resolve(true);
 			} else {
-				reject(false);
+				resolve(false);
 			}
 		});
 		return this.#loadManifestPromises[repositoryName];
@@ -206,7 +190,7 @@ export class Source1ParticleControler {
 	 * @return {Object SourcePCF} Pcf
 	 */
 	static async #getPcf(repositoryName: string, pcfName: string): Promise<SourcePCF> {
-		const promise = new Promise<SourcePCF>((resolve, reject) => {
+		const promise = new Promise<SourcePCF>(resolve => {
 			const pcf = this.#pcfList[pcfName];
 			if (!pcf) {
 				const callback1 = (pcf: SourcePCF) => {
@@ -231,11 +215,11 @@ export class Source1ParticleControler {
 	 */
 	static async #loadPcf(repositoryName: string, pcfName: string): Promise<SourcePCF> {
 		//TODO: return an empty system if not found?
-		const promise = new Promise<SourcePCF>((resolve, reject) => {//TODO: process reject
+		const promise = new Promise<SourcePCF>(resolve => {
 			const pcfLoader = getLoader('SourceEnginePCFLoader');
 			new pcfLoader().load(repositoryName, pcfName).then(
 				(pcf: SourcePCF) => resolve(pcf)
-			);//TODOv3: handle reject
+			);
 		});
 		return promise;
 	}

@@ -1,12 +1,11 @@
 import { vec4 } from 'gl-matrix';
 import { LOG, TESTING, VERBOSE } from '../../../buildoptions';
 import { registerLoader } from '../../../loaders/loaderfactory';
-import { SourcePCF } from '../../source1/loaders/sourcepcf';
 import { GetSource2ParticleOperator } from '../particles/operators/source2particleoperators';
 import { Source2ParticleManager } from '../particles/source2particlemanager';
 import { Source2ParticleSystem } from '../particles/source2particlesystem';
-import { Source2FileLoader } from './source2fileloader';
 import { Source2File } from './source2file';
+import { Source2FileLoader } from './source2fileloader';
 
 export const CParticleSystemDefinition = 'CParticleSystemDefinition';
 
@@ -105,7 +104,7 @@ async function _initChildren(repository, systemArray, kv3Array, snapshotModifier
 				const m_ChildRef = property.m_ChildRef;
 				const m_flDelay = property.m_flDelay || 0;
 				if (m_ChildRef) {
-					const p = new Promise(async (resolve, reject) => {
+					const p = new Promise(async resolve => {
 						const system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
 						system.disabled = property.m_bDisableChild ?? false;
 						if (system) {

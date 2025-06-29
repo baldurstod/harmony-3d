@@ -16,11 +16,11 @@ export interface RepositoryFilter { name?: string | RegExp, extension?: string |
 
 export interface Repository {
 	name: string;
-	getFile: (filepath: string) => Promise<RepositoryFileResponse>;
-	getFileAsArrayBuffer: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
-	getFileAsText: (filepath: string) => Promise<RepositoryTextResponse>;
-	getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;
-	getFileAsJson: (filepath: string) => Promise<RepositoryJsonResponse>;
+	getFile: (path: string) => Promise<RepositoryFileResponse>;
+	getFileAsArrayBuffer: (path: string) => Promise<RepositoryArrayBufferResponse>;
+	getFileAsText: (path: string) => Promise<RepositoryTextResponse>;
+	getFileAsBlob: (path: string) => Promise<RepositoryBlobResponse>;
+	getFileAsJson: (path: string) => Promise<RepositoryJsonResponse>;
 	getFileList: (filter?: RepositoryFilter) => Promise<RepositoryFileListResponse>;
 }
 

@@ -1,38 +1,15 @@
+import { Source2File } from './source2file';
 import { Source2FileLoader } from './source2fileloader';
-import { DEBUG, VERBOSE, WARN } from '../../../buildoptions';
 
 export const Source2TextureLoader = new (function () {
 	class Source2TextureLoader {
 		constructor() {
 		}
 
-		load(repository: string, fileName: string) {
-			const promise = new Promise((resolve, reject) => {
-				fileName = fileName.replace(/.vtex_c/, '');
-				const vtexPromise = new Source2FileLoader(true).load(repository, fileName + '.vtex_c');
-				vtexPromise.then(
-					(source2File) => {
-						//let texture = this._loadTexture(repository, source2File);
-						if (VERBOSE) {
-							console.log(source2File);
-						}
-						resolve(source2File);
-						/*if (texture) {
-							resolve(texture);
-						} else {
-							reject(source2File);
-						}*/
-					}
-				).catch(
-					(error) => {
-						if (WARN) {
-							console.warn(`Error initializing texture : ${repository}${fileName}, reason : ${error}`);
-						}
-						reject(error);
-					}
-				)
-			});
-			return promise;
+		async load(repository: string, path: string): Promise<Source2File | null> {
+
+			path = path.replace(/.vtex_c/, '');
+			return await new Source2FileLoader(true).load(repository, path + '.vtex_c') as unknown as Promise<Source2File | null>;
 		}
 	}
 	return Source2TextureLoader;

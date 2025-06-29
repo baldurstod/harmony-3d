@@ -1,9 +1,7 @@
-import { Source2FileLoader } from './source2fileloader';
-import { Source2SeqGroup } from '../animations/source2seqgroup';
-import { Source2Animation } from '../models/source2animation';
 import { Source2AnimGroup } from '../models/source2animgroup';
-import { Source2File } from './source2file';
 import { Source2Model } from '../models/source2model';
+import { Source2File } from './source2file';
+import { Source2FileLoader } from './source2fileloader';
 
 const loadingSlot = 100;//TODO
 const pending: Record<string, boolean> = {};
@@ -26,19 +24,7 @@ async function getVagrp(repository: string, animGroupName: string, animGroup: So
 	pending[agrpFile] = true;
 
 	await loadVagrp(repository, agrpFile, animGroup);
-	/*
-	let promise = new Promise((resolve, reject) => {
-		fetch(new Request(agrpFile)).then((response) => {
-			response.arrayBuffer().then(async (arrayBuffer) => {
-				await this.#loadVagrp(repository, agrpFile, arrayBuffer, animGroup);
-				pending[agrpFile] = null;
-				resolve(true);
-			})
-		});
-	});
-	0*/
 	return true;
-
 }
 
 async function loadVagrp(repository: string, fileName: string, animGroup: Source2AnimGroup) {

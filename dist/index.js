@@ -3511,6 +3511,8 @@ class Ray {
     }
 }
 
+var interactionCSS = ":host {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tz-index: 10000;\n\ttop: 0px;\n\tleft: 0px;\n\tpointer-events: none;\n}\n\nharmony-color-picker{\n\tpointer-events: all;\n}\n\ninput{\n\tpointer-events: all;\n}\n";
+
 class HTMLFileSelectorTileElement extends HTMLElement {
     #visible = true;
     #selector;
@@ -3965,8 +3967,6 @@ if (customElements) {
     customElements.define('file-selector', FileSelector);
 }
 
-var interactionCSS = ":host {\n\tposition: absolute;\n\twidth: 100%;\n\theight: 100%;\n\tz-index: 10000;\n\ttop: 0px;\n\tleft: 0px;\n\tpointer-events: none;\n}\n\nharmony-color-picker{\n\tpointer-events: all;\n}\n\ninput{\n\tpointer-events: all;\n}\n";
-
 const DATALIST_ID = 'interaction-datalist';
 class Interaction {
     static #instance;
@@ -4039,7 +4039,7 @@ class Interaction {
         this.show();
         //this.#htmlColorPicker.setOptions({alpha:false});
         show(this.#htmlColorPicker);
-        const promise = new Promise((resolve, reject) => {
+        const promise = new Promise(resolve => {
         });
         /*
         this.#htmlColorPickeronDone = (color) => {
@@ -14200,7 +14200,7 @@ class Output extends InputOutput {
         return this.getValue();
     }
     getValue() {
-        const valuePromise = new Promise(async (resolve, reject) => {
+        const valuePromise = new Promise(async (resolve) => {
             await this.node.validate();
             if (this.type == IO_TYPE_TEXTURE_2D) {
                 resolve(this._value);
@@ -14215,7 +14215,7 @@ class Output extends InputOutput {
         return this.getPixelArray();
     }
     getPixelArray() {
-        const valuePromise = new Promise(async (resolve, reject) => {
+        const valuePromise = new Promise(async (resolve) => {
             await this.node.validate();
             if (this.type == InputOutputType.Texture2D) {
                 resolve(this.#pixelArray ?? null);
@@ -14411,7 +14411,7 @@ class Node extends EventTarget {
     }
     ready() {
         const node = this;
-        const promiseFunction = function (resolve, reject) {
+        const promiseFunction = resolve => {
             const callback = function () {
                 if (node.isValid()) {
                     resolve(true);
@@ -20135,20 +20135,6 @@ class Source1ParticleControler {
             return systemNameToPcfRepo[systemName];
         }
         return null;
-        /*
-
-                    let promise = new Promise((resolve, reject) => {
-                        let systemNameToPcfRepo = systemNameToPcf[repository];
-                        if (systemNameToPcfRepo) {
-                            resolve(systemNameToPcfRepo[systemName]);
-                        } else {
-                            let kallback = () => {
-                                resolve(systemNameToPcf[repository][systemName]);
-                            }
-                            this.#loadManifest(repository).then(kallback, reject);//TODOv2: root
-                        }
-                    });
-                    return promise;*/
     }
     static async loadManifest(repository) {
         if (this.#systemNameToPcf[repository] === undefined) {
@@ -20159,12 +20145,12 @@ class Source1ParticleControler {
      * TODO
      */
     static async #loadManifest(repositoryName) {
-        this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve, reject) => {
+        this.#loadManifestPromises[repositoryName] = this.#loadManifestPromises[repositoryName] ?? new Promise(async (resolve) => {
             const systemNameToPcfRepo = {};
             this.#systemNameToPcf[repositoryName] = systemNameToPcfRepo;
             const response = await Repositories.getFileAsJson(repositoryName, 'particles/manifest.json'); //TODO const
             if (response.error) {
-                reject(false);
+                resolve(false);
             }
             const json /*TODO: change type*/ = response.json;
             if (json && json.files) {
@@ -20177,7 +20163,7 @@ class Source1ParticleControler {
                 resolve(true);
             }
             else {
-                reject(false);
+                resolve(false);
             }
         });
         return this.#loadManifestPromises[repositoryName];
@@ -20222,7 +20208,7 @@ class Source1ParticleControler {
      * @return {Object SourcePCF} Pcf
      */
     static async #getPcf(repositoryName, pcfName) {
-        const promise = new Promise((resolve, reject) => {
+        const promise = new Promise(resolve => {
             const pcf = this.#pcfList[pcfName];
             if (!pcf) {
                 const callback1 = (pcf) => {
@@ -20247,9 +20233,9 @@ class Source1ParticleControler {
      */
     static async #loadPcf(repositoryName, pcfName) {
         //TODO: return an empty system if not found?
-        const promise = new Promise((resolve, reject) => {
+        const promise = new Promise(resolve => {
             const pcfLoader = getLoader('SourceEnginePCFLoader');
-            new pcfLoader().load(repositoryName, pcfName).then((pcf) => resolve(pcf)); //TODOv3: handle reject
+            new pcfLoader().load(repositoryName, pcfName).then((pcf) => resolve(pcf));
         });
         return promise;
     }
@@ -23007,6 +22993,86 @@ class Source2FileLoader extends SourceBinaryLoader {
     }
 }
 
+class Source2MaterialLoader {
+    static #materials = new Map();
+    static async load(repository, path) {
+        path = path.replace(/.vmat_c$/, '');
+        const source2File = await new Source2FileLoader().load(repository, path + '.vmat_c');
+        const material = this.#loadMaterial(repository, source2File);
+        return material;
+    }
+    static async #loadMaterial(repository, file) {
+        const shaderName = file.getBlockStruct('DATA.keyValue.root.m_shaderName') || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
+        let material = null;
+        const materialClass = this.#materials.get(shaderName.toLowerCase());
+        if (materialClass !== undefined) {
+            material = new materialClass(repository, file);
+        }
+        else {
+            console.error(`Unknown material : ${shaderName} in ${file.fileName}`);
+        }
+        return material;
+    }
+    static registerMaterial(materialName, materialClass) {
+        this.#materials.set(materialName.toLowerCase(), materialClass);
+    }
+}
+
+function cleanSource2MaterialName(name) {
+    name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmat_c$/g, '').replace(/.vmat$/g, '');
+    name = name + '.vmat_c';
+    return name;
+}
+class Source2MaterialManager {
+    static #materialList = new Map();
+    static #materialList2 = new Set();
+    static addMaterial(material) {
+        this.#materialList2.add(material);
+    }
+    static removeMaterial(material) {
+        this.#materialList2.delete(material);
+    }
+    static getMaterial(repository, fileName) {
+        fileName = cleanSource2MaterialName(fileName);
+        return this.#getMaterial(repository, fileName);
+    }
+    static #getMaterial(repository, fileName) {
+        const material = this.#materialList.get(fileName);
+        if (material instanceof Promise) {
+            const promise = new Promise(resolve => {
+                material.then((material) => {
+                    const newMaterial = material.clone();
+                    this.#materialList2.add(newMaterial);
+                    resolve(newMaterial);
+                });
+            });
+            return promise;
+        }
+        if (material !== undefined) {
+            return new Promise(resolve => {
+                const newMaterial = material.clone();
+                this.#materialList2.add(newMaterial);
+                resolve(newMaterial);
+            });
+        }
+        else {
+            const promise = new Promise(resolve => {
+                Source2MaterialLoader.load(repository, fileName).then((material) => {
+                    if (!material) {
+                        resolve(material);
+                    }
+                    this.#materialList.set(fileName, material);
+                    const newMaterial = material.clone();
+                    this.#materialList2.add(newMaterial);
+                    resolve(newMaterial);
+                });
+            });
+            this.#materialList.set(fileName, promise);
+            return promise;
+        }
+    }
+}
+
 /**
  * Mesh manager
  */
@@ -23889,7 +23955,7 @@ async function getVseq(repository, seqGroupName, seqGroup) {
     pending$1[seqFile] = true;
     await loadVseq(repository, seqFile, seqGroup);
     /*
-    let promise = new Promise((resolve, reject) => {
+    let promise = new Promise((resolve) => {
         fetch(new Request(seqFile)).then((response) => {
             response.arrayBuffer().then(async (arrayBuffer) => {
                 await this.loadVseq(repository, seqFile, arrayBuffer, seqGroup);
@@ -23949,7 +24015,7 @@ async function getVanim(repository, animName, anim) {
                 */
     loadVanim(repository, animFile, anim);
     /*
-    let promise = new Promise((resolve, reject) => {
+    let promise = new Promise((resolve) => {
         fetch(new Request(animFile)).then((response) => {
             response.arrayBuffer().then(async (arrayBuffer) => {
                 this.loadVanim(repository, animFile, arrayBuffer, anim);
@@ -23988,17 +24054,6 @@ async function getVagrp(repository, animGroupName, animGroup) {
     }
     pending[agrpFile] = true;
     await loadVagrp(repository, agrpFile, animGroup);
-    /*
-    let promise = new Promise((resolve, reject) => {
-        fetch(new Request(agrpFile)).then((response) => {
-            response.arrayBuffer().then(async (arrayBuffer) => {
-                await this.#loadVagrp(repository, agrpFile, arrayBuffer, animGroup);
-                pending[agrpFile] = null;
-                resolve(true);
-            })
-        });
-    });
-    0*/
     return true;
 }
 async function loadVagrp(repository, fileName, animGroup) {
@@ -24088,93 +24143,6 @@ class Source2ModelAttachmentInstance extends Entity {
             quat.copy(q, this._quaternion);
         }
         return q;
-    }
-}
-
-class Source2MaterialLoader {
-    static #materials = new Map();
-    static load(repository, fileName) {
-        const promise = new Promise((resolve, reject) => {
-            fileName = fileName.replace(/.vmat_c$/, '');
-            const vmatPromise = new Source2FileLoader().load(repository, fileName + '.vmat_c');
-            vmatPromise.then((source2File) => {
-                const material = this.#loadMaterial(repository, source2File);
-                if (material) {
-                    resolve(material);
-                }
-                else {
-                    reject(source2File);
-                }
-            }).catch((error) => reject(error));
-        });
-        return promise;
-    }
-    static #loadMaterial(repository, file) {
-        const shaderName = file.getBlockStruct('DATA.keyValue.root.m_shaderName') || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
-        let material;
-        const materialClass = this.#materials.get(shaderName.toLowerCase());
-        if (materialClass !== undefined) {
-            material = new materialClass(repository, file);
-        }
-        else {
-            console.error(`Unknown material : ${shaderName} in ${file.fileName}`);
-        }
-        return material;
-    }
-    static registerMaterial(materialName, materialClass) {
-        this.#materials.set(materialName.toLowerCase(), materialClass);
-    }
-}
-
-function cleanSource2MaterialName(name) {
-    name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmat_c$/g, '').replace(/.vmat$/g, '');
-    name = name + '.vmat_c';
-    return name;
-}
-class Source2MaterialManager {
-    static #materialList = new Map();
-    static #materialList2 = new Set();
-    static addMaterial(material) {
-        this.#materialList2.add(material);
-    }
-    static removeMaterial(material) {
-        this.#materialList2.delete(material);
-    }
-    static getMaterial(repository, fileName) {
-        fileName = cleanSource2MaterialName(fileName);
-        return this.#getMaterial(repository, fileName);
-    }
-    static #getMaterial(repository, fileName) {
-        const material = this.#materialList.get(fileName);
-        if (material instanceof Promise) {
-            const promise = new Promise((resolve, reject) => {
-                material.then((material) => {
-                    const newMaterial = material.clone();
-                    this.#materialList2.add(newMaterial);
-                    resolve(newMaterial);
-                }).catch((value) => reject(value));
-            });
-            return promise;
-        }
-        if (material !== undefined) {
-            return new Promise((resolve, reject) => {
-                const newMaterial = material.clone();
-                this.#materialList2.add(newMaterial);
-                resolve(newMaterial);
-            });
-        }
-        else {
-            const promise = new Promise((resolve, reject) => {
-                Source2MaterialLoader.load(repository, fileName).then((material) => {
-                    this.#materialList.set(fileName, material);
-                    const newMaterial = material.clone();
-                    this.#materialList2.add(newMaterial);
-                    resolve(newMaterial);
-                }).catch((value) => reject(value));
-            });
-            this.#materialList.set(fileName, promise);
-            return promise;
-        }
     }
 }
 
@@ -24850,34 +24818,34 @@ class Source2Model {
 var _a$2;
 const defaultMaterial$1 = new MeshBasicMaterial();
 class Source2ModelLoader {
-    static #loadPromisesPerRepo = {};
+    static #loadPromisesPerRepo = {}; //TODO: create map
     static {
         defaultMaterial$1.addUser(_a$2);
     }
-    load(repositoryName, fileName) {
+    async load(repository, path) {
         // Cleanup filename
-        fileName = fileName.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
-        let repoPromises = _a$2.#loadPromisesPerRepo[repositoryName];
+        path = path.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
+        let repoPromises = _a$2.#loadPromisesPerRepo[repository];
         if (!repoPromises) {
             repoPromises = {};
-            _a$2.#loadPromisesPerRepo[repositoryName] = repoPromises;
+            _a$2.#loadPromisesPerRepo[repository] = repoPromises;
         }
-        let promise = repoPromises[fileName];
+        let promise = repoPromises[path];
         if (promise) {
             return promise;
         }
-        promise = new Promise((resolve, reject) => {
-            const vmdlPromise = new Source2FileLoader().load(repositoryName, fileName + '.vmdl_c');
+        promise = new Promise((resolve) => {
+            const vmdlPromise = new Source2FileLoader().load(repository, path + '.vmdl_c');
             vmdlPromise.then(async (source2File) => {
-                const newSourceModel = new Source2Model(repositoryName, source2File);
+                const newSourceModel = new Source2Model(repository, source2File);
                 this.#loadIncludeModels(newSourceModel);
-                await this.testProcess2(source2File, newSourceModel, repositoryName);
+                await this.testProcess2(source2File, newSourceModel, repository);
                 newSourceModel.loadAnimGroups();
                 resolve(newSourceModel);
-            }).catch((error) => reject(error));
+            });
             return;
         });
-        repoPromises[fileName] = promise;
+        repoPromises[path] = promise;
         return promise;
     }
     async testProcess2(vmdl, model, repository) {
@@ -36803,8 +36771,8 @@ function cleanSource1MaterialName(name) {
     return name;
 }
 class SourceEngineMaterialManager {
-    static #fileListPerRepository = new Map();
-    static #materialList = new Map();
+    static #fileListPerRepository = new Map(); // TODO: use a Map2
+    static #materialList = new Map(); // TODO: use a Map2
     static #materialList2 = new Set();
     static #materialListPerRepository = {};
     static getMaterial(repositoryName, fileName, searchPaths) {
@@ -36814,7 +36782,7 @@ class SourceEngineMaterialManager {
             for (const searchPath of searchPaths) {
                 promises.push(this.#getMaterial(repositoryName, 'materials/' + searchPath + fileName));
             }
-            const promise = new Promise((resolve, reject) => {
+            const promise = new Promise((resolve) => {
                 Promise.allSettled(promises).then((promises) => {
                     for (const promise of promises) {
                         if (promise.status == 'fulfilled') {
@@ -36822,7 +36790,7 @@ class SourceEngineMaterialManager {
                             return;
                         }
                     }
-                    this.#getMaterial(repositoryName, 'materials/' + fileName).then((material) => resolve(material), () => reject(null));
+                    this.#getMaterial(repositoryName, 'materials/' + fileName).then(material => resolve(material));
                 });
             });
             return promise;
@@ -36831,21 +36799,24 @@ class SourceEngineMaterialManager {
             return this.#getMaterial(repositoryName, 'materials/' + fileName);
         }
     }
-    static #getMaterial(repositoryName, fileName) {
-        const material = this.#materialList.get(fileName);
+    static #getMaterial(repository, path) {
+        const material = this.#materialList.get(path);
         if (material instanceof Promise) {
-            const promise = new Promise((resolve, reject) => {
+            const promise = new Promise(resolve => {
                 material.then((material) => {
+                    if (!material) {
+                        resolve(material);
+                    }
                     const newMaterial = material.clone();
                     newMaterial.init();
                     this.#materialList2.add(newMaterial);
                     resolve(newMaterial);
-                }).catch((value) => reject(value));
+                });
             });
             return promise;
         }
         if (material !== undefined) {
-            return new Promise((resolve, reject) => {
+            return new Promise(resolve => {
                 const newMaterial = material.clone();
                 newMaterial.init();
                 this.#materialList2.add(newMaterial);
@@ -36853,17 +36824,20 @@ class SourceEngineMaterialManager {
             });
         }
         else {
-            const promise = new Promise((resolve, reject) => {
+            const promise = new Promise(resolve => {
                 const vmtLoader = getLoader('SourceEngineVMTLoader');
-                vmtLoader.load(repositoryName, fileName).then((material) => {
-                    this.#materialList.set(fileName, material);
+                vmtLoader.load(repository, path).then((material) => {
+                    if (!material) {
+                        resolve(material);
+                    }
+                    this.#materialList.set(path, material);
                     const newMaterial = material.clone();
                     newMaterial.init();
                     this.#materialList2.add(newMaterial);
                     resolve(newMaterial);
-                }).catch((value) => reject(value));
+                }).catch((value) => resolve(value));
             });
-            this.#materialList.set(fileName, promise);
+            this.#materialList.set(path, promise);
             return promise;
         }
     }
@@ -37997,140 +37971,321 @@ class ModelLoader {
 registerLoader('ModelLoader', ModelLoader);
 
 /**
- * Light Map
+ * Map entities
  */
-let lightMapNodeId = 0;
-/**
- * TODO
- */
-const SELightMapNode = function (x, y, width, height) {
-    this.y = y;
-    this.x = x;
-    this.height = height;
-    this.width = width;
-    this.content = null;
-    this.filled = false;
-    this.id = ++lightMapNodeId;
+const MapEntities = function () {
 };
-/**
- * TODO
- */
-SELightMapNode.prototype.setContent = function (content) {
-    if (this.sub1)
-        return false;
-    this.content = content;
+MapEntities.entities = Object.create(null);
+MapEntities.registerEntity = function (className, entityClass) {
+    this.entities[className] = entityClass;
 };
-/**
- * TODO
- */
-SELightMapNode.prototype.split = function (x, y) {
-    if (this.content)
-        return false;
-    if (this.filled)
-        return false;
-    if (y >= this.height)
-        return false;
-    if (x >= this.width)
-        return false;
-    if (y != 0 && x != 0)
-        return false;
-    if (y == 0) { /* splitting vertically */
-        this.sub1 = new SELightMapNode(this.x, this.y, x, this.height);
-        this.sub2 = new SELightMapNode(this.x + x, this.y, this.width - x, this.height);
+MapEntities.createEntity = function (map, className) {
+    const entityClass = this.entities[className];
+    if (!entityClass) {
+        return null;
     }
-    else { /* splitting horizontally */
-        this.sub1 = new SELightMapNode(this.x, this.y, this.width, y);
-        this.sub2 = new SELightMapNode(this.x, this.y + y, this.width, this.height - y);
-    }
+    const entity = new entityClass(className);
+    entity.map = map;
+    return entity;
 };
-/**
- * TODO
- */
-SELightMapNode.prototype.allocate = function (width, height) {
-    if (this.filled)
-        return false;
-    if (this.content)
-        return false;
-    if (height == 0)
-        return false;
-    if (width == 0)
-        return false;
-    if (height > this.height)
-        return false;
-    if (width > this.width)
-        return false;
-    let node;
-    if (this.sub1) {
-        node = this.sub1.allocate(width, height);
-        if (node) {
-            this.checkFull();
-            return node;
-        }
-    }
-    if (this.sub2) {
-        node = this.sub2.allocate(width, height);
-        if (node) {
-            this.checkFull();
-            return node;
-        }
-        return false;
-    }
-    if (height == this.height && width == this.width) {
-        this.filled = true;
-        return this;
-    }
-    if ((height / this.height) > (width / this.width)) {
-        this.split(width, 0);
-    }
-    else {
-        this.split(0, height);
-    }
-    if (this.sub1) {
-        node = this.sub1.allocate(width, height);
-        if (node) {
-            this.checkFull();
-            return node;
-        }
-    }
-    if (this.sub2) {
-        node = this.sub2.allocate(width, height);
-        this.checkFull();
-        if (node) {
-            this.checkFull();
-            return node;
-        }
+
+function ParseVector(str) {
+    const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
+    const result = regex.exec(str);
+    if (result) {
+        return vec3.fromValues(Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
     }
     return null;
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.toString = function () {
-    return this.id;
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.checkFull = function () {
-    if (this.sub1.filled && this.sub2.filled) {
-        this.filled = true;
+}
+function ParseVector2(out, str) {
+    const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
+    const result = regex.exec(str);
+    if (result) {
+        return vec3.set(out, Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
     }
-};
+    return null;
+}
+function parseLightColorIntensity(value, light, intensityMultiplier = 1) {
+    const colorValue = vec3.create();
+    const arrayValue = value.split(' ');
+    colorValue[0] = Math.pow(arrayValue[0] / 255.0, 2.2);
+    colorValue[1] = Math.pow(arrayValue[1] / 255.0, 2.2);
+    colorValue[2] = Math.pow(arrayValue[2] / 255.0, 2.2);
+    light.color = colorValue;
+    light.intensity = arrayValue[3] / 255.0 * intensityMultiplier;
+}
+function AngleQuaternion(angles, outQuat) {
+    const sy = Math.sin(angles[1] * 0.5);
+    const cy = Math.cos(angles[1] * 0.5);
+    const sp = Math.sin(angles[0] * 0.5);
+    const cp = Math.cos(angles[0] * 0.5);
+    const sr = Math.sin(angles[2] * 0.5);
+    const cr = Math.cos(angles[2] * 0.5);
+    /*SinCos(DEG2RAD(angles[1]) * 0.5f, &sy, &cy);
+    SinCos(DEG2RAD(angles[0]) * 0.5f, &sp, &cp);
+    SinCos(DEG2RAD(angles[2]) * 0.5f, &sr, &cr);*/
+    // NJS: for some reason VC6 wasn't recognizing the common subexpressions:
+    const srXcp = sr * cp, crXsp = cr * sp;
+    outQuat[0] = srXcp * cy - crXsp * sy; // X
+    outQuat[1] = crXsp * cy + srXcp * sy; // Y
+    const crXcp = cr * cp, srXsp = sr * sp;
+    outQuat[2] = crXcp * sy - srXsp * cy; // Z
+    outQuat[3] = crXcp * cy + srXsp * sy; // W (real component)
+    return outQuat;
+}
+//angles[PITCH, YAW, ROLL]
+function AngleVectors(angles, forward) {
+    const sy = Math.sin(angles[1]);
+    const cy = Math.cos(angles[1]);
+    const sp = Math.sin(angles[0]);
+    const cp = Math.cos(angles[0]);
+    forward[0] = cp * cy;
+    forward[1] = cp * sy;
+    forward[2] = -sp;
+}
+function ParseAngles(str) {
+    const angles = ParseVector(str);
+    if (angles) {
+        return vec3.scale(angles, angles, Math.PI / 180);
+    }
+    return null;
+}
+function ParseAngles2(out, str) {
+    if (ParseVector2(out, str)) {
+        return vec3.scale(out, out, Math.PI / 180);
+    }
+    return null;
+}
 /**
- * TODO
+ * Map entity
  */
-SELightMapNode.prototype.getAllocatedSize = function () {
-    let total = 0;
-    if (this.sub1) {
-        total += this.sub1.getAllocatedSize();
-        total += this.sub2.getAllocatedSize();
-        return total;
+class MapEntity extends Entity {
+    static incrementalId = 0;
+    classname;
+    outputs = [];
+    m_vecVelocity = vec3.create();
+    m_flMoveDoneTime = -1;
+    m_flLocalTime = 0;
+    f = 0;
+    keys = new Map();
+    targetName;
+    parentName;
+    m;
+    constructor(classname) {
+        super({ name: classname });
+        this.classname = classname;
+        this.id = String(++MapEntity.incrementalId);
+        //this.children = Object.create(null);
     }
-    if (this.filled) {
-        return this.height * this.width;
+    setKeyValues(kvElement) {
+        if (kvElement) {
+            if (kvElement.spawnflags) {
+                this.f = kvElement.spawnflags * 1;
+            }
+            const entityParams = Object.keys(kvElement);
+            for (let i = 0, l = entityParams.length; i < l; i++) {
+                const key = entityParams[i];
+                this.setKeyValue(key, kvElement[key]);
+            }
+        }
     }
-    return 0;
-};
+    setKeyValue(key, value) {
+        if (key) {
+            this.keys.set(key, value);
+            if (key.indexOf('on') == 0) {
+                this.addOutput(key.replace(/#\d+$/, ''), value);
+            }
+            switch (key) {
+                case 'targetname':
+                    this.targetName = value;
+                    break;
+                case 'origin':
+                    this._position = ParseVector(value);
+                    break;
+                case 'angles':
+                    AngleQuaternion(ParseAngles(value), this._quaternion);
+                    break;
+                case 'parentname':
+                    this.parentName = value;
+                    break;
+            }
+        }
+    }
+    getValue(key) {
+        return this.keys.get(key);
+    }
+    addOutput(outputName, outputValue) {
+        const output = new MapEntityConnection(outputName);
+        this.m.addConnection(output);
+        this.outputs.push(output);
+        output.fromString(outputValue);
+        //console.log(output.outputName, output.getTargetName(), output.getTargetInput(), output.getTargetParameter(), output.getDelay(), output.getFireOnlyOnce());
+    }
+    setInput(input, parameter) {
+    }
+    getFlag(position) {
+        return (this.f >> position) & 1;
+    }
+    set map(map) {
+        this.m = map;
+    }
+    get map() {
+        return this.m;
+    }
+    move(delta) {
+        this.position = vec3.add(vec3.create(), this._position, delta); //todo remove me
+    }
+    /*set position(o) {
+        if (o) {
+            let oo = this._position;
+            if ((o[0] != oo[0]) || (o[1] != oo[1]) || (o[2] != oo[2])) {
+                this._position = o;
+                let delta = vec3.sub(vec3.create(), this._position, o);
+                for (let i in this.children) {
+                    let child = this.children[i];
+                    child.move(delta, /*initiator || * /this);
+                }
+            }
+        }
+    }*/
+    /*
+    get position() {
+        return super.position;
+    }
+        */
+    getAbsOrigin() {
+        return null;
+    }
+    getLocalOrigin() {
+        return this._position;
+    }
+    getLocalVelocity() {
+        return this.m_vecVelocity;
+    }
+    update(map, delta) {
+        this.m_flLocalTime += delta;
+        if (this.parentName) {
+            const parent = map.getEntityByTargetName(this.parentName);
+            if (parent) {
+                this.setParent(parent);
+                delete this.parentName;
+            }
+        }
+        this.position = vec3.scaleAndAdd(vec3.create(), this.getLocalOrigin(), this.getLocalVelocity(), delta); //TODO removeme : optimize
+    }
+    setParent(parent) {
+        //void CBaseEntity::SetParent(CBaseEntity *pParentEntity, int iAttachment)
+        const oldParent = this.parent;
+        this.parent = parent;
+        if (parent == this) {
+            this.parent = null;
+        }
+        if (oldParent) {
+            oldParent.removeChild(this);
+        }
+        if (this.parent) {
+            this.parent.addChild(this);
+        }
+    }
+    /*addChild(child) {
+        if (child) {
+            this.children[child.id] = child;
+        }
+    }
+
+    removeChild(child) {
+        if (child) {
+            delete this.children[child.id];
+        }
+    }*/
+    setLocalVelocity(vecVelocity) {
+        vec3.copy(this.m_vecVelocity, vecVelocity);
+    }
+    setMoveDoneTime(delay) {
+        if (delay >= 0) {
+            this.m_flMoveDoneTime = this.getLocalTime() + delay;
+        }
+        else {
+            this.m_flMoveDoneTime = -1;
+        }
+    }
+    getLocalTime() {
+        return this.m_flLocalTime;
+    }
+    fireOutput(outputName) {
+        const outputs = this.outputs;
+        const result = [];
+        for (let i = 0, l = outputs.length; i < l; i++) {
+            const output = outputs[i];
+            if (outputName == output.outputName) {
+                //result.push(connection);
+                output.fire(this.m);
+            }
+        }
+        return result;
+    }
+    toString() {
+        return this.classname;
+    }
+}
+MapEntity.incrementalId = 0;
+/**
+ * Entity connection
+ */
+class MapEntityConnection {
+    //'OnMapSpawn' 'tonemap_global,SetAutoExposureMax,.8,0,-1'
+    n;
+    p;
+    constructor(name) {
+        this.n = name;
+        this.p = null;
+    }
+    fromString(stringDatas) {
+        const parameters = stringDatas.split(',');
+        if (parameters && parameters.length == 5) {
+            this.p = parameters;
+        }
+    }
+    get outputName() {
+        return this.n;
+    }
+    getTargetName() {
+        const parameters = this.p;
+        if (parameters) {
+            return parameters[0];
+        }
+    }
+    getTargetInput() {
+        const parameters = this.p;
+        if (parameters) {
+            return parameters[1];
+        }
+    }
+    getTargetParameter() {
+        const parameters = this.p;
+        if (parameters) {
+            return parameters[2];
+        }
+    }
+    getDelay() {
+        const parameters = this.p;
+        if (parameters) {
+            return parameters[3];
+        }
+    }
+    getFireOnlyOnce() {
+        const parameters = this.p;
+        if (parameters) {
+            return parameters[4];
+        }
+    }
+    fire(map) {
+        const parameters = this.p;
+        if (parameters) {
+            map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
+        }
+    }
+}
 
 /**
  * BSP lump
@@ -38721,321 +38876,140 @@ class SourceEngineBspTree {
     }
 }
 
-function ParseVector(str) {
-    const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
-    const result = regex.exec(str);
-    if (result) {
-        return vec3.fromValues(Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
-    }
-    return null;
-}
-function ParseVector2(out, str) {
-    const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
-    const result = regex.exec(str);
-    if (result) {
-        return vec3.set(out, Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
-    }
-    return null;
-}
-function parseLightColorIntensity(value, light, intensityMultiplier = 1) {
-    const colorValue = vec3.create();
-    const arrayValue = value.split(' ');
-    colorValue[0] = Math.pow(arrayValue[0] / 255.0, 2.2);
-    colorValue[1] = Math.pow(arrayValue[1] / 255.0, 2.2);
-    colorValue[2] = Math.pow(arrayValue[2] / 255.0, 2.2);
-    light.color = colorValue;
-    light.intensity = arrayValue[3] / 255.0 * intensityMultiplier;
-}
-function AngleQuaternion(angles, outQuat) {
-    const sy = Math.sin(angles[1] * 0.5);
-    const cy = Math.cos(angles[1] * 0.5);
-    const sp = Math.sin(angles[0] * 0.5);
-    const cp = Math.cos(angles[0] * 0.5);
-    const sr = Math.sin(angles[2] * 0.5);
-    const cr = Math.cos(angles[2] * 0.5);
-    /*SinCos(DEG2RAD(angles[1]) * 0.5f, &sy, &cy);
-    SinCos(DEG2RAD(angles[0]) * 0.5f, &sp, &cp);
-    SinCos(DEG2RAD(angles[2]) * 0.5f, &sr, &cr);*/
-    // NJS: for some reason VC6 wasn't recognizing the common subexpressions:
-    const srXcp = sr * cp, crXsp = cr * sp;
-    outQuat[0] = srXcp * cy - crXsp * sy; // X
-    outQuat[1] = crXsp * cy + srXcp * sy; // Y
-    const crXcp = cr * cp, srXsp = sr * sp;
-    outQuat[2] = crXcp * sy - srXsp * cy; // Z
-    outQuat[3] = crXcp * cy + srXsp * sy; // W (real component)
-    return outQuat;
-}
-//angles[PITCH, YAW, ROLL]
-function AngleVectors(angles, forward) {
-    const sy = Math.sin(angles[1]);
-    const cy = Math.cos(angles[1]);
-    const sp = Math.sin(angles[0]);
-    const cp = Math.cos(angles[0]);
-    forward[0] = cp * cy;
-    forward[1] = cp * sy;
-    forward[2] = -sp;
-}
-function ParseAngles(str) {
-    const angles = ParseVector(str);
-    if (angles) {
-        return vec3.scale(angles, angles, Math.PI / 180);
-    }
-    return null;
-}
-function ParseAngles2(out, str) {
-    if (ParseVector2(out, str)) {
-        return vec3.scale(out, out, Math.PI / 180);
-    }
-    return null;
-}
 /**
- * Map entity
+ * Light Map
  */
-class MapEntity extends Entity {
-    static incrementalId = 0;
-    classname;
-    outputs = [];
-    m_vecVelocity = vec3.create();
-    m_flMoveDoneTime = -1;
-    m_flLocalTime = 0;
-    f = 0;
-    keys = new Map();
-    targetName;
-    parentName;
-    m;
-    constructor(classname) {
-        super({ name: classname });
-        this.classname = classname;
-        this.id = String(++MapEntity.incrementalId);
-        //this.children = Object.create(null);
-    }
-    setKeyValues(kvElement) {
-        if (kvElement) {
-            if (kvElement.spawnflags) {
-                this.f = kvElement.spawnflags * 1;
-            }
-            const entityParams = Object.keys(kvElement);
-            for (let i = 0, l = entityParams.length; i < l; i++) {
-                const key = entityParams[i];
-                this.setKeyValue(key, kvElement[key]);
-            }
-        }
-    }
-    setKeyValue(key, value) {
-        if (key) {
-            this.keys.set(key, value);
-            if (key.indexOf('on') == 0) {
-                this.addOutput(key.replace(/#\d+$/, ''), value);
-            }
-            switch (key) {
-                case 'targetname':
-                    this.targetName = value;
-                    break;
-                case 'origin':
-                    this._position = ParseVector(value);
-                    break;
-                case 'angles':
-                    AngleQuaternion(ParseAngles(value), this._quaternion);
-                    break;
-                case 'parentname':
-                    this.parentName = value;
-                    break;
-            }
-        }
-    }
-    getValue(key) {
-        return this.keys.get(key);
-    }
-    addOutput(outputName, outputValue) {
-        const output = new MapEntityConnection(outputName);
-        this.m.addConnection(output);
-        this.outputs.push(output);
-        output.fromString(outputValue);
-        //console.log(output.outputName, output.getTargetName(), output.getTargetInput(), output.getTargetParameter(), output.getDelay(), output.getFireOnlyOnce());
-    }
-    setInput(input, parameter) {
-    }
-    getFlag(position) {
-        return (this.f >> position) & 1;
-    }
-    set map(map) {
-        this.m = map;
-    }
-    get map() {
-        return this.m;
-    }
-    move(delta) {
-        this.position = vec3.add(vec3.create(), this._position, delta); //todo remove me
-    }
-    /*set position(o) {
-        if (o) {
-            let oo = this._position;
-            if ((o[0] != oo[0]) || (o[1] != oo[1]) || (o[2] != oo[2])) {
-                this._position = o;
-                let delta = vec3.sub(vec3.create(), this._position, o);
-                for (let i in this.children) {
-                    let child = this.children[i];
-                    child.move(delta, /*initiator || * /this);
-                }
-            }
-        }
-    }*/
-    /*
-    get position() {
-        return super.position;
-    }
-        */
-    getAbsOrigin() {
-        return null;
-    }
-    getLocalOrigin() {
-        return this._position;
-    }
-    getLocalVelocity() {
-        return this.m_vecVelocity;
-    }
-    update(map, delta) {
-        this.m_flLocalTime += delta;
-        if (this.parentName) {
-            const parent = map.getEntityByTargetName(this.parentName);
-            if (parent) {
-                this.setParent(parent);
-                delete this.parentName;
-            }
-        }
-        this.position = vec3.scaleAndAdd(vec3.create(), this.getLocalOrigin(), this.getLocalVelocity(), delta); //TODO removeme : optimize
-    }
-    setParent(parent) {
-        //void CBaseEntity::SetParent(CBaseEntity *pParentEntity, int iAttachment)
-        const oldParent = this.parent;
-        this.parent = parent;
-        if (parent == this) {
-            this.parent = null;
-        }
-        if (oldParent) {
-            oldParent.removeChild(this);
-        }
-        if (this.parent) {
-            this.parent.addChild(this);
-        }
-    }
-    /*addChild(child) {
-        if (child) {
-            this.children[child.id] = child;
-        }
-    }
-
-    removeChild(child) {
-        if (child) {
-            delete this.children[child.id];
-        }
-    }*/
-    setLocalVelocity(vecVelocity) {
-        vec3.copy(this.m_vecVelocity, vecVelocity);
-    }
-    setMoveDoneTime(delay) {
-        if (delay >= 0) {
-            this.m_flMoveDoneTime = this.getLocalTime() + delay;
-        }
-        else {
-            this.m_flMoveDoneTime = -1;
-        }
-    }
-    getLocalTime() {
-        return this.m_flLocalTime;
-    }
-    fireOutput(outputName) {
-        const outputs = this.outputs;
-        const result = [];
-        for (let i = 0, l = outputs.length; i < l; i++) {
-            const output = outputs[i];
-            if (outputName == output.outputName) {
-                //result.push(connection);
-                output.fire(this.m);
-            }
-        }
-        return result;
-    }
-    toString() {
-        return this.classname;
-    }
-}
-MapEntity.incrementalId = 0;
+let lightMapNodeId = 0;
 /**
- * Entity connection
+ * TODO
  */
-class MapEntityConnection {
-    //'OnMapSpawn' 'tonemap_global,SetAutoExposureMax,.8,0,-1'
-    n;
-    p;
-    constructor(name) {
-        this.n = name;
-        this.p = null;
-    }
-    fromString(stringDatas) {
-        const parameters = stringDatas.split(',');
-        if (parameters && parameters.length == 5) {
-            this.p = parameters;
-        }
-    }
-    get outputName() {
-        return this.n;
-    }
-    getTargetName() {
-        const parameters = this.p;
-        if (parameters) {
-            return parameters[0];
-        }
-    }
-    getTargetInput() {
-        const parameters = this.p;
-        if (parameters) {
-            return parameters[1];
-        }
-    }
-    getTargetParameter() {
-        const parameters = this.p;
-        if (parameters) {
-            return parameters[2];
-        }
-    }
-    getDelay() {
-        const parameters = this.p;
-        if (parameters) {
-            return parameters[3];
-        }
-    }
-    getFireOnlyOnce() {
-        const parameters = this.p;
-        if (parameters) {
-            return parameters[4];
-        }
-    }
-    fire(map) {
-        const parameters = this.p;
-        if (parameters) {
-            map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
-        }
-    }
-}
-
-/**
- * Map entities
- */
-const MapEntities = function () {
+const SELightMapNode = function (x, y, width, height) {
+    this.y = y;
+    this.x = x;
+    this.height = height;
+    this.width = width;
+    this.content = null;
+    this.filled = false;
+    this.id = ++lightMapNodeId;
 };
-MapEntities.entities = Object.create(null);
-MapEntities.registerEntity = function (className, entityClass) {
-    this.entities[className] = entityClass;
+/**
+ * TODO
+ */
+SELightMapNode.prototype.setContent = function (content) {
+    if (this.sub1)
+        return false;
+    this.content = content;
 };
-MapEntities.createEntity = function (map, className) {
-    const entityClass = this.entities[className];
-    if (!entityClass) {
-        return null;
+/**
+ * TODO
+ */
+SELightMapNode.prototype.split = function (x, y) {
+    if (this.content)
+        return false;
+    if (this.filled)
+        return false;
+    if (y >= this.height)
+        return false;
+    if (x >= this.width)
+        return false;
+    if (y != 0 && x != 0)
+        return false;
+    if (y == 0) { /* splitting vertically */
+        this.sub1 = new SELightMapNode(this.x, this.y, x, this.height);
+        this.sub2 = new SELightMapNode(this.x + x, this.y, this.width - x, this.height);
     }
-    const entity = new entityClass(className);
-    entity.map = map;
-    return entity;
+    else { /* splitting horizontally */
+        this.sub1 = new SELightMapNode(this.x, this.y, this.width, y);
+        this.sub2 = new SELightMapNode(this.x, this.y + y, this.width, this.height - y);
+    }
+};
+/**
+ * TODO
+ */
+SELightMapNode.prototype.allocate = function (width, height) {
+    if (this.filled)
+        return false;
+    if (this.content)
+        return false;
+    if (height == 0)
+        return false;
+    if (width == 0)
+        return false;
+    if (height > this.height)
+        return false;
+    if (width > this.width)
+        return false;
+    let node;
+    if (this.sub1) {
+        node = this.sub1.allocate(width, height);
+        if (node) {
+            this.checkFull();
+            return node;
+        }
+    }
+    if (this.sub2) {
+        node = this.sub2.allocate(width, height);
+        if (node) {
+            this.checkFull();
+            return node;
+        }
+        return false;
+    }
+    if (height == this.height && width == this.width) {
+        this.filled = true;
+        return this;
+    }
+    if ((height / this.height) > (width / this.width)) {
+        this.split(width, 0);
+    }
+    else {
+        this.split(0, height);
+    }
+    if (this.sub1) {
+        node = this.sub1.allocate(width, height);
+        if (node) {
+            this.checkFull();
+            return node;
+        }
+    }
+    if (this.sub2) {
+        node = this.sub2.allocate(width, height);
+        this.checkFull();
+        if (node) {
+            this.checkFull();
+            return node;
+        }
+    }
+    return null;
+};
+/**
+ * TODO
+ */
+SELightMapNode.prototype.toString = function () {
+    return this.id;
+};
+/**
+ * TODO
+ */
+SELightMapNode.prototype.checkFull = function () {
+    if (this.sub1.filled && this.sub2.filled) {
+        this.filled = true;
+    }
+};
+/**
+ * TODO
+ */
+SELightMapNode.prototype.getAllocatedSize = function () {
+    let total = 0;
+    if (this.sub1) {
+        total += this.sub1.getAllocatedSize();
+        total += this.sub2.getAllocatedSize();
+        return total;
+    }
+    if (this.filled) {
+        return this.height * this.width;
+    }
+    return 0;
 };
 
 const DISPLACEMENT_DELTA = 1.0; // max distance from start position
@@ -39091,7 +39065,7 @@ class SourceBSP extends World {
         const lumpEntities = this.getLumpData(LUMP_ENTITIES);
         if (lumpEntities) {
             this.createDynamicEntities(lumpEntities.kv);
-            /*new Promise((resolve, reject) => {
+            /*new Promise((resolve) => {
                 this.createDynamicEntities(entities.kv);
                 this.eventTarget.dispatchEvent(new CustomEvent('entitiescreated'));//TODOv3
                 resolve();
@@ -40465,91 +40439,56 @@ function parsePoseParameter(reader, startOffset) {
 
 class SourceEngineVMTLoaderClass {
     #materials = new Map();
-    #extraMaterials = new Map();
-    load(repositoryName, fileName) {
-        const promise = new Promise(async (resolve, reject) => {
-            /*
-            const requestCallback = async response => {
-                if (response.ok) {
-                    this.parse(resolve, repositoryName, fileName, await response.text());
-                } else {
-                    reject();
-                }
+    #extraMaterials = new Map(); //TODO: this is used for maps create a map repo instead
+    async load(repository, path) {
+        const response = await Repositories.getFileAsText(repository, path);
+        if (!response.error) {
+            return this.parse(repository, path, response.text);
+        }
+        else {
+            const fileContent = this.#extraMaterials.get(path);
+            if (fileContent) {
+                return this.parse(repository, path, fileContent);
             }
-            const requestReject = () => {
-                let fileContent = this.#extraMaterials.get(fileName);
-                if (fileContent) {
-                    this.parse(resolve, repositoryName, fileName, fileContent);
-                } else {
-                    reject();
-                }
-                ///() =>
+        }
+        return null;
+    }
+    async parse(repository, path, content) {
+        path = path.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '');
+        path = path.replace(/\\/g, '/').toLowerCase();
+        const kv = new KvReader();
+        kv.readText(content);
+        const vmt = kv.getRootElement();
+        if (!vmt) {
+            return null;
+        }
+        const shaderName = kv.getRootName().toLowerCase();
+        let material = null;
+        if (shaderName === 'patch') {
+            //TODO: check patch
+            const include = vmt['include'];
+            const insert = vmt['insert'];
+            const material = await SourceEngineMaterialManager.getMaterial(repository, include);
+            for (const insertIndex in insert) {
+                material.variables.set(insertIndex, insert[insertIndex]);
+                material.parameters[insertIndex] = insert[insertIndex];
             }
-                */
-            //let req = customFetch(new URL(fileName, repository.base)).then(requestCallback, requestReject);
-            const response = await Repositories.getFileAsText(repositoryName, fileName);
-            if (!response.error) {
-                this.parse(resolve, repositoryName, fileName, response.text);
+            //materialList[fileNameRemoveMe] = material;removeme
+            return (material);
+            //promise.then(patchResolve);
+        }
+        else {
+            const materialClass = this.#materials.get(shaderName);
+            if (materialClass) {
+                vmt.repository = repository;
+                vmt.filename = path;
+                material = new materialClass(vmt);
             }
             else {
-                const fileContent = this.#extraMaterials.get(fileName);
-                if (fileContent) {
-                    this.parse(resolve, repositoryName, fileName, fileContent);
-                }
-                else {
-                    reject();
-                }
+                console.error('Unknown material : ' + shaderName);
             }
-        });
-        return promise;
-    }
-    parse(resolve, repositoryName, fileName, fileContent) {
-        this.#loadMaterial(repositoryName, fileName, fileContent).then((value) => resolve(value));
-    }
-    #loadMaterial(repositoryName, fileName, file /*, repository, texturesDir*/) {
-        const loadMaterialPromise = new Promise((resolve, reject) => {
-            fileName = fileName.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '');
-            fileName = fileName.replace(/\\/g, '/').toLowerCase();
-            const kv = new KvReader();
-            kv.readText(file);
-            const vmt = kv.getRootElement();
-            if (!vmt) {
-                return null;
-            }
-            const shaderName = kv.getRootName().toLowerCase();
-            let material;
-            if (shaderName === 'patch') {
-                const include = vmt['include'];
-                const insert = vmt['insert'];
-                const patchResolve = function (material) {
-                    for (const insertIndex in insert) {
-                        material.variables.set(insertIndex, insert[insertIndex]);
-                        material.parameters[insertIndex] = insert[insertIndex];
-                    }
-                    //materialList[fileNameRemoveMe] = material;removeme
-                    resolve(material);
-                };
-                const patchReject = function () {
-                };
-                const promise = SourceEngineMaterialManager.getMaterial(repositoryName, include);
-                promise.then(patchResolve, patchReject);
-            }
-            else {
-                const materialClass = this.#materials.get(shaderName);
-                if (materialClass !== undefined) {
-                    vmt.repository = repositoryName;
-                    vmt.filename = fileName;
-                    material = new materialClass(/*repositoryName, fileName, */ vmt);
-                }
-                else {
-                    console.error('Unknown material : ' + shaderName);
-                }
-            }
-            if (material) {
-                resolve(material);
-            }
-        });
-        return loadMaterialPromise;
+        }
+        return (material);
     }
     setMaterial(fileName, fileContent) {
         this.#extraMaterials.set(fileName, fileContent);
@@ -41586,7 +41525,7 @@ class SourceEngineParticleSystem extends Entity {
         });
     }
     #getMaterial() {
-        this.#materialPromise = this.#materialPromise ?? new Promise((resolve, reject) => {
+        this.#materialPromise = this.#materialPromise ?? new Promise(resolve => {
             this.#materialPromiseResolve = resolve;
         });
         return this.#materialPromise;
@@ -55541,7 +55480,7 @@ async function _initChildren(repository, systemArray, kv3Array, snapshotModifier
                 const m_ChildRef = property.m_ChildRef;
                 const m_flDelay = property.m_flDelay || 0;
                 if (m_ChildRef) {
-                    const p = new Promise(async (resolve, reject) => {
+                    const p = new Promise(async (resolve) => {
                         const system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
                         system.disabled = property.m_bDisableChild ?? false;
                         if (system) {
@@ -56295,22 +56234,9 @@ const Source2TextureLoader = new (function () {
     class Source2TextureLoader {
         constructor() {
         }
-        load(repository, fileName) {
-            const promise = new Promise((resolve, reject) => {
-                fileName = fileName.replace(/.vtex_c/, '');
-                const vtexPromise = new Source2FileLoader(true).load(repository, fileName + '.vtex_c');
-                vtexPromise.then((source2File) => {
-                    resolve(source2File);
-                    /*if (texture) {
-                        resolve(texture);
-                    } else {
-                        reject(source2File);
-                    }*/
-                }).catch((error) => {
-                    reject(error);
-                });
-            });
-            return promise;
+        async load(repository, path) {
+            path = path.replace(/.vtex_c/, '');
+            return await new Source2FileLoader(true).load(repository, path + '.vtex_c');
         }
     }
     return Source2TextureLoader;
@@ -56353,7 +56279,7 @@ class Source2TextureManagerClass extends EventTarget {
         }
         if (!this.#texturesList.has(fullPath)) {
             const animatedTexture = new AnimatedTexture();
-            const promise = new Promise(async (resolve, reject) => {
+            const promise = new Promise(async (resolve) => {
                 const vtex = await Source2TextureLoader.load(repository, path);
                 animatedTexture.properties.set('vtex', vtex);
                 const texture = TextureManager.createTexture(); //TODOv3: add params

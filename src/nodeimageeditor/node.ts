@@ -44,6 +44,7 @@ export class Node extends EventTarget {
 	#operation;
 	protected material: Material;
 	#pixelArray?: Uint8ClampedArray;
+
 	constructor(editor: NodeImageEditor, params?: any) {
 		super();
 		this.editor = editor;
@@ -174,7 +175,7 @@ export class Node extends EventTarget {
 
 	ready() {
 		const node = this;
-		const promiseFunction = function (resolve, reject) {
+		const promiseFunction = resolve => {
 			const callback = function () {
 				if (node.isValid()) {
 					resolve(true);

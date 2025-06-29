@@ -6135,11 +6135,11 @@ declare class Choreography {
 
          export declare interface Repository {
              name: string;
-             getFile: (filepath: string) => Promise<RepositoryFileResponse>;
-             getFileAsArrayBuffer: (filepath: string) => Promise<RepositoryArrayBufferResponse>;
-             getFileAsText: (filepath: string) => Promise<RepositoryTextResponse>;
-             getFileAsBlob: (filepath: string) => Promise<RepositoryBlobResponse>;
-             getFileAsJson: (filepath: string) => Promise<RepositoryJsonResponse>;
+             getFile: (path: string) => Promise<RepositoryFileResponse>;
+             getFileAsArrayBuffer: (path: string) => Promise<RepositoryArrayBufferResponse>;
+             getFileAsText: (path: string) => Promise<RepositoryTextResponse>;
+             getFileAsBlob: (path: string) => Promise<RepositoryBlobResponse>;
+             getFileAsJson: (path: string) => Promise<RepositoryJsonResponse>;
              getFileList: (filter?: RepositoryFilter) => Promise<RepositoryFileListResponse>;
          }
 
@@ -7568,7 +7568,7 @@ declare class Choreography {
 
          export declare class Source2ModelLoader {
              #private;
-             load(repositoryName: any, fileName: any): any;
+             load(repository: string, path: string): Promise<Source2Model | null>;
              testProcess2(vmdl: any, model: any, repository: any): Promise<Entity>;
              _loadExternalMeshes(group: any, vmdl: any, model: any, repository: any): Promise<void>;
              loadMeshes(vmdl: any, callback: any): Promise<void>;
@@ -8174,7 +8174,7 @@ declare class Choreography {
 
          export declare class SourceEngineMaterialManager {
              #private;
-             static getMaterial(repositoryName: any, fileName: any, searchPaths?: any): Promise<SourceEngineMaterial>;
+             static getMaterial(repositoryName: any, fileName: any, searchPaths?: any): Promise<SourceEngineMaterial | null>;
              static copyMaterial(repositoryName: any, sourcePath: any, destPath: any, searchPaths: any): Promise<void>;
              static addRepository(repositoryPath: any): void;
              static getMaterialList(): Promise<{
@@ -8567,8 +8567,8 @@ declare class Choreography {
 
          declare class SourceEngineVMTLoaderClass {
              #private;
-             load(repositoryName: any, fileName: any): Promise<unknown>;
-             parse(resolve: any, repositoryName: any, fileName: any, fileContent: any): void;
+             load(repository: string, path: string): Promise<SourceEngineMaterial | null>;
+             parse(repository: string, path: string, content: string): Promise<SourceEngineMaterial | null>;
              setMaterial(fileName: any, fileContent: any): void;
              registerMaterial(materialName: any, materialClass: any): void;
          }
@@ -10087,12 +10087,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#251@#webAssembly"?: any;
-             "__#251@#HEAPU8"?: Uint8Array;
+             "__#253@#webAssembly"?: any;
+             "__#253@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#251@#initHeap"(): void;
+             "__#253@#initHeap"(): void;
          };
 
          export { }

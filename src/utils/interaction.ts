@@ -1,9 +1,9 @@
-import { vec3, vec4 } from 'gl-matrix';
-import { createElement, toggle, hide, show, defineHarmonyColorPicker, createShadowRoot } from 'harmony-ui';
-import { FileSelector } from './fileselector/fileselector';
-export { FileSelector } from './fileselector/fileselector';
+import { vec4 } from 'gl-matrix';
+import { createElement, createShadowRoot, defineHarmonyColorPicker, hide, show } from 'harmony-ui';
 import interactionCSS from '../css/interaction.css';
 import { FileSelectorFile } from './fileselector/file';
+import { FileSelector } from './fileselector/fileselector';
+export { FileSelector } from './fileselector/fileselector';
 
 const DATALIST_ID = 'interaction-datalist';
 
@@ -93,7 +93,7 @@ export class Interaction {
 
 		let promiseResolve: (value: vec4) => void;
 
-		const promise = new Promise<vec4>((resolve, reject) => {
+		const promise = new Promise<vec4>(resolve => {
 			promiseResolve = resolve;
 		});
 		/*

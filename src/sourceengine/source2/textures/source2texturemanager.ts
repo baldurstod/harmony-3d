@@ -55,7 +55,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 
 		if (!this.#texturesList.has(fullPath)) {
 			const animatedTexture = new AnimatedTexture();
-			const promise = new Promise<AnimatedTexture>(async (resolve, reject) => {
+			const promise = new Promise<AnimatedTexture>(async resolve => {
 				const vtex = await Source2TextureLoader.load(repository, path);
 				animatedTexture.properties.set('vtex', vtex);
 				const texture = TextureManager.createTexture();//TODOv3: add params

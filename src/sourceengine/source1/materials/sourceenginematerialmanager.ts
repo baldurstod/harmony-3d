@@ -1,6 +1,7 @@
 import { getLoader } from '../../../loaders/loaderfactory';
 import { JSONObject } from '../../../types';
 import { customFetch } from '../../../utils/customfetch';
+import { SourceEngineVMTLoader } from '../export';
 import { SourceEngineMaterial } from './sourceenginematerial';
 
 function cleanSource1MaterialName(name) {
@@ -12,19 +13,19 @@ function cleanSource1MaterialName(name) {
 }
 
 export class SourceEngineMaterialManager {
-	static #fileListPerRepository = new Map<string, JSONObject | Promise<JSONObject>/*TODO: remove alternative*/>();
-	static #materialList = new Map<string, SourceEngineMaterial | Promise<SourceEngineMaterial>/*TODO: remove alternative*/>();
+	static #fileListPerRepository = new Map<string, JSONObject | Promise<JSONObject>/*TODO: remove alternative*/>(); // TODO: use a Map2
+	static #materialList = new Map<string, SourceEngineMaterial | Promise<SourceEngineMaterial>/*TODO: remove alternative*/>();// TODO: use a Map2
 	static #materialList2 = new Set<SourceEngineMaterial>();
 	static #materialListPerRepository = {};
 
-	static getMaterial(repositoryName, fileName, searchPaths?): Promise<SourceEngineMaterial> {
+	static getMaterial(repositoryName, fileName, searchPaths?): Promise<SourceEngineMaterial | null> {
 		fileName = cleanSource1MaterialName(fileName);
 		if (searchPaths) {
 			const promises = [];
 			for (const searchPath of searchPaths) {
 				promises.push(this.#getMaterial(repositoryName, 'materials/' + searchPath + fileName));
 			}
-			const promise = new Promise<SourceEngineMaterial>((resolve, reject) => {
+			const promise = new Promise<SourceEngineMaterial>((resolve) => {
 				Promise.allSettled(promises).then(
 					(promises) => {
 						for (const promise of promises) {
@@ -34,8 +35,7 @@ export class SourceEngineMaterialManager {
 							}
 						}
 						this.#getMaterial(repositoryName, 'materials/' + fileName).then(
-							(material) => resolve(material),
-							() => reject(null)
+							material => resolve(material),
 						);
 					}
 				)
@@ -46,46 +46,50 @@ export class SourceEngineMaterialManager {
 		}
 	}
 
-	static #getMaterial(repositoryName, fileName): Promise<SourceEngineMaterial> {
-		const material = this.#materialList.get(fileName);
+	static #getMaterial(repository: string, path: string): Promise<SourceEngineMaterial | null> {
+		const material = this.#materialList.get(path);
+
 		if (material instanceof Promise) {
-			const promise = new Promise<SourceEngineMaterial>((resolve, reject) => {
+			const promise = new Promise<SourceEngineMaterial>(resolve => {
 				material.then((material) => {
+					if (!material) {
+						resolve(material);
+					}
 					const newMaterial = material.clone();
 					newMaterial.init();
 					this.#materialList2.add(newMaterial);
 					resolve(newMaterial);
-				}
-				).catch(
-					(value) => reject(value)
-				);
+				});
 			});
 			return promise;
 		}
 
 		if (material !== undefined) {
-			return new Promise((resolve, reject) => {
+			return new Promise(resolve => {
 				const newMaterial = material.clone();
 				newMaterial.init();
 				this.#materialList2.add(newMaterial);
 				resolve(newMaterial);
 			});
 		} else {
-			const promise = new Promise<SourceEngineMaterial>((resolve, reject) => {
-				const vmtLoader = getLoader('SourceEngineVMTLoader');
-				vmtLoader.load(repositoryName, fileName).then(
+			const promise = new Promise<SourceEngineMaterial | null>(resolve => {
+				const vmtLoader = getLoader('SourceEngineVMTLoader') as typeof SourceEngineVMTLoader;
+				vmtLoader.load(repository, path).then(
 					(material) => {
-						this.#materialList.set(fileName, material);
+						if (!material) {
+							resolve(material);
+						}
+						this.#materialList.set(path, material);
 						const newMaterial = material.clone();
 						newMaterial.init();
 						this.#materialList2.add(newMaterial);
 						resolve(newMaterial);
 					}
 				).catch(
-					(value) => reject(value)
+					(value) => resolve(value)
 				);
 			});
-			this.#materialList.set(fileName, promise);
+			this.#materialList.set(path, promise);
 			return promise;
 		}
 	}

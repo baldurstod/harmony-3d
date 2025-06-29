@@ -10,7 +10,7 @@ export class Output extends InputOutput {
 	}
 
 	getValue() {
-		const valuePromise = new Promise(async (resolve, reject) => {
+		const valuePromise = new Promise(async resolve => {
 			await this.node.validate();
 			if (this.type == IO_TYPE_TEXTURE_2D) {
 				resolve(this._value);
@@ -27,7 +27,7 @@ export class Output extends InputOutput {
 	}
 
 	getPixelArray(): Promise<Uint8Array | null> {
-		const valuePromise = new Promise<Uint8Array | null>(async (resolve, reject) => {
+		const valuePromise = new Promise<Uint8Array | null>(async resolve => {
 			await this.node.validate();
 			if (this.type == InputOutputType.Texture2D) {
 				resolve(this.#pixelArray ?? null);

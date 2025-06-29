@@ -1,60 +1,57 @@
-import { MeshManager } from '../models/meshmanager'
-import { Source2Model } from '../models/source2model';
-import { Source2FileLoader } from './source2fileloader';
-
-import { Uint32BufferAttribute, Float32BufferAttribute } from '../../../geometry/bufferattribute';
-import { BufferGeometry } from '../../../geometry/buffergeometry';
-import { Mesh } from '../../../objects/mesh';
-import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
+import { VERBOSE } from '../../../buildoptions';
 import { Entity } from '../../../entities/entity';
+import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../geometry/bufferattribute';
+import { BufferGeometry } from '../../../geometry/buffergeometry';
+import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
+import { Mesh } from '../../../objects/mesh';
 import { FileNameFromPath } from '../../../utils/utils';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
-import { VERBOSE } from '../../../buildoptions';
+import { MeshManager } from '../models/meshmanager';
+import { Source2Model } from '../models/source2model';
 import { Source2File } from './source2file';
+import { Source2FileLoader } from './source2fileloader';
 
 const defaultMaterial = new MeshBasicMaterial();
 
 export class Source2ModelLoader {
-	static #loadPromisesPerRepo = {};
+	static #loadPromisesPerRepo = {};//TODO: create map
 
 	static {
 		defaultMaterial.addUser(Source2ModelLoader);
 	}
 
-	load(repositoryName, fileName) {
+	async load(repository: string, path: string): Promise<Source2Model | null> {
 		// Cleanup filename
-		fileName = fileName.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
+		path = path.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
 
-		let repoPromises = Source2ModelLoader.#loadPromisesPerRepo[repositoryName];
+		let repoPromises = Source2ModelLoader.#loadPromisesPerRepo[repository];
 		if (!repoPromises) {
 			repoPromises = {};
-			Source2ModelLoader.#loadPromisesPerRepo[repositoryName] = repoPromises;
+			Source2ModelLoader.#loadPromisesPerRepo[repository] = repoPromises;
 		}
 
-		let promise = repoPromises[fileName];
+		let promise = repoPromises[path];
 		if (promise) {
 			return promise;
 		}
 
-		promise = new Promise((resolve, reject) => {
-			const vmdlPromise = new Source2FileLoader().load(repositoryName, fileName + '.vmdl_c');
+		promise = new Promise((resolve) => {
+			const vmdlPromise = new Source2FileLoader().load(repository, path + '.vmdl_c');
 			vmdlPromise.then(
-				async (source2File) => {
+				async (source2File: Source2File | null) => {
 					if (VERBOSE) {
 						console.log(source2File);
 					}
-					const newSourceModel = new Source2Model(repositoryName, source2File);
+					const newSourceModel = new Source2Model(repository, source2File);
 					this.#loadIncludeModels(newSourceModel);
-					const mesh = await this.testProcess2(source2File, newSourceModel, repositoryName);
+					const mesh = await this.testProcess2(source2File, newSourceModel, repository);
 					newSourceModel.loadAnimGroups();
 					resolve(newSourceModel);
 				}
-			).catch(
-				(error) => reject(error)
 			)
 			return;
 		});
-		repoPromises[fileName] = promise;
+		repoPromises[path] = promise;
 		return promise;
 	}
 
@@ -77,9 +74,7 @@ export class Source2ModelLoader {
 				morph_texture: "models/heroes/antimage_female/antimage_female/antimage_female_base_vmorf.vtex"
 				name: "antimage_female_base"
 				vbib_block: 2*/
-
 			}
-
 		}
 		await this._loadExternalMeshes(group, vmdl, model, repository);
 		return group;

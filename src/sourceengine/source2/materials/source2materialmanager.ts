@@ -24,39 +24,38 @@ export class Source2MaterialManager {
 		return this.#getMaterial(repository, fileName);
 	}
 
-	static #getMaterial(repository: string, fileName: string): Promise<Source2Material> {
+	static #getMaterial(repository: string, fileName: string): Promise<Source2Material | null> {
 		const material = this.#materialList.get(fileName);
 		if (material instanceof Promise) {
-			const promise = new Promise<Source2Material>((resolve, reject) => {
+			const promise = new Promise<Source2Material>(resolve => {
 				material.then((material) => {
 					const newMaterial = material.clone();
 					this.#materialList2.add(newMaterial);
 					resolve(newMaterial);
-				}
-				).catch(
-					(value) => reject(value)
-				);
+				});
 			});
 			return promise;
 		}
 
 		if (material !== undefined) {
-			return new Promise((resolve, reject) => {
+			return new Promise(resolve => {
 				const newMaterial = material.clone();
 				this.#materialList2.add(newMaterial);
 				resolve(newMaterial);
 			});
 		} else {
-			const promise = new Promise<Source2Material>((resolve, reject) => {
+			const promise = new Promise<Source2Material | null>(resolve => {
 				Source2MaterialLoader.load(repository, fileName).then(
-					(material) => {
+					(material: Source2Material | null) => {
+						if (!material) {
+							resolve(material);
+						}
+
 						this.#materialList.set(fileName, material);
 						const newMaterial = material.clone();
 						this.#materialList2.add(newMaterial);
 						resolve(newMaterial);
 					}
-				).catch(
-					(value) => reject(value)
 				);
 			});
 			this.#materialList.set(fileName, promise);

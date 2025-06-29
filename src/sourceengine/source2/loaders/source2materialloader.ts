@@ -1,38 +1,25 @@
-import { Source2FileLoader } from './source2fileloader';
 import { VERBOSE } from '../../../buildoptions';
-import { Source2File } from './source2file';
 import { Source2Material } from '../materials/source2material';
+import { Source2File } from './source2file';
+import { Source2FileLoader } from './source2fileloader';
 
 
 export class Source2MaterialLoader {
 	static #materials = new Map<string, typeof Source2Material>();
 
-	static load(repository: string, fileName: string): Promise<Source2Material> {
-		const promise = new Promise<Source2Material>((resolve, reject) => {
-			fileName = fileName.replace(/.vmat_c$/, '');
-			const vmatPromise = new Source2FileLoader().load(repository, fileName + '.vmat_c');
-			vmatPromise.then(
-				(source2File: Source2File) => {
-					const material = this.#loadMaterial(repository, source2File);
-					if (VERBOSE) {
-						console.log(source2File);
-					}
-					if (material) {
-						resolve(material);
-					} else {
-						reject(source2File);
-					}
-				}
-			).catch(
-				(error) => reject(error)
-			)
-		});
-		return promise;
+	static async load(repository: string, path: string): Promise<Source2Material | null> {
+		path = path.replace(/.vmat_c$/, '');
+		const source2File = await new Source2FileLoader().load(repository, path + '.vmat_c') as Source2File;
+		const material = this.#loadMaterial(repository, source2File);
+		if (VERBOSE) {
+			console.log(source2File);
+		}
+		return material;
 	}
 
-	static #loadMaterial(repository: string, file: Source2File) {
+	static async #loadMaterial(repository: string, file: Source2File): Promise<Source2Material | null> {
 		const shaderName = file.getBlockStruct('DATA.keyValue.root.m_shaderName') || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
-		let material;
+		let material: Source2Material = null;
 		const materialClass = this.#materials.get(shaderName.toLowerCase());
 		if (materialClass !== undefined) {
 			material = new materialClass(repository, file);
