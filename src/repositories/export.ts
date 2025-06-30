@@ -3,6 +3,7 @@ export * from './memorycacherepository';
 export * from './memoryrepository';
 export * from './mergerepository';
 export * from './overriderepository';
+export * from './pathprefixrepository';
 export * from './repositories';
 export * from './repository';
 export * from './vpkrepository';

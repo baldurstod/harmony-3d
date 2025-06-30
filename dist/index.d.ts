@@ -4990,6 +4990,19 @@ declare class Choreography {
              fromSvgPath(path: any): void;
          }
 
+         export declare class PathPrefixRepository implements Repository {
+             #private;
+             prefix: string;
+             constructor(name: string, base: Repository, prefix?: string);
+             get name(): string;
+             getFile(path: string): Promise<RepositoryFileResponse>;
+             getFileAsArrayBuffer(path: string): Promise<RepositoryArrayBufferResponse>;
+             getFileAsText(path: string): Promise<RepositoryTextResponse>;
+             getFileAsBlob(path: string): Promise<RepositoryBlobResponse>;
+             getFileAsJson(path: string): Promise<RepositoryJsonResponse>;
+             getFileList(): Promise<RepositoryFileListResponse>;
+         }
+
          export declare class PercentageBetweenCPs extends Operator {
              fieldOutput: number;
              inputMin: number;
