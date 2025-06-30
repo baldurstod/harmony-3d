@@ -89,8 +89,14 @@ export class RepositoryEntry {
 		return this.#childs.get(name);
 	}
 
-	getChilds(): Set<RepositoryEntry> {
-		return new Set(this.#childs.values());
+	*getChilds(filter?: RepositoryFilter): Generator<RepositoryEntry, null, undefined> {
+		for (const [_, child] of this.#childs) {
+			if (!filter || child.#matchFilter(filter)) {
+				yield child;
+			}
+		}
+
+		return null;
 	}
 
 	getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry> {
