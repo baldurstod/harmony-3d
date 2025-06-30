@@ -19029,9 +19029,9 @@ class OverrideRepository {
         }
         return this.#base.getFileAsJson(filename);
     }
-    async getFileList(filter) {
+    async getFileList() {
         //TODO: added overriden files ?
-        return this.#base.getFileList(filter);
+        return this.#base.getFileList();
     }
     async overrideFile(filename, file) {
         this.#overrides.set(filename, file);
@@ -19062,11 +19062,11 @@ class ManifestRepository {
     async getFileAsJson(filename) {
         return this.#base.getFileAsJson(filename);
     }
-    async getFileList(filter) {
-        return this.#base.getFileList(filter);
+    async getFileList() {
+        return this.#base.getFileList();
     }
-    async generateModelManifest(name = 'models_manifest.json', filter) {
-        const response = await this.#base.getFileList(filter);
+    async generateModelManifest(name = 'models_manifest.json') {
+        const response = await this.#base.getFileList();
         if (response.error) {
             return response.error;
         }
@@ -19074,8 +19074,8 @@ class ManifestRepository {
         this.#base.overrideFile(name, new File([JSON.stringify(json)], name));
         return null;
     }
-    async generateParticlesManifest(filename = 'particles/manifest.json', filter) {
-        const response = await this.#base.getFileList(filter);
+    async generateParticlesManifest(filename = 'particles/manifest.json') {
+        const response = await this.#base.getFileList();
         if (response.error) {
             return response.error;
         }
@@ -19148,11 +19148,11 @@ class MemoryCacheRepository {
         }
         return { json: JSON.parse(await response.file.text()) };
     }
-    async getFileList(filter) {
+    async getFileList() {
         if (this.#fileList) {
             return this.#fileList;
         }
-        this.#fileList = await this.#base.getFileList(filter);
+        this.#fileList = await this.#base.getFileList();
         return this.#fileList;
     }
 }
@@ -19171,27 +19171,32 @@ class RepositoryEntry {
     #childs = new Map;
     #isDirectory;
     #parent;
-    constructor(repository, name, isDirectory) {
+    #depth;
+    constructor(repository, name, isDirectory, depth) {
         this.#repository = repository;
         this.#name = name;
         this.#isDirectory = isDirectory;
+        this.#depth = depth;
     }
-    addEntry(filename) {
-        const splittedPath = filename.split(/[\/\\]+/);
+    addPath(path) {
+        const splittedPath = path.split(/[\/\\]+/);
         let current = this;
         const len = splittedPath.length - 1;
         for (const [i, p] of splittedPath.entries()) {
             const currentChild = current.#childs.get(p);
             if (!currentChild) {
-                current = current.#addFile(p, i != len);
+                current = current.#addFile(p, i != len, i);
             }
             else {
                 current = currentChild;
             }
         }
     }
-    #addFile(name, isDirectory) {
-        const e = new _a$3(this.#repository, name, isDirectory);
+    removeEntry(name) {
+        this.#childs.delete(name);
+    }
+    #addFile(name, isDirectory, depth) {
+        const e = new _a$3(this.#repository, name, isDirectory, depth);
         e.#parent = this;
         this.#childs.set(name, e);
         return e;
@@ -19219,8 +19224,13 @@ class RepositoryEntry {
     getChild(name) {
         return this.#childs.get(name);
     }
-    getChilds() {
-        return new Set(this.#childs.values());
+    *getChilds(filter) {
+        for (const [_, child] of this.#childs) {
+            if (!filter || child.#matchFilter(filter)) {
+                yield child;
+            }
+        }
+        return null;
     }
     getAllChilds(filter) {
         const childs = new Set();
@@ -19244,6 +19254,9 @@ class RepositoryEntry {
             return false;
         }
         if (filter.files !== undefined && filter.files == this.#isDirectory) {
+            return false;
+        }
+        if (filter.maxDepth !== undefined && this.#depth > filter.maxDepth) {
             return false;
         }
         const { name, extension } = splitFilename(this.#name);
@@ -19346,7 +19359,7 @@ class MemoryRepository {
         }
         return { error: RepositoryError.FileNotFound };
     }
-    async getFileList(filter) {
+    async getFileList() {
         return { error: RepositoryError.NotSupported };
     }
     async setFile(path, file) {
@@ -19414,10 +19427,10 @@ class MergeRepository {
         }
         return { error: RepositoryError.FileNotFound };
     }
-    async getFileList(filter) {
-        const root = new RepositoryEntry(this, '', true);
+    async getFileList() {
+        const root = new RepositoryEntry(this, '', true, 0);
         for (const repository of this.#repositories) {
-            const response = await repository.getFileList(filter);
+            const response = await repository.getFileList();
             if (!response.error) {
                 root.merge(response.root);
             }
@@ -19483,12 +19496,11 @@ class Repositories {
 
 class VpkRepository {
     #name;
-    #vpk;
+    #vpk = new Vpk();
     #initPromiseResolve;
     #initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
     constructor(name, files) {
         this.#name = name;
-        this.#vpk = new Vpk();
         (async () => {
             const error = await this.#vpk.setFiles(files);
             if (error) {
@@ -19542,11 +19554,11 @@ class VpkRepository {
         }
         return { json: JSON.parse(await response.file.text()) };
     }
-    async getFileList(filter) {
+    async getFileList() {
         await this.#initPromise;
-        const root = new RepositoryEntry(this, '', true);
+        const root = new RepositoryEntry(this, '', true, 0);
         for (const filename of await this.#vpk.getFileList()) {
-            root.addEntry(filename);
+            root.addPath(filename);
         }
         return { root: root };
     }
@@ -19640,7 +19652,7 @@ class WebRepository {
             return { error: error };
         }
     }
-    async getFileList(filter) {
+    async getFileList() {
         return { error: RepositoryError.NotSupported };
     }
 }
@@ -19707,11 +19719,11 @@ class ZipRepository {
         }
         return { json: JSON.parse(await file.text()) };
     }
-    async getFileList(filter) {
+    async getFileList() {
         await this.#initPromise;
-        const root = new RepositoryEntry(this, '', true);
+        const root = new RepositoryEntry(this, '', true, 0);
         for (const [filename, _] of this.#zipEntries) {
-            root.addEntry(filename);
+            root.addPath(filename);
         }
         return { root: root };
     }

@@ -3616,9 +3616,9 @@ declare class Choreography {
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
-             getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
-             generateModelManifest(name?: string, filter?: RepositoryFilter): Promise<RepositoryError | null>;
-             generateParticlesManifest(filename?: string, filter?: RepositoryFilter): Promise<RepositoryError | null>;
+             getFileList(): Promise<RepositoryFileListResponse>;
+             generateModelManifest(name?: string): Promise<RepositoryError | null>;
+             generateParticlesManifest(filename?: string): Promise<RepositoryError | null>;
          }
 
          export declare class Manipulator extends Entity {
@@ -4084,7 +4084,7 @@ declare class Choreography {
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
-             getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+             getFileList(): Promise<RepositoryFileListResponse>;
          }
 
          export declare class MemoryRepository implements Repository {
@@ -4096,7 +4096,7 @@ declare class Choreography {
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
-             getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+             getFileList(): Promise<RepositoryFileListResponse>;
              setFile(path: string, file: File): Promise<RepositoryError | null>;
          }
 
@@ -4109,7 +4109,7 @@ declare class Choreography {
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
-             getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+             getFileList(): Promise<RepositoryFileListResponse>;
              pushRepository(repo: Repository): Promise<void>;
              unshiftRepository(repo: Repository): Promise<void>;
          }
@@ -4928,7 +4928,7 @@ declare class Choreography {
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
-             getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+             getFileList(): Promise<RepositoryFileListResponse>;
              overrideFile(filename: string, file: File): Promise<RepositoryError | null>;
          }
 
@@ -6140,7 +6140,7 @@ declare class Choreography {
              getFileAsText: (path: string) => Promise<RepositoryTextResponse>;
              getFileAsBlob: (path: string) => Promise<RepositoryBlobResponse>;
              getFileAsJson: (path: string) => Promise<RepositoryJsonResponse>;
-             getFileList: (filter?: RepositoryFilter) => Promise<RepositoryFileListResponse>;
+             getFileList: () => Promise<RepositoryFileListResponse>;
          }
 
          export declare interface RepositoryArrayBufferResponse {
@@ -6155,14 +6155,15 @@ declare class Choreography {
 
          export declare class RepositoryEntry {
              #private;
-             constructor(repository: Repository, name: string, isDirectory: boolean);
-             addEntry(filename: string): void;
+             constructor(repository: Repository, name: string, isDirectory: boolean, depth: number);
+             addPath(path: string): void;
+             removeEntry(name: string): void;
              getName(): string;
              getFullName(): string;
              getParent(): RepositoryEntry | undefined;
              getRepository(): Repository;
              getChild(name: string): RepositoryEntry | undefined;
-             getChilds(): Set<RepositoryEntry>;
+             getChilds(filter?: RepositoryFilter): Generator<RepositoryEntry, null, undefined>;
              getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry>;
              isDirectory(): boolean;
              toJSON(): JSON;
@@ -6191,6 +6192,7 @@ declare class Choreography {
              extension?: string | RegExp;
              directories?: boolean;
              files?: boolean;
+             maxDepth?: number;
          }
 
          export declare interface RepositoryJsonResponse {
@@ -9859,7 +9861,7 @@ declare class Choreography {
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
-             getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+             getFileList(): Promise<RepositoryFileListResponse>;
          }
 
          declare interface VTFMipMap {
@@ -10040,7 +10042,7 @@ declare class Choreography {
              getFileAsText(fileName: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse>;
              getFileAsJson(fileName: string): Promise<RepositoryJsonResponse>;
-             getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+             getFileList(): Promise<RepositoryFileListResponse>;
          }
 
          export declare class Wireframe extends Entity {
@@ -10083,7 +10085,7 @@ declare class Choreography {
              getFileAsText(filename: string): Promise<RepositoryTextResponse>;
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
-             getFileList(filter?: RepositoryFilter): Promise<RepositoryFileListResponse>;
+             getFileList(): Promise<RepositoryFileListResponse>;
          }
 
          export declare const Zstd: {

@@ -54,6 +54,10 @@ export class RepositoryEntry {
 		}
 	}
 
+	removeEntry(name: string) {
+		this.#childs.delete(name);
+	}
+
 	#addFile(name: string, isDirectory: boolean, depth: number) {
 		const e = new RepositoryEntry(this.#repository, name, isDirectory, depth);
 		e.#parent = this;
@@ -95,7 +99,6 @@ export class RepositoryEntry {
 				yield child;
 			}
 		}
-
 		return null;
 	}
 
