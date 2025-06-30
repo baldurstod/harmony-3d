@@ -39,8 +39,8 @@ export class RepositoryEntry {
 		this.#depth = depth;
 	}
 
-	addEntry(filename: string): void {
-		const splittedPath = filename.split(/[\/\\]+/);
+	addPath(path: string): void {
+		const splittedPath = path.split(/[\/\\]+/);
 		let current: RepositoryEntry = this;
 		const len = splittedPath.length - 1;
 

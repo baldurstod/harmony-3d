@@ -80,7 +80,7 @@ export class ZipRepository implements Repository {
 		await this.#initPromise;
 		const root = new RepositoryEntry(this, '', true, 0);
 		for (const [filename, _] of this.#zipEntries) {
-			root.addEntry(filename);
+			root.addPath(filename);
 		}
 		return { root: root };
 	}

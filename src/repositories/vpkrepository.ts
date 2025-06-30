@@ -3,13 +3,12 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
 
 export class VpkRepository implements Repository {
 	#name: string;
-	#vpk: Vpk;
+	#vpk: Vpk = new Vpk();
 	#initPromiseResolve?: (value: boolean) => void;
 	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
 
 	constructor(name: string, files: File[]) {
 		this.#name = name;
-		this.#vpk = new Vpk();
 
 		(async () => {
 			const error = await this.#vpk.setFiles(files);
@@ -41,7 +40,7 @@ export class VpkRepository implements Repository {
 		if (response.error) {
 			return { error: RepositoryError.FileNotFound };
 		}
-		return { buffer: await response.file.arrayBuffer() };
+		return { buffer: await response.file!.arrayBuffer() };
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
@@ -50,7 +49,7 @@ export class VpkRepository implements Repository {
 		if (response.error) {
 			return { error: RepositoryError.FileNotFound };
 		}
-		return { text: await response.file.text() };
+		return { text: await response.file!.text() };
 	}
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
@@ -68,14 +67,14 @@ export class VpkRepository implements Repository {
 		if (response.error) {
 			return { error: RepositoryError.FileNotFound };
 		}
-		return { json: JSON.parse(await response.file.text()) };
+		return { json: JSON.parse(await response.file!.text()) };
 	}
 
 	async getFileList(): Promise<RepositoryFileListResponse> {
 		await this.#initPromise;
 		const root = new RepositoryEntry(this, '', true, 0);
 		for (const filename of await this.#vpk.getFileList()) {
-			root.addEntry(filename);
+			root.addPath(filename);
 		}
 		return { root: root };
 	}
