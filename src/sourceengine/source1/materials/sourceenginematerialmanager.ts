@@ -29,8 +29,9 @@ export class SourceEngineMaterialManager {
 				Promise.allSettled(promises).then(
 					(promises) => {
 						for (const promise of promises) {
-							if (promise.status == 'fulfilled') {
-								resolve(promise.value);
+							const value = (promise as PromiseFulfilledResult<SourceEngineMaterial | null>).value;
+							if (value) {
+								resolve(value);
 								return;
 							}
 						}
@@ -109,7 +110,7 @@ export class SourceEngineMaterialManager {
 	}
 	*/
 
-	static addRepository(repository:string) {
+	static addRepository(repository: string) {
 		this.#fileListPerRepository.set(repository, null);
 	}
 

@@ -36797,8 +36797,9 @@ class SourceEngineMaterialManager {
             const promise = new Promise((resolve) => {
                 Promise.allSettled(promises).then((promises) => {
                     for (const promise of promises) {
-                        if (promise.status == 'fulfilled') {
-                            resolve(promise.value);
+                        const value = promise.value;
+                        if (value) {
+                            resolve(value);
                             return;
                         }
                     }
