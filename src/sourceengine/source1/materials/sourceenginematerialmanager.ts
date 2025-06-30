@@ -4,7 +4,7 @@ import { customFetch } from '../../../utils/customfetch';
 import { SourceEngineVMTLoader } from '../export';
 import { SourceEngineMaterial } from './sourceenginematerial';
 
-function cleanSource1MaterialName(name) {
+function cleanSource1MaterialName(name: string) {
 	name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '').replace(/^materials\//g, '');
 
 	name = name + '.vmt';
@@ -13,19 +13,19 @@ function cleanSource1MaterialName(name) {
 }
 
 export class SourceEngineMaterialManager {
-	static #fileListPerRepository = new Map<string, JSONObject | Promise<JSONObject>/*TODO: remove alternative*/>(); // TODO: use a Map2
-	static #materialList = new Map<string, SourceEngineMaterial | Promise<SourceEngineMaterial>/*TODO: remove alternative*/>();// TODO: use a Map2
+	static #fileListPerRepository = new Map<string, null | JSONObject | Promise<JSONObject>/*TODO: remove alternative*/>(); // TODO: use a Map2
+	static #materialList = new Map<string, SourceEngineMaterial | null | Promise<SourceEngineMaterial | null>/*TODO: remove alternative*/>();// TODO: use a Map2
 	static #materialList2 = new Set<SourceEngineMaterial>();
 	static #materialListPerRepository = {};
 
-	static getMaterial(repositoryName, fileName, searchPaths?): Promise<SourceEngineMaterial | null> {
-		fileName = cleanSource1MaterialName(fileName);
+	static getMaterial(repository: string, path: string, searchPaths?: string[]): Promise<SourceEngineMaterial | null> {
+		path = cleanSource1MaterialName(path);
 		if (searchPaths) {
-			const promises = [];
+			const promises: Promise<SourceEngineMaterial | null>[] = [];
 			for (const searchPath of searchPaths) {
-				promises.push(this.#getMaterial(repositoryName, 'materials/' + searchPath + fileName));
+				promises.push(this.#getMaterial(repository, 'materials/' + searchPath + path));
 			}
-			const promise = new Promise<SourceEngineMaterial>((resolve) => {
+			const promise = new Promise<SourceEngineMaterial | null>((resolve) => {
 				Promise.allSettled(promises).then(
 					(promises) => {
 						for (const promise of promises) {
@@ -34,7 +34,7 @@ export class SourceEngineMaterialManager {
 								return;
 							}
 						}
-						this.#getMaterial(repositoryName, 'materials/' + fileName).then(
+						this.#getMaterial(repository, 'materials/' + path).then(
 							material => resolve(material),
 						);
 					}
@@ -42,7 +42,7 @@ export class SourceEngineMaterialManager {
 			});
 			return promise;
 		} else {
-			return this.#getMaterial(repositoryName, 'materials/' + fileName);
+			return this.#getMaterial(repository, 'materials/' + path);
 		}
 	}
 
@@ -50,10 +50,11 @@ export class SourceEngineMaterialManager {
 		const material = this.#materialList.get(path);
 
 		if (material instanceof Promise) {
-			const promise = new Promise<SourceEngineMaterial>(resolve => {
+			const promise = new Promise<SourceEngineMaterial | null>(resolve => {
 				material.then((material) => {
 					if (!material) {
 						resolve(material);
+						return;
 					}
 					const newMaterial = material.clone();
 					newMaterial.init();
@@ -65,6 +66,11 @@ export class SourceEngineMaterialManager {
 		}
 
 		if (material !== undefined) {
+			if (!material) {
+				return new Promise(resolve => {
+					resolve(material);
+				});
+			}
 			return new Promise(resolve => {
 				const newMaterial = material.clone();
 				newMaterial.init();
@@ -78,6 +84,7 @@ export class SourceEngineMaterialManager {
 					(material) => {
 						if (!material) {
 							resolve(material);
+							return;
 						}
 						this.#materialList.set(path, material);
 						const newMaterial = material.clone();
@@ -94,14 +101,16 @@ export class SourceEngineMaterialManager {
 		}
 	}
 
-	static async copyMaterial(repositoryName, sourcePath, destPath, searchPaths) {
-		const material: SourceEngineMaterial = await this.getMaterial(repositoryName, sourcePath, searchPaths);
+	/*
+	static async copyMaterial(repository:string, sourcePath:string, destPath:string, searchPaths?: string[]) {
+		const material: SourceEngineMaterial = await this.getMaterial(repository, sourcePath, searchPaths);
 		this.#materialList.set(destPath, material.clone());
 		material.init();
 	}
+	*/
 
-	static addRepository(repositoryPath) {
-		this.#fileListPerRepository.set(repositoryPath, null);
+	static addRepository(repository:string) {
+		this.#fileListPerRepository.set(repository, null);
 	}
 
 	static async getMaterialList() {

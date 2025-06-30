@@ -36787,12 +36787,12 @@ class SourceEngineMaterialManager {
     static #materialList = new Map(); // TODO: use a Map2
     static #materialList2 = new Set();
     static #materialListPerRepository = {};
-    static getMaterial(repositoryName, fileName, searchPaths) {
-        fileName = cleanSource1MaterialName(fileName);
+    static getMaterial(repository, path, searchPaths) {
+        path = cleanSource1MaterialName(path);
         if (searchPaths) {
             const promises = [];
             for (const searchPath of searchPaths) {
-                promises.push(this.#getMaterial(repositoryName, 'materials/' + searchPath + fileName));
+                promises.push(this.#getMaterial(repository, 'materials/' + searchPath + path));
             }
             const promise = new Promise((resolve) => {
                 Promise.allSettled(promises).then((promises) => {
@@ -36802,13 +36802,13 @@ class SourceEngineMaterialManager {
                             return;
                         }
                     }
-                    this.#getMaterial(repositoryName, 'materials/' + fileName).then(material => resolve(material));
+                    this.#getMaterial(repository, 'materials/' + path).then(material => resolve(material));
                 });
             });
             return promise;
         }
         else {
-            return this.#getMaterial(repositoryName, 'materials/' + fileName);
+            return this.#getMaterial(repository, 'materials/' + path);
         }
     }
     static #getMaterial(repository, path) {
@@ -36818,6 +36818,7 @@ class SourceEngineMaterialManager {
                 material.then((material) => {
                     if (!material) {
                         resolve(material);
+                        return;
                     }
                     const newMaterial = material.clone();
                     newMaterial.init();
@@ -36828,6 +36829,11 @@ class SourceEngineMaterialManager {
             return promise;
         }
         if (material !== undefined) {
+            if (!material) {
+                return new Promise(resolve => {
+                    resolve(material);
+                });
+            }
             return new Promise(resolve => {
                 const newMaterial = material.clone();
                 newMaterial.init();
@@ -36841,6 +36847,7 @@ class SourceEngineMaterialManager {
                 vmtLoader.load(repository, path).then((material) => {
                     if (!material) {
                         resolve(material);
+                        return;
                     }
                     this.#materialList.set(path, material);
                     const newMaterial = material.clone();
@@ -36853,13 +36860,15 @@ class SourceEngineMaterialManager {
             return promise;
         }
     }
-    static async copyMaterial(repositoryName, sourcePath, destPath, searchPaths) {
-        const material = await this.getMaterial(repositoryName, sourcePath, searchPaths);
+    /*
+    static async copyMaterial(repository:string, sourcePath:string, destPath:string, searchPaths?: string[]) {
+        const material: SourceEngineMaterial = await this.getMaterial(repository, sourcePath, searchPaths);
         this.#materialList.set(destPath, material.clone());
         material.init();
     }
-    static addRepository(repositoryPath) {
-        this.#fileListPerRepository.set(repositoryPath, null);
+    */
+    static addRepository(repository) {
+        this.#fileListPerRepository.set(repository, null);
     }
     static async getMaterialList() {
         const repoList = [];
