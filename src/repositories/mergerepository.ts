@@ -78,11 +78,15 @@ export class MergeRepository implements Repository {
 		return { root: root };
 	}
 
-	async pushRepository(repo: Repository) {
+	pushRepository(repo: Repository) {
 		this.#repositories.push(repo);
 	}
 
-	async unshiftRepository(repo: Repository) {
+	unshiftRepository(repo: Repository) {
 		this.#repositories.unshift(repo);
+	}
+
+	getSubRepositories():Set<Repository>{
+		return new Set<Repository>(this.#repositories);
 	}
 }

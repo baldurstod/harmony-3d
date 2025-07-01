@@ -19437,11 +19437,14 @@ class MergeRepository {
         }
         return { root: root };
     }
-    async pushRepository(repo) {
+    pushRepository(repo) {
         this.#repositories.push(repo);
     }
-    async unshiftRepository(repo) {
+    unshiftRepository(repo) {
         this.#repositories.unshift(repo);
+    }
+    getSubRepositories() {
+        return new Set(this.#repositories);
     }
 }
 

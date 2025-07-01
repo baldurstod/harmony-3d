@@ -4110,8 +4110,9 @@ declare class Choreography {
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
              getFileList(): Promise<RepositoryFileListResponse>;
-             pushRepository(repo: Repository): Promise<void>;
-             unshiftRepository(repo: Repository): Promise<void>;
+             pushRepository(repo: Repository): void;
+             unshiftRepository(repo: Repository): void;
+             getSubRepositories(): Set<Repository>;
          }
 
          export declare class Mesh extends Entity {
