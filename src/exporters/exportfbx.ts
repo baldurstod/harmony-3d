@@ -1,13 +1,12 @@
 import { mat4, quat, vec3, vec4 } from 'gl-matrix';
-import { FBXExporter, fbxSceneToFBXFile, FBX_SKELETON_TYPE_LIMB, FBXManager, FBX_PROPERTY_TYPE_DOUBLE } from 'harmony-fbx';
-
+import { FBX_PROPERTY_TYPE_DOUBLE, FBX_SKELETON_TYPE_LIMB, FBXExporter, FBXManager, fbxSceneToFBXFile } from 'harmony-fbx';
+import { DEBUG } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { Graphics } from '../graphics/graphics';
+import { HALF_PI } from '../math/constants';
 import { quatToEulerDeg } from '../math/quaternion';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Scene } from '../scenes/scene';
-import { HALF_PI } from '../math/constants';
-import { DEBUG } from '../buildoptions';
 
 const EXPORT_SKELETON = true;
 const EXPORT_ANIM_CURVE = false;
@@ -193,11 +192,11 @@ async function createFBXMesh(fbxScene, mesh, context) {
 	let vertexIndex3;
 	const remappedIndex = new Map<number, number>();
 	let currentIndex = 0;
-	const remappedVertices:number[] = [];
-	const remappedNormals:number[] = [];
-	const remappedUV:number[] = [];
-	const remappedBoneIndices:number[] = [];
-	const remappedBoneWeight:number[] = [];
+	const remappedVertices: number[] = [];
+	const remappedNormals: number[] = [];
+	const remappedUV: number[] = [];
+	const remappedBoneIndices: number[] = [];
+	const remappedBoneWeight: number[] = [];
 	const bonesPerVertex = mesh.bonesPerVertex;
 
 	function remapIndex(index) {
