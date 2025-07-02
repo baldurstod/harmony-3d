@@ -18,6 +18,9 @@ export class ModelLoader {
 			// First load mdl. We need the mdl version to load the vtx
 			const mdlLoader = getLoader('SourceEngineMDLLoader') as typeof SourceEngineMDLLoader;
 			const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
+			if (!mdl) {
+				resolve(null);
+			}
 
 			const vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
 			const vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
