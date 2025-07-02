@@ -53,6 +53,7 @@ export interface EntityParameters {
 	visible?: boolean;
 }
 
+export type MaterialParams = { [key: string]: MaterialParam }//TODO: create a map;
 export type MaterialParam = any/*TODO: create an actual type*/;
 
 export class Entity {
@@ -79,7 +80,7 @@ export class Entity {
 	_mvMatrix = mat4.create();
 	_normalMatrix = mat3.create();
 	_parent: Entity | null = null;
-	materialsParams: { [key: string]: MaterialParam } = {};//TODO: create a map
+	materialsParams: MaterialParams = {};
 	isRenderable = false;
 	lockPos = false;
 	lockRot = false;
