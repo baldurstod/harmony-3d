@@ -1792,9 +1792,7 @@ declare class Choreography {
          _mvMatrix: mat4;
          _normalMatrix: mat3;
          _parent: Entity | null;
-         materialsParams: {
-             [key: string]: MaterialParam;
-         };
+         materialsParams: MaterialParams;
          isRenderable: boolean;
          lockPos: boolean;
          lockRot: boolean;
@@ -2079,7 +2077,7 @@ declare class Choreography {
 
          export declare function ExponentialDecay(decayTo: number, decayTime: number, dt: number): number;
 
-         export declare function exportToBinaryFBX(entity: any): Promise<ArrayBufferLike>;
+         export declare function exportToBinaryFBX(entity: Entity): Promise<ArrayBufferLike>;
 
          export declare class EyeRefractMaterial extends SourceEngineMaterial {
              #private;
@@ -3726,7 +3724,7 @@ declare class Choreography {
              colorMap?: Texture;
              properties: Map<string, any>;
              static materialList: Record<string, typeof Material>;
-             constructor(params?: MaterialParams);
+             constructor(params?: MaterialParams_2);
              get transparent(): boolean;
              set renderLights(renderLights: boolean);
              get renderLights(): boolean;
@@ -3814,6 +3812,10 @@ declare class Choreography {
          declare type MaterialParam = any;
 
          declare type MaterialParams = {
+             [key: string]: MaterialParam;
+         };
+
+         declare type MaterialParams_2 = {
              depthTest?: boolean;
              renderFace?: RenderFace;
              polygonOffset?: boolean;
@@ -8197,7 +8199,7 @@ declare class Choreography {
              }>;
          }
 
-         declare type SourceEngineMaterialParams = MaterialParams & {
+         declare type SourceEngineMaterialParams = MaterialParams_2 & {
              repository: string;
              path: string;
              useSrgb?: boolean;
@@ -10102,12 +10104,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#253@#webAssembly"?: any;
-             "__#253@#HEAPU8"?: Uint8Array;
+             "__#217@#webAssembly"?: any;
+             "__#217@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#253@#initHeap"(): void;
+             "__#217@#initHeap"(): void;
          };
 
          export { }
