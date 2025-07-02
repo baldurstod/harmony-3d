@@ -1,19 +1,19 @@
 import { mat4, quat, vec3, vec4 } from 'gl-matrix';
-import { FBX_PROPERTY_FLAG_STATIC, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_TYPE_DOUBLE, FBX_SKELETON_TYPE_LIMB, FBXAnimCurveNode, FBXAnimLayer, FBXAnimStack, FBXCamera, FBXCluster, FBXExporter, FBXManager, FBXMesh, FBXNode, FBXPose, FBXScene, fbxSceneToFBXFile, FBXSkeleton, FBXSkin, FBXSurfaceMaterial, FBXSurfacePhong, FBXTexture, FBXVideo } from 'harmony-fbx';
+import { FBX_PROPERTY_FLAG_STATIC, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_TYPE_DOUBLE, FBX_SKELETON_TYPE_LIMB, FBXAnimCurveNode, FBXAnimLayer, FBXAnimStack, FBXCamera, FBXCluster, FBXExporter, FBXManager, FBXMesh, FBXNode, FBXPose, FBXScene, fbxSceneToFBXFile, FBXSkeleton, FBXSkin, FBXSurfacePhong, FBXTexture, FBXVideo } from 'harmony-fbx';
 import { DEBUG } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { Entity, MaterialParams } from '../entities/entity';
 import { Graphics } from '../graphics/graphics';
+import { Material } from '../materials/material';
 import { HALF_PI } from '../math/constants';
 import { quatToEulerDeg } from '../math/quaternion';
-import { FullScreenQuad } from '../primitives/fullscreenquad';
-import { Scene } from '../scenes/scene';
-import { Source1ModelInstance } from '../sourceengine/export';
+import { Bone } from '../objects/bone';
 import { Mesh } from '../objects/mesh';
 import { SkeletalMesh } from '../objects/skeletalmesh';
 import { Skeleton } from '../objects/skeleton';
-import { Bone } from '../objects/bone';
-import { Material } from '../materials/material';
+import { FullScreenQuad } from '../primitives/fullscreenquad';
+import { Scene } from '../scenes/scene';
+import { Source1ModelInstance } from '../sourceengine/export';
 
 const EXPORT_SKELETON = true;
 const EXPORT_ANIM_CURVE = false;
@@ -509,7 +509,7 @@ async function configureMaterial(material: Material, fbxMaterial: FBXSurfacePhon
 		fbxVideo.name = 'mat_' + fbxVideo.id + '.png';
 
 
-		const renderResult = await renderMaterial(material, materialsParams);
+		const renderResult = await renderMaterial(material, materialsParams, RenderMode.Color);
 		if (renderResult) {
 			fbxVideo.content = new Uint8Array(renderResult);
 		}
@@ -517,12 +517,37 @@ async function configureMaterial(material: Material, fbxMaterial: FBXSurfacePhon
 		//fbxMaterial.addTexture(fbxTexture);
 		fbxMaterial.diffuse.connectSrcObject(fbxTexture);
 	}
+
+	if (material.uniforms['colorMap']) {
+		const fbxTexture = fbxManager.createObject('FBXTexture', 'DiffuseColor') as FBXTexture;
+		const fbxVideo = fbxManager.createObject('FBXVideo', 'FBXVideo') as FBXVideo;
+		//fbxTexture.fbxMapping = 'DiffuseColor'; TODO ?????
+		fbxTexture.media = fbxVideo;
+		fbxTexture.name = 'mat_' + fbxTexture.id + '.png';
+		fbxVideo.name = 'mat_' + fbxVideo.id + '.png';
+
+
+		const renderResult = await renderMaterial(material, materialsParams, RenderMode.Normal);
+		if (renderResult) {
+			fbxVideo.content = new Uint8Array(renderResult);
+		}
+
+		// TODO: create a helper function in harmony-fbx
+		fbxMaterial.normalMap = fbxMaterial.createProperty(FBX_PROPERTY_TYPE_COLOR_3, 'NormalMap', [0.2, 0.2, 0.2], FBX_PROPERTY_FLAG_STATIC);
+		fbxMaterial.normalMap.connectSrcObject(fbxTexture);
+
+		//fbxMaterial.createProperty(FBX_PROPERTY_TYPE_DOUBLE, 'BumpFactor', 1, FBX_PROPERTY_FLAG_STATIC);
+	}
 }
 
 let scene: Scene;
 let camera: Camera;
 let fullScreenQuadMesh: FullScreenQuad;
-async function renderMaterial(material: Material, materialsParams: MaterialParams): Promise<ArrayBuffer | null> {
+enum RenderMode {
+	Color = 0,
+	Normal = 1,
+}
+async function renderMaterial(material: Material, materialsParams: MaterialParams, renderMode: RenderMode): Promise<ArrayBuffer | null> {
 	if (!scene) {
 		scene = new Scene();
 		camera = new Camera();
@@ -538,6 +563,13 @@ async function renderMaterial(material: Material, materialsParams: MaterialParam
 	new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
 	new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
 
+	switch (renderMode) {
+		case RenderMode.Normal:
+			new Graphics().setIncludeCode('RENDER_MODE', '#define RENDER_MODE 12');
+			break;
+	}
+
+
 	fullScreenQuadMesh.material = material;
 	fullScreenQuadMesh.materialsParams = materialsParams;
 	new Graphics().render(scene, camera, 0, { DisableToolRendering: true });
@@ -547,6 +579,7 @@ async function renderMaterial(material: Material, materialsParams: MaterialParam
 	new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
 	new Graphics().setIncludeCode('SKIP_PROJECTION', '');
 	new Graphics().setIncludeCode('SKIP_LIGHTING', '');
+	new Graphics().removeIncludeCode('RENDER_MODE');
 	new Graphics().setSize(previousWidth, previousHeight);
 	new Graphics().clearColor(previousClearColor);
 

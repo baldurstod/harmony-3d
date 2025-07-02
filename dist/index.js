@@ -1,7 +1,7 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
 import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu } from 'harmony-ui';
 import { ShortcutHandler, saveFile } from 'harmony-browser-utils';
-import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB } from 'harmony-fbx';
+import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
 import { zoomOutSVG, zoomInSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
@@ -11567,18 +11567,39 @@ async function configureMaterial(material, fbxMaterial, materialsParams) {
         fbxTexture.media = fbxVideo;
         fbxTexture.name = 'mat_' + fbxTexture.id + '.png';
         fbxVideo.name = 'mat_' + fbxVideo.id + '.png';
-        const renderResult = await renderMaterial(material, materialsParams);
+        const renderResult = await renderMaterial(material, materialsParams, RenderMode$1.Color);
         if (renderResult) {
             fbxVideo.content = new Uint8Array(renderResult);
         }
         //fbxMaterial.addTexture(fbxTexture);
         fbxMaterial.diffuse.connectSrcObject(fbxTexture);
     }
+    if (material.uniforms['colorMap']) {
+        const fbxTexture = fbxManager.createObject('FBXTexture', 'DiffuseColor');
+        const fbxVideo = fbxManager.createObject('FBXVideo', 'FBXVideo');
+        //fbxTexture.fbxMapping = 'DiffuseColor'; TODO ?????
+        fbxTexture.media = fbxVideo;
+        fbxTexture.name = 'mat_' + fbxTexture.id + '.png';
+        fbxVideo.name = 'mat_' + fbxVideo.id + '.png';
+        const renderResult = await renderMaterial(material, materialsParams, RenderMode$1.Normal);
+        if (renderResult) {
+            fbxVideo.content = new Uint8Array(renderResult);
+        }
+        // TODO: create a helper function in harmony-fbx
+        fbxMaterial.normalMap = fbxMaterial.createProperty(FBX_PROPERTY_TYPE_COLOR_3, 'NormalMap', [0.2, 0.2, 0.2], FBX_PROPERTY_FLAG_STATIC);
+        fbxMaterial.normalMap.connectSrcObject(fbxTexture);
+        //fbxMaterial.createProperty(FBX_PROPERTY_TYPE_DOUBLE, 'BumpFactor', 1, FBX_PROPERTY_FLAG_STATIC);
+    }
 }
 let scene$1;
 let camera$1;
 let fullScreenQuadMesh;
-async function renderMaterial(material, materialsParams) {
+var RenderMode$1;
+(function (RenderMode) {
+    RenderMode[RenderMode["Color"] = 0] = "Color";
+    RenderMode[RenderMode["Normal"] = 1] = "Normal";
+})(RenderMode$1 || (RenderMode$1 = {}));
+async function renderMaterial(material, materialsParams, renderMode) {
     if (!scene$1) {
         scene$1 = new Scene();
         camera$1 = new Camera();
@@ -11592,6 +11613,11 @@ async function renderMaterial(material, materialsParams) {
     new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
     new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
     new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+    switch (renderMode) {
+        case RenderMode$1.Normal:
+            new Graphics().setIncludeCode('RENDER_MODE', '#define RENDER_MODE 12');
+            break;
+    }
     fullScreenQuadMesh.material = material;
     fullScreenQuadMesh.materialsParams = materialsParams;
     new Graphics().render(scene$1, camera$1, 0, { DisableToolRendering: true });
@@ -11599,6 +11625,7 @@ async function renderMaterial(material, materialsParams) {
     new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
     new Graphics().setIncludeCode('SKIP_PROJECTION', '');
     new Graphics().setIncludeCode('SKIP_LIGHTING', '');
+    new Graphics().removeIncludeCode('RENDER_MODE');
     new Graphics().setSize(previousWidth, previousHeight);
     new Graphics().clearColor(previousClearColor);
     return imgContent?.arrayBuffer() ?? null;
