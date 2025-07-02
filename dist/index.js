@@ -26558,6 +26558,12 @@ var compute_fragment_render_mode = `
 		gl_FragColor = vec4(tangentSpaceNormal, 1.0);
 	#elif RENDER_MODE == 11
 		gl_FragColor = vec4(abs(fragmentNormalCameraSpace), 1.0);
+	#elif RENDER_MODE == 12
+		#ifdef USE_NORMAL_MAP
+			gl_FragColor = texelNormal;
+		#else
+			gl_FragColor = vec4(0.5, 0.5, 1.0, 1.0);
+		#endif
 	#endif
 #endif
 `;
@@ -51861,7 +51867,6 @@ void main(void) {
 
 /* TEST SHADING END*/
 
-#include compute_fragment_render_mode
 /* TEST SHADING BEGIN*/
 #ifdef USE_PHONG_SHADING
 	gl_FragColor.rgb = (reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse);
@@ -51887,6 +51892,7 @@ gl_FragColor.a = alpha;
 	#include source1_compute_selfillum
 	#include source1_compute_sheen
 	#include compute_fragment_standard
+	#include compute_fragment_render_mode
 }
 `;
 
@@ -52655,7 +52661,6 @@ void main(void) {
 
 /* TEST SHADING END*/
 
-#include compute_fragment_render_mode
 /* TEST SHADING BEGIN*/
 #ifdef USE_PHONG_SHADING
 	gl_FragColor.rgb = (reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse);
@@ -52706,6 +52711,7 @@ gl_FragColor.a = alpha;
 	#include source1_compute_selfillum
 	#include source1_compute_sheen
 	#include compute_fragment_standard
+	#include compute_fragment_render_mode
 
 	//gl_FragColor.rgb = texture2D(scratchesMap, vTexture2Coord.xy).rgb;
 	//gl_FragColor.rgb = texture2D(grungeMap, vTexture2Coord.zw).rgb;
@@ -52833,7 +52839,6 @@ void main(void) {
 	//gl_FragColor = vec4(normalize(abs(vWorldTangent)), 1.0);
 	//gl_FragColor = vec4(normalize(abs(vWorldBinormal)), 1.0);
 /********************************************/
-#include compute_fragment_render_mode
 	#include compute_fragment_standard
 
 #ifdef SKIP_PROJECTION
@@ -52844,6 +52849,7 @@ void main(void) {
 #endif
 	gl_FragColor.a = 1.;
 #endif
+	#include compute_fragment_render_mode
 }
 `;
 
@@ -53570,7 +53576,6 @@ void main(void) {
 
 /* TEST SHADING END*/
 
-#include compute_fragment_render_mode
 /* TEST SHADING BEGIN*/
 
 vec3 diffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
@@ -53639,6 +53644,8 @@ gl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);
 			gl_FragColor.rgb += saturate(fMult * texelDetail.rgb + fAdd);
 		#endif
 	#endif
+
+	#include compute_fragment_render_mode
 }
 `;
 
@@ -64576,7 +64583,6 @@ mask2.a: Specular Exponent
 
 
 
-#include compute_fragment_render_mode
 #ifdef SKIP_LIGHTING
 	gl_FragColor.rgb = diffuseColor.rgb;
 #else
@@ -64593,6 +64599,7 @@ gl_FragColor.a = texelColor.a;
 #ifdef USE_COLOR_1_MAP
 	gl_FragColor = texture2D(color1Map, vTextureCoord.xy);
 #endif
+	#include compute_fragment_render_mode
 }
 `;
 
@@ -64768,7 +64775,6 @@ mask2.a: Specular Exponent
 
 
 
-#include compute_fragment_render_mode
 #ifdef SKIP_LIGHTING
 	gl_FragColor.rgb = diffuseColor.rgb;
 #else
@@ -64802,6 +64808,7 @@ gl_FragColor.a = texelColor.a;
 
 
 	#include compute_fragment_standard
+	#include compute_fragment_render_mode
 }
 `;
 
@@ -64960,7 +64967,6 @@ mask2.a: Specular Exponent
 
 
 
-#include compute_fragment_render_mode
 #ifdef SKIP_LIGHTING
 	gl_FragColor.rgb = diffuseColor.rgb;
 #else
@@ -64975,6 +64981,7 @@ gl_FragColor.a = texelColor.a;
 	finalcolor.a = texelColor.a;
 
 	gl_FragColor = finalcolor;
+	#include compute_fragment_render_mode
 }
 `;
 
@@ -65117,7 +65124,6 @@ mask2.a: Specular Exponent
 
 
 
-#include compute_fragment_render_mode
 #ifdef SKIP_LIGHTING
 	gl_FragColor.rgb = diffuseColor.rgb;
 #else
@@ -65130,6 +65136,7 @@ gl_FragColor.a = texelColor.a;
 	gl_FragColor += cubeMapColor * METALNESS_MASK;//METALNESS_MASK;
 #endif
 	#include compute_fragment_standard
+	#include compute_fragment_render_mode
 }
 `;
 
@@ -66009,7 +66016,6 @@ mask2.a: Specular Exponent
 
 
 
-#include compute_fragment_render_mode
 #ifdef SKIP_LIGHTING
 	gl_FragColor.rgb = diffuseColor.rgb;
 #else
@@ -66018,6 +66024,7 @@ mask2.a: Specular Exponent
 gl_FragColor.a = texelColor.a;
 //gl_FragColor.rgb = abs(normalize(fragmentNormalCameraSpace.rgb));
 	#include compute_fragment_standard
+	#include compute_fragment_render_mode
 }
 `;
 
@@ -66243,7 +66250,6 @@ mask2.a: Specular Exponent
 
 
 
-#include compute_fragment_render_mode
 #ifdef SKIP_LIGHTING
 	gl_FragColor.rgb = diffuseColor.rgb;
 #else
@@ -66252,6 +66258,7 @@ mask2.a: Specular Exponent
 gl_FragColor.a = texelColor.a;
 //gl_FragColor.rgb = abs(normalize(fragmentNormalCameraSpace.rgb));
 	#include compute_fragment_standard
+	#include compute_fragment_render_mode
 }
 `;
 

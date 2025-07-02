@@ -742,7 +742,6 @@ void main(void) {
 
 /* TEST SHADING END*/
 
-#include compute_fragment_render_mode
 /* TEST SHADING BEGIN*/
 #ifdef USE_PHONG_SHADING
 	gl_FragColor.rgb = (reflectedLight.directSpecular + reflectedLight.directDiffuse + reflectedLight.indirectDiffuse);
@@ -793,6 +792,7 @@ gl_FragColor.a = alpha;
 	#include source1_compute_selfillum
 	#include source1_compute_sheen
 	#include compute_fragment_standard
+	#include compute_fragment_render_mode
 
 	//gl_FragColor.rgb = texture2D(scratchesMap, vTexture2Coord.xy).rgb;
 	//gl_FragColor.rgb = texture2D(grungeMap, vTexture2Coord.zw).rgb;

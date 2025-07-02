@@ -28,6 +28,12 @@ export default `
 		gl_FragColor = vec4(tangentSpaceNormal, 1.0);
 	#elif RENDER_MODE == 11
 		gl_FragColor = vec4(abs(fragmentNormalCameraSpace), 1.0);
+	#elif RENDER_MODE == 12
+		#ifdef USE_NORMAL_MAP
+			gl_FragColor = texelNormal;
+		#else
+			gl_FragColor = vec4(0.5, 0.5, 1.0, 1.0);
+		#endif
 	#endif
 #endif
 `;

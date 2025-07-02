@@ -90,7 +90,6 @@ void main(void) {
 	//gl_FragColor = vec4(normalize(abs(vWorldTangent)), 1.0);
 	//gl_FragColor = vec4(normalize(abs(vWorldBinormal)), 1.0);
 /********************************************/
-#include compute_fragment_render_mode
 	#include compute_fragment_standard
 
 #ifdef SKIP_PROJECTION
@@ -101,5 +100,6 @@ void main(void) {
 #endif
 	gl_FragColor.a = 1.;
 #endif
+	#include compute_fragment_render_mode
 }
 `;

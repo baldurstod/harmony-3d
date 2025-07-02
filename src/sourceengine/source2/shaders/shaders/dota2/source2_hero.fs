@@ -118,7 +118,6 @@ mask2.a: Specular Exponent
 
 
 
-#include compute_fragment_render_mode
 #ifdef SKIP_LIGHTING
 	gl_FragColor.rgb = diffuseColor.rgb;
 #else
@@ -131,5 +130,6 @@ gl_FragColor.a = texelColor.a;
 	gl_FragColor += cubeMapColor * METALNESS_MASK;//METALNESS_MASK;
 #endif
 	#include compute_fragment_standard
+	#include compute_fragment_render_mode
 }
 `;

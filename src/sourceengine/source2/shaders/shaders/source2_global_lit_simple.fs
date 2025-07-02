@@ -128,7 +128,6 @@ mask2.a: Specular Exponent
 
 
 
-#include compute_fragment_render_mode
 #ifdef SKIP_LIGHTING
 	gl_FragColor.rgb = diffuseColor.rgb;
 #else
@@ -137,5 +136,6 @@ mask2.a: Specular Exponent
 gl_FragColor.a = texelColor.a;
 //gl_FragColor.rgb = abs(normalize(fragmentNormalCameraSpace.rgb));
 	#include compute_fragment_standard
+	#include compute_fragment_render_mode
 }
 `;

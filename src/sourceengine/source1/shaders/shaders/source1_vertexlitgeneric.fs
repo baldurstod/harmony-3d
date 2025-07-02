@@ -141,7 +141,6 @@ void main(void) {
 
 /* TEST SHADING END*/
 
-#include compute_fragment_render_mode
 /* TEST SHADING BEGIN*/
 
 vec3 diffuse = reflectedLight.directDiffuse + reflectedLight.indirectDiffuse;
@@ -210,5 +209,7 @@ gl_FragColor.rgb = 0.5 + 0.5 * vec3(D_BlinnPhong);
 			gl_FragColor.rgb += saturate(fMult * texelDetail.rgb + fAdd);
 		#endif
 	#endif
+
+	#include compute_fragment_render_mode
 }
 `;
