@@ -9,6 +9,7 @@ export class ZipRepository implements Repository {
 	#zipEntries = new Map<string, File>();
 	#initPromiseResolve?: (value: boolean) => void;
 	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
+	active: boolean = true;
 
 	constructor(name: string, zip: File) {
 		this.#name = name;
@@ -37,6 +38,9 @@ export class ZipRepository implements Repository {
 	}
 
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		await this.#initPromise;
 		cleanupFilename(filename);
 		throw 'code me';
@@ -44,6 +48,9 @@ export class ZipRepository implements Repository {
 	}
 
 	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		await this.#initPromise;
 		const file = this.#zipEntries.get(cleanupFilename(filename));
 		if (!file) {
@@ -53,6 +60,9 @@ export class ZipRepository implements Repository {
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		await this.#initPromise;
 		const file = this.#zipEntries.get(cleanupFilename(filename));
 		if (!file) {
@@ -62,6 +72,9 @@ export class ZipRepository implements Repository {
 	}
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		await this.#initPromise;
 		cleanupFilename(filename);
 		throw 'code me';
@@ -69,6 +82,9 @@ export class ZipRepository implements Repository {
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		await this.#initPromise;
 		const file = this.#zipEntries.get(cleanupFilename(filename));
 		if (!file) {

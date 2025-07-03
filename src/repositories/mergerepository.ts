@@ -4,6 +4,7 @@ import { RepositoryEntry } from './repositoryentry';
 export class MergeRepository implements Repository {
 	#name: string;
 	#repositories: Repository[] = [];
+	active: boolean = true;
 
 	constructor(name: string, ...repositories: Repository[]) {
 		this.#name = name;
@@ -19,6 +20,9 @@ export class MergeRepository implements Repository {
 	}
 
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		for (const repository of this.#repositories) {
 			const response = await repository.getFile(filename);
 			if (!response.error) {
@@ -29,6 +33,9 @@ export class MergeRepository implements Repository {
 	}
 
 	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		for (const repository of this.#repositories) {
 			const response = await repository.getFileAsArrayBuffer(filename);
 			if (!response.error) {
@@ -39,6 +46,9 @@ export class MergeRepository implements Repository {
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		for (const repository of this.#repositories) {
 			const response = await repository.getFileAsText(filename);
 			if (!response.error) {
@@ -49,6 +59,9 @@ export class MergeRepository implements Repository {
 	}
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		for (const repository of this.#repositories) {
 			const response = await repository.getFileAsBlob(filename);
 			if (!response.error) {
@@ -59,6 +72,9 @@ export class MergeRepository implements Repository {
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		for (const repository of this.#repositories) {
 			const response = await repository.getFileAsJson(filename);
 			if (!response.error) {

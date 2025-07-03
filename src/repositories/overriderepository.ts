@@ -3,6 +3,7 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
 export class OverrideRepository implements Repository {
 	#base: Repository;
 	#overrides = new Map<string, File>();
+	active: boolean = true;
 
 	constructor(base: Repository) {
 		this.#base = base;
@@ -13,6 +14,9 @@ export class OverrideRepository implements Repository {
 	}
 
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		const file = this.#overrides.get(filename);
 		if (file) {
 			return { file: file };
@@ -21,6 +25,9 @@ export class OverrideRepository implements Repository {
 	}
 
 	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		const file = this.#overrides.get(filename);
 		if (file) {
 			return { buffer: await file.arrayBuffer() };
@@ -29,6 +36,9 @@ export class OverrideRepository implements Repository {
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		const file = this.#overrides.get(filename);
 		if (file) {
 			return { text: await file.text() };
@@ -37,6 +47,9 @@ export class OverrideRepository implements Repository {
 	}
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		const file = this.#overrides.get(filename);
 		if (file) {
 			return { blob: file };
@@ -45,6 +58,9 @@ export class OverrideRepository implements Repository {
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		const file = this.#overrides.get(filename);
 		if (file) {
 			return { json: JSON.parse(await file.text()) };

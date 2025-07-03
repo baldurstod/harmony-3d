@@ -7,6 +7,7 @@ export class MemoryCacheRepository implements Repository {
 	#base: Repository;
 	#files = new Map<string, Promise<RepositoryFileResponse>>();
 	#fileList?: RepositoryFileListResponse;
+	active: boolean = true;
 
 	constructor(base: Repository) {
 		this.#base = base;
@@ -17,12 +18,14 @@ export class MemoryCacheRepository implements Repository {
 	}
 
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
-		let response = this.#files.get(filename);
-		if (response) {
-			return response;
+		if (!this.active) {
+			let response = this.#files.get(filename);
+			if (response) {
+				return response;
+			}
 		}
 
-		response = this.#base.getFile(filename);
+		let response = this.#base.getFile(filename);
 		this.#files.set(filename, response);
 		return response;
 	}
