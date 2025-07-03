@@ -20,6 +20,7 @@ export class ModelLoader {
 			const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
 			if (!mdl) {
 				resolve(null);
+				return;
 			}
 
 			const vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');

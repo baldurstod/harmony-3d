@@ -37998,6 +37998,7 @@ class ModelLoader {
             const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
             if (!mdl) {
                 resolve(null);
+                return;
             }
             const vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
             const vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
