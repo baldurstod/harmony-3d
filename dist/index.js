@@ -19302,6 +19302,9 @@ class RepositoryEntry {
     getParent() {
         return this.#parent;
     }
+    setRepository(repository) {
+        this.#repository = repository;
+    }
     getRepository() {
         return this.#repository;
     }
@@ -19351,6 +19354,31 @@ class RepositoryEntry {
             return false;
         }
         return true;
+    }
+    getPath(path) {
+        let splittedPath = path.split('/');
+        for (const [_, child] of this.#childs) {
+            const found = child.#getPath(splittedPath);
+            if (found) {
+                return found;
+            }
+        }
+    }
+    #getPath(path) {
+        if (this.#name != path.at(0)) {
+            return null;
+        }
+        if (path.length == 1 && this.#name == path.at(0)) {
+            return this;
+        }
+        const subPath = path.slice(1);
+        for (const [_, child] of this.#childs) {
+            const found = child.#getPath(subPath);
+            if (found) {
+                return found;
+            }
+        }
+        return null;
     }
     isDirectory() {
         return this.#isDirectory;
@@ -19511,12 +19539,10 @@ class PathPrefixRepository {
         if (baseResponse.error) {
             return baseResponse;
         }
-        const root = baseResponse.root;
-        for (const entry of root.getChilds()) {
-            const name = entry.getName();
-            if (name != this.prefix) {
-                root.removeEntry(name);
-            }
+        let root = baseResponse.root;
+        root = root.getPath(this.prefix);
+        for (const entry of root.getAllChilds()) {
+            entry.setRepository(this);
         }
         return { root: root };
     }

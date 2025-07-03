@@ -41,13 +41,14 @@ export class PathPrefixRepository implements Repository {
 			return baseResponse;
 		}
 
-		const root = baseResponse.root!;
-		for (const entry of root.getChilds()) {
-			const name = entry.getName();
-			if (name != this.prefix) {
-				root.removeEntry(name);
-			}
+		let root = baseResponse.root!;
+
+		root = root.getPath(this.prefix)
+
+		for (const entry of root.getAllChilds()) {
+			entry.setRepository(this);
 		}
+
 		return { root: root };
 	}
 }

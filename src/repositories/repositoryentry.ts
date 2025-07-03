@@ -63,6 +63,10 @@ export class RepositoryEntry {
 		return this.#parent;
 	}
 
+	setRepository(repository: Repository): void {
+		this.#repository = repository;
+	}
+
 	getRepository(): Repository {
 		return this.#repository;
 	}
@@ -123,6 +127,36 @@ export class RepositoryEntry {
 		}
 
 		return true;
+	}
+
+	getPath(path: string): RepositoryEntry | null {
+		let splittedPath = path.split('/');
+
+		for (const [_, child] of this.#childs) {
+			const found = child.#getPath(splittedPath);
+			if (found) {
+				return found;
+			}
+		}
+	}
+
+	#getPath(path: string[]): RepositoryEntry | null {
+		if (this.#name != path.at(0)) {
+			return null;
+		}
+
+		if (path.length == 1 && this.#name == path.at(0)) {
+			return this;
+		}
+
+		const subPath = path.slice(1);
+		for (const [_, child] of this.#childs) {
+			const found = child.#getPath(subPath);
+			if (found) {
+				return found;
+			}
+		}
+		return null;
 	}
 
 	isDirectory(): boolean {

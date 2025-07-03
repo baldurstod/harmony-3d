@@ -6177,10 +6177,12 @@ declare class Choreography {
              getName(): string;
              getFullName(): string;
              getParent(): RepositoryEntry | undefined;
+             setRepository(repository: Repository): void;
              getRepository(): Repository;
              getChild(name: string): RepositoryEntry | undefined;
              getChilds(filter?: RepositoryFilter): Generator<RepositoryEntry, null, undefined>;
              getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry>;
+             getPath(path: string): RepositoryEntry | null;
              isDirectory(): boolean;
              toJSON(): JSON;
              merge(other: RepositoryEntry): void;
