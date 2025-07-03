@@ -6,6 +6,7 @@ export * from './overriderepository';
 export * from './pathprefixrepository';
 export * from './repositories';
 export * from './repository';
+export * from './repositoryentry';
 export * from './vpkrepository';
 export * from './webrepository';
 export * from './ziprepository';

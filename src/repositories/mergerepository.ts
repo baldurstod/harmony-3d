@@ -1,4 +1,5 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { RepositoryEntry } from './repositoryentry';
 
 export class MergeRepository implements Repository {
 	#name: string;
@@ -86,7 +87,7 @@ export class MergeRepository implements Repository {
 		this.#repositories.unshift(repo);
 	}
 
-	getSubRepositories():Set<Repository>{
+	getSubRepositories(): Set<Repository> {
 		return new Set<Repository>(this.#repositories);
 	}
 }

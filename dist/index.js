@@ -19187,7 +19187,6 @@ class MemoryCacheRepository {
     }
 }
 
-var _a$3;
 var RepositoryError;
 (function (RepositoryError) {
     RepositoryError[RepositoryError["FileNotFound"] = 1] = "FileNotFound";
@@ -19195,6 +19194,61 @@ var RepositoryError;
     RepositoryError[RepositoryError["NotSupported"] = 3] = "NotSupported";
     RepositoryError[RepositoryError["RepoNotFound"] = 4] = "RepoNotFound";
 })(RepositoryError || (RepositoryError = {}));
+
+class MemoryRepository {
+    #name;
+    #files = new Map();
+    constructor(name) {
+        this.#name = name;
+    }
+    get name() {
+        return this.#name;
+    }
+    async getFile(filename) {
+        const file = this.#files.get(filename);
+        if (file) {
+            return { file: file };
+        }
+        return { error: RepositoryError.FileNotFound };
+    }
+    async getFileAsArrayBuffer(filename) {
+        const file = this.#files.get(filename);
+        if (file) {
+            return { buffer: await file.arrayBuffer() };
+        }
+        return { error: RepositoryError.FileNotFound };
+    }
+    async getFileAsText(filename) {
+        const file = this.#files.get(filename);
+        if (file) {
+            return { text: await file.text() };
+        }
+        return { error: RepositoryError.FileNotFound };
+    }
+    async getFileAsBlob(filename) {
+        const file = this.#files.get(filename);
+        if (file) {
+            return { blob: file };
+        }
+        return { error: RepositoryError.FileNotFound };
+    }
+    async getFileAsJson(filename) {
+        const file = this.#files.get(filename);
+        if (file) {
+            return { json: JSON.parse(await file.text()) };
+        }
+        return { error: RepositoryError.FileNotFound };
+    }
+    async getFileList() {
+        return { error: RepositoryError.NotSupported };
+    }
+    async setFile(path, file) {
+        this.#files.set(path, file);
+        return null;
+    }
+}
+
+var _a$3;
 class RepositoryEntry {
     #repository;
     #name;
@@ -19342,59 +19396,6 @@ function match(name, filter) {
     else {
         //regex
         return filter.exec(name) != null;
-    }
-}
-
-class MemoryRepository {
-    #name;
-    #files = new Map();
-    constructor(name) {
-        this.#name = name;
-    }
-    get name() {
-        return this.#name;
-    }
-    async getFile(filename) {
-        const file = this.#files.get(filename);
-        if (file) {
-            return { file: file };
-        }
-        return { error: RepositoryError.FileNotFound };
-    }
-    async getFileAsArrayBuffer(filename) {
-        const file = this.#files.get(filename);
-        if (file) {
-            return { buffer: await file.arrayBuffer() };
-        }
-        return { error: RepositoryError.FileNotFound };
-    }
-    async getFileAsText(filename) {
-        const file = this.#files.get(filename);
-        if (file) {
-            return { text: await file.text() };
-        }
-        return { error: RepositoryError.FileNotFound };
-    }
-    async getFileAsBlob(filename) {
-        const file = this.#files.get(filename);
-        if (file) {
-            return { blob: file };
-        }
-        return { error: RepositoryError.FileNotFound };
-    }
-    async getFileAsJson(filename) {
-        const file = this.#files.get(filename);
-        if (file) {
-            return { json: JSON.parse(await file.text()) };
-        }
-        return { error: RepositoryError.FileNotFound };
-    }
-    async getFileList() {
-        return { error: RepositoryError.NotSupported };
-    }
-    async setFile(path, file) {
-        this.#files.set(path, file);
-        return null;
     }
 }
 

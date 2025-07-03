@@ -1,5 +1,6 @@
 import { Vpk } from 'harmony-vpk';
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryEntry, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { RepositoryEntry } from './repositoryentry';
 
 export class VpkRepository implements Repository {
 	#name: string;
