@@ -1,4 +1,5 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { RepositoryEntry } from './repositoryentry';
 
 export class PathPrefixRepository implements Repository {
 	#name: string;
@@ -41,9 +42,14 @@ export class PathPrefixRepository implements Repository {
 			return baseResponse;
 		}
 
-		let root = baseResponse.root!;
+		let root: RepositoryEntry | null = baseResponse.root!;
 
 		root = root.getPath(this.prefix)
+		if (!root) {
+			return { error: RepositoryError.FileNotFound };
+		}
+
+		root.setName('');
 
 		for (const entry of root.getAllChilds()) {
 			entry.setRepository(this);

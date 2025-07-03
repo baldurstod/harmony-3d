@@ -43,6 +43,10 @@ export class RepositoryEntry {
 		return e;
 	}
 
+	setName(name: string): void {
+		this.#name = name;
+	}
+
 	getName(): string {
 		return this.#name;
 	}
@@ -138,6 +142,7 @@ export class RepositoryEntry {
 				return found;
 			}
 		}
+		return null;
 	}
 
 	#getPath(path: string[]): RepositoryEntry | null {

@@ -19285,6 +19285,9 @@ class RepositoryEntry {
         this.#childs.set(name, e);
         return e;
     }
+    setName(name) {
+        this.#name = name;
+    }
     getName() {
         return this.#name;
     }
@@ -19363,6 +19366,7 @@ class RepositoryEntry {
                 return found;
             }
         }
+        return null;
     }
     #getPath(path) {
         if (this.#name != path.at(0)) {
@@ -19541,6 +19545,10 @@ class PathPrefixRepository {
         }
         let root = baseResponse.root;
         root = root.getPath(this.prefix);
+        if (!root) {
+            return { error: RepositoryError.FileNotFound };
+        }
+        root.setName('');
         for (const entry of root.getAllChilds()) {
             entry.setRepository(this);
         }

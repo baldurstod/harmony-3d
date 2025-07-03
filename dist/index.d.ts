@@ -6174,6 +6174,7 @@ declare class Choreography {
              constructor(repository: Repository, name: string, isDirectory: boolean, depth: number);
              addPath(path: string): void;
              removeEntry(name: string): void;
+             setName(name: string): void;
              getName(): string;
              getFullName(): string;
              getParent(): RepositoryEntry | undefined;
