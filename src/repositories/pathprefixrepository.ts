@@ -50,6 +50,7 @@ export class PathPrefixRepository implements Repository {
 		}
 
 		root.setName('');
+		root.setParent(null);
 
 		for (const entry of root.getAllChilds()) {
 			entry.setRepository(this);

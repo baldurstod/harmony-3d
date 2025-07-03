@@ -19254,7 +19254,7 @@ class RepositoryEntry {
     #name;
     #childs = new Map;
     #isDirectory;
-    #parent;
+    #parent = null;
     #depth;
     constructor(repository, name, isDirectory, depth) {
         this.#repository = repository;
@@ -19301,6 +19301,9 @@ class RepositoryEntry {
             name += '/';
         }
         return name;
+    }
+    setParent(parent) {
+        this.#parent = parent;
     }
     getParent() {
         return this.#parent;
@@ -19549,6 +19552,7 @@ class PathPrefixRepository {
             return { error: RepositoryError.FileNotFound };
         }
         root.setName('');
+        root.setParent(null);
         for (const entry of root.getAllChilds()) {
             entry.setRepository(this);
         }

@@ -6177,7 +6177,8 @@ declare class Choreography {
              setName(name: string): void;
              getName(): string;
              getFullName(): string;
-             getParent(): RepositoryEntry | undefined;
+             setParent(parent: RepositoryEntry | null): void;
+             getParent(): RepositoryEntry | null;
              setRepository(repository: Repository): void;
              getRepository(): Repository;
              getChild(name: string): RepositoryEntry | undefined;

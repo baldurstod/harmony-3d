@@ -7,7 +7,7 @@ export class RepositoryEntry {
 	#name: string;
 	#childs = new Map<string, RepositoryEntry>;
 	#isDirectory: boolean;
-	#parent?: RepositoryEntry;
+	#parent: RepositoryEntry | null = null;
 	#depth: number;
 
 	constructor(repository: Repository, name: string, isDirectory: boolean, depth: number) {
@@ -63,7 +63,11 @@ export class RepositoryEntry {
 		return name;
 	}
 
-	getParent(): RepositoryEntry | undefined {
+	setParent(parent: RepositoryEntry | null): void {
+		this.#parent = parent;
+	}
+
+	getParent(): RepositoryEntry | null {
 		return this.#parent;
 	}
 
