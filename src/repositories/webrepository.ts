@@ -4,6 +4,7 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
 export class WebRepository implements Repository {
 	#name: string;
 	#base: string;
+	active: boolean = true;
 
 	constructor(name: string, base: string) {
 		this.#name = name;
@@ -19,6 +20,9 @@ export class WebRepository implements Repository {
 	}
 
 	async getFile(fileName: string): Promise<RepositoryFileResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
 		if (response.ok) {
@@ -33,6 +37,9 @@ export class WebRepository implements Repository {
 	}
 
 	async getFileAsArrayBuffer(fileName: string): Promise<RepositoryArrayBufferResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
 		if (response.ok) {
@@ -47,6 +54,9 @@ export class WebRepository implements Repository {
 	}
 
 	async getFileAsText(fileName: string): Promise<RepositoryTextResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
 		if (response.ok) {
@@ -61,6 +71,9 @@ export class WebRepository implements Repository {
 	}
 
 	async getFileAsBlob(fileName: string): Promise<RepositoryBlobResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
 		if (response.ok) {
@@ -75,6 +88,9 @@ export class WebRepository implements Repository {
 	}
 
 	async getFileAsJson(fileName: string): Promise<RepositoryJsonResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		const url = new URL(fileName, this.#base);
 		const response = await customFetch(url);
 		if (response.ok) {

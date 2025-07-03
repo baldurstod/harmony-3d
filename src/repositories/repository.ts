@@ -5,6 +5,7 @@ export enum RepositoryError {
 	UnknownError,
 	NotSupported,
 	RepoNotFound,
+	RepoInactive,
 }
 
 export interface RepositoryFileResponse { file?: File | null, error?: RepositoryError }
@@ -16,6 +17,7 @@ export interface RepositoryFileListResponse { root?: RepositoryEntry, error?: Re
 
 export interface Repository {
 	name: string;
+	active: boolean;
 	getFile: (path: string) => Promise<RepositoryFileResponse>;
 	getFileAsArrayBuffer: (path: string) => Promise<RepositoryArrayBufferResponse>;
 	getFileAsText: (path: string) => Promise<RepositoryTextResponse>;

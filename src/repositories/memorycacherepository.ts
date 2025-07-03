@@ -1,4 +1,4 @@
-import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
+import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
 
 /**
  * Cache the result of the underlying repository
@@ -7,6 +7,7 @@ export class MemoryCacheRepository implements Repository {
 	#base: Repository;
 	#files = new Map<string, Promise<RepositoryFileResponse>>();
 	#fileList?: RepositoryFileListResponse;
+	active: boolean = true;
 
 	constructor(base: Repository) {
 		this.#base = base;
@@ -17,6 +18,9 @@ export class MemoryCacheRepository implements Repository {
 	}
 
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		let response = this.#files.get(filename);
 		if (response) {
 			return response;

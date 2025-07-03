@@ -19015,9 +19015,19 @@ function getLoader(name) {
     return loaders.get(name);
 }
 
+var RepositoryError;
+(function (RepositoryError) {
+    RepositoryError[RepositoryError["FileNotFound"] = 1] = "FileNotFound";
+    RepositoryError[RepositoryError["UnknownError"] = 2] = "UnknownError";
+    RepositoryError[RepositoryError["NotSupported"] = 3] = "NotSupported";
+    RepositoryError[RepositoryError["RepoNotFound"] = 4] = "RepoNotFound";
+    RepositoryError[RepositoryError["RepoInactive"] = 5] = "RepoInactive";
+})(RepositoryError || (RepositoryError = {}));
+
 class OverrideRepository {
     #base;
     #overrides = new Map();
+    active = true;
     constructor(base) {
         this.#base = base;
     }
@@ -19025,6 +19035,9 @@ class OverrideRepository {
         return this.#base.name;
     }
     async getFile(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const file = this.#overrides.get(filename);
         if (file) {
             return { file: file };
@@ -19032,6 +19045,9 @@ class OverrideRepository {
         return this.#base.getFile(filename);
     }
     async getFileAsArrayBuffer(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const file = this.#overrides.get(filename);
         if (file) {
             return { buffer: await file.arrayBuffer() };
@@ -19039,6 +19055,9 @@ class OverrideRepository {
         return this.#base.getFileAsArrayBuffer(filename);
     }
     async getFileAsText(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const file = this.#overrides.get(filename);
         if (file) {
             return { text: await file.text() };
@@ -19046,6 +19065,9 @@ class OverrideRepository {
         return this.#base.getFileAsText(filename);
     }
     async getFileAsBlob(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const file = this.#overrides.get(filename);
         if (file) {
             return { blob: file };
@@ -19053,6 +19075,9 @@ class OverrideRepository {
         return this.#base.getFileAsBlob(filename);
     }
     async getFileAsJson(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const file = this.#overrides.get(filename);
         if (file) {
             return { json: JSON.parse(await file.text()) };
@@ -19071,6 +19096,7 @@ class OverrideRepository {
 
 class ManifestRepository {
     #base;
+    active = true;
     constructor(base) {
         this.#base = new OverrideRepository(base);
     }
@@ -19078,18 +19104,33 @@ class ManifestRepository {
         return this.#base.name;
     }
     async getFile(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         return this.#base.getFile(filename);
     }
     async getFileAsArrayBuffer(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         return this.#base.getFileAsArrayBuffer(filename);
     }
     async getFileAsText(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         return this.#base.getFileAsText(filename);
     }
     async getFileAsBlob(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         return this.#base.getFileAsBlob(filename);
     }
     async getFileAsJson(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         return this.#base.getFileAsJson(filename);
     }
     async getFileList() {
@@ -19135,6 +19176,7 @@ class MemoryCacheRepository {
     #base;
     #files = new Map();
     #fileList;
+    active = true;
     constructor(base) {
         this.#base = base;
     }
@@ -19142,6 +19184,9 @@ class MemoryCacheRepository {
         return this.#base.name;
     }
     async getFile(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         let response = this.#files.get(filename);
         if (response) {
             return response;
@@ -19187,17 +19232,10 @@ class MemoryCacheRepository {
     }
 }
 
-var RepositoryError;
-(function (RepositoryError) {
-    RepositoryError[RepositoryError["FileNotFound"] = 1] = "FileNotFound";
-    RepositoryError[RepositoryError["UnknownError"] = 2] = "UnknownError";
-    RepositoryError[RepositoryError["NotSupported"] = 3] = "NotSupported";
-    RepositoryError[RepositoryError["RepoNotFound"] = 4] = "RepoNotFound";
-})(RepositoryError || (RepositoryError = {}));
-
 class MemoryRepository {
     #name;
     #files = new Map();
+    active = true;
     constructor(name) {
         this.#name = name;
     }
@@ -19205,6 +19243,9 @@ class MemoryRepository {
         return this.#name;
     }
     async getFile(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const file = this.#files.get(filename);
         if (file) {
             return { file: file };
@@ -19212,6 +19253,9 @@ class MemoryRepository {
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsArrayBuffer(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const file = this.#files.get(filename);
         if (file) {
             return { buffer: await file.arrayBuffer() };
@@ -19219,6 +19263,9 @@ class MemoryRepository {
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsText(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const file = this.#files.get(filename);
         if (file) {
             return { text: await file.text() };
@@ -19226,6 +19273,9 @@ class MemoryRepository {
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsBlob(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const file = this.#files.get(filename);
         if (file) {
             return { blob: file };
@@ -19233,6 +19283,9 @@ class MemoryRepository {
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsJson(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const file = this.#files.get(filename);
         if (file) {
             return { json: JSON.parse(await file.text()) };
@@ -19437,6 +19490,7 @@ function match(name, filter) {
 class MergeRepository {
     #name;
     #repositories = [];
+    active = true;
     constructor(name, ...repositories) {
         this.#name = name;
         for (const repo of repositories) {
@@ -19449,6 +19503,9 @@ class MergeRepository {
         return this.#name;
     }
     async getFile(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         for (const repository of this.#repositories) {
             const response = await repository.getFile(filename);
             if (!response.error) {
@@ -19458,6 +19515,9 @@ class MergeRepository {
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsArrayBuffer(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         for (const repository of this.#repositories) {
             const response = await repository.getFileAsArrayBuffer(filename);
             if (!response.error) {
@@ -19467,6 +19527,9 @@ class MergeRepository {
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsText(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         for (const repository of this.#repositories) {
             const response = await repository.getFileAsText(filename);
             if (!response.error) {
@@ -19476,6 +19539,9 @@ class MergeRepository {
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsBlob(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         for (const repository of this.#repositories) {
             const response = await repository.getFileAsBlob(filename);
             if (!response.error) {
@@ -19485,6 +19551,9 @@ class MergeRepository {
         return { error: RepositoryError.FileNotFound };
     }
     async getFileAsJson(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         for (const repository of this.#repositories) {
             const response = await repository.getFileAsJson(filename);
             if (!response.error) {
@@ -19518,6 +19587,7 @@ class PathPrefixRepository {
     #name;
     #base;
     prefix;
+    active = true;
     constructor(name, base, prefix = '') {
         this.#name = name;
         this.#base = base;
@@ -19527,18 +19597,33 @@ class PathPrefixRepository {
         return this.#name;
     }
     async getFile(path) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         return this.#base.getFile(this.prefix + '/' + path);
     }
     async getFileAsArrayBuffer(path) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         return this.#base.getFileAsArrayBuffer(this.prefix + '/' + path);
     }
     async getFileAsText(path) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         return this.#base.getFileAsText(this.prefix + '/' + path);
     }
     async getFileAsBlob(path) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         return this.#base.getFileAsBlob(this.prefix + '/' + path);
     }
     async getFileAsJson(path) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         return this.#base.getFileAsJson(this.prefix + '/' + path);
     }
     async getFileList() {
@@ -19614,6 +19699,7 @@ class VpkRepository {
     #vpk = new Vpk();
     #initPromiseResolve;
     #initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
+    active = true;
     constructor(name, files) {
         this.#name = name;
         (async () => {
@@ -19630,6 +19716,9 @@ class VpkRepository {
         return this.#name;
     }
     async getFile(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         await this.#initPromise;
         const response = await this.#vpk.getFile(cleanupFilename$1(filename));
         if (response.error) {
@@ -19638,6 +19727,9 @@ class VpkRepository {
         return { file: response.file };
     }
     async getFileAsArrayBuffer(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         await this.#initPromise;
         const response = await this.#vpk.getFile(cleanupFilename$1(filename));
         if (response.error) {
@@ -19646,6 +19738,9 @@ class VpkRepository {
         return { buffer: await response.file.arrayBuffer() };
     }
     async getFileAsText(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         await this.#initPromise;
         const response = await this.#vpk.getFile(cleanupFilename$1(filename));
         if (response.error) {
@@ -19654,6 +19749,9 @@ class VpkRepository {
         return { text: await response.file.text() };
     }
     async getFileAsBlob(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         await this.#initPromise;
         const response = await this.#vpk.getFile(cleanupFilename$1(filename));
         if (response.error) {
@@ -19662,6 +19760,9 @@ class VpkRepository {
         return { blob: response.file };
     }
     async getFileAsJson(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         await this.#initPromise;
         const response = await this.#vpk.getFile(cleanupFilename$1(filename));
         if (response.error) {
@@ -19687,6 +19788,7 @@ function cleanupFilename$1(filename) {
 class WebRepository {
     #name;
     #base;
+    active = true;
     constructor(name, base) {
         this.#name = name;
         this.#base = base;
@@ -19698,6 +19800,9 @@ class WebRepository {
         return this.#base;
     }
     async getFile(fileName) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
         if (response.ok) {
@@ -19712,6 +19817,9 @@ class WebRepository {
         }
     }
     async getFileAsArrayBuffer(fileName) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
         if (response.ok) {
@@ -19726,6 +19834,9 @@ class WebRepository {
         }
     }
     async getFileAsText(fileName) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
         if (response.ok) {
@@ -19740,6 +19851,9 @@ class WebRepository {
         }
     }
     async getFileAsBlob(fileName) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
         if (response.ok) {
@@ -19754,6 +19868,9 @@ class WebRepository {
         }
     }
     async getFileAsJson(fileName) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         const url = new URL(fileName, this.#base);
         const response = await customFetch(url);
         if (response.ok) {
@@ -19779,6 +19896,7 @@ class ZipRepository {
     #zipEntries = new Map();
     #initPromiseResolve;
     #initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
+    active = true;
     constructor(name, zip) {
         this.#name = name;
         this.#zip = zip;
@@ -19801,11 +19919,17 @@ class ZipRepository {
         return this.#name;
     }
     async getFile(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         await this.#initPromise;
         cleanupFilename(filename);
         throw 'code me';
     }
     async getFileAsArrayBuffer(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         await this.#initPromise;
         const file = this.#zipEntries.get(cleanupFilename(filename));
         if (!file) {
@@ -19814,6 +19938,9 @@ class ZipRepository {
         return { buffer: await file.arrayBuffer() };
     }
     async getFileAsText(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         await this.#initPromise;
         const file = this.#zipEntries.get(cleanupFilename(filename));
         if (!file) {
@@ -19822,11 +19949,17 @@ class ZipRepository {
         return { text: await file.text() };
     }
     async getFileAsBlob(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         await this.#initPromise;
         cleanupFilename(filename);
         throw 'code me';
     }
     async getFileAsJson(filename) {
+        if (!this.active) {
+            return { error: RepositoryError.RepoInactive };
+        }
         await this.#initPromise;
         const file = this.#zipEntries.get(cleanupFilename(filename));
         if (!file) {

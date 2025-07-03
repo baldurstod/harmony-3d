@@ -3607,6 +3607,7 @@ declare class Choreography {
 
          export declare class ManifestRepository implements Repository {
              #private;
+             active: boolean;
              constructor(base: Repository);
              get name(): string;
              getFile(filename: string): Promise<RepositoryFileResponse>;
@@ -4079,6 +4080,7 @@ declare class Choreography {
           */
          export declare class MemoryCacheRepository implements Repository {
              #private;
+             active: boolean;
              constructor(base: Repository);
              get name(): string;
              getFile(filename: string): Promise<RepositoryFileResponse>;
@@ -4091,6 +4093,7 @@ declare class Choreography {
 
          export declare class MemoryRepository implements Repository {
              #private;
+             active: boolean;
              constructor(name: string);
              get name(): string;
              getFile(filename: string): Promise<RepositoryFileResponse>;
@@ -4104,6 +4107,7 @@ declare class Choreography {
 
          export declare class MergeRepository implements Repository {
              #private;
+             active: boolean;
              constructor(name: string, ...repositories: Repository[]);
              get name(): string;
              getFile(filename: string): Promise<RepositoryFileResponse>;
@@ -4924,6 +4928,7 @@ declare class Choreography {
 
          export declare class OverrideRepository implements Repository {
              #private;
+             active: boolean;
              constructor(base: Repository);
              get name(): string;
              getFile(filename: string): Promise<RepositoryFileResponse>;
@@ -4996,6 +5001,7 @@ declare class Choreography {
          export declare class PathPrefixRepository implements Repository {
              #private;
              prefix: string;
+             active: boolean;
              constructor(name: string, base: Repository, prefix?: string);
              get name(): string;
              getFile(path: string): Promise<RepositoryFileResponse>;
@@ -6151,6 +6157,7 @@ declare class Choreography {
 
          export declare interface Repository {
              name: string;
+             active: boolean;
              getFile: (path: string) => Promise<RepositoryFileResponse>;
              getFileAsArrayBuffer: (path: string) => Promise<RepositoryArrayBufferResponse>;
              getFileAsText: (path: string) => Promise<RepositoryTextResponse>;
@@ -6194,7 +6201,8 @@ declare class Choreography {
              FileNotFound = 1,
              UnknownError = 2,
              NotSupported = 3,
-             RepoNotFound = 4
+             RepoNotFound = 4,
+             RepoInactive = 5
          }
 
          export declare interface RepositoryFileListResponse {
@@ -6954,7 +6962,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -7573,7 +7581,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -9873,6 +9881,7 @@ declare class Choreography {
 
          export declare class VpkRepository implements Repository {
              #private;
+             active: boolean;
              constructor(name: string, files: File[]);
              get name(): string;
              getFile(filename: string): Promise<RepositoryFileResponse>;
@@ -10053,6 +10062,7 @@ declare class Choreography {
 
          export declare class WebRepository implements Repository {
              #private;
+             active: boolean;
              constructor(name: string, base: string);
              get name(): string;
              get base(): string;
@@ -10097,6 +10107,7 @@ declare class Choreography {
 
          export declare class ZipRepository implements Repository {
              #private;
+             active: boolean;
              constructor(name: string, zip: File);
              get name(): string;
              getFile(filename: string): Promise<RepositoryFileResponse>;
@@ -10108,12 +10119,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#217@#webAssembly"?: any;
-             "__#217@#HEAPU8"?: Uint8Array;
+             "__#35632@#webAssembly"?: any;
+             "__#35632@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#217@#initHeap"(): void;
+             "__#35632@#initHeap"(): void;
          };
 
          export { }

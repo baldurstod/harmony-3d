@@ -6,6 +6,7 @@ import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, Repo
 
 export class ManifestRepository implements Repository {
 	#base: OverrideRepository;
+	active: boolean = true;
 
 	constructor(base: Repository) {
 		this.#base = new OverrideRepository(base);
@@ -16,22 +17,37 @@ export class ManifestRepository implements Repository {
 	}
 
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		return this.#base.getFile(filename);
 	}
 
 	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		return this.#base.getFileAsArrayBuffer(filename);
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		return this.#base.getFileAsText(filename);
 	}
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		return this.#base.getFileAsBlob(filename);
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		return this.#base.getFileAsJson(filename);
 	}
 

@@ -7,6 +7,7 @@ export class VpkRepository implements Repository {
 	#vpk: Vpk = new Vpk();
 	#initPromiseResolve?: (value: boolean) => void;
 	#initPromise = new Promise(resolve => this.#initPromiseResolve = resolve);
+	active: boolean = true;
 
 	constructor(name: string, files: File[]) {
 		this.#name = name;
@@ -27,6 +28,9 @@ export class VpkRepository implements Repository {
 	}
 
 	async getFile(filename: string): Promise<RepositoryFileResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		await this.#initPromise;
 		const response = await this.#vpk.getFile(cleanupFilename(filename));
 		if (response.error) {
@@ -36,6 +40,9 @@ export class VpkRepository implements Repository {
 	}
 
 	async getFileAsArrayBuffer(filename: string): Promise<RepositoryArrayBufferResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		await this.#initPromise;
 		const response = await this.#vpk.getFile(cleanupFilename(filename));
 		if (response.error) {
@@ -45,6 +52,9 @@ export class VpkRepository implements Repository {
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		await this.#initPromise;
 		const response = await this.#vpk.getFile(cleanupFilename(filename));
 		if (response.error) {
@@ -54,6 +64,9 @@ export class VpkRepository implements Repository {
 	}
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		await this.#initPromise;
 		const response = await this.#vpk.getFile(cleanupFilename(filename));
 		if (response.error) {
@@ -63,6 +76,9 @@ export class VpkRepository implements Repository {
 	}
 
 	async getFileAsJson(filename: string): Promise<RepositoryJsonResponse> {
+		if (!this.active) {
+			return { error: RepositoryError.RepoInactive };
+		}
 		await this.#initPromise;
 		const response = await this.#vpk.getFile(cleanupFilename(filename));
 		if (response.error) {
