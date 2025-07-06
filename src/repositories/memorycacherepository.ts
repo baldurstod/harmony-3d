@@ -26,7 +26,7 @@ export class MemoryCacheRepository implements Repository {
 			return response;
 		}
 
-		let response = this.#base.getFile(filename);
+		response = this.#base.getFile(filename);
 		this.#files.set(filename, response);
 		return response;
 	}

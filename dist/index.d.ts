@@ -6962,7 +6962,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7581,7 +7581,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -10119,12 +10119,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#35632@#webAssembly"?: any;
-             "__#35632@#HEAPU8"?: Uint8Array;
+             "__#217@#webAssembly"?: any;
+             "__#217@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#35632@#initHeap"(): void;
+             "__#217@#initHeap"(): void;
          };
 
          export { }
