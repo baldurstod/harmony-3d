@@ -8633,6 +8633,7 @@ declare class Choreography {
               * TODO
               */
              setFlags(flags: number): void;
+             getFlag(flag: number): boolean;
              getAlphaBits(): number;
              /**
               * TODO

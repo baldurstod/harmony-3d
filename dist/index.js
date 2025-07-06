@@ -44928,6 +44928,9 @@ class SourceEngineVTF {
             }
         }
     }
+    getFlag(flag) {
+        return (this.flags & flag) == flag;
+    }
     getAlphaBits() {
         if ((this.flags & TEXTUREFLAGS_ONEBITALPHA) == TEXTUREFLAGS_ONEBITALPHA) {
             return 1;

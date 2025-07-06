@@ -70,6 +70,10 @@ export class SourceEngineVTF {
 		}
 	}
 
+	getFlag(flag: number): boolean {
+		return (this.flags & flag) == flag;
+	}
+
 	getAlphaBits(): number {
 		if ((this.flags & TEXTUREFLAGS_ONEBITALPHA) == TEXTUREFLAGS_ONEBITALPHA) {
 			return 1;
