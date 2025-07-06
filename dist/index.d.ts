@@ -9433,6 +9433,60 @@ declare class Choreography {
 
          export declare const TextureFactoryEventTarget: EventTarget;
 
+         export declare const TEXTUREFLAGS_ALL_MIPS = 1024;
+
+         export declare const TEXTUREFLAGS_ANISOTROPIC = 16;
+
+         export declare const TEXTUREFLAGS_BORDER = 536870912;
+
+         export declare const TEXTUREFLAGS_CLAMPS = 4;
+
+         export declare const TEXTUREFLAGS_CLAMPT = 8;
+
+         export declare const TEXTUREFLAGS_CLAMPU = 33554432;
+
+         export declare const TEXTUREFLAGS_DEPTHRENDERTARGET = 65536;
+
+         export declare const TEXTUREFLAGS_EIGHTBITALPHA = 8192;
+
+         export declare const TEXTUREFLAGS_ENVMAP = 16384;
+
+         export declare const TEXTUREFLAGS_HINT_DXT5 = 32;
+
+         export declare const TEXTUREFLAGS_NODEBUGOVERRIDE = 131072;
+
+         export declare const TEXTUREFLAGS_NODEPTHBUFFER = 8388608;
+
+         export declare const TEXTUREFLAGS_NOLOD = 512;
+
+         export declare const TEXTUREFLAGS_NOMIP = 256;
+
+         export declare const TEXTUREFLAGS_NORMAL = 128;
+
+         export declare const TEXTUREFLAGS_ONEBITALPHA = 4096;
+
+         export declare const TEXTUREFLAGS_POINTSAMPLE = 1;
+
+         export declare const TEXTUREFLAGS_PROCEDURAL = 2048;
+
+         export declare const TEXTUREFLAGS_RENDERTARGET = 32768;
+
+         export declare const TEXTUREFLAGS_SINGLECOPY = 262144;
+
+         export declare const TEXTUREFLAGS_SRGB = 64;
+
+         export declare const TEXTUREFLAGS_SSBUMP = 134217728;
+
+         export declare const TEXTUREFLAGS_TRILINEAR = 2;
+
+         export declare const TEXTUREFLAGS_UNUSED_01000000 = 16777216;
+
+         export declare const TEXTUREFLAGS_UNUSED_40000000 = 1073741824;
+
+         export declare const TEXTUREFLAGS_UNUSED_80000000 = 2147483648;
+
+         export declare const TEXTUREFLAGS_VERTEXTEXTURE = 67108864;
+
          export declare enum TextureFormat {
              Rgb = 6407,
              Rgba = 6408,
