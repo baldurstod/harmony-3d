@@ -8602,7 +8602,7 @@ declare class Choreography {
              registerMaterial(materialName: any, materialClass: any): void;
          }
 
-         declare class SourceEngineVTF {
+         export declare class SourceEngineVTF {
              #private;
              repository: string;
              fileName: string;
