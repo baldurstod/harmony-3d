@@ -1835,7 +1835,7 @@ declare class Choreography {
          get worldMatrix(): mat4;
          render(canvas: HTMLCanvasElement): void;
          get transparent(): boolean;
-         setVisible(visible: boolean | undefined): void;
+         setVisible(visible?: boolean | undefined): void;
          /**
           * @deprecated Please use `setVisible` instead.
           */
@@ -5988,9 +5988,9 @@ declare class Choreography {
 
          export declare class RenderModels extends Operator {
              #private;
-             _paramChanged(paramName: any, value: any): void;
-             initRenderer(particleSystem: any): void;
-             updateParticles(particleSystem: any, particleList: any, elapsedTime: any): void;
+             _paramChanged(paramName: string, value: Source2OperatorParamValue): void;
+             initRenderer(particleSystem: Source2ParticleSystem): void;
+             updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void;
              dispose(): void;
          }
 

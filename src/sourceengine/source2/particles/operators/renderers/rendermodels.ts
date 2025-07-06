@@ -1,8 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { Source2ModelInstance } from '../../../export';
+import { Source2ModelInstance, Source2ParticleSystem } from '../../../export';
 import { Source2ModelManager } from '../../../models/source2modelmanager';
 import { Source2Particle } from '../../source2particle';
-import { Operator } from '../operator';
+import { Operator, Source2OperatorParamValue } from '../operator';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const tempVec3 = vec3.create();
@@ -10,13 +10,13 @@ const tempVec3 = vec3.create();
 export class RenderModels extends Operator {
 	#modelList = new Map<string, number>();
 	#models = new Map<Source2Particle, Source2ModelInstance>();
-	#skin;
-	#totalProbability;
+	#skin = 0;
+	#totalProbability = 0;
 	//#modelPool = new Map();
 	#allModels = new Map<Source2ModelInstance, { repository: string, modelName: string, used: boolean }/*TODO:create a type*/>();
 	#animated = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, value: Source2OperatorParamValue): void {
 		switch (paramName) {
 			case 'm_ModelList':
 				this.#modelList.clear();
@@ -48,10 +48,10 @@ export class RenderModels extends Operator {
 		}
 	}
 
-	initRenderer(particleSystem) {
+	initRenderer(particleSystem: Source2ParticleSystem): void {
 	}
 
-	updateParticles(particleSystem, particleList, elapsedTime) {
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {
 		const activity = particleSystem.getAttribute('activity');
 
 		for (let i = 0, l = particleList.length; i < l; ++i) {
@@ -59,16 +59,17 @@ export class RenderModels extends Operator {
 		}
 	}
 
-	#pickRandomModel() {
+	#pickRandomModel(): string {
 		const random = Math.random() * this.#totalProbability;
 		for (const [modelName, modelProbability] of this.#modelList) {
 			if (random <= modelProbability) {
 				return modelName;
 			}
 		}
+		return '';
 	}
 
-	async #getModel(repository, modelName) {
+	async #getModel(repository: string, modelName: string): Promise<Source2ModelInstance> {
 		for (const [model, datas] of this.#allModels) {
 			if (!datas.used && (datas.modelName == modelName) && (datas.repository == repository)) {
 				//this.#allModels.delete(model);
@@ -85,7 +86,7 @@ export class RenderModels extends Operator {
 		return model;
 	}
 
-	#returnModel(particle) {
+	#returnModel(particle: Source2Particle): void {
 		const model = this.#models.get(particle);
 		if (model) {
 			//previousModel.dispose();
@@ -98,7 +99,7 @@ export class RenderModels extends Operator {
 
 	}
 
-	async #updateParticle(particleSystem, particleIndex, particle, activityName, activityModifiers) {
+	async #updateParticle(particleSystem: Source2ParticleSystem, particleIndex: number, particle: Source2Particle, activityName: string, activityModifiers: string[]): Promise<void> {
 		let model;
 
 		if (!particle.modelName) {
@@ -142,14 +143,14 @@ export class RenderModels extends Operator {
 			model.quaternion = particle.quaternion;
 			model.playSequence(activityName, activityModifiers);
 			if (particle.color[3] == 0) { //TODO: add an actual rendering tint / alpha on models
-				model.visible = false;
+				model.setVisible(false);
 			} else {
-				model.visible = undefined;
+				model.setVisible();
 			}
 		}
 	}
 
-	dispose() {
+	dispose(): void {
 		this.#allModels.forEach((_, model) => model.dispose());
 	}
 }

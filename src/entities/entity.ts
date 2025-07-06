@@ -302,7 +302,7 @@ export class Entity {
 		return false;
 	}
 
-	setVisible(visible: boolean | undefined) {
+	setVisible(visible?: boolean | undefined) {
 		const oldValue = this.#visible;
 		this.#visible = visible;
 		if (oldValue != visible) {

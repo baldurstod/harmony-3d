@@ -63675,8 +63675,8 @@ const tempVec3 = vec3.create();
 class RenderModels extends Operator {
     #modelList = new Map();
     #models = new Map();
-    #skin;
-    #totalProbability;
+    #skin = 0;
+    #totalProbability = 0;
     //#modelPool = new Map();
     #allModels = new Map();
     #animated = false;
@@ -63725,6 +63725,7 @@ class RenderModels extends Operator {
                 return modelName;
             }
         }
+        return '';
     }
     async #getModel(repository, modelName) {
         for (const [model, datas] of this.#allModels) {
@@ -63788,10 +63789,10 @@ class RenderModels extends Operator {
             model.quaternion = particle.quaternion;
             model.playSequence(activityName, activityModifiers);
             if (particle.color[3] == 0) { //TODO: add an actual rendering tint / alpha on models
-                model.visible = false;
+                model.setVisible(false);
             }
             else {
-                model.visible = undefined;
+                model.setVisible();
             }
         }
     }
