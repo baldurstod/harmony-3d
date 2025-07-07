@@ -1,11 +1,12 @@
-import { Metaball } from './metaball';
-import { MetaballsBufferGeometry } from './geometries/metaballsbuffergeometry';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
+import { MetaballsBufferGeometry } from './geometries/metaballsbuffergeometry';
+import { Metaball } from './metaball';
 
 export class Metaballs extends Mesh {
 	cubeWidth: number;
 	#balls: Metaball[] = [];
+
 	constructor(material = new MeshBasicMaterial(), cubeWidth = 1) {
 		super(new MetaballsBufferGeometry(), material);
 

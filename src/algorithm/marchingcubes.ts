@@ -318,7 +318,7 @@ const triTable = new Int8Array([
 	0 will be returned if the grid cell is either totally above
 	of totally below the isolevel.
 */
-export function Polygonise(/*GRIDCELL */grid,/*double */isolevel,/*TRIANGLE **/triangles): number {
+export function polygonise(/*GRIDCELL */grid: GRIDCELL,/*double */isolevel: number,/*TRIANGLE **/triangles: TRIANGLE[]): number {
 	//XYZ vertlist[12];
 	const vertlist = [];
 	for (let i = 0; i < 12; ++i) {
@@ -347,40 +347,40 @@ export function Polygonise(/*GRIDCELL */grid,/*double */isolevel,/*TRIANGLE **/t
 	/* Find the vertices where the surface intersects the cube */
 	if (edgeTable[cubeindex] & 1)
 		vertlist[0] =
-			VertexInterp(isolevel, grid.p[0], grid.p[1], grid.val[0], grid.val[1]);
+			vertexInterp(isolevel, grid.p[0], grid.p[1], grid.val[0], grid.val[1]);
 	if (edgeTable[cubeindex] & 2)
 		vertlist[1] =
-			VertexInterp(isolevel, grid.p[1], grid.p[2], grid.val[1], grid.val[2]);
+			vertexInterp(isolevel, grid.p[1], grid.p[2], grid.val[1], grid.val[2]);
 	if (edgeTable[cubeindex] & 4)
 		vertlist[2] =
-			VertexInterp(isolevel, grid.p[2], grid.p[3], grid.val[2], grid.val[3]);
+			vertexInterp(isolevel, grid.p[2], grid.p[3], grid.val[2], grid.val[3]);
 	if (edgeTable[cubeindex] & 8)
 		vertlist[3] =
-			VertexInterp(isolevel, grid.p[3], grid.p[0], grid.val[3], grid.val[0]);
+			vertexInterp(isolevel, grid.p[3], grid.p[0], grid.val[3], grid.val[0]);
 	if (edgeTable[cubeindex] & 16)
 		vertlist[4] =
-			VertexInterp(isolevel, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
+			vertexInterp(isolevel, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
 	if (edgeTable[cubeindex] & 32)
 		vertlist[5] =
-			VertexInterp(isolevel, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
+			vertexInterp(isolevel, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
 	if (edgeTable[cubeindex] & 64)
 		vertlist[6] =
-			VertexInterp(isolevel, grid.p[6], grid.p[7], grid.val[6], grid.val[7]);
+			vertexInterp(isolevel, grid.p[6], grid.p[7], grid.val[6], grid.val[7]);
 	if (edgeTable[cubeindex] & 128)
 		vertlist[7] =
-			VertexInterp(isolevel, grid.p[7], grid.p[4], grid.val[7], grid.val[4]);
+			vertexInterp(isolevel, grid.p[7], grid.p[4], grid.val[7], grid.val[4]);
 	if (edgeTable[cubeindex] & 256)
 		vertlist[8] =
-			VertexInterp(isolevel, grid.p[0], grid.p[4], grid.val[0], grid.val[4]);
+			vertexInterp(isolevel, grid.p[0], grid.p[4], grid.val[0], grid.val[4]);
 	if (edgeTable[cubeindex] & 512)
 		vertlist[9] =
-			VertexInterp(isolevel, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
+			vertexInterp(isolevel, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
 	if (edgeTable[cubeindex] & 1024)
 		vertlist[10] =
-			VertexInterp(isolevel, grid.p[2], grid.p[6], grid.val[2], grid.val[6]);
+			vertexInterp(isolevel, grid.p[2], grid.p[6], grid.val[2], grid.val[6]);
 	if (edgeTable[cubeindex] & 2048)
 		vertlist[11] =
-			VertexInterp(isolevel, grid.p[3], grid.p[7], grid.val[3], grid.val[7]);
+			vertexInterp(isolevel, grid.p[3], grid.p[7], grid.val[3], grid.val[7]);
 
 	/* Create the triangle */
 	let ntriang = 0;
@@ -403,7 +403,7 @@ export function Polygonise(/*GRIDCELL */grid,/*double */isolevel,/*TRIANGLE **/t
 	Linearly interpolate the position where an isosurface cuts
 	an edge between two vertices, each with their own scalar value
 */
-function VertexInterp(isolevel, p1, p2, valp1, valp2): vec3
+function vertexInterp(isolevel: number, p1: vec3, p2: vec3, valp1: number, valp2: number): vec3
 /*double isolevel;
 XYZ p1,p2;
 double valp1,valp2;*/ {

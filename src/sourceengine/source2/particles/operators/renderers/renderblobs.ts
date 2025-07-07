@@ -1,18 +1,21 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { Source2SpriteCard } from '../../../materials/source2spritecard';
 import { Metaball } from '../../../../../primitives/metaball';
 import { Metaballs } from '../../../../../primitives/metaballs';
+import { Source2SpriteCard } from '../../../materials/source2spritecard';
+import { Source2ParticleSystem } from '../../export';
+import { Source2Particle } from '../../source2particle';
+import { Operator, Source2OperatorParamValue } from '../operator';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RenderBlobs extends Operator {
-	balls = [];
-	metaballs: Metaballs;
-	constructor(system) {
+	#balls: Metaball[] = [];
+	#metaballs = new Metaballs();
+
+	constructor(system: Source2ParticleSystem) {
 		super(system);
 		this.material = new Source2SpriteCard(system.repository);
 	}
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
 		/*
 		cube_width
 			This is the density of the matrix through which the blob is meshed. Smaller numbers give higher precision at higher performance cost, while larger number will cause more swimming with movement but at a much cheaper cost.
@@ -34,7 +37,7 @@ export class RenderBlobs extends Operator {
 		}
 	}
 
-	initRenderer(particleSystem) {
+	initRenderer(particleSystem: Source2ParticleSystem): void {
 		/*this.geometry = new BufferGeometry();
 		this.mesh = new StaticMesh(this.geometry, this.material);
 		this.mesh.setDefine('HARDWARE_PARTICLES');
@@ -42,12 +45,12 @@ export class RenderBlobs extends Operator {
 		this.mesh.setUniform('uParticles', this.texture);
 
 		this.maxParticles = particleSystem.maxParticles;*/
-		this.metaballs = new Metaballs();
-		particleSystem.addChild(this.metaballs);
+		//this.metaballs = new Metaballs();
+		particleSystem.addChild(this.#metaballs);
 	}
 
-	updateParticles(particleSystem, particleList, elapsedTime) {
-		this.metaballs.cubeWidth = this.getParamScalarValue('m_cubeWidth') ?? 1;
+	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {
+		this.#metaballs.cubeWidth = this.getParamScalarValue('m_cubeWidth') ?? 1;
 		const renderRadius = this.getParamScalarValue('m_renderRadius') ?? 1.3;
 		const m_cutoffRadius = this.getParamScalarValue('m_cutoffRadius') ?? 3.3;
 
@@ -55,10 +58,10 @@ export class RenderBlobs extends Operator {
 
 		for (let i = 0; i < Math.min(particleList.length, 500); i++) {
 			const particle = particleList[i];
-			let ball = this.balls[i];
+			let ball = this.#balls[i];
 			if (!ball) {
 				ball = new Metaball();
-				this.balls.push(ball);
+				this.#balls.push(ball);
 			}
 			ball.setRadius(renderRadius);
 			ball.position = particle.position;
@@ -66,8 +69,8 @@ export class RenderBlobs extends Operator {
 			balls.push(ball);
 		}
 
-		this.metaballs.setBalls(balls);
-		this.metaballs.updateGeometry();
+		this.#metaballs.setBalls(balls);
+		this.#metaballs.updateGeometry();
 	}
 }
 RegisterSource2ParticleOperator('C_OP_RenderBlobs', RenderBlobs);

@@ -5302,7 +5302,7 @@ declare class Choreography {
              range?: number;
          };
 
-         export declare function Polygonise(/*GRIDCELL */ grid: any, /*double */ isolevel: any, /*TRIANGLE **/ triangles: any): number;
+         export declare function polygonise(/*GRIDCELL */ grid: GRIDCELL, /*double */ isolevel: number, /*TRIANGLE **/ triangles: TRIANGLE[]): number;
 
          export declare class PositionAlongPathRandom extends SourceEngineParticleOperator {
              static functionName: string;
@@ -5874,12 +5874,11 @@ declare class Choreography {
          }
 
          export declare class RenderBlobs extends Operator {
-             balls: any[];
-             metaballs: Metaballs;
-             constructor(system: any);
-             _paramChanged(paramName: any, value: any): void;
-             initRenderer(particleSystem: any): void;
-             updateParticles(particleSystem: any, particleList: any, elapsedTime: any): void;
+             #private;
+             constructor(system: Source2ParticleSystem);
+             _paramChanged(paramName: string, value: Source2OperatorParamValue): void;
+             initRenderer(particleSystem: Source2ParticleSystem): void;
+             updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void;
          }
 
          export declare class Renderbuffer {

@@ -1,1 +1,1 @@
-export { Polygonise, TRIANGLE, GRIDCELL } from './marchingcubes';
+export { polygonise, TRIANGLE, GRIDCELL } from './marchingcubes';

@@ -3,8 +3,8 @@ import { Entity } from '../entities/entity';
 
 export class Metaball extends Entity {
 	currentWorldPosition = vec3.create();
-	radius: number;
-	radius2: number;
+	radius: number = 0;
+	radius2: number = 0;
 	constructor(radius = 1) {
 		super();
 		this.setRadius(radius);

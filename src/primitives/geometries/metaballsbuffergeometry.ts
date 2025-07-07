@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
-import { Polygonise, GRIDCELL } from '../../algorithm/marchingcubes';
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { GRIDCELL, polygonise, TRIANGLE } from '../../algorithm/marchingcubes';
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 import { Metaball } from './../metaball';
 
@@ -12,12 +12,12 @@ const THRESHOLD = 0.99;
 export class MetaballsBufferGeometry extends BufferGeometry {
 	constructor(balls?: Metaball[]) {
 		super();
-		this.updateGeometry(balls);
+		this.updateGeometry(balls ?? []);
 	}
 
-	updateGeometry(balls = [], cubeWidth = 1) {
+	updateGeometry(balls: Metaball[], cubeWidth = 1) {
 		// build geometry
-		const triangles = this.TestMarchingCubes(balls, cubeWidth);
+		const triangles = this.#testMarchingCubes(balls, cubeWidth);
 
 		const indices = [];
 		const vertices = [];
@@ -52,7 +52,7 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 		this.count = indices.length;
 	}
 
-	static getBoundingBox(balls) {
+	static getBoundingBox(balls: Metaball[]) {
 		const min = vec3.fromValues(+Infinity, +Infinity, +Infinity);
 		const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
 		for (const ball of balls) {
@@ -64,7 +64,7 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 	}
 
 
-	static computeValue(balls, position) {
+	static #computeValue(balls: Metaball[], position: vec3) {
 		let value = 0;
 		const value2 = 0;
 		for (const ball of balls) {
@@ -83,7 +83,7 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 		return value;
 	}
 
-	TestMarchingCubes(balls, cubeWidth) {
+	#testMarchingCubes(balls: Metaball[], cubeWidth: number) {
 		const [min, max] = MetaballsBufferGeometry.getBoundingBox(balls);
 		for (const ball of balls) {
 			ball.getWorldPosition(ball.currentWorldPosition);
@@ -111,44 +111,44 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 		for (let i = min[0] - 1; i <= max[0]; i += cubeWidth) {
 			for (let j = min[1] - 1; j <= max[1]; j += cubeWidth) {
 				for (let k = min[2] - 1; k <= max[2]; k += cubeWidth) {
-					const tris = [];
+					const tris: TRIANGLE[] = [];
 
 
 					grid.p[0][0] = i;
 					grid.p[0][1] = j;
 					grid.p[0][2] = k;
-					grid.val[0] = MetaballsBufferGeometry.computeValue(balls, grid.p[0]);//1 / vec3.squaredDistance(center, grid.p[0]) + 1 / vec3.squaredDistance(center2, grid.p[0]) * doSphere2;
+					grid.val[0] = MetaballsBufferGeometry.#computeValue(balls, grid.p[0]);//1 / vec3.squaredDistance(center, grid.p[0]) + 1 / vec3.squaredDistance(center2, grid.p[0]) * doSphere2;
 					grid.p[1][0] = i + cubeWidth;
 					grid.p[1][1] = j;
 					grid.p[1][2] = k;
-					grid.val[1] = MetaballsBufferGeometry.computeValue(balls, grid.p[1]);//1 / vec3.squaredDistance(center, grid.p[1]) + 1 / vec3.squaredDistance(center2, grid.p[1]) * doSphere2;
+					grid.val[1] = MetaballsBufferGeometry.#computeValue(balls, grid.p[1]);//1 / vec3.squaredDistance(center, grid.p[1]) + 1 / vec3.squaredDistance(center2, grid.p[1]) * doSphere2;
 					grid.p[2][0] = i + cubeWidth;
 					grid.p[2][1] = j + cubeWidth;
 					grid.p[2][2] = k;
-					grid.val[2] = MetaballsBufferGeometry.computeValue(balls, grid.p[2]);//1 / vec3.squaredDistance(center, grid.p[2]) + 1 / vec3.squaredDistance(center2, grid.p[2]) * doSphere2;
+					grid.val[2] = MetaballsBufferGeometry.#computeValue(balls, grid.p[2]);//1 / vec3.squaredDistance(center, grid.p[2]) + 1 / vec3.squaredDistance(center2, grid.p[2]) * doSphere2;
 					grid.p[3][0] = i;
 					grid.p[3][1] = j + cubeWidth;
 					grid.p[3][2] = k;
-					grid.val[3] = MetaballsBufferGeometry.computeValue(balls, grid.p[3]);//1 / vec3.squaredDistance(center, grid.p[3]) + 1 / vec3.squaredDistance(center2, grid.p[3]) * doSphere2;
+					grid.val[3] = MetaballsBufferGeometry.#computeValue(balls, grid.p[3]);//1 / vec3.squaredDistance(center, grid.p[3]) + 1 / vec3.squaredDistance(center2, grid.p[3]) * doSphere2;
 					grid.p[4][0] = i;
 					grid.p[4][1] = j;
 					grid.p[4][2] = k + cubeWidth;
-					grid.val[4] = MetaballsBufferGeometry.computeValue(balls, grid.p[4]);//1 / vec3.squaredDistance(center, grid.p[4]) + 1 / vec3.squaredDistance(center2, grid.p[4]) * doSphere2;
+					grid.val[4] = MetaballsBufferGeometry.#computeValue(balls, grid.p[4]);//1 / vec3.squaredDistance(center, grid.p[4]) + 1 / vec3.squaredDistance(center2, grid.p[4]) * doSphere2;
 					grid.p[5][0] = i + cubeWidth;
 					grid.p[5][1] = j;
 					grid.p[5][2] = k + cubeWidth;
-					grid.val[5] = MetaballsBufferGeometry.computeValue(balls, grid.p[5]);//1 / vec3.squaredDistance(center, grid.p[5]) + 1 / vec3.squaredDistance(center2, grid.p[5]) * doSphere2;
+					grid.val[5] = MetaballsBufferGeometry.#computeValue(balls, grid.p[5]);//1 / vec3.squaredDistance(center, grid.p[5]) + 1 / vec3.squaredDistance(center2, grid.p[5]) * doSphere2;
 					grid.p[6][0] = i + cubeWidth;
 					grid.p[6][1] = j + cubeWidth;
 					grid.p[6][2] = k + cubeWidth;
-					grid.val[6] = MetaballsBufferGeometry.computeValue(balls, grid.p[6]);//1 / vec3.squaredDistance(center, grid.p[6]) + 1 / vec3.squaredDistance(center2, grid.p[6]) * doSphere2;
+					grid.val[6] = MetaballsBufferGeometry.#computeValue(balls, grid.p[6]);//1 / vec3.squaredDistance(center, grid.p[6]) + 1 / vec3.squaredDistance(center2, grid.p[6]) * doSphere2;
 					grid.p[7][0] = i;
 					grid.p[7][1] = j + cubeWidth;
 					grid.p[7][2] = k + cubeWidth;
-					grid.val[7] = MetaballsBufferGeometry.computeValue(balls, grid.p[7]);//1 / vec3.squaredDistance(center, grid.p[7]) + 1 / vec3.squaredDistance(center2, grid.p[7]) * doSphere2;
+					grid.val[7] = MetaballsBufferGeometry.#computeValue(balls, grid.p[7]);//1 / vec3.squaredDistance(center, grid.p[7]) + 1 / vec3.squaredDistance(center2, grid.p[7]) * doSphere2;
 
 
-					Polygonise(grid, isolevel, tris);
+					polygonise(grid, isolevel, tris);
 
 					triangles.push(...tris);
 				}
