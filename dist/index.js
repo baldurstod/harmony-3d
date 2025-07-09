@@ -62846,7 +62846,7 @@ class SetControlPointPositions extends Operator {
     cp = [1, 2, 3, 4];
     cpPos = [vec3.fromValues(128, 0, 0), vec3.fromValues(0, 128, 0), vec3.fromValues(-128, 0, 0), vec3.fromValues(0, -128, 0)];
     headLocation = 0;
-    setOnce;
+    setOnce = false;
     _paramChanged(paramName, value) {
         switch (paramName) {
             case 'm_bUseWorldLocation':
@@ -62889,7 +62889,7 @@ class SetControlPointPositions extends Operator {
                 super._paramChanged(paramName, value);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         //const list = ['First', 'Second', 'Third', 'Fourth'];
         const useWorldLocation = this.useWorldLocation;
         this.system.getControlPointPosition(this.headLocation);

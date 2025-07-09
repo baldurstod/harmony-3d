@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
+import { Source2Particle } from '../../source2particle';
+import { Operator, Source2OperatorParamValue } from '../operator';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 
 const v = vec3.create();
 
@@ -10,9 +11,9 @@ export class SetControlPointPositions extends Operator {
 	cp = [1, 2, 3, 4];
 	cpPos: vec3[] = [vec3.fromValues(128, 0, 0), vec3.fromValues(0, 128, 0), vec3.fromValues(-128, 0, 0), vec3.fromValues(0, -128, 0)];
 	headLocation = 0;
-	setOnce: boolean;
+	setOnce: boolean = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
 		switch (paramName) {
 			case 'm_bUseWorldLocation':
 				this.useWorldLocation = value;
@@ -55,7 +56,7 @@ export class SetControlPointPositions extends Operator {
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle | Source2Particle[] | undefined, elapsedTime: number, strength: number) {
 		//const list = ['First', 'Second', 'Third', 'Fourth'];
 
 		const useWorldLocation = this.useWorldLocation;

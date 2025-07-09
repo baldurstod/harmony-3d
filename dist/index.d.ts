@@ -7958,8 +7958,8 @@ declare class Choreography {
              cpPos: vec3[];
              headLocation: number;
              setOnce: boolean;
-             _paramChanged(paramName: any, value: any): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             _paramChanged(paramName: string, value: Source2OperatorParamValue): void;
+             doOperate(particle: Source2Particle | Source2Particle[] | undefined, elapsedTime: number, strength: number): void;
              isPreEmission(): boolean;
          }
 
