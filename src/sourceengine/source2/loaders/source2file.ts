@@ -1,8 +1,7 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
-import { VTEX_FLAG_CUBE_TEXTURE, VTEX_FORMAT_BC5, VTEX_FORMAT_BGRA8888 } from '../constants';
-import { TEXTURE_FORMAT_UNKNOWN, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5 } from '../../../textures/textureconstants';
-import { VTEX_FORMAT_DXT1, VTEX_FORMAT_DXT5, VTEX_FORMAT_R8G8B8A8_UINT, VTEX_FORMAT_PNG_R8G8B8A8_UINT, VTEX_FORMAT_BC4, VTEX_FORMAT_BC7, VTEX_FORMAT_R8 } from '../constants';
 import { DEBUG } from '../../../buildoptions';
+import { TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN } from '../../../textures/textureconstants';
+import { VTEX_FLAG_CUBE_TEXTURE, VTEX_FORMAT_BC4, VTEX_FORMAT_BC5, VTEX_FORMAT_BC7, VTEX_FORMAT_BGRA8888, VTEX_FORMAT_DXT1, VTEX_FORMAT_DXT5, VTEX_FORMAT_R8, VTEX_FORMAT_R8G8B8A8_UINT } from '../constants';
 import { Source2FileBlock } from './source2fileblock';
 
 const VTEX_TO_INTERNAL_IMAGE_FORMAT: Record<number, number> = {};
@@ -58,22 +57,22 @@ export class Source2File {
 		this.fileName = fileName;
 	}
 
-	addBlock(block: Source2FileBlock) {
+	addBlock(block: Source2FileBlock): void {
 		this.blocksArray.push(block);
 		if (this.blocks[block.type] === undefined) {
 			this.blocks[block.type] = block;
 		}
 	}
 
-	getBlockByType(type) {
+	getBlockByType(type: string): Source2FileBlock | null {
 		return this.blocks[type];
 	}
 
-	getBlockById(id) {
+	getBlockById(id: number): Source2FileBlock | null {
 		return this.blocksArray[id];
 	}
 
-	getVertexCount(bufferId) {
+	getVertexCount(bufferId: number): number {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return 0;
@@ -81,7 +80,8 @@ export class Source2File {
 
 		return block.indices[bufferId].indices.length;
 	}
-	getIndices(bufferId) {
+
+	getIndices(bufferId: number): number[] | null {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
@@ -91,7 +91,8 @@ export class Source2File {
 
 		return indexBuffer ? indexBuffer.indices : [];
 	}
-	getVertices(bufferId) {
+
+	getVertices(bufferId: number): number[] | null {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
@@ -101,7 +102,8 @@ export class Source2File {
 
 		return vertexBuffer ? vertexBuffer.vertices : [];
 	}
-	getNormals(bufferId) {
+
+	getNormals(bufferId: number): number[] | null {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
@@ -125,7 +127,8 @@ export class Source2File {
 		}
 		return ret;//vertexBuffer ? vertexBuffer.normals : [];
 	}
-	getCoords(bufferId) {
+
+	getCoords(bufferId: number): number[] | null {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
@@ -135,7 +138,8 @@ export class Source2File {
 
 		return vertexBuffer ? vertexBuffer.coords : [];
 	}
-	getBoneIndices(bufferId) {
+
+	getBoneIndices(bufferId: number): number[] | null {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
@@ -145,7 +149,8 @@ export class Source2File {
 
 		return vertexBuffer ? vertexBuffer.boneIndices : [];
 	}
-	getBoneWeight(bufferId) {
+
+	getBoneWeight(bufferId: number): number[] | null {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
@@ -155,7 +160,9 @@ export class Source2File {
 
 		return vertexBuffer ? vertexBuffer.boneWeight : [];
 	}
-	getPositionArray(bufferId) {//TODOv3 :removeme
+
+	/*
+	getPositionArray(bufferId: number) {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
@@ -177,6 +184,7 @@ export class Source2File {
 		}
 		return ret;
 	}
+
 	getNormalArray(bufferId) {
 
 		/*function DecompressNormal(float2 inputTangent, out float4 outputTangent) {//_DecompressShort2Tangent
@@ -185,7 +193,7 @@ export class Source2File {
 			outputTangent.xy	= (xyAbs - 16384.0) / 16384.0;	// x and y
 			outputTangent.z		= ztSigns.x * sqrt(saturate(1.0 - dot(outputTangent.xy, outputTangent.xy)));
 			//outputTangent.w		= ztSigns.y;
-		}*/
+		}* /
 
 
 		function DecompressNormal(inputNormal) {				// {nX, nY, nZ}//_DecompressUByte4Normal
@@ -271,6 +279,7 @@ export class Source2File {
 		}
 		return ret;
 	}
+
 	getBoneIndiceArray(bufferId) {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
@@ -296,6 +305,7 @@ export class Source2File {
 		}
 		return ret;
 	}
+
 	getBoneWeightArray(bufferId) {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
@@ -320,6 +330,7 @@ export class Source2File {
 		}
 		return ret;
 	}
+
 	getTangentArray(bufferId) {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
@@ -343,6 +354,7 @@ export class Source2File {
 		}
 		return ret;
 	}
+
 	getBinormalArray(bufferId) {
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
@@ -367,21 +379,25 @@ export class Source2File {
 		}
 		return ret;
 	}
-	getWidth() {
+	*/
+
+	getWidth(): number {
 		const block = this.blocks.DATA;
 		if (!block) {
 			return 0;
 		}
 		return block.width;
 	}
-	getHeight() {
+
+	getHeight(): number {
 		const block = this.blocks.DATA;
 		if (!block) {
 			return 0;
 		}
 		return block.height;
 	}
-	getDxtLevel() {
+
+	getDxtLevel(): number {
 		const block = this.blocks.DATA;
 		if (!block) {
 			return 0;
@@ -395,7 +411,8 @@ export class Source2File {
 		}
 		return 0;
 	}
-	isCompressed() {
+
+	isCompressed(): boolean {
 		const block = this.blocks.DATA;
 		if (!block) {
 			return false;
@@ -403,7 +420,8 @@ export class Source2File {
 
 		return block.imageFormat <= 2;//DXT1 or DXT5
 	}
-	isCubeTexture() {
+
+	isCubeTexture(): boolean {
 		const block = this.blocks.DATA;
 		if (!block) {
 			return false;
@@ -412,7 +430,7 @@ export class Source2File {
 		return (block.flags & VTEX_FLAG_CUBE_TEXTURE) == VTEX_FLAG_CUBE_TEXTURE;
 	}
 
-	getBlockStruct(path) {
+	getBlockStruct(path: string): any | null/*TODO: create a type*/ {
 		const arr = path.split('.');
 		let data = this.blocks;
 		if (!data) {
@@ -431,26 +449,28 @@ export class Source2File {
 		return data;
 	}
 
-	getPermModelData(path) {
+	getPermModelData(path: string): any/*TODO: create a type*/ {
 		return this.getBlockStruct('DATA.structs.PermModelData_t.' + path) || this.getBlockStruct('DATA.keyValue.root.' + path);
 	}
 
-	getMaterialResourceData(path) {
+	getMaterialResourceData(path: string): any/*TODO: create a type*/ {
 		return this.getBlockStruct('DATA.structs.MaterialResourceData_t.' + path) || this.getBlockStruct('DATA.keyValue.root.' + path);
 	}
 
-	getExternalFiles() {
+	getExternalFiles(): string[] | null {
 		const externalFiles = this.getBlockStruct('RERL.externalFiles2');
 		return externalFiles;
 	}
-	getExternalFile(fileIndex) {
+
+	getExternalFile(fileIndex: number): string | null {
 		const externalFiles = this.getBlockStruct('RERL.externalFiles2');
 		if (externalFiles) {
 			return externalFiles[fileIndex];
 		}
 		return null;
 	}
-	getKeyValue(path) {
+
+	getKeyValue(path: string): any/*TODO: create a type*/ {
 		const dataBlock = this.blocks['DATA'];
 		if (dataBlock) {
 			const keyValue = dataBlock.keyValue;
@@ -461,7 +481,7 @@ export class Source2File {
 		return null;
 	}
 
-	get imageFormat() {//TODOv3 improve this
+	get imageFormat(): number {//TODOv3 improve this
 		const block = this.blocks.DATA;
 		if (!block) {
 			return TEXTURE_FORMAT_UNKNOWN;
@@ -479,7 +499,15 @@ export class Source2File {
 		}
 	}
 
-	get displayName() {
+	/**
+	 * @deprecated use getDisplayName() instead
+	 */
+
+	get displayName(): string {
+		return this.getDisplayName();
+	}
+
+	getDisplayName(): string {
 		const fileName = this.fileName;
 		if (fileName) {
 			const result = /(\w+)\.\w+$/.exec(fileName);
@@ -487,21 +515,22 @@ export class Source2File {
 				return result[1];
 			}
 		}
+		return ''
 	}
 
-	getRemappingTable(meshIndex) {
+	getRemappingTable(meshIndex: number): number[] | null {
 		const remappingTableStarts = this.getPermModelData('m_remappingTableStarts');
 		if (!remappingTableStarts || meshIndex > remappingTableStarts.length) {
-			return;
+			return null;
 		}
 		const remappingTable = this.getPermModelData('m_remappingTable');
 		if (!remappingTable) {
-			return;
+			return null;
 		}
 
 		const starts = remappingTableStarts[meshIndex];
 		if (starts > remappingTable.length) {
-			return;
+			return null;
 		}
 
 		let end = remappingTableStarts[meshIndex + 1];
@@ -512,7 +541,7 @@ export class Source2File {
 		return remappingTable.slice(Number(starts), end);
 	}
 
-	remapBuffer(buffer, remappingTable) {
+	remapBuffer(buffer: Float32Array, remappingTable: number[]): Float32Array {
 		const inArr = new Float32Array(buffer);
 		const outArr = new Float32Array(new ArrayBuffer(buffer.byteLength));
 
@@ -526,7 +555,7 @@ export class Source2File {
 }
 
 
-function DecompressNormal(inputNormal) {				// {nX, nY, nZ}//_DecompressUByte4Normal
+function DecompressNormal(inputNormal: vec4): vec3 {				// {nX, nY, nZ}//_DecompressUByte4Normal
 	const fOne = 1.0;
 	const outputNormal = vec3.create();
 
