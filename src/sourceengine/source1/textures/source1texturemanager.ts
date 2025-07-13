@@ -71,8 +71,10 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 					if (vtf) {
 						vtfToTexture(vtf as SourceEngineVTF, animatedTexture, srgb);
 					} else {
-						//this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture);
-						this.setTexture(repository, path, this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture));
+						const texture = this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture);
+						if (texture) {
+							this.setTexture(repository, path, texture);
+						}
 					}
 				}
 			);
