@@ -1,26 +1,28 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { TWO_PI } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
+import { Source2File } from './source2file';
 
 /**
  * Source2 common file block
  */
 export class Source2FileBlock {
-	file;
-	type;
-	offset;
-	length;
-	indices;
-	vertices;
-	keyValue;
-	constructor(file, type, offset, length) {
+	file: Source2File;
+	type: string/*TODO: create enum*/;
+	offset: number;
+	length: number;
+	indices?: any/*TODO: create struct*/[];
+	vertices?: any/*TODO: create struct*/[];
+	keyValue?: any/*TODO: create type*/;
+
+	constructor(file: Source2File, type: string/*TODO: create enum*/, offset: number, length: number) {
 		this.file = file;
 		this.type = type;
 		this.offset = offset;
 		this.length = length;
 	}
 
-	getKeyValue(path) {
+	getKeyValue(path: string): any/*TODO: create type*/ | null {
 		const keyValue = this.keyValue;
 		if (keyValue) {
 			return keyValue.getValue(path);
@@ -28,18 +30,18 @@ export class Source2FileBlock {
 		return null;
 	}
 
-	getIndices(bufferId) {
-		const indexBuffer = this.indices[bufferId];
+	getIndices(bufferId: number): number[] {
+		const indexBuffer = this.indices?.at(bufferId);
 		return indexBuffer ? indexBuffer.indices : [];
 	}
 
-	getVertices(bufferId) {
-		const vertexBuffer = this.vertices[bufferId];
+	getVertices(bufferId: number): number[] {
+		const vertexBuffer = this.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.vertices : [];
 	}
 
-	getNormalsTangents(bufferId) {
-		function DecompressNormal(inputNormal, outputNormal) {				// {nX, nY, nZ}//_DecompressUByte4Normal
+	getNormalsTangents(bufferId: number) {
+		function decompressNormal(inputNormal: vec2, outputNormal: vec3): vec3 {				// {nX, nY, nZ}//_DecompressUByte4Normal
 			const fOne = 1.0;
 			//let outputNormal = vec3.create();
 
@@ -64,13 +66,13 @@ export class Source2FileBlock {
 			outputNormal[1] *= (1 - xySigns[1]) - xySigns[1];
 			return vec3.normalize(outputNormal, outputNormal);
 		}
-		function DecompressTangent(compressedTangent, outputTangent) {
-			DecompressNormal(compressedTangent, outputTangent);
+		function decompressTangent(compressedTangent: vec2, outputTangent: vec4): void {
+			decompressNormal(compressedTangent, outputTangent as vec3);
 			const tSign = compressedTangent[1] - 128.0 < 0 ? -1.0 : 1.0;
 			outputTangent[3] = tSign;
 		}
 
-		function DecompressNormal2(inputNormal) {
+		function decompressNormal2(inputNormal: number): [vec3, vec4] {
 			let normals;
 			let tangents;
 
@@ -133,7 +135,7 @@ export class Source2FileBlock {
 			return [normals, tangents];
 		}
 
-		const vertexBuffer = this.vertices[bufferId];
+		const vertexBuffer = this.vertices?.[bufferId];
 		const normals = new Float32Array(vertexBuffer.normals);
 		const normalArray = [];
 		const tangentArray = [];
@@ -141,7 +143,7 @@ export class Source2FileBlock {
 		const compressedTangent = vec2.create();
 		let normalVec3;
 		let normalTemp = vec3.create();
-		let tangentTemp = vec3.create();
+		let tangentTemp = vec4.create();
 
 		for (let i = 0, l = normals.length; i < l; i += 4) {
 
@@ -150,10 +152,10 @@ export class Source2FileBlock {
 				compressedNormal[1] = normals[i + 1] * 255.0;
 				compressedTangent[0] = normals[i + 2] * 255.0;
 				compressedTangent[1] = normals[i + 3] * 255.0;
-				DecompressNormal(compressedNormal, normalTemp);
-				DecompressTangent(compressedTangent, tangentTemp);
+				decompressNormal(compressedNormal, normalTemp);
+				decompressTangent(compressedTangent, tangentTemp);
 			} else {
-				[normalTemp, tangentTemp] = DecompressNormal2(normals[i]);
+				[normalTemp, tangentTemp] = decompressNormal2(normals[i]);
 			}
 			normalArray.push(normalTemp[0]);
 			normalArray.push(normalTemp[1]);
@@ -167,24 +169,28 @@ export class Source2FileBlock {
 		return [normalArray, tangentArray];
 	}
 
-	getCoords(bufferId) {
-		const vertexBuffer = this.vertices[bufferId];
+	getCoords(bufferId: number): number[] {
+		const vertexBuffer = this.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.coords : [];
 	}
-	getNormal(bufferId) {
-		const vertexBuffer = this.vertices[bufferId];
+
+	getNormal(bufferId: number): number[] {
+		const vertexBuffer = this.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.normals : [];
 	}
-	getTangent(bufferId) {
-		const vertexBuffer = this.vertices[bufferId];
+
+	getTangent(bufferId: number): number[] {
+		const vertexBuffer = this.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.tangents : [];
 	}
-	getBoneIndices(bufferId) {
-		const vertexBuffer = this.vertices[bufferId];
+
+	getBoneIndices(bufferId: number): number[] {
+		const vertexBuffer = this.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.boneIndices : [];
 	}
-	getBoneWeight(bufferId) {
-		const vertexBuffer = this.vertices[bufferId];
+
+	getBoneWeight(bufferId: number): number[] {
+		const vertexBuffer = this.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.boneWeight : [];
 	}
 }
