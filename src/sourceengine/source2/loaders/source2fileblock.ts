@@ -1,6 +1,7 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { TWO_PI } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
+import { Source2SpriteSheet } from '../textures/source2spritesheet';
 import { Source2File } from './source2file';
 
 /**
@@ -193,4 +194,8 @@ export class Source2FileBlock {
 		const vertexBuffer = this.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.boneWeight : [];
 	}
+}
+
+export type Source2TextureBlock = {
+	spriteSheet: Source2SpriteSheet | null;
 }
