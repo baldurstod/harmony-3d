@@ -3,8 +3,6 @@ import { Source2FileLoader } from './source2fileloader';
 
 export const Source2TextureLoader = new (function () {
 	class Source2TextureLoader {
-		constructor() {
-		}
 
 		async load(repository: string, path: string): Promise<Source2File | null> {
 

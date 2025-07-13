@@ -196,6 +196,10 @@ export class Source2FileBlock {
 	}
 }
 
-export type Source2TextureBlock = {
+export type Source2TextureBlock = Source2FileBlock & {
 	spriteSheet: Source2SpriteSheet | null;
+}
+
+export type Source2SnapBlock = Source2FileBlock & {
+	datas: any/*TODO: improve type*/;
 }

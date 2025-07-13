@@ -35,6 +35,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	async getVtf(repository: string, path: string): Promise<SourceEngineVTF | null> {
+		// TODO: fix that concurent calls of the same texture will load it multiple times
 		let vtf: SourceEngineVTF | null | undefined = this.#vtfList.get(repository, path);
 		if (vtf !== undefined) {
 			return vtf;

@@ -1,3 +1,4 @@
+import { Map2 } from 'harmony-utils';
 import { DEBUG, ENABLE_S3TC, TESTING } from '../../../buildoptions';
 import { TEXTURE_CLEANUP_DELAY } from '../../../constants';
 import { Graphics } from '../../../graphics/graphics';
@@ -13,6 +14,7 @@ import { Source2TextureLoader } from '../loaders/source2textureloader';
 import { Source2SpriteSheet } from './source2spritesheet';
 
 class Source2TextureManagerClass extends EventTarget {//TODO: keep event target ?
+	#vtexList = new Map2<string, string, Source2File>();
 	#texturesList = new Map<string, AnimatedTexture>();
 	#loadingTexturesList = new Map<string, Promise<AnimatedTexture>>();
 	#defaultTexture!: Texture;
@@ -41,6 +43,20 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		return texture ? texture.getFrame(frame) : this.#defaultTexture;//TODOv3
 	}
 
+	async getVtex(repository: string, path: string): Promise<Source2File | null> {
+		// TODO: fix that concurent calls of the same texture will load it multiple times
+		let vtex: Source2File | null | undefined = this.#vtexList.get(repository, path);
+		if (vtex !== undefined) {
+			return vtex;
+		}
+
+		vtex = await Source2TextureLoader.load(repository, path);
+		if (vtex) {
+			this.#vtexList.set(repository, path, vtex);
+		}
+		return vtex;
+	}
+
 	async getTextureSheet(repository: string, path: string): Promise<Source2SpriteSheet | null> {
 		const texture = await this.#getTexture(repository, path);
 		return ((texture?.properties.get('vtex') as Source2File | undefined)?.getBlockByType('DATA') as Source2TextureBlock | undefined)?.spriteSheet ?? null;
@@ -58,10 +74,13 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		if (!this.#texturesList.has(fullPath)) {
 			const animatedTexture = new AnimatedTexture();
 			const promise = new Promise<AnimatedTexture>(async resolve => {
-				const vtex = await Source2TextureLoader.load(repository, path);
+				//const vtex = await Source2TextureLoader.load(repository, path);
+				const vtex = await this.getVtex(repository, path);
 				animatedTexture.properties.set('vtex', vtex);
 				const texture = TextureManager.createTexture();//TODOv3: add params
-				this.#initTexture(texture.texture!, vtex);
+				if (vtex) {
+					this.#initTexture(texture.texture!, vtex);
+				}
 				animatedTexture.addFrame(0, texture);
 				resolve(animatedTexture);
 			});
@@ -78,10 +97,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		this.#texturesList.set(path, texture);
 	}
 
-	#initTexture(texture: WebGLTexture, vtexFile: any/*TODO: improve type*/) {
-		if (!texture || !vtexFile) {
-			return;
-		}
+	#initTexture(texture: WebGLTexture, vtexFile: Source2File/*TODO: create a texture Source2File*/) {
 		const imageData = vtexFile.blocks.DATA.imageData;
 		const imageFormat = vtexFile.imageFormat;
 		if (imageData) {

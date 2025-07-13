@@ -1,11 +1,11 @@
 import { vec4 } from 'gl-matrix';
-import { executeDynamicExpression } from './source2dynamicexpression';
-import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL, UniformValue } from '../../../materials/material';
-import { Source2TextureManager } from '../textures/source2texturemanager';
 import { DEBUG } from '../../../buildoptions';
 import { RenderFace } from '../../../materials/constants';
-import { Source2File } from '../loaders/source2file';
+import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL, UniformValue } from '../../../materials/material';
 import { Mesh } from '../../../objects/mesh';
+import { Source2File } from '../loaders/source2file';
+import { Source2TextureManager } from '../textures/source2texturemanager';
+import { executeDynamicExpression } from './source2dynamicexpression';
 
 const UNIFORMS = new Map([
 	['g_vColorTint', 'g_vColorTint'],
@@ -79,7 +79,7 @@ export class Source2Material extends Material {
 		//this.setupUniforms();
 		this.setupUniformsOnce();
 		if (false && DEBUG && source2File) {
-			console.log(source2File!.getBlockByType('DATA')?.keyValue?.root || source2File!.getBlockByType('DATA')?.structs?.MaterialResourceData_t);
+			//console.log(source2File!.getBlockByType('DATA')?.keyValue?.root || source2File!.getBlockByType('DATA')?.structs?.MaterialResourceData_t);
 		}
 	}
 
