@@ -38,7 +38,7 @@ export class RenderTrails extends Operator {
 	lengthFadeInTime = 0;
 	ignoreDT = false;
 	lengthScale = 1;
-	spriteSheet?: Source2SpriteSheet;
+	spriteSheet: Source2SpriteSheet | null = null;
 	#maxParticles = 1000;//TODO: default value
 	texture?: Texture;//TODO: set private ?
 	imgData?: Float32Array;//TODO: set private ?
