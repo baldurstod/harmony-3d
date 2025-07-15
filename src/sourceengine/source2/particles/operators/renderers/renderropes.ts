@@ -33,7 +33,7 @@ export class RenderRopes extends Operator {
 	textureVWorldSize = 10;
 	textureVScrollRate = 10;
 	textureScroll = 0;
-	#spriteSheet?: Source2SpriteSheet;
+	#spriteSheet: Source2SpriteSheet | null = null;
 	#maxParticles = 1000;//TODO: default value
 	#texture?: Texture;
 	#imgData?: Float32Array;
