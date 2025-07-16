@@ -30,7 +30,7 @@ export class RenderSprites extends RenderBase {
 	setDefaultTexture = true;//TODO: remove this property
 	#minSize = 0.0;
 	#maxSize = 5000.0;
-	spriteSheet?: Source2SpriteSheet;
+	#spriteSheet: Source2SpriteSheet | null = null;
 	#maxParticles = 0;
 	texture = TextureManager.createTexture();
 	imgData!: Float32Array;//TODO: set private ?
@@ -92,7 +92,7 @@ export class RenderSprites extends RenderBase {
 	async setTexture(texturePath: string) {
 		this.setDefaultTexture = false;
 		this.material.setTexturePath(texturePath);
-		this.spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
+		this.#spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
@@ -130,9 +130,8 @@ export class RenderSprites extends RenderBase {
 
 			particle.frame += elapsedTime;
 
-			const spriteSheet = this.spriteSheet;
-			if (spriteSheet) {
-				let coords = spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
+			if (this.#spriteSheet) {
+				let coords = this.#spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
 				if (coords) {
 					const uMin = coords[0];
@@ -149,7 +148,7 @@ export class RenderSprites extends RenderBase {
 					uvs[index++] = vMax;
 				}
 
-				coords = spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
+				coords = this.#spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
 				if (coords) {
 					const uMin = coords[0];
