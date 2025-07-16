@@ -1,5 +1,6 @@
 import { DEBUG, TESTING } from '../buildoptions';
 import { WebGLAnyRenderingContext } from '../types';
+import { Properties } from '../utils/properties';
 import { GL_ELEMENT_ARRAY_BUFFER, GL_UNSIGNED_INT, GL_UNSIGNED_SHORT } from '../webgl/constants';
 import { BufferAttribute, Uint16BufferAttribute, Uint32BufferAttribute } from './bufferattribute';
 
@@ -9,7 +10,7 @@ export class BufferGeometry {
 	attributes = new Map<string, BufferAttribute>();
 	dirty = true;
 	count = 0;
-	properties = new Map<string, any>();
+	readonly properties = new Properties()//new Map<string, any>();
 
 	getAttribute(name: string) {
 		return this.attributes.get(name);

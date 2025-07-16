@@ -1,19 +1,20 @@
 import { mat3, mat4, quat, vec3, vec4 } from 'gl-matrix';
-import { EntityObserver } from './entityobserver';
-import { pickList } from './picklist';
 import { DEBUG, VERBOSE } from '../buildoptions';
+import { Camera } from '../cameras/camera';
 import { JSONLoader } from '../importers/jsonloader';
+import { Material } from '../materials/material';
 import { BoundingBox } from '../math/boundingbox';
 import { DEG_TO_RAD } from '../math/constants';
 import { clamp, generateRandomUUID } from '../math/functions';
-import { stringToVec3, stringToQuat } from '../utils/utils';
-import { registerEntity } from './entities';
-import { Scene } from '../scenes/scene';
-import { Camera } from '../cameras/camera';
 import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
-import { Material } from '../materials/material';
+import { Scene } from '../scenes/scene';
 import { JSONObject } from '../types';
+import { Properties } from '../utils/properties';
+import { stringToQuat, stringToVec3 } from '../utils/utils';
+import { registerEntity } from './entities';
+import { EntityObserver } from './entityobserver';
+import { pickList } from './picklist';
 
 const X_VECTOR = vec3.fromValues(1, 0, 0);
 const Y_VECTOR = vec3.fromValues(0, 1, 0);
@@ -91,7 +92,7 @@ export class Entity {
 	lockRotation = false;
 	lockScale = false;
 	static editMaterial: (entity: Entity) => void;
-	readonly properties = new Map<string, any>();
+	readonly properties = new Properties()//Map<string, any>();
 	loadedPromise?: Promise<any>;
 	#layer?: number = undefined;
 
