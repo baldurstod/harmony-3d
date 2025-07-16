@@ -121,9 +121,10 @@ export class Skeleton extends Entity {
 		}
 	}
 
-	addBone(boneId: number, boneName: string) {
+	addBone(boneId: number, boneName: string): Bone {
 		const boneNameLowerCase = boneName.toLowerCase();
-		if (!this.#bonesByName.has(boneNameLowerCase)) {
+		let bone = this.#bonesByName.get(boneNameLowerCase);
+		if (!bone) {
 			const bone = new Bone({ name: boneName, boneId: boneId });
 			bone.skeleton = this;
 			//this.addChild(bone);
@@ -131,7 +132,6 @@ export class Skeleton extends Entity {
 			this.#bonesByName.set(boneNameLowerCase, bone);
 			return bone;
 		} else {
-			const bone = this.#bonesByName.get(boneNameLowerCase);
 			this._bones[boneId] = bone;
 			return bone;
 		}

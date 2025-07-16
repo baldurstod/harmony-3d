@@ -1,11 +1,11 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-import { Entity } from '../entities/entity';
-import { Graphics } from '../graphics/graphics';
 import { DEBUG } from '../buildoptions';
 import { registerEntity } from '../entities/entities';
-import { Skeleton } from './skeleton';
-import { JSONObject } from '../types';
+import { Entity } from '../entities/entity';
+import { Graphics } from '../graphics/graphics';
 import { Lockable } from '../interfaces/lockable';
+import { JSONObject } from '../types';
+import { Skeleton } from './skeleton';
 
 const tempWorldMat = mat4.create();
 const tempWorldQuat = quat.create();
@@ -25,7 +25,7 @@ export class Bone extends Entity implements Lockable {
 	#worldPos = vec3.create();
 	#worldQuat = quat.create();
 	#worldScale = vec3.fromValues(1, 1, 1);
-	#parentSkeletonBone?: Bone;
+	#parentSkeletonBone: Bone | null = null;
 	#skeleton: Skeleton;
 	#refPosition = vec3.create();
 	#refQuaternion = quat.create();
