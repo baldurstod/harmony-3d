@@ -1,6 +1,7 @@
 import { quat, vec3 } from 'gl-matrix';
-
 import { Entity } from '../../../entities/entity';
+import { Bone } from '../../../objects/bone';
+import { Source2ModelInstance } from './source2modelinstance';
 
 const tempPos = vec3.create();
 const tempQuat = quat.create();
@@ -8,10 +9,10 @@ const tempQuat = quat.create();
 export class Source2ModelAttachment {
 	name: string;
 	ignoreRotation = false;
-	influenceNames = [];
-	influenceWeights = [];
-	influenceOffsets = [];
-	influenceRotations = [];
+	influenceNames: string[] = [];
+	influenceWeights: number[] = [];
+	influenceOffsets: vec3[] = [];
+	influenceRotations: quat[] = [];
 	constructor(name: string) {
 		this.name = name;
 	}
@@ -19,16 +20,14 @@ export class Source2ModelAttachment {
 export class Source2ModelAttachmentInstance extends Entity {
 	model;
 	attachment;
-	constructor(model, attachment) {
+	constructor(model: Source2ModelInstance, attachment: Source2ModelAttachment) {
 		super({ name: attachment.name });
 		this.model = model;
 		this.attachment = attachment;
 	}
 
-	#getBone(boneName) {
-		if (this.model) {
-			return this.model.skeleton.getBoneByName(boneName);
-		}
+	#getBone(boneName: string): Bone | null {
+		return this.model?.skeleton?.getBoneByName(boneName) ?? null;
 	}
 
 	//TODO: compute with all bones, not only the first one
