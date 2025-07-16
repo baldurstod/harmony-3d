@@ -8,7 +8,7 @@ function cleanSource2MaterialName(name: string) {
 }
 
 export class Source2MaterialManager {
-	static #materialList = new Map<string, Source2Material | Promise<Source2Material>>();
+	static #materialList = new Map<string, Source2Material | Promise<Source2Material | null>>();
 	static #materialList2 = new Set<Source2Material>();
 
 	static addMaterial(material: Source2Material) {
@@ -19,19 +19,23 @@ export class Source2MaterialManager {
 		this.#materialList2.delete(material);
 	}
 
-	static getMaterial(repository: string, fileName: string): Promise<Source2Material> {
-		fileName = cleanSource2MaterialName(fileName);
-		return this.#getMaterial(repository, fileName);
+	static getMaterial(repository: string, path: string): Promise<Source2Material | null> {
+		path = cleanSource2MaterialName(path);
+		return this.#getMaterial(repository, path);
 	}
 
-	static #getMaterial(repository: string, fileName: string): Promise<Source2Material | null> {
-		const material = this.#materialList.get(fileName);
+	static #getMaterial(repository: string, path: string): Promise<Source2Material | null> {
+		const material = this.#materialList.get(path);
 		if (material instanceof Promise) {
-			const promise = new Promise<Source2Material>(resolve => {
-				material.then((material) => {
-					const newMaterial = material.clone();
-					this.#materialList2.add(newMaterial);
-					resolve(newMaterial);
+			const promise = new Promise<Source2Material | null>(resolve => {
+				material.then(material => {
+					if (!material) {
+						resolve(material);
+					} else {
+						const newMaterial = material.clone();
+						this.#materialList2.add(newMaterial);
+						resolve(newMaterial);
+					}
 				});
 			});
 			return promise;
@@ -45,20 +49,21 @@ export class Source2MaterialManager {
 			});
 		} else {
 			const promise = new Promise<Source2Material | null>(resolve => {
-				Source2MaterialLoader.load(repository, fileName).then(
+				Source2MaterialLoader.load(repository, path).then(
 					(material: Source2Material | null) => {
 						if (!material) {
 							resolve(material);
+							return;
 						}
 
-						this.#materialList.set(fileName, material);
+						this.#materialList.set(path, material);
 						const newMaterial = material.clone();
 						this.#materialList2.add(newMaterial);
 						resolve(newMaterial);
 					}
 				);
 			});
-			this.#materialList.set(fileName, promise);
+			this.#materialList.set(path, promise);
 			return promise;
 		}
 	}
