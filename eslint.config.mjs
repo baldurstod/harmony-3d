@@ -7,6 +7,7 @@ export default tseslint.config(
   {
     rules: {
       "@typescript-eslint/explicit-function-return-type": "error",
+      "@typescript-eslint/prefer-readonly-parameter-types": "error",
     }
   },
   {
