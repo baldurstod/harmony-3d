@@ -10,7 +10,7 @@ import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
 import { Scene } from '../scenes/scene';
 import { JSONObject } from '../types';
-import { Properties } from '../utils/properties';
+import { Properties, Property } from '../utils/properties';
 import { stringToQuat, stringToVec3 } from '../utils/utils';
 import { registerEntity } from './entities';
 import { EntityObserver } from './entityobserver';
@@ -1060,7 +1060,7 @@ export class Entity {
 		vec3.copy(this._scale, source._scale);
 	}
 
-	getProperty(name: string): any {
+	getProperty(name: string): Property | undefined {
 		return this.properties.get(name);
 	}
 

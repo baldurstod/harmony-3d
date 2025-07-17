@@ -27,6 +27,10 @@ export class Properties {
 		this.#properties.set(name, property);
 	}
 
+	get(name: string): Property | undefined {
+		return this.#properties.get(name);
+	}
+
 	setString(name: string, value: string): void {
 		this.#properties.set(name, new Property(PropertyType.String, value));
 	}
