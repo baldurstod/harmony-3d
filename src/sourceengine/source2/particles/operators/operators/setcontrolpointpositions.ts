@@ -56,7 +56,7 @@ export class SetControlPointPositions extends Operator {
 		}
 	}
 
-	doOperate(particle: Source2Particle | Source2Particle[] | undefined, elapsedTime: number, strength: number) {
+	doOperate(particle: Source2Particle | Source2Particle[] | undefined | null, elapsedTime: number, strength: number) {
 		//const list = ['First', 'Second', 'Third', 'Fourth'];
 
 		const useWorldLocation = this.useWorldLocation;
