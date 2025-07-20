@@ -65,6 +65,7 @@ export class Kv3Value {
 			case Kv3Type.UnsignedInt32:
 			case Kv3Type.IntZero:
 			case Kv3Type.IntOne:
+			case Kv3Type.Double:
 			case Kv3Type.DoubleZero:
 			case Kv3Type.DoubleOne:
 				return true;
