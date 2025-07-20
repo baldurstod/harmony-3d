@@ -216,7 +216,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 					break;
 				default:
 					if (WARN) {
-						console.warn('Unknow lump type ', lump.lumpType);
+						console.warn('Unknown lump type ', lump.lumpType);
 					}
 					break;
 			}

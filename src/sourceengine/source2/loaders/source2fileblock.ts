@@ -1,8 +1,11 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { TWO_PI } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
+import { Kv3File } from '../../common/keyvalue/kv3file';
 import { Source2SpriteSheet } from '../textures/source2spritesheet';
 import { Source2File } from './source2file';
+import { Kv3Value } from '../../common/keyvalue/kv3value';
+import { Kv3Element } from '../../common/keyvalue/kv3element';
 
 /**
  * Source2 common file block
@@ -14,7 +17,8 @@ export class Source2FileBlock {
 	length: number;
 	indices?: any/*TODO: create struct*/[];
 	vertices?: any/*TODO: create struct*/[];
-	keyValue?: any/*TODO: create type*/;
+	keyValue?: Kv3File;
+	structs?: never;//TODO: remove me
 
 	constructor(file: Source2File, type: string/*TODO: create enum*/, offset: number, length: number) {
 		this.file = file;
@@ -23,12 +27,16 @@ export class Source2FileBlock {
 		this.length = length;
 	}
 
-	getKeyValue(path: string): any/*TODO: create type*/ | null {
+	getKeyValue(path: string): Kv3Element | Kv3Value | undefined | null {
 		const keyValue = this.keyValue;
 		if (keyValue) {
 			return keyValue.getValue(path);
 		}
-		return null;
+		return undefined;
+	}
+
+	getKeyValueAsElementArray(path: string): Kv3Element[] | null {
+		return this.keyValue?.getValueAsElementArray(path) ?? null;
 	}
 
 	getIndices(bufferId: number): number[] {
@@ -185,9 +193,9 @@ export class Source2FileBlock {
 		return vertexBuffer ? vertexBuffer.tangents : [];
 	}
 
-	getBoneIndices(bufferId: number): number[] {
+	getBoneIndices(bufferId: number): ArrayBuffer {
 		const vertexBuffer = this.vertices?.at(bufferId);
-		return vertexBuffer ? vertexBuffer.boneIndices : [];
+		return vertexBuffer ? vertexBuffer.boneIndices : new ArrayBuffer();
 	}
 
 	getBoneWeight(bufferId: number): number[] {
@@ -203,3 +211,60 @@ export type Source2TextureBlock = Source2FileBlock & {
 export type Source2SnapBlock = Source2FileBlock & {
 	datas: any/*TODO: improve type*/;
 }
+
+export type Source2RerlBlock = Source2FileBlock & {
+	externalFiles: Record<string, string>;
+	externalFiles2: string[];
+}
+
+export type Source2NtroBlock = Source2FileBlock & {
+	structs?: Record<string, Source2FileStruct>;
+	structsArray?: Source2FileStruct[];
+	firstStruct: Source2FileStruct | null;
+	fields: never[];
+}
+
+export type Source2DataBlock = Source2FileBlock & {
+	structs?: Record<string, Source2DataStruct>;
+}
+
+export type Source2VtexBlock = Source2FileBlock & {
+	vtexVersion: number;
+	flags: number;
+	reflectivity: vec4;
+	width: number;
+	height: number;
+	depth: number;
+	imageFormat: number;
+	numMipLevels: number;
+	picmip0Res: number;
+	imageData: any/*TODO: improve type*/;
+	spriteSheet: Source2SpriteSheet;
+	cubemapRadiance: number[];
+}
+
+export type Source2FileStruct = {
+	name: string;
+	discSize/*TODO: DICT ??*/: number;
+	fields: Source2StructField[];//Record<string, Source2StructField>;
+	baseId?: number;
+
+}/*TODO: improve type*/;
+
+export type Source2DataStruct = {
+	[key: string]: Source2StructFieldValue
+};
+//Record<string, Source2StructFieldValue>;
+
+export type Source2StructField = {
+	name: string;
+	count: number;
+	offset: number;
+	indirectionByte: number;
+	level: number;
+	type: number/*TODO: create an enum*/;
+	type2: number/*TODO: create an enum*/;
+}
+
+export type Source2StructEnum = (string | number)[];
+export type Source2StructFieldValue = null | number | boolean | string | string | number | bigint | Float32Array | Source2DataStruct | Source2StructEnum | Source2StructFieldValue[];//TODO: remove type

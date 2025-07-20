@@ -1,13 +1,16 @@
-import { vec3, vec4 } from 'gl-matrix';
+import { quat, vec3, vec4 } from 'gl-matrix';
 import { BufferGeometry } from '../../../geometry/buffergeometry';
 import { Source2Animations } from '../animations/source2animations';
 import { Source2SeqGroup } from '../animations/source2seqgroup';
+import { Source2File } from '../loaders/source2file';
 import { AnimManager } from './animmanager';
 import { Source2Animation } from './source2animation';
 import { Source2AnimationDesc } from './source2animationdesc';
 import { Source2AnimGroup } from './source2animgroup';
 import { Source2ModelAttachment } from './source2modelattachment';
 import { Source2ModelInstance } from './source2modelinstance';
+import { Kv3Element } from '../../common/keyvalue/kv3element';
+import { Kv3Value } from '../../common/keyvalue/kv3value';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
@@ -21,10 +24,10 @@ export type BodyPart = BodyPartMesh[];
 export type BodyPartMesh = BufferGeometry[];
 
 export class Source2Model {
-	#internalAnimGroup;
+	#internalAnimGroup?: Source2AnimGroup;
 	#includeModels = [];
 	repository: string;
-	vmdl;
+	vmdl: Source2File;
 	requiredLod = 0;
 	drawBodyPart = {};
 	currentSkin = 0;
@@ -40,7 +43,7 @@ export class Source2Model {
 	bodyGroups = new Set<string>();
 	bodyGroupsChoices = new Set<BodyGroupChoice>();
 
-	constructor(repository: string, vmdl) {
+	constructor(repository: string, vmdl: Source2File) {
 		this.repository = repository;
 		this.vmdl = vmdl;
 
@@ -51,19 +54,20 @@ export class Source2Model {
 
 	#createAnimGroup() {
 		const aseq = this.vmdl.getBlockByType('ASEQ');
-		if (aseq) {
+		if (aseq && this.#internalAnimGroup) {
 			this.#seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
 			this.#seqGroup.setFile(this.vmdl);
 		}
 	}
 
 	#createBodyGroups() {
-		const meshGroups = this.vmdl.getPermModelData('m_meshGroups') as string[];
+		const meshGroups = this.vmdl.getBlockStructAsArray('DATA', 'm_meshGroups') as string[];
 		if (meshGroups) {
 
 			let bodyGroupId = 0;
 			let bodyGroup: string | undefined;
 			for (const choice of meshGroups) {
+				throw 'do createBodyGroups'
 				if (choice == 'autodefault') {
 					bodyGroup = choice;
 				} else {
@@ -79,7 +83,7 @@ export class Source2Model {
 		}
 	}
 
-	matchActivity(activity, modifiers) {
+	matchActivity(activity: string, modifiers: string[]) {
 		if (this.#seqGroup) {
 			return this.#seqGroup.matchActivity(activity, modifiers);
 		}
@@ -105,12 +109,12 @@ export class Source2Model {
 		this.geometries.add(geometry);
 	}
 
-	createInstance(isDynamic) {
+	createInstance(isDynamic: boolean): Source2ModelInstance {
 		return new Source2ModelInstance(this, isDynamic);
 	}
 
-	getBones() {
-		const skeleton = this.vmdl.getPermModelData('m_modelSkeleton');
+	getBones(): Kv3Element | null {
+		const skeleton = this.vmdl.getBlockStructAsElement('DATA', 'm_modelSkeleton');//this.vmdl.getPermModelData('m_modelSkeleton');
 		if (skeleton) {
 			return skeleton;
 		}
@@ -167,12 +171,12 @@ export class Source2Model {
 	}
 */
 
-	getSkinMaterials(skin) {
-		const materialGroups = this.vmdl.getPermModelData('m_materialGroups');
+	getSkinMaterials(skin: number): string[] | null {
+		const materialGroups = this.vmdl.getBlockStructAsElementArray('DATA', 'm_materialGroups');
 		if (materialGroups) {
 			const materials = materialGroups[skin];
-			if (materials) {
-				return materials.m_materials;
+			if ((materials as Kv3Element)?.isKv3Element) {
+				return (materials as Kv3Element).getValueAsResourceArray('m_materials');
 			}
 		}
 		return null;
@@ -206,15 +210,15 @@ export class Source2Model {
 		//TODOv3: make a common code where external and internal group are loaded
 		if (this.vmdl) {
 			const sourceFile = this.vmdl;
-			const localAnimArray = sourceFile.getBlockStruct('AGRP.keyValue.root.m_localHAnimArray');
-			const decodeKey = sourceFile.getBlockStruct('AGRP.keyValue.root.m_decodeKey');
-			if (localAnimArray && decodeKey) {
+			const localAnimArray = sourceFile.getBlockStructAsResourceArray('AGRP', 'm_localHAnimArray');
+			const decodeKey = sourceFile.getBlockStruct('AGRP', 'm_decodeKey');
+			if (localAnimArray && (decodeKey as Kv3Element | undefined)?.isKv3Element) {
 				const animGroup = new Source2AnimGroup(this, this.repository);
 				animGroup.setFile(this.vmdl);
-				animGroup.setAnimationGroupResourceData(localAnimArray, decodeKey);
+				animGroup.setAnimationGroupResourceData(localAnimArray, decodeKey as Kv3Element);
 				this.#internalAnimGroup = animGroup;
 
-				const anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
+				const anims = sourceFile.getBlockKeyValues('ANIM');
 				if (anims) {
 					const loadedAnim = new Source2Animation(animGroup, '');
 					loadedAnim.setAnimDatas(anims);
@@ -226,13 +230,14 @@ export class Source2Model {
 		}
 	}
 
-	getIncludeModels() {
+	getIncludeModels(): any[] {
+		/*
 		if (!this.vmdl) {
 			return [];
 		}
-		const sourceFile = this.vmdl;
-		const refAnimIncludeModels = sourceFile.getBlockStruct('DATA.keyValue.root.m_refAnimIncludeModels');
-		return refAnimIncludeModels ?? [];
+			*/
+		return this.vmdl.getBlockStructAsArray('DATA', 'm_refAnimIncludeModels') ?? [];
+		//return refAnimIncludeModels ?? [];
 	}
 
 	addIncludeModel(includeModel) {
@@ -323,21 +328,39 @@ export class Source2Model {
 		return animations;
 	}
 
-	_addAttachments(attachments) {
+	_addAttachments(attachments: Kv3Element[]) {
 		for (const attachment of attachments) {
-			const attachmentValue = attachment.value;
+			//throw 'fix attachments type';
+			const attachmentValue = attachment.getValueAsElement('value');//TODO: use property 'key'
 			if (attachmentValue) {
-				const name = attachmentValue.m_name.toLowerCase();
+				const name = attachmentValue.getValueAsString('m_name')?.toLowerCase();
+				if (!name) {
+					continue;
+				}
 				const source2ModelAttachment = new Source2ModelAttachment(name);
 				this.attachments.set(name, source2ModelAttachment);
-				source2ModelAttachment.ignoreRotation = attachmentValue.m_bIgnoreRotation;
-				for (let influenceIndex = 0; influenceIndex < attachmentValue.m_nInfluences; ++influenceIndex) {
-					const influenceName = attachmentValue.m_influenceNames[influenceIndex];
-					if (influenceName) {
-						source2ModelAttachment.influenceNames.push(influenceName.toLowerCase());
-						source2ModelAttachment.influenceWeights.push(attachmentValue.m_influenceWeights[influenceIndex]);
-						source2ModelAttachment.influenceOffsets.push(vec3.clone(attachmentValue.m_vInfluenceOffsets[influenceIndex]));
-						source2ModelAttachment.influenceRotations.push(vec4.clone(attachmentValue.m_vInfluenceRotations[influenceIndex]));
+				source2ModelAttachment.ignoreRotation = attachmentValue.getValueAsBool('m_bIgnoreRotation') ?? false/*TODO: check default value*/;
+
+				const influencesCount = attachmentValue.getValueAsNumber('m_nInfluences');
+				if (influencesCount) {
+					const influenceNames = attachmentValue.getValueAsStringArray('m_influenceNames');
+					const influenceWeights = attachmentValue.getValueAsNumberArray('m_influenceWeights');
+					const influenceOffsets = attachmentValue.getValueAsVectorArray('m_vInfluenceOffsets');
+					const influenceRotations = attachmentValue.getValueAsVectorArray('m_vInfluenceRotations');
+
+					if (influenceNames && influenceWeights && influenceOffsets && influenceRotations) {
+						for (let influenceIndex = 0; influenceIndex < influencesCount; ++influenceIndex) {
+							const influenceName = influenceNames[influenceIndex];
+							const influenceWeight = influenceWeights[influenceIndex];
+							const influenceOffset = influenceOffsets[influenceIndex];
+							const influenceRotation = influenceRotations[influenceIndex];
+							if (influenceName) {
+								source2ModelAttachment.influenceNames.push(influenceName.toLowerCase());
+								source2ModelAttachment.influenceWeights.push(influenceWeight);
+								source2ModelAttachment.influenceOffsets.push(vec3.clone(influenceOffset as vec3));
+								source2ModelAttachment.influenceRotations.push(quat.clone(influenceRotation as quat));
+							}
+						}
 					}
 				}
 			}

@@ -17,7 +17,7 @@ export class Source2Sequence {
 		}
 	}
 
-	matchActivity(activity, modifiers) {
+	matchActivity(activity: string, modifiers: string[]) {
 		if (modifiers) {
 			if (this.activities.length == modifiers.size + 1) {
 				if (this.activities[0].name == activity) {

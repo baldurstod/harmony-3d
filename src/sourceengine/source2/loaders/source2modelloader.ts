@@ -4,17 +4,20 @@ import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../geometry
 import { BufferGeometry } from '../../../geometry/buffergeometry';
 import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
 import { Mesh } from '../../../objects/mesh';
+import { Property, PropertyType } from '../../../utils/properties';
 import { FileNameFromPath } from '../../../utils/utils';
+import { Kv3Value } from '../../common/keyvalue/kv3value';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { MeshManager } from '../models/meshmanager';
 import { Source2Model } from '../models/source2model';
 import { Source2File } from './source2file';
+import { Source2FileBlock } from './source2fileblock';
 import { Source2FileLoader } from './source2fileloader';
 
 const defaultMaterial = new MeshBasicMaterial();
 
 export class Source2ModelLoader {
-	static #loadPromisesPerRepo = {};//TODO: create map
+	static #loadPromisesPerRepo: Record<string, any> = {};//TODO: create map
 
 	static {
 		defaultMaterial.addUser(Source2ModelLoader);
@@ -36,11 +39,14 @@ export class Source2ModelLoader {
 		}
 
 		promise = new Promise((resolve) => {
-			const vmdlPromise = new Source2FileLoader().load(repository, path + '.vmdl_c');
+			const vmdlPromise = new Source2FileLoader().load(repository, path + '.vmdl_c') as Promise<Source2File | null>;
 			vmdlPromise.then(
 				async (source2File: Source2File | null) => {
 					if (VERBOSE) {
 						console.log(source2File);
+					}
+					if (!source2File) {
+						return;
 					}
 					const newSourceModel = new Source2Model(repository, source2File);
 					this.#loadIncludeModels(newSourceModel);
@@ -55,18 +61,35 @@ export class Source2ModelLoader {
 		return promise;
 	}
 
-	async testProcess2(vmdl, model, repository) {
+	async testProcess2(vmdl: Source2File, model: Source2Model, repository: string): Promise<Entity> {
 		const group = new Entity();
-		const ctrlRoot = vmdl.getBlockStruct('CTRL.keyValue.root');
-		const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
-		const m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
-		if (ctrlRoot && m_refLODGroupMasks) {
-			const embeddedMeshes = ctrlRoot.embedded_meshes;
+		const ctrlRoot = vmdl.getBlockKeyValues('CTRL');
+		const m_refLODGroupMasks = vmdl.getBlockStructAsBigintArray('DATA', 'm_refLODGroupMasks') ?? vmdl.getBlockStructAsNumberArray('DATA', 'm_refLODGroupMasks');// ?? vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
+		const m_refMeshGroupMasks = vmdl.getBlockStructAsNumberArray('DATA', 'm_refMeshGroupMasks');// ?? vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
+		const embeddedMeshes = ctrlRoot?.getValueAsElementArray('embedded_meshes');
+		if (ctrlRoot && m_refLODGroupMasks && embeddedMeshes) {
 			for (let meshIndex = 0; meshIndex < embeddedMeshes.length; ++meshIndex) {
 				const lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
 				const meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
 				const embeddedMesh = embeddedMeshes[meshIndex];
-				this.#loadMesh(repository, model, group, vmdl.getBlockById(embeddedMesh.data_block), vmdl.getBlockById(embeddedMesh.vbib_block), lodGroupMask, vmdl, meshIndex, meshGroupMask);
+
+				const dataBlockId = embeddedMesh.getValueAsNumber('data_block');
+				const vbibBlockId = embeddedMesh.getValueAsNumber('vbib_block');
+
+				if (dataBlockId === null || vbibBlockId === null) {
+					console.error('missing dataBlockId / vbibBlockId', embeddedMesh);
+					continue;
+				}
+
+				const dataBlock = vmdl.getBlockById(dataBlockId);
+				const vbibBlock = vmdl.getBlockById(vbibBlockId);
+
+				if (dataBlock === null || vbibBlock === null) {
+					console.error('missing dataBlock / vbibBlock', embeddedMesh, dataBlock, vbibBlock);
+					continue;
+				}
+
+				this.#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
 
 				/*data_block: 1
 				mesh_index: 0
@@ -76,26 +99,38 @@ export class Source2ModelLoader {
 				vbib_block: 2*/
 			}
 		}
-		await this._loadExternalMeshes(group, vmdl, model, repository);
+		await this.#loadExternalMeshes(group, vmdl, model, repository);
 		return group;
 	}
 
-	#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask: number | undefined) {
+	#loadMesh(repository: string, model: Source2Model, group: Entity, dataBlock: Source2FileBlock, vbibBlock: Source2FileBlock, lodGroupMask: number, vmdl: Source2File, meshIndex: number, meshGroupMask: number | undefined) {
 		const remappingTable = vmdl.getRemappingTable(meshIndex);
 
-		model._addAttachments(dataBlock.getKeyValue('m_attachments'));
-		const drawCalls = dataBlock.getKeyValue('m_sceneObjects.0.m_drawCalls') || dataBlock.getKeyValue('root.m_drawCalls');
+		const attachments = dataBlock.getKeyValueAsElementArray('m_attachments');
+		if (attachments) {
+			model._addAttachments(attachments);
+		}
+		const drawCalls = dataBlock.getKeyValueAsElementArray('m_sceneObjects.0.m_drawCalls');// ?? dataBlock.getKeyValue('root.m_drawCalls');
 		if (drawCalls) {
-			for (let drawCallIndex = 0, l = drawCalls.length; drawCallIndex < l; ++drawCallIndex) {//TODOv3: mutualize buffer if used by multiple drawcalls
-				const drawCall = drawCalls[drawCallIndex];
-				const useCompressedNormalTangent = drawCall.m_bUseCompressedNormalTangent ?? drawCall.m_nFlags?.includes('MESH_DRAW_FLAGS_USE_COMPRESSED_NORMAL_TANGENT');
+			for (const drawCall of drawCalls) {//TODOv3: mutualize buffer if used by multiple drawcalls
+				//const drawCall = drawCalls[drawCallIndex];
+				const useCompressedNormalTangent = drawCall.getValueAsBool('m_bUseCompressedNormalTangent') //drawCall.m_nFlags?.includes('MESH_DRAW_FLAGS_USE_COMPRESSED_NORMAL_TANGENT');
 
-				const vertexBuffers = drawCall.m_vertexBuffers[0];//TODOv3 why 0 ?
+				console.assert(useCompressedNormalTangent !== null, 'missing m_bUseCompressedNormalTangent', drawCall);
+
+
+				const vertexBuffers = drawCall.getValueAsElementArray('m_vertexBuffers')?.[0]//TODOv3 why 0 ?
 				if (!vertexBuffers) {
 					continue;
 				}
-				const bufferIndex = vertexBuffers.m_hBuffer;
-				const indices = new Uint32BufferAttribute(vbibBlock.getIndices(bufferIndex), 1, Number(drawCall.m_nStartIndex) * 4, Number(drawCall.m_nIndexCount));//NOTE: number is here to convert bigint TODO: see if we can do better
+				const bufferIndex = vertexBuffers.getValueAsNumber('m_hBuffer');
+				const startIndex = drawCall.getValueAsNumber('m_nStartIndex');
+				const indexCount = drawCall.getValueAsNumber('m_nIndexCount');
+				if (bufferIndex === null || startIndex === null || indexCount === null) {
+					console.error('missing vertexBuffers in loadMesh', vertexBuffers, bufferIndex, startIndex, indexCount);
+					continue;
+				}
+				const indices = new Uint32BufferAttribute(vbibBlock.getIndices(bufferIndex), 1, startIndex * 4, indexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
 				const vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(bufferIndex), 3);
 
 				let vertexNormal, vertexTangent;
@@ -113,8 +148,8 @@ export class Source2ModelLoader {
 				const vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(bufferIndex), remappingTable), 4);
 
 				const geometry = new BufferGeometry();
-				geometry.properties.set('lodGroupMask', lodGroupMask);
-				geometry.properties.set('mesh_group_mask', meshGroupMask ?? 0xFFFFFFFFFFFFFFFFn);
+				geometry.properties.setNumber('lodGroupMask', lodGroupMask);
+				geometry.properties.setBigint('mesh_group_mask', BigInt(meshGroupMask ?? 0xFFFFFFFFFFFFFFFFn));
 				geometry.setIndex(indices);
 				geometry.setAttribute('aVertexPosition', vertexPosition);
 				geometry.setAttribute('aVertexNormal', vertexNormal);
@@ -122,26 +157,43 @@ export class Source2ModelLoader {
 				geometry.setAttribute('aTextureCoord', textureCoord);
 				geometry.setAttribute('aBoneWeight', vertexWeights);
 				geometry.setAttribute('aBoneIndices', vertexBones);
-				geometry.count = Number(drawCall.m_nIndexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
-				geometry.properties.set('materialPath', drawCall.m_material);
-				geometry.properties.set('bones', dataBlock.getKeyValue('m_skeleton.m_bones'));
+				geometry.count = indexCount//Number(drawCall.m_nIndexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
+
+
+				const bones = dataBlock.getKeyValueAsElementArray('m_skeleton.m_bones');
+				if (bones) {
+					geometry.properties.set('bones', new Property(PropertyType.Array, bones));
+				} else {
+					console.error('unable to find m_skeleton.m_bones in DATA block', dataBlock);
+				}
 
 				const material = defaultMaterial;
 				const staticMesh = new Mesh(geometry, material);
 				group.addChild(staticMesh);
-				const materialPath = geometry.properties.get('materialPath');
-				Source2MaterialManager.getMaterial(repository, materialPath).then(
-					(material) => staticMesh.setMaterial(material)
-				).catch(
-					(error) => console.error('unable to find material ' + materialPath, error)
-				);
 
-				model.addGeometry(geometry, FileNameFromPath(drawCall.m_material), 0/*TODOv3*/);
+				const materialPath = drawCall.getValueAsResource('m_material');
+				if (materialPath !== null) {
+					geometry.properties.setString('materialPath', materialPath);
+					Source2MaterialManager.getMaterial(repository, materialPath).then(
+						material => {
+							if (material) {
+								staticMesh.setMaterial(material)
+							} else {
+								console.error('unable to find material ' + materialPath);
+							}
+						}
+					);
+					model.addGeometry(geometry, FileNameFromPath(materialPath), 0/*TODOv3*/);
+				} else {
+					console.error('missing property m_material in draw call', drawCall);
+				}
+				//const materialPath = geometry.properties.getString('materialPath');
+
 			}
 		}
 	}
 
-	async _loadExternalMeshes(group, vmdl, model, repository) {
+	async #loadExternalMeshes(group: Entity, vmdl: Source2File, model: Source2Model, repository: string) {
 		const callback = (mesh, lodGroupMask, meshIndex, meshGroupMask: number | undefined) => {
 			//TODO: only load highest LOD
 			this.#loadMesh(repository, model, group, mesh.getBlockByType('DATA'), mesh.getBlockByType('VBIB'), lodGroupMask, vmdl, meshIndex, meshGroupMask);
@@ -149,11 +201,14 @@ export class Source2ModelLoader {
 		await this.loadMeshes(vmdl, callback);
 	}
 
-	async loadMeshes(vmdl, callback) {
+	async loadMeshes(vmdl: Source2File, callback) {
 		const promises = new Set<Promise<Source2File>>();
-		const m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
-		const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
-		const m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
+		//const m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
+		//const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
+		//const m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
+		const m_refMeshes = vmdl.getBlockStructAsResourceArray('DATA', 'm_refMeshes');
+		const m_refLODGroupMasks = vmdl.getBlockStructAsBigintArray('DATA', 'm_refLODGroupMasks') ?? vmdl.getBlockStructAsNumberArray('DATA', 'm_refLODGroupMasks');
+		const m_refMeshGroupMasks = vmdl.getBlockStructAsNumberArray('DATA', 'm_refMeshGroupMasks');
 		if (m_refMeshes && m_refLODGroupMasks) {
 			for (let meshIndex = 0; meshIndex < m_refMeshes.length; meshIndex++) {//TODOv3
 				const meshName = m_refMeshes[meshIndex];
@@ -176,7 +231,7 @@ export class Source2ModelLoader {
 		await Promise.all(promises);
 	}
 
-	async #loadIncludeModels(model) {
+	async #loadIncludeModels(model: Source2Model) {
 		const includeModels = model.getIncludeModels();
 		for (const includeModel of includeModels) {
 			const refModel = await new Source2ModelLoader().load(model.repository, includeModel);

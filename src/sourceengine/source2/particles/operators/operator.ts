@@ -65,7 +65,7 @@ export class Operator {//TODOv3: rename this class ?
 	setParam(paramName: string, value: Source2OperatorParamValue) {
 		if (value instanceof Kv3Array) {
 			const arr = [];
-			for (const v of value.properties) {
+			for (const v of value.values) {
 				if (typeof v == 'bigint') {
 					arr.push(Number(v));
 				} else {

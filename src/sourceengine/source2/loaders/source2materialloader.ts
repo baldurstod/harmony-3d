@@ -18,8 +18,12 @@ export class Source2MaterialLoader {
 	}
 
 	static async #loadMaterial(repository: string, file: Source2File): Promise<Source2Material | null> {
-		const shaderName = file.getBlockStruct('DATA.keyValue.root.m_shaderName') || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
-		let material: Source2Material = null;
+		//TODO: use getMaterialResourceData()
+		const shaderName = file.getBlockStructAsString('DATA', 'm_shaderName') ?? file.getBlockStructAsString('DATA', 'MaterialResourceData_t.m_shaderName');// || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
+		if (shaderName === null) {
+			return null;
+		}
+		let material: Source2Material | null = null;
 		const materialClass = this.#materials.get(shaderName.toLowerCase());
 		if (materialClass !== undefined) {
 			material = new materialClass(repository, file);

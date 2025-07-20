@@ -1010,13 +1010,68 @@ class Float32BufferAttribute extends BufferAttribute {
     }
 }
 
+var PropertyType;
+(function (PropertyType) {
+    PropertyType[PropertyType["Null"] = 0] = "Null";
+    PropertyType[PropertyType["Undefined"] = 1] = "Undefined";
+    PropertyType[PropertyType["String"] = 2] = "String";
+    PropertyType[PropertyType["Number"] = 3] = "Number";
+    PropertyType[PropertyType["Bigint"] = 4] = "Bigint";
+    PropertyType[PropertyType["Boolean"] = 5] = "Boolean";
+    PropertyType[PropertyType["Array"] = 100] = "Array";
+})(PropertyType || (PropertyType = {}));
+class Property {
+    type;
+    value;
+    constructor(type, value) {
+        this.type = type;
+        this.value = value;
+    }
+}
+class Properties {
+    #properties = new Map();
+    set(name, property) {
+        this.#properties.set(name, property);
+    }
+    get(name) {
+        return this.#properties.get(name);
+    }
+    setString(name, value) {
+        this.#properties.set(name, new Property(PropertyType.String, value));
+    }
+    getString(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.type == PropertyType.String) {
+            return prop.value;
+        }
+    }
+    setNumber(name, value) {
+        this.#properties.set(name, new Property(PropertyType.Number, value));
+    }
+    getNumber(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.type == PropertyType.Number) {
+            return prop.value;
+        }
+    }
+    setBigint(name, value) {
+        this.#properties.set(name, new Property(PropertyType.Bigint, value));
+    }
+    getBigint(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.type == PropertyType.Bigint) {
+            return prop.value;
+        }
+    }
+}
+
 class BufferGeometry {
     #elementArrayType = GL_UNSIGNED_INT;
     #users = new Set();
     attributes = new Map();
     dirty = true;
     count = 0;
-    properties = new Map();
+    properties = new Properties(); //new Map<string, any>();
     getAttribute(name) {
         return this.attributes.get(name);
     }
@@ -1876,40 +1931,6 @@ class MeshBasicMaterial extends Material {
 Material.materialList['MeshBasic'] = MeshBasicMaterial;
 registerEntity(MeshBasicMaterial);
 
-const PARENT_CHANGED = 'parentchanged';
-const CHILD_ADDED = 'childadded';
-const CHILD_REMOVED = 'childremoved';
-const ENTITY_DELETED = 'entitydeleted';
-const PROPERTY_CHANGED$1 = 'propertychanged';
-const ATTRIBUTE_CHANGED = 'attributechanged';
-class EntityObserverClass {
-    #eventTarget = new EventTarget();
-    parentChanged(child, oldParent, newParent) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
-    }
-    childAdded(parent, child) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
-    }
-    childRemoved(parent, child) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
-    }
-    entityDeleted(entity) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
-    }
-    propertyChanged(entity, propertyName, oldValue, newValue) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(PROPERTY_CHANGED$1, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
-    }
-    attributeChanged(entity, attributeName, oldValue, newValue) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
-    }
-    addEventListener(type, callback, options) {
-        this.#eventTarget.addEventListener(type, callback, options);
-    }
-}
-const EntityObserver = new EntityObserverClass();
-
-const pickList = new Map();
-
 const tempVec3$x = vec3.create();
 const tempMin = vec3.create();
 const tempMax = vec3.create();
@@ -2174,6 +2195,40 @@ function stringToQuat(s, q = quat.create()) {
     return q;
 }
 
+const PARENT_CHANGED = 'parentchanged';
+const CHILD_ADDED = 'childadded';
+const CHILD_REMOVED = 'childremoved';
+const ENTITY_DELETED = 'entitydeleted';
+const PROPERTY_CHANGED$1 = 'propertychanged';
+const ATTRIBUTE_CHANGED = 'attributechanged';
+class EntityObserverClass {
+    #eventTarget = new EventTarget();
+    parentChanged(child, oldParent, newParent) {
+        this.#eventTarget.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
+    }
+    childAdded(parent, child) {
+        this.#eventTarget.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
+    }
+    childRemoved(parent, child) {
+        this.#eventTarget.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
+    }
+    entityDeleted(entity) {
+        this.#eventTarget.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
+    }
+    propertyChanged(entity, propertyName, oldValue, newValue) {
+        this.#eventTarget.dispatchEvent(new CustomEvent(PROPERTY_CHANGED$1, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
+    }
+    attributeChanged(entity, attributeName, oldValue, newValue) {
+        this.#eventTarget.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
+    }
+    addEventListener(type, callback, options) {
+        this.#eventTarget.addEventListener(type, callback, options);
+    }
+}
+const EntityObserver = new EntityObserverClass();
+
+const pickList = new Map();
+
 const X_VECTOR = vec3.fromValues(1, 0, 0);
 const Y_VECTOR = vec3.fromValues(0, 1, 0);
 const Z_VECTOR$2 = vec3.fromValues(0, 0, 1);
@@ -2230,7 +2285,7 @@ class Entity {
     lockRotation = false;
     lockScale = false;
     static editMaterial;
-    properties = new Map();
+    properties = new Properties(); //Map<string, any>();
     loadedPromise;
     #layer = undefined;
     constructor(params) {
@@ -13022,10 +13077,10 @@ function equals(p1, p2) {
 }
 // check if two segments intersect
 function intersects(p1, q1, p2, q2) {
-    const o1 = sign$1(area$1(p1, q1, p2));
-    const o2 = sign$1(area$1(p1, q1, q2));
-    const o3 = sign$1(area$1(p2, q2, p1));
-    const o4 = sign$1(area$1(p2, q2, q1));
+    const o1 = sign(area$1(p1, q1, p2));
+    const o2 = sign(area$1(p1, q1, q2));
+    const o3 = sign(area$1(p2, q2, p1));
+    const o4 = sign(area$1(p2, q2, q1));
     if (o1 !== o2 && o3 !== o4)
         return true; // general case
     if (o1 === 0 && onSegment(p1, p2, q1))
@@ -13042,7 +13097,7 @@ function intersects(p1, q1, p2, q2) {
 function onSegment(p, q, r) {
     return q.x <= Math.max(p.x, r.x) && q.x >= Math.min(p.x, r.x) && q.y <= Math.max(p.y, r.y) && q.y >= Math.min(p.y, r.y);
 }
-function sign$1(num) {
+function sign(num) {
     return num > 0 ? 1 : num < 0 ? -1 : 0;
 }
 // check if a polygon diagonal intersects any polygon segments
@@ -16942,7 +16997,7 @@ class Bone extends Entity {
     #worldPos = vec3.create();
     #worldQuat = quat.create();
     #worldScale = vec3.fromValues(1, 1, 1);
-    #parentSkeletonBone;
+    #parentSkeletonBone = null;
     #skeleton;
     #refPosition = vec3.create();
     #refQuaternion = quat.create();
@@ -17988,7 +18043,8 @@ class Skeleton extends Entity {
     }
     addBone(boneId, boneName) {
         const boneNameLowerCase = boneName.toLowerCase();
-        if (!this.#bonesByName.has(boneNameLowerCase)) {
+        let bone = this.#bonesByName.get(boneNameLowerCase);
+        if (!bone) {
             const bone = new Bone({ name: boneName, boneId: boneId });
             bone.skeleton = this;
             //this.addChild(bone);
@@ -17997,7 +18053,6 @@ class Skeleton extends Entity {
             return bone;
         }
         else {
-            const bone = this.#bonesByName.get(boneNameLowerCase);
             this._bones[boneId] = bone;
             return bone;
         }
@@ -20573,17 +20628,6 @@ class SourceBinaryLoader {
     }
 }
 
-const VTEX_FLAG_CUBE_TEXTURE = 0x10;
-const VTEX_FORMAT_DXT1 = 0x01; // 1
-const VTEX_FORMAT_DXT5 = 0x02; // 2
-const VTEX_FORMAT_R8 = 0x03; // 3
-const VTEX_FORMAT_R8G8B8A8_UINT = 0x04; // 4
-const VTEX_FORMAT_PNG_R8G8B8A8_UINT = 0x10; // 16
-const VTEX_FORMAT_BC7 = 0x14; // 20
-const VTEX_FORMAT_BC5 = 0x15; // 21
-const VTEX_FORMAT_BC4 = 0x1B; // 27
-const VTEX_FORMAT_BGRA8888 = 0x1C; // 28
-
 const TEXTURE_FORMAT_UNKNOWN = 0;
 const TEXTURE_FORMAT_UNCOMPRESSED = 1 << 10;
 const TEXTURE_FORMAT_COMPRESSED_S3TC = 1 << 11;
@@ -20600,6 +20644,144 @@ const TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5 = TEXTURE_FORMAT_COMPRESSED_S3TC | 4;
 const TEXTURE_FORMAT_COMPRESSED_RGBA_BC4 = TEXTURE_FORMAT_COMPRESSED_RGTC | 1;
 const TEXTURE_FORMAT_COMPRESSED_RGBA_BC5 = TEXTURE_FORMAT_COMPRESSED_RGTC | 2;
 const TEXTURE_FORMAT_COMPRESSED_RGBA_BC7 = TEXTURE_FORMAT_COMPRESSED_BPTC | 1;
+
+const VTEX_FLAG_CUBE_TEXTURE = 0x10;
+const VTEX_FORMAT_DXT1 = 0x01; // 1
+const VTEX_FORMAT_DXT5 = 0x02; // 2
+const VTEX_FORMAT_R8 = 0x03; // 3
+const VTEX_FORMAT_R8G8B8A8_UINT = 0x04; // 4
+const VTEX_FORMAT_PNG_R8G8B8A8_UINT = 0x10; // 16
+const VTEX_FORMAT_BC7 = 0x14; // 20
+const VTEX_FORMAT_BC5 = 0x15; // 21
+const VTEX_FORMAT_BC4 = 0x1B; // 27
+const VTEX_FORMAT_BGRA8888 = 0x1C; // 28
+
+var Kv3Type;
+(function (Kv3Type) {
+    Kv3Type[Kv3Type["Unknown"] = 0] = "Unknown";
+    Kv3Type[Kv3Type["Null"] = 1] = "Null";
+    Kv3Type[Kv3Type["Bool"] = 2] = "Bool";
+    Kv3Type[Kv3Type["Int64"] = 3] = "Int64";
+    Kv3Type[Kv3Type["UnsignedInt64"] = 4] = "UnsignedInt64";
+    Kv3Type[Kv3Type["Double"] = 5] = "Double";
+    Kv3Type[Kv3Type["String"] = 6] = "String";
+    Kv3Type[Kv3Type["Blob"] = 7] = "Blob";
+    Kv3Type[Kv3Type["Array"] = 8] = "Array";
+    Kv3Type[Kv3Type["Element"] = 9] = "Element";
+    Kv3Type[Kv3Type["TypedArray"] = 10] = "TypedArray";
+    Kv3Type[Kv3Type["Int32"] = 11] = "Int32";
+    Kv3Type[Kv3Type["UnsignedInt32"] = 12] = "UnsignedInt32";
+    Kv3Type[Kv3Type["True"] = 13] = "True";
+    Kv3Type[Kv3Type["False"] = 14] = "False";
+    Kv3Type[Kv3Type["IntZero"] = 15] = "IntZero";
+    Kv3Type[Kv3Type["IntOne"] = 16] = "IntOne";
+    Kv3Type[Kv3Type["DoubleZero"] = 17] = "DoubleZero";
+    Kv3Type[Kv3Type["DoubleOne"] = 18] = "DoubleOne";
+    Kv3Type[Kv3Type["Float"] = 19] = "Float";
+    Kv3Type[Kv3Type["Byte"] = 23] = "Byte";
+    Kv3Type[Kv3Type["TypedArray2"] = 24] = "TypedArray2";
+    Kv3Type[Kv3Type["TypedArray3"] = 25] = "TypedArray3";
+    Kv3Type[Kv3Type["Resource"] = 134] = "Resource";
+})(Kv3Type || (Kv3Type = {}));
+class Kv3Value {
+    isKv3Value = true;
+    #type;
+    #subType;
+    #value;
+    constructor(type, value, subType) {
+        this.#type = type;
+        this.#value = value;
+        this.#subType = subType ?? Kv3Type.Unknown;
+    }
+    getType() {
+        return this.#type;
+    }
+    getSubType() {
+        return this.#subType;
+    }
+    isBoolean() {
+        switch (this.#type) {
+            case Kv3Type.Bool:
+            case Kv3Type.True:
+            case Kv3Type.False:
+                return true;
+        }
+        return false;
+    }
+    isNumber() {
+        switch (this.#type) {
+            case Kv3Type.Int32:
+            case Kv3Type.UnsignedInt32:
+            case Kv3Type.IntZero:
+            case Kv3Type.IntOne:
+            case Kv3Type.DoubleZero:
+            case Kv3Type.DoubleOne:
+                return true;
+        }
+        return false;
+    }
+    isBigint() {
+        switch (this.#type) {
+            case Kv3Type.Int64:
+            case Kv3Type.UnsignedInt64:
+                return true;
+        }
+        return false;
+    }
+    isNumberArray() {
+        switch (this.#subType) {
+            case Kv3Type.Int32:
+            case Kv3Type.UnsignedInt32:
+            case Kv3Type.IntZero:
+            case Kv3Type.IntOne:
+            case Kv3Type.DoubleZero:
+            case Kv3Type.DoubleOne:
+            case Kv3Type.Float:
+                return this.isArray();
+        }
+        return false;
+    }
+    isBigintArray() {
+        switch (this.#subType) {
+            case Kv3Type.Int64:
+            case Kv3Type.UnsignedInt64:
+                return this.isArray();
+        }
+        return false;
+    }
+    isArray() {
+        switch (this.#type) {
+            case Kv3Type.Array:
+            case Kv3Type.TypedArray:
+            case Kv3Type.TypedArray2:
+            case Kv3Type.TypedArray3:
+                return true;
+        }
+        return false;
+    }
+    isVector() {
+        switch (this.#subType) {
+            case Kv3Type.TypedArray:
+            case Kv3Type.TypedArray2:
+            case Kv3Type.TypedArray3:
+                return true;
+        }
+        return false;
+    }
+    getValue() {
+        return this.#value;
+    }
+    exportAsText(linePrefix) {
+        linePrefix = linePrefix ?? '';
+        switch (this.#type) {
+            case 6:
+                return linePrefix + '"' + this.#value + '"';
+            case Kv3Type.Resource:
+                return linePrefix + 'resource:"' + this.#value + '"';
+        }
+        return linePrefix + this.#value;
+    }
+}
 
 const VTEX_TO_INTERNAL_IMAGE_FORMAT = {};
 VTEX_TO_INTERNAL_IMAGE_FORMAT[VTEX_FORMAT_DXT1] = TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1;
@@ -20729,15 +20911,19 @@ class Source2File {
         const vertexBuffer = block.vertices[bufferId];
         return vertexBuffer ? vertexBuffer.boneWeight : [];
     }
-    getPositionArray(bufferId) {
+    /*
+    getPositionArray(bufferId: number) {
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
+
         const vertexBuffer = block.vertices[bufferId];
         const indexBuffer = block.indices[bufferId];
+
         const vertices = vertexBuffer ? vertexBuffer.vertices : [];
         const indices = indexBuffer ? indexBuffer.indices : [];
+
         const ret = [];
         const indicesLength = indices.length;
         for (let i = 0; i < indicesLength; i++) {
@@ -20748,43 +20934,54 @@ class Source2File {
         }
         return ret;
     }
+
     getNormalArray(bufferId) {
+
         /*function DecompressNormal(float2 inputTangent, out float4 outputTangent) {//_DecompressShort2Tangent
             const ztSigns		= sign(inputTangent);				// sign bits for z and tangent (+1 or -1)
             float2 xyAbs		= abs(inputTangent);				// 1..32767
             outputTangent.xy	= (xyAbs - 16384.0) / 16384.0;	// x and y
             outputTangent.z		= ztSigns.x * sqrt(saturate(1.0 - dot(outputTangent.xy, outputTangent.xy)));
             //outputTangent.w		= ztSigns.y;
-        }*/
-        function DecompressNormal(inputNormal) {
+        }* /
+
+
+        function DecompressNormal(inputNormal) {				// {nX, nY, nZ}//_DecompressUByte4Normal
+            const fOne = 1.0;
             const outputNormal = vec3.create();
+
             //float2 ztSigns		= (inputNormal.xy - 128.0) < 0;				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
-            const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0)); // sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
+            const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0));				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
             //float2 xyAbs		= abs(inputNormal.xy - 128.0) - ztSigns;		// 0..127
-            const xyAbs = vec2.fromValues(Math.abs(inputNormal[0] - 128.0) - ztSigns[0], Math.abs(inputNormal[1] - 128.0) - ztSigns[1]); // 0..127
+            const xyAbs = vec2.fromValues(Math.abs(inputNormal[0] - 128.0) - ztSigns[0], Math.abs(inputNormal[1] - 128.0) - ztSigns[1]);		// 0..127
             //float2 xySigns		= (xyAbs - 64.0) < 0;						// sign bits for xs and ys (1 or 0)
-            const xySigns = vec2.fromValues(Number((xyAbs[0] - 64.0) < 0), Number((xyAbs[1] - 64.0) < 0)); // sign bits for xs and ys (1 or 0)
+            const xySigns = vec2.fromValues(Number((xyAbs[0] - 64.0) < 0), Number((xyAbs[1] - 64.0) < 0));						// sign bits for xs and ys (1 or 0)
             //outputNormal.xy		= (abs(xyAbs - 64.0) - xySigns) / 63.0;	// abs({nX, nY})
-            outputNormal[0] = (Math.abs(xyAbs[0] - 64.0) - xySigns[0]) / 63.0; // abs({nX, nY})
-            outputNormal[1] = (Math.abs(xyAbs[1] - 64.0) - xySigns[1]) / 63.0; // abs({nX, nY})
+            outputNormal[0] = (Math.abs(xyAbs[0] - 64.0) - xySigns[0]) / 63.0;	// abs({nX, nY})
+            outputNormal[1] = (Math.abs(xyAbs[1] - 64.0) - xySigns[1]) / 63.0;	// abs({nX, nY})
+
             //outputNormal.z		= 1.0 - outputNormal.x - outputNormal.y;		// Project onto x+y+z=1
-            outputNormal[2] = 1.0 - outputNormal[0] - outputNormal[1]; // Project onto x+y+z=1
+            outputNormal[2] = 1.0 - outputNormal[0] - outputNormal[1];		// Project onto x+y+z=1
             //outputNormal.xyz	= normalize(outputNormal.xyz);				// Normalize onto unit sphere
             vec3.normalize(outputNormal, outputNormal);
+
             //outputNormal.xy	 *= lerp(fOne.xx, -fOne.xx, xySigns);			// Restore x and y signs
             //outputNormal.z	 *= lerp(fOne.x, -fOne.x, ztSigns.x);			// Restore z sign
             outputNormal[0] *= (1 - xySigns[0]) - xySigns[0];
             outputNormal[1] *= (1 - xySigns[1]) - xySigns[1];
             return vec3.normalize(outputNormal, outputNormal);
         }
+
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
+
         const vertexBuffer = block.vertices[bufferId];
         const indexBuffer = block.indices[bufferId];
         const normals = vertexBuffer ? vertexBuffer.normals : [];
         const indices = indexBuffer ? indexBuffer.indices : [];
+
         const ret = [];
         const indicesLength = indices.length;
         const normalVec4 = vec4.create();
@@ -20795,11 +20992,13 @@ class Source2File {
             normalVec4[1] = normals[vertexId + 1];
             normalVec4[2] = normals[vertexId + 2];
             normalVec4[3] = normals[vertexId + 3];
+
             normalVec3 = DecompressNormal(normalVec4);
             ret.push(normalVec3[0]);
             ret.push(normalVec3[1]);
             ret.push(normalVec3[2]);
             //ret.push(0);
+
             //ret.push(normals[vertexId + 0] / 255.0);
             //ret.push(normals[vertexId + 1] / 255.0);
             //ret.push(normals[vertexId + 2] / 255.0);
@@ -20807,17 +21006,20 @@ class Source2File {
         }
         return ret;
     }
+
     getCoordArray(bufferId) {
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
+
         const vertexBuffer = block.vertices[bufferId];
         const indexBuffer = block.indices[bufferId];
         const coords = vertexBuffer ? vertexBuffer.coords : [];
         const indices = indexBuffer ? indexBuffer.indices : [];
         //var coords = block.vertices[bufferId].coords;
         //var indices = block.indices[bufferId].indices;
+
         const ret = [];
         const indicesLength = indices.length;
         for (let i = 0; i < indicesLength; i++) {
@@ -20827,17 +21029,21 @@ class Source2File {
         }
         return ret;
     }
+
     getBoneIndiceArray(bufferId) {
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
+
+
         const vertexBuffer = block.vertices[bufferId];
         const indexBuffer = block.indices[bufferId];
         const vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
         const indices = indexBuffer ? indexBuffer.indices : [];
         //var vertices = block.vertices[bufferId].boneIndices;
         //var indices = block.indices[bufferId].indices;
+
         const ret = [];
         const indicesLength = indices.length;
         for (let i = 0; i < indicesLength; i++) {
@@ -20849,28 +21055,32 @@ class Source2File {
         }
         return ret;
     }
+
     getBoneWeightArray(bufferId) {
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
+
         const vertexBuffer = block.vertices[bufferId];
         const indexBuffer = block.indices[bufferId];
         const vertices = vertexBuffer ? vertexBuffer.boneWeight : [];
         const indices = indexBuffer ? indexBuffer.indices : [];
         //var vertices = block.vertices[bufferId].boneWeight;
         //var indices = block.indices[bufferId].indices;
+
         const ret = [];
         const indicesLength = indices.length;
         for (let i = 0; i < indicesLength; i++) {
             const vertexId = indices[i] * 4;
-            ret.push(vertices[vertexId + 0] / 255); //TODO: optimise
+            ret.push(vertices[vertexId + 0] / 255);//TODO: optimise
             ret.push(vertices[vertexId + 1] / 255);
             ret.push(vertices[vertexId + 2] / 255);
             //ret.push(vertices[vertexId + 3]);TODO
         }
         return ret;
     }
+
     getTangentArray(bufferId) {
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
@@ -20882,6 +21092,7 @@ class Source2File {
         const indices = indexBuffer ? indexBuffer.indices : [];
         //var vertices = block.vertices[bufferId].boneIndices;
         //var indices = block.indices[bufferId].indices;
+
         const ret = [];
         const indicesLength = indices.length;
         for (let i = 0; i < indicesLength; i++) {
@@ -20893,17 +21104,20 @@ class Source2File {
         }
         return ret;
     }
+
     getBinormalArray(bufferId) {
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
+
         const vertexBuffer = block.vertices[bufferId];
         const indexBuffer = block.indices[bufferId];
         const vertices = vertexBuffer ? vertexBuffer.boneIndices : [];
         const indices = indexBuffer ? indexBuffer.indices : [];
         //var vertices = block.vertices[bufferId].boneIndices;
         //var indices = block.indices[bufferId].indices;
+
         const ret = [];
         const indicesLength = indices.length;
         for (let i = 0; i < indicesLength; i++) {
@@ -20914,6 +21128,190 @@ class Source2File {
             //ret.push(vertices[vertexId + 3]);TODO
         }
         return ret;
+    }
+    */
+    getBlockStruct(block, path) {
+        console.assert(path != null, 'path is null', block, path);
+        console.assert(path != '', 'path is empty, use getBlockKeyValues', block, path);
+        //const arr = path.split('.');
+        const b = this.blocks[block];
+        if (!b) {
+            return null;
+        }
+        const value = b.getKeyValue(path);
+        //console.assert(value != null, 'value is null', block, path, b);
+        /*
+        if ((value as (Kv3Value | undefined))?.isKv3Value) {
+            return (value as Kv3Value).getValue();
+        }
+        */
+        return value;
+    }
+    getBlockStructAsArray(block, path) {
+        const prop = this.getBlockStruct(block, path);
+        if (prop?.isKv3Value && prop.isArray()) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getBlockStructAsElement(block, path) {
+        const prop = this.getBlockStruct(block, path);
+        if (prop?.isKv3Element) {
+            return prop;
+        }
+        if (prop?.isKv3Value && prop.getType() == Kv3Type.Element) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getBlockStructAsElementArray(block, path) {
+        const prop = this.getBlockStruct(block, path);
+        if (prop?.isKv3Value && prop.getSubType() == Kv3Type.Element) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getBlockStructAsString(block, path) {
+        const prop = this.getBlockStruct(block, path);
+        if (prop?.isKv3Value && prop.getType() == Kv3Type.String) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getBlockStructAsStringArray(block, path) {
+        const prop = this.getBlockStruct(block, path);
+        if (prop?.isKv3Value && prop.getSubType() == Kv3Type.String) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getBlockStructAsResourceArray(block, path) {
+        const prop = this.getBlockStruct(block, path);
+        if (prop?.isKv3Value && prop.isArray() && prop.getSubType() == Kv3Type.Resource) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getBlockStructAsBigintArray(block, path) {
+        const prop = this.getBlockStruct(block, path);
+        if (prop?.isKv3Value && prop.isBigintArray()) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getBlockStructAsNumberArray(block, path) {
+        const prop = this.getBlockStruct(block, path);
+        if (prop?.isKv3Value && prop.isNumberArray()) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getBlockKeyValues(block) {
+        const b = this.blocks[block];
+        if (!b) {
+            return null;
+        }
+        return b.keyValue?.root ?? null;
+    }
+    getPermModelData(path) {
+        //return this.getBlockStruct('DATA.structs.PermModelData_t.' + path) || this.getBlockStruct('DATA.keyValue.root.' + path);
+        return this.getBlockStruct('DATA', 'PermModelData_t.' + path) ?? this.getBlockStruct('DATA', path);
+    }
+    getMaterialResourceData(path) {
+        return this.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t' + path) ?? this.getBlockStructAsElementArray('DATA', path); // ?? this.getBlockStruct('DATA', path);
+    }
+    getExternalFiles() {
+        const rerl = this.blocks['RERL'];
+        return rerl?.externalFiles2 ?? [];
+    }
+    getExternalFile(fileIndex) {
+        const externalFiles = this.getExternalFiles();
+        return externalFiles?.[fileIndex] ?? null;
+    }
+    getKeyValue(path) {
+        const dataBlock = this.blocks['DATA'];
+        if (dataBlock) {
+            const keyValue = dataBlock.keyValue;
+            if (keyValue) {
+                return keyValue.getValue(path);
+            }
+        }
+        return null;
+    }
+    /**
+     * @deprecated use getDisplayName() instead
+     */
+    get displayName() {
+        return this.getDisplayName();
+    }
+    getDisplayName() {
+        const fileName = this.fileName;
+        if (fileName) {
+            const result = /(\w+)\.\w+$/.exec(fileName);
+            if (result && result.length == 2) {
+                return result[1];
+            }
+        }
+        return '';
+    }
+    getRemappingTable(meshIndex) {
+        const remappingTableStarts = this.getBlockStructAsBigintArray('DATA', 'm_remappingTableStarts') ?? this.getBlockStructAsNumberArray('DATA', 'm_remappingTableStarts');
+        if (!remappingTableStarts || meshIndex > remappingTableStarts.length) {
+            return null;
+        }
+        const remappingTable = this.getBlockStructAsBigintArray('DATA', 'm_remappingTable') ?? this.getBlockStructAsNumberArray('DATA', 'm_remappingTable');
+        if (!remappingTable) {
+            return null;
+        }
+        const starts = remappingTableStarts[meshIndex];
+        if (starts > remappingTable.length) {
+            return null;
+        }
+        let end = Number(remappingTableStarts[meshIndex + 1]);
+        if (end !== undefined) {
+            end = Number(end); // Converts bigint
+        }
+        return remappingTable.slice(Number(starts), end);
+    }
+    remapBuffer(buffer, remappingTable) {
+        const inArr = new Float32Array(buffer);
+        const outArr = new Float32Array(new ArrayBuffer(buffer.byteLength));
+        if (remappingTable) {
+            inArr.forEach((element, index) => {
+                outArr[index] = Number(remappingTable[element] ?? element);
+            });
+        }
+        return outArr;
+    }
+}
+function DecompressNormal(inputNormal) {
+    const outputNormal = vec3.create();
+    //float2 ztSigns		= (inputNormal.xy - 128.0) < 0;				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
+    const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0)); // sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
+    //float2 xyAbs		= abs(inputNormal.xy - 128.0) - ztSigns;		// 0..127
+    const xyAbs = vec2.fromValues(Math.abs(inputNormal[0] - 128.0) - ztSigns[0], Math.abs(inputNormal[1] - 128.0) - ztSigns[1]); // 0..127
+    //float2 xySigns		= (xyAbs - 64.0) < 0;						// sign bits for xs and ys (1 or 0)
+    const xySigns = vec2.fromValues(Number((xyAbs[0] - 64.0) < 0), Number((xyAbs[1] - 64.0) < 0)); // sign bits for xs and ys (1 or 0)
+    //outputNormal.xy		= (abs(xyAbs - 64.0) - xySigns) / 63.0;	// abs({nX, nY})
+    outputNormal[0] = (Math.abs(xyAbs[0] - 64.0) - xySigns[0]) / 63.0; // abs({nX, nY})
+    outputNormal[1] = (Math.abs(xyAbs[1] - 64.0) - xySigns[1]) / 63.0; // abs({nX, nY})
+    //outputNormal.z		= 1.0 - outputNormal.x - outputNormal.y;		// Project onto x+y+z=1
+    outputNormal[2] = 1.0 - outputNormal[0] - outputNormal[1]; // Project onto x+y+z=1
+    //outputNormal.xyz	= normalize(outputNormal.xyz);				// Normalize onto unit sphere
+    vec3.normalize(outputNormal, outputNormal);
+    //outputNormal.xy	 *= lerp(fOne.xx, -fOne.xx, xySigns);			// Restore x and y signs
+    //outputNormal.z	 *= lerp(fOne.x, -fOne.x, ztSigns.x);			// Restore z sign
+    outputNormal[0] *= (1 - xySigns[0]) - xySigns[0];
+    outputNormal[1] *= (1 - xySigns[1]) - xySigns[1];
+    return vec3.normalize(outputNormal, outputNormal);
+}
+
+class Source2Texture extends Source2File {
+    constructor(repository, path) {
+        super(repository, path);
+    }
+    getAlphaBits() {
+        return 8; //TODO: fix that
     }
     getWidth() {
         const block = this.blocks.DATA;
@@ -20956,49 +21354,6 @@ class Source2File {
         }
         return (block.flags & VTEX_FLAG_CUBE_TEXTURE) == VTEX_FLAG_CUBE_TEXTURE;
     }
-    getBlockStruct(path) {
-        const arr = path.split('.');
-        let data = this.blocks;
-        if (!data) {
-            return null;
-        }
-        let sub;
-        for (let i = 0; i < arr.length; i++) {
-            sub = data[arr[i]];
-            if (!sub) {
-                return null;
-            }
-            data = sub;
-        }
-        return data;
-    }
-    getPermModelData(path) {
-        return this.getBlockStruct('DATA.structs.PermModelData_t.' + path) || this.getBlockStruct('DATA.keyValue.root.' + path);
-    }
-    getMaterialResourceData(path) {
-        return this.getBlockStruct('DATA.structs.MaterialResourceData_t.' + path) || this.getBlockStruct('DATA.keyValue.root.' + path);
-    }
-    getExternalFiles() {
-        const externalFiles = this.getBlockStruct('RERL.externalFiles2');
-        return externalFiles;
-    }
-    getExternalFile(fileIndex) {
-        const externalFiles = this.getBlockStruct('RERL.externalFiles2');
-        if (externalFiles) {
-            return externalFiles[fileIndex];
-        }
-        return null;
-    }
-    getKeyValue(path) {
-        const dataBlock = this.blocks['DATA'];
-        if (dataBlock) {
-            const keyValue = dataBlock.keyValue;
-            if (keyValue) {
-                return keyValue.getValue(path);
-            }
-        }
-        return null;
-    }
     get imageFormat() {
         const block = this.blocks.DATA;
         if (!block) {
@@ -21008,224 +21363,6 @@ class Source2File {
         {
             return VTEX_TO_INTERNAL_IMAGE_FORMAT[imageFormat];
         }
-    }
-    get displayName() {
-        const fileName = this.fileName;
-        if (fileName) {
-            const result = /(\w+)\.\w+$/.exec(fileName);
-            if (result && result.length == 2) {
-                return result[1];
-            }
-        }
-    }
-    getRemappingTable(meshIndex) {
-        const remappingTableStarts = this.getPermModelData('m_remappingTableStarts');
-        if (!remappingTableStarts || meshIndex > remappingTableStarts.length) {
-            return;
-        }
-        const remappingTable = this.getPermModelData('m_remappingTable');
-        if (!remappingTable) {
-            return;
-        }
-        const starts = remappingTableStarts[meshIndex];
-        if (starts > remappingTable.length) {
-            return;
-        }
-        let end = remappingTableStarts[meshIndex + 1];
-        if (end !== undefined) {
-            end = Number(end); // Converts bigint
-        }
-        return remappingTable.slice(Number(starts), end);
-    }
-    remapBuffer(buffer, remappingTable) {
-        const inArr = new Float32Array(buffer);
-        const outArr = new Float32Array(new ArrayBuffer(buffer.byteLength));
-        if (remappingTable) {
-            inArr.forEach((element, index) => {
-                outArr[index] = Number(remappingTable[element] ?? element);
-            });
-        }
-        return outArr;
-    }
-}
-function DecompressNormal(inputNormal) {
-    const outputNormal = vec3.create();
-    //float2 ztSigns		= (inputNormal.xy - 128.0) < 0;				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
-    const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0)); // sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
-    //float2 xyAbs		= abs(inputNormal.xy - 128.0) - ztSigns;		// 0..127
-    const xyAbs = vec2.fromValues(Math.abs(inputNormal[0] - 128.0) - ztSigns[0], Math.abs(inputNormal[1] - 128.0) - ztSigns[1]); // 0..127
-    //float2 xySigns		= (xyAbs - 64.0) < 0;						// sign bits for xs and ys (1 or 0)
-    const xySigns = vec2.fromValues(Number((xyAbs[0] - 64.0) < 0), Number((xyAbs[1] - 64.0) < 0)); // sign bits for xs and ys (1 or 0)
-    //outputNormal.xy		= (abs(xyAbs - 64.0) - xySigns) / 63.0;	// abs({nX, nY})
-    outputNormal[0] = (Math.abs(xyAbs[0] - 64.0) - xySigns[0]) / 63.0; // abs({nX, nY})
-    outputNormal[1] = (Math.abs(xyAbs[1] - 64.0) - xySigns[1]) / 63.0; // abs({nX, nY})
-    //outputNormal.z		= 1.0 - outputNormal.x - outputNormal.y;		// Project onto x+y+z=1
-    outputNormal[2] = 1.0 - outputNormal[0] - outputNormal[1]; // Project onto x+y+z=1
-    //outputNormal.xyz	= normalize(outputNormal.xyz);				// Normalize onto unit sphere
-    vec3.normalize(outputNormal, outputNormal);
-    //outputNormal.xy	 *= lerp(fOne.xx, -fOne.xx, xySigns);			// Restore x and y signs
-    //outputNormal.z	 *= lerp(fOne.x, -fOne.x, ztSigns.x);			// Restore z sign
-    outputNormal[0] *= (1 - xySigns[0]) - xySigns[0];
-    outputNormal[1] *= (1 - xySigns[1]) - xySigns[1];
-    return vec3.normalize(outputNormal, outputNormal);
-}
-
-/**
- * Source2 common file block
- */
-class Source2FileBlock {
-    file;
-    type;
-    offset;
-    length;
-    indices;
-    vertices;
-    keyValue;
-    constructor(file, type, offset, length) {
-        this.file = file;
-        this.type = type;
-        this.offset = offset;
-        this.length = length;
-    }
-    getKeyValue(path) {
-        const keyValue = this.keyValue;
-        if (keyValue) {
-            return keyValue.getValue(path);
-        }
-        return null;
-    }
-    getIndices(bufferId) {
-        const indexBuffer = this.indices[bufferId];
-        return indexBuffer ? indexBuffer.indices : [];
-    }
-    getVertices(bufferId) {
-        const vertexBuffer = this.vertices[bufferId];
-        return vertexBuffer ? vertexBuffer.vertices : [];
-    }
-    getNormalsTangents(bufferId) {
-        function DecompressNormal(inputNormal, outputNormal) {
-            //let outputNormal = vec3.create();
-            //float2 ztSigns		= ( inputNormal.xy - 128.0 ) < 0;				// sign bits for zs and binormal (1 or 0)  set-less-than (slt) asm instruction
-            const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0)); // sign bits for zs and binormal (1 or 0)  set-less-than (slt) asm instruction
-            //float2 xyAbs		= abs( inputNormal.xy - 128.0 ) - ztSigns;		// 0..127
-            const xyAbs = vec2.fromValues(Math.abs(inputNormal[0] - 128.0) - ztSigns[0], Math.abs(inputNormal[1] - 128.0) - ztSigns[1]); // 0..127
-            //float2 xySigns		= ( xyAbs -  64.0 ) < 0;						// sign bits for xs and ys (1 or 0)
-            const xySigns = vec2.fromValues(Number((xyAbs[0] - 64.0) < 0), Number((xyAbs[1] - 64.0) < 0)); // sign bits for xs and ys (1 or 0)
-            //outputNormal.xy		= ( abs( xyAbs - 64.0 ) - xySigns ) / 63.0;	// abs({nX, nY})
-            outputNormal[0] = (Math.abs(xyAbs[0] - 64.0) - xySigns[0]) / 63.0; // abs({nX, nY})
-            outputNormal[1] = (Math.abs(xyAbs[1] - 64.0) - xySigns[1]) / 63.0; // abs({nX, nY})
-            //outputNormal.z		= 1.0 - outputNormal.x - outputNormal.y;		// Project onto x+y+z=1
-            outputNormal[2] = 1.0 - outputNormal[0] - outputNormal[1]; // Project onto x+y+z=1
-            //outputNormal.xyz	= normalize( outputNormal.xyz );				// Normalize onto unit sphere
-            vec3.normalize(outputNormal, outputNormal);
-            //outputNormal.xy	   *= lerp( fOne.xx, -fOne.xx, xySigns   );			// Restore x and y signs
-            //outputNormal.z	   *= lerp( fOne.x,  -fOne.x,  ztSigns.x );			// Restore z sign
-            outputNormal[0] *= (1 - xySigns[0]) - xySigns[0];
-            outputNormal[1] *= (1 - xySigns[1]) - xySigns[1];
-            return vec3.normalize(outputNormal, outputNormal);
-        }
-        function DecompressTangent(compressedTangent, outputTangent) {
-            DecompressNormal(compressedTangent, outputTangent);
-            const tSign = compressedTangent[1] - 128.0 < 0 ? -1.0 : 1.0;
-            outputTangent[3] = tSign;
-        }
-        function DecompressNormal2(inputNormal) {
-            let normals;
-            let tangents;
-            const SignBit = inputNormal & 1; // LSB bit
-            const Tbits = (inputNormal >> 1) & 0x7ff; // 11 bits
-            const Xbits = (inputNormal >> 12) & 0x3ff; // 10 bits
-            const Ybits = (inputNormal >> 22) & 0x3ff; // 10 bits
-            // Unpack from 0..1 to -1..1
-            const nPackedFrameX = (Xbits / 1023.0) * 2.0 - 1.0;
-            const nPackedFrameY = (Ybits / 1023.0) * 2.0 - 1.0;
-            // Z is never given a sign, meaning negative values are caused by abs(packedframexy) adding up to over 1.0
-            const derivedNormalZ = 1.0 - Math.abs(nPackedFrameX) - Math.abs(nPackedFrameY); // Project onto x+y+z=1
-            const unpackedNormal = vec3.fromValues(nPackedFrameX, nPackedFrameY, derivedNormalZ);
-            // If Z is negative, X and Y has had extra amounts (TODO: find the logic behind this value) added into them so they would add up to over 1.0
-            // Thus, we take the negative components of Z and add them back into XY to get the correct original values.
-            const negativeZCompensation = clamp(-derivedNormalZ, 0.0, 1.0); // Isolate the negative 0..1 range of derived Z
-            const unpackedNormalXPositive = unpackedNormal[0] >= 0.0 ? 1.0 : 0.0;
-            const unpackedNormalYPositive = unpackedNormal[1] >= 0.0 ? 1.0 : 0.0;
-            unpackedNormal[0] += negativeZCompensation * (1 - unpackedNormalXPositive) + -negativeZCompensation * unpackedNormalXPositive; // mix() - x×(1−a)+y×a
-            unpackedNormal[1] += negativeZCompensation * (1 - unpackedNormalYPositive) + -negativeZCompensation * unpackedNormalYPositive;
-            const normal = vec3.normalize(unpackedNormal, unpackedNormal); // Get final normal by normalizing it onto the unit sphere
-            normals = normal;
-            // Invert tangent when normal Z is negative
-            const tangentSign = (normal[2] >= 0.0) ? 1.0 : -1.0;
-            // equal to tangentSign * (1.0 + abs(normal.z))
-            const rcpTangentZ = 1.0 / (tangentSign + normal[2]);
-            // Be careful of rearranging ops here, could lead to differences in float precision, especially when dealing with compressed data.
-            const unalignedTangent = vec3.create();
-            // Unoptimized (but clean) form:
-            // tangent.X = -(normal.x * normal.x) / (tangentSign + normal.z) + 1.0
-            // tangent.Y = -(normal.x * normal.y) / (tangentSign + normal.z)
-            // tangent.Z = -(normal.x)
-            unalignedTangent[0] = -tangentSign * (normal[0] * normal[0]) * rcpTangentZ + 1.0;
-            unalignedTangent[1] = -tangentSign * ((normal[0] * normal[1]) * rcpTangentZ);
-            unalignedTangent[2] = -tangentSign * normal[0];
-            // This establishes a single direction on the tangent plane that derived from only the normal (has no texcoord info).
-            // But it doesn't line up with the texcoords. For that, it uses nPackedFrameT, which is the rotation.
-            // Angle to use to rotate tangent
-            const nPackedFrameT = Tbits / 2047.0 * TWO_PI;
-            // Rotate tangent to the correct angle that aligns with texcoords.
-            //let tangent = unalignedTangent * Math.cos(nPackedFrameT) + Vector3.Cross(normal, unalignedTangent) * Math.sin(nPackedFrameT);
-            const tangent = vec3.scale(vec3.create(), unalignedTangent, Math.cos(nPackedFrameT));
-            const c = vec3.cross(vec3.create(), normal, unalignedTangent);
-            vec3.scale(c, c, Math.sin(nPackedFrameT));
-            vec3.add(tangent, tangent, c);
-            tangents = vec4.fromValues(tangent[0], tangent[1], tangent[2], (SignBit == 0) ? -1.0 : 1.0); // Bitangent sign bit... inverted (0 = negative
-            return [normals, tangents];
-        }
-        const vertexBuffer = this.vertices[bufferId];
-        const normals = new Float32Array(vertexBuffer.normals);
-        const normalArray = [];
-        const tangentArray = [];
-        const compressedNormal = vec2.create();
-        const compressedTangent = vec2.create();
-        let normalTemp = vec3.create();
-        let tangentTemp = vec3.create();
-        for (let i = 0, l = normals.length; i < l; i += 4) {
-            if (!vertexBuffer.decompressTangentV2) {
-                compressedNormal[0] = normals[i + 0] * 255.0;
-                compressedNormal[1] = normals[i + 1] * 255.0;
-                compressedTangent[0] = normals[i + 2] * 255.0;
-                compressedTangent[1] = normals[i + 3] * 255.0;
-                DecompressNormal(compressedNormal, normalTemp);
-                DecompressTangent(compressedTangent, tangentTemp);
-            }
-            else {
-                [normalTemp, tangentTemp] = DecompressNormal2(normals[i]);
-            }
-            normalArray.push(normalTemp[0]);
-            normalArray.push(normalTemp[1]);
-            normalArray.push(normalTemp[2]);
-            tangentArray.push(tangentTemp[0]);
-            tangentArray.push(tangentTemp[1]);
-            tangentArray.push(tangentTemp[2]);
-            tangentArray.push(1.0);
-        }
-        return [normalArray, tangentArray];
-    }
-    getCoords(bufferId) {
-        const vertexBuffer = this.vertices[bufferId];
-        return vertexBuffer ? vertexBuffer.coords : [];
-    }
-    getNormal(bufferId) {
-        const vertexBuffer = this.vertices[bufferId];
-        return vertexBuffer ? vertexBuffer.normals : [];
-    }
-    getTangent(bufferId) {
-        const vertexBuffer = this.vertices[bufferId];
-        return vertexBuffer ? vertexBuffer.tangents : [];
-    }
-    getBoneIndices(bufferId) {
-        const vertexBuffer = this.vertices[bufferId];
-        return vertexBuffer ? vertexBuffer.boneIndices : [];
-    }
-    getBoneWeight(bufferId) {
-        const vertexBuffer = this.vertices[bufferId];
-        return vertexBuffer ? vertexBuffer.boneWeight : [];
     }
 }
 
@@ -21285,53 +21422,251 @@ function decodeLz4(reader, decompressBlobArray, compressedSize, uncompressedSize
     return decodedeBytes;
 }
 
-/**
- * Kv3Value
- */
-class Kv3Value {
-    t;
-    v;
-    constructor(type, value) {
-        this.t = type;
-        this.v = value;
-    }
-    exportAsText = function (linePrefix) {
-        linePrefix = linePrefix ?? '';
-        switch (this.t) {
-            case 6:
-                return linePrefix + '"' + this.v + '"';
-            case 134:
-                return linePrefix + 'resource:"' + this.v + '"';
+function zstd(imports){return _loadWasmModule(0, null, 'AGFzbQEAAAABvAEYYAF/AX9gAn9/AX9gA39/fwF/YAV/f39/fwF/YAF/AGACf38AYAN/f38AYAR/f39/AX9gBn9/f39/fwF/YAABf2AHf39/f39/fwF/YAd/f39/f39/AGABfwF+YAN/fn8BfmACfn4BfmAAAGAFf39/f38AYAl/f39/f39/f38AYAp/f39/f39/f39/AGACf34AYAh/f39/f39/fwF/YA9/f39/f39/f39/f39/f38Bf2ACfn4Bf2ACf38BfgInAQNlbnYfZW1zY3JpcHRlbl9ub3RpZnlfbWVtb3J5X2dyb3d0aAAEA4sBiQEAAQAFAgECDhMAAgUABQIAAAABAQUGBAMFCwUABg4UFQACBRcCAAcCAAQGDwoDEAkGAwMDAwMHBwADBgQEBwcBAwgFAQUCAAEMBgwKAwoKAAYABwsCBAUIBAMIAwEIAxIRCQgJAQEBBgEWAgIHAAcDAggEBgEEAAkABgIAAQEABQ0BAAQHCAQEAAQFAXABBQUFBAEAgAIGCQF/AUHQrMACCwejAQsGbWVtb3J5AgANY3JlYXRlX2J1ZmZlcgCJAQ5kZXN0cm95X2J1ZmZlcgBzD2RlY29tcHJlc3NfWlNURABtCmRlY29tcHJlc3MAaRJnZXRfcmVzdWx0X3BvaW50ZXIAZA9nZXRfcmVzdWx0X3NpemUAYgZfc3RhcnQALAlzdGFja1NhdmUAeApzdGFja0FsbG9jAHcMc3RhY2tSZXN0b3JlAHYJCwEAQQELBCyBAUZ/Cu3HAokBCAAgAEGIf0sLGQAgACgCACAAKAIEQR9xdEEAIAFrQR9xdgt+AQR/QQMhASAAKAIEIgNBIE0EQCAAKAIIIgEgACgCEE8EQCAAEA0PCyAAKAIMIgIgAUYEQEEBQQIgA0EgSRsPCyAAIAEgASACayADQQN2IgQgASAEayACSSIBGyICayIENgIIIAAgAyACQQN0azYCBCAAIAQoAAA2AgALIAELFgAgACABKQAANwAAIAAgASkACDcACAuBBAEDfyACQYAETwRAIAAgASACEHogAA8LIAAgAmohAwJAIAAgAXNBA3FFBEACQCACQQFIBEAgACECDAELIABBA3FFBEAgACECDAELIAAhAgNAIAIgAS0AADoAACABQQFqIQEgAkEBaiICIANPDQEgAkEDcQ0ACwsCQCADQXxxIgRBwABJDQAgAiAEQUBqIgVLDQADQCACIAEoAgA2AgAgAiABKAIENgIEIAIgASgCCDYCCCACIAEoAgw2AgwgAiABKAIQNgIQIAIgASgCFDYCFCACIAEoAhg2AhggAiABKAIcNgIcIAIgASgCIDYCICACIAEoAiQ2AiQgAiABKAIoNgIoIAIgASgCLDYCLCACIAEoAjA2AjAgAiABKAI0NgI0IAIgASgCODYCOCACIAEoAjw2AjwgAUFAayEBIAJBQGsiAiAFTQ0ACwsgAiAETw0BA0AgAiABKAIANgIAIAFBBGohASACQQRqIgIgBEkNAAsMAQsgA0EESQRAIAAhAgwBCyADQXxqIgQgAEkEQCAAIQIMAQsgACECA0AgAiABLQAAOgAAIAIgAS0AAToAASACIAEtAAI6AAIgAiABLQADOgADIAFBBGohASACQQRqIgIgBE0NAAsLIAIgA0kEQANAIAIgAS0AADoAACABQQFqIQEgAkEBaiICIANHDQALCyAACxsBAX8gACABEAIhAiAAIAAoAgQgAWo2AgQgAgv3AQECfyACRQRAIABCADcCACAAQQA2AhAgAEIANwIIQbh/DwsgACABNgIMIAAgAUEEajYCECACQQRPBEAgACABIAJqIgFBfGoiAzYCCCAAIAMoAAA2AgAgAUF/ai0AACIBBEAgAEEIIAEQEGs2AgQgAg8LIABBADYCBEF/DwsgACABNgIIIAAgAS0AACIDNgIAIAJBfmoiBEEBTQRAIARBAWtFBEAgACABLQACQRB0IANyIgM2AgALIAAgAS0AAUEIdCADajYCAAsgASACakF/ai0AACIBRQRAIABBADYCBEFsDwsgAEEoIAEQECACQQN0ams2AgQgAgshACABQs/W077Sx6vZQn4gAHxCH4lCh5Wvr5i23puef34LCQAgACABNwAACx0BAX8gACgCCCAAKAIMRgR/IAAoAgRBIEYFQQALC/MCAgJ/AX4CQCACRQ0AIAAgAmoiA0F/aiABOgAAIAAgAToAACACQQNJDQAgA0F+aiABOgAAIAAgAToAASADQX1qIAE6AAAgACABOgACIAJBB0kNACADQXxqIAE6AAAgACABOgADIAJBCUkNACAAQQAgAGtBA3EiBGoiAyABQf8BcUGBgoQIbCIBNgIAIAMgAiAEa0F8cSIEaiICQXxqIAE2AgAgBEEJSQ0AIAMgATYCCCADIAE2AgQgAkF4aiABNgIAIAJBdGogATYCACAEQRlJDQAgAyABNgIYIAMgATYCFCADIAE2AhAgAyABNgIMIAJBcGogATYCACACQWxqIAE2AgAgAkFoaiABNgIAIAJBZGogATYCACAEIANBBHFBGHIiBGsiAkEgSQ0AIAGtIgVCIIYgBYQhBSADIARqIQEDQCABIAU3AxggASAFNwMQIAEgBTcDCCABIAU3AwAgAUEgaiEBIAJBYGoiAkEfSw0ACwsgAAsMACAAIAEpAAA3AAALQQECfyAAKAIIIgEgACgCEEkEQEEDDwsgACAAKAIEIgJBB3E2AgQgACABIAJBA3ZrIgE2AgggACABKAAANgIAQQALDAAgACABKAIANgAAC+wCAQJ/AkAgACABRg0AAkAgASACaiAASwRAIAAgAmoiBCABSw0BCyAAIAEgAhAFDwsgACABc0EDcSEDAkACQCAAIAFJBEAgAwRAIAAhAwwDCyAAQQNxRQRAIAAhAwwCCyAAIQMDQCACRQ0EIAMgAS0AADoAACABQQFqIQEgAkF/aiECIANBAWoiA0EDcQ0ACwwBCwJAIAMNACAEQQNxBEADQCACRQ0FIAAgAkF/aiICaiIDIAEgAmotAAA6AAAgA0EDcQ0ACwsgAkEDTQ0AA0AgACACQXxqIgJqIAEgAmooAgA2AgAgAkEDSw0ACwsgAkUNAgNAIAAgAkF/aiICaiABIAJqLQAAOgAAIAINAAsMAgsgAkEDTQ0AA0AgAyABKAIANgIAIAFBBGohASADQQRqIQMgAkF8aiICQQNLDQALCyACRQ0AA0AgAyABLQAAOgAAIANBAWohAyABQQFqIQEgAkF/aiICDQALCyAACwgAIABnQR9zC0EBAn8/ACEBAkBB0CwoAgAiAiAAQQNqQXxxaiIAIAFBEHRNDQAgABB5DQBB2ChBMDYCAEF/DwtB0CwgADYCACACC70tAQt/IwBBEGsiCyQAAkACQAJAAkACQAJAAkACQAJAAkACQCAAQfQBTQRAQdwoKAIAIgZBECAAQQtqQXhxIABBC0kbIgVBA3YiAHYiAUEDcQRAIAFBf3NBAXEgAGoiAkEDdCIEQYwpaigCACIBQQhqIQACQCABKAIIIgMgBEGEKWoiBEYEQEHcKCAGQX4gAndxNgIADAELQewoKAIAGiADIAQ2AgwgBCADNgIICyABIAJBA3QiAkEDcjYCBCABIAJqIgEgASgCBEEBcjYCBAwMCyAFQeQoKAIAIghNDQEgAQRAAkBBAiAAdCICQQAgAmtyIAEgAHRxIgBBACAAa3FBf2oiACAAQQx2QRBxIgB2IgFBBXZBCHEiAiAAciABIAJ2IgBBAnZBBHEiAXIgACABdiIAQQF2QQJxIgFyIAAgAXYiAEEBdkEBcSIBciAAIAF2aiICQQN0IgNBjClqKAIAIgEoAggiACADQYQpaiIDRgRAQdwoIAZBfiACd3EiBjYCAAwBC0HsKCgCABogACADNgIMIAMgADYCCAsgAUEIaiEAIAEgBUEDcjYCBCABIAVqIgcgAkEDdCICIAVrIgNBAXI2AgQgASACaiADNgIAIAgEQCAIQQN2IgRBA3RBhClqIQFB8CgoAgAhAgJ/IAZBASAEdCIEcUUEQEHcKCAEIAZyNgIAIAEMAQsgASgCCAshBCABIAI2AgggBCACNgIMIAIgATYCDCACIAQ2AggLQfAoIAc2AgBB5CggAzYCAAwMC0HgKCgCACIKRQ0BIApBACAKa3FBf2oiACAAQQx2QRBxIgB2IgFBBXZBCHEiAiAAciABIAJ2IgBBAnZBBHEiAXIgACABdiIAQQF2QQJxIgFyIAAgAXYiAEEBdkEBcSIBciAAIAF2akECdEGMK2ooAgAiASgCBEF4cSAFayEDIAEhAgNAAkAgAigCECIARQRAIAIoAhQiAEUNAQsgACgCBEF4cSAFayICIAMgAiADSSICGyEDIAAgASACGyEBIAAhAgwBCwsgASgCGCEJIAEgASgCDCIERwRAQewoKAIAIAEoAggiAE0EQCAAKAIMGgsgACAENgIMIAQgADYCCAwLCyABQRRqIgIoAgAiAEUEQCABKAIQIgBFDQMgAUEQaiECCwNAIAIhByAAIgRBFGoiAigCACIADQAgBEEQaiECIAQoAhAiAA0ACyAHQQA2AgAMCgtBfyEFIABBv39LDQAgAEELaiIAQXhxIQVB4CgoAgAiB0UNAEEAIAVrIQICQAJAAkACf0EAIABBCHYiAEUNABpBHyAFQf///wdLDQAaIAAgAEGA/j9qQRB2QQhxIgB0IgEgAUGA4B9qQRB2QQRxIgF0IgMgA0GAgA9qQRB2QQJxIgN0QQ92IAAgAXIgA3JrIgBBAXQgBSAAQRVqdkEBcXJBHGoLIghBAnRBjCtqKAIAIgNFBEBBACEADAELIAVBAEEZIAhBAXZrIAhBH0YbdCEBQQAhAANAAkAgAygCBEF4cSAFayIGIAJPDQAgAyEEIAYiAg0AQQAhAiADIQAMAwsgACADKAIUIgYgBiADIAFBHXZBBHFqKAIQIgNGGyAAIAYbIQAgASADQQBHdCEBIAMNAAsLIAAgBHJFBEBBAiAIdCIAQQAgAGtyIAdxIgBFDQMgAEEAIABrcUF/aiIAIABBDHZBEHEiAHYiAUEFdkEIcSIDIAByIAEgA3YiAEECdkEEcSIBciAAIAF2IgBBAXZBAnEiAXIgACABdiIAQQF2QQFxIgFyIAAgAXZqQQJ0QYwraigCACEACyAARQ0BCwNAIAAoAgRBeHEgBWsiAyACSSEBIAMgAiABGyECIAAgBCABGyEEIAAoAhAiAQR/IAEFIAAoAhQLIgANAAsLIARFDQAgAkHkKCgCACAFa08NACAEKAIYIQggBCAEKAIMIgFHBEBB7CgoAgAgBCgCCCIATQRAIAAoAgwaCyAAIAE2AgwgASAANgIIDAkLIARBFGoiAygCACIARQRAIAQoAhAiAEUNAyAEQRBqIQMLA0AgAyEGIAAiAUEUaiIDKAIAIgANACABQRBqIQMgASgCECIADQALIAZBADYCAAwIC0HkKCgCACIBIAVPBEBB8CgoAgAhAAJAIAEgBWsiAkEQTwRAQeQoIAI2AgBB8CggACAFaiIDNgIAIAMgAkEBcjYCBCAAIAFqIAI2AgAgACAFQQNyNgIEDAELQfAoQQA2AgBB5ChBADYCACAAIAFBA3I2AgQgACABaiIBIAEoAgRBAXI2AgQLIABBCGohAAwKC0HoKCgCACIBIAVLBEBB6CggASAFayIBNgIAQfQoQfQoKAIAIgAgBWoiAjYCACACIAFBAXI2AgQgACAFQQNyNgIEIABBCGohAAwKC0EAIQAgBUEvaiIEAn9BtCwoAgAEQEG8LCgCAAwBC0HALEJ/NwIAQbgsQoCggICAgAQ3AgBBtCwgC0EMakFwcUHYqtWqBXM2AgBByCxBADYCAEGYLEEANgIAQYAgCyICaiIGQQAgAmsiB3EiAiAFTQ0JQZQsKAIAIgMEQEGMLCgCACIIIAJqIgkgCE0gCSADS3INCgtBmCwtAABBBHENBAJAAkBB9CgoAgAiAwRAQZwsIQADQCAAKAIAIgggA00EQCAIIAAoAgRqIANLDQMLIAAoAggiAA0ACwtBABARIgFBf0YNBSACIQZBuCwoAgAiAEF/aiIDIAFxBEAgAiABayABIANqQQAgAGtxaiEGCyAGIAVNIAZB/v///wdLcg0FQZQsKAIAIgAEQEGMLCgCACIDIAZqIgcgA00gByAAS3INBgsgBhARIgAgAUcNAQwHCyAGIAFrIAdxIgZB/v///wdLDQQgBhARIgEgACgCACAAKAIEakYNAyABIQALIABBf0YgBUEwaiAGTXJFBEBBvCwoAgAiASAEIAZrakEAIAFrcSIBQf7///8HSwRAIAAhAQwHCyABEBFBf0cEQCABIAZqIQYgACEBDAcLQQAgBmsQERoMBAsgACIBQX9HDQUMAwtBACEEDAcLQQAhAQwFCyABQX9HDQILQZgsQZgsKAIAQQRyNgIACyACQf7///8HSw0BIAIQESIBQQAQESIATyABQX9GciAAQX9Gcg0BIAAgAWsiBiAFQShqTQ0BC0GMLEGMLCgCACAGaiIANgIAIABBkCwoAgBLBEBBkCwgADYCAAsCQAJAAkBB9CgoAgAiAwRAQZwsIQADQCABIAAoAgAiAiAAKAIEIgRqRg0CIAAoAggiAA0ACwwCC0HsKCgCACIAQQAgASAATxtFBEBB7CggATYCAAtBACEAQaAsIAY2AgBBnCwgATYCAEH8KEF/NgIAQYApQbQsKAIANgIAQagsQQA2AgADQCAAQQN0IgJBjClqIAJBhClqIgM2AgAgAkGQKWogAzYCACAAQQFqIgBBIEcNAAtB6CggBkFYaiIAQXggAWtBB3FBACABQQhqQQdxGyICayIDNgIAQfQoIAEgAmoiAjYCACACIANBAXI2AgQgACABakEoNgIEQfgoQcQsKAIANgIADAILIAAtAAxBCHEgASADTXIgAiADS3INACAAIAQgBmo2AgRB9CggA0F4IANrQQdxQQAgA0EIakEHcRsiAGoiATYCAEHoKEHoKCgCACAGaiICIABrIgA2AgAgASAAQQFyNgIEIAIgA2pBKDYCBEH4KEHELCgCADYCAAwBCyABQewoKAIAIgRJBEBB7CggATYCACABIQQLIAEgBmohAkGcLCEAAkACQAJAAkACQAJAA0Ag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QQAhBCAIQQAgCEEAShshByAAIQEDQCAEIAdGDQIgDyABQQF0aiICIAwgBCANamotAAAgCkH/AXEQJCIREAkgAkEIaiAREAkgBEEBaiEEIAFBCGohAQwAAAsAC0EAIQkgCEEAIAhBAEobIQcgACEBA0AgByAJRg0BIA8gAUEBdGohAkEAIQQgDCAJIA1qai0AACAKQf8BcRAkIREDQCAEIAtIBEAgAiAEQQF0aiIGIBEQCSAGQQhqIBEQCSAGQRBqIBEQCSAGQRhqIBEQCSAEQRBqIQQMAQsLIAlBAWohCSABIAtqIQEMAAALAAsgDkEBaiEOIAggDWohDSAIIAtsIABqIQAgBSgCDCEJDAAACwAFIAMgBEECdCICaigCACEAIAIgCmogATYCACAEQQFqIQQgACABaiEBDAELAAALAAsgECEECyAFQRBqJAAgBAscACABIAMgASADSRsiAQRAIAAgAiABEAUaCyABCwwAIAAoAvzpAUEHRgvaAQEBfyAAEDkhBQJAAkAgACgC6OsBRQRAAn8gBQRAIAAoAsjrASEBQQAMAQsgACgCxOsBIAAoAsjrASIBawshAiAAIAAoAsDrASABaiACIAMgBBBBIgMQAQ0CIAMgBXJFBEAgAEECNgKs6wEMAgsgAEEENgKs6wEgACAAKALI6wEgA2o2AszrAQwBCwJ/IAUEQCABKAIAIQVBAAwBCyACIAEoAgAiBWsLIQIgACAFIAIgAyAEEEEiAxABDQEgASABKAIAIANqNgIAIABBAjYCrOsBC0EAIQMLIAMLQQECfyAAIAAoAqzpASIDNgK46QEgACgCsOkBIQQgACABNgKw6QEgACABIAJqNgKs6QEgACABIAQgA2tqNgK06QELsgEBAX8gACAAKALk6gEQHDYCvOkBIABCADcCrOkBIABBtOkBakIANwIAIABCADcD6OkBIABB8OkBakIANwMAIABBqNAAaiIBQYyAgOAANgIAIABBADYCmOsBIABCADcDgOoBIABCAzcD+OkBIABBrNABakHgDykCADcCACAAQbTQAWpB6A8oAgA2AgAgACABNgIMIAAgAEGYIGo2AgggACAAQaAwajYCBCAAIABBEGo2AgALTQEBfwJAIAAoApTrAUUNACAAKAKk6wEgAEHc6QFqKAIAEGYiAUUNACAAECogAEF/NgKg6wEgACAB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QSAgBGsQKyAAIAApAwggAikAABAINwMIIAAgACkDECAAKQAwEAg3AxAgACAAKQMYIAApADgQCDcDGCAAIAApAyAgAEFAaykAABAINwMgIAAoAkghAiAAQQA2AkggASACa0EgaiEBCyABQSBqIANLCwRAIAEhAgwBCyADQWBqIQQgACkDICEFIAApAxghBiAAKQMQIQcgACkDCCEIA0AgCCABKQAAEAghCCAHIAEpAAgQCCEHIAYgASkAEBAIIQYgBSABKQAYEAghBSABQSBqIgIhASACIARNDQALIAAgBTcDICAAIAY3AxggACAHNwMQIAAgCDcDCAsgAiADTw0BIABBKGogAiADIAJrIgMQKwsgACADNgJICwviAwICfwF+IABBBGohAgJAIABBB3FFBEAgACEBQsnP2bLx5brqJyEDA0AgAUEIaiIAIAJNBEBCACABKQMAEAggA4VCG4lCh5Wvr5i23puef35C49zKlfzO8vWFf3whAyAAIQEMAQsLAkAgAUEEaiIAIAJLBEAgASEADAELIAE1AgBCh5Wvr5i23puef34gA4VCF4lCz9bTvtLHq9lCfkL5893xmfaZqxZ8IQMLA0AgACACTw0CIAAxAABCxc/ZsvHluuonfiADhUILiUKHla+vmLbem55/fiEDIABBAWohAAwAAAsACyAAIQFCyc/ZsvHluuonIQMDQCABQQhqIgAgAk0EQEIAIAEpAAAQCCADhUIbiUKHla+vmLbem55/fkLj3MqV/M7y9YV/fCEDIAAhAQwBCwsCQCABQQRqIgAgAksEQCABIQAMAQsgASgAAK1Ch5Wvr5i23puef34gA4VCF4lCz9bTvtLHq9lCfkL5893xmfaZqxZ8IQMLA0AgACACTw0BIAAxAABCxc/ZsvHluuonfiADhUILiUKHla+vmLbem55/fiEDIABBAWohAAwAAAsACyADQiGIIAOFQs/W077Sx6vZQn4iA0IdiCADhUL5893xmfaZqxZ+IgNCIIggA4ULoQMBA39BuH8hBwJAIAVFDQAgBCwAACIIQf8BcSEJAkAgCEF/TARAIAlBgn9qQQF2IgggBU8NAkFsIQcgCUGBf2oiBkGAAk8NAiAEQQFqIQRBACEFA0AgBSAGTwRAIAYhByAIIQkMAwUgACAFaiAEIAVBAXZqIgctAABBBHY6AAAgACAFQQFy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', imports)}
+
+const Zstd = new (function () {
+    class Zstd {
+        #webAssembly;
+        #HEAPU8;
+        async decompress(compressedDatas) {
+            const wa = await this.getWebAssembly();
+            if (!wa) {
+                return null;
+            }
+            if (!this.#HEAPU8) {
+                return null;
+            }
+            const api = wa.instance.exports;
+            const srcSize = compressedDatas.length;
+            const src = api.create_buffer(srcSize);
+            this.#HEAPU8.set(compressedDatas, src);
+            const result = api.decompress(src, srcSize);
+            api.destroy_buffer(src);
+            if (result >= 0) {
+                const resultPointer = api.get_result_pointer();
+                const temp = new Uint8Array(new Uint8Array(this.#HEAPU8.buffer, resultPointer, api.get_result_size()));
+                api.destroy_buffer(resultPointer);
+                return temp;
+            }
+            return null;
         }
-        return linePrefix + this.v;
-    };
-}
+        async decompress_ZSTD(compressedDatas, uncompressedDatas) {
+            if (!this.#HEAPU8) {
+                return null;
+            }
+            const wa = await this.getWebAssembly();
+            const api = wa.instance.exports;
+            const srcSize = compressedDatas.length;
+            const dstSize = uncompressedDatas.length;
+            const src = api.create_buffer(srcSize);
+            const dst = api.create_buffer(dstSize);
+            this.#HEAPU8.set(compressedDatas, src);
+            const result = api.decompress_ZSTD(dst, dstSize, src, srcSize);
+            console.error(result);
+            const resultView = new Uint8ClampedArray(this.#HEAPU8.buffer, dst, dstSize);
+            uncompressedDatas.set(resultView);
+            api.destroy_buffer(src);
+            api.destroy_buffer(dst);
+            return result;
+        }
+        async getWebAssembly() {
+            if (this.#webAssembly) {
+                return this.#webAssembly;
+            }
+            const env = {
+                'abortStackOverflow': (_) => { throw new Error('overflow'); },
+                'emscripten_notify_memory_growth': (_) => { this.#initHeap(); },
+                'table': new WebAssembly.Table({ initial: 0, maximum: 0, element: 'anyfunc' }),
+                'tableBase': 0,
+                'memoryBase': 1024,
+                'STACKTOP': 0,
+            };
+            this.#webAssembly = await zstd({ env }); //await WebAssembly.instantiateStreaming(fetch('zstd.wasm'), {env});
+            this.#initHeap();
+            return this.#webAssembly;
+        }
+        #initHeap() {
+            this.#HEAPU8 = new Uint8Array(this.#webAssembly.instance.exports.memory.buffer);
+        }
+    }
+    return Zstd;
+}());
 
 /**
  * Kv3Element
  */
 class Kv3Element {
+    isKv3Element = true;
+    #properties = new Map();
     setProperty(property, value) {
-        this[property] = value;
+        this.#properties.set(property, value);
+    }
+    getProperty(name) {
+        return this.#properties.get(name);
+    }
+    getValueAsString(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.getType() == Kv3Type.String) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsStringArray(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.getSubType() == Kv3Type.String) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsResource(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.getType() == Kv3Type.Resource) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsResourceArray(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.getSubType() == Kv3Type.Resource) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsBool(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.isBoolean()) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsNumber(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.isNumber()) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsNumberArray(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.isNumberArray()) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsBigint(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.isBigint()) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsBigintArray(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.isBigintArray()) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsBlob(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.getType() == Kv3Type.Blob) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsElement(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Element) {
+            return prop;
+        }
+        if (prop?.isKv3Value && prop.getType() == Kv3Type.Element) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsElementArray(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.getSubType() == Kv3Type.Element) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getValueAsVectorArray(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.isKv3Value && prop.isVector()) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    /*
+        Unknown = 0,
+        Null = 1,
+        Bool = 2,
+        Int64 = 3,
+        UnsignedInt64 = 4,
+        Double = 5,
+        String = 6,
+        Blob = 7,
+        Array = 8,
+        Object = 9,
+        TypedArray = 10,
+        Int32 = 11,
+        UnsignedInt32 = 12,
+        True = 13,
+        False = 14,
+        IntZero = 15,
+        IntOne = 16,
+        DoubleZero = 17,
+        DoubleOne = 18,
+        Float = 19,
+        Byte = 23,
+        TypedArray2 = 24,
+        TypedArray3 = 25,
+        Resource = 134,
+        */
+    getSubValue(path) {
+        const arr = path.split('.');
+        let data = this;
+        for (const subPath of arr) {
+            if (data.isKv3Value) {
+                if (!data.isArray) {
+                    return null;
+                }
+                const value = data.getValue()?.[Number(subPath)];
+                if (!value || (!value.isKv3Element && !value.isKv3Value)) {
+                    return null;
+                }
+                data = value;
+            }
+            else {
+                if (data.isKv3Element) {
+                    data = data.getProperty(subPath);
+                    if (!data) {
+                        return null;
+                    }
+                }
+            }
+        }
+        return data;
+    }
+    getSubValueAsNumberArray(path) {
+        const prop = this.getSubValue(path);
+        if (prop?.isKv3Value && prop.isNumberArray()) {
+            return prop.getValue();
+        }
+        return null;
     }
     exportAsText(linePrefix) {
         const out = [];
-        const keys = Object.keys(this);
+        //const keys = Object.keys(this);
         const linePrefix2 = linePrefix + '\t';
         out.push(linePrefix);
         out.push('{\r\n');
-        for (let i = 0; i < keys.length; i++) {
-            const val = this[keys[i]];
-            //console.log(keys[i]);
-            // use val
+        for (const [key, val] of this.#properties) {
             out.push(linePrefix2);
-            out.push(keys[i]);
+            out.push(key);
             out.push(' = ');
-            // TODO: do this better
-            if (val instanceof Kv3Value) {
-                out.push(val.exportAsText());
-            }
-            else {
+            if (val) {
                 out.push(val.exportAsText(linePrefix2));
             }
             out.push('\r\n');
@@ -21347,37 +21682,11 @@ class SourceKv3String {
         this.id = id;
     }
 }
-class SourceKv3Value {
-    value;
+class Source2Kv3Value {
     type;
-    constructor(type) {
+    value;
+    constructor(type /*TODO: create an enum*/) {
         this.type = type;
-    }
-}
-
-/**
- * Kv3Array
- */
-class Kv3Array {
-    properties = [];
-    push(value) {
-        this.properties.push(value);
-    }
-    exportAsText(linePrefix) {
-        const out = [];
-        const keys = this.properties;
-        const linePrefix2 = linePrefix + '\t';
-        out.push('\r\n');
-        out.push(linePrefix);
-        out.push('[\r\n');
-        for (let i = 0; i < keys.length; i++) {
-            const val = keys[i];
-            out.push(val.exportAsText(linePrefix2));
-            out.push(',\r\n');
-        }
-        out.push(linePrefix);
-        out.push(']');
-        return out.join('');
     }
 }
 
@@ -21385,6 +21694,7 @@ class Kv3Array {
  * Kv3File
  */
 class Kv3File {
+    isKv3File = true;
     root = null;
     setRoot(root) {
         this.root = root;
@@ -21401,25 +21711,78 @@ class Kv3File {
         if (!data) {
             return null;
         }
-        let sub;
-        for (let i = 0; i < arr.length; i++) {
-            sub = data[arr[i]];
-            if (!sub) {
-                return null;
-            }
-            if (sub instanceof Kv3Array) {
-                data = sub.properties;
+        //let sub;
+        for (const subPath of arr) {
+            if (data.isKv3Value) {
+                if (!data.isArray) {
+                    return null;
+                }
+                const value = data.getValue()?.[Number(subPath)];
+                if (!value || (!value.isKv3Element && !value.isKv3Value)) {
+                    return null;
+                }
+                data = value;
             }
             else {
-                data = sub;
+                if (data.isKv3Element) {
+                    data = data.getProperty(subPath);
+                    if (!data) {
+                        return null;
+                    }
+                }
             }
+            /*
+            if (sub instanceof Kv3Array) {
+                data = sub;
+            } else {
+                data = sub;
+            }*/
         }
+        /*
         if (data instanceof Kv3Value) {
-            return data.v;
-        }
-        else {
+            return data.getValue();
+        } else {
             return data;
+        }*/
+        return data;
+    }
+    getValueAsElementArray(path) {
+        const value = this.getValue(path);
+        if (value?.isKv3Value && value.getSubType() == Kv3Type.Element) {
+            return value.getValue();
         }
+        return null;
+    }
+}
+//export type Kv3ValueType = null | number | Kv3Element;
+
+class Source2SpriteSheetFrame {
+    coords = vec4.create();
+    duration = 0;
+}
+class Source2SpriteSheetSequence {
+    duration = 0;
+    frames = [];
+    addFrame() {
+        const frame = new Source2SpriteSheetFrame();
+        this.frames.push(frame);
+        return frame;
+    }
+}
+class Source2SpriteSheet {
+    sequences = [];
+    addSequence() {
+        const sequence = new Source2SpriteSheetSequence();
+        this.sequences.push(sequence);
+        return sequence;
+    }
+    getFrame(sequenceId, frame) {
+        const sequence = this.sequences[sequenceId] ?? this.sequences[0];
+        if (sequence) {
+            frame = (frame % sequence.frames.length) << 0;
+            return sequence.frames[frame];
+        }
+        return null;
     }
 }
 
@@ -21432,7 +21795,7 @@ const DATA_TYPE_STRING = 0x06;
 const DATA_TYPE_BLOB = 0x07;
 const DATA_TYPE_ARRAY = 0x08;
 const DATA_TYPE_OBJECT = 0x09;
-const DATA_TYPE_TYPED_ARRAY = 0x0A;
+//const DATA_TYPE_TYPED_ARRAY = 0x0A;
 const DATA_TYPE_INT32 = 0x0B;
 const DATA_TYPE_UINT32 = 0x0C;
 const DATA_TYPE_TRUE = 0x0D;
@@ -21443,9 +21806,6 @@ const DATA_TYPE_DOUBLE_ZERO = 0x11;
 const DATA_TYPE_DOUBLE_ONE = 0x12;
 const DATA_TYPE_FLOAT$1 = 0x13;
 const DATA_TYPE_BYTE$1 = 0x17;
-const DATA_TYPE_TYPED_ARRAY2 = 0x18;
-const DATA_TYPE_TYPED_ARRAY3 = 0x19;
-const DATA_TYPE_RESOURCE = 0x86;
 const BinaryKv3Loader = new (function () {
     class BinaryKv3Loader {
         getBinaryVkv3(binaryString) {
@@ -21453,10 +21813,13 @@ const BinaryKv3Loader = new (function () {
             const binaryKv3 = new Kv3File();
             const stringDictionary = [];
             readStringDictionary(reader, stringDictionary);
-            binaryKv3.setRoot(readElement(reader, stringDictionary));
+            const element = readElement(reader, stringDictionary);
+            if (element instanceof Kv3Element) {
+                binaryKv3.setRoot(element);
+            }
             return binaryKv3;
         }
-        getBinaryKv3(version, binaryString, singleByteCount, doubleByteCount, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, bufferId, stringDictionary, objectCount, arrayCount, buffer0) {
+        getBinaryKv3(version, binaryString, singleByteCount, doubleByteCount, quadByteCount, eightByteCount, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, bufferId, stringDictionary, objectCount, arrayCount /*TODO: use it*/, buffer0) {
             const reader = new BinaryReader(binaryString);
             if (!stringDictionary) {
                 stringDictionary = [];
@@ -21498,6 +21861,9 @@ const BinaryKv3Loader = new (function () {
             }
             else if (version < 5) { //v2-v4
                 offset = blobOffset;
+            }
+            else {
+                offset = 0 /*TODO: check*/;
             }
             const typeArray = [];
             const valueArray = [];
@@ -21574,13 +21940,17 @@ const BinaryKv3Loader = new (function () {
             let decompressBlobArray;
             if (compressedBlobReader) { //if a compressed reader is provided, we have to uncompress the blobs
                 decompressBlobBuffer = new ArrayBuffer(totalUncompressedBlobSize);
-                decompressBlobArray = new Uint8Array(decompressBlobBuffer);
-                decompressBlobArray.decompressOffset = 0;
+                decompressBlobArray =
+                    { array: new Uint8Array(decompressBlobBuffer), offset: 0 };
+                //decompressBlobArray.decompressOffset = 0;
             }
-            const rootElement = readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers);
+            const rootElement = readBinaryKv3Element({ dictionary: stringDictionary }, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers);
             // return it in a suitable format
             const binaryKv3 = new Kv3File();
-            binaryKv3.setRoot(binaryKv32KV3(rootElement, stringDictionary));
+            if (rootElement.isKv3Element) {
+                //binaryKv3.setRoot(binaryKv32KV3(rootElement, stringDictionary));
+                binaryKv3.setRoot(rootElement);
+            }
             return binaryKv3;
         }
     }
@@ -21592,89 +21962,101 @@ function readStringDictionary(reader, stringDictionary, stringCount) {
         stringDictionary.push(reader.getNullString());
     }
 }
-function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, elementType, isArray, compressionFrameSize, readers0) {
+function readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray /*TODO: remove me ?*/, elementType, isArray, compressionFrameSize, readers0) {
     function shiftArray() {
         const elementType = typeArray.shift();
-        if (elementType == DATA_TYPE_RESOURCE) {
+        if (elementType == Kv3Type.Resource) {
             typeArray.shift();
         }
         return elementType;
     }
     elementType = elementType || shiftArray() /*typeArray.shift()*/;
     if (elementType == undefined) {
-        return;
+        return null;
     }
-    let count;
-    let elements;
+    //let count;
+    //let elements: SourceKv3Value[];
     switch (elementType) {
         case DATA_TYPE_NULL:
             return null;
         case DATA_TYPE_BOOL:
+            return new Kv3Value(elementType, byteReader.getUint8() ? true : false);
+        /*
             if (isArray) {
-                return byteReader.getUint8() ? true : false;
-            }
-            else {
-                const value = new SourceKv3Value(elementType);
+                //return byteReader.getUint8() ? true : false;
+                return new Kv3Value(elementType, byteReader.getUint8() ? true : false);
+            } else {
+                const value = new Source2Kv3Value(elementType);
                 valueArray.push(value);
                 value.value = byteReader.getUint8() ? true : false;
                 return value;
             }
+        */
         case DATA_TYPE_INT64$1:
+            return new Kv3Value(elementType, eightReader.getBigInt64());
+        /*
             if (isArray) {
                 return eightReader.getBigInt64();
-            }
-            else {
-                const value = new SourceKv3Value(elementType);
+            } else {
+                const value = new Source2Kv3Value(elementType);
                 value.value = eightReader.getBigInt64();
                 valueArray.push(value);
                 return value;
             }
+        */
         case DATA_TYPE_UINT64$1:
+            return new Kv3Value(elementType, eightReader.getBigUint64());
+        /*
             if (isArray) {
                 return eightReader.getBigUint64();
-            }
-            else {
-                const value = new SourceKv3Value(elementType);
+            } else {
+                const value = new Source2Kv3Value(elementType);
                 value.value = eightReader.getBigUint64();
                 valueArray.push(value);
                 return value;
             }
+        */
         case DATA_TYPE_DOUBLE:
+            return new Kv3Value(elementType, eightReader.getFloat64());
+        /*
             if (isArray) {
                 return eightReader.getFloat64();
-            }
-            else {
-                const value = new SourceKv3Value(elementType);
+            } else {
+                const value = new Source2Kv3Value(elementType);
                 value.value = eightReader.getFloat64();
                 valueArray.push(value);
                 return value;
             }
+        */
         case DATA_TYPE_BYTE$1:
+            return new Kv3Value(elementType, byteReader.getInt8());
+        /*
             if (isArray) {
                 return byteReader.getInt8();
-            }
-            else {
-                const value = new SourceKv3Value(elementType);
+            } else {
+                const value = new Source2Kv3Value(elementType);
                 value.value = byteReader.getInt8();
                 valueArray.push(value);
                 return value;
             }
+        */
         case DATA_TYPE_STRING:
-            return new SourceKv3String(quadReader.getInt32());
+            return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()]);
+        //return new SourceKv3String(quadReader.getInt32());
         case DATA_TYPE_BLOB:
             if (blobCount == 0) {
-                count = quadReader.getUint32();
-                elements = [];
-                for (let i = 0; i < count; i++) {
-                    elements.push(byteReader.getUint8());
+                const blobCount = quadReader.getUint32();
+                const blobArray = new Uint8Array(blobCount);
+                for (let i = 0; i < blobCount; i++) {
+                    blobArray[i] = byteReader.getUint8();
                 }
-                return elements;
+                return new Kv3Value(elementType, blobArray);
             }
             else {
-                if (compressedBlobReader) { //if we have a decompress buffer, that means we have to decompress the blobs
+                if (compressedBlobReader && uncompressedBlobSizeReader && compressedBlobSizeReader && decompressBlobBuffer && decompressBlob) { //if we have a decompress buffer, that means we have to decompress the blobs
                     let uncompressedBlobSize = uncompressedBlobSizeReader.getUint32();
                     //let decompressBuffer = new ArrayBuffer(uncompressedBlobSize);
-                    const decompressArray = new Uint8Array(decompressBlobBuffer, decompressBlobArray.decompressOffset, uncompressedBlobSize);
+                    const decompressArray = new Uint8Array(decompressBlobBuffer, decompressBlob.offset, uncompressedBlobSize);
                     /*
                     TODO: test blobs version 5 compression method 1 (lz4)
                     let compressedBlobSize: number;
@@ -21686,13 +22068,13 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                     while (true) {
                         const compressedBlobSize = compressedBlobSizeReader.getUint16();
                         if (uncompressedBlobSize > compressionFrameSize) {
-                            const uncompressedFrameSize = decodeLz4(compressedBlobReader, decompressBlobArray, compressedBlobSize, compressionFrameSize, decompressBlobArray.decompressOffset);
-                            decompressBlobArray.decompressOffset += uncompressedFrameSize;
+                            const uncompressedFrameSize = decodeLz4(compressedBlobReader, decompressBlob.array, compressedBlobSize, compressionFrameSize, decompressBlob.offset);
+                            decompressBlob.offset += uncompressedFrameSize;
                             uncompressedBlobSize -= uncompressedFrameSize;
                         }
                         else {
-                            uncompressedBlobSize = decodeLz4(compressedBlobReader, decompressBlobArray, compressedBlobSize, uncompressedBlobSize, decompressBlobArray.decompressOffset);
-                            decompressBlobArray.decompressOffset += uncompressedBlobSize;
+                            uncompressedBlobSize = decodeLz4(compressedBlobReader, decompressBlob.array, compressedBlobSize, uncompressedBlobSize, decompressBlob.offset);
+                            decompressBlob.offset += uncompressedBlobSize;
                             break;
                         }
                     }
@@ -21707,12 +22089,14 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                         uncompressedBlobSize = decodeLz4(compressedBlobReader, decompressBlobArray, compressedBlobSize, uncompressedBlobSize, decompressBlobArray.decompressOffset);
                         decompressBlobArray.decompressOffset += uncompressedBlobSize;
                     }*/
-                    return decompressArray;
+                    //return decompressArray;
+                    return new Kv3Value(elementType, decompressArray);
                 }
                 else {
-                    if (uncompressedBlobReader) { //blobs have already been uncompressed
+                    if (uncompressedBlobReader && uncompressedBlobSizeReader) { //blobs have already been uncompressed
                         const uncompressedBlobSize = uncompressedBlobSizeReader.getUint32();
-                        return uncompressedBlobReader.getBytes(uncompressedBlobSize);
+                        //return uncompressedBlobReader.getBytes(uncompressedBlobSize);
+                        return new Kv3Value(elementType, uncompressedBlobReader.getBytes(uncompressedBlobSize));
                     }
                     else {
                         //should not happend
@@ -21721,109 +22105,143 @@ function readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eig
                 }
             }
         case DATA_TYPE_ARRAY:
-            count = quadReader.getUint32();
-            elements = [];
-            for (let i = 0; i < count; i++) {
-                elements.push(readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, true, compressionFrameSize, readers0));
+            const arrayCount = quadReader.getUint32();
+            const arrayElements = new Array(arrayCount);
+            for (let i = 0; i < arrayCount; i++) {
+                arrayElements[i] = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, true, compressionFrameSize, readers0);
             }
-            return elements;
+            //return arrayElements;
+            return new Kv3Value(elementType, arrayElements);
         case DATA_TYPE_OBJECT:
-            count = objectsSizeReader.getUint32();
+            const objectCount = objectsSizeReader.getUint32();
             //elements = new Kv3Element();
-            elements = new Map();
-            for (let i = 0; i < count; i++) {
+            const objectElements = new Kv3Element(); //new Map<number, Source2Kv3Value>();
+            const stringDictionary = context.dictionary;
+            for (let i = 0; i < objectCount; i++) {
                 const nameId = quadReader.getUint32();
-                const element = readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
-                elements.set(nameId, element);
+                const element = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
+                objectElements.setProperty(stringDictionary[nameId], element);
                 //elements.setProperty(nameId, element);
             }
-            return elements;
-        case DATA_TYPE_TYPED_ARRAY:
-            count = quadReader.getUint32();
-            const subType = shiftArray() /*typeArray.shift()*/;
-            elements = [];
-            for (let i = 0; i < count; i++) {
-                elements.push(readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType, true, compressionFrameSize, readers0));
+            return objectElements;
+        case Kv3Type.TypedArray:
+            {
+                const typedArrayCount = quadReader.getUint32();
+                const subType = shiftArray() /*typeArray.shift()*/;
+                const typesArrayElements = new Array(typedArrayCount);
+                for (let i = 0; i < typedArrayCount; i++) {
+                    const value = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType, true, compressionFrameSize, readers0);
+                    if (value && value.isKv3Value) {
+                        typesArrayElements[i] = value.getValue();
+                    }
+                    else {
+                        typesArrayElements[i] = value;
+                    }
+                }
+                //return typesArrayElements;
+                return new Kv3Value(elementType, typesArrayElements, subType);
             }
-            return elements;
         case DATA_TYPE_INT32:
-            return quadReader.getInt32();
+            return new Kv3Value(elementType, quadReader.getInt32());
         case DATA_TYPE_UINT32:
-            return quadReader.getUint32();
+            return new Kv3Value(elementType, quadReader.getUint32());
         case DATA_TYPE_TRUE:
-            return true;
+            return new Kv3Value(elementType, true);
         case DATA_TYPE_FALSE:
-            return false;
+            return new Kv3Value(elementType, false);
         case DATA_TYPE_INT_ZERO:
-            return 0;
-        case DATA_TYPE_INT_ONE:
-            return 1;
         case DATA_TYPE_DOUBLE_ZERO:
-            return 0.0;
+            return new Kv3Value(elementType, 0);
+        case DATA_TYPE_INT_ONE:
         case DATA_TYPE_DOUBLE_ONE:
-            return 1.0;
+            return new Kv3Value(elementType, 1);
         case DATA_TYPE_FLOAT$1:
+            return new Kv3Value(elementType, quadReader.getFloat32());
+        /*
             if (isArray) {
                 return quadReader.getFloat32();
-            }
-            else {
-                const value = new SourceKv3Value(elementType);
+            } else {
+                const value = new Source2Kv3Value(elementType);
                 value.value = quadReader.getFloat32();
                 valueArray.push(value);
                 return value;
             }
-        case DATA_TYPE_TYPED_ARRAY2:
-            count = byteReader.getUint8();
-            const subType2 = shiftArray() /*typeArray.shift()*/;
-            elements = [];
-            for (let i = 0; i < count; i++) {
-                elements.push(readBinaryKv3Element(version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType2, true, compressionFrameSize, readers0));
+        */
+        case Kv3Type.TypedArray2:
+            {
+                const typedArray2Count = byteReader.getUint8();
+                const subType2 = shiftArray() /*typeArray.shift()*/;
+                const typesArray2Elements = new Array(typedArray2Count);
+                for (let i = 0; i < typedArray2Count; i++) {
+                    const value = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType2, true, compressionFrameSize, readers0);
+                    if (value.isKv3Value) {
+                        typesArray2Elements[i] = value.getValue();
+                    }
+                    else {
+                        typesArray2Elements[i] = value;
+                    }
+                }
+                //return typesArray2Elements;
+                return new Kv3Value(elementType, typesArray2Elements, subType2);
             }
-            return elements;
-        case DATA_TYPE_TYPED_ARRAY3:
-            count = byteReader.getUint8();
-            const subType3 = shiftArray() /*typeArray.shift()*/;
-            elements = [];
-            for (let i = 0; i < count; i++) {
-                elements.push(readBinaryKv3Element(version, readers0.reader1, readers0.reader2, readers0.reader4, readers0.reader8, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlobArray, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType3, true, compressionFrameSize, readers0));
+        case Kv3Type.TypedArray3:
+            {
+                const typedArray3Count = byteReader.getUint8();
+                const subType3 = shiftArray() /*typeArray.shift()*/;
+                const typesArray3Elements = new Array(typedArray3Count);
+                for (let i = 0; i < typedArray3Count; i++) {
+                    const value = readBinaryKv3Element(context, version, readers0.reader1, readers0.reader2, readers0.reader4, readers0.reader8, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType3, true, compressionFrameSize, readers0);
+                    if (value.isKv3Value) {
+                        typesArray3Elements[i] = value.getValue();
+                    }
+                    else {
+                        typesArray3Elements[i] = value;
+                    }
+                }
+                //return typesArray3Elements;
+                return new Kv3Value(elementType, typesArray3Elements, subType3);
             }
-            return elements;
-        case DATA_TYPE_RESOURCE:
-            return new SourceKv3String(quadReader.getInt32());
+        case Kv3Type.Resource:
+            //return new SourceKv3String(quadReader.getInt32());
+            return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()]);
         default:
-            console.error('Unknow element type : ', elementType);
+            console.error('Unknown element type : ', elementType);
     }
+    return null;
 }
-function binaryKv32KV3(elementKv3, stringDictionary) {
-    let element;
+/*
+
+function binaryKv32KV3_removeme(elementKv3: Source2Kv3Value | Map<Number, Source2Kv3ValueType> | Array<never>, stringDictionary: string[]): Kv3Element {
+    let element: Kv3Element;
+
     if (elementKv3 instanceof Map || elementKv3 instanceof Array) {
         if (elementKv3 instanceof Map) {
             element = new Kv3Element();
-        }
-        else {
+        } else {
             element = [];
         }
+
         function iterateMap(value, key, map) {
             let newKey;
             if (elementKv3 instanceof Map) {
                 newKey = stringDictionary[key];
+            } else {
+                //console.log(key, value);
             }
+
             if (value instanceof Map) {
                 value = binaryKv32KV3(value, stringDictionary);
-            }
-            else if (value instanceof SourceKv3String) {
+            } else if (value instanceof SourceKv3String) {
                 value = stringDictionary[value.id];
-            }
-            else if (value instanceof Array) {
+            } else if (value instanceof Array) {
                 value = binaryKv32KV3(value, stringDictionary);
-            }
-            else if (value instanceof SourceKv3Value) {
+            } else if (value instanceof Source2Kv3Value) {
                 value = value.value;
             }
+
             if (elementKv3 instanceof Map) {
                 element.setProperty(newKey, value);
-            }
-            else {
+            } else {
                 element[key] = value;
             }
         }
@@ -21831,6 +22249,7 @@ function binaryKv32KV3(elementKv3, stringDictionary) {
     }
     return element;
 }
+    */
 function readElement(reader, stringDictionary, occurences) {
     const type = reader.getUint8();
     //console.log(type);
@@ -21853,17 +22272,20 @@ function readElement(reader, stringDictionary, occurences) {
         case 0:
             break;
         case 1:
-            return null;
+            //return null;
+            return new Kv3Value(type, null);
         case 2: // Bool
             if (occurences) {
                 const arr = [];
                 for (let i = 0; i < occurences; i++) {
                     arr.push(reader.getUint8() ? true : false);
                 }
-                return arr; //new SE2Kv3Value(type, arr);
+                //return arr;//new SE2Kv3Value(type, arr);
+                return new Kv3Value(type, arr);
             }
             else {
-                return reader.getUint8() ? true : false; //new SE2Kv3Value(type, reader.getUint8() ? true:false);
+                //return reader.getUint8() ? true : false;//new SE2Kv3Value(type, reader.getUint8() ? true:false);
+                return new Kv3Value(type, reader.getUint8() ? true : false);
             }
         case 3: // Int 64
             if (occurences) {
@@ -21872,11 +22294,13 @@ function readElement(reader, stringDictionary, occurences) {
                     const int64 = reader.getBigInt64(); //TODO: handle int64
                     arr.push(int64 /*(int64.hi << 32) + int64.lo*/);
                 }
-                return arr; //new SE2Kv3Value(type, arr);
+                //return arr;//new SE2Kv3Value(type, arr);
+                return new Kv3Value(type, arr);
             }
             else {
                 const int64 = reader.getBigInt64(); //TODO: handle int64
-                return int64; //(int64.hi << 32) + int64.lo;//new SE2Kv3Value(type, (int64.hi << 32) + int64.lo);
+                //return int64;//(int64.hi << 32) + int64.lo;//new SE2Kv3Value(type, (int64.hi << 32) + int64.lo);
+                return new Kv3Value(type, int64);
             }
         case 5: // Float 64
             if (occurences) {
@@ -21884,10 +22308,12 @@ function readElement(reader, stringDictionary, occurences) {
                 for (let i = 0; i < occurences; i++) {
                     arr.push(reader.getFloat64());
                 }
-                return arr; //new SE2Kv3Value(type, arr);
+                //return arr;//new SE2Kv3Value(type, arr);
+                return new Kv3Value(type, arr);
             }
             else {
-                return reader.getFloat64(); //new SE2Kv3Value(type, reader.getFloat64());
+                //return reader.getFloat64();//new SE2Kv3Value(type, reader.getFloat64());
+                return new Kv3Value(type, reader.getFloat64());
             }
         case 6: // String
             if (occurences) {
@@ -21897,39 +22323,43 @@ function readElement(reader, stringDictionary, occurences) {
                     propertyName = stringDictionary[propertyIndex];
                     arr.push(propertyName);
                 }
-                return arr; //new SE2Kv3Value(type, arr);
+                //return arr;//new SE2Kv3Value(type, arr);
+                return new Kv3Value(type, arr);
             }
             else {
                 propertyIndex = reader.getUint32();
                 propertyName = stringDictionary[propertyIndex];
-                return propertyName; //new SE2Kv3Value(type, propertyName);
+                //return propertyName;//new SE2Kv3Value(type, propertyName);
+                return new Kv3Value(type, propertyName);
             }
         case 0x07: // byte array
             var propertiesCount = reader.getUint32();
-            var element = []; //new Kv3Array();
+            var element = new Uint8Array(propertiesCount); //new Kv3Array();
             for (let i = 0; i < propertiesCount; i++) {
-                element.push(reader.getUint8());
+                element[i] = reader.getUint8();
             }
-            return element;
+            //return element;
+            return new Kv3Value(type, element);
         case 8: // Array
             var propertiesCount = reader.getUint32();
-            var element = []; //new Kv3Array();
+            var elementArray = new Array(propertiesCount);
             var propertyName = null;
             var propertyIndex = null;
             var property = null;
             for (var i = 0; i < propertiesCount; i++) {
                 //propertyIndex = reader.getUint32();
                 //propertyName = stringDictionary(propertyIndex);
-                property = readElement(reader, stringDictionary);
+                //property = readElement(reader, stringDictionary);
                 //element.setProperty(property);
-                element.push(property);
+                elementArray[i] = readElement(reader, stringDictionary);
             }
-            return element;
+            //return elementArray;
+            return new Kv3Value(type, elementArray);
         case 9: // Element
             if (occurences) {
-                const arr = [];
+                const arr = new Array(occurences);
                 for (let i = 0; i < occurences; i++) {
-                    var propertiesCount = reader.getUint32();
+                    const propertiesCount = reader.getUint32();
                     const element = new Kv3Element();
                     var propertyName = null;
                     var propertyIndex = null;
@@ -21940,9 +22370,10 @@ function readElement(reader, stringDictionary, occurences) {
                         property = readElement(reader, stringDictionary);
                         element.setProperty(propertyName, property);
                     }
-                    arr.push(element);
+                    arr[i] = element;
                 }
-                return arr;
+                //return arr;
+                return new Kv3Value(type, arr);
             }
             else {
                 var propertiesCount = reader.getUint32();
@@ -21956,16 +22387,18 @@ function readElement(reader, stringDictionary, occurences) {
                     property = readElement(reader, stringDictionary);
                     element.setProperty(propertyName, property);
                 }
-                return element;
+                //return element;
+                return new Kv3Value(type, element);
             }
         case 0x0A: // vector
             if (occurences) {
-                const arr = [];
+                const arr = new Array(occurences);
                 for (let i = 0; i < occurences; i++) {
                     const count = reader.getUint32();
-                    arr.push(readElement(reader, stringDictionary, count));
+                    arr[i] = readElement(reader, stringDictionary, count);
                 }
-                return arr; //new SE2Kv3Value(type, arr);
+                //return arr;//new SE2Kv3Value(type, arr);
+                return new Kv3Value(type, arr);
             }
             else {
                 const count = reader.getUint32();
@@ -21973,64 +22406,72 @@ function readElement(reader, stringDictionary, occurences) {
             }
         case 0x0B: // int32
             if (occurences) {
-                const arr = [];
+                const arr = new Array(occurences);
                 for (let i = 0; i < occurences; i++) {
-                    arr.push(reader.getInt32());
+                    arr[i] = reader.getInt32();
                 }
-                return arr; //new SE2Kv3Value(type, arr);
+                //return arr;//new SE2Kv3Value(type, arr);
+                return new Kv3Value(type, arr);
             }
             else {
-                return reader.getInt32(); //new SE2Kv3Value(type, reader.getInt32());
+                //return reader.getInt32();//new SE2Kv3Value(type, reader.getInt32());
+                return new Kv3Value(type, reader.getInt32());
             }
-        case 0x10: // ????
-        case 0x12: // ????
+        case Kv3Type.IntOne:
+        case Kv3Type.DoubleOne:
             if (occurences) {
-                const arr = [];
+                const arr = new Array(occurences);
                 for (let i = 0; i < occurences; i++) {
-                    arr.push(1);
+                    arr[i] = 1;
                 }
-                return arr; //new SE2Kv3Value(type, arr);
+                //return arr;//new SE2Kv3Value(type, arr);
+                return new Kv3Value(type, arr);
             }
             else {
-                return 1; //new SE2Kv3Value(type, 1);
+                //return 1;//new SE2Kv3Value(type, 1);
+                return new Kv3Value(type, 1);
             }
-        case 0x11: // ????
-        case 0x0F: // ????
+        case Kv3Type.IntZero:
+        case Kv3Type.DoubleZero:
             if (occurences) {
-                const arr = [];
+                const arr = new Array(occurences);
                 for (let i = 0; i < occurences; i++) {
-                    arr.push(0);
+                    arr[i] = 0;
                 }
-                return arr; //new SE2Kv3Value(type, arr);
+                //return arr;//new SE2Kv3Value(type, arr);
+                return new Kv3Value(type, arr);
             }
             else {
-                return 0; //new SE2Kv3Value(type, 0);
+                //return 0;//new SE2Kv3Value(type, 0);
+                return new Kv3Value(type, 0);
             }
-        case 0x0D: // ????
-            //reader.skip(4);//????
+        case Kv3Type.True:
             if (occurences) {
-                const arr = [];
+                const arr = new Array(occurences);
                 for (let i = 0; i < occurences; i++) {
-                    arr.push(true);
+                    arr[i] = true;
                 }
-                return arr;
+                //return arr;
+                return new Kv3Value(type, arr);
             }
             else {
-                return true;
+                //return true;
+                return new Kv3Value(type, true);
             }
-        case 0x0E: // ????
-            //reader.skip(4);//????
+        case Kv3Type.False:
             if (occurences) {
-                const arr = [];
+                const arr = new Array(occurences);
                 for (let i = 0; i < occurences; i++) {
-                    arr.push(false);
+                    arr[i] = false;
                 }
-                return arr;
+                //return arr;
+                return new Kv3Value(type, arr);
             }
             else {
-                return false;
+                //return false;
+                return new Kv3Value(type, false);
             }
-        case 134: // Resource
+        case Kv3Type.Resource:
             if (occurences) {
                 const arr = [];
                 reader.getUint8(); //todo: rename variable
@@ -22039,119 +22480,23 @@ function readElement(reader, stringDictionary, occurences) {
                     propertyName = stringDictionary[propertyIndex];
                     arr.push(propertyName);
                 }
-                return arr; //new SE2Kv3Value(type, arr);
+                //return arr;//new SE2Kv3Value(type, arr);
+                return new Kv3Value(type, arr);
             }
             else {
                 reader.getUint8(); //todo: rename variable
                 propertyIndex = reader.getUint32();
                 propertyName = stringDictionary[propertyIndex];
                 //console.error(propertyName, test);
-                return propertyName; //new SE2Kv3Value(type, propertyName);
+                //return propertyName;//new SE2Kv3Value(type, propertyName);
+                return new Kv3Value(type, propertyName);
             }
         default:
             console.error('Unknown value type : ' + type);
     }
+    //return null;
+    return new Kv3Value(type, null);
 }
-
-class Source2SpriteSheetFrame {
-    coords = vec4.create();
-    duration = 0;
-}
-class Source2SpriteSheetSequence {
-    duration = 0;
-    frames = [];
-    addFrame() {
-        const frame = new Source2SpriteSheetFrame();
-        this.frames.push(frame);
-        return frame;
-    }
-}
-class Source2SpriteSheet {
-    sequences = [];
-    addSequence() {
-        const sequence = new Source2SpriteSheetSequence();
-        this.sequences.push(sequence);
-        return sequence;
-    }
-    getFrame(sequenceId, frame) {
-        const sequence = this.sequences[sequenceId] ?? this.sequences[0];
-        if (sequence) {
-            frame = (frame % sequence.frames.length) << 0;
-            return sequence.frames[frame];
-        }
-        return null;
-    }
-}
-
-function zstd(imports){return _loadWasmModule(0, null, 'AGFzbQEAAAABvAEYYAF/AX9gAn9/AX9gA39/fwF/YAV/f39/fwF/YAF/AGACf38AYAN/f38AYAR/f39/AX9gBn9/f39/fwF/YAABf2AHf39/f39/fwF/YAd/f39/f39/AGABfwF+YAN/fn8BfmACfn4BfmAAAGAFf39/f38AYAl/f39/f39/f38AYAp/f39/f39/f39/AGACf34AYAh/f39/f39/fwF/YA9/f39/f39/f39/f39/f38Bf2ACfn4Bf2ACf38BfgInAQNlbnYfZW1zY3JpcHRlbl9ub3RpZnlfbWVtb3J5X2dyb3d0aAAEA4sBiQEAAQAFAgECDhMAAgUABQIAAAABAQUGBAMFCwUABg4UFQACBRcCAAcCAAQGDwoDEAkGAwMDAwMHBwADBgQEBwcBAwgFAQUCAAEMBgwKAwoKAAYABwsCBAUIBAMIAwEIAxIRCQgJAQEBBgEWAgIHAAcDAggEBgEEAAkABgIAAQEABQ0BAAQHCAQEAAQFAXABBQUFBAEAgAIGCQF/AUHQrMACCwejAQsGbWVtb3J5AgANY3JlYXRlX2J1ZmZlcgCJAQ5kZXN0cm95X2J1ZmZlcgBzD2RlY29tcHJlc3NfWlNURABtCmRlY29tcHJlc3MAaRJnZXRfcmVzdWx0X3BvaW50ZXIAZA9nZXRfcmVzdWx0X3NpemUAYgZfc3RhcnQALAlzdGFja1NhdmUAeApzdGFja0FsbG9jAHcMc3RhY2tSZXN0b3JlAHYJCwEAQQELBCyBAUZ/Cu3HAokBCAAgAEGIf0sLGQAgACgCACAAKAIEQR9xdEEAIAFrQR9xdgt+AQR/QQMhASAAKAIEIgNBIE0EQCAAKAIIIgEgACgCEE8EQCAAEA0PCyAAKAIMIgIgAUYEQEEBQQIgA0EgSRsPCyAAIAEgASACayADQQN2IgQgASAEayACSSIBGyICayIENgIIIAAgAyACQQN0azYCBCAAIAQoAAA2AgALIAELFgAgACABKQAANwAAIAAgASkACDcACAuBBAEDfyACQYAETwRAIAAgASACEHogAA8LIAAgAmohAwJAIAAgAXNBA3FFBEACQCACQQFIBEAgACECDAELIABBA3FFBEAgACECDAELIAAhAgNAIAIgAS0AADoAACABQQFqIQEgAkEBaiICIANPDQEgAkEDcQ0ACwsCQCADQXxxIgRBwABJDQAgAiAEQUBqIgVLDQADQCACIAEoAgA2AgAgAiABKAIENgIEIAIgASgCCDYCCCACIAEoAgw2AgwgAiABKAIQNgIQIAIgASgCFDYCFCACIAEoAhg2AhggAiABKAIcNgIcIAIgASgCIDYCICACIAEoAiQ2AiQgAiABKAIoNgIoIAIgASgCLDYCLCACIAEoAjA2AjAgAiABKAI0NgI0IAIgASgCODYCOCACIAEoAjw2AjwgAUFAayEBIAJBQGsiAiAFTQ0ACwsgAiAETw0BA0AgAiABKAIANgIAIAFBBGohASACQQRqIgIgBEkNAAsMAQsgA0EESQRAIAAhAgwBCyADQXxqIgQgAEkEQCAAIQIMAQsgACECA0AgAiABLQAAOgAAIAIgAS0AAToAASACIAEtAAI6AAIgAiABLQADOgADIAFBBGohASACQQRqIgIgBE0NAAsLIAIgA0kEQANAIAIgAS0AADoAACABQQFqIQEgAkEBaiICIANHDQALCyAACxsBAX8gACABEAIhAiAAIAAoAgQgAWo2AgQgAgv3AQECfyACRQRAIABCADcCACAAQQA2AhAgAEIANwIIQbh/DwsgACABNgIMIAAgAUEEajYCECACQQRPBEAgACABIAJqIgFBfGoiAzYCCCAAIAMoAAA2AgAgAUF/ai0AACIBBEAgAEEIIAEQEGs2AgQgAg8LIABBADYCBEF/DwsgACABNgIIIAAgAS0AACIDNgIAIAJBfmoiBEEBTQRAIARBAWtFBEAgACABLQACQRB0IANyIgM2AgALIAAgAS0AAUEIdCADajYCAAsgASACakF/ai0AACIBRQRAIABBADYCBEFsDwsgAEEoIAEQECACQQN0ams2AgQgAgshACABQs/W077Sx6vZQn4gAHxCH4lCh5Wvr5i23puef34LCQAgACABNwAACx0BAX8gACgCCCAAKAIMRgR/IAAoAgRBIEYFQQALC/MCAgJ/AX4CQCACRQ0AIAAgAmoiA0F/aiABOgAAIAAgAToAACACQQNJDQAgA0F+aiABOgAAIAAgAToAASADQX1qIAE6AAAgACABOgACIAJBB0kNACADQXxqIAE6AAAgACABOgADIAJBCUkNACAAQQAgAGtBA3EiBGoiAyABQf8BcUGBgoQIbCIBNgIAIAMgAiAEa0F8cSIEaiICQXxq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mCwtAABBBHENBAJAAkBB9CgoAgAiAwRAQZwsIQADQCAAKAIAIgggA00EQCAIIAAoAgRqIANLDQMLIAAoAggiAA0ACwtBABARIgFBf0YNBSACIQZBuCwoAgAiAEF/aiIDIAFxBEAgAiABayABIANqQQAgAGtxaiEGCyAGIAVNIAZB/v///wdLcg0FQZQsKAIAIgAEQEGMLCgCACIDIAZqIgcgA00gByAAS3INBgsgBhARIgAgAUcNAQwHCyAGIAFrIAdxIgZB/v///wdLDQQgBhARIgEgACgCACAAKAIEakYNAyABIQALIABBf0YgBUEwaiAGTXJFBEBBvCwoAgAiASAEIAZrakEAIAFrcSIBQf7///8HSwRAIAAhAQwHCyABEBFBf0cEQCABIAZqIQYgACEBDAcLQQAgBmsQERoMBAsgACIBQX9HDQUMAwtBACEEDAcLQQAhAQwFCyABQX9HDQILQZgsQZgsKAIAQQRyNgIACyACQf7///8HSw0BIAIQESIBQQAQESIATyABQX9GciAAQX9Gcg0BIAAgAWsiBiAFQShqTQ0BC0GMLEGMLCgCACAGaiIANgIAIABBkCwoAgBLBEBBkCwgADYCAAsCQAJAAkBB9CgoAgAiAwRAQZwsIQADQCABIAAoAgAiAiAAKAIEIgRqRg0CIAAoAggiAA0ACwwCC0HsKCgCACIAQQAgASAATxtFBEBB7CggATYCAAtBACEAQaAsIAY2AgBBnCwgATYCAEH8KEF/NgIAQYApQbQsKAIANgIAQagsQQA2AgADQCAAQQN0IgJBjClqIAJBhClqIgM2AgAgAkGQKWogAzYCACAAQQFqIgBBIEcNAAtB6CggBkFYaiIAQXggAWtBB3FBACABQQhqQQdxGyICayIDNgIAQfQoIAEgAmoiAjYCACACIANBAXI2AgQgACABakEoNgIEQfgoQcQsKAIANgIADAILIAAtAAxBCHEgASADTXIgAiADS3INACAAIAQgBmo2AgRB9CggA0F4IANrQQdxQQAgA0EIakEHcRsiAGoiATYCAEHoKEHoKCgCACAGaiICIABrIgA2AgAgASAAQQFyNgIEIAIgA2pBKDYCBEH4KEHELCgCADYCAAwBCyABQewoKAIAIgRJBEBB7CggATYCACABIQQLIAEgBmohAkGcLCEAAkACQAJAAkACQAJAA0Ag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QQAhBCAIQQAgCEEAShshByAAIQEDQCAEIAdGDQIgDyABQQF0aiICIAwgBCANamotAAAgCkH/AXEQJCIREAkgAkEIaiAREAkgBEEBaiEEIAFBCGohAQwAAAsAC0EAIQkgCEEAIAhBAEobIQcgACEBA0AgByAJRg0BIA8gAUEBdGohAkEAIQQgDCAJIA1qai0AACAKQf8BcRAkIREDQCAEIAtIBEAgAiAEQQF0aiIGIBEQCSAGQQhqIBEQCSAGQRBqIBEQCSAGQRhqIBEQCSAEQRBqIQQMAQsLIAlBAWohCSABIAtqIQEMAAALAAsgDkEBaiEOIAggDWohDSAIIAtsIABqIQAgBSgCDCEJDAAACwAFIAMgBEECdCICaigCACEAIAIgCmogATYCACAEQQFqIQQgACABaiEBDAELAAALAAsgECEECyAFQRBqJAAgBAscACABIAMgASADSRsiAQRAIAAgAiABEAUaCyABCwwAIAAoAvzpAUEHRgvaAQEBfyAAEDkhBQJAAkAgACgC6OsBRQRAAn8gBQRAIAAoAsjrASEBQQAMAQsgACgCxOsBIAAoAsjrASIBawshAiAAIAAoAsDrASABaiACIAMgBBBBIgMQAQ0CIAMgBXJFBEAgAEECNgKs6wEMAgsgAEEENgKs6wEgACAAKALI6wEgA2o2AszrAQwBCwJ/IAUEQCABKAIAIQVBAAwBCyACIAEoAgAiBWsLIQIgACAFIAIgAyAEEEEiAxABDQEgASABKAIAIANqNgIAIABBAjYCrOsBC0EAIQMLIAMLQQECfyAAIAAoAqzpASIDNgK46QEgACgCsOkBIQQgACABNgKw6QEgACABIAJqNgKs6QEgACABIAQgA2tqNgK06QELsgEBAX8gACAAKALk6gEQHDYCvOkBIABCADcCrOkBIABBtOkBakIANwIAIABCADcD6OkBIABB8OkBakIANwMAIABBqNAAaiIBQYyAgOAANgIAIABBADYCmOsBIABCADcDgOoBIABCAzcD+OkBIABBrNABakHgDykCADcCACAAQbTQAWpB6A8oAgA2AgAgACABNgIMIAAgAEGYIGo2AgggACAAQaAwajYCBCAAIABBEGo2AgALTQEBfwJAIAAoApTrAUUNACAAKAKk6wEgAEHc6QFqKAIAEGYiAUUNACAAECogAEF/NgKg6wEgACAB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QSAgBGsQKyAAIAApAwggAikAABAINwMIIAAgACkDECAAKQAwEAg3AxAgACAAKQMYIAApADgQCDcDGCAAIAApAyAgAEFAaykAABAINwMgIAAoAkghAiAAQQA2AkggASACa0EgaiEBCyABQSBqIANLCwRAIAEhAgwBCyADQWBqIQQgACkDICEFIAApAxghBiAAKQMQIQcgACkDCCEIA0AgCCABKQAAEAghCCAHIAEpAAgQCCEHIAYgASkAEBAIIQYgBSABKQAYEAghBSABQSBqIgIhASACIARNDQALIAAgBTcDICAAIAY3AxggACAHNwMQIAAgCDcDCAsgAiADTw0BIABBKGogAiADIAJrIgMQKwsgACADNgJICwviAwICfwF+IABBBGohAgJAIABBB3FFBEAgACEBQsnP2bLx5brqJyEDA0AgAUEIaiIAIAJNBEBCACABKQMAEAggA4VCG4lCh5Wvr5i23puef35C49zKlfzO8vWFf3whAyAAIQEMAQsLAkAgAUEEaiIAIAJLBEAgASEADAELIAE1AgBCh5Wvr5i23puef34gA4VCF4lCz9bTvtLHq9lCfkL5893xmfaZqxZ8IQMLA0AgACACTw0CIAAxAABCxc/ZsvHluuonfiADhUILiUKHla+vmLbem55/fiEDIABBAWohAAwAAAsACyAAIQFCyc/ZsvHluuonIQMDQCABQQhqIgAgAk0EQEIAIAEpAAAQCCADhUIbiUKHla+vmLbem55/fkLj3MqV/M7y9YV/fCEDIAAhAQwBCwsCQCABQQRqIgAgAksEQCABIQAMAQsgASgAAK1Ch5Wvr5i23puef34gA4VCF4lCz9bTvtLHq9lCfkL5893xmfaZqxZ8IQMLA0AgACACTw0BIAAxAABCxc/ZsvHluuonfiADhUILiUKHla+vmLbem55/fiEDIABBAWohAAwAAAsACyADQiGIIAOFQs/W077Sx6vZQn4iA0IdiCADhUL5893xmfaZqxZ+IgNCIIggA4ULoQMBA39BuH8hBwJAIAVFDQAgBCwAACIIQf8BcSEJAkAgCEF/TARAIAlBgn9qQQF2IgggBU8NAkFsIQcgCUGBf2oiBkGAAk8NAiAEQQFqIQRBACEFA0AgBSAGTwRAIAYhByAIIQkMAwUgACAFaiAEIAVBAXZqIgctAABBBHY6AAAgACAFQQFy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', imports)}
-
-const Zstd = new (function () {
-    class Zstd {
-        #webAssembly;
-        #HEAPU8;
-        async decompress(compressedDatas) {
-            const wa = await this.getWebAssembly();
-            if (!wa) {
-                return null;
-            }
-            if (!this.#HEAPU8) {
-                return null;
-            }
-            const api = wa.instance.exports;
-            const srcSize = compressedDatas.length;
-            const src = api.create_buffer(srcSize);
-            this.#HEAPU8.set(compressedDatas, src);
-            const result = api.decompress(src, srcSize);
-            api.destroy_buffer(src);
-            if (result >= 0) {
-                const resultPointer = api.get_result_pointer();
-                const temp = new Uint8Array(new Uint8Array(this.#HEAPU8.buffer, resultPointer, api.get_result_size()));
-                api.destroy_buffer(resultPointer);
-                return temp;
-            }
-            return null;
-        }
-        async decompress_ZSTD(compressedDatas, uncompressedDatas) {
-            if (!this.#HEAPU8) {
-                return null;
-            }
-            const wa = await this.getWebAssembly();
-            const api = wa.instance.exports;
-            const srcSize = compressedDatas.length;
-            const dstSize = uncompressedDatas.length;
-            const src = api.create_buffer(srcSize);
-            const dst = api.create_buffer(dstSize);
-            this.#HEAPU8.set(compressedDatas, src);
-            const result = api.decompress_ZSTD(dst, dstSize, src, srcSize);
-            console.error(result);
-            const resultView = new Uint8ClampedArray(this.#HEAPU8.buffer, dst, dstSize);
-            uncompressedDatas.set(resultView);
-            api.destroy_buffer(src);
-            api.destroy_buffer(dst);
-            return result;
-        }
-        async getWebAssembly() {
-            if (this.#webAssembly) {
-                return this.#webAssembly;
-            }
-            const env = {
-                'abortStackOverflow': (_) => { throw new Error('overflow'); },
-                'emscripten_notify_memory_growth': (_) => { this.#initHeap(); },
-                'table': new WebAssembly.Table({ initial: 0, maximum: 0, element: 'anyfunc' }),
-                'tableBase': 0,
-                'memoryBase': 1024,
-                'STACKTOP': 0,
-            };
-            this.#webAssembly = await zstd({ env }); //await WebAssembly.instantiateStreaming(fetch('zstd.wasm'), {env});
-            this.#initHeap();
-            return this.#webAssembly;
-        }
-        #initHeap() {
-            this.#HEAPU8 = new Uint8Array(this.#webAssembly.instance.exports.memory.buffer);
-        }
-    }
-    return Zstd;
-}());
 
 const DXGI_FORMAT_R32G32B32A32_FLOAT = 2;
 const DXGI_FORMAT_R32G32B32_FLOAT = 6;
@@ -22189,8 +22534,6 @@ function sNormUint16(uint16) {
 }
 const Source2BlockLoader = new (function () {
     class Source2BlockLoader {
-        constructor() {
-        }
         async parseBlock(reader, file, block, parseVtex) {
             const introspection = file.blocks['NTRO'];
             const reference = file.blocks['RERL'];
@@ -22259,12 +22602,15 @@ const Source2BlockLoader = new (function () {
                 }
                 return null;
             }
-            block.structs = {};
+            block.keyValue = new Kv3File();
+            const rootElement = new Kv3Element();
+            block.keyValue.setRoot(rootElement);
             const structList = introspection.structsArray;
             let startOffset = block.offset;
             for (let structIndex = 0; structIndex < 1 /*removeme*/ /*structList.length*/; structIndex++) {
                 const struct = structList[structIndex]; //introspection.firstStruct;
-                block.structs[struct.name] = loadStruct(reader, reference, struct, block, startOffset, introspection);
+                //block.structs[struct.name] = ;
+                rootElement.setProperty(struct.name, loadStruct(reader, reference, struct, block, startOffset, introspection));
                 startOffset += struct.discSize;
             }
         }
@@ -22643,42 +22989,55 @@ function loadVbib(reader, block) {
     }
 }
 function getStruct(block, structId) {
-    return block.structs[structId];
+    return block.structs?.[structId];
 }
 function loadStruct(reader, reference, struct, block, startOffset, introspection, depth) {
-    let dataStruct = {};
+    //let dataStruct: Source2DataStruct = {};
+    let element; // = new Kv3Element();
     if (struct.baseId) {
+        //throw 'TODO: fix this loadStruct';
         const baseStruct = getStruct(introspection, struct.baseId);
         if (baseStruct) {
-            dataStruct = loadStruct(reader, reference, baseStruct, block, startOffset, introspection);
+            element = loadStruct(reader, reference, baseStruct, block, startOffset, introspection);
         }
+        else {
+            element = new Kv3Element();
+        }
+    }
+    else {
+        element = new Kv3Element();
     }
     const fieldList = struct.fields;
     for (let fieldIndex = 0; fieldIndex < fieldList.length; fieldIndex++) {
         const field = fieldList[fieldIndex];
         if (field.count) {
-            dataStruct[field.name] = [];
+            const data = /*dataStruct[field.name]*/ [];
             FIELD_SIZE[field.type2];
             for (let i = 0; i < field.count; i++) {
-                dataStruct[field.name].push(255); //TODOv3 dafuck ?
+                data.push(255); //TODOv3 dafuck ?
             }
+            element.setProperty(field.name, new Kv3Value(Kv3Type.TypedArray, data, Kv3Type.UnsignedInt32));
         }
         else {
-            dataStruct[field.name] = loadField(reader, reference, field, block, startOffset, introspection, field.offset, field.indirectionByte, field.level);
+            const f = loadField(reader, reference, field, block, startOffset, introspection, field.offset, field.indirectionByte, field.level);
+            if (f) {
+                //dataStruct[field.name] = f;
+                element.setProperty(field.name, f);
+            }
         }
     }
-    dataStruct._name = struct.name;
-    return dataStruct;
+    //dataStruct._name = struct.name;
+    return element;
 }
 const FIELD_SIZE = [0, 0 /*STRUCT*/, 0 /*ENUM*/, 8 /*HANDLE*/, 0, 0, 0, 0, 0, 0,
     1 /*BYTE*/, 1 /*BYTE*/, 2 /*SHORT*/, 2 /*SHORT*/, 4 /*INTEGER*/, 4 /*INTEGER*/, 8 /*INT64*/, 8 /*INT64*/,
     4 /*FLOAT*/, 0, 0, 0, 12 /*VECTOR3*/, 0, 0, 16 /*QUATERNION*/, 0, 16, 4, 0, 1, 4];
-function loadField(reader, reference, field, block, startOffset, introspection, field_offset, field_indirectionByte, field_level, depth) {
-    const fieldOffset = startOffset + field_offset;
-    if (field_level > 0) {
+function loadField(reader, reference, field, block, startOffset, introspection, fieldOffset, fieldIndirectionByte, fieldLevel, depth) {
+    fieldOffset = startOffset + fieldOffset;
+    if (fieldLevel > 0) {
         reader.getInt8(fieldOffset);
-        if (field_indirectionByte == 3) { // Pointer
-            var struct = introspection.structs[field.type];
+        if (fieldIndirectionByte == 3) { // Pointer
+            var struct = introspection.structs?.[field.type];
             if (struct) {
                 var pos = reader.getUint32(fieldOffset);
                 return loadStruct(reader, reference, struct, null, fieldOffset + pos, introspection);
@@ -22687,19 +23046,21 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 console.log('Unknown struct ' + field.type, fieldOffset);
             }
             console.log(fieldOffset);
-            return fieldOffset;
+            throw 'check this code loadField1';
+            //return fieldOffset;
         }
-        else if (field_indirectionByte == 4) { // Array
+        else if (fieldIndirectionByte == 4) { // Array
             //console.log("indirect type 4", reader.getUint32(fieldOffset));
             const arrayOffset2 = reader.getUint32(fieldOffset);
             if (arrayOffset2) {
                 const arrayOffset = fieldOffset + arrayOffset2;
                 const arrayCount = reader.getUint32();
-                var values = [];
+                const values = [];
                 if (field.type) {
                     if (field.type2 == DATA_TYPE_STRUCT) { // STRUCT
-                        var struct = introspection.structs[field.type];
+                        const struct = introspection.structs?.[field.type];
                         if (struct) {
+                            const values = [];
                             for (var i = 0; i < arrayCount; i++) {
                                 var pos = arrayOffset + struct.discSize * i;
                                 //reader.seek(reader.getUint32(pos) + pos);
@@ -22708,6 +23069,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                                 //values[name] = this.loadStruct(reader, struct, null, pos, introspection);
                                 values.push(loadStruct(reader, reference, struct, block, pos, introspection));
                             }
+                            return new Kv3Value(Kv3Type.TypedArray, values, Kv3Type.Element);
                         }
                         else {
                             console.log('Unknown struct ' + field.type, fieldOffset);
@@ -22719,11 +23081,12 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                             var pos = arrayOffset + 8 * i;
                             reader.seek(pos);
                             var handle = readHandle(reader);
-                            values[i] = reference ? reference.externalFiles[handle] : null;
+                            values[i] = reference ? reference.externalFiles[handle] : '';
                         }
                         //reader.seek(fieldOffset);
                         //var handle = readHandle(reader);
-                        return values; //this.reference.externalFiles[handle];
+                        //return values;//this.reference.externalFiles[handle];
+                        return new Kv3Value(Kv3Type.TypedArray, values, Kv3Type.String);
                     }
                     else {
                         console.log('Unknown struct type for array ' + field, fieldOffset);
@@ -22731,19 +23094,24 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 }
                 else {
                     // single field
-                    var values = [];
+                    const values = [];
                     const fieldSize = FIELD_SIZE[field.type2];
                     if (field.type2 == 11) ;
                     for (var i = 0; i < arrayCount; i++) {
                         var pos = arrayOffset + fieldSize * i;
                         /*reader.seek(reader.getUint32(pos) + pos);
                         var name = reader.getNullString();*/
-                        values.push(loadField(reader, reference, field, null, pos, introspection, 0, 0, 0));
+                        values[i] = loadField(reader, reference, field, null, pos, introspection, 0, 0, 0);
                     }
-                    return values;
+                    //return values;
+                    console.info(values);
+                    //throw 'check array type';
+                    return new Kv3Value(Kv3Type.Array, values);
                 }
             }
-            return values;
+            //throw 'check this code loadField2';
+            return new Kv3Value(Kv3Type.Array, []);
+            //return [];
         }
         else {
             // No indirection
@@ -22754,62 +23122,72 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
         //fieldOffset += field_offset;
         switch (field.type2) {
             case DATA_TYPE_STRUCT: //1
-                var struct = introspection.structs[field.type];
+                const struct = introspection.structs?.[field.type];
                 if (struct) {
                     return loadStruct(reader, reference, struct, null, fieldOffset, introspection);
                 }
                 console.log(fieldOffset);
-                return;
+                return null;
             case DATA_TYPE_ENUM: //2
-                return ['enum', field.name, field.type2, fieldOffset, reader.getInt32(fieldOffset)];
+                throw 'fix me';
             case DATA_TYPE_HANDLE: //3
                 // Handle to an external ressource in the RERL block
                 reader.seek(fieldOffset);
                 var handle = readHandle(reader);
-                return reference ? reference.externalFiles[handle] : null;
+                //return reference ? reference.externalFiles[handle] : null;
+                return new Kv3Value(Kv3Type.Resource, reference ? reference.externalFiles[handle] : '');
             case DATA_TYPE_BYTE: //10
-                return reader.getInt8(fieldOffset);
+                throw 'fix me';
             case DATA_TYPE_UBYTE: //11
-                return reader.getUint8(fieldOffset);
+                throw 'fix me';
             case DATA_TYPE_SHORT: //12
-                return reader.getInt16(fieldOffset);
+                throw 'fix me';
             case DATA_TYPE_USHORT: //13
-                return reader.getUint16(fieldOffset);
+                throw 'fix me';
             case DATA_TYPE_INTEGER: //14
-                return reader.getInt32(fieldOffset);
+                return new Kv3Value(Kv3Type.Int32, reader.getInt32(fieldOffset));
+            //return reader.getInt32(fieldOffset);
             case DATA_TYPE_UINTEGER: //15
-                return reader.getUint32(fieldOffset);
+                return new Kv3Value(Kv3Type.UnsignedInt32, reader.getUint32(fieldOffset));
+            //return reader.getUint32(fieldOffset);
             case DATA_TYPE_INT64: //16
                 const i64 = reader.getBigInt64(fieldOffset);
-                return i64; //i64.lo + i64.hi * 4294967295;
+                //return i64;//i64.lo + i64.hi * 4294967295;
+                return new Kv3Value(Kv3Type.Int64, i64);
             case DATA_TYPE_UINT64: //17
                 const ui64 = reader.getBigUint64(fieldOffset);
-                return ui64; //ui64.lo + ui64.hi * 4294967295;
+                //return ui64;//ui64.lo + ui64.hi * 4294967295;
+                return new Kv3Value(Kv3Type.UnsignedInt64, ui64);
             case DATA_TYPE_FLOAT: //18
-                return reader.getFloat32(fieldOffset);
+                //return reader.getFloat32(fieldOffset);
+                return new Kv3Value(Kv3Type.Float, reader.getFloat32(fieldOffset));
             case DATA_TYPE_VECTOR2: //21
-                return reader.getVector2(fieldOffset);
+                throw 'fix me';
             case DATA_TYPE_VECTOR3: //22
-                return reader.getVector3(fieldOffset);
+                throw 'fix me';
             case DATA_TYPE_VECTOR4: //23
-                return reader.getVector4(fieldOffset);
+                //return reader.getVector4(fieldOffset);
+                return new Kv3Value(Kv3Type.TypedArray2, reader.getVector4(fieldOffset), Kv3Type.Float);
             case DATA_TYPE_QUATERNION: //25
-                return reader.getVector4(fieldOffset);
+                //return reader.getVector4(fieldOffset);
+                return new Kv3Value(Kv3Type.TypedArray2, reader.getVector4(fieldOffset), Kv3Type.Float);
             case DATA_TYPE_BOOLEAN: //30
-                return (reader.getInt8(fieldOffset)) ? true : false;
+                throw 'fix me';
             case DATA_TYPE_NAME: //31
                 var strOffset = reader.getInt32(fieldOffset);
                 /*if ((strOffset<0) || (strOffset>10000)) {
                     console.log(strOffset);
                 }*/
                 reader.seek(fieldOffset + strOffset);
-                return reader.getNullString();
+                //return reader.getNullString();
+                return new Kv3Value(Kv3Type.String, reader.getNullString());
             case 40: //DATA_TYPE_VECTOR4://40
-                return reader.getVector4(fieldOffset);
+                throw 'fix me';
             default:
                 console.error(`Unknown field type: ${field.type2}`);
         }
     }
+    return null;
 }
 function loadDataVtex(reader, block) {
     const DATA_FALLBACK_BITS = 1;
@@ -22882,7 +23260,7 @@ function loadDataVtex(reader, block) {
                     /*if (TESTING) {
                         SaveFile(new File([new Blob([reader.getBytes(size, offset)])], 'block_' + size + '_' + offset));
                     }*/
-                    console.error(`Unknow type : ${type}`);
+                    console.error(`Unknown type : ${type}`);
             }
         }
     }
@@ -22902,14 +23280,14 @@ function loadDataVtexImageData(reader, block, compressedMips) {
     for (let mipmapIndex = 0; mipmapIndex < block.numMipLevels; mipmapIndex++) {
         // Todo : add frame support + depth support
         for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
-            const compressedLength = compressedMips ? compressedMips.pop() : null; //TODO: check how this actually works with depth / frames
+            const compressedLength = compressedMips?.pop() ?? null; //TODO: check how this actually works with depth / frames
             block.imageData[faceIndex] = getImage(reader, mipmapWidth, mipmapHeight, block.imageFormat, compressedLength);
         }
         mipmapWidth *= 2;
         mipmapHeight *= 2;
     }
 }
-function getImage(reader, mipmapWidth, mipmapHeight, imageFormat, compressedLength) {
+function getImage(reader, mipmapWidth, mipmapHeight, imageFormat /*TODO: create enum*/, compressedLength) {
     let entrySize = 0;
     switch (imageFormat) {
         case VTEX_FORMAT_DXT1:
@@ -22997,7 +23375,7 @@ function loadDataVkv(reader, block) {
                 decodeLz4(reader, sa, block.length, decodeLength);
                 break;
             default:
-                console.error('Unknow kv3 encoding ', encoding.split(''));
+                console.error('Unknown kv3 encoding ', encoding.split(''));
                 break;
         }
     }
@@ -23033,8 +23411,8 @@ async function loadDataKv3(reader, block, version) {
     reader.skip(4);
     reader.getString(16);
     const compressionMethod = reader.getUint32();
-    let compressionFrameSize;
-    let dictionaryTypeLength, blobCount = 0, totalUncompressedBlobSize;
+    let compressionFrameSize = 0;
+    let dictionaryTypeLength = 0, blobCount = 0, totalUncompressedBlobSize = 0;
     if (version >= 2) {
         reader.getUint16();
         compressionFrameSize = reader.getUint16();
@@ -23081,11 +23459,11 @@ async function loadDataKv3(reader, block, version) {
         uncompressedBufferSize.push(decodeLength);
         compressedBufferSize.push(compressedLength);
     }
-    let sa;
+    let sa = new Uint8Array();
     let compressedBlobReader;
     let uncompressedBlobReader;
-    let stringDictionary;
-    let buffer0;
+    let stringDictionary = [];
+    let buffer0 = new Uint8Array();
     for (let i = 0; i < bufferCount; i++) {
         switch (compressionMethod) {
             case 0:
@@ -23104,6 +23482,9 @@ async function loadDataKv3(reader, block, version) {
                 const compressedBytes = reader.getBytes(compressedBufferSize[i]);
                 //SaveFile(new File([new Blob([compressedBytes])], 'block_' + block.offset + '_' + block.length));
                 const decompressedBytes = await Zstd.decompress(compressedBytes);
+                if (!decompressedBytes) {
+                    break;
+                }
                 sa = new Uint8Array(new Uint8Array(decompressedBytes.buffer, 0, uncompressedBufferSize[i]));
                 if (blobCount > 0) {
                     if (version < 5) {
@@ -23116,7 +23497,9 @@ async function loadDataKv3(reader, block, version) {
                             //SaveFile(new File([new Blob([compressedBlobBytes])], 'compressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
                             const decompressedBlobBytes = await Zstd.decompress(compressedBlobBytes);
                             //console.info(decompressedBlobBytes);
-                            uncompressedBlobReader = new BinaryReader(decompressedBlobBytes);
+                            if (decompressedBlobBytes) {
+                                uncompressedBlobReader = new BinaryReader(decompressedBlobBytes);
+                            }
                             //SaveFile(new File([new Blob([decompressedBlobBytes])], 'decompressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
                         }
                         //compressedBlobReader = new BinaryReader(reader, reader.tell());
@@ -23126,7 +23509,7 @@ async function loadDataKv3(reader, block, version) {
                 //SaveFile(new File([new Blob([sa])], 'zstd'));
                 break;
             default:
-                throw 'Unknow kv3 compressionMethod ' + compressionMethod;
+                throw 'Unknown kv3 compressionMethod ' + compressionMethod;
         }
         const result = BinaryKv3Loader.getBinaryKv3(version, sa, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8, dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize, i, stringDictionary, objectCount[i], arrayCount[i], buffer0);
         if (version >= 5 && i == 0) {
@@ -23135,7 +23518,9 @@ async function loadDataKv3(reader, block, version) {
         }
         else {
             //console.log(block.type, result);
-            block.keyValue = result;
+            if (result.isKv3File) {
+                block.keyValue = result;
+            }
         }
     }
 }
@@ -23237,20 +23622,189 @@ function loadVtexCubemapRadiance(reader, block, offset, size) {
     block.cubemapRadiance = coefficients;
 }
 
+/**
+ * Source2 common file block
+ */
+class Source2FileBlock {
+    file;
+    type;
+    offset;
+    length;
+    indices;
+    vertices;
+    keyValue;
+    structs; //TODO: remove me
+    constructor(file, type /*TODO: create enum*/, offset, length) {
+        this.file = file;
+        this.type = type;
+        this.offset = offset;
+        this.length = length;
+    }
+    getKeyValue(path) {
+        const keyValue = this.keyValue;
+        if (keyValue) {
+            return keyValue.getValue(path);
+        }
+        return undefined;
+    }
+    getKeyValueAsElementArray(path) {
+        return this.keyValue?.getValueAsElementArray(path) ?? null;
+    }
+    getIndices(bufferId) {
+        const indexBuffer = this.indices?.at(bufferId);
+        return indexBuffer ? indexBuffer.indices : [];
+    }
+    getVertices(bufferId) {
+        const vertexBuffer = this.vertices?.at(bufferId);
+        return vertexBuffer ? vertexBuffer.vertices : [];
+    }
+    getNormalsTangents(bufferId) {
+        function decompressNormal(inputNormal, outputNormal) {
+            //let outputNormal = vec3.create();
+            //float2 ztSigns		= ( inputNormal.xy - 128.0 ) < 0;				// sign bits for zs and binormal (1 or 0)  set-less-than (slt) asm instruction
+            const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0)); // sign bits for zs and binormal (1 or 0)  set-less-than (slt) asm instruction
+            //float2 xyAbs		= abs( inputNormal.xy - 128.0 ) - ztSigns;		// 0..127
+            const xyAbs = vec2.fromValues(Math.abs(inputNormal[0] - 128.0) - ztSigns[0], Math.abs(inputNormal[1] - 128.0) - ztSigns[1]); // 0..127
+            //float2 xySigns		= ( xyAbs -  64.0 ) < 0;						// sign bits for xs and ys (1 or 0)
+            const xySigns = vec2.fromValues(Number((xyAbs[0] - 64.0) < 0), Number((xyAbs[1] - 64.0) < 0)); // sign bits for xs and ys (1 or 0)
+            //outputNormal.xy		= ( abs( xyAbs - 64.0 ) - xySigns ) / 63.0;	// abs({nX, nY})
+            outputNormal[0] = (Math.abs(xyAbs[0] - 64.0) - xySigns[0]) / 63.0; // abs({nX, nY})
+            outputNormal[1] = (Math.abs(xyAbs[1] - 64.0) - xySigns[1]) / 63.0; // abs({nX, nY})
+            //outputNormal.z		= 1.0 - outputNormal.x - outputNormal.y;		// Project onto x+y+z=1
+            outputNormal[2] = 1.0 - outputNormal[0] - outputNormal[1]; // Project onto x+y+z=1
+            //outputNormal.xyz	= normalize( outputNormal.xyz );				// Normalize onto unit sphere
+            vec3.normalize(outputNormal, outputNormal);
+            //outputNormal.xy	   *= lerp( fOne.xx, -fOne.xx, xySigns   );			// Restore x and y signs
+            //outputNormal.z	   *= lerp( fOne.x,  -fOne.x,  ztSigns.x );			// Restore z sign
+            outputNormal[0] *= (1 - xySigns[0]) - xySigns[0];
+            outputNormal[1] *= (1 - xySigns[1]) - xySigns[1];
+            return vec3.normalize(outputNormal, outputNormal);
+        }
+        function decompressTangent(compressedTangent, outputTangent) {
+            decompressNormal(compressedTangent, outputTangent);
+            const tSign = compressedTangent[1] - 128.0 < 0 ? -1.0 : 1.0;
+            outputTangent[3] = tSign;
+        }
+        function decompressNormal2(inputNormal) {
+            let normals;
+            let tangents;
+            const SignBit = inputNormal & 1; // LSB bit
+            const Tbits = (inputNormal >> 1) & 0x7ff; // 11 bits
+            const Xbits = (inputNormal >> 12) & 0x3ff; // 10 bits
+            const Ybits = (inputNormal >> 22) & 0x3ff; // 10 bits
+            // Unpack from 0..1 to -1..1
+            const nPackedFrameX = (Xbits / 1023.0) * 2.0 - 1.0;
+            const nPackedFrameY = (Ybits / 1023.0) * 2.0 - 1.0;
+            // Z is never given a sign, meaning negative values are caused by abs(packedframexy) adding up to over 1.0
+            const derivedNormalZ = 1.0 - Math.abs(nPackedFrameX) - Math.abs(nPackedFrameY); // Project onto x+y+z=1
+            const unpackedNormal = vec3.fromValues(nPackedFrameX, nPackedFrameY, derivedNormalZ);
+            // If Z is negative, X and Y has had extra amounts (TODO: find the logic behind this value) added into them so they would add up to over 1.0
+            // Thus, we take the negative components of Z and add them back into XY to get the correct original values.
+            const negativeZCompensation = clamp(-derivedNormalZ, 0.0, 1.0); // Isolate the negative 0..1 range of derived Z
+            const unpackedNormalXPositive = unpackedNormal[0] >= 0.0 ? 1.0 : 0.0;
+            const unpackedNormalYPositive = unpackedNormal[1] >= 0.0 ? 1.0 : 0.0;
+            unpackedNormal[0] += negativeZCompensation * (1 - unpackedNormalXPositive) + -negativeZCompensation * unpackedNormalXPositive; // mix() - x×(1−a)+y×a
+            unpackedNormal[1] += negativeZCompensation * (1 - unpackedNormalYPositive) + -negativeZCompensation * unpackedNormalYPositive;
+            const normal = vec3.normalize(unpackedNormal, unpackedNormal); // Get final normal by normalizing it onto the unit sphere
+            normals = normal;
+            // Invert tangent when normal Z is negative
+            const tangentSign = (normal[2] >= 0.0) ? 1.0 : -1.0;
+            // equal to tangentSign * (1.0 + abs(normal.z))
+            const rcpTangentZ = 1.0 / (tangentSign + normal[2]);
+            // Be careful of rearranging ops here, could lead to differences in float precision, especially when dealing with compressed data.
+            const unalignedTangent = vec3.create();
+            // Unoptimized (but clean) form:
+            // tangent.X = -(normal.x * normal.x) / (tangentSign + normal.z) + 1.0
+            // tangent.Y = -(normal.x * normal.y) / (tangentSign + normal.z)
+            // tangent.Z = -(normal.x)
+            unalignedTangent[0] = -tangentSign * (normal[0] * normal[0]) * rcpTangentZ + 1.0;
+            unalignedTangent[1] = -tangentSign * ((normal[0] * normal[1]) * rcpTangentZ);
+            unalignedTangent[2] = -tangentSign * normal[0];
+            // This establishes a single direction on the tangent plane that derived from only the normal (has no texcoord info).
+            // But it doesn't line up with the texcoords. For that, it uses nPackedFrameT, which is the rotation.
+            // Angle to use to rotate tangent
+            const nPackedFrameT = Tbits / 2047.0 * TWO_PI;
+            // Rotate tangent to the correct angle that aligns with texcoords.
+            //let tangent = unalignedTangent * Math.cos(nPackedFrameT) + Vector3.Cross(normal, unalignedTangent) * Math.sin(nPackedFrameT);
+            const tangent = vec3.scale(vec3.create(), unalignedTangent, Math.cos(nPackedFrameT));
+            const c = vec3.cross(vec3.create(), normal, unalignedTangent);
+            vec3.scale(c, c, Math.sin(nPackedFrameT));
+            vec3.add(tangent, tangent, c);
+            tangents = vec4.fromValues(tangent[0], tangent[1], tangent[2], (SignBit == 0) ? -1.0 : 1.0); // Bitangent sign bit... inverted (0 = negative
+            return [normals, tangents];
+        }
+        const vertexBuffer = this.vertices?.[bufferId];
+        const normals = new Float32Array(vertexBuffer.normals);
+        const normalArray = [];
+        const tangentArray = [];
+        const compressedNormal = vec2.create();
+        const compressedTangent = vec2.create();
+        let normalTemp = vec3.create();
+        let tangentTemp = vec4.create();
+        for (let i = 0, l = normals.length; i < l; i += 4) {
+            if (!vertexBuffer.decompressTangentV2) {
+                compressedNormal[0] = normals[i + 0] * 255.0;
+                compressedNormal[1] = normals[i + 1] * 255.0;
+                compressedTangent[0] = normals[i + 2] * 255.0;
+                compressedTangent[1] = normals[i + 3] * 255.0;
+                decompressNormal(compressedNormal, normalTemp);
+                decompressTangent(compressedTangent, tangentTemp);
+            }
+            else {
+                [normalTemp, tangentTemp] = decompressNormal2(normals[i]);
+            }
+            normalArray.push(normalTemp[0]);
+            normalArray.push(normalTemp[1]);
+            normalArray.push(normalTemp[2]);
+            tangentArray.push(tangentTemp[0]);
+            tangentArray.push(tangentTemp[1]);
+            tangentArray.push(tangentTemp[2]);
+            tangentArray.push(1.0);
+        }
+        return [normalArray, tangentArray];
+    }
+    getCoords(bufferId) {
+        const vertexBuffer = this.vertices?.at(bufferId);
+        return vertexBuffer ? vertexBuffer.coords : [];
+    }
+    getNormal(bufferId) {
+        const vertexBuffer = this.vertices?.at(bufferId);
+        return vertexBuffer ? vertexBuffer.normals : [];
+    }
+    getTangent(bufferId) {
+        const vertexBuffer = this.vertices?.at(bufferId);
+        return vertexBuffer ? vertexBuffer.tangents : [];
+    }
+    getBoneIndices(bufferId) {
+        const vertexBuffer = this.vertices?.at(bufferId);
+        return vertexBuffer ? vertexBuffer.boneIndices : new ArrayBuffer();
+    }
+    getBoneWeight(bufferId) {
+        const vertexBuffer = this.vertices?.at(bufferId);
+        return vertexBuffer ? vertexBuffer.boneWeight : [];
+    }
+}
+
 class Source2FileLoader extends SourceBinaryLoader {
     vtex;
     constructor(vtex = false) {
         super();
         this.vtex = vtex;
     }
-    async parse(repository, fileName, arrayBuffer) {
+    async parse(repository, path, arrayBuffer) {
         const reader = new BinaryReader(arrayBuffer);
-        const file = new Source2File(repository, fileName);
+        let file;
+        if (this.vtex) {
+            file = new Source2Texture(repository, path);
+        }
+        else {
+            file = new Source2File(repository, path);
+        }
         await this.#parseHeader(reader, file, this.vtex);
         return file;
     }
     async #parseHeader(reader, file, parseVtex) {
-        reader.tell();
+        //const startOffset = reader.tell();
         file.fileLength = reader.getUint32();
         file.versionMaj = reader.getUint16();
         file.versionMin = reader.getUint16();
@@ -23272,7 +23826,7 @@ class Source2FileLoader extends SourceBinaryLoader {
                 await Source2BlockLoader.parseBlock(reader, file, block, parseVtex);
             }
         }
-        return;
+        //return;
     }
 }
 
@@ -23285,7 +23839,11 @@ class Source2MaterialLoader {
         return material;
     }
     static async #loadMaterial(repository, file) {
-        const shaderName = file.getBlockStruct('DATA.keyValue.root.m_shaderName') || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
+        //TODO: use getMaterialResourceData()
+        const shaderName = file.getBlockStructAsString('DATA', 'm_shaderName') ?? file.getBlockStructAsString('DATA', 'MaterialResourceData_t.m_shaderName'); // || file.getBlockStruct('DATA.structs.MaterialResourceData_t.m_shaderName');
+        if (shaderName === null) {
+            return null;
+        }
         let material = null;
         const materialClass = this.#materials.get(shaderName.toLowerCase());
         if (materialClass !== undefined) {
@@ -23315,18 +23873,23 @@ class Source2MaterialManager {
     static removeMaterial(material) {
         this.#materialList2.delete(material);
     }
-    static getMaterial(repository, fileName) {
-        fileName = cleanSource2MaterialName(fileName);
-        return this.#getMaterial(repository, fileName);
+    static getMaterial(repository, path) {
+        path = cleanSource2MaterialName(path);
+        return this.#getMaterial(repository, path);
     }
-    static #getMaterial(repository, fileName) {
-        const material = this.#materialList.get(fileName);
+    static #getMaterial(repository, path) {
+        const material = this.#materialList.get(path);
         if (material instanceof Promise) {
             const promise = new Promise(resolve => {
-                material.then((material) => {
-                    const newMaterial = material.clone();
-                    this.#materialList2.add(newMaterial);
-                    resolve(newMaterial);
+                material.then(material => {
+                    if (!material) {
+                        resolve(material);
+                    }
+                    else {
+                        const newMaterial = material.clone();
+                        this.#materialList2.add(newMaterial);
+                        resolve(newMaterial);
+                    }
                 });
             });
             return promise;
@@ -23340,17 +23903,18 @@ class Source2MaterialManager {
         }
         else {
             const promise = new Promise(resolve => {
-                Source2MaterialLoader.load(repository, fileName).then((material) => {
+                Source2MaterialLoader.load(repository, path).then((material) => {
                     if (!material) {
                         resolve(material);
+                        return;
                     }
-                    this.#materialList.set(fileName, material);
+                    this.#materialList.set(path, material);
                     const newMaterial = material.clone();
                     this.#materialList2.add(newMaterial);
                     resolve(newMaterial);
                 });
             });
-            this.#materialList.set(fileName, promise);
+            this.#materialList.set(path, promise);
             return promise;
         }
     }
@@ -23423,69 +23987,6 @@ class Source2Animations {
     }
 }
 
-class Source2Activity {
-    name;
-    weight;
-    flags;
-    activity;
-    constructor(name, weight, flags, activity) {
-        this.name = name;
-        this.weight = weight;
-        this.flags = flags;
-        this.activity = activity;
-        if (flags != 0) {
-            throw 'Check this: flags != 0';
-        }
-        if (activity != 0) {
-            throw 'Check this: activity != 0';
-        }
-    }
-}
-
-class Source2Sequence {
-    name;
-    fps;
-    frameCount;
-    activities;
-    animNames;
-    constructor(name, params = {}) {
-        this.name = name;
-        this.fps = params.fps ?? 30;
-        this.frameCount = params.frameCount ?? 0;
-        if (params.activities) {
-            this.activities = params.activities;
-        }
-        if (params.animNames) {
-            this.animNames = params.animNames;
-        }
-    }
-    matchActivity(activity, modifiers) {
-        if (modifiers) {
-            if (this.activities.length == modifiers.size + 1) {
-                if (this.activities[0].name == activity) {
-                    let matchCount = 0;
-                    for (let i = 1; i < this.activities.length; i++) {
-                        for (const modifier of modifiers) {
-                            if (this.activities[i] == modifier) {
-                                ++matchCount;
-                            }
-                        }
-                    }
-                    if (matchCount == modifiers.size) {
-                        return true;
-                    }
-                }
-            }
-            return false;
-        }
-        else {
-            if (this.activities[0]?.name == activity) {
-                return true;
-            }
-        }
-    }
-}
-
 const BASE_BYTES_PER_BONE = 4 * 3;
 const DELTA_BYTES_PER_BONE = 2 * 3;
 let baseX, baseY, baseZ, deltaX, deltaY, deltaZ;
@@ -23501,22 +24002,21 @@ function decodeCCompressedDeltaVector3(reader, elementCount, elementIndex, frame
 
 class Source2AnimationDesc {
     #source2Model;
-    #fps = 30;
+    #fps;
     #lastFrame = 0;
     data;
-    animationResource;
-    frameBlockArray;
+    #animationResource;
+    #frameBlockArray = null;
+    #segmentReaders = new Map;
     constructor(source2Model, data, animationResource) {
         this.#source2Model = source2Model;
         this.data = data;
-        this.animationResource = animationResource;
-        this.frameBlockArray = null;
-        if (data) {
-            this.#fps = data.fps ?? 30;
-            if (data.m_pData) {
-                this.#lastFrame = data.m_pData.m_nFrames - 1;
-                this.frameBlockArray = data.m_pData.m_frameblockArray;
-            }
+        this.#animationResource = animationResource;
+        this.#fps = data.getValueAsNumber('fps') ?? 30;
+        const frameDatas = data.getValueAsElement('m_pData');
+        if (frameDatas) {
+            this.#lastFrame = (frameDatas.getValueAsNumber('m_nFrames') ?? 1) - 1;
+            this.#frameBlockArray = frameDatas.getValueAsElementArray('m_frameblockArray');
         }
     }
     get fps() {
@@ -23526,12 +24026,12 @@ class Source2AnimationDesc {
         return this.#getActualAnimDesc()?.lastFrame ?? this.#lastFrame;
     }
     #getActualAnimDesc() {
-        const fetch = this.data?.m_fetch;
+        const fetch = this.data.getValueAsElement('m_fetch');
         if (fetch) {
-            const localReferenceArray = fetch.m_localReferenceArray;
+            const localReferenceArray = fetch.getValueAsNumberArray('m_localReferenceArray');
             //TODO: mix multiple anims
-            if (localReferenceArray[0] !== undefined) {
-                const animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
+            if (localReferenceArray && localReferenceArray[0] !== undefined) {
+                const animName = this.#animationResource.localSequenceNameArray[localReferenceArray[0]];
                 if (animName) {
                     const animDesc = this.#source2Model.getAnimationByName(animName);
                     if (animDesc) {
@@ -23540,15 +24040,18 @@ class Source2AnimationDesc {
                 }
             }
         }
+        return null;
     }
     getFrame(frameIndex) {
         frameIndex = clamp(frameIndex, 0, this.lastFrame);
-        const frameBlockArray = this.frameBlockArray;
+        const frameBlockArray = this.#frameBlockArray;
         let segmentIndexArray = null;
         let frameBlock = null;
-        const decodeKey = this.animationResource.getDecodeKey();
-        const decodeArray = this.animationResource.getDecoderArray();
+        const decodeKey = this.#animationResource.getDecodeKey();
+        const decodeArray = this.#animationResource.getDecoderArray();
         const boneArray = [];
+        const decodeKeyBoneArray = decodeKey?.getValueAsElementArray('m_boneArray');
+        const decodeKeyDataChannelArray = decodeKey?.getValueAsElementArray('m_dataChannelArray');
         /*
         let fetch = this.data?.m_fetch;
         if (fetch) {
@@ -23570,21 +24073,25 @@ class Source2AnimationDesc {
         if (actualAnimDesc) {
             return actualAnimDesc.getFrame(frameIndex);
         }
-        if (frameBlockArray && decodeArray && decodeKey && decodeKey.m_boneArray) {
-            for (var i = 0; i < decodeKey.m_boneArray.length; i++) {
-                boneArray.push({ name: decodeKey.m_boneArray[i].m_name });
+        if (frameBlockArray && decodeArray && decodeKeyBoneArray && decodeKeyDataChannelArray) {
+            for (const decodeKeyBone of decodeKeyBoneArray) {
+                boneArray.push({ name: decodeKeyBone.getValueAsString('m_name') });
             }
             for (var i = 0; i < frameBlockArray.length; i++) {
                 frameBlock = frameBlockArray[i];
-                if ((frameBlock.m_nStartFrame <= frameIndex) && (frameBlock.m_nEndFrame >= frameIndex)) {
-                    segmentIndexArray = frameBlock.m_segmentIndexArray;
+                const startFrame = frameBlock.getValueAsNumber('m_nStartFrame') ?? 0;
+                const endFrame = frameBlock.getValueAsNumber('m_nEndFrame') ?? 0;
+                if ((startFrame <= frameIndex) && (endFrame >= frameIndex)) {
+                    segmentIndexArray = frameBlock.getValueAsNumberArray('m_segmentIndexArray');
                     //console.log(this);
                     //console.log(decodeKey);
-                    for (let j = 0; j < segmentIndexArray.length; j++) {
-                        const segment = this.animationResource.getSegment(segmentIndexArray[j]);
-                        //console.log(frameIndex, frameIndex - frameBlock.m_nStartFrame);
-                        //console.log(frameIndex);
-                        this.readSegment(frameIndex - frameBlock.m_nStartFrame, segment, boneArray, decodeKey.m_dataChannelArray, decodeArray);
+                    if (segmentIndexArray) {
+                        for (const segmentIndex of segmentIndexArray) {
+                            const segment = this.#animationResource.getSegment(segmentIndex);
+                            //console.log(frameIndex, frameIndex - frameBlock.m_nStartFrame);
+                            //console.log(frameIndex);
+                            this.#readSegment(frameIndex - startFrame, segment, boneArray, decodeKeyDataChannelArray, decodeArray);
+                        }
                     }
                 }
             }
@@ -23592,27 +24099,34 @@ class Source2AnimationDesc {
         //console.log(boneArray);
         return boneArray;
     }
-    readSegment(frameIndex, segment, boneArray, dataChannelArray, decodeArray) {
-        //console.log(segment);
-        const channel = dataChannelArray[segment.m_nLocalChannel];
-        const segmentToBoneIndex = {};
-        const channelVar = channel.m_szVariableName;
-        const container = segment.m_container;
-        let reader = segment.dataReader;
+    #getReader(segment, container) {
+        let reader = this.#segmentReaders.get(segment);
         if (!reader) {
-            reader = new BinaryReader(container);
-            segment.dataReader = reader;
+            reader = new BinaryReader(segment.getValueAsBlob('m_container') ?? '');
+            this.#segmentReaders.set(segment, reader);
         }
+        return reader;
+    }
+    #readSegment(frameIndex, segment, boneArray, dataChannelArray, decodeArray) {
+        //console.log(segment);
+        const channel = dataChannelArray[segment.getValueAsNumber('m_nLocalChannel') ?? 0];
+        const segmentToBoneIndex = new Map();
+        const channelVar = channel.getValueAsString('m_szVariableName');
+        const container = segment.getValueAsBlob('m_container');
+        if (!channelVar || !container) {
+            return;
+        }
+        const reader = this.#getReader(segment, container); //segment.dataReader;
         const decoderId = container[0] + (container[1] << 8);
         let bytesPerBone = container[2] + (container[3] << 8);
         const boneCount = container[4] + (container[5] << 8);
         container[6] + (container[7] << 8);
         bytesPerBone = 0;
         const segmentBoneArray = [];
-        if (channel.m_nElementIndexArray) {
-            const elementIndexArray = channel.m_nElementIndexArray;
+        const elementIndexArray = channel.getValueAsNumberArray('m_nElementIndexArray');
+        if (elementIndexArray) {
             for (let i = 0; i < elementIndexArray.length; i++) {
-                segmentToBoneIndex[elementIndexArray[i]] = i;
+                segmentToBoneIndex.set(elementIndexArray[i], i);
             }
         }
         else {
@@ -23620,9 +24134,9 @@ class Source2AnimationDesc {
             return;
         }
         const decoder = decodeArray[decoderId];
+        const decoderName = decoder.name;
         //console.log(decoderId, bytesPerBone, boneCount, dataLength);
-        if (decoder && decoder.m_szName) {
-            const decoderName = decoder.m_szName;
+        if (decoder && decoderName) {
             //console.log(decoderName);
             switch (decoderName) {
                 case 'CCompressedStaticFullVector3':
@@ -23661,10 +24175,10 @@ class Source2AnimationDesc {
             }
             var byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
             for (var boneIndex = 0; boneIndex < boneCount; boneIndex++) {
-                const boneIndex2 = segmentToBoneIndex[segmentBoneArray[boneIndex]];
-                /*if (boneIndex2 === undefined) {//removeme
-                    return;
-                }*/
+                const boneIndex2 = segmentToBoneIndex.get(segmentBoneArray[boneIndex]);
+                if (boneIndex2 === undefined) { //removeme
+                    continue;
+                }
                 const bytes = [];
                 const byteIndex2 = byteIndex + boneIndex * bytesPerBone;
                 for (let j = 0; j < bytesPerBone; j++) {
@@ -23705,14 +24219,15 @@ class Source2AnimationDesc {
         }
     }
     matchActivity(activityName) {
-        const activityArray = this.data?.m_activityArray;
+        const activityArray = this.data.getValueAsElementArray('m_activityArray');
         if (activityArray) {
             for (const activity of activityArray) {
-                if (activity.m_name == activityName) {
+                if (activity.getValueAsString('m_name') == activityName) {
                     return true;
                 }
             }
         }
+        return false;
     }
     getActivityName() {
         return this.data?.m_activityArray?.[0]?.m_name;
@@ -23747,9 +24262,9 @@ class Source2AnimationDesc {
         return -1;
     }
     matchModifiers(activityName, modifiers) {
-        const activityArray = this.data?.m_activityArray;
+        const activityArray = this.data.getValueAsElementArray('m_activityArray');
         if (activityArray && activityArray.length > 0) {
-            if (activityArray[0].m_name != activityName) {
+            if (activityArray[0].getValueAsString('m_name') != activityName) {
                 return false;
             }
             if (activityArray.length == 1 && modifiers.size == 0) {
@@ -23830,37 +24345,59 @@ function _readQuaternion48(bytes, boneIndexRemoveMe, boneNameRemoveMe) {
     }
 }
 
+function kv3ElementToDecoderArray(elements) {
+    if (!elements) {
+        return [];
+    }
+    const decoders = new Array(elements.length);
+    for (let i = 0, l = elements.length; i < l; i++) {
+        const element = elements[i];
+        decoders[i] = {
+            name: element.getValueAsString('m_szName') ?? '',
+            version: element.getValueAsNumber('m_nVersion') ?? 0,
+            type: element.getValueAsNumber('m_nType') ?? 0,
+        };
+    }
+    return decoders;
+}
+
 class Source2Animation {
-    #animArray;
+    #animArray = [];
     #animNames = new Map();
-    animGroup;
+    #animGroup;
     filePath;
     file;
-    decoderArray;
-    segmentArray;
-    frameData;
+    #decoderArray = [];
+    #segmentArray = [];
+    //#frameData;
     constructor(animGroup, filePath) {
-        this.animGroup = animGroup;
+        this.#animGroup = animGroup;
         this.filePath = filePath;
     }
     setFile(sourceFile) {
         this.file = sourceFile;
-        this.setAnimDatas(sourceFile.getBlockStruct('DATA.structs.AnimationResourceData_t')
-            ?? sourceFile.getBlockStruct('DATA.keyValue.root')
-            ?? sourceFile.getBlockStruct('DATA.keyValue.root.m_localS1SeqDescArray')
-            ?? sourceFile.getBlockStruct('ANIM.keyValue.root'));
+        const animDatas = 
+        //sourceFile.getBlockStruct('DATA.structs.AnimationResourceData_t')
+        sourceFile.getBlockKeyValues('DATA')
+            //?? sourceFile.getBlockStruct('DATA', 'm_localS1SeqDescArray')
+            ?? sourceFile.getBlockKeyValues('ANIM');
+        if (animDatas) {
+            this.setAnimDatas(animDatas);
+        }
     }
     setAnimDatas(data) {
         if (data) {
-            this.#animArray = data.m_animArray ?? [];
+            this.#animArray = data.getValueAsElementArray('m_animArray') ?? []; //data.m_animArray ?? [];
             //console.error('data.m_animArray', data.m_animArray);
-            this.decoderArray = data.m_decoderArray;
-            this.segmentArray = data.m_segmentArray;
-            this.frameData = data.m_frameData;
-            if (this.#animArray) {
-                for (let i = 0; i < this.#animArray.length; i++) {
-                    const anim = this.#animArray[i];
-                    this.#animNames.set(anim.m_name, new Source2AnimationDesc(this.animGroup.source2Model, anim, this));
+            this.#decoderArray = kv3ElementToDecoderArray(data.getValueAsElementArray('m_decoderArray')); //this.decoderArray = data.m_decoderArray;
+            this.#segmentArray = data.getValueAsElementArray('m_segmentArray') ?? []; //data.m_segmentArray;
+            //this.#frameData = data.m_frameData;
+            //for (let i = 0; i < this.#animArray.length; i++) {
+            for (const anim of this.#animArray) {
+                //const anim = this.#animArray[i];
+                const animName = anim.getValueAsString('m_name');
+                if (animName) {
+                    this.#animNames.set(animName, new Source2AnimationDesc(this.#animGroup.source2Model, anim, this));
                 }
             }
         }
@@ -23869,14 +24406,14 @@ class Source2Animation {
         return this.#animNames.get(name);
     }
     getDecodeKey() {
-        return this.animGroup.decodeKey;
+        return this.#animGroup.decodeKey;
     }
     getDecoderArray() {
-        return this.decoderArray;
+        return this.#decoderArray;
     }
     getSegment(segmentIndex) {
         //TODO: check segement
-        return this.segmentArray[segmentIndex];
+        return this.#segmentArray[segmentIndex];
     }
     async getAnimations(animations = new Set()) {
         for (let i = 0; i < this.#animArray.length; i++) {
@@ -23963,40 +24500,108 @@ class Source2Animation {
     }
 }
 
+class Source2Activity {
+    name;
+    weight;
+    flags;
+    activity;
+    constructor(name, weight, flags, activity) {
+        this.name = name;
+        this.weight = weight;
+        this.flags = flags;
+        this.activity = activity;
+        if (flags != 0) {
+            throw 'Check this: flags != 0';
+        }
+        if (activity != 0) {
+            throw 'Check this: activity != 0';
+        }
+    }
+}
+
+class Source2Sequence {
+    name;
+    fps;
+    frameCount;
+    activities;
+    animNames;
+    constructor(name, params = {}) {
+        this.name = name;
+        this.fps = params.fps ?? 30;
+        this.frameCount = params.frameCount ?? 0;
+        if (params.activities) {
+            this.activities = params.activities;
+        }
+        if (params.animNames) {
+            this.animNames = params.animNames;
+        }
+    }
+    matchActivity(activity, modifiers) {
+        if (modifiers) {
+            if (this.activities.length == modifiers.size + 1) {
+                if (this.activities[0].name == activity) {
+                    let matchCount = 0;
+                    for (let i = 1; i < this.activities.length; i++) {
+                        for (const modifier of modifiers) {
+                            if (this.activities[i] == modifier) {
+                                ++matchCount;
+                            }
+                        }
+                    }
+                    if (matchCount == modifiers.size) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        }
+        else {
+            if (this.activities[0]?.name == activity) {
+                return true;
+            }
+        }
+    }
+}
+
 class Source2SeqGroup {
     #animNames = new Map();
     #animGroup;
     #localSequenceNameArray;
     sequences = [];
     file;
-    m_localS1SeqDescArray;
-    animArray;
+    m_localS1SeqDescArray = null;
+    #animArray = null;
     loaded = false;
     constructor(animGroup) {
         this.#animGroup = animGroup;
     }
     setFile(sourceFile) {
         this.file = sourceFile;
-        const sequenceGroupResourceData_t = sourceFile.getBlockStruct('DATA.structs.SequenceGroupResourceData_t');
+        const sequenceGroupResourceData_t = sourceFile.getBlockStruct('DATA', 'structs.SequenceGroupResourceData_t' /*TODO: check that*/);
         let localSequenceNameArray;
         if (sequenceGroupResourceData_t) {
             this.m_localS1SeqDescArray = sequenceGroupResourceData_t.m_localS1SeqDescArray;
             localSequenceNameArray = sequenceGroupResourceData_t.m_localSequenceNameArray;
         }
         else {
-            this.m_localS1SeqDescArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localS1SeqDescArray') ?? sourceFile.getBlockStruct('ASEQ.keyValue.root.m_localS1SeqDescArray');
-            localSequenceNameArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localSequenceNameArray') ?? sourceFile.getBlockStruct('ASEQ.keyValue.root.m_localSequenceNameArray');
+            this.m_localS1SeqDescArray = sourceFile.getBlockStructAsElementArray('DATA', 'm_localS1SeqDescArray') ?? sourceFile.getBlockStructAsElementArray('ASEQ', 'm_localS1SeqDescArray');
+            localSequenceNameArray = sourceFile.getBlockStructAsStringArray('DATA', 'm_localSequenceNameArray') ?? sourceFile.getBlockStructAsStringArray('ASEQ', 'm_localSequenceNameArray');
         }
         this.#localSequenceNameArray = localSequenceNameArray;
-        this.#processSeqDesc(this.m_localS1SeqDescArray, localSequenceNameArray);
-        this.animArray = this.m_localS1SeqDescArray;
-        if (this.animArray) {
-            for (let i = 0; i < this.animArray.length; i++) {
-                const anim = this.animArray[i];
-                this.#animNames.set(anim.m_sName, new Source2AnimationDesc(this.#animGroup.source2Model, anim, this));
+        if (this.m_localS1SeqDescArray && localSequenceNameArray) {
+            this.#processSeqDesc(this.m_localS1SeqDescArray, localSequenceNameArray);
+        }
+        this.#animArray = this.m_localS1SeqDescArray;
+        if (this.#animArray) {
+            for (let i = 0; i < this.#animArray.length; i++) {
+                const anim = this.#animArray[i];
+                const animName = anim.getValueAsString('m_sName');
+                if (animName) {
+                    this.#animNames.set(animName, new Source2AnimationDesc(this.#animGroup.source2Model, anim, this));
+                }
             }
         }
-        const anims = sourceFile.getBlockStruct('DATA.keyValue.root') ?? sourceFile.getBlockStruct('DATA.structs.SequenceGroupResourceData_t');
+        const anims = sourceFile.getBlockKeyValues('DATA'); // ?? sourceFile.getBlockStruct('DATA', ''/*.structs.SequenceGroupResourceData_t'*/);
         if (anims) {
             const loadedAnim = new Source2Animation(this, '');
             loadedAnim.setAnimDatas(anims);
@@ -24009,27 +24614,34 @@ class Source2SeqGroup {
         return this.#animNames.get(name);
     }
     #processSeqDesc(m_localS1SeqDescArray, localSequenceNameArray) {
-        if (m_localS1SeqDescArray) {
-            for (let i = 0; i < m_localS1SeqDescArray.length; ++i) {
-                const sequence = m_localS1SeqDescArray[i];
-                const activities = [];
-                if (sequence.m_activityArray) {
-                    for (let j = 0; j < sequence.m_activityArray.length; ++j) {
-                        const activity = sequence.m_activityArray[j];
-                        activities.push(new Source2Activity(activity.m_name, activity.m_nWeight, activity.m_nFlags, activity.m_nActivity));
-                    }
-                }
-                const localReferenceArray = sequence?.m_fetch?.m_localReferenceArray;
-                const animNames = [];
-                if (localReferenceArray) {
-                    for (const localReference of localReferenceArray) {
-                        animNames.push(localSequenceNameArray[localReference]);
-                    }
-                }
-                const s2Seq = new Source2Sequence(sequence.m_sName, { activities: activities, animNames: animNames });
-                //console.error(s2Seq);
-                this.sequences.push(s2Seq);
+        for (const sequence of m_localS1SeqDescArray) {
+            //const sequence = m_localS1SeqDescArray[i];
+            const activities = [];
+            const activityArray = sequence.getValueAsElementArray('m_activityArray');
+            const sequenceName = sequence.getValueAsString('m_sName');
+            if (!sequenceName) {
+                continue;
             }
+            if (activityArray) {
+                for (const activity of activityArray) {
+                    //const activity = activityArray[j];
+                    const name = activity.getValueAsString('m_name') ?? '';
+                    const weight = activity.getValueAsNumber('m_nWeight') ?? 0;
+                    const flags = activity.getValueAsNumber('m_nFlags') ?? 0;
+                    const act = activity.getValueAsNumber('m_nActivity') ?? 0;
+                    activities.push(new Source2Activity(name, weight, flags, act));
+                }
+            }
+            const localReferenceArray = sequence.getSubValueAsNumberArray('m_fetch.m_localReferenceArray'); //?.m_fetch?.m_localReferenceArray;
+            const animNames = [];
+            if (localReferenceArray) {
+                for (const localReference of localReferenceArray) {
+                    animNames.push(localSequenceNameArray[localReference]);
+                }
+            }
+            const s2Seq = new Source2Sequence(sequenceName, { activities: activities, animNames: animNames });
+            //console.error(s2Seq);
+            this.sequences.push(s2Seq);
         }
     }
     matchActivity(activity, modifiers) {
@@ -24066,7 +24678,7 @@ class Source2AnimGroup {
     #_changemyname = [];
     repository;
     file;
-    decoderArray;
+    decoderArray = [];
     localAnimArray;
     decodeKey;
     directHSeqGroup;
@@ -24080,7 +24692,7 @@ class Source2AnimGroup {
         this.file = sourceFile;
         let localAnimArray;
         let decodeKey;
-        const animationGroupData = sourceFile.getBlockStruct('DATA.structs.AnimationGroupResourceData_t');
+        const animationGroupData = sourceFile.getBlockStruct('DATA', 'AnimationGroupResourceData_t');
         let directHSeqGroup;
         if (animationGroupData) {
             localAnimArray = animationGroupData.m_localHAnimArray;
@@ -24088,18 +24700,18 @@ class Source2AnimGroup {
             directHSeqGroup = animationGroupData.m_directHSeqGroup;
         }
         else {
-            localAnimArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localHAnimArray');
-            decodeKey = sourceFile.getBlockStruct('DATA.keyValue.root.m_decodeKey');
-            directHSeqGroup = sourceFile.getBlockStruct('DATA.keyValue.root.m_directHSeqGroup');
+            localAnimArray = sourceFile.getBlockStructAsResourceArray('DATA', 'm_localHAnimArray');
+            decodeKey = sourceFile.getBlockStruct('DATA', 'm_decodeKey');
+            directHSeqGroup = sourceFile.getBlockStruct('DATA', 'm_directHSeqGroup');
         }
-        this.decoderArray = sourceFile.getBlockStruct('ANIM.keyValue.root.m_decoderArray');
+        this.decoderArray = kv3ElementToDecoderArray(sourceFile.getBlockStructAsElementArray('ANIM', 'm_decoderArray'));
         if (directHSeqGroup) {
             (async () => {
                 this.directHSeqGroup = await getSequenceGroup(this.repository, directHSeqGroup, this);
             })();
         }
         this.setAnimationGroupResourceData(localAnimArray, decodeKey);
-        const anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
+        const anims = sourceFile.getBlockKeyValues('ANIM');
         if (anims) {
             const loadedAnim = new Source2Animation(this, '');
             loadedAnim.setAnimDatas(anims);
@@ -24314,9 +24926,9 @@ async function loadVanim(repository, fileName, anim) {
     const vanim = await new Source2FileLoader().load(repository, fileName);
     if (vanim) {
         anim.setFile(vanim);
-        const dataBlock = vanim.blocks.DATA;
+        const dataBlock = vanim.getBlockStructAsElement('DATA', '');
         if (dataBlock) {
-            anim.setAnimDatas(vanim.getBlockStruct('DATA.structs.AnimationResourceData_t') || vanim.getBlockStruct('DATA.keyValue.root'));
+            anim.setAnimDatas(dataBlock); // || vanim.getBlockStruct('DATA.keyValue.root'));
         }
     }
     //this.fileLoaded(model);TODOv3
@@ -24398,9 +25010,7 @@ class Source2ModelAttachmentInstance extends Entity {
         this.attachment = attachment;
     }
     #getBone(boneName) {
-        if (this.model) {
-            return this.model.skeleton.getBoneByName(boneName);
-        }
+        return this.model?.skeleton?.getBoneByName(boneName) ?? null;
     }
     //TODO: compute with all bones, not only the first one
     getWorldPosition(vec = vec3.create()) {
@@ -24437,7 +25047,7 @@ let animSpeed$1 = 1.0;
 const defaultMaterial$2 = new MeshBasicMaterial();
 class Source2ModelInstance extends Entity {
     isSource2ModelInstance = true;
-    #skeleton;
+    #skeleton = null;
     #skin = 0;
     #materialsUsed = new Set();
     #animName;
@@ -24455,11 +25065,13 @@ class Source2ModelInstance extends Entity {
     sourceModel;
     hasAnimations = true;
     #bodyGroups = new Map();
-    constructor(sourceModel, isDynamic) {
+    static {
         defaultMaterial$2.addUser(Source2ModelInstance);
+    }
+    constructor(sourceModel, isDynamic) {
         super();
         this.sourceModel = sourceModel;
-        this.name = sourceModel?.vmdl?.displayName;
+        this.name = sourceModel?.vmdl?.getDisplayName();
         if (isDynamic) {
             this.#skeleton = new Skeleton({ name: `Skeleton ${this.name}` });
             this.addChild(this.#skeleton);
@@ -24499,8 +25111,8 @@ class Source2ModelInstance extends Entity {
             const geometry = mesh.geometry;
             mesh.setVisible(undefined);
             if (geometry) {
-                const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask'));
-                const lodGroupMask = BigInt(geometry.properties.get('lodGroupMask'));
+                const meshGroupMask = geometry.properties.getBigint('mesh_group_mask') ?? 0xffffffffffffffffn;
+                const lodGroupMask = BigInt(geometry.properties.getBigint('lodGroupMask') ?? geometry.properties.getNumber('lodGroupMask') ?? 0);
                 mesh.setVisible((meshGroupMask & mask) > 0 ? undefined : false);
                 if (lodGroupMask && ((lodGroupMask & this.#lod) == 0n)) {
                     mesh.setVisible(false);
@@ -24638,10 +25250,10 @@ class Source2ModelInstance extends Entity {
         for (const mesh of this.meshes) {
             if (materials0 && materials) {
                 for (const i in materials0) {
-                    if (materials0[i] == mesh.geometry.properties.get('materialPath')) {
+                    if (materials0[i] == mesh.geometry?.properties.getString('materialPath')) {
                         const materialPath = materials[i];
                         if (materialPath) {
-                            mesh.properties.set('materialPath', materialPath);
+                            mesh.properties.setString('materialPath', materialPath);
                         }
                         break;
                     }
@@ -24652,13 +25264,21 @@ class Source2ModelInstance extends Entity {
                 }*/
             }
             else {
-                mesh.properties.set('materialPath', mesh.geometry.properties.get('materialPath'));
+                const materialPath = mesh.geometry?.properties.getString('materialPath');
+                if (materialPath) {
+                    mesh.properties.setString('materialPath', materialPath);
+                }
             }
-            Source2MaterialManager.getMaterial(this.sourceModel.repository, mesh.properties.get('materialPath')).then((material) => {
-                material.addUser(this);
-                mesh.setMaterial(material);
-                this.#materialsUsed.add(material);
-            });
+            const materialPath = mesh.properties.getString('materialPath');
+            if (materialPath) {
+                Source2MaterialManager.getMaterial(this.sourceModel.repository, materialPath).then(material => {
+                    if (material) {
+                        material.addUser(this);
+                        mesh.setMaterial(material);
+                        this.#materialsUsed.add(material);
+                    }
+                });
+            }
         }
     }
     #init() {
@@ -24682,7 +25302,10 @@ class Source2ModelInstance extends Entity {
                             mesh.setDefine('USE_VERTEX_TANGENT');
                         }
                         mesh.setVisible(undefined);
-                        mesh.properties.set('materialPath', geometry.properties.get('materialPath'));
+                        const materialPath = geometry.properties.getString('materialPath');
+                        if (materialPath) {
+                            mesh.properties.setString('materialPath', materialPath);
+                        }
                         newModel.push(mesh);
                         this.addChild(mesh);
                         this.meshes.add(mesh);
@@ -24699,11 +25322,11 @@ class Source2ModelInstance extends Entity {
     #initSkeleton() {
         const bones = this.sourceModel.getBones();
         if (bones) {
-            const bonesName = bones.m_boneName;
-            const bonePosParent = bones.m_bonePosParent;
-            const boneRotParent = bones.m_boneRotParent;
-            const boneParent = bones.m_nParent;
-            if (bonesName && bonePosParent && boneRotParent && boneParent) {
+            const bonesName = bones.getValueAsStringArray('m_boneName');
+            const bonePosParent = bones.getValueAsVectorArray('m_bonePosParent');
+            const boneRotParent = bones.getValueAsVectorArray('m_boneRotParent');
+            const boneParent = bones.getValueAsBigintArray('m_nParent') ?? bones.getValueAsNumberArray('m_nParent');
+            if (bonesName && bonePosParent && boneRotParent && boneParent && this.#skeleton) {
                 for (let modelBoneIndex = 0, m = bonesName.length; modelBoneIndex < m; ++modelBoneIndex) {
                     const boneName = bonesName[modelBoneIndex];
                     const bone = this.#skeleton.addBone(modelBoneIndex, boneName);
@@ -24734,6 +25357,9 @@ class Source2ModelInstance extends Entity {
                         bone.poseToBone = poseToBone;
                     }
                 }
+            }
+            else {
+                console.error('source2 #initSkeleton check code');
             }
         }
     }
@@ -24833,29 +25459,16 @@ class Source2Model {
     }
     #createAnimGroup() {
         const aseq = this.vmdl.getBlockByType('ASEQ');
-        if (aseq) {
+        if (aseq && this.#internalAnimGroup) {
             this.#seqGroup = new Source2SeqGroup(this.#internalAnimGroup);
             this.#seqGroup.setFile(this.vmdl);
         }
     }
     #createBodyGroups() {
-        const meshGroups = this.vmdl.getPermModelData('m_meshGroups');
+        const meshGroups = this.vmdl.getBlockStructAsArray('DATA', 'm_meshGroups');
         if (meshGroups) {
-            let bodyGroupId = 0;
-            let bodyGroup;
             for (const choice of meshGroups) {
-                if (choice == 'autodefault') {
-                    bodyGroup = choice;
-                }
-                else {
-                    const result = /(.*)_@\d$/.exec(choice);
-                    bodyGroup = result?.[1];
-                }
-                if (bodyGroup) {
-                    this.bodyGroups.add(bodyGroup);
-                    this.bodyGroupsChoices.add({ choice: choice, bodyGroup: bodyGroup, bodyGroupId: bodyGroupId });
-                }
-                bodyGroupId++;
+                throw 'do createBodyGroups';
             }
         }
     }
@@ -24887,7 +25500,7 @@ class Source2Model {
         return new Source2ModelInstance(this, isDynamic);
     }
     getBones() {
-        const skeleton = this.vmdl.getPermModelData('m_modelSkeleton');
+        const skeleton = this.vmdl.getBlockStructAsElement('DATA', 'm_modelSkeleton'); //this.vmdl.getPermModelData('m_modelSkeleton');
         if (skeleton) {
             return skeleton;
         }
@@ -24944,11 +25557,11 @@ class Source2Model {
     }
 */
     getSkinMaterials(skin) {
-        const materialGroups = this.vmdl.getPermModelData('m_materialGroups');
+        const materialGroups = this.vmdl.getBlockStructAsElementArray('DATA', 'm_materialGroups');
         if (materialGroups) {
             const materials = materialGroups[skin];
-            if (materials) {
-                return materials.m_materials;
+            if (materials?.isKv3Element) {
+                return materials.getValueAsResourceArray('m_materials');
             }
         }
         return null;
@@ -24979,14 +25592,14 @@ class Source2Model {
         //TODOv3: make a common code where external and internal group are loaded
         if (this.vmdl) {
             const sourceFile = this.vmdl;
-            const localAnimArray = sourceFile.getBlockStruct('AGRP.keyValue.root.m_localHAnimArray');
-            const decodeKey = sourceFile.getBlockStruct('AGRP.keyValue.root.m_decodeKey');
-            if (localAnimArray && decodeKey) {
+            const localAnimArray = sourceFile.getBlockStructAsResourceArray('AGRP', 'm_localHAnimArray');
+            const decodeKey = sourceFile.getBlockStruct('AGRP', 'm_decodeKey');
+            if (localAnimArray && decodeKey?.isKv3Element) {
                 const animGroup = new Source2AnimGroup(this, this.repository);
                 animGroup.setFile(this.vmdl);
                 animGroup.setAnimationGroupResourceData(localAnimArray, decodeKey);
                 this.#internalAnimGroup = animGroup;
-                const anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
+                const anims = sourceFile.getBlockKeyValues('ANIM');
                 if (anims) {
                     const loadedAnim = new Source2Animation(animGroup, '');
                     loadedAnim.setAnimDatas(anims);
@@ -24998,12 +25611,13 @@ class Source2Model {
         }
     }
     getIncludeModels() {
+        /*
         if (!this.vmdl) {
             return [];
         }
-        const sourceFile = this.vmdl;
-        const refAnimIncludeModels = sourceFile.getBlockStruct('DATA.keyValue.root.m_refAnimIncludeModels');
-        return refAnimIncludeModels ?? [];
+            */
+        return this.vmdl.getBlockStructAsArray('DATA', 'm_refAnimIncludeModels') ?? [];
+        //return refAnimIncludeModels ?? [];
     }
     addIncludeModel(includeModel) {
         this.#includeModels.push(includeModel);
@@ -25069,19 +25683,35 @@ class Source2Model {
     }
     _addAttachments(attachments) {
         for (const attachment of attachments) {
-            const attachmentValue = attachment.value;
+            //throw 'fix attachments type';
+            const attachmentValue = attachment.getValueAsElement('value'); //TODO: use property 'key'
             if (attachmentValue) {
-                const name = attachmentValue.m_name.toLowerCase();
+                const name = attachmentValue.getValueAsString('m_name')?.toLowerCase();
+                if (!name) {
+                    continue;
+                }
                 const source2ModelAttachment = new Source2ModelAttachment(name);
                 this.attachments.set(name, source2ModelAttachment);
-                source2ModelAttachment.ignoreRotation = attachmentValue.m_bIgnoreRotation;
-                for (let influenceIndex = 0; influenceIndex < attachmentValue.m_nInfluences; ++influenceIndex) {
-                    const influenceName = attachmentValue.m_influenceNames[influenceIndex];
-                    if (influenceName) {
-                        source2ModelAttachment.influenceNames.push(influenceName.toLowerCase());
-                        source2ModelAttachment.influenceWeights.push(attachmentValue.m_influenceWeights[influenceIndex]);
-                        source2ModelAttachment.influenceOffsets.push(vec3.clone(attachmentValue.m_vInfluenceOffsets[influenceIndex]));
-                        source2ModelAttachment.influenceRotations.push(vec4.clone(attachmentValue.m_vInfluenceRotations[influenceIndex]));
+                source2ModelAttachment.ignoreRotation = attachmentValue.getValueAsBool('m_bIgnoreRotation') ?? false /*TODO: check default value*/;
+                const influencesCount = attachmentValue.getValueAsNumber('m_nInfluences');
+                if (influencesCount) {
+                    const influenceNames = attachmentValue.getValueAsStringArray('m_influenceNames');
+                    const influenceWeights = attachmentValue.getValueAsNumberArray('m_influenceWeights');
+                    const influenceOffsets = attachmentValue.getValueAsVectorArray('m_vInfluenceOffsets');
+                    const influenceRotations = attachmentValue.getValueAsVectorArray('m_vInfluenceRotations');
+                    if (influenceNames && influenceWeights && influenceOffsets && influenceRotations) {
+                        for (let influenceIndex = 0; influenceIndex < influencesCount; ++influenceIndex) {
+                            const influenceName = influenceNames[influenceIndex];
+                            const influenceWeight = influenceWeights[influenceIndex];
+                            const influenceOffset = influenceOffsets[influenceIndex];
+                            const influenceRotation = influenceRotations[influenceIndex];
+                            if (influenceName) {
+                                source2ModelAttachment.influenceNames.push(influenceName.toLowerCase());
+                                source2ModelAttachment.influenceWeights.push(influenceWeight);
+                                source2ModelAttachment.influenceOffsets.push(vec3.clone(influenceOffset));
+                                source2ModelAttachment.influenceRotations.push(quat.clone(influenceRotation));
+                            }
+                        }
                     }
                 }
             }
@@ -25120,6 +25750,9 @@ class Source2ModelLoader {
         promise = new Promise((resolve) => {
             const vmdlPromise = new Source2FileLoader().load(repository, path + '.vmdl_c');
             vmdlPromise.then(async (source2File) => {
+                if (!source2File) {
+                    return;
+                }
                 const newSourceModel = new Source2Model(repository, source2File);
                 this.#loadIncludeModels(newSourceModel);
                 await this.testProcess2(source2File, newSourceModel, repository);
@@ -25133,16 +25766,28 @@ class Source2ModelLoader {
     }
     async testProcess2(vmdl, model, repository) {
         const group = new Entity();
-        const ctrlRoot = vmdl.getBlockStruct('CTRL.keyValue.root');
-        const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
-        const m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
-        if (ctrlRoot && m_refLODGroupMasks) {
-            const embeddedMeshes = ctrlRoot.embedded_meshes;
+        const ctrlRoot = vmdl.getBlockKeyValues('CTRL');
+        const m_refLODGroupMasks = vmdl.getBlockStructAsBigintArray('DATA', 'm_refLODGroupMasks') ?? vmdl.getBlockStructAsNumberArray('DATA', 'm_refLODGroupMasks'); // ?? vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
+        const m_refMeshGroupMasks = vmdl.getBlockStructAsNumberArray('DATA', 'm_refMeshGroupMasks'); // ?? vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
+        const embeddedMeshes = ctrlRoot?.getValueAsElementArray('embedded_meshes');
+        if (ctrlRoot && m_refLODGroupMasks && embeddedMeshes) {
             for (let meshIndex = 0; meshIndex < embeddedMeshes.length; ++meshIndex) {
                 const lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
                 const meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
                 const embeddedMesh = embeddedMeshes[meshIndex];
-                this.#loadMesh(repository, model, group, vmdl.getBlockById(embeddedMesh.data_block), vmdl.getBlockById(embeddedMesh.vbib_block), lodGroupMask, vmdl, meshIndex, meshGroupMask);
+                const dataBlockId = embeddedMesh.getValueAsNumber('data_block');
+                const vbibBlockId = embeddedMesh.getValueAsNumber('vbib_block');
+                if (dataBlockId === null || vbibBlockId === null) {
+                    console.error('missing dataBlockId / vbibBlockId', embeddedMesh);
+                    continue;
+                }
+                const dataBlock = vmdl.getBlockById(dataBlockId);
+                const vbibBlock = vmdl.getBlockById(vbibBlockId);
+                if (dataBlock === null || vbibBlock === null) {
+                    console.error('missing dataBlock / vbibBlock', embeddedMesh, dataBlock, vbibBlock);
+                    continue;
+                }
+                this.#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
                 /*data_block: 1
                 mesh_index: 0
                 morph_block: 0
@@ -25151,23 +25796,33 @@ class Source2ModelLoader {
                 vbib_block: 2*/
             }
         }
-        await this._loadExternalMeshes(group, vmdl, model, repository);
+        await this.#loadExternalMeshes(group, vmdl, model, repository);
         return group;
     }
     #loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask) {
         const remappingTable = vmdl.getRemappingTable(meshIndex);
-        model._addAttachments(dataBlock.getKeyValue('m_attachments'));
-        const drawCalls = dataBlock.getKeyValue('m_sceneObjects.0.m_drawCalls') || dataBlock.getKeyValue('root.m_drawCalls');
+        const attachments = dataBlock.getKeyValueAsElementArray('m_attachments');
+        if (attachments) {
+            model._addAttachments(attachments);
+        }
+        const drawCalls = dataBlock.getKeyValueAsElementArray('m_sceneObjects.0.m_drawCalls'); // ?? dataBlock.getKeyValue('root.m_drawCalls');
         if (drawCalls) {
-            for (let drawCallIndex = 0, l = drawCalls.length; drawCallIndex < l; ++drawCallIndex) { //TODOv3: mutualize buffer if used by multiple drawcalls
-                const drawCall = drawCalls[drawCallIndex];
-                const useCompressedNormalTangent = drawCall.m_bUseCompressedNormalTangent ?? drawCall.m_nFlags?.includes('MESH_DRAW_FLAGS_USE_COMPRESSED_NORMAL_TANGENT');
-                const vertexBuffers = drawCall.m_vertexBuffers[0]; //TODOv3 why 0 ?
+            for (const drawCall of drawCalls) { //TODOv3: mutualize buffer if used by multiple drawcalls
+                //const drawCall = drawCalls[drawCallIndex];
+                const useCompressedNormalTangent = drawCall.getValueAsBool('m_bUseCompressedNormalTangent'); //drawCall.m_nFlags?.includes('MESH_DRAW_FLAGS_USE_COMPRESSED_NORMAL_TANGENT');
+                console.assert(useCompressedNormalTangent !== null, 'missing m_bUseCompressedNormalTangent', drawCall);
+                const vertexBuffers = drawCall.getValueAsElementArray('m_vertexBuffers')?.[0]; //TODOv3 why 0 ?
                 if (!vertexBuffers) {
                     continue;
                 }
-                const bufferIndex = vertexBuffers.m_hBuffer;
-                const indices = new Uint32BufferAttribute(vbibBlock.getIndices(bufferIndex), 1, Number(drawCall.m_nStartIndex) * 4, Number(drawCall.m_nIndexCount)); //NOTE: number is here to convert bigint TODO: see if we can do better
+                const bufferIndex = vertexBuffers.getValueAsNumber('m_hBuffer');
+                const startIndex = drawCall.getValueAsNumber('m_nStartIndex');
+                const indexCount = drawCall.getValueAsNumber('m_nIndexCount');
+                if (bufferIndex === null || startIndex === null || indexCount === null) {
+                    console.error('missing vertexBuffers in loadMesh', vertexBuffers, bufferIndex, startIndex, indexCount);
+                    continue;
+                }
+                const indices = new Uint32BufferAttribute(vbibBlock.getIndices(bufferIndex), 1, startIndex * 4, indexCount); //NOTE: number is here to convert bigint TODO: see if we can do better
                 const vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(bufferIndex), 3);
                 let vertexNormal, vertexTangent;
                 if (useCompressedNormalTangent) {
@@ -25183,8 +25838,8 @@ class Source2ModelLoader {
                 const vertexWeights = new Float32BufferAttribute(vbibBlock.getBoneWeight(bufferIndex), 4);
                 const vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(bufferIndex), remappingTable), 4);
                 const geometry = new BufferGeometry();
-                geometry.properties.set('lodGroupMask', lodGroupMask);
-                geometry.properties.set('mesh_group_mask', meshGroupMask ?? 0xffffffffffffffffn);
+                geometry.properties.setNumber('lodGroupMask', lodGroupMask);
+                geometry.properties.setBigint('mesh_group_mask', BigInt(meshGroupMask ?? 0xffffffffffffffffn));
                 geometry.setIndex(indices);
                 geometry.setAttribute('aVertexPosition', vertexPosition);
                 geometry.setAttribute('aVertexNormal', vertexNormal);
@@ -25192,19 +25847,38 @@ class Source2ModelLoader {
                 geometry.setAttribute('aTextureCoord', textureCoord);
                 geometry.setAttribute('aBoneWeight', vertexWeights);
                 geometry.setAttribute('aBoneIndices', vertexBones);
-                geometry.count = Number(drawCall.m_nIndexCount); //NOTE: number is here to convert bigint TODO: see if we can do better
-                geometry.properties.set('materialPath', drawCall.m_material);
-                geometry.properties.set('bones', dataBlock.getKeyValue('m_skeleton.m_bones'));
+                geometry.count = indexCount; //Number(drawCall.m_nIndexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
+                const bones = dataBlock.getKeyValueAsElementArray('m_skeleton.m_bones');
+                if (bones) {
+                    geometry.properties.set('bones', new Property(PropertyType.Array, bones));
+                }
+                else {
+                    console.error('unable to find m_skeleton.m_bones in DATA block', dataBlock);
+                }
                 const material = defaultMaterial$1;
                 const staticMesh = new Mesh(geometry, material);
                 group.addChild(staticMesh);
-                const materialPath = geometry.properties.get('materialPath');
-                Source2MaterialManager.getMaterial(repository, materialPath).then((material) => staticMesh.setMaterial(material)).catch((error) => console.error('unable to find material ' + materialPath, error));
-                model.addGeometry(geometry, FileNameFromPath(drawCall.m_material), 0 /*TODOv3*/);
+                const materialPath = drawCall.getValueAsResource('m_material');
+                if (materialPath !== null) {
+                    geometry.properties.setString('materialPath', materialPath);
+                    Source2MaterialManager.getMaterial(repository, materialPath).then(material => {
+                        if (material) {
+                            staticMesh.setMaterial(material);
+                        }
+                        else {
+                            console.error('unable to find material ' + materialPath);
+                        }
+                    });
+                    model.addGeometry(geometry, FileNameFromPath(materialPath), 0 /*TODOv3*/);
+                }
+                else {
+                    console.error('missing property m_material in draw call', drawCall);
+                }
+                //const materialPath = geometry.properties.getString('materialPath');
             }
         }
     }
-    async _loadExternalMeshes(group, vmdl, model, repository) {
+    async #loadExternalMeshes(group, vmdl, model, repository) {
         const callback = (mesh, lodGroupMask, meshIndex, meshGroupMask) => {
             //TODO: only load highest LOD
             this.#loadMesh(repository, model, group, mesh.getBlockByType('DATA'), mesh.getBlockByType('VBIB'), lodGroupMask, vmdl, meshIndex, meshGroupMask);
@@ -25213,9 +25887,12 @@ class Source2ModelLoader {
     }
     async loadMeshes(vmdl, callback) {
         const promises = new Set();
-        const m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
-        const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
-        const m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
+        //const m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
+        //const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
+        //const m_refMeshGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
+        const m_refMeshes = vmdl.getBlockStructAsResourceArray('DATA', 'm_refMeshes');
+        const m_refLODGroupMasks = vmdl.getBlockStructAsBigintArray('DATA', 'm_refLODGroupMasks') ?? vmdl.getBlockStructAsNumberArray('DATA', 'm_refLODGroupMasks');
+        const m_refMeshGroupMasks = vmdl.getBlockStructAsNumberArray('DATA', 'm_refMeshGroupMasks');
         if (m_refMeshes && m_refLODGroupMasks) {
             for (let meshIndex = 0; meshIndex < m_refMeshes.length; meshIndex++) { //TODOv3
                 const meshName = m_refMeshes[meshIndex];
@@ -30571,32 +31248,6 @@ class FlexAnimationTrack {
     }
 }
 
-class Sound {
-    #repository;
-    #wave;
-    #channel;
-    constructor(repository, wave, channel) {
-        this.#repository = repository;
-        this.#wave = wave;
-        this.#channel = channel;
-    }
-    getRepository() {
-        return this.#repository;
-    }
-    getWave() {
-        if (Array.isArray(this.#wave)) {
-            const index = Math.floor(Math.random() * this.#wave.length);
-            return this.#wave[index];
-        }
-        else {
-            return this.#wave;
-        }
-    }
-    getChannel() {
-        return this.#channel;
-    }
-}
-
 class KvAttribute {
     name;
     value;
@@ -30912,6 +31563,32 @@ class KvReader {
             }
             this.currentAttribute = newAttribute;
         }
+    }
+}
+
+class Sound {
+    #repository;
+    #wave;
+    #channel;
+    constructor(repository, wave, channel) {
+        this.#repository = repository;
+        this.#wave = wave;
+        this.#channel = channel;
+    }
+    getRepository() {
+        return this.#repository;
+    }
+    getWave() {
+        if (Array.isArray(this.#wave)) {
+            const index = Math.floor(Math.random() * this.#wave.length);
+            return this.#wave[index];
+        }
+        else {
+            return this.#wave;
+        }
+    }
+    getChannel() {
+        return this.#channel;
     }
 }
 
@@ -45730,6 +46407,7 @@ class Source1TextureManagerClass extends EventTarget {
         return animatedTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
     }
     async getVtf(repository, path) {
+        // TODO: fix that concurent calls of the same texture will load it multiple times
         let vtf = this.#vtfList.get(repository, path);
         if (vtf !== undefined) {
             return vtf;
@@ -45758,8 +46436,10 @@ class Source1TextureManagerClass extends EventTarget {
                     vtfToTexture(vtf, animatedTexture, srgb);
                 }
                 else {
-                    //this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture);
-                    this.setTexture(repository, path, this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture));
+                    const texture = this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture);
+                    if (texture) {
+                        this.setTexture(repository, path, texture);
+                    }
                 }
             });
         }
@@ -54712,7 +55392,7 @@ const Source2SnapshotLoader = new (function () {
                             break;
                         default:
                             attributeValue = null;
-                            console.error('Unknow snapshot attribute type', snapshotAttribute.type, snapshotAttribute, snapFile, Number(snapshotAttribute.data_size) / particleCount);
+                            console.error('Unknown snapshot attribute type', snapshotAttribute.type, snapshotAttribute, snapFile, Number(snapshotAttribute.data_size) / particleCount);
                     }
                     snapShot.attributes[snapshotAttribute.name] = attributeValue;
                 }
@@ -55843,704 +56523,8 @@ const Source2ParticleLoader = new (function () {
 }());
 registerLoader('Source2ParticleLoader', Source2ParticleLoader);
 
-/**
- * DynamicExpression
- */
-let stack;
-const hashes = {};
-const HASH_SEED = 0x31415926;
-hashes[murmurhash2_32_gc('time', HASH_SEED)] = 'time';
-function executeDynamicExpression(byteCode, renderAttributes = []) {
-    let pointer = -1;
-    const storage = {};
-    stack = [];
-    let storeAddress;
-    let location;
-    while (pointer < byteCode.length) {
-        ++pointer;
-        const opcode = byteCode[pointer];
-        switch (opcode) {
-            case 0: // stop
-                return stack.pop();
-            case 2: // goto
-                location = getlocation(byteCode, pointer + 1);
-                if ((location >= 0) && (location < byteCode.length)) {
-                    pointer = location - 1;
-                }
-                else {
-                    //TODO: error message
-                    return null;
-                }
-                break;
-            case 4: // ?
-                const conditionalValue = stack.pop();
-                // Only the first value is tested
-                location = conditionalValue[0] ? getlocation(byteCode, pointer + 1) : getlocation(byteCode, pointer + 3);
-                if ((location >= 0) && (location < byteCode.length)) {
-                    pointer = location - 1;
-                }
-                else {
-                    //TODO: error message
-                    return null;
-                }
-                break;
-            case 6: // function
-                const functionCode = getlocation(byteCode, pointer + 1);
-                if (functionCode >= 0) {
-                    processFunction(functionCode);
-                    pointer += 2;
-                }
-                else {
-                    //TODO: error message
-                    return null;
-                }
-                break;
-            case 7: // float32
-                stack.push(getFloat32(byteCode, pointer + 1));
-                pointer += 4;
-                break;
-            case 8: // save
-                storeAddress = getByte(byteCode, pointer + 1);
-                if (storeAddress >= 0) {
-                    storage[storeAddress] = stack.pop();
-                    pointer += 1;
-                }
-                else {
-                    //TODO: error message
-                    return null;
-                }
-                break;
-            case 9: // restore
-                storeAddress = getByte(byteCode, pointer + 1);
-                if (storeAddress >= 0) {
-                    stack.push(storage[storeAddress]);
-                    pointer += 1;
-                }
-                else {
-                    //TODO: error message
-                    return null;
-                }
-                break;
-            case 12:
-                not();
-                break;
-            case 13: // ==
-                equality();
-                break;
-            case 14: // !=
-                inequality();
-                break;
-            case 15: // >
-                greater();
-                break;
-            case 16: // >=
-                greaterEqual();
-                break;
-            case 17: // <
-                less();
-                break;
-            case 18: // <=
-                lessEqual();
-                break;
-            case 19: // +
-                add();
-                break;
-            case 20: // -
-                subtract();
-                break;
-            case 21: // *
-                multiply();
-                break;
-            case 22: // /
-                divide();
-                break;
-            case 23: // %
-                modulo();
-                break;
-            case 24: // negate
-                negation();
-                break;
-            case 25: // get value
-                const intValue = (byteCode[pointer + 1] + (byteCode[pointer + 2] << 8) + (byteCode[pointer + 3] << 16) + (byteCode[pointer + 4] << 24)) >>> 0;
-                let stringValue = hashes[intValue];
-                if (!stringValue) {
-                    for (let renderAttribute of renderAttributes) {
-                        renderAttribute = renderAttribute.toLowerCase();
-                        hashes[murmurhash2_32_gc(renderAttribute, HASH_SEED)] = renderAttribute;
-                    }
-                    stringValue = hashes[intValue];
-                }
-                if (stringValue) {
-                    let value = 0;
-                    if (stringValue === 'time') {
-                        value = performance.now() * 0.001;
-                    }
-                    stack.push(vec4.fromValues(value, value, value, value));
-                }
-                pointer += 4;
-                break;
-            //see m_renderAttributesUsed
-            //time : 0: 25 1: 204 2: 133 3: 68 4: 150 5: 0
-            //$gemcolor: 0: 25 1: 230 2: 22 3: 70 4: 81 5: 0
-            //a: 0: 25 1: 225 2: 113 3: 207 4: 30 5: 0
-            //b: 0: 25 1: 42 2: 183 3: 253 4: 183 5: 0
-            //B: 0: 25 1: 42 2: 183 3: 253 4: 183 5: 0
-            //$a: 0: 25 1: 96 2: 46 3: 222 4: 5 5: 0
-            //??? 0: 25 1: 252 2: 99 3: 114 4: 40 5: 0 ==> $PA_ARCANA_DETAIL1SCALE
-            //$gem 0: 25 1: 150 2: 173 3: 217 4: 104 5: 0
-            case 30:
-                swizzle(getByte(byteCode, ++pointer));
-                break;
-            case 31: // exist
-                stack.push(vec4.fromValues(0, 0, 0, 0)); //TODO get an external var
-                pointer += 4;
-                break;
-        }
-    }
-}
-function processFunction(functionCode) {
-    let a, b, c, d;
-    switch (functionCode) {
-        case 0: // sin
-            sin();
-            break;
-        case 1: // cos
-            cos();
-            break;
-        case 2: // tan
-            tan();
-            break;
-        case 3: // frac
-            frac();
-            break;
-        case 4: // floor
-            floor();
-            break;
-        case 5: // ceil
-            ceil();
-            break;
-        case 6: // saturate
-            saturate();
-            break;
-        case 7: // clamp
-            a = stack.pop();
-            b = stack.pop();
-            c = stack.pop();
-            a[0] = clamp(c[0], b[0], a[0]);
-            a[1] = clamp(c[1], b[1], a[1]);
-            a[2] = clamp(c[2], b[2], a[2]);
-            a[3] = clamp(c[3], b[3], a[3]);
-            stack.push(a);
-            break;
-        case 8: // lerp
-            const factor = stack.pop();
-            const second = stack.pop();
-            const first = stack.pop();
-            first[0] = first[0] + factor[0] * (second[0] - first[0]);
-            first[1] = first[1] + factor[1] * (second[1] - first[1]);
-            first[2] = first[2] + factor[2] * (second[2] - first[2]);
-            first[3] = first[3] + factor[3] * (second[3] - first[3]);
-            stack.push(first);
-            break;
-        case 9: // dot4
-            dot4();
-            break;
-        case 10: // dot3
-            dot3();
-            break;
-        case 11: // dot2
-            dot2();
-            break;
-        case 12: // log
-            log();
-            break;
-        case 13: // log2
-            log2();
-            break;
-        case 14: // log10
-            log10();
-            break;
-        case 15: // exp
-            exp();
-            break;
-        case 16: // exp2
-            exp2();
-            break;
-        case 17: // sqrt
-            sqrt();
-            break;
-        case 18: // rsqrt
-            rsqrt();
-            break;
-        case 19: // sign
-            sign();
-            break;
-        case 20: // abs
-            abs();
-            break;
-        case 21: // pow
-            pow();
-            break;
-        case 22: // step
-            step$1();
-            break;
-        case 23: // smoothstep
-            smoothstep();
-            break;
-        case 24: // float4
-            a = stack.pop();
-            b = stack.pop();
-            c = stack.pop();
-            d = stack.pop();
-            stack.push(vec4.fromValues(d[0], c[0], b[0], a[0]));
-            break;
-        case 25: // float3
-            a = stack.pop();
-            b = stack.pop();
-            c = stack.pop();
-            stack.push(vec4.fromValues(c[0], b[0], a[0], a[0]));
-            break;
-        case 26: // float2
-            a = stack.pop();
-            b = stack.pop();
-            stack.push(vec4.fromValues(b[0], a[0], a[0], a[0]));
-            break;
-        case 27: // time
-            const time = performance.now() * 0.001;
-            stack.push(vec4.fromValues(time, time, time, time));
-            break;
-        case 28: // min
-            min$1();
-            break;
-        case 29: // max
-            max$1();
-            break;
-        case 30:
-            SrgbLinearToGamma();
-            break;
-        case 31:
-            SrgbGammaToLinear();
-            break;
-        case 32: // random
-            random$1();
-            break;
-        case 33:
-            normalize$1();
-            break;
-        case 34:
-            length$1();
-            break;
-        case 35:
-            sqr();
-            break;
-    }
-}
-function getByte(b, offset) {
-    return (offset > b.length - 1) ? -1 : b[0 + offset];
-}
-function getFloat32(b, offset) {
-    const sign = 1 - (2 * (b[3 + offset] >> 7)), exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127, mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
-    let ret;
-    if (exponent === 128) {
-        if (mantissa !== 0) {
-            ret = NaN;
-        }
-        else {
-            ret = sign * Infinity;
-        }
-    }
-    else if (exponent === -127) { // Denormalized
-        ret = sign * mantissa * pow2(-126 - 23);
-    }
-    else {
-        ret = sign * (1 + mantissa * pow2(-23)) * pow2(exponent);
-    }
-    return vec4.fromValues(ret, ret, ret, ret);
-}
-function getlocation(b, offset) {
-    return (offset > b.length - 2) ? -1 : (b[1 + offset] << 8) | b[0 + offset];
-}
-function getRandomArbitrary(min, max) {
-    return Math.random() * (max - min) + min;
-}
-function not() {
-    const a = stack.pop();
-    a[0] = !a[0];
-    a[1] = !a[1];
-    a[2] = !a[2];
-    a[3] = !a[3];
-    stack.push(a);
-}
-function equality() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] == a[0];
-    a[1] = b[1] == a[1];
-    a[2] = b[2] == a[2];
-    a[3] = b[3] == a[3];
-    stack.push(a);
-}
-function inequality() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] != a[0];
-    a[1] = b[1] != a[1];
-    a[2] = b[2] != a[2];
-    a[3] = b[3] != a[3];
-    stack.push(a);
-}
-function greater() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] > a[0];
-    a[1] = b[1] > a[1];
-    a[2] = b[2] > a[2];
-    a[3] = b[3] > a[3];
-    stack.push(a);
-}
-function greaterEqual() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] >= a[0];
-    a[1] = b[1] >= a[1];
-    a[2] = b[2] >= a[2];
-    a[3] = b[3] >= a[3];
-    stack.push(a);
-}
-function less() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] < a[0];
-    a[1] = b[1] < a[1];
-    a[2] = b[2] < a[2];
-    a[3] = b[3] < a[3];
-    stack.push(a);
-}
-function lessEqual() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] <= a[0];
-    a[1] = b[1] <= a[1];
-    a[2] = b[2] <= a[2];
-    a[3] = b[3] <= a[3];
-    stack.push(a);
-}
-function add() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] + a[0];
-    a[1] = b[1] + a[1];
-    a[2] = b[2] + a[2];
-    a[3] = b[3] + a[3];
-    stack.push(a);
-}
-function subtract() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] - a[0];
-    a[1] = b[1] - a[1];
-    a[2] = b[2] - a[2];
-    a[3] = b[3] - a[3];
-    stack.push(a);
-}
-function multiply() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] * a[0];
-    a[1] = b[1] * a[1];
-    a[2] = b[2] * a[2];
-    a[3] = b[3] * a[3];
-    stack.push(a);
-}
-function divide() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] / a[0];
-    a[1] = b[1] / a[1];
-    a[2] = b[2] / a[2];
-    a[3] = b[3] / a[3];
-    stack.push(a);
-}
-function modulo() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] % a[0];
-    a[1] = b[1] % a[1];
-    a[2] = b[2] % a[2];
-    a[3] = b[3] % a[3];
-    stack.push(a);
-}
-function negation() {
-    const a = stack.pop();
-    a[0] = -a[0];
-    a[1] = -a[1];
-    a[2] = -a[2];
-    a[3] = -a[3];
-    stack.push(a);
-}
-function swizzle(code) {
-    const a = stack.pop();
-    a[0] = a[(code >> 0) & 3];
-    a[1] = a[(code >> 2) & 3];
-    a[2] = a[(code >> 4) & 3];
-    a[3] = a[(code >> 6) & 3];
-    stack.push(a);
-}
-// Functions
-function sin() {
-    const a = stack.pop();
-    a[0] = Math.sin(a[0]);
-    a[1] = Math.sin(a[1]);
-    a[2] = Math.sin(a[2]);
-    a[3] = Math.sin(a[3]);
-    stack.push(a);
-}
-function cos() {
-    const a = stack.pop();
-    a[0] = Math.cos(a[0]);
-    a[1] = Math.cos(a[1]);
-    a[2] = Math.cos(a[2]);
-    a[3] = Math.cos(a[3]);
-    stack.push(a);
-}
-function tan() {
-    const a = stack.pop();
-    a[0] = Math.tan(a[0]);
-    a[1] = Math.tan(a[1]);
-    a[2] = Math.tan(a[2]);
-    a[3] = Math.tan(a[3]);
-    stack.push(a);
-}
-function frac() {
-    const a = stack.pop();
-    a[0] = a[0] % 1;
-    a[1] = a[1] % 1;
-    a[2] = a[2] % 1;
-    a[3] = a[3] % 1;
-    stack.push(a);
-}
-function floor() {
-    const a = stack.pop();
-    a[0] = Math.floor(a[0]);
-    a[1] = Math.floor(a[1]);
-    a[2] = Math.floor(a[2]);
-    a[3] = Math.floor(a[3]);
-    stack.push(a);
-}
-function ceil() {
-    const a = stack.pop();
-    a[0] = Math.ceil(a[0]);
-    a[1] = Math.ceil(a[1]);
-    a[2] = Math.ceil(a[2]);
-    a[3] = Math.ceil(a[3]);
-    stack.push(a);
-}
-function saturate() {
-    const a = stack.pop();
-    a[0] = clamp(a[0], 0, 1);
-    a[1] = clamp(a[1], 0, 1);
-    a[2] = clamp(a[2], 0, 1);
-    a[3] = clamp(a[3], 0, 1);
-    stack.push(a);
-}
-function dot4() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = a[1] = a[2] = a[3] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
-    stack.push(a);
-}
-function dot3() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = a[1] = a[2] = a[3] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    stack.push(a);
-}
-function dot2() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = a[1] = a[2] = a[3] = a[0] * b[0] + a[1] * b[1];
-    stack.push(a);
-}
-function log() {
-    const a = stack.pop();
-    a[0] = Math.log(a[0]);
-    a[1] = Math.log(a[1]);
-    a[2] = Math.log(a[2]);
-    a[3] = Math.log(a[3]);
-    stack.push(a);
-}
-function log2() {
-    const a = stack.pop();
-    a[0] = Math.log2(a[0]);
-    a[1] = Math.log2(a[1]);
-    a[2] = Math.log2(a[2]);
-    a[3] = Math.log2(a[3]);
-    stack.push(a);
-}
-function log10() {
-    const a = stack.pop();
-    a[0] = Math.log10(a[0]);
-    a[1] = Math.log10(a[1]);
-    a[2] = Math.log10(a[2]);
-    a[3] = Math.log10(a[3]);
-    stack.push(a);
-}
-function exp() {
-    const a = stack.pop();
-    a[0] = Math.exp(a[0]);
-    a[1] = Math.exp(a[1]);
-    a[2] = Math.exp(a[2]);
-    a[3] = Math.exp(a[3]);
-    stack.push(a);
-}
-function exp2() {
-    const a = stack.pop();
-    a[0] = 2 ** a[0];
-    a[1] = 2 ** a[1];
-    a[2] = 2 ** a[2];
-    a[3] = 2 ** a[3];
-    stack.push(a);
-}
-function sqrt() {
-    const a = stack.pop();
-    a[0] = Math.sqrt(a[0]);
-    a[1] = Math.sqrt(a[1]);
-    a[2] = Math.sqrt(a[2]);
-    a[3] = Math.sqrt(a[3]);
-    stack.push(a);
-}
-function rsqrt() {
-    const a = stack.pop();
-    a[0] = 1 / Math.sqrt(a[0]);
-    a[1] = 1 / Math.sqrt(a[1]);
-    a[2] = 1 / Math.sqrt(a[2]);
-    a[3] = 1 / Math.sqrt(a[3]);
-    stack.push(a);
-}
-function sign() {
-    const a = stack.pop();
-    a[0] = Math.sign(a[0]);
-    a[1] = Math.sign(a[1]);
-    a[2] = Math.sign(a[2]);
-    a[3] = Math.sign(a[3]);
-    stack.push(a);
-}
-function abs() {
-    const a = stack.pop();
-    a[0] = Math.abs(a[0]);
-    a[1] = Math.abs(a[1]);
-    a[2] = Math.abs(a[2]);
-    a[3] = Math.abs(a[3]);
-    stack.push(a);
-}
-function pow() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] ** a[0];
-    a[1] = b[1] ** a[1];
-    a[2] = b[2] ** a[2];
-    a[3] = b[3] ** a[3];
-    stack.push(a);
-}
-function step$1() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = b[0] >= a[0] ? 1 : 0;
-    a[1] = b[1] >= a[1] ? 1 : 0;
-    a[2] = b[2] >= a[2] ? 1 : 0;
-    a[3] = b[3] >= a[3] ? 1 : 0;
-    stack.push(a);
-}
-function _smoothstep(min, max, x) {
-    x = clamp((x - min) / (max - min), 0.0, 1.0);
-    return x * x * (3 - 2 * x);
-}
-function smoothstep() {
-    const x = stack.pop();
-    const max = stack.pop();
-    const min = stack.pop();
-    x[0] = _smoothstep(min[0], max[0], x[0]);
-    x[1] = _smoothstep(min[1], max[1], x[1]);
-    x[2] = _smoothstep(min[2], max[2], x[2]);
-    x[3] = _smoothstep(min[3], max[3], x[3]);
-    stack.push(x);
-}
-function min$1() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = Math.min(b[0], a[0]);
-    a[1] = Math.min(b[1], a[1]);
-    a[2] = Math.min(b[2], a[2]);
-    a[3] = Math.min(b[3], a[3]);
-    stack.push(a);
-}
-function max$1() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = Math.max(b[0], a[0]);
-    a[1] = Math.max(b[1], a[1]);
-    a[2] = Math.max(b[2], a[2]);
-    a[3] = Math.max(b[3], a[3]);
-    stack.push(a);
-}
-function SrgbLinearToGamma() {
-    const a = stack.pop();
-    //saturate
-    a[0] = Math.min(Math.max(a[0], 0), 1);
-    a[1] = Math.min(Math.max(a[1], 0), 1);
-    a[2] = Math.min(Math.max(a[2], 0), 1);
-    a[3] = Math.min(Math.max(a[3], 0), 1);
-    a[0] = (a[0] <= 0.0031308) ? (a[0] * 12.92) : (1.055 * Math.pow(a[0], (1.0 / 2.4))) - 0.055;
-    a[1] = (a[1] <= 0.0031308) ? (a[1] * 12.92) : (1.055 * Math.pow(a[1], (1.0 / 2.4))) - 0.055;
-    a[2] = (a[2] <= 0.0031308) ? (a[2] * 12.92) : (1.055 * Math.pow(a[2], (1.0 / 2.4))) - 0.055;
-    a[3] = (a[3] <= 0.0031308) ? (a[3] * 12.92) : (1.055 * Math.pow(a[3], (1.0 / 2.4))) - 0.055;
-    stack.push(a);
-}
-function SrgbGammaToLinear() {
-    const a = stack.pop();
-    //saturate
-    a[0] = Math.min(Math.max(a[0], 0), 1);
-    a[1] = Math.min(Math.max(a[1], 0), 1);
-    a[2] = Math.min(Math.max(a[2], 0), 1);
-    a[3] = Math.min(Math.max(a[3], 0), 1);
-    a[0] = (a[0] <= 0.04045) ? (a[0] / 12.92) : (Math.pow((a[0] + 0.055) / 1.055, 2.4));
-    a[1] = (a[1] <= 0.04045) ? (a[1] / 12.92) : (Math.pow((a[1] + 0.055) / 1.055, 2.4));
-    a[2] = (a[2] <= 0.04045) ? (a[2] / 12.92) : (Math.pow((a[2] + 0.055) / 1.055, 2.4));
-    a[3] = (a[3] <= 0.04045) ? (a[3] / 12.92) : (Math.pow((a[3] + 0.055) / 1.055, 2.4));
-    stack.push(a);
-}
-function random$1() {
-    const a = stack.pop();
-    const b = stack.pop();
-    a[0] = getRandomArbitrary(b[0], a[0]);
-    a[1] = getRandomArbitrary(b[1], a[1]);
-    a[2] = getRandomArbitrary(b[2], a[2]);
-    a[3] = getRandomArbitrary(b[3], a[3]);
-    stack.push(a);
-}
-function normalize$1() {
-    const a = stack.pop();
-    vec3.normalize(a, a);
-    stack.push(a);
-}
-function length$1() {
-    const a = stack.pop();
-    a[0] = a[1] = a[2] = a[3] = Math.hypot(a[0], a[1], a[2]);
-    stack.push(a);
-}
-function sqr() {
-    const a = stack.pop();
-    a[0] = a[0] * a[0];
-    a[1] = a[1] * a[1];
-    a[2] = a[2] * a[2];
-    a[3] = a[3] * a[3];
-    stack.push(a);
-}
-
 const Source2TextureLoader = new (function () {
     class Source2TextureLoader {
-        constructor() {
-        }
         async load(repository, path) {
             path = path.replace(/.vtex_c/, '');
             return await new Source2FileLoader(true).load(repository, path + '.vtex_c');
@@ -56550,6 +56534,7 @@ const Source2TextureLoader = new (function () {
 }());
 
 class Source2TextureManagerClass extends EventTarget {
+    #vtexList = new Map2();
     #texturesList = new Map();
     #loadingTexturesList = new Map();
     #defaultTexture;
@@ -56573,9 +56558,21 @@ class Source2TextureManagerClass extends EventTarget {
         const texture = await this.#getTexture(repository, path);
         return texture ? texture.getFrame(frame) : this.#defaultTexture; //TODOv3
     }
+    async getVtex(repository, path) {
+        // TODO: fix that concurent calls of the same texture will load it multiple times
+        let vtex = this.#vtexList.get(repository, path);
+        if (vtex !== undefined) {
+            return vtex;
+        }
+        vtex = await Source2TextureLoader.load(repository, path);
+        if (vtex) {
+            this.#vtexList.set(repository, path, vtex);
+        }
+        return vtex;
+    }
     async getTextureSheet(repository, path) {
         const texture = await this.#getTexture(repository, path);
-        return texture?.properties.get('vtex')?.getBlockByType('DATA')?.spriteSheet;
+        return texture?.properties.get('vtex')?.getBlockByType('DATA')?.spriteSheet ?? null;
     }
     async #getTexture(repository, path) {
         path = path.replace(/.vtex_c$/, '').replace(/.vtex$/, '');
@@ -56587,10 +56584,13 @@ class Source2TextureManagerClass extends EventTarget {
         if (!this.#texturesList.has(fullPath)) {
             const animatedTexture = new AnimatedTexture();
             const promise = new Promise(async (resolve) => {
-                const vtex = await Source2TextureLoader.load(repository, path);
+                //const vtex = await Source2TextureLoader.load(repository, path);
+                const vtex = await this.getVtex(repository, path);
                 animatedTexture.properties.set('vtex', vtex);
                 const texture = TextureManager.createTexture(); //TODOv3: add params
-                this.#initTexture(texture.texture, vtex);
+                if (vtex) {
+                    this.#initTexture(texture.texture, vtex);
+                }
                 animatedTexture.addFrame(0, texture);
                 resolve(animatedTexture);
             });
@@ -56604,10 +56604,7 @@ class Source2TextureManagerClass extends EventTarget {
     setTexture(path, texture) {
         this.#texturesList.set(path, texture);
     }
-    #initTexture(texture, vtexFile /*TODO: improve type*/) {
-        if (!texture || !vtexFile) {
-            return;
-        }
+    #initTexture(texture, vtexFile) {
         const imageData = vtexFile.blocks.DATA.imageData;
         const imageFormat = vtexFile.imageFormat;
         if (imageData) {
@@ -56793,6 +56790,10 @@ class Source2TextureManagerClass extends EventTarget {
 }
 const Source2TextureManager = new Source2TextureManagerClass();
 
+const hashes = {};
+const HASH_SEED = 0x31415926;
+hashes[murmurhash2_32_gc('time', HASH_SEED)] = 'time';
+
 const UNIFORMS = new Map([
     ['g_vColorTint', 'g_vColorTint'],
     ['g_vEmissiveColor', 'g_vEmissiveColor'],
@@ -56962,12 +56963,13 @@ class Source2Material extends Material {
     }
     getTextureByName(textureName) {
         if (this.#source2File) {
-            const textures = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_textureParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_textureParams');
+            //TODO: use getMaterialResourceData()
+            const textures = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_textureParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_textureParams');
             if (textures) {
                 for (let textureIndex = 0; textureIndex < textures.length; textureIndex++) {
                     const texture = textures[textureIndex];
-                    if (texture.m_name == textureName) {
-                        return texture.m_pValue;
+                    if (texture.getValueAsString('m_name') == textureName) {
+                        return texture.getValueAsResource('m_pValue');
                     }
                 }
             }
@@ -57047,7 +57049,11 @@ class Source2Material extends Material {
             const floats = this.#source2File.getMaterialResourceData('m_floatParams');
             if (floats) {
                 for (const fl of floats) {
-                    this.setUniform(fl.m_name, fl.m_flValue);
+                    const name = fl.getValueAsString('m_name');
+                    const value = fl.getValueAsNumber('m_flValue');
+                    if (name !== null && value !== null) {
+                        this.setUniform(name, value);
+                    }
                 }
             }
         }
@@ -57057,7 +57063,11 @@ class Source2Material extends Material {
             const vectors = this.#source2File.getMaterialResourceData('m_vectorParams');
             if (vectors) {
                 for (const vector of vectors) {
-                    this.setUniform(vector.m_name, vector.m_value);
+                    const name = vector.getValueAsString('m_name');
+                    const value = vector.getValueAsNumberArray('m_value');
+                    if (name !== null && value !== null) {
+                        this.setUniform(name, value);
+                    }
                 }
             }
         }
@@ -57099,7 +57109,7 @@ class Source2Material extends Material {
     }
     getIntParam(intName) {
         if (this.#source2File) {
-            const ints = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_intParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_intParams');
+            const ints = this.#source2File.getBlockStruct('DATA', 'MaterialResourceData_t.m_intParams') ?? this.#source2File.getBlockStruct('DATA', 'm_intParams');
             if (ints) {
                 for (let intIndex = 0; intIndex < ints.length; intIndex++) {
                     const fl = ints[intIndex];
@@ -57113,7 +57123,7 @@ class Source2Material extends Material {
     }
     getFloatParam(floatName) {
         if (this.#source2File) {
-            const floats = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_floatParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_floatParams');
+            const floats = this.#source2File.getBlockStruct('DATA', 'MaterialResourceData_t.m_floatParams') ?? this.#source2File.getBlockStruct('DATA', 'm_floatParams');
             if (floats) {
                 for (let floatIndex = 0; floatIndex < floats.length; floatIndex++) {
                     const fl = floats[floatIndex];
@@ -57127,7 +57137,7 @@ class Source2Material extends Material {
     }
     getVectorParam(vectorName) {
         if (this.#source2File) {
-            const vectors = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_vectorParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_vectorParams');
+            const vectors = this.#source2File.getBlockStruct('DATA', 'MaterialResourceData_t.m_vectorParams') ?? this.#source2File.getBlockStruct('DATA', 'm_vectorParams');
             if (vectors) {
                 for (let vectorIndex = 0; vectorIndex < vectors.length; vectorIndex++) {
                     const vector = vectors[vectorIndex];
@@ -57141,13 +57151,11 @@ class Source2Material extends Material {
     }
     getDynamicParam(dynamicName) {
         if (this.#source2File) {
-            const dynamicParams = this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_dynamicParams') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
+            const dynamicParams = this.#source2File.getBlockStruct('DATA', 'm_dynamicParams'); // || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
             if (dynamicParams) {
                 for (let dynamicIndex = 0; dynamicIndex < dynamicParams.length; dynamicIndex++) {
-                    const dynamicParam = dynamicParams[dynamicIndex];
-                    if (dynamicParam.m_name == dynamicName) {
-                        return executeDynamicExpression(dynamicParam.m_value, this.#source2File.getBlockStruct('DATA.structs.MaterialResourceData_t.m_renderAttributesUsed') || this.#source2File.getBlockStruct('DATA.keyValue.root.m_renderAttributesUsed'));
-                    }
+                    dynamicParams[dynamicIndex];
+                    throw 'TODO: check strict type getDynamicParam';
                 }
             }
         }
@@ -57967,6 +57975,33 @@ class Source2Unlit extends Source2Material {
 }
 Source2MaterialLoader.registerMaterial('unlit.vfx', Source2Unlit);
 
+/**
+ * Kv3Array
+ */
+class Kv3Array {
+    values = [];
+    push(value) {
+        this.values.push(value);
+    }
+    getValue(index /*yes it's a string*/) {
+        return this.values[Number(index)];
+    }
+    exportAsText(linePrefix) {
+        const out = [];
+        const linePrefix2 = linePrefix + '\t';
+        out.push('\r\n');
+        out.push(linePrefix);
+        out.push('[\r\n');
+        for (const val of this.values) {
+            out.push(val.exportAsText(linePrefix2));
+            out.push(',\r\n');
+        }
+        out.push(linePrefix);
+        out.push(']');
+        return out.join('');
+    }
+}
+
 const COLOR_SCALE = 1 / 255;
 function vec4Scale(out, a, b) {
     out[0] = Number(a[0]) * b;
@@ -58012,7 +58047,7 @@ class Operator {
     setParam(paramName, value) {
         if (value instanceof Kv3Array) {
             const arr = [];
-            for (const v of value.properties) {
+            for (const v of value.values) {
                 if (typeof v == 'bigint') {
                     arr.push(Number(v));
                 }
@@ -62373,72 +62408,72 @@ vec3.create();
 //const tempQuat = quat.create();
 vec3.create();
 class PositionLock extends Operator {
-    startTimeMin = 1;
-    startTimeMax = 1;
-    startTimeExp = 1;
-    endTimeMin = 1;
-    endTimeMax = 1;
-    endTimeExp = 1;
-    range = 0;
-    jumpThreshold = 512;
-    prevPosScale = 1;
-    lockRot = false;
-    startFadeOutTime;
-    endFadeOutTime;
+    #startTimeMin = 1;
+    #startTimeMax = 1;
+    #startTimeExp = 1;
+    #endTimeMin = 1;
+    #endTimeMax = 1;
+    #endTimeExp = 1;
+    #range = 0;
+    #jumpThreshold = 512;
+    #prevPosScale = 1;
+    #lockRot = false;
+    #startFadeOutTime = 0;
+    #endFadeOutTime = 0;
     constructor(system) {
         super(system);
         this._update();
     }
     _update() {
         //TODO: this is wrong: must be done per particle
-        this.startFadeOutTime = RandomFloatExp(this.startTimeMin, this.startTimeMax, this.startTimeExp);
-        this.endFadeOutTime = RandomFloatExp(this.endTimeMin, this.endTimeMax, this.endTimeExp);
+        this.#startFadeOutTime = RandomFloatExp(this.#startTimeMin, this.#startTimeMax, this.#startTimeExp);
+        this.#endFadeOutTime = RandomFloatExp(this.#endTimeMin, this.#endTimeMax, this.#endTimeExp);
     }
     _paramChanged(paramName, value) {
         switch (paramName) {
             case 'm_flStartTime_min':
-                this.startTimeMin = value;
+                this.#startTimeMin = value;
                 this._update();
                 break;
             case 'm_flStartTime_max':
-                this.startTimeMax = value;
+                this.#startTimeMax = value;
                 this._update();
                 break;
             case 'm_flStartTime_exp':
-                this.startTimeExp = value;
+                this.#startTimeExp = value;
                 this._update();
                 break;
             case 'm_flEndTime_min':
-                this.endTimeMin = value;
+                this.#endTimeMin = value;
                 this._update();
                 break;
             case 'm_flEndTime_max':
-                this.endTimeMax = value;
+                this.#endTimeMax = value;
                 this._update();
                 break;
             case 'm_flEndTime_exp':
-                this.endTimeExp = value;
+                this.#endTimeExp = value;
                 this._update();
                 break;
             case 'm_flRange':
-                this.range = value;
+                this.#range = value;
                 break;
             case 'm_flJumpThreshold':
-                this.jumpThreshold = value;
+                this.#jumpThreshold = value;
                 break;
             case 'm_flPrevPosScale':
-                this.prevPosScale = value;
+                this.#prevPosScale = value;
                 break;
             case 'm_bLockRot':
-                this.lockRot = value;
+                this.#lockRot = value;
                 break;
             default:
                 super._paramChanged(paramName, value);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         const proportionOfLife = clamp(particle.proportionOfLife, 0, 1);
-        if (proportionOfLife > this.endFadeOutTime) {
+        if (proportionOfLife > this.#endFadeOutTime) {
             return;
         }
         const cp = this.system.getControlPoint(this.controlPointNumber);
@@ -62449,21 +62484,21 @@ class PositionLock extends Operator {
                 } else {
                     vec3.copy(particle.initialCPPosition, particle.cpPosition);
                 }
-    
+
                 particle.cpPosition = vec3.clone(cp.getWorldPosition(vec));
-    
+
                 let delta = vec3.subtract(vec3.create(), particle.cpPosition, particle.initialCPPosition);
-    
+
                 const deltaL = vec3.length(delta);
                 particle.deltaL = particle.deltaL ?? 0;
                 particle.deltaL += deltaL;
-    
+
                 //console.log(deltaL);
                 if (this.range != 0 && particle.deltaL > this.range) {
                     particle.posLockedToCP = -1;
                 }*/
             //TODO: use m_flRange and other parameters
-            if (this.lockRot) {
+            if (this.#lockRot) {
                 delta = cp.deltaWorldTransformation;
                 vec3.transformMat4(particle.position, particle.position, delta);
                 vec3.transformMat4(particle.prevPosition, particle.prevPosition, delta);
@@ -63838,7 +63873,7 @@ class RenderRopes extends Operator {
     textureVWorldSize = 10;
     textureVScrollRate = 10;
     textureScroll = 0;
-    #spriteSheet;
+    #spriteSheet = null;
     #maxParticles = 1000; //TODO: default value
     #texture;
     #imgData;
@@ -64015,7 +64050,7 @@ class RenderSprites extends RenderBase {
     setDefaultTexture = true; //TODO: remove this property
     #minSize = 0.0;
     #maxSize = 5000.0;
-    spriteSheet;
+    #spriteSheet = null;
     #maxParticles = 0;
     texture = TextureManager.createTexture();
     imgData; //TODO: set private ?
@@ -64070,7 +64105,7 @@ class RenderSprites extends RenderBase {
     async setTexture(texturePath) {
         this.setDefaultTexture = false;
         this.material.setTexturePath(texturePath);
-        this.spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
+        this.#spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
     }
     updateParticles(particleSystem, particleList, elapsedTime) {
         const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
@@ -64099,9 +64134,8 @@ class RenderSprites extends RenderBase {
                 }
             }
             particle.frame += elapsedTime;
-            const spriteSheet = this.spriteSheet;
-            if (spriteSheet) {
-                let coords = spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords; //sequences[particle.sequence].frames[particle.frame].coords;
+            if (this.#spriteSheet) {
+                let coords = this.#spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords; //sequences[particle.sequence].frames[particle.frame].coords;
                 //coords = coords.m_TextureCoordData[0];
                 if (coords) {
                     const uMin = coords[0];
@@ -64117,7 +64151,7 @@ class RenderSprites extends RenderBase {
                     uvs[index++] = uMax;
                     uvs[index++] = vMax;
                 }
-                coords = spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0)?.coords; //sequences[particle.sequence].frames[particle.frame].coords;
+                coords = this.#spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0)?.coords; //sequences[particle.sequence].frames[particle.frame].coords;
                 //coords = coords.m_TextureCoordData[0];
                 if (coords) {
                     const uMin = coords[0];
@@ -64257,7 +64291,7 @@ class RenderTrails extends Operator {
     lengthFadeInTime = 0;
     ignoreDT = false;
     lengthScale = 1;
-    spriteSheet;
+    spriteSheet = null;
     #maxParticles = 1000; //TODO: default value
     texture; //TODO: set private ?
     imgData; //TODO: set private ?

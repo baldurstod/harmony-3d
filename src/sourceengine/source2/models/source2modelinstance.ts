@@ -26,14 +26,14 @@ const defaultMaterial = new MeshBasicMaterial();
 
 export class Source2ModelInstance extends Entity implements Animated {
 	isSource2ModelInstance = true;
-	#skeleton;
+	#skeleton: Skeleton | null = null;
 	#skin = 0;
 	#materialsUsed = new Set<Material>();
 	#animName;
 	animable = true;
 	#lod = 1n;
 	bodyParts = {};
-	poseParameters = {};
+	poseParameters: Record<string, number> = {};
 	meshes = new Set<Mesh>();
 	attachments = new Map<string, Source2ModelAttachmentInstance>();
 	activity = '';
@@ -43,13 +43,16 @@ export class Source2ModelInstance extends Entity implements Animated {
 	animationSpeed = 1.0;
 	sourceModel: Source2Model;
 	hasAnimations: true = true;
-	#bodyGroups = new Map<string, number>();
+	#bodyGroups = new Map<string, number | undefined>();
 
-	constructor(sourceModel: Source2Model, isDynamic) {
+	static {
 		defaultMaterial.addUser(Source2ModelInstance);
+	}
+
+	constructor(sourceModel: Source2Model, isDynamic: boolean) {
 		super();
 		this.sourceModel = sourceModel;
-		this.name = sourceModel?.vmdl?.displayName;
+		this.name = sourceModel?.vmdl?.getDisplayName();
 		if (isDynamic) {
 			this.#skeleton = new Skeleton({ name: `Skeleton ${this.name}` });
 			this.addChild(this.#skeleton);
@@ -98,8 +101,8 @@ export class Source2ModelInstance extends Entity implements Animated {
 			const geometry = mesh.geometry;
 			mesh.setVisible(undefined);
 			if (geometry) {
-				const meshGroupMask = BigInt(geometry.properties.get('mesh_group_mask'));
-				const lodGroupMask = BigInt(geometry.properties.get('lodGroupMask'));
+				const meshGroupMask = geometry.properties.getBigint('mesh_group_mask') ?? 0xFFFFFFFFFFFFFFFFn;
+				const lodGroupMask = BigInt(geometry.properties.getBigint('lodGroupMask') ?? geometry.properties.getNumber('lodGroupMask') ?? 0);
 				mesh.setVisible((meshGroupMask & mask) > 0 ? undefined : false);
 
 				if (lodGroupMask && ((lodGroupMask & this.#lod) == 0n)) {
@@ -124,13 +127,13 @@ export class Source2ModelInstance extends Entity implements Animated {
 		return vec3.clone(this._position);
 	}
 
-	addChild(child) {
+	addChild(child: Entity) {
 		if (!child) {
 			return;
 		}
 		const ret = super.addChild(child);
-		if (child.skeleton) {
-			child.skeleton.setParentSkeleton(this.#skeleton);
+		if ((child as any).skeleton) {
+			(child as any).skeleton.setParentSkeleton(this.#skeleton);
 		}
 		/*if (child instanceof Source2ModelInstance) {
 			for (let mesh of child.meshes) {
@@ -145,10 +148,10 @@ export class Source2ModelInstance extends Entity implements Animated {
 		return ret;
 	}
 
-	removeChild(child) {
+	removeChild(child: Entity) {
 		super.removeChild(child);
-		if (child.skeleton) {
-			child.skeleton.setParentSkeleton(null);
+		if ((child as any).skeleton) {
+			(child as any).skeleton.setParentSkeleton(null);
 		}
 	}
 
@@ -171,7 +174,7 @@ export class Source2ModelInstance extends Entity implements Animated {
 		});
 	}
 
-	setPoseParameter(paramName, paramValue) {
+	setPoseParameter(paramName: string, paramValue: number) {
 		this.poseParameters[paramName] = paramValue;
 	}
 
@@ -256,10 +259,10 @@ export class Source2ModelInstance extends Entity implements Animated {
 		for (const mesh of this.meshes) {
 			if (materials0 && materials) {
 				for (const i in materials0) {
-					if (materials0[i] == mesh.geometry.properties.get('materialPath')) {
+					if (materials0[i] == mesh.geometry?.properties.getString('materialPath')) {
 						const materialPath = materials[i];
 						if (materialPath) {
-							mesh.properties.set('materialPath', materialPath);
+							mesh.properties.setString('materialPath', materialPath);
 						}
 						break;
 					}
@@ -269,15 +272,24 @@ export class Source2ModelInstance extends Entity implements Animated {
 					mesh.materialPath = materialPath;
 				}*/
 			} else {
-				mesh.properties.set('materialPath', mesh.geometry.properties.get('materialPath'));
-			}
-			Source2MaterialManager.getMaterial(this.sourceModel.repository, mesh.properties.get('materialPath')).then(
-				(material) => {
-					material.addUser(this);
-					mesh.setMaterial(material);
-					this.#materialsUsed.add(material);
+				const materialPath = mesh.geometry?.properties.getString('materialPath');
+				if (materialPath) {
+					mesh.properties.setString('materialPath', materialPath);
 				}
-			);
+			}
+
+			const materialPath = mesh.properties.getString('materialPath');
+			if (materialPath) {
+				Source2MaterialManager.getMaterial(this.sourceModel.repository, materialPath).then(
+					material => {
+						if (material) {
+							material.addUser(this);
+							mesh.setMaterial(material);
+							this.#materialsUsed.add(material);
+						}
+					}
+				);
+			}
 		}
 	}
 
@@ -301,7 +313,10 @@ export class Source2ModelInstance extends Entity implements Animated {
 							mesh.setDefine('USE_VERTEX_TANGENT');
 						}
 						mesh.setVisible(undefined);
-						mesh.properties.set('materialPath', geometry.properties.get('materialPath'));
+						const materialPath = geometry.properties.getString('materialPath');
+						if (materialPath) {
+							mesh.properties.setString('materialPath', materialPath);
+						}
 						newModel.push(mesh);
 						this.addChild(mesh);
 						this.meshes.add(mesh);
@@ -319,19 +334,19 @@ export class Source2ModelInstance extends Entity implements Animated {
 	#initSkeleton() {
 		const bones = this.sourceModel.getBones();
 		if (bones) {
-			const bonesName = bones.m_boneName;
-			const bonePosParent = bones.m_bonePosParent;
-			const boneRotParent = bones.m_boneRotParent;
-			const boneParent = bones.m_nParent;
-			if (bonesName && bonePosParent && boneRotParent && boneParent) {
+			const bonesName = bones.getValueAsStringArray('m_boneName');
+			const bonePosParent = bones.getValueAsVectorArray('m_bonePosParent');
+			const boneRotParent = bones.getValueAsVectorArray('m_boneRotParent');
+			const boneParent = bones.getValueAsBigintArray('m_nParent') ?? bones.getValueAsNumberArray('m_nParent');
+			if (bonesName && bonePosParent && boneRotParent && boneParent && this.#skeleton) {
 				for (let modelBoneIndex = 0, m = bonesName.length; modelBoneIndex < m; ++modelBoneIndex) {
 					const boneName = bonesName[modelBoneIndex];
 					const bone = this.#skeleton.addBone(modelBoneIndex, boneName);
 					//bone.name = boneName;
-					bone.quaternion = boneRotParent[modelBoneIndex];
-					bone.position = bonePosParent[modelBoneIndex];
-					bone.refQuaternion = boneRotParent[modelBoneIndex];
-					bone.refPosition = bonePosParent[modelBoneIndex];
+					bone.quaternion = boneRotParent[modelBoneIndex] as quat;
+					bone.position = bonePosParent[modelBoneIndex] as vec3;
+					bone.refQuaternion = boneRotParent[modelBoneIndex] as quat;
+					bone.refPosition = bonePosParent[modelBoneIndex] as vec3;
 					//const poseToBone = mat4.fromRotationTranslation(mat4.create(), bone.refQuaternion, bone.refPosition);//TODO: optimize
 					//mat4.invert(poseToBone, poseToBone);
 
@@ -356,6 +371,8 @@ export class Source2ModelInstance extends Entity implements Animated {
 						bone.poseToBone = poseToBone;
 					}
 				}
+			} else {
+				console.error('source2 #initSkeleton check code');
 			}
 		}
 	}

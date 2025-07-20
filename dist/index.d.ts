@@ -4,6 +4,7 @@ import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import { quat } from 'gl-matrix';
+import { Source2AnimeDecoder as Source2AnimeDecoder_2 } from '../models/source2animgroup';
 import { Texture as Texture_2 } from '../..';
 import { Texture as Texture_3 } from '../../../../..';
 import { vec2 } from 'gl-matrix';
@@ -601,7 +602,7 @@ export declare class BufferGeometry {
     attributes: Map<string, BufferAttribute>;
     dirty: boolean;
     count: number;
-    properties: Map<string, any>;
+    readonly properties: Properties;
     getAttribute(name: string): BufferAttribute;
     setAttribute(name: string, attribute: BufferAttribute): void;
     hasAttribute(name: string): boolean;
@@ -1802,7 +1803,7 @@ declare class Choreography {
          lockRotation: boolean;
          lockScale: boolean;
          static editMaterial: (entity: Entity) => void;
-         readonly properties: Map<string, any>;
+         readonly properties: Properties;
          loadedPromise?: Promise<any>;
          constructor(params?: EntityParameters);
          setParameters(parameters?: EntityParameters): void;
@@ -2014,14 +2015,14 @@ declare class Choreography {
           getAttribute(attributeName: string, inherited?: boolean): any;
           propagate(): void;
           copy(source: Entity): void;
-          getProperty(name: string): any;
-          setProperty(name: string, value: any): Map<string, any>;
+          getProperty(name: string): Property | undefined;
+          setProperty(name: string, value: any): void;
           setLayer(layer?: number): void;
           getLayer(): number | undefined;
           setMaterialParam(name: string, value: MaterialParam): void;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
-          createChild(entityName: string, parameters: any): Promise<Entity | Material>;
+          createChild(entityName: string, parameters: any): Promise<Material | Entity>;
           fromJSON(json: JSONObject): void;
           static getEntityName(): string;
           is(s: string): boolean;
@@ -3311,8 +3312,8 @@ declare class Choreography {
          }
 
          export declare class JSONLoader {
-             static fromJSON(rootEntity: object): Promise<Entity | Material>;
-             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material>;
+             static fromJSON(rootEntity: object): Promise<Material | Entity>;
+             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Material | Entity>;
              static registerEntity(ent: typeof Entity | typeof Material): void;
          }
 
@@ -3326,6 +3327,90 @@ declare class Choreography {
              addChild(child: Entity): Entity;
              static getEntityName(): string;
          }
+
+         /**
+          * Kv3Element
+          */
+         declare class Kv3Element {
+             #private;
+             isKv3Element: true;
+             setProperty(property: string, value: Kv3Element | Kv3Value | null): void;
+             getProperty(name: string): Kv3Element | Kv3Value | null | undefined;
+             getValueAsString(name: string): string | null;
+             getValueAsStringArray(name: string): string[] | null;
+             getValueAsResource(name: string): string | null;
+             getValueAsResourceArray(name: string): string[] | null;
+             getValueAsBool(name: string): boolean | null;
+             getValueAsNumber(name: string): number | null;
+             getValueAsNumberArray(name: string): number[] | null;
+             getValueAsBigint(name: string): bigint | null;
+             getValueAsBigintArray(name: string): bigint[] | null;
+             getValueAsBlob(name: string): Uint8Array | null;
+             getValueAsElement(name: string): Kv3Element | null;
+             getValueAsElementArray(name: string): Kv3Element[] | null;
+             getValueAsVectorArray(name: string): number[][] | null;
+             getSubValue(path: string): Kv3Element | Kv3Value | null;
+             getSubValueAsNumberArray(path: string): number[] | null;
+             exportAsText(linePrefix: string): string;
+         }
+
+         /**
+          * Kv3File
+          */
+         declare class Kv3File {
+             isKv3File: true;
+             root: null | Kv3Element;
+             setRoot(root: Kv3Element): void;
+             exportAsText(): string;
+             getValue(path: string): Kv3Element | Kv3Value | null;
+             getValueAsElementArray(path: string): Kv3Element[] | null;
+         }
+
+         declare enum Kv3Type {
+             Unknown = 0,
+             Null = 1,
+             Bool = 2,
+             Int64 = 3,
+             UnsignedInt64 = 4,
+             Double = 5,
+             String = 6,
+             Blob = 7,
+             Array = 8,
+             Element = 9,
+             TypedArray = 10,
+             Int32 = 11,
+             UnsignedInt32 = 12,
+             True = 13,
+             False = 14,
+             IntZero = 15,
+             IntOne = 16,
+             DoubleZero = 17,
+             DoubleOne = 18,
+             Float = 19,
+             Byte = 23,
+             TypedArray2 = 24,
+             TypedArray3 = 25,
+             Resource = 134
+         }
+
+         declare class Kv3Value {
+             #private;
+             isKv3Value: true;
+             constructor(type: Kv3Type, value: Kv3ValueType, subType?: Kv3Type);
+             getType(): Kv3Type;
+             getSubType(): Kv3Type;
+             isBoolean(): boolean;
+             isNumber(): boolean;
+             isBigint(): boolean;
+             isNumberArray(): boolean;
+             isBigintArray(): boolean;
+             isArray(): boolean;
+             isVector(): boolean;
+             getValue(): Kv3ValueType;
+             exportAsText(linePrefix?: string): string;
+         }
+
+         declare type Kv3ValueType = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3ValueType[] | Kv3Element | Kv3Value;
 
          export declare function lerp(min: number, max: number, v: number): number;
 
@@ -5327,22 +5412,11 @@ declare class Choreography {
          }
 
          export declare class PositionLock extends Operator {
-             startTimeMin: number;
-             startTimeMax: number;
-             startTimeExp: number;
-             endTimeMin: number;
-             endTimeMax: number;
-             endTimeExp: number;
-             range: number;
-             jumpThreshold: number;
-             prevPosScale: number;
-             lockRot: boolean;
-             startFadeOutTime: any;
-             endFadeOutTime: any;
-             constructor(system: any);
+             #private;
+             constructor(system: Source2ParticleSystem);
              _update(): void;
-             _paramChanged(paramName: any, value: any): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             _paramChanged(paramName: string, value: Source2OperatorParamValue): void;
+             doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
          export declare class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
@@ -5409,6 +5483,24 @@ declare class Choreography {
              getProgram(): WebGLProgram;
          }
 
+         declare class Properties {
+             #private;
+             set(name: string, property: Property): void;
+             get(name: string): Property | undefined;
+             setString(name: string, value: string): void;
+             getString(name: string): string | undefined;
+             setNumber(name: string, value: number): void;
+             getNumber(name: string): number | undefined;
+             setBigint(name: string, value: bigint): void;
+             getBigint(name: string): bigint | undefined;
+         }
+
+         declare class Property {
+             type: PropertyType;
+             value: PropertyValues;
+             constructor(type: PropertyType, value: PropertyValues);
+         }
+
          export declare const PROPERTY_CHANGED = "propertychanged";
 
          export declare interface PropertyChangedEventData {
@@ -5417,6 +5509,18 @@ declare class Choreography {
              value: any;
              oldValue: any;
          }
+
+         declare enum PropertyType {
+             Null = 0,
+             Undefined = 1,
+             String = 2,
+             Number = 3,
+             Bigint = 4,
+             Boolean = 5,
+             Array = 100
+         }
+
+         declare type PropertyValues = string | number | bigint | any[];
 
          /**
           * Source engine material interface
@@ -6042,7 +6146,6 @@ declare class Choreography {
              #private;
              geometry: BufferGeometry;
              setDefaultTexture: boolean;
-             spriteSheet?: Source2SpriteSheet;
              texture: Texture_3;
              imgData: Float32Array;
              constructor(system: Source2ParticleSystem);
@@ -6127,7 +6230,7 @@ declare class Choreography {
              lengthFadeInTime: number;
              ignoreDT: boolean;
              lengthScale: number;
-             spriteSheet?: Source2SpriteSheet;
+             spriteSheet: Source2SpriteSheet | null;
              texture?: Texture;
              imgData?: Float32Array;
              constructor(system: Source2ParticleSystem);
@@ -7092,41 +7195,34 @@ declare class Choreography {
 
          declare class Source2Animation {
              #private;
-             animGroup: any;
              filePath: any;
-             file: any;
-             decoderArray: any;
-             segmentArray: any;
-             frameData: any;
-             constructor(animGroup: any, filePath: any);
-             setFile(sourceFile: any): void;
-             setAnimDatas(data: any): void;
+             file?: Source2File;
+             constructor(animGroup: Source2AnimGroup, filePath: string);
+             setFile(sourceFile: Source2File): void;
+             setAnimDatas(data: Kv3Element): void;
              getAnimDesc(name: string): Source2AnimationDesc | undefined;
-             getDecodeKey(): any;
-             getDecoderArray(): any;
-             getSegment(segmentIndex: any): any;
+             getDecodeKey(): Kv3Element;
+             getDecoderArray(): Source2AnimeDecoder[];
+             getSegment(segmentIndex: number): Kv3Element;
              getAnimations(animations?: Set<string>): Promise<Set<string>>;
              getAnimationByActivity(activityName: any, activityModifiers: any): any[];
-             getAnimationsByActivity(activityName: any): any[];
-             get animArray(): any;
-             getAnimationByName(animName: any): Source2AnimationDesc;
+             getAnimationsByActivity(activityName: string): any[];
+             get animArray(): Kv3Element[];
+             getAnimationByName(animName: string): Source2AnimationDesc;
          }
 
          declare class Source2AnimationDesc {
              #private;
-             data: any;
-             animationResource: any;
-             frameBlockArray: any;
-             constructor(source2Model: any, data: any, animationResource: any);
-             get fps(): any;
-             get lastFrame(): any;
-             getFrame(frameIndex: any): any;
-             readSegment(frameIndex: any, segment: any, boneArray: any, dataChannelArray: any, decodeArray: any): void;
-             matchActivity(activityName: any): boolean;
+             data: Kv3Element;
+             constructor(source2Model: Source2Model, data: Kv3Element, animationResource: Source2Animation | Source2SeqGroup);
+             get fps(): number;
+             get lastFrame(): number;
+             getFrame(frameIndex: number): any[];
+             matchActivity(activityName: string): boolean;
              getActivityName(): any;
              hasModifiers(): boolean;
              modifiersScore(activityName: any, modifiers: any): number;
-             matchModifiers(activityName: any, modifiers: any): boolean;
+             matchModifiers(activityName: string, modifiers: Set<string>): boolean;
          }
 
          declare class Source2Animations {
@@ -7137,25 +7233,31 @@ declare class Choreography {
              getBestAnimation(activityName: any, activityModifiers: any): any;
          }
 
+         declare type Source2AnimeDecoder = {
+             name: string;
+             version: number;
+             type: number;
+         };
+
          declare class Source2AnimGroup {
              #private;
              repository: string;
              file: any;
-             decoderArray: any;
+             decoderArray: Source2AnimeDecoder[];
              localAnimArray: any;
-             decodeKey: any;
+             decodeKey?: Kv3Element;
              directHSeqGroup: any;
              loaded: boolean;
-             constructor(source2Model: any, repository: string);
-             setFile(sourceFile: any): void;
-             setAnimationGroupResourceData(localAnimArray: any, decodeKey: any): void;
+             constructor(source2Model: Source2Model, repository: string);
+             setFile(sourceFile: Source2File): void;
+             setAnimationGroupResourceData(localAnimArray: any, decodeKey: Kv3Element): void;
              getAnim(animIndex: number): any;
              getAnimDesc(name: string): Source2AnimationDesc | undefined;
-             matchActivity(activity: any, modifiers: any): any;
+             matchActivity(activity: string, modifiers: string[]): any;
              getAnims(): Set<Source2Animation>;
              getAnimationsByActivity(activityName: any): any[];
-             getDecodeKey(): any;
-             get source2Model(): any;
+             getDecodeKey(): Kv3Element;
+             get source2Model(): Source2Model;
              getAnimationByName(animName: string): Source2AnimationDesc;
              set _changemyname(_changemyname: Source2Animation[]);
              get _changemyname(): Source2Animation[];
@@ -7237,7 +7339,7 @@ declare class Choreography {
          declare class Source2File {
              repository: string;
              fileName: string;
-             blocks: any;
+             blocks: Record<string, Source2FileBlock>;
              blocksArray: Source2FileBlock[];
              fileLength: number;
              versionMaj: number;
@@ -7245,67 +7347,69 @@ declare class Choreography {
              maxBlockOffset: number;
              constructor(repository: string, fileName: string);
              addBlock(block: Source2FileBlock): void;
-             getBlockByType(type: any): any;
-             getBlockById(id: any): Source2FileBlock;
-             getVertexCount(bufferId: any): any;
-             getIndices(bufferId: any): any;
-             getVertices(bufferId: any): any;
-             getNormals(bufferId: any): any[];
-             getCoords(bufferId: any): any;
-             getBoneIndices(bufferId: any): any;
-             getBoneWeight(bufferId: any): any;
-             getPositionArray(bufferId: any): any[];
-             getNormalArray(bufferId: any): any[];
-             getCoordArray(bufferId: any): any[];
-             getBoneIndiceArray(bufferId: any): any[];
-             getBoneWeightArray(bufferId: any): any[];
-             getTangentArray(bufferId: any): any[];
-             getBinormalArray(bufferId: any): any[];
-             getWidth(): any;
-             getHeight(): any;
-             getDxtLevel(): 0 | 1 | 5;
-             isCompressed(): boolean;
-             isCubeTexture(): boolean;
-             getBlockStruct(path: any): any;
-             getPermModelData(path: any): any;
-             getMaterialResourceData(path: any): any;
-             getExternalFiles(): any;
-             getExternalFile(fileIndex: any): any;
-             getKeyValue(path: any): any;
-             get imageFormat(): number;
+             getBlockByType(type: string): Source2FileBlock | null;
+             getBlockById(id: number): Source2FileBlock | null;
+             getVertexCount(bufferId: number): number;
+             getIndices(bufferId: number): number[] | null;
+             getVertices(bufferId: number): number[] | null;
+             getNormals(bufferId: number): number[] | null;
+             getCoords(bufferId: number): number[] | null;
+             getBoneIndices(bufferId: number): number[] | null;
+             getBoneWeight(bufferId: number): number[] | null;
+             getBlockStruct(block: string, path: string): Kv3ValueType | undefined;
+             getBlockStructAsArray(block: string, path: string): any[] | null;
+             getBlockStructAsElement(block: string, path: string): Kv3Element | null;
+             getBlockStructAsElementArray(block: string, path: string): Kv3Element[] | null;
+             getBlockStructAsString(block: string, path: string): string | null;
+             getBlockStructAsStringArray(block: string, path: string): string[] | null;
+             getBlockStructAsResourceArray(block: string, path: string): string[] | null;
+             getBlockStructAsBigintArray(block: string, path: string): bigint[] | null;
+             getBlockStructAsNumberArray(block: string, path: string): number[] | null;
+             getBlockKeyValues(block: string): Kv3Element | null;
+             getPermModelData(path: string): Kv3ValueType | undefined;
+             getMaterialResourceData(path: string): Kv3Element[] | null;
+             getExternalFiles(): string[] | null;
+             getExternalFile(fileIndex: number): string | null;
+             getKeyValue(path: string): any;
+             /**
+              * @deprecated use getDisplayName() instead
+              */
              get displayName(): string;
-             getRemappingTable(meshIndex: any): any;
-             remapBuffer(buffer: any, remappingTable: any): Float32Array<ArrayBuffer>;
+             getDisplayName(): string;
+             getRemappingTable(meshIndex: number): number[] | bigint[] | null;
+             remapBuffer(buffer: ArrayBuffer, remappingTable: number[] | bigint[] | null): Float32Array;
          }
 
          /**
           * Source2 common file block
           */
          declare class Source2FileBlock {
-             file: any;
-             type: any;
-             offset: any;
-             length: any;
-             indices: any;
-             vertices: any;
-             keyValue: any;
-             constructor(file: any, type: any, offset: any, length: any);
-             getKeyValue(path: any): any;
-             getIndices(bufferId: any): any;
-             getVertices(bufferId: any): any;
-             getNormalsTangents(bufferId: any): any[][];
-             getCoords(bufferId: any): any;
-             getNormal(bufferId: any): any;
-             getTangent(bufferId: any): any;
-             getBoneIndices(bufferId: any): any;
-             getBoneWeight(bufferId: any): any;
+             file: Source2File;
+             type: string;
+             offset: number;
+             length: number;
+             indices?: any[];
+             vertices?: any[];
+             keyValue?: Kv3File;
+             structs?: never;
+             constructor(file: Source2File, type: string, offset: number, length: number);
+             getKeyValue(path: string): Kv3Element | Kv3Value | undefined | null;
+             getKeyValueAsElementArray(path: string): Kv3Element[] | null;
+             getIndices(bufferId: number): number[];
+             getVertices(bufferId: number): number[];
+             getNormalsTangents(bufferId: number): any[][];
+             getCoords(bufferId: number): number[];
+             getNormal(bufferId: number): number[];
+             getTangent(bufferId: number): number[];
+             getBoneIndices(bufferId: number): ArrayBuffer;
+             getBoneWeight(bufferId: number): number[];
          }
 
          export declare class Source2FileLoader extends SourceBinaryLoader {
              #private;
              vtex: boolean;
              constructor(vtex?: boolean);
-             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File>;
+             parse(repository: string, path: string, arrayBuffer: ArrayBuffer): Promise<Source2File | Source2Texture>;
          }
 
          export declare class Source2Generic extends Source2Material {
@@ -7367,7 +7471,7 @@ declare class Choreography {
              setupUniformsOnce(): void;
              setupUniforms(): void;
              clone(): Source2Material;
-             getTextureByName(textureName: string): any;
+             getTextureByName(textureName: string): string | null;
              updateMaterial(time: number, mesh: Mesh): void;
              processProxies(time: number, proxyParams: ProxyParams): void;
              _afterProcessProxies(proxyParams: ProxyParams): void;
@@ -7390,13 +7494,13 @@ declare class Choreography {
              #private;
              static addMaterial(material: Source2Material): void;
              static removeMaterial(material: Source2Material): void;
-             static getMaterial(repository: string, fileName: string): Promise<Source2Material>;
+             static getMaterial(repository: string, path: string): Promise<Source2Material | null>;
          }
 
          declare class Source2Model {
              #private;
              repository: string;
-             vmdl: any;
+             vmdl: Source2File;
              requiredLod: number;
              drawBodyPart: {};
              currentSkin: number;
@@ -7410,31 +7514,31 @@ declare class Choreography {
              attachments: Map<string, Source2ModelAttachment>;
              bodyGroups: Set<string>;
              bodyGroupsChoices: Set<BodyGroupChoice>;
-             constructor(repository: string, vmdl: any);
-             matchActivity(activity: any, modifiers: any): any;
+             constructor(repository: string, vmdl: Source2File);
+             matchActivity(activity: string, modifiers: string[]): any;
              addGeometry(geometry: BufferGeometry, bodyPartName: string, bodyPartModelId: number): void;
-             createInstance(isDynamic: any): Source2ModelInstance;
-             getBones(): any;
-             getSkinMaterials(skin: any): any;
+             createInstance(isDynamic: boolean): Source2ModelInstance;
+             getBones(): Kv3Element | null;
+             getSkinMaterials(skin: number): string[] | null;
              getSkinList(): any[];
              loadAnimGroups(): Promise<void>;
-             getIncludeModels(): any;
+             getIncludeModels(): any[];
              addIncludeModel(includeModel: any): void;
              getAnim(activityName: any, activityModifiers: any): any;
              getAnimation(name: string): Source2AnimationDesc | undefined;
              getAnimationsByActivity(activityName: any, animations?: Source2Animations): Source2Animations;
              getAnimations(): Promise<Set<string>>;
-             _addAttachments(attachments: any): void;
+             _addAttachments(attachments: Kv3Element[]): void;
              getAnimationByName(animName: any): Source2AnimationDesc;
          }
 
          declare class Source2ModelAttachment {
              name: string;
              ignoreRotation: boolean;
-             influenceNames: any[];
-             influenceWeights: any[];
-             influenceOffsets: any[];
-             influenceRotations: any[];
+             influenceNames: string[];
+             influenceWeights: number[];
+             influenceOffsets: vec3[];
+             influenceRotations: quat[];
              constructor(name: string);
          }
 
@@ -7442,7 +7546,7 @@ declare class Choreography {
              #private;
              model: any;
              attachment: any;
-             constructor(model: any, attachment: any);
+             constructor(model: Source2ModelInstance, attachment: Source2ModelAttachment);
              getWorldPosition(vec?: vec3): vec3;
              getWorldQuaternion(q?: quat): quat;
          }
@@ -7452,7 +7556,7 @@ declare class Choreography {
              isSource2ModelInstance: boolean;
              animable: boolean;
              bodyParts: {};
-             poseParameters: {};
+             poseParameters: Record<string, number>;
              meshes: Set<Mesh>;
              attachments: Map<string, Source2ModelAttachmentInstance>;
              activity: string;
@@ -7462,17 +7566,17 @@ declare class Choreography {
              animationSpeed: number;
              sourceModel: Source2Model;
              hasAnimations: true;
-             constructor(sourceModel: Source2Model, isDynamic: any);
+             constructor(sourceModel: Source2Model, isDynamic: boolean);
              setBodyGroup(name: string, choice: number): void;
-             get skeleton(): any;
+             get skeleton(): Skeleton;
              set position(position: vec3);
              get position(): vec3;
-             addChild(child: any): Entity;
-             removeChild(child: any): void;
+             addChild(child: Entity): Entity;
+             removeChild(child: Entity): void;
              set skin(skin: number);
              get skin(): number;
              setLOD(lod: number): void;
-             setPoseParameter(paramName: any, paramValue: any): void;
+             setPoseParameter(paramName: string, paramValue: number): void;
              playSequence(activity: string, activityModifiers?: string[]): void;
              playAnimation(name: any): void;
              setAnimation(id: number, name: string, weight: number): Promise<void>;
@@ -7598,9 +7702,8 @@ declare class Choreography {
          export declare class Source2ModelLoader {
              #private;
              load(repository: string, path: string): Promise<Source2Model | null>;
-             testProcess2(vmdl: any, model: any, repository: any): Promise<Entity>;
-             _loadExternalMeshes(group: any, vmdl: any, model: any, repository: any): Promise<void>;
-             loadMeshes(vmdl: any, callback: any): Promise<void>;
+             testProcess2(vmdl: Source2File, model: Source2Model, repository: string): Promise<Entity>;
+             loadMeshes(vmdl: Source2File, callback: any): Promise<void>;
          }
 
          export declare class Source2ModelManager {
@@ -7951,6 +8054,32 @@ declare class Choreography {
              doForce(particle: any, elapsedTime: any, accumulatedForces: any): void;
          }
 
+         declare class Source2SeqGroup {
+             #private;
+             sequences: Source2Sequence[];
+             file: any;
+             m_localS1SeqDescArray: Kv3Element[] | null;
+             loaded: boolean;
+             constructor(animGroup: Source2AnimGroup);
+             setFile(sourceFile: Source2File): void;
+             getAnimDesc(name: string): Source2AnimationDesc | undefined;
+             matchActivity(activity: string, modifiers: string[]): any;
+             getAnimationsByActivity(activityName: any): any[];
+             getDecodeKey(): Kv3Element;
+             getDecoderArray(): Source2AnimeDecoder_2[];
+             get localSequenceNameArray(): any;
+         }
+
+         declare class Source2Sequence {
+             name: string;
+             fps: number;
+             frameCount: number;
+             activities: any;
+             animNames: any;
+             constructor(name: any, params?: any);
+             matchActivity(activity: string, modifiers: string[]): boolean;
+         }
+
          export declare class Source2SetControlPointPositions extends Operator {
              useWorldLocation: boolean;
              orient: boolean;
@@ -7959,7 +8088,7 @@ declare class Choreography {
              headLocation: number;
              setOnce: boolean;
              _paramChanged(paramName: string, value: Source2OperatorParamValue): void;
-             doOperate(particle: Source2Particle | Source2Particle[] | undefined, elapsedTime: number, strength: number): void;
+             doOperate(particle: Source2Particle | Source2Particle[] | undefined | null, elapsedTime: number, strength: number): void;
              isPreEmission(): boolean;
          }
 
@@ -8006,6 +8135,17 @@ declare class Choreography {
              addFrame(): Source2SpriteSheetFrame;
          }
 
+         declare class Source2Texture extends Source2File {
+             constructor(repository: string, path: string);
+             getAlphaBits(): number;
+             getWidth(): number;
+             getHeight(): number;
+             getDxtLevel(): number;
+             isCompressed(): boolean;
+             isCubeTexture(): boolean;
+             get imageFormat(): number;
+         }
+
          export declare const Source2TextureManager: Source2TextureManagerClass;
 
          declare class Source2TextureManagerClass extends EventTarget {
@@ -8015,7 +8155,8 @@ declare class Choreography {
              EXT_texture_compression_rgtc: any;
              constructor();
              getTexture(repository: string, path: string, frame: number): Promise<Texture>;
-             getTextureSheet(repository: string, path: string): Promise<Source2SpriteSheet | undefined>;
+             getVtex(repository: string, path: string): Promise<Source2Texture | null>;
+             getTextureSheet(repository: string, path: string): Promise<Source2SpriteSheet | null>;
              setTexture(path: string, texture: AnimatedTexture): void;
              fillTexture(imageFormat: number, width: number, height: number, datas: ArrayBufferView | null, target: GLenum): void;
              fillTextureDxt(texture: WebGLTexture, imageFormat: number, width: number, height: number, datas: Uint8Array, target: GLenum): void;
@@ -10173,12 +10314,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#217@#webAssembly"?: any;
-             "__#217@#HEAPU8"?: Uint8Array;
+             "__#219@#webAssembly"?: any;
+             "__#219@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#217@#initHeap"(): void;
+             "__#219@#initHeap"(): void;
          };
 
          export { }

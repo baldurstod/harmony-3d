@@ -1,33 +1,41 @@
+import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Source2SeqGroup } from '../animations/source2seqgroup';
 import { Source2File } from '../loaders/source2file';
 import { Source2FileLoader } from '../loaders/source2fileloader';
 import { Source2Animation } from './source2animation';
 import { Source2AnimationDesc } from './source2animationdesc';
+import { Source2Model } from './source2model';
+import { kv3ElementToDecoderArray } from './utils';
+
+export type Source2AnimeDecoder = {
+	name: string;
+	version: number;
+	type: number;
+}
 
 export class Source2AnimGroup {
-	#source2Model;
+	#source2Model: Source2Model;
 	#_changemyname: Source2Animation[] = [];
 	repository: string;
 	file;
-	decoderArray;
+	decoderArray: Source2AnimeDecoder[] = [];
 	localAnimArray;
-	decodeKey;
+	decodeKey?: Kv3Element;
 	directHSeqGroup;
 	loaded = false;
 
-	constructor(source2Model, repository: string) {
+	constructor(source2Model: Source2Model, repository: string) {
 		//TODO: remove repository param. redundant with model
 		this.#source2Model = source2Model;
 		this.repository = repository;
 	}
 
-	setFile(sourceFile) {
+	setFile(sourceFile: Source2File) {
 		this.file = sourceFile;
 
-		let localAnimArray;
+		let localAnimArray: string[] | null;
 		let decodeKey;
-		let decoderArray;
-		const animationGroupData = sourceFile.getBlockStruct('DATA.structs.AnimationGroupResourceData_t');
+		const animationGroupData = sourceFile.getBlockStruct('DATA', 'AnimationGroupResourceData_t');
 
 		let directHSeqGroup;
 		if (animationGroupData) {
@@ -35,12 +43,12 @@ export class Source2AnimGroup {
 			decodeKey = animationGroupData.m_decodeKey;
 			directHSeqGroup = animationGroupData.m_directHSeqGroup;
 		} else {
-			localAnimArray = sourceFile.getBlockStruct('DATA.keyValue.root.m_localHAnimArray');
-			decodeKey = sourceFile.getBlockStruct('DATA.keyValue.root.m_decodeKey');
-			directHSeqGroup = sourceFile.getBlockStruct('DATA.keyValue.root.m_directHSeqGroup');
+			localAnimArray = sourceFile.getBlockStructAsResourceArray('DATA', 'm_localHAnimArray');
+			decodeKey = sourceFile.getBlockStruct('DATA', 'm_decodeKey');
+			directHSeqGroup = sourceFile.getBlockStruct('DATA', 'm_directHSeqGroup');
 		}
 
-		this.decoderArray = sourceFile.getBlockStruct('ANIM.keyValue.root.m_decoderArray');
+		this.decoderArray = kv3ElementToDecoderArray(sourceFile.getBlockStructAsElementArray('ANIM', 'm_decoderArray'));
 
 		if (directHSeqGroup) {
 			(async () => {
@@ -49,7 +57,7 @@ export class Source2AnimGroup {
 		}
 		this.setAnimationGroupResourceData(localAnimArray, decodeKey);
 
-		const anims = sourceFile.getBlockStruct('ANIM.keyValue.root');
+		const anims = sourceFile.getBlockKeyValues('ANIM');
 		if (anims) {
 			const loadedAnim = new Source2Animation(this, '');
 			loadedAnim.setAnimDatas(anims);
@@ -62,7 +70,7 @@ export class Source2AnimGroup {
 		this.loaded = true;
 	}
 
-	setAnimationGroupResourceData(localAnimArray, decodeKey) {
+	setAnimationGroupResourceData(localAnimArray, decodeKey: Kv3Element) {
 		this.localAnimArray = localAnimArray;
 		this.decodeKey = decodeKey;
 		//this.getAnim(0);
@@ -82,7 +90,7 @@ export class Source2AnimGroup {
 	}
 
 	getAnimDesc(name: string): Source2AnimationDesc | undefined {
-		let animation: Source2AnimationDesc;
+		let animation: Source2AnimationDesc | undefined;
 		for (const a of this.#_changemyname) {
 			animation = a.getAnimDesc(name);
 			if (animation) {
@@ -91,7 +99,7 @@ export class Source2AnimGroup {
 		}
 	}
 
-	matchActivity(activity, modifiers) {
+	matchActivity(activity: string, modifiers: string[]) {
 		if (this.directHSeqGroup) {
 			return this.directHSeqGroup.matchActivity(activity, modifiers);
 		}
@@ -228,7 +236,7 @@ async function getVseq(repository: string, seqGroupName: string, seqGroup: Sourc
 }
 
 async function loadVseq(repository: string, fileName: string, seqGroup: Source2SeqGroup) {
-	const vseq = await new Source2FileLoader().load(repository, fileName);
+	const vseq = await new Source2FileLoader().load(repository, fileName) as Source2File;
 	if (vseq) {
 		seqGroup.setFile(vseq);
 	}
@@ -303,9 +311,9 @@ async function loadVanim(repository: string, fileName: string, anim: Source2Anim
 	const vanim = await new Source2FileLoader().load(repository, fileName) as Source2File;
 	if (vanim) {
 		anim.setFile(vanim);
-		const dataBlock = vanim.blocks.DATA;
+		const dataBlock = vanim.getBlockStructAsElement('DATA', '');
 		if (dataBlock) {
-			anim.setAnimDatas(vanim.getBlockStruct('DATA.structs.AnimationResourceData_t') || vanim.getBlockStruct('DATA.keyValue.root'));
+			anim.setAnimDatas(dataBlock);// || vanim.getBlockStruct('DATA.keyValue.root'));
 		}
 	}
 	//this.fileLoaded(model);TODOv3

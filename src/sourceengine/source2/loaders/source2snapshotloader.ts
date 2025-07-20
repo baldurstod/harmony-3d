@@ -83,7 +83,7 @@ export const Source2SnapshotLoader = new (function () {
 							break;
 						default:
 							attributeValue = null;
-							console.error('Unknow snapshot attribute type', snapshotAttribute.type, snapshotAttribute, snapFile, Number(snapshotAttribute.data_size) / particleCount);
+							console.error('Unknown snapshot attribute type', snapshotAttribute.type, snapshotAttribute, snapFile, Number(snapshotAttribute.data_size) / particleCount);
 							if (TESTING) {
 								saveFile(new File([new Blob([snapBlock.datas])], 'snap_datas_' + snapBlock.length));
 							}

@@ -1,21 +1,28 @@
 import { BinaryReader } from 'harmony-binary-reader';
+import { TESTING } from '../../../buildoptions';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
+import { Source2Texture } from '../textures/source2texture';
+import { Source2BlockLoader } from './source2blockloader';
 import { Source2File } from './source2file';
 import { Source2FileBlock } from './source2fileblock';
-import { Source2BlockLoader } from './source2blockloader';
-import { DEBUG, TESTING } from '../../../buildoptions';
 
 export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make singleton ???
 	vtex: boolean;
+
 	constructor(vtex = false) {
 		super();
 		this.vtex = vtex;
 	}
 
-	async parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File> {
+	async parse(repository: string, path: string, arrayBuffer: ArrayBuffer): Promise<Source2File | Source2Texture> {
 		const reader = new BinaryReader(arrayBuffer);
 
-		const file = new Source2File(repository, fileName);
+		let file: Source2File | Source2Texture;
+		if (this.vtex) {
+			file = new Source2Texture(repository, path);
+		} else {
+			file = new Source2File(repository, path);
+		}
 
 		await this.#parseHeader(reader, file, this.vtex);
 		if (false && TESTING) {
@@ -24,8 +31,8 @@ export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make single
 		return file;
 	}
 
-	async #parseHeader(reader: BinaryReader, file: Source2File, parseVtex: boolean) {
-		const startOffset = reader.tell();
+	async #parseHeader(reader: BinaryReader, file: Source2File, parseVtex: boolean): Promise<void> {
+		//const startOffset = reader.tell();
 		file.fileLength = reader.getUint32();
 		file.versionMaj = reader.getUint16();
 		file.versionMin = reader.getUint16();
@@ -51,6 +58,6 @@ export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make single
 				await Source2BlockLoader.parseBlock(reader, file, block, parseVtex);
 			}
 		}
-		return;
+		//return;
 	}
 }

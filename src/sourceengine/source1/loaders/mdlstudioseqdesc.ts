@@ -164,7 +164,7 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 							break;
 						default:
 							if (DEBUG) {
-								console.error(`Unknow option ${options[1]}`, options);
+								console.error(`Unknown option ${options[1]}`, options);
 							}
 					}
 				};

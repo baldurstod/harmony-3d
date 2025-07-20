@@ -1,48 +1,52 @@
 import { quat, vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
-import { decodeCCompressedDeltaVector3 } from '../animations/decoders/compresseddeltavector3';
-import { clamp, pow2 } from '../../../math/functions';
 import { DEBUG, TESTING } from '../../../buildoptions';
+import { clamp, pow2 } from '../../../math/functions';
+import { Kv3Element } from '../../common/keyvalue/kv3element';
+import { decodeCCompressedDeltaVector3 } from '../animations/decoders/compresseddeltavector3';
+import { Source2SeqGroup } from '../animations/source2seqgroup';
+import { Source2Animation } from './source2animation';
 import { Source2Model } from './source2model';
+import { Source2AnimeDecoder } from './source2animgroup';
 
-const Warning = {};
+const Warning: Record<string, boolean> = {};
 export class Source2AnimationDesc {
 	#source2Model: Source2Model;
-	#fps = 30;
-	#lastFrame = 0;
-	data;
-	animationResource;
-	frameBlockArray;
+	#fps: number;
+	#lastFrame: number = 0;
+	data: Kv3Element;
+	#animationResource: Source2Animation | Source2SeqGroup;
+	#frameBlockArray: Kv3Element[] | null = null;
+	#segmentReaders = new Map<Kv3Element, BinaryReader>;
 
-	constructor(source2Model, data, animationResource) {
+	constructor(source2Model: Source2Model, data: Kv3Element, animationResource: Source2Animation | Source2SeqGroup) {
 		this.#source2Model = source2Model;
 		this.data = data;
-		this.animationResource = animationResource;
-		this.frameBlockArray = null;
-		if (data) {
-			this.#fps = data.fps ?? 30;
-			if (data.m_pData) {
-				this.#lastFrame = data.m_pData.m_nFrames - 1;
-				this.frameBlockArray = data.m_pData.m_frameblockArray;
-			}
+		this.#animationResource = animationResource;
+		this.#fps = data.getValueAsNumber('fps') ?? 30;
+
+		const frameDatas = data.getValueAsElement('m_pData');
+		if (frameDatas) {
+			this.#lastFrame = (frameDatas.getValueAsNumber('m_nFrames') ?? 1) - 1;
+			this.#frameBlockArray = frameDatas.getValueAsElementArray('m_frameblockArray');
 		}
 	}
 
-	get fps() {
+	get fps(): number {
 		return this.#getActualAnimDesc()?.fps ?? this.#fps;
 	}
 
-	get lastFrame() {
+	get lastFrame(): number {
 		return this.#getActualAnimDesc()?.lastFrame ?? this.#lastFrame;
 	}
 
-	#getActualAnimDesc(): Source2AnimationDesc {
-		const fetch = this.data?.m_fetch;
+	#getActualAnimDesc(): Source2AnimationDesc | null {
+		const fetch = this.data.getValueAsElement('m_fetch');
 		if (fetch) {
-			const localReferenceArray = fetch.m_localReferenceArray;
+			const localReferenceArray = fetch.getValueAsNumberArray('m_localReferenceArray');
 			//TODO: mix multiple anims
-			if (localReferenceArray[0] !== undefined) {
-				const animName = this.animationResource.localSequenceNameArray[localReferenceArray[0]];
+			if (localReferenceArray && localReferenceArray[0] !== undefined) {
+				const animName = (this.#animationResource as Source2SeqGroup).localSequenceNameArray[localReferenceArray[0]];
 				if (animName) {
 					const animDesc = this.#source2Model.getAnimationByName(animName);
 					if (animDesc) {
@@ -51,17 +55,20 @@ export class Source2AnimationDesc {
 				}
 			}
 		}
+		return null;
 	}
 
 
-	getFrame(frameIndex) {
+	getFrame(frameIndex: number): any/*TODO: fix type*/[] {
 		frameIndex = clamp(frameIndex, 0, this.lastFrame);
-		const frameBlockArray = this.frameBlockArray;
+		const frameBlockArray = this.#frameBlockArray;
 		let segmentIndexArray = null;
 		let frameBlock = null;
-		const decodeKey = this.animationResource.getDecodeKey();
-		const decodeArray = this.animationResource.getDecoderArray();
+		const decodeKey = this.#animationResource.getDecodeKey();
+		const decodeArray = this.#animationResource.getDecoderArray();
 		const boneArray = [];
+		const decodeKeyBoneArray = decodeKey?.getValueAsElementArray('m_boneArray');
+		const decodeKeyDataChannelArray = decodeKey?.getValueAsElementArray('m_dataChannelArray');
 
 		/*
 		let fetch = this.data?.m_fetch;
@@ -85,27 +92,30 @@ export class Source2AnimationDesc {
 			return actualAnimDesc.getFrame(frameIndex);
 		}
 
-		if (frameBlockArray && decodeArray && decodeKey && decodeKey.m_boneArray) {
-			for (var i = 0; i < decodeKey.m_boneArray.length; i++) {
-				boneArray.push({ name: decodeKey.m_boneArray[i].m_name });
+		if (frameBlockArray && decodeArray && decodeKeyBoneArray && decodeKeyDataChannelArray) {
+			for (const decodeKeyBone of decodeKeyBoneArray) {
+				boneArray.push({ name: decodeKeyBone.getValueAsString('m_name') });
 			}
-
 
 			for (var i = 0; i < frameBlockArray.length; i++) {
 				frameBlock = frameBlockArray[i];
-				if ((frameBlock.m_nStartFrame <= frameIndex) && (frameBlock.m_nEndFrame >= frameIndex)) {
-					segmentIndexArray = frameBlock.m_segmentIndexArray;
+				const startFrame = frameBlock.getValueAsNumber('m_nStartFrame') ?? 0;
+				const endFrame = frameBlock.getValueAsNumber('m_nEndFrame') ?? 0;
+				if ((startFrame <= frameIndex) && (endFrame >= frameIndex)) {
+					segmentIndexArray = frameBlock.getValueAsNumberArray('m_segmentIndexArray');
 					//console.log(this);
 					//console.log(decodeKey);
-					for (let j = 0; j < segmentIndexArray.length; j++) {
-						const segment = this.animationResource.getSegment(segmentIndexArray[j]);
-						if (TESTING && !segment) {
-							//console.error('missing segment : ', segmentIndexArray[j]);
-							continue;
+					if (segmentIndexArray) {
+						for (const segmentIndex of segmentIndexArray) {
+							const segment = (this.#animationResource as Source2Animation).getSegment(segmentIndex);
+							if (TESTING && !segment) {
+								//console.error('missing segment : ', segmentIndexArray[j]);
+								continue;
+							}
+							//console.log(frameIndex, frameIndex - frameBlock.m_nStartFrame);
+							//console.log(frameIndex);
+							this.#readSegment(frameIndex - startFrame, segment, boneArray, decodeKeyDataChannelArray, decodeArray);
 						}
-						//console.log(frameIndex, frameIndex - frameBlock.m_nStartFrame);
-						//console.log(frameIndex);
-						this.readSegment(frameIndex - frameBlock.m_nStartFrame, segment, boneArray, decodeKey.m_dataChannelArray, decodeArray);
 					}
 				}
 			}
@@ -113,17 +123,27 @@ export class Source2AnimationDesc {
 		//console.log(boneArray);
 		return boneArray;
 	}
-	readSegment(frameIndex, segment, boneArray, dataChannelArray, decodeArray) {
-		//console.log(segment);
-		const channel = dataChannelArray[segment.m_nLocalChannel];
-		const segmentToBoneIndex = {};
-		const channelVar = channel.m_szVariableName;
-		const container = segment.m_container;
-		let reader = segment.dataReader;
+
+	#getReader(segment: Kv3Element, container: Uint8Array): BinaryReader {
+		let reader = this.#segmentReaders.get(segment);
 		if (!reader) {
-			reader = new BinaryReader(container);
-			segment.dataReader = reader;
+			reader = new BinaryReader(segment.getValueAsBlob('m_container') ?? '');
+			this.#segmentReaders.set(segment, reader);
 		}
+		return reader;
+	}
+
+	#readSegment(frameIndex: number, segment: Kv3Element, boneArray: any/*TODO: fix type*/[], dataChannelArray: Kv3Element[], decodeArray: Source2AnimeDecoder[]): void {
+		//console.log(segment);
+		const channel = dataChannelArray[segment.getValueAsNumber('m_nLocalChannel') ?? 0];
+		const segmentToBoneIndex = new Map<number, number>();
+		const channelVar = channel.getValueAsString('m_szVariableName');
+		const container = segment.getValueAsBlob('m_container');
+		if (!channelVar || !container) {
+			return;
+		}
+
+		const reader = this.#getReader(segment, container);//segment.dataReader;
 
 		const decoderId = container[0] + (container[1] << 8);
 		let bytesPerBone = container[2] + (container[3] << 8);
@@ -132,10 +152,11 @@ export class Source2AnimationDesc {
 		bytesPerBone = 0;
 		const segmentBoneArray = [];
 
-		if (channel.m_nElementIndexArray) {
-			const elementIndexArray = channel.m_nElementIndexArray;
+		const elementIndexArray = channel.getValueAsNumberArray('m_nElementIndexArray');
+
+		if (elementIndexArray) {
 			for (let i = 0; i < elementIndexArray.length; i++) {
-				segmentToBoneIndex[elementIndexArray[i]] = i;
+				segmentToBoneIndex.set(elementIndexArray[i], i);
 			}
 		} else {
 			//TODO
@@ -143,9 +164,9 @@ export class Source2AnimationDesc {
 		}
 
 		const decoder = decodeArray[decoderId];
+		const decoderName = decoder.name;
 		//console.log(decoderId, bytesPerBone, boneCount, dataLength);
-		if (decoder && decoder.m_szName) {
-			const decoderName = decoder.m_szName;
+		if (decoder && decoderName) {
 			//console.log(decoderName);
 			switch (decoderName) {
 				case 'CCompressedStaticFullVector3':
@@ -178,7 +199,7 @@ export class Source2AnimationDesc {
 				default:
 					if (DEBUG && TESTING) {
 						if (!Warning[decoderName]) {
-							console.error('Warning: unknown decoder ' + decoderName + ' in ' + this.animationResource.fileName);
+							console.error('Warning: unknown decoder ' + decoderName + ' in ' + (this.#animationResource).fileName);
 							Warning[decoderName] = true;
 						}
 					}
@@ -192,10 +213,10 @@ export class Source2AnimationDesc {
 
 			var byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
 			for (var boneIndex = 0; boneIndex < boneCount; boneIndex++) {
-				const boneIndex2 = segmentToBoneIndex[segmentBoneArray[boneIndex]];
-				/*if (boneIndex2 === undefined) {//removeme
-					return;
-				}*/
+				const boneIndex2 = segmentToBoneIndex.get(segmentBoneArray[boneIndex]);
+				if (boneIndex2 === undefined) {//removeme
+					continue;
+				}
 				const bytes = [];
 				const byteIndex2 = byteIndex + boneIndex * bytesPerBone;
 				for (let j = 0; j < bytesPerBone; j++) {
@@ -231,7 +252,7 @@ export class Source2AnimationDesc {
 					default:
 						if (DEBUG) {
 							if (!Warning[decoderName]) {
-								console.error('Warning: unknown decoder ' + decoderName + ' in ' + this.animationResource.fileName + ' for bone ' + boneArray[boneIndex2].name);
+								console.error('Warning: unknown decoder ' + decoderName + ' in ' + this.#animationResource.fileName + ' for bone ' + boneArray[boneIndex2].name);
 								Warning[decoderName] = true;
 							}
 						}
@@ -246,15 +267,16 @@ export class Source2AnimationDesc {
 		}
 	}
 
-	matchActivity(activityName) {
-		const activityArray = this.data?.m_activityArray;
+	matchActivity(activityName: string): boolean {
+		const activityArray = this.data.getValueAsElementArray('m_activityArray');
 		if (activityArray) {
 			for (const activity of activityArray) {
-				if (activity.m_name == activityName) {
+				if (activity.getValueAsString('m_name') == activityName) {
 					return true;
 				}
 			}
 		}
+		return false;
 	}
 
 	getActivityName() {
@@ -295,10 +317,10 @@ export class Source2AnimationDesc {
 		return -1;
 	}
 
-	matchModifiers(activityName, modifiers) {
-		const activityArray = this.data?.m_activityArray;
+	matchModifiers(activityName: string, modifiers: Set<string>): boolean {
+		const activityArray = this.data.getValueAsElementArray('m_activityArray');
 		if (activityArray && activityArray.length > 0) {
-			if (activityArray[0].m_name != activityName) {
+			if (activityArray[0].getValueAsString('m_name') != activityName) {
 				return false;
 			}
 

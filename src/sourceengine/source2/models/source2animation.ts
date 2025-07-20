@@ -1,57 +1,73 @@
+import { Kv3Element } from '../../common/keyvalue/kv3element';
+import { Source2File } from '../loaders/source2file';
 import { Source2AnimationDesc } from './source2animationdesc';
+import { Source2AnimeDecoder, Source2AnimGroup } from './source2animgroup';
+import { kv3ElementToDecoderArray } from './utils';
 
 export class Source2Animation {
-	#animArray;
+	#animArray: Kv3Element[] = [];
 	#animNames = new Map<string, Source2AnimationDesc>();
-	animGroup;
+	#animGroup: Source2AnimGroup;
 	filePath;
-	file;
-	decoderArray;
-	segmentArray;
-	frameData;
-	constructor(animGroup, filePath) {
-		this.animGroup = animGroup;
+	file?: Source2File;
+	#decoderArray: Source2AnimeDecoder[] = [];
+	#segmentArray: Kv3Element[] = [];
+	//#frameData;
+
+	constructor(animGroup: Source2AnimGroup, filePath: string) {
+		this.#animGroup = animGroup;
 		this.filePath = filePath;
 	}
 
-	setFile(sourceFile) {
+	setFile(sourceFile: Source2File) {
 		this.file = sourceFile;
 
-		this.setAnimDatas(sourceFile.getBlockStruct('DATA.structs.AnimationResourceData_t')
-			?? sourceFile.getBlockStruct('DATA.keyValue.root')
-			?? sourceFile.getBlockStruct('DATA.keyValue.root.m_localS1SeqDescArray')
-			?? sourceFile.getBlockStruct('ANIM.keyValue.root')
-		);
+		const animDatas =
+			//sourceFile.getBlockStruct('DATA.structs.AnimationResourceData_t')
+			sourceFile.getBlockKeyValues('DATA')
+			//?? sourceFile.getBlockStruct('DATA', 'm_localS1SeqDescArray')
+			?? sourceFile.getBlockKeyValues('ANIM');
+
+		if (animDatas) {
+			this.setAnimDatas(animDatas);
+		}
 	}
 
-	setAnimDatas(data) {
+	setAnimDatas(data: Kv3Element) {
 		if (data) {
-			this.#animArray = data.m_animArray ?? [];
+			this.#animArray = data.getValueAsElementArray('m_animArray') ?? [];//data.m_animArray ?? [];
 			//console.error('data.m_animArray', data.m_animArray);
-			this.decoderArray = data.m_decoderArray;
-			this.segmentArray = data.m_segmentArray;
-			this.frameData = data.m_frameData;
+			this.#decoderArray = kv3ElementToDecoderArray(data.getValueAsElementArray('m_decoderArray'));//this.decoderArray = data.m_decoderArray;
 
-			if (this.#animArray) {
-				for (let i = 0; i < this.#animArray.length; i++) {
-					const anim = this.#animArray[i];
-					this.#animNames.set(anim.m_name, new Source2AnimationDesc(this.animGroup.source2Model, anim, this));
+			this.#segmentArray = data.getValueAsElementArray('m_segmentArray') ?? [];//data.m_segmentArray;
+			//this.#frameData = data.m_frameData;
+
+			//for (let i = 0; i < this.#animArray.length; i++) {
+			for (const anim of this.#animArray) {
+				//const anim = this.#animArray[i];
+				const animName = anim.getValueAsString('m_name');
+				if (animName) {
+					this.#animNames.set(animName, new Source2AnimationDesc(this.#animGroup.source2Model, anim, this));
 				}
 			}
 		}
 	}
+
 	getAnimDesc(name: string): Source2AnimationDesc | undefined {
 		return this.#animNames.get(name);
 	}
+
 	getDecodeKey() {
-		return this.animGroup.decodeKey;
+		return this.#animGroup.decodeKey;
 	}
+
 	getDecoderArray() {
-		return this.decoderArray;
+		return this.#decoderArray;
 	}
-	getSegment(segmentIndex) {
+
+	getSegment(segmentIndex: number): Kv3Element {
 		//TODO: check segement
-		return this.segmentArray[segmentIndex];
+		return this.#segmentArray[segmentIndex];
 	}
 
 	async getAnimations(animations = new Set<string>()) {
@@ -119,7 +135,7 @@ export class Source2Animation {
 		return [bestMatch, bestScore];
 	}
 
-	getAnimationsByActivity(activityName) {
+	getAnimationsByActivity(activityName: string) {
 		const anims = [];
 		for (const [animName, animDesc] of this.#animNames) {
 			if (animDesc.matchActivity(activityName)) {
@@ -133,7 +149,7 @@ export class Source2Animation {
 		return this.#animArray;
 	}
 
-	getAnimationByName(animName) {
+	getAnimationByName(animName: string) {
 		return this.#animNames.get(animName);
 		//return this.#internalAnimGroup?.getAnimationByName(animName);
 		/*for (let source2Animation in this.#animArray) {
