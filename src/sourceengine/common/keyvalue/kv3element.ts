@@ -19,6 +19,17 @@ export class Kv3Element {
 		return this.#properties;
 	}
 
+	getValue(name: string): Kv3ValueType {
+		const prop = this.#properties.get(name);
+		if ((prop as Kv3Element)?.isKv3Element) {
+			return (prop as Kv3Element);
+		}
+		if ((prop as Kv3Value)?.isKv3Value) {
+			return (prop as Kv3Value).getValue();
+		}
+		return null;
+	}
+
 	getValueAsString(name: string): string | null {
 		const prop = this.#properties.get(name);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.String) {
