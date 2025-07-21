@@ -26,7 +26,7 @@ const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE
 const SEQUENCE_SAMPLE_COUNT = 1;//TODO
 
 export class RenderSprites extends RenderBase {
-	geometry: BufferGeometry;
+	geometry: BufferGeometry = new BufferGeometry();
 	setDefaultTexture = true;//TODO: remove this property
 	#minSize = 0.0;
 	#maxSize = 5000.0;
@@ -38,8 +38,6 @@ export class RenderSprites extends RenderBase {
 	constructor(system: Source2ParticleSystem) {
 		super(system);
 		this.setMaxParticles(1000);//TODO: default value
-		this.material.repository = system.repository;
-		this.geometry = new BufferGeometry();
 		this.mesh = new Mesh(this.geometry, this.material);
 		this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
 		Source2MaterialManager.addMaterial(this.material);
@@ -176,7 +174,7 @@ export class RenderSprites extends RenderBase {
 	setMaxParticles(maxParticles: number): void {
 		this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
 		this.#createParticlesArray();
-		this._initBuffers();
+		this.#initBuffers();
 	}
 
 	/**
@@ -186,7 +184,7 @@ export class RenderSprites extends RenderBase {
 		this.setMaxParticles(maxParticles);
 	}
 
-	_initBuffers() {
+	#initBuffers() {
 		const geometry = this.geometry;
 		const vertices = [];
 		const uvs = [];

@@ -1,19 +1,16 @@
 import { vec3, vec4 } from 'gl-matrix';
-
-
-import { Kv3Array } from '../../../common/keyvalue/kv3array';
-import { clamp, lerp, RemapValClamped, RemapValClampedBias, RandomFloat } from '../../../../math/functions';
-import { vec3RandomBox } from '../../../../math/functions';
-import { PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED, PARTICLE_ORIENTATION_WORLD_Z_ALIGNED, PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION } from '../../../common/particles/particleconsts';
 import { TESTING } from '../../../../buildoptions';
-import { Source2ParticleSystem } from '../source2particlesystem';
-import { Source2Material } from '../../materials/source2material';
+import { clamp, lerp, RandomFloat, RemapValClamped, RemapValClampedBias, vec3RandomBox } from '../../../../math/functions';
 import { Mesh } from '../../../../objects/mesh';
+import { JSONObject } from '../../../../types';
+import { Kv3Array } from '../../../common/keyvalue/kv3array';
+import { PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION, PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED, PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_WORLD_Z_ALIGNED } from '../../../common/particles/particleconsts';
+import { Source2Material } from '../../materials/source2material';
 import { Source2SpriteCard } from '../../materials/source2spritecard';
 import { Source2Particle } from '../source2particle';
-import { JSONObject } from '../../../../types';
+import { Source2ParticleSystem } from '../source2particlesystem';
 
-const COLOR_SCALE = 1 / 255;
+export const COLOR_SCALE = 1 / 255;
 
 function vec4Scale(out: vec4, a: vec4, b: number) {
 	out[0] = Number(a[0]) * b;
@@ -53,7 +50,6 @@ export class Operator {//TODOv3: rename this class ?
 	fieldOutput = -1;
 	scaleCp?: number;
 	mesh?: Mesh;
-	material = new Source2SpriteCard('');
 	endCapState?: number;
 	currentTime = 0;
 	operateAllParticlesRemoveme = false;
@@ -351,27 +347,9 @@ export class Operator {//TODOv3: rename this class ?
 			case 'm_flOpStrength':
 				//TODO
 				break;
-			case 'm_ColorScale':
-				const colorScale = vec3.create();
-				colorScale[0] = Number(value[0]) * COLOR_SCALE;
-				colorScale[1] = Number(value[1]) * COLOR_SCALE;
-				colorScale[2] = Number(value[2]) * COLOR_SCALE;
-				this.material?.setUniform('uColorScale', colorScale);
-				break;
 			case 'm_flAlphaScale':
 				//handled in operator
 				break;
-			// Renderer parameters
-			case 'm_nOutputBlendMode':
-				this.setOutputBlendMode(value);
-				break;
-			case 'm_bAdditive':
-				this.setOutputBlendMode('PARTICLE_OUTPUT_BLEND_MODE_ADD');
-				break;
-			case 'm_bMod2X':
-				this.setOutputBlendMode('PARTICLE_OUTPUT_BLEND_MODE_MOD2X');
-				break;
-			default:
 				console.warn(this.constructor.name + ' : unknown parameter : ' + paramName, value);
 		}
 	}
@@ -450,10 +428,6 @@ export class Operator {//TODOv3: rename this class ?
 			return (this.currentTime - this.opStartFadeOutTime) / (this.opEndFadeOutTime - this.opStartFadeOutTime);
 		}
 		return 1;
-	}
-
-	setMaterial(material: Source2SpriteCard) {
-		this.material = material;
 	}
 
 	setParameter(parameter: string, type: any/*TODO: improve type*/, value: any) {
@@ -623,33 +597,6 @@ export class Operator {//TODOv3: rename this class ?
 			default:
 				console.error('Unknonw orientationType ', orientationType);
 		}
-	}
-
-	setOutputBlendMode(outputBlendMode: string) {
-		let blendMode = 0;
-		switch (outputBlendMode) {
-			case 'PARTICLE_OUTPUT_BLEND_MODE_ADD':
-				blendMode = 1;
-				break;
-			case 'PARTICLE_OUTPUT_BLEND_MODE_BLEND_ADD':
-				blendMode = 2;
-				break;
-			case 'PARTICLE_OUTPUT_BLEND_MODE_HALF_BLEND_ADD':
-				blendMode = 3;
-				break;
-			case 'PARTICLE_OUTPUT_BLEND_MODE_NEG_HALF_BLEND_ADD':
-				blendMode = 4;
-				break;
-			case 'PARTICLE_OUTPUT_BLEND_MODE_MOD2X':
-				blendMode = 5;
-				break;
-			case 'PARTICLE_OUTPUT_BLEND_MODE_LIGHTEN':
-				blendMode = 6;
-				break;
-			default:
-				console.error('Unknonw outputBlendMode ', outputBlendMode);
-		}
-		this.material?.setOutputBlendMode(blendMode);
 	}
 
 	init() {

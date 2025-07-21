@@ -1,28 +1,28 @@
 import { vec2, vec3 } from 'gl-matrix';
 
-import { OPERATOR_PARAM_TEXTURE } from '../operatorparams';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
-import { Source2ParticleManager } from '../../source2particlemanager';
-import { Source2MaterialManager } from '../../../materials/source2materialmanager';
-import { Source2TextureManager } from '../../../textures/source2texturemanager';
-import { Source2SpriteCard } from '../../../materials/source2spritecard';
-import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
 import { LOG, TESTING } from '../../../../../buildoptions';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 import { Graphics } from '../../../../../graphics/graphics';
+import { ceilPowerOfTwo, clamp } from '../../../../../math/functions';
 import { Mesh } from '../../../../../objects/mesh';
-import { TextureManager } from '../../../../../textures/texturemanager';
-import { clamp, ceilPowerOfTwo } from '../../../../../math/functions';
-import { GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_NEAREST, GL_FLOAT, GL_RGBA, GL_RGBA32F } from '../../../../../webgl/constants';
-import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
-import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
-import { Source2SpriteSheet } from '../../../textures/source2spritesheet';
 import { Texture } from '../../../../../textures/texture';
+import { TextureManager } from '../../../../../textures/texturemanager';
+import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER } from '../../../../../webgl/constants';
+import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
+import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
+import { Source2MaterialManager } from '../../../materials/source2materialmanager';
+import { Source2SpriteCard } from '../../../materials/source2spritecard';
+import { Source2SpriteSheet } from '../../../textures/source2spritesheet';
+import { Source2TextureManager } from '../../../textures/source2texturemanager';
 import { Source2ParticleSystem } from '../../export';
+import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
 import { Source2Particle } from '../../source2particle';
+import { Source2ParticleManager } from '../../source2particlemanager';
+import { OPERATOR_PARAM_TEXTURE } from '../operatorparams';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
+import { RenderBase } from './renderbase';
 
 const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
@@ -30,7 +30,7 @@ const SEQUENCE_SAMPLE_COUNT = 1;//TODO
 
 const tempVec2 = vec2.create();
 
-export class RenderTrails extends Operator {
+export class RenderTrails extends RenderBase {
 	geometry: BufferGeometry;
 	setDefaultTexture? = true;//TODO: remove this property
 	minLength = 0;
@@ -200,10 +200,10 @@ export class RenderTrails extends Operator {
 	set maxParticles(maxParticles: number) {
 		this.#maxParticles = new Graphics().isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
 		this.#createParticlesArray();
-		this._initBuffers();
+		this.#initBuffers();
 	}
 
-	_initBuffers() {
+	#initBuffers() {
 		const geometry = this.geometry;
 		const vertices = [];
 		const uvs = [];
