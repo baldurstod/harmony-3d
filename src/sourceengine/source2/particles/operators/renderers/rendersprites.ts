@@ -37,8 +37,8 @@ export class RenderSprites extends RenderBase {
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this.setMaxParticles(1000);//TODO: default value
 		this.mesh = new Mesh(this.geometry, this.material);
+		this.setMaxParticles(1000);//TODO: default value
 		this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
 		Source2MaterialManager.addMaterial(this.material);
 		//this.setParam(OPERATOR_PARAM_TEXTURE, 'materials/particle/base_sprite');//TODOv3: make a const
@@ -83,7 +83,7 @@ export class RenderSprites extends RenderBase {
 				this.material.setDefine('USE_TEXTURE_COORD_2');
 				break;
 			default:
-				console.error('Unknonw sequenceCombineMode ', sequenceCombineMode);
+				console.error('Unknown sequenceCombineMode ', sequenceCombineMode);
 		}
 	}
 
