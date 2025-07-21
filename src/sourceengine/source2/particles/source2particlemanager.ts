@@ -1,3 +1,4 @@
+import { Map2 } from 'harmony-utils';
 import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../../../graphics/graphicsevents';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
@@ -7,7 +8,7 @@ import { Source2File } from '../loaders/source2file';
 import { Source2ParticleSystem } from './source2particlesystem';
 
 class Source2ParticleManagerClass {// TODO: turn into a proper singleton
-	#vpcfs: Record<string, Source2File> = {};//TODO: turn to map
+	#vpcfs = new Map2<string, string, Source2File | null>();
 	#fileList: Record<string, undefined | FileSelectorFile[]> = {};//TODO: turn to map and improve type
 	speed = 1.0;
 	activeSystemList = new Set<Source2ParticleSystem>();
@@ -19,13 +20,11 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 		});
 	}
 
-	async #getVpcf(repository: string, vpcfPath: string) {
-		const fullPath = repository + vpcfPath;
-
-		let vpcf = this.#vpcfs[fullPath];
+	async #getVpcf(repository: string, path: string): Promise<Source2File | null> {
+		let vpcf: Source2File | undefined | null = this.#vpcfs.get(repository, path);
 		if (vpcf === undefined) {
-			vpcf = await (getLoader('Source2ParticleLoader') as typeof Source2ParticleLoader).load(repository, vpcfPath);
-			this.#vpcfs[fullPath] = vpcf;
+			vpcf = await (getLoader('Source2ParticleLoader') as typeof Source2ParticleLoader).load(repository, path);
+			this.#vpcfs.set(repository, path, vpcf);
 		}
 		return vpcf;
 	}
@@ -44,7 +43,7 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 			elapsedTime *= this.speed;
 			elapsedTime = Math.min(elapsedTime, 0.1);
 			for (const system of this.activeSystemList.values()) {
-				if (system.parentSystem === undefined) {
+				if (!system.parentSystem) {
 					system.step(elapsedTime);
 				}
 			}
