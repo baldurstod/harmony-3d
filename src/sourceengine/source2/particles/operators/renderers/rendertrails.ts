@@ -103,7 +103,7 @@ export class RenderTrails extends RenderBase {
 				this.material!.setDefine('USE_TEXTURE_COORD_2');
 				break;
 			default:
-				console.error('Unknonw sequenceCombineMode ', sequenceCombineMode);
+				console.error('Unknown sequenceCombineMode ', sequenceCombineMode);
 		}
 	}
 

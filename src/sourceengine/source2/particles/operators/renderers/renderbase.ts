@@ -61,7 +61,7 @@ export class RenderBase extends Operator {
 				blendMode = 6;
 				break;
 			default:
-				console.error('Unknonw outputBlendMode ', outputBlendMode);
+				console.error('Unknown outputBlendMode ', outputBlendMode);
 		}
 		this.material?.setOutputBlendMode(blendMode);
 	}

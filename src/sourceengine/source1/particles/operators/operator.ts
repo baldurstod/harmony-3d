@@ -343,7 +343,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
 				break;
 			default:
-				console.error('Unknonw orientationType ', orientationType);
+				console.error('Unknown orientationType ', orientationType);
 		}
 	}
 
