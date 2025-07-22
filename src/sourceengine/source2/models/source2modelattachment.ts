@@ -17,6 +17,7 @@ export class Source2ModelAttachment {
 		this.name = name;
 	}
 }
+
 export class Source2ModelAttachmentInstance extends Entity {
 	model;
 	attachment;
@@ -32,7 +33,7 @@ export class Source2ModelAttachmentInstance extends Entity {
 
 	//TODO: compute with all bones, not only the first one
 	getWorldPosition(vec = vec3.create()) {
-		const bone = this.#getBone(this.attachment.influenceNames[0]);
+		const bone = this.#getBone(this.attachment.influenceNames[0] ?? '');
 		if (bone) {
 			bone.getWorldPosition(vec);
 			bone.getWorldQuaternion(tempQuat);
@@ -44,8 +45,9 @@ export class Source2ModelAttachmentInstance extends Entity {
 		return vec;
 	}
 
+	//TODO: compute with all bones, not only the first one
 	getWorldQuaternion(q = quat.create()) {
-		const bone = this.#getBone(this.attachment.influenceNames[0]);
+		const bone = this.#getBone(this.attachment.influenceNames[0] ?? '');
 		if (bone) {
 			bone.getWorldQuaternion(q);
 			quat.mul(q, q, this.attachment.influenceRotations[0]);
