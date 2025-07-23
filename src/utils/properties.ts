@@ -8,7 +8,7 @@ export enum PropertyType {
 	Array = 'array',
 }
 
-export type PropertyValues = string | number | bigint | any[];
+export type PropertyValues = string | number | bigint | any | any[];
 
 export class Property {
 	type: string;

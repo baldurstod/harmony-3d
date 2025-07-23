@@ -2262,7 +2262,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): SpotLightHelper | PointLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -5529,7 +5529,7 @@ declare class Choreography {
              Array = "array"
          }
 
-         export declare type PropertyValues = string | number | bigint | any[];
+         export declare type PropertyValues = string | number | bigint | any | any[];
 
          /**
           * Source engine material interface
