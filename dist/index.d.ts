@@ -2011,13 +2011,13 @@ declare class Choreography {
           propagate(): void;
           copy(source: Entity): void;
           getProperty(name: string): Property | undefined;
-          setProperty(name: string, value: any): void;
+          setProperty(name: string, value: Property): void;
           setLayer(layer?: number): void;
           getLayer(): number | undefined;
           setMaterialParam(name: string, value: MaterialParam): void;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
-          createChild(entityName: string, parameters: any): Promise<Material | Entity>;
+          createChild(entityName: string, parameters: any): Promise<Entity | Material>;
           fromJSON(json: JSONObject): void;
           static getEntityName(): string;
           is(s: string): boolean;
@@ -2262,7 +2262,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): SpotLightHelper | PointLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -3295,8 +3295,8 @@ declare class Choreography {
          }
 
          export declare class JSONLoader {
-             static fromJSON(rootEntity: object): Promise<Material | Entity>;
-             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Material | Entity>;
+             static fromJSON(rootEntity: object): Promise<Entity | Material>;
+             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material>;
              static registerEntity(ent: typeof Entity | typeof Material): void;
          }
 
@@ -7815,7 +7815,7 @@ declare class Choreography {
              /**
               * TODO
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number, number] | [number, number, number] | Float32Array<ArrayBufferLike>;
              /**
               * TODO
               */

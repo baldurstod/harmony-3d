@@ -1064,7 +1064,7 @@ export class Entity {
 		return this.properties.get(name);
 	}
 
-	setProperty(name: string, value: any) {
+	setProperty(name: string, value: Property): void {
 		return this.properties.set(name, value);
 	}
 
