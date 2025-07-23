@@ -5492,7 +5492,7 @@ declare class Choreography {
              getProgram(): WebGLProgram;
          }
 
-         declare class Properties {
+         export declare class Properties {
              #private;
              set(name: string, property: Property): void;
              get(name: string): Property | undefined;
@@ -5504,7 +5504,7 @@ declare class Choreography {
              getBigint(name: string): bigint | undefined;
          }
 
-         declare class Property {
+         export declare class Property {
              type: PropertyType;
              value: PropertyValues;
              constructor(type: PropertyType, value: PropertyValues);
@@ -5519,7 +5519,7 @@ declare class Choreography {
              oldValue: any;
          }
 
-         declare enum PropertyType {
+         export declare enum PropertyType {
              Null = 0,
              Undefined = 1,
              String = 2,
@@ -5529,7 +5529,7 @@ declare class Choreography {
              Array = 100
          }
 
-         declare type PropertyValues = string | number | bigint | any[];
+         export declare type PropertyValues = string | number | bigint | any[];
 
          /**
           * Source engine material interface
