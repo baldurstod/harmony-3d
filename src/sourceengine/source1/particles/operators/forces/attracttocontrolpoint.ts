@@ -6,7 +6,7 @@ import { FLT_EPSILON } from '../../../../../math/constants';
 
 const tempVec3 = vec3.create();
 
-export class PullTowardsControlPoint extends SourceEngineParticleOperator {
+export class AttractToControlPoint extends SourceEngineParticleOperator {
 	static functionName =  'Pull towards control point';
 	constructor() {
 		super();
@@ -45,4 +45,4 @@ export class PullTowardsControlPoint extends SourceEngineParticleOperator {
 		vec3.add(accumulatedForces, accumulatedForces, ofs);
 	}
 }
-SourceEngineParticleOperators.registerOperator(PullTowardsControlPoint);
+SourceEngineParticleOperators.registerOperator(AttractToControlPoint);
