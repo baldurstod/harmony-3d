@@ -56515,6 +56515,12 @@ class OperatorParam {
         }
         return this.#value.get(name);
     }
+    getSubValueAsBool(name) {
+        return this.getSubValue(name)?.getValueAsBool();
+    }
+    getSubValueAsNumber(name) {
+        return this.getSubValue(name)?.getValueAsNumber();
+    }
     static fromKv3(kv3) {
         if (kv3.isKv3Element) {
             return this.#fromKv3Element(kv3);
@@ -58288,8 +58294,9 @@ class Operator {
         if (type) {
             switch (type) {
                 case 'PF_TYPE_LITERAL':
-                    return parameter.m_flLiteralValue;
+                    return parameter.getSubValueAsNumber('m_flLiteralValue') ?? 0;
                 case 'PF_TYPE_PARTICLE_AGE':
+                    console.error('do this getParamScalarValue');
                     return parameter.m_vLiteralValue;
                 case 'PF_TYPE_PARTICLE_NUMBER_NORMALIZED':
                     if (this.normalizePerLiving) {
@@ -58306,21 +58313,25 @@ class Operator {
                 case 'PF_TYPE_PARTICLE_AGE_NORMALIZED':
                     return this.#getParamScalarValue2(parameter, particle?.proportionOfLife ?? 0);
                 case 'PF_TYPE_RANDOM_BIASED':
-                    //TODO: use parameter.m_nBiasType
-                    return RemapValClampedBias(Math.random(), 0, 1, parameter.m_flRandomMin, parameter.m_flRandomMax, 0.5 /*parameter.m_flBiasParameter*/); //TODO: use another bias function bias varies from -1 to 1
+                    //TODO: use m_nBiasType (PF_BIAS_TYPE_EXPONENTIAL ...)
+                    return RemapValClampedBias(Math.random(), 0, 1, parameter.getSubValueAsNumber('m_flRandomMin') ?? 0, parameter.getSubValueAsNumber('m_flRandomMax') ?? 1, 0.5 /*parameter.m_flBiasParameter*/); //TODO: use another bias function bias varies from -1 to 1
                 case 'PF_TYPE_RANDOM_UNIFORM':
-                    return RandomFloat(parameter.m_flRandomMin, parameter.m_flRandomMax);
+                    // TODO: user m_nRandomMode (PF_RANDOM_MODE_CONSTANT ...)
+                    return RandomFloat(parameter.getSubValueAsNumber('m_flRandomMin') ?? 0, parameter.getSubValueAsNumber('m_flRandomMax') ?? 1);
                 case 'PF_TYPE_COLLECTION_AGE':
                     return this.#getParamScalarValue2(parameter, this.system.currentTime);
                 case 'PF_TYPE_PARTICLE_NOISE':
+                    console.error('do this getParamScalarValue');
                     return this.#getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin, parameter.m_flNoiseOutputMax)); //TODO
                 case 'PF_TYPE_CONTROL_POINT_COMPONENT':
+                    console.error('do this getParamScalarValue');
                     const cp = this.system.getControlPoint(parameter.m_nControlPoint);
                     if (cp) {
                         return cp.position[parameter.m_nVectorComponent];
                     }
                     return 0;
                 case 'PF_TYPE_PARTICLE_FLOAT':
+                    console.error('do this getParamScalarValue');
                     return inputValue = RemapValClamped(particle?.getField(parameter.m_nScalarAttribute ?? 0) ?? 0, parameter.m_flInput0 ?? 0, parameter.m_flInput1 ?? 1, parameter.m_flOutput0 ?? 0, parameter.m_flOutput1 ?? 1);
                 default:
                     console.error('#getParamScalarValue unknown type', parameter);

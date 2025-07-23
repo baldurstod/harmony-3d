@@ -98,9 +98,10 @@ export class Operator {//TODOv3: rename this class ?
 		if (type) {
 			switch (type) {
 				case 'PF_TYPE_LITERAL':
-					return parameter.m_flLiteralValue;
+					return parameter.getSubValueAsNumber('m_flLiteralValue') ?? 0;
 					break;
 				case 'PF_TYPE_PARTICLE_AGE':
+					console.error('do this getParamScalarValue');
 					return parameter.m_vLiteralValue;
 					break;
 				case 'PF_TYPE_PARTICLE_NUMBER_NORMALIZED':
@@ -120,19 +121,22 @@ export class Operator {//TODOv3: rename this class ?
 					return this.#getParamScalarValue2(parameter, particle?.proportionOfLife ?? 0);
 					break;
 				case 'PF_TYPE_RANDOM_BIASED':
-					//TODO: use parameter.m_nBiasType
-					return RemapValClampedBias(Math.random(), 0, 1, parameter.m_flRandomMin as number, parameter.m_flRandomMax as number, 0.5/*parameter.m_flBiasParameter*/);//TODO: use another bias function bias varies from -1 to 1
+					//TODO: use m_nBiasType (PF_BIAS_TYPE_EXPONENTIAL ...)
+					return RemapValClampedBias(Math.random(), 0, 1, parameter.getSubValueAsNumber('m_flRandomMin') ?? 0, parameter.getSubValueAsNumber('m_flRandomMax') ?? 1, 0.5/*parameter.m_flBiasParameter*/);//TODO: use another bias function bias varies from -1 to 1
 					break;
 				case 'PF_TYPE_RANDOM_UNIFORM':
-					return RandomFloat(parameter.m_flRandomMin as number, parameter.m_flRandomMax as number);
+					// TODO: user m_nRandomMode (PF_RANDOM_MODE_CONSTANT ...)
+					return RandomFloat(parameter.getSubValueAsNumber('m_flRandomMin') ?? 0, parameter.getSubValueAsNumber('m_flRandomMax') ?? 1);
 					break;
 				case 'PF_TYPE_COLLECTION_AGE':
 					return this.#getParamScalarValue2(parameter, this.system.currentTime);
 					break;
 				case 'PF_TYPE_PARTICLE_NOISE':
+					console.error('do this getParamScalarValue');
 					return this.#getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin as number, parameter.m_flNoiseOutputMax as number));//TODO
 					break;
 				case 'PF_TYPE_CONTROL_POINT_COMPONENT':
+					console.error('do this getParamScalarValue');
 					const cp = this.system.getControlPoint(parameter.m_nControlPoint as number);
 					if (cp) {
 						return cp.position[parameter.m_nVectorComponent as number];
@@ -140,6 +144,7 @@ export class Operator {//TODOv3: rename this class ?
 					return 0;
 					break;
 				case 'PF_TYPE_PARTICLE_FLOAT':
+					console.error('do this getParamScalarValue');
 					return inputValue = RemapValClamped(
 						particle?.getField(parameter.m_nScalarAttribute as number ?? 0) as number ?? 0,
 						parameter.m_flInput0 as number ?? 0,

@@ -4933,6 +4933,8 @@ declare class Choreography {
              getValueAsVec3(out: vec3): vec3 | null;
              getValueAsVec4(out: vec4): vec4 | null;
              getSubValue(name: string): OperatorParam | null | undefined;
+             getSubValueAsBool(name: string): boolean | null | undefined;
+             getSubValueAsNumber(name: string): number | null | undefined;
              static fromKv3(kv3: Kv3Element | Kv3Value | null): OperatorParam;
          }
 
@@ -7815,7 +7817,7 @@ declare class Choreography {
              /**
               * TODO
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number, number] | [number, number, number] | Float32Array<ArrayBufferLike>;
+             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
              /**
               * TODO
               */

@@ -96,6 +96,14 @@ export class OperatorParam {
 		return (this.#value as Map<string, OperatorParam>).get(name);
 	}
 
+	getSubValueAsBool(name: string): boolean | null | undefined {
+		return this.getSubValue(name)?.getValueAsBool();
+	}
+
+	getSubValueAsNumber(name: string): number | null | undefined {
+		return this.getSubValue(name)?.getValueAsNumber();
+	}
+
 	static fromKv3(kv3: Kv3Element | Kv3Value | null): OperatorParam {
 		if ((kv3 as Kv3Element).isKv3Element) {
 			return this.#fromKv3Element(kv3 as Kv3Element);
