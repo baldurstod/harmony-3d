@@ -4701,7 +4701,7 @@ declare class Choreography {
              successorsLength(): number;
              get title(): string;
              updatePreview(context?: any): void;
-             savePicture(): Promise<void>;
+             savePicture(filename?: string): Promise<void>;
              saveVTF(): Promise<void>;
              toString(tabs?: string): Promise<string>;
              dispose(): void;

@@ -267,7 +267,7 @@ export class Node extends EventTarget {
 		new Graphics().popRenderTarget();
 	}
 
-	async savePicture() {
+	async savePicture(filename: string = 'texture.png') {
 		await this.redraw({ previewSize: 2048 });
 
 		const image = this.previewPic;
@@ -275,7 +275,7 @@ export class Node extends EventTarget {
 		const canvas = createElement('canvas', { width: image.width, height: image.height }) as HTMLCanvasElement;
 		const ctx = canvas.getContext('2d');
 		ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-		canvas.toBlob((blob) => saveFile(new File([blob], 'texture.png')));//toDataURL
+		canvas.toBlob((blob) => saveFile(new File([blob], filename)));//toDataURL
 		//		saveFile(new File([blob], 'texture.png'));
 		this.previewPic.width = PREVIEW_PICTURE_SIZE;
 		this.previewPic.height = PREVIEW_PICTURE_SIZE;
