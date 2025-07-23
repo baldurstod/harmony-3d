@@ -1012,13 +1012,13 @@ class Float32BufferAttribute extends BufferAttribute {
 
 var PropertyType;
 (function (PropertyType) {
-    PropertyType[PropertyType["Null"] = 0] = "Null";
-    PropertyType[PropertyType["Undefined"] = 1] = "Undefined";
-    PropertyType[PropertyType["String"] = 2] = "String";
-    PropertyType[PropertyType["Number"] = 3] = "Number";
-    PropertyType[PropertyType["Bigint"] = 4] = "Bigint";
-    PropertyType[PropertyType["Boolean"] = 5] = "Boolean";
-    PropertyType[PropertyType["Array"] = 100] = "Array";
+    PropertyType["Null"] = "null";
+    PropertyType["Undefined"] = "undefined";
+    PropertyType["String"] = "string";
+    PropertyType["Number"] = "number";
+    PropertyType["Bigint"] = "bigint";
+    PropertyType["Boolean"] = "boolean";
+    PropertyType["Array"] = "array";
 })(PropertyType || (PropertyType = {}));
 class Property {
     type;

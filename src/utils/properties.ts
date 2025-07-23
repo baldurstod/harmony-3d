@@ -1,20 +1,20 @@
 export enum PropertyType {
-	Null = 0,
-	Undefined = 1,
-	String = 2,
-	Number = 3,
-	Bigint = 4,
-	Boolean = 5,
-	Array = 100,
+	Null = 'null',
+	Undefined = 'undefined',
+	String = 'string',
+	Number = 'number',
+	Bigint = 'bigint',
+	Boolean = 'boolean',
+	Array = 'array',
 }
 
 export type PropertyValues = string | number | bigint | any[];
 
 export class Property {
-	type: PropertyType;
+	type: string;
 	value: PropertyValues;
 
-	constructor(type: PropertyType, value: PropertyValues) {
+	constructor(type: string, value: PropertyValues) {
 		this.type = type;
 		this.value = value;
 	}

@@ -2262,7 +2262,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): SpotLightHelper | PointLightHelper | Grid | CameraFrustum;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -5505,9 +5505,9 @@ declare class Choreography {
          }
 
          export declare class Property {
-             type: PropertyType;
+             type: string;
              value: PropertyValues;
-             constructor(type: PropertyType, value: PropertyValues);
+             constructor(type: string, value: PropertyValues);
          }
 
          export declare const PROPERTY_CHANGED = "propertychanged";
@@ -5520,13 +5520,13 @@ declare class Choreography {
          }
 
          export declare enum PropertyType {
-             Null = 0,
-             Undefined = 1,
-             String = 2,
-             Number = 3,
-             Bigint = 4,
-             Boolean = 5,
-             Array = 100
+             Null = "null",
+             Undefined = "undefined",
+             String = "string",
+             Number = "number",
+             Bigint = "bigint",
+             Boolean = "boolean",
+             Array = "array"
          }
 
          export declare type PropertyValues = string | number | bigint | any[];
