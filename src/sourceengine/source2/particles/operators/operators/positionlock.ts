@@ -1,9 +1,10 @@
 import { vec3 } from 'gl-matrix';
 import { RandomFloatExp, clamp } from '../../../../../math/functions';
 import { Source2ParticleSystem } from '../../export';
-import { Operator, Source2OperatorParamValue } from '../operator';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Source2Particle } from '../../source2particle';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const tempPrevPos = vec3.create();
 const tempPos = vec3.create();
@@ -35,46 +36,51 @@ export class PositionLock extends Operator {
 		this.#endFadeOutTime = RandomFloatExp(this.#endTimeMin, this.#endTimeMax, this.#endTimeExp);
 	}
 
-	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flStartTime_min':
-				this.#startTimeMin = value;
+				this.#startTimeMin = param.getValueAsNumber() ?? 1;
 				this._update();
 				break;
 			case 'm_flStartTime_max':
-				this.#startTimeMax = value;
+				this.#startTimeMax = param.getValueAsNumber() ?? 1;
 				this._update();
 				break;
 			case 'm_flStartTime_exp':
-				this.#startTimeExp = value;
+				console.error('do this param', paramName, param);
+				this.#startTimeExp = param;
 				this._update();
 				break;
 			case 'm_flEndTime_min':
-				this.#endTimeMin = value;
+				this.#endTimeMin = param.getValueAsNumber() ?? 1;
 				this._update();
 				break;
 			case 'm_flEndTime_max':
-				this.#endTimeMax = value;
+				this.#endTimeMax = param.getValueAsNumber() ?? 1;
 				this._update();
 				break;
 			case 'm_flEndTime_exp':
-				this.#endTimeExp = value;
+				console.error('do this param', paramName, param);
+				this.#endTimeExp = param;
 				this._update();
 				break;
 			case 'm_flRange':
-				this.#range = value;
+				console.error('do this param', paramName, param);
+				this.#range = param;
 				break;
 			case 'm_flJumpThreshold':
-				this.#jumpThreshold = value;
+				console.error('do this param', paramName, param);
+				this.#jumpThreshold = param;
 				break;
 			case 'm_flPrevPosScale':
-				this.#prevPosScale = value;
+				console.error('do this param', paramName, param);
+				this.#prevPosScale = param;
 				break;
 			case 'm_bLockRot':
-				this.#lockRot = value;
+				this.#lockRot = param.getValueAsBool() ?? false;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

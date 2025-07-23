@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { OperatorParam } from '../operatorparam';
 
 const v = vec3.create();
 
@@ -16,37 +17,37 @@ export class PositionWarp extends Operator {
 	invertWarp = false;
 	useCount = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecWarpMin':
-				vec3.copy(this.warpMin, value);
+				vec3.copy(this.warpMin, param);
 				break;
 			case 'm_vecWarpMax':
-				vec3.copy(this.warpMax, value);
+				vec3.copy(this.warpMax, param);
 				break;
 			case 'm_nScaleControlPointNumber':
-				this.scaleControlPointNumber = Number(value);
+				this.scaleControlPointNumber = (param);
 				break;
 			case 'm_nRadiusComponent':
-				this.radiusComponent = Number(value);//TODO: check [-1 0 1 2]
+				this.radiusComponent = (param);//TODO: check [-1 0 1 2]
 				break;
 			case 'm_flWarpTime':
-				this.warpTime = value;
+				this.warpTime = param;
 				break;
 			case 'm_flWarpStartTime':
-				this.warpStartTime = value;
+				this.warpStartTime = param;
 				break;
 			case 'm_flPrevPosScale':
-				this.prevPosScale = value;
+				this.prevPosScale = param;
 				break;
 			case 'm_bInvertWarp':
-				this.invertWarp = value;
+				this.invertWarp = param;
 				break;
 			case 'm_bUseCount':
-				this.useCount = value;
+				this.useCount = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

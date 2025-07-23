@@ -1,39 +1,33 @@
-import { vec2, vec3 } from 'gl-matrix';
-
-import { OPERATOR_PARAM_TEXTURE } from '../operatorparams';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
-import { Source2ParticleManager } from '../../source2particlemanager';
-import { Source2MaterialManager } from '../../../materials/source2materialmanager';
-import { Source2TextureManager } from '../../../textures/source2texturemanager';
-import { Source2SpriteCard } from '../../../materials/source2spritecard';
-import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
-import { LOG, TESTING } from '../../../../../buildoptions';
+import { vec3 } from 'gl-matrix';
 import { Graphics } from '../../../../../graphics/graphics';
 import { Mesh } from '../../../../../objects/mesh';
 import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geometries/beambuffergeometry';
-import { TextureManager } from '../../../../../textures/texturemanager';
-import { GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_NEAREST, GL_FLOAT, GL_RGBA, GL_RGBA32F } from '../../../../../webgl/constants';
-import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
-import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
-import { BufferGeometry } from '../../../../../geometry/buffergeometry';
-import { Source2SpriteSheet } from '../../../textures/source2spritesheet';
 import { Texture } from '../../../../../textures/texture';
+import { TextureManager } from '../../../../../textures/texturemanager';
+import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER } from '../../../../../webgl/constants';
+import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
+import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
+import { Source2MaterialManager } from '../../../materials/source2materialmanager';
+import { Source2SpriteCard } from '../../../materials/source2spritecard';
 import { Source2ParticleSystem } from '../../export';
+import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
 import { Source2Particle } from '../../source2particle';
+import { OperatorParam } from '../operatorparam';
+import { OPERATOR_PARAM_TEXTURE } from '../operatorparams';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
+import { RenderBase } from './renderbase';
 
 const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
 const SEQUENCE_SAMPLE_COUNT = 1;//TODO
+const DEFAULT_WORLD_SIZE = 10;
 
-export class RenderRopes extends Operator {
-	geometry: BeamBufferGeometry;
-	setDefaultTexture? = true;//TODO: remove this property
-	textureVWorldSize = 10;
-	textureVScrollRate = 10;
-	textureScroll = 0;
-	#spriteSheet: Source2SpriteSheet | null = null;
+export class RenderRopes extends RenderBase {
+	#geometry: BeamBufferGeometry;
+	#textureVWorldSize = DEFAULT_WORLD_SIZE;
+	#textureVScrollRate = 10;
+	#textureScroll = 0;
 	#maxParticles = 1000;//TODO: default value
 	#texture?: Texture;
 	#imgData?: Float32Array;
@@ -41,8 +35,8 @@ export class RenderRopes extends Operator {
 	constructor(system: Source2ParticleSystem) {
 		super(system);
 		this.material = new Source2SpriteCard(system.repository);
-		this.geometry = new BeamBufferGeometry();
-		this.mesh = new Mesh(this.geometry, this.material);
+		this.#geometry = new BeamBufferGeometry();
+		this.mesh = new Mesh(this.#geometry, this.material);
 		this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
 		Source2MaterialManager.addMaterial(this.material);
 		this.setDefaultTexture = true;
@@ -50,36 +44,33 @@ export class RenderRopes extends Operator {
 		//this.setParam(OPERATOR_PARAM_MOD_2X, false);
 		//this.setParam(OPERATOR_PARAM_ORIENTATION_TYPE, ORIENTATION_TYPE_SCREEN_ALIGN);
 		//this.setParam(OPERATOR_PARAM_SEQUENCE_COMBINE_MODE, SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0);//TODOv3: get the actual default value
-		this.textureVWorldSize = 10;
-		this.textureVScrollRate = 10;
-		this.textureScroll = 0;
+		this.#textureVWorldSize = 10;
+		this.#textureVScrollRate = 10;
+		this.#textureScroll = 0;
 	}
 
-	_paramChanged(paramName: string, value: any) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
-			case 'm_vecTexturesInput':
-				if (TESTING && LOG) {
-					console.debug(value);
-				}
-				this.setTexture(value[0].m_hTexture ?? DEFAULT_PARTICLE_TEXTURE);//TODO: check multiple textures ?
-				break;
 			case OPERATOR_PARAM_TEXTURE:
-				this.setTexture(value);
+				console.error('do this param', paramName, param);
+				this.setTexture(param);
 				break;
 			case 'm_nSequenceCombineMode':
-				this.setSequenceCombineMode(value);
+				console.error('do this param', paramName, param);
+				this.setSequenceCombineMode(param);
 				break;
 			case 'm_flTextureVWorldSize':
-				this.textureVWorldSize = value;
+				this.#textureVWorldSize = param.getValueAsNumber() ?? DEFAULT_WORLD_SIZE;
 				break;
 			case 'm_flTextureVScrollRate':
-				this.textureVScrollRate = value;
+				console.error('do this param', paramName, param);
+				this.#textureVScrollRate = param;
 				break;
 			case 'm_flFinalTextureScaleU':
 			case 'm_flFinalTextureScaleV':
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -95,17 +86,11 @@ export class RenderRopes extends Operator {
 		}
 	}
 
-	async setTexture(texturePath: string) {
-		delete this.setDefaultTexture;
-		this.material?.setTexturePath(texturePath);
-		this.#spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
-	}
-
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {//TODOv3
-		this.textureScroll += elapsedTime * this.textureVScrollRate;
+		this.#textureScroll += elapsedTime * this.#textureVScrollRate;
 		const subdivCount = this.getParameter('subdivision_count') ?? 3;
 
-		const geometry = this.geometry;
+		const geometry = this.#geometry;
 		const vertices = [];
 		const indices = [];
 		const id = [];
@@ -115,8 +100,8 @@ export class RenderRopes extends Operator {
 		let particle;
 		let ropeLength = 0.0;
 		let previousSegment = null;
-		const textureVWorldSize = 1 / this.textureVWorldSize;
-		const textureScroll = this.textureScroll;
+		const textureVWorldSize = 1 / this.#textureVWorldSize;
+		const textureScroll = this.#textureScroll;
 		const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
 		for (let i = 0, l = particleList.length; i < l; i++) {
 			//for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {

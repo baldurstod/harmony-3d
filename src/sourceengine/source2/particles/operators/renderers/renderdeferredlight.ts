@@ -1,19 +1,8 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { Source2SpriteCard } from '../../../materials/source2spritecard';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { RenderBase } from './renderbase';
 
-export class RenderDeferredLight extends Operator {
-	constructor(system) {
-		super(system);
-		this.material = new Source2SpriteCard(system.repository);
-	}
-
-	_paramChanged(paramName, value) {
-		switch (paramName) {
-			default:
-				super._paramChanged(paramName, value);
-		}
-	}
+export class RenderDeferredLight extends RenderBase {
 
 	initRenderer(particleSystem) {
 	}

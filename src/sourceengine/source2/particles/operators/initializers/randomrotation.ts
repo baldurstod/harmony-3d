@@ -1,8 +1,9 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_ROTATION_ROLL } from '../../../../common/particles/particlefields';
-import { TWO_PI, DEG_TO_RAD } from '../../../../../math/constants';
+import { DEG_TO_RAD, TWO_PI } from '../../../../../math/constants';
 import { RandomFloat, RandomFloatExp } from '../../../../../math/functions';
+import { PARTICLE_FIELD_ROTATION_ROLL } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RandomRotation extends Operator {
 	radians = 0;
@@ -11,25 +12,25 @@ export class RandomRotation extends Operator {
 	rotationRandExponent = 1;
 	randomlyFlipDirection = false;//TODO: actual default value
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flDegreesMin':
-				this.radiansMin = DEG_TO_RAD * value;
+				this.radiansMin = DEG_TO_RAD * param;
 				break;
 			case 'm_flDegreesMax':
-				this.radiansMax = DEG_TO_RAD * value;
+				this.radiansMax = DEG_TO_RAD * param;
 				break;
 			case 'm_flDegrees':
-				this.radians = DEG_TO_RAD * value;
+				this.radians = DEG_TO_RAD * param;
 				break;
 			case 'm_flRotationRandExponent':
-				this.rotationRandExponent = value;
+				this.rotationRandExponent = param;
 				break;
 			case 'm_bRandomlyFlipDirection':
-				this.randomlyFlipDirection = value;
+				this.randomlyFlipDirection = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

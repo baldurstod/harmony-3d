@@ -1,40 +1,44 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Source2Particle } from '../../source2particle';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RampScalarLinearSimple extends Operator {
-	rate = 0;
-	startTime = 0;
-	endTime = 1;
-	field = PARTICLE_FIELD_RADIUS;
+	#rate = 0;
+	#startTime = 0;
+	#endTime = 1;
+	#field = PARTICLE_FIELD_RADIUS;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_Rate':
-				this.rate = value;
+				this.#rate = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_flStartTime':
-				this.startTime = value;
+				console.error('do this param', paramName, param);
+				this.#startTime = param;
 				break;
 			case 'm_flEndTime':
-				this.endTime = value;
+				console.error('do this param', paramName, param);
+				this.#endTime = param;
 				break;
 			case 'm_nField':
-				this.field = Number(value);
+				this.#field = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		const particleTime = particle.proportionOfLife;
-		if (particleTime < this.startTime || particleTime > this.endTime) {
+		if (particleTime < this.#startTime || particleTime > this.#endTime) {
 			return;
 		}
 
-		const value = particle.getField(this.field) + this.rate * elapsedTime;
-		particle.setField(this.field, value);
+		const value = particle.getField(this.#field) + this.#rate * elapsedTime;
+		particle.setField(this.#field, value);
 	}
 }
 RegisterSource2ParticleOperator('C_OP_RampScalarLinearSimple', RampScalarLinearSimple);

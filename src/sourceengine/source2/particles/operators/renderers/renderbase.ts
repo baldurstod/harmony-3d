@@ -1,10 +1,18 @@
 import { vec3 } from 'gl-matrix';
-import { Source2ParticleSystem, Source2SpriteCard } from '../../../export';
-import { COLOR_SCALE, Operator, Source2OperatorParamValue } from '../operator';
+import { TESTING } from '../../../../../buildoptions';
+import { Source2SpriteCard } from '../../../materials/source2spritecard';
+import { Source2SpriteSheet } from '../../../textures/source2spritesheet';
+import { Source2TextureManager } from '../../../textures/source2texturemanager';
+import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
+import { Source2ParticleSystem } from '../../source2particlesystem';
+import { COLOR_SCALE, Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
 
 // Base renderer for common attributes like textures
 export class RenderBase extends Operator {
 	protected material = new Source2SpriteCard('');
+	protected setDefaultTexture = true;//TODO: remove this property
+	protected spriteSheet: Source2SpriteSheet | null = null;
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
@@ -15,18 +23,36 @@ export class RenderBase extends Operator {
 		this.material = material;
 	}
 
-	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
+			case 'm_vecTexturesInput':
+				if (TESTING) {
+					console.debug('m_vecTexturesInput', param);
+				}
+
+				const textureInput0 = param.getValueAsArray()?.[0];//TODO: check multiple textures ?
+				if (textureInput0 && (textureInput0 as OperatorParam).isOperatorParam) {
+					this.setTexture((textureInput0 as OperatorParam).getSubValue('m_hTexture')?.getValueAsString() ?? DEFAULT_PARTICLE_TEXTURE);
+
+					const textureChannels = (textureInput0 as OperatorParam).getSubValue('m_nTextureChannels');
+					if (textureChannels) {
+						throw 'fix me';//this.material.setDefine(value[0].m_nTextureChannels);//TODO: check values
+					}
+				}
+				break;
 			case 'm_ColorScale':
 				const colorScale = vec3.create();
-				colorScale[0] = Number(value[0]) * COLOR_SCALE;
-				colorScale[1] = Number(value[1]) * COLOR_SCALE;
-				colorScale[2] = Number(value[2]) * COLOR_SCALE;
+				colorScale[0] = Number(param[0]) * COLOR_SCALE;
+				colorScale[1] = Number(param[1]) * COLOR_SCALE;
+				colorScale[2] = Number(param[2]) * COLOR_SCALE;
 				this.material?.setUniform('uColorScale', colorScale);
 				break;
 			// Renderer parameters
 			case 'm_nOutputBlendMode':
-				this.#setOutputBlendMode(value);
+				const blendMode = param.getValueAsString();
+				if (blendMode) {
+					this.#setOutputBlendMode(blendMode);
+				}
 				break;
 			case 'm_bAdditive':
 				this.#setOutputBlendMode('PARTICLE_OUTPUT_BLEND_MODE_ADD');
@@ -35,7 +61,7 @@ export class RenderBase extends Operator {
 				this.#setOutputBlendMode('PARTICLE_OUTPUT_BLEND_MODE_MOD2X');
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -64,5 +90,11 @@ export class RenderBase extends Operator {
 				console.error('Unknown outputBlendMode ', outputBlendMode);
 		}
 		this.material?.setOutputBlendMode(blendMode);
+	}
+
+	async setTexture(texturePath: string) {
+		this.setDefaultTexture = false;
+		this.material.setTexturePath(texturePath);
+		this.spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
 	}
 }

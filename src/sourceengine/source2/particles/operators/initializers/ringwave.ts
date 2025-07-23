@@ -1,8 +1,8 @@
 import { vec3 } from 'gl-matrix';
-
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { DEG_TO_RAD, TWO_PI } from '../../../../../math/constants';
 import { Operator } from '../operator';
-import { TWO_PI, DEG_TO_RAD } from '../../../../../math/constants';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const va = vec3.create();
 const o = vec3.create();
@@ -12,7 +12,7 @@ export class RingWave extends Operator {
 	xyVelocityOnly = true;
 	t = 0;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flParticlesPerOrbit':
 			case 'm_flInitialRadius':
@@ -24,13 +24,13 @@ export class RingWave extends Operator {
 			case 'm_flYaw':
 				break;
 			case 'm_bEvenDistribution':
-				this.evenDistribution = value;
+				this.evenDistribution = param;
 				break;
 			case 'm_bXYVelocityOnly':
-				this.xyVelocityOnly = value;
+				this.xyVelocityOnly = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

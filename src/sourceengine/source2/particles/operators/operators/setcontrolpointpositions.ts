@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { Source2Particle } from '../../source2particle';
-import { Operator, Source2OperatorParamValue } from '../operator';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const v = vec3.create();
@@ -13,46 +14,46 @@ export class SetControlPointPositions extends Operator {
 	headLocation = 0;
 	setOnce: boolean = false;
 
-	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bUseWorldLocation':
-				this.useWorldLocation = value;
+				this.useWorldLocation = param;
 				break;
 			case 'm_bOrient':
-				this.orient = value;
+				this.orient = param;
 				break;
 			case 'm_bSetOnce':
-				this.setOnce = value;
+				this.setOnce = param;
 				break;
 			case 'm_nCP1':
-				this.cp[0] = Number(value);
+				this.cp[0] = (param);
 				break;
 			case 'm_nCP2':
-				this.cp[1] = Number(value);
+				this.cp[1] = (param);
 				break;
 			case 'm_nCP3':
-				this.cp[2] = Number(value);
+				this.cp[2] = (param);
 				break;
 			case 'm_nCP4':
-				this.cp[3] = Number(value);
+				this.cp[3] = (param);
 				break;
 			case 'm_vecCP1Pos':
-				vec3.copy(this.cpPos[0], value);
+				vec3.copy(this.cpPos[0], param);
 				break;
 			case 'm_vecCP2Pos':
-				vec3.copy(this.cpPos[1], value);
+				vec3.copy(this.cpPos[1], param);
 				break;
 			case 'm_vecCP3Pos':
-				vec3.copy(this.cpPos[2], value);
+				vec3.copy(this.cpPos[2], param);
 				break;
 			case 'm_vecCP4Pos':
-				vec3.copy(this.cpPos[3], value);
+				vec3.copy(this.cpPos[3], param);
 				break;
 			case 'm_nHeadLocation':
-				this.headLocation = Number(value);
+				this.headLocation = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

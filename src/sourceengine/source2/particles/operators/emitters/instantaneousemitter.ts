@@ -1,5 +1,6 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class InstantaneousEmitter extends Operator {
 	emitted = 0;
@@ -7,26 +8,29 @@ export class InstantaneousEmitter extends Operator {
 	maxEmittedPerFrame = -1;
 	snapshotControlPoint = -1;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nParticlesToEmit':
 			case 'm_flStartTime':
 				break;
 			case 'm_flInitFromKilledParentParticles':
-				this.initFromKilledParentParticles = Number(value);
+				console.error('do this param', paramName, param);
+				this.initFromKilledParentParticles = (param);
 				break;
 			case 'm_nMaxEmittedPerFrame':
-				this.maxEmittedPerFrame = Number(value);
+				console.error('do this param', paramName, param);
+				this.maxEmittedPerFrame = (param);
 				break;
 			case 'm_nSnapshotControlPoint':
-				this.snapshotControlPoint = Number(value);
+				console.error('do this param', paramName, param);
+				this.snapshotControlPoint = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
-	doEmit(elapsedTime) {
+	doEmit(elapsedTime: number): void {
 		//todo: use snapshotControlPoint
 		let particlesToEmit = this.getParamScalarValue('m_nParticlesToEmit') ?? 100;
 		const startTime = this.getParamScalarValue('m_flStartTime') ?? 0;

@@ -1,8 +1,9 @@
 import { mat3, mat4, vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { DEFAULT_PARTICLE_NORMAL } from '../../source2particle';
 import { TESTING } from '../../../../../buildoptions';
+import { DEFAULT_PARTICLE_NORMAL } from '../../source2particle';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const mat = mat4.create();
 const nmat = mat3.create();
@@ -11,14 +12,14 @@ const IDENTITY_MAT4 = mat4.create();
 export class SnapshotRigidSkinToBones extends Operator {
 	transformNormals = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bTransformNormals':
 				//normal seems to be transformed whatever this parameter value is ?
-				this.transformNormals = value;
+				this.transformNormals = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

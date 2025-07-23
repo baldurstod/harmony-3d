@@ -1,44 +1,49 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { FLT_EPSILON } from '../../../../../math/constants';
+import { Source2Particle } from '../../source2particle';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const vecCenter = vec3.create();
 const vec = vec3.create();
 
 export class AttractToControlPoint extends Operator {
-	componentScale = vec3.fromValues(1, 1, 1);
-	falloffPower = 0;
-	scaleLocal = false;
-	applyMinForce = false;
+	#componentScale = vec3.fromValues(1, 1, 1);
+	#falloffPower = 0;
+	#scaleLocal = false;
+	#applyMinForce = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_fForceAmount':
 			case 'm_fForceAmountMin':
 				break;
 			case 'm_vecComponentScale':
-				vec3.copy(this.componentScale, value);
+				console.error('do this param', paramName, param);
+				vec3.copy(this.#componentScale, param);
 				break;
 			case 'm_fFalloffPower':
-				this.falloffPower = value;
+				this.#falloffPower = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_bScaleLocal':
-				this.scaleLocal = value;
+				console.error('do this param', paramName, param);
+				this.#scaleLocal = param;
 				break;
 			case 'm_bApplyMinForce':
-				this.applyMinForce = value;
+				console.error('do this param', paramName, param);
+				this.#applyMinForce = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
-	doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
+	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void {
 		const forceAmount = this.getParamScalarValue('m_fForceAmount') ?? 100;
 		const forceAmountMin = this.getParamScalarValue('m_fForceAmountMin') ?? 0;
 
-		const power_frac = (-4.0 * this.falloffPower) << 0;					// convert to what pow_fixedpoint_exponent_simd wants
+		const power_frac = (-4.0 * this.#falloffPower) << 0;					// convert to what pow_fixedpoint_exponent_simd wants
 		const fForceScale = -forceAmount * strength/*flStrength*/;
 
 		const cp = this.system.getControlPoint(this.controlPointNumber);
@@ -51,7 +56,7 @@ export class AttractToControlPoint extends Operator {
 		if (len === 0) {
 			len = FLT_EPSILON;
 		}
-		vec3.scale(vecCenter, vecCenter, fForceScale / len * Math.pow(len, -this.falloffPower));
+		vec3.scale(vecCenter, vecCenter, fForceScale / len * Math.pow(len, -this.#falloffPower));
 		vec3.add(accumulatedForces, accumulatedForces, vecCenter);
 
 		//TODO: use m_vecComponentScale m_bScaleLocal m_bApplyMinForce

@@ -1,6 +1,8 @@
 import { quat, vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const tempQuat = quat.create();
 const tempVec3 = vec3.create();
@@ -10,20 +12,22 @@ export class SetToCP extends Operator {
 	offset = vec3.create();
 	offsetLocal = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecOffset':
-				vec3.copy(this.offset, value);
+				console.error('do this param', paramName, param);
+				vec3.copy(this.offset, param);
 				break;
 			case 'm_bOffsetLocal':
-				this.offsetLocal = value;
+				console.error('do this param', paramName, param);
+				this.offsetLocal = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
 			cp.getWorldPosition(tempVec3_2);

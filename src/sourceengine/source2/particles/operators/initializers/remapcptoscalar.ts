@@ -1,7 +1,8 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { RemapValClampedBias, lerp } from '../../../../../math/functions';
+import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RemapCPtoScalar extends Operator {
 	cpInput = 0;
@@ -15,45 +16,45 @@ export class RemapCPtoScalar extends Operator {
 	setMethod = null;
 	remapBias = 0.5;
 	scaleInitialRange;// TODO: search default value
-	fieldOutput = PARTICLE_FIELD_RADIUS;
+	#fieldOutput = PARTICLE_FIELD_RADIUS;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCPInput':
-				this.cpInput = Number(value);
+				this.cpInput = (param);
 				break;
 			case 'm_nField':
-				this.field = Number(value);//TODO: check [0, 1, 2]
+				this.field = (param);//TODO: check [0, 1, 2]
 				break;
 			case 'm_flInputMin':
-				this.inputMin = value;
+				this.inputMin = param;
 				break;
 			case 'm_flInputMax':
-				this.inputMax = value;
+				this.inputMax = param;
 				break;
 			case 'm_flOutputMin':
-				this.outputMin = value;
+				this.outputMin = param;
 				break;
 			case 'm_flOutputMax':
-				this.outputMax = value;
+				this.outputMax = param;
 				break;
 			case 'm_flStartTime':
-				this.startTime = value;
+				this.startTime = param;
 				break;
 			case 'm_flEndTime':
-				this.endTime = value;
+				this.endTime = param;
 				break;
 			case 'm_nSetMethod':
-				this.setMethod = value;
+				this.setMethod = param;
 				break;
 			case 'm_flRemapBias':
-				this.remapBias = value;
+				this.remapBias = param;
 				break;
 			case 'm_bScaleInitialRange':
-				this.scaleInitialRange = value;
+				this.scaleInitialRange = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -68,10 +69,10 @@ export class RemapCPtoScalar extends Operator {
 		if (scaleInitial) {
 			value = lerp(1, value, strength);
 		} else {
-			value = lerp(particle.getField(this.fieldOutput), value, strength);
+			value = lerp(particle.getField(this.#fieldOutput), value, strength);
 		}
 
-		particle.setField(this.fieldOutput, value, scaleInitial);
+		particle.setField(this.#fieldOutput, value, scaleInitial);
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RemapCPtoScalar', RemapCPtoScalar);

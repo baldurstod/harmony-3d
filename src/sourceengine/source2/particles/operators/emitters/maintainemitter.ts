@@ -2,17 +2,18 @@ import { vec3 } from 'gl-matrix';
 
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
 
 export class MaintainEmitter extends Operator {
 	particlesToMaintain = 100;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nParticlesToMaintain':
-				this.particlesToMaintain = Number(value);
+				this.particlesToMaintain = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

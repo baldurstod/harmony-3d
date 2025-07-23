@@ -3,12 +3,11 @@ import { TESTING } from '../../../../buildoptions';
 import { clamp, lerp, RandomFloat, RemapValClamped, RemapValClampedBias, vec3RandomBox } from '../../../../math/functions';
 import { Mesh } from '../../../../objects/mesh';
 import { JSONObject } from '../../../../types';
-import { Kv3Array } from '../../../common/keyvalue/kv3array';
 import { PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION, PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED, PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_WORLD_Z_ALIGNED } from '../../../common/particles/particleconsts';
 import { Source2Material } from '../../materials/source2material';
-import { Source2SpriteCard } from '../../materials/source2spritecard';
 import { Source2Particle } from '../source2particle';
 import { Source2ParticleSystem } from '../source2particlesystem';
+import { OperatorParam } from './operatorparam';
 
 export const COLOR_SCALE = 1 / 255;
 
@@ -32,11 +31,11 @@ function vec4Lerp(out: vec4, a: vec4, b: vec4, t: number) {
 	return out;
 }
 
-export type Source2OperatorParamValue = any;/*TODO: improve type */
+export type Source2OperatorParamValue = number | number[];/*TODO: improve type */
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
-	#parameters: Record<string, any> = {};
+	#parameters: Record<string, OperatorParam> = {};
 	system: Source2ParticleSystem
 	opStartFadeInTime = 0;
 	opEndFadeInTime = 0;
@@ -47,7 +46,7 @@ export class Operator {//TODOv3: rename this class ?
 	disableOperator = false;
 	controlPointNumber = 0;
 	fieldInput = -1;
-	fieldOutput = -1;
+	protected fieldOutput = -1;
 	scaleCp?: number;
 	mesh?: Mesh;
 	endCapState?: number;
@@ -58,7 +57,8 @@ export class Operator {//TODOv3: rename this class ?
 		this.system = system;
 	}
 
-	setParam(paramName: string, value: Source2OperatorParamValue) {
+	setParam(paramName: string, param: /*Source2OperatorParamValue*/OperatorParam) {
+		/*
 		if (value instanceof Kv3Array) {
 			const arr = [];
 			for (const v of value.values) {
@@ -76,81 +76,83 @@ export class Operator {//TODOv3: rename this class ?
 				this.#parameters[paramName] = value;
 			}
 		}
-		this._paramChanged(paramName, value);
+		*/
+		this.#parameters[paramName] = param;
+		this._paramChanged(paramName, param);
 	}
 
 	getParam(paramName: string) {
 		return this.#parameters[paramName];
 	}
 
-	getParamScalarValue(paramName: string, particle?: Source2Particle) {
+	getParamScalarValue(paramName: string, particle?: Source2Particle): number | undefined | null {
 		const parameter = this.#parameters[paramName];
-		return this.#getParamScalarValue(parameter, particle);
+		if (parameter) {
+			return this.#getParamScalarValue(parameter, particle);
+		}
 	}
 
-	#getParamScalarValue(parameter: JSONObject, particle?: Source2Particle) {
-		if (parameter) {
-			let inputValue;
-			const type = parameter.m_nType;
-			if (type) {
-				switch (type) {
-					case 'PF_TYPE_LITERAL':
-						return parameter.m_flLiteralValue;
-						break;
-					case 'PF_TYPE_PARTICLE_AGE':
-						return parameter.m_vLiteralValue;
-						break;
-					case 'PF_TYPE_PARTICLE_NUMBER_NORMALIZED':
-						if (this.normalizePerLiving) {
-							const max = this.system.livingParticles.length;
-							inputValue = (particle?.id ?? 0) % max / max;
-						} else {
-							inputValue = (particle?.id ?? 0) / this.system.maxParticles;
-						}
-						return this.#getParamScalarValue2(parameter, inputValue);
-						break;
-					case 'PF_TYPE_PARTICLE_NUMBER':
-						inputValue = particle?.id ?? 0;
-						return this.#getParamScalarValue2(parameter, inputValue);
-						break;
-					case 'PF_TYPE_PARTICLE_AGE_NORMALIZED':
-						return this.#getParamScalarValue2(parameter, particle?.proportionOfLife ?? 0);
-						break;
-					case 'PF_TYPE_RANDOM_BIASED':
-						//TODO: use parameter.m_nBiasType
-						return RemapValClampedBias(Math.random(), 0, 1, parameter.m_flRandomMin as number, parameter.m_flRandomMax as number, 0.5/*parameter.m_flBiasParameter*/);//TODO: use another bias function bias varies from -1 to 1
-						break;
-					case 'PF_TYPE_RANDOM_UNIFORM':
-						return RandomFloat(parameter.m_flRandomMin as number, parameter.m_flRandomMax as number);
-						break;
-					case 'PF_TYPE_COLLECTION_AGE':
-						return this.#getParamScalarValue2(parameter, this.system.currentTime);
-						break;
-					case 'PF_TYPE_PARTICLE_NOISE':
-						return this.#getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin as number, parameter.m_flNoiseOutputMax as number));//TODO
-						break;
-					case 'PF_TYPE_CONTROL_POINT_COMPONENT':
-						const cp = this.system.getControlPoint(parameter.m_nControlPoint as number);
-						if (cp) {
-							return cp.position[parameter.m_nVectorComponent as number];
-						}
-						return 0;
-						break;
-					case 'PF_TYPE_PARTICLE_FLOAT':
-						return inputValue = RemapValClamped(
-							particle?.getField(parameter.m_nScalarAttribute as number ?? 0) as number ?? 0,
-							parameter.m_flInput0 as number ?? 0,
-							parameter.m_flInput1 as number ?? 1,
-							parameter.m_flOutput0 as number ?? 0,
-							parameter.m_flOutput1 as number ?? 1
-						);
-					default:
-						console.error('#getParamScalarValue unknown type', parameter);
-						throw 'Code me'
-				}
-			} else {
-				return parameter;
+	#getParamScalarValue(parameter: OperatorParam, particle?: Source2Particle): number | undefined | null {
+		let inputValue;
+		const type = (parameter.getSubValue('m_nType')?.getValueAsString());
+		if (type) {
+			switch (type) {
+				case 'PF_TYPE_LITERAL':
+					return parameter.m_flLiteralValue;
+					break;
+				case 'PF_TYPE_PARTICLE_AGE':
+					return parameter.m_vLiteralValue;
+					break;
+				case 'PF_TYPE_PARTICLE_NUMBER_NORMALIZED':
+					if (this.normalizePerLiving) {
+						const max = this.system.livingParticles.length;
+						inputValue = (particle?.id ?? 0) % max / max;
+					} else {
+						inputValue = (particle?.id ?? 0) / this.system.maxParticles;
+					}
+					return this.#getParamScalarValue2(parameter, inputValue);
+					break;
+				case 'PF_TYPE_PARTICLE_NUMBER':
+					inputValue = particle?.id ?? 0;
+					return this.#getParamScalarValue2(parameter, inputValue);
+					break;
+				case 'PF_TYPE_PARTICLE_AGE_NORMALIZED':
+					return this.#getParamScalarValue2(parameter, particle?.proportionOfLife ?? 0);
+					break;
+				case 'PF_TYPE_RANDOM_BIASED':
+					//TODO: use parameter.m_nBiasType
+					return RemapValClampedBias(Math.random(), 0, 1, parameter.m_flRandomMin as number, parameter.m_flRandomMax as number, 0.5/*parameter.m_flBiasParameter*/);//TODO: use another bias function bias varies from -1 to 1
+					break;
+				case 'PF_TYPE_RANDOM_UNIFORM':
+					return RandomFloat(parameter.m_flRandomMin as number, parameter.m_flRandomMax as number);
+					break;
+				case 'PF_TYPE_COLLECTION_AGE':
+					return this.#getParamScalarValue2(parameter, this.system.currentTime);
+					break;
+				case 'PF_TYPE_PARTICLE_NOISE':
+					return this.#getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin as number, parameter.m_flNoiseOutputMax as number));//TODO
+					break;
+				case 'PF_TYPE_CONTROL_POINT_COMPONENT':
+					const cp = this.system.getControlPoint(parameter.m_nControlPoint as number);
+					if (cp) {
+						return cp.position[parameter.m_nVectorComponent as number];
+					}
+					return 0;
+					break;
+				case 'PF_TYPE_PARTICLE_FLOAT':
+					return inputValue = RemapValClamped(
+						particle?.getField(parameter.m_nScalarAttribute as number ?? 0) as number ?? 0,
+						parameter.m_flInput0 as number ?? 0,
+						parameter.m_flInput1 as number ?? 1,
+						parameter.m_flOutput0 as number ?? 0,
+						parameter.m_flOutput1 as number ?? 1
+					);
+				default:
+					console.error('#getParamScalarValue unknown type', parameter);
+					throw 'Code me'
 			}
+		} else {
+			return parameter.getValueAsNumber();
 		}
 	}
 
@@ -217,50 +219,61 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 
-	getParamVectorValue(paramName: string, particle?: Source2Particle, outVec: vec4 = vec4.create()) {
+	getParamVectorValue(paramName: string, particle: Source2Particle, out: vec4): vec4 | undefined | null {
 		const parameter = this.#parameters[paramName];
-		if (parameter) {
-			const type = parameter.m_nType;
-			if (type) {
-				switch (type) {
-					case 'PVEC_TYPE_LITERAL':
-						return parameter.m_vLiteralValue;
-						break;
-					case 'PVEC_TYPE_PARTICLE_VECTOR':
-						if (!Operator.PVEC_TYPE_PARTICLE_VECTOR) {
-							Operator.PVEC_TYPE_PARTICLE_VECTOR = true;
-							throw 'Code me';
+		if (!parameter) {
+			return undefined;
+		}
+
+		const type = (parameter.getSubValue('m_nType')?.getValueAsString());
+		if (type) {
+			switch (type) {
+				case 'PVEC_TYPE_LITERAL':
+					return parameter.m_vLiteralValue;
+					break;
+				case 'PVEC_TYPE_PARTICLE_VECTOR':
+					if (!Operator.PVEC_TYPE_PARTICLE_VECTOR) {
+						Operator.PVEC_TYPE_PARTICLE_VECTOR = true;
+						throw 'Code me';
+					}
+					break;
+				case 'PVEC_TYPE_FLOAT_INTERP_GRADIENT':
+					return this.#getParamVectorValueFloatInterpGradient(parameter, particle, out);
+					break;
+				case 'PVEC_TYPE_FLOAT_COMPONENTS':
+					out[0] = this.#getParamScalarValue(parameter.m_FloatComponentX, particle);
+					out[1] = this.#getParamScalarValue(parameter.m_FloatComponentY, particle);
+					out[2] = this.#getParamScalarValue(parameter.m_FloatComponentZ, particle);
+					break;
+				case 'PVEC_TYPE_RANDOM_UNIFORM_OFFSET':
+					vec3RandomBox(out as vec3, parameter.m_vRandomMin, parameter.m_vRandomMax);
+					break;
+				case 'PVEC_TYPE_CP_VALUE':
+					const cp = this.system.getControlPoint(parameter.m_nControlPoint);
+					if (cp) {
+						vec3.copy(out as vec3, cp.currentWorldPosition);
+						if (parameter.m_vCPValueScale) {
+							vec3.mul(out as vec3, out as vec3, parameter.m_vCPValueScale);
 						}
-						break;
-					case 'PVEC_TYPE_FLOAT_INTERP_GRADIENT':
-						return this.#getParamVectorValueFloatInterpGradient(parameter, particle, outVec);
-						break;
-					case 'PVEC_TYPE_FLOAT_COMPONENTS':
-						outVec[0] = this.#getParamScalarValue(parameter.m_FloatComponentX, particle);
-						outVec[1] = this.#getParamScalarValue(parameter.m_FloatComponentY, particle);
-						outVec[2] = this.#getParamScalarValue(parameter.m_FloatComponentZ, particle);
-						break;
-					case 'PVEC_TYPE_RANDOM_UNIFORM_OFFSET':
-						vec3RandomBox(outVec as vec3, parameter.m_vRandomMin, parameter.m_vRandomMax);
-						break;
-					case 'PVEC_TYPE_CP_VALUE':
-						const cp = this.system.getControlPoint(parameter.m_nControlPoint);
-						if (cp) {
-							vec3.copy(outVec as vec3, cp.currentWorldPosition);
-							if (parameter.m_vCPValueScale) {
-								vec3.mul(outVec as vec3, outVec as vec3, parameter.m_vCPValueScale);
-							}
-						}
-						break;
-					case 'PVEC_TYPE_RANDOM_UNIFORM':
-						//TODO
-						break;
-					default:
-						console.error('getParamVectorValue unknown type', parameter);
-						throw 'Code me'
+					}
+					break;
+				case 'PVEC_TYPE_RANDOM_UNIFORM':
+					//TODO
+					break;
+				default:
+					console.error('getParamVectorValue unknown type', parameter);
+					throw 'Code me'
+			}
+		} else {
+			const value = parameter.getValueAsArray();
+			if (value) {
+				for (let i = 0; i < 4; i++) {
+					out[i] = (value as number[])[i] ?? 0;
 				}
+				return out;
 			} else {
-				return parameter;
+				console.error('value is not an array, investigate');
+				return null
 			}
 		}
 	}
@@ -294,63 +307,81 @@ export class Operator {//TODOv3: rename this class ?
 
 	}
 
-	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bDisableOperator':
-				this.disableOperator = value;
+				this.disableOperator = param.getValueAsBool() ?? false;
 				break;
 			case 'm_nOpEndCapState':
+				const endCapState = param.getValueAsString();
+				if (endCapState === null) {
+					console.error('wrong type for', paramName, param);
+				}
 				//TODO: do it properly
-				if (value == 1 || value == 1n || value == 'PARTICLE_ENDCAP_ENDCAP_ON') {
+				if (endCapState == 'PARTICLE_ENDCAP_ENDCAP_ON') {
 					this.disableOperator = true;
+				} else {
+					if (endCapState == 'PARTICLE_ENDCAP_ENDCAP_OFF') {
+						this.disableOperator = false;
+					} else {
+						console.error('unknown value', paramName, param);
+					}
 				}
 				break;
 			case 'm_flOpStartFadeInTime':
-				this.opStartFadeInTime = value;
+				throw 'do m_fSpeedRandExp';
+				this.opStartFadeInTime = param;
 				break;
 			case 'm_flOpEndFadeInTime':
-				this.opEndFadeInTime = value;
+				throw 'do m_fSpeedRandExp';
+				this.opEndFadeInTime = param;
 				break;
 			case 'm_flOpStartFadeOutTime':
-				this.opStartFadeOutTime = value;
+				throw 'do m_fSpeedRandExp';
+				this.opStartFadeOutTime = param;
 				break;
 			case 'm_flOpEndFadeOutTime':
-				this.opEndFadeOutTime = value;
+				throw 'do m_fSpeedRandExp';
+				this.opEndFadeOutTime = param;
 				break;
 			case 'm_flOpFadeOscillatePeriod':
-				this.opFadeOscillatePeriod = value;
+				throw 'do m_fSpeedRandExp';
+				this.opFadeOscillatePeriod = param;
 				break;
 			case 'm_nControlPointNumber':
-				if (TESTING && this.controlPointNumber === undefined) {
-					throw 'this.controlPointNumber must have a default value';
-				}
-				this.controlPointNumber = Number(value);
+				this.controlPointNumber = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_nOrientationType':
-				this.setOrientationType(value);
+				throw 'do m_fSpeedRandExp';
+				this.setOrientationType(param);
 				break;
 			case 'm_nFieldInput':
+				throw 'do m_fSpeedRandExp';
 				if (TESTING && this.fieldInput === undefined) {
 					throw 'this.fieldInput must have a default value';
 				}
-				this.fieldInput = Number(value);
+				this.fieldInput = (param);
 				break;
-			case 'm_nFieldOutput':
-				if (TESTING && this.fieldOutput === undefined) {
-					throw 'this.fieldOutput must have a default value';
-				}
-				this.fieldOutput = Number(value);
+			case 'm_nFieldOutput': // TODO: check wether is it actually the same field
+			case 'm_nOutputField':
+				this.fieldOutput = param.getValueAsNumber() ?? -1;
 				break;
 			case 'm_nOpScaleCP':
-				this.scaleCp = Number(value);
+				throw 'do m_fSpeedRandExp';
+				this.scaleCp = (param);
 				break;
 			case 'm_flOpStrength':
+				throw 'do m_fSpeedRandExp';
 				//TODO
 				break;
-			case 'm_flAlphaScale':
-				//handled in operator
-				break;
-				console.warn(this.constructor.name + ' : unknown parameter : ' + paramName, value);
+			/*
+		case 'm_flAlphaScale':
+			throw 'do m_fSpeedRandExp';
+			//handled in operator
+			break;
+			*/
+			default:
+				console.warn(this.constructor.name + ' : unknown parameter : ' + paramName, param);
 		}
 	}
 
@@ -595,7 +626,7 @@ export class Operator {//TODOv3: rename this class ?
 				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION);
 				break;
 			default:
-				console.error('Unknonw orientationType ', orientationType);
+				console.error('Unknown orientationType ', orientationType);
 		}
 	}
 
@@ -606,10 +637,10 @@ export class Operator {//TODOv3: rename this class ?
 	dispose() {
 	}
 
-	doInit(particle: Source2Particle, elapsedTime: number, strength: number) { }
+	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void { }
 	doEmit(elapsedTime: number) { }
-	doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number) { }
-	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number) { }
+	doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void { }
+	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void { }
 	applyConstraint(particle: Source2Particle) { }
 	doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material) { }
 	initRenderer(particleSystem: Source2ParticleSystem) { }

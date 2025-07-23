@@ -1,5 +1,6 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class LockToBone extends Operator {
 	hitboxSetName = 'default';
@@ -12,40 +13,40 @@ export class LockToBone extends Operator {
 	rotationSetType = null;
 	rigidRotationLock = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_HitboxSetName':
-				this.hitboxSetName = value;
+				this.hitboxSetName = param;
 				break;
 			case 'm_flLifeTimeFadeStart':
-				this.lifeTimeFadeStart = value;
+				this.lifeTimeFadeStart = param;
 				break;
 			case 'm_flLifeTimeFadeEnd':
-				this.lifeTimeFadeEnd = value;
+				this.lifeTimeFadeEnd = param;
 				break;
 			case 'm_flJumpThreshold':
-				this.jumpThreshold = value;
+				this.jumpThreshold = param;
 				break;
 			case 'm_flPrevPosScale':
-				this.prevPosScale = value;
+				this.prevPosScale = param;
 				break;
 			case 'm_bRigid':
-				this.rigid = value;
+				this.rigid = param;
 				break;
 			case 'm_bUseBones':
-				this.useBones = value;
+				this.useBones = param;
 				break;
 			case 'm_nRotationSetType':
-				this.rotationSetType = Number(value);
+				this.rotationSetType = (param);
 				break;
 			case 'm_bRigidRotationLock':
-				this.rigidRotationLock = value;
+				this.rigidRotationLock = param;
 				break;
 			case 'm_vecRotation':
 			case 'm_flRotLerp':
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

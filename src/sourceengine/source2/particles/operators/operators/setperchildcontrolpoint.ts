@@ -1,5 +1,6 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class SetPerChildControlPoint extends Operator {
 	childGroupID = 0;
@@ -8,28 +9,28 @@ export class SetPerChildControlPoint extends Operator {
 	setOrientation = false;
 	numBasedOnParticleCount = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nChildGroupID':
-				this.childGroupID = Number(value);
+				this.childGroupID = (param);
 				break;
 			case 'm_nFirstControlPoint':
-				this.firstControlPoint = Number(value);
+				this.firstControlPoint = (param);
 				break;
 			case 'm_nNumControlPoints':
-				this.numControlPoints = Number(value);
+				this.numControlPoints = (param);
 				break;
 			case 'm_nParticleIncrement':
 			case 'm_nFirstSourcePoint':
 				break;
 			case 'm_bSetOrientation':
-				this.setOrientation = value;
+				this.setOrientation = param;
 				break;
 			case 'm_bNumBasedOnParticleCount':
-				this.numBasedOnParticleCount = value;
+				this.numBasedOnParticleCount = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

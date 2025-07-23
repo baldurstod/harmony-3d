@@ -1,12 +1,13 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_RADIUS, ATTRIBUTES_WHICH_ARE_ANGLES } from '../../../../common/particles/particlefields';
-import { NoiseSIMD } from '../../../../common/math/noise';
 import { DEG_TO_RAD } from '../../../../../math/constants';
+import { NoiseSIMD } from '../../../../common/math/noise';
+import { ATTRIBUTES_WHICH_ARE_ANGLES, PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class CreationNoise extends Operator {
-	fieldOutput = PARTICLE_FIELD_RADIUS;
+	#fieldOutput = PARTICLE_FIELD_RADIUS;
 	absVal = false;
 	absValInv = false;
 	offset = 0;
@@ -17,42 +18,42 @@ export class CreationNoise extends Operator {
 	offsetLoc = vec3.create();
 	worldTimeScale = 0;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bAbsVal':
-				this.absVal = Number(value) != 0;
+				this.absVal = (param) != 0;
 				break;
 			case 'm_bAbsValInv':
-				this.absValInv = Number(value) != 0;
+				this.absValInv = (param) != 0;
 				break;
 			case 'm_flOffset':
-				this.offset = Number(value);
+				this.offset = (param);
 				break;
 			case 'm_flOutputMin':
-				this.outputMin = Number(value);
+				this.outputMin = (param);
 				break;
 			case 'm_flOutputMax':
-				this.outputMax = Number(value);
+				this.outputMax = (param);
 				break;
 			case 'm_flNoiseScale':
-				this.noiseScale = Number(value);
+				this.noiseScale = (param);
 				break;
 			case 'm_flNoiseScaleLoc':
-				this.noiseScaleLoc = Number(value);
+				this.noiseScaleLoc = Numer(param);
 				break;
 			case 'm_vecOffsetLoc':
-				vec3.copy(this.offsetLoc, value);
+				vec3.copy(this.offsetLoc, param);
 				break;
 			case 'm_flWorldTimeScale':
-				this.worldTimeScale = Number(value);
+				this.worldTimeScale = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
 	doInit(particle, elapsedTime) {
-		const fieldOutput = this.fieldOutput;
+		const fieldOutput = this.#fieldOutput;
 		//let nAbsVal = 0xffffffff;
 		let flAbsScale = 0.5;
 		if (this.absVal) {
@@ -71,14 +72,14 @@ export class CreationNoise extends Operator {
 		const CoordScaleLoc = this.noiseScaleLoc;
 
 		let ValueScale, ValueBase;
-		ValueScale = ( flAbsScale *( fMax - fMin ) );
-		ValueBase = ( fMin+ ( ( 1.0 - flAbsScale ) *( fMax - fMin ) ) );
+		ValueScale = (flAbsScale * (fMax - fMin));
+		ValueBase = (fMin + ((1.0 - flAbsScale) * (fMax - fMin)));
 
 		let CoordLoc, CoordWorldTime, CoordBase;
 		//let pCreationTime = particle.cTime;//pParticles->GetFloatAttributePtr( PARTICLE_ATTRIBUTE_CREATION_TIME, start_p );
 		const Offset = this.offset;
-		const a = (particle.cTime + Offset) * this.noiseScale +  performance.now() * this.worldTimeScale;
-		CoordBase = vec3.fromValues (a, a, a);
+		const a = (particle.cTime + Offset) * this.noiseScale + performance.now() * this.worldTimeScale;
+		CoordBase = vec3.fromValues(a, a, a);
 		CoordLoc = vec3.create();
 		//CoordBase *= this.noiseScale;
 		//CoordWorldTime = Vector( (Plat_MSTime() * m_flWorldTimeScale), (Plat_MSTime() * m_flWorldTimeScale), (Plat_MSTime() * m_flWorldTimeScale) );
@@ -103,19 +104,18 @@ export class CreationNoise extends Operator {
 			//fvNoise.DuplicateVector( Coord );
 			//flNoise128 = NoiseSIMD( fvNoise , 0);
 			//float flNoise = SubFloat( flNoise128, 0 );
-			let flNoise = NoiseSIMD( Coord , 0, 0);
+			let flNoise = NoiseSIMD(Coord, 0, 0);
 
 			//*( (int *) &flNoise)  &= nAbsVal;
 			if (this.absVal) {
 				flNoise = Math.abs(flNoise);
 			}
 
-			if ( this.absValInv )
-			{
+			if (this.absValInv) {
 				flNoise = 1.0 - flNoise;
 			}
 
-			const flInitialNoise = ( ValueBase + ( ValueScale * flNoise ) );
+			const flInitialNoise = (ValueBase + (ValueScale * flNoise));
 
 			/*
 			//TODO
@@ -126,7 +126,7 @@ export class CreationNoise extends Operator {
 
 			//*( pAttr ) = flInitialNoise;
 
-			particle.setInitialField(this.fieldOutput, flInitialNoise);
+			particle.setInitialField(this.#fieldOutput, flInitialNoise);
 		}
 	}
 }

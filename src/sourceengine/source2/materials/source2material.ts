@@ -369,7 +369,7 @@ export class Source2Material extends Material {
 
 	getIntParam(intName: string) {
 		if (this.#source2File) {
-			const ints = this.#source2File.getBlockStruct('DATA', 'MaterialResourceData_t.m_intParams') ?? this.#source2File.getBlockStruct('DATA', 'm_intParams');
+			const ints = this.#source2File.getBlockStructAsNumberArray('DATA', 'MaterialResourceData_t.m_intParams') ?? this.#source2File.getBlockStructAsNumberArray('DATA', 'm_intParams');
 			if (ints) {
 				for (let intIndex = 0; intIndex < ints.length; intIndex++) {
 					const fl = ints[intIndex];

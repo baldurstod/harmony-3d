@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
 
 const vec = vec3.create();
 
@@ -21,55 +22,55 @@ export class CreateSequentialPath extends Operator {
 	endOffset = vec3.create();
 	t = 0;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flNumToAssign':
-				this.numToAssign = value;
-				this.step = 1 / value;
+				this.numToAssign = param;
+				this.step = 1 / param;
 				break;
 			case 'm_bLoop':
-				this.loop = value;
+				this.loop = param;
 				break;
 			case 'm_PathParams':
-				for (const subName of Object.keys(value)) {
-					this._paramChanged(subName, value[subName]);
+				for (const subName of Object.keys(param)) {
+					this._paramChanged(subName, param[subName]);
 				}
 				break;
 			case 'm_fMaxDistance':
-				this.maxDistance = value;
+				this.maxDistance = param;
 				break;
 			case 'm_bCPPairs':
-				this.cpPairs = value;
+				this.cpPairs = param;
 				break;
 			case 'm_bSaveOffset':
-				this.saveOffset = value;
+				this.saveOffset = param;
 				break;
 			case 'm_nStartControlPointNumber':
-				this.startControlPointNumber = Number(value);
+				this.startControlPointNumber = (param);
 				break;
 			case 'm_nEndControlPointNumber':
-				this.endControlPointNumber = Number(value);
+				this.endControlPointNumber = (param);
 				break;
 			case 'm_nBulgeControl':
-				this.bulgeControl = Number(value);
+				this.bulgeControl = (param);
 				break;
 			case 'm_flBulge':
-				this.bulge = value;
+				this.bulge = param;
 				break;
 			case 'm_flMidPoint':
-				this.midPoint = value;
+				this.midPoint = param;
 				break;
 			case 'm_vStartPointOffset':
-				vec3.copy(this.startPointOffset, value);
+				vec3.copy(this.startPointOffset, param);
 				break;
 			case 'm_vMidPointOffset':
-				vec3.copy(this.midPointOffset, value);
+				vec3.copy(this.midPointOffset, param);
 				break;
 			case 'm_vEndOffset':
-				vec3.copy(this.endOffset, value);
+				vec3.copy(this.endOffset, param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

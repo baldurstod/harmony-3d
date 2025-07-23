@@ -1,33 +1,39 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { SimpleSplineRemapValWithDeltasClamped } from '../../../../common/math/sse';
+import { Source2Particle } from '../../source2particle';
+import { Source2ParticleSystem } from '../../source2particlesystem';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+
+const DEFAULT_FADE_IN_TIME = 0.25;
 
 export class FadeInSimple extends Operator {
-	fadeInTime = 0.25;
-	invFadeInTime = 0.25;
-	constructor(system) {
+	#fadeInTime = DEFAULT_FADE_IN_TIME;
+	#invFadeInTime!: number;
+
+	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this._update();
+		this.#update();
 	}
 
-	_update() {
-		this.invFadeInTime = 1.0 / this.fadeInTime;
+	#update() {
+		this.#invFadeInTime = 1.0 / this.#fadeInTime;
 	}
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flFadeInTime':
-				this.fadeInTime = value;
-				this._update();
+				this.#fadeInTime = param.getValueAsNumber() ?? DEFAULT_FADE_IN_TIME;
+				this.#update();
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		const proportionOfLife = particle.currentTime / particle.timeToLive;
-		particle.alpha = SimpleSplineRemapValWithDeltasClamped(proportionOfLife, 0, this.fadeInTime, this.invFadeInTime, 0, particle.startAlpha);
+		particle.alpha = SimpleSplineRemapValWithDeltasClamped(proportionOfLife, 0, this.#fadeInTime, this.#invFadeInTime, 0, particle.startAlpha);
 		//TODO: use fieldOutput
 	}
 }

@@ -1,7 +1,8 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { RandomFloatExp } from '../../../../../math/functions';
 import { SimpleSplineRemapValWithDeltasClamped } from '../../../../common/math/sse';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class FadeIn extends Operator {
 	fadeInTimeMin = 0.25;
@@ -21,25 +22,25 @@ export class FadeIn extends Operator {
 		this.invFadeInTime = 1.0 / this.fadeInTime;
 	}
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flFadeInTimeMin':
-				this.fadeInTimeMin = value;
+				this.fadeInTimeMin = param;
 				this._update();
 				break;
 			case 'm_flFadeInTimeMax':
-				this.fadeInTimeMax = value;
+				this.fadeInTimeMax = param;
 				this._update();
 				break;
 			case 'm_flFadeInTimeExp':
-				this.fadeInTimeExp = value;
+				this.fadeInTimeExp = param;
 				this._update();
 				break;
 			case 'm_bProportional':
-				this.proportional = value;
+				this.proportional = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

@@ -3,6 +3,7 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { vec3RandomBox } from '../../../../../math/functions';
 import { Source2Particle } from '../../source2particle';
+import { OperatorParam } from '../operatorparam';
 
 const tempQuat = quat.create();
 const tempVec3 = vec3.create();
@@ -14,22 +15,22 @@ export class CreateWithinBox extends Operator {
 	localSpace = false;
 	scaleCP = -1;
 
-	_paramChanged(paramName: string, value: any) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecMin':
-				vec3.copy(this.vecMin, value);
+				vec3.copy(this.vecMin, param);
 				break;
 			case 'm_vecMax':
-				vec3.copy(this.vecMax, value);
+				vec3.copy(this.vecMax, param);
 				break;
 			case 'm_bLocalSpace':
-				this.localSpace = value;
+				this.localSpace = param;
 				break;
 			case 'm_nScaleCP':
-				this.scaleCP = Number(value);
+				this.scaleCP = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

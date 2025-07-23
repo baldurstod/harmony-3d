@@ -11,7 +11,49 @@ import { Source2ParticleManager } from './source2particlemanager';
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
 
+export const SOURCE2_DEFAULT_RADIUS = 5;
+
 const vec = vec3.create();
+
+export type ControlPointConfigurationDriver = {
+	attachmentName: string | null;
+	entityName: string | null;
+	attachType: string | null;
+	controlPoint: number | null;
+};
+
+export type ControlPointConfiguration = {
+	name: string;
+	drivers: ControlPointConfigurationDriver[],
+	//TODO: previewstate
+
+	/*
+					const drivers = controlPointConfiguration.m_drivers;
+					if (drivers) {
+						let i = 0;
+						for (const driver of drivers) {
+							const attachmentName = driver.m_attachmentName;
+							if (attachmentName) {
+								let attachmentInstance = (model as Source2ModelInstance)?.getAttachment(attachmentName);
+								if (driver.m_entityName == 'parent') {
+									attachmentInstance = (model?.parent as any)?.getAttachment?.(attachmentName) ?? attachmentInstance;
+								}
+
+								if (attachmentInstance) {
+									const cp = this.getOwnControlPoint(driver.m_iControlPoint ?? i);
+									attachmentInstance.addChild(cp);
+									cp.step();
+								} else {
+									if (TESTING) {
+										console.warn(`Cannot find attachment ${attachmentName}`);
+									}
+								}
+							}
+							++i;
+						}
+					}
+						*/
+};
 
 export interface BaseProperties {
 	color: vec4,
@@ -21,10 +63,7 @@ export interface BaseProperties {
 	snapshotControlPoint: number,
 	snapshot: string,
 	rotationSpeedRoll: number,
-	controlPointConfigurations: {
-		m_drivers?: any[],
-
-	}[]
+	controlPointConfigurations: ControlPointConfiguration[];
 	//this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: 5, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '', rotationSpeedRoll: 0, controlPointConfigurations: { m_drivers: [] } };
 }
 
@@ -76,7 +115,7 @@ export class Source2ParticleSystem extends Entity {
 
 		//Add first control point
 		//this.getControlPoint(0);
-		this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: 5, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '', rotationSpeedRoll: 0, controlPointConfigurations: [] };
+		this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: SOURCE2_DEFAULT_RADIUS, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '', rotationSpeedRoll: 0, controlPointConfigurations: [] };
 	}
 
 	async init(snapshotModifiers?: Map<string, string>) {
@@ -316,14 +355,12 @@ export class Source2ParticleSystem extends Entity {
 		particle.start();
 
 		// Init modifiers in a 2nd loop
-		for (const i in this.initializers) {
-			const initializer = this.initializers[i];
+		for (const initializer of this.initializers) {
 			if (!initializer.initMultipleOverride()) {
 				initializer.initializeParticle(particle, elapsedTime);
 			}
 		}
-		for (const i in this.initializers) {
-			const initializer = this.initializers[i];
+		for (const initializer of this.initializers) {
 			if (initializer.initMultipleOverride()) {
 				initializer.initializeParticle(particle, elapsedTime);
 			}
@@ -475,19 +512,19 @@ export class Source2ParticleSystem extends Entity {
 		if (this.baseProperties.controlPointConfigurations) {
 			for (const controlPointConfiguration of this.baseProperties.controlPointConfigurations) {
 				/*if (controlPointConfiguration.m_name == 'point_follow')*/ {
-					const drivers = controlPointConfiguration.m_drivers;
+					const drivers = controlPointConfiguration.drivers;
 					if (drivers) {
 						let i = 0;
 						for (const driver of drivers) {
-							const attachmentName = driver.m_attachmentName;
+							const attachmentName = driver.attachmentName;
 							if (attachmentName) {
 								let attachmentInstance = (model as Source2ModelInstance)?.getAttachment(attachmentName);
-								if (driver.m_entityName == 'parent') {
+								if (driver.entityName == 'parent') {
 									attachmentInstance = (model?.parent as any)?.getAttachment?.(attachmentName) ?? attachmentInstance;
 								}
 
 								if (attachmentInstance) {
-									const cp = this.getOwnControlPoint(driver.m_iControlPoint ?? i);
+									const cp = this.getOwnControlPoint(driver.controlPoint ?? i);
 									attachmentInstance.addChild(cp);
 									cp.step();
 								} else {

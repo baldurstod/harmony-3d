@@ -1,9 +1,10 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { ATTRIBUTE_NAME_PER_FIELD } from '../../particleconstants';
+import { TESTING } from '../../../../../buildoptions';
 import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
-import { ERROR, TESTING } from '../../../../../buildoptions';
+import { ATTRIBUTE_NAME_PER_FIELD } from '../../particleconstants';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 /*
 export const PARTICLE_FIELD_LIFETIME = 1;
@@ -51,31 +52,31 @@ export class InitFromCPSnapshot extends Operator {
 	randomSeed = 0;
 	localSpaceAngles = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nAttributeToRead':
-				this.attributeToRead = Number(value);
+				this.attributeToRead = (param);
 				break;
 			case 'm_nAttributeToWrite':
-				this.attributeToWrite = Number(value);
+				this.attributeToWrite = (param);
 				break;
 			case 'm_nLocalSpaceCP':
-				this.localSpaceCP = Number(value);
+				this.localSpaceCP = (param);
 				break;
 			case 'm_bRandom':
-				this.random = value;
+				this.random = param;
 				break;
 			case 'm_bReverse':
-				this.reverse = value;
+				this.reverse = param;
 				break;
 			case 'm_nRandomSeed':
-				this.randomSeed = Number(value);
+				this.randomSeed = (param);
 				break;
 			case 'm_bLocalSpaceAngles':
-				this.localSpaceAngles = value;
+				this.localSpaceAngles = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

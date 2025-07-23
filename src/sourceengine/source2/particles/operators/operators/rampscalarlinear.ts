@@ -1,7 +1,8 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { RandomFloat } from '../../../../../math/functions';
+import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RampScalarLinear extends Operator {
 	rateMin = 0;
@@ -13,34 +14,34 @@ export class RampScalarLinear extends Operator {
 	field = PARTICLE_FIELD_RADIUS;
 	proportionalOp = true;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_RateMin':
-				this.rateMin = value;
+				this.rateMin = param;
 				break;
 			case 'm_RateMax':
-				this.rateMax = value;
+				this.rateMax = param;
 				break;
 			case 'm_flStartTime_min':
-				this.startTime_min = value;
+				this.startTime_min = param;
 				break;
 			case 'm_flStartTime_max':
-				this.startTime_max = value;
+				this.startTime_max = param;
 				break;
 			case 'm_flEndTime_min':
-				this.endTime_min = value;
+				this.endTime_min = param;
 				break;
 			case 'm_flEndTime_max':
-				this.endTime_max = value;
+				this.endTime_max = param;
 				break;
 			case 'm_nField':
-				this.field = Number(value);
+				this.field = (param);
 				break;
 			case 'm_bProportionalOp':
-				this.proportionalOp = value;
+				this.proportionalOp = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

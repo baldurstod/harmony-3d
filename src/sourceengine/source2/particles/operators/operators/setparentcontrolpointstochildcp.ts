@@ -1,5 +1,6 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class SetParentControlPointsToChildCP extends Operator {
 	childGroupID = 0;
@@ -8,25 +9,25 @@ export class SetParentControlPointsToChildCP extends Operator {
 	firstSourcePoint = 0;
 	setOrientation = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nChildGroupID':
-				this.childGroupID = Number(value);
+				this.childGroupID = (param);
 				break;
 			case 'm_nChildControlPoint':
-				this.childControlPoint = Number(value);
+				this.childControlPoint = (param);
 				break;
 			case 'm_nNumControlPoints':
-				this.numControlPoints = Number(value);
+				this.numControlPoints = (param);
 				break;
 			case 'm_nFirstSourcePoint':
-				this.firstSourcePoint = Number(value);
+				this.firstSourcePoint = (param);
 				break;
 			case 'm_bSetOrientation':
-				this.setOrientation = value;
+				this.setOrientation = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

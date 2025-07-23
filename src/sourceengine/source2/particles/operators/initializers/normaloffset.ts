@@ -1,7 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const v = vec3.create();
 
@@ -11,22 +12,22 @@ export class NormalOffset extends Operator {
 	localCoords = false;
 	normalize = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_OffsetMin':
-				vec3.copy(this.offsetMin, value);
+				vec3.copy(this.offsetMin, param);
 				break;
 			case 'm_OffsetMax':
-				vec3.copy(this.offsetMax, value);
+				vec3.copy(this.offsetMax, param);
 				break;
 			case 'm_bLocalCoords':
-				this.localCoords = value;
+				this.localCoords = param;
 				break;
 			case 'm_bNormalize':
-				this.normalize = value;
+				this.normalize = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

@@ -1,20 +1,26 @@
-import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { vec3, vec4 } from 'gl-matrix';
+import { lerp, RandomFloatExp, RandomVectorInUnitSphere, vec3RandomBox } from '../../../../../math/functions';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
-import { vec3RandomBox, lerp, RandomVectorInUnitSphere, RandomFloatExp } from '../../../../../math/functions';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const DEFAULT_SPEED = vec3.create();
 const DEFAULT_DISTANCE_BIAS = vec3.fromValues(1, 1, 1);
 
-const vec = vec3.create();
+//const vec = vec3.create();
+
+const createWithinSphereSpeedMin = vec4.create();
+const createWithinSphereSpeedMax = vec4.create();
+const createWithinSphereDistanceBias = vec4.create();
 
 export class CreateWithinSphere extends Operator {
-	distanceBias = vec3.fromValues(1, 1, 1);
-	distanceBiasAbs = vec3.create();
-	speedRandExp = 1;
-	localCoords = false;
+	#distanceBias = vec3.fromValues(1, 1, 1);
+	#distanceBiasAbs = vec3.create();
+	#speedRandExp = 1;
+	#localCoords = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_LocalCoordinateSystemSpeedMin':
 			case 'm_LocalCoordinateSystemSpeedMax':
@@ -25,35 +31,38 @@ export class CreateWithinSphere extends Operator {
 			case 'm_fSpeedMax':
 				break;
 			case 'm_vecDistanceBiasAbs':
-				vec3.copy(this.distanceBiasAbs, value);
+				console.error('do this param', paramName, param);
+				vec3.copy(this.#distanceBiasAbs, param);
 				break;
 			case 'm_fSpeedRandExp':
-				this.speedRandExp = value;
+				console.error('do this param', paramName, param);
+				this.#speedRandExp = param;
 				break;
 			case 'm_bLocalCoords':
-				this.localCoords = value;
+				console.error('do this param', paramName, param);
+				this.#localCoords = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
-	doInit(particle, elapsedTime) {
-		const localCoordinateSystemSpeedMin = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin') ?? DEFAULT_SPEED;
-		const localCoordinateSystemSpeedMax = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax') ?? DEFAULT_SPEED;
-		const m_vecDistanceBias = this.getParamVectorValue('m_vecDistanceBias') ?? DEFAULT_DISTANCE_BIAS;
+	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+		const localCoordinateSystemSpeedMin = (this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin', particle, createWithinSphereSpeedMin) ?? DEFAULT_SPEED) as vec3;
+		const localCoordinateSystemSpeedMax = (this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax', particle, createWithinSphereSpeedMax) ?? DEFAULT_SPEED) as vec3;
+		const m_vecDistanceBias = (this.getParamVectorValue('m_vecDistanceBias', particle, createWithinSphereDistanceBias) ?? DEFAULT_DISTANCE_BIAS) as vec3;
 		const radiusMin = this.getParamScalarValue('m_fRadiusMin') ?? 0;
 		const radiusMax = this.getParamScalarValue('m_fRadiusMax') ?? 0;
 		const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
 		const speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
 
-		const m_vecDistanceBiasAbs = this.distanceBiasAbs;
+		const m_vecDistanceBiasAbs = this.#distanceBiasAbs;
 		//const controlPointNumber = this.getParameter('control_point_number');
 
 		const m_bDistanceBias = (m_vecDistanceBias[0] != 1.0) || (m_vecDistanceBias[1] != 1.0) || (m_vecDistanceBias[2] != 1.0);
 		const m_bDistanceBiasAbs = (m_vecDistanceBiasAbs[0] != 0.0) || (m_vecDistanceBiasAbs[1] != 0.0) || (m_vecDistanceBiasAbs[2] != 0.0);
 
-		const speed = RandomFloatExp(speedMin, speedMax, this.speedRandExp);//(speedMax - speedMin) * Math.random() + speedMin;
+		const speed = RandomFloatExp(speedMin, speedMax, this.#speedRandExp);//(speedMax - speedMin) * Math.random() + speedMin;
 
 		const randpos = vec3.create();
 		let cp;
@@ -62,7 +71,7 @@ export class CreateWithinSphere extends Operator {
 			const flLength = RandomVectorInUnitSphere(randpos);
 
 			// Absolute value and biasing for creating hemispheres and ovoids.
-			if (m_bDistanceBiasAbs	) {
+			if (m_bDistanceBiasAbs) {
 				if (m_vecDistanceBiasAbs[0] != 0.0) {
 					randpos[0] = Math.abs(randpos[0]);
 				}
@@ -79,7 +88,7 @@ export class CreateWithinSphere extends Operator {
 			const randDir = vec3.clone(randpos);
 			vec3.scale(randpos, randpos, lerp(radiusMin, radiusMax, flLength));
 
-			if (!m_bDistanceBias || !this.localCoords) {
+			if (!m_bDistanceBias || !this.#localCoords) {
 				/*Vector vecControlPoint;
 				pParticles->GetControlPointAtTime(nCurrentControlPoint, *ct, &vecControlPoint);
 				randpos += vecControlPoint;*/

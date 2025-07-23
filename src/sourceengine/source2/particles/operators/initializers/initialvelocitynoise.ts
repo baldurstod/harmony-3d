@@ -1,14 +1,15 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { NoiseSIMD } from '../../../../common/math/noise';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const DEFAULT_OUTPUT_MIN = vec3.create();
 const DEFAULT_OUTPUT_MAX = vec3.fromValues(1, 1, 1);
 const DEFAULT_OFFSET_LOC = vec3.create();
 
-const ofs_y = vec3.fromValues( 100000.5, 300000.25, 9000000.75 );
-const ofs_z = vec3.fromValues( 110000.25, 310000.75, 9100000.5 );
+const ofs_y = vec3.fromValues(100000.5, 300000.25, 9000000.75);
+const ofs_z = vec3.fromValues(110000.25, 310000.75, 9100000.5);
 
 const CoordLoc = vec3.create();
 const Coord = vec3.create();
@@ -17,11 +18,11 @@ const Coord3 = vec3.create();
 const poffset = vec3.create();
 
 export class InitialVelocityNoise extends Operator {
-	absVal = vec3.create();
-	absValInv = vec3.create();
-	localSpace = false;
+	#absVal = vec3.create();
+	#absValInv = vec3.create();
+	#localSpace = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecOutputMin':
 			case 'm_vecOutputMax':
@@ -31,16 +32,18 @@ export class InitialVelocityNoise extends Operator {
 			case 'm_flNoiseScaleLoc':
 				break;
 			case 'm_vecAbsVal':
-				vec3.set(this.absVal, Number(value[0]) / 255, Number(value[1]) / 255, Number(value[2]) / 255);
+				console.error('do this param', paramName, param);
+				vec3.set(this.#absVal, Number(param[0]) / 255, Number(param[1]) / 255, Number(param[2]) / 255);
 				break;
 			case 'm_vecAbsValInv':
-				vec3.set(this.absValInv, Number(value[0]) / 255, Number(value[1]) / 255, Number(value[2]) / 255);
+				console.error('do this param', paramName, param);
+				vec3.set(this.#absValInv, Number(param[0]) / 255, Number(param[1]) / 255, Number(param[2]) / 255);
 				break;
-			case 'm_bLocalSpace':
-				this.localSpace = value;
+			case 'm_bLocalSpace'://TODO: put this param in Operator ?
+				this.#localSpace = param.getValueAsBool() ?? false;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -62,20 +65,17 @@ export class InitialVelocityNoise extends Operator {
 		let flAbsScaleY = 0.5;
 		let flAbsScaleZ = 0.5;
 		// Set up single if check for absolute value inversion inside the loop
-		const m_bNoiseAbs = ( this.absValInv[0] != 0.0 ) || ( this.absValInv[1] != 0.0 ) || ( this.absValInv[2] != 0.0 );
+		const m_bNoiseAbs = (this.#absValInv[0] != 0.0) || (this.#absValInv[1] != 0.0) || (this.#absValInv[2] != 0.0);
 		// Set up values for more optimal absolute value calculations inside the loop
-		if ( this.absVal[0] != 0.0 )
-		{
+		if (this.#absVal[0] != 0.0) {
 			//nAbsValX = 0x7fffffff;
 			flAbsScaleX = 1.0;
 		}
-		if ( this.absVal[1] != 0.0 )
-		{
+		if (this.#absVal[1] != 0.0) {
 			//nAbsValY = 0x7fffffff;
 			flAbsScaleY = 1.0;
 		}
-		if ( this.absVal[2] != 0.0 )
-		{
+		if (this.#absVal[2] != 0.0) {
 			//nAbsValZ = 0x7fffffff;
 			flAbsScaleZ = 1.0;
 		}
@@ -83,13 +83,13 @@ export class InitialVelocityNoise extends Operator {
 		//float ValueScaleX, ValueScaleY, ValueScaleZ, ValueBaseX, ValueBaseY, ValueBaseZ;
 
 		const ValueScaleX = flAbsScaleX * (outputMax[0] - outputMin[0]);
-		const ValueBaseX = outputMin[0] + ( ( 1.0 - flAbsScaleX ) * ( outputMax[0] - outputMin[0] ) );
+		const ValueBaseX = outputMin[0] + ((1.0 - flAbsScaleX) * (outputMax[0] - outputMin[0]));
 
-		const ValueScaleY = ( flAbsScaleY *(outputMax[1]-outputMin[1] ) );
-		const ValueBaseY = (outputMin[1]+ ( ( 1.0 - flAbsScaleY ) *( outputMax[1]-outputMin[1] ) ) );
+		const ValueScaleY = (flAbsScaleY * (outputMax[1] - outputMin[1]));
+		const ValueBaseY = (outputMin[1] + ((1.0 - flAbsScaleY) * (outputMax[1] - outputMin[1])));
 
-		const ValueScaleZ = ( flAbsScaleZ *(outputMax[2]-outputMin[2] ) );
-		const ValueBaseZ = (outputMin[2]+ ( ( 1.0 - flAbsScaleZ ) *( outputMax[2]-outputMin[2] ) ) );
+		const ValueScaleZ = (flAbsScaleZ * (outputMax[2] - outputMin[2]));
+		const ValueBaseZ = (outputMin[2] + ((1.0 - flAbsScaleZ) * (outputMax[2] - outputMin[2])));
 
 
 		//float CoordScale = m_flNoiseScale;
@@ -128,60 +128,59 @@ export class InitialVelocityNoise extends Operator {
 			/*fvNoise.DuplicateVector( Coord );
 			flNoise128 = NoiseSIMD( fvNoise );
 			float flNoiseX = SubFloat( flNoise128, 0 );*/
-			let flNoiseX = NoiseSIMD( Coord , 0, 0);
+			let flNoiseX = NoiseSIMD(Coord, 0, 0);
 
 			/*fvNoise.DuplicateVector( Coord2 + ofs_y );
 			flNoise128 = NoiseSIMD( fvNoise );
 			float flNoiseY = SubFloat( flNoise128, 0 );*/
-			let flNoiseY = NoiseSIMD( Coord2 , 0, 0);
+			let flNoiseY = NoiseSIMD(Coord2, 0, 0);
 
 			/*fvNoise.DuplicateVector( Coord3 + ofs_z );
 			flNoise128 = NoiseSIMD( fvNoise );
 			float flNoiseZ = SubFloat( flNoise128, 0 );*/
-			let flNoiseZ = NoiseSIMD( Coord3 , 0, 0);
+			let flNoiseZ = NoiseSIMD(Coord3, 0, 0);
 
 			//*( (int *) &flNoiseX)  &= nAbsValX;
 			//*( (int *) &flNoiseY)  &= nAbsValY;
 			//*( (int *) &flNoiseZ)  &= nAbsValZ;
-			if (this.absVal[0]) {
+			if (this.#absVal[0]) {
 				flNoiseX = Math.abs(flNoiseX);
 			}
 
-			if (this.absVal[1]) {
+			if (this.#absVal[1]) {
 				flNoiseY = Math.abs(flNoiseY);
 			}
 
-			if (this.absVal[2]) {
+			if (this.#absVal[2]) {
 				flNoiseZ = Math.abs(flNoiseZ);
 			}
 
-			if ( m_bNoiseAbs )
-			{
-				if (this.absValInv[0] != 0.0) {
+			if (m_bNoiseAbs) {
+				if (this.#absValInv[0] != 0.0) {
 					flNoiseX = 1.0 - flNoiseX;
 				}
 
-				if (this.absValInv[1] != 0.0) {
+				if (this.#absValInv[1] != 0.0) {
 					flNoiseY = 1.0 - flNoiseY;
 				}
-				if (this.absValInv[2] != 0.0) {
+				if (this.#absValInv[2] != 0.0) {
 					flNoiseZ = 1.0 - flNoiseZ;
 				}
 			}
 
 			//Vector poffset;
-			poffset[0] = ( ValueBaseX + ( ValueScaleX * flNoiseX ) ) * elapsedTime;
-			poffset[1] = ( ValueBaseY + ( ValueScaleY * flNoiseY ) ) * elapsedTime;
-			poffset[2] = ( ValueBaseZ + ( ValueScaleZ * flNoiseZ ) ) * elapsedTime;
+			poffset[0] = (ValueBaseX + (ValueScaleX * flNoiseX)) * elapsedTime;
+			poffset[1] = (ValueBaseY + (ValueScaleY * flNoiseY)) * elapsedTime;
+			poffset[2] = (ValueBaseZ + (ValueScaleZ * flNoiseZ)) * elapsedTime;
 
 			//poffset *= pParticles->m_flPreviousDt;
 
-			if (this.localSpace){
-/*				matrix3x4_t mat;
-				pParticles->GetControlPointTransformAtTime( m_nControlPointNumber, *pCreationTime, &mat );
-				Vector vecTransformLocal = vec3_origin;
-				VectorRotate( poffset, mat, vecTransformLocal );
-				poffset = vecTransformLocal;*/
+			if (this.#localSpace) {
+				/*				matrix3x4_t mat;
+								pParticles->GetControlPointTransformAtTime( m_nControlPointNumber, *pCreationTime, &mat );
+								Vector vecTransformLocal = vec3_origin;
+								VectorRotate( poffset, mat, vecTransformLocal );
+								poffset = vecTransformLocal;*/
 				const cp = this.system.getControlPoint(this.controlPointNumber);
 				if (cp) {
 					vec3.transformQuat(poffset, poffset, cp.getWorldQuaternion());

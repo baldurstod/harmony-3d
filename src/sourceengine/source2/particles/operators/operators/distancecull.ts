@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const vec = vec3.create();
 
@@ -9,22 +10,22 @@ export class DistanceCull extends Operator {
 	distance = 0;
 	cullInside = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nControlPoint':
-				this.controlPointNumber = Number(value);
+				this.controlPointNumber = (param);
 				break;
 			case 'm_vecPointOffset':
-				vec3.copy(this.pointOffset, value);
+				vec3.copy(this.pointOffset, param);
 				break;
 			case 'm_flDistance':
-				this.distance = value;
+				this.distance = param;
 				break;
 			case 'm_bCullInside':
-				this.cullInside = value;
+				this.cullInside = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

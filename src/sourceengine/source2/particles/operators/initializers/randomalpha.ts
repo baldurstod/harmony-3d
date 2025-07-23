@@ -1,25 +1,26 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { RandomFloatExp } from '../../../../../math/functions';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RandomAlpha extends Operator {
 	alphaMin = 255;
 	alphaMax = 255;
 	alphaRandExponent = 1;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nAlphaMin':
-				this.alphaMin = Number(value);
+				this.alphaMin = (param);
 				break;
 			case 'm_nAlphaMax':
-				this.alphaMax = Number(value);
+				this.alphaMax = (param);
 				break;
 			case 'm_flAlphaRandExponent':
-				this.alphaRandExponent = Number(value);
+				this.alphaRandExponent = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

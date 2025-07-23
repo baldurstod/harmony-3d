@@ -1,5 +1,6 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class PinParticleToCP extends Operator {
 	offsetLocal = true;
@@ -8,7 +9,7 @@ export class PinParticleToCP extends Operator {
 	breakControlPointNumber = -1
 	breakControlPointNumber2 = -1
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecOffset':
 			case 'm_nParticleNumber':
@@ -17,22 +18,22 @@ export class PinParticleToCP extends Operator {
 			case 'm_flAge':
 				break;
 			case 'm_bOffsetLocal':
-				this.offsetLocal = value;
+				this.offsetLocal = param;
 				break;
 			case 'm_nParticleSelection':
-				this.particleSelection = value;
+				this.particleSelection = param;
 				break;
 			case 'm_nPinBreakType':
-				this.pinBreakType = value;
+				this.pinBreakType = param;
 				break;
 			case 'm_nBreakControlPointNumber':
-				this.breakControlPointNumber = Number(value);
+				this.breakControlPointNumber = (param);
 				break;
 			case 'm_nBreakControlPointNumber2':
-				this.breakControlPointNumber2 = Number(value);
+				this.breakControlPointNumber2 = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

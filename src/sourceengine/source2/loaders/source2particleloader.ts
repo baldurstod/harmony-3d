@@ -1,45 +1,83 @@
 import { vec4 } from 'gl-matrix';
 import { LOG, TESTING, VERBOSE } from '../../../buildoptions';
 import { registerLoader } from '../../../loaders/loaderfactory';
+import { Kv3Element } from '../../common/keyvalue/kv3element';
+import { Operator } from '../particles/operators/operator';
 import { GetSource2ParticleOperator } from '../particles/operators/source2particleoperators';
 import { Source2ParticleManager } from '../particles/source2particlemanager';
-import { Source2ParticleSystem } from '../particles/source2particlesystem';
+import { ControlPointConfiguration, ControlPointConfigurationDriver, SOURCE2_DEFAULT_RADIUS, Source2ParticleSystem } from '../particles/source2particlesystem';
 import { Source2File } from './source2file';
 import { Source2FileLoader } from './source2fileloader';
+import { DEFAULT_MAX_PARTICLES } from '../../common/particles/particleconsts';
+import { OperatorParam } from '../particles/operators/operatorparam';
 
 export const CParticleSystemDefinition = 'CParticleSystemDefinition';
 
-function _initProperties(system, systemDefinition) {
-	const keys = Object.keys(systemDefinition);
-	for (const key of keys) {
-		const value = systemDefinition[key];
+function valueToControlPointConfigurationDrivers(value: Kv3Element[] | null): ControlPointConfigurationDriver[] {
+	const ret: ControlPointConfigurationDriver[] = [];
+	if (value) {
+		for (const configuration of value) {
+			ret.push({
+				attachmentName: configuration.getValueAsString('m_attachmentName'),
+				entityName: configuration.getValueAsString('m_entityName'),
+				attachType: configuration.getValueAsString('m_iAttachType'),
+				controlPoint: configuration.getValueAsNumber('m_iControlPoint'),
+			});
+		}
+	}
+	return ret;
+}
+
+function valueToControlPointConfigurations(value: Kv3Element[] | null): ControlPointConfiguration[] {
+	const ret: ControlPointConfiguration[] = [];
+	if (value) {
+		for (const configuration of value) {
+			ret.push({
+				name: configuration.getValueAsString('m_name') ?? '',
+				drivers: valueToControlPointConfigurationDrivers(configuration.getValueAsElementArray('m_drivers')),
+			});
+		}
+	}
+	return ret;
+}
+
+function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Element) {
+	//const keys = Object.keys(systemDefinition);
+
+
+	for (const [key, value] of systemDefinition.getProperties()) {
+		//const value = systemDefinition[key];
 		switch (key) {
 			case 'm_nMaxParticles':
-				system.setMaxParticles(Number(value));
+				system.setMaxParticles(systemDefinition.getValueAsNumber('m_nMaxParticles') ?? DEFAULT_MAX_PARTICLES);
 				break;
 			case 'm_ConstantColor':
-				vec4.set(system.baseProperties.color, Number(value[0]) / 255.0, Number(value[1]) / 255.0, Number(value[2]) / 255.0, Number(value[3]) / 255.0);
+				//vec4.set(system.baseProperties.color, Number(value[0]) / 255.0, Number(value[1]) / 255.0, Number(value[2]) / 255.0, Number(value[3]) / 255.0);
+				const constantColor = systemDefinition.getValueAsNumberArray('m_ConstantColor');
+				if (constantColor) {
+					vec4.set(system.baseProperties.color, constantColor[0] / 255.0, constantColor[1] / 255.0, constantColor[2] / 255.0, constantColor[3] / 255.0);
+				}
 				break;
 			case 'm_flConstantLifespan':
 				system.baseProperties.lifespan = value;
 				break;
 			case 'm_flConstantRadius':
-				system.baseProperties.radius = Number(value);
+				system.baseProperties.radius = systemDefinition.getValueAsNumber('m_flConstantRadius') ?? SOURCE2_DEFAULT_RADIUS;
 				break;
 			case 'm_nConstantSequenceNumber':
-				system.baseProperties.sequenceNumber = Number(value);
+				system.baseProperties.sequenceNumber = systemDefinition.getValueAsNumber('m_nConstantSequenceNumber') ?? 0;
 				break;
 			case 'm_controlPointConfigurations':
-				system.baseProperties.controlPointConfigurations = value;
+				system.baseProperties.controlPointConfigurations = valueToControlPointConfigurations(systemDefinition.getValueAsElementArray('m_controlPointConfigurations'));
 				break;
 			case 'm_hSnapshot':
 				system.baseProperties.snapshot = value;
 				break;
 			case 'm_nSnapshotControlPoint':
-				system.baseProperties.snapshotControlPoint = Number(value);
+				system.baseProperties.snapshotControlPoint = (value);
 				break;
 			case 'm_nInitialParticles':
-				system.initialParticles = Number(value);
+				system.initialParticles = (value);
 				break;
 			case 'm_flConstantRotationSpeed':
 				system.baseProperties.rotationSpeedRoll = value;
@@ -65,50 +103,52 @@ function _initProperties(system, systemDefinition) {
 	}
 }
 
-function _initOperators(system, systemArray, kv3Array) {
-	if (kv3Array) {
-		const properties = kv3Array;
-		if (properties) {
-			for (const property of properties) {
-				if (property._class) {
-					const operatorClass = GetSource2ParticleOperator(property._class);
-					if (operatorClass) {
-						const operator = new operatorClass(system);
-						if (operator.isPreEmission()) {
-							system.preEmissionOperators.push(operator);
-						} else {
-							systemArray.push(operator);
-						}
-						for (const param of Object.keys(property)) {
-							if (param != '_class') {
-								operator.setParam(param, property[param]);
-							}
-						}
-						operator.init();
+function initOperators(system: Source2ParticleSystem, systemArray: Operator[], kv3Array: Kv3Element[] | null): void {
+	if (!kv3Array) {
+		return;
+	}
+	const properties = kv3Array;
+	if (properties) {
+		for (const property of properties) {
+			const operatorClassName = property.getValueAsString('_class');
+			if (operatorClassName) {
+				const operatorClass = GetSource2ParticleOperator(operatorClassName);
+				if (operatorClass) {
+					const operator = new operatorClass(system);
+					if (operator.isPreEmission()) {
+						system.preEmissionOperators.push(operator);
 					} else {
-						console.error('Unknown operator : ' + property._class, property, system.name);
+						systemArray.push(operator);
 					}
+					for (const [name, value] of property.getProperties()) {
+						if (value && name != '_class') {
+							operator.setParam(name, OperatorParam.fromKv3(value)/*property.getValue(name)*/);
+						}
+					}
+					operator.init();
+				} else {
+					console.error('Unknown operator : ' + operatorClassName, property, system.name);
 				}
 			}
 		}
 	}
 }
 
-async function _initChildren(repository, systemArray, kv3Array, snapshotModifiers) {
-	const promises = [];
+async function initChildren(repository: string, systemArray: Source2ParticleSystem[], kv3Array: Kv3Element[] | null, snapshotModifiers?: Map<string, string>): Promise<void> {
+	const promises: Promise<boolean>[] = [];
 	if (kv3Array) {
 		const properties = kv3Array;
 		if (properties) {
 			for (let childIndex = 0; childIndex < properties.length; ++childIndex) {
 				const property = properties[childIndex];
-				const m_ChildRef = property.m_ChildRef;
-				const m_flDelay = property.m_flDelay || 0;
+				const m_ChildRef = property.getValueAsResource('m_ChildRef');
+				const m_flDelay = property.getValueAsNumber('m_flDelay') ?? 0;
 				if (m_ChildRef) {
-					const p = new Promise(async resolve => {
+					const p = new Promise<boolean>(async resolve => {
 						const system = await Source2ParticleManager.getSystem(repository, m_ChildRef, snapshotModifiers);
-						system.disabled = property.m_bDisableChild ?? false;
+						system.disabled = property.getValueAsBool('m_bDisableChild') ?? false;
 						if (system) {
-							system.endCap = property.m_bEndCap ?? false;
+							system.endCap = property.getValueAsBool('m_bEndCap') ?? false;
 							system.startAfterDelay = m_flDelay;
 							systemArray[childIndex] = system;
 							resolve(true);
@@ -126,12 +166,12 @@ async function _initChildren(repository, systemArray, kv3Array, snapshotModifier
 
 export const Source2ParticleLoader = new (function () {
 	class Source2ParticleLoader {
-		load(repository, fileName): Promise<Source2File> {
-			const promise = new Promise<Source2File>(resolve => {
-				fileName = fileName.replace(/.vpcf_c/, '');
-				const vpcfPromise = new Source2FileLoader().load(repository, fileName + '.vpcf_c');
+		load(repository: string, path: string): Promise<Source2File | null> {
+			const promise = new Promise<Source2File | null>(resolve => {
+				path = path.replace(/.vpcf_c/, '');
+				const vpcfPromise = new Source2FileLoader().load(repository, path + '.vpcf_c') as Promise<Source2File | null>;
 				vpcfPromise.then(
-					(source2File: Source2File) => {
+					(source2File: Source2File | null) => {
 						if (VERBOSE) {
 							console.log(source2File);
 						}
@@ -142,7 +182,7 @@ export const Source2ParticleLoader = new (function () {
 			return promise;
 		}
 
-		async getSystem(repository, vpcf, snapshotModifiers?) {
+		async getSystem(repository: string, vpcf: Source2File, snapshotModifiers?: Map<string, string>) {
 			if (TESTING && LOG) {
 				console.debug(vpcf);
 			}
@@ -152,17 +192,20 @@ export const Source2ParticleLoader = new (function () {
 
 			const system = new Source2ParticleSystem(repository, fileName, result ? result[0] : fileName);
 
-			const systemDefinition = vpcf.getBlockStruct('DATA.keyValue.root');
-			if (systemDefinition._class == CParticleSystemDefinition) {
-				_initOperators(system, system.preEmissionOperators, systemDefinition.m_PreEmissionOperators);
-				_initOperators(system, system.emitters, systemDefinition.m_Emitters);
-				_initOperators(system, system.initializers, systemDefinition.m_Initializers);
-				_initOperators(system, system.operators, systemDefinition.m_Operators);
-				_initOperators(system, system.renderers, systemDefinition.m_Renderers);
-				_initOperators(system, system.forces, systemDefinition.m_ForceGenerators);
-				_initOperators(system, system.constraints, systemDefinition.m_Constraints);
-				await _initChildren(repository, system.childSystems, systemDefinition.m_Children, snapshotModifiers);
-				_initProperties(system, systemDefinition);
+			//const systemDefinition = vpcf.getBlockStruct('DATA', '');
+			if (vpcf.getBlockStructAsString('DATA', '_class') == CParticleSystemDefinition) {
+				initOperators(system, system.preEmissionOperators, vpcf.getBlockStructAsElementArray('DATA', 'm_PreEmissionOperators'));
+				initOperators(system, system.emitters, vpcf.getBlockStructAsElementArray('DATA', 'm_Emitters'));
+				initOperators(system, system.initializers, vpcf.getBlockStructAsElementArray('DATA', 'm_Initializers'));
+				initOperators(system, system.operators, vpcf.getBlockStructAsElementArray('DATA', 'm_Operators'));
+				initOperators(system, system.renderers, vpcf.getBlockStructAsElementArray('DATA', 'm_Renderers'));
+				initOperators(system, system.forces, vpcf.getBlockStructAsElementArray('DATA', 'm_ForceGenerators'));
+				initOperators(system, system.constraints, vpcf.getBlockStructAsElementArray('DATA', 'm_Constraints'));
+				await initChildren(repository, system.childSystems, vpcf.getBlockStructAsElementArray('DATA', 'm_Children'), snapshotModifiers);
+				const dataKv = vpcf.getBlockKeyValues('DATA');
+				if (dataKv) {
+					initProperties(system, dataKv);
+				}
 			}
 
 			await system.init(snapshotModifiers);

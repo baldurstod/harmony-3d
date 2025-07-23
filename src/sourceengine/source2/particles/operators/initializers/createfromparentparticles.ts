@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class CreateFromParentParticles extends Operator {
 	velocityScale = 0;
@@ -9,25 +10,25 @@ export class CreateFromParentParticles extends Operator {
 	randomSeed = 0;
 	subFrame = true;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flVelocityScale':
-				this.velocityScale = value;
+				this.velocityScale = param;
 				break;
 			case 'm_flIncrement':
-				this.increment = value;
+				this.increment = param;
 				break;
 			case 'm_bRandomDistribution':
-				this.randomDistribution = value;
+				this.randomDistribution = param;
 				break;
 			case 'm_nRandomSeed':
-				this.randomSeed = Number(value);
+				this.randomSeed = Number(param);
 				break;
 			case 'm_bSubFrame':
-				this.subFrame = value;
+				this.subFrame = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

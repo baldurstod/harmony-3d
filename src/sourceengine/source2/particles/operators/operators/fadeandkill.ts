@@ -1,6 +1,7 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { SimpleSplineRemapValWithDeltasClamped } from '../../../../common/math/sse';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class FadeAndKill extends Operator {
 	startAlpha = 1;
@@ -11,31 +12,31 @@ export class FadeAndKill extends Operator {
 	endAlpha = 0;
 	forcePreserveParticleOrder = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flStartAlpha':
-				this.startAlpha = value;
+				this.startAlpha = param;
 				break;
 			case 'm_flStartFadeInTime':
-				this.startFadeInTime = value;
+				this.startFadeInTime = param;
 				break;
 			case 'm_flEndFadeInTime':
-				this.endFadeInTime = value;
+				this.endFadeInTime = param;
 				break;
 			case 'm_flStartFadeOutTime':
-				this.startFadeOutTime = value;
+				this.startFadeOutTime = param;
 				break;
 			case 'm_flEndFadeOutTime':
-				this.endFadeOutTime = value;
+				this.endFadeOutTime = param;
 				break;
 			case 'm_flEndAlpha':
-				this.endAlpha = value;
+				this.endAlpha = param;
 				break;
 			case 'm_bForcePreserveParticleOrder':
-				this.forcePreserveParticleOrder = value;
+				this.forcePreserveParticleOrder = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

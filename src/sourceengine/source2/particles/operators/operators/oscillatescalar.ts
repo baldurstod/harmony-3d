@@ -1,7 +1,8 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_ALPHA } from '../../../../common/particles/particlefields';
 import { clamp } from '../../../../../math/functions';
+import { PARTICLE_FIELD_ALPHA } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class OscillateScalar extends Operator {
 	rateMin = 0;
@@ -18,49 +19,49 @@ export class OscillateScalar extends Operator {
 	oscMult = 2;
 	oscAdd = 0.5;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_RateMin':
-				this.rateMin = value;
+				this.rateMin = param;
 				break;
 			case 'm_RateMax':
-				this.rateMax = value;
+				this.rateMax = param;
 				break;
 			case 'm_FrequencyMin':
-				this.frequencyMin = value;
+				this.frequencyMin = param;
 				break;
 			case 'm_FrequencyMax':
-				this.frequencyMax = value;
+				this.frequencyMax = param;
 				break;
 			case 'm_nField':
-				this.field = Number(value);
+				this.field = (param);
 				break;
 			case 'm_bProportional':
-				this.proportional = value;
+				this.proportional = param;
 				break;
 			case 'm_bProportionalOp':
-				this.proportionalOp = value;
+				this.proportionalOp = param;
 				break;
 			case 'm_flStartTime_min':
-				this.startTimeMin = value;
+				this.startTimeMin = param;
 				break;
 			case 'm_flStartTime_max':
-				this.startTimeMax = value;
+				this.startTimeMax = param;
 				break;
 			case 'm_flEndTime_min':
-				this.endTimeMin = value;
+				this.endTimeMin = param;
 				break;
 			case 'm_flEndTime_max':
-				this.endTimeMax = value;
+				this.endTimeMax = param;
 				break;
 			case 'm_flOscMult':
-				this.oscMult = value;
+				this.oscMult = param;
 				break;
 			case 'm_flOscAdd':
-				this.oscAdd = value;
+				this.oscAdd = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -103,7 +104,7 @@ export class OscillateScalar extends Operator {
 				let fl4Cos;
 				if (this.proportional) {
 					fl4LifeTime = (particle.currentTime - particle.cTime) / particle.timeToLive;
-					fl4Cos = ((this.oscMult *(fl4LifeTime * fl4Frequency)) + this.oscAdd);
+					fl4Cos = ((this.oscMult * (fl4LifeTime * fl4Frequency)) + this.oscAdd);
 				} else {
 					fl4Cos = fl4CosFactor * fl4Frequency;
 				}

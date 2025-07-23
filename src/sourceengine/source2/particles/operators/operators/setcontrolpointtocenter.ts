@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const center = vec3.create();
 
@@ -8,16 +9,16 @@ export class SetControlPointToCenter extends Operator {
 	cp1 = 1;
 	cp1Pos = vec3.create();
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCP1':
-				this.cp1 = Number(value);
+				this.cp1 = (param);
 				break;
 			case 'm_vecCP1Pos':
-				vec3.copy(this.cp1Pos, value);
+				vec3.copy(this.cp1Pos, param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

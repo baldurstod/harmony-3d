@@ -1,7 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const v = vec3.create();
 
@@ -14,31 +15,31 @@ export class SetRandomControlPointPosition extends Operator {
 	cpMaxPos = vec3.create();
 	lastRandomTime = -1;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bUseWorldLocation':
-				this.useWorldLocation = value;
+				this.useWorldLocation = param;
 				break;
 			case 'm_bOrient':
-				this.orient = value;
+				this.orient = param;
 				break;
 			case 'm_nCP1':
-				this.cp1 = Number(value);
+				this.cp1 = (param);
 				break;
 			case 'm_nHeadLocation':
-				this.headLocation = Number(value);
+				this.headLocation = (param);
 				break;
 			case 'm_flReRandomRate':
 			case 'm_flInterpolation':
 				break;
 			case 'm_vecCPMinPos':
-				vec3.copy(this.cpMinPos, value);
+				vec3.copy(this.cpMinPos, param);
 				break;
 			case 'm_vecCPMaxPos':
-				vec3.copy(this.cpMaxPos, value);
+				vec3.copy(this.cpMaxPos, param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

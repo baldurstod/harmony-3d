@@ -1,10 +1,11 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { RemapValClamped, lerp } from '../../../../../math/functions';
+import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RemapCPtoScalar extends Operator {
-	fieldOutput = PARTICLE_FIELD_RADIUS;
+	#fieldOutput = PARTICLE_FIELD_RADIUS;
 	cpInput = 0;
 	field = -1;//disabled
 	inputMin = 0;
@@ -17,40 +18,50 @@ export class RemapCPtoScalar extends Operator {
 	setMethod = null;
 	scaleInitialRange;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCPInput':
-				this.cpInput = Number(value);
+				console.error('do this param', paramName, param);
+				this.cpInput = (param);
 				break;
 			case 'm_nField':
-				this.field = Number(value);//TODO check -1 / 0 / 1 / 2
+				console.error('do this param', paramName, param);
+				this.field = (param);//TODO check -1 / 0 / 1 / 2
 				break;
 			case 'm_flInputMin':
-				this.inputMin = value;
+				console.error('do this param', paramName, param);
+				this.inputMin = param;
 				break;
 			case 'm_flInputMax':
-				this.inputMax = value;
+				console.error('do this param', paramName, param);
+				this.inputMax = param;
 				break;
 			case 'm_flOutputMin':
-				this.outputMin = value;
+				console.error('do this param', paramName, param);
+				this.outputMin = param;
 				break;
 			case 'm_flOutputMax':
-				this.outputMax = value;
+				console.error('do this param', paramName, param);
+				this.outputMax = param;
 				break;
 			case 'm_flStartTime':
-				this.startTime = value;
+				console.error('do this param', paramName, param);
+				this.startTime = param;
 				break;
 			case 'm_flEndTime':
-				this.endTime = value;
+				console.error('do this param', paramName, param);
+				this.endTime = param;
 				break;
 			case 'm_flInterpRate':
-				this.interpRate = value;
+				console.error('do this param', paramName, param);
+				this.interpRate = param;
 				break;
 			case 'm_nSetMethod':
-				this.setMethod = value;
+				console.error('do this param', paramName, param);
+				this.setMethod = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -66,10 +77,10 @@ export class RemapCPtoScalar extends Operator {
 		if (scaleInitial) {
 			value = lerp(1, value, strength);
 		} else {
-			value = lerp(particle.getField(this.fieldOutput), value, strength);
+			value = lerp(particle.getField(this.#fieldOutput), value, strength);
 		}
 
-		particle.setField(this.fieldOutput, value, scaleInitial);
+		particle.setField(this.#fieldOutput, value, scaleInitial);
 	}
 }
 RegisterSource2ParticleOperator('C_OP_RemapCPtoScalar', RemapCPtoScalar);

@@ -1,16 +1,11 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class LifespanDecay extends Operator {
 
-	_paramChanged(paramName, value) {
-		switch (paramName) {
-			default:
-				super._paramChanged(paramName, value);
-		}
-	}
-
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		if (particle.timeToLive < particle.currentTime) {
 			particle.die();
 		}

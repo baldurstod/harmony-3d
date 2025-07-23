@@ -1,21 +1,22 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class SetControlPointFromObjectScale extends Operator {
 	cpInput = 0;
 	cpOutput = 1;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCPInput':
-				this.cpInput  = Number(value);
+				this.cpInput  = (param);
 				break;
 			case 'm_nCPOutput':
-				this.cpOutput  = Number(value);
+				this.cpOutput  = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

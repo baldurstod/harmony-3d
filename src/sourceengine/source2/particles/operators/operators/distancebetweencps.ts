@@ -1,11 +1,12 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { RemapValClamped } from '../../../../../math/functions';
+import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class DistanceBetweenCPs extends Operator {
-	fieldOutput = PARTICLE_FIELD_RADIUS;
+	#fieldOutput = PARTICLE_FIELD_RADIUS;
 	startCP = 0;
 	endCP = 1;
 	maxTraceLength = -1;
@@ -14,13 +15,13 @@ export class DistanceBetweenCPs extends Operator {
 	los = false;
 	setMethod = null;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nStartCP':
-				this.startCP = Number(value);
+				this.startCP = (param);
 				break;
 			case 'm_nEndCP':
-				this.endCP = Number(value);
+				this.endCP = (param);
 				break;
 			case 'm_flInputMin':
 			case 'm_flInputMax':
@@ -28,22 +29,22 @@ export class DistanceBetweenCPs extends Operator {
 			case 'm_flOutputMax':
 				break;
 			case 'm_flMaxTraceLength':
-				this.maxTraceLength = value;
+				this.maxTraceLength = param;
 				break;
 			case 'm_flLOSScale':
-				this.losScale = value;
+				this.losScale = param;
 				break;
 			case 'm_CollisionGroupName':
-				this.collisionGroupName = value;
+				this.collisionGroupName = param;
 				break;
 			case 'm_bLOS':
-				this.los = value;
+				this.los = param;
 				break;
 			case 'm_nSetMethod':
-				this.setMethod = value;
+				this.setMethod = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -61,7 +62,7 @@ export class DistanceBetweenCPs extends Operator {
 		let value = vec3.distance(startCpPos, endCPPos);
 
 		value = RemapValClamped(value, inputMin, inputMax, outputMin, outputMax);
-		particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+		particle.setField(this.#fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
 	}
 }
 RegisterSource2ParticleOperator('C_OP_DistanceBetweenCPs', DistanceBetweenCPs);

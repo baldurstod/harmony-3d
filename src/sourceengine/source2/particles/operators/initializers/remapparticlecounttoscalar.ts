@@ -1,7 +1,8 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { RemapValClampedBias } from '../../../../../math/functions';
+import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RemapParticleCountToScalar extends Operator {
 	inputMin = 0;
@@ -15,45 +16,45 @@ export class RemapParticleCountToScalar extends Operator {
 	invert = false;
 	wrap = false;
 	remapBias = 0.5;
-	fieldOutput = PARTICLE_FIELD_RADIUS;
+	#fieldOutput = PARTICLE_FIELD_RADIUS;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nInputMin':
-				this.inputMin = Number(value);
+				this.inputMin = (param);
 				break;
 			case 'm_nInputMax':
-				this.inputMax = Number(value);
+				this.inputMax = (param);
 				break;
 			case 'm_nScaleControlPoint':
-				this.scaleControlPoint = Number(value);
+				this.scaleControlPoint = Number(param);
 				break;
 			case 'm_nScaleControlPointField':
-				this.scaleControlPointField = Number(value);
+				this.scaleControlPointField = Number(param);
 				break;
 			case 'm_flOutputMin':
-				this.outputMin = value;
+				this.outputMin = param;
 				break;
 			case 'm_flOutputMax':
-				this.outputMax = value;
+				this.outputMax = param;
 				break;
 			case 'm_nSetMethod':
-				this.setMethod = value;
+				this.setMethod = param;
 				break;
 			case 'm_bActiveRange':
-				this.activeRange = value;
+				this.activeRange = param;
 				break;
 			case 'm_bInvert':
-				this.invert = value;
+				this.invert = param;
 				break;
 			case 'm_bWrap':
-				this.wrap = value;
+				this.wrap = param;
 				break;
 			case 'm_flRemapBias':
-				this.remapBias = value;
+				this.remapBias = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -69,7 +70,7 @@ export class RemapParticleCountToScalar extends Operator {
 		}
 
 		value = RemapValClampedBias(value, this.inputMin, this.inputMax, this.outputMin, this.outputMax, this.remapBias);
-		particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+		particle.setField(this.#fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RemapParticleCountToScalar', RemapParticleCountToScalar);

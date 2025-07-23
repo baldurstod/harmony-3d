@@ -24,7 +24,7 @@ export class Source2SpriteCard extends Source2Material {
 		this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 	}
 
-	setOutputBlendMode(outputBlendMode: number) {
+	setOutputBlendMode(outputBlendMode: number/*TODO; create enum*/) {
 		switch (outputBlendMode) {
 			case 0:
 				this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);

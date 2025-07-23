@@ -1,18 +1,11 @@
 import { mat3, vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 //const mat = mat4.create();
 const nmat = mat3.create();
 
 export class NormalLock extends Operator {
-
-	_paramChanged(paramName, value) {
-		switch (paramName) {
-			default:
-				super._paramChanged(paramName, value);
-		}
-	}
 
 	doOperate(particle, elapsedTime) {
 		const cp = this.system.getControlPoint(this.controlPointNumber);

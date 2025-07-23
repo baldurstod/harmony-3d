@@ -3,7 +3,8 @@ import { Metaballs } from '../../../../../primitives/metaballs';
 import { Source2SpriteCard } from '../../../materials/source2spritecard';
 import { Source2ParticleSystem } from '../../export';
 import { Source2Particle } from '../../source2particle';
-import { Operator, Source2OperatorParamValue } from '../operator';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RenderBlobs extends Operator {
@@ -15,7 +16,7 @@ export class RenderBlobs extends Operator {
 		this.material = new Source2SpriteCard(system.repository);
 	}
 
-	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		/*
 		cube_width
 			This is the density of the matrix through which the blob is meshed. Smaller numbers give higher precision at higher performance cost, while larger number will cause more swimming with movement but at a much cheaper cost.
@@ -33,7 +34,7 @@ export class RenderBlobs extends Operator {
 			case 'm_cubeWidth':
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

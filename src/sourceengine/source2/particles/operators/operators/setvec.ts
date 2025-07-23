@@ -1,7 +1,8 @@
 import { vec4 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { PARTICLE_FIELD_COLOR } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const DEFAULT_VECTOR_VALUE = vec4.create();
 const vec = vec4.create();
@@ -11,19 +12,19 @@ export class SetVec extends Operator {
 	setMethod = 'PARTICLE_SET_VALUE';
 	normalizePerLiving = true;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_InputValue':
 			case 'm_Lerp':
 				break;
 			case 'm_nOutputField':
-				this.outputField = Number(value);
+				this.outputField = (param);
 				break;
 			case 'm_nSetMethod':
-				this.setMethod = value;
+				this.setMethod = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

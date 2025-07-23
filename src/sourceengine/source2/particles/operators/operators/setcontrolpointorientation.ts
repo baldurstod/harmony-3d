@@ -1,6 +1,7 @@
 import { quat, vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const q = quat.create();
 
@@ -13,34 +14,34 @@ export class SetControlPointOrientation extends Operator {
 	rotation = vec3.create();
 	rotationB = vec3.create();
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flInterpolation':
 				break;
 			case 'm_bUseWorldLocation':
-				this.useWorldLocation = value;
+				this.useWorldLocation = param;
 				break;
 			case 'm_bRandomize':
-				this.randomize = value;
+				this.randomize = param;
 				break;
 			case 'm_bSetOnce':
-				this.setOnce = value;
+				this.setOnce = param;
 				break;
 			case 'm_nCP':
-				this.cp = Number(value);
+				this.cp = (param);
 				break;
 			case 'm_nHeadLocation':
-				this.headLocation = Number(value);
+				this.headLocation = (param);
 				break;
 			case 'm_vecRotation':
-				vec3.copy(this.rotation, value);
+				vec3.copy(this.rotation, param);
 				break;
 			case 'm_vecRotationB':
-				vec3.copy(this.rotationB, value);
+				vec3.copy(this.rotationB, param);
 				break;
 
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

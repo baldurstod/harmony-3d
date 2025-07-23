@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
 
 const vec = vec3.create();
 
@@ -15,39 +16,39 @@ export class CreateOnModel extends Operator {
 	localCoords = false;
 	useBones = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecHitBoxScale':
 				break;
 			case 'm_nForceInModel':
-				this.forceInModel = Number(value);
+				this.forceInModel = (param);
 				break;
 			case 'm_nDesiredHitbox':
-				this.desiredHitbox = Number(value);
+				this.desiredHitbox = (param);
 				break;
 			case 'm_nHitboxValueFromControlPointIndex':
-				this.hitboxValueFromControlPointIndex = Number(value);
+				this.hitboxValueFromControlPointIndex = (param);
 				break;
 			case 'm_flBoneVelocity':
-				this.boneVelocity = value;
+				this.boneVelocity = param;
 				break;
 			case 'm_flMaxBoneVelocity':
-				this.maxBoneVelocity = value;
+				this.maxBoneVelocity = param;
 				break;
 			case 'm_vecDirectionBias':
-				vec3.copy(this.directionBias, value);
+				vec3.copy(this.directionBias, param);
 				break;
 			case 'm_HitboxSetName':
-				this.hitboxSetName = value;
+				this.hitboxSetName = param;
 				break;
 			case 'm_bLocalCoords':
-				this.localCoords = value;
+				this.localCoords = param;
 				break;
 			case 'm_bUseBones':
-				this.useBones = value;
+				this.useBones = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

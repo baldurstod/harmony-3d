@@ -1,8 +1,8 @@
 import { vec3 } from 'gl-matrix';
-
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const DEFAULT_SPEED = vec3.create();
 const randomVector = vec3.create();
@@ -11,7 +11,7 @@ const tempVec3 = vec3.create();
 export class VelocityRandom extends Operator {
 	ignoreDT = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_LocalCoordinateSystemSpeedMin':
 			case 'm_LocalCoordinateSystemSpeedMax':
@@ -19,10 +19,10 @@ export class VelocityRandom extends Operator {
 			case 'm_fSpeedMax':
 				break;
 			case 'm_bIgnoreDT':
-				this.ignoreDT = value;
+				this.ignoreDT = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

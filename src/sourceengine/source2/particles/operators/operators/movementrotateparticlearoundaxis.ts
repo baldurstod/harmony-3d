@@ -1,7 +1,8 @@
 import { mat4, quat, vec3, vec4 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { DEG_TO_RAD } from '../../../../../math/constants';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const m4 = mat4.create();
 const q = quat.create();
@@ -14,19 +15,19 @@ export class MovementRotateParticleAroundAxis extends Operator {
 	localSpace = false;
 
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecRotAxis':
 			case 'm_flRotRate':
 				break;
 			case 'm_nCP':
-				this.controlPointNumber = Number(value);
+				this.controlPointNumber = (param);
 				break;
 			case 'm_bLocalSpace':
-				this.localSpace = value;
+				this.localSpace = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

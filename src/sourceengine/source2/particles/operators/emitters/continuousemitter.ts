@@ -1,26 +1,28 @@
-import { vec3 } from 'gl-matrix';
 
+import { Operator, Source2OperatorParamValue } from '../operator';
+import { OperatorParam } from '../operatorparam';
 import { } from '../operatorparams';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
+
+const DEFAULT_EMIT_RATE = 100;
 
 export class ContinuousEmitter extends Operator {
-	emitRate = 100;
-	remainder = 0;
+	#emitRate = DEFAULT_EMIT_RATE;
+	#remainder = 0;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flEmitRate':
-				this.emitRate = value.m_flLiteralValue ?? value;
+				this.#emitRate = param.getValueAsNumber() ?? DEFAULT_EMIT_RATE;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
-	doEmit(elapsedTime) {
+	doEmit(elapsedTime: number) {
 		const emission_start_time = this.getParameter('emission_start_time') ?? 0;
-		let emission_rate = this.emitRate;
+		let emission_rate = this.#emitRate;
 		const emission_duration = this.getParameter('emission_duration') ?? 0;
 
 		const fade = this.getOperatorFade();
@@ -28,11 +30,11 @@ export class ContinuousEmitter extends Operator {
 
 		let currentTime = this.system.currentTime;
 
-		if (currentTime<emission_start_time) return;
-		if (emission_duration!=0 && (currentTime>emission_start_time + emission_duration)) return;
+		if (currentTime < emission_start_time) return;
+		if (emission_duration != 0 && (currentTime > emission_start_time + emission_duration)) return;
 
-		let nToEmit = this.remainder + elapsedTime * emission_rate;
-		this.remainder = nToEmit % 1;
+		let nToEmit = this.#remainder + elapsedTime * emission_rate;
+		this.#remainder = nToEmit % 1;
 		nToEmit = Math.floor(nToEmit);
 
 		const timeStampStep = elapsedTime / nToEmit;

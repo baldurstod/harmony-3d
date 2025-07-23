@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const v = vec3.create();
 
@@ -8,16 +9,16 @@ export class DampenToCP extends Operator {
 	range = 100;
 	scale = 1;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flRange':
-				this.range = value;
+				this.range = param;
 				break;
 			case 'm_flScale':
-				this.scale = value;
+				this.scale = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

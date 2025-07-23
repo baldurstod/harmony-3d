@@ -1,30 +1,31 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { Operator } from '../operator';
-import { PARTICLE_FIELD_RADIUS, ATTRIBUTES_WHICH_ARE_ANGLES } from '../../../../common/particles/particlefields';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class InheritFromParentParticles extends Operator {
 	scale = 1;
-	fieldOutput = PARTICLE_FIELD_RADIUS;
+	#fieldOutput = PARTICLE_FIELD_RADIUS;
 	increment = 1;
 	randomDistribution = false;
 	randomSeed = 0;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flScale':
-				this.scale = value;
+				this.scale = param;
 				break;
 			case 'm_nIncrement':
-				this.increment = Number(value);
+				this.increment = (param);
 				break;
 			case 'm_bRandomDistribution':
-				this.randomDistribution = value;
+				this.randomDistribution = param;
 				break;
 			case 'm_nRandomSeed':
-				this.randomSeed = Number(value);
+				this.randomSeed = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -34,7 +35,7 @@ export class InheritFromParentParticles extends Operator {
 		if (parentSystem) {
 			const parentParticle = parentSystem.getParticle(particle.id - 1);
 			if (parentParticle) {
-				particle.setField(this.fieldOutput, parentParticle.getField(this.fieldOutput));
+				particle.setField(this.#fieldOutput, parentParticle.getField(this.#fieldOutput));
 			}
 		}
 	}

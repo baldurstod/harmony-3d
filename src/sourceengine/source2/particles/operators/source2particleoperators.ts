@@ -8,5 +8,40 @@ export function RegisterSource2ParticleOperator(operatorName: string, operator: 
 }
 
 export function GetSource2ParticleOperator(operatorName: string): typeof Operator | undefined {
+	switch (operatorName) {//TODO: remove switch
+		case 'C_OP_RemapCPtoScalar':
+		case 'C_OP_ContinuousEmitter':
+		case 'C_INIT_CreateWithinSphere':
+		case 'C_OP_BasicMovement':
+		case 'C_INIT_InitFloat':
+		case 'C_INIT_RandomColor':
+		case 'C_OP_InstantaneousEmitter':
+		case 'C_OP_RenderModels':
+		case 'C_OP_Decay':
+		case 'C_INIT_RandomSequence':
+		case 'C_OP_RenderSprites':
+		case 'C_OP_ColorInterpolate':
+		case 'C_OP_PositionLock':
+		case 'C_OP_InterpolateRadius':
+		case 'C_OP_FadeInSimple':
+		case 'C_OP_RenderDeferredLight':
+		case 'C_OP_SetToCP':
+		case 'C_OP_FadeOutSimple':
+		case 'C_OP_RemapCPOrientationToRotations':
+		case 'C_INIT_RandomYawFlip':
+		case 'C_OP_RampScalarLinearSimple':
+		case 'C_OP_AttractToControlPoint':
+		case 'C_OP_SpinUpdate':
+		case 'C_OP_VectorNoise':
+		case 'C_OP_DistanceToCP':
+		case 'C_OP_ConstrainDistance':
+		case 'C_OP_SetControlPointsToModelParticles':
+		case 'C_INIT_InitialVelocityNoise':
+		case 'C_OP_RenderRopes':
+			break;
+		default:
+			console.warn('do operator ', operatorName);
+			break;
+	}
 	return Source2ParticleOperators.get(operatorName);
 }

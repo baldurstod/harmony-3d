@@ -1,6 +1,5 @@
 import { vec2, vec3 } from 'gl-matrix';
 
-import { LOG, TESTING } from '../../../../../buildoptions';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 import { Graphics } from '../../../../../graphics/graphics';
@@ -13,12 +12,11 @@ import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
 import { Source2MaterialManager } from '../../../materials/source2materialmanager';
 import { Source2SpriteCard } from '../../../materials/source2spritecard';
-import { Source2SpriteSheet } from '../../../textures/source2spritesheet';
-import { Source2TextureManager } from '../../../textures/source2texturemanager';
 import { Source2ParticleSystem } from '../../export';
 import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
 import { Source2Particle } from '../../source2particle';
 import { Source2ParticleManager } from '../../source2particlemanager';
+import { OperatorParam } from '../operatorparam';
 import { OPERATOR_PARAM_TEXTURE } from '../operatorparams';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
@@ -32,13 +30,11 @@ const tempVec2 = vec2.create();
 
 export class RenderTrails extends RenderBase {
 	geometry: BufferGeometry;
-	setDefaultTexture? = true;//TODO: remove this property
 	minLength = 0;
 	maxLength = 2000;
 	lengthFadeInTime = 0;
 	ignoreDT = false;
 	lengthScale = 1;
-	spriteSheet: Source2SpriteSheet | null = null;
 	#maxParticles = 1000;//TODO: default value
 	texture?: Texture;//TODO: set private ?
 	imgData?: Float32Array;//TODO: set private ?
@@ -57,41 +53,35 @@ export class RenderTrails extends RenderBase {
 		//this.setParam(OPERATOR_PARAM_SEQUENCE_COMBINE_MODE, SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0);//TODOv3: get the actual default value
 	}
 
-	_paramChanged(paramName: string, value: any) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
-			case 'm_vecTexturesInput':
-				if (TESTING && LOG) {
-					console.debug(value);
-				}
-				this.setTexture(value[0].m_hTexture ?? DEFAULT_PARTICLE_TEXTURE);//TODO: check multiple textures ?
-				break;
 			case OPERATOR_PARAM_TEXTURE:
-				this.setTexture(value);
+				this.setTexture(param);
 				break;
 			/*case 'm_nSequenceCombineMode':
 				this.setSequenceCombineMode(value);
 				break;*/
 			case 'm_flMinLength':
-				this.minLength = value;
+				this.minLength = param;
 				break;
 			case 'm_flMaxLength':
-				this.maxLength = value;
+				this.maxLength = param;
 				break;
 			case 'm_flLengthFadeInTime':
-				this.lengthFadeInTime = value;
+				this.lengthFadeInTime = param;
 				break;
 			case 'm_bIgnoreDT':
-				this.ignoreDT = value;
+				this.ignoreDT = param;
 				break;
 			case 'm_flRadiusScale':
 			case 'm_flFinalTextureScaleU':
 			case 'm_flFinalTextureScaleV':
 				break;
 			case 'm_flLengthScale':
-				this.lengthScale = value;
+				this.lengthScale = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -105,12 +95,6 @@ export class RenderTrails extends RenderBase {
 			default:
 				console.error('Unknown sequenceCombineMode ', sequenceCombineMode);
 		}
-	}
-
-	async setTexture(texturePath: string) {
-		delete this.setDefaultTexture;
-		this.material!.setTexturePath(texturePath);
-		this.spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {

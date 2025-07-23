@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
-
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class NoiseEmitter extends Operator {
 	emissionDuration = 0;
@@ -20,52 +20,52 @@ export class NoiseEmitter extends Operator {
 	worldTimeScale = 0;
 	remainder = 0;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flEmissionDuration':
-				this.emissionDuration = value;
+				this.emissionDuration = param;
 				break;
 			case 'm_flStartTime':
-				this.startTime = value;
+				this.startTime = param;
 				break;
 			case 'm_nScaleControlPoint':
-				this.scaleControlPoint = Number(value);
+				this.scaleControlPoint = (param);
 				break;
 			case 'm_nScaleControlPointField':
-				this.scaleControlPointField = Number(value);
+				this.scaleControlPointField = (param);
 				break;
 			case 'm_nWorldNoisePoint':
-				this.worldNoisePoint = Number(value);
+				this.worldNoisePoint = (param);
 				break;
 			case 'm_bAbsVal':
-				this.absVal = value;
+				this.absVal = param;
 				break;
 			case 'm_bAbsValInv':
-				this.absValInv = value;
+				this.absValInv = param;
 				break;
 			case 'm_flOffset':
-				this.offset = value;
+				this.offset = param;
 				break;
 			case 'm_flOutputMin':
-				this.outputMin = value;
+				this.outputMin = param;
 				break;
 			case 'm_flOutputMax':
-				this.outputMax = value;
+				this.outputMax = param;
 				break;
 			case 'm_flNoiseScale':
-				this.noiseScale = value;
+				this.noiseScale = param;
 				break;
 			case 'm_flWorldNoiseScale':
-				this.worldNoiseScale = value;
+				this.worldNoiseScale = param;
 				break;
 			case 'm_vecOffsetLoc':
-				vec3.copy(this.offsetLoc, value);
+				vec3.copy(this.offsetLoc, param);
 				break;
 			case 'm_flWorldTimeScale':
-				this.worldTimeScale = Number(value);
+				this.worldTimeScale = Number(param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -80,8 +80,8 @@ export class NoiseEmitter extends Operator {
 
 		let currentTime = this.system.currentTime;
 
-		if (currentTime<emission_start_time) return;
-		if (emission_duration!=0 && (currentTime>emission_start_time + emission_duration)) return;
+		if (currentTime < emission_start_time) return;
+		if (emission_duration != 0 && (currentTime > emission_start_time + emission_duration)) return;
 
 		let nToEmit = this.remainder + elapsedTime * emission_rate;
 		this.remainder = nToEmit % 1;

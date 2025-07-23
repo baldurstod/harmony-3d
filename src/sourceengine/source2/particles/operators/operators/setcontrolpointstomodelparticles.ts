@@ -1,48 +1,54 @@
 import { Source2Particle } from '../../source2particle';
-import { Operator, Source2OperatorParamValue } from '../operator';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class SetControlPointsToModelParticles extends Operator {
 	#followAttachment = false;
 	#attachmentName = '';
 	hitboxSetName = 'default';
-	firstControlPoint = 0;
+	#firstControlPoint = 0;
 	numControlPoints = 1;
 	firstSourcePoint = 0;
 	skin = false;
 
-	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_HitboxSetName':
-				this.hitboxSetName = value;
+				console.error('do this param', paramName, param);
+				this.hitboxSetName = param;
 				break;
 			case 'm_AttachmentName':
-				this.#attachmentName = value;
+				this.#attachmentName = param.getValueAsString() ?? '';
 				break;
 			case 'm_nFirstControlPoint':
-				this.firstControlPoint = Number(value);
+				this.#firstControlPoint = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_nNumControlPoints':
-				this.numControlPoints = Number(value);
+				console.error('do this param', paramName, param);
+				this.numControlPoints = (param);
 				break;
 			case 'm_nFirstSourcePoint':
-				this.firstSourcePoint = Number(value);
+				console.error('do this param', paramName, param);
+				this.firstSourcePoint = (param);
 				break;
 			case 'm_bSkin':
-				this.skin = value;
+				console.error('do this param', paramName, param);
+				this.skin = param;
+				throw 'TODO: what is this skin param'
 				break;
 			case 'm_bAttachment':
-				this.#followAttachment = value;
+				this.#followAttachment = param.getValueAsBool() ?? false;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
 	doOperate(particle: Source2Particle, elapsedTime: number) {
 		//todo: use m_bSkin m_bAttachment m_HitboxSetName m_AttachmentName
 		const children = this.system.childSystems;
-		const firstControlPoint = this.firstControlPoint;
+		const firstControlPoint = this.#firstControlPoint;
 		const firstSourcePoint = this.firstSourcePoint;
 
 

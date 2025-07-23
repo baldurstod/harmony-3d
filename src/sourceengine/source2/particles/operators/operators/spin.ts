@@ -1,25 +1,26 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { DEG_TO_RAD, TWO_PI } from '../../../../../math/constants';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class Spin extends Operator {
 	spinRateDegrees = 0;
 	spinRateMinDegrees = 0;
 	spinRateStopTime = 0;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nSpinRateDegrees':
-				this.spinRateDegrees = Number(value);
+				this.spinRateDegrees = (param);
 				break;
 			case 'm_nSpinRateMinDegrees':
-				this.spinRateMinDegrees = Number(value);
+				this.spinRateMinDegrees = (param);
 				break;
 			case 'm_fSpinRateStopTime':
-				this.spinRateStopTime = value;
+				this.spinRateStopTime = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

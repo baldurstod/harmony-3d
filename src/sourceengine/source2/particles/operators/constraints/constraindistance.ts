@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
-
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const vec = vec3.create();
 
@@ -12,25 +12,25 @@ export class ConstrainDistance extends Operator {
 	centerOffset = vec3.create();
 	globalCenter = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_fMinDistance':
-				this.minDistance = Number(value);
+				this.minDistance = (param);
 				break;
 			case 'm_fMaxDistance':
-				this.maxDistance = Number(value);
+				this.maxDistance = (param);
 				break;
 			case 'm_nScaleCP':
-				this.scaleCP = Number(value);
+				this.scaleCP = (param);
 				break;
 			case 'm_CenterOffset':
-				vec3.copy(this.centerOffset, value);
+				vec3.copy(this.centerOffset, param);
 				break;
 			case 'm_bGlobalCenter':
-				this.globalCenter = value;
+				this.globalCenter = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

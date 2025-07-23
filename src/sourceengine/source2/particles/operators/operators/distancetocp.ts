@@ -3,13 +3,16 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { clamp, RemapValClamped, lerp } from '../../../../../math/functions';
 import { PARTICLE_FIELD_RADIUS, ATTRIBUTES_WHICH_ARE_0_TO_1 } from '../../../../common/particles/particlefields';
+import { OperatorParam } from '../operatorparam';
 
 const DEFAULT_COMPONENT_SCALE = vec3.fromValues(1, 1, 1);
 
+const DEFAULT_INPUT_MAX = 128;
+
 export class DistanceToCP extends Operator {
-	fieldOutput = PARTICLE_FIELD_RADIUS;
+	#fieldOutput = PARTICLE_FIELD_RADIUS/*TODO: create enum*/;
 	inputMin = 0;
-	inputMax = 128;
+	inputMax = DEFAULT_INPUT_MAX;
 	outputMin = 0;
 	outputMax = 1;
 	startCP = 0;
@@ -17,7 +20,7 @@ export class DistanceToCP extends Operator {
 	collisionGroupName = '';
 	maxTraceLength = -1;
 	losScale = 0;
-	setMethod = null;
+	#setMethod: string | null | undefined;
 	activeRange = false;;
 	additive = false;
 	scaleInitialRange = false;
@@ -25,7 +28,7 @@ export class DistanceToCP extends Operator {
 	outputMax1;
 
 	_update() {
-		if (ATTRIBUTES_WHICH_ARE_0_TO_1 & (1 << this.fieldOutput)) {
+		if (ATTRIBUTES_WHICH_ARE_0_TO_1 & (1 << this.#fieldOutput)) {
 			this.outputMin1 = clamp(this.outputMin, 0, 1);
 			this.outputMax1 = clamp(this.outputMax, 0, 1);
 		} else {
@@ -34,61 +37,70 @@ export class DistanceToCP extends Operator {
 		}
 	}
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecComponentScale':
+				throw `do this param ${paramName}`;
 				break;
 			case 'm_nFieldOutput':
-				this.fieldOutput = Number(value);
+				this.#fieldOutput = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
 				this._update();
 				break;
 			case 'm_flInputMin':
-				this.inputMin = value;
+				this.inputMin = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_flInputMax':
-				this.inputMax = value;
+				this.inputMax = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
 				break;
 			case 'm_flOutputMin':
-				this.outputMin = value;
+				this.outputMin = param.getValueAsNumber() ?? 0;
 				this._update();
 				break;
 			case 'm_flOutputMax':
-				this.outputMax = value;
+				this.outputMax = param.getValueAsNumber() ?? 1;
 				this._update();
 				break;
 			case 'm_nStartCP':
-				this.startCP = Number(value);
+				this.startCP = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_bLOS':
-				this.los = value;
+				throw `do this param ${paramName}`;
+				this.los = param;
 				break;
 			case 'm_CollisionGroupName':
-				this.collisionGroupName = value;
+				throw `do this param ${paramName}`;
+				this.collisionGroupName = param;
 				break;
 			case 'm_flMaxTraceLength':
-				this.maxTraceLength = value;
+				throw `do this param ${paramName}`;
+				this.maxTraceLength = param;
 				break;
 			case 'm_flLOSScale':
-				this.losScale = value;
+				throw `do this param ${paramName}`;
+				this.losScale = param;
 				break;
 			case 'm_nSetMethod':
-				this.setMethod = value;
+				this.#setMethod = param.getValueAsString();
 				break;
 			case 'm_bActiveRange':
-				this.activeRange = value;
+				throw `do this param ${paramName}`;
+				this.activeRange = param;
 				break;
 			case 'm_bAdditive':
-				this.additive = value;
+				throw `do this param ${paramName}`;
+				this.additive = param;
 				break;
 			case 'm_bScaleInitialRange':
-				this.scaleInitialRange = value;
+				throw `do this param ${paramName}`;
+				this.scaleInitialRange = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
 	doOperate(particle, elapsedTime, flStrength = 1) {
+		//TODO: use setMethod
 		const componentScale = this.getParamVectorValue('m_vecComponentScale') ?? DEFAULT_COMPONENT_SCALE;
 
 		const flMin = this.outputMin1;
@@ -115,15 +127,13 @@ export class DistanceToCP extends Operator {
 			vec3.sub(vecDelta, vecControlPoint1, particle.position);
 
 			const flDistance = vec3.length(vecDelta);//vecDelta.Length();
-			if ( this.activeRange && ( flDistance < this.inputMin || flDistance > this.inputMax ) )
-			{
+			if (this.activeRange && (flDistance < this.inputMin || flDistance > this.inputMax)) {
 				return;//continue;
 			}
-			if ( this.los ) {
+			if (this.los) {
 				//Vector vecEndPoint = vecPosition2;
 				vec3.copy(vecEndPoint, particle.position);
-				if ( this.maxTraceLength != -1.0 && this.maxTraceLength < flDistance )
-				{
+				if (this.maxTraceLength != -1.0 && this.maxTraceLength < flDistance) {
 					//VectorNormalize(vecEndPoint);
 					vec3.normalize(vecEndPoint, vecEndPoint);
 					//vecEndPoint *= m_flMaxTraceLength;
@@ -141,7 +151,7 @@ export class DistanceToCP extends Operator {
 
 			}
 
-			const flOutput = RemapValClamped( flDistance, this.inputMin, this.inputMax, flMin, flMax  );
+			const flOutput = RemapValClamped(flDistance, this.inputMin, this.inputMax, flMin, flMax);
 			/*if ( m_bScaleInitialRange )
 			{
 				const float *pInitialOutput = pParticles->GetInitialFloatAttributePtr( m_nFieldOutput, i );
@@ -150,14 +160,14 @@ export class DistanceToCP extends Operator {
 			//float *pOutput = pParticles->GetFloatAttributePtrForWrite( m_nFieldOutput, i );
 			//TODO: use m_nSetMethod m_bActiveRange m_bAdditive m_bScaleInitialRange
 
-			let output = particle.getField(this.fieldOutput);
+			let output = particle.getField(this.#fieldOutput);
 
 			//*pOutput = Lerp (flStrength, *pOutput, flOutput);
 			output = lerp(output, flOutput, flStrength);
-			particle.setField(this.fieldOutput, output);
-				//float *pOutput = pParticles->GetFloatAttributePtrForWrite( m_nFieldOutput, i );
-				//float flOutput = RemapValClamped( flDistance, m_flInputMin, m_flInputMax, flMin, flMax  );
-				//*pOutput = Lerp (flStrength, *pOutput, flOutput);
+			particle.setField(this.#fieldOutput, output);
+			//float *pOutput = pParticles->GetFloatAttributePtrForWrite( m_nFieldOutput, i );
+			//float flOutput = RemapValClamped( flDistance, m_flInputMin, m_flInputMax, flMin, flMax  );
+			//*pOutput = Lerp (flStrength, *pOutput, flOutput);
 		}
 	}
 }

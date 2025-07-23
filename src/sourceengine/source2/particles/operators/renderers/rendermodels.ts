@@ -2,7 +2,8 @@ import { vec3 } from 'gl-matrix';
 import { Source2ModelInstance, Source2ParticleSystem } from '../../../export';
 import { Source2ModelManager } from '../../../models/source2modelmanager';
 import { Source2Particle } from '../../source2particle';
-import { Operator, Source2OperatorParamValue } from '../operator';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const tempVec3 = vec3.create();
@@ -16,24 +17,30 @@ export class RenderModels extends Operator {
 	#allModels = new Map<Source2ModelInstance, { repository: string, modelName: string, used: boolean }/*TODO:create a type*/>();
 	#animated = false;
 
-	_paramChanged(paramName: string, value: Source2OperatorParamValue): void {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_ModelList':
 				this.#modelList.clear();
 				this.#totalProbability = 0;
 
 				// Example of system with multiple models: muerta_ultimate_ambient_flowers
-				for (const model of value) {
-					const modelName = model?.m_model;
-					const modelProbability = model?.m_flRelativeProbabilityOfSpawn ?? 1;
-					if (modelName) {
-						this.#totalProbability += modelProbability;
-						this.#modelList.set(modelName, this.#totalProbability);
+				const models = param.getValueAsArray();
+				if (!models) {
+					break;
+				}
+				for (const model of models) {
+					if ((model as OperatorParam).isOperatorParam) {
+						const modelName = (model as OperatorParam).getSubValue('m_model')?.getValueAsString();
+						if (modelName) {
+							const modelProbability = (model as OperatorParam).getSubValue('m_flRelativeProbabilityOfSpawn')?.getValueAsNumber() ?? 1;
+							this.#totalProbability += modelProbability;
+							this.#modelList.set(modelName, this.#totalProbability);
+						}
 					}
 				}
 				break;
 			case 'm_nSkin':
-				this.#skin = value;
+				this.#skin = param.getValueAsNumber() ?? 0;
 				this.#models.forEach(model => {
 					if (model) {
 						model.skin = this.#skin
@@ -41,10 +48,10 @@ export class RenderModels extends Operator {
 				});
 				break;
 			case 'm_bAnimated':
-				this.#animated = value;
+				this.#animated = param.getValueAsBool() ?? false;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -55,7 +62,7 @@ export class RenderModels extends Operator {
 		const activity = particleSystem.getAttribute('activity');
 
 		for (let i = 0, l = particleList.length; i < l; ++i) {
-			this.#updateParticle(particleSystem, i, particleList[i], activity?.activity, activity?.modifiers);
+			this.#updateParticle(particleSystem, i, particleList[i]!, activity?.activity, activity?.modifiers);
 		}
 	}
 

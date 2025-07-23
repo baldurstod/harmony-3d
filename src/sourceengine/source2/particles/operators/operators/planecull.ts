@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const vec = vec3.create();
 
@@ -19,24 +20,24 @@ export class PlaneCull extends Operator {
 		vec3.scale(this.planeDirectionOffset, this.planeDirection, this.planeOffset);
 	}
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nPlaneControlPoint':
-				this.planeControlPoint = Number(value);
+				this.planeControlPoint = (param);
 				break;
 			case 'm_vecPlaneDirection':
-				vec3.normalize(this.planeDirection, value);
+				vec3.normalize(this.planeDirection, param);
 				this._update();
 				break;
 			case 'm_bLocalSpace':
-				this.localSpace  = value;
+				this.localSpace = param;
 				break;
 			case 'm_flPlaneOffset':
-				this.planeOffset = Number(value);
+				this.planeOffset = (param);
 				this._update();
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

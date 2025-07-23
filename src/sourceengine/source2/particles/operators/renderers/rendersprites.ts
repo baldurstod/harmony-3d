@@ -16,6 +16,7 @@ import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
 import { Source2Particle } from '../../source2particle';
 import { Source2ParticleManager } from '../../source2particlemanager';
 import { Source2OperatorParamValue } from '../operator';
+import { OperatorParam } from '../operatorparam';
 import { OPERATOR_PARAM_TEXTURE } from '../operatorparams';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
@@ -24,13 +25,12 @@ import { RenderBase } from './renderbase';
 const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
 const SEQUENCE_SAMPLE_COUNT = 1;//TODO
+const DEFAULT_MAX_SIZE = 5000;
 
 export class RenderSprites extends RenderBase {
 	geometry: BufferGeometry = new BufferGeometry();
-	setDefaultTexture = true;//TODO: remove this property
 	#minSize = 0.0;
-	#maxSize = 5000.0;
-	#spriteSheet: Source2SpriteSheet | null = null;
+	#maxSize = DEFAULT_MAX_SIZE;
 	#maxParticles = 0;
 	texture = TextureManager.createTexture();
 	imgData!: Float32Array;//TODO: set private ?
@@ -47,31 +47,24 @@ export class RenderSprites extends RenderBase {
 		//this.setParam(OPERATOR_PARAM_SEQUENCE_COMBINE_MODE, SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0);//TODOv3: get the actual default value
 	}
 
-	_paramChanged(paramName: string, value: Source2OperatorParamValue) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
-			case 'm_vecTexturesInput':
-				if (TESTING) {
-					console.debug('m_vecTexturesInput', value);
-				}
-				this.setTexture(value[0].m_hTexture ?? DEFAULT_PARTICLE_TEXTURE);//TODO: check multiple textures ?
-				if (value[0].m_nTextureChannels) {
-					this.material.setDefine(value[0].m_nTextureChannels);//TODO: check values
-				}
-				break;
 			case OPERATOR_PARAM_TEXTURE:
-				this.setTexture(value);
+				console.error('do this param', paramName, param);
+				this.setTexture(param);
 				break;
 			case 'm_nSequenceCombineMode':
-				this.setSequenceCombineMode(value);
+				console.error('do this param', paramName, param);
+				this.setSequenceCombineMode(param);
 				break;
 			case 'm_flMinSize':
-				this.#minSize = Number(value) * 200.;//TODO: use the actual screen size
+				this.#minSize = (param.getValueAsNumber() ?? 0) * 200.;//TODO: use the actual screen size
 				break;
 			case 'm_flMaxSize':
-				this.#maxSize = Number(value) * 200.;//TODO: use the actual screen size
+				this.#maxSize = (param.getValueAsNumber() ?? DEFAULT_MAX_SIZE) * 200.;//TODO: use the actual screen size
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -85,12 +78,6 @@ export class RenderSprites extends RenderBase {
 			default:
 				console.error('Unknown sequenceCombineMode ', sequenceCombineMode);
 		}
-	}
-
-	async setTexture(texturePath: string) {
-		this.setDefaultTexture = false;
-		this.material.setTexturePath(texturePath);
-		this.#spriteSheet = await Source2TextureManager.getTextureSheet(this.system.repository, texturePath);
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
@@ -108,8 +95,7 @@ export class RenderSprites extends RenderBase {
 		const uvs2 = this.geometry.attributes.get('aTextureCoord2')!._array;
 		let index = 0;
 		let index2 = 0;
-		for (let i = 0; i < particleList.length; i++) {
-			const particle = particleList[i];
+		for (const particle of particleList) {
 			const sequence = particle.sequence;
 			let flAgeScale;
 			if (m_bFitCycleToLifetime) {
@@ -128,8 +114,8 @@ export class RenderSprites extends RenderBase {
 
 			particle.frame += elapsedTime;
 
-			if (this.#spriteSheet) {
-				let coords = this.#spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
+			if (this.spriteSheet) {
+				let coords = this.spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
 				if (coords) {
 					const uMin = coords[0];
@@ -146,7 +132,7 @@ export class RenderSprites extends RenderBase {
 					uvs[index++] = vMax;
 				}
 
-				coords = this.#spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
+				coords = this.spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
 				if (coords) {
 					const uMin = coords[0];
@@ -286,5 +272,4 @@ export class RenderSprites extends RenderBase {
 	}
 }
 RegisterSource2ParticleOperator('C_OP_RenderSprites', RenderSprites);
-//RegisterSource2ParticleOperator('C_OP_RenderDeferredLight', RenderSprites);//TODO: set proper renderer
 //RegisterSource2ParticleOperator('C_OP_RenderProjected', RenderSprites);//TODO: set proper renderer

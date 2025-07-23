@@ -13,5 +13,6 @@
     "outDir": "dist",
     "declarationDir": "dist/dts",
     //"noImplicitAny": true,
+    "noUncheckedIndexedAccess": true,
   }
 }

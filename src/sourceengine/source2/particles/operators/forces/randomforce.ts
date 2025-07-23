@@ -1,22 +1,23 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RandomForce extends Operator {
 	minForce = vec3.create();
 	maxForce = vec3.create();
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_MinForce':
-				vec3.copy(this.minForce, value);
+				vec3.copy(this.minForce, param);
 				break;
 			case 'm_MaxForce':
-				vec3.copy(this.maxForce, value);
+				vec3.copy(this.maxForce, param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

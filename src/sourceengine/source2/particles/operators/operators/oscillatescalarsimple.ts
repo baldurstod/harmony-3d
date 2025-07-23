@@ -1,8 +1,9 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_ALPHA } from '../../../../common/particles/particlefields';
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { clamp } from '../../../../../math/functions';
+import { PARTICLE_FIELD_ALPHA } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class OscillateScalarSimple extends Operator {
 	rate = 0;
@@ -11,25 +12,25 @@ export class OscillateScalarSimple extends Operator {
 	oscMult = 2;
 	oscAdd = 0.5;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_Rate':
-				this.rate = value;
+				this.rate = param;
 				break;
 			case 'm_Frequency':
-				this.frequency = value;
+				this.frequency = param;
 				break;
 			case 'm_nField':
-				this.field = Number(value);
+				this.field = (param);
 				break;
 			case 'm_flOscMult':
-				this.oscMult = value;
+				this.oscMult = param;
 				break;
 			case 'm_flOscAdd':
-				this.oscAdd = value;
+				this.oscAdd = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

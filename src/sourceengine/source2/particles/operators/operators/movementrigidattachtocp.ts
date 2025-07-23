@@ -1,7 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { PARTICLE_FIELD_POSITION, PARTICLE_FIELD_POSITION_PREVIOUS } from '../../../../common/particles/particlefields';
 import { Operator } from '../operator';
-import { PARTICLE_FIELD_POSITION_PREVIOUS, PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 //const tempMat4 = mat4.create();
 const tempPrevPos = vec3.create();
@@ -12,25 +13,25 @@ export class MovementRigidAttachToCP extends Operator {
 	scaleControlPoint = -1;
 	scaleCPField = 0;//-1: disabled, 0: X, 1: Y, 2 :Z
 	fieldInput = PARTICLE_FIELD_POSITION_PREVIOUS;
-	fieldOutput = PARTICLE_FIELD_POSITION;
+	#fieldOutput = PARTICLE_FIELD_POSITION;
 	offsetLocal = true;
 	constructor(system) {
 		super(system);
 	}
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nScaleControlPoint':
-				this.scaleControlPoint = Number(value);
+				this.scaleControlPoint = (param);
 				break;
 			case 'm_nScaleCPField':
-				this.scaleCPField = Number(value);
+				this.scaleCPField = (param);
 				break;
 			case 'm_bOffsetLocal':
-				this.offsetLocal = value;
+				this.offsetLocal = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -80,7 +81,7 @@ export class MovementRigidAttachToCP extends Operator {
 
 			vec3.transformMat4(v, particle.getField(this.fieldInput), delta);
 			particle.setField(this.fieldInput, v);
-			particle.setField(this.fieldOutput, v);
+			particle.setField(this.#fieldOutput, v);
 
 		}
 	}

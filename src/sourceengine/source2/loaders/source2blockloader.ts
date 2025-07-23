@@ -93,7 +93,7 @@ export const Source2BlockLoader = new (function () {
 					(block as Source2SnapBlock).datas = sa;
 					break;
 				default:
-					console.warn('Unknown block type ' + block.type, block.offset, block.length, block);
+					console.info('Unknown block type ' + block.type, block.offset, block.length, block);
 			}
 		}
 
@@ -113,7 +113,7 @@ export const Source2BlockLoader = new (function () {
 				case 0x4B563305: // KV3 v5 new since frostivus 2024
 					return await loadDataKv3(reader, block, 5);
 				default:
-					console.warn('Unknown block data type:', bytes);
+					console.info('Unknown block data type:', bytes);
 			}
 			if (!introspection || !introspection.structsArray) {
 				if (parseVtex) {//TODO

@@ -1,9 +1,10 @@
 import { mat3, mat4, vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { DEFAULT_PARTICLE_NORMAL } from '../../source2particle';
-import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
 import { TESTING } from '../../../../../buildoptions';
+import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
+import { DEFAULT_PARTICLE_NORMAL } from '../../source2particle';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const mat = mat4.create();
 const nmat = mat3.create();
@@ -28,58 +29,58 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 	copyAlpha = false;
 	copyRadius = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nSnapshotControlPointNumber':
-				this.snapshotControlPointNumber = Number(value);
+				this.snapshotControlPointNumber = (param);
 				break;
 			case 'm_bRandom':
-				this.random = value;
+				this.random = param;
 				break;
 			case 'm_nRandomSeed':
-				this.randomSeed = Number(value);
+				this.randomSeed = (param);
 				break;
 			case 'm_bRigid':
-				this.rigid = value;
+				this.rigid = param;
 				break;
 			case 'm_bSetNormal':
-				this.setNormal = value;
+				this.setNormal = param;
 				break;
 			case 'm_bIgnoreDt':
-				this.ignoreDt = value;
+				this.ignoreDt = param;
 				break;
 			case 'm_flMinNormalVelocity':
-				this.minNormalVelocity = value;
+				this.minNormalVelocity = param;
 				break;
 			case 'm_flMaxNormalVelocity':
-				this.maxNormalVelocity = value;
+				this.maxNormalVelocity = param;
 				break;
 			case 'm_flIncrement':
-				this.increment = value;
+				this.increment = param;
 				break;
 			case 'm_nFullLoopIncrement':
-				this.fullLoopIncrement = Number(value);
+				this.fullLoopIncrement = (param);
 				break;
 			case 'm_nSnapShotStartPoint':
-				this.snapShotStartPoint = Number(value);
+				this.snapShotStartPoint = (param);
 				break;
 			case 'm_flBoneVelocity':
-				this.boneVelocity = value;
+				this.boneVelocity = param;
 				break;
 			case 'm_flBoneVelocityMax':
-				this.boneVelocityMax = value;
+				this.boneVelocityMax = param;
 				break;
 			case 'm_bCopyColor':
-				this.copyColor = value;
+				this.copyColor = param;
 				break;
 			case 'm_bCopyAlpha':
-				this.copyAlpha = value;
+				this.copyAlpha = param;
 				break;
 			case 'm_bCopyRadius':
-				this.copyRadius = value;
+				this.copyRadius = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -172,10 +173,10 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 		const particleInitialNormal = particle.initialSkinnedNormal ?? DEFAULT_PARTICLE_NORMAL;
 
 		if (particleSkinning && particleInitialPosition) {
-			mat[ 0] = 0;mat[ 1] = 0;mat[ 2] = 0;
-			mat[ 4] = 0;mat[ 5] = 0;mat[ 6] = 0;
-			mat[ 8] = 0;mat[ 9] = 0;mat[10] = 0;
-			mat[12] = 0;mat[13] = 0;mat[14] = 0;
+			mat[0] = 0; mat[1] = 0; mat[2] = 0;
+			mat[4] = 0; mat[5] = 0; mat[6] = 0;
+			mat[8] = 0; mat[9] = 0; mat[10] = 0;
+			mat[12] = 0; mat[13] = 0; mat[14] = 0;
 			for (let i = 0; i < 4; ++i) {
 				boneName = particleSkinning.bones[i];
 				if (boneName) {
@@ -184,16 +185,16 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 					if (bone && boneWeight) {
 						boneMat = bone ? bone.boneMat : IDENTITY_MAT4;
 
-						mat[ 0] += boneWeight * boneMat[ 0];
-						mat[ 1] += boneWeight * boneMat[ 1];
-						mat[ 2] += boneWeight * boneMat[ 2];
+						mat[0] += boneWeight * boneMat[0];
+						mat[1] += boneWeight * boneMat[1];
+						mat[2] += boneWeight * boneMat[2];
 
-						mat[ 4] += boneWeight * boneMat[ 4];
-						mat[ 5] += boneWeight * boneMat[ 5];
-						mat[ 6] += boneWeight * boneMat[ 6];
+						mat[4] += boneWeight * boneMat[4];
+						mat[5] += boneWeight * boneMat[5];
+						mat[6] += boneWeight * boneMat[6];
 
-						mat[ 8] += boneWeight * boneMat[ 8];
-						mat[ 9] += boneWeight * boneMat[ 9];
+						mat[8] += boneWeight * boneMat[8];
+						mat[9] += boneWeight * boneMat[9];
 						mat[10] += boneWeight * boneMat[10];
 
 						mat[12] += boneWeight * boneMat[12];

@@ -1,8 +1,9 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
 import { RemapValClampedBias } from '../../../../../math/functions';
+import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const v = vec3.create();
 const v1 = vec3.fromValues(1, 1, 1);
@@ -21,51 +22,51 @@ export class RemapCPtoVector extends Operator {
 	localSpaceCP = -1;
 	remapBias = 0.5;
 	scaleInitialRange;// TODO: search default value
-	fieldOutput = PARTICLE_FIELD_POSITION;
+	#fieldOutput = PARTICLE_FIELD_POSITION;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCPInput':
-				this.cpInput = Number(value);
+				this.cpInput = (param);
 				break;
 			case 'm_vInputMin':
-				vec3.copy(this.inputMin, value);
+				vec3.copy(this.inputMin, param);
 				break;
 			case 'm_vInputMax':
-				vec3.copy(this.inputMax, value);
+				vec3.copy(this.inputMax, param);
 				break;
 			case 'm_vOutputMin':
-				vec3.copy(this.outputMin, value);
+				vec3.copy(this.outputMin, param);
 				break;
 			case 'm_vOutputMax':
-				vec3.copy(this.outputMax, value);
+				vec3.copy(this.outputMax, param);
 				break;
 			case 'm_flStartTime':
-				this.startTime = value;
+				this.startTime = param;
 				break;
 			case 'm_flEndTime':
-				this.endTime = value;
+				this.endTime = param;
 				break;
 			case 'm_nSetMethod':
-				this.setMethod = value;
+				this.setMethod = param;
 				break;
 			case 'm_bOffset':
-				this.offset = value;
+				this.offset = param;
 				break;
 			case 'm_bAccelerate':
-				this.accelerate = value;
+				this.accelerate = param;
 				break;
 			case 'm_nLocalSpaceCP':
-				this.localSpaceCP = Number(value);
+				this.localSpaceCP = (param);
 				break;
 			case 'm_flRemapBias':
-				this.remapBias = value;
+				this.remapBias = param;
 				break;
 			case 'm_bScaleInitialRange':
-				this.scaleInitialRange = value;
+				this.scaleInitialRange = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -86,10 +87,10 @@ export class RemapCPtoVector extends Operator {
 		if (scaleInitial) {
 			vec3.lerp(v, v1, v, strength);
 		} else {
-			vec3.lerp(v, particle.getField(this.fieldOutput), v, strength);
+			vec3.lerp(v, particle.getField(this.#fieldOutput), v, strength);
 		}
 
-		particle.setField(this.fieldOutput, v, scaleInitial);
+		particle.setField(this.#fieldOutput, v, scaleInitial);
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RemapCPtoVector', RemapCPtoVector);

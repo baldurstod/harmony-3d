@@ -1,7 +1,8 @@
 import { vec3, vec4 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { AddSIMD, Four_Ones, Four_Zeros, MaskedAssign, MaxSIMD, MinSIMD, MulSIMD, SinEst01SIMD } from '../../../../common/math/sse';
 import { Operator } from '../operator';
-import { AddSIMD, MaxSIMD, MinSIMD, MulSIMD, SinEst01SIMD, MaskedAssign, Four_Ones, Four_Zeros } from '../../../../common/math/sse';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class OscillateVector extends Operator {
 	rateMin = vec3.create();
@@ -19,52 +20,52 @@ export class OscillateVector extends Operator {
 	oscMult = 2;
 	oscAdd = 0.5;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_RateMin':
-				vec3.copy(this.rateMin, value);
+				vec3.copy(this.rateMin, param);
 				break;
 			case 'm_RateMax':
-				vec3.copy(this.rateMax, value);
+				vec3.copy(this.rateMax, param);
 				break;
 			case 'm_FrequencyMin':
-				vec3.copy(this.frequencyMin, value);
+				vec3.copy(this.frequencyMin, param);
 				break;
 			case 'm_FrequencyMax':
-				vec3.copy(this.frequencyMax, value);
+				vec3.copy(this.frequencyMax, param);
 				break;
 			case 'm_nField':
-				this.field = Number(value);
+				this.field = (param);
 				break;
 			case 'm_bProportional':
-				this.proportional = value;
+				this.proportional = param;
 				break;
 			case 'm_bProportionalOp':
-				this.proportionalOp = value;
+				this.proportionalOp = param;
 				break;
 			case 'm_bOffset':
-				this.offset = value;
+				this.offset = param;
 				break;
 			case 'm_flStartTime_min':
-				this.startTimeMin = value;
+				this.startTimeMin = param;
 				break;
 			case 'm_flStartTime_max':
-				this.startTimeMax = value;
+				this.startTimeMax = param;
 				break;
 			case 'm_flEndTime_min':
-				this.endTimeMin = value;
+				this.endTimeMin = param;
 				break;
 			case 'm_flEndTime_max':
-				this.endTimeMax = value;
+				this.endTimeMax = param;
 				break;
 			case 'm_flOscMult':
-				this.oscMult = value;
+				this.oscMult = param;
 				break;
 			case 'm_flOscAdd':
-				this.oscAdd = value;
+				this.oscAdd = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

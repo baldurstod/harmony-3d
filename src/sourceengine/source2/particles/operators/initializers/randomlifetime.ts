@@ -1,25 +1,26 @@
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { RandomFloatExp } from '../../../../../math/functions';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RandomLifeTime extends Operator {
 	lifetimeMin = 0;
 	lifetimeMax = 0;
 	lifetimeRandExponent = 1;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_fLifetimeMin':
-				this.lifetimeMin = Number(value);
+				this.lifetimeMin = (param);
 				break;
 			case 'm_fLifetimeMax':
-				this.lifetimeMax = Number(value);
+				this.lifetimeMax = (param);
 				break;
 			case 'm_fLifetimeRandExponent':
-				this.lifetimeRandExponent = Number(value);
+				this.lifetimeRandExponent = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

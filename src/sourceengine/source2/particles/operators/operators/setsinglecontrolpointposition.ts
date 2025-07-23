@@ -1,6 +1,7 @@
 import { vec3, vec4 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const DEFAULT_POSITION = vec3.fromValues(128, 0, 0);
 const v = vec3.create();
@@ -13,24 +14,24 @@ export class SetSingleControlPointPosition extends Operator {
 	headLocation = 0;
 	set = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecCP1Pos':
 				break;
 			case 'm_bUseWorldLocation':
-				this.useWorldLocation = value;
+				this.useWorldLocation = param;
 				break;
 			case 'm_bSetOnce':
-				this.setOnce = value;
+				this.setOnce = param;
 				break;
 			case 'm_nCP1':
-				this.cp1 = Number(value);
+				this.cp1 = (param);
 				break;
 			case 'm_nHeadLocation':
-				this.headLocation = Number(value);
+				this.headLocation = (param);
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 

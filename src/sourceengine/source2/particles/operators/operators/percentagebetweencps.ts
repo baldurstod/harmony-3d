@@ -1,14 +1,15 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { RemapValClamped } from '../../../../../math/functions';
+import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const va = vec3.create();
 const vb = vec3.create();
 
 export class PercentageBetweenCPs extends Operator {
-	fieldOutput = PARTICLE_FIELD_RADIUS;
+	#fieldOutput = PARTICLE_FIELD_RADIUS;
 	inputMin = 0;
 	inputMax = 1;
 	outputMin = 0;
@@ -20,40 +21,40 @@ export class PercentageBetweenCPs extends Operator {
 	radialCheck = true;
 	scaleInitialRange = false;
 
-	_paramChanged(paramName, value) {
+	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flInputMin':
-				this.inputMin = value;
+				this.inputMin = param;
 				break;
 			case 'm_flInputMax':
-				this.inputMax = value;
+				this.inputMax = param;
 				break;
 			case 'm_flOutputMin':
-				this.outputMin = value;
+				this.outputMin = param;
 				break;
 			case 'm_flOutputMax':
-				this.outputMax = value;
+				this.outputMax = param;
 				break;
 			case 'm_nStartCP':
-				this.startCP = Number(value);
+				this.startCP = (param);
 				break;
 			case 'm_nEndCP':
-				this.endCP = Number(value);
+				this.endCP = (param);
 				break;
 			case 'm_nSetMethod':
-				this.setMethod = value;
+				this.setMethod = param;
 				break;
 			case 'm_bActiveRange':
-				this.activeRange = value;
+				this.activeRange = param;
 				break;
 			case 'm_bRadialCheck':
-				this.radialCheck = value;
+				this.radialCheck = param;
 				break;
 			case 'm_bScaleInitialRange':
-				this.scaleInitialRange = value;
+				this.scaleInitialRange = param;
 				break;
 			default:
-				super._paramChanged(paramName, value);
+				super._paramChanged(paramName, param);
 		}
 	}
 
@@ -80,7 +81,7 @@ export class PercentageBetweenCPs extends Operator {
 
 
 		const value = RemapValClamped(percentage, this.inputMin, this.inputMax, this.outputMin, this.outputMax);
-		particle.setField(this.fieldOutput, value, this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+		particle.setField(this.#fieldOutput, value, this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
 	}
 }
 RegisterSource2ParticleOperator('C_OP_PercentageBetweenCPs', PercentageBetweenCPs);
