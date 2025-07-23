@@ -14611,7 +14611,7 @@ class Node extends EventTarget {
         this.previewPic.width = PREVIEW_PICTURE_SIZE;
         this.previewPic.height = PREVIEW_PICTURE_SIZE;
     }
-    async saveVTF() {
+    async saveVTF(filename = 'texture.vtf') {
         if (!this.#pixelArray) {
             return;
         }
@@ -14619,7 +14619,7 @@ class Node extends EventTarget {
         vtfFile.setFlag(TEXTUREFLAGS_EIGHTBITALPHA | TEXTUREFLAGS_NOMIP);
         await this.redraw({ previewSize: 2048 });
         vtfFile.setImageData(this.#pixelArray);
-        VTFWriter.writeAndSave(vtfFile, 'texture.vtf');
+        VTFWriter.writeAndSave(vtfFile, filename);
         this.previewPic.width = PREVIEW_PICTURE_SIZE;
         this.previewPic.height = PREVIEW_PICTURE_SIZE;
     }

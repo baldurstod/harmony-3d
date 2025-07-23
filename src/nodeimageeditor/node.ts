@@ -281,7 +281,7 @@ export class Node extends EventTarget {
 		this.previewPic.height = PREVIEW_PICTURE_SIZE;
 	}
 
-	async saveVTF() {
+	async saveVTF(filename: string = 'texture.vtf') {
 		if (!this.#pixelArray) {
 			return;
 		}
@@ -290,7 +290,7 @@ export class Node extends EventTarget {
 		await this.redraw({ previewSize: 2048 });
 
 		vtfFile.setImageData(this.#pixelArray);
-		VTFWriter.writeAndSave(vtfFile, 'texture.vtf');
+		VTFWriter.writeAndSave(vtfFile, filename);
 		this.previewPic.width = PREVIEW_PICTURE_SIZE;
 		this.previewPic.height = PREVIEW_PICTURE_SIZE;
 	}

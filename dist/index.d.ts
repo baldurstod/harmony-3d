@@ -4702,7 +4702,7 @@ declare class Choreography {
              get title(): string;
              updatePreview(context?: any): void;
              savePicture(filename?: string): Promise<void>;
-             saveVTF(): Promise<void>;
+             saveVTF(filename?: string): Promise<void>;
              toString(tabs?: string): Promise<string>;
              dispose(): void;
              set hasPreview(hasPreview: boolean);
