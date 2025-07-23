@@ -19,16 +19,14 @@ export class AttractToControlPoint extends Operator {
 			case 'm_fForceAmount':
 			case 'm_fForceAmountMin':
 				break;
-			case 'm_vecComponentScale':
-				console.error('do this param', paramName, param);
-				vec3.copy(this.#componentScale, param);
+			case 'm_vecComponentScale':// TODO: mutualise ?
+				param.getValueAsVec3(this.#componentScale);
 				break;
 			case 'm_fFalloffPower':
 				this.#falloffPower = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_bScaleLocal':
-				console.error('do this param', paramName, param);
-				this.#scaleLocal = param;
+				this.#scaleLocal = param.getValueAsBool() ?? false;
 				break;
 			case 'm_bApplyMinForce':
 				console.error('do this param', paramName, param);
@@ -39,7 +37,7 @@ export class AttractToControlPoint extends Operator {
 		}
 	}
 
-	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void {
+	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void {
 		const forceAmount = this.getParamScalarValue('m_fForceAmount') ?? 100;
 		const forceAmountMin = this.getParamScalarValue('m_fForceAmountMin') ?? 0;
 

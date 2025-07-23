@@ -1,4 +1,3 @@
-import { TESTING } from '../../../../../buildoptions';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 import { Graphics } from '../../../../../graphics/graphics';
@@ -9,13 +8,10 @@ import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MA
 import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
 import { Source2MaterialManager } from '../../../materials/source2materialmanager';
-import { Source2SpriteSheet } from '../../../textures/source2spritesheet';
-import { Source2TextureManager } from '../../../textures/source2texturemanager';
 import { Source2ParticleSystem } from '../../export';
 import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
 import { Source2Particle } from '../../source2particle';
 import { Source2ParticleManager } from '../../source2particlemanager';
-import { Source2OperatorParamValue } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { OPERATOR_PARAM_TEXTURE } from '../operatorparams';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -31,7 +27,9 @@ export class RenderSprites extends RenderBase {
 	geometry: BufferGeometry = new BufferGeometry();
 	#minSize = 0.0;
 	#maxSize = DEFAULT_MAX_SIZE;
+	#saturateColorPreAlphaBlend = false;//TODO: check default value
 	#maxParticles = 0;
+	#feathering = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';
 	texture = TextureManager.createTexture();
 	imgData!: Float32Array;//TODO: set private ?
 
@@ -63,6 +61,18 @@ export class RenderSprites extends RenderBase {
 			case 'm_flMaxSize':
 				this.#maxSize = (param.getValueAsNumber() ?? DEFAULT_MAX_SIZE) * 200.;//TODO: use the actual screen size
 				break;
+			case 'm_bSaturateColorPreAlphaBlend':
+				this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? false;
+				break;
+			case 'm_nFeatheringMode':
+				this.#feathering = param.getValueAsString() ?? 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';// TODO: check default value
+				break;
+			case 'm_flRadiusScale':// TODO: mutualize ?
+			case 'm_flAlphaScale':// TODO: mutualize ?
+			case 'm_flOverbrightFactor':// TODO: mutualize ?
+			case 'm_flRefractAmount':
+				// used in updateParticles
+				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
@@ -81,6 +91,7 @@ export class RenderSprites extends RenderBase {
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
+		// TODO: use m_flRefractAmount
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
@@ -235,6 +246,7 @@ export class RenderSprites extends RenderBase {
 
 		let index = 0;
 		const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
+		const radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
 		for (const particle of particleList) {//TODOv3
 			/*let pose = bone.boneMat;
 			for (let k = 0; k < 16; ++k) {
@@ -248,7 +260,7 @@ export class RenderSprites extends RenderBase {
 			a[index++] = particle.color[1];
 			a[index++] = particle.color[2];
 			a[index++] = particle.alpha * alphaScale;
-			a[index++] = clamp(particle.radius, this.#minSize, this.#maxSize);
+			a[index++] = clamp(particle.radius * radiusScale, this.#minSize, this.#maxSize);
 			index++;
 			a[index++] = particle.rotationRoll;
 			a[index++] = particle.rotationYaw;

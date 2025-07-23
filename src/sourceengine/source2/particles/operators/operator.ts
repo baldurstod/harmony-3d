@@ -1,4 +1,4 @@
-import { vec3, vec4 } from 'gl-matrix';
+import { vec2, vec3, vec4 } from 'gl-matrix';
 import { TESTING } from '../../../../buildoptions';
 import { clamp, lerp, RandomFloat, RemapValClamped, RemapValClampedBias, vec3RandomBox } from '../../../../math/functions';
 import { Mesh } from '../../../../objects/mesh';
@@ -32,6 +32,9 @@ function vec4Lerp(out: vec4, a: vec4, b: vec4, t: number) {
 }
 
 export type Source2OperatorParamValue = number | number[];/*TODO: improve type */
+
+const operatorTempVec2_0 = vec2.create();
+const operatorTempVec2_1 = vec2.create();
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
@@ -92,9 +95,9 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	#getParamScalarValue(parameter: OperatorParam, particle?: Source2Particle): number | undefined | null {
+	#getParamScalarValue(parameter: OperatorParam, particle?: Source2Particle): number {
 		let inputValue;
-		const type = (parameter.getSubValue('m_nType')?.getValueAsString());
+		const type = parameter.getSubValueAsString('m_nType');
 		if (type) {
 			switch (type) {
 				case 'PF_TYPE_LITERAL':
@@ -132,8 +135,7 @@ export class Operator {//TODOv3: rename this class ?
 					return this.#getParamScalarValue2(parameter, this.system.currentTime);
 					break;
 				case 'PF_TYPE_PARTICLE_NOISE':
-					console.error('do this getParamScalarValue');
-					return this.#getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin as number, parameter.m_flNoiseOutputMax as number));//TODO
+					return this.#getParamScalarValue2(parameter, RandomFloat(parameter.getSubValueAsNumber('m_flNoiseOutputMin') ?? 0, parameter.getSubValueAsNumber('m_flNoiseOutputMax') ?? 1));
 					break;
 				case 'PF_TYPE_CONTROL_POINT_COMPONENT':
 					console.error('do this getParamScalarValue');
@@ -161,8 +163,12 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	#getParamScalarValue2(parameter: any/*TODO: improve type*/, inputValue: number) {
-		const mapType = parameter.m_nMapType;
+	#getParamScalarValue2(parameter: OperatorParam, inputValue: number): number {
+		const mapType = parameter.getSubValueAsString('m_nMapType');
+
+		if (!mapType) {
+			return 0;
+		}
 
 		switch (mapType) {
 			case 'PF_MAP_TYPE_DIRECT':
@@ -172,6 +178,7 @@ export class Operator {//TODOv3: rename this class ?
 				return this.#getParamScalarValueCurve(parameter, inputValue);
 				break;
 			case 'PF_MAP_TYPE_MULT':
+				console.error('do this getParamScalarValue2');
 				return inputValue * parameter.m_flMultFactor;
 				break;
 			case 'PF_MAP_TYPE_REMAP':
@@ -183,15 +190,28 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	#getParamScalarValueCurve(parameter: JSONObject/*TODO: improve type*/, inputValue: number) {
-		const curve = parameter.m_Curve as any/*TODO: improve type*/;
-		const inputMin = curve.m_vDomainMins[0];
-		const inputMax = curve.m_vDomainMaxs[0];
-		const outputMin = curve.m_vDomainMins[1];
-		const outputMax = curve.m_vDomainMaxs[1];
-		const inputMode = parameter.m_nInputMode;
+	#getParamScalarValueCurve(parameter: OperatorParam, inputValue: number): number {
+		const curve = parameter.getSubValue('m_Curve');
+		if (!curve) {
+			return 0;
+		}
+
+		const domainMins = curve?.getSubValueAsVec2('m_vDomainMins', operatorTempVec2_0);
+		const domainMaxs = curve?.getSubValueAsVec2('m_vDomainMaxs', operatorTempVec2_1);
+
+		if (!domainMins || !domainMaxs) {
+			return 0;
+		}
+
+
+		const inputMin = domainMins[0];
+		const inputMax = domainMaxs[0];
+		const outputMin = domainMins[1];
+		const outputMax = domainMaxs[1];
 		//let modeClamped = parameter.m_nInputMode == "PF_INPUT_MODE_CLAMPED" ? true : false;
-		if (parameter.m_nInputMode == 'PF_INPUT_MODE_CLAMPED') {
+
+		// TODO: use params m_spline, m_tangents, see for instance particles/units/heroes/hero_dawnbreaker/dawnbreaker_ambient_hair.vpcf_c
+		if (parameter.getSubValueAsString('m_nInputMode') == 'PF_INPUT_MODE_CLAMPED') {
 			inputValue = clamp(inputValue, inputMin, inputMax);
 		} else {
 			//"PF_INPUT_MODE_LOOPED"
@@ -202,24 +222,35 @@ export class Operator {//TODOv3: rename this class ?
 		return this.#getCurveValue(curve, inputValue);
 	}
 
-	#getCurveValue(curve: any/*TODO: improve type*/, x: number) {
+	#getCurveValue(curve: OperatorParam/*TODO: improve type*/, x: number): number {
 		//TODO: do a real curve
-		const spline = curve.m_spline;
+		const spline = curve.getSubValueAsArray('m_spline') as OperatorParam[];
+		if (!spline) {
+			return 0;
+		}
+
 		let previousKey = spline[0];
-		let key = previousKey;
-		if (x < previousKey.x) {
-			return previousKey.y;
+		if (!previousKey || !previousKey.isOperatorParam) {
+			return 0;
+		}
+
+		let key: OperatorParam | undefined = previousKey;
+		if (x < (previousKey.getSubValueAsNumber('x') ?? 0)) {
+			return previousKey.getSubValueAsNumber('y') ?? 0;
 		}
 
 		let index = 0;
 		while (key = spline[++index]) {
-			if (x < key.x) {
-				return lerp(previousKey.y, key.y, (x - previousKey.x) / (key.x - previousKey.x));
+			const keyX = key.getSubValueAsNumber('x') ?? 0;
+			const keyY = key.getSubValueAsNumber('y') ?? 0;
+			const previousKeyX = previousKey.getSubValueAsNumber('x') ?? 0;
+			const previousKeyY = previousKey.getSubValueAsNumber('y') ?? 0;
+			if (x < keyX) {
+				return lerp(previousKeyY, keyY, (x - previousKeyX) / (keyX - previousKeyX));
 			}
 			previousKey = key;
 		}
-		return previousKey.y;
-
+		return previousKey.getSubValueAsNumber('y') ?? 0;
 		//export function lerp(min, max, v) {
 	}
 
@@ -334,34 +365,33 @@ export class Operator {//TODOv3: rename this class ?
 				}
 				break;
 			case 'm_flOpStartFadeInTime':
-				throw 'do m_fSpeedRandExp';
+				console.error('do this param', paramName, param);
 				this.opStartFadeInTime = param;
 				break;
 			case 'm_flOpEndFadeInTime':
-				throw 'do m_fSpeedRandExp';
+				console.error('do this param', paramName, param);
 				this.opEndFadeInTime = param;
 				break;
 			case 'm_flOpStartFadeOutTime':
-				throw 'do m_fSpeedRandExp';
+				console.error('do this param', paramName, param);
 				this.opStartFadeOutTime = param;
 				break;
 			case 'm_flOpEndFadeOutTime':
-				throw 'do m_fSpeedRandExp';
+				console.error('do this param', paramName, param);
 				this.opEndFadeOutTime = param;
 				break;
 			case 'm_flOpFadeOscillatePeriod':
-				throw 'do m_fSpeedRandExp';
+				console.error('do this param', paramName, param);
 				this.opFadeOscillatePeriod = param;
 				break;
 			case 'm_nControlPointNumber':
 				this.controlPointNumber = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_nOrientationType':
-				throw 'do m_fSpeedRandExp';
-				this.setOrientationType(param);
+				this.setOrientationType(param.getValueAsString() ?? '');//TODO: default value ?
 				break;
 			case 'm_nFieldInput':
-				throw 'do m_fSpeedRandExp';
+				console.error('do this param', paramName, param);
 				if (TESTING && this.fieldInput === undefined) {
 					throw 'this.fieldInput must have a default value';
 				}
@@ -372,11 +402,11 @@ export class Operator {//TODOv3: rename this class ?
 				this.fieldOutput = param.getValueAsNumber() ?? -1;
 				break;
 			case 'm_nOpScaleCP':
-				throw 'do m_fSpeedRandExp';
+				console.error('do this param', paramName, param);
 				this.scaleCp = (param);
 				break;
 			case 'm_flOpStrength':
-				throw 'do m_fSpeedRandExp';
+				console.error('do this param', paramName, param);
 				//TODO
 				break;
 			/*
@@ -418,7 +448,7 @@ export class Operator {//TODOv3: rename this class ?
 		if (!particle || this.disableOperator) {
 			return;
 		}
-		this.doForce(particle, elapsedTime, accumulatedForces);
+		this.doForce(particle, elapsedTime, accumulatedForces, 1/*TODO: compute actual strengh*/);
 	}
 
 	constraintParticle(particle: Source2Particle) {
@@ -643,9 +673,9 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void { }
-	doEmit(elapsedTime: number) { }
+	doEmit(elapsedTime: number): void { }
 	doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void { }
-	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void { }
+	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void { }
 	applyConstraint(particle: Source2Particle) { }
 	doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material) { }
 	initRenderer(particleSystem: Source2ParticleSystem) { }

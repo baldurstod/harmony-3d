@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -21,7 +22,7 @@ export class RandomForce extends Operator {
 		}
 	}
 
-	doForce(particle, elapsedTime, accumulatedForces) {
+	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void {
 		vec3.add(accumulatedForces, accumulatedForces, vec3RandomBox(vec3.create(), this.minForce, this.maxForce));
 	}
 }

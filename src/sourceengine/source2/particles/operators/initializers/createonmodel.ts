@@ -2,58 +2,66 @@ import { vec3 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
+import { Source2Particle } from '../../source2particle';
 
 const vec = vec3.create();
 
 export class CreateOnModel extends Operator {
-	forceInModel = 0;
-	desiredHitbox = -1;
-	hitboxValueFromControlPointIndex = -1;
-	boneVelocity = 0;
-	maxBoneVelocity = 0;
-	directionBias = vec3.create();
-	hitboxSetName = 'default';
-	localCoords = false;
-	useBones = false;
+	#forceInModel = 0;
+	#desiredHitbox = -1;
+	#hitboxValueFromControlPointIndex = -1;
+	#boneVelocity = 0;
+	#maxBoneVelocity = 0;
+	#directionBias = vec3.create();
+	#hitboxSetName = 'default';
+	#localCoords = false;
+	#useBones = false;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecHitBoxScale':
+				// used in doInit
 				break;
 			case 'm_nForceInModel':
-				this.forceInModel = (param);
+				this.#forceInModel = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_nDesiredHitbox':
-				this.desiredHitbox = (param);
+				console.error('do this param', paramName, param);
+				this.#desiredHitbox = (param);
 				break;
 			case 'm_nHitboxValueFromControlPointIndex':
-				this.hitboxValueFromControlPointIndex = (param);
+				console.error('do this param', paramName, param);
+				this.#hitboxValueFromControlPointIndex = (param);
 				break;
 			case 'm_flBoneVelocity':
-				this.boneVelocity = param;
+				console.error('do this param', paramName, param);
+				this.#boneVelocity = param;
 				break;
 			case 'm_flMaxBoneVelocity':
-				this.maxBoneVelocity = param;
+				console.error('do this param', paramName, param);
+				this.#maxBoneVelocity = param;
 				break;
 			case 'm_vecDirectionBias':
-				vec3.copy(this.directionBias, param);
+				param.getValueAsVec3(this.#directionBias);
 				break;
 			case 'm_HitboxSetName':
-				this.hitboxSetName = param;
+				this.#hitboxSetName = param.getValueAsString() ?? '';
 				break;
 			case 'm_bLocalCoords':
-				this.localCoords = param;
+				this.#localCoords = param.getValueAsBool() ?? false;
 				break;
 			case 'm_bUseBones':
-				this.useBones = param;
+				console.error('do this param', paramName, param);
+				this.#useBones = param;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doInit(particle, elapsedTime) {
-		const hitBoxScale = this.getParamVectorValue('m_vecHitBoxScale');
+	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+		// TODO: use m_vecHitBoxScale, forceInModel, directionBias, hitboxSetName
+		//const hitBoxScale = this.getParamVectorValue('m_vecHitBoxScale');
 
 		const controlPoint = this.system.getControlPoint(this.controlPointNumber);
 		if (controlPoint) {

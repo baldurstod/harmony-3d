@@ -1,4 +1,4 @@
-import { vec3, vec4 } from 'gl-matrix';
+import { vec2, vec3, vec4 } from 'gl-matrix';
 import { Kv3Element } from '../../../common/keyvalue/kv3element';
 import { Kv3Type, Kv3Value, Kv3ValueType } from '../../../common/keyvalue/kv3value';
 
@@ -63,6 +63,19 @@ export class OperatorParam {
 		return this.#value as OperatorParamValueType[];
 	}
 
+	getValueAsVec2(out: vec2): vec2 | null {
+		if (this.#type != OperatorParamType.Array) {
+			return null;
+		}
+
+		const value = this.#value as number[];//TODO: check the actual type
+		for (let i = 0; i < 2; i++) {
+			// TODO: check len
+			out[i] = (value as number[])[i] ?? 0;
+		}
+		return out;
+	}
+
 	getValueAsVec3(out: vec3): vec3 | null {
 		if (this.#type != OperatorParamType.Array) {
 			return null;
@@ -102,6 +115,18 @@ export class OperatorParam {
 
 	getSubValueAsNumber(name: string): number | null | undefined {
 		return this.getSubValue(name)?.getValueAsNumber();
+	}
+
+	getSubValueAsString(name: string): string | null | undefined {
+		return this.getSubValue(name)?.getValueAsString();
+	}
+
+	getSubValueAsArray(name: string): OperatorParamValueType[] | null | undefined {
+		return this.getSubValue(name)?.getValueAsArray();
+	}
+
+	getSubValueAsVec2(name: string, out: vec2): vec2 | null | undefined {
+		return this.getSubValue(name)?.getValueAsVec2(out);
 	}
 
 	static fromKv3(kv3: Kv3Element | Kv3Value | null): OperatorParam {

@@ -82,7 +82,7 @@ export class Source2ParticleSystem extends Entity {
 	emitters: Operator[] = [];
 	initializers: Operator[] = [];
 	operators: Operator[] = [];
-	forces = [];
+	forces: Operator[] = [];
 	constraints: Operator[] = [];
 	renderers: Operator[] = [];
 	controlPoints: ControlPoint[] = [];
@@ -283,7 +283,7 @@ export class Source2ParticleSystem extends Entity {
 
 	#stepOperators() {
 		for (let i = 0; i < this.livingParticles.length; ++i) {
-			const particle = this.livingParticles[i];
+			const particle = this.livingParticles[i]!;
 			particle.step(this.elapsedTime);
 			for (const operator of this.operators) {
 				//const operator = this.operators[j];
@@ -293,6 +293,10 @@ export class Source2ParticleSystem extends Entity {
 					}
 				} else {
 					operator.operateParticle(particle, this.elapsedTime);
+				}
+
+				if (TESTING && isNaN(particle.position[0])) {
+					throw operator;
 				}
 
 				// break the loop if the particle is dead

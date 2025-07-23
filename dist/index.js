@@ -48831,7 +48831,7 @@ class EmitNoise extends SourceEngineParticleOperator {
 SourceEngineParticleOperators.registerOperator(EmitNoise);
 
 const tempVec3$i = vec3.create();
-class PullTowardsControlPoint extends SourceEngineParticleOperator {
+let AttractToControlPoint$1 = class AttractToControlPoint extends SourceEngineParticleOperator {
     static functionName = 'Pull towards control point';
     constructor() {
         super();
@@ -48864,8 +48864,8 @@ class PullTowardsControlPoint extends SourceEngineParticleOperator {
         //vec3.scale(v, v, 1 / Math.pow(len, power_frac));
         vec3.add(accumulatedForces, accumulatedForces, ofs);
     }
-}
-SourceEngineParticleOperators.registerOperator(PullTowardsControlPoint);
+};
+SourceEngineParticleOperators.registerOperator(AttractToControlPoint$1);
 
 let RandomForce$1 = class RandomForce extends SourceEngineParticleOperator {
     static functionName = 'random force';
@@ -55357,6 +55357,15 @@ function GetSource2ParticleOperator(operatorName) {
         case 'C_OP_SetControlPointsToModelParticles':
         case 'C_INIT_InitialVelocityNoise':
         case 'C_OP_RenderRopes':
+        case 'C_OP_FadeAndKill':
+        case 'C_OP_SetControlPointToCenter':
+        case 'C_OP_MaintainEmitter':
+        case 'C_INIT_CreateOnModel':
+        case 'C_INIT_PositionOffset':
+        case 'C_OP_LockToBone':
+        case 'C_OP_RampScalarLinear':
+        case 'C_OP_SetFloat':
+        case 'C_OP_NoiseEmitter':
             break;
         default:
             console.warn('do operator ', operatorName);
@@ -56487,6 +56496,17 @@ class OperatorParam {
         }
         return this.#value;
     }
+    getValueAsVec2(out) {
+        if (this.#type != OperatorParamType.Array) {
+            return null;
+        }
+        const value = this.#value; //TODO: check the actual type
+        for (let i = 0; i < 2; i++) {
+            // TODO: check len
+            out[i] = value[i] ?? 0;
+        }
+        return out;
+    }
     getValueAsVec3(out) {
         if (this.#type != OperatorParamType.Array) {
             return null;
@@ -56520,6 +56540,15 @@ class OperatorParam {
     }
     getSubValueAsNumber(name) {
         return this.getSubValue(name)?.getValueAsNumber();
+    }
+    getSubValueAsString(name) {
+        return this.getSubValue(name)?.getValueAsString();
+    }
+    getSubValueAsArray(name) {
+        return this.getSubValue(name)?.getValueAsArray();
+    }
+    getSubValueAsVec2(name, out) {
+        return this.getSubValue(name)?.getValueAsVec2(out);
     }
     static fromKv3(kv3) {
         if (kv3.isKv3Element) {
@@ -58234,6 +58263,8 @@ function vec4Lerp(out, a, b, t) {
     out[3] = aw + t * (Number(b[3]) - aw);
     return out;
 }
+const operatorTempVec2_0 = vec2.create();
+const operatorTempVec2_1 = vec2.create();
 class Operator {
     static PVEC_TYPE_PARTICLE_VECTOR = false;
     #parameters = {};
@@ -58290,7 +58321,7 @@ class Operator {
     }
     #getParamScalarValue(parameter, particle) {
         let inputValue;
-        const type = (parameter.getSubValue('m_nType')?.getValueAsString());
+        const type = parameter.getSubValueAsString('m_nType');
         if (type) {
             switch (type) {
                 case 'PF_TYPE_LITERAL':
@@ -58321,8 +58352,7 @@ class Operator {
                 case 'PF_TYPE_COLLECTION_AGE':
                     return this.#getParamScalarValue2(parameter, this.system.currentTime);
                 case 'PF_TYPE_PARTICLE_NOISE':
-                    console.error('do this getParamScalarValue');
-                    return this.#getParamScalarValue2(parameter, RandomFloat(parameter.m_flNoiseOutputMin, parameter.m_flNoiseOutputMax)); //TODO
+                    return this.#getParamScalarValue2(parameter, RandomFloat(parameter.getSubValueAsNumber('m_flNoiseOutputMin') ?? 0, parameter.getSubValueAsNumber('m_flNoiseOutputMax') ?? 1));
                 case 'PF_TYPE_CONTROL_POINT_COMPONENT':
                     console.error('do this getParamScalarValue');
                     const cp = this.system.getControlPoint(parameter.m_nControlPoint);
@@ -58342,14 +58372,18 @@ class Operator {
             return parameter.getValueAsNumber();
         }
     }
-    #getParamScalarValue2(parameter /*TODO: improve type*/, inputValue) {
-        const mapType = parameter.m_nMapType;
+    #getParamScalarValue2(parameter, inputValue) {
+        const mapType = parameter.getSubValueAsString('m_nMapType');
+        if (!mapType) {
+            return 0;
+        }
         switch (mapType) {
             case 'PF_MAP_TYPE_DIRECT':
                 return inputValue;
             case 'PF_MAP_TYPE_CURVE':
                 return this.#getParamScalarValueCurve(parameter, inputValue);
             case 'PF_MAP_TYPE_MULT':
+                console.error('do this getParamScalarValue2');
                 return inputValue * parameter.m_flMultFactor;
             case 'PF_MAP_TYPE_REMAP':
                 return inputValue; //TODO
@@ -58358,15 +58392,23 @@ class Operator {
                 return 0;
         }
     }
-    #getParamScalarValueCurve(parameter /*TODO: improve type*/, inputValue) {
-        const curve = parameter.m_Curve /*TODO: improve type*/;
-        const inputMin = curve.m_vDomainMins[0];
-        const inputMax = curve.m_vDomainMaxs[0];
-        curve.m_vDomainMins[1];
-        curve.m_vDomainMaxs[1];
-        parameter.m_nInputMode;
+    #getParamScalarValueCurve(parameter, inputValue) {
+        const curve = parameter.getSubValue('m_Curve');
+        if (!curve) {
+            return 0;
+        }
+        const domainMins = curve?.getSubValueAsVec2('m_vDomainMins', operatorTempVec2_0);
+        const domainMaxs = curve?.getSubValueAsVec2('m_vDomainMaxs', operatorTempVec2_1);
+        if (!domainMins || !domainMaxs) {
+            return 0;
+        }
+        const inputMin = domainMins[0];
+        const inputMax = domainMaxs[0];
+        domainMins[1];
+        domainMaxs[1];
         //let modeClamped = parameter.m_nInputMode == "PF_INPUT_MODE_CLAMPED" ? true : false;
-        if (parameter.m_nInputMode == 'PF_INPUT_MODE_CLAMPED') {
+        // TODO: use params m_spline, m_tangents, see for instance particles/units/heroes/hero_dawnbreaker/dawnbreaker_ambient_hair.vpcf_c
+        if (parameter.getSubValueAsString('m_nInputMode') == 'PF_INPUT_MODE_CLAMPED') {
             inputValue = clamp(inputValue, inputMin, inputMax);
         }
         else {
@@ -58378,20 +58420,30 @@ class Operator {
     }
     #getCurveValue(curve /*TODO: improve type*/, x) {
         //TODO: do a real curve
-        const spline = curve.m_spline;
+        const spline = curve.getSubValueAsArray('m_spline');
+        if (!spline) {
+            return 0;
+        }
         let previousKey = spline[0];
+        if (!previousKey || !previousKey.isOperatorParam) {
+            return 0;
+        }
         let key = previousKey;
-        if (x < previousKey.x) {
-            return previousKey.y;
+        if (x < (previousKey.getSubValueAsNumber('x') ?? 0)) {
+            return previousKey.getSubValueAsNumber('y') ?? 0;
         }
         let index = 0;
         while (key = spline[++index]) {
-            if (x < key.x) {
-                return lerp(previousKey.y, key.y, (x - previousKey.x) / (key.x - previousKey.x));
+            const keyX = key.getSubValueAsNumber('x') ?? 0;
+            const keyY = key.getSubValueAsNumber('y') ?? 0;
+            const previousKeyX = previousKey.getSubValueAsNumber('x') ?? 0;
+            const previousKeyY = previousKey.getSubValueAsNumber('y') ?? 0;
+            if (x < keyX) {
+                return lerp(previousKeyY, keyY, (x - previousKeyX) / (keyX - previousKeyX));
             }
             previousKey = key;
         }
-        return previousKey.y;
+        return previousKey.getSubValueAsNumber('y') ?? 0;
         //export function lerp(min, max, v) {
     }
     getParamVectorValue(paramName, particle, out) {
@@ -58499,30 +58551,47 @@ class Operator {
                 }
                 break;
             case 'm_flOpStartFadeInTime':
-                throw 'do m_fSpeedRandExp';
+                console.error('do this param', paramName, param);
+                this.opStartFadeInTime = param;
+                break;
             case 'm_flOpEndFadeInTime':
-                throw 'do m_fSpeedRandExp';
+                console.error('do this param', paramName, param);
+                this.opEndFadeInTime = param;
+                break;
             case 'm_flOpStartFadeOutTime':
-                throw 'do m_fSpeedRandExp';
+                console.error('do this param', paramName, param);
+                this.opStartFadeOutTime = param;
+                break;
             case 'm_flOpEndFadeOutTime':
-                throw 'do m_fSpeedRandExp';
+                console.error('do this param', paramName, param);
+                this.opEndFadeOutTime = param;
+                break;
             case 'm_flOpFadeOscillatePeriod':
-                throw 'do m_fSpeedRandExp';
+                console.error('do this param', paramName, param);
+                this.opFadeOscillatePeriod = param;
+                break;
             case 'm_nControlPointNumber':
                 this.controlPointNumber = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_nOrientationType':
-                throw 'do m_fSpeedRandExp';
+                this.setOrientationType(param.getValueAsString() ?? ''); //TODO: default value ?
+                break;
             case 'm_nFieldInput':
-                throw 'do m_fSpeedRandExp';
+                console.error('do this param', paramName, param);
+                this.fieldInput = (param);
+                break;
             case 'm_nFieldOutput': // TODO: check wether is it actually the same field
             case 'm_nOutputField':
                 this.fieldOutput = param.getValueAsNumber() ?? -1;
                 break;
             case 'm_nOpScaleCP':
-                throw 'do m_fSpeedRandExp';
+                console.error('do this param', paramName, param);
+                this.scaleCp = (param);
+                break;
             case 'm_flOpStrength':
-                throw 'do m_fSpeedRandExp';
+                console.error('do this param', paramName, param);
+                //TODO
+                break;
             /*
         case 'm_flAlphaScale':
             throw 'do m_fSpeedRandExp';
@@ -58559,7 +58628,7 @@ class Operator {
         if (!particle || this.disableOperator) {
             return;
         }
-        this.doForce(particle, elapsedTime, accumulatedForces);
+        this.doForce(particle, elapsedTime, accumulatedForces, 1 /*TODO: compute actual strengh*/);
     }
     constraintParticle(particle) {
         if (!particle || this.disableOperator) {
@@ -58920,19 +58989,20 @@ class InstantaneousEmitter extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_InstantaneousEmitter', InstantaneousEmitter);
 
+const DEFAULT_PARTICLES_TO_MAINTAIN = 100;
 class MaintainEmitter extends Operator {
-    particlesToMaintain = 100;
+    #particlesToMaintain = DEFAULT_PARTICLES_TO_MAINTAIN;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nParticlesToMaintain':
-                this.particlesToMaintain = (param);
+                this.#particlesToMaintain = param.getValueAsNumber() ?? DEFAULT_PARTICLES_TO_MAINTAIN;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
     doEmit(elapsedTime) {
-        const nToEmit = this.particlesToMaintain - this.system.livingParticles.length;
+        const nToEmit = this.#particlesToMaintain - this.system.livingParticles.length;
         if (nToEmit > 0) {
             let currentTime = this.system.currentTime;
             const timeStampStep = elapsedTime / nToEmit;
@@ -58948,65 +59018,78 @@ class MaintainEmitter extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_MaintainEmitter', MaintainEmitter);
 
+const DEFAULT_OUTPUT_MAX = 100;
 class NoiseEmitter extends Operator {
-    emissionDuration = 0;
-    startTime = 0;
-    scaleControlPoint = -1;
-    scaleControlPointField = 0;
-    worldNoisePoint = -1;
-    absVal = false;
-    absValInv = false;
-    offset = 0;
-    outputMin = 0;
-    outputMax = 100;
-    noiseScale = 0.1;
-    worldNoiseScale = 0.001;
-    offsetLoc = vec3.create();
-    worldTimeScale = 0;
-    remainder = 0;
+    #emissionDuration = 0;
+    #startTime = 0;
+    #scaleControlPoint = -1;
+    #scaleControlPointField = 0;
+    #worldNoisePoint = -1;
+    #absVal = false;
+    #absValInv = false;
+    #offset = 0;
+    #outputMin = 0;
+    #outputMax = DEFAULT_OUTPUT_MAX;
+    #noiseScale = 0.1;
+    #worldNoiseScale = 0.001;
+    #offsetLoc = vec3.create();
+    #worldTimeScale = 0;
+    #remainder = 0;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flEmissionDuration':
-                this.emissionDuration = param;
+                console.error('do this param', paramName, param);
+                this.#emissionDuration = param;
                 break;
             case 'm_flStartTime':
-                this.startTime = param;
+                console.error('do this param', paramName, param);
+                this.#startTime = param;
                 break;
             case 'm_nScaleControlPoint':
-                this.scaleControlPoint = (param);
+                console.error('do this param', paramName, param);
+                this.#scaleControlPoint = (param);
                 break;
             case 'm_nScaleControlPointField':
-                this.scaleControlPointField = (param);
+                console.error('do this param', paramName, param);
+                this.#scaleControlPointField = (param);
                 break;
             case 'm_nWorldNoisePoint':
-                this.worldNoisePoint = (param);
+                console.error('do this param', paramName, param);
+                this.#worldNoisePoint = (param);
                 break;
             case 'm_bAbsVal':
-                this.absVal = param;
+                console.error('do this param', paramName, param);
+                this.#absVal = param;
                 break;
             case 'm_bAbsValInv':
-                this.absValInv = param;
+                console.error('do this param', paramName, param);
+                this.#absValInv = param;
                 break;
             case 'm_flOffset':
-                this.offset = param;
+                console.error('do this param', paramName, param);
+                this.#offset = param;
                 break;
             case 'm_flOutputMin':
-                this.outputMin = param;
+                this.#outputMin = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_flOutputMax':
-                this.outputMax = param;
+                this.#outputMax = param.getValueAsNumber() ?? 100;
                 break;
             case 'm_flNoiseScale':
-                this.noiseScale = param;
+                console.error('do this param', paramName, param);
+                this.#noiseScale = param;
                 break;
             case 'm_flWorldNoiseScale':
-                this.worldNoiseScale = param;
+                console.error('do this param', paramName, param);
+                this.#worldNoiseScale = param;
                 break;
             case 'm_vecOffsetLoc':
-                vec3.copy(this.offsetLoc, param);
+                console.error('do this param', paramName, param);
+                vec3.copy(this.#offsetLoc, param);
                 break;
             case 'm_flWorldTimeScale':
-                this.worldTimeScale = Number(param);
+                console.error('do this param', paramName, param);
+                this.#worldTimeScale = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -59014,9 +59097,9 @@ class NoiseEmitter extends Operator {
     }
     doEmit(elapsedTime) {
         //TODO: code me
-        const emission_start_time = this.startTime;
-        let emission_rate = (this.outputMin + this.outputMax) * 0.5;
-        const emission_duration = this.emissionDuration;
+        const emission_start_time = this.#startTime;
+        let emission_rate = (this.#outputMin + this.#outputMax) * 0.5;
+        const emission_duration = this.#emissionDuration;
         const fade = this.getOperatorFade();
         emission_rate *= fade;
         let currentTime = this.system.currentTime;
@@ -59024,8 +59107,8 @@ class NoiseEmitter extends Operator {
             return;
         if (emission_duration != 0 && (currentTime > emission_start_time + emission_duration))
             return;
-        let nToEmit = this.remainder + elapsedTime * emission_rate;
-        this.remainder = nToEmit % 1;
+        let nToEmit = this.#remainder + elapsedTime * emission_rate;
+        this.#remainder = nToEmit % 1;
         nToEmit = Math.floor(nToEmit);
         const timeStampStep = elapsedTime / nToEmit;
         for (let i = 0; i < nToEmit; ++i) {
@@ -59051,16 +59134,14 @@ class AttractToControlPoint extends Operator {
             case 'm_fForceAmount':
             case 'm_fForceAmountMin':
                 break;
-            case 'm_vecComponentScale':
-                console.error('do this param', paramName, param);
-                vec3.copy(this.#componentScale, param);
+            case 'm_vecComponentScale': // TODO: mutualise ?
+                param.getValueAsVec3(this.#componentScale);
                 break;
             case 'm_fFalloffPower':
                 this.#falloffPower = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_bScaleLocal':
-                console.error('do this param', paramName, param);
-                this.#scaleLocal = param;
+                this.#scaleLocal = param.getValueAsBool() ?? false;
                 break;
             case 'm_bApplyMinForce':
                 console.error('do this param', paramName, param);
@@ -59100,7 +59181,7 @@ class CPVelocityForce extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
+    doForce(particle, elapsedTime, accumulatedForces, strength) {
         this.getParamScalarValue('m_flScale') ?? 1;
         //TODO
     }
@@ -59122,7 +59203,7 @@ class RandomForce extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doForce(particle, elapsedTime, accumulatedForces) {
+    doForce(particle, elapsedTime, accumulatedForces, strength) {
         vec3.add(accumulatedForces, accumulatedForces, vec3RandomBox(vec3.create(), this.minForce, this.maxForce));
     }
 }
@@ -59215,52 +59296,59 @@ RegisterSource2ParticleOperator('C_INIT_CreateFromParentParticles', CreateFromPa
 
 const vec$5 = vec3.create();
 class CreateOnModel extends Operator {
-    forceInModel = 0;
-    desiredHitbox = -1;
-    hitboxValueFromControlPointIndex = -1;
-    boneVelocity = 0;
-    maxBoneVelocity = 0;
-    directionBias = vec3.create();
-    hitboxSetName = 'default';
-    localCoords = false;
-    useBones = false;
+    #forceInModel = 0;
+    #desiredHitbox = -1;
+    #hitboxValueFromControlPointIndex = -1;
+    #boneVelocity = 0;
+    #maxBoneVelocity = 0;
+    #directionBias = vec3.create();
+    #hitboxSetName = 'default';
+    #localCoords = false;
+    #useBones = false;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_vecHitBoxScale':
+                // used in doInit
                 break;
             case 'm_nForceInModel':
-                this.forceInModel = (param);
+                this.#forceInModel = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_nDesiredHitbox':
-                this.desiredHitbox = (param);
+                console.error('do this param', paramName, param);
+                this.#desiredHitbox = (param);
                 break;
             case 'm_nHitboxValueFromControlPointIndex':
-                this.hitboxValueFromControlPointIndex = (param);
+                console.error('do this param', paramName, param);
+                this.#hitboxValueFromControlPointIndex = (param);
                 break;
             case 'm_flBoneVelocity':
-                this.boneVelocity = param;
+                console.error('do this param', paramName, param);
+                this.#boneVelocity = param;
                 break;
             case 'm_flMaxBoneVelocity':
-                this.maxBoneVelocity = param;
+                console.error('do this param', paramName, param);
+                this.#maxBoneVelocity = param;
                 break;
             case 'm_vecDirectionBias':
-                vec3.copy(this.directionBias, param);
+                param.getValueAsVec3(this.#directionBias);
                 break;
             case 'm_HitboxSetName':
-                this.hitboxSetName = param;
+                this.#hitboxSetName = param.getValueAsString() ?? '';
                 break;
             case 'm_bLocalCoords':
-                this.localCoords = param;
+                this.#localCoords = param.getValueAsBool() ?? false;
                 break;
             case 'm_bUseBones':
-                this.useBones = param;
+                console.error('do this param', paramName, param);
+                this.#useBones = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
-        this.getParamVectorValue('m_vecHitBoxScale');
+    doInit(particle, elapsedTime, strength) {
+        // TODO: use m_vecHitBoxScale, forceInModel, directionBias, hitboxSetName
+        //const hitBoxScale = this.getParamVectorValue('m_vecHitBoxScale');
         const controlPoint = this.system.getControlPoint(this.controlPointNumber);
         if (controlPoint) {
             const controllingModel = controlPoint.parentModel;
@@ -60206,28 +60294,32 @@ RegisterSource2ParticleOperator('C_INIT_OffsetVectorToVector', OffsetVectorToVec
 const DEFAULT_OFFSET = vec3.create();
 const offset$1 = vec3.create();
 class PositionOffset extends Operator {
-    localCoords = false;
-    proportional = false;
+    #localCoords = false;
+    #proportional = false;
+    #offsetMin = vec4.create();
+    #offsetMax = vec4.create();
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_OffsetMin':
             case 'm_OffsetMax':
+                // used in doInit
                 break;
             case 'm_bLocalCoords':
-                this.localCoords = param;
+                this.#localCoords = param.getValueAsBool() ?? false;
                 break;
             case 'm_bProportional':
-                this.proportional = param;
+                console.error('do this param', paramName, param);
+                this.#proportional = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
-        const offsetMin = this.getParamVectorValue('m_OffsetMin') ?? DEFAULT_OFFSET;
-        const offsetMax = this.getParamVectorValue('m_OffsetMax') ?? DEFAULT_OFFSET;
+    doInit(particle, elapsedTime, strength) {
+        const offsetMin = this.getParamVectorValue('m_OffsetMin', particle, this.#offsetMin) ?? DEFAULT_OFFSET;
+        const offsetMax = this.getParamVectorValue('m_OffsetMax', particle, this.#offsetMax) ?? DEFAULT_OFFSET;
         vec3RandomBox(offset$1, offsetMin, offsetMax);
-        if (this.localCoords) {
+        if (this.#localCoords) {
             const cp = particle.system.getControlPoint(this.controlPointNumber);
             if (cp) {
                 vec3.transformQuat(offset$1, offset$1, cp.getWorldQuaternion());
@@ -61464,49 +61556,53 @@ class DistanceToCP extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_DistanceToCP', DistanceToCP);
 
+const DEFAULT_END_FADE_IN_TIME = 0.5;
 class FadeAndKill extends Operator {
-    startAlpha = 1;
-    startFadeInTime = 0;
-    endFadeInTime = 0.5;
-    startFadeOutTime = 0.5;
-    endFadeOutTime = 1.0;
-    endAlpha = 0;
-    forcePreserveParticleOrder = false;
+    #startAlpha = 1;
+    #startFadeInTime = 0;
+    #endFadeInTime = DEFAULT_END_FADE_IN_TIME;
+    #startFadeOutTime = DEFAULT_END_FADE_IN_TIME;
+    #endFadeOutTime = 1.0;
+    #endAlpha = 0;
+    #forcePreserveParticleOrder = false;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flStartAlpha':
-                this.startAlpha = param;
+                console.error('do this param', paramName, param);
+                this.#startAlpha = param;
                 break;
             case 'm_flStartFadeInTime':
-                this.startFadeInTime = param;
+                this.#startFadeInTime = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_flEndFadeInTime':
-                this.endFadeInTime = param;
+                this.#endFadeInTime = param.getValueAsNumber() ?? DEFAULT_END_FADE_IN_TIME;
                 break;
             case 'm_flStartFadeOutTime':
-                this.startFadeOutTime = param;
+                this.#startFadeOutTime = param.getValueAsNumber() ?? DEFAULT_END_FADE_IN_TIME;
                 break;
             case 'm_flEndFadeOutTime':
-                this.endFadeOutTime = param;
+                this.#endFadeOutTime = param.getValueAsNumber() ?? 1;
                 break;
             case 'm_flEndAlpha':
-                this.endAlpha = param;
+                console.error('do this param', paramName, param);
+                this.#endAlpha = param;
                 break;
             case 'm_bForcePreserveParticleOrder':
-                this.forcePreserveParticleOrder = param;
+                console.error('do this param', paramName, param);
+                this.#forcePreserveParticleOrder = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         //TODO:use forcePreserveParticleOrder
-        const startAlpha = this.startAlpha;
-        const endAlpha = this.endAlpha;
-        const startFadeInTime = this.startFadeInTime;
-        const endFadeInTime = this.endFadeInTime;
-        const startFadeOutTime = this.startFadeOutTime;
-        const endFadeOutTime = this.endFadeOutTime;
+        const startAlpha = this.#startAlpha;
+        const endAlpha = this.#endAlpha;
+        const startFadeInTime = this.#startFadeInTime;
+        const endFadeInTime = this.#endFadeInTime;
+        const startFadeOutTime = this.#startFadeOutTime;
+        const endFadeOutTime = this.#endFadeOutTime;
         const proportionOfLife = particle.currentTime / particle.timeToLive;
         const fl4FadeInDuration = endFadeInTime - startFadeInTime;
         const fl4OOFadeInDuration = 1.0 / fl4FadeInDuration;
@@ -61773,52 +61869,61 @@ class LifespanDecay extends Operator {
 RegisterSource2ParticleOperator('C_OP_Decay', LifespanDecay);
 
 class LockToBone extends Operator {
-    hitboxSetName = 'default';
-    lifeTimeFadeStart = 0;
-    lifeTimeFadeEnd = 0;
-    jumpThreshold = 100;
-    prevPosScale = 1;
-    rigid = false;
-    useBones = false;
-    rotationSetType = null;
-    rigidRotationLock = false;
+    #hitboxSetName = 'default';
+    #lifeTimeFadeStart = 0;
+    #lifeTimeFadeEnd = 0;
+    #jumpThreshold = 100;
+    #prevPosScale = 1;
+    #rigid = false;
+    #useBones = false;
+    #rotationSetType = null;
+    #rigidRotationLock = false;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_HitboxSetName':
-                this.hitboxSetName = param;
+                this.#hitboxSetName = param.getValueAsString() ?? '';
                 break;
             case 'm_flLifeTimeFadeStart':
-                this.lifeTimeFadeStart = param;
+                console.error('do this param', paramName, param);
+                this.#lifeTimeFadeStart = param;
                 break;
             case 'm_flLifeTimeFadeEnd':
-                this.lifeTimeFadeEnd = param;
+                console.error('do this param', paramName, param);
+                this.#lifeTimeFadeEnd = param;
                 break;
             case 'm_flJumpThreshold':
-                this.jumpThreshold = param;
+                console.error('do this param', paramName, param);
+                this.#jumpThreshold = param;
                 break;
             case 'm_flPrevPosScale':
-                this.prevPosScale = param;
+                console.error('do this param', paramName, param);
+                this.#prevPosScale = param;
                 break;
             case 'm_bRigid':
-                this.rigid = param;
+                console.error('do this param', paramName, param);
+                this.#rigid = param;
                 break;
             case 'm_bUseBones':
-                this.useBones = param;
+                console.error('do this param', paramName, param);
+                this.#useBones = param;
                 break;
             case 'm_nRotationSetType':
-                this.rotationSetType = (param);
+                console.error('do this param', paramName, param);
+                this.#rotationSetType = (param);
                 break;
             case 'm_bRigidRotationLock':
-                this.rigidRotationLock = param;
+                console.error('do this param', paramName, param);
+                this.#rigidRotationLock = param;
                 break;
             case 'm_vecRotation':
             case 'm_flRotLerp':
+                // TODO ????
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         //console.error('TODO');
     }
 }
@@ -62736,52 +62841,54 @@ class PositionLock extends Operator {
 RegisterSource2ParticleOperator('C_OP_PositionLock', PositionLock);
 
 class RampScalarLinear extends Operator {
-    rateMin = 0;
-    rateMax = 0;
-    startTime_min = 0;
-    startTime_max = 0;
-    endTime_min = 1;
-    endTime_max = 1;
-    field = PARTICLE_FIELD_RADIUS;
-    proportionalOp = true;
+    #rateMin = 0;
+    #rateMax = 0;
+    #startTimeMin = 0;
+    #startTimeMax = 0;
+    #endTimeMin = 1;
+    #endTimeMax = 1;
+    #field = PARTICLE_FIELD_RADIUS; // TODO: not sure about the field
+    #proportionalOp = true;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_RateMin':
-                this.rateMin = param;
+                this.#rateMin = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_RateMax':
-                this.rateMax = param;
+                this.#rateMax = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_flStartTime_min':
-                this.startTime_min = param;
+                console.error('do this param', paramName, param);
+                this.#startTimeMin = param;
                 break;
             case 'm_flStartTime_max':
-                this.startTime_max = param;
+                console.error('do this param', paramName, param);
+                this.#startTimeMax = param;
                 break;
             case 'm_flEndTime_min':
-                this.endTime_min = param;
+                this.#endTimeMin = param.getValueAsNumber() ?? 1;
                 break;
             case 'm_flEndTime_max':
-                this.endTime_max = param;
+                this.#endTimeMax = param.getValueAsNumber() ?? 1;
                 break;
             case 'm_nField':
-                this.field = (param);
+                this.#field = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
                 break;
             case 'm_bProportionalOp':
-                this.proportionalOp = param;
+                this.#proportionalOp = param.getValueAsBool() ?? true;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         const context = particle.context.get(this);
         let rate, startTime, endTime;
         if (context == undefined) {
             //Init per particle parameters
-            rate = RandomFloat(this.rateMin, this.rateMax);
-            startTime = RandomFloat(this.startTime_min, this.startTime_max);
-            endTime = RandomFloat(this.endTime_min, this.endTime_max);
+            rate = RandomFloat(this.#rateMin, this.#rateMax);
+            startTime = RandomFloat(this.#startTimeMin, this.#startTimeMax);
+            endTime = RandomFloat(this.#endTimeMin, this.#endTimeMax);
             particle.context.set(this, { r: rate, s: startTime, e: endTime });
         }
         else {
@@ -62789,12 +62896,12 @@ class RampScalarLinear extends Operator {
             startTime = context.s;
             endTime = context.e;
         }
-        const particleTime = this.proportionalOp ? particle.proportionOfLife : particle.currentTime;
+        const particleTime = this.#proportionalOp ? particle.proportionOfLife : particle.currentTime;
         if (particleTime < startTime || particleTime > endTime) {
             return;
         }
-        const value = particle.getField(this.field) + rate * elapsedTime;
-        particle.setField(this.field, value);
+        const value = particle.getField(this.#field) + rate * elapsedTime;
+        particle.setField(this.#field, value);
     }
 }
 RegisterSource2ParticleOperator('C_OP_RampScalarLinear', RampScalarLinear);
@@ -63258,24 +63365,25 @@ RegisterSource2ParticleOperator('C_OP_SetControlPointsToModelParticles', SetCont
 
 const center$1 = vec3.create();
 class SetControlPointToCenter extends Operator {
-    cp1 = 1;
-    cp1Pos = vec3.create();
+    #cp1 = 1;
+    #cp1Pos = vec3.create();
     _paramChanged(paramName, param) {
         switch (paramName) {
-            case 'm_nCP1':
-                this.cp1 = (param);
+            case 'm_nCP1': // TODO: mutualize thsi parameter ?
+                this.#cp1 = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_vecCP1Pos':
-                vec3.copy(this.cp1Pos, param);
+                console.error('do this param', paramName, param);
+                vec3.copy(this.#cp1Pos, param);
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         this.system.getBoundsCenter(center$1);
-        vec3.add(center$1, center$1, this.cp1Pos);
-        this.system.getOwnControlPoint(this.cp1).position = center$1;
+        vec3.add(center$1, center$1, this.#cp1Pos);
+        this.system.getOwnControlPoint(this.#cp1).position = center$1;
     }
     isPreEmission() {
         return true;
@@ -63338,23 +63446,24 @@ RegisterSource2ParticleOperator('C_OP_SetCPOrientationToGroundNormal', SetCPOrie
 
 class SetFloat extends Operator {
     normalizePerLiving = true;
-    outputField = PARTICLE_FIELD_RADIUS;
-    setMethod = 'PARTICLE_SET_VALUE';
+    outputField = PARTICLE_FIELD_RADIUS; //TODO: not sure about the default field
+    setMethod = 'PARTICLE_SET_VALUE'; // TODO: create a const
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_InputValue':
+                // used in dooperate
                 break;
-            case 'm_nOutputField':
-                this.outputField = (param);
+            case 'm_nOutputField': // TODO: mutualize param ?
+                this.outputField = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
                 break;
             case 'm_nSetMethod':
-                this.setMethod = param;
+                this.setMethod = param.getValueAsString() ?? 'PARTICLE_SET_VALUE';
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         //TODO: use lerp
         const value = this.getParamScalarValue('m_InputValue', particle);
         //TODO: use setMethod
@@ -64000,6 +64109,11 @@ class RenderBase extends Operator {
             case 'm_bMod2X':
                 this.#setOutputBlendMode('PARTICLE_OUTPUT_BLEND_MODE_MOD2X');
                 break;
+            /*
+        case 'm_flRadiusScale':
+            this.radiusScale = param.getValueAsNumber() ?? 1;
+            break;
+            */
             default:
                 super._paramChanged(paramName, param);
         }
@@ -64359,7 +64473,9 @@ class RenderSprites extends RenderBase {
     geometry = new BufferGeometry();
     #minSize = 0.0;
     #maxSize = DEFAULT_MAX_SIZE;
+    #saturateColorPreAlphaBlend = false; //TODO: check default value
     #maxParticles = 0;
+    #feathering = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';
     texture = TextureManager.createTexture();
     imgData; //TODO: set private ?
     constructor(system) {
@@ -64389,6 +64505,18 @@ class RenderSprites extends RenderBase {
             case 'm_flMaxSize':
                 this.#maxSize = (param.getValueAsNumber() ?? DEFAULT_MAX_SIZE) * 200.; //TODO: use the actual screen size
                 break;
+            case 'm_bSaturateColorPreAlphaBlend':
+                this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? false;
+                break;
+            case 'm_nFeatheringMode':
+                this.#feathering = param.getValueAsString() ?? 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED'; // TODO: check default value
+                break;
+            case 'm_flRadiusScale': // TODO: mutualize ?
+            case 'm_flAlphaScale': // TODO: mutualize ?
+            case 'm_flOverbrightFactor': // TODO: mutualize ?
+            case 'm_flRefractAmount':
+                // used in updateParticles
+                break;
             default:
                 super._paramChanged(paramName, param);
         }
@@ -64405,6 +64533,7 @@ class RenderSprites extends RenderBase {
         }
     }
     updateParticles(particleSystem, particleList, elapsedTime) {
+        // TODO: use m_flRefractAmount
         const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
         const rate = this.getParameter('animation rate');
         const useAnimRate = this.getParameter('use animation rate as FPS');
@@ -64540,6 +64669,7 @@ class RenderSprites extends RenderBase {
         const a = this.imgData;
         let index = 0;
         const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
+        const radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
         for (const particle of particleList) { //TODOv3
             /*let pose = bone.boneMat;
             for (let k = 0; k < 16; ++k) {
@@ -64553,7 +64683,7 @@ class RenderSprites extends RenderBase {
             a[index++] = particle.color[1];
             a[index++] = particle.color[2];
             a[index++] = particle.alpha * alphaScale;
-            a[index++] = clamp(particle.radius, this.#minSize, this.#maxSize);
+            a[index++] = clamp(particle.radius * radiusScale, this.#minSize, this.#maxSize);
             index++;
             a[index++] = particle.rotationRoll;
             a[index++] = particle.rotationYaw;
@@ -68055,4 +68185,4 @@ class RenderTargetViewer {
     }
 }
 
-export { ATTRIBUTE_CHANGED, Add, AddVectorToVector, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTF, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { ATTRIBUTE_CHANGED, Add, AddVectorToVector, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTF, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };

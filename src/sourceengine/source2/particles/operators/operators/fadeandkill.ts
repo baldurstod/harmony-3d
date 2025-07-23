@@ -1,54 +1,60 @@
 import { SimpleSplineRemapValWithDeltasClamped } from '../../../../common/math/sse';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+const DEFAULT_END_FADE_IN_TIME = 0.5;
+
 export class FadeAndKill extends Operator {
-	startAlpha = 1;
-	startFadeInTime = 0;
-	endFadeInTime = 0.5;
-	startFadeOutTime = 0.5;
-	endFadeOutTime = 1.0;
-	endAlpha = 0;
-	forcePreserveParticleOrder = false;
+	#startAlpha = 1;
+	#startFadeInTime = 0;
+	#endFadeInTime = DEFAULT_END_FADE_IN_TIME;
+	#startFadeOutTime = DEFAULT_END_FADE_IN_TIME;
+	#endFadeOutTime = 1.0;
+	#endAlpha = 0;
+	#forcePreserveParticleOrder = false;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flStartAlpha':
-				this.startAlpha = param;
+				console.error('do this param', paramName, param);
+				this.#startAlpha = param;
 				break;
 			case 'm_flStartFadeInTime':
-				this.startFadeInTime = param;
+				this.#startFadeInTime = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_flEndFadeInTime':
-				this.endFadeInTime = param;
+				this.#endFadeInTime = param.getValueAsNumber() ?? DEFAULT_END_FADE_IN_TIME;
 				break;
 			case 'm_flStartFadeOutTime':
-				this.startFadeOutTime = param;
+				this.#startFadeOutTime = param.getValueAsNumber() ?? DEFAULT_END_FADE_IN_TIME;
 				break;
 			case 'm_flEndFadeOutTime':
-				this.endFadeOutTime = param;
+				this.#endFadeOutTime = param.getValueAsNumber() ?? 1;
 				break;
 			case 'm_flEndAlpha':
-				this.endAlpha = param;
+				console.error('do this param', paramName, param);
+				this.#endAlpha = param;
 				break;
 			case 'm_bForcePreserveParticleOrder':
-				this.forcePreserveParticleOrder = param;
+				console.error('do this param', paramName, param);
+				this.#forcePreserveParticleOrder = param;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//TODO:use forcePreserveParticleOrder
-		const startAlpha = this.startAlpha;
-		const endAlpha = this.endAlpha;
+		const startAlpha = this.#startAlpha;
+		const endAlpha = this.#endAlpha;
 
-		const startFadeInTime = this.startFadeInTime;
-		const endFadeInTime = this.endFadeInTime;
-		const startFadeOutTime = this.startFadeOutTime;
-		const endFadeOutTime = this.endFadeOutTime;
+		const startFadeInTime = this.#startFadeInTime;
+		const endFadeInTime = this.#endFadeInTime;
+		const startFadeOutTime = this.#startFadeOutTime;
+		const endFadeOutTime = this.#endFadeOutTime;
 
 		const alpha = 1.0;
 
@@ -60,8 +66,7 @@ export class FadeAndKill extends Operator {
 		const fl4OOFadeOutDuration = 1.0 / fl4FadeOutDuration;
 
 		let fl4Goal, fl4NewAlpha;
-		switch (true)
-		{
+		switch (true) {
 			case proportionOfLife <= startFadeInTime:
 				break;
 			case proportionOfLife < endFadeInTime:

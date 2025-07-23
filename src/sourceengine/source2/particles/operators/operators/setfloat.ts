@@ -1,29 +1,31 @@
 import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class SetFloat extends Operator {
 	normalizePerLiving = true;
-	outputField = PARTICLE_FIELD_RADIUS;
-	setMethod = 'PARTICLE_SET_VALUE';
+	outputField = PARTICLE_FIELD_RADIUS;//TODO: not sure about the default field
+	setMethod = 'PARTICLE_SET_VALUE';// TODO: create a const
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_InputValue':
+				// used in dooperate
 				break;
-			case 'm_nOutputField':
-				this.outputField = (param);
+			case 'm_nOutputField':// TODO: mutualize param ?
+				this.outputField = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
 				break;
 			case 'm_nSetMethod':
-				this.setMethod = param;
+				this.setMethod = param.getValueAsString() ?? 'PARTICLE_SET_VALUE';
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//TODO: use lerp
 		const value = this.getParamScalarValue('m_InputValue', particle);
 		//TODO: use setMethod

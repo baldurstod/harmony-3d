@@ -60,6 +60,11 @@ export class RenderBase extends Operator {
 			case 'm_bMod2X':
 				this.#setOutputBlendMode('PARTICLE_OUTPUT_BLEND_MODE_MOD2X');
 				break;
+				/*
+			case 'm_flRadiusScale':
+				this.radiusScale = param.getValueAsNumber() ?? 1;
+				break;
+				*/
 			default:
 				super._paramChanged(paramName, param);
 		}

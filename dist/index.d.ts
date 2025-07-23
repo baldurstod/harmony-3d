@@ -163,7 +163,7 @@ export declare class ApplySticker extends Node_2 {
 export declare class AttractToControlPoint extends Operator {
     #private;
     _paramChanged(paramName: string, param: OperatorParam): void;
-    doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
+    doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
 }
 
 export declare const ATTRIBUTE_CHANGED = "attributechanged";
@@ -1271,7 +1271,7 @@ declare class Choreography {
 
      export declare class CPVelocityForce extends Operator {
          _paramChanged(paramName: string, param: OperatorParam): void;
-         doForce(particle: any, elapsedTime: any, accumulatedForces: any, strength?: number): void;
+         doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
      }
 
      export declare class CreateFromParentParticles extends Operator {
@@ -1285,17 +1285,9 @@ declare class Choreography {
      }
 
      export declare class CreateOnModel extends Operator {
-         forceInModel: number;
-         desiredHitbox: number;
-         hitboxValueFromControlPointIndex: number;
-         boneVelocity: number;
-         maxBoneVelocity: number;
-         directionBias: vec3;
-         hitboxSetName: string;
-         localCoords: boolean;
-         useBones: boolean;
+         #private;
          _paramChanged(paramName: string, param: OperatorParam): void;
-         doInit(particle: any, elapsedTime: any): void;
+         doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
      }
 
      export declare class CreateSequentialPath extends Operator {
@@ -2086,15 +2078,9 @@ declare class Choreography {
          }
 
          export declare class FadeAndKill extends Operator {
-             startAlpha: number;
-             startFadeInTime: number;
-             endFadeInTime: number;
-             startFadeOutTime: number;
-             endFadeOutTime: number;
-             endAlpha: number;
-             forcePreserveParticleOrder: boolean;
+             #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
          export declare class FadeIn extends Operator {
@@ -3650,9 +3636,9 @@ declare class Choreography {
          }
 
          export declare class MaintainEmitter extends Operator {
-             particlesToMaintain: number;
+             #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doEmit(elapsedTime: any): void;
+             doEmit(elapsedTime: number): void;
          }
 
          export declare class MaintainSequentialPath extends Operator {
@@ -4784,23 +4770,9 @@ declare class Choreography {
          }
 
          export declare class NoiseEmitter extends Operator {
-             emissionDuration: number;
-             startTime: number;
-             scaleControlPoint: number;
-             scaleControlPointField: number;
-             worldNoisePoint: number;
-             absVal: boolean;
-             absValInv: boolean;
-             offset: number;
-             outputMin: number;
-             outputMax: number;
-             noiseScale: number;
-             worldNoiseScale: number;
-             offsetLoc: vec3;
-             worldTimeScale: number;
-             remainder: number;
+             #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doEmit(elapsedTime: any): void;
+             doEmit(elapsedTime: number): void;
          }
 
          export declare class NormalAlignToCP extends Operator {
@@ -4915,7 +4887,7 @@ declare class Choreography {
              doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
              doEmit(elapsedTime: number): void;
              doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void;
-             doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
+             doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
              applyConstraint(particle: Source2Particle): void;
              doRender(particle: Source2Particle, elapsedTime: number, material: Source2Material): void;
              initRenderer(particleSystem: Source2ParticleSystem): void;
@@ -4930,11 +4902,15 @@ declare class Choreography {
              getValueAsNumber(): number | null | undefined;
              getValueAsString(): string | null;
              getValueAsArray(): OperatorParamValueType[] | null;
+             getValueAsVec2(out: vec2): vec2 | null;
              getValueAsVec3(out: vec3): vec3 | null;
              getValueAsVec4(out: vec4): vec4 | null;
              getSubValue(name: string): OperatorParam | null | undefined;
              getSubValueAsBool(name: string): boolean | null | undefined;
              getSubValueAsNumber(name: string): number | null | undefined;
+             getSubValueAsString(name: string): string | null | undefined;
+             getSubValueAsArray(name: string): OperatorParamValueType[] | null | undefined;
+             getSubValueAsVec2(name: string, out: vec2): vec2 | null | undefined;
              static fromKv3(kv3: Kv3Element | Kv3Value | null): OperatorParam;
          }
 
@@ -5438,10 +5414,9 @@ declare class Choreography {
          }
 
          export declare class PositionOffset extends Operator {
-             localCoords: boolean;
-             proportional: boolean;
+             #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
              initMultipleOverride(): boolean;
          }
 
@@ -5615,16 +5590,9 @@ declare class Choreography {
          export declare function radToDeg(rad: number): number;
 
          export declare class RampScalarLinear extends Operator {
-             rateMin: number;
-             rateMax: number;
-             startTime_min: number;
-             startTime_max: number;
-             endTime_min: number;
-             endTime_max: number;
-             field: number;
-             proportionalOp: boolean;
+             #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void;
          }
 
          export declare class RampScalarLinearSimple extends Operator {
@@ -6622,10 +6590,9 @@ declare class Choreography {
          }
 
          export declare class SetControlPointToCenter extends Operator {
-             cp1: number;
-             cp1Pos: vec3;
+             #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
              isPreEmission(): boolean;
          }
 
@@ -6657,7 +6624,7 @@ declare class Choreography {
              outputField: number;
              setMethod: string;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
          export declare class SetParentControlPointsToChildCP extends Operator {
@@ -7450,17 +7417,9 @@ declare class Choreography {
          }
 
          export declare class Source2LockToBone extends Operator {
-             hitboxSetName: string;
-             lifeTimeFadeStart: number;
-             lifeTimeFadeEnd: number;
-             jumpThreshold: number;
-             prevPosScale: number;
-             rigid: boolean;
-             useBones: boolean;
-             rotationSetType: any;
-             rigidRotationLock: boolean;
+             #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void;
          }
 
          export declare class Source2Material extends Material {
@@ -7890,7 +7849,7 @@ declare class Choreography {
              emitters: Operator[];
              initializers: Operator[];
              operators: Operator[];
-             forces: any[];
+             forces: Operator[];
              constraints: Operator[];
              renderers: Operator[];
              controlPoints: ControlPoint[];
@@ -8048,7 +8007,7 @@ declare class Choreography {
              minForce: vec3;
              maxForce: vec3;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doForce(particle: any, elapsedTime: any, accumulatedForces: any): void;
+             doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
          }
 
          declare class Source2SeqGroup {

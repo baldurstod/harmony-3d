@@ -38,6 +38,15 @@ export function GetSource2ParticleOperator(operatorName: string): typeof Operato
 		case 'C_OP_SetControlPointsToModelParticles':
 		case 'C_INIT_InitialVelocityNoise':
 		case 'C_OP_RenderRopes':
+		case 'C_OP_FadeAndKill':
+		case 'C_OP_SetControlPointToCenter':
+		case 'C_OP_MaintainEmitter':
+		case 'C_INIT_CreateOnModel':
+		case 'C_INIT_PositionOffset':
+		case 'C_OP_LockToBone':
+		case 'C_OP_RampScalarLinear':
+		case 'C_OP_SetFloat':
+		case 'C_OP_NoiseEmitter':
 			break;
 		default:
 			console.warn('do operator ', operatorName);

@@ -1,3 +1,5 @@
+import { vec3 } from 'gl-matrix';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -13,7 +15,7 @@ export class CPVelocityForce extends Operator {
 		}
 	}
 
-	doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
+	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void {
 		const scale = this.getParamScalarValue('m_flScale') ?? 1;
 		//TODO
 	}
