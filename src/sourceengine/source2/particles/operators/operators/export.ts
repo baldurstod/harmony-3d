@@ -1,4 +1,5 @@
 export { BasicMovement } from './basicmovement';
+export { ClampScalar } from './clampscalar';
 export { ColorInterpolate } from './colorinterpolate';
 export { DampenToCP } from './dampentocp';
 export { DistanceBetweenCPs } from './distancebetweencps';
