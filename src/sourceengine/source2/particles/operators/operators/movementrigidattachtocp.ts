@@ -3,39 +3,46 @@ import { PARTICLE_FIELD_POSITION, PARTICLE_FIELD_POSITION_PREVIOUS } from '../..
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2Particle } from '../../source2particle';
 
 //const tempMat4 = mat4.create();
 const tempPrevPos = vec3.create();
 const tempPos = vec3.create();
 const v = vec3.create();
 
+const DEFAULT_SCALE_CONTROL_POINT = -1;// TODO: check default value
+const DEFAULT_SCALE_CP_FIELD = 0;// TODO: check default value
+const DEFAULT_FIELD_INPUT = PARTICLE_FIELD_POSITION_PREVIOUS;// TODO: check default value
+const DEFAULT_FIELD_OUTPUT = PARTICLE_FIELD_POSITION;// TODO: check default value
+const DEFAULT_OFFSET_LOCAL = true;// TODO: check default value
+
 export class MovementRigidAttachToCP extends Operator {
-	scaleControlPoint = -1;
-	scaleCPField = 0;//-1: disabled, 0: X, 1: Y, 2 :Z
-	fieldInput = PARTICLE_FIELD_POSITION_PREVIOUS;
-	#fieldOutput = PARTICLE_FIELD_POSITION;
-	offsetLocal = true;
-	constructor(system) {
-		super(system);
-	}
+	#scaleControlPoint = DEFAULT_SCALE_CONTROL_POINT;
+	#scaleCPField = DEFAULT_SCALE_CP_FIELD;//-1: disabled, 0: X, 1: Y, 2 :Z
+	#fieldInput = DEFAULT_FIELD_INPUT;
+	#fieldOutput = DEFAULT_FIELD_OUTPUT;
+	#offsetLocal = DEFAULT_OFFSET_LOCAL;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nScaleControlPoint':
-				this.scaleControlPoint = (param);
+				console.error('do this param', paramName, param);
+				this.#scaleControlPoint = (param);
 				break;
 			case 'm_nScaleCPField':
-				this.scaleCPField = (param);
+				console.error('do this param', paramName, param);
+				this.#scaleCPField = (param);
 				break;
 			case 'm_bOffsetLocal':
-				this.offsetLocal = param;
+				console.error('do this param', paramName, param);
+				this.#offsetLocal = param;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//TODO: use scale cp and other parameters
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
@@ -79,8 +86,8 @@ export class MovementRigidAttachToCP extends Operator {
 			//vec3.transformMat4(particle.position, particle.position, delta);
 			//vec3.transformMat4(particle.prevPosition, particle.prevPosition, delta);
 
-			vec3.transformMat4(v, particle.getField(this.fieldInput), delta);
-			particle.setField(this.fieldInput, v);
+			vec3.transformMat4(v, particle.getField(this.#fieldInput) as vec3, delta);
+			particle.setField(this.#fieldInput, v);
 			particle.setField(this.#fieldOutput, v);
 
 		}

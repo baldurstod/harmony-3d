@@ -28,16 +28,24 @@ const SEQUENCE_SAMPLE_COUNT = 1;//TODO
 
 const tempVec2 = vec2.create();
 
+const DEFAULT_ANIMATION_RATE = 1;// TODO: check default value
+const DEFAULT_VERT_CROP_FIELD = 1;// TODO: check default value
+const DEFAULT_TAIL_ALPHA_SCALE = 1;// TODO: check default value
+const DEFAULT_IGNORE_DT = false;// TODO: check default value
+
 export class RenderTrails extends RenderBase {
 	geometry: BufferGeometry;
 	minLength = 0;
 	maxLength = 2000;
 	lengthFadeInTime = 0;
-	ignoreDT = false;
+	#ignoreDT = DEFAULT_IGNORE_DT;
 	lengthScale = 1;
 	#maxParticles = 1000;//TODO: default value
 	texture?: Texture;//TODO: set private ?
 	imgData?: Float32Array;//TODO: set private ?
+	#animationRate = DEFAULT_ANIMATION_RATE;
+	#vertCropField = DEFAULT_VERT_CROP_FIELD;
+	#tailAlphaScale = DEFAULT_TAIL_ALPHA_SCALE;
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
@@ -56,29 +64,45 @@ export class RenderTrails extends RenderBase {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case OPERATOR_PARAM_TEXTURE:
+				console.error('do this param', paramName, param);
 				this.setTexture(param);
 				break;
 			/*case 'm_nSequenceCombineMode':
 				this.setSequenceCombineMode(value);
 				break;*/
 			case 'm_flMinLength':
+
+				console.error('do this param', paramName, param);
 				this.minLength = param;
 				break;
 			case 'm_flMaxLength':
+				console.error('do this param', paramName, param);
 				this.maxLength = param;
 				break;
 			case 'm_flLengthFadeInTime':
+				console.error('do this param', paramName, param);
 				this.lengthFadeInTime = param;
 				break;
 			case 'm_bIgnoreDT':
-				this.ignoreDT = param;
+				this.#ignoreDT = param.getValueAsBool() ?? DEFAULT_IGNORE_DT;
 				break;
 			case 'm_flRadiusScale':
 			case 'm_flFinalTextureScaleU':
 			case 'm_flFinalTextureScaleV':
+			case 'm_flOverbrightFactor':// TODO: mutualize ?
 				break;
 			case 'm_flLengthScale':
+				console.error('do this param', paramName, param);
 				this.lengthScale = param;
+				break;
+			case 'm_flAnimationRate':
+				this.#animationRate = param.getValueAsNumber() ?? DEFAULT_ANIMATION_RATE;
+				break;
+			case 'm_nVertCropField':
+				this.#vertCropField = param.getValueAsNumber() ?? DEFAULT_VERT_CROP_FIELD;
+				break;
+			case 'm_flTailAlphaScale':
+				this.#tailAlphaScale = param.getValueAsNumber() ?? DEFAULT_TAIL_ALPHA_SCALE;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -98,6 +122,8 @@ export class RenderTrails extends RenderBase {
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {
+		// TODO: use animationRate, vertCropField, m_flTailAlphaScale
+		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
@@ -264,7 +290,7 @@ export class RenderTrails extends RenderBase {
 		let index = 0;
 
 		let flOODt;
-		if (this.ignoreDT) {
+		if (this.#ignoreDT) {
 			flOODt = 1;
 		} else {
 			flOODt = (elapsedTime != 0.0) ? (1.0 / elapsedTime) : 1.0;

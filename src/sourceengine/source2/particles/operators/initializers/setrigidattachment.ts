@@ -10,7 +10,7 @@ const v = vec3.create();
 export class SetRigidAttachment extends Operator {
 	localSpace = true;
 	#fieldOutput = PARTICLE_FIELD_POSITION_PREVIOUS;
-	fieldInput = PARTICLE_FIELD_POSITION;
+	#fieldInput = PARTICLE_FIELD_POSITION;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -27,7 +27,7 @@ export class SetRigidAttachment extends Operator {
 		if (!this.localSpace) {
 			throw 'code me';
 		}
-		vec3.sub(v, particle.getField(this.fieldInput), this.system.getControlPoint(this.controlPointNumber).currentWorldPosition);
+		vec3.sub(v, particle.getField(this.#fieldInput), this.system.getControlPoint(this.controlPointNumber).currentWorldPosition);
 		particle.setField(this.#fieldOutput, v);
 	}
 }

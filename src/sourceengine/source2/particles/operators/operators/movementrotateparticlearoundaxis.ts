@@ -7,7 +7,7 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 const m4 = mat4.create();
 const q = quat.create();
 const v = vec3.create();
-const a = vec4.create();
+const movementRotateParticleAroundAxisTempVec4 = vec4.create();
 
 const DEFAULT_AXIS = vec3.fromValues(0, 0, 1);
 
@@ -32,7 +32,7 @@ export class MovementRotateParticleAroundAxis extends Operator {
 	}
 
 	doOperate(particle, elapsedTime) {
-		const axis = vec3.normalize(a as vec3, this.getParamVectorValue('m_vecRotAxis', particle, a) ?? DEFAULT_AXIS);
+		const axis = vec3.normalize(movementRotateParticleAroundAxisTempVec4 as vec3, this.getParamVectorValue(movementRotateParticleAroundAxisTempVec4, 'm_vecRotAxis', particle) as vec3 ?? DEFAULT_AXIS);
 		const rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
 
 		const cp = this.system.getControlPoint(this.controlPointNumber);

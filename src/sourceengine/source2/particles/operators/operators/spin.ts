@@ -1,34 +1,39 @@
 import { DEG_TO_RAD, TWO_PI } from '../../../../../math/constants';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+const DEFAULT_SPIN_RATE = 0;// TODO: check default value
+const DEFAULT_SPIN_RATE_MIN = 0;// TODO: check default value
+const DEFAULT_SPIN_RATE_STOP_TIME = 0;// TODO: check default value
+
 export class Spin extends Operator {
-	spinRateDegrees = 0;
-	spinRateMinDegrees = 0;
-	spinRateStopTime = 0;
+	#spinRateDegrees = DEFAULT_SPIN_RATE;
+	#spinRateMinDegrees = DEFAULT_SPIN_RATE_MIN;
+	#spinRateStopTime = DEFAULT_SPIN_RATE_STOP_TIME;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nSpinRateDegrees':
-				this.spinRateDegrees = (param);
+				this.#spinRateDegrees = param.getValueAsNumber() ?? DEFAULT_SPIN_RATE;
 				break;
 			case 'm_nSpinRateMinDegrees':
-				this.spinRateMinDegrees = (param);
+				this.#spinRateMinDegrees = param.getValueAsNumber() ?? DEFAULT_SPIN_RATE_MIN;
 				break;
 			case 'm_fSpinRateStopTime':
-				this.spinRateStopTime = param;
+				this.#spinRateStopTime = param.getValueAsNumber() ?? DEFAULT_SPIN_RATE_STOP_TIME;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle , elapsedTime: number, strength: number): void {
 		//particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
-		const m_fSpinRateStopTime = this.spinRateStopTime;
-		const m_fSpinRateRadians = (this.spinRateDegrees) * DEG_TO_RAD;
-		const m_fSpinRateMinRadians = (this.spinRateMinDegrees) * DEG_TO_RAD;
+		const m_fSpinRateStopTime = this.#spinRateStopTime;
+		const m_fSpinRateRadians = (this.#spinRateDegrees) * DEG_TO_RAD;//TODO: optimize
+		const m_fSpinRateMinRadians = (this.#spinRateMinDegrees) * DEG_TO_RAD;//TODO: optimize
 		const fCurSpinRate = m_fSpinRateRadians /* * flStrength*/;//TODO
 
 		if (fCurSpinRate == 0.0) {

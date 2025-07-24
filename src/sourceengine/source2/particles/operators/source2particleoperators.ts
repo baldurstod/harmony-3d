@@ -54,6 +54,24 @@ export function GetSource2ParticleOperator(operatorName: string): typeof Operato
 		case 'C_OP_OscillateVector':
 		case 'C_OP_DampenToCP':
 		case 'C_OP_RampScalarSpline':
+		case 'C_OP_SetSingleControlPointPosition':
+		case 'C_OP_SetControlPointOrientation':
+		case 'C_OP_SetParentControlPointsToChildCP':
+		case 'C_INIT_InitVec':
+		case 'C_OP_Noise':
+		case 'C_OP_Spin':
+		case 'C_OP_SetControlPointFromObjectScale':
+		case 'C_INIT_InitFromCPSnapshot':
+		case 'C_INIT_PositionWarp':
+		case 'C_OP_MovementRigidAttachToCP':
+		case 'C_INIT_CreateFromParentParticles':
+		case 'C_OP_RemapControlPointDirectionToVector':
+		case 'C_OP_RenderTrails':
+		case 'C_OP_OscillateScalar':
+		case 'C_OP_RemapSpeed':
+		case 'C_OP_RemapSpeedtoCP':
+		case 'C_INIT_CreateOnModelAtHeight':
+		case 'C_OP_LerpEndCapScalar':
 			break;
 		default:
 			console.warn('do operator ', operatorName);

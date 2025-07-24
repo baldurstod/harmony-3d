@@ -11,7 +11,7 @@ const vb = vec3.create();
 
 export class AddVectorToVector extends Operator {
 	#fieldOutput = PARTICLE_FIELD_POSITION;
-	fieldInput = PARTICLE_FIELD_POSITION;
+	#fieldInput = PARTICLE_FIELD_POSITION;
 	scale = vec3.fromValues(1, 1, 1);
 	offsetMin = vec3.create();
 	offsetMax = vec3.fromValues(1, 1, 1);
@@ -33,7 +33,7 @@ export class AddVectorToVector extends Operator {
 	}
 
 	doInit(particle, elapsedTime) {
-		vec3.copy(va, particle.getField(this.fieldInput));
+		vec3.copy(va, particle.getField(this.#fieldInput));
 		vec3RandomBox(vb, this.offsetMin, this.offsetMax);
 
 		va[0] = (va[0] * (1 + this.scale[0]) + vb[0]) * 0.5;

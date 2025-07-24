@@ -36,8 +36,8 @@ export class PositionOffset extends Operator {
 
 	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		// TODO: use m_bProportional
-		const offsetMin = this.getParamVectorValue('m_OffsetMin', particle, this.#offsetMin) ?? DEFAULT_OFFSET;
-		const offsetMax = this.getParamVectorValue('m_OffsetMax', particle, this.#offsetMax) ?? DEFAULT_OFFSET;
+		const offsetMin = this.getParamVectorValue(this.#offsetMin, 'm_OffsetMin', particle) ?? DEFAULT_OFFSET;
+		const offsetMax = this.getParamVectorValue(this.#offsetMax, 'm_OffsetMax', particle) ?? DEFAULT_OFFSET;
 
 		vec3RandomBox(offset, offsetMin as vec3, offsetMax as vec3);
 

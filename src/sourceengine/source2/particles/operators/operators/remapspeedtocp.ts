@@ -1,5 +1,3 @@
-import { RemapValClamped, lerp } from '../../../../../math/functions';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
@@ -9,12 +7,14 @@ const DEFAULT_INPUT_MIN = 0;// TODO: check default value
 const DEFAULT_INPUT_MAX = 1;// TODO: check default value
 const DEFAULT_OUTPUT_MIN = 0;// TODO: check default value
 const DEFAULT_OUTPUT_MAX = 1;// TODO: check default value
+const DEFAULT_OUT_CONTROL_POINT_NUMBER = 1;// TODO: check default value
 
 export class RemapSpeedtoCP extends Operator {
 	#inputMin = DEFAULT_INPUT_MIN;
 	#inputMax = DEFAULT_INPUT_MAX;
 	#outputMin = DEFAULT_OUTPUT_MIN;
 	#outputMax = DEFAULT_OUTPUT_MAX;
+	#outControlPointNumber = DEFAULT_OUT_CONTROL_POINT_NUMBER;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -29,6 +29,9 @@ export class RemapSpeedtoCP extends Operator {
 				break;
 			case 'm_flOutputMax':
 				this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX;
+				break;
+			case 'm_nOutControlPointNumber':
+				this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUT_CONTROL_POINT_NUMBER;
 				break;
 			default:
 				super._paramChanged(paramName, param);

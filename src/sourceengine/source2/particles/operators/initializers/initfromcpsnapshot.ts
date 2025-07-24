@@ -5,6 +5,7 @@ import { ATTRIBUTE_NAME_PER_FIELD } from '../../particleconstants';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2Particle } from '../../source2particle';
 
 /*
 export const PARTICLE_FIELD_LIFETIME = 1;
@@ -43,77 +44,90 @@ export const PARTICLE_FIELD_SHADER_EXTRA_DATA_2 = 40;
 */
 const v = vec3.create();
 
+const DEFAULT_ATTRIBUTE_TO_READ = -1;// TODO: check default value
+const DEFAULT_ATTRIBUTE_TO_WRITE = PARTICLE_FIELD_POSITION;// TODO: check default value
+const DEFAULT_LOCAL_SPACE_CP = 0;// TODO: check default value
+const DEFAULT_RANDOM = false;// TODO: check default value
+const DEFAULT_REVERSE = false;// TODO: check default value
+const DEFAULT_RANDOM_SEED = 0;// TODO: check default value
+const DEFAULT_LOCAL_SPACE_ANGLES = false;// TODO: check default value
+
 export class InitFromCPSnapshot extends Operator {
-	attributeToRead = -1;
-	attributeToWrite = PARTICLE_FIELD_POSITION;
-	localSpaceCP = 0;
-	random = false;
-	reverse = false;
-	randomSeed = 0;
-	localSpaceAngles = false;
+	#attributeToRead = DEFAULT_ATTRIBUTE_TO_READ;
+	#attributeToWrite = DEFAULT_ATTRIBUTE_TO_WRITE;
+	#localSpaceCP = DEFAULT_LOCAL_SPACE_CP;
+	#random = DEFAULT_RANDOM;
+	#reverse = DEFAULT_REVERSE;
+	#randomSeed = DEFAULT_RANDOM_SEED;
+	#localSpaceAngles = DEFAULT_LOCAL_SPACE_ANGLES;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nAttributeToRead':
-				this.attributeToRead = (param);
+				this.#attributeToRead = param.getValueAsNumber() ?? DEFAULT_ATTRIBUTE_TO_READ;
 				break;
 			case 'm_nAttributeToWrite':
-				this.attributeToWrite = (param);
+				console.error('do this param', paramName, param);
+				this.#attributeToWrite = (param);
 				break;
 			case 'm_nLocalSpaceCP':
-				this.localSpaceCP = (param);
+				this.#localSpaceCP = param.getValueAsNumber() ?? DEFAULT_LOCAL_SPACE_CP;
 				break;
 			case 'm_bRandom':
-				this.random = param;
+				console.error('do this param', paramName, param);
+				this.#random = param;
 				break;
 			case 'm_bReverse':
-				this.reverse = param;
+				console.error('do this param', paramName, param);
+				this.#reverse = param;
 				break;
 			case 'm_nRandomSeed':
-				this.randomSeed = (param);
+				console.error('do this param', paramName, param);
+				this.#randomSeed = (param);
 				break;
 			case 'm_bLocalSpaceAngles':
-				this.localSpaceAngles = param;
+				console.error('do this param', paramName, param);
+				this.#localSpaceAngles = param;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doInit(particle, elapsedTime) {
-		if (this.attributeToRead == -1) {
+	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+		if (this.#attributeToRead == -1) {
 			return;
 		}
 
 		const system = this.system;
 		const snapshot = system.getControlPoint(this.controlPointNumber)?.snapshot;
 		if (snapshot) {
-			const attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.attributeToRead];
+			const attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.#attributeToRead];
 			if (TESTING && attributeToReadName === undefined) {
 				throw 'Unknown field';
 			}
 			const attributeToRead = snapshot.attributes[attributeToReadName];
 			if (attributeToRead) {
 				let id;
-				if (this.random) {
+				if (this.#random) {
 					id = (snapshot.particleCount * Math.random() << 0) % snapshot.particleCount;
 				} else {
 					id = (particle.id - 1) % snapshot.particleCount;
 				}
-				if (this.attributeToWrite == PARTICLE_FIELD_POSITION) {
-					const localSpaceCP = system.getControlPoint(this.localSpaceCP);
+				if (this.#attributeToWrite == PARTICLE_FIELD_POSITION) {
+					const localSpaceCP = system.getControlPoint(this.#localSpaceCP);
 					if (localSpaceCP) {
 						//TODO: check attributeToRead[id] is actually a vector
 						//TODO: only transform position when this.localSpaceAngles = true
-						if (true || this.localSpaceAngles) {
+						if (true || this.#localSpaceAngles) {
 							vec3.transformMat4(v, attributeToRead[id], localSpaceCP.currentWorldTransformation);
 						} else {
 							vec3.add(v, attributeToRead[id], localSpaceCP.currentWorldPosition);
 						}
-						particle.setInitialField(this.attributeToWrite, v);
+						particle.setInitialField(this.#attributeToWrite, v);
 					}
 				} else {
-					particle.setInitialField(this.attributeToWrite, attributeToRead[id]);
+					particle.setInitialField(this.#attributeToWrite, attributeToRead[id]);
 				}
 			}
 		}

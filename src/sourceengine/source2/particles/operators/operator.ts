@@ -49,7 +49,7 @@ export class Operator {//TODOv3: rename this class ?
 	normalizePerLiving = false;
 	disableOperator = false;
 	controlPointNumber = 0;
-	fieldInput = -1;
+	#fieldInput = -1;
 	protected fieldOutput = -1;
 	scaleCp?: number;
 	mesh?: Mesh;
@@ -255,7 +255,7 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 
-	getParamVectorValue(paramName: string, particle: Source2Particle, out: vec4): vec4 | undefined | null {
+	getParamVectorValue(out: vec4, paramName: string, particle?: Source2Particle): vec4 | undefined | null {
 		const parameter = this.#parameters[paramName];
 		if (!parameter) {
 			return undefined;
@@ -265,8 +265,11 @@ export class Operator {//TODOv3: rename this class ?
 		if (type) {
 			switch (type) {
 				case 'PVEC_TYPE_LITERAL':
+					console.error('do this param', paramName, parameter);
 					return parameter.m_vLiteralValue;
 					break;
+				case 'PVEC_TYPE_LITERAL_COLOR':
+					return parameter.getValueAsVec3(out as vec3) as vec4;
 				case 'PVEC_TYPE_PARTICLE_VECTOR':
 					if (!Operator.PVEC_TYPE_PARTICLE_VECTOR) {
 						Operator.PVEC_TYPE_PARTICLE_VECTOR = true;
@@ -297,7 +300,7 @@ export class Operator {//TODOv3: rename this class ?
 					//TODO
 					break;
 				default:
-					console.error('getParamVectorValue unknown type', parameter);
+					console.error('getParamVectorValue unknown type', type, parameter);
 					throw 'Code me'
 			}
 		} else {
@@ -392,10 +395,10 @@ export class Operator {//TODOv3: rename this class ?
 				break;
 			case 'm_nFieldInput':
 				console.error('do this param', paramName, param);
-				if (TESTING && this.fieldInput === undefined) {
+				if (TESTING && this.#fieldInput === undefined) {
 					throw 'this.fieldInput must have a default value';
 				}
-				this.fieldInput = (param);
+				this.#fieldInput = (param);
 				break;
 			case 'm_nFieldOutput': // TODO: check wether is it actually the same field
 			case 'm_nOutputField':

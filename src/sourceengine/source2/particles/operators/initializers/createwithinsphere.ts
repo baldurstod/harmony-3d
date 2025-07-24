@@ -47,9 +47,9 @@ export class CreateWithinSphere extends Operator {
 	}
 
 	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
-		const localCoordinateSystemSpeedMin = (this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin', particle, createWithinSphereSpeedMin) ?? DEFAULT_SPEED) as vec3;
-		const localCoordinateSystemSpeedMax = (this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax', particle, createWithinSphereSpeedMax) ?? DEFAULT_SPEED) as vec3;
-		const m_vecDistanceBias = (this.getParamVectorValue('m_vecDistanceBias', particle, createWithinSphereDistanceBias) ?? DEFAULT_DISTANCE_BIAS) as vec3;
+		const localCoordinateSystemSpeedMin = (this.getParamVectorValue(createWithinSphereSpeedMin, 'm_LocalCoordinateSystemSpeedMin', particle) ?? DEFAULT_SPEED) as vec3;
+		const localCoordinateSystemSpeedMax = (this.getParamVectorValue(createWithinSphereSpeedMax, 'm_LocalCoordinateSystemSpeedMax', particle) ?? DEFAULT_SPEED) as vec3;
+		const m_vecDistanceBias = (this.getParamVectorValue(createWithinSphereDistanceBias, 'm_vecDistanceBias', particle) ?? DEFAULT_DISTANCE_BIAS) as vec3;
 		const radiusMin = this.getParamScalarValue('m_fRadiusMin') ?? 0;
 		const radiusMax = this.getParamScalarValue('m_fRadiusMax') ?? 0;
 		const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;

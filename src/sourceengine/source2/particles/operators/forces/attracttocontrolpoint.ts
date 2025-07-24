@@ -19,7 +19,7 @@ export class AttractToControlPoint extends Operator {
 			case 'm_fForceAmount':
 			case 'm_fForceAmountMin':
 				break;
-			case 'm_vecComponentScale':// TODO: mutualise ?
+			case 'm_vecComponentScale':// TODO: mutualize ?
 				param.getValueAsVec3(this.#componentScale);
 				break;
 			case 'm_fFalloffPower':
