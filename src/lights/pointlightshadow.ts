@@ -1,18 +1,18 @@
 import { mat4, quat, vec3, vec4 } from 'gl-matrix';
-
-import { LightShadow } from './lightshadow';
 import { Camera } from '../cameras/camera';
+import { LightShadow } from './lightshadow';
+import { PointLight } from './pointlight';
 
 const worldPos = vec3.create();
 
 const cubeDirections = [
-	vec3.fromValues(1, 0, 0 ), vec3.fromValues(- 1, 0, 0 ), vec3.fromValues(0, 0, 1 ),
-	vec3.fromValues(0, 0, - 1 ), vec3.fromValues(0, 1, 0 ), vec3.fromValues(0, - 1, 0 )
+	vec3.fromValues(1, 0, 0), vec3.fromValues(- 1, 0, 0), vec3.fromValues(0, 0, 1),
+	vec3.fromValues(0, 0, - 1), vec3.fromValues(0, 1, 0), vec3.fromValues(0, - 1, 0)
 ];
 
 const cubeUps = [
-	vec3.fromValues(0, 1, 0 ), vec3.fromValues(0, 1, 0 ), vec3.fromValues(0, 1, 0 ),
-	vec3.fromValues(0, 1, 0 ), vec3.fromValues(0, 0, 1 ),	vec3.fromValues(0, 0, - 1 )
+	vec3.fromValues(0, 1, 0), vec3.fromValues(0, 1, 0), vec3.fromValues(0, 1, 0),
+	vec3.fromValues(0, 1, 0), vec3.fromValues(0, 0, 1), vec3.fromValues(0, 0, - 1)
 ];
 
 const S2 = Math.SQRT1_2;
@@ -27,8 +27,8 @@ const DIRECTIONS = [
 
 
 export class PointLightShadow extends LightShadow {
-	constructor(light) {
-		super(light, new Camera({nearPlane: 1, farPlane: 1000, verticalFov: 90}));//TODO: adjust default variables
+	constructor(light: PointLight) {
+		super(light, new Camera({ nearPlane: 1, farPlane: 1000, verticalFov: 90 }));//TODO: adjust default variables
 		this.range = this.light.range;
 		this.viewPorts = [
 			vec4.fromValues(0.5, 0.5, 0.25, 0.5),
@@ -47,11 +47,14 @@ export class PointLightShadow extends LightShadow {
 		this.viewPortsLength = 6;
 	}
 
-	computeShadowMatrix(mapIndex) {
+	computeShadowMatrix(mapIndex: number): void {
 		const shadowCamera = this.camera;
 		const shadowMatrix = this.shadowMatrix;
 
-		shadowCamera.setWorldQuaternion(DIRECTIONS[mapIndex]);
+		const direction = DIRECTIONS[mapIndex];
+		if (direction) {
+			shadowCamera.setWorldQuaternion(direction);
+		}
 		shadowCamera.dirty();
 
 		shadowCamera.getWorldPosition(worldPos);

@@ -1,7 +1,7 @@
 import { mat4, vec2, vec4 } from 'gl-matrix';
 
-import { RenderTarget } from '../textures/rendertarget';
 import { Camera } from '../cameras/camera';
+import { RenderTarget } from '../textures/rendertarget';
 import { Light } from './light';
 
 const tempMat4 = mat4.create();
@@ -40,7 +40,7 @@ export class LightShadow {
 		return this.#textureSize;
 	}
 
-	computeShadowMatrix(mapIndex) {
+	computeShadowMatrix(mapIndex: number): void {
 		const shadowCamera = this.camera;
 		const shadowMatrix = this.shadowMatrix;
 
