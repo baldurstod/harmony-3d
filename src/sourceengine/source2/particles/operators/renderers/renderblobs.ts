@@ -3,11 +3,11 @@ import { Metaballs } from '../../../../../primitives/metaballs';
 import { Source2SpriteCard } from '../../../materials/source2spritecard';
 import { Source2ParticleSystem } from '../../export';
 import { Source2Particle } from '../../source2particle';
-import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { RenderBase } from './renderbase';
 
-export class RenderBlobs extends Operator {
+export class RenderBlobs extends RenderBase {
 	#balls: Metaball[] = [];
 	#metaballs = new Metaballs();
 
@@ -58,14 +58,14 @@ export class RenderBlobs extends Operator {
 		const balls = [];
 
 		for (let i = 0; i < Math.min(particleList.length, 500); i++) {
-			const particle = particleList[i];
+			const particle = particleList[i]!;
 			let ball = this.#balls[i];
 			if (!ball) {
 				ball = new Metaball();
 				this.#balls.push(ball);
 			}
 			ball.setRadius(renderRadius);
-			ball.position = particle.position;
+			ball.setPosition(particle.position);
 
 			balls.push(ball);
 		}

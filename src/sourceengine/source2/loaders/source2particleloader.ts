@@ -80,11 +80,10 @@ function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Elem
 				system.baseProperties.snapshotControlPoint = systemDefinition.getValueAsNumber(key) ?? 0;// TODO: check default value
 				break;
 			case 'm_nInitialParticles':
-				system.initialParticles = systemDefinition.getValueAsNumber(key) ?? 0;
+				system.initialParticles = systemDefinition.getValueAsNumber(key) ?? 0;// TODO: check default value
 				break;
 			case 'm_flConstantRotationSpeed':
-				console.error('do this param', key, value);
-				system.baseProperties.rotationSpeedRoll = value;
+				system.baseProperties.rotationSpeedRoll = systemDefinition.getValueAsNumber(key) ?? 0;// TODO: check default value
 				break;
 			default:
 				switch (key) {

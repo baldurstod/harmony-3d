@@ -77,12 +77,10 @@ export class RenderSprites extends RenderBase {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case OPERATOR_PARAM_TEXTURE:
-				console.error('do this param', paramName, param);
-				this.setTexture(param);
+				this.setTexture(param.getValueAsString() ?? '');// TODO: check default value
 				break;
 			case 'm_nSequenceCombineMode':
-				console.error('do this param', paramName, param);
-				this.setSequenceCombineMode(param);
+				this.setSequenceCombineMode(param.getValueAsString() ?? '');// TODO: check default value
 				break;
 			case 'm_flMinSize':
 				this.#minSize = (param.getValueAsNumber() ?? 0) * 200.;//TODO: use the actual screen size

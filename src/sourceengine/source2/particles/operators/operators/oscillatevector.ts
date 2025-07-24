@@ -47,8 +47,7 @@ export class OscillateVector extends Operator {
 				param.getValueAsVec3(this.#frequencyMax);
 				break;
 			case 'm_nField':
-				console.error('do this param', paramName, param);
-				this.#field = (param);
+				this.#field = param.getValueAsNumber() ?? DEFAULT_FIELD;
 				break;
 			case 'm_bProportional':
 				this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL;
@@ -72,12 +71,10 @@ export class OscillateVector extends Operator {
 				this.#endTimeMax = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX;
 				break;
 			case 'm_flOscMult':
-				console.error('do this param', paramName, param);
-				this.#oscMult = param;
+				this.#oscMult = param.getValueAsNumber() ?? DEFAULT_OSC_MULT;
 				break;
 			case 'm_flOscAdd':
-				console.error('do this param', paramName, param);
-				this.oscAdd = param;
+				this.#oscAdd = param.getValueAsNumber() ?? DEFAULT_OSC_ADD;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -102,7 +99,7 @@ export class OscillateVector extends Operator {
 		const fl4ScaleFactor = flStrength * elapsedTime;
 
 		const fl4CosFactorMultiplier = this.#oscMult;
-		const fl4CosFactorAdd = this.oscAdd;
+		const fl4CosFactorAdd = this.#oscAdd;
 
 		const fl4CosFactor = fl4CosFactorMultiplier * fl4CurTime + fl4CosFactorAdd;
 		const fl4CosFactorProp = fl4CosFactorMultiplier;

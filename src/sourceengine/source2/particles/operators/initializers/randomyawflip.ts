@@ -3,7 +3,6 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-
 const DEFAULT_PERCENT = 0.5;// TODO: check default value
 
 export class RandomYawFlip extends Operator {

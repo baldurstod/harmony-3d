@@ -71,7 +71,7 @@ export class RenderTrails extends RenderBase {
 		switch (paramName) {
 			case OPERATOR_PARAM_TEXTURE:
 				console.error('do this param', paramName, param);
-				this.setTexture(param);
+				this.setTexture(param.getValueAsString() ?? '');// TODO: check default value
 				break;
 			/*case 'm_nSequenceCombineMode':
 				this.setSequenceCombineMode(value);
@@ -95,8 +95,7 @@ export class RenderTrails extends RenderBase {
 			case 'm_flOverbrightFactor':// TODO: mutualize ?
 				break;
 			case 'm_flLengthScale':
-				console.error('do this param', paramName, param);
-				this.#lengthScale = param;
+				this.#lengthScale = param.getValueAsNumber() ?? DEFAULT_LENGTH_SCALE;
 				break;
 			case 'm_flAnimationRate':
 				this.#animationRate = param.getValueAsNumber() ?? DEFAULT_ANIMATION_RATE;
@@ -151,8 +150,7 @@ export class RenderTrails extends RenderBase {
 		const uvs2 = geometry.attributes.get('aTextureCoord2')!._array;
 		let index = 0;
 		let index2 = 0;
-		for (let i = 0; i < particleList.length; i++) {
-			const particle = particleList[i];
+		for (const particle of particleList) {
 			const sequence = particle.sequence;
 			let flAgeScale;
 			if (m_bFitCycleToLifetime) {

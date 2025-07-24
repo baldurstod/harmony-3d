@@ -35,7 +35,7 @@ export class RampScalarLinearSimple extends Operator {
 			return;
 		}
 
-		const value = particle.getField(this.#field) + this.#rate * elapsedTime;
+		const value = particle.getField(this.#field) as number + this.#rate * elapsedTime;
 		particle.setField(this.#field, value);
 	}
 }

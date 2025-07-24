@@ -3,102 +3,90 @@ import { Source2ParticlePathParams } from '../utils/pathparams';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2Particle } from '../../source2particle';
 
 const vec = vec3.create();
 
+
+const DEFAULT_NUM_TO_ASSIGN = 100;// TODO: check default value
+const DEFAULT_LOOP = true;// TODO: check default value
+const DEFAULT_MAX_DISTANCE = 0;// TODO: check default value
+const DEFAULT_SAVE_OFFSET = false;// TODO: check default value
+const DEFAULT_CP_PAIRS = false;// TODO: check default value
+const DEFAULT_MID_POINT = 0.5;// TODO: check default value
+
 export class MaintainSequentialPath extends Operator {
-	numToAssign = 100;
+	#numToAssign = DEFAULT_NUM_TO_ASSIGN;
 	assignedSoFar = 0;
-	step = 0.01;
-	loop = true;
+	#step = 0.01;
+	loop = DEFAULT_LOOP;
 	bounceDirection = 1;
-	maxDistance = 0;
-	cpPairs = false;
-	saveOffset = false;
-	/*
-	startControlPointNumber = 0;
-	endControlPointNumber = 0;
-	bulgeControl = 0;
-	bulge = 0;
-	*/
-	midPoint = 0.5;
-	startPointOffset = vec3.create();
-	midPointOffset = vec3.create();
-	endOffset = vec3.create();
-	operateAllParticlesRemoveme = true;
-	#path = new Source2ParticlePathParams();
+	#maxDistance = DEFAULT_MAX_DISTANCE;
+	cpPairs = DEFAULT_CP_PAIRS;
+	#saveOffset = DEFAULT_SAVE_OFFSET;
+	#midPoint = DEFAULT_MID_POINT;
+	#startPointOffset = vec3.create();// TODO: check default value
+	#midPointOffset = vec3.create();// TODO: check default value
+	#endOffset = vec3.create();// TODO: check default value
+	operateAllParticlesRemoveme: true = true;
+	#pathParams = new Source2ParticlePathParams();
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flNumToAssign':
-				this.numToAssign = param;
-				this.step = 1 / (param - 1);
+				this.#numToAssign = param.getValueAsNumber() ?? DEFAULT_NUM_TO_ASSIGN;
+				this.#step = 1 / (this.#numToAssign - 1);
 				break;
 			case 'm_bLoop':
-				this.loop = param;
+				this.loop = param.getValueAsBool() ?? DEFAULT_LOOP;
 				break;
 			case 'm_PathParams':
-				Source2ParticlePathParams.fromOperatorParam(param, this.#path);
+				Source2ParticlePathParams.fromOperatorParam(param, this.#pathParams);
 				break;
 			case 'm_fMaxDistance':
-				this.maxDistance = param;
+				this.#maxDistance = param.getValueAsNumber() ?? DEFAULT_MAX_DISTANCE;
 				break;
 			case 'm_bCPPairs':
-				this.cpPairs = param;
+				this.cpPairs = param.getValueAsBool() ?? DEFAULT_CP_PAIRS;
 				break;
 			case 'm_bSaveOffset':
-				this.saveOffset = param;
+				this.#saveOffset = param.getValueAsBool() ?? DEFAULT_SAVE_OFFSET;
 				break;
-				/*
-			case 'm_nStartControlPointNumber':
-				this.startControlPointNumber = (param);
-				break;
-			case 'm_nEndControlPointNumber':
-				this.endControlPointNumber = (param);
-				break;
-			case 'm_nBulgeControl':
-				this.bulgeControl = (param);
-				break;
-			case 'm_flBulge':
-				this.bulge = param;
-				break;
-				*/
 			case 'm_flMidPoint':
-				this.midPoint = param;
+				this.#midPoint = param.getValueAsNumber() ?? DEFAULT_MID_POINT;
 				break;
 			case 'm_vStartPointOffset':
-				vec3.copy(this.startPointOffset, param);
+				param.getValueAsVec3(this.#startPointOffset);
 				break;
 			case 'm_vMidPointOffset':
-				vec3.copy(this.midPointOffset, param);
+				param.getValueAsVec3(this.#midPointOffset);
 				break;
 			case 'm_vEndOffset':
-				vec3.copy(this.endOffset, param);
+				param.getValueAsVec3(this.#endOffset);
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particles, elapsedTime) {
+	doOperate(particles: Source2Particle[], elapsedTime: number, strength: number): void {
 		const t = vec3.create();
 		//TODO: use other parameters
-		const startControlPointNumber = this.startControlPointNumber;
-		const endControlPointNumber = this.endControlPointNumber;
+		const startControlPointNumber = this.#pathParams.startControlPointNumber;
+		const endControlPointNumber = this.#pathParams.endControlPointNumber;
 
 		const startControlPoint = this.system.getControlPoint(startControlPointNumber);
 		const endControlPoint = this.system.getControlPoint(endControlPointNumber);
 
 		if (startControlPoint && endControlPoint) {
-			const numToAssign = this.numToAssign;
+			const numToAssign = this.#numToAssign;
 			let assignedSoFar = this.assignedSoFar;
 
 			let particle;
 			const delta = startControlPoint.deltaPosFrom(endControlPoint, vec);
-			for (let i = 0; i < particles.length; ++i) {
-				particle = particles[i];
+			for (const particle of particles) {
 
-				vec3.scale(t, delta, assignedSoFar * this.step);
+				vec3.scale(t, delta, assignedSoFar * this.#step);
 				vec3.add(particle.position, startControlPoint.currentWorldPosition, t);
 				vec3.copy(particle.prevPosition, particle.position);
 

@@ -1,39 +1,53 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Operator } from '../operator';
 import { clamp, RemapValClamped, lerp } from '../../../../../math/functions';
 import { PARTICLE_FIELD_RADIUS, ATTRIBUTES_WHICH_ARE_0_TO_1 } from '../../../../common/particles/particlefields';
 import { OperatorParam } from '../operatorparam';
+import { Source2Particle } from '../../source2particle';
 
 const DEFAULT_COMPONENT_SCALE = vec3.fromValues(1, 1, 1);
 
-const DEFAULT_INPUT_MAX = 128;
+const distanceToCPTempVec4 = vec4.create();
+
+const DEFAULT_INPUT_MIN = 0;// TODO: check default value
+const DEFAULT_INPUT_MAX = 128;// TODO: check default value
+const DEFAULT_OUTPUT_MIN = 0;// TODO: check default value
+const DEFAULT_OUTPUT_MAX = 128;// TODO: check default value
+const DEFAULT_LOS = true;// TODO: check default value
+const DEFAULT_LOS_SCALE = 0;// TODO: check default value
+const DEFAULT_COLLISION_GROUP_NAME = '';// TODO: check default value
+const DEFAULT_MAX_TRACE_LENGTH = -1;// TODO: check default value
+const DEFAULT_ACTIVE_RANGE = false;// TODO: check default value
+const DEFAULT_ADDITIVE = false;// TODO: check default value
+const DEFAULT_SCALE_INITIAL_RANGE = false;// TODO: check default value
+const DEFAULT_START_CP = 0;// TODO: check default value
 
 export class DistanceToCP extends Operator {
-	#fieldOutput = PARTICLE_FIELD_RADIUS/*TODO: create enum*/;
-	inputMin = 0;
-	inputMax = DEFAULT_INPUT_MAX;
-	outputMin = 0;
-	outputMax = 1;
-	startCP = 0;
-	los = true;
-	collisionGroupName = '';
-	maxTraceLength = -1;
-	losScale = 0;
+	//#fieldOutput = PARTICLE_FIELD_RADIUS/*TODO: create enum*/;
+	#inputMin = DEFAULT_INPUT_MIN;
+	#inputMax = DEFAULT_INPUT_MAX;
+	#outputMin = DEFAULT_OUTPUT_MIN;
+	#outputMax = DEFAULT_OUTPUT_MAX;
+	#startCP = DEFAULT_START_CP;
+	#los = DEFAULT_LOS;
+	#collisionGroupName = DEFAULT_COLLISION_GROUP_NAME;
+	#maxTraceLength = DEFAULT_MAX_TRACE_LENGTH;
+	#losScale = DEFAULT_LOS_SCALE;
 	#setMethod: string | null | undefined;
-	activeRange = false;;
-	additive = false;
-	scaleInitialRange = false;
-	outputMin1;
-	outputMax1;
+	#activeRange = DEFAULT_ACTIVE_RANGE;
+	#additive = DEFAULT_ADDITIVE;
+	#scaleInitialRange = DEFAULT_SCALE_INITIAL_RANGE;
+	#outputMin1 = 0;// computed
+	#outputMax1 = 0;// computed
 
-	_update() {
-		if (ATTRIBUTES_WHICH_ARE_0_TO_1 & (1 << this.#fieldOutput)) {
-			this.outputMin1 = clamp(this.outputMin, 0, 1);
-			this.outputMax1 = clamp(this.outputMax, 0, 1);
+	#update() {
+		if (ATTRIBUTES_WHICH_ARE_0_TO_1 & (1 << this.fieldOutput)) {
+			this.#outputMin1 = clamp(this.#outputMin, 0, 1);
+			this.#outputMax1 = clamp(this.#outputMax, 0, 1);
 		} else {
-			this.outputMin1 = this.outputMin;
-			this.outputMax1 = this.outputMax;
+			this.#outputMin1 = this.#outputMin;
+			this.#outputMax1 = this.#outputMax;
 		}
 	}
 
@@ -43,75 +57,68 @@ export class DistanceToCP extends Operator {
 				throw `do this param ${paramName}`;
 				break;
 			case 'm_nFieldOutput':
-				this.#fieldOutput = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
-				this._update();
+				this.fieldOutput = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
+				this.#update();
 				break;
 			case 'm_flInputMin':
-				this.inputMin = param.getValueAsNumber() ?? 0;
+				this.#inputMin = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_flInputMax':
-				this.inputMax = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
+				this.#inputMax = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
 				break;
 			case 'm_flOutputMin':
-				this.outputMin = param.getValueAsNumber() ?? 0;
-				this._update();
+				this.#outputMin = param.getValueAsNumber() ?? 0;
+				this.#update();
 				break;
 			case 'm_flOutputMax':
-				this.outputMax = param.getValueAsNumber() ?? 1;
-				this._update();
+				this.#outputMax = param.getValueAsNumber() ?? 1;
+				this.#update();
 				break;
 			case 'm_nStartCP':
-				this.startCP = param.getValueAsNumber() ?? 0;
+				this.#startCP = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_bLOS':
-				throw `do this param ${paramName}`;
-				this.los = param;
+				this.#los = param.getValueAsBool() ?? DEFAULT_LOS;
 				break;
 			case 'm_CollisionGroupName':
-				throw `do this param ${paramName}`;
-				this.collisionGroupName = param;
+				this.#collisionGroupName = param.getValueAsString() ?? DEFAULT_COLLISION_GROUP_NAME;
 				break;
 			case 'm_flMaxTraceLength':
-				throw `do this param ${paramName}`;
-				this.maxTraceLength = param;
+				this.#maxTraceLength = param.getValueAsNumber() ?? DEFAULT_MAX_TRACE_LENGTH;
 				break;
 			case 'm_flLOSScale':
-				throw `do this param ${paramName}`;
-				this.losScale = param;
+				this.#losScale = param.getValueAsNumber() ?? DEFAULT_LOS_SCALE;
 				break;
 			case 'm_nSetMethod':
 				this.#setMethod = param.getValueAsString();
 				break;
 			case 'm_bActiveRange':
-				throw `do this param ${paramName}`;
-				this.activeRange = param;
+				this.#activeRange = param.getValueAsBool() ?? DEFAULT_ACTIVE_RANGE;
 				break;
 			case 'm_bAdditive':
-				throw `do this param ${paramName}`;
-				this.additive = param;
+				this.#additive = param.getValueAsBool() ?? DEFAULT_ADDITIVE;
 				break;
 			case 'm_bScaleInitialRange':
-				throw `do this param ${paramName}`;
-				this.scaleInitialRange = param;
+				this.#scaleInitialRange = param.getValueAsBool() ?? DEFAULT_SCALE_INITIAL_RANGE;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle, elapsedTime, flStrength = 1) {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//TODO: use setMethod
-		const componentScale = this.getParamVectorValue('m_vecComponentScale') ?? DEFAULT_COMPONENT_SCALE;
+		const componentScale: vec3 = this.getParamVectorValue(distanceToCPTempVec4, 'm_vecComponentScale', particle) as vec3 ?? DEFAULT_COMPONENT_SCALE;
 
-		const flMin = this.outputMin1;
-		const flMax = this.outputMax1;
+		const flMin = this.#outputMin1;
+		const flMax = this.#outputMax1;
 		/*if ( ATTRIBUTES_WHICH_ARE_0_TO_1 & ( 1 << m_nFieldOutput ) )
 		{
 			flMin = clamp(m_flOutputMin, 0.0f, 1.0f );
 			flMax = clamp(m_flOutputMax, 0.0f, 1.0f );
 		}*/
 		//Vector vecControlPoint1 = pParticles->GetControlPointAtCurrentTime( m_nStartCP );
-		const vecControlPoint1 = this.system.getControlPointPosition(this.startCP);
+		const vecControlPoint1 = this.system.getControlPointPosition(this.#startCP);
 
 		//let vecPosition2 = vec3.create();
 		const vecDelta = vec3.create();
@@ -127,17 +134,17 @@ export class DistanceToCP extends Operator {
 			vec3.sub(vecDelta, vecControlPoint1, particle.position);
 
 			const flDistance = vec3.length(vecDelta);//vecDelta.Length();
-			if (this.activeRange && (flDistance < this.inputMin || flDistance > this.inputMax)) {
+			if (this.#activeRange && (flDistance < this.#inputMin || flDistance > this.#inputMax)) {
 				return;//continue;
 			}
-			if (this.los) {
+			if (this.#los) {
 				//Vector vecEndPoint = vecPosition2;
 				vec3.copy(vecEndPoint, particle.position);
-				if (this.maxTraceLength != -1.0 && this.maxTraceLength < flDistance) {
+				if (this.#maxTraceLength != -1.0 && this.#maxTraceLength < flDistance) {
 					//VectorNormalize(vecEndPoint);
 					vec3.normalize(vecEndPoint, vecEndPoint);
 					//vecEndPoint *= m_flMaxTraceLength;
-					vec3.scale(vecEndPoint, vecEndPoint, this.maxTraceLength);
+					vec3.scale(vecEndPoint, vecEndPoint, this.#maxTraceLength);
 					//vecEndPoint += vecControlPoint1;
 					vec3.add(vecEndPoint, vecEndPoint, vecControlPoint1);
 				}
@@ -151,7 +158,7 @@ export class DistanceToCP extends Operator {
 
 			}
 
-			const flOutput = RemapValClamped(flDistance, this.inputMin, this.inputMax, flMin, flMax);
+			const flOutput = RemapValClamped(flDistance, this.#inputMin, this.#inputMax, flMin, flMax);
 			/*if ( m_bScaleInitialRange )
 			{
 				const float *pInitialOutput = pParticles->GetInitialFloatAttributePtr( m_nFieldOutput, i );
@@ -160,11 +167,11 @@ export class DistanceToCP extends Operator {
 			//float *pOutput = pParticles->GetFloatAttributePtrForWrite( m_nFieldOutput, i );
 			//TODO: use m_nSetMethod m_bActiveRange m_bAdditive m_bScaleInitialRange
 
-			let output = particle.getField(this.#fieldOutput);
+			let output = particle.getField(this.fieldOutput) as number;
 
 			//*pOutput = Lerp (flStrength, *pOutput, flOutput);
-			output = lerp(output, flOutput, flStrength);
-			particle.setField(this.#fieldOutput, output);
+			output = lerp(output, flOutput, strength);
+			particle.setField(this.fieldOutput, output);
 			//float *pOutput = pParticles->GetFloatAttributePtrForWrite( m_nFieldOutput, i );
 			//float flOutput = RemapValClamped( flDistance, m_flInputMin, m_flInputMax, flMin, flMax  );
 			//*pOutput = Lerp (flStrength, *pOutput, flOutput);

@@ -59,25 +59,22 @@ export class OscillateScalar extends Operator {
 				this.#proportionalOp = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL_OP;
 				break;
 			case 'm_flStartTime_min':
-				console.error('do this param', paramName, param);
-				this.#startTimeMin = param;
+				this.#startTimeMin = param.getValueAsNumber() ?? DEFAULT_START_TIME_MIN;
 				break;
 			case 'm_flStartTime_max':
-				console.error('do this param', paramName, param);
-				this.#startTimeMax = param;
+				this.#startTimeMax = param.getValueAsNumber() ?? DEFAULT_START_TIME_MAX;
 				break;
 			case 'm_flEndTime_min':
-				this.#endTimeMin = param.getValueAsString() ?? DEFAULT_END_TIME_MIN;
+				this.#endTimeMin = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX;
 				break;
 			case 'm_flEndTime_max':
-				this.#endTimeMax = param.getValueAsString() ?? DEFAULT_END_TIME_MAX;
+				this.#endTimeMax = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX;
 				break;
 			case 'm_flOscMult':// TODO: mutualize ?
 				this.#oscMult = param.getValueAsNumber() ?? DEFAULT_OSC_MULT;
 				break;
-			case 'm_flOscAdd':
-				console.error('do this param', paramName, param);
-				this.#oscAdd = param;
+			case 'm_flOscAdd':// TODO: mutualize ?
+				this.#oscAdd = param.getValueAsNumber() ?? DEFAULT_OSC_ADD;
 				break;
 			default:
 				super._paramChanged(paramName, param);

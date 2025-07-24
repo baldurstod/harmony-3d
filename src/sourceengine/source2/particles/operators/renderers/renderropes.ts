@@ -63,12 +63,10 @@ export class RenderRopes extends RenderBase {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case OPERATOR_PARAM_TEXTURE:
-				console.error('do this param', paramName, param);
-				this.setTexture(param);
+				this.setTexture(param.getValueAsString() ?? '');// TODO: check default value
 				break;
 			case 'm_nSequenceCombineMode':
-				console.error('do this param', paramName, param);
-				this.setSequenceCombineMode(param);
+				this.setSequenceCombineMode(param.getValueAsString() ?? '');// TODO: check default value
 				break;
 			case 'm_flTextureVWorldSize':
 				this.#textureVWorldSize = param.getValueAsNumber() ?? DEFAULT_WORLD_SIZE;
@@ -145,9 +143,8 @@ export class RenderRopes extends RenderBase {
 		const textureVWorldSize = 1 / this.#textureVWorldSize;
 		const textureScroll = this.#textureScroll;
 		const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
-		for (let i = 0, l = particleList.length; i < l; i++) {
+		for (const particle of particleList) {
 			//for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
-			particle = particleList[i];
 			const segment = new BeamSegment(particle.position, [particle.color[0], particle.color[1], particle.color[2], particle.alpha * alphaScale], 0.0, particle.radius);
 			vec3.copy(segment.normal, particle.normal);
 			if (previousSegment) {

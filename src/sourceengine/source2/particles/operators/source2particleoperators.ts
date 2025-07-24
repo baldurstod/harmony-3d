@@ -92,10 +92,12 @@ export function GetSource2ParticleOperator(operatorName: string): typeof Operato
 		case 'C_OP_FadeIn':
 		case 'C_OP_PlaneCull':
 		case 'C_INIT_SequenceLifeTime':
+		case 'C_INIT_VelocityRandom':
+		case 'C_INIT_CreateSequentialPath':
 			break;
 		default:
 			if (!messagePerOperator.has(operatorName)) {
-				console.warn('do operator ', operatorName);
+				console.error('do operator ', operatorName);
 				messagePerOperator.add(operatorName);
 			}
 			break;

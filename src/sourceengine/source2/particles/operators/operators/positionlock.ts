@@ -13,27 +13,37 @@ const vec = vec3.create();
 
 export const DEFAULT_JUMP_THRESHOLD = 512;// TODO: check default value
 export const DEFAULT_RANGE = 0;// TODO: check default value
+export const DEFAULT_START_TIME_MIN = 1;// TODO: check default value
+export const DEFAULT_START_TIME_MAX = 1;// TODO: check default value
+export const DEFAULT_START_TIME_EXP = 1;// TODO: check default value
+export const DEFAULT_END_TIME_MIN = 1;// TODO: check default value
+export const DEFAULT_END_TIME_MAX = 1;// TODO: check default value
+export const DEFAULT_END_TIME_EXP = 1;// TODO: check default value
+export const DEFAULT_PREV_POS_SCALE = 1;// TODO: check default value
+export const DEFAULT_LOCK_ROT = false;// TODO: check default value
+export const DEFAULT_START_FADE_OUT_TIME = 0;// TODO: check default value
+export const DEFAULT_END_FADE_OUT_TIME = 0;// TODO: check default value
 
 export class PositionLock extends Operator {
-	#startTimeMin = 1;
-	#startTimeMax = 1;
-	#startTimeExp = 1;
-	#endTimeMin = 1;
-	#endTimeMax = 1;
-	#endTimeExp = 1;
+	#startTimeMin = DEFAULT_START_TIME_MIN;
+	#startTimeMax = DEFAULT_START_TIME_MAX;
+	#startTimeExp = DEFAULT_START_TIME_EXP;
+	#endTimeMin = DEFAULT_END_TIME_MIN;
+	#endTimeMax = DEFAULT_END_TIME_MAX;
+	#endTimeExp = DEFAULT_END_TIME_EXP;
 	#range = DEFAULT_RANGE;
 	#jumpThreshold = DEFAULT_JUMP_THRESHOLD;
-	#prevPosScale = 1;
-	#lockRot = false;
-	#startFadeOutTime = 0;
-	#endFadeOutTime = 0;
+	#prevPosScale = DEFAULT_PREV_POS_SCALE;
+	#lockRot = DEFAULT_LOCK_ROT;
+	#startFadeOutTime = DEFAULT_START_FADE_OUT_TIME;
+	#endFadeOutTime = DEFAULT_END_FADE_OUT_TIME;
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this._update();
+		this.#update();
 	}
 
-	_update() {
+	#update() {
 		//TODO: this is wrong: must be done per particle
 		this.#startFadeOutTime = RandomFloatExp(this.#startTimeMin, this.#startTimeMax, this.#startTimeExp);
 		this.#endFadeOutTime = RandomFloatExp(this.#endTimeMin, this.#endTimeMax, this.#endTimeExp);
@@ -42,30 +52,28 @@ export class PositionLock extends Operator {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flStartTime_min':
-				this.#startTimeMin = param.getValueAsNumber() ?? 1;
-				this._update();
+				this.#startTimeMin = param.getValueAsNumber() ?? DEFAULT_START_TIME_MIN;
+				this.#update();
 				break;
 			case 'm_flStartTime_max':
-				this.#startTimeMax = param.getValueAsNumber() ?? 1;
-				this._update();
+				this.#startTimeMax = param.getValueAsNumber() ?? DEFAULT_START_TIME_MAX;
+				this.#update();
 				break;
 			case 'm_flStartTime_exp':
-				console.error('do this param', paramName, param);
-				this.#startTimeExp = param;
-				this._update();
+				this.#startTimeExp = param.getValueAsNumber() ?? DEFAULT_START_TIME_EXP;
+				this.#update();
 				break;
 			case 'm_flEndTime_min':
-				this.#endTimeMin = param.getValueAsNumber() ?? 1;
-				this._update();
+				this.#endTimeMin = param.getValueAsNumber() ?? DEFAULT_END_TIME_MIN;
+				this.#update();
 				break;
 			case 'm_flEndTime_max':
-				this.#endTimeMax = param.getValueAsNumber() ?? 1;
-				this._update();
+				this.#endTimeMax = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX;
+				this.#update();
 				break;
 			case 'm_flEndTime_exp':
-				console.error('do this param', paramName, param);
-				this.#endTimeExp = param;
-				this._update();
+				this.#endTimeExp = param.getValueAsNumber() ?? DEFAULT_END_TIME_EXP;
+				this.#update();
 				break;
 			case 'm_flRange':// TODO: mutualize ?
 				this.#range = param.getValueAsNumber() ?? DEFAULT_RANGE;

@@ -6,16 +6,16 @@ import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class RandomForce extends Operator {
-	minForce = vec3.create();
-	maxForce = vec3.create();
+	#minForce = vec3.create();
+	#maxForce = vec3.create();
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_MinForce':
-				vec3.copy(this.minForce, param);
+				param.getValueAsVec3(this.#minForce);
 				break;
 			case 'm_MaxForce':
-				vec3.copy(this.maxForce, param);
+				param.getValueAsVec3(this.#maxForce);
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -23,7 +23,7 @@ export class RandomForce extends Operator {
 	}
 
 	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void {
-		vec3.add(accumulatedForces, accumulatedForces, vec3RandomBox(vec3.create(), this.minForce, this.maxForce));
+		vec3.add(accumulatedForces, accumulatedForces, vec3RandomBox(vec3.create(), this.#minForce, this.#maxForce));
 	}
 }
 RegisterSource2ParticleOperator('C_OP_RandomForce', RandomForce);

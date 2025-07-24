@@ -5,50 +5,58 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+const DEFAULT_RATE_MIN = 0;// TODO: check default value
+const DEFAULT_RATE_MAX = 0;// TODO: check default value
+const DEFAULT_START_TIME_MIN = 0;// TODO: check default value
+const DEFAULT_START_TIME_MAX = 0;// TODO: check default value
+const DEFAULT_END_TIME_MIN = 0;// TODO: check default value
+const DEFAULT_END_TIME_MAX = 0;// TODO: check default value
+const DEFAULT_FIELD = PARTICLE_FIELD_RADIUS;// TODO: check default value
+const DEFAULT_PROPORTIONAL_OP = true;// TODO: check default value
+
 export class RampScalarLinear extends Operator {
-	#rateMin = 0;
-	#rateMax = 0;
-	#startTimeMin = 0;
-	#startTimeMax = 0;
-	#endTimeMin = 1;
-	#endTimeMax = 1;
-	#field = PARTICLE_FIELD_RADIUS;// TODO: not sure about the field
-	#proportionalOp = true;
+	#rateMin = DEFAULT_RATE_MIN;
+	#rateMax = DEFAULT_RATE_MAX;
+	#startTimeMin = DEFAULT_START_TIME_MIN;
+	#startTimeMax = DEFAULT_START_TIME_MAX;
+	#endTimeMin = DEFAULT_END_TIME_MIN;
+	#endTimeMax = DEFAULT_END_TIME_MAX;
+	#field = DEFAULT_FIELD;// TODO: not sure about the field
+	#proportionalOp = DEFAULT_PROPORTIONAL_OP;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_RateMin':
-				this.#rateMin = param.getValueAsNumber() ?? 0;
+				this.#rateMin = param.getValueAsNumber() ?? DEFAULT_RATE_MIN;
 				break;
 			case 'm_RateMax':
-				this.#rateMax = param.getValueAsNumber() ?? 0;
+				this.#rateMax = param.getValueAsNumber() ?? DEFAULT_RATE_MAX;
 				break;
 			case 'm_flStartTime_min':
 				console.error('do this param', paramName, param);
-				this.#startTimeMin = param;
+				this.#startTimeMin = param.getValueAsNumber() ?? DEFAULT_START_TIME_MIN;
 				break;
 			case 'm_flStartTime_max':
-				console.error('do this param', paramName, param);
-				this.#startTimeMax = param;
+				this.#startTimeMax = param.getValueAsNumber() ?? DEFAULT_START_TIME_MAX;
 				break;
 			case 'm_flEndTime_min':
-				this.#endTimeMin = param.getValueAsNumber() ?? 1;
+				this.#endTimeMin = param.getValueAsNumber() ?? DEFAULT_END_TIME_MIN;
 				break;
 			case 'm_flEndTime_max':
-				this.#endTimeMax = param.getValueAsNumber() ?? 1;
+				this.#endTimeMax = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX;
 				break;
 			case 'm_nField':
 				this.#field = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
 				break;
 			case 'm_bProportionalOp':
-				this.#proportionalOp = param.getValueAsBool() ?? true;
+				this.#proportionalOp = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL_OP;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		const context = particle.context.get(this);
 		let rate, startTime, endTime;
 		if (context == undefined) {
@@ -68,7 +76,7 @@ export class RampScalarLinear extends Operator {
 			return;
 		}
 
-		const value = particle.getField(this.#field) + rate * elapsedTime;
+		const value = particle.getField(this.#field) as number + rate * elapsedTime;
 		particle.setField(this.#field, value);
 
 	}

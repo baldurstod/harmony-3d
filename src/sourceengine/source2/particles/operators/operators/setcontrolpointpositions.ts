@@ -33,8 +33,7 @@ export class SetControlPointPositions extends Operator {
 				this.#orient = param.getValueAsBool() ?? DEFAULT_ORIENT;
 				break;
 			case 'm_bSetOnce':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.#setOnce = param;
+				this.#setOnce = param.getValueAsBool() ?? DEFAULT_SET_ONCE;
 				break;
 			case 'm_nCP1':
 				this.#cp[0] = param.getValueAsNumber() ?? DEFAULT_CP_1;
@@ -82,16 +81,16 @@ export class SetControlPointPositions extends Operator {
 		const headLocation = this.system.getControlPoint(this.#headLocation);
 
 		for (let cpIndex = 0; cpIndex < 4; ++cpIndex) {
-			cpNumber = this.#cp[cpIndex];
-			cpLocation = this.#cpPos[cpIndex];
+			cpNumber = this.#cp[cpIndex]!;
+			cpLocation = this.#cpPos[cpIndex]!;
 
 			const cp = this.system.getControlPoint(cpNumber);
 			if (!useWorldLocation) {
 				vec3.transformQuat(v, cpLocation, headLocation.currentWorldQuaternion);
 				vec3.add(v, v, headLocation.currentWorldPosition);
-				cp.position = v;
+				cp.setPosition(v);
 			} else {
-				cp.position = cpLocation;
+				cp.setPosition(cpLocation);
 				this.system.setControlPointPosition(cpNumber, cpLocation);
 			}
 		}

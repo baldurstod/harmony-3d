@@ -3,11 +3,13 @@ import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const DEFAULT_SNAPSHOT_CONTROL_POINT = -1;// TODO: check default value
+const DEFAULT_MAX_EMITTED_PER_FRAME = -1;// TODO: check default value
+const DEFAULT_INIT_FROM_KILLED_PARENT_PARTICLES = 0;// TODO: check default value
 
 export class InstantaneousEmitter extends Operator {
 	#emitted = 0;
-	#initFromKilledParentParticles = 0;
-	#maxEmittedPerFrame = -1;
+	#initFromKilledParentParticles = DEFAULT_INIT_FROM_KILLED_PARENT_PARTICLES;
+	#maxEmittedPerFrame = DEFAULT_MAX_EMITTED_PER_FRAME;
 	#snapshotControlPoint = DEFAULT_SNAPSHOT_CONTROL_POINT;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
@@ -16,12 +18,11 @@ export class InstantaneousEmitter extends Operator {
 			case 'm_flStartTime':
 				break;
 			case 'm_flInitFromKilledParentParticles':
-				console.error('do this param', paramName, param);
-				this.#initFromKilledParentParticles = (param);
+				this.#initFromKilledParentParticles = param.getValueAsNumber() ?? DEFAULT_INIT_FROM_KILLED_PARENT_PARTICLES;
 				break;
 			case 'm_nMaxEmittedPerFrame':
 				console.error('do this param', paramName, param);
-				this.#maxEmittedPerFrame = (param);
+				this.#maxEmittedPerFrame = param.getValueAsNumber() ?? DEFAULT_MAX_EMITTED_PER_FRAME;
 				break;
 			case 'm_nSnapshotControlPoint':
 				this.#snapshotControlPoint = param.getValueAsNumber() ?? DEFAULT_SNAPSHOT_CONTROL_POINT;
