@@ -47,9 +47,8 @@ export class FadeOut extends Operator {
 				this.#fadeOutTimeExp = param;
 				this.#update();
 				break;
-			case 'm_bProportional':
-				console.error('do this param', paramName, param);
-				this.#proportional = param;
+			case 'm_bProportional'://TODO: mutualize
+				this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL;
 				break;
 			default:
 				super._paramChanged(paramName, param);

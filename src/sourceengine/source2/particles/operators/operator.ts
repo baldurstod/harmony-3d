@@ -53,6 +53,7 @@ const DEFAULT_OP_END_FADE_IN_TIME = 0;// TODO: check default value
 const DEFAULT_OP_START_FADE_OUT_TIME = 0;// TODO: check default value
 const DEFAULT_OP_END_FADE_OUT_TIME = 0;// TODO: check default value
 const DEFAULT_OP_FADE_OSCILLATE_PERIOD = 0;// TODO: check default value
+export const DEFAULT_CONTROL_POINT_NUMBER = 0;// TODO: check default value
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
@@ -63,9 +64,9 @@ export class Operator {//TODOv3: rename this class ?
 	protected opStartFadeOutTime = DEFAULT_OP_START_FADE_OUT_TIME;
 	protected opEndFadeOutTime = DEFAULT_OP_END_FADE_OUT_TIME;
 	protected opFadeOscillatePeriod = DEFAULT_OP_FADE_OSCILLATE_PERIOD;
-	normalizePerLiving = false;
+	#normalizePerLiving = false;
 	disableOperator = false;
-	controlPointNumber = 0;
+	controlPointNumber = DEFAULT_CONTROL_POINT_NUMBER;
 	#fieldInput = -1;
 	protected fieldOutput = -1;
 	scaleCp?: number;
@@ -126,7 +127,7 @@ export class Operator {//TODOv3: rename this class ?
 				case 'PF_TYPE_PARTICLE_AGE':
 					return particle?.currentTime ?? null;// TODO: not sure if this is the actual value
 				case 'PF_TYPE_PARTICLE_NUMBER_NORMALIZED':
-					if (this.normalizePerLiving) {
+					if (this.#normalizePerLiving) {
 						const max = this.system.livingParticles.length;
 						inputValue = (particle?.id ?? 0) % max / max;
 					} else {
@@ -275,7 +276,7 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 
-	getParamVectorValue(out: vec4/*not sure about vec4. maybe vec3 ?*/ , paramName: string, particle?: Source2Particle): vec4 | undefined | null {
+	getParamVectorValue(out: vec4/*not sure about vec4. maybe vec3 ?*/, paramName: string, particle?: Source2Particle): vec4 | undefined | null {
 		const parameter = this.#parameters[paramName];
 		if (!parameter) {
 			return undefined;
@@ -306,7 +307,10 @@ export class Operator {//TODOv3: rename this class ?
 					out[2] = this.#getParamScalarValue(parameter.m_FloatComponentZ, particle);
 					break;
 				case 'PVEC_TYPE_RANDOM_UNIFORM_OFFSET':
-					vec3RandomBox(out as vec3, parameter.m_vRandomMin, parameter.m_vRandomMax);
+					if (parameter.getSubValueAsVec3('m_vRandomMin', operatorTempVec3_0) &&
+						parameter.getSubValueAsVec3('m_vRandomMax', operatorTempVec3_1)) {
+						vec3RandomBox(out as vec3, operatorTempVec3_0, operatorTempVec3_1);
+					}
 					break;
 				case 'PVEC_TYPE_CP_VALUE':
 					const cp = this.system.getControlPoint(parameter.m_nControlPoint);

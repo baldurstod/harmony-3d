@@ -5,25 +5,32 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const DEFAULT_OFFSET = true;
-const DEFAULT_END_TIME_MIN = 1;
-const DEFAULT_END_TIME_MAX = 1;
+const DEFAULT_OFFSET = true;// TODO: check default value
+const DEFAULT_END_TIME_MIN = 1;// TODO: check default value
+const DEFAULT_END_TIME_MAX = 1;// TODO: check default value
+const DEFAULT_PROPORTIONAL = true;// TODO: check default value
+const DEFAULT_PROPORTIONAL_OP = true;// TODO: check default value
+const DEFAULT_FIELD = 0;// TODO: check default value
+const DEFAULT_START_TIME_MIN = 0;// TODO: check default value
+const DEFAULT_START_TIME_MAX = 0;// TODO: check default value
+const DEFAULT_OSC_MULT = 2;// TODO: check default value
+const DEFAULT_OSC_ADD = 0.5;// TODO: check default value
 
 export class OscillateVector extends Operator {
 	#rateMin = vec3.create();// TODO: check default value
 	#rateMax = vec3.create();// TODO: check default value
 	#frequencyMin = vec3.fromValues(1, 1, 1);// TODO: check default value
 	#frequencyMax = vec3.fromValues(1, 1, 1);// TODO: check default value
-	#field = 0;
-	#proportional = true;
-	#proportionalOp = true;
+	#field = DEFAULT_FIELD;
+	#proportional = DEFAULT_PROPORTIONAL;
+	#proportionalOp = DEFAULT_PROPORTIONAL_OP;
 	#offset = DEFAULT_OFFSET;
-	#startTimeMin = 0;
-	#startTimeMax = 0;
+	#startTimeMin = DEFAULT_START_TIME_MIN;
+	#startTimeMax = DEFAULT_START_TIME_MAX;
 	#endTimeMin = DEFAULT_END_TIME_MIN;
 	#endTimeMax = DEFAULT_END_TIME_MAX;
-	#oscMult = 2;
-	#oscAdd = 0.5;
+	#oscMult = DEFAULT_OSC_MULT;
+	#oscAdd = DEFAULT_OSC_ADD;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -44,23 +51,19 @@ export class OscillateVector extends Operator {
 				this.#field = (param);
 				break;
 			case 'm_bProportional':
-				console.error('do this param', paramName, param);
-				this.#proportional = param;
+				this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL;
 				break;
 			case 'm_bProportionalOp':
-				console.error('do this param', paramName, param);
-				this.#proportionalOp = param;
+				this.#proportionalOp = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL_OP;
 				break;
 			case 'm_bOffset':
 				this.#offset = param.getValueAsBool() ?? DEFAULT_OFFSET;
 				break;
 			case 'm_flStartTime_min':
-				console.error('do this param', paramName, param);
-				this.#startTimeMin = param;
+				this.#startTimeMin = param.getValueAsNumber() ?? DEFAULT_START_TIME_MIN;
 				break;
 			case 'm_flStartTime_max':
-				console.error('do this param', paramName, param);
-				this.#startTimeMax = param;
+				this.#startTimeMax = param.getValueAsNumber() ?? DEFAULT_START_TIME_MAX;
 				break;
 			case 'm_flEndTime_min':
 				this.#endTimeMin = param.getValueAsNumber() ?? DEFAULT_END_TIME_MIN;

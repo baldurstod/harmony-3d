@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { DEG_TO_RAD, TWO_PI } from '../../../../../math/constants';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -11,8 +12,8 @@ const DEFAULT_EVEN_DISTRIBUTION = false;// TODO: check default value
 const DEFAULT_XY_VELOCITY_ONLY = true;// TODO: check default value
 
 export class RingWave extends Operator {
-	#evenDistribution = false;
-	#xyVelocityOnly = true;
+	#evenDistribution = DEFAULT_EVEN_DISTRIBUTION;
+	#xyVelocityOnly = DEFAULT_XY_VELOCITY_ONLY;
 	t = 0;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
@@ -27,19 +28,17 @@ export class RingWave extends Operator {
 			case 'm_flYaw':
 				break;
 			case 'm_bEvenDistribution':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.#evenDistribution = param;
+				this.#evenDistribution = param.getValueAsBool() ?? DEFAULT_EVEN_DISTRIBUTION;
 				break;
 			case 'm_bXYVelocityOnly':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.#xyVelocityOnly = param;
+				this.#xyVelocityOnly = param.getValueAsBool() ?? DEFAULT_XY_VELOCITY_ONLY;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//TODO: use all parameters
 		const particlesPerOrbit = this.getParamScalarValue('m_flParticlesPerOrbit') ?? -1;//even distribution count
 		const initialRadius = this.getParamScalarValue('m_flInitialRadius') ?? 0;

@@ -1,11 +1,14 @@
 import { RemapValClampedBias, lerp } from '../../../../../math/functions';
 import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+const DEFAULT_CP_INPUT = 0;// TODO: check default value
+
 export class RemapCPtoScalar extends Operator {
-	cpInput = 0;
+	#cpInput = DEFAULT_CP_INPUT;
 	field = 0;//X
 	inputMin = 0;
 	inputMax = 1;
@@ -21,36 +24,46 @@ export class RemapCPtoScalar extends Operator {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nCPInput':
-				this.cpInput = (param);
+				this.#cpInput = param.getValueAsNumber() ?? DEFAULT_CP_INPUT;
 				break;
 			case 'm_nField':
+				console.error('do this param', paramName, param, this.constructor.name);
 				this.field = (param);//TODO: check [0, 1, 2]
 				break;
 			case 'm_flInputMin':
+				console.error('do this param', paramName, param, this.constructor.name);
 				this.inputMin = param;
 				break;
 			case 'm_flInputMax':
+				console.error('do this param', paramName, param, this.constructor.name);
 				this.inputMax = param;
 				break;
 			case 'm_flOutputMin':
+				console.error('do this param', paramName, param, this.constructor.name);
 				this.outputMin = param;
 				break;
 			case 'm_flOutputMax':
+				console.error('do this param', paramName, param, this.constructor.name);
 				this.outputMax = param;
 				break;
 			case 'm_flStartTime':
+				console.error('do this param', paramName, param, this.constructor.name);
 				this.startTime = param;
 				break;
 			case 'm_flEndTime':
+				console.error('do this param', paramName, param, this.constructor.name);
 				this.endTime = param;
 				break;
 			case 'm_nSetMethod':
+				console.error('do this param', paramName, param, this.constructor.name);
 				this.setMethod = param;
 				break;
 			case 'm_flRemapBias':
+				console.error('do this param', paramName, param, this.constructor.name);
 				this.remapBias = param;
 				break;
 			case 'm_bScaleInitialRange':
+				console.error('do this param', paramName, param, this.constructor.name);
 				this.scaleInitialRange = param;
 				break;
 			default:
@@ -58,9 +71,9 @@ export class RemapCPtoScalar extends Operator {
 		}
 	}
 
-	doInit(particle, elapsedTime, strength) {
-		const cpInputPos = this.system.getControlPoint(this.cpInput).currentWorldPosition;
-		let value = cpInputPos[this.field];
+	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+		const cpInputPos = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
+		let value = cpInputPos[this.field] ?? 0;
 
 		value = RemapValClampedBias(value, this.inputMin, this.inputMax, this.outputMin, this.outputMax, this.remapBias);
 

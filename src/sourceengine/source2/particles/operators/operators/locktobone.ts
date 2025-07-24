@@ -8,6 +8,7 @@ import { DEFAULT_JUMP_THRESHOLD } from './positionlock';
 export const DEFAULT_LIFE_TIME_FADE_START = 0;// TODO: check default value
 export const DEFAULT_LIFE_TIME_FADE_END = 0;// TODO: check default value
 export const DEFAULT_PREV_POS_SCALE = 1;// TODO: check default value
+export const DEFAULT_RIGID = false;// TODO: check default value
 
 export class LockToBone extends Operator {
 	#hitboxSetName = 'default';
@@ -15,7 +16,7 @@ export class LockToBone extends Operator {
 	#lifeTimeFadeEnd = DEFAULT_LIFE_TIME_FADE_END;
 	#jumpThreshold = DEFAULT_JUMP_THRESHOLD;
 	#prevPosScale = 1;
-	#rigid = false;
+	#rigid = DEFAULT_RIGID;
 	#useBones = false;
 	#rotationSetType = null;
 	#rigidRotationLock = false;
@@ -37,9 +38,8 @@ export class LockToBone extends Operator {
 			case 'm_flPrevPosScale':
 				this.#prevPosScale = param.getValueAsNumber() ?? DEFAULT_PREV_POS_SCALE;
 				break;
-			case 'm_bRigid':
-				console.error('do this param', paramName, param);
-				this.#rigid = param;
+			case 'm_bRigid':// TODO: mutualize ?
+				this.#rigid = param.getValueAsBool() ?? DEFAULT_RIGID;
 				break;
 			case 'm_bUseBones':
 				console.error('do this param', paramName, param);

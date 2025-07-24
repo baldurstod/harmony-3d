@@ -53,7 +53,7 @@ export class OscillateScalar extends Operator {
 				this.#field = param.getValueAsNumber() ?? DEFAULT_FIELD;
 				break;
 			case 'm_bProportional':
-				this.#proportional =  param.getValueAsBool() ?? DEFAULT_PROPORTIONAL;
+				this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL;
 				break;
 			case 'm_bProportionalOp':
 				this.#proportionalOp = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL_OP;
@@ -72,9 +72,8 @@ export class OscillateScalar extends Operator {
 			case 'm_flEndTime_max':
 				this.#endTimeMax = param.getValueAsString() ?? DEFAULT_END_TIME_MAX;
 				break;
-			case 'm_flOscMult':
-				console.error('do this param', paramName, param);
-				this.#oscMult = param;
+			case 'm_flOscMult':// TODO: mutualize ?
+				this.#oscMult = param.getValueAsNumber() ?? DEFAULT_OSC_MULT;
 				break;
 			case 'm_flOscAdd':
 				console.error('do this param', paramName, param);

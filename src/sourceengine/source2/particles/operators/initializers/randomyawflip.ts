@@ -3,14 +3,16 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+
+const DEFAULT_PERCENT = 0.5;// TODO: check default value
+
 export class RandomYawFlip extends Operator {
-	#percent = 0.5;
+	#percent = DEFAULT_PERCENT;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flPercent':
-				console.error('do this param', paramName, param);
-				this.#percent = (param);
+				this.#percent = param.getValueAsNumber() ?? DEFAULT_PERCENT;
 				break;
 			default:
 				super._paramChanged(paramName, param);

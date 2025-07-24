@@ -7,6 +7,7 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 const DEFAULT_OUTPUT_MIN = 0;
 const DEFAULT_OUTPUT_MAX = 100;
 const DEFAULT_NOISE_SCALE = 0.1;
+const DEFAULT_OFFSET = 0;
 
 export class NoiseEmitter extends Operator {
 	#emissionDuration = 0;
@@ -16,7 +17,7 @@ export class NoiseEmitter extends Operator {
 	#worldNoisePoint = -1;
 	#absVal = false;
 	#absValInv = false;
-	#offset = 0;
+	#offset = DEFAULT_OFFSET;
 	#outputMin = DEFAULT_OUTPUT_MIN;
 	#outputMax = DEFAULT_OUTPUT_MAX;
 	#noiseScale = DEFAULT_NOISE_SCALE;
@@ -56,8 +57,7 @@ export class NoiseEmitter extends Operator {
 				this.#absValInv = param;
 				break;
 			case 'm_flOffset':
-				console.error('do this param', paramName, param);
-				this.#offset = param;
+				this.#offset = param.getValueAsNumber() ?? DEFAULT_OFFSET;
 				break;
 			case 'm_flOutputMin':
 				this.#outputMin = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN;

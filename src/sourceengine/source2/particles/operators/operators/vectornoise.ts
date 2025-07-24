@@ -16,7 +16,8 @@ const ofs_z = vec3.fromValues(110000.25, 310000.75, 9100000.5);
 const posScale = 0.00;
 const timeScale = 0.1;
 
-const DEFAULT_NOISE_SCALE = 0.1;
+const DEFAULT_NOISE_SCALE = 0.1;// TODO: check default value
+const DEFAULT_OFFSET = false;// TODO: check default value
 
 export class VectorNoise extends Operator {
 	#outputMin = vec3.create();
@@ -24,7 +25,7 @@ export class VectorNoise extends Operator {
 	#fieldOutput = PARTICLE_FIELD_COLOR;
 	#noiseScale = DEFAULT_NOISE_SCALE;
 	#additive = false;
-	#offset = false;
+	#offset = DEFAULT_OFFSET;
 	#noiseAnimationTimeScale = 0;
 	#valueScale = vec3.create();
 	#valueBase = vec3.create();
@@ -62,9 +63,8 @@ export class VectorNoise extends Operator {
 			case 'm_bAdditive':
 				this.#additive = param.getValueAsBool() ?? false;
 				break;
-			case 'm_bOffset':
-				console.error('do this param', paramName, param);
-				this.#offset = param;
+			case 'm_bOffset':// TODO: mutualize
+				this.#offset = param.getValueAsBool() ?? DEFAULT_OFFSET;
 				break;
 			case 'm_flNoiseAnimationTimeScale':
 				console.error('do this param', paramName, param);

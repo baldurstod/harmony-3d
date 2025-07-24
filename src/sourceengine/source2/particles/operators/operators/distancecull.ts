@@ -1,32 +1,33 @@
 import { vec3 } from 'gl-matrix';
 import { Source2Particle } from '../../source2particle';
-import { Operator } from '../operator';
+import { DEFAULT_CONTROL_POINT_NUMBER, Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const vec = vec3.create();
 
+const DEFAULT_DISTANCE = 0;// TODO: check default value
+const DEFAULT_CULL_INSIDE = false;// TODO: check default value
+
 export class DistanceCull extends Operator {
-	pointOffset = vec3.create();
-	distance = 0;
-	cullInside = false;
+	#pointOffset = vec3.create();// TODO: check default value
+	#distance = DEFAULT_DISTANCE;
+	#cullInside = DEFAULT_CULL_INSIDE;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
-			case 'm_nControlPoint':
-				console.error('do this param', paramName, param);
-				this.controlPointNumber = (param);
+			case 'm_nControlPoint':// TODO: mutualize ?
+				this.controlPointNumber = param.getValueAsNumber() ?? DEFAULT_CONTROL_POINT_NUMBER;
 				break;
 			case 'm_vecPointOffset':
-				console.error('do this param', paramName, param);
-				vec3.copy(this.pointOffset, param);
+				param.getValueAsVec3(this.#pointOffset);
 				break;
 			case 'm_flDistance':
-				this.distance = param.getValueAsNumber() ?? 0;
+				this.#distance = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_bCullInside':
 				console.error('do this param', paramName, param);
-				this.cullInside = param;
+				this.#cullInside = param;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -37,14 +38,14 @@ export class DistanceCull extends Operator {
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
 			const origin = cp.getWorldPosition(vec);
-			vec3.add(origin, origin, this.pointOffset);
+			vec3.add(origin, origin, this.#pointOffset);
 
-			if (this.cullInside) {//TODO: improve this
-				if (vec3.distance(particle.position, origin) < this.distance) {
+			if (this.#cullInside) {//TODO: improve this
+				if (vec3.distance(particle.position, origin) < this.#distance) {
 					particle.die();
 				}
 			} else {
-				if (vec3.distance(particle.position, origin) > this.distance) {
+				if (vec3.distance(particle.position, origin) > this.#distance) {
 					particle.die();
 				}
 			}

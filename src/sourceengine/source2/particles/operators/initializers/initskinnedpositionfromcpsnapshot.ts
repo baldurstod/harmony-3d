@@ -55,15 +55,13 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 				this.#random = param.getValueAsBool() ?? DEFAULT_RANDOM;
 				break;
 			case 'm_nRandomSeed':
-				console.error('do this param', paramName, param);
-				this.#randomSeed = (param);
+				this.#randomSeed = param.getValueAsNumber() ?? DEFAULT_RANDOM_SEED;
 				break;
 			case 'm_bRigid':
 				this.#rigid = param.getValueAsBool() ?? DEFAULT_RIGID;
 				break;
 			case 'm_bSetNormal':
-				console.error('do this param', paramName, param);
-				this.#setNormal = param;
+				this.#setNormal = param.getValueAsBool() ?? DEFAULT_SET_NORMAL;
 				break;
 			case 'm_bIgnoreDt':
 				console.error('do this param', paramName, param);
@@ -102,8 +100,7 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 				this.#copyColor = param;
 				break;
 			case 'm_bCopyAlpha':
-				console.error('do this param', paramName, param);
-				this.#copyAlpha = param;
+				this.#copyAlpha = param.getValueAsBool() ?? DEFAULT_COPY_ALPHA;
 				break;
 			case 'm_bCopyRadius':
 				console.error('do this param', paramName, param);

@@ -20,12 +20,10 @@ export class CreateFromParentParticles extends Operator {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flVelocityScale':
-				console.error('do this param', paramName, param);
-				this.#velocityScale = param;
+				this.#velocityScale = param.getValueAsNumber() ?? DEFAULT_VELOCITY_SCALE;
 				break;
 			case 'm_flIncrement':
-				console.error('do this param', paramName, param);
-				this.#increment = param;
+				this.#increment = param.getValueAsNumber() ?? DEFAULT_INCREMENT;
 				break;
 			case 'm_bRandomDistribution':
 				this.#randomDistribution = param.getValueAsBool() ?? DEFAULT_RANDOM_DISTRIBUTION;

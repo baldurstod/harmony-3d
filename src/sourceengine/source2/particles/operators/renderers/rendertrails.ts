@@ -77,8 +77,6 @@ export class RenderTrails extends RenderBase {
 				this.setSequenceCombineMode(value);
 				break;*/
 			case 'm_flMinLength':
-
-				console.error('do this param', paramName, param);
 				this.#minLength = param.getValueAsNumber() ?? DEFAULT_MIN_LENGTH;
 				break;
 			case 'm_flMaxLength':

@@ -5,7 +5,7 @@ import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class SetFloat extends Operator {
-	normalizePerLiving = true;
+	#normalizePerLiving = true;
 	outputField = PARTICLE_FIELD_RADIUS;//TODO: not sure about the default field
 	setMethod = 'PARTICLE_SET_VALUE';// TODO: create a const
 

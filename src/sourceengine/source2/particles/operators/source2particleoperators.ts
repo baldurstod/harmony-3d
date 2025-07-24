@@ -1,7 +1,9 @@
 import { Operator } from './operator';
 
-const Source2ParticleOperators = new Map<string, typeof Operator>;
+// TODO: remove me when particle are finished
+const messagePerOperator = new Set<string>();
 
+const Source2ParticleOperators = new Map<string, typeof Operator>;
 
 export function RegisterSource2ParticleOperator(operatorName: string, operator: typeof Operator) {
 	Source2ParticleOperators.set(operatorName, operator);
@@ -83,9 +85,19 @@ export function GetSource2ParticleOperator(operatorName: string): typeof Operato
 		case 'C_INIT_RingWave':
 		case 'C_OP_NormalLock':
 		case 'C_INIT_NormalAlignToCP':
+		case 'C_OP_SetVec':
+		case 'C_OP_SetControlPointPositions':
+		case 'C_OP_MovementRotateParticleAroundAxis':
+		case 'C_INIT_CreationNoise':
+		case 'C_OP_FadeIn':
+		case 'C_OP_PlaneCull':
+		case 'C_INIT_SequenceLifeTime':
 			break;
 		default:
-			console.warn('do operator ', operatorName);
+			if (!messagePerOperator.has(operatorName)) {
+				console.warn('do operator ', operatorName);
+				messagePerOperator.add(operatorName);
+			}
 			break;
 	}
 	return Source2ParticleOperators.get(operatorName);

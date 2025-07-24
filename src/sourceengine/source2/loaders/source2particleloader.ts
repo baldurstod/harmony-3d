@@ -13,6 +13,9 @@ import { OperatorParam } from '../particles/operators/operatorparam';
 
 export const CParticleSystemDefinition = 'CParticleSystemDefinition';
 
+// TODO: remove me when particle are finished
+const messagePerOperator = new Set<string>();
+
 function valueToControlPointConfigurationDrivers(value: Kv3Element[] | null): ControlPointConfigurationDriver[] {
 	const ret: ControlPointConfigurationDriver[] = [];
 	if (value) {
@@ -128,7 +131,10 @@ function initOperators(system: Source2ParticleSystem, systemArray: Operator[], k
 					}
 					operator.init();
 				} else {
-					console.error('Unknown operator : ' + operatorClassName, property, system.name);
+					if (!messagePerOperator.has(operatorClassName)) {
+						console.error('Unknown operator : ' + operatorClassName, property, system.name);
+						messagePerOperator.add(operatorClassName);
+					}
 				}
 			}
 		}

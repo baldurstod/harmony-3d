@@ -12,6 +12,7 @@ const tempPos = vec3.create();
 const vec = vec3.create();
 
 export const DEFAULT_JUMP_THRESHOLD = 512;// TODO: check default value
+export const DEFAULT_RANGE = 0;// TODO: check default value
 
 export class PositionLock extends Operator {
 	#startTimeMin = 1;
@@ -20,7 +21,7 @@ export class PositionLock extends Operator {
 	#endTimeMin = 1;
 	#endTimeMax = 1;
 	#endTimeExp = 1;
-	#range = 0;
+	#range = DEFAULT_RANGE;
 	#jumpThreshold = DEFAULT_JUMP_THRESHOLD;
 	#prevPosScale = 1;
 	#lockRot = false;
@@ -66,9 +67,8 @@ export class PositionLock extends Operator {
 				this.#endTimeExp = param;
 				this._update();
 				break;
-			case 'm_flRange':
-				console.error('do this param', paramName, param);
-				this.#range = param;
+			case 'm_flRange':// TODO: mutualize ?
+				this.#range = param.getValueAsNumber() ?? DEFAULT_RANGE;
 				break;
 			case 'm_flJumpThreshold':// TODO: mutualize ?
 				this.#jumpThreshold = param.getValueAsNumber() ?? DEFAULT_JUMP_THRESHOLD;

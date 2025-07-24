@@ -29,12 +29,10 @@ export class PositionWarp extends Operator {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_vecWarpMin':
-				console.error('do this param', paramName, param);
-				vec3.copy(this.#warpMin, param);
+				param.getValueAsVec3(this.#warpMin);
 				break;
 			case 'm_vecWarpMax':
-				console.error('do this param', paramName, param);
-				vec3.copy(this.#warpMax, param);
+				param.getValueAsVec3(this.#warpMax);
 				break;
 			case 'm_nScaleControlPointNumber':
 				this.#scaleControlPointNumber = param.getValueAsNumber() ?? DEFAULT_SCALE_CONTROL_POINT_NUMBER;

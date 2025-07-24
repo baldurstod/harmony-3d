@@ -6,16 +6,21 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const randomColorTempVec4 = vec4.create();
 
+const DEFAULT_UPDATE_THRESHOLD = 32;// TODO: check default value
+const DEFAULT_TINT_CP = 0;// TODO: check default value
+const DEFAULT_LIGHT_AMPLIFICATION = 1;// TODO: check default value
+const DEFAULT_TINT_PERC = 0;// TODO: check default value
+
 export class RandomColor extends Operator {
-	#colorMin = vec4.fromValues(1, 1, 1, 1);
-	#colorMax = vec4.fromValues(1, 1, 1, 1);
-	tintMin = vec3.fromValues(0, 0, 0);
-	tintMax = vec3.fromValues(1, 1, 1);
-	updateThreshold = 32;
-	tintCP = 0;
-	tintBlendMode = null;
-	lightAmplification = 1;
-	tintPerc = 0;
+	#colorMin = vec4.fromValues(1, 1, 1, 1);// TODO: check default value
+	#colorMax = vec4.fromValues(1, 1, 1, 1);// TODO: check default value
+	#tintMin = vec3.fromValues(0, 0, 0);// TODO: check default value
+	#tintMax = vec3.fromValues(1, 1, 1);// TODO: check default value
+	#updateThreshold = DEFAULT_UPDATE_THRESHOLD;
+	#tintCP = DEFAULT_TINT_CP;
+	#tintBlendMode = null;
+	#lightAmplification = DEFAULT_LIGHT_AMPLIFICATION;
+	#tintPerc = DEFAULT_TINT_PERC;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -33,31 +38,30 @@ export class RandomColor extends Operator {
 				break;
 			case 'm_TintMin':
 				console.error('do this param', paramName, param);
-				vec3.set(this.tintMin, Number(param[0]) / 255, Number(param[1]) / 255, Number(param[2]) / 255);
+				vec3.set(this.#tintMin, Number(param[0]) / 255, Number(param[1]) / 255, Number(param[2]) / 255);
 				break;
 			case 'm_TintMax':
-				console.error('do this param', paramName, param);
-				vec3.set(this.tintMax, Number(param[0]) / 255, Number(param[1]) / 255, Number(param[2]) / 255);
+				if (param.getValueAsVec3(this.#tintMax)) {
+					vec3.scale(this.#tintMax, this.#tintMax, 1 / 255);
+				}
 				break;
 			case 'm_flUpdateThreshold':
-				console.error('do this param', paramName, param);
-				this.updateThreshold = param;
+				this.#updateThreshold = param.getValueAsNumber() ?? DEFAULT_UPDATE_THRESHOLD;
 				break;
 			case 'm_nTintCP':
 				console.error('do this param', paramName, param);
-				this.tintCP = param;
+				this.#tintCP = param;
 				break;
 			case 'm_nTintBlendMode':
 				console.error('do this param', paramName, param);
-				this.tintBlendMode = param;
+				this.#tintBlendMode = param;
 				break;
 			case 'm_flLightAmplification':
-				console.error('do this param', paramName, param);
-				this.lightAmplification = param;
+				this.#lightAmplification = param.getValueAsNumber() ?? DEFAULT_LIGHT_AMPLIFICATION;
 				break;
 			case 'm_flTintPerc':
 				console.error('do this param', paramName, param);
-				this.tintPerc = param;
+				this.#tintPerc = param;
 				break;
 			default:
 				super._paramChanged(paramName, param);
