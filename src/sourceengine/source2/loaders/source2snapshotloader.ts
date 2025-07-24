@@ -13,7 +13,7 @@ export const Source2SnapshotLoader = new (function () {
 			filename = filename.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
 			const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
 			if (snapFile) {
-				return this.loadSnapshot(snapFile as Source2File);
+				return this.#loadSnapshot(snapFile as Source2File);
 			} else {
 				if (ERROR) {
 					console.error('Error loading snapshot', repository, filename);
@@ -22,7 +22,7 @@ export const Source2SnapshotLoader = new (function () {
 			}
 		}
 
-		loadSnapshot(snapFile: Source2File) {
+		#loadSnapshot(snapFile: Source2File) {
 			const snapShot = new Source2Snapshot();
 			snapShot.file = snapFile;
 
@@ -35,16 +35,21 @@ export const Source2SnapshotLoader = new (function () {
 				}
 				const particleCount = Number(dataBlock.getKeyValue('num_particles'));
 				snapShot.setParticleCount(particleCount);
-				const snapshotAttributes = dataBlock.getKeyValue('attributes') ?? [];
-				const snapshotStringList = dataBlock.getKeyValue('string_list') ?? [];
+				const snapshotAttributes = dataBlock.getKeyValueAsElementArray('attributes') ?? [];
+				const snapshotStringList = dataBlock.getKeyValueAsElementArray('string_list') ?? [];
 
 				const reader = new BinaryReader(snapBlock.datas);
 				let attributeValue;
 				let bones;
 				let weights;
 				for (const snapshotAttribute of snapshotAttributes) {
-					reader.seek(Number(snapshotAttribute.data_offset));
-					switch (snapshotAttribute.type) {
+					const dataOffset = snapshotAttribute.getSubValueAsNumber('data_offset');
+					if (dataOffset === null) {
+						continue;
+					}
+					reader.seek(dataOffset);
+					const attributeType = snapshotAttribute.getSubValueAsString('type')
+					switch (attributeType) {
 						case 'float3':
 						case 'vector':
 							attributeValue = [];
