@@ -5,11 +5,12 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const DEFAULT_SET_ORIENTATION = false;
 const DEFAULT_NUM_CONTROL_POINTS = 1;
-const DEFAULT_FIRST_SOURCE_CONTROL_POINT= 0;
+const DEFAULT_FIRST_SOURCE_CONTROL_POINT = 0;
+const DEFAULT_CHILD_CONTROL_POINT = 0;
 
 export class SetParentControlPointsToChildCP extends Operator {
 	#childGroupID = 0;
-	#childControlPoint = 0;
+	#childControlPoint = DEFAULT_CHILD_CONTROL_POINT;
 	#numControlPoints = DEFAULT_NUM_CONTROL_POINTS;
 	#firstSourcePoint = DEFAULT_FIRST_SOURCE_CONTROL_POINT;
 	#setOrientation = DEFAULT_SET_ORIENTATION;
@@ -21,8 +22,7 @@ export class SetParentControlPointsToChildCP extends Operator {
 				this.#childGroupID = (param);
 				break;
 			case 'm_nChildControlPoint':
-				console.error('do this param', paramName, param);
-				this.#childControlPoint = (param);
+				this.#childControlPoint = param.getValueAsNumber() ?? DEFAULT_CHILD_CONTROL_POINT;
 				break;
 			case 'm_nNumControlPoints':
 				this.#numControlPoints = param.getValueAsNumber() ?? DEFAULT_NUM_CONTROL_POINTS;

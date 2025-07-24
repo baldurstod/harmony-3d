@@ -37,6 +37,9 @@ const DEFAULT_COLOR_SCALE = vec3.fromValues(1, 1, 1);// TODO: check default valu
 const DEFAULT_ADD_SELF_AMOUNT = 1;// TODO: check default value
 const DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND = false;// TODO: check default value
 const DEFAULT_ANIMATION_TYPE = 'ANIMATION_TYPE_FIT_LIFETIME';// TODO: check default value
+const DEFAULT_REFRACT = false;// TODO: check default value
+const DEFAULT_REFRACT_BLUR_RADIUS = 1;// TODO: check default value
+const DEFAULT_GAMMA_CORRECT_VERTEX_COLORS = true;// TODO: check default value
 
 export class RenderSprites extends RenderBase {
 	geometry: BufferGeometry = new BufferGeometry();
@@ -55,6 +58,9 @@ export class RenderSprites extends RenderBase {
 	#endFadeSize = DEFAULT_END_FADE_SIZE;
 	#depthBias = DEFAULT_DEPTH_BIAS;
 	#animationType = DEFAULT_ANIMATION_TYPE;
+	#refract = DEFAULT_REFRACT;
+	#refractBlurRadius = DEFAULT_REFRACT_BLUR_RADIUS;
+	#gammaCorrectVertexColors = DEFAULT_GAMMA_CORRECT_VERTEX_COLORS;
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
@@ -114,6 +120,15 @@ export class RenderSprites extends RenderBase {
 			case 'm_nAnimationType':
 				this.#animationType = param.getValueAsString() ?? DEFAULT_ANIMATION_TYPE;
 				break;
+			case 'm_bRefract':
+				this.#refract = param.getValueAsBool() ?? DEFAULT_REFRACT;
+				break;
+			case 'm_nRefractBlurRadius':
+				this.#refractBlurRadius = param.getValueAsNumber() ?? DEFAULT_REFRACT_BLUR_RADIUS;
+				break;
+			case 'm_bGammaCorrectVertexColors':
+				this.#gammaCorrectVertexColors = param.getValueAsBool() ?? DEFAULT_GAMMA_CORRECT_VERTEX_COLORS;
+				break;
 			case 'm_flRadiusScale':// TODO: mutualize ?
 			case 'm_flAlphaScale':// TODO: mutualize ?
 			case 'm_flOverbrightFactor':// TODO: mutualize ?
@@ -140,8 +155,9 @@ export class RenderSprites extends RenderBase {
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
-		// TODO: use m_flRefractAmount, m_flAddSelfAmount, blendFramesSeq0, VisibilityInputs, m_nFeatheringMode
-const colorScale = this.getParamVectorValue(renderSpritesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
+		// TODO: use m_flRefractAmount, m_flAddSelfAmount, blendFramesSeq0, VisibilityInputs, m_nFeatheringMode, m_bGammaCorrectVertexColors
+		// TODO: do refraction ex: particles/units/heroes/hero_arc_warden/arc_warden_bracer_hand.vpcf_c
+		const colorScale = this.getParamVectorValue(renderSpritesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
 
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.getParameter('animation rate');

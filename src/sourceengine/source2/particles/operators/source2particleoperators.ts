@@ -79,6 +79,10 @@ export function GetSource2ParticleOperator(operatorName: string): typeof Operato
 		case 'C_OP_ClampScalar':
 		case 'C_INIT_RemapCPtoVector':
 		case 'C_OP_RepeatedTriggerChildGroup':
+		case 'C_OP_FadeOut':
+		case 'C_INIT_RingWave':
+		case 'C_OP_NormalLock':
+		case 'C_INIT_NormalAlignToCP':
 			break;
 		default:
 			console.warn('do operator ', operatorName);

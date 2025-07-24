@@ -1,5 +1,4 @@
 import { vec2, vec3 } from 'gl-matrix';
-
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 import { Graphics } from '../../../../../graphics/graphics';
@@ -11,7 +10,6 @@ import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MA
 import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
 import { Source2MaterialManager } from '../../../materials/source2materialmanager';
-import { Source2SpriteCard } from '../../../materials/source2spritecard';
 import { Source2ParticleSystem } from '../../export';
 import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
 import { Source2Particle } from '../../source2particle';
@@ -39,6 +37,7 @@ const DEFAULT_LENGTH_SCALE = 1;// TODO: check default value
 const DEFAULT_MAX_PARTICLES = 1000;// TODO: check default value
 const DEFAULT_ADD_SELF_AMOUNT = 1;// TODO: check default value
 const DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND = false;// TODO: check default value
+const DEFAULT_RADIUS_HEAD_TAPER = 1;// TODO: check default value
 
 export class RenderTrails extends RenderBase {
 	#geometry: BufferGeometry = new BufferGeometry();
@@ -94,6 +93,7 @@ export class RenderTrails extends RenderBase {
 			case 'm_flRadiusScale':
 			case 'm_flFinalTextureScaleU':
 			case 'm_flFinalTextureScaleV':
+			case 'm_flRadiusHeadTaper':
 			case 'm_flOverbrightFactor':// TODO: mutualize ?
 				break;
 			case 'm_flLengthScale':
@@ -133,7 +133,8 @@ export class RenderTrails extends RenderBase {
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {
-		// TODO: use animationRate, vertCropField, m_flTailAlphaScale
+		// TODO: use animationRate, vertCropField, m_flTailAlphaScale, m_flRadiusHeadTaper
+		const radiusHeadTaper = this.getParamScalarValue('m_flRadiusHeadTaper') ?? DEFAULT_RADIUS_HEAD_TAPER;
 		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.getParameter('animation rate');

@@ -5,7 +5,7 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const DEFAULT_FADE_IN_TIME = 0.25;
+const DEFAULT_FADE_IN_TIME = 0.25;// TODO: check default value
 
 export class FadeInSimple extends Operator {
 	#fadeInTime = DEFAULT_FADE_IN_TIME;

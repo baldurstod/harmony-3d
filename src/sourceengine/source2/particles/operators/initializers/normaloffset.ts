@@ -13,8 +13,8 @@ const DEFAULT_NORMALIZE = false;// TODO: check default value
 export class NormalOffset extends Operator {
 	#offsetMin = vec3.create();// TODO: check default value
 	#offsetMax = vec3.create();// TODO: check default value
-	#localCoords = false;// TODO: check default value
-	#normalize = false;// TODO: check default value
+	#localCoords = DEFAULT_LOCAL_COORDS;// TODO: check default value
+	#normalize = DEFAULT_NORMALIZE;// TODO: check default value
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -25,11 +25,10 @@ export class NormalOffset extends Operator {
 				param.getValueAsVec3(this.#offsetMax);
 				break;
 			case 'm_bLocalCoords':
-				console.error('do this param', paramName, param);
-				this.#localCoords = param;
+				this.#localCoords = param.getValueAsBool() ?? DEFAULT_LOCAL_COORDS;
 				break;
 			case 'm_bNormalize':
-				this.#normalize = param.getValueAsBool() ?? DEFAULT_NORMALIZE;// TODO: check default value
+				this.#normalize = param.getValueAsBool() ?? DEFAULT_NORMALIZE;
 				break;
 			default:
 				super._paramChanged(paramName, param);

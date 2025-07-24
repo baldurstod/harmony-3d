@@ -17,10 +17,13 @@ const Coord2 = vec3.create();
 const Coord3 = vec3.create();
 const poffset = vec3.create();
 
+const DEFAULT_IGNORE_DT = false;// TODO: check default value
+
 export class InitialVelocityNoise extends Operator {
 	#absVal = vec3.create();
 	#absValInv = vec3.create();
 	#localSpace = false;
+	#ignoreDt = DEFAULT_IGNORE_DT;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -41,6 +44,9 @@ export class InitialVelocityNoise extends Operator {
 				break;
 			case 'm_bLocalSpace'://TODO: put this param in Operator ?
 				this.#localSpace = param.getValueAsBool() ?? false;
+				break;
+			case 'm_bIgnoreDt'://TODO: put this param in Operator ?
+				this.#ignoreDt = param.getValueAsBool() ?? DEFAULT_IGNORE_DT;
 				break;
 			default:
 				super._paramChanged(paramName, param);

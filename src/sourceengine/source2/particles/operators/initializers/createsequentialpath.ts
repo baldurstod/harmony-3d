@@ -36,7 +36,7 @@ export class CreateSequentialPath extends Operator {
 				this.loop = param;
 				break;
 			case 'm_PathParams':
-				Source2ParticlePathParams.fromOperatorParam(param, this.#path);
+				Source2ParticlePathParams.fromOperatorParam(param, this.#pathParams);
 				break;
 			case 'm_fMaxDistance':
 				this.maxDistance = param;

@@ -6,6 +6,8 @@ import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const DEFAULT_OFFSET = true;
+const DEFAULT_END_TIME_MIN = 1;
+const DEFAULT_END_TIME_MAX = 1;
 
 export class OscillateVector extends Operator {
 	#rateMin = vec3.create();// TODO: check default value
@@ -18,8 +20,8 @@ export class OscillateVector extends Operator {
 	#offset = DEFAULT_OFFSET;
 	#startTimeMin = 0;
 	#startTimeMax = 0;
-	#endTimeMin = 1;
-	#endTimeMax = 1;
+	#endTimeMin = DEFAULT_END_TIME_MIN;
+	#endTimeMax = DEFAULT_END_TIME_MAX;
 	#oscMult = 2;
 	#oscAdd = 0.5;
 
@@ -61,12 +63,10 @@ export class OscillateVector extends Operator {
 				this.#startTimeMax = param;
 				break;
 			case 'm_flEndTime_min':
-				console.error('do this param', paramName, param);
-				this.#endTimeMin = param;
+				this.#endTimeMin = param.getValueAsNumber() ?? DEFAULT_END_TIME_MIN;
 				break;
 			case 'm_flEndTime_max':
-				console.error('do this param', paramName, param);
-				this.#endTimeMax = param;
+				this.#endTimeMax = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX;
 				break;
 			case 'm_flOscMult':
 				console.error('do this param', paramName, param);

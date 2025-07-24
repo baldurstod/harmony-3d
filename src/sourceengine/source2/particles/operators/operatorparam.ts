@@ -30,7 +30,7 @@ export class OperatorParam {
 		return this.#value as boolean;
 	}
 
-	getValueAsNumber(): number | null | undefined {
+	getValueAsNumber(): number | null {
 		if (this.#type == OperatorParamType.Number) {
 			return this.#value as number;
 		}
@@ -40,7 +40,7 @@ export class OperatorParam {
 			const type = (this.#value as Map<string, OperatorParam>).get('m_nType')?.getValueAsString();
 			switch (type) {
 				case 'PF_TYPE_LITERAL'/*TODO: create a string constant*/:
-					return (this.#value as Map<string, OperatorParam>).get('m_flLiteralValue')?.getValueAsNumber();
+					return (this.#value as Map<string, OperatorParam>).get('m_flLiteralValue')?.getValueAsNumber() ?? null;
 				default:
 					console.error('unknown number type, maybe use getParamScalarValue instead', type, this);
 			}
@@ -102,31 +102,35 @@ export class OperatorParam {
 		return out;
 	}
 
-	getSubValue(name: string): OperatorParam | null | undefined {
+	getSubValue(name: string): OperatorParam | null {
 		if (this.#type != OperatorParamType.Element) {
 			return null;
 		}
-		return (this.#value as Map<string, OperatorParam>).get(name);
+		return (this.#value as Map<string, OperatorParam>).get(name) ?? null;
 	}
 
-	getSubValueAsBool(name: string): boolean | null | undefined {
-		return this.getSubValue(name)?.getValueAsBool();
+	getSubValueAsBool(name: string): boolean | null {
+		return this.getSubValue(name)?.getValueAsBool() ?? null;
 	}
 
-	getSubValueAsNumber(name: string): number | null | undefined {
-		return this.getSubValue(name)?.getValueAsNumber();
+	getSubValueAsNumber(name: string): number | null {
+		return this.getSubValue(name)?.getValueAsNumber() ?? null;
 	}
 
-	getSubValueAsString(name: string): string | null | undefined {
-		return this.getSubValue(name)?.getValueAsString();
+	getSubValueAsString(name: string): string | null {
+		return this.getSubValue(name)?.getValueAsString() ?? null;
 	}
 
-	getSubValueAsArray(name: string): OperatorParamValueType[] | null | undefined {
-		return this.getSubValue(name)?.getValueAsArray();
+	getSubValueAsArray(name: string): OperatorParamValueType[] | null {
+		return this.getSubValue(name)?.getValueAsArray() ?? null;
 	}
 
-	getSubValueAsVec2(name: string, out: vec2): vec2 | null | undefined {
-		return this.getSubValue(name)?.getValueAsVec2(out);
+	getSubValueAsVec2(name: string, out: vec2): vec2 | null {
+		return this.getSubValue(name)?.getValueAsVec2(out) ?? null;
+	}
+
+	getSubValueAsVec3(name: string, out: vec3): vec3 | null {
+		return this.getSubValue(name)?.getValueAsVec3(out) ?? null;
 	}
 
 	static fromKv3(kv3: Kv3Element | Kv3Value | null): OperatorParam {

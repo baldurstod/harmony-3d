@@ -14,11 +14,14 @@ const createWithinSphereSpeedMin = vec4.create();
 const createWithinSphereSpeedMax = vec4.create();
 const createWithinSphereDistanceBias = vec4.create();
 
+const DEFAULT_SPEED_RAND_EXP = 1;// TODO: check default value
+const DEFAULT_LOCAL_COORDS = false;// TODO: check default value
+
 export class CreateWithinSphere extends Operator {
 	#distanceBias = vec3.fromValues(1, 1, 1);// TODO: check default value
 	#distanceBiasAbs = vec3.create();// TODO: check default value
-	#speedRandExp = 1;
-	#localCoords = false;
+	#speedRandExp = DEFAULT_SPEED_RAND_EXP;
+	#localCoords = DEFAULT_LOCAL_COORDS;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -37,9 +40,8 @@ export class CreateWithinSphere extends Operator {
 				console.error('do this param', paramName, param);
 				this.#speedRandExp = param;
 				break;
-			case 'm_bLocalCoords':
-				console.error('do this param', paramName, param);
-				this.#localCoords = param;
+			case 'm_bLocalCoords'://TODO: mutualize
+				this.#localCoords = param.getValueAsBool() ?? DEFAULT_LOCAL_COORDS;
 				break;
 			default:
 				super._paramChanged(paramName, param);

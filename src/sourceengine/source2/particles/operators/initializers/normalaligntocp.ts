@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -16,7 +17,7 @@ export class NormalAlignToCP extends Operator {
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//This operator overrides the normal
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {

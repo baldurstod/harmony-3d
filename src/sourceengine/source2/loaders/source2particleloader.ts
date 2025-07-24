@@ -59,10 +59,10 @@ function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Elem
 				}
 				break;
 			case 'm_flConstantLifespan':
-				system.baseProperties.lifespan = systemDefinition.getValueAsNumber('key') ?? 0;// TODO: check default value
+				system.baseProperties.lifespan = systemDefinition.getValueAsNumber(key) ?? 0;// TODO: check default value
 				break;
 			case 'm_flConstantRadius':
-				system.baseProperties.radius = systemDefinition.getValueAsNumber('key') ?? SOURCE2_DEFAULT_RADIUS;// TODO: check default value
+				system.baseProperties.radius = systemDefinition.getValueAsNumber(key) ?? SOURCE2_DEFAULT_RADIUS;// TODO: check default value
 				break;
 			case 'm_nConstantSequenceNumber':
 				system.baseProperties.sequenceNumber = systemDefinition.getValueAsNumber(key) ?? 0;// TODO: check default value
@@ -74,11 +74,10 @@ function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Elem
 				system.baseProperties.snapshot = systemDefinition.getValueAsResource(key) ?? '';// TODO: check default value
 				break;
 			case 'm_nSnapshotControlPoint':
-				system.baseProperties.snapshotControlPoint = systemDefinition.getValueAsNumber('key') ?? 0;// TODO: check default value
+				system.baseProperties.snapshotControlPoint = systemDefinition.getValueAsNumber(key) ?? 0;// TODO: check default value
 				break;
 			case 'm_nInitialParticles':
-				console.error('do this param', key, value);
-				system.initialParticles = (value);
+				system.initialParticles = systemDefinition.getValueAsNumber(key) ?? 0;
 				break;
 			case 'm_flConstantRotationSpeed':
 				console.error('do this param', key, value);

@@ -11,7 +11,7 @@ import { Source2ParticleManager } from './source2particlemanager';
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
 
-export const SOURCE2_DEFAULT_RADIUS = 5;
+export const SOURCE2_DEFAULT_RADIUS = 5;// TODO: check default value
 
 const vec = vec3.create();
 

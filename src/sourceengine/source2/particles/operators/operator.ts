@@ -52,6 +52,7 @@ const DEFAULT_OP_START_FADE_IN_TIME = 0;// TODO: check default value
 const DEFAULT_OP_END_FADE_IN_TIME = 0;// TODO: check default value
 const DEFAULT_OP_START_FADE_OUT_TIME = 0;// TODO: check default value
 const DEFAULT_OP_END_FADE_OUT_TIME = 0;// TODO: check default value
+const DEFAULT_OP_FADE_OSCILLATE_PERIOD = 0;// TODO: check default value
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
@@ -61,7 +62,7 @@ export class Operator {//TODOv3: rename this class ?
 	protected opEndFadeInTime = DEFAULT_OP_END_FADE_IN_TIME;
 	protected opStartFadeOutTime = DEFAULT_OP_START_FADE_OUT_TIME;
 	protected opEndFadeOutTime = DEFAULT_OP_END_FADE_OUT_TIME;
-	opFadeOscillatePeriod = 0;
+	protected opFadeOscillatePeriod = DEFAULT_OP_FADE_OSCILLATE_PERIOD;
 	normalizePerLiving = false;
 	disableOperator = false;
 	controlPointNumber = 0;
@@ -106,14 +107,15 @@ export class Operator {//TODOv3: rename this class ?
 		return this.#parameters[paramName];
 	}
 
-	getParamScalarValue(paramName: string, particle?: Source2Particle): number | undefined | null {
+	getParamScalarValue(paramName: string, particle?: Source2Particle): number | null {
 		const parameter = this.#parameters[paramName];
 		if (parameter) {
 			return this.#getParamScalarValue(parameter, particle);
 		}
+		return null;
 	}
 
-	#getParamScalarValue(parameter: OperatorParam, particle?: Source2Particle): number {
+	#getParamScalarValue(parameter: OperatorParam, particle?: Source2Particle): number | null {
 		let inputValue;
 		const type = parameter.getSubValueAsString('m_nType');
 		if (type) {
@@ -122,9 +124,7 @@ export class Operator {//TODOv3: rename this class ?
 					return parameter.getSubValueAsNumber('m_flLiteralValue') ?? 0;
 					break;
 				case 'PF_TYPE_PARTICLE_AGE':
-					console.error('do this getParamScalarValue');
-					return parameter.m_vLiteralValue;
-					break;
+					return particle?.currentTime ?? null;// TODO: not sure if this is the actual value
 				case 'PF_TYPE_PARTICLE_NUMBER_NORMALIZED':
 					if (this.normalizePerLiving) {
 						const max = this.system.livingParticles.length;
@@ -171,6 +171,9 @@ export class Operator {//TODOv3: rename this class ?
 						parameter.getSubValueAsNumber('m_flOutput0') as number ?? 0,
 						parameter.getSubValueAsNumber('m_flOutput1') ?? 1
 					);
+				case 'PF_TYPE_CONTROL_POINT_SPEED':
+					// TODO: code me
+					return null;
 				default:
 					console.error('#getParamScalarValue unknown type', parameter);
 					throw 'Code me'
@@ -272,18 +275,19 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 
-	getParamVectorValue(out: vec4, paramName: string, particle?: Source2Particle): vec4 | undefined | null {
+	getParamVectorValue(out: vec4/*not sure about vec4. maybe vec3 ?*/ , paramName: string, particle?: Source2Particle): vec4 | undefined | null {
 		const parameter = this.#parameters[paramName];
 		if (!parameter) {
 			return undefined;
 		}
 
-		const type = (parameter.getSubValue('m_nType')?.getValueAsString());
+		const type = parameter.getSubValueAsString('m_nType');
 		if (type) {
 			switch (type) {
 				case 'PVEC_TYPE_LITERAL':
-					console.error('do this param', paramName, parameter);
-					return parameter.m_vLiteralValue;
+					//console.error('do this param', paramName, parameter);
+					//return parameter.m_vLiteralValue;
+					parameter.getSubValueAsVec3('m_vLiteralValue', out as vec3);
 					break;
 				case 'PVEC_TYPE_LITERAL_COLOR':
 					return parameter.getValueAsVec3(out as vec3) as vec4;
@@ -429,8 +433,7 @@ export class Operator {//TODOv3: rename this class ?
 				this.opEndFadeOutTime = param.getValueAsNumber() ?? DEFAULT_OP_END_FADE_OUT_TIME;
 				break;
 			case 'm_flOpFadeOscillatePeriod':
-				console.error('do this param', paramName, param);
-				this.opFadeOscillatePeriod = param;
+				this.opFadeOscillatePeriod = param.getValueAsNumber() ?? DEFAULT_OP_FADE_OSCILLATE_PERIOD;
 				break;
 			case 'm_nControlPointNumber':
 				this.controlPointNumber = param.getValueAsNumber() ?? 0;
@@ -528,6 +531,7 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 	#checkIfOperatorShouldRun() {
+		// use opFadeOscillatePeriod
 		const strength = this.fadeInOut();
 		return strength > 0;
 	}

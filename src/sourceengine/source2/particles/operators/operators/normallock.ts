@@ -1,4 +1,5 @@
 import { mat3, vec3 } from 'gl-matrix';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
@@ -7,7 +8,7 @@ const nmat = mat3.create();
 
 export class NormalLock extends Operator {
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		const cp = this.system.getControlPoint(this.controlPointNumber);
 		if (cp) {
 			//mat4.invert(mat, particle.cpPreviousTransform);

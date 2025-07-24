@@ -7,9 +7,12 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 const va = vec3.create();
 const o = vec3.create();
 
+const DEFAULT_EVEN_DISTRIBUTION = false;// TODO: check default value
+const DEFAULT_XY_VELOCITY_ONLY = true;// TODO: check default value
+
 export class RingWave extends Operator {
-	evenDistribution = false;
-	xyVelocityOnly = true;
+	#evenDistribution = false;
+	#xyVelocityOnly = true;
 	t = 0;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
@@ -24,10 +27,12 @@ export class RingWave extends Operator {
 			case 'm_flYaw':
 				break;
 			case 'm_bEvenDistribution':
-				this.evenDistribution = param;
+				console.error('do this param', paramName, param, this.constructor.name);
+				this.#evenDistribution = param;
 				break;
 			case 'm_bXYVelocityOnly':
-				this.xyVelocityOnly = param;
+				console.error('do this param', paramName, param, this.constructor.name);
+				this.#xyVelocityOnly = param;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -46,7 +51,7 @@ export class RingWave extends Operator {
 		const yaw = this.getParamScalarValue('m_flYaw') ?? 0;
 
 		let theta;
-		if (this.evenDistribution) {
+		if (this.#evenDistribution) {
 			const step = particlesPerOrbit == -1 ? TWO_PI / this.system.livingParticles.length : TWO_PI / particlesPerOrbit;
 			this.t += step;
 			theta = this.t;
