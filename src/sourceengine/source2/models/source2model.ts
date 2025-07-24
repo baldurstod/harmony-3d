@@ -60,14 +60,13 @@ export class Source2Model {
 		}
 	}
 
-	#createBodyGroups() {
+	#createBodyGroups(): void {
 		const meshGroups = this.vmdl.getBlockStructAsArray('DATA', 'm_meshGroups') as string[];
 		if (meshGroups) {
 
 			let bodyGroupId = 0;
 			let bodyGroup: string | undefined;
 			for (const choice of meshGroups) {
-				throw 'do createBodyGroups'
 				if (choice == 'autodefault') {
 					bodyGroup = choice;
 				} else {
