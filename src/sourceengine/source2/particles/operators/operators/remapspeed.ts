@@ -1,0 +1,42 @@
+import { RemapValClamped, lerp } from '../../../../../math/functions';
+import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Source2Particle } from '../../source2particle';
+import { Operator } from '../operator';
+import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+
+const DEFAULT_IGNORE_DELTA = false;// TODO: check default value
+const DEFAULT_INPUT_MIN = 0;// TODO: check default value
+const DEFAULT_INPUT_MAX = 1;// TODO: check default value
+const DEFAULT_SET_METHOD = 'PARTICLE_SET_SCALE_CURRENT_VALUE';// TODO: check default value
+
+export class RemapSpeed extends Operator {
+	#ignoreDelta = DEFAULT_IGNORE_DELTA;
+	#inputMin = DEFAULT_INPUT_MIN;
+	#inputMax = DEFAULT_INPUT_MAX;
+	#setMethod = DEFAULT_SET_METHOD;
+
+	_paramChanged(paramName: string, param: OperatorParam): void {
+		switch (paramName) {
+			case 'm_bIgnoreDelta':
+				this.#ignoreDelta = param.getValueAsBool() ?? DEFAULT_IGNORE_DELTA;
+				break;
+			case 'm_flInputMin':
+				this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MIN;
+				break;
+			case 'm_flInputMax':
+				this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
+				break;
+			case 'm_nSetMethod':
+				this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
+				break;
+			default:
+				super._paramChanged(paramName, param);
+		}
+	}
+
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+		//TODO
+	}
+}
+RegisterSource2ParticleOperator('C_OP_RemapSpeed', RemapSpeed);
