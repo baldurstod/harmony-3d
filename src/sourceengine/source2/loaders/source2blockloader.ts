@@ -707,11 +707,9 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				//return reference ? reference.externalFiles[handle] : null;
 				return new Kv3Value(Kv3Type.Resource, reference ? reference.externalFiles[handle] : '');
 			case DATA_TYPE_BYTE://10
-				throw 'fix me';
-				return reader.getInt8(fieldOffset);
+				return new Kv3Value(Kv3Type.Int32/*TODO: check if there is a better type*/, reader.getInt8(fieldOffset));
 			case DATA_TYPE_UBYTE://11
-				throw 'fix me';
-				return reader.getUint8(fieldOffset);
+				return new Kv3Value(Kv3Type.UnsignedInt32/*TODO: check if there is a better type*/, reader.getUint8(fieldOffset));
 			case DATA_TYPE_SHORT://12
 				throw 'fix me';
 				return reader.getInt16(fieldOffset);
