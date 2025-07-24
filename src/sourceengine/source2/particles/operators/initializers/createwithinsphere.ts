@@ -15,8 +15,8 @@ const createWithinSphereSpeedMax = vec4.create();
 const createWithinSphereDistanceBias = vec4.create();
 
 export class CreateWithinSphere extends Operator {
-	#distanceBias = vec3.fromValues(1, 1, 1);
-	#distanceBiasAbs = vec3.create();
+	#distanceBias = vec3.fromValues(1, 1, 1);// TODO: check default value
+	#distanceBiasAbs = vec3.create();// TODO: check default value
 	#speedRandExp = 1;
 	#localCoords = false;
 
@@ -31,8 +31,7 @@ export class CreateWithinSphere extends Operator {
 			case 'm_fSpeedMax':
 				break;
 			case 'm_vecDistanceBiasAbs':
-				console.error('do this param', paramName, param);
-				vec3.copy(this.#distanceBiasAbs, param);
+				param.getValueAsVec3(this.#distanceBiasAbs);
 				break;
 			case 'm_fSpeedRandExp':
 				console.error('do this param', paramName, param);

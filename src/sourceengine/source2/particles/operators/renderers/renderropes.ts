@@ -22,20 +22,23 @@ const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE
 
 const SEQUENCE_SAMPLE_COUNT = 1;//TODO
 const DEFAULT_WORLD_SIZE = 10;
+const DEFAULT_SCROLL_RATE = 10;
 
 export class RenderRopes extends RenderBase {
-	#geometry: BeamBufferGeometry;
 	#textureVWorldSize = DEFAULT_WORLD_SIZE;
-	#textureVScrollRate = 10;
+	#textureVScrollRate = DEFAULT_SCROLL_RATE;
 	#textureScroll = 0;
 	#maxParticles = 1000;//TODO: default value
 	#texture?: Texture;
 	#imgData?: Float32Array;
+	#geometry = new BeamBufferGeometry();
+	#addSelfAmount = 1;// TODO: check default value
+	#saturateColorPreAlphaBlend = false;// TODO: check default value
+	#minTesselation = 1;// TODO: check default value
+	#maxTesselation = 1;// TODO: check default value
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this.material = new Source2SpriteCard(system.repository);
-		this.#geometry = new BeamBufferGeometry();
 		this.mesh = new Mesh(this.#geometry, this.material);
 		this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
 		Source2MaterialManager.addMaterial(this.material);
@@ -44,9 +47,6 @@ export class RenderRopes extends RenderBase {
 		//this.setParam(OPERATOR_PARAM_MOD_2X, false);
 		//this.setParam(OPERATOR_PARAM_ORIENTATION_TYPE, ORIENTATION_TYPE_SCREEN_ALIGN);
 		//this.setParam(OPERATOR_PARAM_SEQUENCE_COMBINE_MODE, SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0);//TODOv3: get the actual default value
-		this.#textureVWorldSize = 10;
-		this.#textureVScrollRate = 10;
-		this.#textureScroll = 0;
 	}
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
@@ -63,11 +63,25 @@ export class RenderRopes extends RenderBase {
 				this.#textureVWorldSize = param.getValueAsNumber() ?? DEFAULT_WORLD_SIZE;
 				break;
 			case 'm_flTextureVScrollRate':
-				console.error('do this param', paramName, param);
-				this.#textureVScrollRate = param;
+				this.#textureVScrollRate = param.getValueAsNumber() ?? DEFAULT_SCROLL_RATE;
+				break;
+			case 'm_flAddSelfAmount':
+				this.#addSelfAmount = param.getValueAsNumber() ?? 1;// TODO: check default value
+				break;
+			case 'm_nMinTesselation':
+				this.#minTesselation = param.getValueAsNumber() ?? 1;// TODO: check default value
+				break;
+			case 'm_nMaxTesselation':
+				this.#maxTesselation = param.getValueAsNumber() ?? 1;// TODO: check default value
+				break;
+			case 'm_bSaturateColorPreAlphaBlend':
+				this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? false;// TODO: check default value
 				break;
 			case 'm_flFinalTextureScaleU':
 			case 'm_flFinalTextureScaleV':
+			case 'm_flOverbrightFactor':// TODO: mutualize ?
+			case 'm_flRadiusScale':
+				// used in updateParticles
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -87,6 +101,9 @@ export class RenderRopes extends RenderBase {
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {//TODOv3
+		// TODO: use saturateColorPreAlphaBlend, m_nMinTesselation, m_nMaxTesselation
+		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
+		const radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
 		this.#textureScroll += elapsedTime * this.#textureVScrollRate;
 		const subdivCount = this.getParameter('subdivision_count') ?? 3;
 

@@ -34,9 +34,9 @@ export class RenderBase extends Operator {
 				if (textureInput0 && (textureInput0 as OperatorParam).isOperatorParam) {
 					this.setTexture((textureInput0 as OperatorParam).getSubValue('m_hTexture')?.getValueAsString() ?? DEFAULT_PARTICLE_TEXTURE);
 
-					const textureChannels = (textureInput0 as OperatorParam).getSubValue('m_nTextureChannels');
+					const textureChannels = (textureInput0 as OperatorParam).getSubValueAsString('m_nTextureChannels');
 					if (textureChannels) {
-						throw 'fix me';//this.material.setDefine(value[0].m_nTextureChannels);//TODO: check values
+						this.material.setDefine(textureChannels);//TODO: check values
 					}
 				}
 				break;
@@ -60,11 +60,11 @@ export class RenderBase extends Operator {
 			case 'm_bMod2X':
 				this.#setOutputBlendMode('PARTICLE_OUTPUT_BLEND_MODE_MOD2X');
 				break;
-				/*
-			case 'm_flRadiusScale':
-				this.radiusScale = param.getValueAsNumber() ?? 1;
-				break;
-				*/
+			/*
+		case 'm_flRadiusScale':
+			this.radiusScale = param.getValueAsNumber() ?? 1;
+			break;
+			*/
 			default:
 				super._paramChanged(paramName, param);
 		}

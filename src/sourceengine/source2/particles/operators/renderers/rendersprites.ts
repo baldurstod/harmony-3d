@@ -23,6 +23,12 @@ const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE
 const SEQUENCE_SAMPLE_COUNT = 1;//TODO
 const DEFAULT_MAX_SIZE = 5000;
 
+const DEFAULT_BLEND_FRAMES_SEQ_0 = false;// TODO: check default value
+const DEFAULT_ANIMATION_RATE = 1;// TODO: check default value
+const DEFAULT_START_FADE_SIZE = 1;// TODO: check default value
+const DEFAULT_END_FADE_SIZE = 1;// TODO: check default value
+const DEFAULT_FEATHERING_MAX_DIST = 1;// TODO: check default value
+
 export class RenderSprites extends RenderBase {
 	geometry: BufferGeometry = new BufferGeometry();
 	#minSize = 0.0;
@@ -30,8 +36,14 @@ export class RenderSprites extends RenderBase {
 	#saturateColorPreAlphaBlend = false;//TODO: check default value
 	#maxParticles = 0;
 	#feathering = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';
+	#featheringMaxDist = DEFAULT_FEATHERING_MAX_DIST;
 	texture = TextureManager.createTexture();
 	imgData!: Float32Array;//TODO: set private ?
+	#addSelfAmount = 1;// TODO: check default value
+	#blendFramesSeq0 = DEFAULT_BLEND_FRAMES_SEQ_0;
+	#animationRate = DEFAULT_ANIMATION_RATE;
+	#startFadeSize = DEFAULT_START_FADE_SIZE;
+	#endFadeSize = DEFAULT_END_FADE_SIZE;
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
@@ -64,8 +76,26 @@ export class RenderSprites extends RenderBase {
 			case 'm_bSaturateColorPreAlphaBlend':
 				this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? false;
 				break;
+			case 'm_bBlendFramesSeq0':
+				this.#blendFramesSeq0 = param.getValueAsBool() ?? DEFAULT_BLEND_FRAMES_SEQ_0;
+				break;
 			case 'm_nFeatheringMode':
 				this.#feathering = param.getValueAsString() ?? 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';// TODO: check default value
+				break;
+			case 'm_flFeatheringMaxDist':
+				this.#featheringMaxDist = param.getValueAsNumber() ?? DEFAULT_FEATHERING_MAX_DIST;
+				break;
+			case 'm_flAddSelfAmount':// TODO: mutualize ?
+				this.#addSelfAmount = param.getValueAsNumber() ?? 1;// TODO: check default value
+				break;
+			case 'm_flAnimationRate':
+				this.#animationRate = param.getValueAsNumber() ?? DEFAULT_ANIMATION_RATE;
+				break;
+			case 'm_flStartFadeSize':
+				this.#startFadeSize = param.getValueAsNumber() ?? DEFAULT_START_FADE_SIZE;
+				break;
+			case 'm_flEndFadeSize':
+				this.#endFadeSize = param.getValueAsNumber() ?? DEFAULT_END_FADE_SIZE;
 				break;
 			case 'm_flRadiusScale':// TODO: mutualize ?
 			case 'm_flAlphaScale':// TODO: mutualize ?
@@ -91,7 +121,7 @@ export class RenderSprites extends RenderBase {
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
-		// TODO: use m_flRefractAmount
+		// TODO: use m_flRefractAmount, m_flAddSelfAmount, blendFramesSeq0
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');

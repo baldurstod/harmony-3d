@@ -35,6 +35,7 @@ export type Source2OperatorParamValue = number | number[];/*TODO: improve type *
 
 const operatorTempVec2_0 = vec2.create();
 const operatorTempVec2_1 = vec2.create();
+const operatorTempVec3_0 = vec3.create();
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
@@ -138,21 +139,20 @@ export class Operator {//TODOv3: rename this class ?
 					return this.#getParamScalarValue2(parameter, RandomFloat(parameter.getSubValueAsNumber('m_flNoiseOutputMin') ?? 0, parameter.getSubValueAsNumber('m_flNoiseOutputMax') ?? 1));
 					break;
 				case 'PF_TYPE_CONTROL_POINT_COMPONENT':
-					console.error('do this getParamScalarValue');
-					const cp = this.system.getControlPoint(parameter.m_nControlPoint as number);
+					const cp = this.system.getControlPoint(parameter.getSubValueAsNumber('m_nControlPoint') ?? 0);
 					if (cp) {
-						return cp.position[parameter.m_nVectorComponent as number];
+						return cp.getPosition(operatorTempVec3_0)[parameter.getSubValueAsNumber('m_nVectorComponent') ?? 0] ?? 0;
 					}
 					return 0;
 					break;
 				case 'PF_TYPE_PARTICLE_FLOAT':
-					console.error('do this getParamScalarValue');
+					// TODO: use m_nMapType (PF_MAP_TYPE_REMAP...)
 					return inputValue = RemapValClamped(
-						particle?.getField(parameter.m_nScalarAttribute as number ?? 0) as number ?? 0,
-						parameter.m_flInput0 as number ?? 0,
-						parameter.m_flInput1 as number ?? 1,
-						parameter.m_flOutput0 as number ?? 0,
-						parameter.m_flOutput1 as number ?? 1
+						particle?.getField(parameter.getSubValueAsNumber('m_nScalarAttribute') ?? 0) as number ?? 0,
+						parameter.getSubValueAsNumber('m_flInput0') ?? 0,
+						parameter.getSubValueAsNumber('m_flInput1') ?? 1,
+						parameter.getSubValueAsNumber('m_flOutput0') as number ?? 0,
+						parameter.getSubValueAsNumber('m_flOutput1') ?? 1
 					);
 				default:
 					console.error('#getParamScalarValue unknown type', parameter);

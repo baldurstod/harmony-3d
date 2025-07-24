@@ -2,12 +2,17 @@ import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { DEFAULT_JUMP_THRESHOLD } from './positionlock';
+
+
+export const DEFAULT_LIFE_TIME_FADE_START = 0;// TODO: check default value
+export const DEFAULT_LIFE_TIME_FADE_END = 0;// TODO: check default value
 
 export class LockToBone extends Operator {
 	#hitboxSetName = 'default';
-	#lifeTimeFadeStart = 0;
-	#lifeTimeFadeEnd = 0;
-	#jumpThreshold = 100;
+	#lifeTimeFadeStart = DEFAULT_LIFE_TIME_FADE_START;
+	#lifeTimeFadeEnd = DEFAULT_LIFE_TIME_FADE_END;
+	#jumpThreshold = DEFAULT_JUMP_THRESHOLD;
 	#prevPosScale = 1;
 	#rigid = false;
 	#useBones = false;
@@ -20,16 +25,13 @@ export class LockToBone extends Operator {
 				this.#hitboxSetName = param.getValueAsString() ?? '';
 				break;
 			case 'm_flLifeTimeFadeStart':
-				console.error('do this param', paramName, param);
-				this.#lifeTimeFadeStart = param;
+				this.#lifeTimeFadeStart = param.getValueAsNumber() ?? DEFAULT_LIFE_TIME_FADE_START;
 				break;
 			case 'm_flLifeTimeFadeEnd':
-				console.error('do this param', paramName, param);
-				this.#lifeTimeFadeEnd = param;
+				this.#lifeTimeFadeEnd = param.getValueAsNumber() ?? DEFAULT_LIFE_TIME_FADE_END;
 				break;
 			case 'm_flJumpThreshold':
-				console.error('do this param', paramName, param);
-				this.#jumpThreshold = param;
+				this.#jumpThreshold = param.getValueAsNumber() ?? DEFAULT_JUMP_THRESHOLD;
 				break;
 			case 'm_flPrevPosScale':
 				console.error('do this param', paramName, param);

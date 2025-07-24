@@ -7,7 +7,7 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 export class RampScalarLinearSimple extends Operator {
 	#rate = 0;
 	#startTime = 0;
-	#endTime = 1;
+	#endTime = 1;//TODO: check default value
 	#field = PARTICLE_FIELD_RADIUS;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
@@ -16,12 +16,10 @@ export class RampScalarLinearSimple extends Operator {
 				this.#rate = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_flStartTime':
-				console.error('do this param', paramName, param);
-				this.#startTime = param;
+				this.#startTime = param.getValueAsNumber() ?? 0;
 				break;
-			case 'm_flEndTime':
-				console.error('do this param', paramName, param);
-				this.#endTime = param;
+			case 'm_flEndTime':// TODO: mutualize param ?
+				this.#endTime = param.getValueAsNumber() ?? 1;
 				break;
 			case 'm_nField':
 				this.#field = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;

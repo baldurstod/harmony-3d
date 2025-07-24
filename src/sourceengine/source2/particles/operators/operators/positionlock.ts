@@ -11,6 +11,8 @@ const tempPos = vec3.create();
 //const tempQuat = quat.create();
 const vec = vec3.create();
 
+export const DEFAULT_JUMP_THRESHOLD = 512;// TODO: check default value
+
 export class PositionLock extends Operator {
 	#startTimeMin = 1;
 	#startTimeMax = 1;
@@ -19,7 +21,7 @@ export class PositionLock extends Operator {
 	#endTimeMax = 1;
 	#endTimeExp = 1;
 	#range = 0;
-	#jumpThreshold = 512;
+	#jumpThreshold = DEFAULT_JUMP_THRESHOLD;
 	#prevPosScale = 1;
 	#lockRot = false;
 	#startFadeOutTime = 0;
@@ -68,9 +70,8 @@ export class PositionLock extends Operator {
 				console.error('do this param', paramName, param);
 				this.#range = param;
 				break;
-			case 'm_flJumpThreshold':
-				console.error('do this param', paramName, param);
-				this.#jumpThreshold = param;
+			case 'm_flJumpThreshold':// TODO: mutualize ?
+				this.#jumpThreshold = param.getValueAsNumber() ?? DEFAULT_JUMP_THRESHOLD;
 				break;
 			case 'm_flPrevPosScale':
 				console.error('do this param', paramName, param);
@@ -85,6 +86,7 @@ export class PositionLock extends Operator {
 	}
 
 	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+		// TODO: use jumpThreshold
 		const proportionOfLife = clamp(particle.proportionOfLife, 0, 1);
 		if (proportionOfLife > this.#endFadeOutTime) {
 			return;

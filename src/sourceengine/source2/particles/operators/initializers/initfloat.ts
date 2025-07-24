@@ -6,7 +6,7 @@ import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 export class InitFloat extends Operator {
-	setMethod = null;
+	#setMethod = '';
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
@@ -24,9 +24,8 @@ export class InitFloat extends Operator {
 				this.#fieldOutput = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
 				break;
 			*/
-			case 'm_nSetMethod':
-				console.error('do this param', paramName, param);
-				this.setMethod = param;
+			case 'm_nSetMethod'://TODO: mutualize
+				this.#setMethod = param.getValueAsString() ?? '';
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -36,7 +35,7 @@ export class InitFloat extends Operator {
 	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		const value = this.getParamScalarValue('m_InputValue', particle);
 		//TODO: use setMethod
-		particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE', true);
+		particle.setField(this.fieldOutput, value, this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE', true);
 
 		//setField(field = 0, value, mulInitial = false, setInitial = false, additive = false) {
 	}
