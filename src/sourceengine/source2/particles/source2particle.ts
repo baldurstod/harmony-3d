@@ -4,6 +4,7 @@ import { DEG_TO_RAD } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
 import { PARTICLE_FIELD_COLOR, PARTICLE_FIELD_GLOW_ALPHA, PARTICLE_FIELD_GLOW_RGB, PARTICLE_FIELD_HITBOX_OFFSET_POSITION, PARTICLE_FIELD_POSITION, PARTICLE_FIELD_POSITION_PREVIOUS, PARTICLE_FIELD_SCRATCH_FLOAT, PARTICLE_FIELD_SCRATCH_VECTOR, PARTICLE_FIELD_SEQUENCE_NUMBER, PARTICLE_FIELD_SHADER_EXTRA_DATA_1, PARTICLE_FIELD_SHADER_EXTRA_DATA_2, PARTICLE_FIELD_TRAIL_LENGTH } from '../../common/particles/particlefields';
 import { Source2ParticleSystem } from './export';
+import { Operator } from './operators/operator';
 
 export const DEFAULT_PARTICLE_NORMAL = vec3.fromValues(0, 0, 1);
 
@@ -27,7 +28,7 @@ export class Source2Particle {
 	vMin = 0;
 	vMax = 1;
 	cTime = 0;
-	context = new Map();
+	context = new Map<Operator, any/*TODO: improve type*/>();
 	system: Source2ParticleSystem;
 	currentTime = 0;
 	timeToLive = 0;
@@ -341,6 +342,7 @@ export class Source2Particle {
 	*/
 
 	getField(field = 0, initial = false) {
+		// TODO: create getScalarField / getVectorField
 
 		switch (field) {
 			case PARTICLE_FIELD_POSITION:
