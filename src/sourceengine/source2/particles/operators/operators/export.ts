@@ -10,6 +10,7 @@ export { FadeInSimple } from './fadeinsimple';
 export { FadeOut } from './fadeout';
 export { FadeOutSimple } from './fadeoutsimple';
 export { InterpolateRadius } from './interpolateradius';
+export { LerpEndCapScalar } from './lerpendcapscalar';
 export { LifespanDecay as Source2LifespanDecay } from './lifespandecay';
 export { LockToBone as Source2LockToBone } from './locktobone';
 export { MaintainSequentialPath } from './maintainsequentialpath';
