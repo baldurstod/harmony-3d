@@ -11,12 +11,13 @@ const tempVec4 = vec4.create();
 const DEFAULT_CP_1 = 1;// TODO: check default value
 const DEFAULT_USE_WORLD_POSITION = false;// TODO: check default value
 const DEFAULT_SET_ONCE = false;// TODO: check default value
+const DEFAULT_HEAD_LOCATION = 0;// TODO: check default value
 
 export class SetSingleControlPointPosition extends Operator {
 	#useWorldLocation = DEFAULT_USE_WORLD_POSITION;
 	#setOnce = DEFAULT_SET_ONCE;
 	#cp1 = DEFAULT_CP_1;
-	#headLocation = 0;
+	#headLocation = DEFAULT_HEAD_LOCATION;
 	#set = false;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
@@ -34,8 +35,7 @@ export class SetSingleControlPointPosition extends Operator {
 				this.#cp1 = param.getValueAsNumber() ?? DEFAULT_CP_1;
 				break;
 			case 'm_nHeadLocation':
-				console.error('do this param', paramName, param);
-				this.#headLocation = (param);
+				this.#headLocation = param.getValueAsNumber() ?? DEFAULT_HEAD_LOCATION;
 				break;
 			default:
 				super._paramChanged(paramName, param);

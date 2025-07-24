@@ -7,6 +7,9 @@ import { Source2Particle } from '../../source2particle';
 
 const v = vec3.create();
 
+const DEFAULT_LOCAL_COORDS = false;// TODO: check default value
+const DEFAULT_NORMALIZE = false;// TODO: check default value
+
 export class NormalOffset extends Operator {
 	#offsetMin = vec3.create();// TODO: check default value
 	#offsetMax = vec3.create();// TODO: check default value
@@ -26,8 +29,7 @@ export class NormalOffset extends Operator {
 				this.#localCoords = param;
 				break;
 			case 'm_bNormalize':
-				console.error('do this param', paramName, param);
-				this.#normalize = param.getValueAsBool() ?? false;// TODO: check default value
+				this.#normalize = param.getValueAsBool() ?? DEFAULT_NORMALIZE;// TODO: check default value
 				break;
 			default:
 				super._paramChanged(paramName, param);

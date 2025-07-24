@@ -15,6 +15,7 @@ export class SnapshotRigidSkinToBones extends Operator {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bTransformNormals':
+				console.error('do this param', paramName, param);
 				//normal seems to be transformed whatever this parameter value is ?
 				this.transformNormals = param;
 				break;
@@ -54,10 +55,10 @@ export class SnapshotRigidSkinToBones extends Operator {
 		const particleInitialNormal = particle.initialSkinnedNormal ?? DEFAULT_PARTICLE_NORMAL;
 
 		if (particleSkinning && particleInitialPosition) {
-			mat[ 0] = 0;mat[ 1] = 0;mat[ 2] = 0;
-			mat[ 4] = 0;mat[ 5] = 0;mat[ 6] = 0;
-			mat[ 8] = 0;mat[ 9] = 0;mat[10] = 0;
-			mat[12] = 0;mat[13] = 0;mat[14] = 0;
+			mat[0] = 0; mat[1] = 0; mat[2] = 0;
+			mat[4] = 0; mat[5] = 0; mat[6] = 0;
+			mat[8] = 0; mat[9] = 0; mat[10] = 0;
+			mat[12] = 0; mat[13] = 0; mat[14] = 0;
 			for (let i = 0; i < 4; ++i) {
 				boneName = particleSkinning.bones[i];
 				if (boneName) {
@@ -66,16 +67,16 @@ export class SnapshotRigidSkinToBones extends Operator {
 					if (bone && boneWeight) {
 						boneMat = bone ? bone.boneMat : IDENTITY_MAT4;
 
-						mat[ 0] += boneWeight * boneMat[ 0];
-						mat[ 1] += boneWeight * boneMat[ 1];
-						mat[ 2] += boneWeight * boneMat[ 2];
+						mat[0] += boneWeight * boneMat[0];
+						mat[1] += boneWeight * boneMat[1];
+						mat[2] += boneWeight * boneMat[2];
 
-						mat[ 4] += boneWeight * boneMat[ 4];
-						mat[ 5] += boneWeight * boneMat[ 5];
-						mat[ 6] += boneWeight * boneMat[ 6];
+						mat[4] += boneWeight * boneMat[4];
+						mat[5] += boneWeight * boneMat[5];
+						mat[6] += boneWeight * boneMat[6];
 
-						mat[ 8] += boneWeight * boneMat[ 8];
-						mat[ 9] += boneWeight * boneMat[ 9];
+						mat[8] += boneWeight * boneMat[8];
+						mat[9] += boneWeight * boneMat[9];
 						mat[10] += boneWeight * boneMat[10];
 
 						mat[12] += boneWeight * boneMat[12];

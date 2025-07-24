@@ -1,3 +1,4 @@
+import { vec3, vec4 } from 'gl-matrix';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 import { Graphics } from '../../../../../graphics/graphics';
@@ -18,6 +19,8 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
 import { RenderBase } from './renderbase';
 
+const renderSpritesTempVec4 = vec4.create();
+
 const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
 const SEQUENCE_SAMPLE_COUNT = 1;//TODO
@@ -27,23 +30,31 @@ const DEFAULT_BLEND_FRAMES_SEQ_0 = false;// TODO: check default value
 const DEFAULT_ANIMATION_RATE = 1;// TODO: check default value
 const DEFAULT_START_FADE_SIZE = 1;// TODO: check default value
 const DEFAULT_END_FADE_SIZE = 1;// TODO: check default value
+const DEFAULT_FEATHERING_MODE = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';// TODO: check default value
 const DEFAULT_FEATHERING_MAX_DIST = 1;// TODO: check default value
+const DEFAULT_DEPTH_BIAS = 1;// TODO: check default value
+const DEFAULT_COLOR_SCALE = vec3.fromValues(1, 1, 1);// TODO: check default value
+const DEFAULT_ADD_SELF_AMOUNT = 1;// TODO: check default value
+const DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND = false;// TODO: check default value
+const DEFAULT_ANIMATION_TYPE = 'ANIMATION_TYPE_FIT_LIFETIME';// TODO: check default value
 
 export class RenderSprites extends RenderBase {
 	geometry: BufferGeometry = new BufferGeometry();
 	#minSize = 0.0;
 	#maxSize = DEFAULT_MAX_SIZE;
-	#saturateColorPreAlphaBlend = false;//TODO: check default value
+	#saturateColorPreAlphaBlend = DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND;
 	#maxParticles = 0;
-	#feathering = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';
+	#featheringMode = DEFAULT_FEATHERING_MODE;
 	#featheringMaxDist = DEFAULT_FEATHERING_MAX_DIST;
 	texture = TextureManager.createTexture();
 	imgData!: Float32Array;//TODO: set private ?
-	#addSelfAmount = 1;// TODO: check default value
+	#addSelfAmount = DEFAULT_ADD_SELF_AMOUNT;
 	#blendFramesSeq0 = DEFAULT_BLEND_FRAMES_SEQ_0;
 	#animationRate = DEFAULT_ANIMATION_RATE;
 	#startFadeSize = DEFAULT_START_FADE_SIZE;
 	#endFadeSize = DEFAULT_END_FADE_SIZE;
+	#depthBias = DEFAULT_DEPTH_BIAS;
+	#animationType = DEFAULT_ANIMATION_TYPE;
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
@@ -74,19 +85,22 @@ export class RenderSprites extends RenderBase {
 				this.#maxSize = (param.getValueAsNumber() ?? DEFAULT_MAX_SIZE) * 200.;//TODO: use the actual screen size
 				break;
 			case 'm_bSaturateColorPreAlphaBlend':
-				this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? false;
+				this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND;
 				break;
 			case 'm_bBlendFramesSeq0':
 				this.#blendFramesSeq0 = param.getValueAsBool() ?? DEFAULT_BLEND_FRAMES_SEQ_0;
 				break;
+			case 'm_flDepthBias'://TODO: mutualize in renderbase
+				this.#depthBias = param.getValueAsNumber() ?? DEFAULT_DEPTH_BIAS;// TODO: check default value
+				break;
 			case 'm_nFeatheringMode':
-				this.#feathering = param.getValueAsString() ?? 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';// TODO: check default value
+				this.#featheringMode = param.getValueAsString() ?? DEFAULT_FEATHERING_MODE;// TODO: check default value
 				break;
 			case 'm_flFeatheringMaxDist':
 				this.#featheringMaxDist = param.getValueAsNumber() ?? DEFAULT_FEATHERING_MAX_DIST;
 				break;
 			case 'm_flAddSelfAmount':// TODO: mutualize ?
-				this.#addSelfAmount = param.getValueAsNumber() ?? 1;// TODO: check default value
+				this.#addSelfAmount = param.getValueAsNumber() ?? DEFAULT_ADD_SELF_AMOUNT;
 				break;
 			case 'm_flAnimationRate':
 				this.#animationRate = param.getValueAsNumber() ?? DEFAULT_ANIMATION_RATE;
@@ -97,11 +111,15 @@ export class RenderSprites extends RenderBase {
 			case 'm_flEndFadeSize':
 				this.#endFadeSize = param.getValueAsNumber() ?? DEFAULT_END_FADE_SIZE;
 				break;
+			case 'm_nAnimationType':
+				this.#animationType = param.getValueAsString() ?? DEFAULT_ANIMATION_TYPE;
+				break;
 			case 'm_flRadiusScale':// TODO: mutualize ?
 			case 'm_flAlphaScale':// TODO: mutualize ?
 			case 'm_flOverbrightFactor':// TODO: mutualize ?
 			case 'm_flRefractAmount':
 			case 'VisibilityInputs':
+			case 'm_vecColorScale':
 				// used in updateParticles
 				break;
 			default:
@@ -122,7 +140,9 @@ export class RenderSprites extends RenderBase {
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
-		// TODO: use m_flRefractAmount, m_flAddSelfAmount, blendFramesSeq0, VisibilityInputs
+		// TODO: use m_flRefractAmount, m_flAddSelfAmount, blendFramesSeq0, VisibilityInputs, m_nFeatheringMode
+const colorScale = this.getParamVectorValue(renderSpritesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
+
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');

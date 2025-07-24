@@ -53,12 +53,10 @@ export class OscillateScalar extends Operator {
 				this.#field = param.getValueAsNumber() ?? DEFAULT_FIELD;
 				break;
 			case 'm_bProportional':
-				console.error('do this param', paramName, param);
-				this.#proportional = param;
+				this.#proportional =  param.getValueAsBool() ?? DEFAULT_PROPORTIONAL;
 				break;
 			case 'm_bProportionalOp':
-				console.error('do this param', paramName, param);
-				this.#proportionalOp = param;
+				this.#proportionalOp = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL_OP;
 				break;
 			case 'm_flStartTime_min':
 				console.error('do this param', paramName, param);
@@ -69,12 +67,10 @@ export class OscillateScalar extends Operator {
 				this.#startTimeMax = param;
 				break;
 			case 'm_flEndTime_min':
-				console.error('do this param', paramName, param);
-				this.#endTimeMin = param;
+				this.#endTimeMin = param.getValueAsString() ?? DEFAULT_END_TIME_MIN;
 				break;
 			case 'm_flEndTime_max':
-				console.error('do this param', paramName, param);
-				this.#endTimeMax = param;
+				this.#endTimeMax = param.getValueAsString() ?? DEFAULT_END_TIME_MAX;
 				break;
 			case 'm_flOscMult':
 				console.error('do this param', paramName, param);

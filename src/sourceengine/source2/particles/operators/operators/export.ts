@@ -35,6 +35,7 @@ export { RemapCPOrientationToRotations } from './remapcporientationtorotations';
 export { RemapCPtoScalar } from './remapcptoscalar';
 export { RemapSpeed } from './remapspeed';
 export { RemapSpeedtoCP } from './remapspeedtocp';
+export { RepeatedTriggerChildGroup } from './repeatedtriggerchildgroup';
 export { SetControlPointFromObjectScale } from './setcontrolpointfromobjectscale';
 export { SetControlPointOrientation } from './setcontrolpointorientation';
 export { SetControlPointPositions as Source2SetControlPointPositions } from './setcontrolpointpositions';

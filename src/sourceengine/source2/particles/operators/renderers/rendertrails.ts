@@ -28,30 +28,37 @@ const SEQUENCE_SAMPLE_COUNT = 1;//TODO
 
 const tempVec2 = vec2.create();
 
+const DEFAULT_MIN_LENGTH = 0;// TODO: check default value
+const DEFAULT_MAX_LENGTH = 2000;// TODO: check default value
 const DEFAULT_ANIMATION_RATE = 1;// TODO: check default value
 const DEFAULT_VERT_CROP_FIELD = 1;// TODO: check default value
 const DEFAULT_TAIL_ALPHA_SCALE = 1;// TODO: check default value
 const DEFAULT_IGNORE_DT = false;// TODO: check default value
+const DEFAULT_LENGTH_FADE_IN_TIME = 0;// TODO: check default value
+const DEFAULT_LENGTH_SCALE = 1;// TODO: check default value
+const DEFAULT_MAX_PARTICLES = 1000;// TODO: check default value
+const DEFAULT_ADD_SELF_AMOUNT = 1;// TODO: check default value
+const DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND = false;// TODO: check default value
 
 export class RenderTrails extends RenderBase {
-	geometry: BufferGeometry;
-	minLength = 0;
-	maxLength = 2000;
-	lengthFadeInTime = 0;
+	#geometry: BufferGeometry = new BufferGeometry();
+	#minLength = DEFAULT_MIN_LENGTH;
+	#maxLength = DEFAULT_MAX_LENGTH;
+	#lengthFadeInTime = DEFAULT_LENGTH_FADE_IN_TIME;
 	#ignoreDT = DEFAULT_IGNORE_DT;
-	lengthScale = 1;
-	#maxParticles = 1000;//TODO: default value
-	texture?: Texture;//TODO: set private ?
-	imgData?: Float32Array;//TODO: set private ?
+	#lengthScale = DEFAULT_LENGTH_SCALE;
+	#maxParticles = DEFAULT_MAX_PARTICLES;//TODO: default value
+	#texture?: Texture;//TODO: set private ?
+	#imgData?: Float32Array;//TODO: set private ?
 	#animationRate = DEFAULT_ANIMATION_RATE;
 	#vertCropField = DEFAULT_VERT_CROP_FIELD;
 	#tailAlphaScale = DEFAULT_TAIL_ALPHA_SCALE;
+	#addSelfAmount = DEFAULT_ADD_SELF_AMOUNT;
+	#saturateColorPreAlphaBlend = DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND;
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this.material = new Source2SpriteCard(system.repository);
-		this.geometry = new BufferGeometry();
-		this.mesh = new Mesh(this.geometry, this.material);
+		this.mesh = new Mesh(this.#geometry, this.material);
 		this.material.setDefine('RENDER_SPRITE_TRAIL');
 		this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
 		Source2MaterialManager.addMaterial(this.material);
@@ -73,15 +80,13 @@ export class RenderTrails extends RenderBase {
 			case 'm_flMinLength':
 
 				console.error('do this param', paramName, param);
-				this.minLength = param;
+				this.#minLength = param.getValueAsNumber() ?? DEFAULT_MIN_LENGTH;
 				break;
 			case 'm_flMaxLength':
-				console.error('do this param', paramName, param);
-				this.maxLength = param;
+				this.#maxLength = param.getValueAsNumber() ?? DEFAULT_MAX_LENGTH;
 				break;
 			case 'm_flLengthFadeInTime':
-				console.error('do this param', paramName, param);
-				this.lengthFadeInTime = param;
+				this.#lengthFadeInTime = param.getValueAsNumber() ?? DEFAULT_LENGTH_FADE_IN_TIME;
 				break;
 			case 'm_bIgnoreDT':
 				this.#ignoreDT = param.getValueAsBool() ?? DEFAULT_IGNORE_DT;
@@ -93,7 +98,7 @@ export class RenderTrails extends RenderBase {
 				break;
 			case 'm_flLengthScale':
 				console.error('do this param', paramName, param);
-				this.lengthScale = param;
+				this.#lengthScale = param;
 				break;
 			case 'm_flAnimationRate':
 				this.#animationRate = param.getValueAsNumber() ?? DEFAULT_ANIMATION_RATE;
@@ -103,6 +108,12 @@ export class RenderTrails extends RenderBase {
 				break;
 			case 'm_flTailAlphaScale':
 				this.#tailAlphaScale = param.getValueAsNumber() ?? DEFAULT_TAIL_ALPHA_SCALE;
+				break;
+			case 'm_flAddSelfAmount':// TODO: mutualize ?
+				this.#addSelfAmount = param.getValueAsNumber() ?? DEFAULT_ADD_SELF_AMOUNT;
+				break;
+			case 'm_bSaturateColorPreAlphaBlend':
+				this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -127,7 +138,7 @@ export class RenderTrails extends RenderBase {
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
-		const geometry = this.geometry;
+		const geometry = this.#geometry;
 		geometry.count = particleList.length * 6;
 		const maxParticles = this.#maxParticles;
 		this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
@@ -214,7 +225,7 @@ export class RenderTrails extends RenderBase {
 	}
 
 	#initBuffers() {
-		const geometry = this.geometry;
+		const geometry = this.#geometry;
 		const vertices = [];
 		const uvs = [];
 		const uvs2 = [];
@@ -243,20 +254,20 @@ export class RenderTrails extends RenderBase {
 		this.mesh!.hideInExplorer = true;
 		this.mesh!.setDefine('HARDWARE_PARTICLES');
 		this.#createParticlesTexture();
-		this.mesh!.setUniform('uParticles', this.texture!);
+		this.mesh!.setUniform('uParticles', this.#texture!);
 
 		this.maxParticles = particleSystem.maxParticles;
 		particleSystem.addChild(this.mesh);
 	}
 
 	#createParticlesArray() {
-		this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
+		this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
 	}
 
 	#createParticlesTexture() {
-		this.texture = TextureManager.createTexture();
+		this.#texture = TextureManager.createTexture();
 		const gl = new Graphics().glContext;//TODO
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		gl.bindTexture(GL_TEXTURE_2D, null);
@@ -265,20 +276,20 @@ export class RenderTrails extends RenderBase {
 	updateParticlesTexture() {
 		const gl = new Graphics().glContext;
 
-		gl.bindTexture(GL_TEXTURE_2D, this.texture!.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.#texture!.texture);
 		if (new Graphics().isWebGL2) {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData!);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData!);
 		} else {
-			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData!);
+			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData!);
 		}
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
 	#setupParticlesTexture(particleList: Source2Particle[], maxParticles: number, elapsedTime: number) {
-		const a = this.imgData!;
-		const m_flMaxLength = this.maxLength;
-		const m_flMinLength = this.minLength;
-		const m_flLengthFadeInTime = this.lengthFadeInTime;
+		const a = this.#imgData!;
+		const m_flMaxLength = this.#maxLength;
+		const m_flMinLength = this.#minLength;
+		const m_flLengthFadeInTime = this.#lengthFadeInTime;
 		const rate = this.getParameter('animation rate') ?? 30;
 		const fit = this.getParameter('animation_fit_lifetime') ?? 0;
 
@@ -305,7 +316,7 @@ export class RenderTrails extends RenderBase {
 			const vecDelta = vec3.subtract(vec3.create(), particle.prevPosition, particle.position);//TODOv3: optimize
 			const flMag = vec3.length(vecDelta);
 			vec3.normalize(vecDelta, vecDelta);
-			let flLength = flLengthScale * flMag * flOODt * particle.trailLength * this.lengthScale;
+			let flLength = flLengthScale * flMag * flOODt * particle.trailLength * this.#lengthScale;
 			if (flLength <= 0.0) {
 				return;
 			}

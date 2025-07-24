@@ -14,12 +14,13 @@ const DEFAULT_FIELD_OUTPUT = PARTICLE_FIELD_RADIUS;
 const DEFAULT_OUTPUT_MIN = 0;
 const DEFAULT_OUTPUT_MAX = 1;
 const DEFAULT_ADDITIVE = false;
+const DEFAULT_NOISE_SCALE = 0.1;
 
 export class Noise extends Operator {
 	#fieldOutput = DEFAULT_FIELD_OUTPUT;
 	#outputMin = DEFAULT_OUTPUT_MIN;
 	#outputMax = DEFAULT_OUTPUT_MAX;
-	#noiseScale = 0.1;
+	#noiseScale = DEFAULT_NOISE_SCALE;
 	#additive = DEFAULT_ADDITIVE;
 	#noiseAnimationTimeScale = 0;
 	#outputMinRad = 0;
@@ -60,8 +61,7 @@ export class Noise extends Operator {
 				this._update();
 				break;
 			case 'm_fl4NoiseScale':
-				console.error('do this param', paramName, param);
-				this.#noiseScale = param;
+				this.#noiseScale = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE;
 				break;
 			case 'm_bAdditive':
 				this.#additive = param.getValueAsBool() ?? DEFAULT_ADDITIVE;

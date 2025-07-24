@@ -8,15 +8,16 @@ const q = quat.create();
 
 const DEFAULT_CP = 1;// TODO: check default value
 const DEFAULT_USE_WORLD_LOCATION = false;// TODO: check default value
+const DEFAULT_HEAD_LOCATION = 0;// TODO: check default value
 
 export class SetControlPointOrientation extends Operator {
 	#useWorldLocation = DEFAULT_USE_WORLD_LOCATION;
-	#randomize = false;
-	#setOnce = false;
+	#randomize = false;// TODO: check default value
+	#setOnce = false;// TODO: check default value
 	#cp = DEFAULT_CP;
-	#headLocation = 0;
-	#rotation = vec3.create();
-	#rotationB = vec3.create();
+	#headLocation = DEFAULT_HEAD_LOCATION;
+	#rotation = vec3.create();// TODO: check default value
+	#rotationB = vec3.create();// TODO: check default value
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -38,23 +39,20 @@ export class SetControlPointOrientation extends Operator {
 				this.#cp = param.getValueAsNumber() ?? DEFAULT_CP;
 				break;
 			case 'm_nHeadLocation':
-				console.error('do this param', paramName, param);
-				this.#headLocation = (param);
+				this.#headLocation = param.getValueAsNumber() ?? DEFAULT_HEAD_LOCATION;
 				break;
 			case 'm_vecRotation':
-				console.error('do this param', paramName, param);
-				vec3.copy(this.#rotation, param);
+				param.getValueAsVec3(this.#rotation);
 				break;
 			case 'm_vecRotationB':
-				console.error('do this param', paramName, param);
-				vec3.copy(this.#rotationB, param);
+				param.getValueAsVec3(this.#rotationB);
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle: Source2Particle , elapsedTime: number, strength: number): void {
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		return;
 		//TODO: randomize parameter + interpolation
 		const cp = this.system.getControlPoint(this.#cp);

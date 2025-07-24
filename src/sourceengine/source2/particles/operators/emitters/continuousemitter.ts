@@ -4,7 +4,8 @@ import { OperatorParam } from '../operatorparam';
 import { } from '../operatorparams';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const DEFAULT_EMIT_RATE = 100;
+const DEFAULT_EMIT_RATE = 100;// TODO: check default value
+const DEFAULT_EMISSION_DURATION = 100;// TODO: check default value
 
 export class ContinuousEmitter extends Operator {
 	//#emitRate = DEFAULT_EMIT_RATE;
@@ -12,6 +13,7 @@ export class ContinuousEmitter extends Operator {
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
+			case 'm_flEmissionDuration':
 			case 'm_flEmitRate':
 				// used in doEmit
 				//this.#emitRate = param.getValueAsNumber() ?? DEFAULT_EMIT_RATE;
@@ -22,6 +24,8 @@ export class ContinuousEmitter extends Operator {
 	}
 
 	doEmit(elapsedTime: number) {
+		// TODO: use m_flEmissionDuration
+		const emissionDuration = this.getParamScalarValue('m_flEmissionDuration') ?? DEFAULT_EMISSION_DURATION;
 
 		const emission_start_time = this.getParameter('emission_start_time') ?? 0;
 		//let emitRate = this.#emitRate;

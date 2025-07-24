@@ -37,14 +37,20 @@ const operatorTempVec2_0 = vec2.create();
 const operatorTempVec2_1 = vec2.create();
 const operatorTempVec3_0 = vec3.create();
 
+const DEFAULT_OP_STRENGTH = 1;// TODO: check default value
+const DEFAULT_OP_START_FADE_IN_TIME = 0;// TODO: check default value
+const DEFAULT_OP_END_FADE_IN_TIME = 0;// TODO: check default value
+const DEFAULT_OP_START_FADE_OUT_TIME = 0;// TODO: check default value
+const DEFAULT_OP_END_FADE_OUT_TIME = 0;// TODO: check default value
+
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
 	#parameters: Record<string, OperatorParam> = {};
 	system: Source2ParticleSystem
-	opStartFadeInTime = 0;
-	opEndFadeInTime = 0;
-	opStartFadeOutTime = 0;
-	opEndFadeOutTime = 0;
+	protected opStartFadeInTime = DEFAULT_OP_START_FADE_IN_TIME;
+	protected opEndFadeInTime = DEFAULT_OP_END_FADE_IN_TIME;
+	protected opStartFadeOutTime = DEFAULT_OP_START_FADE_OUT_TIME;
+	protected opEndFadeOutTime = DEFAULT_OP_END_FADE_OUT_TIME;
 	opFadeOscillatePeriod = 0;
 	normalizePerLiving = false;
 	disableOperator = false;
@@ -56,6 +62,7 @@ export class Operator {//TODOv3: rename this class ?
 	endCapState?: number;
 	currentTime = 0;
 	operateAllParticlesRemoveme = false;
+	//protected opStrength = DEFAULT_OP_STRENGTH;
 
 	constructor(system: Source2ParticleSystem) {
 		this.system = system;
@@ -368,20 +375,16 @@ export class Operator {//TODOv3: rename this class ?
 				}
 				break;
 			case 'm_flOpStartFadeInTime':
-				console.error('do this param', paramName, param);
-				this.opStartFadeInTime = param;
+				this.opStartFadeInTime = param.getValueAsNumber() ?? DEFAULT_OP_START_FADE_IN_TIME;
 				break;
 			case 'm_flOpEndFadeInTime':
-				console.error('do this param', paramName, param);
-				this.opEndFadeInTime = param;
+				this.opEndFadeInTime = param.getValueAsNumber() ?? DEFAULT_OP_END_FADE_IN_TIME;
 				break;
 			case 'm_flOpStartFadeOutTime':
-				console.error('do this param', paramName, param);
-				this.opStartFadeOutTime = param;
+				this.opStartFadeOutTime  = param.getValueAsNumber() ?? DEFAULT_OP_START_FADE_OUT_TIME;
 				break;
 			case 'm_flOpEndFadeOutTime':
-				console.error('do this param', paramName, param);
-				this.opEndFadeOutTime = param;
+				this.opEndFadeOutTime = param.getValueAsNumber() ?? DEFAULT_OP_END_FADE_OUT_TIME;
 				break;
 			case 'm_flOpFadeOscillatePeriod':
 				console.error('do this param', paramName, param);
@@ -409,8 +412,8 @@ export class Operator {//TODOv3: rename this class ?
 				this.scaleCp = (param);
 				break;
 			case 'm_flOpStrength':
-				console.error('do this param', paramName, param);
-				//TODO
+				//this.opStrength = param.getValueAsNumber() ?? DEFAULT_OP_STRENGTH;
+				// used in operateParticle
 				break;
 			/*
 		case 'm_flAlphaScale':
@@ -427,7 +430,8 @@ export class Operator {//TODOv3: rename this class ?
 		if (!particles || this.disableOperator) {
 			return;
 		}
-		let strength = 1;
+		let strength = 1;// TODO: use m_flOpStrength?
+		// TODO: use checkIfOperatorShouldRun
 		if (this.scaleCp) {
 			strength = this.system.getControlPoint(this.scaleCp).currentWorldPosition[0];
 		}
@@ -439,7 +443,8 @@ export class Operator {//TODOv3: rename this class ?
 			return;
 		}
 		if (this.endCapState != 1) {
-			let strength = 1;
+			let strength = this.getParamScalarValue('m_flOpStrength') ?? DEFAULT_OP_STRENGTH;
+			// TODO: use checkIfOperatorShouldRun
 			if (this.scaleCp) {
 				strength = this.system.getControlPoint(this.scaleCp).currentWorldPosition[0];
 			}
@@ -475,7 +480,7 @@ export class Operator {//TODOv3: rename this class ?
 		this.doRender(particleList, elapsedTime, material);
 	}
 
-	checkIfOperatorShouldRun() {
+	#checkIfOperatorShouldRun() {
 		const strength = this.fadeInOut();
 		return strength > 0;
 	}

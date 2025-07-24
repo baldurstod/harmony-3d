@@ -1,4 +1,4 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
 import { Graphics } from '../../../../../graphics/graphics';
 import { Mesh } from '../../../../../objects/mesh';
 import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geometries/beambuffergeometry';
@@ -8,7 +8,6 @@ import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MA
 import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { PARTICLE_ORIENTATION_SCREEN_ALIGNED } from '../../../../common/particles/particleconsts';
 import { Source2MaterialManager } from '../../../materials/source2materialmanager';
-import { Source2SpriteCard } from '../../../materials/source2spritecard';
 import { Source2ParticleSystem } from '../../export';
 import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
 import { Source2Particle } from '../../source2particle';
@@ -18,11 +17,19 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 } from './constants';
 import { RenderBase } from './renderbase';
 
+
+const renderRopesTempVec4 = vec4.create();
+
 const SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0 = 'SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0';
 
 const SEQUENCE_SAMPLE_COUNT = 1;//TODO
-const DEFAULT_WORLD_SIZE = 10;
-const DEFAULT_SCROLL_RATE = 10;
+const DEFAULT_WORLD_SIZE = 10;// TODO: check default value
+const DEFAULT_SCROLL_RATE = 10;// TODO: check default value
+const DEFAULT_COLOR_SCALE = vec3.fromValues(1, 1, 1);// TODO: check default value
+const DEFAULT_DEPTH_BIAS = 1;// TODO: check default value
+const DEFAULT_FEATHERING_MODE = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';// TODO: check default value
+const DEFAULT_FEATHERING_MAX_DIST = 1;// TODO: check default value
+const DEFAULT_COLOR_BLEND_TYPE = 'PARTICLE_COLOR_BLEND_MIN';// TODO: check default value
 
 export class RenderRopes extends RenderBase {
 	#textureVWorldSize = DEFAULT_WORLD_SIZE;
@@ -36,6 +43,10 @@ export class RenderRopes extends RenderBase {
 	#saturateColorPreAlphaBlend = false;// TODO: check default value
 	#minTesselation = 1;// TODO: check default value
 	#maxTesselation = 1;// TODO: check default value
+	#depthBias = DEFAULT_DEPTH_BIAS;
+	#featheringMode = DEFAULT_FEATHERING_MODE;
+	#featheringMaxDist = DEFAULT_FEATHERING_MAX_DIST;
+	#colorBlendType = DEFAULT_COLOR_BLEND_TYPE
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
@@ -77,10 +88,23 @@ export class RenderRopes extends RenderBase {
 			case 'm_bSaturateColorPreAlphaBlend':
 				this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? false;// TODO: check default value
 				break;
+			case 'm_flDepthBias':
+				this.#depthBias = param.getValueAsNumber() ?? DEFAULT_DEPTH_BIAS;// TODO: check default value
+				break;
+			case 'm_nFeatheringMode'://TODO: mutualize in renderbase
+				this.#featheringMode = param.getValueAsString() ?? DEFAULT_FEATHERING_MODE;// TODO: check default value
+				break;
+			case 'm_flFeatheringMaxDist':
+				this.#featheringMaxDist = param.getValueAsNumber() ?? DEFAULT_FEATHERING_MAX_DIST;
+				break;
+			case 'm_nColorBlendType'://TODO: mutualize in renderbase
+				this.#colorBlendType = param.getValueAsString() ?? DEFAULT_COLOR_BLEND_TYPE;// TODO: check default value
+				break;
 			case 'm_flFinalTextureScaleU':
 			case 'm_flFinalTextureScaleV':
 			case 'm_flOverbrightFactor':// TODO: mutualize ?
 			case 'm_flRadiusScale':
+			case 'm_vecColorScale':
 				// used in updateParticles
 				break;
 			default:
@@ -101,8 +125,9 @@ export class RenderRopes extends RenderBase {
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number) {//TODOv3
-		// TODO: use saturateColorPreAlphaBlend, m_nMinTesselation, m_nMaxTesselation
+		// TODO: use saturateColorPreAlphaBlend, m_nMinTesselation, m_nMaxTesselation, colorScale, m_flDepthBias, featheringMode
 		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
+		const colorScale = this.getParamVectorValue(renderRopesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
 		const radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
 		this.#textureScroll += elapsedTime * this.#textureVScrollRate;
 		const subdivCount = this.getParameter('subdivision_count') ?? 3;

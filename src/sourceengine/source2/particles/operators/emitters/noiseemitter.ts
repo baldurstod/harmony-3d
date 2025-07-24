@@ -4,7 +4,9 @@ import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 
+const DEFAULT_OUTPUT_MIN = 0;
 const DEFAULT_OUTPUT_MAX = 100;
+const DEFAULT_NOISE_SCALE = 0.1;
 
 export class NoiseEmitter extends Operator {
 	#emissionDuration = 0;
@@ -15,9 +17,9 @@ export class NoiseEmitter extends Operator {
 	#absVal = false;
 	#absValInv = false;
 	#offset = 0;
-	#outputMin = 0;
+	#outputMin = DEFAULT_OUTPUT_MIN;
 	#outputMax = DEFAULT_OUTPUT_MAX;
-	#noiseScale = 0.1;
+	#noiseScale = DEFAULT_NOISE_SCALE;
 	#worldNoiseScale = 0.001;
 	#offsetLoc = vec3.create();
 	#worldTimeScale = 0;
@@ -58,14 +60,13 @@ export class NoiseEmitter extends Operator {
 				this.#offset = param;
 				break;
 			case 'm_flOutputMin':
-				this.#outputMin = param.getValueAsNumber() ?? 0;
+				this.#outputMin = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN;
 				break;
 			case 'm_flOutputMax':
-				this.#outputMax = param.getValueAsNumber() ?? 100;
+				this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX;
 				break;
 			case 'm_flNoiseScale':
-				console.error('do this param', paramName, param);
-				this.#noiseScale = param;
+				this.#noiseScale = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE;
 				break;
 			case 'm_flWorldNoiseScale':
 				console.error('do this param', paramName, param);

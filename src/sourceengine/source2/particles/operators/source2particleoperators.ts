@@ -72,6 +72,13 @@ export function GetSource2ParticleOperator(operatorName: string): typeof Operato
 		case 'C_OP_RemapSpeedtoCP':
 		case 'C_INIT_CreateOnModelAtHeight':
 		case 'C_OP_LerpEndCapScalar':
+		case 'C_INIT_InitSkinnedPositionFromCPSnapshot':
+		case 'C_OP_SnapshotRigidSkinToBones':
+		case 'C_INIT_InheritFromParentParticles':
+		case 'C_INIT_AgeNoise':
+		case 'C_OP_ClampScalar':
+		case 'C_INIT_RemapCPtoVector':
+		case 'C_OP_RepeatedTriggerChildGroup':
 			break;
 		default:
 			console.warn('do operator ', operatorName);

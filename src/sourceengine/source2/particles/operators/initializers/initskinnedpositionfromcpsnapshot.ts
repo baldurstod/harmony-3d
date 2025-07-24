@@ -1,7 +1,7 @@
 import { mat3, mat4, vec3 } from 'gl-matrix';
 import { TESTING } from '../../../../../buildoptions';
 import { PARTICLE_FIELD_POSITION } from '../../../../common/particles/particlefields';
-import { DEFAULT_PARTICLE_NORMAL } from '../../source2particle';
+import { DEFAULT_PARTICLE_NORMAL, Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -10,88 +10,118 @@ const mat = mat4.create();
 const nmat = mat3.create();
 const IDENTITY_MAT4 = mat4.create();
 
+const DEFAULT_SNAPSHOT_CONTROL_POINT_NUMBER = 1;// TODO: check default value
+const DEFAULT_RANDOM = false;// TODO: check default value
+const DEFAULT_RANDOM_SEED = 0;// TODO: check default value
+const DEFAULT_RIGID = false;// TODO: check default value
+const DEFAULT_SET_NORMAL = false;// TODO: check default value
+const DEFAULT_IGNORE_DT = false;// TODO: check default value
+const DEFAULT_MIN_NORMAL_VELOCITY = 0;// TODO: check default value
+const DEFAULT_MAX_NORMAL_VELOCITY = 0;// TODO: check default value
+const DEFAULT_INCREMENT = 1;// TODO: check default value
+const DEFAULT_FULL_LOOP_INCREMENT = 0;// TODO: check default value
+const DEFAULT_SNAPSHOT_START_POINT = 0;// TODO: check default value
+const DEFAULT_BONE_VELOCITY = 0;// TODO: check default value
+const DEFAULT_BONE_VELOCITY_MAX = 0;// TODO: check default value
+const DEFAULT_COPY_COLOR = false;// TODO: check default value
+const DEFAULT_COPY_ALPHA = false;// TODO: check default value
+const DEFAULT_COPY_RADIUS = false;// TODO: check default value
+
 export class InitSkinnedPositionFromCPSnapshot extends Operator {
 	#rigidOnce = false;
-	snapshotControlPointNumber = 1;
-	random = false;
-	randomSeed = 0;
-	rigid = false;
-	setNormal = false;
-	ignoreDt = false;
-	minNormalVelocity = 0;
-	maxNormalVelocity = 0;
-	increment = 1;
-	fullLoopIncrement = 0;
-	snapShotStartPoint = 0;
-	boneVelocity = 0;
-	boneVelocityMax = 0;
-	copyColor = false;
-	copyAlpha = false;
-	copyRadius = false;
+	#snapshotControlPointNumber = DEFAULT_SNAPSHOT_CONTROL_POINT_NUMBER;
+	#random = DEFAULT_RANDOM;
+	#randomSeed = DEFAULT_RANDOM_SEED;
+	#rigid = DEFAULT_RIGID;
+	#setNormal = DEFAULT_SET_NORMAL;
+	#ignoreDt = DEFAULT_IGNORE_DT;
+	#minNormalVelocity = DEFAULT_MIN_NORMAL_VELOCITY;
+	#maxNormalVelocity = DEFAULT_MAX_NORMAL_VELOCITY;
+	#increment = DEFAULT_INCREMENT;
+	#fullLoopIncrement = DEFAULT_FULL_LOOP_INCREMENT;
+	#snapShotStartPoint = DEFAULT_SNAPSHOT_START_POINT;
+	#boneVelocity = DEFAULT_BONE_VELOCITY;
+	#boneVelocityMax = DEFAULT_BONE_VELOCITY_MAX;
+	#copyColor = DEFAULT_COPY_COLOR;
+	#copyAlpha = DEFAULT_COPY_ALPHA;
+	#copyRadius = DEFAULT_COPY_RADIUS;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nSnapshotControlPointNumber':
-				this.snapshotControlPointNumber = (param);
+				this.#snapshotControlPointNumber = param.getValueAsNumber() ?? DEFAULT_SNAPSHOT_CONTROL_POINT_NUMBER;
 				break;
 			case 'm_bRandom':
-				this.random = param;
+				this.#random = param.getValueAsBool() ?? DEFAULT_RANDOM;
 				break;
 			case 'm_nRandomSeed':
-				this.randomSeed = (param);
+				console.error('do this param', paramName, param);
+				this.#randomSeed = (param);
 				break;
 			case 'm_bRigid':
-				this.rigid = param;
+				this.#rigid = param.getValueAsBool() ?? DEFAULT_RIGID;
 				break;
 			case 'm_bSetNormal':
-				this.setNormal = param;
+				console.error('do this param', paramName, param);
+				this.#setNormal = param;
 				break;
 			case 'm_bIgnoreDt':
-				this.ignoreDt = param;
+				console.error('do this param', paramName, param);
+				this.#ignoreDt = param;
 				break;
 			case 'm_flMinNormalVelocity':
-				this.minNormalVelocity = param;
+				console.error('do this param', paramName, param);
+				this.#minNormalVelocity = param;
 				break;
 			case 'm_flMaxNormalVelocity':
-				this.maxNormalVelocity = param;
+				console.error('do this param', paramName, param);
+				this.#maxNormalVelocity = param;
 				break;
 			case 'm_flIncrement':
-				this.increment = param;
+				console.error('do this param', paramName, param);
+				this.#increment = param;
 				break;
 			case 'm_nFullLoopIncrement':
-				this.fullLoopIncrement = (param);
+				console.error('do this param', paramName, param);
+				this.#fullLoopIncrement = (param);
 				break;
 			case 'm_nSnapShotStartPoint':
-				this.snapShotStartPoint = (param);
+				console.error('do this param', paramName, param);
+				this.#snapShotStartPoint = (param);
 				break;
 			case 'm_flBoneVelocity':
-				this.boneVelocity = param;
+				console.error('do this param', paramName, param);
+				this.#boneVelocity = param;
 				break;
 			case 'm_flBoneVelocityMax':
-				this.boneVelocityMax = param;
+				console.error('do this param', paramName, param);
+				this.#boneVelocityMax = param;
 				break;
 			case 'm_bCopyColor':
-				this.copyColor = param;
+				console.error('do this param', paramName, param);
+				this.#copyColor = param;
 				break;
 			case 'm_bCopyAlpha':
-				this.copyAlpha = param;
+				console.error('do this param', paramName, param);
+				this.#copyAlpha = param;
 				break;
 			case 'm_bCopyRadius':
-				this.copyRadius = param;
+				console.error('do this param', paramName, param);
+				this.#copyRadius = param;
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		//TODO: use all parameters
 		const system = this.system;
-		const snapshot = system.getControlPoint(this.snapshotControlPointNumber)?.snapshot;
+		const snapshot = system.getControlPoint(this.#snapshotControlPointNumber)?.snapshot;
 
 		if (!snapshot) {
 			if (TESTING) {
-				console.warn(`Missing snapshot for cp ${this.snapshotControlPointNumber} in system ${this.system.name}`, system);
+				console.warn(`Missing snapshot for cp ${this.#snapshotControlPointNumber} in system ${this.system.name}`, system);
 			}
 			return;
 		}
@@ -110,7 +140,7 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 			throw 'Unknown field';
 		}*/
 		let attributeId;
-		if (this.random) {
+		if (this.#random) {
 			attributeId = (snapshot.particleCount * Math.random() << 0) % snapshot.particleCount;
 		} else {
 			attributeId = (particle.id - 1) % snapshot.particleCount;
@@ -143,7 +173,7 @@ export class InitSkinnedPositionFromCPSnapshot extends Operator {
 			particle.snapHitboxOffset = hitboxOffsetAttribute[attributeId];
 		}
 
-		if (this.rigid) {
+		if (this.#rigid) {
 			if (TESTING && !this.#rigidOnce) {
 				console.warn('Code me');
 				this.#rigidOnce = true;

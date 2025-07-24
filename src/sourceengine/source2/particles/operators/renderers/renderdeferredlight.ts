@@ -22,9 +22,6 @@ export class RenderDeferredLight extends RenderBase {
 			case 'm_hTexture':
 				this.#texture = param.getValueAsString() ?? '';// TODO: check default value
 				break;
-			case 'm_vecColorScale':
-				this.#texture = param.getValueAsString() ?? '';// TODO: check default value
-				break;
 			case 'm_flRadiusScale':
 			case 'm_flAlphaScale':// TODO: mutualize ?
 			case 'm_vecColorScale':
@@ -41,7 +38,7 @@ export class RenderDeferredLight extends RenderBase {
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {
 		const radiusScale = this.getParamScalarValue('m_flRadiusScale') ?? 1;
 		const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? DEFAULT_ALPHA_SCALE;
-		const colorScale = this.getParamVectorValue(renderDeferredLightTempVec4, 'm_vecColorScale') ?? DEFAULT_ALPHA_SCALE;
+		const colorScale = this.getParamVectorValue(renderDeferredLightTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
 
 		for (const particle of particleList) {
 		}
