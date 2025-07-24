@@ -1,4 +1,5 @@
 export { AddVectorToVector } from './addvectortovector';
+export { AgeNoise } from './agenoise';
 export { CreateFromParentParticles } from './createfromparentparticles';
 export { CreateOnModel } from './createonmodel';
 export { CreateOnModelAtHeight } from './createonmodelatheight';
