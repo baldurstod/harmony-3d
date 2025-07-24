@@ -52,7 +52,7 @@ export class WebGLShaderSource {
 		//TODOv3: use regexp to do a better job
 		const outArray: string[] = [];
 		for (let i = 0; i < sourceLineArray.length; ++i) {
-			const line = sourceLineArray[i];
+			const line = sourceLineArray[i]!;
 			let actualSize = 1;
 			if (line.startsWith('#extension')) {
 				this.#extensions += line + '\n';
@@ -110,7 +110,7 @@ export class WebGLShaderSource {
 		includeLineArray.unshift('');//Add an empty line to insure nested include won't occupy the same line #
 		const outArray: string[] = [];
 		for (let i = 0, l = includeLineArray.length; i < l; ++i) {
-			const line = includeLineArray[i];
+			const line = includeLineArray[i]!;
 			if (line.trim().startsWith('#include')) {
 				const includeName = line.replace('#include', '').trim();
 				const include = this.getInclude(includeName, compileRow + i, recursion, allIncludes);
@@ -138,16 +138,14 @@ export class WebGLShaderSource {
 	}
 
 	getCompileSource(includeCode = '') {
-		function getDefineValue(defineName: string, includeCode = '') {
+		function getDefineValue(defineName: string, includeCode = '') :string{
 			const sourceLineArray = includeCode.split('\n');
 			const definePattern = /\s*#define\s+(\S+)\s+(\S+)/;
-			for (let i = 0, l = sourceLineArray.length; i < l; ++i) {
-				const line = sourceLineArray[i];
-
+			for (const line of sourceLineArray) {
 				const regexResult = definePattern.exec(line);
 				if (regexResult && defineName) {
 					if (regexResult[1] == defineName) {
-						return regexResult[2];
+						return regexResult[2]!;
 					}
 				}
 			}
@@ -167,8 +165,8 @@ export class WebGLShaderSource {
 					if ((loopVariable == regexResult[3]) && (loopVariable == regexResult[5])) {//Check the variable name is the same everywhere
 						let startIndex = forPattern.lastIndex;
 						let curlyCount = 1;//we already ate one
-						const startLoopName = regexResult[2];
-						const endLoopName = regexResult[4];
+						const startLoopName = regexResult[2]!;
+						const endLoopName = regexResult[4]!;
 						let loopSnippet = '';
 						curlyLoop:
 						while (startIndex != -1) {
@@ -279,7 +277,7 @@ export class WebGLShaderSource {
 		sourceLineArray.unshift(getHeader(this.#type) ?? '');
 
 		for (let i = sourceLineArray.length - 1; i >= 0; i--) {
-			const line = sourceLineArray[i];
+			const line = sourceLineArray[i]!;
 			if (line.trim().startsWith('#include')) {
 				const include = this.getInclude(line.replace('#include', '').trim());
 				if (include) {
@@ -294,7 +292,7 @@ export class WebGLShaderSource {
 	compileRowToSourceRow(row: number) {
 		let totalSoFar = 0;
 		for (let i = 0; i < this.#sizeOfSourceRow.length; i++) {
-			totalSoFar += this.#sizeOfSourceRow[i];
+			totalSoFar += this.#sizeOfSourceRow[i]!;
 			if (totalSoFar >= row) {
 				return i - 1;
 			}
