@@ -1,7 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2ParticlePathParams } from '../utils/pathparams';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const vec = vec3.create();
 
@@ -12,15 +13,18 @@ export class CreateSequentialPath extends Operator {
 	maxDistance = 0;
 	cpPairs = false;
 	saveOffset = false;
+	/*
 	startControlPointNumber = 0;
 	endControlPointNumber = 0;
-	bulgeControl = 0;
+	bulgeControl = 0; => path
 	bulge = 0;
+	*/
 	midPoint = 0.5;
 	startPointOffset = vec3.create();
 	midPointOffset = vec3.create();
 	endOffset = vec3.create();
 	t = 0;
+	#pathParams = new Source2ParticlePathParams();
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -32,9 +36,7 @@ export class CreateSequentialPath extends Operator {
 				this.loop = param;
 				break;
 			case 'm_PathParams':
-				for (const subName of Object.keys(param)) {
-					this._paramChanged(subName, param[subName]);
-				}
+				Source2ParticlePathParams.fromOperatorParam(param, this.#path);
 				break;
 			case 'm_fMaxDistance':
 				this.maxDistance = param;

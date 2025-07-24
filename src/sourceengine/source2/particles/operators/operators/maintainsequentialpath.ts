@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { Source2ParticlePathParams } from '../utils/pathparams';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
@@ -14,15 +15,18 @@ export class MaintainSequentialPath extends Operator {
 	maxDistance = 0;
 	cpPairs = false;
 	saveOffset = false;
+	/*
 	startControlPointNumber = 0;
 	endControlPointNumber = 0;
 	bulgeControl = 0;
 	bulge = 0;
+	*/
 	midPoint = 0.5;
 	startPointOffset = vec3.create();
 	midPointOffset = vec3.create();
 	endOffset = vec3.create();
 	operateAllParticlesRemoveme = true;
+	#path = new Source2ParticlePathParams();
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -34,9 +38,7 @@ export class MaintainSequentialPath extends Operator {
 				this.loop = param;
 				break;
 			case 'm_PathParams':
-				for (const subName of Object.keys(param)) {
-					this._paramChanged(subName, param[subName]);
-				}
+				Source2ParticlePathParams.fromOperatorParam(param, this.#path);
 				break;
 			case 'm_fMaxDistance':
 				this.maxDistance = param;
@@ -47,6 +49,7 @@ export class MaintainSequentialPath extends Operator {
 			case 'm_bSaveOffset':
 				this.saveOffset = param;
 				break;
+				/*
 			case 'm_nStartControlPointNumber':
 				this.startControlPointNumber = (param);
 				break;
@@ -59,6 +62,7 @@ export class MaintainSequentialPath extends Operator {
 			case 'm_flBulge':
 				this.bulge = param;
 				break;
+				*/
 			case 'm_flMidPoint':
 				this.midPoint = param;
 				break;
