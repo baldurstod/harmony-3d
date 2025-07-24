@@ -40,8 +40,7 @@ export class ShadowMap {
 
 		let renderTarget;
 		let shadowViewport;
-		for (let lightIndex = 0, l = lights.length; lightIndex < l; ++lightIndex) {
-			const light = lights[lightIndex];
+		for (const light of lights) {
 			if (light.castShadow) {
 				const shadow = light.shadow;
 				if (shadow) {
@@ -52,7 +51,7 @@ export class ShadowMap {
 					WebGLRenderingState.clear(true, true, true);
 					this.#graphics.setIncludeCode('IS_POINT_LIGHT', (light as PointLight).isPointLight ? '#define IS_POINT_LIGHT' : '');
 					for (let viewPortIndex = 0; viewPortIndex < shadow.viewPortsLength; ++viewPortIndex) {
-						shadowViewport = shadow.viewPorts[viewPortIndex];
+						shadowViewport = shadow.viewPorts[viewPortIndex]!;
 						vec4.set(viewPort,
 							mapSize[0] * shadowViewport[0],
 							mapSize[1] * shadowViewport[1],

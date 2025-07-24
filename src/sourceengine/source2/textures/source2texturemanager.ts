@@ -115,7 +115,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		}
 	}
 
-	#initCubeTexture(texture: WebGLTexture, imageFormat: number, width: number, height: number, imageData: Uint8Array[]) {
+	#initCubeTexture(texture: WebGLTexture, imageFormat: number, width: number, height: number, imageData: [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array]) {
 		const glContext = new Graphics().glContext;
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 		switch (true) {
@@ -155,7 +155,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
 	}
 
-	#initFlatTexture(texture: WebGLTexture, imageFormat: number/*TODO create an imageformat enum*/, width: number, height: number, imageData: Uint8Array[]) {
+	#initFlatTexture(texture: WebGLTexture, imageFormat: number/*TODO create an imageformat enum*/, width: number, height: number, imageData: [Uint8Array]): void {
 		const glContext = new Graphics().glContext;
 		if (TESTING) {
 			new Graphics().cleanupGLError();

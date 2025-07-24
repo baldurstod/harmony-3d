@@ -29,7 +29,7 @@ export class Source2SpriteSheet {
 		const sequence = this.sequences[sequenceId] ?? this.sequences[0];
 		if (sequence) {
 			frame = (frame % sequence.frames.length) << 0;
-			return sequence.frames[frame];
+			return sequence.frames[frame]!;
 		}
 		return null;
 	}

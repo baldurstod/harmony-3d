@@ -160,8 +160,8 @@ export class Source2ParticleSystem extends Entity {
 	}
 
 	#startChildren() {
-		for (let i = 0; i < this.childSystems.length; ++i) {
-			this.childSystems[i].start();
+		for (const child of this.childSystems) {
+			child.start();
 		}
 	}
 
@@ -169,7 +169,7 @@ export class Source2ParticleSystem extends Entity {
 		this.stopChildren();
 		this.isRunning = false;
 		for (let i = 0; i < this.livingParticles.length; ++i) {
-			const particle = this.livingParticles[i];
+			const particle = this.livingParticles[i]!;
 			this.poolParticles.push(particle);
 			this.livingParticles.splice(i, 1);
 			--i;
@@ -177,8 +177,8 @@ export class Source2ParticleSystem extends Entity {
 	}
 
 	stopChildren() {
-		for (let i = 0; i < this.childSystems.length; ++i) {
-			this.childSystems[i].stop();
+		for (const child of this.childSystems) {
+			child.stop();
 		}
 	}
 
@@ -206,8 +206,8 @@ export class Source2ParticleSystem extends Entity {
 	}
 
 	#resetChilds() {
-		for (let i = 0; i < this.childSystems.length; ++i) {
-			this.childSystems[i].#reset();
+		for (const child of this.childSystems) {
+			child.#reset();
 		}
 	}
 
@@ -258,8 +258,8 @@ export class Source2ParticleSystem extends Entity {
 	}
 
 	stepControlPoint() {
-		for (const i in this.controlPoints) {
-			const cp = this.controlPoints[i];
+		for (const cp of this.controlPoints) {
+			//const cp = this.controlPoints[i];
 			cp.step();
 			/*if (i == 0) {
 				if (cp.attachmentProp) {
@@ -462,8 +462,7 @@ export class Source2ParticleSystem extends Entity {
 
 	stepConstraints(particle: Source2Particle) {
 		//TODOv3: multiple passes
-		for (const j in this.constraints) {
-			const constraint = this.constraints[j];
+		for (const constraint of  this.constraints) {
 			constraint.constraintParticle(particle);
 		}
 	}

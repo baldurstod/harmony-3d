@@ -201,8 +201,8 @@ export class RemGenerator {
 			this.#pingPongRenderTarget.dispose();
 		}
 
-		for (let i = 0; i < this.#lodPlanes.length; i++) {
-			this.#lodPlanes[i].dispose();
+		for (const lodPlane of this.#lodPlanes) {
+			lodPlane.dispose();
 		}
 		this.#lodPlanes = [];
 	}
@@ -339,18 +339,18 @@ export class RemGenerator {
 
 			if (col === 0) {
 
-				cubeCamera.upVector = vec3.fromValues(0, upSign[i], 0);//cubeCamera.up.set(0, upSign[i], 0);
-				cubeCamera.lookAt(vec3.fromValues(forwardSign[i], 0, 0));
+				cubeCamera.upVector = vec3.fromValues(0, upSign[i]!, 0);//cubeCamera.up.set(0, upSign[i], 0);
+				cubeCamera.lookAt(vec3.fromValues(forwardSign[i]!, 0, 0));
 
 			} else if (col === 1) {
 
-				cubeCamera.upVector = vec3.fromValues(0, 0, upSign[i]);//cubeCamera.up.set(0, 0, upSign[i]);
-				cubeCamera.lookAt(vec3.fromValues(0, forwardSign[i], 0));
+				cubeCamera.upVector = vec3.fromValues(0, 0, upSign[i]!);//cubeCamera.up.set(0, 0, upSign[i]);
+				cubeCamera.lookAt(vec3.fromValues(0, forwardSign[i]!, 0));
 
 			} else {
 
-				cubeCamera.upVector = vec3.fromValues(0, upSign[i], 0);//cubeCamera.up.set(0, upSign[i], 0);
-				cubeCamera.lookAt(vec3.fromValues(0, 0, forwardSign[i]));
+				cubeCamera.upVector = vec3.fromValues(0, upSign[i]!, 0);//cubeCamera.up.set(0, upSign[i], 0);
+				cubeCamera.lookAt(vec3.fromValues(0, 0, forwardSign[i]!));
 			}
 
 			const size = this.#cubeSize;
@@ -421,7 +421,7 @@ export class RemGenerator {
 
 		for (let i = 1; i < this.#lodPlanes.length; i++) {
 
-			const sigma = Math.sqrt(this.#sigmas[i] * this.#sigmas[i] - this.#sigmas[i - 1] * this.#sigmas[i - 1]);
+			const sigma = Math.sqrt(this.#sigmas[i]! * this.#sigmas[i]! - this.#sigmas[i - 1]! * this.#sigmas[i - 1]!);
 
 			const poleAxis = axisDirections[(i - 1) % axisDirections.length];
 
@@ -486,7 +486,7 @@ export class RemGenerator {
 		const scene = new Scene();
 		scene.addChild(blurMesh);
 
-		const pixels = this.#sizeLods[lodIn] - 1;
+		const pixels = this.#sizeLods[lodIn]! - 1;
 		const radiansPerPixel = isFinite(sigmaRadians) ? Math.PI / (2 * pixels) : 2 * Math.PI / (2 * MAX_SAMPLES - 1);
 		const sigmaPixels = sigmaRadians / radiansPerPixel;
 		const samples = isFinite(sigmaRadians) ? 1 + Math.floor(STANDARD_DEVIATIONS * sigmaPixels) : MAX_SAMPLES;
@@ -520,7 +520,7 @@ export class RemGenerator {
 
 		for (let i = 0; i < weights.length; i++) {
 
-			weights[i] = weights[i] / sum;
+			weights[i] = weights[i]! / sum;
 
 		}
 
@@ -538,7 +538,7 @@ export class RemGenerator {
 		blurUniforms['dTheta'] = radiansPerPixel;
 		blurUniforms['mipInt'] = this.#lodMax - lodIn;
 
-		const outputSize = this.#sizeLods[lodOut];
+		const outputSize = this.#sizeLods[lodOut]!;
 		const x = 3 * outputSize * (lodOut > this.#lodMax - LOD_MIN ? lodOut - this.#lodMax + LOD_MIN : 0);
 		const y = 4 * (this.#cubeSize - outputSize);
 
@@ -571,7 +571,7 @@ function createPlanes(lodMax: number) {
 
 		if (i > lodMax - LOD_MIN) {
 
-			sigma = EXTRA_LOD_SIGMA[i - lodMax + LOD_MIN - 1];
+			sigma = EXTRA_LOD_SIGMA[i - lodMax + LOD_MIN - 1]!;
 
 		} else if (i === 0) {
 
