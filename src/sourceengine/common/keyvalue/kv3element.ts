@@ -177,7 +177,7 @@ export class Kv3Element {
 					return null;
 				}
 
-				const value: Kv3ValueType = ((data as Kv3Value).getValue() as Kv3ValueType[])?.[Number(subPath)];
+				const value: Kv3ValueType | undefined = ((data as Kv3Value).getValue() as Kv3ValueType[])?.[Number(subPath)];
 				if (!value || (!(value as Kv3Element).isKv3Element && !(value as Kv3Value).isKv3Value)) {
 					return null;
 				}
@@ -195,6 +195,15 @@ export class Kv3Element {
 		return data;
 	}
 
+
+	getSubValueAsString(path: string): string | null {
+		const prop = this.getSubValue(path);
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.String) {
+			return (prop as Kv3Value).getValue() as string;
+		}
+		return null;
+	}
+
 	getSubValueAsNumberArray(path: string): number[] | null {
 		const prop = this.getSubValue(path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isNumberArray()) {
@@ -202,7 +211,6 @@ export class Kv3Element {
 		}
 		return null;
 	}
-
 
 	exportAsText(linePrefix: string): string {
 		const out = [];

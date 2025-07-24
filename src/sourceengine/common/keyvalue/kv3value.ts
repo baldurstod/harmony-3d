@@ -27,7 +27,7 @@ export enum Kv3Type {
 	Resource = 134,
 }
 
-export type Kv3ValueTypeAll = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
+export type Kv3ValueTypeAll = null | boolean | bigint | number | number[] | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
 export type Kv3ValueType = Kv3ValueTypeAll | Kv3ValueTypeAll[];
 
 export class Kv3Value {
