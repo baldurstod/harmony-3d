@@ -2,7 +2,6 @@ import { vec2, vec3, vec4 } from 'gl-matrix';
 import { TESTING } from '../../../../buildoptions';
 import { clamp, lerp, RandomFloat, RemapValClamped, RemapValClampedBias, vec3RandomBox } from '../../../../math/functions';
 import { Mesh } from '../../../../objects/mesh';
-import { JSONObject } from '../../../../types';
 import { PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION, PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED, PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_WORLD_Z_ALIGNED } from '../../../common/particles/particleconsts';
 import { Source2Material } from '../../materials/source2material';
 import { Source2Particle } from '../source2particle';
@@ -16,6 +15,16 @@ function vec4Scale(out: vec4, a: vec4, b: number) {
 	out[1] = Number(a[1]) * b;
 	out[2] = Number(a[2]) * b;
 	out[3] = Number(a[3]) * b;
+	return out;
+}
+
+function vec3Lerp(out: vec3, a: vec3, b: vec3, t: number) {
+	const ax = Number(a[0]);
+	const ay = Number(a[1]);
+	const az = Number(a[2]);
+	out[0] = ax + t * (Number(b[0]) - ax);
+	out[1] = ay + t * (Number(b[1]) - ay);
+	out[2] = az + t * (Number(b[2]) - az);
 	return out;
 }
 
@@ -36,6 +45,7 @@ export type Source2OperatorParamValue = number | number[];/*TODO: improve type *
 const operatorTempVec2_0 = vec2.create();
 const operatorTempVec2_1 = vec2.create();
 const operatorTempVec3_0 = vec3.create();
+const operatorTempVec3_1 = vec3.create();
 
 const DEFAULT_OP_STRENGTH = 1;// TODO: check default value
 const DEFAULT_OP_START_FADE_IN_TIME = 0;// TODO: check default value
@@ -284,7 +294,7 @@ export class Operator {//TODOv3: rename this class ?
 					}
 					break;
 				case 'PVEC_TYPE_FLOAT_INTERP_GRADIENT':
-					return this.#getParamVectorValueFloatInterpGradient(parameter, particle, out);
+					return this.#getParamVectorValueFloatInterpGradient(out, parameter, particle);
 					break;
 				case 'PVEC_TYPE_FLOAT_COMPONENTS':
 					out[0] = this.#getParamScalarValue(parameter.m_FloatComponentX, particle);
@@ -324,33 +334,65 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	#getParamVectorValueFloatInterpGradient(parameter: any/*TODO: improve type*/, particle: Source2Particle | undefined, outVec: vec4) {
-		const interpInput0 = parameter.m_flInterpInput0;
-		const interpInput1 = parameter.m_flInterpInput1;
-		let inputValue = this.#getParamScalarValue(parameter.m_FloatInterp, particle);
+	#getParamVectorValueFloatInterpGradient(out: vec4, parameter: OperatorParam, particle: Source2Particle | undefined): vec4 | null {
+		const interpInput0 = parameter.getSubValueAsNumber('m_flInterpInput0');
+		const interpInput1 = parameter.getSubValueAsNumber('m_flInterpInput1');
+		const floatInterp = parameter.getSubValue('m_FloatInterp')
+		if (!floatInterp || interpInput0 === null || interpInput1 === null) {
+			return null;
+		}
+		let inputValue = this.#getParamScalarValue(floatInterp, particle);
 
 		inputValue = RemapValClamped(inputValue, interpInput0, interpInput1, 0.0, 1.0);
 
-		const stops = parameter.m_Gradient?.m_Stops;
-		if (stops) {
-			//m_Color
-			let previousStop = stops[0];
-			let stop = previousStop;
-			if (inputValue < previousStop.m_flPosition) {
-				return vec4Scale(outVec, previousStop.m_Color, COLOR_SCALE);
-			}
-
-			let index = 0;
-			while (stop = stops[++index]) {
-				if (inputValue < stop.m_flPosition) {
-					vec4Lerp(outVec, previousStop.m_Color, stop.m_Color, (inputValue - previousStop.m_flPosition) / (stop.m_flPosition - previousStop.m_flPosition));
-					return vec4.scale(outVec, outVec, COLOR_SCALE);
-				}
-				previousStop = stop;
-			}
-			return vec4Scale(outVec, previousStop.m_Color, COLOR_SCALE);
+		const gradient = parameter.getSubValue('m_Gradient');
+		if (!gradient) {
+			return null;
 		}
 
+		const stops = gradient.getSubValueAsArray('m_Stops') as OperatorParam[] | null;
+		if (!stops || stops.length == 0) {
+			return null;
+		}
+		//m_Color
+		let previousStop = stops[0]!;
+		let stop: OperatorParam | undefined = previousStop;
+		if (inputValue < (previousStop.getSubValueAsNumber('m_flPosition') ?? 0)) {
+			if (previousStop.getSubValueAsVec3('m_Color', out as vec3)) {
+				return vec4.scale(out, out, COLOR_SCALE);
+			}
+		}
+
+		let index = 0;
+		while (stop = stops[++index]) {
+			// TODO: optimize
+			const previousStopColor = previousStop.getSubValueAsVec3('m_Color', operatorTempVec3_0);
+			if (!previousStopColor) {
+				return null;
+			}
+			const previousStopPosition = previousStop.getSubValueAsNumber('m_flPosition');
+			if (previousStopPosition === null) {
+				return null;
+			}
+			const stopColor = stop.getSubValueAsVec3('m_Color', operatorTempVec3_1);
+			if (!stopColor) {
+				return null;
+			}
+			const stopPosition = stop.getSubValueAsNumber('m_flPosition');
+			if (stopPosition === null) {
+				return null;
+			}
+
+			if (inputValue < (previousStop.getSubValueAsNumber('m_flPosition') ?? 0)) {
+				vec3Lerp(out as vec3, previousStopColor, stopColor, (inputValue - previousStopPosition) / (stopPosition - previousStopPosition));
+				return vec4.scale(out, out, COLOR_SCALE);
+			}
+			previousStop = stop;
+		}
+		if (previousStop.getSubValueAsVec3('m_Color', out as vec3)) {
+			return out;
+		}
+		return null;
 	}
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
@@ -381,7 +423,7 @@ export class Operator {//TODOv3: rename this class ?
 				this.opEndFadeInTime = param.getValueAsNumber() ?? DEFAULT_OP_END_FADE_IN_TIME;
 				break;
 			case 'm_flOpStartFadeOutTime':
-				this.opStartFadeOutTime  = param.getValueAsNumber() ?? DEFAULT_OP_START_FADE_OUT_TIME;
+				this.opStartFadeOutTime = param.getValueAsNumber() ?? DEFAULT_OP_START_FADE_OUT_TIME;
 				break;
 			case 'm_flOpEndFadeOutTime':
 				this.opEndFadeOutTime = param.getValueAsNumber() ?? DEFAULT_OP_END_FADE_OUT_TIME;
@@ -412,6 +454,11 @@ export class Operator {//TODOv3: rename this class ?
 				this.scaleCp = (param);
 				break;
 			case 'm_flOpStrength':
+				//this.opStrength = param.getValueAsNumber() ?? DEFAULT_OP_STRENGTH;
+				// used in operateParticle
+				break;
+			case 'm_Notes':
+				console.info(this.constructor.name, 'notes:', param.getValueAsString());
 				//this.opStrength = param.getValueAsNumber() ?? DEFAULT_OP_STRENGTH;
 				// used in operateParticle
 				break;
