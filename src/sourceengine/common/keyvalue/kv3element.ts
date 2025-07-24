@@ -204,6 +204,14 @@ export class Kv3Element {
 		return null;
 	}
 
+	getSubValueAsNumber(path: string): number | null {
+		const prop = this.getSubValue(path);
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isNumber()) {
+			return (prop as Kv3Value).getValue() as number;
+		}
+		return null;
+	}
+
 	getSubValueAsNumberArray(path: string): number[] | null {
 		const prop = this.getSubValue(path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isNumberArray()) {
