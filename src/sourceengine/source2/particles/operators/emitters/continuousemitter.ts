@@ -7,13 +7,14 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 const DEFAULT_EMIT_RATE = 100;
 
 export class ContinuousEmitter extends Operator {
-	#emitRate = DEFAULT_EMIT_RATE;
+	//#emitRate = DEFAULT_EMIT_RATE;
 	#remainder = 0;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flEmitRate':
-				this.#emitRate = param.getValueAsNumber() ?? DEFAULT_EMIT_RATE;
+				// used in doEmit
+				//this.#emitRate = param.getValueAsNumber() ?? DEFAULT_EMIT_RATE;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -21,19 +22,20 @@ export class ContinuousEmitter extends Operator {
 	}
 
 	doEmit(elapsedTime: number) {
+
 		const emission_start_time = this.getParameter('emission_start_time') ?? 0;
-		let emission_rate = this.#emitRate;
+		//let emitRate = this.#emitRate;
 		const emission_duration = this.getParameter('emission_duration') ?? 0;
 
 		const fade = this.getOperatorFade();
-		emission_rate *= fade;
+		const emitRate = (this.getParamScalarValue('m_flEmitRate') ?? DEFAULT_EMIT_RATE) * fade;
 
 		let currentTime = this.system.currentTime;
 
 		if (currentTime < emission_start_time) return;
 		if (emission_duration != 0 && (currentTime > emission_start_time + emission_duration)) return;
 
-		let nToEmit = this.#remainder + elapsedTime * emission_rate;
+		let nToEmit = this.#remainder + elapsedTime * emitRate;
 		this.#remainder = nToEmit % 1;
 		nToEmit = Math.floor(nToEmit);
 

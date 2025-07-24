@@ -6,12 +6,14 @@ import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const DEFAULT_OFFSET = vec3.create();
+const DEFAULT_LOCAL_COORDS = false;
+const DEFAULT_PROPORTIONAL = false;
 
 const offset = vec3.create();
 
 export class PositionOffset extends Operator {
-	#localCoords = false;
-	#proportional = false;
+	#localCoords = DEFAULT_LOCAL_COORDS;
+	#proportional = DEFAULT_PROPORTIONAL;
 	#offsetMin = vec4.create();
 	#offsetMax = vec4.create();
 
@@ -22,11 +24,10 @@ export class PositionOffset extends Operator {
 				// used in doInit
 				break;
 			case 'm_bLocalCoords':
-				this.#localCoords = param.getValueAsBool() ?? false;
+				this.#localCoords = param.getValueAsBool() ?? DEFAULT_LOCAL_COORDS;
 				break;
-			case 'm_bProportional':
-				console.error('do this param', paramName, param);
-				this.#proportional = param;
+			case 'm_bProportional'://TODO: mutualize ?
+				this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -34,6 +35,7 @@ export class PositionOffset extends Operator {
 	}
 
 	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+		// TODO: use m_bProportional
 		const offsetMin = this.getParamVectorValue('m_OffsetMin', particle, this.#offsetMin) ?? DEFAULT_OFFSET;
 		const offsetMax = this.getParamVectorValue('m_OffsetMax', particle, this.#offsetMax) ?? DEFAULT_OFFSET;
 

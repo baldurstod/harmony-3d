@@ -2,11 +2,13 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+const DEFAULT_SNAPSHOT_CONTROL_POINT = -1;// TODO: check default value
+
 export class InstantaneousEmitter extends Operator {
-	emitted = 0;
-	initFromKilledParentParticles = 0;
-	maxEmittedPerFrame = -1;
-	snapshotControlPoint = -1;
+	#emitted = 0;
+	#initFromKilledParentParticles = 0;
+	#maxEmittedPerFrame = -1;
+	#snapshotControlPoint = DEFAULT_SNAPSHOT_CONTROL_POINT;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -15,15 +17,14 @@ export class InstantaneousEmitter extends Operator {
 				break;
 			case 'm_flInitFromKilledParentParticles':
 				console.error('do this param', paramName, param);
-				this.initFromKilledParentParticles = (param);
+				this.#initFromKilledParentParticles = (param);
 				break;
 			case 'm_nMaxEmittedPerFrame':
 				console.error('do this param', paramName, param);
-				this.maxEmittedPerFrame = (param);
+				this.#maxEmittedPerFrame = (param);
 				break;
 			case 'm_nSnapshotControlPoint':
-				console.error('do this param', paramName, param);
-				this.snapshotControlPoint = (param);
+				this.#snapshotControlPoint = param.getValueAsNumber() ?? DEFAULT_SNAPSHOT_CONTROL_POINT;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -36,8 +37,8 @@ export class InstantaneousEmitter extends Operator {
 		const startTime = this.getParamScalarValue('m_flStartTime') ?? 0;
 
 		const system = this.system;
-		if (this.snapshotControlPoint != -1) {
-			const snapshot = system.getControlPoint(this.snapshotControlPoint)?.snapshot;
+		if (this.#snapshotControlPoint != -1) {
+			const snapshot = system.getControlPoint(this.#snapshotControlPoint)?.snapshot;
 			if (snapshot) {
 				particlesToEmit = snapshot.particleCount;
 			} else {
@@ -46,9 +47,9 @@ export class InstantaneousEmitter extends Operator {
 		}
 		//TODO: check start timeout
 
-		let nToEmit = particlesToEmit - this.emitted;
-		if (this.maxEmittedPerFrame != -1) {
-			nToEmit = Math.min(nToEmit, this.maxEmittedPerFrame);
+		let nToEmit = particlesToEmit - this.#emitted;
+		if (this.#maxEmittedPerFrame != -1) {
+			nToEmit = Math.min(nToEmit, this.#maxEmittedPerFrame);
 		}
 
 		let currentTime = system.currentTime;
@@ -59,12 +60,12 @@ export class InstantaneousEmitter extends Operator {
 				break; // Break if a particule can't emitted (max reached)
 			}
 			currentTime += timeStampStep;
-			++this.emitted;
+			++this.#emitted;
 		}
 	}
 
 	reset() {
-		this.emitted = 0;
+		this.#emitted = 0;
 	}
 }
 RegisterSource2ParticleOperator('C_OP_InstantaneousEmitter', InstantaneousEmitter);

@@ -51,6 +51,9 @@ export function GetSource2ParticleOperator(operatorName: string): typeof Operato
 		case 'C_INIT_NormalOffset':
 		case 'C_OP_TwistAroundAxis':
 		case 'C_INIT_RandomSecondSequence':
+		case 'C_OP_OscillateVector':
+		case 'C_OP_DampenToCP':
+		case 'C_OP_RampScalarSpline':
 			break;
 		default:
 			console.warn('do operator ', operatorName);

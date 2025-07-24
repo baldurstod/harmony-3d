@@ -101,6 +101,7 @@ export class RenderSprites extends RenderBase {
 			case 'm_flAlphaScale':// TODO: mutualize ?
 			case 'm_flOverbrightFactor':// TODO: mutualize ?
 			case 'm_flRefractAmount':
+			case 'VisibilityInputs':
 				// used in updateParticles
 				break;
 			default:
@@ -121,7 +122,7 @@ export class RenderSprites extends RenderBase {
 	}
 
 	updateParticles(particleSystem: Source2ParticleSystem, particleList: Source2Particle[], elapsedTime: number): void {//TODOv3
-		// TODO: use m_flRefractAmount, m_flAddSelfAmount, blendFramesSeq0
+		// TODO: use m_flRefractAmount, m_flAddSelfAmount, blendFramesSeq0, VisibilityInputs
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
 		const rate = this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');

@@ -54,32 +54,34 @@ function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Elem
 			case 'm_ConstantColor':
 				//vec4.set(system.baseProperties.color, Number(value[0]) / 255.0, Number(value[1]) / 255.0, Number(value[2]) / 255.0, Number(value[3]) / 255.0);
 				const constantColor = systemDefinition.getValueAsNumberArray('m_ConstantColor');
-				if (constantColor) {
-					vec4.set(system.baseProperties.color, constantColor[0] / 255.0, constantColor[1] / 255.0, constantColor[2] / 255.0, constantColor[3] / 255.0);
+				if (constantColor && constantColor.length >= 4) {
+					vec4.set(system.baseProperties.color, constantColor[0]! / 255.0, constantColor[1]! / 255.0, constantColor[2]! / 255.0, constantColor[3]! / 255.0);
 				}
 				break;
 			case 'm_flConstantLifespan':
-				system.baseProperties.lifespan = value;
+				system.baseProperties.lifespan = systemDefinition.getValueAsNumber('key') ?? 0;// TODO: check default value
 				break;
 			case 'm_flConstantRadius':
-				system.baseProperties.radius = systemDefinition.getValueAsNumber('m_flConstantRadius') ?? SOURCE2_DEFAULT_RADIUS;
+				system.baseProperties.radius = systemDefinition.getValueAsNumber('key') ?? SOURCE2_DEFAULT_RADIUS;// TODO: check default value
 				break;
 			case 'm_nConstantSequenceNumber':
-				system.baseProperties.sequenceNumber = systemDefinition.getValueAsNumber('m_nConstantSequenceNumber') ?? 0;
+				system.baseProperties.sequenceNumber = systemDefinition.getValueAsNumber(key) ?? 0;// TODO: check default value
 				break;
 			case 'm_controlPointConfigurations':
-				system.baseProperties.controlPointConfigurations = valueToControlPointConfigurations(systemDefinition.getValueAsElementArray('m_controlPointConfigurations'));
+				system.baseProperties.controlPointConfigurations = valueToControlPointConfigurations(systemDefinition.getValueAsElementArray(key));// TODO: check default value
 				break;
 			case 'm_hSnapshot':
-				system.baseProperties.snapshot = value;
+				system.baseProperties.snapshot = systemDefinition.getValueAsResource(key) ?? '';// TODO: check default value
 				break;
 			case 'm_nSnapshotControlPoint':
-				system.baseProperties.snapshotControlPoint = (value);
+				system.baseProperties.snapshotControlPoint = systemDefinition.getValueAsNumber('key') ?? 0;// TODO: check default value
 				break;
 			case 'm_nInitialParticles':
+				console.error('do this param', key, value);
 				system.initialParticles = (value);
 				break;
 			case 'm_flConstantRotationSpeed':
+				console.error('do this param', key, value);
 				system.baseProperties.rotationSpeedRoll = value;
 				break;
 			default:

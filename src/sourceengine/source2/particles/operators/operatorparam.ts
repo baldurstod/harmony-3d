@@ -42,7 +42,7 @@ export class OperatorParam {
 				case 'PF_TYPE_LITERAL'/*TODO: create a string constant*/:
 					return (this.#value as Map<string, OperatorParam>).get('m_flLiteralValue')?.getValueAsNumber();
 				default:
-					console.error('unknown number type, fix me', this);
+					console.error('unknown number type, maybe use getParamScalarValue instead', this);
 			}
 		}
 
