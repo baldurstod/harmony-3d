@@ -1,31 +1,35 @@
-import { SourceEngineParticleSystem } from '../particles/sourceengineparticlesystem';
-import { SourceEngineParticleOperators } from '../particles/sourceengineparticleoperators';
-import { ELEMENT_TYPES } from '../particles/constants';
-import { generateRandomUUID } from '../../../math/functions';
 import { LOG, WARN } from '../../../buildoptions';
+import { generateRandomUUID } from '../../../math/functions';
+import { ELEMENT_TYPES } from '../particles/constants';
+import { SourceEngineParticleOperator } from '../particles/operators/operator';
+import { SourceEngineParticleOperators } from '../particles/sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../particles/sourceengineparticlesystem';
+import { CDmxAttribute, CDmxAttributeValue, CDmxElement } from './sourceenginepcfloader';
 
 export class SourcePCF {
 	repository: string;
-	stringDict = [];
-	elementsDict = [];
-	systems = {};
-	systems2 = {};
-	binaryVersion;
-	repositoryName: string;
-	constructor(repository: string) {
+	path: string;
+	stringDict: string[] = [];
+	elementsDict: CDmxElement[] = [];
+	systems: Record<string, CDmxElement> = {};//TODO: turn into map
+	systems2: Record<string, CDmxElement> = {};//TODO: turn into map
+	binaryVersion: number = 0;
+
+	constructor(repository: string, path: string) {
 		this.repository = repository;
+		this.path = path;
 	}
 
-	getSystemElement(systemName) {
+	getSystemElement(systemName: string): CDmxElement | undefined {
 		return this.systems[systemName];
 	}
 
-	addSystem(element) {
+	addSystem(element: CDmxElement): void {
 		this.systems[element.name] = element;
 		this.systems2[element.guid2] = element;
 	}
 
-	getSystem(systemName) {
+	getSystem(systemName: string): SourceEngineParticleSystem | null {
 		const element = this.systems[systemName];
 		if (!element) { return null; }
 
@@ -35,8 +39,7 @@ export class SourcePCF {
 		ps.pcf = this;	// Store PCF to load children
 		ps.repository = this.repository;
 
-		for (let attributeIndex = 0; attributeIndex < attributes.length; ++attributeIndex) {
-			const attribute = attributes[attributeIndex];
+		for (const attribute of attributes) {
 			switch (attribute.typeName) {
 				case 'renderers':
 				case 'operators':
@@ -44,10 +47,8 @@ export class SourcePCF {
 				case 'emitters':
 				case 'forces':
 				case 'constraints':
-					this.addOperators(ps, attribute.value, attribute.typeName);
-					break;
 				case 'children':
-					this.addOperators(ps, attribute.value, attribute.typeName);
+					this.addOperators(ps, attribute.value as CDmxAttributeValue[]/*TODO: check actual value*/, attribute.typeName);
 					break;
 				default:
 					ps.setParam(attribute);
@@ -56,7 +57,7 @@ export class SourcePCF {
 		return ps;
 	}
 
-	initSystem(system) {//TODOv2: merge with previous function
+	initSystem(system: SourceEngineParticleSystem): SourceEngineParticleSystem | null {//TODOv2: merge with previous function
 		const element = this.systems[system.name];
 		if (!element) { return null; }
 
@@ -65,8 +66,7 @@ export class SourcePCF {
 		system.pcf = this;	// Store PCF to load children
 		system.repository = this.repository;
 
-		for (let attributeIndex = 0; attributeIndex < attributes.length; ++attributeIndex) {
-			const attribute = attributes[attributeIndex];
+		for (const attribute of attributes) {
 			switch (attribute.typeName) {
 				case 'renderers':
 				case 'operators':
@@ -74,10 +74,8 @@ export class SourcePCF {
 				case 'emitters':
 				case 'forces':
 				case 'constraints':
-					this.addOperators(system, attribute.value, attribute.typeName);
-					break;
 				case 'children':
-					this.addOperators(system, attribute.value, attribute.typeName);
+					this.addOperators(system, attribute.value as CDmxAttributeValue[]/*TODO: check actual value*/, attribute.typeName);
 					break;
 				default:
 					system.setParam(attribute);
@@ -86,9 +84,9 @@ export class SourcePCF {
 		return system;
 	}
 
-	addOperators(system, list, listType) {
+	addOperators(system: SourceEngineParticleSystem, list: CDmxAttributeValue[], listType: string) {
 		for (let i = 0; i < list.length; ++i) {
-			const ope = list[i];
+			const ope = list[i] as CDmxElement/*TODO: check actual value*/;
 			if (ope.type == 'DmeParticleOperator') {
 				const operator = SourceEngineParticleOperators.getOperator(ope.name);
 				if (operator) {
@@ -102,10 +100,9 @@ export class SourcePCF {
 			} else {
 				if (ope.type == 'DmeParticleChild') {
 					const attribs = ope.attributes;
-					for (let attribIndex = 0; attribIndex < attribs.length; ++attribIndex) {
-						const attrib = attribs[attribIndex];
+					for (const attrib of attribs) {
 						if (attrib.typeName == 'child' && attrib.value) {
-							system.addTempChild(attrib.value.name, ope.guid2);
+							system.addTempChild((attrib.value as CDmxElement/*TODO: check actual value*/).name, ope.guid2);
 						}
 					}
 				} else {
@@ -115,10 +112,8 @@ export class SourcePCF {
 		}
 	}
 
-	addAttributes(operator, list) {
-		for (let i = 0; i < list.length; ++i) {
-			const attrib = list[i];
-
+	addAttributes(operator: SourceEngineParticleOperator, list: CDmxAttribute[]) {
+		for (const attrib of list) {
 			operator.setParameter(attrib.typeName, ELEMENT_TYPES[attrib.type], attrib.value);
 		}
 	}

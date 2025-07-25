@@ -88,7 +88,7 @@ export class SourceEnginePCFLoader extends SourceBinaryLoader {
 		}
 
 		if (element.type == DmeParticleSystemDefinition) {
-			pcf.addSystem(element);
+			pcf.addSystem(element as CDmxElement);
 		}
 		return element as CDmxElement;
 	}
