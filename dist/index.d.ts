@@ -1743,6 +1743,10 @@ declare class Choreography {
          execute(variables: any): void;
      }
 
+     export declare const DmeElement = "DmeElement";
+
+     export declare const DmeParticleSystemDefinition = "DmeParticleSystemDefinition";
+
      export declare class DrawCircle extends Node_2 {
          #private;
          constructor(editor: NodeImageEditor, params?: any);
@@ -7691,7 +7695,7 @@ declare class Choreography {
              /**
               * TODO
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number, number] | [number, number, number] | Float32Array<ArrayBufferLike>;
+             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
              /**
               * TODO
               */
@@ -8856,7 +8860,7 @@ declare class Choreography {
              constructor(mesh: any, geometry: any);
          }
 
-         declare class SourcePCF {
+         export declare class SourcePCF {
              repository: string;
              path: string;
              stringDict: string[];

@@ -7,3 +7,4 @@ export { SourceEngineVMTLoader } from './sourceenginevmtloader';
 export { SourceEnginePCFLoader } from './sourceenginepcfloader';
 export { SourceEngineBSPLoader } from './sourceenginebsploader';
 export { SourceModel } from './sourcemodel';
+export * from './sourcepcf';
