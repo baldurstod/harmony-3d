@@ -35,9 +35,9 @@ export class SourceEnginePCFLoader extends SourceBinaryLoader {
 
 		this.#parseHeader(reader, pcf, startOffset);
 
-		console.info(pcf);
-		console.info(pcfToSTring(pcf));
-		saveFile(new File([pcfToSTring(pcf)], 'pcf'));
+		//console.info(pcf);
+		//console.info(pcfToSTring(pcf));
+		//saveFile(new File([pcfToSTring(pcf)], 'pcf'));
 		return pcf;
 	}
 

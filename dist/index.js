@@ -43709,9 +43709,9 @@ class SourceEnginePCFLoader extends SourceBinaryLoader {
             console.log('Binary version unknown. Loading of file may be unaccurate.');
         }
         this.#parseHeader(reader, pcf, startOffset);
-        console.info(pcf);
-        console.info(pcfToSTring(pcf));
-        saveFile(new File([pcfToSTring(pcf)], 'pcf'));
+        //console.info(pcf);
+        //console.info(pcfToSTring(pcf));
+        //saveFile(new File([pcfToSTring(pcf)], 'pcf'));
         return pcf;
     }
     #parseHeader(reader, pcf, startOffset) {
