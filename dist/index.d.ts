@@ -904,13 +904,14 @@ export declare enum CDmxAttributeType {
 
 export declare type CDmxAttributeValue = null | undefined | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
 
-export declare type CDmxElement = {
+export declare class CDmxElement {
     type: string;
     name: string;
     guid: Uint8Array;
     guid2: string;
     attributes: CDmxAttribute[];
-};
+    inlineSubElements(): Map<CDmxElement, boolean>;
+}
 
 export declare function ceilPowerOfTwo(n: number): number;
 
@@ -7697,7 +7698,7 @@ declare class Choreography {
              /**
               * TODO
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number, number] | [number, number, number] | Float32Array<ArrayBufferLike>;
              /**
               * TODO
               */

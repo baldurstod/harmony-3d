@@ -37,7 +37,7 @@ export class SourceEnginePCFLoader extends SourceBinaryLoader {
 
 		console.info(pcf);
 		console.info(pcfToSTring(pcf));
-		//saveFile(new File([cDmxElementsToSTring(pcf.elementsDict)], 'pcf'));
+		saveFile(new File([pcfToSTring(pcf)], 'pcf'));
 		return pcf;
 	}
 
@@ -72,7 +72,7 @@ export class SourceEnginePCFLoader extends SourceBinaryLoader {
 	}
 
 	#parseElement(reader: BinaryReader, pcf: SourcePCF): CDmxElement {
-		const element: Partial<CDmxElement> = {};
+		const element = new CDmxElement();
 
 		if (pcf.binaryVersion < 5) {
 			element.type = this.getString(pcf, reader.getUint16());
@@ -219,12 +219,50 @@ export class SourceEnginePCFLoader extends SourceBinaryLoader {
 }
 registerLoader('SourceEnginePCFLoader', SourceEnginePCFLoader);
 
-export type CDmxElement = {
-	type: string;
-	name: string;
-	guid: Uint8Array;
-	guid2: string;
-	attributes: CDmxAttribute[];
+export class CDmxElement {
+	type!: string;
+	name!: string;
+	guid!: Uint8Array;
+	guid2!: string;
+	attributes!: CDmxAttribute[];
+
+	inlineSubElements(): Map<CDmxElement, boolean> {
+		const subs = new Map<CDmxElement, boolean>()
+		const done = new Set<CDmxElement>()
+
+		let current: CDmxElement | undefined;
+		const stack: CDmxElement[] = [this];
+		do {
+			current = stack.pop();
+			if (!current || done.has(current)) {
+				continue;
+			}
+			done.add(current);
+			if (subs.has(current)) {
+				subs.set(current, false);
+			} else {
+				subs.set(current, true);
+			}
+
+			for (const attribute of current.attributes) {
+				switch (attribute.type) {
+					case CDmxAttributeType.Element:
+						// prevent inlining
+						subs.set(attribute.value as CDmxElement, false);
+						stack.push(attribute.value as CDmxElement);
+						break;
+					case CDmxAttributeType.ElementArray:
+						for (const subElement of attribute.value as CDmxElement[]) {
+							stack.push(subElement);
+						}
+						break;
+				}
+			}
+		} while (current);
+
+
+		return subs;
+	}
 }
 export type CDmxAttribute = {
 	typeName: string;
@@ -268,20 +306,33 @@ export type CDmxAttributeValue = null | undefined | number | CDmxElement | Color
 
 type DmxElementsToSTringContext = {
 	tabs: number;
+	inlineSubElements: Map<CDmxElement, boolean>;
 }
 
 export function pcfToSTring(pcf: SourcePCF): string {
 	const element = pcf.elementsDict[0];
-	if (element) {
-		return cDmxElementToSTring(element, { tabs: 0 });
+	if (!element) {
+		return '';
 	}
-	return '';
+	const inlineSubElements = element.inlineSubElements();
+	const lines: string[] = [];
+	lines.push(cDmxElementToSTring(element, { tabs: 0, inlineSubElements: inlineSubElements }));
+	for (const [subElement, inline] of inlineSubElements) {
+		if (!inline) {
+			lines.push(cDmxElementToSTring(subElement, { tabs: 0, inlineSubElements: inlineSubElements }));
+		}
+	}
+	return lines.join('\n');
 }
 
 function cDmxElementsToSTring(elements: CDmxElement[], context: DmxElementsToSTringContext): string {
 	let lines: string[] = [];
 	for (const element of elements) {
-		lines.push(cDmxElementToSTring(element, context) + ',');
+		if (context.inlineSubElements.get(element)) {
+			lines.push(cDmxElementToSTring(element, context) + ',');
+		} else {
+			lines.push(`${makeTabs(context.tabs)} ${element.name} "element" "${element.guid2}",`);
+		}
 	}
 	return lines.join('\n');
 }
@@ -311,7 +362,7 @@ function cDmxAttributeToSTring(attribute: CDmxAttribute, context: DmxElementsToS
 
 	switch (attribute.type) {
 		case CDmxAttributeType.Element:
-			line += ` "element" "${attribute.value}"`;
+			line += ` "element" "${(attribute.value as CDmxElement).guid2}"`;
 			break;
 		case CDmxAttributeType.Integer:
 			line += ` "int" ${attribute.value}`;
