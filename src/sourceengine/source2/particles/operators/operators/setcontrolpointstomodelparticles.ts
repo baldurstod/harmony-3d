@@ -3,42 +3,46 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+
+const DEFAULT_FOLLOW_ATTACHMENT = false;// TODO: check default value
+const DEFAULT_ATTACHMENT_NAME = '';// TODO: check default value
+const DEFAULT_HITBOX_SET_NAME = 'default';// TODO: check default value
+const DEFAULT_FIRST_CONTROL_POINT = 0;// TODO: check default value
+const DEFAULT_FIRST_SOURCE_POINT = 0;// TODO: check default value
+const DEFAULT_NUM_CONTROL_POINT = 1;// TODO: check default value
+const DEFAULT_SKIN = false;// TODO: check default value
+
 export class SetControlPointsToModelParticles extends Operator {
-	#followAttachment = false;
-	#attachmentName = '';
-	hitboxSetName = 'default';
-	#firstControlPoint = 0;
-	numControlPoints = 1;
-	firstSourcePoint = 0;
-	skin = false;
+	#followAttachment = DEFAULT_FOLLOW_ATTACHMENT;
+	#attachmentName = DEFAULT_ATTACHMENT_NAME;
+	#hitboxSetName = DEFAULT_HITBOX_SET_NAME;
+	#firstControlPoint = DEFAULT_FIRST_CONTROL_POINT;
+	#numControlPoints = DEFAULT_NUM_CONTROL_POINT;
+	firstSourcePoint = DEFAULT_FIRST_SOURCE_POINT;
+	#skin = DEFAULT_SKIN;//TODO: remove ?
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_HitboxSetName':
-				console.error('do this param', paramName, param);
-				this.hitboxSetName = param;
+				this.#hitboxSetName = param.getValueAsString() ?? DEFAULT_HITBOX_SET_NAME;
 				break;
 			case 'm_AttachmentName':
-				this.#attachmentName = param.getValueAsString() ?? '';
+				this.#attachmentName = param.getValueAsString() ?? DEFAULT_ATTACHMENT_NAME;
 				break;
 			case 'm_nFirstControlPoint':
-				this.#firstControlPoint = param.getValueAsNumber() ?? 0;
+				this.#firstControlPoint = param.getValueAsNumber() ?? DEFAULT_FIRST_CONTROL_POINT;
 				break;
 			case 'm_nNumControlPoints':
-				console.error('do this param', paramName, param);
-				this.numControlPoints = (param);
+				this.#numControlPoints = param.getValueAsNumber() ?? DEFAULT_NUM_CONTROL_POINT;
 				break;
 			case 'm_nFirstSourcePoint':
-				console.error('do this param', paramName, param);
-				this.firstSourcePoint = (param);
+				this.firstSourcePoint = param.getValueAsNumber() ?? DEFAULT_FIRST_SOURCE_POINT;
 				break;
 			case 'm_bSkin':
-				console.error('do this param', paramName, param);
-				this.skin = param;
-				throw 'TODO: what is this skin param'
+				this.#skin = param.getValueAsBool() ?? DEFAULT_SKIN;
 				break;
 			case 'm_bAttachment':
-				this.#followAttachment = param.getValueAsBool() ?? false;
+				this.#followAttachment = param.getValueAsBool() ?? DEFAULT_FOLLOW_ATTACHMENT;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -52,7 +56,7 @@ export class SetControlPointsToModelParticles extends Operator {
 		const firstSourcePoint = this.firstSourcePoint;
 
 
-		for (let i = 0; i < this.numControlPoints; ++i) {
+		for (let i = 0; i < this.#numControlPoints; ++i) {
 			const particle = this.system.livingParticles[firstSourcePoint + i];
 			if (particle) {
 				for (const child of children) {

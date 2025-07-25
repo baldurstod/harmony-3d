@@ -57,7 +57,7 @@ export const DEFAULT_CONTROL_POINT_NUMBER = 0;// TODO: check default value
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
-	#parameters: Record<string, OperatorParam> = {};
+	#parameters: Record<string, OperatorParam> = {};// TODO: turn into Map<string,OperatorParam>
 	system: Source2ParticleSystem
 	protected opStartFadeInTime = DEFAULT_OP_START_FADE_IN_TIME;
 	protected opEndFadeInTime = DEFAULT_OP_END_FADE_IN_TIME;
@@ -184,7 +184,7 @@ export class Operator {//TODOv3: rename this class ?
 		}
 	}
 
-	#getParamScalarValue2(parameter: OperatorParam, inputValue: number): number {
+	#getParamScalarValue2/*TODO: rename to MapType*/(parameter: OperatorParam, inputValue: number): number {
 		const mapType = parameter.getSubValueAsString('m_nMapType');
 
 		if (!mapType) {
@@ -194,17 +194,13 @@ export class Operator {//TODOv3: rename this class ?
 		switch (mapType) {
 			case 'PF_MAP_TYPE_DIRECT':
 				return inputValue;
-				break;
 			case 'PF_MAP_TYPE_CURVE':
 				return this.#getParamScalarValueCurve(parameter, inputValue);
-				break;
 			case 'PF_MAP_TYPE_MULT':
 				console.error('do this getParamScalarValue2');
-				return inputValue * parameter.m_flMultFactor;
-				break;
+				return inputValue * (parameter.getSubValueAsNumber('m_flMultFactor') ?? 1/* TODO: check default value*/);
 			case 'PF_MAP_TYPE_REMAP':
 				return inputValue;//TODO
-				break;
 			default:
 				console.error('Unknown map type : ', mapType, parameter);
 				return 0;
@@ -302,9 +298,15 @@ export class Operator {//TODOv3: rename this class ?
 					return this.#getParamVectorValueFloatInterpGradient(out, parameter, particle);
 					break;
 				case 'PVEC_TYPE_FLOAT_COMPONENTS':
-					out[0] = this.#getParamScalarValue(parameter.m_FloatComponentX, particle);
-					out[1] = this.#getParamScalarValue(parameter.m_FloatComponentY, particle);
-					out[2] = this.#getParamScalarValue(parameter.m_FloatComponentZ, particle);
+					console.error('fix me: PVEC_TYPE_FLOAT_COMPONENTS', parameter);
+					const componentX = parameter.getSubValue('m_FloatComponentX');
+					const componentY = parameter.getSubValue('m_FloatComponentX');
+					const componentZ = parameter.getSubValue('m_FloatComponentX');
+					if (componentX && componentY && componentZ) {
+						out[0] = this.#getParamScalarValue(componentX, particle) ?? 0/* TODO: check default value*/;
+						out[1] = this.#getParamScalarValue(componentY, particle) ?? 0/* TODO: check default value*/;
+						out[2] = this.#getParamScalarValue(componentZ, particle) ?? 0/* TODO: check default value*/;
+					}
 					break;
 				case 'PVEC_TYPE_RANDOM_UNIFORM_OFFSET':
 					if (parameter.getSubValueAsVec3('m_vRandomMin', operatorTempVec3_0) &&
@@ -575,13 +577,8 @@ export class Operator {//TODOv3: rename this class ?
 		return this;
 	}
 
-	getParameter(parameter: string) {
-		const p = this.#parameters[parameter];
-		if (p == undefined) {
-			return null;
-		}
-
-		return p.value;
+	getParameter(name: string): OperatorParam | null {
+		return this.#parameters[name] ?? null;
 	}
 
 	getParameters() {

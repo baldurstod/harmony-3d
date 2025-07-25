@@ -134,7 +134,7 @@ export class RenderTrails extends RenderBase {
 		const radiusHeadTaper = this.getParamScalarValue('m_flRadiusHeadTaper') ?? DEFAULT_RADIUS_HEAD_TAPER;
 		this.mesh!.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
-		const rate = this.getParameter('animation rate');
+		const rate = this.#animationRate;//this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
 		const geometry = this.#geometry;
 		geometry.count = particleList.length * 6;

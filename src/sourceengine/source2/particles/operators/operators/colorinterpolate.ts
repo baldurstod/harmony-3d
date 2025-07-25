@@ -7,19 +7,24 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const colorInterpolateTempVec4 = vec4.create();
 
+
+const DEFAULT_FADE_START_TIME = 0;// TODO: check default value
+const DEFAULT_FADE_END_TIME = 1;// TODO: check default value
+const DEFAULT_EASE_IN_AND_OUT = false;// TODO: check default value
+
 export class ColorInterpolate extends Operator {
-	#colorFade = vec4.fromValues(1, 1, 1, 1);
-	#fadeStartTime = 0;
-	#fadeEndTime = 1;
-	#easeInAndOut = false;
-	#invTime: number = 1;
+	#colorFade = vec4.fromValues(1, 1, 1, 1);// TODO: check default value
+	#fadeStartTime = DEFAULT_FADE_START_TIME;
+	#fadeEndTime = DEFAULT_FADE_END_TIME;
+	#easeInAndOut = DEFAULT_EASE_IN_AND_OUT;
+	#invTime: number = 1;//computed
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this._update();
+		this.#update();
 	}
 
-	_update() {
+	#update() {
 		this.#invTime = 1.0 / (this.#fadeEndTime - this.#fadeStartTime);
 	}
 
@@ -31,20 +36,16 @@ export class ColorInterpolate extends Operator {
 				};
 				break;
 			case 'm_flFadeStartTime':
-				this.#fadeStartTime = param.getValueAsNumber() ?? 0;
-				this._update();
+				this.#fadeStartTime = param.getValueAsNumber() ?? DEFAULT_FADE_START_TIME;
+				this.#update();
 				break;
 			case 'm_flFadeEndTime':
-				this.#fadeEndTime = param.getValueAsNumber() ?? 1;
-				this._update();
+				this.#fadeEndTime = param.getValueAsNumber() ?? DEFAULT_FADE_END_TIME;
+				this.#update();
 				break;
-			case 'm_bEaseInAndOut':
-				console.error('do this param', paramName, param);
-				this.#easeInAndOut = param;
-				break;
-			case 'm_bEaseInOut':
-				console.error('do this param', paramName, param);
-				this.#easeInAndOut = param;
+			case 'm_bEaseInAndOut'://TODO: check thoses params m_bEaseInAndOut and m_bEaseInOut
+			//case 'm_bEaseInOut':
+				this.#easeInAndOut = param.getValueAsBool() ?? DEFAULT_EASE_IN_AND_OUT;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -52,7 +53,7 @@ export class ColorInterpolate extends Operator {
 	}
 
 	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
-		const color = vec3.clone(particle.initialColor);
+		const color = vec3.clone(particle.initialColor as vec3);//TODO: optimize
 
 		const proportionOfLife = Math.min(particle.currentTime / particle.timeToLive, 1.0);
 
@@ -63,7 +64,7 @@ export class ColorInterpolate extends Operator {
 		if (proportionOfLife < this.#fadeEndTime) {
 			const a = (proportionOfLife - this.#fadeStartTime) * this.#invTime;
 
-			vec3.lerp(particle.color, particle.initialColor, this.#colorFade, a);
+			vec3.lerp(particle.color as vec3, particle.initialColor as vec3, this.#colorFade as vec3, a);
 			return;
 		}
 		vec4.copy(particle.color, this.#colorFade);

@@ -158,7 +158,7 @@ export class RenderSprites extends RenderBase {
 		const colorScale = this.getParamVectorValue(renderSpritesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
 
 		const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
-		const rate = this.getParameter('animation rate');
+		const rate = this.#animationRate;//this.getParameter('animation rate');
 		const useAnimRate = this.getParameter('use animation rate as FPS');
 		this.geometry.count = particleList.length * 6;
 		const maxParticles = this.#maxParticles;
