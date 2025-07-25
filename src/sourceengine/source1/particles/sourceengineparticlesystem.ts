@@ -74,7 +74,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	operators: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
 	forces = new Map<string, SourceEngineParticleOperator>();
 	constraints: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
-	controlPoints: ControlPoint[] = [];
+	#controlPoints: ControlPoint[] = [];
 
 	childrenSystems: SourceEngineParticleSystem[] = [];//todo transform to map
 	tempChildren: Record<string, string> = {};//new Array();//todo transform to map
@@ -468,8 +468,8 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	stepControlPoint() {
-		for (let i = 0; i < this.controlPoints.length; i++) {
-			const cp = this.controlPoints[i];
+		for (let i = 0; i < this.#controlPoints.length; i++) {
+			const cp = this.#controlPoints[i];
 			if (!cp) {
 				continue;
 			}
@@ -693,10 +693,10 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		}
 		const parentSystem = this.parentSystem;
 		if (parentSystem !== undefined) {
-			return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
+			return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
 		}
 
-		let controlPoint = this.controlPoints[controlPointId];
+		let controlPoint = this.#controlPoints[controlPointId];
 		if (controlPoint === undefined) {
 			controlPoint = this.#createControlPoint(controlPointId);
 		}
@@ -704,7 +704,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	getOwnControlPoint(controlPointId: number) {
-		return this.controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
+		return this.#controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
 	}
 
 	#createControlPoint(controlPointId: number) {
@@ -717,7 +717,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 			//this.getControlPoint(0).addChild(controlPoint);
 			this.addChild(controlPoint);
 		}
-		this.controlPoints[controlPointId] = controlPoint;
+		this.#controlPoints[controlPointId] = controlPoint;
 
 		vec3.set(controlPoint.fVector, 0, 1, 0);
 		vec3.set(controlPoint.uVector, 0, 0, 1);
@@ -880,8 +880,8 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 
 	dispose() {
 		super.dispose();
-		this.controlPoints.forEach(element => element.dispose());
-		this.controlPoints.length = 0;
+		this.#controlPoints.forEach(element => element.dispose());
+		this.#controlPoints.length = 0;
 		this.material?.removeUser(this);
 
 		for (const [_, renderer] of this.#renderers) {
@@ -936,7 +936,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		}
 
 		const jControlPoint: string[] = [];
-		this.controlPoints.forEach((element, index) => jControlPoint[index] = element.id);
+		this.#controlPoints.forEach((element, index) => jControlPoint[index] = element.id);
 		json.controlpoints = jControlPoint;
 		return json;
 	}
@@ -952,7 +952,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 					for (let i = 0; i < jControlPoint.length; ++i) {
 						const cpEntity = entities.get(jControlPoint[i]) as ControlPoint;
 						if (cpEntity) {
-							entity.controlPoints[i] = cpEntity;
+							entity.#controlPoints[i] = cpEntity;
 						}
 					}
 				}

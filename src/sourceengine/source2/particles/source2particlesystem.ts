@@ -85,7 +85,7 @@ export class Source2ParticleSystem extends Entity {
 	forces: Operator[] = [];
 	constraints: Operator[] = [];
 	renderers: Operator[] = [];
-	controlPoints: ControlPoint[] = [];
+	#controlPoints: ControlPoint[] = [];
 	childSystems: Source2ParticleSystem[] = [];
 	livingParticles: Source2Particle[] = [];
 	poolParticles: Source2Particle[] = [];
@@ -236,7 +236,7 @@ export class Source2ParticleSystem extends Entity {
 
 		this.elapsedTime = elapsedTime * this.speed;
 		this.#preEmission();
-		this.stepControlPoint();
+		this.#stepControlPoint();
 		if (this.firstStep) {
 			this.firstStep = false;
 			this.#emitInitialParticles(elapsedTime);
@@ -257,10 +257,13 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	stepControlPoint() {
-		for (const cp of this.controlPoints) {
+	#stepControlPoint() {
+		for (const cp of this.#controlPoints) {
 			//const cp = this.controlPoints[i];
-			cp.step();
+			if (cp) {// There can be empty values in controlPoints
+
+				cp.step();
+			}
 			/*if (i == 0) {
 				if (cp.attachmentProp) {
 					const atta = cp.attachmentProp;
@@ -399,10 +402,10 @@ export class Source2ParticleSystem extends Entity {
 	getControlPoint(controlPointId: number): ControlPoint {
 		const parentSystem = this.parentSystem;
 		if (parentSystem) {
-			return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);//TODO: remove recursion
+			return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);//TODO: remove recursion
 		}
 
-		let controlPoint = this.controlPoints[controlPointId];
+		let controlPoint = this.#controlPoints[controlPointId];
 		if (controlPoint === undefined) {
 			controlPoint = this.#createControlPoint(controlPointId);
 		}
@@ -412,10 +415,10 @@ export class Source2ParticleSystem extends Entity {
 	getControlPointForScale(controlPointId: number) {
 		const parentSystem = this.parentSystem;
 		if (parentSystem) {
-			return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
+			return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
 		}
 
-		let controlPoint = this.controlPoints[controlPointId];
+		let controlPoint = this.#controlPoints[controlPointId];
 		if (controlPoint === undefined) {
 			controlPoint = this.#createControlPoint(controlPointId);
 			controlPoint.position = DEFAULT_CONTROL_POINT_SCALE;
@@ -425,14 +428,14 @@ export class Source2ParticleSystem extends Entity {
 
 	getOwnControlPoint(controlPointId: number) {
 		//return this.getControlPoint(controlPointId);
-		return this.controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
+		return this.#controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
 	}
 
 	#createControlPoint(controlPointId: number) {
 		const controlPoint = new ControlPoint();
 		controlPoint.name = String(controlPointId);
 		this.addChild(controlPoint);
-		this.controlPoints[controlPointId] = controlPoint;
+		this.#controlPoints[controlPointId] = controlPoint;
 
 		vec3.set(controlPoint.fVector, 0, 1, 0);
 		vec3.set(controlPoint.uVector, 0, 0, 1);
@@ -567,11 +570,11 @@ export class Source2ParticleSystem extends Entity {
 
 	dispose() {
 		super.dispose();
-		this.controlPoints.forEach(element => element.dispose());
+		this.#controlPoints.forEach(element => element.dispose());
 		this.operators.forEach(element => element.dispose());
 		this.renderers.forEach(element => element.dispose());
 		this.childSystems.forEach(element => element.dispose());
-		this.controlPoints.length = 0;
+		this.#controlPoints.length = 0;
 
 	}
 
