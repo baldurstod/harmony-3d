@@ -266,11 +266,11 @@ export enum CDmxAttributeType {
 
 export type CDmxAttributeValue = null | undefined | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
 
-export type DmxElementsToSTringContext = {
+type DmxElementsToSTringContext = {
 	tabs: number;
 }
 
-function pcfToSTring(pcf: SourcePCF): string {
+export function pcfToSTring(pcf: SourcePCF): string {
 	const element = pcf.elementsDict[0];
 	if (element) {
 		return cDmxElementToSTring(element, { tabs: 0 });

@@ -864,13 +864,13 @@ export declare enum CameraProjection {
     Mixed = 2
 }
 
-declare type CDmxAttribute = {
+export declare type CDmxAttribute = {
     typeName: string;
     type: CDmxAttributeType;
     value: CDmxAttributeValue | CDmxAttributeValue[];
 };
 
-declare enum CDmxAttributeType {
+export declare enum CDmxAttributeType {
     Unknown = 0,
     Element = 1,
     Integer = 2,
@@ -902,9 +902,9 @@ declare enum CDmxAttributeType {
     VMatrixArray = 28
 }
 
-declare type CDmxAttributeValue = null | undefined | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
+export declare type CDmxAttributeValue = null | undefined | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
 
-declare type CDmxElement = {
+export declare type CDmxElement = {
     type: string;
     name: string;
     guid: Uint8Array;
@@ -5085,6 +5085,8 @@ declare class Choreography {
              getFileAsJson(path: string): Promise<RepositoryJsonResponse>;
              getFileList(): Promise<RepositoryFileListResponse>;
          }
+
+         export declare function pcfToSTring(pcf: SourcePCF): string;
 
          export declare class PercentageBetweenCPs extends Operator {
              #private;
