@@ -4,6 +4,7 @@ import { registerLoader } from '../../../loaders/loaderfactory';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
 import { Color } from '../particles/color';
 import { DmeParticleSystemDefinition, SourcePCF } from './sourcepcf';
+import { saveFile } from 'harmony-browser-utils';
 
 const _PCF_LOADER_DEBUG_ = false;//TODOv3 remove
 
@@ -34,6 +35,9 @@ export class SourceEnginePCFLoader extends SourceBinaryLoader {
 
 		this.#parseHeader(reader, pcf, startOffset);
 
+		console.info(pcf);
+		console.info(pcfToSTring(pcf));
+		//saveFile(new File([cDmxElementsToSTring(pcf.elementsDict)], 'pcf'));
 		return pcf;
 	}
 
@@ -224,8 +228,148 @@ export type CDmxElement = {
 }
 export type CDmxAttribute = {
 	typeName: string;
-	type: number;//TODO: create enum
+	type: CDmxAttributeType;
 	value: CDmxAttributeValue | CDmxAttributeValue[];
 }
 
+export enum CDmxAttributeType {
+	Unknown = 0,
+	Element,
+	Integer,
+	Float,
+	Bool,
+	String,
+	Void,
+	Time,
+	Color,//rgba
+	Vec2,
+	Vec3,
+	Vec4,
+	QAngle,
+	Quaternion,
+	VMatrix,
+	ElementArray,
+	IntegerArray,
+	FloatArray,
+	BoolArray,
+	StringArray,
+	VoidArray,
+	TimeArray,
+	ColorArray,
+	Vec2Array,
+	Vec3Array,
+	Vec4Array,
+	QAngleArray,
+	QuaternionArray,
+	VMatrixArray,
+}
+
 export type CDmxAttributeValue = null | undefined | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
+
+export type DmxElementsToSTringContext = {
+	tabs: number;
+}
+
+function pcfToSTring(pcf: SourcePCF): string {
+	const element = pcf.elementsDict[0];
+	if (element) {
+		return cDmxElementToSTring(element, { tabs: 0 });
+	}
+	return '';
+}
+
+function cDmxElementsToSTring(elements: CDmxElement[], context: DmxElementsToSTringContext): string {
+	let lines: string[] = [];
+	for (const element of elements) {
+		lines.push(cDmxElementToSTring(element, context) + ',');
+	}
+	return lines.join('\n');
+}
+
+function cDmxElementToSTring(element: CDmxElement, context: DmxElementsToSTringContext): string {
+	let lines: string[] = [];
+
+	lines.push(makeTabs(context.tabs) + `"${element.type}"`);
+	lines.push(makeTabs(context.tabs) + '{');
+	++context.tabs;
+	lines.push(makeTabs(context.tabs) + `"id" "elementid" "${element.guid2}"`);
+	lines.push(makeTabs(context.tabs) + `"name" "string" "${element.name}"`);
+
+	for (const attribute of element.attributes) {
+		lines.push(makeTabs(context.tabs) + cDmxAttributeToSTring(attribute, context));
+	}
+
+	--context.tabs;
+	lines.push(makeTabs(context.tabs) + '}');
+	return lines.join('\n');
+}
+
+function cDmxAttributeToSTring(attribute: CDmxAttribute, context: DmxElementsToSTringContext): string {
+	let line = makeTabs(context.tabs);
+
+	line = `"${attribute.typeName}"`;
+
+	switch (attribute.type) {
+		case CDmxAttributeType.Element:
+			line += ` "element" "${attribute.value}"`;
+			break;
+		case CDmxAttributeType.Integer:
+			line += ` "int" ${attribute.value}`;
+			break;
+		case CDmxAttributeType.Float:
+			line += ` "float" ${attribute.value}`;
+			break;
+		case CDmxAttributeType.Bool:
+			line += ` "bool" ${attribute.value ? '1' : '0'}`;
+			break;
+		case CDmxAttributeType.String:
+			line += ` "string" "${attribute.value}"`;
+			break;
+		case CDmxAttributeType.Color:
+			line += ` "color" "${(attribute.value as Color).r * 255} ${(attribute.value as Color).g * 255} ${(attribute.value as Color).b * 255} ${(attribute.value as Color).a * 255}"`;
+			break;
+		case CDmxAttributeType.Vec2:
+			line += ` "vector2" "${(attribute.value as vec4)[0]} ${(attribute.value as vec4)[1]}"`;
+			break;
+		case CDmxAttributeType.Vec3:
+			line += ` "vector3" "${(attribute.value as vec4)[0]} ${(attribute.value as vec4)[1]} ${(attribute.value as vec4)[2]}"`;
+			break;
+		case CDmxAttributeType.Vec4:
+			line += ` "vector4" "${(attribute.value as vec4)[0]} ${(attribute.value as vec4)[1]} ${(attribute.value as vec4)[2]} ${(attribute.value as vec4)[3]}"`;
+			break;
+		case CDmxAttributeType.ElementArray:
+			line += ' "element_array"\n';
+			line += makeTabs(context.tabs);
+			line += '[\n';
+			++context.tabs;
+			line += cDmxElementsToSTring(attribute.value as CDmxElement[], context);
+			line += '\n';
+			--context.tabs;
+			line += makeTabs(context.tabs);
+			line += ']';
+			break;
+		default:
+			console.error('do type ', attribute.type, attribute);
+	}
+
+	return line;
+}
+
+function makeTabs(count: number): string {
+	let s = '';
+	for (let i = 0; i < count; i++) {
+		s += '\t';
+	}
+	return s;
+}
+
+
+/*
+				"DmeParticleChild"
+				{
+					"id" "elementid" "6faed681-cad8-46bd-b75f-e1ef20ca5453"
+					"name" "string" "utaunt_sharkfin2_water_base"
+					"child" "element" "3c594b90-3c2d-4076-bcc7-c2e875923a12"
+					"delay" "float" "0"
+				},
+*/

@@ -4731,8 +4731,7 @@ class WebGLShaderSource {
         function getDefineValue(defineName, includeCode = '') {
             const sourceLineArray = includeCode.split('\n');
             const definePattern = /\s*#define\s+(\S+)\s+(\S+)/;
-            for (let i = 0, l = sourceLineArray.length; i < l; ++i) {
-                const line = sourceLineArray[i];
+            for (const line of sourceLineArray) {
                 const regexResult = definePattern.exec(line);
                 if (regexResult && defineName) {
                     if (regexResult[1] == defineName) {
@@ -7085,7 +7084,7 @@ class Renderer {
 }
 
 const CLEAR_COLOR$1 = vec4.fromValues(1, 0, 1, 1);
-const a$b = vec4.create();
+const a$a = vec4.create();
 const mapSize = vec2.create();
 const lightPos = vec3.create();
 const viewPort = vec4.create();
@@ -7101,7 +7100,7 @@ class ShadowMap {
         const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
         const scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
         const depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
-        WebGLRenderingState.getClearColor(a$b);
+        WebGLRenderingState.getClearColor(a$a);
         WebGLRenderingState.disable(GL_BLEND);
         WebGLRenderingState.disable(GL_SCISSOR_TEST);
         WebGLRenderingState.enable(GL_DEPTH_TEST);
@@ -7109,8 +7108,7 @@ class ShadowMap {
         this.#graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
         let renderTarget;
         let shadowViewport;
-        for (let lightIndex = 0, l = lights.length; lightIndex < l; ++lightIndex) {
-            const light = lights[lightIndex];
+        for (const light of lights) {
             if (light.castShadow) {
                 const shadow = light.shadow;
                 if (shadow) {
@@ -7134,7 +7132,7 @@ class ShadowMap {
         blendCapability ? WebGLRenderingState.enable(GL_BLEND) : WebGLRenderingState.disable(GL_BLEND);
         scissorCapability ? WebGLRenderingState.enable(GL_SCISSOR_TEST) : WebGLRenderingState.disable(GL_SCISSOR_TEST);
         depthCapability ? WebGLRenderingState.enable(GL_DEPTH_TEST) : WebGLRenderingState.disable(GL_DEPTH_TEST);
-        WebGLRenderingState.clearColor(a$b);
+        WebGLRenderingState.clearColor(a$a);
         this.#graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
     }
 }
@@ -10329,7 +10327,7 @@ const intersectionPoint1 = vec3.create();
 const intersectionPoint2 = vec3.create();
 const intersectionNormal$1 = vec3.create();
 const tempVec3$r = vec3.create();
-const v$g = vec3.create();
+const v$f = vec3.create();
 class Sphere extends Mesh {
     radius;
     segments;
@@ -10377,7 +10375,7 @@ class Sphere extends Mesh {
     }
     raycast(raycaster, intersections) {
         const ray = raycaster.ray;
-        const worldPosition = this.getWorldPosition(v$g);
+        const worldPosition = this.getWorldPosition(v$f);
         const inverseRadius = 1 / this.radius;
         if (ray.intersectSphere(worldPosition, this.radius, this.getWorldScale(tempVec3$r), intersectionPoint1, intersectionPoint2)) {
             //return super.raycast(raycaster, intersections);//TODO: improve
@@ -12372,7 +12370,10 @@ class PointLightShadow extends LightShadow {
     computeShadowMatrix(mapIndex) {
         const shadowCamera = this.camera;
         const shadowMatrix = this.shadowMatrix;
-        shadowCamera.setWorldQuaternion(DIRECTIONS[mapIndex]);
+        const direction = DIRECTIONS[mapIndex];
+        if (direction) {
+            shadowCamera.setWorldQuaternion(direction);
+        }
         shadowCamera.dirty();
         shadowCamera.getWorldPosition(worldPos);
         vec3.scale(worldPos, worldPos, -1);
@@ -16743,7 +16744,7 @@ class Line extends Mesh {
 }
 registerEntity(Line);
 
-const a$a = vec3.create();
+const a$9 = vec3.create();
 const b$4 = vec3.create();
 const c$1 = vec3.create();
 class Raycaster {
@@ -16764,7 +16765,7 @@ class Raycaster {
     }
     castCameraRay(camera, normalizedX, normalizedY, entities, recursive) {
         const projectionMatrixInverse = camera.projectionMatrixInverse;
-        const nearP = vec3.set(a$a, normalizedX, normalizedY, -1);
+        const nearP = vec3.set(a$9, normalizedX, normalizedY, -1);
         const farP = vec3.set(b$4, normalizedX, normalizedY, 1);
         vec3.transformMat4(nearP, nearP, projectionMatrixInverse);
         vec3.transformMat4(farP, farP, projectionMatrixInverse);
@@ -18869,7 +18870,7 @@ class Metaball extends Entity {
 }
 
 var _a$4;
-const a$9 = vec3.create();
+const a$8 = vec3.create();
 const b$3 = vec3.create();
 const THRESHOLD = 0.99;
 class MetaballsBufferGeometry extends BufferGeometry {
@@ -18891,9 +18892,9 @@ class MetaballsBufferGeometry extends BufferGeometry {
             vertices.push(...triangles[triangleIndex][0]);
             vertices.push(...triangles[triangleIndex][1]);
             vertices.push(...triangles[triangleIndex][2]);
-            vec3.sub(a$9, triangles[triangleIndex][1], triangles[triangleIndex][0]);
+            vec3.sub(a$8, triangles[triangleIndex][1], triangles[triangleIndex][0]);
             vec3.sub(b$3, triangles[triangleIndex][2], triangles[triangleIndex][0]);
-            vec3.cross(normal, a$9, b$3);
+            vec3.cross(normal, a$8, b$3);
             vec3.normalize(normal, normal);
             normals.push(...normal);
             normals.push(...normal);
@@ -18911,8 +18912,8 @@ class MetaballsBufferGeometry extends BufferGeometry {
         const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
         for (const ball of balls) {
             vec3.set(b$3, ball.radius, ball.radius, ball.radius);
-            vec3.min(min, min, vec3.sub(a$9, ball.currentWorldPosition, b$3));
-            vec3.max(max, max, vec3.add(a$9, ball.currentWorldPosition, b$3));
+            vec3.min(min, min, vec3.sub(a$8, ball.currentWorldPosition, b$3));
+            vec3.max(max, max, vec3.add(a$8, ball.currentWorldPosition, b$3));
         }
         return [min, max];
     }
@@ -19035,7 +19036,7 @@ class Metaballs extends Mesh {
     }
 }
 
-const a$8 = vec3.create();
+const a$7 = vec3.create();
 const b$2 = vec3.create();
 class TrianglesBufferGeometry extends BufferGeometry {
     constructor(triangles) {
@@ -19054,9 +19055,9 @@ class TrianglesBufferGeometry extends BufferGeometry {
             vertices.push(...triangles[triangleIndex][0]);
             vertices.push(...triangles[triangleIndex][1]);
             vertices.push(...triangles[triangleIndex][2]);
-            vec3.sub(a$8, triangles[triangleIndex][1], triangles[triangleIndex][0]);
+            vec3.sub(a$7, triangles[triangleIndex][1], triangles[triangleIndex][0]);
             vec3.sub(b$2, triangles[triangleIndex][2], triangles[triangleIndex][0]);
-            vec3.cross(normal, a$8, b$2);
+            vec3.cross(normal, a$7, b$2);
             vec3.normalize(normal, normal);
             normals.push(...normal);
             normals.push(...normal);
@@ -21663,6 +21664,20 @@ class Kv3Element {
         }
         return data;
     }
+    getSubValueAsString(path) {
+        const prop = this.getSubValue(path);
+        if (prop?.isKv3Value && prop.getType() == Kv3Type.String) {
+            return prop.getValue();
+        }
+        return null;
+    }
+    getSubValueAsNumber(path) {
+        const prop = this.getSubValue(path);
+        if (prop?.isKv3Value && prop.isNumber()) {
+            return prop.getValue();
+        }
+        return null;
+    }
     getSubValueAsNumberArray(path) {
         const prop = this.getSubValue(path);
         if (prop?.isKv3Value && prop.isNumberArray()) {
@@ -23151,9 +23166,9 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 //return reference ? reference.externalFiles[handle] : null;
                 return new Kv3Value(Kv3Type.Resource, reference ? reference.externalFiles[handle] : '');
             case DATA_TYPE_BYTE: //10
-                throw 'fix me';
+                return new Kv3Value(Kv3Type.Int32 /*TODO: check if there is a better type*/, reader.getInt8(fieldOffset));
             case DATA_TYPE_UBYTE: //11
-                throw 'fix me';
+                return new Kv3Value(Kv3Type.UnsignedInt32 /*TODO: check if there is a better type*/, reader.getUint8(fieldOffset));
             case DATA_TYPE_SHORT: //12
                 throw 'fix me';
             case DATA_TYPE_USHORT: //13
@@ -25482,8 +25497,21 @@ class Source2Model {
     #createBodyGroups() {
         const meshGroups = this.vmdl.getBlockStructAsArray('DATA', 'm_meshGroups');
         if (meshGroups) {
+            let bodyGroupId = 0;
+            let bodyGroup;
             for (const choice of meshGroups) {
-                throw 'do createBodyGroups';
+                if (choice == 'autodefault') {
+                    bodyGroup = choice;
+                }
+                else {
+                    const result = /(.*)_@\d$/.exec(choice);
+                    bodyGroup = result?.[1];
+                }
+                if (bodyGroup) {
+                    this.bodyGroups.add(bodyGroup);
+                    this.bodyGroupsChoices.add({ choice: choice, bodyGroup: bodyGroup, bodyGroupId: bodyGroupId });
+                }
+                bodyGroupId++;
             }
         }
     }
@@ -41494,15 +41522,6 @@ class SourceEngineVMTLoaderClass {
 const SourceEngineVMTLoader = new SourceEngineVMTLoaderClass();
 registerLoader('SourceEngineVMTLoader', SourceEngineVMTLoader);
 
-const DEFAULT_MAX_PARTICLES = 1000;
-const HARD_MAX_PARTICLES = 5000;
-const PARTICLE_ORIENTATION_SCREEN_ALIGNED = 0; //Point towards camera
-const PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED = 1; //parallel to camera axis
-const PARTICLE_ORIENTATION_WORLD_Z_ALIGNED = 2;
-const PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL = 3;
-const PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL = 4;
-const PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION = 5;
-
 class Color {
     r;
     g;
@@ -41603,6 +41622,43 @@ const ELEMENT_TYPES = [
     PARAM_TYPE_VECTOR,
     '', //TODO verctor4
 ];
+
+class SourceEngineParticleOperators {
+    static #functions = {};
+    static #functionsType = {};
+    static getOperator(name) {
+        const n = name.replace(/\_/g, ' ').toLowerCase();
+        if (!this.#functions[n]) {
+            return null;
+        }
+        return new this.#functions[n]();
+    }
+    static #register(type, name, className) {
+        this.#functions[name.replace(/\_/g, ' ').toLowerCase()] = className;
+        this.#functionsType[type] = this.#functionsType[type] ?? [];
+        this.#functionsType[type].push(name);
+    }
+    static getOperators(type) {
+        return this.#functionsType[type] ?? [];
+    }
+    static registerOperator(name, className) {
+        if (className) {
+            this.#register('Operators', name, className);
+        }
+        else {
+            this.#register('Operators', name.functionName, name);
+        }
+    }
+}
+
+const DEFAULT_MAX_PARTICLES$1 = 1000;
+const HARD_MAX_PARTICLES = 5000;
+const PARTICLE_ORIENTATION_SCREEN_ALIGNED = 0; //Point towards camera
+const PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED = 1; //parallel to camera axis
+const PARTICLE_ORIENTATION_WORLD_Z_ALIGNED = 2;
+const PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL = 3;
+const PARTICLE_ORIENTATION_SCREENALIGN_TO_PARTICLE_NORMAL = 4;
+const PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION = 5;
 
 /**
  * TODO
@@ -42070,7 +42126,7 @@ class SourceEngineParticleSystem extends Entity {
     operators = {}; //new Array();//todo transform to map
     forces = new Map();
     constraints = {}; //new Array();//todo transform to map
-    controlPoints = [];
+    #controlPoints = [];
     childrenSystems = []; //todo transform to map
     tempChildren = {}; //new Array();//todo transform to map
     operatorRandomSampleOffset = 0;
@@ -42079,7 +42135,7 @@ class SourceEngineParticleSystem extends Entity {
     pcf;
     material;
     materialName;
-    maxParticles = DEFAULT_MAX_PARTICLES;
+    maxParticles = DEFAULT_MAX_PARTICLES$1;
     resetDelay = 0;
     snapshot;
     static #speed = 1.0;
@@ -42411,8 +42467,8 @@ class SourceEngineParticleSystem extends Entity {
         return vec3.zero(vec);
     }
     stepControlPoint() {
-        for (let i = 0; i < this.controlPoints.length; i++) {
-            const cp = this.controlPoints[i];
+        for (let i = 0; i < this.#controlPoints.length; i++) {
+            const cp = this.#controlPoints[i];
             if (!cp) {
                 continue;
             }
@@ -42602,16 +42658,16 @@ class SourceEngineParticleSystem extends Entity {
         }
         const parentSystem = this.parentSystem;
         if (parentSystem !== undefined) {
-            return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
+            return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
         }
-        let controlPoint = this.controlPoints[controlPointId];
+        let controlPoint = this.#controlPoints[controlPointId];
         if (controlPoint === undefined) {
             controlPoint = this.#createControlPoint(controlPointId);
         }
         return controlPoint;
     }
     getOwnControlPoint(controlPointId) {
-        return this.controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
+        return this.#controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
     }
     #createControlPoint(controlPointId) {
         const controlPoint = new ControlPoint();
@@ -42624,7 +42680,7 @@ class SourceEngineParticleSystem extends Entity {
             //this.getControlPoint(0).addChild(controlPoint);
             this.addChild(controlPoint);
         }
-        this.controlPoints[controlPointId] = controlPoint;
+        this.#controlPoints[controlPointId] = controlPoint;
         vec3.set(controlPoint.fVector, 0, 1, 0);
         vec3.set(controlPoint.uVector, 0, 0, 1);
         vec3.set(controlPoint.rVector, 1, 0, 0);
@@ -42754,8 +42810,8 @@ class SourceEngineParticleSystem extends Entity {
     }
     dispose() {
         super.dispose();
-        this.controlPoints.forEach(element => element.dispose());
-        this.controlPoints.length = 0;
+        this.#controlPoints.forEach(element => element.dispose());
+        this.#controlPoints.length = 0;
         this.material?.removeUser(this);
         for (const [_, renderer] of this.#renderers) {
             renderer.dispose();
@@ -42802,7 +42858,7 @@ class SourceEngineParticleSystem extends Entity {
             json.isrunning = false;
         }
         const jControlPoint = [];
-        this.controlPoints.forEach((element, index) => jControlPoint[index] = element.id);
+        this.#controlPoints.forEach((element, index) => jControlPoint[index] = element.id);
         json.controlpoints = jControlPoint;
         return json;
     }
@@ -42816,7 +42872,7 @@ class SourceEngineParticleSystem extends Entity {
                     for (let i = 0; i < jControlPoint.length; ++i) {
                         const cpEntity = entities.get(jControlPoint[i]);
                         if (cpEntity) {
-                            entity.controlPoints[i] = cpEntity;
+                            entity.#controlPoints[i] = cpEntity;
                         }
                     }
                 }
@@ -42836,44 +42892,17 @@ SourceEngineParticleSystem.prototype.isParticleSystem = true;
 registerEntity(SourceEngineParticleSystem);
 Source1ParticleControler.setParticleConstructor(SourceEngineParticleSystem);
 
-class SourceEngineParticleOperators {
-    static #functions = {};
-    static #functionsType = {};
-    static getOperator(name) {
-        const n = name.replace(/\_/g, ' ').toLowerCase();
-        if (!this.#functions[n]) {
-            return null;
-        }
-        return new this.#functions[n]();
-    }
-    static #register(type, name, className) {
-        this.#functions[name.replace(/\_/g, ' ').toLowerCase()] = className;
-        this.#functionsType[type] = this.#functionsType[type] ?? [];
-        this.#functionsType[type].push(name);
-    }
-    static getOperators(type) {
-        return this.#functionsType[type] ?? [];
-    }
-    static registerOperator(name, className) {
-        if (className) {
-            this.#register('Operators', name, className);
-        }
-        else {
-            this.#register('Operators', name.functionName, name);
-        }
-    }
-}
-
 class SourcePCF {
     repository;
+    path;
     stringDict = [];
     elementsDict = [];
-    systems = {};
-    systems2 = {};
-    binaryVersion;
-    repositoryName;
-    constructor(repository) {
+    systems = {}; //TODO: turn into map
+    systems2 = {}; //TODO: turn into map
+    binaryVersion = 0;
+    constructor(repository, path) {
         this.repository = repository;
+        this.path = path;
     }
     getSystemElement(systemName) {
         return this.systems[systemName];
@@ -42891,8 +42920,7 @@ class SourcePCF {
         const ps = new SourceEngineParticleSystem({ repository: this.repository, name: systemName });
         ps.pcf = this; // Store PCF to load children
         ps.repository = this.repository;
-        for (let attributeIndex = 0; attributeIndex < attributes.length; ++attributeIndex) {
-            const attribute = attributes[attributeIndex];
+        for (const attribute of attributes) {
             switch (attribute.typeName) {
                 case 'renderers':
                 case 'operators':
@@ -42900,10 +42928,8 @@ class SourcePCF {
                 case 'emitters':
                 case 'forces':
                 case 'constraints':
-                    this.addOperators(ps, attribute.value, attribute.typeName);
-                    break;
                 case 'children':
-                    this.addOperators(ps, attribute.value, attribute.typeName);
+                    this.addOperators(ps, attribute.value /*TODO: check actual value*/, attribute.typeName);
                     break;
                 default:
                     ps.setParam(attribute);
@@ -42919,8 +42945,7 @@ class SourcePCF {
         const attributes = element.attributes;
         system.pcf = this; // Store PCF to load children
         system.repository = this.repository;
-        for (let attributeIndex = 0; attributeIndex < attributes.length; ++attributeIndex) {
-            const attribute = attributes[attributeIndex];
+        for (const attribute of attributes) {
             switch (attribute.typeName) {
                 case 'renderers':
                 case 'operators':
@@ -42928,10 +42953,8 @@ class SourcePCF {
                 case 'emitters':
                 case 'forces':
                 case 'constraints':
-                    this.addOperators(system, attribute.value, attribute.typeName);
-                    break;
                 case 'children':
-                    this.addOperators(system, attribute.value, attribute.typeName);
+                    this.addOperators(system, attribute.value /*TODO: check actual value*/, attribute.typeName);
                     break;
                 default:
                     system.setParam(attribute);
@@ -42941,7 +42964,7 @@ class SourcePCF {
     }
     addOperators(system, list, listType) {
         for (let i = 0; i < list.length; ++i) {
-            const ope = list[i];
+            const ope = list[i] /*TODO: check actual value*/;
             if (ope.type == 'DmeParticleOperator') {
                 const operator = SourceEngineParticleOperators.getOperator(ope.name);
                 if (operator) {
@@ -42952,10 +42975,9 @@ class SourcePCF {
             else {
                 if (ope.type == 'DmeParticleChild') {
                     const attribs = ope.attributes;
-                    for (let attribIndex = 0; attribIndex < attribs.length; ++attribIndex) {
-                        const attrib = attribs[attribIndex];
+                    for (const attrib of attribs) {
                         if (attrib.typeName == 'child' && attrib.value) {
-                            system.addTempChild(attrib.value.name, ope.guid2);
+                            system.addTempChild(attrib.value /*TODO: check actual value*/.name, ope.guid2);
                         }
                     }
                 }
@@ -42963,8 +42985,7 @@ class SourcePCF {
         }
     }
     addAttributes(operator, list) {
-        for (let i = 0; i < list.length; ++i) {
-            const attrib = list[i];
+        for (const attrib of list) {
             operator.setParameter(attrib.typeName, ELEMENT_TYPES[attrib.type], attrib.value);
         }
     }
@@ -42977,10 +42998,10 @@ const data_size = [
 ];
 const BINARY_FORMAT_POS = 25;
 class SourceEnginePCFLoader extends SourceBinaryLoader {
-    parse(repositoryName, fileName, arrayBuffer) {
-        const pcf = new SourcePCF(repositoryName);
-        const reader = new BinaryReader(arrayBuffer);
-        const str = reader.getString(Math.min(1000, arrayBuffer.byteLength));
+    parse(repository, path, content) {
+        const pcf = new SourcePCF(repository, path);
+        const reader = new BinaryReader(content);
+        const str = reader.getString(Math.min(1000, content.byteLength));
         let startOffset = str.indexOf('-->');
         if (startOffset === 0) {
             return null;
@@ -42991,6 +43012,9 @@ class SourceEnginePCFLoader extends SourceBinaryLoader {
             console.log('Binary version unknown. Loading of file may be unaccurate.');
         }
         this.#parseHeader(reader, pcf, startOffset);
+        console.info(pcf);
+        console.info(pcfToSTring(pcf));
+        //saveFile(new File([cDmxElementsToSTring(pcf.elementsDict)], 'pcf'));
         return pcf;
     }
     #parseHeader(reader, pcf, startOffset) {
@@ -43012,7 +43036,7 @@ class SourceEnginePCFLoader extends SourceBinaryLoader {
         else {
             nElements = reader.getUint32();
         }
-        for (let i = 0; i < nElements; ++i) {
+        for (let i = 0; i < nElements; i++) {
             pcf.elementsDict.push(this.#parseElement(reader, pcf));
         }
         for (let i = 0; i < nElements; i++) {
@@ -43020,7 +43044,7 @@ class SourceEnginePCFLoader extends SourceBinaryLoader {
         }
     }
     #parseElement(reader, pcf) {
-        const element = new CDmxElement();
+        const element = {};
         if (pcf.binaryVersion < 5) {
             element.type = this.getString(pcf, reader.getUint16());
         }
@@ -43052,7 +43076,7 @@ class SourceEnginePCFLoader extends SourceBinaryLoader {
         return attributes;
     }
     #parseAttribute(reader, pcf) {
-        const attribute = new CDmxAttribute();
+        const attribute = {};
         if (pcf.binaryVersion < 5) {
             attribute.typeName = this.getString(pcf, reader.getUint16());
         }
@@ -43060,7 +43084,6 @@ class SourceEnginePCFLoader extends SourceBinaryLoader {
             attribute.typeName = this.getString(pcf, reader.getUint32());
         }
         attribute.type = reader.getUint8();
-        attribute.value = null;
         if (attribute.type > 14) {
             attribute.value = this.#parseArray(reader, pcf, attribute.type);
         }
@@ -43123,8 +43146,8 @@ class SourceEnginePCFLoader extends SourceBinaryLoader {
                 reader.seek(reader.tell() + size);
                 break;
             default:
-                reader.seek(reader.tell() + size);
-                break;
+                console.error('unknown type', type, 'in #parseValue', pcf);
+                throw 'fix me';
         }
         return value;
     }
@@ -43154,17 +43177,129 @@ class SourceEnginePCFLoader extends SourceBinaryLoader {
     }
 }
 registerLoader('SourceEnginePCFLoader', SourceEnginePCFLoader);
-class CDmxElement {
-    type;
-    name;
-    guid;
-    guid2;
+var CDmxAttributeType;
+(function (CDmxAttributeType) {
+    CDmxAttributeType[CDmxAttributeType["Unknown"] = 0] = "Unknown";
+    CDmxAttributeType[CDmxAttributeType["Element"] = 1] = "Element";
+    CDmxAttributeType[CDmxAttributeType["Integer"] = 2] = "Integer";
+    CDmxAttributeType[CDmxAttributeType["Float"] = 3] = "Float";
+    CDmxAttributeType[CDmxAttributeType["Bool"] = 4] = "Bool";
+    CDmxAttributeType[CDmxAttributeType["String"] = 5] = "String";
+    CDmxAttributeType[CDmxAttributeType["Void"] = 6] = "Void";
+    CDmxAttributeType[CDmxAttributeType["Time"] = 7] = "Time";
+    CDmxAttributeType[CDmxAttributeType["Color"] = 8] = "Color";
+    CDmxAttributeType[CDmxAttributeType["Vec2"] = 9] = "Vec2";
+    CDmxAttributeType[CDmxAttributeType["Vec3"] = 10] = "Vec3";
+    CDmxAttributeType[CDmxAttributeType["Vec4"] = 11] = "Vec4";
+    CDmxAttributeType[CDmxAttributeType["QAngle"] = 12] = "QAngle";
+    CDmxAttributeType[CDmxAttributeType["Quaternion"] = 13] = "Quaternion";
+    CDmxAttributeType[CDmxAttributeType["VMatrix"] = 14] = "VMatrix";
+    CDmxAttributeType[CDmxAttributeType["ElementArray"] = 15] = "ElementArray";
+    CDmxAttributeType[CDmxAttributeType["IntegerArray"] = 16] = "IntegerArray";
+    CDmxAttributeType[CDmxAttributeType["FloatArray"] = 17] = "FloatArray";
+    CDmxAttributeType[CDmxAttributeType["BoolArray"] = 18] = "BoolArray";
+    CDmxAttributeType[CDmxAttributeType["StringArray"] = 19] = "StringArray";
+    CDmxAttributeType[CDmxAttributeType["VoidArray"] = 20] = "VoidArray";
+    CDmxAttributeType[CDmxAttributeType["TimeArray"] = 21] = "TimeArray";
+    CDmxAttributeType[CDmxAttributeType["ColorArray"] = 22] = "ColorArray";
+    CDmxAttributeType[CDmxAttributeType["Vec2Array"] = 23] = "Vec2Array";
+    CDmxAttributeType[CDmxAttributeType["Vec3Array"] = 24] = "Vec3Array";
+    CDmxAttributeType[CDmxAttributeType["Vec4Array"] = 25] = "Vec4Array";
+    CDmxAttributeType[CDmxAttributeType["QAngleArray"] = 26] = "QAngleArray";
+    CDmxAttributeType[CDmxAttributeType["QuaternionArray"] = 27] = "QuaternionArray";
+    CDmxAttributeType[CDmxAttributeType["VMatrixArray"] = 28] = "VMatrixArray";
+})(CDmxAttributeType || (CDmxAttributeType = {}));
+function pcfToSTring(pcf) {
+    const element = pcf.elementsDict[0];
+    if (element) {
+        return cDmxElementToSTring(element, { tabs: 0 });
+    }
+    return '';
 }
-class CDmxAttribute {
-    typeName;
-    type;
-    value;
+function cDmxElementsToSTring(elements, context) {
+    let lines = [];
+    for (const element of elements) {
+        lines.push(cDmxElementToSTring(element, context) + ',');
+    }
+    return lines.join('\n');
 }
+function cDmxElementToSTring(element, context) {
+    let lines = [];
+    lines.push(makeTabs(context.tabs) + `"${element.type}"`);
+    lines.push(makeTabs(context.tabs) + '{');
+    ++context.tabs;
+    lines.push(makeTabs(context.tabs) + `"id" "elementid" "${element.guid2}"`);
+    lines.push(makeTabs(context.tabs) + `"name" "string" "${element.name}"`);
+    for (const attribute of element.attributes) {
+        lines.push(makeTabs(context.tabs) + cDmxAttributeToSTring(attribute, context));
+    }
+    --context.tabs;
+    lines.push(makeTabs(context.tabs) + '}');
+    return lines.join('\n');
+}
+function cDmxAttributeToSTring(attribute, context) {
+    let line = makeTabs(context.tabs);
+    line = `"${attribute.typeName}"`;
+    switch (attribute.type) {
+        case CDmxAttributeType.Element:
+            line += ` "element" "${attribute.value}"`;
+            break;
+        case CDmxAttributeType.Integer:
+            line += ` "int" ${attribute.value}`;
+            break;
+        case CDmxAttributeType.Float:
+            line += ` "float" ${attribute.value}`;
+            break;
+        case CDmxAttributeType.Bool:
+            line += ` "bool" ${attribute.value ? '1' : '0'}`;
+            break;
+        case CDmxAttributeType.String:
+            line += ` "string" "${attribute.value}"`;
+            break;
+        case CDmxAttributeType.Color:
+            line += ` "color" "${attribute.value.r * 255} ${attribute.value.g * 255} ${attribute.value.b * 255} ${attribute.value.a * 255}"`;
+            break;
+        case CDmxAttributeType.Vec2:
+            line += ` "vector2" "${attribute.value[0]} ${attribute.value[1]}"`;
+            break;
+        case CDmxAttributeType.Vec3:
+            line += ` "vector3" "${attribute.value[0]} ${attribute.value[1]} ${attribute.value[2]}"`;
+            break;
+        case CDmxAttributeType.Vec4:
+            line += ` "vector4" "${attribute.value[0]} ${attribute.value[1]} ${attribute.value[2]} ${attribute.value[3]}"`;
+            break;
+        case CDmxAttributeType.ElementArray:
+            line += ' "element_array"\n';
+            line += makeTabs(context.tabs);
+            line += '[\n';
+            ++context.tabs;
+            line += cDmxElementsToSTring(attribute.value, context);
+            line += '\n';
+            --context.tabs;
+            line += makeTabs(context.tabs);
+            line += ']';
+            break;
+        default:
+            console.error('do type ', attribute.type, attribute);
+    }
+    return line;
+}
+function makeTabs(count) {
+    let s = '';
+    for (let i = 0; i < count; i++) {
+        s += '\t';
+    }
+    return s;
+}
+/*
+                "DmeParticleChild"
+                {
+                    "id" "elementid" "6faed681-cad8-46bd-b75f-e1ef20ca5453"
+                    "name" "string" "utaunt_sharkfin2_water_base"
+                    "child" "element" "3c594b90-3c2d-4076-bcc7-c2e875923a12"
+                    "delay" "float" "0"
+                },
+*/
 
 const BSP_HEADER_LUMPS_COUNT = 64;
 function InitLZMALump(reader, lump) {
@@ -48652,7 +48787,7 @@ class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(ConstrainDistanceToControlPoint);
 
-const a$7 = vec3.create();
+const a$6 = vec3.create();
 const b$1 = vec3.create();
 /*
     DMXELEMENT_UNPACK_FIELD( "minimum distance", "0", float, m_fMinDistance )
@@ -48687,8 +48822,8 @@ class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngineParticl
         const startCP = this.particleSystem.getControlPoint(startNumber);
         const endCP = this.particleSystem.getControlPoint(endNumber);
         if (startCP && endCP) {
-            const delta = vec3.sub(vec3.create(), endCP.getWorldPosition(b$1), startCP.getWorldPosition(a$7));
-            vec3.scaleAndAdd(particle.position, a$7, delta, travelTime);
+            const delta = vec3.sub(vec3.create(), endCP.getWorldPosition(b$1), startCP.getWorldPosition(a$6));
+            vec3.scaleAndAdd(particle.position, a$6, delta, travelTime);
         }
     }
 }
@@ -48891,7 +49026,7 @@ const tempVec3$h = vec3.create();
 const tempVec3_2$6 = vec3.create();
 vec3.create();
 quat.create();
-class TwistAroundAxis extends SourceEngineParticleOperator {
+let TwistAroundAxis$1 = class TwistAroundAxis extends SourceEngineParticleOperator {
     static functionName = 'twist around axis';
     constructor() {
         super();
@@ -48919,8 +49054,8 @@ class TwistAroundAxis extends SourceEngineParticleOperator {
         vec3.scale(f, f, amountOfForce * strength);
         vec3.add(accumulatedForces, accumulatedForces, f);
     }
-}
-SourceEngineParticleOperators.registerOperator(TwistAroundAxis);
+};
+SourceEngineParticleOperators.registerOperator(TwistAroundAxis$1);
 
 class AlphaRandom extends SourceEngineParticleOperator {
     static functionName = 'Alpha Random';
@@ -48999,7 +49134,7 @@ class LifetimeRandom extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(LifetimeRandom);
 
-const a$6 = vec3.create();
+const a$5 = vec3.create();
 class PositionAlongPathRandom extends SourceEngineParticleOperator {
     static functionName = 'Position Along Path Random';
     sequence = 0;
@@ -49023,7 +49158,7 @@ class PositionAlongPathRandom extends SourceEngineParticleOperator {
         const delta = startCP.deltaPosFrom(endCP);
         this.sequence / nbPart;
         vec3.scale(delta, delta, Math.random());
-        vec3.add(particle.position, startCP.getWorldPosition(a$6), delta);
+        vec3.add(particle.position, startCP.getWorldPosition(a$5), delta);
         vec3.copy(particle.prevPosition, particle.position);
         ++this.sequence;
         if (this.sequence > nbPart) { //TODO: handle loop
@@ -49162,7 +49297,7 @@ void VectorRotate(const float *in1, const matrix3x4_t& in2, float *out)
 }
 SourceEngineParticleOperators.registerOperator(PositionModifyOffsetRandom);
 
-const a$5 = vec3.create();
+const a$4 = vec3.create();
 class PositionOnModelRandom extends SourceEngineParticleOperator {
     static functionName = 'Position on Model Random';
     constructor() {
@@ -49196,7 +49331,7 @@ class PositionOnModelRandom extends SourceEngineParticleOperator {
         }
         else {
             if (controlPoint) {
-                vec3.copy(particle.position, controlPoint.getWorldPosition(a$5));
+                vec3.copy(particle.position, controlPoint.getWorldPosition(a$4));
                 vec3.copy(particle.prevPosition, particle.position);
             }
         }
@@ -49377,7 +49512,7 @@ class RadiusRandom extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(RadiusRandom);
 
-const a$4 = vec3.create();
+const a$3 = vec3.create();
 class RemapControlPointToScalar extends SourceEngineParticleOperator {
     static functionName = 'remap control point to scalar';
     constructor() {
@@ -49437,7 +49572,7 @@ class RemapControlPointToScalar extends SourceEngineParticleOperator {
         if (inputField == 0 || inputField == 1 || inputField == 2) {
             const cp = this.particleSystem.getControlPoint(cpNumber);
             if (cp) {
-                return cp.getWorldPosition(a$4)[inputField];
+                return cp.getWorldPosition(a$3)[inputField];
             }
         }
         return 0;
@@ -49453,7 +49588,7 @@ const tempVec3_2$4 = vec3.create();
 const tempVec3_3$1 = vec3.create();
 const tempVec3_4 = vec3.create();
 const tempVec3_5 = vec3.create();
-const a$3 = vec3.create();
+const a$2 = vec3.create();
 class RemapControlPointToVector extends SourceEngineParticleOperator {
     static functionName = 'remap control point to vector';
     constructor() {
@@ -49496,7 +49631,7 @@ class RemapControlPointToVector extends SourceEngineParticleOperator {
         if (inputField == 0 || inputField == 1 || inputField == 2) {
             const cp = this.particleSystem.getControlPoint(cpNumber);
             if (cp) {
-                return cp.getWorldPosition(a$3)[inputField];
+                return cp.getWorldPosition(a$2)[inputField];
             }
         }
         return 0;
@@ -51064,7 +51199,7 @@ class RadiusScale extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(RadiusScale);
 
-const a$2 = vec3.create();
+const a$1 = vec3.create();
 class RemapCPSpeedToCP extends SourceEngineParticleOperator {
     static functionName = 'remap cp speed to cp';
     constructor() {
@@ -51089,7 +51224,7 @@ class RemapCPSpeedToCP extends SourceEngineParticleOperator {
         const incp = this.particleSystem.getControlPoint(inCPNumber);
         const outcp = this.particleSystem.getControlPoint(outCPNumber);
         if (incp && outcp && (outputField == 0 || outputField == 1 || outputField == 2)) {
-            vec3.length(incp.getWorldPosition(a$2));
+            vec3.length(incp.getWorldPosition(a$1));
             const position = outcp.position; //TODO optimize
             position[outputField] = RemapValClamped(200, inputMinimum, inputMaximum, outputMinimum, outputMaximum);
             outcp.position = position;
@@ -55322,6 +55457,8 @@ Shaders['source1_weapondecal.vs'] = source1_weapondecal_vs;
 Shaders['source1_worldvertextransition.fs'] = source1_worldvertextransition_fs;
 Shaders['source1_worldvertextransition.vs'] = source1_worldvertextransition_vs;
 
+// TODO: remove me when particle are finished
+const messagePerOperator$1 = new Set();
 const Source2ParticleOperators = new Map;
 function RegisterSource2ParticleOperator(operatorName, operator) {
     Source2ParticleOperators.set(operatorName, operator);
@@ -55366,9 +55503,57 @@ function GetSource2ParticleOperator(operatorName) {
         case 'C_OP_RampScalarLinear':
         case 'C_OP_SetFloat':
         case 'C_OP_NoiseEmitter':
+        case 'C_OP_DistanceCull':
+        case 'C_INIT_NormalOffset':
+        case 'C_OP_TwistAroundAxis':
+        case 'C_INIT_RandomSecondSequence':
+        case 'C_OP_OscillateVector':
+        case 'C_OP_DampenToCP':
+        case 'C_OP_RampScalarSpline':
+        case 'C_OP_SetSingleControlPointPosition':
+        case 'C_OP_SetControlPointOrientation':
+        case 'C_OP_SetParentControlPointsToChildCP':
+        case 'C_INIT_InitVec':
+        case 'C_OP_Noise':
+        case 'C_OP_Spin':
+        case 'C_OP_SetControlPointFromObjectScale':
+        case 'C_INIT_InitFromCPSnapshot':
+        case 'C_INIT_PositionWarp':
+        case 'C_OP_MovementRigidAttachToCP':
+        case 'C_INIT_CreateFromParentParticles':
+        case 'C_OP_RemapControlPointDirectionToVector':
+        case 'C_OP_RenderTrails':
+        case 'C_OP_OscillateScalar':
+        case 'C_OP_RemapSpeed':
+        case 'C_OP_RemapSpeedtoCP':
+        case 'C_INIT_CreateOnModelAtHeight':
+        case 'C_OP_LerpEndCapScalar':
+        case 'C_INIT_InitSkinnedPositionFromCPSnapshot':
+        case 'C_OP_SnapshotRigidSkinToBones':
+        case 'C_INIT_InheritFromParentParticles':
+        case 'C_INIT_AgeNoise':
+        case 'C_OP_ClampScalar':
+        case 'C_INIT_RemapCPtoVector':
+        case 'C_OP_RepeatedTriggerChildGroup':
+        case 'C_OP_FadeOut':
+        case 'C_INIT_RingWave':
+        case 'C_OP_NormalLock':
+        case 'C_INIT_NormalAlignToCP':
+        case 'C_OP_SetVec':
+        case 'C_OP_SetControlPointPositions':
+        case 'C_OP_MovementRotateParticleAroundAxis':
+        case 'C_INIT_CreationNoise':
+        case 'C_OP_FadeIn':
+        case 'C_OP_PlaneCull':
+        case 'C_INIT_SequenceLifeTime':
+        case 'C_INIT_VelocityRandom':
+        case 'C_INIT_CreateSequentialPath':
             break;
         default:
-            console.warn('do operator ', operatorName);
+            if (!messagePerOperator$1.has(operatorName)) {
+                console.error('do operator ', operatorName);
+                messagePerOperator$1.add(operatorName);
+            }
             break;
     }
     return Source2ParticleOperators.get(operatorName);
@@ -55389,13 +55574,13 @@ const Source2SnapshotLoader = new (function () {
             filename = filename.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
             const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
             if (snapFile) {
-                return this.loadSnapshot(snapFile);
+                return this.#loadSnapshot(snapFile);
             }
             else {
                 return null;
             }
         }
-        loadSnapshot(snapFile) {
+        #loadSnapshot(snapFile) {
             const snapShot = new Source2Snapshot();
             snapShot.file = snapFile;
             const dataBlock = snapFile.getBlockByType('DATA');
@@ -55403,15 +55588,20 @@ const Source2SnapshotLoader = new (function () {
             if (dataBlock && snapBlock) {
                 const particleCount = Number(dataBlock.getKeyValue('num_particles'));
                 snapShot.setParticleCount(particleCount);
-                const snapshotAttributes = dataBlock.getKeyValue('attributes') ?? [];
-                const snapshotStringList = dataBlock.getKeyValue('string_list') ?? [];
+                const snapshotAttributes = dataBlock.getKeyValueAsElementArray('attributes') ?? [];
+                const snapshotStringList = dataBlock.getKeyValueAsElementArray('string_list') ?? [];
                 const reader = new BinaryReader(snapBlock.datas);
                 let attributeValue;
                 let bones;
                 let weights;
                 for (const snapshotAttribute of snapshotAttributes) {
-                    reader.seek(Number(snapshotAttribute.data_offset));
-                    switch (snapshotAttribute.type) {
+                    const dataOffset = snapshotAttribute.getSubValueAsNumber('data_offset');
+                    if (dataOffset === null) {
+                        continue;
+                    }
+                    reader.seek(dataOffset);
+                    const attributeType = snapshotAttribute.getSubValueAsString('type');
+                    switch (attributeType) {
                         case 'float3':
                         case 'vector':
                             attributeValue = [];
@@ -55802,6 +55992,7 @@ class Source2Particle {
     DEFPARTICLE_ATTRIBUTE(HITBOX_RELATIVE_XYZ, 15);
     */
     getField(field = 0, initial = false) {
+        // TODO: create getScalarField / getVectorField
         switch (field) {
             case PARTICLE_FIELD_POSITION:
                 return this.position;
@@ -55990,8 +56181,8 @@ DEFPARTICLE_ATTRIBUTE(HITBOX_RELATIVE_XYZ, 15);
  */
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
-const SOURCE2_DEFAULT_RADIUS = 5;
-const vec$8 = vec3.create();
+const SOURCE2_DEFAULT_RADIUS = 5; // TODO: check default value
+const vec$7 = vec3.create();
 class Source2ParticleSystem extends Entity {
     isParticleSystem = true;
     isSource2ParticleSystem = true;
@@ -56010,7 +56201,7 @@ class Source2ParticleSystem extends Entity {
     forces = [];
     constraints = [];
     renderers = [];
-    controlPoints = [];
+    #controlPoints = [];
     childSystems = [];
     livingParticles = [];
     poolParticles = [];
@@ -56035,7 +56226,7 @@ class Source2ParticleSystem extends Entity {
         super({ name: name });
         this.fileName = fileName;
         this.repository = repository;
-        this.setMaxParticles(DEFAULT_MAX_PARTICLES);
+        this.setMaxParticles(DEFAULT_MAX_PARTICLES$1);
         //Add first control point
         //this.getControlPoint(0);
         this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: SOURCE2_DEFAULT_RADIUS, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '', rotationSpeedRoll: 0, controlPointConfigurations: [] };
@@ -56077,8 +56268,8 @@ class Source2ParticleSystem extends Entity {
         this.isRunning = true;
     }
     #startChildren() {
-        for (let i = 0; i < this.childSystems.length; ++i) {
-            this.childSystems[i].start();
+        for (const child of this.childSystems) {
+            child.start();
         }
     }
     stop() {
@@ -56092,8 +56283,8 @@ class Source2ParticleSystem extends Entity {
         }
     }
     stopChildren() {
-        for (let i = 0; i < this.childSystems.length; ++i) {
-            this.childSystems[i].stop();
+        for (const child of this.childSystems) {
+            child.stop();
         }
     }
     do(action, params) {
@@ -56117,8 +56308,8 @@ class Source2ParticleSystem extends Entity {
         //TODO: reset some operators
     }
     #resetChilds() {
-        for (let i = 0; i < this.childSystems.length; ++i) {
-            this.childSystems[i].#reset();
+        for (const child of this.childSystems) {
+            child.#reset();
         }
     }
     #resetEmitters() {
@@ -56143,7 +56334,7 @@ class Source2ParticleSystem extends Entity {
         this.previousElapsedTime = this.elapsedTime;
         this.elapsedTime = elapsedTime * this.speed;
         this.#preEmission();
-        this.stepControlPoint();
+        this.#stepControlPoint();
         if (this.firstStep) {
             this.firstStep = false;
             this.#emitInitialParticles(elapsedTime);
@@ -56160,10 +56351,12 @@ class Source2ParticleSystem extends Entity {
             this.createParticle(0, elapsedTime);
         }
     }
-    stepControlPoint() {
-        for (const i in this.controlPoints) {
-            const cp = this.controlPoints[i];
-            cp.step();
+    #stepControlPoint() {
+        for (const cp of this.#controlPoints) {
+            //const cp = this.controlPoints[i];
+            if (cp) { // There can be empty values in controlPoints
+                cp.step();
+            }
             /*if (i == 0) {
                 if (cp.attachmentProp) {
                     const atta = cp.attachmentProp;
@@ -56282,9 +56475,9 @@ class Source2ParticleSystem extends Entity {
     getControlPoint(controlPointId) {
         const parentSystem = this.parentSystem;
         if (parentSystem) {
-            return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId); //TODO: remove recursion
+            return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId); //TODO: remove recursion
         }
-        let controlPoint = this.controlPoints[controlPointId];
+        let controlPoint = this.#controlPoints[controlPointId];
         if (controlPoint === undefined) {
             controlPoint = this.#createControlPoint(controlPointId);
         }
@@ -56293,9 +56486,9 @@ class Source2ParticleSystem extends Entity {
     getControlPointForScale(controlPointId) {
         const parentSystem = this.parentSystem;
         if (parentSystem) {
-            return this.controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
+            return this.#controlPoints[controlPointId] ?? parentSystem.getControlPoint(controlPointId);
         }
-        let controlPoint = this.controlPoints[controlPointId];
+        let controlPoint = this.#controlPoints[controlPointId];
         if (controlPoint === undefined) {
             controlPoint = this.#createControlPoint(controlPointId);
             controlPoint.position = DEFAULT_CONTROL_POINT_SCALE;
@@ -56304,13 +56497,13 @@ class Source2ParticleSystem extends Entity {
     }
     getOwnControlPoint(controlPointId) {
         //return this.getControlPoint(controlPointId);
-        return this.controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
+        return this.#controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
     }
     #createControlPoint(controlPointId) {
         const controlPoint = new ControlPoint();
         controlPoint.name = String(controlPointId);
         this.addChild(controlPoint);
-        this.controlPoints[controlPointId] = controlPoint;
+        this.#controlPoints[controlPointId] = controlPoint;
         vec3.set(controlPoint.fVector, 0, 1, 0);
         vec3.set(controlPoint.uVector, 0, 0, 1);
         vec3.set(controlPoint.rVector, 1, 0, 0);
@@ -56319,7 +56512,7 @@ class Source2ParticleSystem extends Entity {
     getControlPointPosition(cpId) {
         const cp = this.getControlPoint(cpId);
         if (cp) {
-            return cp.getWorldPosition(vec$8);
+            return cp.getWorldPosition(vec$7);
         }
         return vec3.create();
     }
@@ -56334,8 +56527,7 @@ class Source2ParticleSystem extends Entity {
     }
     stepConstraints(particle) {
         //TODOv3: multiple passes
-        for (const j in this.constraints) {
-            const constraint = this.constraints[j];
+        for (const constraint of this.constraints) {
             constraint.constraintParticle(particle);
         }
     }
@@ -56424,11 +56616,11 @@ class Source2ParticleSystem extends Entity {
     }
     dispose() {
         super.dispose();
-        this.controlPoints.forEach(element => element.dispose());
+        this.#controlPoints.forEach(element => element.dispose());
         this.operators.forEach(element => element.dispose());
         this.renderers.forEach(element => element.dispose());
         this.childSystems.forEach(element => element.dispose());
-        this.controlPoints.length = 0;
+        this.#controlPoints.length = 0;
     }
     buildContextMenu() {
         const startStop = this.isRunning ? { i18n: '#stop', f: () => this.stop() } : { i18n: '#start', f: () => this.start() };
@@ -56477,9 +56669,9 @@ class OperatorParam {
             const type = this.#value.get('m_nType')?.getValueAsString();
             switch (type) {
                 case 'PF_TYPE_LITERAL' /*TODO: create a string constant*/:
-                    return this.#value.get('m_flLiteralValue')?.getValueAsNumber();
+                    return this.#value.get('m_flLiteralValue')?.getValueAsNumber() ?? null;
                 default:
-                    throw 'fix me, missing type';
+                    console.error('unknown number type, maybe use getParamScalarValue instead', type, this);
             }
         }
         return null;
@@ -56533,22 +56725,25 @@ class OperatorParam {
         if (this.#type != OperatorParamType.Element) {
             return null;
         }
-        return this.#value.get(name);
+        return this.#value.get(name) ?? null;
     }
     getSubValueAsBool(name) {
-        return this.getSubValue(name)?.getValueAsBool();
+        return this.getSubValue(name)?.getValueAsBool() ?? null;
     }
     getSubValueAsNumber(name) {
-        return this.getSubValue(name)?.getValueAsNumber();
+        return this.getSubValue(name)?.getValueAsNumber() ?? null;
     }
     getSubValueAsString(name) {
-        return this.getSubValue(name)?.getValueAsString();
+        return this.getSubValue(name)?.getValueAsString() ?? null;
     }
     getSubValueAsArray(name) {
-        return this.getSubValue(name)?.getValueAsArray();
+        return this.getSubValue(name)?.getValueAsArray() ?? null;
     }
     getSubValueAsVec2(name, out) {
-        return this.getSubValue(name)?.getValueAsVec2(out);
+        return this.getSubValue(name)?.getValueAsVec2(out) ?? null;
+    }
+    getSubValueAsVec3(name, out) {
+        return this.getSubValue(name)?.getValueAsVec3(out) ?? null;
     }
     static fromKv3(kv3) {
         if (kv3.isKv3Element) {
@@ -56623,6 +56818,8 @@ class OperatorParam {
 }
 
 const CParticleSystemDefinition = 'CParticleSystemDefinition';
+// TODO: remove me when particle are finished
+const messagePerOperator = new Set();
 function valueToControlPointConfigurationDrivers(value) {
     const ret = [];
     if (value) {
@@ -56655,38 +56852,38 @@ function initProperties(system, systemDefinition) {
         //const value = systemDefinition[key];
         switch (key) {
             case 'm_nMaxParticles':
-                system.setMaxParticles(systemDefinition.getValueAsNumber('m_nMaxParticles') ?? DEFAULT_MAX_PARTICLES);
+                system.setMaxParticles(systemDefinition.getValueAsNumber('m_nMaxParticles') ?? DEFAULT_MAX_PARTICLES$1);
                 break;
             case 'm_ConstantColor':
                 //vec4.set(system.baseProperties.color, Number(value[0]) / 255.0, Number(value[1]) / 255.0, Number(value[2]) / 255.0, Number(value[3]) / 255.0);
                 const constantColor = systemDefinition.getValueAsNumberArray('m_ConstantColor');
-                if (constantColor) {
+                if (constantColor && constantColor.length >= 4) {
                     vec4.set(system.baseProperties.color, constantColor[0] / 255.0, constantColor[1] / 255.0, constantColor[2] / 255.0, constantColor[3] / 255.0);
                 }
                 break;
             case 'm_flConstantLifespan':
-                system.baseProperties.lifespan = value;
+                system.baseProperties.lifespan = systemDefinition.getValueAsNumber(key) ?? 0; // TODO: check default value
                 break;
             case 'm_flConstantRadius':
-                system.baseProperties.radius = systemDefinition.getValueAsNumber('m_flConstantRadius') ?? SOURCE2_DEFAULT_RADIUS;
+                system.baseProperties.radius = systemDefinition.getValueAsNumber(key) ?? SOURCE2_DEFAULT_RADIUS; // TODO: check default value
                 break;
             case 'm_nConstantSequenceNumber':
-                system.baseProperties.sequenceNumber = systemDefinition.getValueAsNumber('m_nConstantSequenceNumber') ?? 0;
+                system.baseProperties.sequenceNumber = systemDefinition.getValueAsNumber(key) ?? 0; // TODO: check default value
                 break;
             case 'm_controlPointConfigurations':
-                system.baseProperties.controlPointConfigurations = valueToControlPointConfigurations(systemDefinition.getValueAsElementArray('m_controlPointConfigurations'));
+                system.baseProperties.controlPointConfigurations = valueToControlPointConfigurations(systemDefinition.getValueAsElementArray(key)); // TODO: check default value
                 break;
             case 'm_hSnapshot':
-                system.baseProperties.snapshot = value;
+                system.baseProperties.snapshot = systemDefinition.getValueAsResource(key) ?? ''; // TODO: check default value
                 break;
             case 'm_nSnapshotControlPoint':
-                system.baseProperties.snapshotControlPoint = (value);
+                system.baseProperties.snapshotControlPoint = systemDefinition.getValueAsNumber(key) ?? 0; // TODO: check default value
                 break;
             case 'm_nInitialParticles':
-                system.initialParticles = (value);
+                system.initialParticles = systemDefinition.getValueAsNumber(key) ?? 0; // TODO: check default value
                 break;
             case 'm_flConstantRotationSpeed':
-                system.baseProperties.rotationSpeedRoll = value;
+                system.baseProperties.rotationSpeedRoll = systemDefinition.getValueAsNumber(key) ?? 0; // TODO: check default value
                 break;
         }
     }
@@ -56717,7 +56914,10 @@ function initOperators(system, systemArray, kv3Array) {
                     operator.init();
                 }
                 else {
-                    console.error('Unknown operator : ' + operatorClassName, property, system.name);
+                    if (!messagePerOperator.has(operatorClassName)) {
+                        console.error('Unknown operator : ' + operatorClassName, property, system.name);
+                        messagePerOperator.add(operatorClassName);
+                    }
                 }
             }
         }
@@ -58245,45 +58445,46 @@ class Source2Unlit extends Source2Material {
 Source2MaterialLoader.registerMaterial('unlit.vfx', Source2Unlit);
 
 const COLOR_SCALE = 1 / 255;
-function vec4Scale(out, a, b) {
-    out[0] = Number(a[0]) * b;
-    out[1] = Number(a[1]) * b;
-    out[2] = Number(a[2]) * b;
-    out[3] = Number(a[3]) * b;
-    return out;
-}
-function vec4Lerp(out, a, b, t) {
+function vec3Lerp(out, a, b, t) {
     const ax = Number(a[0]);
     const ay = Number(a[1]);
     const az = Number(a[2]);
-    const aw = Number(a[3]);
     out[0] = ax + t * (Number(b[0]) - ax);
     out[1] = ay + t * (Number(b[1]) - ay);
     out[2] = az + t * (Number(b[2]) - az);
-    out[3] = aw + t * (Number(b[3]) - aw);
     return out;
 }
 const operatorTempVec2_0 = vec2.create();
 const operatorTempVec2_1 = vec2.create();
+const operatorTempVec3_0 = vec3.create();
+const operatorTempVec3_1 = vec3.create();
+const DEFAULT_OP_STRENGTH = 1; // TODO: check default value
+const DEFAULT_OP_START_FADE_IN_TIME = 0; // TODO: check default value
+const DEFAULT_OP_END_FADE_IN_TIME = 0; // TODO: check default value
+const DEFAULT_OP_START_FADE_OUT_TIME = 0; // TODO: check default value
+const DEFAULT_OP_END_FADE_OUT_TIME = 0; // TODO: check default value
+const DEFAULT_OP_FADE_OSCILLATE_PERIOD = 0; // TODO: check default value
+const DEFAULT_CONTROL_POINT_NUMBER = 0; // TODO: check default value
 class Operator {
     static PVEC_TYPE_PARTICLE_VECTOR = false;
-    #parameters = {};
+    #parameters = {}; // TODO: turn into Map<string,OperatorParam>
     system;
-    opStartFadeInTime = 0;
-    opEndFadeInTime = 0;
-    opStartFadeOutTime = 0;
-    opEndFadeOutTime = 0;
-    opFadeOscillatePeriod = 0;
-    normalizePerLiving = false;
+    opStartFadeInTime = DEFAULT_OP_START_FADE_IN_TIME;
+    opEndFadeInTime = DEFAULT_OP_END_FADE_IN_TIME;
+    opStartFadeOutTime = DEFAULT_OP_START_FADE_OUT_TIME;
+    opEndFadeOutTime = DEFAULT_OP_END_FADE_OUT_TIME;
+    opFadeOscillatePeriod = DEFAULT_OP_FADE_OSCILLATE_PERIOD;
+    #normalizePerLiving = false;
     disableOperator = false;
-    controlPointNumber = 0;
-    fieldInput = -1;
+    controlPointNumber = DEFAULT_CONTROL_POINT_NUMBER;
+    #fieldInput = -1;
     fieldOutput = -1;
     scaleCp;
     mesh;
     endCapState;
     currentTime = 0;
     operateAllParticlesRemoveme = false;
+    //protected opStrength = DEFAULT_OP_STRENGTH;
     constructor(system) {
         this.system = system;
     }
@@ -58318,6 +58519,7 @@ class Operator {
         if (parameter) {
             return this.#getParamScalarValue(parameter, particle);
         }
+        return null;
     }
     #getParamScalarValue(parameter, particle) {
         let inputValue;
@@ -58327,10 +58529,9 @@ class Operator {
                 case 'PF_TYPE_LITERAL':
                     return parameter.getSubValueAsNumber('m_flLiteralValue') ?? 0;
                 case 'PF_TYPE_PARTICLE_AGE':
-                    console.error('do this getParamScalarValue');
-                    return parameter.m_vLiteralValue;
+                    return particle?.currentTime ?? null; // TODO: not sure if this is the actual value
                 case 'PF_TYPE_PARTICLE_NUMBER_NORMALIZED':
-                    if (this.normalizePerLiving) {
+                    if (this.#normalizePerLiving) {
                         const max = this.system.livingParticles.length;
                         inputValue = (particle?.id ?? 0) % max / max;
                     }
@@ -58354,15 +58555,17 @@ class Operator {
                 case 'PF_TYPE_PARTICLE_NOISE':
                     return this.#getParamScalarValue2(parameter, RandomFloat(parameter.getSubValueAsNumber('m_flNoiseOutputMin') ?? 0, parameter.getSubValueAsNumber('m_flNoiseOutputMax') ?? 1));
                 case 'PF_TYPE_CONTROL_POINT_COMPONENT':
-                    console.error('do this getParamScalarValue');
-                    const cp = this.system.getControlPoint(parameter.m_nControlPoint);
+                    const cp = this.system.getControlPoint(parameter.getSubValueAsNumber('m_nControlPoint') ?? 0);
                     if (cp) {
-                        return cp.position[parameter.m_nVectorComponent];
+                        return cp.getPosition(operatorTempVec3_0)[parameter.getSubValueAsNumber('m_nVectorComponent') ?? 0] ?? 0;
                     }
                     return 0;
                 case 'PF_TYPE_PARTICLE_FLOAT':
-                    console.error('do this getParamScalarValue');
-                    return inputValue = RemapValClamped(particle?.getField(parameter.m_nScalarAttribute ?? 0) ?? 0, parameter.m_flInput0 ?? 0, parameter.m_flInput1 ?? 1, parameter.m_flOutput0 ?? 0, parameter.m_flOutput1 ?? 1);
+                    // TODO: use m_nMapType (PF_MAP_TYPE_REMAP...)
+                    return inputValue = RemapValClamped(particle?.getField(parameter.getSubValueAsNumber('m_nScalarAttribute') ?? 0) ?? 0, parameter.getSubValueAsNumber('m_flInput0') ?? 0, parameter.getSubValueAsNumber('m_flInput1') ?? 1, parameter.getSubValueAsNumber('m_flOutput0') ?? 0, parameter.getSubValueAsNumber('m_flOutput1') ?? 1);
+                case 'PF_TYPE_CONTROL_POINT_SPEED':
+                    // TODO: code me
+                    return null;
                 default:
                     console.error('#getParamScalarValue unknown type', parameter);
                     throw 'Code me';
@@ -58372,7 +58575,7 @@ class Operator {
             return parameter.getValueAsNumber();
         }
     }
-    #getParamScalarValue2(parameter, inputValue) {
+    #getParamScalarValue2 /*TODO: rename to MapType*/(parameter, inputValue) {
         const mapType = parameter.getSubValueAsString('m_nMapType');
         if (!mapType) {
             return 0;
@@ -58384,7 +58587,7 @@ class Operator {
                 return this.#getParamScalarValueCurve(parameter, inputValue);
             case 'PF_MAP_TYPE_MULT':
                 console.error('do this getParamScalarValue2');
-                return inputValue * parameter.m_flMultFactor;
+                return inputValue * (parameter.getSubValueAsNumber('m_flMultFactor') ?? 1 /* TODO: check default value*/);
             case 'PF_MAP_TYPE_REMAP':
                 return inputValue; //TODO
             default:
@@ -58446,16 +58649,21 @@ class Operator {
         return previousKey.getSubValueAsNumber('y') ?? 0;
         //export function lerp(min, max, v) {
     }
-    getParamVectorValue(paramName, particle, out) {
+    getParamVectorValue(out /*not sure about vec4. maybe vec3 ?*/, paramName, particle) {
         const parameter = this.#parameters[paramName];
         if (!parameter) {
             return undefined;
         }
-        const type = (parameter.getSubValue('m_nType')?.getValueAsString());
+        const type = parameter.getSubValueAsString('m_nType');
         if (type) {
             switch (type) {
                 case 'PVEC_TYPE_LITERAL':
-                    return parameter.m_vLiteralValue;
+                    //console.error('do this param', paramName, parameter);
+                    //return parameter.m_vLiteralValue;
+                    parameter.getSubValueAsVec3('m_vLiteralValue', out);
+                    break;
+                case 'PVEC_TYPE_LITERAL_COLOR':
+                    return parameter.getValueAsVec3(out);
                 case 'PVEC_TYPE_PARTICLE_VECTOR':
                     if (!Operator.PVEC_TYPE_PARTICLE_VECTOR) {
                         Operator.PVEC_TYPE_PARTICLE_VECTOR = true;
@@ -58463,14 +58671,23 @@ class Operator {
                     }
                     break;
                 case 'PVEC_TYPE_FLOAT_INTERP_GRADIENT':
-                    return this.#getParamVectorValueFloatInterpGradient(parameter, particle, out);
+                    return this.#getParamVectorValueFloatInterpGradient(out, parameter, particle);
                 case 'PVEC_TYPE_FLOAT_COMPONENTS':
-                    out[0] = this.#getParamScalarValue(parameter.m_FloatComponentX, particle);
-                    out[1] = this.#getParamScalarValue(parameter.m_FloatComponentY, particle);
-                    out[2] = this.#getParamScalarValue(parameter.m_FloatComponentZ, particle);
+                    console.error('fix me: PVEC_TYPE_FLOAT_COMPONENTS', parameter);
+                    const componentX = parameter.getSubValue('m_FloatComponentX');
+                    const componentY = parameter.getSubValue('m_FloatComponentX');
+                    const componentZ = parameter.getSubValue('m_FloatComponentX');
+                    if (componentX && componentY && componentZ) {
+                        out[0] = this.#getParamScalarValue(componentX, particle) ?? 0 /* TODO: check default value*/;
+                        out[1] = this.#getParamScalarValue(componentY, particle) ?? 0 /* TODO: check default value*/;
+                        out[2] = this.#getParamScalarValue(componentZ, particle) ?? 0 /* TODO: check default value*/;
+                    }
                     break;
                 case 'PVEC_TYPE_RANDOM_UNIFORM_OFFSET':
-                    vec3RandomBox(out, parameter.m_vRandomMin, parameter.m_vRandomMax);
+                    if (parameter.getSubValueAsVec3('m_vRandomMin', operatorTempVec3_0) &&
+                        parameter.getSubValueAsVec3('m_vRandomMax', operatorTempVec3_1)) {
+                        vec3RandomBox(out, operatorTempVec3_0, operatorTempVec3_1);
+                    }
                     break;
                 case 'PVEC_TYPE_CP_VALUE':
                     const cp = this.system.getControlPoint(parameter.m_nControlPoint);
@@ -58485,7 +58702,7 @@ class Operator {
                     //TODO
                     break;
                 default:
-                    console.error('getParamVectorValue unknown type', parameter);
+                    console.error('getParamVectorValue unknown type', type, parameter);
                     throw 'Code me';
             }
         }
@@ -58503,29 +58720,60 @@ class Operator {
             }
         }
     }
-    #getParamVectorValueFloatInterpGradient(parameter /*TODO: improve type*/, particle, outVec) {
-        const interpInput0 = parameter.m_flInterpInput0;
-        const interpInput1 = parameter.m_flInterpInput1;
-        let inputValue = this.#getParamScalarValue(parameter.m_FloatInterp, particle);
-        inputValue = RemapValClamped(inputValue, interpInput0, interpInput1, 0.0, 1.0);
-        const stops = parameter.m_Gradient?.m_Stops;
-        if (stops) {
-            //m_Color
-            let previousStop = stops[0];
-            let stop = previousStop;
-            if (inputValue < previousStop.m_flPosition) {
-                return vec4Scale(outVec, previousStop.m_Color, COLOR_SCALE);
-            }
-            let index = 0;
-            while (stop = stops[++index]) {
-                if (inputValue < stop.m_flPosition) {
-                    vec4Lerp(outVec, previousStop.m_Color, stop.m_Color, (inputValue - previousStop.m_flPosition) / (stop.m_flPosition - previousStop.m_flPosition));
-                    return vec4.scale(outVec, outVec, COLOR_SCALE);
-                }
-                previousStop = stop;
-            }
-            return vec4Scale(outVec, previousStop.m_Color, COLOR_SCALE);
+    #getParamVectorValueFloatInterpGradient(out, parameter, particle) {
+        const interpInput0 = parameter.getSubValueAsNumber('m_flInterpInput0');
+        const interpInput1 = parameter.getSubValueAsNumber('m_flInterpInput1');
+        const floatInterp = parameter.getSubValue('m_FloatInterp');
+        if (!floatInterp || interpInput0 === null || interpInput1 === null) {
+            return null;
         }
+        let inputValue = this.#getParamScalarValue(floatInterp, particle);
+        inputValue = RemapValClamped(inputValue, interpInput0, interpInput1, 0.0, 1.0);
+        const gradient = parameter.getSubValue('m_Gradient');
+        if (!gradient) {
+            return null;
+        }
+        const stops = gradient.getSubValueAsArray('m_Stops');
+        if (!stops || stops.length == 0) {
+            return null;
+        }
+        //m_Color
+        let previousStop = stops[0];
+        let stop = previousStop;
+        if (inputValue < (previousStop.getSubValueAsNumber('m_flPosition') ?? 0)) {
+            if (previousStop.getSubValueAsVec3('m_Color', out)) {
+                return vec4.scale(out, out, COLOR_SCALE);
+            }
+        }
+        let index = 0;
+        while (stop = stops[++index]) {
+            // TODO: optimize
+            const previousStopColor = previousStop.getSubValueAsVec3('m_Color', operatorTempVec3_0);
+            if (!previousStopColor) {
+                return null;
+            }
+            const previousStopPosition = previousStop.getSubValueAsNumber('m_flPosition');
+            if (previousStopPosition === null) {
+                return null;
+            }
+            const stopColor = stop.getSubValueAsVec3('m_Color', operatorTempVec3_1);
+            if (!stopColor) {
+                return null;
+            }
+            const stopPosition = stop.getSubValueAsNumber('m_flPosition');
+            if (stopPosition === null) {
+                return null;
+            }
+            if (inputValue < (previousStop.getSubValueAsNumber('m_flPosition') ?? 0)) {
+                vec3Lerp(out, previousStopColor, stopColor, (inputValue - previousStopPosition) / (stopPosition - previousStopPosition));
+                return vec4.scale(out, out, COLOR_SCALE);
+            }
+            previousStop = stop;
+        }
+        if (previousStop.getSubValueAsVec3('m_Color', out)) {
+            return out;
+        }
+        return null;
     }
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -58551,24 +58799,19 @@ class Operator {
                 }
                 break;
             case 'm_flOpStartFadeInTime':
-                console.error('do this param', paramName, param);
-                this.opStartFadeInTime = param;
+                this.opStartFadeInTime = param.getValueAsNumber() ?? DEFAULT_OP_START_FADE_IN_TIME;
                 break;
             case 'm_flOpEndFadeInTime':
-                console.error('do this param', paramName, param);
-                this.opEndFadeInTime = param;
+                this.opEndFadeInTime = param.getValueAsNumber() ?? DEFAULT_OP_END_FADE_IN_TIME;
                 break;
             case 'm_flOpStartFadeOutTime':
-                console.error('do this param', paramName, param);
-                this.opStartFadeOutTime = param;
+                this.opStartFadeOutTime = param.getValueAsNumber() ?? DEFAULT_OP_START_FADE_OUT_TIME;
                 break;
             case 'm_flOpEndFadeOutTime':
-                console.error('do this param', paramName, param);
-                this.opEndFadeOutTime = param;
+                this.opEndFadeOutTime = param.getValueAsNumber() ?? DEFAULT_OP_END_FADE_OUT_TIME;
                 break;
             case 'm_flOpFadeOscillatePeriod':
-                console.error('do this param', paramName, param);
-                this.opFadeOscillatePeriod = param;
+                this.opFadeOscillatePeriod = param.getValueAsNumber() ?? DEFAULT_OP_FADE_OSCILLATE_PERIOD;
                 break;
             case 'm_nControlPointNumber':
                 this.controlPointNumber = param.getValueAsNumber() ?? 0;
@@ -58578,7 +58821,7 @@ class Operator {
                 break;
             case 'm_nFieldInput':
                 console.error('do this param', paramName, param);
-                this.fieldInput = (param);
+                this.#fieldInput = (param);
                 break;
             case 'm_nFieldOutput': // TODO: check wether is it actually the same field
             case 'm_nOutputField':
@@ -58589,8 +58832,13 @@ class Operator {
                 this.scaleCp = (param);
                 break;
             case 'm_flOpStrength':
-                console.error('do this param', paramName, param);
-                //TODO
+                //this.opStrength = param.getValueAsNumber() ?? DEFAULT_OP_STRENGTH;
+                // used in operateParticle
+                break;
+            case 'm_Notes':
+                console.info(this.constructor.name, 'notes:', param.getValueAsString());
+                //this.opStrength = param.getValueAsNumber() ?? DEFAULT_OP_STRENGTH;
+                // used in operateParticle
                 break;
             /*
         case 'm_flAlphaScale':
@@ -58606,7 +58854,8 @@ class Operator {
         if (!particles || this.disableOperator) {
             return;
         }
-        let strength = 1;
+        let strength = 1; // TODO: use m_flOpStrength?
+        // TODO: use checkIfOperatorShouldRun
         if (this.scaleCp) {
             strength = this.system.getControlPoint(this.scaleCp).currentWorldPosition[0];
         }
@@ -58617,7 +58866,8 @@ class Operator {
             return;
         }
         if (this.endCapState != 1) {
-            let strength = 1;
+            let strength = this.getParamScalarValue('m_flOpStrength') ?? DEFAULT_OP_STRENGTH;
+            // TODO: use checkIfOperatorShouldRun
             if (this.scaleCp) {
                 strength = this.system.getControlPoint(this.scaleCp).currentWorldPosition[0];
             }
@@ -58648,7 +58898,8 @@ class Operator {
         }
         this.doRender(particleList, elapsedTime, material);
     }
-    checkIfOperatorShouldRun() {
+    #checkIfOperatorShouldRun() {
+        // use opFadeOscillatePeriod
         const strength = this.fadeInOut();
         return strength > 0;
     }
@@ -58685,12 +58936,8 @@ class Operator {
         //this.propertyChanged(parameter);
         return this;
     }
-    getParameter(parameter) {
-        const p = this.#parameters[parameter];
-        if (p == undefined) {
-            return null;
-        }
-        return p.value;
+    getParameter(name) {
+        return this.#parameters[name] ?? null;
     }
     getParameters() {
         return this.#parameters;
@@ -58832,7 +59079,7 @@ class Operator {
     updateParticles(particleSystem, particleList, elapsedTime) { }
 }
 
-const vec$7 = vec3.create();
+const vec$6 = vec3.create();
 class ConstrainDistance extends Operator {
     minDistance = 0;
     maxDistance = 100;
@@ -58868,19 +59115,19 @@ class ConstrainDistance extends Operator {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         const v = vec3.clone(particle.position);
         if (cp) {
-            vec3.sub(v, v, cp.getWorldPosition(vec$7));
+            vec3.sub(v, v, cp.getWorldPosition(vec$6));
         }
         const distance = vec3.length(v);
         if (distance > 0) {
             vec3.scale(v, v, 1 / distance);
             if (distance < this.minDistance) {
                 vec3.scale(v, v, this.minDistance);
-                vec3.add(particle.position, cp.getWorldPosition(vec$7), v);
+                vec3.add(particle.position, cp.getWorldPosition(vec$6), v);
             }
             else {
                 if (distance > this.maxDistance) {
                     vec3.scale(v, v, this.maxDistance);
-                    vec3.add(particle.position, cp.getWorldPosition(vec$7), v);
+                    vec3.add(particle.position, cp.getWorldPosition(vec$6), v);
                 }
             }
         }
@@ -58888,31 +59135,36 @@ class ConstrainDistance extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_ConstrainDistance', ConstrainDistance);
 
-const DEFAULT_EMIT_RATE = 100;
+const DEFAULT_EMIT_RATE = 100; // TODO: check default value
+const DEFAULT_EMISSION_DURATION = 100; // TODO: check default value
 class ContinuousEmitter extends Operator {
-    #emitRate = DEFAULT_EMIT_RATE;
+    //#emitRate = DEFAULT_EMIT_RATE;
     #remainder = 0;
     _paramChanged(paramName, param) {
         switch (paramName) {
+            case 'm_flEmissionDuration':
             case 'm_flEmitRate':
-                this.#emitRate = param.getValueAsNumber() ?? DEFAULT_EMIT_RATE;
+                // used in doEmit
+                //this.#emitRate = param.getValueAsNumber() ?? DEFAULT_EMIT_RATE;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
     doEmit(elapsedTime) {
+        // TODO: use m_flEmissionDuration
+        this.getParamScalarValue('m_flEmissionDuration') ?? DEFAULT_EMISSION_DURATION;
         const emission_start_time = this.getParameter('emission_start_time') ?? 0;
-        let emission_rate = this.#emitRate;
+        //let emitRate = this.#emitRate;
         const emission_duration = this.getParameter('emission_duration') ?? 0;
         const fade = this.getOperatorFade();
-        emission_rate *= fade;
+        const emitRate = (this.getParamScalarValue('m_flEmitRate') ?? DEFAULT_EMIT_RATE) * fade;
         let currentTime = this.system.currentTime;
         if (currentTime < emission_start_time)
             return;
         if (emission_duration != 0 && (currentTime > emission_start_time + emission_duration))
             return;
-        let nToEmit = this.#remainder + elapsedTime * emission_rate;
+        let nToEmit = this.#remainder + elapsedTime * emitRate;
         this.#remainder = nToEmit % 1;
         nToEmit = Math.floor(nToEmit);
         const timeStampStep = elapsedTime / nToEmit;
@@ -58927,27 +59179,28 @@ class ContinuousEmitter extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_ContinuousEmitter', ContinuousEmitter);
 
+const DEFAULT_SNAPSHOT_CONTROL_POINT = -1; // TODO: check default value
+const DEFAULT_MAX_EMITTED_PER_FRAME = -1; // TODO: check default value
+const DEFAULT_INIT_FROM_KILLED_PARENT_PARTICLES = 0; // TODO: check default value
 class InstantaneousEmitter extends Operator {
-    emitted = 0;
-    initFromKilledParentParticles = 0;
-    maxEmittedPerFrame = -1;
-    snapshotControlPoint = -1;
+    #emitted = 0;
+    #initFromKilledParentParticles = DEFAULT_INIT_FROM_KILLED_PARENT_PARTICLES;
+    #maxEmittedPerFrame = DEFAULT_MAX_EMITTED_PER_FRAME;
+    #snapshotControlPoint = DEFAULT_SNAPSHOT_CONTROL_POINT;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nParticlesToEmit':
             case 'm_flStartTime':
                 break;
             case 'm_flInitFromKilledParentParticles':
-                console.error('do this param', paramName, param);
-                this.initFromKilledParentParticles = (param);
+                this.#initFromKilledParentParticles = param.getValueAsNumber() ?? DEFAULT_INIT_FROM_KILLED_PARENT_PARTICLES;
                 break;
             case 'm_nMaxEmittedPerFrame':
                 console.error('do this param', paramName, param);
-                this.maxEmittedPerFrame = (param);
+                this.#maxEmittedPerFrame = param.getValueAsNumber() ?? DEFAULT_MAX_EMITTED_PER_FRAME;
                 break;
             case 'm_nSnapshotControlPoint':
-                console.error('do this param', paramName, param);
-                this.snapshotControlPoint = (param);
+                this.#snapshotControlPoint = param.getValueAsNumber() ?? DEFAULT_SNAPSHOT_CONTROL_POINT;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -58958,8 +59211,8 @@ class InstantaneousEmitter extends Operator {
         let particlesToEmit = this.getParamScalarValue('m_nParticlesToEmit') ?? 100;
         this.getParamScalarValue('m_flStartTime') ?? 0;
         const system = this.system;
-        if (this.snapshotControlPoint != -1) {
-            const snapshot = system.getControlPoint(this.snapshotControlPoint)?.snapshot;
+        if (this.#snapshotControlPoint != -1) {
+            const snapshot = system.getControlPoint(this.#snapshotControlPoint)?.snapshot;
             if (snapshot) {
                 particlesToEmit = snapshot.particleCount;
             }
@@ -58968,9 +59221,9 @@ class InstantaneousEmitter extends Operator {
             }
         }
         //TODO: check start timeout
-        let nToEmit = particlesToEmit - this.emitted;
-        if (this.maxEmittedPerFrame != -1) {
-            nToEmit = Math.min(nToEmit, this.maxEmittedPerFrame);
+        let nToEmit = particlesToEmit - this.#emitted;
+        if (this.#maxEmittedPerFrame != -1) {
+            nToEmit = Math.min(nToEmit, this.#maxEmittedPerFrame);
         }
         let currentTime = system.currentTime;
         const timeStampStep = elapsedTime / nToEmit;
@@ -58980,11 +59233,11 @@ class InstantaneousEmitter extends Operator {
                 break; // Break if a particule can't emitted (max reached)
             }
             currentTime += timeStampStep;
-            ++this.emitted;
+            ++this.#emitted;
         }
     }
     reset() {
-        this.emitted = 0;
+        this.#emitted = 0;
     }
 }
 RegisterSource2ParticleOperator('C_OP_InstantaneousEmitter', InstantaneousEmitter);
@@ -59018,7 +59271,10 @@ class MaintainEmitter extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_MaintainEmitter', MaintainEmitter);
 
-const DEFAULT_OUTPUT_MAX = 100;
+const DEFAULT_OUTPUT_MIN$6 = 0;
+const DEFAULT_OUTPUT_MAX$6 = 100;
+const DEFAULT_NOISE_SCALE$4 = 0.1;
+const DEFAULT_OFFSET$5 = 0;
 class NoiseEmitter extends Operator {
     #emissionDuration = 0;
     #startTime = 0;
@@ -59027,10 +59283,10 @@ class NoiseEmitter extends Operator {
     #worldNoisePoint = -1;
     #absVal = false;
     #absValInv = false;
-    #offset = 0;
-    #outputMin = 0;
-    #outputMax = DEFAULT_OUTPUT_MAX;
-    #noiseScale = 0.1;
+    #offset = DEFAULT_OFFSET$5;
+    #outputMin = DEFAULT_OUTPUT_MIN$6;
+    #outputMax = DEFAULT_OUTPUT_MAX$6;
+    #noiseScale = DEFAULT_NOISE_SCALE$4;
     #worldNoiseScale = 0.001;
     #offsetLoc = vec3.create();
     #worldTimeScale = 0;
@@ -59066,18 +59322,16 @@ class NoiseEmitter extends Operator {
                 this.#absValInv = param;
                 break;
             case 'm_flOffset':
-                console.error('do this param', paramName, param);
-                this.#offset = param;
+                this.#offset = param.getValueAsNumber() ?? DEFAULT_OFFSET$5;
                 break;
             case 'm_flOutputMin':
-                this.#outputMin = param.getValueAsNumber() ?? 0;
+                this.#outputMin = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN$6;
                 break;
             case 'm_flOutputMax':
-                this.#outputMax = param.getValueAsNumber() ?? 100;
+                this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX$6;
                 break;
             case 'm_flNoiseScale':
-                console.error('do this param', paramName, param);
-                this.#noiseScale = param;
+                this.#noiseScale = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE$4;
                 break;
             case 'm_flWorldNoiseScale':
                 console.error('do this param', paramName, param);
@@ -59123,7 +59377,7 @@ class NoiseEmitter extends Operator {
 RegisterSource2ParticleOperator('C_OP_NoiseEmitter', NoiseEmitter);
 
 const vecCenter = vec3.create();
-const vec$6 = vec3.create();
+const vec$5 = vec3.create();
 class AttractToControlPoint extends Operator {
     #componentScale = vec3.fromValues(1, 1, 1);
     #falloffPower = 0;
@@ -59134,7 +59388,7 @@ class AttractToControlPoint extends Operator {
             case 'm_fForceAmount':
             case 'm_fForceAmountMin':
                 break;
-            case 'm_vecComponentScale': // TODO: mutualise ?
+            case 'm_vecComponentScale': // TODO: mutualize ?
                 param.getValueAsVec3(this.#componentScale);
                 break;
             case 'm_fFalloffPower':
@@ -59160,7 +59414,7 @@ class AttractToControlPoint extends Operator {
         if (!cp) {
             return;
         }
-        vec3.subtract(vecCenter, particle.position, cp.getWorldPosition(vec$6)); //TODO: add particle base cp
+        vec3.subtract(vecCenter, particle.position, cp.getWorldPosition(vec$5)); //TODO: add particle base cp
         let len = vec3.length(vecCenter);
         if (len === 0) {
             len = FLT_EPSILON;
@@ -59189,31 +59443,47 @@ class CPVelocityForce extends Operator {
 RegisterSource2ParticleOperator('C_OP_CPVelocityForce', CPVelocityForce);
 
 class RandomForce extends Operator {
-    minForce = vec3.create();
-    maxForce = vec3.create();
+    #minForce = vec3.create();
+    #maxForce = vec3.create();
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_MinForce':
-                vec3.copy(this.minForce, param);
+                param.getValueAsVec3(this.#minForce);
                 break;
             case 'm_MaxForce':
-                vec3.copy(this.maxForce, param);
+                param.getValueAsVec3(this.#maxForce);
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
     doForce(particle, elapsedTime, accumulatedForces, strength) {
-        vec3.add(accumulatedForces, accumulatedForces, vec3RandomBox(vec3.create(), this.minForce, this.maxForce));
+        vec3.add(accumulatedForces, accumulatedForces, vec3RandomBox(vec3.create(), this.#minForce, this.#maxForce));
     }
 }
 RegisterSource2ParticleOperator('C_OP_RandomForce', RandomForce);
+
+const DEFAULT_FORCE_AMOUNT = 100; // TODO: check default value
+class TwistAroundAxis extends Operator {
+    _paramChanged(paramName, param) {
+        switch (paramName) {
+            case 'm_fForceAmount':
+                break;
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
+    doForce(particle, elapsedTime, accumulatedForces, strength) {
+        this.getParamScalarValue('m_fForceAmount') ?? DEFAULT_FORCE_AMOUNT;
+    }
+}
+RegisterSource2ParticleOperator('C_OP_TwistAroundAxis', TwistAroundAxis);
 
 const va$2 = vec3.create();
 const vb$1 = vec3.create();
 class AddVectorToVector extends Operator {
     #fieldOutput = PARTICLE_FIELD_POSITION;
-    fieldInput = PARTICLE_FIELD_POSITION;
+    #fieldInput = PARTICLE_FIELD_POSITION;
     scale = vec3.fromValues(1, 1, 1);
     offsetMin = vec3.create();
     offsetMax = vec3.fromValues(1, 1, 1);
@@ -59233,7 +59503,7 @@ class AddVectorToVector extends Operator {
         }
     }
     doInit(particle, elapsedTime) {
-        vec3.copy(va$2, particle.getField(this.fieldInput));
+        vec3.copy(va$2, particle.getField(this.#fieldInput));
         vec3RandomBox(vb$1, this.offsetMin, this.offsetMax);
         va$2[0] = (va$2[0] * (1 + this.scale[0]) + vb$1[0]) * 0.5;
         va$2[1] = (va$2[1] * (1 + this.scale[1]) + vb$1[1]) * 0.5;
@@ -59248,34 +59518,63 @@ class AddVectorToVector extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_AddVectorToVector', AddVectorToVector);
 
-class CreateFromParentParticles extends Operator {
-    velocityScale = 0;
-    increment = 1;
-    randomDistribution = false;
-    randomSeed = 0;
-    subFrame = true;
+const DEFAULT_NOISE_SCALE$3 = 1; // TODO: check default value
+const DEFAULT_NOISE_SCALE_LOC$1 = 1; // TODO: check default value
+class AgeNoise extends Operator {
+    #noiseScale = DEFAULT_NOISE_SCALE$3;
+    #noiseScaleLoc = DEFAULT_NOISE_SCALE_LOC$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
-            case 'm_flVelocityScale':
-                this.velocityScale = param;
+            case 'm_flNoiseScale':
+                this.#noiseScale = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE$3;
                 break;
-            case 'm_flIncrement':
-                this.increment = param;
-                break;
-            case 'm_bRandomDistribution':
-                this.randomDistribution = param;
-                break;
-            case 'm_nRandomSeed':
-                this.randomSeed = Number(param);
-                break;
-            case 'm_bSubFrame':
-                this.subFrame = param;
+            case 'm_flNoiseScaleLoc':
+                this.#noiseScaleLoc = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE_LOC$1;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle, elapsedTime, strength) {
+        //TODO
+    }
+}
+RegisterSource2ParticleOperator('C_INIT_AgeNoise', AgeNoise);
+
+const DEFAULT_VELOCITY_SCALE = 0; // TODO: check default value
+const DEFAULT_INCREMENT$2 = 1; // TODO: check default value
+const DEFAULT_RANDOM_DISTRIBUTION = false; // TODO: check default value
+const DEFAULT_RANDOM_SEED$2 = 0; // TODO: check default value
+const DEFAULT_SUB_FRAME = true; // TODO: check default value
+class CreateFromParentParticles extends Operator {
+    #velocityScale = DEFAULT_VELOCITY_SCALE;
+    #increment = DEFAULT_INCREMENT$2;
+    #randomDistribution = DEFAULT_RANDOM_DISTRIBUTION;
+    #randomSeed = DEFAULT_RANDOM_SEED$2;
+    #subFrame = DEFAULT_SUB_FRAME;
+    _paramChanged(paramName, param) {
+        switch (paramName) {
+            case 'm_flVelocityScale':
+                this.#velocityScale = param.getValueAsNumber() ?? DEFAULT_VELOCITY_SCALE;
+                break;
+            case 'm_flIncrement':
+                this.#increment = param.getValueAsNumber() ?? DEFAULT_INCREMENT$2;
+                break;
+            case 'm_bRandomDistribution':
+                this.#randomDistribution = param.getValueAsBool() ?? DEFAULT_RANDOM_DISTRIBUTION;
+                break;
+            case 'm_nRandomSeed':
+                console.error('do this param', paramName, param);
+                this.#randomSeed = Number(param);
+                break;
+            case 'm_bSubFrame':
+                this.#subFrame = param.getValueAsBool() ?? DEFAULT_SUB_FRAME;
+                break;
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
+    doInit(particle, elapsedTime, strength) {
         const parent = this.system.parentSystem;
         if (parent == null) {
             return;
@@ -59294,7 +59593,7 @@ class CreateFromParentParticles extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_CreateFromParentParticles', CreateFromParentParticles);
 
-const vec$5 = vec3.create();
+const vec$4 = vec3.create();
 class CreateOnModel extends Operator {
     #forceInModel = 0;
     #desiredHitbox = -1;
@@ -59364,7 +59663,7 @@ class CreateOnModel extends Operator {
             }
             else {
                 if (controlPoint) {
-                    vec3.copy(particle.position, controlPoint.getWorldPosition(vec$5));
+                    vec3.copy(particle.position, controlPoint.getWorldPosition(vec$4));
                     vec3.copy(particle.prevPosition, particle.position);
                 }
             }
@@ -59373,7 +59672,125 @@ class CreateOnModel extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_CreateOnModel', CreateOnModel);
 
-const vec$4 = vec3.create();
+vec3.create();
+const DEFAULT_HEIGHT_CP = 1;
+const DEFAULT_DESIRED_HEIGHT = 1;
+const DEFAULT_FORCE_Z = false;
+class CreateOnModelAtHeight extends Operator {
+    #heightCP = DEFAULT_HEIGHT_CP;
+    #desiredHeight = DEFAULT_HEIGHT_CP;
+    #forceZ = DEFAULT_FORCE_Z;
+    /*
+    #forceInModel = 0;
+    #desiredHitbox = -1;
+    #hitboxValueFromControlPointIndex = -1;
+    #boneVelocity = 0;
+    #maxBoneVelocity = 0;
+    #directionBias = vec3.create();
+    #hitboxSetName = 'default';
+    #localCoords = false;
+    #useBones = false;
+    */
+    _paramChanged(paramName, param) {
+        switch (paramName) {
+            case 'm_nHeightCP':
+                this.#heightCP = param.getValueAsNumber() ?? DEFAULT_HEIGHT_CP;
+                break;
+            case 'm_flDesiredHeight':
+                this.#heightCP = param.getValueAsNumber() ?? DEFAULT_DESIRED_HEIGHT;
+                break;
+            case 'm_bForceZ':
+                this.#forceZ = param.getValueAsBool() ?? DEFAULT_FORCE_Z;
+                break;
+            case 'm_vecHitBoxScale':
+                // used in doInit
+                break;
+            /*
+        case 'm_nForceInModel':
+            this.#forceInModel = param.getValueAsNumber() ?? 0;
+            break;
+        case 'm_nDesiredHitbox':
+            console.error('do this param', paramName, param);
+            this.#desiredHitbox = (param);
+            break;
+        case 'm_nHitboxValueFromControlPointIndex':
+            console.error('do this param', paramName, param);
+            this.#hitboxValueFromControlPointIndex = (param);
+            break;
+        case 'm_flBoneVelocity':
+            console.error('do this param', paramName, param);
+            this.#boneVelocity = param;
+            break;
+        case 'm_flMaxBoneVelocity':
+            console.error('do this param', paramName, param);
+            this.#maxBoneVelocity = param;
+            break;
+        case 'm_vecDirectionBias':
+            param.getValueAsVec3(this.#directionBias);
+            break;
+        case 'm_HitboxSetName':
+            this.#hitboxSetName = param.getValueAsString() ?? '';
+            break;
+        case 'm_bLocalCoords':
+            this.#localCoords = param.getValueAsBool() ?? false;
+            break;
+        case 'm_bUseBones':
+            console.error('do this param', paramName, param);
+            this.#useBones = param;
+            break;
+            */
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
+    doInit(particle, elapsedTime, strength) {
+        // TODO
+        /*
+        // TODO: use m_vecHitBoxScale, forceInModel, directionBias, hitboxSetName
+        //const hitBoxScale = this.getParamVectorValue('m_vecHitBoxScale');
+
+        const controlPoint = this.system.getControlPoint(this.controlPointNumber);
+        if (controlPoint) {
+            const controllingModel = controlPoint.parentModel;
+            if ((controllingModel as any)?.getRandomPointOnModel) {
+                const bones = [];
+                particle.bones = bones;
+                particle.initialVec = vec3.create();
+                const position = (controllingModel as any).getRandomPointOnModel(vec3.create(), particle.initialVec, bones);
+                if (controlPoint) {
+                    vec3.copy(particle.position, position);
+                    vec3.copy(particle.prevPosition, position);
+                }
+            } else {
+                if (controlPoint) {
+                    vec3.copy(particle.position, controlPoint.getWorldPosition(vec));
+                    vec3.copy(particle.prevPosition, particle.position);
+                }
+            }
+        }*/
+    }
+}
+RegisterSource2ParticleOperator('C_INIT_CreateOnModelAtHeight', CreateOnModelAtHeight);
+
+const DEFAULT_BULGE_CONTROL = 0; // TODO: check default value
+const DEFAULT_BULGE = 0; // TODO: check default value
+const DEFAULT_START_CONTROL_POINT_NUMBER = 0; // TODO: check default value
+const DEFAULT_END_CONTROL_POINT_NUMBER = 1; // TODO: check default value
+class Source2ParticlePathParams {
+    bulgeControl = DEFAULT_BULGE_CONTROL;
+    bulge = DEFAULT_BULGE;
+    startControlPointNumber = DEFAULT_START_CONTROL_POINT_NUMBER;
+    endControlPointNumber = DEFAULT_END_CONTROL_POINT_NUMBER;
+    static fromOperatorParam(param, path) {
+        path.bulge = param.getSubValueAsNumber('m_flBulge') ?? DEFAULT_BULGE;
+        path.bulgeControl = param.getSubValueAsNumber('m_nBulgeControl') ?? DEFAULT_BULGE_CONTROL;
+        path.startControlPointNumber = param.getSubValueAsNumber('m_nEndControlPointNumber') ?? DEFAULT_START_CONTROL_POINT_NUMBER;
+        path.endControlPointNumber = param.getSubValueAsNumber('m_nEndControlPointNumber') ?? DEFAULT_END_CONTROL_POINT_NUMBER;
+        // TODO: check if there are other params
+    }
+}
+
+const vec$3 = vec3.create();
 class CreateSequentialPath extends Operator {
     numToAssign = 100;
     step = 0.01;
@@ -59381,75 +59798,90 @@ class CreateSequentialPath extends Operator {
     maxDistance = 0;
     cpPairs = false;
     saveOffset = false;
+    /*
     startControlPointNumber = 0;
     endControlPointNumber = 0;
-    bulgeControl = 0;
+    bulgeControl = 0; => path
     bulge = 0;
+    */
     midPoint = 0.5;
     startPointOffset = vec3.create();
     midPointOffset = vec3.create();
     endOffset = vec3.create();
     t = 0;
+    #pathParams = new Source2ParticlePathParams();
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flNumToAssign':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.numToAssign = param;
                 this.step = 1 / param;
                 break;
             case 'm_bLoop':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.loop = param;
                 break;
             case 'm_PathParams':
-                for (const subName of Object.keys(param)) {
-                    this._paramChanged(subName, param[subName]);
-                }
+                console.error('do this param', paramName, param, this.constructor.name);
+                Source2ParticlePathParams.fromOperatorParam(param, this.#pathParams);
                 break;
             case 'm_fMaxDistance':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.maxDistance = param;
                 break;
             case 'm_bCPPairs':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.cpPairs = param;
                 break;
             case 'm_bSaveOffset':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.saveOffset = param;
                 break;
             case 'm_nStartControlPointNumber':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.startControlPointNumber = (param);
                 break;
             case 'm_nEndControlPointNumber':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.endControlPointNumber = (param);
                 break;
             case 'm_nBulgeControl':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.bulgeControl = (param);
                 break;
             case 'm_flBulge':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.bulge = param;
                 break;
             case 'm_flMidPoint':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.midPoint = param;
                 break;
             case 'm_vStartPointOffset':
+                console.error('do this param', paramName, param, this.constructor.name);
                 vec3.copy(this.startPointOffset, param);
                 break;
             case 'm_vMidPointOffset':
+                console.error('do this param', paramName, param, this.constructor.name);
                 vec3.copy(this.midPointOffset, param);
                 break;
             case 'm_vEndOffset':
+                console.error('do this param', paramName, param, this.constructor.name);
                 vec3.copy(this.endOffset, param);
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle, elapsedTime, strength) {
         //TODO: use other parameters
-        const startControlPointNumber = this.startControlPointNumber;
-        const endControlPointNumber = this.endControlPointNumber;
+        const startControlPointNumber = this.#pathParams.startControlPointNumber;
+        const endControlPointNumber = this.#pathParams.endControlPointNumber;
         const startControlPoint = this.system.getControlPoint(startControlPointNumber);
         const endControlPoint = this.system.getControlPoint(endControlPointNumber);
         if (startControlPoint && endControlPoint) {
             this.numToAssign;
-            const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$4);
+            const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$3);
             vec3.scale(delta, delta, this.t);
             vec3.add(particle.position, startControlPoint.currentWorldPosition, delta);
             vec3.copy(particle.prevPosition, particle.position);
@@ -59523,11 +59955,13 @@ const DEFAULT_DISTANCE_BIAS = vec3.fromValues(1, 1, 1);
 const createWithinSphereSpeedMin = vec4.create();
 const createWithinSphereSpeedMax = vec4.create();
 const createWithinSphereDistanceBias = vec4.create();
+const DEFAULT_SPEED_RAND_EXP = 1; // TODO: check default value
+const DEFAULT_LOCAL_COORDS$2 = false; // TODO: check default value
 class CreateWithinSphere extends Operator {
-    #distanceBias = vec3.fromValues(1, 1, 1);
-    #distanceBiasAbs = vec3.create();
-    #speedRandExp = 1;
-    #localCoords = false;
+    #distanceBias = vec3.fromValues(1, 1, 1); // TODO: check default value
+    #distanceBiasAbs = vec3.create(); // TODO: check default value
+    #speedRandExp = DEFAULT_SPEED_RAND_EXP;
+    #localCoords = DEFAULT_LOCAL_COORDS$2;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_LocalCoordinateSystemSpeedMin':
@@ -59539,25 +59973,23 @@ class CreateWithinSphere extends Operator {
             case 'm_fSpeedMax':
                 break;
             case 'm_vecDistanceBiasAbs':
-                console.error('do this param', paramName, param);
-                vec3.copy(this.#distanceBiasAbs, param);
+                param.getValueAsVec3(this.#distanceBiasAbs);
                 break;
             case 'm_fSpeedRandExp':
                 console.error('do this param', paramName, param);
                 this.#speedRandExp = param;
                 break;
-            case 'm_bLocalCoords':
-                console.error('do this param', paramName, param);
-                this.#localCoords = param;
+            case 'm_bLocalCoords': //TODO: mutualize
+                this.#localCoords = param.getValueAsBool() ?? DEFAULT_LOCAL_COORDS$2;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
     doInit(particle, elapsedTime, strength) {
-        const localCoordinateSystemSpeedMin = (this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin', particle, createWithinSphereSpeedMin) ?? DEFAULT_SPEED$1);
-        const localCoordinateSystemSpeedMax = (this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax', particle, createWithinSphereSpeedMax) ?? DEFAULT_SPEED$1);
-        const m_vecDistanceBias = (this.getParamVectorValue('m_vecDistanceBias', particle, createWithinSphereDistanceBias) ?? DEFAULT_DISTANCE_BIAS);
+        const localCoordinateSystemSpeedMin = (this.getParamVectorValue(createWithinSphereSpeedMin, 'm_LocalCoordinateSystemSpeedMin', particle) ?? DEFAULT_SPEED$1);
+        const localCoordinateSystemSpeedMax = (this.getParamVectorValue(createWithinSphereSpeedMax, 'm_LocalCoordinateSystemSpeedMax', particle) ?? DEFAULT_SPEED$1);
+        const m_vecDistanceBias = (this.getParamVectorValue(createWithinSphereDistanceBias, 'm_vecDistanceBias', particle) ?? DEFAULT_DISTANCE_BIAS);
         const radiusMin = this.getParamScalarValue('m_fRadiusMin') ?? 0;
         const radiusMax = this.getParamScalarValue('m_fRadiusMax') ?? 0;
         const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
@@ -59637,72 +60069,82 @@ class CreateWithinSphere extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_CreateWithinSphere', CreateWithinSphere);
 
+const DEFAULT_OUTPUT_MIN$5 = 0; // TODO: check default value
+const DEFAULT_OUTPUT_MAX$5 = 0; // TODO: check default value
+const DEFAULT_NOISE_SCALE$2 = 0.1; // TODO: check default value
+const DEFAULT_NOISE_SCALE_LOC = 0.001; // TODO: check default value
+const DEFAULT_OFFSET$4 = 0; // TODO: check default value
+const DEFAULT_ABS_VAL = false; // TODO: check default value
+const DEFAULT_ABS_VAL_INV = false; // TODO: check default value
+const DEFAULT_WORLD_TIME_SCALE = 0; // TODO: check default value
 class CreationNoise extends Operator {
-    #fieldOutput = PARTICLE_FIELD_RADIUS;
-    absVal = false;
-    absValInv = false;
-    offset = 0;
-    outputMin = 0;
-    outputMax = 0;
-    noiseScale = 0.1;
-    noiseScaleLoc = 0.001;
-    offsetLoc = vec3.create();
-    worldTimeScale = 0;
+    #absVal = DEFAULT_ABS_VAL;
+    #absValInv = DEFAULT_ABS_VAL_INV;
+    #offset = DEFAULT_OFFSET$4;
+    #outputMin = DEFAULT_OUTPUT_MIN$5;
+    #outputMax = DEFAULT_OUTPUT_MAX$5;
+    #noiseScale = DEFAULT_NOISE_SCALE$2;
+    #noiseScaleLoc = DEFAULT_NOISE_SCALE_LOC;
+    #offsetLoc = vec3.create(); // TODO: check default value
+    #worldTimeScale = DEFAULT_WORLD_TIME_SCALE;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_bAbsVal':
-                this.absVal = (param) != 0;
+                console.error('do this param', paramName, param, this.constructor.name);
+                this.#absVal = (param) != 0;
                 break;
             case 'm_bAbsValInv':
-                this.absValInv = (param) != 0;
+                console.error('do this param', paramName, param, this.constructor.name);
+                this.#absValInv = (param) != 0;
                 break;
             case 'm_flOffset':
-                this.offset = (param);
+                this.#offset = param.getValueAsNumber() ?? DEFAULT_OFFSET$4;
                 break;
             case 'm_flOutputMin':
-                this.outputMin = (param);
+                this.#outputMin = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN$5;
                 break;
             case 'm_flOutputMax':
-                this.outputMax = (param);
+                this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX$5;
                 break;
             case 'm_flNoiseScale':
-                this.noiseScale = (param);
+                this.#noiseScale = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE$2;
                 break;
             case 'm_flNoiseScaleLoc':
-                this.noiseScaleLoc = Numer(param);
+                this.#noiseScaleLoc = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE_LOC;
                 break;
             case 'm_vecOffsetLoc':
-                vec3.copy(this.offsetLoc, param);
+                console.error('do this param', paramName, param, this.constructor.name);
+                vec3.copy(this.#offsetLoc, param);
                 break;
-            case 'm_flWorldTimeScale':
-                this.worldTimeScale = (param);
+            case 'm_flWorldTimeScale': //TODO: mutualize
+                this.#worldTimeScale = param.getValueAsNumber() ?? DEFAULT_WORLD_TIME_SCALE;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
-        const fieldOutput = this.#fieldOutput;
+    doInit(particle, elapsedTime, strength) {
+        const fieldOutput = this.fieldOutput;
         //let nAbsVal = 0xffffffff;
         let flAbsScale = 0.5;
-        if (this.absVal) {
+        if (this.#absVal) {
             //nAbsVal = 0x7fffffff;
             flAbsScale = 1.0;
         }
-        let fMin = this.outputMin;
-        let fMax = this.outputMax;
+        let fMin = this.#outputMin;
+        let fMax = this.#outputMax;
         if (ATTRIBUTES_WHICH_ARE_ANGLES & (1 << fieldOutput)) {
             fMin *= DEG_TO_RAD;
             fMax *= DEG_TO_RAD;
         }
-        const CoordScaleLoc = this.noiseScaleLoc;
+        const CoordScaleLoc = this.#noiseScaleLoc;
         let ValueScale, ValueBase;
         ValueScale = (flAbsScale * (fMax - fMin));
         ValueBase = (fMin + ((1.0 - flAbsScale) * (fMax - fMin)));
         let CoordLoc, CoordBase;
         //let pCreationTime = particle.cTime;//pParticles->GetFloatAttributePtr( PARTICLE_ATTRIBUTE_CREATION_TIME, start_p );
-        const Offset = this.offset;
-        const a = (particle.cTime + Offset) * this.noiseScale + performance.now() * this.worldTimeScale;
+        const Offset = this.#offset;
+        const a = (particle.cTime + Offset) * this.#noiseScale + performance.now() * this.#worldTimeScale;
         CoordBase = vec3.fromValues(a, a, a);
         CoordLoc = vec3.create();
         //CoordBase *= this.noiseScale;
@@ -59713,7 +60155,7 @@ class CreationNoise extends Operator {
         {
             vec3.copy(Coord, CoordBase);
             vec3.copy(CoordLoc, particle.position);
-            vec3.add(CoordLoc, CoordLoc, this.offsetLoc);
+            vec3.add(CoordLoc, CoordLoc, this.#offsetLoc);
             //CoordLoc += m_vecOffsetLoc;
             vec3.scale(CoordLoc, CoordLoc, CoordScaleLoc);
             //CoordLoc *= CoordScaleLoc;
@@ -59727,10 +60169,10 @@ class CreationNoise extends Operator {
             //float flNoise = SubFloat( flNoise128, 0 );
             let flNoise = NoiseSIMD(Coord, 0, 0);
             //*( (int *) &flNoise)  &= nAbsVal;
-            if (this.absVal) {
+            if (this.#absVal) {
                 flNoise = Math.abs(flNoise);
             }
-            if (this.absValInv) {
+            if (this.#absValInv) {
                 flNoise = 1.0 - flNoise;
             }
             const flInitialNoise = (ValueBase + (ValueScale * flNoise));
@@ -59741,37 +60183,43 @@ class CreationNoise extends Operator {
                 flInitialNoise = clamp(flInitialNoise, 0.0f, 1.0f );
             }*/
             //*( pAttr ) = flInitialNoise;
-            particle.setInitialField(this.#fieldOutput, flInitialNoise);
+            particle.setInitialField(this.fieldOutput, flInitialNoise);
         }
     }
 }
 RegisterSource2ParticleOperator('C_INIT_CreationNoise', CreationNoise);
 
+const DEFAULT_SCALE$2 = 1; // TODO: check default value
+const DEFAULT_FIELD_OUTPUT$5 = PARTICLE_FIELD_RADIUS; // TODO: check default value
+const DEFAULT_INCREMENT$1 = 1; // TODO: check default value
 class InheritFromParentParticles extends Operator {
-    scale = 1;
-    #fieldOutput = PARTICLE_FIELD_RADIUS;
-    increment = 1;
-    randomDistribution = false;
-    randomSeed = 0;
+    #scale = DEFAULT_SCALE$2;
+    #fieldOutput = DEFAULT_FIELD_OUTPUT$5;
+    #increment = DEFAULT_INCREMENT$1;
+    #randomDistribution = false;
+    #randomSeed = 0;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flScale':
-                this.scale = param;
+                this.#scale = param.getValueAsNumber() ?? DEFAULT_SCALE$2;
                 break;
             case 'm_nIncrement':
-                this.increment = (param);
+                console.error('do this param', paramName, param);
+                this.#increment = (param);
                 break;
             case 'm_bRandomDistribution':
-                this.randomDistribution = param;
+                console.error('do this param', paramName, param);
+                this.#randomDistribution = param;
                 break;
             case 'm_nRandomSeed':
-                this.randomSeed = (param);
+                console.error('do this param', paramName, param);
+                this.#randomSeed = (param);
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle, elapsedTime, strength) {
         //TODO: use m_flScale m_nIncrement m_bRandomDistribution m_nRandomSeed
         const parentSystem = this.system.parentSystem;
         if (parentSystem) {
@@ -59785,7 +60233,7 @@ class InheritFromParentParticles extends Operator {
 RegisterSource2ParticleOperator('C_INIT_InheritFromParentParticles', InheritFromParentParticles);
 
 class InitFloat extends Operator {
-    setMethod = null;
+    #setMethod = '';
     constructor(system) {
         super(system);
         this.fieldOutput = PARTICLE_FIELD_RADIUS;
@@ -59801,9 +60249,8 @@ class InitFloat extends Operator {
                 this.#fieldOutput = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
                 break;
             */
-            case 'm_nSetMethod':
-                console.error('do this param', paramName, param);
-                this.setMethod = param;
+            case 'm_nSetMethod': //TODO: mutualize
+                this.#setMethod = param.getValueAsString() ?? '';
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -59812,7 +60259,7 @@ class InitFloat extends Operator {
     doInit(particle, elapsedTime, strength) {
         const value = this.getParamScalarValue('m_InputValue', particle);
         //TODO: use setMethod
-        particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE', true);
+        particle.setField(this.fieldOutput, value, this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE', true);
         //setField(field = 0, value, mulInitial = false, setInitial = false, additive = false) {
     }
 }
@@ -59856,72 +60303,84 @@ export const PARTICLE_FIELD_MANUAL_ANIMATION_FRAME = 38;
 export const PARTICLE_FIELD_SHADER_EXTRA_DATA_1 = 39;
 export const PARTICLE_FIELD_SHADER_EXTRA_DATA_2 = 40;
 */
-const v$f = vec3.create();
+const v$e = vec3.create();
+const DEFAULT_ATTRIBUTE_TO_READ = -1; // TODO: check default value
+const DEFAULT_ATTRIBUTE_TO_WRITE = PARTICLE_FIELD_POSITION; // TODO: check default value
+const DEFAULT_LOCAL_SPACE_CP$1 = 0; // TODO: check default value
+const DEFAULT_RANDOM$1 = false; // TODO: check default value
+const DEFAULT_REVERSE = false; // TODO: check default value
+const DEFAULT_RANDOM_SEED$1 = 0; // TODO: check default value
+const DEFAULT_LOCAL_SPACE_ANGLES = false; // TODO: check default value
 class InitFromCPSnapshot extends Operator {
-    attributeToRead = -1;
-    attributeToWrite = PARTICLE_FIELD_POSITION;
-    localSpaceCP = 0;
-    random = false;
-    reverse = false;
-    randomSeed = 0;
-    localSpaceAngles = false;
+    #attributeToRead = DEFAULT_ATTRIBUTE_TO_READ;
+    #attributeToWrite = DEFAULT_ATTRIBUTE_TO_WRITE;
+    #localSpaceCP = DEFAULT_LOCAL_SPACE_CP$1;
+    #random = DEFAULT_RANDOM$1;
+    #reverse = DEFAULT_REVERSE;
+    #randomSeed = DEFAULT_RANDOM_SEED$1;
+    #localSpaceAngles = DEFAULT_LOCAL_SPACE_ANGLES;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nAttributeToRead':
-                this.attributeToRead = (param);
+                this.#attributeToRead = param.getValueAsNumber() ?? DEFAULT_ATTRIBUTE_TO_READ;
                 break;
             case 'm_nAttributeToWrite':
-                this.attributeToWrite = (param);
+                console.error('do this param', paramName, param);
+                this.#attributeToWrite = (param);
                 break;
             case 'm_nLocalSpaceCP':
-                this.localSpaceCP = (param);
+                this.#localSpaceCP = param.getValueAsNumber() ?? DEFAULT_LOCAL_SPACE_CP$1;
                 break;
             case 'm_bRandom':
-                this.random = param;
+                console.error('do this param', paramName, param);
+                this.#random = param;
                 break;
             case 'm_bReverse':
-                this.reverse = param;
+                console.error('do this param', paramName, param);
+                this.#reverse = param;
                 break;
             case 'm_nRandomSeed':
-                this.randomSeed = (param);
+                console.error('do this param', paramName, param);
+                this.#randomSeed = (param);
                 break;
             case 'm_bLocalSpaceAngles':
-                this.localSpaceAngles = param;
+                console.error('do this param', paramName, param);
+                this.#localSpaceAngles = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
-        if (this.attributeToRead == -1) {
+    doInit(particle, elapsedTime, strength) {
+        if (this.#attributeToRead == -1) {
             return;
         }
         const system = this.system;
         const snapshot = system.getControlPoint(this.controlPointNumber)?.snapshot;
         if (snapshot) {
-            const attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.attributeToRead];
+            const attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.#attributeToRead];
             const attributeToRead = snapshot.attributes[attributeToReadName];
             if (attributeToRead) {
                 let id;
-                if (this.random) {
+                if (this.#random) {
                     id = (snapshot.particleCount * Math.random() << 0) % snapshot.particleCount;
                 }
                 else {
                     id = (particle.id - 1) % snapshot.particleCount;
                 }
-                if (this.attributeToWrite == PARTICLE_FIELD_POSITION) {
-                    const localSpaceCP = system.getControlPoint(this.localSpaceCP);
+                if (this.#attributeToWrite == PARTICLE_FIELD_POSITION) {
+                    const localSpaceCP = system.getControlPoint(this.#localSpaceCP);
                     if (localSpaceCP) {
                         //TODO: check attributeToRead[id] is actually a vector
                         //TODO: only transform position when this.localSpaceAngles = true
                         {
-                            vec3.transformMat4(v$f, attributeToRead[id], localSpaceCP.currentWorldTransformation);
+                            vec3.transformMat4(v$e, attributeToRead[id], localSpaceCP.currentWorldTransformation);
                         }
-                        particle.setInitialField(this.attributeToWrite, v$f);
+                        particle.setInitialField(this.#attributeToWrite, v$e);
                     }
                 }
                 else {
-                    particle.setInitialField(this.attributeToWrite, attributeToRead[id]);
+                    particle.setInitialField(this.#attributeToWrite, attributeToRead[id]);
                 }
             }
         }
@@ -59939,10 +60398,12 @@ vec3.create();
 vec3.create();
 vec3.create();
 vec3.create();
+const DEFAULT_IGNORE_DT$3 = false; // TODO: check default value
 class InitialVelocityNoise extends Operator {
     #absVal = vec3.create();
     #absValInv = vec3.create();
     #localSpace = false;
+    #ignoreDt = DEFAULT_IGNORE_DT$3;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_vecOutputMin':
@@ -59963,6 +60424,9 @@ class InitialVelocityNoise extends Operator {
             case 'm_bLocalSpace': //TODO: put this param in Operator ?
                 this.#localSpace = param.getValueAsBool() ?? false;
                 break;
+            case 'm_bIgnoreDt': //TODO: put this param in Operator ?
+                this.#ignoreDt = param.getValueAsBool() ?? DEFAULT_IGNORE_DT$3;
+                break;
             default:
                 super._paramChanged(paramName, param);
         }
@@ -59980,82 +60444,108 @@ RegisterSource2ParticleOperator('C_INIT_InitialVelocityNoise', InitialVelocityNo
 const mat$1 = mat4.create();
 const nmat$2 = mat3.create();
 const IDENTITY_MAT4$1 = mat4.create();
+const DEFAULT_SNAPSHOT_CONTROL_POINT_NUMBER = 1; // TODO: check default value
+const DEFAULT_RANDOM = false; // TODO: check default value
+const DEFAULT_RANDOM_SEED = 0; // TODO: check default value
+const DEFAULT_RIGID$1 = false; // TODO: check default value
+const DEFAULT_SET_NORMAL = false; // TODO: check default value
+const DEFAULT_IGNORE_DT$2 = false; // TODO: check default value
+const DEFAULT_MIN_NORMAL_VELOCITY = 0; // TODO: check default value
+const DEFAULT_MAX_NORMAL_VELOCITY = 0; // TODO: check default value
+const DEFAULT_INCREMENT = 1; // TODO: check default value
+const DEFAULT_FULL_LOOP_INCREMENT = 0; // TODO: check default value
+const DEFAULT_SNAPSHOT_START_POINT = 0; // TODO: check default value
+const DEFAULT_BONE_VELOCITY = 0; // TODO: check default value
+const DEFAULT_BONE_VELOCITY_MAX = 0; // TODO: check default value
+const DEFAULT_COPY_COLOR = false; // TODO: check default value
+const DEFAULT_COPY_ALPHA = false; // TODO: check default value
+const DEFAULT_COPY_RADIUS = false; // TODO: check default value
 class InitSkinnedPositionFromCPSnapshot extends Operator {
     #rigidOnce = false;
-    snapshotControlPointNumber = 1;
-    random = false;
-    randomSeed = 0;
-    rigid = false;
-    setNormal = false;
-    ignoreDt = false;
-    minNormalVelocity = 0;
-    maxNormalVelocity = 0;
-    increment = 1;
-    fullLoopIncrement = 0;
-    snapShotStartPoint = 0;
-    boneVelocity = 0;
-    boneVelocityMax = 0;
-    copyColor = false;
-    copyAlpha = false;
-    copyRadius = false;
+    #snapshotControlPointNumber = DEFAULT_SNAPSHOT_CONTROL_POINT_NUMBER;
+    #random = DEFAULT_RANDOM;
+    #randomSeed = DEFAULT_RANDOM_SEED;
+    #rigid = DEFAULT_RIGID$1;
+    #setNormal = DEFAULT_SET_NORMAL;
+    #ignoreDt = DEFAULT_IGNORE_DT$2;
+    #minNormalVelocity = DEFAULT_MIN_NORMAL_VELOCITY;
+    #maxNormalVelocity = DEFAULT_MAX_NORMAL_VELOCITY;
+    #increment = DEFAULT_INCREMENT;
+    #fullLoopIncrement = DEFAULT_FULL_LOOP_INCREMENT;
+    #snapShotStartPoint = DEFAULT_SNAPSHOT_START_POINT;
+    #boneVelocity = DEFAULT_BONE_VELOCITY;
+    #boneVelocityMax = DEFAULT_BONE_VELOCITY_MAX;
+    #copyColor = DEFAULT_COPY_COLOR;
+    #copyAlpha = DEFAULT_COPY_ALPHA;
+    #copyRadius = DEFAULT_COPY_RADIUS;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nSnapshotControlPointNumber':
-                this.snapshotControlPointNumber = (param);
+                this.#snapshotControlPointNumber = param.getValueAsNumber() ?? DEFAULT_SNAPSHOT_CONTROL_POINT_NUMBER;
                 break;
             case 'm_bRandom':
-                this.random = param;
+                this.#random = param.getValueAsBool() ?? DEFAULT_RANDOM;
                 break;
             case 'm_nRandomSeed':
-                this.randomSeed = (param);
+                this.#randomSeed = param.getValueAsNumber() ?? DEFAULT_RANDOM_SEED;
                 break;
             case 'm_bRigid':
-                this.rigid = param;
+                this.#rigid = param.getValueAsBool() ?? DEFAULT_RIGID$1;
                 break;
             case 'm_bSetNormal':
-                this.setNormal = param;
+                this.#setNormal = param.getValueAsBool() ?? DEFAULT_SET_NORMAL;
                 break;
             case 'm_bIgnoreDt':
-                this.ignoreDt = param;
+                console.error('do this param', paramName, param);
+                this.#ignoreDt = param;
                 break;
             case 'm_flMinNormalVelocity':
-                this.minNormalVelocity = param;
+                console.error('do this param', paramName, param);
+                this.#minNormalVelocity = param;
                 break;
             case 'm_flMaxNormalVelocity':
-                this.maxNormalVelocity = param;
+                console.error('do this param', paramName, param);
+                this.#maxNormalVelocity = param;
                 break;
             case 'm_flIncrement':
-                this.increment = param;
+                console.error('do this param', paramName, param);
+                this.#increment = param;
                 break;
             case 'm_nFullLoopIncrement':
-                this.fullLoopIncrement = (param);
+                console.error('do this param', paramName, param);
+                this.#fullLoopIncrement = (param);
                 break;
             case 'm_nSnapShotStartPoint':
-                this.snapShotStartPoint = (param);
+                console.error('do this param', paramName, param);
+                this.#snapShotStartPoint = (param);
                 break;
             case 'm_flBoneVelocity':
-                this.boneVelocity = param;
+                console.error('do this param', paramName, param);
+                this.#boneVelocity = param;
                 break;
             case 'm_flBoneVelocityMax':
-                this.boneVelocityMax = param;
+                console.error('do this param', paramName, param);
+                this.#boneVelocityMax = param;
                 break;
             case 'm_bCopyColor':
-                this.copyColor = param;
+                console.error('do this param', paramName, param);
+                this.#copyColor = param;
                 break;
             case 'm_bCopyAlpha':
-                this.copyAlpha = param;
+                this.#copyAlpha = param.getValueAsBool() ?? DEFAULT_COPY_ALPHA;
                 break;
             case 'm_bCopyRadius':
-                this.copyRadius = param;
+                console.error('do this param', paramName, param);
+                this.#copyRadius = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle, elapsedTime, strength) {
         //TODO: use all parameters
         const system = this.system;
-        const snapshot = system.getControlPoint(this.snapshotControlPointNumber)?.snapshot;
+        const snapshot = system.getControlPoint(this.#snapshotControlPointNumber)?.snapshot;
         if (!snapshot) {
             return;
         }
@@ -60068,7 +60558,7 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
             throw 'Unknown field';
         }*/
         let attributeId;
-        if (this.random) {
+        if (this.#random) {
             attributeId = (snapshot.particleCount * Math.random() << 0) % snapshot.particleCount;
         }
         else {
@@ -60093,7 +60583,7 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
         if (hitboxOffsetAttribute) {
             particle.snapHitboxOffset = hitboxOffsetAttribute[attributeId];
         }
-        if (this.rigid) {
+        if (this.#rigid) {
             return;
         }
         let bone, boneName, boneWeight, boneMat;
@@ -60169,31 +60659,35 @@ class InitSkinnedPositionFromCPSnapshot extends Operator {
 RegisterSource2ParticleOperator('C_INIT_InitSkinnedPositionFromCPSnapshot', InitSkinnedPositionFromCPSnapshot);
 
 const DEFAULT_INPUT_VALUE = vec3.create();
-const v$e = vec4.create();
+const initVecTempVec4 = vec4.create();
+const DEFAULT_FIELD_OUTPUT$4 = PARTICLE_FIELD_COLOR; // TODO: check default value
+const DEFAULT_SET_METHOD$5 = 'PARTICLE_SET_SCALE_INITIAL_VALUE'; // TODO: check default value
+const DEFAULT_SCALE_INITIAL_RANGE$2 = false; // TODO: check default value
 class InitVec extends Operator {
-    setMethod = null;
-    scaleInitialRange = false;
-    #fieldOutput = PARTICLE_FIELD_COLOR;
+    #setMethod = DEFAULT_SET_METHOD$5;
+    #scaleInitialRange = DEFAULT_SCALE_INITIAL_RANGE$2;
+    #fieldOutput = DEFAULT_FIELD_OUTPUT$4;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_InputValue':
+                // used in doInit
                 break;
-            case 'm_nOutputField':
-                this.#fieldOutput = (param);
+            case 'm_nOutputField': // TODO: mutualize
+                this.#fieldOutput = param.getValueAsNumber() ?? DEFAULT_FIELD_OUTPUT$4;
                 break;
-            case 'm_nSetMethod':
-                this.setMethod = param;
+            case 'm_nSetMethod': // TODO: mutualize
+                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD$5;
                 break;
             case 'm_bScaleInitialRange':
-                this.scaleInitialRange = param;
+                this.#scaleInitialRange = param.getValueAsBool() ?? DEFAULT_SCALE_INITIAL_RANGE$2;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
-        const inputValue = this.getParamVectorValue('m_InputValue', particle, v$e) ?? DEFAULT_INPUT_VALUE;
-        particle.setField(this.#fieldOutput, inputValue, this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+    doInit(particle, elapsedTime, strength) {
+        const inputValue = this.getParamVectorValue(initVecTempVec4, 'm_InputValue', particle) ?? DEFAULT_INPUT_VALUE;
+        particle.setField(this.#fieldOutput, inputValue, this.#scaleInitialRange || this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
     }
 }
 RegisterSource2ParticleOperator('C_INIT_InitVec', InitVec);
@@ -60208,7 +60702,7 @@ class NormalAlignToCP extends Operator {
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle, elapsedTime, strength) {
         //This operator overrides the normal
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
@@ -60220,37 +60714,39 @@ class NormalAlignToCP extends Operator {
 RegisterSource2ParticleOperator('C_INIT_NormalAlignToCP', NormalAlignToCP);
 
 const v$d = vec3.create();
+const DEFAULT_LOCAL_COORDS$1 = false; // TODO: check default value
+const DEFAULT_NORMALIZE = false; // TODO: check default value
 class NormalOffset extends Operator {
-    offsetMin = vec3.create();
-    offsetMax = vec3.create();
-    localCoords = false;
-    normalize = false;
+    #offsetMin = vec3.create(); // TODO: check default value
+    #offsetMax = vec3.create(); // TODO: check default value
+    #localCoords = DEFAULT_LOCAL_COORDS$1; // TODO: check default value
+    #normalize = DEFAULT_NORMALIZE; // TODO: check default value
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_OffsetMin':
-                vec3.copy(this.offsetMin, param);
+                param.getValueAsVec3(this.#offsetMin);
                 break;
             case 'm_OffsetMax':
-                vec3.copy(this.offsetMax, param);
+                param.getValueAsVec3(this.#offsetMax);
                 break;
             case 'm_bLocalCoords':
-                this.localCoords = param;
+                this.#localCoords = param.getValueAsBool() ?? DEFAULT_LOCAL_COORDS$1;
                 break;
             case 'm_bNormalize':
-                this.normalize = param;
+                this.#normalize = param.getValueAsBool() ?? DEFAULT_NORMALIZE;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
-        vec3RandomBox(v$d, this.offsetMin, this.offsetMax);
-        if (this.localCoords) {
+    doInit(particle, elapsedTime, strength) {
+        vec3RandomBox(v$d, this.#offsetMin, this.#offsetMax);
+        if (this.#localCoords) {
             const cp = this.system.getControlPoint(this.controlPointNumber);
             vec3.transformQuat(v$d, v$d, cp.currentWorldQuaternion);
         }
         vec3.add(particle.normal, particle.normal, v$d);
-        if (this.normalize) {
+        if (this.#normalize) {
             vec3.normalize(particle.normal, particle.normal);
         }
     }
@@ -60265,7 +60761,7 @@ class OffsetVectorToVector extends Operator {
     outputMin = vec3.create();
     outputMax = vec3.fromValues(1, 1, 1);
     #fieldOutput = PARTICLE_FIELD_POSITION;
-    fieldInput = PARTICLE_FIELD_POSITION;
+    #fieldInput = PARTICLE_FIELD_POSITION;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_vecOutputMin':
@@ -60280,7 +60776,7 @@ class OffsetVectorToVector extends Operator {
     }
     doInit(particle, elapsedTime) {
         vec3RandomBox(v$c, this.outputMin, this.outputMax);
-        vec3.add(v$c, v$c, particle.getField(this.fieldInput));
+        vec3.add(v$c, v$c, particle.getField(this.#fieldInput));
         if (this.#fieldOutput == PARTICLE_FIELD_COLOR) {
             v$c[0] = ((v$c[0] % ONE_EPS) + ONE_EPS) % ONE_EPS;
             v$c[1] = ((v$c[1] % ONE_EPS) + ONE_EPS) % ONE_EPS;
@@ -60291,11 +60787,13 @@ class OffsetVectorToVector extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_OffsetVectorToVector', OffsetVectorToVector);
 
-const DEFAULT_OFFSET = vec3.create();
+const DEFAULT_OFFSET$3 = vec3.create();
+const DEFAULT_LOCAL_COORDS = false;
+const DEFAULT_PROPORTIONAL$4 = false;
 const offset$1 = vec3.create();
 class PositionOffset extends Operator {
-    #localCoords = false;
-    #proportional = false;
+    #localCoords = DEFAULT_LOCAL_COORDS;
+    #proportional = DEFAULT_PROPORTIONAL$4;
     #offsetMin = vec4.create();
     #offsetMax = vec4.create();
     _paramChanged(paramName, param) {
@@ -60305,19 +60803,19 @@ class PositionOffset extends Operator {
                 // used in doInit
                 break;
             case 'm_bLocalCoords':
-                this.#localCoords = param.getValueAsBool() ?? false;
+                this.#localCoords = param.getValueAsBool() ?? DEFAULT_LOCAL_COORDS;
                 break;
-            case 'm_bProportional':
-                console.error('do this param', paramName, param);
-                this.#proportional = param;
+            case 'm_bProportional': //TODO: mutualize ?
+                this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL$4;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
     doInit(particle, elapsedTime, strength) {
-        const offsetMin = this.getParamVectorValue('m_OffsetMin', particle, this.#offsetMin) ?? DEFAULT_OFFSET;
-        const offsetMax = this.getParamVectorValue('m_OffsetMax', particle, this.#offsetMax) ?? DEFAULT_OFFSET;
+        // TODO: use m_bProportional
+        const offsetMin = this.getParamVectorValue(this.#offsetMin, 'm_OffsetMin', particle) ?? DEFAULT_OFFSET$3;
+        const offsetMax = this.getParamVectorValue(this.#offsetMax, 'm_OffsetMax', particle) ?? DEFAULT_OFFSET$3;
         vec3RandomBox(offset$1, offsetMin, offsetMax);
         if (this.#localCoords) {
             const cp = particle.system.getControlPoint(this.controlPointNumber);
@@ -60335,65 +60833,78 @@ class PositionOffset extends Operator {
 RegisterSource2ParticleOperator('C_INIT_PositionOffset', PositionOffset);
 
 const v$b = vec3.create();
+const DEFAULT_SCALE_CONTROL_POINT_NUMBER = -1; // TODO: check default value
+const DEFAULT_RADIUS_COMPONENT = -1; // TODO: check default value
+const DEFAULT_WARP_TIME = 0; // TODO: check default value
+const DEFAULT_WARP_START_TIME = 0; // TODO: check default value
+const DEFAULT_PREV_POS_SCALE$2 = 1; // TODO: check default value
+const DEFAULT_INVERT_WARP = false; // TODO: check default value
+const DEFAULT_USE_COUNT = false; // TODO: check default value
 class PositionWarp extends Operator {
-    warpMin = vec3.fromValues(1, 1, 1);
-    warpMax = vec3.fromValues(1, 1, 1);
-    scaleControlPointNumber = -1;
-    radiusComponent = -1;
-    warpTime = 0;
-    warpStartTime = 0;
-    prevPosScale = 1;
-    invertWarp = false;
-    useCount = false;
+    #warpMin = vec3.fromValues(1, 1, 1); // TODO: check default value
+    #warpMax = vec3.fromValues(1, 1, 1); // TODO: check default value
+    #scaleControlPointNumber = DEFAULT_SCALE_CONTROL_POINT_NUMBER;
+    #radiusComponent = DEFAULT_RADIUS_COMPONENT;
+    #warpTime = DEFAULT_WARP_TIME;
+    #warpStartTime = DEFAULT_WARP_START_TIME;
+    #prevPosScale = DEFAULT_PREV_POS_SCALE$2;
+    #invertWarp = DEFAULT_INVERT_WARP;
+    #useCount = DEFAULT_USE_COUNT;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_vecWarpMin':
-                vec3.copy(this.warpMin, param);
+                param.getValueAsVec3(this.#warpMin);
                 break;
             case 'm_vecWarpMax':
-                vec3.copy(this.warpMax, param);
+                param.getValueAsVec3(this.#warpMax);
                 break;
             case 'm_nScaleControlPointNumber':
-                this.scaleControlPointNumber = (param);
+                this.#scaleControlPointNumber = param.getValueAsNumber() ?? DEFAULT_SCALE_CONTROL_POINT_NUMBER;
                 break;
             case 'm_nRadiusComponent':
-                this.radiusComponent = (param); //TODO: check [-1 0 1 2]
+                console.error('do this param', paramName, param);
+                this.#radiusComponent = (param); //TODO: check [-1 0 1 2]
                 break;
             case 'm_flWarpTime':
-                this.warpTime = param;
+                console.error('do this param', paramName, param);
+                this.#warpTime = param;
                 break;
             case 'm_flWarpStartTime':
-                this.warpStartTime = param;
+                console.error('do this param', paramName, param);
+                this.#warpStartTime = param;
                 break;
             case 'm_flPrevPosScale':
-                this.prevPosScale = param;
+                console.error('do this param', paramName, param);
+                this.#prevPosScale = param;
                 break;
             case 'm_bInvertWarp':
-                this.invertWarp = param;
+                console.error('do this param', paramName, param);
+                this.#invertWarp = param;
                 break;
             case 'm_bUseCount':
-                this.useCount = param;
+                console.error('do this param', paramName, param);
+                this.#useCount = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle, elapsedTime, strength) {
         //TODO: use time parameters, m_bUseCount
-        vec3RandomBox(v$b, this.warpMin, this.warpMax);
-        if (this.scaleControlPointNumber != -1) {
-            const scaleCp = this.system.getControlPoint(this.scaleControlPointNumber);
+        vec3RandomBox(v$b, this.#warpMin, this.#warpMax);
+        if (this.#scaleControlPointNumber != -1) {
+            const scaleCp = this.system.getControlPoint(this.#scaleControlPointNumber);
             if (scaleCp) {
                 vec3.mul(v$b, v$b, scaleCp._position); //Not sure if it's position or world position
             }
         }
-        if (this.radiusComponent != -1) {
-            particle.radius *= v$b[this.radiusComponent];
+        if (this.#radiusComponent != -1) {
+            particle.radius *= v$b[this.#radiusComponent] ?? 1;
         }
         vec3.mul(particle.position, particle.position, v$b);
         vec3.mul(particle.prevPosition, particle.prevPosition, v$b);
-        if (this.prevPosScale != -1) {
-            vec3.scale(particle.prevPosition, particle.prevPosition, this.prevPosScale);
+        if (this.#prevPosScale != -1) {
+            vec3.scale(particle.prevPosition, particle.prevPosition, this.#prevPosScale);
         }
     }
 }
@@ -60415,13 +60926,6 @@ class RadiusFromCPObject extends Operator {
     }
 }
 RegisterSource2ParticleOperator('C_INIT_RadiusFromCPObject', RadiusFromCPObject);
-
-class SequenceLifeTime extends Operator {
-    doInit(particles, elapsedTime) {
-        //TODOv3
-    }
-}
-RegisterSource2ParticleOperator('C_INIT_SequenceLifeTime', SequenceLifeTime);
 
 class RandomAlpha extends Operator {
     alphaMin = 255;
@@ -60452,16 +60956,20 @@ class RandomAlpha extends Operator {
 RegisterSource2ParticleOperator('C_INIT_RandomAlpha', RandomAlpha);
 
 const randomColorTempVec4 = vec4.create();
+const DEFAULT_UPDATE_THRESHOLD = 32; // TODO: check default value
+const DEFAULT_TINT_CP = 0; // TODO: check default value
+const DEFAULT_LIGHT_AMPLIFICATION = 1; // TODO: check default value
+const DEFAULT_TINT_PERC = 0; // TODO: check default value
 class RandomColor extends Operator {
-    #colorMin = vec4.fromValues(1, 1, 1, 1);
-    #colorMax = vec4.fromValues(1, 1, 1, 1);
-    tintMin = vec3.fromValues(0, 0, 0);
-    tintMax = vec3.fromValues(1, 1, 1);
-    updateThreshold = 32;
-    tintCP = 0;
-    tintBlendMode = null;
-    lightAmplification = 1;
-    tintPerc = 0;
+    #colorMin = vec4.fromValues(1, 1, 1, 1); // TODO: check default value
+    #colorMax = vec4.fromValues(1, 1, 1, 1); // TODO: check default value
+    #tintMin = vec3.fromValues(0, 0, 0); // TODO: check default value
+    #tintMax = vec3.fromValues(1, 1, 1); // TODO: check default value
+    #updateThreshold = DEFAULT_UPDATE_THRESHOLD;
+    #tintCP = DEFAULT_TINT_CP;
+    #tintBlendMode = null;
+    #lightAmplification = DEFAULT_LIGHT_AMPLIFICATION;
+    #tintPerc = DEFAULT_TINT_PERC;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_ColorMin':
@@ -60478,31 +60986,30 @@ class RandomColor extends Operator {
                 break;
             case 'm_TintMin':
                 console.error('do this param', paramName, param);
-                vec3.set(this.tintMin, Number(param[0]) / 255, Number(param[1]) / 255, Number(param[2]) / 255);
+                vec3.set(this.#tintMin, Number(param[0]) / 255, Number(param[1]) / 255, Number(param[2]) / 255);
                 break;
             case 'm_TintMax':
-                console.error('do this param', paramName, param);
-                vec3.set(this.tintMax, Number(param[0]) / 255, Number(param[1]) / 255, Number(param[2]) / 255);
+                if (param.getValueAsVec3(this.#tintMax)) {
+                    vec3.scale(this.#tintMax, this.#tintMax, 1 / 255);
+                }
                 break;
             case 'm_flUpdateThreshold':
-                console.error('do this param', paramName, param);
-                this.updateThreshold = param;
+                this.#updateThreshold = param.getValueAsNumber() ?? DEFAULT_UPDATE_THRESHOLD;
                 break;
             case 'm_nTintCP':
                 console.error('do this param', paramName, param);
-                this.tintCP = param;
+                this.#tintCP = param;
                 break;
             case 'm_nTintBlendMode':
                 console.error('do this param', paramName, param);
-                this.tintBlendMode = param;
+                this.#tintBlendMode = param;
                 break;
             case 'm_flLightAmplification':
-                console.error('do this param', paramName, param);
-                this.lightAmplification = param;
+                this.#lightAmplification = param.getValueAsNumber() ?? DEFAULT_LIGHT_AMPLIFICATION;
                 break;
             case 'm_flTintPerc':
                 console.error('do this param', paramName, param);
-                this.tintPerc = param;
+                this.#tintPerc = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -60672,23 +61179,25 @@ class RandomScalar extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_RandomScalar', RandomScalar);
 
+const DEFAULT_SEQUENCE_MIN = 0; // TODO: check default value
+const DEFAULT_SEQUENCE_MAX = 0; // TODO: check default value
 class RandomSecondSequence extends Operator {
-    sequenceMin = 0;
-    sequenceMax = 0;
+    #sequenceMin = DEFAULT_SEQUENCE_MIN;
+    #sequenceMax = DEFAULT_SEQUENCE_MAX;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nSequenceMin':
-                this.sequenceMin = (param);
+                this.#sequenceMin = param.getValueAsNumber() ?? DEFAULT_SEQUENCE_MIN;
                 break;
             case 'm_nSequenceMax':
-                this.sequenceMax = (param);
+                this.#sequenceMax = param.getValueAsNumber() ?? DEFAULT_SEQUENCE_MAX;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
-        particle.sequence2 = Math.round((this.sequenceMax - this.sequenceMin) * Math.random()) + this.sequenceMin;
+    doInit(particle, elapsedTime, strength) {
+        particle.sequence2 = Math.round((this.#sequenceMax - this.#sequenceMin) * Math.random()) + this.#sequenceMin;
     }
 }
 RegisterSource2ParticleOperator('C_INIT_RandomSecondSequence', RandomSecondSequence);
@@ -60802,13 +61311,13 @@ class RandomYaw extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_RandomYaw', RandomYaw);
 
+const DEFAULT_PERCENT = 0.5; // TODO: check default value
 class RandomYawFlip extends Operator {
-    #percent = 0.5;
+    #percent = DEFAULT_PERCENT;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flPercent':
-                console.error('do this param', paramName, param);
-                this.#percent = (param);
+                this.#percent = param.getValueAsNumber() ?? DEFAULT_PERCENT;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -60823,8 +61332,9 @@ class RandomYawFlip extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_RandomYawFlip', RandomYawFlip);
 
+const DEFAULT_CP_INPUT$3 = 0; // TODO: check default value
 let RemapCPtoScalar$1 = class RemapCPtoScalar extends Operator {
-    cpInput = 0;
+    #cpInput = DEFAULT_CP_INPUT$3;
     field = 0; //X
     inputMin = 0;
     inputMax = 1;
@@ -60839,36 +61349,46 @@ let RemapCPtoScalar$1 = class RemapCPtoScalar extends Operator {
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nCPInput':
-                this.cpInput = (param);
+                this.#cpInput = param.getValueAsNumber() ?? DEFAULT_CP_INPUT$3;
                 break;
             case 'm_nField':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.field = (param); //TODO: check [0, 1, 2]
                 break;
             case 'm_flInputMin':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.inputMin = param;
                 break;
             case 'm_flInputMax':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.inputMax = param;
                 break;
             case 'm_flOutputMin':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.outputMin = param;
                 break;
             case 'm_flOutputMax':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.outputMax = param;
                 break;
             case 'm_flStartTime':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.startTime = param;
                 break;
             case 'm_flEndTime':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.endTime = param;
                 break;
             case 'm_nSetMethod':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.setMethod = param;
                 break;
             case 'm_flRemapBias':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.remapBias = param;
                 break;
             case 'm_bScaleInitialRange':
+                console.error('do this param', paramName, param, this.constructor.name);
                 this.scaleInitialRange = param;
                 break;
             default:
@@ -60876,8 +61396,8 @@ let RemapCPtoScalar$1 = class RemapCPtoScalar extends Operator {
         }
     }
     doInit(particle, elapsedTime, strength) {
-        const cpInputPos = this.system.getControlPoint(this.cpInput).currentWorldPosition;
-        let value = cpInputPos[this.field];
+        const cpInputPos = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
+        let value = cpInputPos[this.field] ?? 0;
         value = RemapValClampedBias(value, this.inputMin, this.inputMax, this.outputMin, this.outputMax, this.remapBias);
         const scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
         if (scaleInitial) {
@@ -60893,76 +61413,96 @@ RegisterSource2ParticleOperator('C_INIT_RemapCPtoScalar', RemapCPtoScalar$1);
 
 const v$a = vec3.create();
 const v1 = vec3.fromValues(1, 1, 1);
+const DEFAULT_CP_INPUT$2 = 0; // TODO: check default value
+const DEFAULT_START_TIME$1 = -1; // TODO: check default value
+const DEFAULT_END_TIME$1 = -1; // TODO: check default value
+const DEFAULT_SET_METHOD$4 = 'PARTICLE_SET_SCALE_INITIAL_VALUE'; // TODO: check default value
+const DEFAULT_OFFSET$2 = false; // TODO: check default value
+const DEFAULT_ACCELERATE = false; // TODO: check default value
+const DEFAULT_LOCAL_SPACE_CP = -1; // TODO: check default value
+const DEFAULT_REMAP_BIAS = 0.5; // TODO: check default value
+const DEFAULT_SCALE_INITIAL_RANGE$1 = false; // TODO: check default value
+const DEFAULT_FIELD_OUTPUT$3 = PARTICLE_FIELD_POSITION; // TODO: check default value
 class RemapCPtoVector extends Operator {
-    cpInput = 0;
-    inputMin = vec3.create();
-    inputMax = vec3.create();
-    outputMin = vec3.create();
-    outputMax = vec3.create();
-    startTime = -1;
-    endTime = -1;
-    setMethod = null;
-    offset = false;
-    accelerate = false;
-    localSpaceCP = -1;
-    remapBias = 0.5;
-    scaleInitialRange; // TODO: search default value
-    #fieldOutput = PARTICLE_FIELD_POSITION;
+    #cpInput = DEFAULT_CP_INPUT$2;
+    #inputMin = vec3.create(); // TODO: check default value
+    #inputMax = vec3.create(); // TODO: check default value
+    #outputMin = vec3.create(); // TODO: check default value
+    #outputMax = vec3.create(); // TODO: check default value
+    #startTime = DEFAULT_START_TIME$1;
+    #endTime = DEFAULT_END_TIME$1;
+    #setMethod = DEFAULT_SET_METHOD$4;
+    #offset = DEFAULT_OFFSET$2;
+    #accelerate = DEFAULT_ACCELERATE;
+    #localSpaceCP = DEFAULT_LOCAL_SPACE_CP;
+    #remapBias = DEFAULT_REMAP_BIAS;
+    #scaleInitialRange = DEFAULT_SCALE_INITIAL_RANGE$1; // TODO: search default value
+    #fieldOutput = DEFAULT_FIELD_OUTPUT$3;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nCPInput':
-                this.cpInput = (param);
+                this.#cpInput = param.getValueAsNumber() ?? DEFAULT_CP_INPUT$2;
                 break;
             case 'm_vInputMin':
-                vec3.copy(this.inputMin, param);
+                console.error('do this param', paramName, param);
+                vec3.copy(this.#inputMin, param);
                 break;
             case 'm_vInputMax':
-                vec3.copy(this.inputMax, param);
+                param.getValueAsVec3(this.#inputMax);
                 break;
             case 'm_vOutputMin':
-                vec3.copy(this.outputMin, param);
+                console.error('do this param', paramName, param);
+                vec3.copy(this.#outputMin, param);
                 break;
             case 'm_vOutputMax':
-                vec3.copy(this.outputMax, param);
+                param.getValueAsVec3(this.#outputMax);
                 break;
             case 'm_flStartTime':
-                this.startTime = param;
+                console.error('do this param', paramName, param);
+                this.#startTime = param;
                 break;
             case 'm_flEndTime':
-                this.endTime = param;
+                console.error('do this param', paramName, param);
+                this.#endTime = param;
                 break;
             case 'm_nSetMethod':
-                this.setMethod = param;
+                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD$4;
                 break;
             case 'm_bOffset':
-                this.offset = param;
+                console.error('do this param', paramName, param);
+                this.#offset = param;
                 break;
             case 'm_bAccelerate':
-                this.accelerate = param;
+                console.error('do this param', paramName, param);
+                this.#accelerate = param;
                 break;
             case 'm_nLocalSpaceCP':
-                this.localSpaceCP = (param);
+                console.error('do this param', paramName, param);
+                this.#localSpaceCP = (param);
                 break;
             case 'm_flRemapBias':
-                this.remapBias = param;
+                console.error('do this param', paramName, param);
+                this.#remapBias = param;
                 break;
             case 'm_bScaleInitialRange':
-                this.scaleInitialRange = param;
+                console.error('do this param', paramName, param);
+                this.#scaleInitialRange = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
     doInit(particle, elapsedTime, strength) {
-        const inputMin = this.inputMin;
-        const inputMax = this.inputMax;
-        const outputMin = this.outputMin;
-        const outputMax = this.outputMax;
-        const input = this.system.getControlPoint(this.cpInput).currentWorldPosition;
-        v$a[0] = RemapValClampedBias(input[0], inputMin[0], inputMax[0], outputMin[0], outputMax[0], this.remapBias);
-        v$a[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.remapBias);
-        v$a[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.remapBias);
-        const scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
+        //TODO: use missing parameters
+        const inputMin = this.#inputMin;
+        const inputMax = this.#inputMax;
+        const outputMin = this.#outputMin;
+        const outputMax = this.#outputMax;
+        const input = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
+        v$a[0] = RemapValClampedBias(input[0], inputMin[0], inputMax[0], outputMin[0], outputMax[0], this.#remapBias);
+        v$a[1] = RemapValClampedBias(input[1], inputMin[1], inputMax[1], outputMin[1], outputMax[1], this.#remapBias);
+        v$a[2] = RemapValClampedBias(input[2], inputMin[2], inputMax[2], outputMin[2], outputMax[2], this.#remapBias);
+        const scaleInitial = this.#scaleInitialRange || this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
         if (scaleInitial) {
             vec3.lerp(v$a, v1, v$a, strength);
         }
@@ -61043,9 +61583,11 @@ RegisterSource2ParticleOperator('C_INIT_RemapParticleCountToScalar', RemapPartic
 
 const va$1 = vec3.create();
 const o = vec3.create();
+const DEFAULT_EVEN_DISTRIBUTION = false; // TODO: check default value
+const DEFAULT_XY_VELOCITY_ONLY = true; // TODO: check default value
 class RingWave extends Operator {
-    evenDistribution = false;
-    xyVelocityOnly = true;
+    #evenDistribution = DEFAULT_EVEN_DISTRIBUTION;
+    #xyVelocityOnly = DEFAULT_XY_VELOCITY_ONLY;
     t = 0;
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -61059,16 +61601,16 @@ class RingWave extends Operator {
             case 'm_flYaw':
                 break;
             case 'm_bEvenDistribution':
-                this.evenDistribution = param;
+                this.#evenDistribution = param.getValueAsBool() ?? DEFAULT_EVEN_DISTRIBUTION;
                 break;
             case 'm_bXYVelocityOnly':
-                this.xyVelocityOnly = param;
+                this.#xyVelocityOnly = param.getValueAsBool() ?? DEFAULT_XY_VELOCITY_ONLY;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
+    doInit(particle, elapsedTime, strength) {
         //TODO: use all parameters
         const particlesPerOrbit = this.getParamScalarValue('m_flParticlesPerOrbit') ?? -1; //even distribution count
         const initialRadius = this.getParamScalarValue('m_flInitialRadius') ?? 0;
@@ -61079,7 +61621,7 @@ class RingWave extends Operator {
         const pitch = this.getParamScalarValue('m_flPitch') ?? 0;
         const yaw = this.getParamScalarValue('m_flYaw') ?? 0;
         let theta;
-        if (this.evenDistribution) {
+        if (this.#evenDistribution) {
             const step = particlesPerOrbit == -1 ? TWO_PI / this.system.livingParticles.length : TWO_PI / particlesPerOrbit;
             this.t += step;
             theta = this.t;
@@ -61107,11 +61649,18 @@ class RingWave extends Operator {
 }
 RegisterSource2ParticleOperator('C_INIT_RingWave', RingWave);
 
+class SequenceLifeTime extends Operator {
+    doInit(particle, elapsedTime, strength) {
+        //TODO: I don't know what to do
+    }
+}
+RegisterSource2ParticleOperator('C_INIT_SequenceLifeTime', SequenceLifeTime);
+
 const v$9 = vec3.create();
 class SetRigidAttachment extends Operator {
     localSpace = true;
     #fieldOutput = PARTICLE_FIELD_POSITION_PREVIOUS;
-    fieldInput = PARTICLE_FIELD_POSITION;
+    #fieldInput = PARTICLE_FIELD_POSITION;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_bLocalSpace':
@@ -61126,7 +61675,7 @@ class SetRigidAttachment extends Operator {
         if (!this.localSpace) {
             throw 'code me';
         }
-        vec3.sub(v$9, particle.getField(this.fieldInput), this.system.getControlPoint(this.controlPointNumber).currentWorldPosition);
+        vec3.sub(v$9, particle.getField(this.#fieldInput), this.system.getControlPoint(this.controlPointNumber).currentWorldPosition);
         particle.setField(this.#fieldOutput, v$9);
     }
 }
@@ -61135,25 +61684,30 @@ RegisterSource2ParticleOperator('C_INIT_SetRigidAttachment', SetRigidAttachment)
 const DEFAULT_SPEED = vec3.create();
 const randomVector = vec3.create();
 const tempVec3$2 = vec3.create();
+const velocityRandomTempVec4_0 = vec4.create();
+const velocityRandomTempVec4_1 = vec4.create();
+const DEFAULT_IGNORE_DT$1 = false; // TODO: check default value
 class VelocityRandom extends Operator {
-    ignoreDT = false;
+    #ignoreDT = DEFAULT_IGNORE_DT$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_LocalCoordinateSystemSpeedMin':
             case 'm_LocalCoordinateSystemSpeedMax':
             case 'm_fSpeedMin':
             case 'm_fSpeedMax':
+                // used in doInit
                 break;
             case 'm_bIgnoreDT':
-                this.ignoreDT = param;
+                console.error('do this param', paramName, param, this.constructor.name);
+                this.#ignoreDT = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doInit(particle, elapsedTime) {
-        const localCoordinateSystemSpeedMin = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMin') ?? DEFAULT_SPEED;
-        const localCoordinateSystemSpeedMax = this.getParamVectorValue('m_LocalCoordinateSystemSpeedMax') ?? DEFAULT_SPEED;
+    doInit(particle, elapsedTime, strength) {
+        const localCoordinateSystemSpeedMin = this.getParamVectorValue(velocityRandomTempVec4_0, 'm_LocalCoordinateSystemSpeedMin', particle) ?? DEFAULT_SPEED;
+        const localCoordinateSystemSpeedMax = this.getParamVectorValue(velocityRandomTempVec4_1, 'm_LocalCoordinateSystemSpeedMax', particle) ?? DEFAULT_SPEED;
         const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
         const speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
         const randomSpeed = (speedMax - speedMin) * Math.random() + speedMin;
@@ -61172,7 +61726,7 @@ class VelocityRandom extends Operator {
         if (cp) {
             vec3.transformQuat(randomVector, randomVector, cp.getWorldQuaternion());
         }
-        if (!this.ignoreDT) {
+        if (!this.#ignoreDT) {
             vec3.scale(randomVector, randomVector, -elapsedTime);
         }
         vec3.add(particle.prevPosition, particle.prevPosition, randomVector);
@@ -61224,18 +61778,70 @@ class BasicMovement extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_BasicMovement', BasicMovement);
 
+/*
+const DEFAULT_IGNORE_DELTA = false;// TODO: check default value
+const DEFAULT_INPUT_MIN = 0;// TODO: check default value
+const DEFAULT_INPUT_MAX = 1;// TODO: check default value
+const DEFAULT_SET_METHOD = 'PARTICLE_SET_SCALE_CURRENT_VALUE';// TODO: check default value
+*/
+const DEFAULT_OUTPUT_MIN$4 = 0;
+const DEFAULT_OUTPUT_MAX$4 = 1;
+class ClampScalar extends Operator {
+    #outputMin = DEFAULT_OUTPUT_MIN$4;
+    #outputMax = DEFAULT_OUTPUT_MAX$4;
+    /*
+    #ignoreDelta = DEFAULT_IGNORE_DELTA;
+    #inputMin = DEFAULT_INPUT_MIN;
+    #inputMax = DEFAULT_INPUT_MAX;
+    #setMethod = DEFAULT_SET_METHOD;
+    */
+    _paramChanged(paramName, param) {
+        switch (paramName) {
+            case 'm_flOutputMin': //TODO: mutualize
+                this.#outputMin = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN$4;
+                break;
+            case 'm_flOutputMax': //TODO: mutualize
+                this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX$4;
+                break;
+            /*
+            case 'm_bIgnoreDelta':
+                this.#ignoreDelta = param.getValueAsBool() ?? DEFAULT_IGNORE_DELTA;
+                break;
+            case 'm_flInputMin':
+                this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MIN;
+                break;
+            case 'm_flInputMax':
+                this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
+                break;
+            case 'm_nSetMethod':
+                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
+                break;
+                */
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
+    doOperate(particle, elapsedTime, strength) {
+        //TODO
+    }
+}
+RegisterSource2ParticleOperator('C_OP_ClampScalar', ClampScalar);
+
 const colorInterpolateTempVec4 = vec4.create();
+const DEFAULT_FADE_START_TIME = 0; // TODO: check default value
+const DEFAULT_FADE_END_TIME = 1; // TODO: check default value
+const DEFAULT_EASE_IN_AND_OUT = false; // TODO: check default value
 class ColorInterpolate extends Operator {
-    #colorFade = vec4.fromValues(1, 1, 1, 1);
-    #fadeStartTime = 0;
-    #fadeEndTime = 1;
-    #easeInAndOut = false;
-    #invTime = 1;
+    #colorFade = vec4.fromValues(1, 1, 1, 1); // TODO: check default value
+    #fadeStartTime = DEFAULT_FADE_START_TIME;
+    #fadeEndTime = DEFAULT_FADE_END_TIME;
+    #easeInAndOut = DEFAULT_EASE_IN_AND_OUT;
+    #invTime = 1; //computed
     constructor(system) {
         super(system);
-        this._update();
+        this.#update();
     }
-    _update() {
+    #update() {
         this.#invTime = 1.0 / (this.#fadeEndTime - this.#fadeStartTime);
     }
     _paramChanged(paramName, param) {
@@ -61246,27 +61852,23 @@ class ColorInterpolate extends Operator {
                 }
                 break;
             case 'm_flFadeStartTime':
-                this.#fadeStartTime = param.getValueAsNumber() ?? 0;
-                this._update();
+                this.#fadeStartTime = param.getValueAsNumber() ?? DEFAULT_FADE_START_TIME;
+                this.#update();
                 break;
             case 'm_flFadeEndTime':
-                this.#fadeEndTime = param.getValueAsNumber() ?? 1;
-                this._update();
+                this.#fadeEndTime = param.getValueAsNumber() ?? DEFAULT_FADE_END_TIME;
+                this.#update();
                 break;
-            case 'm_bEaseInAndOut':
-                console.error('do this param', paramName, param);
-                this.#easeInAndOut = param;
-                break;
-            case 'm_bEaseInOut':
-                console.error('do this param', paramName, param);
-                this.#easeInAndOut = param;
+            case 'm_bEaseInAndOut': //TODO: check thoses params m_bEaseInAndOut and m_bEaseInOut
+                //case 'm_bEaseInOut':
+                this.#easeInAndOut = param.getValueAsBool() ?? DEFAULT_EASE_IN_AND_OUT;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
     doOperate(particle, elapsedTime, strength) {
-        vec3.clone(particle.initialColor);
+        vec3.clone(particle.initialColor); //TODO: optimize
         const proportionOfLife = Math.min(particle.currentTime / particle.timeToLive, 1.0);
         if (proportionOfLife < this.#fadeStartTime) {
             return;
@@ -61282,29 +61884,32 @@ class ColorInterpolate extends Operator {
 RegisterSource2ParticleOperator('C_OP_ColorInterpolate', ColorInterpolate);
 
 const v$8 = vec3.create();
+const DEFAULT_RANGE$1 = 100; // TODO: check default value
+const DEFAULT_SCALE$1 = 100; // TODO: check default value
 class DampenToCP extends Operator {
-    range = 100;
-    scale = 1;
+    #range = DEFAULT_RANGE$1;
+    #scale = DEFAULT_SCALE$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flRange':
-                this.range = param;
+                this.#range = param.getValueAsNumber() ?? DEFAULT_RANGE$1;
                 break;
             case 'm_flScale':
-                this.scale = param;
+                this.#scale = param.getValueAsNumber() ?? DEFAULT_SCALE$1;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
+        // TODO: use m_flScale
         const cp = this.system.getControlPoint(this.controlPointNumber);
         const distance = vec3.distance(particle.position, cp.currentWorldPosition);
-        if (distance > this.range) {
+        if (distance > this.#range) {
             return;
         }
         else {
-            const dampenAmount = distance / this.range;
+            const dampenAmount = distance / this.#range;
             vec3.sub(v$8, particle.position, particle.prevPosition);
             vec3.scale(v$8, v$8, dampenAmount);
             vec3.add(particle.position, particle.prevPosition, v$8);
@@ -61314,97 +61919,107 @@ class DampenToCP extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_DampenToCP', DampenToCP);
 
+const DEFAULT_START_CP$1 = 0; // TODO: check default value
+const DEFAULT_END_CP = 1; // TODO: check default value
+const DEFAULT_MAX_TRACE_LENGTH$2 = -1; // TODO: check default value
+const DEFAULT_LOS$1 = false; // TODO: check default value
+const DEFAULT_LOS_SCALE$1 = 0; // TODO: check default value
+const DEFAULT_COLLISION_GROUP_NAME$2 = 'NONE'; // TODO: check default value
+const DEFAULT_SET_METHOD$3 = 'PARTICLE_SET_SCALE_INITIAL_VALUE'; // TODO: check default value//TODO: enum
 class DistanceBetweenCPs extends Operator {
-    #fieldOutput = PARTICLE_FIELD_RADIUS;
-    startCP = 0;
-    endCP = 1;
-    maxTraceLength = -1;
-    losScale = 0;
-    collisionGroupName = 'NONE';
-    los = false;
-    setMethod = null;
+    #startCP = DEFAULT_START_CP$1;
+    #endCP = DEFAULT_END_CP;
+    #maxTraceLength = DEFAULT_MAX_TRACE_LENGTH$2;
+    #los = false;
+    #losScale = DEFAULT_LOS_SCALE$1;
+    #collisionGroupName = DEFAULT_COLLISION_GROUP_NAME$2;
+    setMethod = DEFAULT_SET_METHOD$3;
     _paramChanged(paramName, param) {
         switch (paramName) {
-            case 'm_nStartCP':
-                this.startCP = (param);
+            case 'm_nStartCP': //TODO: mutualize
+                this.#startCP = param.getValueAsNumber() ?? DEFAULT_START_CP$1;
                 break;
-            case 'm_nEndCP':
-                this.endCP = (param);
+            case 'm_nEndCP': //TODO: mutualize
+                this.#endCP = param.getValueAsNumber() ?? DEFAULT_END_CP;
                 break;
             case 'm_flInputMin':
             case 'm_flInputMax':
             case 'm_flOutputMin':
             case 'm_flOutputMax':
+                //used in doOperate
                 break;
             case 'm_flMaxTraceLength':
-                this.maxTraceLength = param;
+                this.#maxTraceLength = param.getValueAsNumber() ?? DEFAULT_MAX_TRACE_LENGTH$2;
                 break;
             case 'm_flLOSScale':
-                this.losScale = param;
+                this.#losScale = param.getValueAsNumber() ?? DEFAULT_LOS_SCALE$1;
                 break;
             case 'm_CollisionGroupName':
-                this.collisionGroupName = param;
+                this.#collisionGroupName = param.getValueAsString() ?? DEFAULT_COLLISION_GROUP_NAME$2;
                 break;
             case 'm_bLOS':
-                this.los = param;
+                this.#los = param.getValueAsBool() ?? DEFAULT_LOS$1;
                 break;
             case 'm_nSetMethod':
-                this.setMethod = param;
+                this.setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD$3;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         const inputMin = this.getParamScalarValue('m_flInputMin') ?? 0;
         const inputMax = this.getParamScalarValue('m_flInputMax') ?? 128;
         const outputMin = this.getParamScalarValue('m_flOutputMin') ?? 0;
         const outputMax = this.getParamScalarValue('m_flOutputMax') ?? 1;
         //TODO: los and other parameters
-        const startCpPos = this.system.getControlPoint(this.startCP).currentWorldPosition;
-        const endCPPos = this.system.getControlPoint(this.endCP).currentWorldPosition;
+        const startCpPos = this.system.getControlPoint(this.#startCP).currentWorldPosition;
+        const endCPPos = this.system.getControlPoint(this.#endCP).currentWorldPosition;
         let value = vec3.distance(startCpPos, endCPPos);
         value = RemapValClamped(value, inputMin, inputMax, outputMin, outputMax);
-        particle.setField(this.#fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+        particle.setField(this.fieldOutput, value, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
     }
 }
 RegisterSource2ParticleOperator('C_OP_DistanceBetweenCPs', DistanceBetweenCPs);
 
-const vec$3 = vec3.create();
+const vec$2 = vec3.create();
+const DEFAULT_DISTANCE = 0; // TODO: check default value
+const DEFAULT_CULL_INSIDE = false; // TODO: check default value
 class DistanceCull extends Operator {
-    pointOffset = vec3.create();
-    distance = 0;
-    cullInside = false;
+    #pointOffset = vec3.create(); // TODO: check default value
+    #distance = DEFAULT_DISTANCE;
+    #cullInside = DEFAULT_CULL_INSIDE;
     _paramChanged(paramName, param) {
         switch (paramName) {
-            case 'm_nControlPoint':
-                this.controlPointNumber = (param);
+            case 'm_nControlPoint': // TODO: mutualize ?
+                this.controlPointNumber = param.getValueAsNumber() ?? DEFAULT_CONTROL_POINT_NUMBER;
                 break;
             case 'm_vecPointOffset':
-                vec3.copy(this.pointOffset, param);
+                param.getValueAsVec3(this.#pointOffset);
                 break;
             case 'm_flDistance':
-                this.distance = param;
+                this.#distance = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_bCullInside':
-                this.cullInside = param;
+                console.error('do this param', paramName, param);
+                this.#cullInside = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
-            const origin = cp.getWorldPosition(vec$3);
-            vec3.add(origin, origin, this.pointOffset);
-            if (this.cullInside) { //TODO: improve this
-                if (vec3.distance(particle.position, origin) < this.distance) {
+            const origin = cp.getWorldPosition(vec$2);
+            vec3.add(origin, origin, this.#pointOffset);
+            if (this.#cullInside) { //TODO: improve this
+                if (vec3.distance(particle.position, origin) < this.#distance) {
                     particle.die();
                 }
             }
             else {
-                if (vec3.distance(particle.position, origin) > this.distance) {
+                if (vec3.distance(particle.position, origin) > this.#distance) {
                     particle.die();
                 }
             }
@@ -61414,33 +62029,44 @@ class DistanceCull extends Operator {
 RegisterSource2ParticleOperator('C_OP_DistanceCull', DistanceCull);
 
 const DEFAULT_COMPONENT_SCALE = vec3.fromValues(1, 1, 1);
-const DEFAULT_INPUT_MAX = 128;
+const distanceToCPTempVec4 = vec4.create();
+const DEFAULT_INPUT_MIN$3 = 0; // TODO: check default value
+const DEFAULT_INPUT_MAX$3 = 128; // TODO: check default value
+const DEFAULT_OUTPUT_MIN$3 = 0; // TODO: check default value
+const DEFAULT_OUTPUT_MAX$3 = 128; // TODO: check default value
+const DEFAULT_LOS = true; // TODO: check default value
+const DEFAULT_LOS_SCALE = 0; // TODO: check default value
+const DEFAULT_COLLISION_GROUP_NAME$1 = ''; // TODO: check default value
+const DEFAULT_MAX_TRACE_LENGTH$1 = -1; // TODO: check default value
+const DEFAULT_ACTIVE_RANGE = false; // TODO: check default value
+const DEFAULT_ADDITIVE$1 = false; // TODO: check default value
+const DEFAULT_SCALE_INITIAL_RANGE = false; // TODO: check default value
+const DEFAULT_START_CP = 0; // TODO: check default value
 class DistanceToCP extends Operator {
-    #fieldOutput = PARTICLE_FIELD_RADIUS /*TODO: create enum*/;
-    inputMin = 0;
-    inputMax = DEFAULT_INPUT_MAX;
-    outputMin = 0;
-    outputMax = 1;
-    startCP = 0;
-    los = true;
-    collisionGroupName = '';
-    maxTraceLength = -1;
-    losScale = 0;
+    //#fieldOutput = PARTICLE_FIELD_RADIUS/*TODO: create enum*/;
+    #inputMin = DEFAULT_INPUT_MIN$3;
+    #inputMax = DEFAULT_INPUT_MAX$3;
+    #outputMin = DEFAULT_OUTPUT_MIN$3;
+    #outputMax = DEFAULT_OUTPUT_MAX$3;
+    #startCP = DEFAULT_START_CP;
+    #los = DEFAULT_LOS;
+    #collisionGroupName = DEFAULT_COLLISION_GROUP_NAME$1;
+    #maxTraceLength = DEFAULT_MAX_TRACE_LENGTH$1;
+    #losScale = DEFAULT_LOS_SCALE;
     #setMethod;
-    activeRange = false;
-    ;
-    additive = false;
-    scaleInitialRange = false;
-    outputMin1;
-    outputMax1;
-    _update() {
-        if (ATTRIBUTES_WHICH_ARE_0_TO_1 & (1 << this.#fieldOutput)) {
-            this.outputMin1 = clamp(this.outputMin, 0, 1);
-            this.outputMax1 = clamp(this.outputMax, 0, 1);
+    #activeRange = DEFAULT_ACTIVE_RANGE;
+    #additive = DEFAULT_ADDITIVE$1;
+    #scaleInitialRange = DEFAULT_SCALE_INITIAL_RANGE;
+    #outputMin1 = 0; // computed
+    #outputMax1 = 0; // computed
+    #update() {
+        if (ATTRIBUTES_WHICH_ARE_0_TO_1 & (1 << this.fieldOutput)) {
+            this.#outputMin1 = clamp(this.#outputMin, 0, 1);
+            this.#outputMax1 = clamp(this.#outputMax, 0, 1);
         }
         else {
-            this.outputMin1 = this.outputMin;
-            this.outputMax1 = this.outputMax;
+            this.#outputMin1 = this.#outputMin;
+            this.#outputMax1 = this.#outputMax;
         }
     }
     _paramChanged(paramName, param) {
@@ -61448,59 +62074,66 @@ class DistanceToCP extends Operator {
             case 'm_vecComponentScale':
                 throw `do this param ${paramName}`;
             case 'm_nFieldOutput':
-                this.#fieldOutput = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
-                this._update();
+                this.fieldOutput = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
+                this.#update();
                 break;
             case 'm_flInputMin':
-                this.inputMin = param.getValueAsNumber() ?? 0;
+                this.#inputMin = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_flInputMax':
-                this.inputMax = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
+                this.#inputMax = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX$3;
                 break;
             case 'm_flOutputMin':
-                this.outputMin = param.getValueAsNumber() ?? 0;
-                this._update();
+                this.#outputMin = param.getValueAsNumber() ?? 0;
+                this.#update();
                 break;
             case 'm_flOutputMax':
-                this.outputMax = param.getValueAsNumber() ?? 1;
-                this._update();
+                this.#outputMax = param.getValueAsNumber() ?? 1;
+                this.#update();
                 break;
             case 'm_nStartCP':
-                this.startCP = param.getValueAsNumber() ?? 0;
+                this.#startCP = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_bLOS':
-                throw `do this param ${paramName}`;
+                this.#los = param.getValueAsBool() ?? DEFAULT_LOS;
+                break;
             case 'm_CollisionGroupName':
-                throw `do this param ${paramName}`;
+                this.#collisionGroupName = param.getValueAsString() ?? DEFAULT_COLLISION_GROUP_NAME$1;
+                break;
             case 'm_flMaxTraceLength':
-                throw `do this param ${paramName}`;
+                this.#maxTraceLength = param.getValueAsNumber() ?? DEFAULT_MAX_TRACE_LENGTH$1;
+                break;
             case 'm_flLOSScale':
-                throw `do this param ${paramName}`;
+                this.#losScale = param.getValueAsNumber() ?? DEFAULT_LOS_SCALE;
+                break;
             case 'm_nSetMethod':
                 this.#setMethod = param.getValueAsString();
                 break;
             case 'm_bActiveRange':
-                throw `do this param ${paramName}`;
+                this.#activeRange = param.getValueAsBool() ?? DEFAULT_ACTIVE_RANGE;
+                break;
             case 'm_bAdditive':
-                throw `do this param ${paramName}`;
+                this.#additive = param.getValueAsBool() ?? DEFAULT_ADDITIVE$1;
+                break;
             case 'm_bScaleInitialRange':
-                throw `do this param ${paramName}`;
+                this.#scaleInitialRange = param.getValueAsBool() ?? DEFAULT_SCALE_INITIAL_RANGE;
+                break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime, flStrength = 1) {
+    doOperate(particle, elapsedTime, strength) {
         //TODO: use setMethod
-        this.getParamVectorValue('m_vecComponentScale') ?? DEFAULT_COMPONENT_SCALE;
-        const flMin = this.outputMin1;
-        const flMax = this.outputMax1;
+        this.getParamVectorValue(distanceToCPTempVec4, 'm_vecComponentScale', particle) ?? DEFAULT_COMPONENT_SCALE;
+        const flMin = this.#outputMin1;
+        const flMax = this.#outputMax1;
         /*if ( ATTRIBUTES_WHICH_ARE_0_TO_1 & ( 1 << m_nFieldOutput ) )
         {
             flMin = clamp(m_flOutputMin, 0.0f, 1.0f );
             flMax = clamp(m_flOutputMax, 0.0f, 1.0f );
         }*/
         //Vector vecControlPoint1 = pParticles->GetControlPointAtCurrentTime( m_nStartCP );
-        const vecControlPoint1 = this.system.getControlPointPosition(this.startCP);
+        const vecControlPoint1 = this.system.getControlPointPosition(this.#startCP);
         //let vecPosition2 = vec3.create();
         const vecDelta = vec3.create();
         const vecEndPoint = vec3.create();
@@ -61514,17 +62147,17 @@ class DistanceToCP extends Operator {
             //Vector vecDelta = vecControlPoint1 - vecPosition2;
             vec3.sub(vecDelta, vecControlPoint1, particle.position);
             const flDistance = vec3.length(vecDelta); //vecDelta.Length();
-            if (this.activeRange && (flDistance < this.inputMin || flDistance > this.inputMax)) {
+            if (this.#activeRange && (flDistance < this.#inputMin || flDistance > this.#inputMax)) {
                 return; //continue;
             }
-            if (this.los) {
+            if (this.#los) {
                 //Vector vecEndPoint = vecPosition2;
                 vec3.copy(vecEndPoint, particle.position);
-                if (this.maxTraceLength != -1.0 && this.maxTraceLength < flDistance) {
+                if (this.#maxTraceLength != -1.0 && this.#maxTraceLength < flDistance) {
                     //VectorNormalize(vecEndPoint);
                     vec3.normalize(vecEndPoint, vecEndPoint);
                     //vecEndPoint *= m_flMaxTraceLength;
-                    vec3.scale(vecEndPoint, vecEndPoint, this.maxTraceLength);
+                    vec3.scale(vecEndPoint, vecEndPoint, this.#maxTraceLength);
                     //vecEndPoint += vecControlPoint1;
                     vec3.add(vecEndPoint, vecEndPoint, vecControlPoint1);
                 }
@@ -61536,7 +62169,7 @@ class DistanceToCP extends Operator {
                 }*/
                 //TODO
             }
-            const flOutput = RemapValClamped(flDistance, this.inputMin, this.inputMax, flMin, flMax);
+            const flOutput = RemapValClamped(flDistance, this.#inputMin, this.#inputMax, flMin, flMax);
             /*if ( m_bScaleInitialRange )
             {
                 const float *pInitialOutput = pParticles->GetInitialFloatAttributePtr( m_nFieldOutput, i );
@@ -61544,10 +62177,10 @@ class DistanceToCP extends Operator {
             }*/
             //float *pOutput = pParticles->GetFloatAttributePtrForWrite( m_nFieldOutput, i );
             //TODO: use m_nSetMethod m_bActiveRange m_bAdditive m_bScaleInitialRange
-            let output = particle.getField(this.#fieldOutput);
+            let output = particle.getField(this.fieldOutput);
             //*pOutput = Lerp (flStrength, *pOutput, flOutput);
-            output = lerp(output, flOutput, flStrength);
-            particle.setField(this.#fieldOutput, output);
+            output = lerp(output, flOutput, strength);
+            particle.setField(this.fieldOutput, output);
             //float *pOutput = pParticles->GetFloatAttributePtrForWrite( m_nFieldOutput, i );
             //float flOutput = RemapValClamped( flDistance, m_flInputMin, m_flInputMax, flMin, flMax  );
             //*pOutput = Lerp (flStrength, *pOutput, flOutput);
@@ -61632,50 +62265,55 @@ class FadeAndKill extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_FadeAndKill', FadeAndKill);
 
+const DEFAULT_PROPORTIONAL$3 = true; // TODO: check default value
+const DEFAULT_FADE_IN_TIME_MIN = 0.25; // TODO: check default value
+const DEFAULT_FADE_IN_TIME_MAX = 0.25; // TODO: check default value
+const DEFAULT_FADE_IN_TIME_EXP = 1; // TODO: check default value
 class FadeIn extends Operator {
-    fadeInTimeMin = 0.25;
-    fadeInTimeMax = 0.25;
-    fadeInTimeExp = 1;
-    proportional = true;
-    fadeInTime;
-    invFadeInTime;
+    #fadeInTimeMin = DEFAULT_FADE_IN_TIME_MIN;
+    #fadeInTimeMax = DEFAULT_FADE_IN_TIME_MAX;
+    #fadeInTimeExp = DEFAULT_FADE_IN_TIME_EXP;
+    #proportional = DEFAULT_PROPORTIONAL$3;
+    #fadeInTime = 0;
+    #invFadeInTime = 0;
     constructor(system) {
         super(system);
-        this._update();
+        this.#update();
     }
-    _update() {
+    #update() {
         //TODO: this is wrong: must be done per particle
-        this.fadeInTime = RandomFloatExp(this.fadeInTimeMin, this.fadeInTimeMax, this.fadeInTimeExp);
-        this.invFadeInTime = 1.0 / this.fadeInTime;
+        this.#fadeInTime = RandomFloatExp(this.#fadeInTimeMin, this.#fadeInTimeMax, this.#fadeInTimeExp);
+        this.#invFadeInTime = 1.0 / this.#fadeInTime;
     }
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flFadeInTimeMin':
-                this.fadeInTimeMin = param;
-                this._update();
+                this.#fadeInTimeMin = param.getValueAsNumber() ?? DEFAULT_FADE_IN_TIME_MIN;
+                this.#update();
                 break;
             case 'm_flFadeInTimeMax':
-                this.fadeInTimeMax = param;
-                this._update();
+                this.#fadeInTimeMax = param.getValueAsNumber() ?? DEFAULT_FADE_IN_TIME_MAX;
+                this.#update();
                 break;
             case 'm_flFadeInTimeExp':
-                this.fadeInTimeExp = param;
-                this._update();
+                console.error('do this param', paramName, param, this.constructor.name);
+                this.#fadeInTimeExp = param;
+                this.#update();
                 break;
-            case 'm_bProportional':
-                this.proportional = param;
+            case 'm_bProportional': //TODO: mutualize
+                this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL$3;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
-        particle.alpha = SimpleSplineRemapValWithDeltasClamped(this.proportional ? particle.currentTime / particle.timeToLive : particle.currentTime, 0, this.fadeInTime, this.invFadeInTime, 0, particle.startAlpha);
+    doOperate(particle, elapsedTime, strength) {
+        particle.alpha = SimpleSplineRemapValWithDeltasClamped(this.#proportional ? particle.currentTime / particle.timeToLive : particle.currentTime, 0, this.#fadeInTime, this.#invFadeInTime, 0, particle.startAlpha);
     }
 }
 RegisterSource2ParticleOperator('C_OP_FadeIn', FadeIn);
 
-const DEFAULT_FADE_IN_TIME = 0.25;
+const DEFAULT_FADE_IN_TIME = 0.25; // TODO: check default value
 class FadeInSimple extends Operator {
     #fadeInTime = DEFAULT_FADE_IN_TIME;
     #invFadeInTime;
@@ -61704,19 +62342,23 @@ class FadeInSimple extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_FadeInSimple', FadeInSimple);
 
+const DEFAULT_FADE_OUT_TIME_MIN = 0.25; // TODO: check default value
+const DEFAULT_FADE_OUT_TIME_MAX = 0.25; // TODO: check default value
+const DEFAULT_FADE_OUT_TIME_EXP = 1; // TODO: check default value
+const DEFAULT_PROPORTIONAL$2 = true; // TODO: check default value
 class FadeOut extends Operator {
-    #fadeOutTimeMin = 0.25;
-    #fadeOutTimeMax = 0.25;
-    #fadeOutTimeExp = 1;
-    #proportional = true;
+    #fadeOutTimeMin = DEFAULT_FADE_OUT_TIME_MIN;
+    #fadeOutTimeMax = DEFAULT_FADE_OUT_TIME_MAX;
+    #fadeOutTimeExp = DEFAULT_FADE_OUT_TIME_EXP;
+    #proportional = DEFAULT_PROPORTIONAL$2;
     #fadeOutTime = 0;
     #startFadeOutTime = 0;
     #invFadeOutTime = 0;
     constructor(system) {
         super(system);
-        this._update();
+        this.#update();
     }
-    _update() {
+    #update() {
         //TODO: this is wrong: must be done per particle
         this.#fadeOutTime = RandomFloatExp(this.#fadeOutTimeMin, this.#fadeOutTimeMax, this.#fadeOutTimeExp);
         this.#startFadeOutTime = 1.0 - this.#fadeOutTime;
@@ -61725,25 +62367,26 @@ class FadeOut extends Operator {
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flFadeOutTimeMin':
-                this.#fadeOutTimeMin = param;
-                this._update();
+                this.#fadeOutTimeMin = param.getValueAsNumber() ?? DEFAULT_FADE_OUT_TIME_MIN;
+                this.#update();
                 break;
             case 'm_flFadeOutTimeMax':
-                this.#fadeOutTimeMax = param;
-                this._update();
+                this.#fadeOutTimeMax = param.getValueAsNumber() ?? DEFAULT_FADE_OUT_TIME_MAX;
+                this.#update();
                 break;
             case 'm_flFadeOutTimeExp':
+                console.error('do this param', paramName, param);
                 this.#fadeOutTimeExp = param;
-                this._update();
+                this.#update();
                 break;
-            case 'm_bProportional':
-                this.#proportional = param;
+            case 'm_bProportional': //TODO: mutualize
+                this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL$2;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         //particle.alpha = SimpleSplineRemapValWithDeltasClamped(this.proportional ? particle.currentTime / particle.timeToLive : particle.currentTime, 0, this.fadeInTime, this.invFadeInTime, 0, particle.startAlpha);
         particle.alpha = SimpleSplineRemapValWithDeltasClamped(this.#proportional ? particle.currentTime / particle.timeToLive : particle.currentTime, this.#startFadeOutTime, this.#fadeOutTime, this.#invFadeOutTime, particle.startAlpha, -particle.startAlpha);
         //TODO: if not proportional, set start time per particle
@@ -61781,14 +62424,14 @@ class FadeOutSimple extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_FadeOutSimple', FadeOutSimple);
 
-const DEFAULT_BIAS = 0.5;
+const DEFAULT_BIAS$1 = 0.5;
 class InterpolateRadius extends Operator {
     #startTime = 0;
     #endTime = 1;
     #startScale = 1;
     #endScale = 1;
     #easeInAndOut = false;
-    #bias = DEFAULT_BIAS;
+    #bias = DEFAULT_BIAS$1;
     #invTime = 1;
     #biasParam = 1;
     #scaleWidth = 0;
@@ -61823,7 +62466,7 @@ class InterpolateRadius extends Operator {
                 this.#easeInAndOut = param.getValueAsBool() ?? false;
                 break;
             case 'm_flBias':
-                this.#bias = param.getValueAsNumber() ?? DEFAULT_BIAS;
+                this.#bias = param.getValueAsNumber() ?? DEFAULT_BIAS$1;
                 this._update();
                 break;
             default:
@@ -61859,6 +62502,29 @@ class InterpolateRadius extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_InterpolateRadius', InterpolateRadius);
 
+const DEFAULT_OUTPUT = 0; // TODO: check default value
+const DEFAULT_LERP_TIME = 0; // TODO: check default value
+class LerpEndCapScalar extends Operator {
+    #output = DEFAULT_OUTPUT;
+    #lerpTime = DEFAULT_OUTPUT;
+    _paramChanged(paramName, param) {
+        switch (paramName) {
+            case 'm_flOutput':
+                this.#output = param.getValueAsNumber() ?? DEFAULT_OUTPUT;
+                break;
+            case 'm_flLerpTime':
+                this.#lerpTime = param.getValueAsNumber() ?? DEFAULT_LERP_TIME;
+                break;
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
+    doOperate(particle, elapsedTime, strength) {
+        //TODO
+    }
+}
+RegisterSource2ParticleOperator('C_OP_LerpEndCapScalar', LerpEndCapScalar);
+
 class LifespanDecay extends Operator {
     doOperate(particle, elapsedTime, strength) {
         if (particle.timeToLive < particle.currentTime) {
@@ -61868,13 +62534,142 @@ class LifespanDecay extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_Decay', LifespanDecay);
 
+vec3.create();
+vec3.create();
+//const tempQuat = quat.create();
+vec3.create();
+const DEFAULT_JUMP_THRESHOLD = 512; // TODO: check default value
+const DEFAULT_RANGE = 0; // TODO: check default value
+const DEFAULT_START_TIME_MIN$3 = 1; // TODO: check default value
+const DEFAULT_START_TIME_MAX$3 = 1; // TODO: check default value
+const DEFAULT_START_TIME_EXP = 1; // TODO: check default value
+const DEFAULT_END_TIME_MIN$3 = 1; // TODO: check default value
+const DEFAULT_END_TIME_MAX$3 = 1; // TODO: check default value
+const DEFAULT_END_TIME_EXP = 1; // TODO: check default value
+const DEFAULT_PREV_POS_SCALE$1 = 1; // TODO: check default value
+const DEFAULT_LOCK_ROT = false; // TODO: check default value
+const DEFAULT_START_FADE_OUT_TIME = 0; // TODO: check default value
+const DEFAULT_END_FADE_OUT_TIME = 0; // TODO: check default value
+class PositionLock extends Operator {
+    #startTimeMin = DEFAULT_START_TIME_MIN$3;
+    #startTimeMax = DEFAULT_START_TIME_MAX$3;
+    #startTimeExp = DEFAULT_START_TIME_EXP;
+    #endTimeMin = DEFAULT_END_TIME_MIN$3;
+    #endTimeMax = DEFAULT_END_TIME_MAX$3;
+    #endTimeExp = DEFAULT_END_TIME_EXP;
+    #range = DEFAULT_RANGE;
+    #jumpThreshold = DEFAULT_JUMP_THRESHOLD;
+    #prevPosScale = DEFAULT_PREV_POS_SCALE$1;
+    #lockRot = DEFAULT_LOCK_ROT;
+    #startFadeOutTime = DEFAULT_START_FADE_OUT_TIME;
+    #endFadeOutTime = DEFAULT_END_FADE_OUT_TIME;
+    constructor(system) {
+        super(system);
+        this.#update();
+    }
+    #update() {
+        //TODO: this is wrong: must be done per particle
+        this.#startFadeOutTime = RandomFloatExp(this.#startTimeMin, this.#startTimeMax, this.#startTimeExp);
+        this.#endFadeOutTime = RandomFloatExp(this.#endTimeMin, this.#endTimeMax, this.#endTimeExp);
+    }
+    _paramChanged(paramName, param) {
+        switch (paramName) {
+            case 'm_flStartTime_min':
+                this.#startTimeMin = param.getValueAsNumber() ?? DEFAULT_START_TIME_MIN$3;
+                this.#update();
+                break;
+            case 'm_flStartTime_max':
+                this.#startTimeMax = param.getValueAsNumber() ?? DEFAULT_START_TIME_MAX$3;
+                this.#update();
+                break;
+            case 'm_flStartTime_exp':
+                this.#startTimeExp = param.getValueAsNumber() ?? DEFAULT_START_TIME_EXP;
+                this.#update();
+                break;
+            case 'm_flEndTime_min':
+                this.#endTimeMin = param.getValueAsNumber() ?? DEFAULT_END_TIME_MIN$3;
+                this.#update();
+                break;
+            case 'm_flEndTime_max':
+                this.#endTimeMax = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX$3;
+                this.#update();
+                break;
+            case 'm_flEndTime_exp':
+                this.#endTimeExp = param.getValueAsNumber() ?? DEFAULT_END_TIME_EXP;
+                this.#update();
+                break;
+            case 'm_flRange': // TODO: mutualize ?
+                this.#range = param.getValueAsNumber() ?? DEFAULT_RANGE;
+                break;
+            case 'm_flJumpThreshold': // TODO: mutualize ?
+                this.#jumpThreshold = param.getValueAsNumber() ?? DEFAULT_JUMP_THRESHOLD;
+                break;
+            case 'm_flPrevPosScale':
+                console.error('do this param', paramName, param);
+                this.#prevPosScale = param;
+                break;
+            case 'm_bLockRot':
+                this.#lockRot = param.getValueAsBool() ?? false;
+                break;
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
+    doOperate(particle, elapsedTime, strength) {
+        // TODO: use jumpThreshold
+        const proportionOfLife = clamp(particle.proportionOfLife, 0, 1);
+        if (proportionOfLife > this.#endFadeOutTime) {
+            return;
+        }
+        const cp = this.system.getControlPoint(this.controlPointNumber);
+        if (cp) {
+            let delta;
+            /*	if (!particle.initialCPPosition) {
+                    particle.initialCPPosition = vec3.clone(cp.getWorldPosition(vec));
+                } else {
+                    vec3.copy(particle.initialCPPosition, particle.cpPosition);
+                }
+
+                particle.cpPosition = vec3.clone(cp.getWorldPosition(vec));
+
+                let delta = vec3.subtract(vec3.create(), particle.cpPosition, particle.initialCPPosition);
+
+                const deltaL = vec3.length(delta);
+                particle.deltaL = particle.deltaL ?? 0;
+                particle.deltaL += deltaL;
+
+                //console.log(deltaL);
+                if (this.range != 0 && particle.deltaL > this.range) {
+                    particle.posLockedToCP = -1;
+                }*/
+            //TODO: use m_flRange and other parameters
+            if (this.#lockRot) {
+                delta = cp.deltaWorldTransformation;
+                vec3.transformMat4(particle.position, particle.position, delta);
+                vec3.transformMat4(particle.prevPosition, particle.prevPosition, delta);
+                //TODO: do LockStrength
+            }
+            else {
+                delta = cp.deltaWorldPosition;
+                vec3.add(particle.position, particle.position, delta);
+                vec3.add(particle.prevPosition, particle.prevPosition, delta);
+            }
+        }
+    }
+}
+RegisterSource2ParticleOperator('C_OP_PositionLock', PositionLock);
+
+const DEFAULT_LIFE_TIME_FADE_START = 0; // TODO: check default value
+const DEFAULT_LIFE_TIME_FADE_END = 0; // TODO: check default value
+const DEFAULT_PREV_POS_SCALE = 1; // TODO: check default value
+const DEFAULT_RIGID = false; // TODO: check default value
 class LockToBone extends Operator {
     #hitboxSetName = 'default';
-    #lifeTimeFadeStart = 0;
-    #lifeTimeFadeEnd = 0;
-    #jumpThreshold = 100;
+    #lifeTimeFadeStart = DEFAULT_LIFE_TIME_FADE_START;
+    #lifeTimeFadeEnd = DEFAULT_LIFE_TIME_FADE_END;
+    #jumpThreshold = DEFAULT_JUMP_THRESHOLD;
     #prevPosScale = 1;
-    #rigid = false;
+    #rigid = DEFAULT_RIGID;
     #useBones = false;
     #rotationSetType = null;
     #rigidRotationLock = false;
@@ -61884,24 +62679,19 @@ class LockToBone extends Operator {
                 this.#hitboxSetName = param.getValueAsString() ?? '';
                 break;
             case 'm_flLifeTimeFadeStart':
-                console.error('do this param', paramName, param);
-                this.#lifeTimeFadeStart = param;
+                this.#lifeTimeFadeStart = param.getValueAsNumber() ?? DEFAULT_LIFE_TIME_FADE_START;
                 break;
             case 'm_flLifeTimeFadeEnd':
-                console.error('do this param', paramName, param);
-                this.#lifeTimeFadeEnd = param;
+                this.#lifeTimeFadeEnd = param.getValueAsNumber() ?? DEFAULT_LIFE_TIME_FADE_END;
                 break;
             case 'm_flJumpThreshold':
-                console.error('do this param', paramName, param);
-                this.#jumpThreshold = param;
+                this.#jumpThreshold = param.getValueAsNumber() ?? DEFAULT_JUMP_THRESHOLD;
                 break;
             case 'm_flPrevPosScale':
-                console.error('do this param', paramName, param);
-                this.#prevPosScale = param;
+                this.#prevPosScale = param.getValueAsNumber() ?? DEFAULT_PREV_POS_SCALE;
                 break;
-            case 'm_bRigid':
-                console.error('do this param', paramName, param);
-                this.#rigid = param;
+            case 'm_bRigid': // TODO: mutualize ?
+                this.#rigid = param.getValueAsBool() ?? DEFAULT_RIGID;
                 break;
             case 'm_bUseBones':
                 console.error('do this param', paramName, param);
@@ -61929,91 +62719,78 @@ class LockToBone extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_LockToBone', LockToBone);
 
-const vec$2 = vec3.create();
+const vec$1 = vec3.create();
+const DEFAULT_NUM_TO_ASSIGN = 100; // TODO: check default value
+const DEFAULT_LOOP = true; // TODO: check default value
+const DEFAULT_MAX_DISTANCE = 0; // TODO: check default value
+const DEFAULT_SAVE_OFFSET = false; // TODO: check default value
+const DEFAULT_CP_PAIRS = false; // TODO: check default value
+const DEFAULT_MID_POINT = 0.5; // TODO: check default value
 class MaintainSequentialPath extends Operator {
-    numToAssign = 100;
+    #numToAssign = DEFAULT_NUM_TO_ASSIGN;
     assignedSoFar = 0;
-    step = 0.01;
-    loop = true;
+    #step = 0.01;
+    loop = DEFAULT_LOOP;
     bounceDirection = 1;
-    maxDistance = 0;
-    cpPairs = false;
-    saveOffset = false;
-    startControlPointNumber = 0;
-    endControlPointNumber = 0;
-    bulgeControl = 0;
-    bulge = 0;
-    midPoint = 0.5;
-    startPointOffset = vec3.create();
-    midPointOffset = vec3.create();
-    endOffset = vec3.create();
+    #maxDistance = DEFAULT_MAX_DISTANCE;
+    cpPairs = DEFAULT_CP_PAIRS;
+    #saveOffset = DEFAULT_SAVE_OFFSET;
+    #midPoint = DEFAULT_MID_POINT;
+    #startPointOffset = vec3.create(); // TODO: check default value
+    #midPointOffset = vec3.create(); // TODO: check default value
+    #endOffset = vec3.create(); // TODO: check default value
     operateAllParticlesRemoveme = true;
+    #pathParams = new Source2ParticlePathParams();
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flNumToAssign':
-                this.numToAssign = param;
-                this.step = 1 / (param - 1);
+                this.#numToAssign = param.getValueAsNumber() ?? DEFAULT_NUM_TO_ASSIGN;
+                this.#step = 1 / (this.#numToAssign - 1);
                 break;
             case 'm_bLoop':
-                this.loop = param;
+                this.loop = param.getValueAsBool() ?? DEFAULT_LOOP;
                 break;
             case 'm_PathParams':
-                for (const subName of Object.keys(param)) {
-                    this._paramChanged(subName, param[subName]);
-                }
+                Source2ParticlePathParams.fromOperatorParam(param, this.#pathParams);
                 break;
             case 'm_fMaxDistance':
-                this.maxDistance = param;
+                this.#maxDistance = param.getValueAsNumber() ?? DEFAULT_MAX_DISTANCE;
                 break;
             case 'm_bCPPairs':
-                this.cpPairs = param;
+                this.cpPairs = param.getValueAsBool() ?? DEFAULT_CP_PAIRS;
                 break;
             case 'm_bSaveOffset':
-                this.saveOffset = param;
-                break;
-            case 'm_nStartControlPointNumber':
-                this.startControlPointNumber = (param);
-                break;
-            case 'm_nEndControlPointNumber':
-                this.endControlPointNumber = (param);
-                break;
-            case 'm_nBulgeControl':
-                this.bulgeControl = (param);
-                break;
-            case 'm_flBulge':
-                this.bulge = param;
+                this.#saveOffset = param.getValueAsBool() ?? DEFAULT_SAVE_OFFSET;
                 break;
             case 'm_flMidPoint':
-                this.midPoint = param;
+                this.#midPoint = param.getValueAsNumber() ?? DEFAULT_MID_POINT;
                 break;
             case 'm_vStartPointOffset':
-                vec3.copy(this.startPointOffset, param);
+                param.getValueAsVec3(this.#startPointOffset);
                 break;
             case 'm_vMidPointOffset':
-                vec3.copy(this.midPointOffset, param);
+                param.getValueAsVec3(this.#midPointOffset);
                 break;
             case 'm_vEndOffset':
-                vec3.copy(this.endOffset, param);
+                param.getValueAsVec3(this.#endOffset);
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particles, elapsedTime) {
+    doOperate(particles, elapsedTime, strength) {
         const t = vec3.create();
         //TODO: use other parameters
-        const startControlPointNumber = this.startControlPointNumber;
-        const endControlPointNumber = this.endControlPointNumber;
+        const startControlPointNumber = this.#pathParams.startControlPointNumber;
+        const endControlPointNumber = this.#pathParams.endControlPointNumber;
         const startControlPoint = this.system.getControlPoint(startControlPointNumber);
         const endControlPoint = this.system.getControlPoint(endControlPointNumber);
         if (startControlPoint && endControlPoint) {
-            const numToAssign = this.numToAssign;
+            const numToAssign = this.#numToAssign;
             let assignedSoFar = this.assignedSoFar;
-            let particle;
-            const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$2);
-            for (let i = 0; i < particles.length; ++i) {
-                particle = particles[i];
-                vec3.scale(t, delta, assignedSoFar * this.step);
+            const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$1);
+            for (const particle of particles) {
+                vec3.scale(t, delta, assignedSoFar * this.#step);
                 vec3.add(particle.position, startControlPoint.currentWorldPosition, t);
                 vec3.copy(particle.prevPosition, particle.position);
                 assignedSoFar += this.bounceDirection;
@@ -62037,31 +62814,36 @@ RegisterSource2ParticleOperator('C_OP_MaintainSequentialPath', MaintainSequentia
 vec3.create();
 vec3.create();
 const v$7 = vec3.create();
+const DEFAULT_SCALE_CONTROL_POINT = -1; // TODO: check default value
+const DEFAULT_SCALE_CP_FIELD = 0; // TODO: check default value
+const DEFAULT_FIELD_INPUT = PARTICLE_FIELD_POSITION_PREVIOUS; // TODO: check default value
+const DEFAULT_FIELD_OUTPUT$2 = PARTICLE_FIELD_POSITION; // TODO: check default value
+const DEFAULT_OFFSET_LOCAL$1 = true; // TODO: check default value
 let MovementRigidAttachToCP$1 = class MovementRigidAttachToCP extends Operator {
-    scaleControlPoint = -1;
-    scaleCPField = 0; //-1: disabled, 0: X, 1: Y, 2 :Z
-    fieldInput = PARTICLE_FIELD_POSITION_PREVIOUS;
-    #fieldOutput = PARTICLE_FIELD_POSITION;
-    offsetLocal = true;
-    constructor(system) {
-        super(system);
-    }
+    #scaleControlPoint = DEFAULT_SCALE_CONTROL_POINT;
+    #scaleCPField = DEFAULT_SCALE_CP_FIELD; //-1: disabled, 0: X, 1: Y, 2 :Z
+    #fieldInput = DEFAULT_FIELD_INPUT;
+    #fieldOutput = DEFAULT_FIELD_OUTPUT$2;
+    #offsetLocal = DEFAULT_OFFSET_LOCAL$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nScaleControlPoint':
-                this.scaleControlPoint = (param);
+                console.error('do this param', paramName, param);
+                this.#scaleControlPoint = (param);
                 break;
             case 'm_nScaleCPField':
-                this.scaleCPField = (param);
+                console.error('do this param', paramName, param);
+                this.#scaleCPField = (param);
                 break;
             case 'm_bOffsetLocal':
-                this.offsetLocal = param;
+                console.error('do this param', paramName, param);
+                this.#offsetLocal = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         //TODO: use scale cp and other parameters
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
@@ -62103,8 +62885,8 @@ let MovementRigidAttachToCP$1 = class MovementRigidAttachToCP extends Operator {
             }
             //vec3.transformMat4(particle.position, particle.position, delta);
             //vec3.transformMat4(particle.prevPosition, particle.prevPosition, delta);
-            vec3.transformMat4(v$7, particle.getField(this.fieldInput), delta);
-            particle.setField(this.fieldInput, v$7);
+            vec3.transformMat4(v$7, particle.getField(this.#fieldInput), delta);
+            particle.setField(this.#fieldInput, v$7);
             particle.setField(this.#fieldOutput, v$7);
         }
     }
@@ -62114,30 +62896,32 @@ RegisterSource2ParticleOperator('C_OP_MovementRigidAttachToCP', MovementRigidAtt
 const m4 = mat4.create();
 const q$1 = quat.create();
 const v$6 = vec3.create();
-const a$1 = vec4.create();
+const movementRotateParticleAroundAxisTempVec4 = vec4.create();
 const DEFAULT_AXIS = vec3.fromValues(0, 0, 1);
+const DEFAULT_LOCAL_SPACE$1 = false; // TODO: check default value
 class MovementRotateParticleAroundAxis extends Operator {
-    localSpace = false;
+    #localSpace = DEFAULT_LOCAL_SPACE$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_vecRotAxis':
             case 'm_flRotRate':
+                // used in doOperate
                 break;
             case 'm_nCP':
-                this.controlPointNumber = (param);
+                this.controlPointNumber = param.getValueAsNumber() ?? DEFAULT_CONTROL_POINT_NUMBER;
                 break;
-            case 'm_bLocalSpace':
-                this.localSpace = param;
+            case 'm_bLocalSpace': //TODO: mutualize
+                this.#localSpace = param.getValueAsBool() ?? DEFAULT_LOCAL_SPACE$1;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
-        const axis = vec3.normalize(a$1, this.getParamVectorValue('m_vecRotAxis', particle, a$1) ?? DEFAULT_AXIS);
+    doOperate(particle, elapsedTime, strength) {
+        const axis = vec3.normalize(movementRotateParticleAroundAxisTempVec4, this.getParamVectorValue(movementRotateParticleAroundAxisTempVec4, 'm_vecRotAxis', particle) ?? DEFAULT_AXIS);
         const rotationRate = this.getParamScalarValue('m_flRotRate') ?? 180;
         const cp = this.system.getControlPoint(this.controlPointNumber);
-        if (this.localSpace) {
+        if (this.#localSpace) {
             quat.copy(q$1, cp.currentWorldQuaternion);
         }
         else {
@@ -62155,63 +62939,69 @@ class MovementRotateParticleAroundAxis extends Operator {
 RegisterSource2ParticleOperator('C_OP_MovementRotateParticleAroundAxis', MovementRotateParticleAroundAxis);
 
 const Coord$1 = vec3.create();
+const DEFAULT_FIELD_OUTPUT$1 = PARTICLE_FIELD_RADIUS;
+const DEFAULT_OUTPUT_MIN$2 = 0;
+const DEFAULT_OUTPUT_MAX$2 = 1;
+const DEFAULT_ADDITIVE = false;
+const DEFAULT_NOISE_SCALE$1 = 0.1;
 class Noise extends Operator {
-    #fieldOutput = PARTICLE_FIELD_RADIUS;
-    outputMin = 0;
-    outputMax = 1;
-    noiseScale = 0.1;
-    additive = false;
-    noiseAnimationTimeScale = 0;
-    outputMin1;
-    outputMax1;
-    valueScale;
-    valueBase;
+    #fieldOutput = DEFAULT_FIELD_OUTPUT$1;
+    #outputMin = DEFAULT_OUTPUT_MIN$2;
+    #outputMax = DEFAULT_OUTPUT_MAX$2;
+    #noiseScale = DEFAULT_NOISE_SCALE$1;
+    #additive = DEFAULT_ADDITIVE;
+    #noiseAnimationTimeScale = 0;
+    #outputMinRad = 0;
+    #outputMaxRad = 0;
+    #valueScale = 0;
+    #valueBase = 0;
     constructor(system) {
         super(system);
         this._update();
     }
     _update() {
         if (ATTRIBUTES_WHICH_ARE_ANGLES & (1 << this.#fieldOutput)) {
-            this.outputMin1 = this.outputMin * DEG_TO_RAD;
-            this.outputMax1 = this.outputMax * DEG_TO_RAD;
+            this.#outputMinRad = this.#outputMin * DEG_TO_RAD;
+            this.#outputMaxRad = this.#outputMax * DEG_TO_RAD;
         }
         else {
-            this.outputMin1 = this.outputMin;
-            this.outputMax1 = this.outputMax;
+            this.#outputMinRad = this.#outputMin;
+            this.#outputMaxRad = this.#outputMax;
         }
-        this.valueScale = 0.5 * (this.outputMax1 - this.outputMin1);
-        this.valueBase = this.outputMin1 + this.valueScale;
+        this.#valueScale = 0.5 * (this.#outputMaxRad - this.#outputMinRad);
+        this.#valueBase = this.#outputMinRad + this.#valueScale;
     }
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nFieldOutput':
-                this.#fieldOutput = (param);
+                this.#fieldOutput = param.getValueAsNumber() ?? DEFAULT_FIELD_OUTPUT$1;
                 this._update();
                 break;
-            case 'm_flOutputMin':
-                this.outputMin = param;
+            case 'm_flOutputMin': //TODO: mutualize
+                this.#outputMin = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN$2;
                 this._update();
                 break;
-            case 'm_flOutputMax':
-                this.outputMax = param;
+            case 'm_flOutputMax': //TODO: mutualize
+                this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX$2;
                 this._update();
                 break;
             case 'm_fl4NoiseScale':
-                this.noiseScale = param;
+                this.#noiseScale = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE$1;
                 break;
             case 'm_bAdditive':
-                this.additive = param;
+                this.#additive = param.getValueAsBool() ?? DEFAULT_ADDITIVE;
                 break;
             case 'm_flNoiseAnimationTimeScale':
-                this.noiseAnimationTimeScale = param;
+                console.error('do this param', paramName, param);
+                this.#noiseAnimationTimeScale = param;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
-        vec3.scale(Coord$1, particle.position, this.noiseScale);
-        const noise = NoiseSIMD(Coord$1, 0, 0) * this.valueScale + this.valueBase;
+    doOperate(particle, elapsedTime, strength) {
+        vec3.scale(Coord$1, particle.position, this.#noiseScale);
+        const noise = NoiseSIMD(Coord$1, 0, 0) * this.#valueScale + this.#valueBase;
         particle.setField(this.#fieldOutput, noise);
         //TODO: use m_fl4NoiseScale m_bAdditive m_flNoiseAnimationTimeScale
     }
@@ -62243,7 +63033,7 @@ RegisterSource2ParticleOperator('C_OP_NormalizeVector', NormalizeVector);
 //const mat = mat4.create();
 const nmat$1 = mat3.create();
 class NormalLock extends Operator {
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
             //mat4.invert(mat, particle.cpPreviousTransform);
@@ -62256,75 +63046,88 @@ class NormalLock extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_NormalLock', NormalLock);
 
+const DEFAULT_RATE_MIN$2 = 0; // TODO: check default value
+const DEFAULT_RATE_MAX$2 = 0; // TODO: check default value
+const DEFAULT_FREQUENCY_MIN = 1; // TODO: check default value
+const DEFAULT_FREQUENCY_MAX = 1; // TODO: check default value
+const DEFAULT_FIELD$4 = PARTICLE_FIELD_ALPHA; // TODO: check default value
+const DEFAULT_PROPORTIONAL$1 = true; // TODO: check default value
+const DEFAULT_PROPORTIONAL_OP$2 = true; // TODO: check default value
+const DEFAULT_START_TIME_MIN$2 = 0; // TODO: check default value
+const DEFAULT_START_TIME_MAX$2 = 0; // TODO: check default value
+const DEFAULT_END_TIME_MIN$2 = 1; // TODO: check default value
+const DEFAULT_END_TIME_MAX$2 = 1; // TODO: check default value
+const DEFAULT_OSC_MULT$1 = 2; // TODO: check default value
+const DEFAULT_OSC_ADD$1 = 0.5; // TODO: check default value
 class OscillateScalar extends Operator {
-    rateMin = 0;
-    rateMax = 0;
-    frequencyMin = 1;
-    frequencyMax = 1;
-    field = PARTICLE_FIELD_ALPHA;
-    proportional = true;
-    proportionalOp = true;
-    startTimeMin = 0;
-    startTimeMax = 0;
-    endTimeMin = 1;
-    endTimeMax = 1;
-    oscMult = 2;
-    oscAdd = 0.5;
+    #rateMin = DEFAULT_RATE_MIN$2;
+    #rateMax = DEFAULT_RATE_MAX$2;
+    #frequencyMin = DEFAULT_FREQUENCY_MIN;
+    #frequencyMax = DEFAULT_FREQUENCY_MAX;
+    #field = DEFAULT_FIELD$4;
+    #proportional = DEFAULT_PROPORTIONAL$1;
+    #proportionalOp = DEFAULT_PROPORTIONAL_OP$2;
+    #startTimeMin = DEFAULT_START_TIME_MIN$2;
+    #startTimeMax = DEFAULT_START_TIME_MAX$2;
+    #endTimeMin = DEFAULT_END_TIME_MIN$2;
+    #endTimeMax = DEFAULT_END_TIME_MAX$2;
+    #oscMult = DEFAULT_OSC_MULT$1;
+    #oscAdd = DEFAULT_OSC_ADD$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
-            case 'm_RateMin':
-                this.rateMin = param;
+            case 'm_RateMin': // TODO: mutualize ?
+                this.#rateMin = param.getValueAsNumber() ?? DEFAULT_RATE_MIN$2;
                 break;
             case 'm_RateMax':
-                this.rateMax = param;
+                this.#rateMax = param.getValueAsNumber() ?? DEFAULT_RATE_MAX$2;
                 break;
             case 'm_FrequencyMin':
-                this.frequencyMin = param;
+                this.#frequencyMin = param.getValueAsNumber() ?? DEFAULT_FREQUENCY_MIN;
                 break;
             case 'm_FrequencyMax':
-                this.frequencyMax = param;
+                this.#frequencyMax = param.getValueAsNumber() ?? DEFAULT_FREQUENCY_MAX;
                 break;
             case 'm_nField':
-                this.field = (param);
+                this.#field = param.getValueAsNumber() ?? DEFAULT_FIELD$4;
                 break;
             case 'm_bProportional':
-                this.proportional = param;
+                this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL$1;
                 break;
             case 'm_bProportionalOp':
-                this.proportionalOp = param;
+                this.#proportionalOp = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL_OP$2;
                 break;
             case 'm_flStartTime_min':
-                this.startTimeMin = param;
+                this.#startTimeMin = param.getValueAsNumber() ?? DEFAULT_START_TIME_MIN$2;
                 break;
             case 'm_flStartTime_max':
-                this.startTimeMax = param;
+                this.#startTimeMax = param.getValueAsNumber() ?? DEFAULT_START_TIME_MAX$2;
                 break;
             case 'm_flEndTime_min':
-                this.endTimeMin = param;
+                this.#endTimeMin = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX$2;
                 break;
             case 'm_flEndTime_max':
-                this.endTimeMax = param;
+                this.#endTimeMax = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX$2;
                 break;
-            case 'm_flOscMult':
-                this.oscMult = param;
+            case 'm_flOscMult': // TODO: mutualize ?
+                this.#oscMult = param.getValueAsNumber() ?? DEFAULT_OSC_MULT$1;
                 break;
-            case 'm_flOscAdd':
-                this.oscAdd = param;
+            case 'm_flOscAdd': // TODO: mutualize ?
+                this.#oscAdd = param.getValueAsNumber() ?? DEFAULT_OSC_ADD$1;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
-        const fl4StartTimeWidth = this.startTimeMax - this.startTimeMin;
-        const fl4EndTimeWidth = this.endTimeMax - this.endTimeMin;
-        const fl4FrequencyWidth = this.frequencyMax - this.frequencyMin;
-        const fl4RateWidth = this.rateMax - this.rateMin;
+    doOperate(particle, elapsedTime, strength) {
+        const fl4StartTimeWidth = this.#startTimeMax - this.#startTimeMin;
+        const fl4EndTimeWidth = this.#endTimeMax - this.#endTimeMin;
+        const fl4FrequencyWidth = this.#frequencyMax - this.#frequencyMin;
+        const fl4RateWidth = this.#rateMax - this.#rateMin;
         const fl4ScaleFactor = /*flStrength * */ elapsedTime;
-        const fl4CosFactor = this.oscMult * particle.currentTime + this.oscAdd;
+        const fl4CosFactor = this.#oscMult * particle.currentTime + this.#oscAdd;
         if (particle.timeToLive) {
             let fl4LifeTime;
-            if (this.proportionalOp) {
+            if (this.#proportionalOp) {
                 fl4LifeTime = particle.proportionOfLife;
             }
             else {
@@ -62332,31 +63135,31 @@ class OscillateScalar extends Operator {
             }
             //TODO: use random table
             let fl4StartTime = 0.5; //Math.random();//pParticles->RandomFloat(*pParticleId, nRandomOffset + 11);
-            fl4StartTime = this.startTimeMin + fl4StartTimeWidth * fl4StartTime;
+            fl4StartTime = this.#startTimeMin + fl4StartTimeWidth * fl4StartTime;
             //TODO: use random table
             let fl4EndTime = 0.5; //Math.random();//pParticles->RandomFloat(*pParticleId, nRandomOffset + 12);
-            fl4EndTime = this.endTimeMin + fl4EndTimeWidth * fl4EndTime;
+            fl4EndTime = this.#endTimeMin + fl4EndTimeWidth * fl4EndTime;
             if ((fl4LifeTime >= fl4StartTime) && (fl4LifeTime < fl4EndTime)) {
                 //TODO: use random table
                 let fl4Frequency = 0.5; //Math.random();//pParticles->RandomFloat(*pParticleId, nRandomOffset);
-                fl4Frequency = this.frequencyMin + fl4FrequencyWidth * fl4Frequency;
+                fl4Frequency = this.#frequencyMin + fl4FrequencyWidth * fl4Frequency;
                 //TODO: use random table
                 let fl4Rate = 0.5; //Math.random();//pParticles->RandomFloat(*pParticleId, nRandomOffset + 1);
-                fl4Rate = this.rateMin + fl4RateWidth * fl4Rate;
+                fl4Rate = this.#rateMin + fl4RateWidth * fl4Rate;
                 let fl4Cos;
-                if (this.proportional) {
+                if (this.#proportional) {
                     fl4LifeTime = (particle.currentTime - particle.cTime) / particle.timeToLive;
-                    fl4Cos = ((this.oscMult * (fl4LifeTime * fl4Frequency)) + this.oscAdd);
+                    fl4Cos = ((this.#oscMult * (fl4LifeTime * fl4Frequency)) + this.#oscAdd);
                 }
                 else {
                     fl4Cos = fl4CosFactor * fl4Frequency;
                 }
                 const fl4OscMultiplier = fl4Rate * fl4ScaleFactor;
-                let fl4OscVal = particle.getField(this.field) + fl4OscMultiplier * Math.sin(fl4Cos * Math.PI);
-                if (this.field == PARTICLE_FIELD_ALPHA) {
+                let fl4OscVal = particle.getField(this.#field) + fl4OscMultiplier * Math.sin(fl4Cos * Math.PI);
+                if (this.#field == PARTICLE_FIELD_ALPHA) {
                     fl4OscVal = clamp(fl4OscVal, 0.0, 1.0);
                 }
-                particle.setField(this.field, fl4OscVal);
+                particle.setField(this.#field, fl4OscVal);
             }
         }
     }
@@ -62402,71 +63205,81 @@ class OscillateScalarSimple extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_OscillateScalarSimple', OscillateScalarSimple);
 
+const DEFAULT_OFFSET$1 = true; // TODO: check default value
+const DEFAULT_END_TIME_MIN$1 = 1; // TODO: check default value
+const DEFAULT_END_TIME_MAX$1 = 1; // TODO: check default value
+const DEFAULT_PROPORTIONAL = true; // TODO: check default value
+const DEFAULT_PROPORTIONAL_OP$1 = true; // TODO: check default value
+const DEFAULT_FIELD$3 = 0; // TODO: check default value
+const DEFAULT_START_TIME_MIN$1 = 0; // TODO: check default value
+const DEFAULT_START_TIME_MAX$1 = 0; // TODO: check default value
+const DEFAULT_OSC_MULT = 2; // TODO: check default value
+const DEFAULT_OSC_ADD = 0.5; // TODO: check default value
 class OscillateVector extends Operator {
-    rateMin = vec3.create();
-    rateMax = vec3.create();
-    frequencyMin = vec3.fromValues(1, 1, 1);
-    frequencyMax = vec3.fromValues(1, 1, 1);
-    field = 0;
-    proportional = true;
-    proportionalOp = true;
-    offset = true;
-    startTimeMin = 0;
-    startTimeMax = 0;
-    endTimeMin = 1;
-    endTimeMax = 1;
-    oscMult = 2;
-    oscAdd = 0.5;
+    #rateMin = vec3.create(); // TODO: check default value
+    #rateMax = vec3.create(); // TODO: check default value
+    #frequencyMin = vec3.fromValues(1, 1, 1); // TODO: check default value
+    #frequencyMax = vec3.fromValues(1, 1, 1); // TODO: check default value
+    #field = DEFAULT_FIELD$3;
+    #proportional = DEFAULT_PROPORTIONAL;
+    #proportionalOp = DEFAULT_PROPORTIONAL_OP$1;
+    #offset = DEFAULT_OFFSET$1;
+    #startTimeMin = DEFAULT_START_TIME_MIN$1;
+    #startTimeMax = DEFAULT_START_TIME_MAX$1;
+    #endTimeMin = DEFAULT_END_TIME_MIN$1;
+    #endTimeMax = DEFAULT_END_TIME_MAX$1;
+    #oscMult = DEFAULT_OSC_MULT;
+    #oscAdd = DEFAULT_OSC_ADD;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_RateMin':
-                vec3.copy(this.rateMin, param);
+                param.getValueAsVec3(this.#rateMin);
                 break;
             case 'm_RateMax':
-                vec3.copy(this.rateMax, param);
+                param.getValueAsVec3(this.#rateMax);
                 break;
             case 'm_FrequencyMin':
-                vec3.copy(this.frequencyMin, param);
+                param.getValueAsVec3(this.#frequencyMin);
                 break;
             case 'm_FrequencyMax':
-                vec3.copy(this.frequencyMax, param);
+                param.getValueAsVec3(this.#frequencyMax);
                 break;
             case 'm_nField':
-                this.field = (param);
+                this.#field = param.getValueAsNumber() ?? DEFAULT_FIELD$3;
                 break;
             case 'm_bProportional':
-                this.proportional = param;
+                this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL;
                 break;
             case 'm_bProportionalOp':
-                this.proportionalOp = param;
+                this.#proportionalOp = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL_OP$1;
                 break;
             case 'm_bOffset':
-                this.offset = param;
+                this.#offset = param.getValueAsBool() ?? DEFAULT_OFFSET$1;
                 break;
             case 'm_flStartTime_min':
-                this.startTimeMin = param;
+                this.#startTimeMin = param.getValueAsNumber() ?? DEFAULT_START_TIME_MIN$1;
                 break;
             case 'm_flStartTime_max':
-                this.startTimeMax = param;
+                this.#startTimeMax = param.getValueAsNumber() ?? DEFAULT_START_TIME_MAX$1;
                 break;
             case 'm_flEndTime_min':
-                this.endTimeMin = param;
+                this.#endTimeMin = param.getValueAsNumber() ?? DEFAULT_END_TIME_MIN$1;
                 break;
             case 'm_flEndTime_max':
-                this.endTimeMax = param;
+                this.#endTimeMax = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX$1;
                 break;
             case 'm_flOscMult':
-                this.oscMult = param;
+                this.#oscMult = param.getValueAsNumber() ?? DEFAULT_OSC_MULT;
                 break;
             case 'm_flOscAdd':
-                this.oscAdd = param;
+                this.#oscAdd = param.getValueAsNumber() ?? DEFAULT_OSC_ADD;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
-        const m_nField = this.field;
+    doOperate(particle, elapsedTime, strength) {
+        const m_nField = this.#field;
         particle.cTime; //CM128AttributeIterator pCreationTime(PARTICLE_ATTRIBUTE_CREATION_TIME, pParticles);
         const pLifeDuration = particle.timeToLive; //CM128AttributeIterator pLifeDuration(PARTICLE_ATTRIBUTE_LIFE_DURATION, pParticles);
         //C4IAttributeIterator pParticleId (PARTICLE_ATTRIBUTE_PARTICLE_ID, pParticles);
@@ -62476,23 +63289,23 @@ class OscillateVector extends Operator {
         const fvOscVal = vec3.create(); //todov3optimize
         const flStrength = 1;
         const fl4ScaleFactor = flStrength * elapsedTime;
-        const fl4CosFactorMultiplier = this.oscMult;
-        const fl4CosFactorAdd = this.oscAdd;
+        const fl4CosFactorMultiplier = this.#oscMult;
+        const fl4CosFactorAdd = this.#oscAdd;
         const fl4CosFactor = fl4CosFactorMultiplier * fl4CurTime + fl4CosFactorAdd;
         const fl4CosFactorProp = fl4CosFactorMultiplier;
-        const fl4StartTimeWidth = this.startTimeMax - this.startTimeMin;
-        const fl4EndTimeWidth = this.endTimeMax - this.endTimeMin;
-        const fvFrequencyMin = this.frequencyMin;
-        const fvFrequencyWidth = vec3.sub(vec3.create(), this.frequencyMax, fvFrequencyMin); //todov3optimize
-        const fvRateMin = this.rateMin;
-        const fvRateWidth = vec3.sub(vec3.create(), this.rateMax, fvRateMin); //todov3optimize
+        const fl4StartTimeWidth = this.#startTimeMax - this.#startTimeMin;
+        const fl4EndTimeWidth = this.#endTimeMax - this.#endTimeMin;
+        const fvFrequencyMin = this.#frequencyMin;
+        const fvFrequencyWidth = vec3.sub(vec3.create(), this.#frequencyMax, fvFrequencyMin); //todov3optimize
+        const fvRateMin = this.#rateMin;
+        const fvRateWidth = vec3.sub(vec3.create(), this.#rateMax, fvRateMin); //todov3optimize
         //int nCtr = pParticles->m_nPaddedActiveParticles;
         //do
         {
             const fl4LifeDuration = pLifeDuration;
             const fl4GoodMask = fl4LifeDuration > 0.0;
             let fl4LifeTime;
-            if (this.proportionalOp) {
+            if (this.#proportionalOp) {
                 fl4LifeTime = particle.currentTime / particle.timeToLive;
             }
             else {
@@ -62500,10 +63313,10 @@ class OscillateVector extends Operator {
             }
             //TODO: use random table
             let fl4StartTime = Math.random(); //pParticles->RandomFloat(*pParticleId, nRandomOffset + 11);
-            fl4StartTime = this.startTimeMin + fl4StartTimeWidth * fl4StartTime;
+            fl4StartTime = this.#startTimeMin + fl4StartTimeWidth * fl4StartTime;
             //TODO: use random table
             let fl4EndTime = Math.random(); //pParticles->RandomFloat(*pParticleId, nRandomOffset + 12);
-            fl4EndTime = this.endTimeMin + fl4EndTimeWidth * fl4EndTime;
+            fl4EndTime = this.#endTimeMin + fl4EndTimeWidth * fl4EndTime;
             if ((fl4LifeTime >= fl4StartTime) && (fl4LifeTime < fl4EndTime)) {
                 //TODO: use random table
                 const fvFrequency = vec3.fromValues(Math.random(), Math.random(), Math.random());
@@ -62520,7 +63333,7 @@ class OscillateVector extends Operator {
                 vec3.mul(fvRate, fvRate, fvRateWidth);
                 vec3.add(fvRate, fvRate, fvRateMin);
                 const fvCos = vec3.create(); //todov3optimize
-                if (this.proportional) {
+                if (this.#proportional) {
                     fl4LifeTime = particle.currentTime / particle.timeToLive;
                     fvCos[0] = fl4CosFactorProp * fvFrequency[0] * fl4LifeTime + fl4CosFactorAdd;
                     fvCos[1] = fl4CosFactorProp * fvFrequency[1] * fl4LifeTime + fl4CosFactorAdd;
@@ -62676,47 +63489,53 @@ class PinParticleToCP extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_PinParticleToCP', PinParticleToCP);
 
-const vec$1 = vec3.create();
+const vec = vec3.create();
+const DEFAULT_PLANE_OFFSET = 0; // TODO: check default value
+const DEFAULT_LOCAL_SPACE = false; // TODO: check default value
+const DEFAULT_PLANE_CONTROL_POINT = 0; // TODO: check default value
 class PlaneCull extends Operator {
-    planeControlPoint = 0;
-    planeDirection = vec3.fromValues(0, 0, 1);
-    localSpace = false;
-    planeOffset = 0;
-    planeDirectionOffset = vec3.create();
+    #planeControlPoint = DEFAULT_PLANE_CONTROL_POINT;
+    #planeDirection = vec3.fromValues(0, 0, 1); // TODO: check default value
+    #localSpace = DEFAULT_LOCAL_SPACE;
+    #planeOffset = DEFAULT_PLANE_OFFSET;
+    #planeDirectionOffset = vec3.create(); //computed
     constructor(system) {
         super(system);
-        this._update();
+        this.#update();
     }
-    _update() {
-        vec3.scale(this.planeDirectionOffset, this.planeDirection, this.planeOffset);
+    #update() {
+        vec3.scale(this.#planeDirectionOffset, this.#planeDirection, this.#planeOffset);
     }
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nPlaneControlPoint':
-                this.planeControlPoint = (param);
+                this.#planeControlPoint = param.getValueAsNumber() ?? DEFAULT_PLANE_CONTROL_POINT;
                 break;
             case 'm_vecPlaneDirection':
-                vec3.normalize(this.planeDirection, param);
-                this._update();
+                console.error('do this param', paramName, param, this.constructor.name);
+                vec3.normalize(this.#planeDirection, param);
+                this.#update();
                 break;
             case 'm_bLocalSpace':
-                this.localSpace = param;
+                console.error('do this param', paramName, param, this.constructor.name);
+                this.#localSpace = param;
                 break;
             case 'm_flPlaneOffset':
-                this.planeOffset = (param);
-                this._update();
+                this.#planeOffset = param.getValueAsNumber() ?? DEFAULT_PLANE_OFFSET;
+                this.#update();
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
-        const cp = this.system.getControlPoint(this.planeControlPoint);
+    doOperate(particle, elapsedTime, strength) {
+        // TODO: use m_bLocalSpace
+        const cp = this.system.getControlPoint(this.#planeControlPoint);
         if (cp) {
-            const origin = cp.getWorldPosition(vec$1);
-            vec3.sub(origin, origin, this.planeDirectionOffset);
+            const origin = cp.getWorldPosition(vec);
+            vec3.sub(origin, origin, this.#planeDirectionOffset);
             vec3.sub(origin, particle.position, origin);
-            if (vec3.dot(this.planeDirection, origin) < 0) {
+            if (vec3.dot(this.#planeDirection, origin) < 0) {
                 particle.die();
             }
         }
@@ -62724,158 +63543,49 @@ class PlaneCull extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_PlaneCull', PlaneCull);
 
-vec3.create();
-vec3.create();
-//const tempQuat = quat.create();
-vec3.create();
-class PositionLock extends Operator {
-    #startTimeMin = 1;
-    #startTimeMax = 1;
-    #startTimeExp = 1;
-    #endTimeMin = 1;
-    #endTimeMax = 1;
-    #endTimeExp = 1;
-    #range = 0;
-    #jumpThreshold = 512;
-    #prevPosScale = 1;
-    #lockRot = false;
-    #startFadeOutTime = 0;
-    #endFadeOutTime = 0;
-    constructor(system) {
-        super(system);
-        this._update();
-    }
-    _update() {
-        //TODO: this is wrong: must be done per particle
-        this.#startFadeOutTime = RandomFloatExp(this.#startTimeMin, this.#startTimeMax, this.#startTimeExp);
-        this.#endFadeOutTime = RandomFloatExp(this.#endTimeMin, this.#endTimeMax, this.#endTimeExp);
-    }
-    _paramChanged(paramName, param) {
-        switch (paramName) {
-            case 'm_flStartTime_min':
-                this.#startTimeMin = param.getValueAsNumber() ?? 1;
-                this._update();
-                break;
-            case 'm_flStartTime_max':
-                this.#startTimeMax = param.getValueAsNumber() ?? 1;
-                this._update();
-                break;
-            case 'm_flStartTime_exp':
-                console.error('do this param', paramName, param);
-                this.#startTimeExp = param;
-                this._update();
-                break;
-            case 'm_flEndTime_min':
-                this.#endTimeMin = param.getValueAsNumber() ?? 1;
-                this._update();
-                break;
-            case 'm_flEndTime_max':
-                this.#endTimeMax = param.getValueAsNumber() ?? 1;
-                this._update();
-                break;
-            case 'm_flEndTime_exp':
-                console.error('do this param', paramName, param);
-                this.#endTimeExp = param;
-                this._update();
-                break;
-            case 'm_flRange':
-                console.error('do this param', paramName, param);
-                this.#range = param;
-                break;
-            case 'm_flJumpThreshold':
-                console.error('do this param', paramName, param);
-                this.#jumpThreshold = param;
-                break;
-            case 'm_flPrevPosScale':
-                console.error('do this param', paramName, param);
-                this.#prevPosScale = param;
-                break;
-            case 'm_bLockRot':
-                this.#lockRot = param.getValueAsBool() ?? false;
-                break;
-            default:
-                super._paramChanged(paramName, param);
-        }
-    }
-    doOperate(particle, elapsedTime, strength) {
-        const proportionOfLife = clamp(particle.proportionOfLife, 0, 1);
-        if (proportionOfLife > this.#endFadeOutTime) {
-            return;
-        }
-        const cp = this.system.getControlPoint(this.controlPointNumber);
-        if (cp) {
-            let delta;
-            /*	if (!particle.initialCPPosition) {
-                    particle.initialCPPosition = vec3.clone(cp.getWorldPosition(vec));
-                } else {
-                    vec3.copy(particle.initialCPPosition, particle.cpPosition);
-                }
-
-                particle.cpPosition = vec3.clone(cp.getWorldPosition(vec));
-
-                let delta = vec3.subtract(vec3.create(), particle.cpPosition, particle.initialCPPosition);
-
-                const deltaL = vec3.length(delta);
-                particle.deltaL = particle.deltaL ?? 0;
-                particle.deltaL += deltaL;
-
-                //console.log(deltaL);
-                if (this.range != 0 && particle.deltaL > this.range) {
-                    particle.posLockedToCP = -1;
-                }*/
-            //TODO: use m_flRange and other parameters
-            if (this.#lockRot) {
-                delta = cp.deltaWorldTransformation;
-                vec3.transformMat4(particle.position, particle.position, delta);
-                vec3.transformMat4(particle.prevPosition, particle.prevPosition, delta);
-                //TODO: do LockStrength
-            }
-            else {
-                delta = cp.deltaWorldPosition;
-                vec3.add(particle.position, particle.position, delta);
-                vec3.add(particle.prevPosition, particle.prevPosition, delta);
-            }
-        }
-    }
-}
-RegisterSource2ParticleOperator('C_OP_PositionLock', PositionLock);
-
+const DEFAULT_RATE_MIN$1 = 0; // TODO: check default value
+const DEFAULT_RATE_MAX$1 = 0; // TODO: check default value
+const DEFAULT_START_TIME_MIN = 0; // TODO: check default value
+const DEFAULT_START_TIME_MAX = 0; // TODO: check default value
+const DEFAULT_END_TIME_MIN = 0; // TODO: check default value
+const DEFAULT_END_TIME_MAX = 0; // TODO: check default value
+const DEFAULT_FIELD$2 = PARTICLE_FIELD_RADIUS; // TODO: check default value
+const DEFAULT_PROPORTIONAL_OP = true; // TODO: check default value
 class RampScalarLinear extends Operator {
-    #rateMin = 0;
-    #rateMax = 0;
-    #startTimeMin = 0;
-    #startTimeMax = 0;
-    #endTimeMin = 1;
-    #endTimeMax = 1;
-    #field = PARTICLE_FIELD_RADIUS; // TODO: not sure about the field
-    #proportionalOp = true;
+    #rateMin = DEFAULT_RATE_MIN$1;
+    #rateMax = DEFAULT_RATE_MAX$1;
+    #startTimeMin = DEFAULT_START_TIME_MIN;
+    #startTimeMax = DEFAULT_START_TIME_MAX;
+    #endTimeMin = DEFAULT_END_TIME_MIN;
+    #endTimeMax = DEFAULT_END_TIME_MAX;
+    #field = DEFAULT_FIELD$2; // TODO: not sure about the field
+    #proportionalOp = DEFAULT_PROPORTIONAL_OP;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_RateMin':
-                this.#rateMin = param.getValueAsNumber() ?? 0;
+                this.#rateMin = param.getValueAsNumber() ?? DEFAULT_RATE_MIN$1;
                 break;
             case 'm_RateMax':
-                this.#rateMax = param.getValueAsNumber() ?? 0;
+                this.#rateMax = param.getValueAsNumber() ?? DEFAULT_RATE_MAX$1;
                 break;
             case 'm_flStartTime_min':
                 console.error('do this param', paramName, param);
-                this.#startTimeMin = param;
+                this.#startTimeMin = param.getValueAsNumber() ?? DEFAULT_START_TIME_MIN;
                 break;
             case 'm_flStartTime_max':
-                console.error('do this param', paramName, param);
-                this.#startTimeMax = param;
+                this.#startTimeMax = param.getValueAsNumber() ?? DEFAULT_START_TIME_MAX;
                 break;
             case 'm_flEndTime_min':
-                this.#endTimeMin = param.getValueAsNumber() ?? 1;
+                this.#endTimeMin = param.getValueAsNumber() ?? DEFAULT_END_TIME_MIN;
                 break;
             case 'm_flEndTime_max':
-                this.#endTimeMax = param.getValueAsNumber() ?? 1;
+                this.#endTimeMax = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX;
                 break;
             case 'm_nField':
                 this.#field = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
                 break;
             case 'm_bProportionalOp':
-                this.#proportionalOp = param.getValueAsBool() ?? true;
+                this.#proportionalOp = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL_OP;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -62909,7 +63619,7 @@ RegisterSource2ParticleOperator('C_OP_RampScalarLinear', RampScalarLinear);
 class RampScalarLinearSimple extends Operator {
     #rate = 0;
     #startTime = 0;
-    #endTime = 1;
+    #endTime = 1; //TODO: check default value
     #field = PARTICLE_FIELD_RADIUS;
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -62917,12 +63627,10 @@ class RampScalarLinearSimple extends Operator {
                 this.#rate = param.getValueAsNumber() ?? 0;
                 break;
             case 'm_flStartTime':
-                console.error('do this param', paramName, param);
-                this.#startTime = param;
+                this.#startTime = param.getValueAsNumber() ?? 0;
                 break;
-            case 'm_flEndTime':
-                console.error('do this param', paramName, param);
-                this.#endTime = param;
+            case 'm_flEndTime': // TODO: mutualize param ?
+                this.#endTime = param.getValueAsNumber() ?? 1;
                 break;
             case 'm_nField':
                 this.#field = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
@@ -62942,62 +63650,72 @@ class RampScalarLinearSimple extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_RampScalarLinearSimple', RampScalarLinearSimple);
 
+const DEFAULT_BIAS = 0.5;
+const DEFAULT_EASE_OUT = false;
+const DEFAULT_RATE_MIN = 0;
+const DEFAULT_RATE_MAX = 0;
+const DEFAULT_FIELD$1 = PARTICLE_FIELD_RADIUS;
 class RampScalarSpline extends Operator {
-    rateMin = 0;
-    rateMax = 0;
-    startTime_min = 0;
-    startTime_max = 0;
-    endTime_min = 1;
-    endTime_max = 1;
-    field = PARTICLE_FIELD_RADIUS;
-    proportionalOp = true;
-    bias = 0.5;
-    easeOut = false;
+    #rateMin = 0;
+    #rateMax = 0;
+    #startTimeMin = 0;
+    #startTimeMax = 0;
+    #endTimeMin = 1;
+    #endTimeMax = 1;
+    #field = DEFAULT_FIELD$1;
+    #proportionalOp = true;
+    #bias = DEFAULT_BIAS;
+    #easeOut = DEFAULT_EASE_OUT;
     _paramChanged(paramName, param) {
         switch (paramName) {
-            case 'm_RateMin':
-                this.rateMin = param;
+            case 'm_RateMin': // TODO: mutualize ?
+                this.#rateMin = param.getValueAsNumber() ?? DEFAULT_RATE_MIN;
                 break;
-            case 'm_RateMax':
-                this.rateMax = param;
+            case 'm_RateMax': // TODO: mutualize ?
+                this.#rateMax = param.getValueAsNumber() ?? DEFAULT_RATE_MAX;
                 break;
             case 'm_flStartTime_min':
-                this.startTime_min = param;
+                console.error('do this param', paramName, param);
+                this.#startTimeMin = param;
                 break;
             case 'm_flStartTime_max':
-                this.startTime_max = param;
+                console.error('do this param', paramName, param);
+                this.#startTimeMax = param;
                 break;
             case 'm_flEndTime_min':
-                this.endTime_min = param;
+                console.error('do this param', paramName, param);
+                this.#endTimeMin = param;
                 break;
             case 'm_flEndTime_max':
-                this.endTime_max = param;
+                console.error('do this param', paramName, param);
+                this.#endTimeMax = param;
                 break;
-            case 'm_nField':
-                this.field = (param);
+            case 'm_nField': // TODO: mutualize ?
+                this.#field = param.getValueAsNumber() ?? DEFAULT_FIELD$1;
                 break;
             case 'm_bProportionalOp':
-                this.proportionalOp = param;
+                console.error('do this param', paramName, param);
+                this.#proportionalOp = param;
                 break;
             case 'm_flBias':
-                this.bias = param;
+                this.#bias = param.getValueAsNumber() ?? DEFAULT_BIAS;
                 break;
             case 'm_bEaseOut':
-                this.easeOut = param;
+                this.#easeOut = param.getValueAsBool() ?? DEFAULT_EASE_OUT;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         //TODO : use m_flBias m_bEaseOut
         const context = particle.context.get(this);
         let rate, startTime, endTime;
         if (context == undefined) {
             //Init per particle parameters
-            rate = RandomFloat(this.rateMin, this.rateMax);
-            startTime = RandomFloat(this.startTime_min, this.startTime_max);
-            endTime = RandomFloat(this.endTime_min, this.endTime_max);
+            rate = RandomFloat(this.#rateMin, this.#rateMax);
+            startTime = RandomFloat(this.#startTimeMin, this.#startTimeMax);
+            endTime = RandomFloat(this.#endTimeMin, this.#endTimeMax);
             particle.context.set(this, { r: rate, s: startTime, e: endTime });
         }
         else {
@@ -63005,33 +63723,35 @@ class RampScalarSpline extends Operator {
             startTime = context.s;
             endTime = context.e;
         }
-        const particleTime = this.proportionalOp ? particle.proportionOfLife : particle.currentTime;
+        const particleTime = this.#proportionalOp ? particle.proportionOfLife : particle.currentTime;
         if (particleTime < startTime || particleTime > endTime) {
             return;
         }
-        const value = particle.getField(this.field) + rate * elapsedTime;
-        particle.setField(this.field, value);
+        const value = particle.getField(this.#field) + rate * elapsedTime;
+        particle.setField(this.#field, value);
     }
 }
 RegisterSource2ParticleOperator('C_OP_RampScalarSpline', RampScalarSpline);
 
 const DEFAULT_VECTOR = vec3.fromValues(1, 0, 0);
 const v$4 = vec3.create();
+const DEFAULT_FIELD_OUTPUT = PARTICLE_FIELD_POSITION; // TODO: check default value
+const DEFAULT_SCALE = 1; // TODO: check default value
 class RemapControlPointDirectionToVector extends Operator {
-    #fieldOutput = PARTICLE_FIELD_POSITION;
-    scale = 1;
+    #fieldOutput = DEFAULT_FIELD_OUTPUT;
+    #scale = DEFAULT_SCALE;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flScale':
-                this.scale = param;
+                this.#scale = param.getValueAsNumber() ?? DEFAULT_SCALE;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         vec3.transformQuat(v$4, DEFAULT_VECTOR, cp.currentWorldQuaternion);
-        vec3.scale(v$4, v$4, this.scale);
+        vec3.scale(v$4, v$4, this.#scale);
         particle.setField(this.#fieldOutput, v$4);
     }
 }
@@ -63064,60 +63784,63 @@ class RemapCPOrientationToRotations extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_RemapCPOrientationToRotations', RemapCPOrientationToRotations);
 
+const DEFAULT_CP_INPUT$1 = 0; // TODO: check default value
+const DEFAULT_FIELD = -1; // TODO: check default value
+const DEFAULT_INPUT_MIN$2 = 0; // TODO: check default value
+const DEFAULT_INPUT_MAX$2 = 1; // TODO: check default value
+const DEFAULT_OUTPUT_MIN$1 = 0; // TODO: check default value
+const DEFAULT_OUTPUT_MAX$1 = 1; // TODO: check default value
+const DEFAULT_START_TIME = -1; // TODO: check default value
+const DEFAULT_END_TIME = -1; // TODO: check default value
+const DEFAULT_INTERP_RATE$1 = 0; // TODO: check default value
+const DEFAULT_SET_METHOD$2 = 'PARTICLE_SET_SCALE_INITIAL_VALUE'; // TODO: check default value//TODO: enum
 class RemapCPtoScalar extends Operator {
-    #fieldOutput = PARTICLE_FIELD_RADIUS;
-    cpInput = 0;
-    field = -1; //disabled
-    inputMin = 0;
-    inputMax = 1;
-    outputMin = 0;
-    outputMax = 1;
-    startTime = -1;
-    endTime = -1;
-    interpRate = 0;
-    setMethod = null;
-    scaleInitialRange;
+    //#fieldOutput = PARTICLE_FIELD_RADIUS;
+    #cpInput = DEFAULT_CP_INPUT$1;
+    #field = DEFAULT_FIELD;
+    #inputMin = DEFAULT_INPUT_MIN$2;
+    #inputMax = DEFAULT_INPUT_MAX$2;
+    #outputMin = DEFAULT_OUTPUT_MIN$1;
+    #outputMax = DEFAULT_OUTPUT_MAX$1;
+    #startTime = DEFAULT_START_TIME;
+    #endTime = DEFAULT_END_TIME;
+    #interpRate = DEFAULT_INTERP_RATE$1;
+    #setMethod = DEFAULT_SET_METHOD$2;
+    //scaleInitialRange;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nCPInput':
-                console.error('do this param', paramName, param);
-                this.cpInput = (param);
+                this.#cpInput = param.getValueAsNumber() ?? DEFAULT_CP_INPUT$1;
                 break;
             case 'm_nField':
                 console.error('do this param', paramName, param);
-                this.field = (param); //TODO check -1 / 0 / 1 / 2
+                this.#field = (param); //TODO check -1 / 0 / 1 / 2
                 break;
-            case 'm_flInputMin':
-                console.error('do this param', paramName, param);
-                this.inputMin = param;
+            case 'm_flInputMin': // TODO: mutualize
+                this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MIN$2;
                 break;
-            case 'm_flInputMax':
-                console.error('do this param', paramName, param);
-                this.inputMax = param;
+            case 'm_flInputMax': // TODO: mutualize
+                this.#inputMax = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX$2;
                 break;
-            case 'm_flOutputMin':
-                console.error('do this param', paramName, param);
-                this.outputMin = param;
+            case 'm_flOutputMin': // TODO: mutualize
+                this.#outputMin = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN$1;
                 break;
-            case 'm_flOutputMax':
-                console.error('do this param', paramName, param);
-                this.outputMax = param;
+            case 'm_flOutputMax': // TODO: mutualize
+                this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX$1;
                 break;
             case 'm_flStartTime':
                 console.error('do this param', paramName, param);
-                this.startTime = param;
+                this.#startTime = param;
                 break;
             case 'm_flEndTime':
                 console.error('do this param', paramName, param);
-                this.endTime = param;
+                this.#endTime = param;
                 break;
             case 'm_flInterpRate':
-                console.error('do this param', paramName, param);
-                this.interpRate = param;
+                this.#interpRate = param.getValueAsNumber() ?? DEFAULT_INTERP_RATE$1;
                 break;
             case 'm_nSetMethod':
-                console.error('do this param', paramName, param);
-                this.setMethod = param;
+                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD$2;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -63125,41 +63848,131 @@ class RemapCPtoScalar extends Operator {
     }
     doOperate(particle, elapsedTime, strength) {
         //TODO: use m_flInterpRate
-        const cpInputPos = this.system.getControlPoint(this.cpInput).currentWorldPosition;
-        let value = cpInputPos[this.field];
-        value = RemapValClamped(value, this.inputMin, this.inputMax, this.outputMin, this.outputMax);
-        const scaleInitial = this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
+        const cpInputPos = this.system.getControlPoint(this.#cpInput).currentWorldPosition;
+        let value = cpInputPos[this.#field] ?? 0;
+        value = RemapValClamped(value, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax);
+        const scaleInitial = /*this.scaleInitialRange || */ this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE'; //TODO: optimize
         if (scaleInitial) {
             value = lerp(1, value, strength);
         }
         else {
-            value = lerp(particle.getField(this.#fieldOutput), value, strength);
+            value = lerp(particle.getField(this.fieldOutput), value, strength);
         }
-        particle.setField(this.#fieldOutput, value, scaleInitial);
+        particle.setField(this.fieldOutput, value, scaleInitial);
     }
 }
 RegisterSource2ParticleOperator('C_OP_RemapCPtoScalar', RemapCPtoScalar);
 
-class SetControlPointFromObjectScale extends Operator {
-    cpInput = 0;
-    cpOutput = 1;
+const DEFAULT_IGNORE_DELTA = false; // TODO: check default value
+const DEFAULT_INPUT_MIN$1 = 0; // TODO: check default value
+const DEFAULT_INPUT_MAX$1 = 1; // TODO: check default value
+const DEFAULT_SET_METHOD$1 = 'PARTICLE_SET_SCALE_CURRENT_VALUE'; // TODO: check default value
+class RemapSpeed extends Operator {
+    #ignoreDelta = DEFAULT_IGNORE_DELTA;
+    #inputMin = DEFAULT_INPUT_MIN$1;
+    #inputMax = DEFAULT_INPUT_MAX$1;
+    #setMethod = DEFAULT_SET_METHOD$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
-            case 'm_nCPInput':
-                this.cpInput = (param);
+            case 'm_bIgnoreDelta':
+                this.#ignoreDelta = param.getValueAsBool() ?? DEFAULT_IGNORE_DELTA;
                 break;
-            case 'm_nCPOutput':
-                this.cpOutput = (param);
+            case 'm_flInputMin':
+                this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MIN$1;
+                break;
+            case 'm_flInputMax':
+                this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX$1;
+                break;
+            case 'm_nSetMethod':
+                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD$1;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
-        this.system.getControlPoint(this.cpInput);
-        const cpOutput = this.system.getControlPoint(this.cpOutput);
+    doOperate(particle, elapsedTime, strength) {
+        //TODO
+    }
+}
+RegisterSource2ParticleOperator('C_OP_RemapSpeed', RemapSpeed);
+
+const DEFAULT_INPUT_MIN = 0; // TODO: check default value
+const DEFAULT_INPUT_MAX = 1; // TODO: check default value
+const DEFAULT_OUTPUT_MIN = 0; // TODO: check default value
+const DEFAULT_OUTPUT_MAX = 1; // TODO: check default value
+const DEFAULT_OUT_CONTROL_POINT_NUMBER = 1; // TODO: check default value
+class RemapSpeedtoCP extends Operator {
+    #inputMin = DEFAULT_INPUT_MIN;
+    #inputMax = DEFAULT_INPUT_MAX;
+    #outputMin = DEFAULT_OUTPUT_MIN;
+    #outputMax = DEFAULT_OUTPUT_MAX;
+    #outControlPointNumber = DEFAULT_OUT_CONTROL_POINT_NUMBER;
+    _paramChanged(paramName, param) {
+        switch (paramName) {
+            case 'm_flInputMin':
+                this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MIN;
+                break;
+            case 'm_flInputMax':
+                this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
+                break;
+            case 'm_flOutputMin':
+                this.#outputMin = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN;
+                break;
+            case 'm_flOutputMax':
+                this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX;
+                break;
+            case 'm_nOutControlPointNumber':
+                this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUT_CONTROL_POINT_NUMBER;
+                break;
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
+    doOperate(particle, elapsedTime, strength) {
+        //TODO
+    }
+}
+RegisterSource2ParticleOperator('C_OP_RemapSpeedtoCP', RemapSpeedtoCP);
+
+class RepeatedTriggerChildGroup extends Operator {
+    _paramChanged(paramName, param) {
+        switch (paramName) {
+            case 'm_flClusterCooldown':
+                // used in doOperate
+                break;
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
+    doOperate(particle, elapsedTime, strength) {
+        this.getParamScalarValue('m_flClusterCooldown');
+        //TODO: i have no idea of what it does
+    }
+}
+RegisterSource2ParticleOperator('C_OP_RepeatedTriggerChildGroup', RepeatedTriggerChildGroup);
+
+const DEFAULT_CP_INPUT = 0; // TODO: check default value
+const DEFAULT_CP_OUTPUT = 1; // TODO: check default value
+class SetControlPointFromObjectScale extends Operator {
+    #cpInput = 0;
+    #cpOutput = 1;
+    _paramChanged(paramName, param) {
+        switch (paramName) {
+            case 'm_nCPInput':
+                this.#cpInput = param.getValueAsNumber() ?? DEFAULT_CP_INPUT;
+                break;
+            case 'm_nCPOutput':
+                this.#cpOutput = param.getValueAsNumber() ?? DEFAULT_CP_OUTPUT;
+                break;
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
+    doOperate(particle, elapsedTime, strength) {
+        this.system.getControlPoint(this.#cpInput);
+        const cpOutput = this.system.getControlPoint(this.#cpOutput);
         //TODO: use the actual scale
-        cpOutput.position = vec3.fromValues(1, 1, 1);
+        cpOutput.setPosition(vec3.fromValues(1, 1, 1));
     }
     isPreEmission() {
         return true;
@@ -63168,44 +63981,50 @@ class SetControlPointFromObjectScale extends Operator {
 RegisterSource2ParticleOperator('C_OP_SetControlPointFromObjectScale', SetControlPointFromObjectScale);
 
 quat.create();
+const DEFAULT_CP = 1; // TODO: check default value
+const DEFAULT_USE_WORLD_LOCATION$1 = false; // TODO: check default value
+const DEFAULT_HEAD_LOCATION$2 = 0; // TODO: check default value
 class SetControlPointOrientation extends Operator {
-    useWorldLocation = false;
-    randomize = false;
-    setOnce = false;
-    cp = 1;
-    headLocation = 0;
-    rotation = vec3.create();
-    rotationB = vec3.create();
+    #useWorldLocation = DEFAULT_USE_WORLD_LOCATION$1;
+    #randomize = false; // TODO: check default value
+    #setOnce = false; // TODO: check default value
+    #cp = DEFAULT_CP;
+    #headLocation = DEFAULT_HEAD_LOCATION$2;
+    #rotation = vec3.create(); // TODO: check default value
+    #rotationB = vec3.create(); // TODO: check default value
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flInterpolation':
+                console.error('do this param', paramName, param);
                 break;
             case 'm_bUseWorldLocation':
-                this.useWorldLocation = param;
+                this.#useWorldLocation = param.getValueAsBool() ?? DEFAULT_USE_WORLD_LOCATION$1;
                 break;
             case 'm_bRandomize':
-                this.randomize = param;
+                console.error('do this param', paramName, param);
+                this.#randomize = param;
                 break;
             case 'm_bSetOnce':
-                this.setOnce = param;
+                console.error('do this param', paramName, param);
+                this.#setOnce = param;
                 break;
-            case 'm_nCP':
-                this.cp = (param);
+            case 'm_nCP': //TODO: mutualize
+                this.#cp = param.getValueAsNumber() ?? DEFAULT_CP;
                 break;
             case 'm_nHeadLocation':
-                this.headLocation = (param);
+                this.#headLocation = param.getValueAsNumber() ?? DEFAULT_HEAD_LOCATION$2;
                 break;
             case 'm_vecRotation':
-                vec3.copy(this.rotation, param);
+                param.getValueAsVec3(this.#rotation);
                 break;
             case 'm_vecRotationB':
-                vec3.copy(this.rotationB, param);
+                param.getValueAsVec3(this.#rotationB);
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         return;
     }
     isPreEmission() {
@@ -63215,73 +64034,82 @@ class SetControlPointOrientation extends Operator {
 RegisterSource2ParticleOperator('C_OP_SetControlPointOrientation', SetControlPointOrientation);
 
 const v$3 = vec3.create();
+const DEFAULT_USE_WORLD_LOCATION = false; // TODO: check default value
+const DEFAULT_ORIENT = false; // TODO: check default value
+const DEFAULT_CP_1$2 = 1; // TODO: check default value
+const DEFAULT_CP_2 = 2; // TODO: check default value
+const DEFAULT_CP_3 = 3; // TODO: check default value
+const DEFAULT_CP_4 = 4; // TODO: check default value
+const DEFAULT_HEAD_LOCATION$1 = 0; // TODO: check default value
+const DEFAULT_SET_ONCE$1 = false; // TODO: check default value
 class SetControlPointPositions extends Operator {
-    useWorldLocation = false;
-    orient = false;
-    cp = [1, 2, 3, 4];
-    cpPos = [vec3.fromValues(128, 0, 0), vec3.fromValues(0, 128, 0), vec3.fromValues(-128, 0, 0), vec3.fromValues(0, -128, 0)];
-    headLocation = 0;
-    setOnce = false;
+    #useWorldLocation = DEFAULT_USE_WORLD_LOCATION;
+    #orient = DEFAULT_ORIENT;
+    #cp = [DEFAULT_CP_1$2, DEFAULT_CP_2, DEFAULT_CP_3, DEFAULT_CP_4];
+    #cpPos = [vec3.fromValues(128, 0, 0), vec3.fromValues(0, 128, 0), vec3.fromValues(-128, 0, 0), vec3.fromValues(0, -128, 0)]; // TODO: check default value
+    #headLocation = DEFAULT_HEAD_LOCATION$1;
+    #setOnce = DEFAULT_SET_ONCE$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
-            case 'm_bUseWorldLocation':
-                this.useWorldLocation = param;
+            case 'm_bUseWorldLocation': // TODO: mutualize
+                this.#useWorldLocation = param.getValueAsBool() ?? DEFAULT_USE_WORLD_LOCATION;
                 break;
             case 'm_bOrient':
-                this.orient = param;
+                this.#orient = param.getValueAsBool() ?? DEFAULT_ORIENT;
                 break;
             case 'm_bSetOnce':
-                this.setOnce = param;
+                this.#setOnce = param.getValueAsBool() ?? DEFAULT_SET_ONCE$1;
                 break;
             case 'm_nCP1':
-                this.cp[0] = (param);
+                this.#cp[0] = param.getValueAsNumber() ?? DEFAULT_CP_1$2;
                 break;
             case 'm_nCP2':
-                this.cp[1] = (param);
+                this.#cp[1] = param.getValueAsNumber() ?? DEFAULT_CP_2;
                 break;
             case 'm_nCP3':
-                this.cp[2] = (param);
+                this.#cp[2] = param.getValueAsNumber() ?? DEFAULT_CP_3;
                 break;
             case 'm_nCP4':
-                this.cp[3] = (param);
+                this.#cp[3] = param.getValueAsNumber() ?? DEFAULT_CP_4;
                 break;
             case 'm_vecCP1Pos':
-                vec3.copy(this.cpPos[0], param);
+                param.getValueAsVec3(this.#cpPos[0]);
                 break;
             case 'm_vecCP2Pos':
-                vec3.copy(this.cpPos[1], param);
+                param.getValueAsVec3(this.#cpPos[1]);
                 break;
             case 'm_vecCP3Pos':
-                vec3.copy(this.cpPos[2], param);
+                param.getValueAsVec3(this.#cpPos[2]);
                 break;
             case 'm_vecCP4Pos':
-                vec3.copy(this.cpPos[3], param);
+                param.getValueAsVec3(this.#cpPos[3]);
                 break;
             case 'm_nHeadLocation':
-                this.headLocation = (param);
+                this.#headLocation = param.getValueAsNumber() ?? DEFAULT_HEAD_LOCATION$1;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
     doOperate(particle, elapsedTime, strength) {
+        // TODO: use orient
         //const list = ['First', 'Second', 'Third', 'Fourth'];
-        const useWorldLocation = this.useWorldLocation;
-        this.system.getControlPointPosition(this.headLocation);
+        const useWorldLocation = this.#useWorldLocation;
+        this.system.getControlPointPosition(this.#headLocation);
         let cpNumber;
         let cpLocation;
-        const headLocation = this.system.getControlPoint(this.headLocation);
+        const headLocation = this.system.getControlPoint(this.#headLocation);
         for (let cpIndex = 0; cpIndex < 4; ++cpIndex) {
-            cpNumber = this.cp[cpIndex];
-            cpLocation = this.cpPos[cpIndex];
+            cpNumber = this.#cp[cpIndex];
+            cpLocation = this.#cpPos[cpIndex];
             const cp = this.system.getControlPoint(cpNumber);
             if (!useWorldLocation) {
                 vec3.transformQuat(v$3, cpLocation, headLocation.currentWorldQuaternion);
                 vec3.add(v$3, v$3, headLocation.currentWorldPosition);
-                cp.position = v$3;
+                cp.setPosition(v$3);
             }
             else {
-                cp.position = cpLocation;
+                cp.setPosition(cpLocation);
                 this.system.setControlPointPosition(cpNumber, cpLocation);
             }
         }
@@ -63292,40 +64120,43 @@ class SetControlPointPositions extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_SetControlPointPositions', SetControlPointPositions);
 
+const DEFAULT_FOLLOW_ATTACHMENT = false; // TODO: check default value
+const DEFAULT_ATTACHMENT_NAME = ''; // TODO: check default value
+const DEFAULT_HITBOX_SET_NAME = 'default'; // TODO: check default value
+const DEFAULT_FIRST_CONTROL_POINT = 0; // TODO: check default value
+const DEFAULT_FIRST_SOURCE_POINT = 0; // TODO: check default value
+const DEFAULT_NUM_CONTROL_POINT = 1; // TODO: check default value
+const DEFAULT_SKIN = false; // TODO: check default value
 class SetControlPointsToModelParticles extends Operator {
-    #followAttachment = false;
-    #attachmentName = '';
-    hitboxSetName = 'default';
-    #firstControlPoint = 0;
-    numControlPoints = 1;
-    firstSourcePoint = 0;
-    skin = false;
+    #followAttachment = DEFAULT_FOLLOW_ATTACHMENT;
+    #attachmentName = DEFAULT_ATTACHMENT_NAME;
+    #hitboxSetName = DEFAULT_HITBOX_SET_NAME;
+    #firstControlPoint = DEFAULT_FIRST_CONTROL_POINT;
+    #numControlPoints = DEFAULT_NUM_CONTROL_POINT;
+    firstSourcePoint = DEFAULT_FIRST_SOURCE_POINT;
+    #skin = DEFAULT_SKIN; //TODO: remove ?
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_HitboxSetName':
-                console.error('do this param', paramName, param);
-                this.hitboxSetName = param;
+                this.#hitboxSetName = param.getValueAsString() ?? DEFAULT_HITBOX_SET_NAME;
                 break;
             case 'm_AttachmentName':
-                this.#attachmentName = param.getValueAsString() ?? '';
+                this.#attachmentName = param.getValueAsString() ?? DEFAULT_ATTACHMENT_NAME;
                 break;
             case 'm_nFirstControlPoint':
-                this.#firstControlPoint = param.getValueAsNumber() ?? 0;
+                this.#firstControlPoint = param.getValueAsNumber() ?? DEFAULT_FIRST_CONTROL_POINT;
                 break;
             case 'm_nNumControlPoints':
-                console.error('do this param', paramName, param);
-                this.numControlPoints = (param);
+                this.#numControlPoints = param.getValueAsNumber() ?? DEFAULT_NUM_CONTROL_POINT;
                 break;
             case 'm_nFirstSourcePoint':
-                console.error('do this param', paramName, param);
-                this.firstSourcePoint = (param);
+                this.firstSourcePoint = param.getValueAsNumber() ?? DEFAULT_FIRST_SOURCE_POINT;
                 break;
             case 'm_bSkin':
-                console.error('do this param', paramName, param);
-                this.skin = param;
-                throw 'TODO: what is this skin param';
+                this.#skin = param.getValueAsBool() ?? DEFAULT_SKIN;
+                break;
             case 'm_bAttachment':
-                this.#followAttachment = param.getValueAsBool() ?? false;
+                this.#followAttachment = param.getValueAsBool() ?? DEFAULT_FOLLOW_ATTACHMENT;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -63336,7 +64167,7 @@ class SetControlPointsToModelParticles extends Operator {
         const children = this.system.childSystems;
         const firstControlPoint = this.#firstControlPoint;
         const firstSourcePoint = this.firstSourcePoint;
-        for (let i = 0; i < this.numControlPoints; ++i) {
+        for (let i = 0; i < this.#numControlPoints; ++i) {
             const particle = this.system.livingParticles[firstSourcePoint + i];
             if (particle) {
                 for (const child of children) {
@@ -63364,17 +64195,17 @@ class SetControlPointsToModelParticles extends Operator {
 RegisterSource2ParticleOperator('C_OP_SetControlPointsToModelParticles', SetControlPointsToModelParticles);
 
 const center$1 = vec3.create();
+const DEFAULT_CP_1$1 = 1; // TODO: check default value
 class SetControlPointToCenter extends Operator {
-    #cp1 = 1;
+    #cp1 = DEFAULT_CP_1$1;
     #cp1Pos = vec3.create();
     _paramChanged(paramName, param) {
         switch (paramName) {
-            case 'm_nCP1': // TODO: mutualize thsi parameter ?
-                this.#cp1 = param.getValueAsNumber() ?? 0;
+            case 'm_nCP1': // TODO: mutualize this parameter ?
+                this.#cp1 = param.getValueAsNumber() ?? DEFAULT_CP_1$1;
                 break;
             case 'm_vecCP1Pos':
-                console.error('do this param', paramName, param);
-                vec3.copy(this.#cp1Pos, param);
+                param.getValueAsVec3(this.#cp1Pos);
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -63394,48 +64225,56 @@ RegisterSource2ParticleOperator('C_OP_SetControlPointToCenter', SetControlPointT
 const UNIT_VEC3_X = vec3.fromValues(1, 0, 0);
 const UNIT_VEC3_Z = vec3.fromValues(0, 0, 1);
 const q = quat.create();
+const DEFAULT_INTERP_RATE = 0; // TODO: check default value
+const DEFAULT_MAX_TRACE_LENGTH = 128; // TODO: check default value
+const DEFAULT_TOLERANCE = 32; // TODO: check default value
+const DEFAULT_TRACE_OFFSET = 64; // TODO: check default value
+const DEFAULT_COLLISION_GROUP_NAME = 'NONE'; // TODO: check default value
+const DEFAULT_INPUT_CP = 0; // TODO: check default value
+const DEFAULT_OUTPUT_CP = 1; // TODO: check default value
+const DEFAULT_INCLUDE_WATER = false; // TODO: check default value
 class SetCPOrientationToGroundNormal extends Operator {
-    m_flInterpRate = 0;
-    maxTraceLength = 128;
-    tolerance = 32;
-    traceOffset = 64;
-    collisionGroupName = 'NONE';
-    inputCP = 0;
-    outputCP = 1;
-    includeWater = false;
+    #interpRate = DEFAULT_INTERP_RATE;
+    #maxTraceLength = DEFAULT_MAX_TRACE_LENGTH;
+    #tolerance = DEFAULT_TOLERANCE;
+    #traceOffset = DEFAULT_TRACE_OFFSET;
+    #collisionGroupName = DEFAULT_COLLISION_GROUP_NAME;
+    #inputCP = DEFAULT_INPUT_CP;
+    #outputCP = DEFAULT_OUTPUT_CP;
+    #includeWater = DEFAULT_INCLUDE_WATER;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flInterpRate':
-                this.m_flInterpRate = param;
+                this.#interpRate = param.getValueAsNumber() ?? DEFAULT_INTERP_RATE;
                 break;
             case 'm_flMaxTraceLength':
-                this.maxTraceLength = param;
+                this.#maxTraceLength = param.getValueAsNumber() ?? DEFAULT_MAX_TRACE_LENGTH;
                 break;
             case 'm_flTolerance':
-                this.tolerance = param;
+                this.#tolerance = param.getValueAsNumber() ?? DEFAULT_TOLERANCE;
                 break;
             case 'm_flTraceOffset':
-                this.traceOffset = param;
+                this.#traceOffset = param.getValueAsNumber() ?? DEFAULT_TRACE_OFFSET;
                 break;
-            case 'm_CollisionGroupName':
-                this.collisionGroupName = param;
+            case 'm_CollisionGroupName': //TODO: mutualize
+                this.#collisionGroupName = param.getValueAsString() ?? DEFAULT_COLLISION_GROUP_NAME;
                 break;
-            case 'm_nInputCP':
-                this.inputCP = (param);
+            case 'm_nInputCP': //TODO: mutualize
+                this.#inputCP = param.getValueAsNumber() ?? DEFAULT_INPUT_CP;
                 break;
-            case 'm_nOutputCP':
-                this.outputCP = (param);
+            case 'm_nOutputCP': //TODO mutualize
+                this.#outputCP = param.getValueAsNumber() ?? DEFAULT_OUTPUT_CP;
                 break;
             case 'm_bIncludeWater':
-                this.includeWater = param;
+                this.#includeWater = param.getValueAsBool() ?? DEFAULT_INCLUDE_WATER;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         //TODO: do it properly
-        const outputCP = this.system.getControlPoint(this.outputCP);
+        const outputCP = this.system.getControlPoint(this.#outputCP);
         if (outputCP) {
             quat.rotationTo(q, UNIT_VEC3_X, UNIT_VEC3_Z);
             outputCP.quaternion = q;
@@ -63445,7 +64284,7 @@ class SetCPOrientationToGroundNormal extends Operator {
 RegisterSource2ParticleOperator('C_OP_SetCPOrientationToGroundNormal', SetCPOrientationToGroundNormal);
 
 class SetFloat extends Operator {
-    normalizePerLiving = true;
+    #normalizePerLiving = true;
     outputField = PARTICLE_FIELD_RADIUS; //TODO: not sure about the default field
     setMethod = 'PARTICLE_SET_VALUE'; // TODO: create a const
     _paramChanged(paramName, param) {
@@ -63473,43 +64312,49 @@ class SetFloat extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_SetFloat', SetFloat);
 
+const DEFAULT_SET_ORIENTATION = false;
+const DEFAULT_NUM_CONTROL_POINTS = 1;
+const DEFAULT_FIRST_SOURCE_CONTROL_POINT = 0;
+const DEFAULT_CHILD_CONTROL_POINT = 0;
 class SetParentControlPointsToChildCP extends Operator {
-    childGroupID = 0;
-    childControlPoint = 0;
-    numControlPoints = 1;
-    firstSourcePoint = 0;
-    setOrientation = false;
+    #childGroupID = 0;
+    #childControlPoint = DEFAULT_CHILD_CONTROL_POINT;
+    #numControlPoints = DEFAULT_NUM_CONTROL_POINTS;
+    #firstSourcePoint = DEFAULT_FIRST_SOURCE_CONTROL_POINT;
+    #setOrientation = DEFAULT_SET_ORIENTATION;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nChildGroupID':
-                this.childGroupID = (param);
+                console.error('do this param', paramName, param);
+                this.#childGroupID = (param);
                 break;
             case 'm_nChildControlPoint':
-                this.childControlPoint = (param);
+                this.#childControlPoint = param.getValueAsNumber() ?? DEFAULT_CHILD_CONTROL_POINT;
                 break;
             case 'm_nNumControlPoints':
-                this.numControlPoints = (param);
+                this.#numControlPoints = param.getValueAsNumber() ?? DEFAULT_NUM_CONTROL_POINTS;
                 break;
             case 'm_nFirstSourcePoint':
-                this.firstSourcePoint = (param);
+                this.#firstSourcePoint = param.getValueAsNumber() ?? DEFAULT_FIRST_SOURCE_CONTROL_POINT;
                 break;
             case 'm_bSetOrientation':
-                this.setOrientation = param;
+                this.#setOrientation = param.getValueAsBool() ?? DEFAULT_SET_ORIENTATION;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
+        // TODO: use setOrientation
         const children = this.system.childSystems;
-        let childId = this.childGroupID;
-        let cpId = this.firstSourcePoint;
-        let count = this.numControlPoints;
+        let childId = this.#childGroupID;
+        let cpId = this.#firstSourcePoint;
+        let count = this.#numControlPoints;
         while (count--) {
             const child = children[childId];
             const cp = this.system.getControlPoint(cpId);
             if (child && cp) {
-                const childCp = child.getOwnControlPoint(this.childControlPoint);
+                const childCp = child.getOwnControlPoint(this.#childControlPoint);
                 childCp.position = cp.currentWorldPosition;
             }
             ++childId;
@@ -63635,50 +64480,55 @@ RegisterSource2ParticleOperator('C_OP_SetRandomControlPointPosition', SetRandomC
 const DEFAULT_POSITION = vec3.fromValues(128, 0, 0);
 const v$1 = vec3.create();
 const tempVec4 = vec4.create();
+const DEFAULT_CP_1 = 1; // TODO: check default value
+const DEFAULT_USE_WORLD_POSITION = false; // TODO: check default value
+const DEFAULT_SET_ONCE = false; // TODO: check default value
+const DEFAULT_HEAD_LOCATION = 0; // TODO: check default value
 class SetSingleControlPointPosition extends Operator {
-    useWorldLocation = false;
-    setOnce = false;
-    cp1 = 1;
-    headLocation = 0;
-    set = false;
+    #useWorldLocation = DEFAULT_USE_WORLD_POSITION;
+    #setOnce = DEFAULT_SET_ONCE;
+    #cp1 = DEFAULT_CP_1;
+    #headLocation = DEFAULT_HEAD_LOCATION;
+    #set = false;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_vecCP1Pos':
+                //used in doOperate
                 break;
             case 'm_bUseWorldLocation':
-                this.useWorldLocation = param;
+                this.#useWorldLocation = param.getValueAsBool() ?? DEFAULT_USE_WORLD_POSITION;
                 break;
-            case 'm_bSetOnce':
-                this.setOnce = param;
+            case 'm_bSetOnce': // TODO: mutualize
+                this.#setOnce = param.getValueAsBool() ?? DEFAULT_SET_ONCE;
                 break;
             case 'm_nCP1':
-                this.cp1 = (param);
+                this.#cp1 = param.getValueAsNumber() ?? DEFAULT_CP_1;
                 break;
             case 'm_nHeadLocation':
-                this.headLocation = (param);
+                this.#headLocation = param.getValueAsNumber() ?? DEFAULT_HEAD_LOCATION;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
     reset() {
-        this.set = false;
+        this.#set = false;
     }
-    doOperate(particle, elapsedTime) {
-        const cp1Pos = this.getParamVectorValue('m_vecCP1Pos', particle, tempVec4) ?? DEFAULT_POSITION;
+    doOperate(particle, elapsedTime, strength) {
+        const cp1Pos = this.getParamVectorValue(tempVec4, 'm_vecCP1Pos', particle) ?? DEFAULT_POSITION;
         //TODO
-        if (!this.setOnce || !this.set) {
-            const cp = this.system.getOwnControlPoint(this.cp1);
-            if (this.useWorldLocation) {
-                cp.position = cp1Pos;
+        if (!this.#setOnce || !this.#set) {
+            const cp = this.system.getOwnControlPoint(this.#cp1);
+            if (this.#useWorldLocation) {
+                cp.setPosition(cp1Pos);
             }
             else {
-                const headCp = this.system.getControlPoint(this.headLocation);
+                const headCp = this.system.getControlPoint(this.#headLocation);
                 vec3.transformQuat(v$1, cp1Pos, headCp.currentWorldQuaternion);
                 vec3.add(v$1, v$1, headCp.currentWorldPosition);
                 cp.position = v$1;
             }
-            this.set = true;
+            this.#set = true;
         }
     }
     isPreEmission() {
@@ -63690,18 +64540,17 @@ RegisterSource2ParticleOperator('C_OP_SetSingleControlPointPosition', SetSingleC
 const tempQuat = quat.create();
 const tempVec3$1 = vec3.create();
 const tempVec3_2 = vec3.create();
+const DEFAULT_OFFSET_LOCAL = false; // TODO: check default value
 class SetToCP extends Operator {
-    offset = vec3.create();
-    offsetLocal = false;
+    #offset = vec3.create();
+    #offsetLocal = DEFAULT_OFFSET_LOCAL;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_vecOffset':
-                console.error('do this param', paramName, param);
-                vec3.copy(this.offset, param);
+                param.getValueAsVec3(this.#offset);
                 break;
-            case 'm_bOffsetLocal':
-                console.error('do this param', paramName, param);
-                this.offsetLocal = param;
+            case 'm_bOffsetLocal': //TODO: mutualize
+                this.#offsetLocal = param.getValueAsBool() ?? DEFAULT_OFFSET_LOCAL;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -63711,12 +64560,12 @@ class SetToCP extends Operator {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
             cp.getWorldPosition(tempVec3_2);
-            if (this.offsetLocal) {
-                vec3.transformQuat(tempVec3$1, this.offset, cp.getWorldQuaternion(tempQuat));
+            if (this.#offsetLocal) {
+                vec3.transformQuat(tempVec3$1, this.#offset, cp.getWorldQuaternion(tempQuat));
                 vec3.add(tempVec3$1, tempVec3$1, tempVec3_2);
             }
             else {
-                vec3.add(tempVec3$1, this.offset, tempVec3_2);
+                vec3.add(tempVec3$1, this.#offset, tempVec3_2);
             }
             vec3.copy(particle.position, tempVec3$1);
             vec3.copy(particle.prevPosition, tempVec3$1);
@@ -63726,31 +64575,34 @@ class SetToCP extends Operator {
 RegisterSource2ParticleOperator('C_OP_SetToCP', SetToCP);
 
 const DEFAULT_VECTOR_VALUE = vec4.create();
-const vec = vec4.create();
+const setVecTempVec4 = vec4.create();
+const DEFAULT_OUTPUT_FIELD = PARTICLE_FIELD_COLOR; // TODO: check default value
+const DEFAULT_SET_METHOD = 'PARTICLE_SET_VALUE'; // TODO: check default value
 class SetVec extends Operator {
-    outputField = PARTICLE_FIELD_COLOR;
-    setMethod = 'PARTICLE_SET_VALUE';
-    normalizePerLiving = true;
+    #outputField = DEFAULT_OUTPUT_FIELD;
+    #setMethod = DEFAULT_SET_METHOD;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_InputValue':
             case 'm_Lerp':
+                // used in doOperate
                 break;
             case 'm_nOutputField':
-                this.outputField = (param);
+                console.error('do this param', paramName, param, this.constructor.name);
+                this.#outputField = (param);
                 break;
             case 'm_nSetMethod':
-                this.setMethod = param;
+                this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         //TODO: use lerp
-        const inputValue = this.getParamVectorValue('m_InputValue', particle, vec) ?? DEFAULT_VECTOR_VALUE;
+        const inputValue = this.getParamVectorValue(setVecTempVec4, 'm_InputValue', particle) ?? DEFAULT_VECTOR_VALUE;
         this.getParamScalarValue('m_Lerp', particle) ?? 1;
-        particle.setField(this.outputField, inputValue, this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
+        particle.setField(this.#outputField, inputValue, this.#setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
     }
 }
 RegisterSource2ParticleOperator('C_OP_SetVec', SetVec);
@@ -63758,19 +64610,20 @@ RegisterSource2ParticleOperator('C_OP_SetVec', SetVec);
 const mat = mat4.create();
 const nmat = mat3.create();
 const IDENTITY_MAT4 = mat4.create();
+const DEFAULT_TRANSFORM_NORMALS = false; // TODO: check default value
 class SnapshotRigidSkinToBones extends Operator {
-    transformNormals = false;
+    #transformNormals = DEFAULT_TRANSFORM_NORMALS;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_bTransformNormals':
                 //normal seems to be transformed whatever this parameter value is ?
-                this.transformNormals = param;
+                this.#transformNormals = param.getValueAsBool() ?? DEFAULT_TRANSFORM_NORMALS;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         let bone, boneName, boneWeight, boneMat;
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (!cp) {
@@ -63848,30 +64701,33 @@ class SnapshotRigidSkinToBones extends Operator {
 RegisterSource2ParticleOperator('C_OP_SnapshotRigidSkinToBones', SnapshotRigidSkinToBones);
 RegisterSource2ParticleOperator('C_OP_SnapshotSkinToBones', SnapshotRigidSkinToBones); //TODO: set proper operator
 
+const DEFAULT_SPIN_RATE = 0; // TODO: check default value
+const DEFAULT_SPIN_RATE_MIN = 0; // TODO: check default value
+const DEFAULT_SPIN_RATE_STOP_TIME = 0; // TODO: check default value
 class Spin extends Operator {
-    spinRateDegrees = 0;
-    spinRateMinDegrees = 0;
-    spinRateStopTime = 0;
+    #spinRateDegrees = DEFAULT_SPIN_RATE;
+    #spinRateMinDegrees = DEFAULT_SPIN_RATE_MIN;
+    #spinRateStopTime = DEFAULT_SPIN_RATE_STOP_TIME;
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_nSpinRateDegrees':
-                this.spinRateDegrees = (param);
+                this.#spinRateDegrees = param.getValueAsNumber() ?? DEFAULT_SPIN_RATE;
                 break;
             case 'm_nSpinRateMinDegrees':
-                this.spinRateMinDegrees = (param);
+                this.#spinRateMinDegrees = param.getValueAsNumber() ?? DEFAULT_SPIN_RATE_MIN;
                 break;
             case 'm_fSpinRateStopTime':
-                this.spinRateStopTime = param;
+                this.#spinRateStopTime = param.getValueAsNumber() ?? DEFAULT_SPIN_RATE_STOP_TIME;
                 break;
             default:
                 super._paramChanged(paramName, param);
         }
     }
-    doOperate(particle, elapsedTime) {
+    doOperate(particle, elapsedTime, strength) {
         //particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
-        const m_fSpinRateStopTime = this.spinRateStopTime;
-        const m_fSpinRateRadians = (this.spinRateDegrees) * DEG_TO_RAD;
-        const m_fSpinRateMinRadians = (this.spinRateMinDegrees) * DEG_TO_RAD;
+        const m_fSpinRateStopTime = this.#spinRateStopTime;
+        const m_fSpinRateRadians = (this.#spinRateDegrees) * DEG_TO_RAD; //TODO: optimize
+        const m_fSpinRateMinRadians = (this.#spinRateMinDegrees) * DEG_TO_RAD; //TODO: optimize
         const fCurSpinRate = m_fSpinRateRadians /* * flStrength*/; //TODO
         if (fCurSpinRate == 0.0) {
             return;
@@ -63938,14 +64794,15 @@ const Coord = vec3.create();
 const output = vec3.create();
 const ofs_y = vec3.fromValues(100000.5, 300000.25, 9000000.75);
 const ofs_z = vec3.fromValues(110000.25, 310000.75, 9100000.5);
-const DEFAULT_NOISE_SCALE = 0.1;
+const DEFAULT_NOISE_SCALE = 0.1; // TODO: check default value
+const DEFAULT_OFFSET = false; // TODO: check default value
 class VectorNoise extends Operator {
     #outputMin = vec3.create();
     #outputMax = vec3.fromValues(1, 1, 1);
     #fieldOutput = PARTICLE_FIELD_COLOR;
     #noiseScale = DEFAULT_NOISE_SCALE;
     #additive = false;
-    #offset = false;
+    #offset = DEFAULT_OFFSET;
     #noiseAnimationTimeScale = 0;
     #valueScale = vec3.create();
     #valueBase = vec3.create();
@@ -63979,9 +64836,8 @@ class VectorNoise extends Operator {
             case 'm_bAdditive':
                 this.#additive = param.getValueAsBool() ?? false;
                 break;
-            case 'm_bOffset':
-                console.error('do this param', paramName, param);
-                this.#offset = param;
+            case 'm_bOffset': // TODO: mutualize
+                this.#offset = param.getValueAsBool() ?? DEFAULT_OFFSET;
                 break;
             case 'm_flNoiseAnimationTimeScale':
                 console.error('do this param', paramName, param);
@@ -64004,67 +64860,6 @@ class VectorNoise extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_VectorNoise', VectorNoise);
 
-class RenderBlobs extends Operator {
-    #balls = [];
-    #metaballs = new Metaballs();
-    constructor(system) {
-        super(system);
-        this.material = new Source2SpriteCard(system.repository);
-    }
-    _paramChanged(paramName, param) {
-        /*
-        cube_width
-            This is the density of the matrix through which the blob is meshed. Smaller numbers give higher precision at higher performance cost, while larger number will cause more swimming with movement but at a much cheaper cost.
-
-        cutoff_radius
-            The distance at which particles will attempt to connect with other particles to create a continuous mesh. Larger distances are more expensive, should be balanced carefully with cube_width for best performance.
-
-        render_radius
-            The visual radius of each particle. Note that this should be kept smaller than the cutoff radius or multiple particles will potentially overlap each other visually, which may cause a variety of visual errors.
-
-        scale CP
-            Allows the other visual properties to be scaled via an external Control Point. X = cube_width / Y = cutoff radius / Z = render radius
-        */
-        switch (paramName) {
-            case 'm_cubeWidth':
-                break;
-            default:
-                super._paramChanged(paramName, param);
-        }
-    }
-    initRenderer(particleSystem) {
-        /*this.geometry = new BufferGeometry();
-        this.mesh = new StaticMesh(this.geometry, this.material);
-        this.mesh.setDefine('HARDWARE_PARTICLES');
-        this.#createParticlesTexture();
-        this.mesh.setUniform('uParticles', this.texture);
-
-        this.maxParticles = particleSystem.maxParticles;*/
-        //this.metaballs = new Metaballs();
-        particleSystem.addChild(this.#metaballs);
-    }
-    updateParticles(particleSystem, particleList, elapsedTime) {
-        this.#metaballs.cubeWidth = this.getParamScalarValue('m_cubeWidth') ?? 1;
-        const renderRadius = this.getParamScalarValue('m_renderRadius') ?? 1.3;
-        this.getParamScalarValue('m_cutoffRadius') ?? 3.3;
-        const balls = [];
-        for (let i = 0; i < Math.min(particleList.length, 500); i++) {
-            const particle = particleList[i];
-            let ball = this.#balls[i];
-            if (!ball) {
-                ball = new Metaball();
-                this.#balls.push(ball);
-            }
-            ball.setRadius(renderRadius);
-            ball.position = particle.position;
-            balls.push(ball);
-        }
-        this.#metaballs.setBalls(balls);
-        this.#metaballs.updateGeometry();
-    }
-}
-RegisterSource2ParticleOperator('C_OP_RenderBlobs', RenderBlobs);
-
 // Base renderer for common attributes like textures
 class RenderBase extends Operator {
     material = new Source2SpriteCard('');
@@ -64083,9 +64878,9 @@ class RenderBase extends Operator {
                 const textureInput0 = param.getValueAsArray()?.[0]; //TODO: check multiple textures ?
                 if (textureInput0 && textureInput0.isOperatorParam) {
                     this.setTexture(textureInput0.getSubValue('m_hTexture')?.getValueAsString() ?? DEFAULT_PARTICLE_TEXTURE);
-                    const textureChannels = textureInput0.getSubValue('m_nTextureChannels');
+                    const textureChannels = textureInput0.getSubValueAsString('m_nTextureChannels');
                     if (textureChannels) {
-                        throw 'fix me'; //this.material.setDefine(value[0].m_nTextureChannels);//TODO: check values
+                        this.material.setDefine(textureChannels); //TODO: check values
                     }
                 }
                 break;
@@ -64151,10 +64946,98 @@ class RenderBase extends Operator {
     }
 }
 
+class RenderBlobs extends RenderBase {
+    #balls = [];
+    #metaballs = new Metaballs();
+    constructor(system) {
+        super(system);
+        this.material = new Source2SpriteCard(system.repository);
+    }
+    _paramChanged(paramName, param) {
+        /*
+        cube_width
+            This is the density of the matrix through which the blob is meshed. Smaller numbers give higher precision at higher performance cost, while larger number will cause more swimming with movement but at a much cheaper cost.
+
+        cutoff_radius
+            The distance at which particles will attempt to connect with other particles to create a continuous mesh. Larger distances are more expensive, should be balanced carefully with cube_width for best performance.
+
+        render_radius
+            The visual radius of each particle. Note that this should be kept smaller than the cutoff radius or multiple particles will potentially overlap each other visually, which may cause a variety of visual errors.
+
+        scale CP
+            Allows the other visual properties to be scaled via an external Control Point. X = cube_width / Y = cutoff radius / Z = render radius
+        */
+        switch (paramName) {
+            case 'm_cubeWidth':
+                break;
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
+    initRenderer(particleSystem) {
+        /*this.geometry = new BufferGeometry();
+        this.mesh = new StaticMesh(this.geometry, this.material);
+        this.mesh.setDefine('HARDWARE_PARTICLES');
+        this.#createParticlesTexture();
+        this.mesh.setUniform('uParticles', this.texture);
+
+        this.maxParticles = particleSystem.maxParticles;*/
+        //this.metaballs = new Metaballs();
+        particleSystem.addChild(this.#metaballs);
+    }
+    updateParticles(particleSystem, particleList, elapsedTime) {
+        this.#metaballs.cubeWidth = this.getParamScalarValue('m_cubeWidth') ?? 1;
+        const renderRadius = this.getParamScalarValue('m_renderRadius') ?? 1.3;
+        this.getParamScalarValue('m_cutoffRadius') ?? 3.3;
+        const balls = [];
+        for (let i = 0; i < Math.min(particleList.length, 500); i++) {
+            const particle = particleList[i];
+            let ball = this.#balls[i];
+            if (!ball) {
+                ball = new Metaball();
+                this.#balls.push(ball);
+            }
+            ball.setRadius(renderRadius);
+            ball.setPosition(particle.position);
+            balls.push(ball);
+        }
+        this.#metaballs.setBalls(balls);
+        this.#metaballs.updateGeometry();
+    }
+}
+RegisterSource2ParticleOperator('C_OP_RenderBlobs', RenderBlobs);
+
+const renderDeferredLightTempVec4 = vec4.create();
+const DEFAULT_ALPHA_SCALE = 1;
+const DEFAULT_COLOR_SCALE$2 = vec3.fromValues(1, 1, 1); // TODO: check default value
 class RenderDeferredLight extends RenderBase {
+    #startFalloff = 0; // TODO: check default value
+    #texture = ''; // TODO: check default value
+    _paramChanged(paramName, param) {
+        switch (paramName) {
+            case 'm_flStartFalloff':
+                this.#startFalloff = param.getValueAsNumber() ?? 0; // TODO: check default value
+                break;
+            case 'm_hTexture':
+                this.#texture = param.getValueAsString() ?? ''; // TODO: check default value
+                break;
+            case 'm_flRadiusScale':
+            case 'm_flAlphaScale': // TODO: mutualize ?
+            case 'm_vecColorScale':
+                // used in updateParticles
+                break;
+            default:
+                super._paramChanged(paramName, param);
+        }
+    }
     initRenderer(particleSystem) {
     }
     updateParticles(particleSystem, particleList, elapsedTime) {
+        this.getParamScalarValue('m_flRadiusScale') ?? 1;
+        this.getParamScalarValue('m_flAlphaScale') ?? DEFAULT_ALPHA_SCALE;
+        this.getParamVectorValue(renderDeferredLightTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE$2;
+        for (const particle of particleList) {
+        }
     }
 }
 RegisterSource2ParticleOperator('C_OP_RenderDeferredLight', RenderDeferredLight);
@@ -64300,19 +65183,32 @@ const OPERATOR_PARAM_TEXTURE = 'm_hTexture';
 
 const SEQUENCE_COMBINE_MODE_ALPHA_FROM0_RGB_FROM_1 = 1;
 
-const DEFAULT_WORLD_SIZE = 10;
+const renderRopesTempVec4 = vec4.create();
+const DEFAULT_WORLD_SIZE = 10; // TODO: check default value
+const DEFAULT_SCROLL_RATE = 10; // TODO: check default value
+const DEFAULT_COLOR_SCALE$1 = vec3.fromValues(1, 1, 1); // TODO: check default value
+const DEFAULT_DEPTH_BIAS$1 = 1; // TODO: check default value
+const DEFAULT_FEATHERING_MODE$1 = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED'; // TODO: check default value
+const DEFAULT_FEATHERING_MAX_DIST$1 = 1; // TODO: check default value
+const DEFAULT_COLOR_BLEND_TYPE = 'PARTICLE_COLOR_BLEND_MIN'; // TODO: check default value
 class RenderRopes extends RenderBase {
-    #geometry;
     #textureVWorldSize = DEFAULT_WORLD_SIZE;
-    #textureVScrollRate = 10;
+    #textureVScrollRate = DEFAULT_SCROLL_RATE;
     #textureScroll = 0;
     #maxParticles = 1000; //TODO: default value
     #texture;
     #imgData;
+    #geometry = new BeamBufferGeometry();
+    #addSelfAmount = 1; // TODO: check default value
+    #saturateColorPreAlphaBlend = false; // TODO: check default value
+    #minTesselation = 1; // TODO: check default value
+    #maxTesselation = 1; // TODO: check default value
+    #depthBias = DEFAULT_DEPTH_BIAS$1;
+    #featheringMode = DEFAULT_FEATHERING_MODE$1;
+    #featheringMaxDist = DEFAULT_FEATHERING_MAX_DIST$1;
+    #colorBlendType = DEFAULT_COLOR_BLEND_TYPE;
     constructor(system) {
         super(system);
-        this.material = new Source2SpriteCard(system.repository);
-        this.#geometry = new BeamBufferGeometry();
         this.mesh = new Mesh(this.#geometry, this.material);
         this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
         Source2MaterialManager.addMaterial(this.material);
@@ -64321,29 +65217,51 @@ class RenderRopes extends RenderBase {
         //this.setParam(OPERATOR_PARAM_MOD_2X, false);
         //this.setParam(OPERATOR_PARAM_ORIENTATION_TYPE, ORIENTATION_TYPE_SCREEN_ALIGN);
         //this.setParam(OPERATOR_PARAM_SEQUENCE_COMBINE_MODE, SEQUENCE_COMBINE_MODE_USE_SEQUENCE_0);//TODOv3: get the actual default value
-        this.#textureVWorldSize = 10;
-        this.#textureVScrollRate = 10;
-        this.#textureScroll = 0;
     }
     _paramChanged(paramName, param) {
         switch (paramName) {
             case OPERATOR_PARAM_TEXTURE:
-                console.error('do this param', paramName, param);
-                this.setTexture(param);
+                this.setTexture(param.getValueAsString() ?? ''); // TODO: check default value
                 break;
             case 'm_nSequenceCombineMode':
-                console.error('do this param', paramName, param);
-                this.setSequenceCombineMode(param);
+                this.setSequenceCombineMode(param.getValueAsString() ?? ''); // TODO: check default value
                 break;
             case 'm_flTextureVWorldSize':
                 this.#textureVWorldSize = param.getValueAsNumber() ?? DEFAULT_WORLD_SIZE;
                 break;
             case 'm_flTextureVScrollRate':
-                console.error('do this param', paramName, param);
-                this.#textureVScrollRate = param;
+                this.#textureVScrollRate = param.getValueAsNumber() ?? DEFAULT_SCROLL_RATE;
+                break;
+            case 'm_flAddSelfAmount':
+                this.#addSelfAmount = param.getValueAsNumber() ?? 1; // TODO: check default value
+                break;
+            case 'm_nMinTesselation':
+                this.#minTesselation = param.getValueAsNumber() ?? 1; // TODO: check default value
+                break;
+            case 'm_nMaxTesselation':
+                this.#maxTesselation = param.getValueAsNumber() ?? 1; // TODO: check default value
+                break;
+            case 'm_bSaturateColorPreAlphaBlend':
+                this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? false; // TODO: check default value
+                break;
+            case 'm_flDepthBias':
+                this.#depthBias = param.getValueAsNumber() ?? DEFAULT_DEPTH_BIAS$1; // TODO: check default value
+                break;
+            case 'm_nFeatheringMode': //TODO: mutualize in renderbase
+                this.#featheringMode = param.getValueAsString() ?? DEFAULT_FEATHERING_MODE$1; // TODO: check default value
+                break;
+            case 'm_flFeatheringMaxDist':
+                this.#featheringMaxDist = param.getValueAsNumber() ?? DEFAULT_FEATHERING_MAX_DIST$1;
+                break;
+            case 'm_nColorBlendType': //TODO: mutualize in renderbase
+                this.#colorBlendType = param.getValueAsString() ?? DEFAULT_COLOR_BLEND_TYPE; // TODO: check default value
                 break;
             case 'm_flFinalTextureScaleU':
             case 'm_flFinalTextureScaleV':
+            case 'm_flOverbrightFactor': // TODO: mutualize ?
+            case 'm_flRadiusScale':
+            case 'm_vecColorScale':
+                // used in updateParticles
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -64361,19 +65279,21 @@ class RenderRopes extends RenderBase {
         }
     }
     updateParticles(particleSystem, particleList, elapsedTime) {
+        // TODO: use saturateColorPreAlphaBlend, m_nMinTesselation, m_nMaxTesselation, colorScale, m_flDepthBias, featheringMode
+        this.mesh.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
+        this.getParamVectorValue(renderRopesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE$1;
+        this.getParamScalarValue('m_flRadiusScale') ?? 1;
         this.#textureScroll += elapsedTime * this.#textureVScrollRate;
         this.getParameter('subdivision_count') ?? 3;
         const geometry = this.#geometry;
         const segments = [];
-        let particle;
         let ropeLength = 0.0;
         let previousSegment = null;
         const textureVWorldSize = 1 / this.#textureVWorldSize;
         const textureScroll = this.#textureScroll;
         const alphaScale = this.getParamScalarValue('m_flAlphaScale') ?? 1;
-        for (let i = 0, l = particleList.length; i < l; i++) {
+        for (const particle of particleList) {
             //for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
-            particle = particleList[i];
             const segment = new BeamSegment(particle.position, [particle.color[0], particle.color[1], particle.color[2], particle.alpha * alphaScale], 0.0, particle.radius);
             vec3.copy(segment.normal, particle.normal);
             if (previousSegment) {
@@ -64468,16 +65388,42 @@ class RenderRopes extends RenderBase {
 }
 RegisterSource2ParticleOperator('C_OP_RenderRopes', RenderRopes);
 
+const renderSpritesTempVec4 = vec4.create();
 const DEFAULT_MAX_SIZE = 5000;
+const DEFAULT_BLEND_FRAMES_SEQ_0 = false; // TODO: check default value
+const DEFAULT_ANIMATION_RATE$1 = 1; // TODO: check default value
+const DEFAULT_START_FADE_SIZE = 1; // TODO: check default value
+const DEFAULT_END_FADE_SIZE = 1; // TODO: check default value
+const DEFAULT_FEATHERING_MODE = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED'; // TODO: check default value
+const DEFAULT_FEATHERING_MAX_DIST = 1; // TODO: check default value
+const DEFAULT_DEPTH_BIAS = 1; // TODO: check default value
+const DEFAULT_COLOR_SCALE = vec3.fromValues(1, 1, 1); // TODO: check default value
+const DEFAULT_ADD_SELF_AMOUNT$1 = 1; // TODO: check default value
+const DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND$1 = false; // TODO: check default value
+const DEFAULT_ANIMATION_TYPE = 'ANIMATION_TYPE_FIT_LIFETIME'; // TODO: check default value
+const DEFAULT_REFRACT = false; // TODO: check default value
+const DEFAULT_REFRACT_BLUR_RADIUS = 1; // TODO: check default value
+const DEFAULT_GAMMA_CORRECT_VERTEX_COLORS = true; // TODO: check default value
 class RenderSprites extends RenderBase {
     geometry = new BufferGeometry();
     #minSize = 0.0;
     #maxSize = DEFAULT_MAX_SIZE;
-    #saturateColorPreAlphaBlend = false; //TODO: check default value
+    #saturateColorPreAlphaBlend = DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND$1;
     #maxParticles = 0;
-    #feathering = 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED';
+    #featheringMode = DEFAULT_FEATHERING_MODE;
+    #featheringMaxDist = DEFAULT_FEATHERING_MAX_DIST;
     texture = TextureManager.createTexture();
     imgData; //TODO: set private ?
+    #addSelfAmount = DEFAULT_ADD_SELF_AMOUNT$1;
+    #blendFramesSeq0 = DEFAULT_BLEND_FRAMES_SEQ_0;
+    #animationRate = DEFAULT_ANIMATION_RATE$1;
+    #startFadeSize = DEFAULT_START_FADE_SIZE;
+    #endFadeSize = DEFAULT_END_FADE_SIZE;
+    #depthBias = DEFAULT_DEPTH_BIAS;
+    #animationType = DEFAULT_ANIMATION_TYPE;
+    #refract = DEFAULT_REFRACT;
+    #refractBlurRadius = DEFAULT_REFRACT_BLUR_RADIUS;
+    #gammaCorrectVertexColors = DEFAULT_GAMMA_CORRECT_VERTEX_COLORS;
     constructor(system) {
         super(system);
         this.mesh = new Mesh(this.geometry, this.material);
@@ -64492,12 +65438,10 @@ class RenderSprites extends RenderBase {
     _paramChanged(paramName, param) {
         switch (paramName) {
             case OPERATOR_PARAM_TEXTURE:
-                console.error('do this param', paramName, param);
-                this.setTexture(param);
+                this.setTexture(param.getValueAsString() ?? ''); // TODO: check default value
                 break;
             case 'm_nSequenceCombineMode':
-                console.error('do this param', paramName, param);
-                this.setSequenceCombineMode(param);
+                this.setSequenceCombineMode(param.getValueAsString() ?? ''); // TODO: check default value
                 break;
             case 'm_flMinSize':
                 this.#minSize = (param.getValueAsNumber() ?? 0) * 200.; //TODO: use the actual screen size
@@ -64506,15 +65450,50 @@ class RenderSprites extends RenderBase {
                 this.#maxSize = (param.getValueAsNumber() ?? DEFAULT_MAX_SIZE) * 200.; //TODO: use the actual screen size
                 break;
             case 'm_bSaturateColorPreAlphaBlend':
-                this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? false;
+                this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND$1;
+                break;
+            case 'm_bBlendFramesSeq0':
+                this.#blendFramesSeq0 = param.getValueAsBool() ?? DEFAULT_BLEND_FRAMES_SEQ_0;
+                break;
+            case 'm_flDepthBias': //TODO: mutualize in renderbase
+                this.#depthBias = param.getValueAsNumber() ?? DEFAULT_DEPTH_BIAS; // TODO: check default value
                 break;
             case 'm_nFeatheringMode':
-                this.#feathering = param.getValueAsString() ?? 'PARTICLE_DEPTH_FEATHERING_ON_REQUIRED'; // TODO: check default value
+                this.#featheringMode = param.getValueAsString() ?? DEFAULT_FEATHERING_MODE; // TODO: check default value
+                break;
+            case 'm_flFeatheringMaxDist':
+                this.#featheringMaxDist = param.getValueAsNumber() ?? DEFAULT_FEATHERING_MAX_DIST;
+                break;
+            case 'm_flAddSelfAmount': // TODO: mutualize ?
+                this.#addSelfAmount = param.getValueAsNumber() ?? DEFAULT_ADD_SELF_AMOUNT$1;
+                break;
+            case 'm_flAnimationRate':
+                this.#animationRate = param.getValueAsNumber() ?? DEFAULT_ANIMATION_RATE$1;
+                break;
+            case 'm_flStartFadeSize':
+                this.#startFadeSize = param.getValueAsNumber() ?? DEFAULT_START_FADE_SIZE;
+                break;
+            case 'm_flEndFadeSize':
+                this.#endFadeSize = param.getValueAsNumber() ?? DEFAULT_END_FADE_SIZE;
+                break;
+            case 'm_nAnimationType':
+                this.#animationType = param.getValueAsString() ?? DEFAULT_ANIMATION_TYPE;
+                break;
+            case 'm_bRefract':
+                this.#refract = param.getValueAsBool() ?? DEFAULT_REFRACT;
+                break;
+            case 'm_nRefractBlurRadius':
+                this.#refractBlurRadius = param.getValueAsNumber() ?? DEFAULT_REFRACT_BLUR_RADIUS;
+                break;
+            case 'm_bGammaCorrectVertexColors':
+                this.#gammaCorrectVertexColors = param.getValueAsBool() ?? DEFAULT_GAMMA_CORRECT_VERTEX_COLORS;
                 break;
             case 'm_flRadiusScale': // TODO: mutualize ?
             case 'm_flAlphaScale': // TODO: mutualize ?
             case 'm_flOverbrightFactor': // TODO: mutualize ?
             case 'm_flRefractAmount':
+            case 'VisibilityInputs':
+            case 'm_vecColorScale':
                 // used in updateParticles
                 break;
             default:
@@ -64533,9 +65512,11 @@ class RenderSprites extends RenderBase {
         }
     }
     updateParticles(particleSystem, particleList, elapsedTime) {
-        // TODO: use m_flRefractAmount
+        // TODO: use m_flRefractAmount, m_flAddSelfAmount, blendFramesSeq0, VisibilityInputs, m_nFeatheringMode, m_bGammaCorrectVertexColors
+        // TODO: do refraction ex: particles/units/heroes/hero_arc_warden/arc_warden_bracer_hand.vpcf_c
+        this.getParamVectorValue(renderSpritesTempVec4, 'm_vecColorScale') ?? DEFAULT_COLOR_SCALE;
         const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
-        const rate = this.getParameter('animation rate');
+        const rate = this.#animationRate; //this.getParameter('animation rate');
         const useAnimRate = this.getParameter('use animation rate as FPS');
         this.geometry.count = particleList.length * 6;
         const maxParticles = this.#maxParticles;
@@ -64708,21 +65689,36 @@ RegisterSource2ParticleOperator('C_OP_RenderSprites', RenderSprites);
 //RegisterSource2ParticleOperator('C_OP_RenderProjected', RenderSprites);//TODO: set proper renderer
 
 const tempVec2 = vec2.create();
+const DEFAULT_MIN_LENGTH = 0; // TODO: check default value
+const DEFAULT_MAX_LENGTH = 2000; // TODO: check default value
+const DEFAULT_ANIMATION_RATE = 1; // TODO: check default value
+const DEFAULT_VERT_CROP_FIELD = 1; // TODO: check default value
+const DEFAULT_TAIL_ALPHA_SCALE = 1; // TODO: check default value
+const DEFAULT_IGNORE_DT = false; // TODO: check default value
+const DEFAULT_LENGTH_FADE_IN_TIME = 0; // TODO: check default value
+const DEFAULT_LENGTH_SCALE = 1; // TODO: check default value
+const DEFAULT_MAX_PARTICLES = 1000; // TODO: check default value
+const DEFAULT_ADD_SELF_AMOUNT = 1; // TODO: check default value
+const DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND = false; // TODO: check default value
+const DEFAULT_RADIUS_HEAD_TAPER = 1; // TODO: check default value
 class RenderTrails extends RenderBase {
-    geometry;
-    minLength = 0;
-    maxLength = 2000;
-    lengthFadeInTime = 0;
-    ignoreDT = false;
-    lengthScale = 1;
-    #maxParticles = 1000; //TODO: default value
-    texture; //TODO: set private ?
-    imgData; //TODO: set private ?
+    #geometry = new BufferGeometry();
+    #minLength = DEFAULT_MIN_LENGTH;
+    #maxLength = DEFAULT_MAX_LENGTH;
+    #lengthFadeInTime = DEFAULT_LENGTH_FADE_IN_TIME;
+    #ignoreDT = DEFAULT_IGNORE_DT;
+    #lengthScale = DEFAULT_LENGTH_SCALE;
+    #maxParticles = DEFAULT_MAX_PARTICLES; //TODO: default value
+    #texture; //TODO: set private ?
+    #imgData; //TODO: set private ?
+    #animationRate = DEFAULT_ANIMATION_RATE;
+    #vertCropField = DEFAULT_VERT_CROP_FIELD;
+    #tailAlphaScale = DEFAULT_TAIL_ALPHA_SCALE;
+    #addSelfAmount = DEFAULT_ADD_SELF_AMOUNT;
+    #saturateColorPreAlphaBlend = DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND;
     constructor(system) {
         super(system);
-        this.material = new Source2SpriteCard(system.repository);
-        this.geometry = new BufferGeometry();
-        this.mesh = new Mesh(this.geometry, this.material);
+        this.mesh = new Mesh(this.#geometry, this.material);
         this.material.setDefine('RENDER_SPRITE_TRAIL');
         this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
         Source2MaterialManager.addMaterial(this.material);
@@ -64734,29 +65730,47 @@ class RenderTrails extends RenderBase {
     _paramChanged(paramName, param) {
         switch (paramName) {
             case OPERATOR_PARAM_TEXTURE:
-                this.setTexture(param);
+                console.error('do this param', paramName, param);
+                this.setTexture(param.getValueAsString() ?? ''); // TODO: check default value
                 break;
             /*case 'm_nSequenceCombineMode':
                 this.setSequenceCombineMode(value);
                 break;*/
             case 'm_flMinLength':
-                this.minLength = param;
+                this.#minLength = param.getValueAsNumber() ?? DEFAULT_MIN_LENGTH;
                 break;
             case 'm_flMaxLength':
-                this.maxLength = param;
+                this.#maxLength = param.getValueAsNumber() ?? DEFAULT_MAX_LENGTH;
                 break;
             case 'm_flLengthFadeInTime':
-                this.lengthFadeInTime = param;
+                this.#lengthFadeInTime = param.getValueAsNumber() ?? DEFAULT_LENGTH_FADE_IN_TIME;
                 break;
             case 'm_bIgnoreDT':
-                this.ignoreDT = param;
+                this.#ignoreDT = param.getValueAsBool() ?? DEFAULT_IGNORE_DT;
                 break;
             case 'm_flRadiusScale':
             case 'm_flFinalTextureScaleU':
             case 'm_flFinalTextureScaleV':
+            case 'm_flRadiusHeadTaper':
+            case 'm_flOverbrightFactor': // TODO: mutualize ?
                 break;
             case 'm_flLengthScale':
-                this.lengthScale = param;
+                this.#lengthScale = param.getValueAsNumber() ?? DEFAULT_LENGTH_SCALE;
+                break;
+            case 'm_flAnimationRate':
+                this.#animationRate = param.getValueAsNumber() ?? DEFAULT_ANIMATION_RATE;
+                break;
+            case 'm_nVertCropField':
+                this.#vertCropField = param.getValueAsNumber() ?? DEFAULT_VERT_CROP_FIELD;
+                break;
+            case 'm_flTailAlphaScale':
+                this.#tailAlphaScale = param.getValueAsNumber() ?? DEFAULT_TAIL_ALPHA_SCALE;
+                break;
+            case 'm_flAddSelfAmount': // TODO: mutualize ?
+                this.#addSelfAmount = param.getValueAsNumber() ?? DEFAULT_ADD_SELF_AMOUNT;
+                break;
+            case 'm_bSaturateColorPreAlphaBlend':
+                this.#saturateColorPreAlphaBlend = param.getValueAsBool() ?? DEFAULT_SATURATE_COLOR_PRE_ALPHA_BLEND;
                 break;
             default:
                 super._paramChanged(paramName, param);
@@ -64774,10 +65788,13 @@ class RenderTrails extends RenderBase {
         }
     }
     updateParticles(particleSystem, particleList, elapsedTime) {
+        // TODO: use animationRate, vertCropField, m_flTailAlphaScale, m_flRadiusHeadTaper
+        this.getParamScalarValue('m_flRadiusHeadTaper') ?? DEFAULT_RADIUS_HEAD_TAPER;
+        this.mesh.setUniform('uOverbrightFactor', this.getParamScalarValue('m_flOverbrightFactor') ?? 1);
         const m_bFitCycleToLifetime = this.getParameter('animation_fit_lifetime');
-        const rate = this.getParameter('animation rate');
+        const rate = this.#animationRate; //this.getParameter('animation rate');
         const useAnimRate = this.getParameter('use animation rate as FPS');
-        const geometry = this.geometry;
+        const geometry = this.#geometry;
         geometry.count = particleList.length * 6;
         const maxParticles = this.#maxParticles;
         this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
@@ -64787,8 +65804,7 @@ class RenderTrails extends RenderBase {
         this.material.setUniform('uFinalTextureScale', tempVec2);
         geometry.attributes.get('aTextureCoord')._array;
         geometry.attributes.get('aTextureCoord2')._array;
-        for (let i = 0; i < particleList.length; i++) {
-            const particle = particleList[i];
+        for (const particle of particleList) {
             const sequence = particle.sequence;
             if (m_bFitCycleToLifetime) {
                 particle.timeToLive; //SubFloat(pLifeDuration[ nGroup * ld_stride ], nOffset);
@@ -64811,7 +65827,7 @@ class RenderTrails extends RenderBase {
         this.#initBuffers();
     }
     #initBuffers() {
-        const geometry = this.geometry;
+        const geometry = this.#geometry;
         const vertices = [];
         const uvs = [];
         const uvs2 = [];
@@ -64838,43 +65854,43 @@ class RenderTrails extends RenderBase {
         this.mesh.hideInExplorer = true;
         this.mesh.setDefine('HARDWARE_PARTICLES');
         this.#createParticlesTexture();
-        this.mesh.setUniform('uParticles', this.texture);
+        this.mesh.setUniform('uParticles', this.#texture);
         this.maxParticles = particleSystem.maxParticles;
         particleSystem.addChild(this.mesh);
     }
     #createParticlesArray() {
-        this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
+        this.#imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
     #createParticlesTexture() {
-        this.texture = TextureManager.createTexture();
+        this.#texture = TextureManager.createTexture();
         const gl = new Graphics().glContext; //TODO
-        gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
         const gl = new Graphics().glContext;
-        gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+        gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         if (new Graphics().isWebGL2) {
-            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
+            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
-            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
+            gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     #setupParticlesTexture(particleList, maxParticles, elapsedTime) {
-        const a = this.imgData;
-        const m_flMaxLength = this.maxLength;
-        const m_flMinLength = this.minLength;
-        const m_flLengthFadeInTime = this.lengthFadeInTime;
+        const a = this.#imgData;
+        const m_flMaxLength = this.#maxLength;
+        const m_flMinLength = this.#minLength;
+        const m_flLengthFadeInTime = this.#lengthFadeInTime;
         this.getParameter('animation rate') ?? 30;
         this.getParameter('animation_fit_lifetime') ?? 0;
         //const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
         let index = 0;
         let flOODt;
-        if (this.ignoreDT) {
+        if (this.#ignoreDT) {
             flOODt = 1;
         }
         else {
@@ -64888,7 +65904,7 @@ class RenderTrails extends RenderBase {
             const vecDelta = vec3.subtract(vec3.create(), particle.prevPosition, particle.position); //TODOv3: optimize
             const flMag = vec3.length(vecDelta);
             vec3.normalize(vecDelta, vecDelta);
-            let flLength = flLengthScale * flMag * flOODt * particle.trailLength * this.lengthScale;
+            let flLength = flLengthScale * flMag * flOODt * particle.trailLength * this.#lengthScale;
             if (flLength <= 0.0) {
                 return;
             }
@@ -67324,8 +68340,8 @@ class RemGenerator {
         if (this.#pingPongRenderTarget) {
             this.#pingPongRenderTarget.dispose();
         }
-        for (let i = 0; i < this.#lodPlanes.length; i++) {
-            this.#lodPlanes[i].dispose();
+        for (const lodPlane of this.#lodPlanes) {
+            lodPlane.dispose();
         }
         this.#lodPlanes = [];
     }
@@ -68185,4 +69201,4 @@ class RenderTargetViewer {
     }
 }
 
-export { ATTRIBUTE_CHANGED, Add, AddVectorToVector, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTF, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { ATTRIBUTE_CHANGED, Add, AddVectorToVector, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTF, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
