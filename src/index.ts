@@ -12,6 +12,7 @@ export * from './graphics/export';
 export * from './helpers/export';
 export * from './importers/export';
 export * from './lights/export';
+export * from './loaders/export';
 export * from './managers/export';
 export * from './materials/export';
 export * from './math/export';

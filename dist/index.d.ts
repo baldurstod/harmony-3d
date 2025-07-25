@@ -2266,6 +2266,8 @@ declare class Choreography {
 
          export declare function getIncludeSource(name: string): string | undefined;
 
+         export declare function getLoader(name: string): any | undefined;
+
          export declare function getRandomInt(max: any): number;
 
          export declare function getSceneExplorer(): SceneExplorer;
@@ -5735,6 +5737,8 @@ declare class Choreography {
              clone(): RefractMaterial;
              getShaderSource(): string;
          }
+
+         export declare function registerLoader(name: string, loader: any): void;
 
          export declare class RemapControlPointDirectionToVector extends Operator {
              #private;
