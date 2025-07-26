@@ -5048,7 +5048,10 @@ declare class Choreography {
              getFileList(): Promise<RepositoryFileListResponse>;
          }
 
-         export declare function pcfToSTring(pcf: SourcePCF): string;
+         export declare function pcfToSTring(pcf: SourcePCF): {
+             text: string;
+             elementsLine: Map<string, number>;
+         } | null;
 
          export declare class PercentageBetweenCPs extends Operator {
              #private;
@@ -7643,7 +7646,7 @@ declare class Choreography {
              /**
               * TODO
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number, number] | [number, number, number] | Float32Array<ArrayBufferLike>;
              /**
               * TODO
               */

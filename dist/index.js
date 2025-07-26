@@ -43755,10 +43755,7 @@ class SourceEnginePCFLoader extends SourceBinaryLoader {
             element.name = this.getString(pcf, reader.getUint32());
         }
         element.guid = reader.getBytes(16);
-        element.guid2 = '';
-        for (let i = 0; i < 16; ++i) {
-            element.guid2 += String.fromCharCode(element.guid[i]);
-        }
+        element.guid2 = guidToString(element.guid);
         if (element.type == DmeParticleSystemDefinition) {
             pcf.addSystem(element);
         }
@@ -43950,27 +43947,38 @@ var CDmxAttributeType;
 function pcfToSTring(pcf) {
     const element = pcf.elementsDict[0];
     if (!element) {
-        return '';
+        return null;
     }
     const inlineSubElements = element.inlineSubElements();
     const lines = [];
-    lines.push(cDmxElementToSTring(element, { tabs: 0, inlineSubElements: inlineSubElements }));
+    const context = { tabs: 0, inlineSubElements: inlineSubElements, line: 1, elementsLine: new Map() };
+    lines.push(cDmxElementToSTring(element, context));
+    ++context.line;
+    context.tabs = 0;
     for (const [subElement, inline] of inlineSubElements) {
         if (!inline) {
-            lines.push(cDmxElementToSTring(subElement, { tabs: 0, inlineSubElements: inlineSubElements }));
+            lines.push(cDmxElementToSTring(subElement, context));
+            ++context.line;
+            lines.push('');
+            ++context.line;
         }
     }
-    return lines.join('\n');
+    return { text: lines.join('\n'), elementsLine: context.elementsLine };
 }
 function cDmxElementsToSTring(elements, context) {
     let lines = [];
     for (const element of elements) {
         if (context.inlineSubElements.get(element)) {
             lines.push(cDmxElementToSTring(element, context) + ',');
+            ++context.line;
         }
         else {
-            lines.push(`${makeTabs(context.tabs)}${element.name} "element" "${guidToString(element.guid)}",`);
+            lines.push(`${makeTabs(context.tabs)}${element.name} "element" "${element.guid2}",`);
+            ++context.line;
         }
+    }
+    if (lines.length > 0) {
+        --context.line;
     }
     return lines.join('\n');
 }
@@ -43984,16 +43992,23 @@ function guidToString(bytes) {
 }
 function cDmxElementToSTring(element, context) {
     let lines = [];
+    context.elementsLine.set(element.guid2, context.line);
     lines.push(makeTabs(context.tabs) + `"${element.type}"`);
+    ++context.line;
     lines.push(makeTabs(context.tabs) + '{');
+    ++context.line;
     ++context.tabs;
-    lines.push(makeTabs(context.tabs) + `"id" "elementid" "${guidToString(element.guid)}"`);
+    lines.push(makeTabs(context.tabs) + `"id" "elementid" "${element.guid2}"`);
+    ++context.line;
     lines.push(makeTabs(context.tabs) + `"name" "string" "${element.name}"`);
+    ++context.line;
     for (const attribute of element.attributes) {
         lines.push(makeTabs(context.tabs) + cDmxAttributeToSTring(attribute, context));
+        ++context.line;
     }
     --context.tabs;
     lines.push(makeTabs(context.tabs) + '}');
+    //++context.line;
     return lines.join('\n');
 }
 function cDmxAttributeToSTring(attribute, context) {
@@ -44001,7 +44016,7 @@ function cDmxAttributeToSTring(attribute, context) {
     line = `"${attribute.typeName}"`;
     switch (attribute.type) {
         case CDmxAttributeType.Element:
-            line += ` "element" "${guidToString(attribute.value.guid)}"`;
+            line += ` "element" "${attribute.value.guid2}"`;
             break;
         case CDmxAttributeType.Integer:
             line += ` "int" ${attribute.value}`;
@@ -44029,11 +44044,14 @@ function cDmxAttributeToSTring(attribute, context) {
             break;
         case CDmxAttributeType.ElementArray:
             line += ' "element_array"\n';
+            ++context.line;
             line += makeTabs(context.tabs);
             line += '[\n';
+            ++context.line;
             ++context.tabs;
             line += cDmxElementsToSTring(attribute.value, context);
             line += '\n';
+            ++context.line;
             --context.tabs;
             line += makeTabs(context.tabs);
             line += ']';
