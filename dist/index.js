@@ -43974,12 +43974,20 @@ function cDmxElementsToSTring(elements, context) {
     }
     return lines.join('\n');
 }
+function guidToString(bytes) {
+    let a = Array.from(bytes);
+    // Reverse some bytes because microsoft
+    a = a.slice(0, 4).reverse().concat(a.slice(4, 6).reverse()).concat(a.slice(6, 8).reverse()).concat(a.slice(8));
+    return a.map((b) => ('00' + b.toString(16)).slice(-2))
+        .join('')
+        .replace(/(.{8})(.{4})(.{4})(.{4})(.{12})/, '$1-$2-$3-$4-$5');
+}
 function cDmxElementToSTring(element, context) {
     let lines = [];
     lines.push(makeTabs(context.tabs) + `"${element.type}"`);
     lines.push(makeTabs(context.tabs) + '{');
     ++context.tabs;
-    lines.push(makeTabs(context.tabs) + `"id" "elementid" "${element.guid2}"`);
+    lines.push(makeTabs(context.tabs) + `"id" "elementid" "${guidToString(element.guid)}"`);
     lines.push(makeTabs(context.tabs) + `"name" "string" "${element.name}"`);
     for (const attribute of element.attributes) {
         lines.push(makeTabs(context.tabs) + cDmxAttributeToSTring(attribute, context));
