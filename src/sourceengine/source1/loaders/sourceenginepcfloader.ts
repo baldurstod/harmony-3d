@@ -331,7 +331,7 @@ function cDmxElementsToSTring(elements: CDmxElement[], context: DmxElementsToSTr
 		if (context.inlineSubElements.get(element)) {
 			lines.push(cDmxElementToSTring(element, context) + ',');
 		} else {
-			lines.push(`${makeTabs(context.tabs)} ${element.name} "element" "${element.guid2}",`);
+			lines.push(`${makeTabs(context.tabs)}${element.name} "element" "${guidToString(element.guid)}",`);
 		}
 	}
 	return lines.join('\n');
@@ -372,7 +372,7 @@ function cDmxAttributeToSTring(attribute: CDmxAttribute, context: DmxElementsToS
 
 	switch (attribute.type) {
 		case CDmxAttributeType.Element:
-			line += ` "element" "${(attribute.value as CDmxElement).guid2}"`;
+			line += ` "element" "${guidToString((attribute.value as CDmxElement).guid)}"`;
 			break;
 		case CDmxAttributeType.Integer:
 			line += ` "int" ${attribute.value}`;

@@ -43969,7 +43969,7 @@ function cDmxElementsToSTring(elements, context) {
             lines.push(cDmxElementToSTring(element, context) + ',');
         }
         else {
-            lines.push(`${makeTabs(context.tabs)} ${element.name} "element" "${element.guid2}",`);
+            lines.push(`${makeTabs(context.tabs)}${element.name} "element" "${guidToString(element.guid)}",`);
         }
     }
     return lines.join('\n');
@@ -44001,7 +44001,7 @@ function cDmxAttributeToSTring(attribute, context) {
     line = `"${attribute.typeName}"`;
     switch (attribute.type) {
         case CDmxAttributeType.Element:
-            line += ` "element" "${attribute.value.guid2}"`;
+            line += ` "element" "${guidToString(attribute.value.guid)}"`;
             break;
         case CDmxAttributeType.Integer:
             line += ` "int" ${attribute.value}`;
