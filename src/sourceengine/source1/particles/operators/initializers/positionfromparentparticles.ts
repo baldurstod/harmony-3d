@@ -14,7 +14,6 @@ export class PositionFromParentParticles extends SourceEngineParticleOperator {
 	#velocitySCale = DEFAULT_VELOCITY_SCALE;
 
 	paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]) {
-		console.info(name, param);
 		switch (name) {
 			case 'Inherited Velocity Scale':
 				this.#velocitySCale = param as number;//TODO: convert to number

@@ -23,7 +23,6 @@ export class SetChildControlPointsFromParticlePositions extends SourceEnginePart
 	}
 
 	paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]) {
-		console.info(name, param);
 		switch (name) {
 			case 'Set cp orientation for particles':
 				this.#setCpOrientation = param as boolean;//TODO: convert to boolean

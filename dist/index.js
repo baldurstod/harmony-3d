@@ -49331,7 +49331,6 @@ let PositionFromParentParticles$1 = class PositionFromParentParticles extends So
     static functionName = 'Position From Parent Particles';
     #velocitySCale = DEFAULT_VELOCITY_SCALE$1;
     paramChanged(name, param) {
-        console.info(name, param);
         switch (name) {
             case 'Inherited Velocity Scale':
                 this.#velocitySCale = param; //TODO: convert to number
@@ -51053,7 +51052,6 @@ class OrientTo2dDirection extends SourceEngineParticleOperator {
     #rotationOffset = DEFAULT_ORIENTATION_OFFSET;
     #spinStrength = SPIN_STRENGTH;
     paramChanged(name, param) {
-        console.info(name, param);
         switch (name) {
             case 'Rotation Offset':
                 this.#rotationOffset = param * DEG_TO_RAD + Math.PI /*Add PI right away*/; //TODO: convert to number
@@ -51667,7 +51665,6 @@ class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOpe
         this.addParam('First control point to set', PARAM_TYPE_INT, 0);
     }
     paramChanged(name, param) {
-        console.info(name, param);
         switch (name) {
             case 'Set cp orientation for particles':
                 this.#setCpOrientation = param; //TODO: convert to boolean
