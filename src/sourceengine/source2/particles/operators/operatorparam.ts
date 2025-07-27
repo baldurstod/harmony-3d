@@ -16,8 +16,19 @@ export type OperatorParamValueType = null | boolean | number | bigint | string |
 
 export class OperatorParam {
 	isOperatorParam: true = true;
-	#value!: OperatorParamValueType;
-	#type!: OperatorParamType;
+	#value: OperatorParamValueType;
+	#type: OperatorParamType;
+	#name: string;
+
+	constructor(name: string, type: OperatorParamType, value: OperatorParamValueType) {
+		this.#name = name;
+		this.#type = type;
+		this.#value = value;
+	}
+
+	getName(): string {
+		return this.#name;
+	}
 
 	getType(): OperatorParamType {
 		return this.#type;
@@ -133,46 +144,45 @@ export class OperatorParam {
 		return this.getSubValue(name)?.getValueAsVec3(out) ?? null;
 	}
 
-	static fromKv3(kv3: Kv3Element | Kv3Value | null): OperatorParam {
+	static fromKv3(name: string, kv3: Kv3Element | Kv3Value | null): OperatorParam {
 		if ((kv3 as Kv3Element).isKv3Element) {
-			return this.#fromKv3Element(kv3 as Kv3Element);
+			return this.#fromKv3Element(name, kv3 as Kv3Element);
 		}
 		if ((kv3 as Kv3Value).isKv3Value) {
-			return this.#fromKv3Value(kv3 as Kv3Value);
+			return this.#fromKv3Value(name, kv3 as Kv3Value);
 		}
 
 		if (kv3 === null) {
-			const operatorParam = new OperatorParam();
-			operatorParam.#type = OperatorParamType.Null;
+			const operatorParam = new OperatorParam(name, OperatorParamType.Null, null);
 		}
 		throw 'fix me';
 	}
 
-	static #fromKv3Element(element: Kv3Element): OperatorParam {
-		const operatorParam = new OperatorParam();
-
-		operatorParam.#type = OperatorParamType.Element;
-		operatorParam.#value = new Map<string, OperatorParam>;
+	static #fromKv3Element(name: string, element: Kv3Element): OperatorParam {
+		const operatorParam = new OperatorParam(name, OperatorParamType.Element, new Map<string, OperatorParam>);
 
 		for (const [name, property] of element.getProperties()) {
-			operatorParam.#value.set(name, this.fromKv3(property));
+			(operatorParam.#value as Map<string, OperatorParam>).set(name, this.fromKv3(name, property));
 		}
 
 
 		return operatorParam;
 	}
 
-	static #fromKv3Value(kv3: Kv3Value): OperatorParam {
-		const operatorParam = new OperatorParam();
+	static #fromKv3Value(name: string, kv3: Kv3Value): OperatorParam {
+		//const operatorParam = new OperatorParam();
+
+		let type:OperatorParamType;
+		let value:OperatorParamValueType;
 
 		if (kv3.isArray()) {
-			operatorParam.#type = OperatorParamType.Array;
+			type = OperatorParamType.Array;
 
-			const value: OperatorParamValueType[] = [];
+			value = [];
 
 			if (kv3.getSubType() == Kv3Type.Element) {
 				for (const sub of kv3.getValue() as Kv3ValueType[]) {
-					value.push(this.fromKv3(sub as Kv3Element));
+					value.push(this.fromKv3('', sub as Kv3Element));
 				}
 			} else {
 				// TODO: control subtype
@@ -181,15 +191,14 @@ export class OperatorParam {
 				}
 			}
 
-			operatorParam.#value = value;
 
 			//export type Kv3ValueType = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3ValueType[] | Kv3Element | Kv3Value;
 		} else {
 			switch (kv3.getType()) {
 				case Kv3Type.Resource:
 				case Kv3Type.String:
-					operatorParam.#type = OperatorParamType.String;
-					operatorParam.#value = kv3.getValue() as string;
+					type = OperatorParamType.String;
+					value = kv3.getValue() as string;
 					break;
 				case Kv3Type.Double:
 				case Kv3Type.Float:
@@ -198,20 +207,20 @@ export class OperatorParam {
 				case Kv3Type.IntOne:
 				case Kv3Type.DoubleZero:
 				case Kv3Type.DoubleOne:
-					operatorParam.#type = OperatorParamType.Number;
-					operatorParam.#value = kv3.getValue() as number;
+					type = OperatorParamType.Number;
+					value = kv3.getValue() as number;
 					break;
 				case Kv3Type.True:
 				case Kv3Type.False:
 				case Kv3Type.Bool:
-					operatorParam.#type = OperatorParamType.Bool;
-					operatorParam.#value = kv3.getValue() as boolean;
+					type = OperatorParamType.Bool;
+					value = kv3.getValue() as boolean;
 					break;
 				default:
 					throw 'fix me, missing type';
 			}
 		}
 
-		return operatorParam;
+		return new OperatorParam(name, type, value);
 	}
 }

@@ -125,7 +125,7 @@ function initOperators(system: Source2ParticleSystem, systemArray: Operator[], k
 					}
 					for (const [name, value] of property.getProperties()) {
 						if (value && name != '_class') {
-							operator.setParam(name, OperatorParam.fromKv3(value)/*property.getValue(name)*/);
+							operator.setParam(name, OperatorParam.fromKv3(name, value)/*property.getValue(name)*/);
 						}
 					}
 					operator.init();
@@ -146,7 +146,7 @@ async function initChildren(repository: string, systemArray: Source2ParticleSyst
 		const properties = kv3Array;
 		if (properties) {
 			for (let childIndex = 0; childIndex < properties.length; ++childIndex) {
-				const property = properties[childIndex];
+				const property = properties[childIndex]!;
 				const m_ChildRef = property.getValueAsResource('m_ChildRef');
 				const m_flDelay = property.getValueAsNumber('m_flDelay') ?? 0;
 				if (m_ChildRef) {
