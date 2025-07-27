@@ -14,11 +14,11 @@ export class SourceEngineParticle {
 	name: string;
 	id;
 	isAlive = false;
-	position = vec3.create();
-	prevPosition = vec3.create();
-	cpPosition = vec3.create();
-	cpOrientation = quat.create();//TODO: rename this var
-	cpOrientationInvert = quat.create();
+	readonly position = vec3.create();
+	readonly prevPosition = vec3.create();
+	readonly cpPosition = vec3.create();
+	readonly cpOrientation = quat.create();//TODO: rename this var
+	readonly cpOrientationInvert = quat.create();
 	velocity = vec3.create();
 	color = new Color(255, 255, 255);
 	initialColor = new Color(255, 255, 255);
