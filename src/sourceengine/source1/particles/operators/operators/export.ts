@@ -8,6 +8,7 @@ export { MovementBasic } from './movementbasic';
 export { MovementLocktoControlPoint } from './movementlocktocontrolpoint';
 export { MovementMaxVelocity } from './movementmaxvelocity';
 export { MovementRotateParticleAroundAxis } from './movementrotateparticlearoundaxis';
+export { OrientTo2dDirection } from './orientto2ddirection';
 export { OscillateScalar } from './oscillatescalar';
 export { OscillateVector } from './oscillatevector';
 export { RadiusScale } from './radiusscale';
