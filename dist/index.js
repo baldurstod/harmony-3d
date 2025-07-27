@@ -43993,6 +43993,9 @@ function guidToString(bytes) {
 function cDmxElementToSTring(element, context) {
     let lines = [];
     context.elementsLine.set(element.guid2, context.line);
+    if (element.type == 'DmeParticleSystemDefinition') {
+        context.elementsLine.set(element.name, context.line);
+    }
     lines.push(makeTabs(context.tabs) + `"${element.type}"`);
     ++context.line;
     lines.push(makeTabs(context.tabs) + '{');

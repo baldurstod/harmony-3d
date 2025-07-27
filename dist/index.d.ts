@@ -7646,7 +7646,7 @@ declare class Choreography {
              /**
               * TODO
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number, number] | [number, number, number] | Float32Array<ArrayBufferLike>;
+             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
              /**
               * TODO
               */

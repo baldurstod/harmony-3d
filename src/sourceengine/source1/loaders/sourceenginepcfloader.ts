@@ -362,6 +362,10 @@ function cDmxElementToSTring(element: CDmxElement, context: DmxElementsToSTringC
 
 	context.elementsLine.set(element.guid2, context.line);
 
+	if (element.type == 'DmeParticleSystemDefinition') {
+		context.elementsLine.set(element.name, context.line);
+	}
+
 	lines.push(makeTabs(context.tabs) + `"${element.type}"`);
 	++context.line;
 	lines.push(makeTabs(context.tabs) + '{');
