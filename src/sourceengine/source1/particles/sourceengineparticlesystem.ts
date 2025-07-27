@@ -7,7 +7,7 @@ import { BoundingBox } from '../../../math/boundingbox';
 import { ControlPoint } from '../../common/particles/controlpoint';
 import { DEFAULT_MAX_PARTICLES, HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
 import { MAX_FLOATS } from '../../common/particles/randomfloats';
-import { CDmxAttribute } from '../loaders/sourceenginepcfloader';
+import { CDmxAttribute, CDmxAttributeType } from '../loaders/sourceenginepcfloader';
 import { SourcePCF } from '../loaders/sourcepcf';
 import { SourceEngineMaterial } from '../materials/sourceenginematerial';
 import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
@@ -46,7 +46,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	animable = true;
 	resetable = true;
 	paramList: ParamType[] = [];
-	parameters: Record<string, { type?: string, value?: string }> = {};
+	parameters: Record<string, { type?: any/*TODO: fix type*/, value?: string }> = {};
 	minimumTickRate = 0;
 	maximumTickRate = 1;
 	// particle to emit when the system starts
@@ -495,7 +495,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		this.setParameter(param, type, value);
 	}
 
-	setParameter(parameter: string, type: string/*TODO: create an enum*/, value: any) {
+	setParameter(parameter: string, type: any/*TODO: create an enum*/, value: any) {
 		if (parameter == '') return;
 		if (this.parameters[parameter] === undefined) {
 			this.parameters[parameter] = {};
