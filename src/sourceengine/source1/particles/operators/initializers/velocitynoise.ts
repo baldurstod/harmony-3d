@@ -1,15 +1,16 @@
 import { vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { NoiseSIMD } from '../../../../common/math/noise';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleOperator } from '../operator';
+import { SourceEngineParticle } from '../../particle';
 
 export class VelocityNoise extends SourceEngineParticleOperator {
 	static functionName = 'Velocity Noise';
-	randX = Math.random() * 1000;
-	randY = Math.random() * 1000;
-	randZ = Math.random() * 1000;
+	#randX = Math.random() * 1000;
+	#randY = Math.random() * 1000;
+	#randZ = Math.random() * 1000;
+
 	constructor() {
 		super();
 		this.addParam('', PARAM_TYPE_INT, 0);
@@ -35,7 +36,7 @@ export class VelocityNoise extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('Apply Velocity in Local Space (0/1)','0', bool, m_bLocalSpace)
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number) {
 		const m_nControlPointNumber = this.getParameter('Control Point Number');
 		const m_flNoiseScale = this.getParameter('Time Noise Coordinate Scale');
 		const m_flNoiseScaleLoc = this.getParameter('Spatial Noise Coordinate Scale');
