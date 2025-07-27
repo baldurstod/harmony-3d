@@ -21,7 +21,7 @@ export class OrientTo2dDirection extends SourceEngineParticleOperator {
 		console.info(name, param);
 		switch (name) {
 			case 'Rotation Offset':
-				this.#rotationOffset = (param as number) * DEG_TO_RAD;//TODO: convert to boolean
+				this.#rotationOffset = (param as number) * DEG_TO_RAD + Math.PI/*Add PI right away*/ ;//TODO: convert to number
 				break;
 			case 'Spin Strength':
 				this.#spinStrength = param as number;//TODO: convert to boolean
@@ -38,10 +38,9 @@ export class OrientTo2dDirection extends SourceEngineParticleOperator {
 		vec2.normalize(orientTo2dDirectionTempVelocity, orientTo2dDirectionTempVelocity);
 
 		const currentRotation = particle.rotationRoll;
-		const velocityRotation = Math.atan2(orientTo2dDirectionTempVelocity[1], orientTo2dDirectionTempVelocity[0]);
+		const velocityRotation = Math.atan2(orientTo2dDirectionTempVelocity[1], orientTo2dDirectionTempVelocity[0]) + this.#rotationOffset;
 
 		particle.rotationRoll = lerp(currentRotation, velocityRotation, this.#spinStrength);
-		//console.info(particle.rotationRoll, orientTo2dDirectionTempVelocity);
 	}
 }
 SourceEngineParticleOperators.registerOperator(OrientTo2dDirection);
