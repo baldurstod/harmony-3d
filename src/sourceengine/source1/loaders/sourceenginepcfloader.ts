@@ -299,7 +299,7 @@ export enum CDmxAttributeType {
 	VMatrixArray,
 }
 
-export type CDmxAttributeValue = null | undefined | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
+export type CDmxAttributeValue = null | undefined | boolean | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
 
 type DmxElementsToSTringContext = {
 	tabs: number;

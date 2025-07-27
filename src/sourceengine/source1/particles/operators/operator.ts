@@ -6,15 +6,16 @@ import { PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIG
 import { PARAM_TYPE_ID, PARAM_TYPE_STRING } from '../constants';
 import { SourceEngineParticle } from '../particle';
 import { ParamType, SourceEngineParticleSystem } from '../sourceengineparticlesystem';
+import { CDmxAttributeValue } from '../../export';
 
 export class SourceEngineParticleOperator {//TODOv3: rename this class ?
-	#parameters = {};
-	particleSystem: SourceEngineParticleSystem;
-	material: Material;
+	#parameters: Record<string, any> = {};
+	particleSystem?: SourceEngineParticleSystem;
+	material?: Material;//for renderers// TODO: put  in a subclas ?
 	materialLoaded = false;
 	paramList: ParamType[] = [];
-	endCapState = -1;
-	mesh: Mesh;//for renderers
+	#endCapState = -1;
+	mesh?: Mesh;//for renderers// TODO: put  in a subclas ?
 	constructor() {
 		this.setNameId(this.functionName);
 	}
@@ -31,27 +32,27 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		return this.functionName;
 	}
 
-	initializeParticle(particle, elapsedTime) {
+	initializeParticle(particle: SourceEngineParticle, elapsedTime: number) {
 		if (!particle) {
 			return;
 		}
 		this.doInit(particle, elapsedTime);
 	}
 
-	operateParticle(particle, elapsedTime) {
-		if (this.endCapState != 1) {
+	operateParticle(particle: SourceEngineParticle, elapsedTime: number) {
+		if (this.#endCapState != 1) {
 			this.doOperate(particle, elapsedTime);
 		}
 	}
 
-	forceParticle(particle, elapsedTime, accumulatedForces?) {
+	forceParticle(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces?: vec3) {
 		if (!particle) {
 			return;
 		}
 		this.doForce(particle, elapsedTime, accumulatedForces);
 	}
 
-	constraintParticle(particle) {
+	constraintParticle(particle: SourceEngineParticle) {
 		if (!particle) {
 			return;
 		}
@@ -64,7 +65,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 
 	doOperate(particle: SourceEngineParticle, elapsedTime: number) { }
 
-	doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces, strength?: number) { }
+	doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces?: vec3, strength?: number) { }
 
 	applyConstraint(particle: SourceEngineParticle) { }
 
@@ -72,40 +73,42 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 
 	initRenderer(particleSystem: SourceEngineParticleSystem) { }
 
-	updateParticles(particleSystem, particleList, elapsedTime) { }
+	updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number) { }
 
-	emitParticle(creationTime, elapsedTime) {
+	emitParticle(creationTime: number, elapsedTime: number) {
 		if (!this.particleSystem) {
 			return;
 		}
 		return this.particleSystem.createParticle(creationTime, elapsedTime);
 	}
 
-	renderParticle(particleList, elapsedTime, material) {
+	/*
+	renderParticle(particleList: SourceEngineParticle[], elapsedTime: number, material) {
 		if (!particleList) {
 			return;
 		}
 		this.doRender(particleList, elapsedTime, material);
 	}
+	*/
 
-	setMaterial(material) {
+	setMaterial(material: Material) {
 		this.material = material;
 	}
 
-	setParticleSystem(particleSystem) {
+	setParticleSystem(particleSystem: SourceEngineParticleSystem) {
 		this.particleSystem = particleSystem;
 	}
 
-	paramChanged(name, value) {
+	paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]) {
 		// Override this function is you need a notification when a parm is modified
 	}
 
-	setParameter(parameter, type, value) {
+	setParameter(parameter: string, type: string, value: CDmxAttributeValue | CDmxAttributeValue[]) {
 		if (parameter == '' || parameter == undefined) {
 			return this;
 		}
 		if (parameter == 'operator end cap state') {
-			this.endCapState = value;
+			this.#endCapState = value as number;
 		}
 		if (this.#parameters[parameter] == undefined) {
 			this.#parameters[parameter] = {};
@@ -117,7 +120,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		return this;
 	}
 
-	getParameter(parameter) {
+	getParameter(parameter: string) {
 		const p = this.#parameters[parameter];
 		if (p == undefined) {
 			return null;
@@ -130,6 +133,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		return this.#parameters;
 	}
 
+	/*
 	setParameters(parameters) {
 		for (const i in parameters) {
 			const pair = parameters[i];
@@ -137,8 +141,9 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		}
 		return this;
 	}
+	*/
 
-	setNameId(name) {
+	setNameId(name: string) {
 		//this.functionName = name;
 		this.addParam('id', PARAM_TYPE_ID, generateRandomUUID());//TODO
 		this.addParam('name', PARAM_TYPE_STRING, name);
@@ -256,7 +261,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		return this.paramList;
 	}
 
-	addParam(param, type, value) {
+	addParam(param: string, type: string, value: CDmxAttributeValue) {
 		this.paramList.push(new ParamType(param, type));
 
 		this.setParameter(param, type, value);
@@ -283,7 +288,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		}
 	*/
 
-	getInputValue(inputField, particle) {
+	getInputValue(inputField: number/*TODO: create enum*/, particle: SourceEngineParticle) {
 		let input: any = 0;
 		switch (inputField) {
 			case 0: //creation time
@@ -296,7 +301,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		return input;
 	}
 
-	getInputValueAsVector(inputField, particle, v) {
+	getInputValueAsVector(inputField: number, particle: SourceEngineParticle, v: vec3) {
 		let input;
 		switch (inputField) {
 			case 0: //creation time
@@ -315,8 +320,8 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		}
 	}
 
-	setOutputValue(outputField, value, particle) {
-		particle.setInitialField(outputField, value /*TODO*/);
+	setOutputValue(outputField: number, value: any/*TODO: imrpove type*/, particle: SourceEngineParticle) {
+		particle.setInitialField(outputField, value, false /*TODO*/);
 	}
 
 	initMultipleOverride() {
@@ -327,20 +332,20 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		return false;
 	}
 
-	setOrientationType(orientationType) {
+	setOrientationType(orientationType: number/*TODO: use source2 enum*/) {
 		switch (orientationType) {
 			case 0:
-				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_ALIGNED);
+				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_ALIGNED);
 				break;
 			case 1:
-				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED);
+				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED);
 				break;
 			case 2:
-				this.mesh.setDefine('USE_PARTICLE_YAW', 0);
-				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
+				this.mesh?.setDefine('USE_PARTICLE_YAW', 0);
+				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
 				break;
 			case 3:
-				this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
+				this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
 				break;
 			default:
 				console.error('Unknown orientationType ', orientationType);

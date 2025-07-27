@@ -114,7 +114,7 @@ export class SourcePCF {
 
 	addAttributes(operator: SourceEngineParticleOperator, list: CDmxAttribute[]) {
 		for (const attrib of list) {
-			operator.setParameter(attrib.typeName, ELEMENT_TYPES[attrib.type], attrib.value);
+			operator.setParameter(attrib.typeName, ELEMENT_TYPES[attrib.type]!, attrib.value);
 		}
 	}
 
