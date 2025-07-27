@@ -42812,9 +42812,9 @@ class SourceEngineParticleSystem extends Entity {
     radius = 1;
     attachmentBone = null;
     // List of living particles
-    livingParticles = [];
+    #livingParticles = [];
     // List of dead but reusable particles
-    poolParticles = [];
+    #poolParticles = [];
     currentOrientation = quat.create();
     prevOrientation = quat.create();
     emitters = {}; //new Array();//todo transform to map
@@ -42823,7 +42823,7 @@ class SourceEngineParticleSystem extends Entity {
     forces = new Map();
     constraints = {}; //new Array();//todo transform to map
     #controlPoints = [];
-    childrenSystems = []; //todo transform to map
+    #childrenSystems = []; //todo transform to map
     tempChildren = {}; //new Array();//todo transform to map
     operatorRandomSampleOffset = 0;
     parentSystem;
@@ -42877,23 +42877,23 @@ class SourceEngineParticleSystem extends Entity {
         this.isRunning = true;
     }
     #startChildren() {
-        for (let i = 0; i < this.childrenSystems.length; ++i) {
-            this.childrenSystems[i].start();
+        for (let i = 0; i < this.#childrenSystems.length; ++i) {
+            this.#childrenSystems[i].start();
         }
     }
     stop() {
         this.stopChildren();
         this.isRunning = false;
-        for (let i = 0; i < this.livingParticles.length; ++i) {
-            const particle = this.livingParticles[i];
-            this.poolParticles.push(particle);
-            this.livingParticles.splice(i, 1);
+        for (let i = 0; i < this.#livingParticles.length; ++i) {
+            const particle = this.#livingParticles[i];
+            this.#poolParticles.push(particle);
+            this.#livingParticles.splice(i, 1);
             --i;
         }
     }
     stopChildren() {
-        for (let i = 0; i < this.childrenSystems.length; ++i) {
-            this.childrenSystems[i].stop();
+        for (let i = 0; i < this.#childrenSystems.length; ++i) {
+            this.#childrenSystems[i].stop();
         }
     }
     do(action, params) {
@@ -42917,8 +42917,8 @@ class SourceEngineParticleSystem extends Entity {
         this.#resetInitializers();
     }
     #resetChilds() {
-        for (let i = 0; i < this.childrenSystems.length; ++i) {
-            this.childrenSystems[i].#reset();
+        for (let i = 0; i < this.#childrenSystems.length; ++i) {
+            this.#childrenSystems[i].#reset();
         }
     }
     #resetEmitters() {
@@ -43001,8 +43001,8 @@ class SourceEngineParticleSystem extends Entity {
      * Step operators for each particle, killing it if necessary.
      */
     #stepOperators() {
-        for (let i = 0; i < this.livingParticles.length; ++i) {
-            const particle = this.livingParticles[i];
+        for (let i = 0; i < this.#livingParticles.length; ++i) {
+            const particle = this.#livingParticles[i];
             particle.step(this.elapsedTime);
             this.operatorRandomSampleOffset = 0;
             for (const j in this.operators) {
@@ -43015,12 +43015,12 @@ class SourceEngineParticleSystem extends Entity {
             }
             //particle.step(this.elapsedTime);
             if (!particle.isAlive) {
-                this.poolParticles.push(particle);
-                this.livingParticles.splice(i, 1);
+                this.#poolParticles.push(particle);
+                this.#livingParticles.splice(i, 1);
                 --i;
             }
         }
-        if (this.livingParticles.length == 0) {
+        if (this.#livingParticles.length == 0) {
             for (const j in this.operators) {
                 const operator = this.operators[j];
                 switch (operator.functionName) {
@@ -43055,15 +43055,15 @@ class SourceEngineParticleSystem extends Entity {
                 return false;
             }
         }
-        for (const child of this.childrenSystems) {
-            if ((child.livingParticles.length > 0) || !child.#finished()) {
+        for (const child of this.#childrenSystems) {
+            if ((child.#livingParticles.length > 0) || !child.#finished()) {
                 return false;
             }
         }
         return true;
     }
     #stepOperators1() {
-        if (this.livingParticles.length == 0) {
+        if (this.#livingParticles.length == 0) {
             for (const j in this.operators) {
                 const operator = this.operators[j];
                 switch (operator.functionName) {
@@ -43078,8 +43078,8 @@ class SourceEngineParticleSystem extends Entity {
      * Step forces for each particle.
      */
     stepForces() {
-        for (let i = 0; i < this.livingParticles.length; ++i) {
-            const particle = this.livingParticles[i];
+        for (let i = 0; i < this.#livingParticles.length; ++i) {
+            const particle = this.#livingParticles[i];
             for (const force of this.forces.values()) {
                 //const force = this.forces[j];
                 force.forceParticle(particle, this.elapsedTime);
@@ -43095,20 +43095,20 @@ class SourceEngineParticleSystem extends Entity {
     }
     #stepRenderers(elapsedTime) {
         for (const [_, renderer] of this.#renderers) {
-            renderer.updateParticles(this, this.livingParticles, elapsedTime);
+            renderer.updateParticles(this, this.#livingParticles, elapsedTime);
         }
     }
     #stepChildren(elapsedTime) {
-        for (const j in this.childrenSystems) { //TODOv3
-            const child = this.childrenSystems[j];
+        for (const j in this.#childrenSystems) { //TODOv3
+            const child = this.#childrenSystems[j];
             child.#step(elapsedTime);
         }
     }
     createParticle(creationTime, elapsedTime) {
-        if (this.livingParticles.length < this.maxParticles) {
+        if (this.#livingParticles.length < this.maxParticles) {
             // first try to get one from the pool
-            if (this.poolParticles.length > 0) {
-                const particle = this.poolParticles.pop();
+            if (this.#poolParticles.length > 0) {
+                const particle = this.#poolParticles.pop();
                 //init the particle to its initial state;
                 particle.reset();
                 particle.cTime = creationTime;
@@ -43128,7 +43128,7 @@ class SourceEngineParticleSystem extends Entity {
     }
     #startParticle(particle, elapsedTime) {
         this.resetDelay = 0;
-        this.livingParticles.push(particle);
+        this.#livingParticles.push(particle);
         this.#preInitParticle(particle);
         particle.previousElapsedTime = elapsedTime;
         particle.start();
@@ -43362,6 +43362,9 @@ class SourceEngineParticleSystem extends Entity {
         }
         return controlPoint;
     }
+    getControlPoints() {
+        return this.#controlPoints;
+    }
     getOwnControlPoint(controlPointId) {
         return this.#controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
     }
@@ -43393,7 +43396,7 @@ class SourceEngineParticleSystem extends Entity {
         this.tempChildren[id] = name;
     }
     addChildSystem(particleSystem) {
-        this.childrenSystems.push(particleSystem);
+        this.#childrenSystems.push(particleSystem);
         particleSystem.setParent(this);
         this.addChild(particleSystem);
         particleSystem.serializable = false;
@@ -43435,8 +43438,7 @@ class SourceEngineParticleSystem extends Entity {
         quat.copy(this.currentOrientation, orientation);
     }
     setChildControlPointPosition(first, last, position) {
-        for (let i = 0; i < this.childrenSystems.length; ++i) {
-            const child = this.childrenSystems[i];
+        for (const child of this.#childrenSystems) {
             for (let cpId = first; cpId <= last; ++cpId) {
                 const cp = child.getOwnControlPoint(cpId);
                 if (cp) {
@@ -43448,15 +43450,28 @@ class SourceEngineParticleSystem extends Entity {
             }
         }
     }
+    setChildControlPointOrientation(first, last, orientation) {
+        for (const child of this.#childrenSystems) {
+            for (let cpId = first; cpId <= last; ++cpId) {
+                const cp = child.getOwnControlPoint(cpId);
+                if (cp) {
+                    cp.setQuaternion(orientation);
+                    //The control point is now world positioned
+                    //Therefore we remove it from the hierarchy
+                    //cp.remove();
+                }
+            }
+        }
+    }
     getParticle(index) {
         if (index == undefined) {
-            index = Math.floor(Math.random() * this.livingParticles.length);
+            index = Math.floor(Math.random() * this.#livingParticles.length);
         }
         /*if (index >= this.livingParticles.length) {
             index = Math.floor(Math.random() * this.poolParticles.length);
             return this.poolParticles[index];
         }*/
-        return this.livingParticles[index];
+        return this.#livingParticles[index];
     }
     getControlPointPosition(cpId) {
         const cp = this.getControlPoint(cpId);
@@ -43512,19 +43527,19 @@ class SourceEngineParticleSystem extends Entity {
         for (const [_, renderer] of this.#renderers) {
             renderer.dispose();
         }
-        for (const child of this.childrenSystems) {
+        for (const child of this.#childrenSystems) {
             child.dispose();
         }
     }
     getBounds(min = vec3.create(), max = vec3.create()) {
-        if (!this.livingParticles.length) {
+        if (!this.#livingParticles.length) {
             vec3.set(min, -1, -1, -1);
             vec3.set(max, 1, 1, 1);
         }
         else {
             vec3.set(min, Infinity, Infinity, Infinity);
             vec3.set(max, -Infinity, -Infinity, -Infinity);
-            for (const particle of this.livingParticles) {
+            for (const particle of this.#livingParticles) {
                 vec3.min(min, min, particle.position);
                 vec3.max(max, max, particle.position);
             }
@@ -43538,6 +43553,12 @@ class SourceEngineParticleSystem extends Entity {
         if (simulationSteps > 0 && simulationSteps <= 10) {
             _a.#simulationSteps = simulationSteps;
         }
+    }
+    getChildrenSystems() {
+        return this.#childrenSystems;
+    }
+    getActiveParticlesCount() {
+        return this.#livingParticles.length; //TODO: optimize
     }
     buildContextMenu() {
         const startStop = this.isRunning ? { i18n: '#stop', f: () => this.stop() } : { i18n: '#start', f: () => this.start() };
@@ -48482,11 +48503,11 @@ SourceEngineVMTLoader.registerMaterial('worldvertextransition', WorldVertexTrans
 class SourceEngineParticleOperator {
     #parameters = {};
     particleSystem;
-    material;
+    material; //for renderers// TODO: put  in a subclas ?
     materialLoaded = false;
     paramList = [];
-    endCapState = -1;
-    mesh; //for renderers
+    #endCapState = -1;
+    mesh; //for renderers// TODO: put  in a subclas ?
     constructor() {
         this.setNameId(this.functionName);
     }
@@ -48506,7 +48527,7 @@ class SourceEngineParticleOperator {
         this.doInit(particle, elapsedTime);
     }
     operateParticle(particle, elapsedTime) {
-        if (this.endCapState != 1) {
+        if (this.#endCapState != 1) {
             this.doOperate(particle, elapsedTime);
         }
     }
@@ -48536,12 +48557,14 @@ class SourceEngineParticleOperator {
         }
         return this.particleSystem.createParticle(creationTime, elapsedTime);
     }
-    renderParticle(particleList, elapsedTime, material) {
+    /*
+    renderParticle(particleList: SourceEngineParticle[], elapsedTime: number, material) {
         if (!particleList) {
             return;
         }
         this.doRender(particleList, elapsedTime, material);
     }
+    */
     setMaterial(material) {
         this.material = material;
     }
@@ -48556,7 +48579,7 @@ class SourceEngineParticleOperator {
             return this;
         }
         if (parameter == 'operator end cap state') {
-            this.endCapState = value;
+            this.#endCapState = value;
         }
         if (this.#parameters[parameter] == undefined) {
             this.#parameters[parameter] = {};
@@ -48577,6 +48600,7 @@ class SourceEngineParticleOperator {
     getParameters() {
         return this.#parameters;
     }
+    /*
     setParameters(parameters) {
         for (const i in parameters) {
             const pair = parameters[i];
@@ -48584,6 +48608,7 @@ class SourceEngineParticleOperator {
         }
         return this;
     }
+    */
     setNameId(name) {
         //this.functionName = name;
         this.addParam('id', PARAM_TYPE_ID, generateRandomUUID()); //TODO
@@ -48682,7 +48707,7 @@ class SourceEngineParticleOperator {
             return s;
         }
     */
-    getInputValue(inputField, particle) {
+    getInputValue(inputField /*TODO: create enum*/, particle) {
         let input = 0;
         switch (inputField) {
             case 0: //creation time
@@ -48711,8 +48736,8 @@ class SourceEngineParticleOperator {
                 break;
         }
     }
-    setOutputValue(outputField, value, particle) {
-        particle.setInitialField(outputField, value /*TODO*/);
+    setOutputValue(outputField, value /*TODO: imrpove type*/, particle) {
+        particle.setInitialField(outputField, value, false /*TODO*/);
     }
     initMultipleOverride() {
         return false;
@@ -48720,20 +48745,20 @@ class SourceEngineParticleOperator {
     finished() {
         return false;
     }
-    setOrientationType(orientationType) {
+    setOrientationType(orientationType /*TODO: use source2 enum*/) {
         switch (orientationType) {
             case 0:
-                this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_ALIGNED);
+                this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_ALIGNED);
                 break;
             case 1:
-                this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED);
+                this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED);
                 break;
             case 2:
-                this.mesh.setDefine('USE_PARTICLE_YAW', 0);
-                this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
+                this.mesh?.setDefine('USE_PARTICLE_YAW', 0);
+                this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
                 break;
             case 3:
-                this.mesh.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
+                this.mesh?.setDefine('PARTICLE_ORIENTATION', PARTICLE_ORIENTATION_WORLD_Z_ALIGNED);
                 break;
             default:
                 console.error('Unknown orientationType ', orientationType);
@@ -49299,24 +49324,44 @@ class PositionAlongPathSequential extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(PositionAlongPathSequential);
 
+vec3.create();
+vec3.create();
+const DEFAULT_VELOCITY_SCALE$1 = 0; /* TODO: check default value*/
 let PositionFromParentParticles$1 = class PositionFromParentParticles extends SourceEngineParticleOperator {
     static functionName = 'Position From Parent Particles';
-    constructor() {
-        super();
+    #velocitySCale = DEFAULT_VELOCITY_SCALE$1;
+    paramChanged(name, param) {
+        console.info(name, param);
+        switch (name) {
+            case 'Inherited Velocity Scale':
+                this.#velocitySCale = param; //TODO: convert to number
+                break;
+            default:
+                super.paramChanged(name, param);
+                break;
+        }
     }
     doInit(particle, elapsedTime) {
         const parent = this.particleSystem.parentSystem;
-        if (parent == null) {
+        if (!parent) {
+            vec3.zero(particle.position);
+            vec3.zero(particle.prevPosition);
             return;
+        }
+        const particleCount = parent.getActiveParticlesCount();
+        if (particleCount == 0) {
+            particle.die();
         }
         const base = parent.getParticle();
         if (base != null) {
             /*particle.timeToLive = 0;
             particle.die();
             return;*/
-            base.getWorldPos(particle.position);
+            //TODO: do subframe
+            //base.getWorldPos(particle.position);
             base.getLocalPos(particle.position);
-            vec3.copy(particle.prevPosition, particle.position);
+            vec3.lerp(particle.prevPosition, base.position, base.prevPosition, this.#velocitySCale);
+            //vec3.copy(particle.prevPosition, particle.position);
         }
         else {
             particle.die();
@@ -50258,9 +50303,9 @@ function NoiseSIMD(x, y, z) {
 
 class VelocityNoise extends SourceEngineParticleOperator {
     static functionName = 'Velocity Noise';
-    randX = Math.random() * 1000;
-    randY = Math.random() * 1000;
-    randZ = Math.random() * 1000;
+    #randX = Math.random() * 1000;
+    #randY = Math.random() * 1000;
+    #randZ = Math.random() * 1000;
     constructor() {
         super();
         this.addParam('', PARAM_TYPE_INT, 0);
@@ -50999,6 +51044,39 @@ let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis 
 };
 SourceEngineParticleOperators.registerOperator(MovementRotateParticleAroundAxis$1);
 
+const DEFAULT_ORIENTATION_OFFSET = 0;
+const SPIN_STRENGTH = 1;
+const orientTo2dDirectionTempVelocity = vec2.create();
+//const orientTo2dDirectionTempVec3_1 = vec3.create();
+class OrientTo2dDirection extends SourceEngineParticleOperator {
+    static functionName = 'Rotation Orient to 2D Direction';
+    #rotationOffset = DEFAULT_ORIENTATION_OFFSET;
+    #spinStrength = SPIN_STRENGTH;
+    paramChanged(name, param) {
+        console.info(name, param);
+        switch (name) {
+            case 'Rotation Offset':
+                this.#rotationOffset = param * DEG_TO_RAD + Math.PI /*Add PI right away*/; //TODO: convert to number
+                break;
+            case 'Spin Strength':
+                this.#spinStrength = param; //TODO: convert to boolean
+                break;
+            default:
+                super.paramChanged(name, param);
+                break;
+        }
+    }
+    doOperate(particle, elapsedTime) {
+        particle.position;
+        vec2.sub(orientTo2dDirectionTempVelocity, particle.position, particle.prevPosition);
+        vec2.normalize(orientTo2dDirectionTempVelocity, orientTo2dDirectionTempVelocity);
+        const currentRotation = particle.rotationRoll;
+        const velocityRotation = Math.atan2(orientTo2dDirectionTempVelocity[1], orientTo2dDirectionTempVelocity[0]) + this.#rotationOffset;
+        particle.rotationRoll = lerp(currentRotation, velocityRotation, this.#spinStrength);
+    }
+}
+SourceEngineParticleOperators.registerOperator(OrientTo2dDirection);
+
 let OscillateScalar$1 = class OscillateScalar extends SourceEngineParticleOperator {
     static functionName = 'Oscillate Scalar';
     constructor() {
@@ -51576,12 +51654,34 @@ class RotationSpinYaw extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(RotationSpinYaw);
 
+const DEFAULT_SET_CP_ORIENTATION_FOR_PARTICLES = false; /* TODO: check default value*/
+const setChildControlPointsFromParticlePositionsTempQuat = quat.create();
+const setChildControlPointsFromParticlePositionsTempVec3 = vec3.create();
+const setChildControlPointsFromParticlePositionsXUnitVec3 = vec3.fromValues(1, 0, 0);
 class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOperator {
     static functionName = 'Set child control points from particle positions';
+    #setCpOrientation = DEFAULT_SET_CP_ORIENTATION_FOR_PARTICLES;
     constructor() {
         super();
         this.addParam('# of control points to set', PARAM_TYPE_INT, 1);
         this.addParam('First control point to set', PARAM_TYPE_INT, 0);
+    }
+    paramChanged(name, param) {
+        console.info(name, param);
+        switch (name) {
+            case 'Set cp orientation for particles':
+                this.#setCpOrientation = param; //TODO: convert to boolean
+                break;
+            default:
+                super.paramChanged(name, param);
+                break;
+            /*
+            Set cp radius for particles 1
+            Set cp velocity for particles 1
+            Set cp density for particles 1
+            Set cp orientation for particles 1
+            */
+        }
     }
     doOperate(particle, elapsedTime) {
         const number = this.getParameter('# of control points to set');
@@ -51590,9 +51690,15 @@ class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOpe
         //v.add(particle.offsetPosition);
         //const v = vec3.add(vec3.create(), particle.position, particle.cpPosition);//v.add(particle.cpPosition);
         //TODO
-        const v = vec3.create();
+        const v = vec3.create(); //TODO: optimize
         particle.getWorldPos(v);
         this.particleSystem.setChildControlPointPosition(first, first + number - 1, v);
+        if (this.#setCpOrientation) {
+            const b = vec3.sub(setChildControlPointsFromParticlePositionsTempVec3, particle.position, particle.prevPosition);
+            setChildControlPointsFromParticlePositionsTempQuat[3] = Math.sqrt(vec3.sqrLen(setChildControlPointsFromParticlePositionsXUnitVec3) * vec3.sqrLen(b)) + vec3.dot(setChildControlPointsFromParticlePositionsXUnitVec3, b);
+            vec3.cross(setChildControlPointsFromParticlePositionsTempQuat /*affect xyz*/, setChildControlPointsFromParticlePositionsXUnitVec3, setChildControlPointsFromParticlePositionsTempVec3);
+            this.particleSystem.setChildControlPointOrientation(first, first + number - 1, setChildControlPointsFromParticlePositionsTempQuat);
+        }
     }
 }
 SourceEngineParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);
@@ -56735,6 +56841,15 @@ class OperatorParam {
     isOperatorParam = true;
     #value;
     #type;
+    #name;
+    constructor(name, type, value) {
+        this.#name = name;
+        this.#type = type;
+        this.#value = value;
+    }
+    getName() {
+        return this.#name;
+    }
     getType() {
         return this.#type;
     }
@@ -56829,36 +56944,35 @@ class OperatorParam {
     getSubValueAsVec3(name, out) {
         return this.getSubValue(name)?.getValueAsVec3(out) ?? null;
     }
-    static fromKv3(kv3) {
+    static fromKv3(name, kv3) {
         if (kv3.isKv3Element) {
-            return this.#fromKv3Element(kv3);
+            return this.#fromKv3Element(name, kv3);
         }
         if (kv3.isKv3Value) {
-            return this.#fromKv3Value(kv3);
+            return this.#fromKv3Value(name, kv3);
         }
         if (kv3 === null) {
-            const operatorParam = new OperatorParam();
-            operatorParam.#type = OperatorParamType.Null;
+            new OperatorParam(name, OperatorParamType.Null, null);
         }
         throw 'fix me';
     }
-    static #fromKv3Element(element) {
-        const operatorParam = new OperatorParam();
-        operatorParam.#type = OperatorParamType.Element;
-        operatorParam.#value = new Map;
+    static #fromKv3Element(name, element) {
+        const operatorParam = new OperatorParam(name, OperatorParamType.Element, new Map);
         for (const [name, property] of element.getProperties()) {
-            operatorParam.#value.set(name, this.fromKv3(property));
+            operatorParam.#value.set(name, this.fromKv3(name, property));
         }
         return operatorParam;
     }
-    static #fromKv3Value(kv3) {
-        const operatorParam = new OperatorParam();
+    static #fromKv3Value(name, kv3) {
+        //const operatorParam = new OperatorParam();
+        let type;
+        let value;
         if (kv3.isArray()) {
-            operatorParam.#type = OperatorParamType.Array;
-            const value = [];
+            type = OperatorParamType.Array;
+            value = [];
             if (kv3.getSubType() == Kv3Type.Element) {
                 for (const sub of kv3.getValue()) {
-                    value.push(this.fromKv3(sub));
+                    value.push(this.fromKv3('', sub));
                 }
             }
             else {
@@ -56867,15 +56981,14 @@ class OperatorParam {
                     value.push(sub);
                 }
             }
-            operatorParam.#value = value;
             //export type Kv3ValueType = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3ValueType[] | Kv3Element | Kv3Value;
         }
         else {
             switch (kv3.getType()) {
                 case Kv3Type.Resource:
                 case Kv3Type.String:
-                    operatorParam.#type = OperatorParamType.String;
-                    operatorParam.#value = kv3.getValue();
+                    type = OperatorParamType.String;
+                    value = kv3.getValue();
                     break;
                 case Kv3Type.Double:
                 case Kv3Type.Float:
@@ -56884,20 +56997,20 @@ class OperatorParam {
                 case Kv3Type.IntOne:
                 case Kv3Type.DoubleZero:
                 case Kv3Type.DoubleOne:
-                    operatorParam.#type = OperatorParamType.Number;
-                    operatorParam.#value = kv3.getValue();
+                    type = OperatorParamType.Number;
+                    value = kv3.getValue();
                     break;
                 case Kv3Type.True:
                 case Kv3Type.False:
                 case Kv3Type.Bool:
-                    operatorParam.#type = OperatorParamType.Bool;
-                    operatorParam.#value = kv3.getValue();
+                    type = OperatorParamType.Bool;
+                    value = kv3.getValue();
                     break;
                 default:
                     throw 'fix me, missing type';
             }
         }
-        return operatorParam;
+        return new OperatorParam(name, type, value);
     }
 }
 
@@ -56992,7 +57105,7 @@ function initOperators(system, systemArray, kv3Array) {
                     }
                     for (const [name, value] of property.getProperties()) {
                         if (value && name != '_class') {
-                            operator.setParam(name, OperatorParam.fromKv3(value) /*property.getValue(name)*/);
+                            operator.setParam(name, OperatorParam.fromKv3(name, value) /*property.getValue(name)*/);
                         }
                     }
                     operator.init();
@@ -69285,4 +69398,4 @@ class RenderTargetViewer {
     }
 }
 
-export { ATTRIBUTE_CHANGED, Add, AddVectorToVector, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTF, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { ATTRIBUTE_CHANGED, Add, AddVectorToVector, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceBetweenCPs, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OffsetVectorToVector, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PercentageBetweenCPs, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomAlpha, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomLifeTime, RandomRadius, RandomRotation, RandomRotationSpeed, RandomScalar, RandomSecondSequence, RandomSequence, RandomTrailLength, RandomVector, RandomVectorInUnitSphere, RandomYaw, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, RemapCPtoScalar$1 as Source2InitRemapCPtoScalar, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTF, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };

@@ -901,7 +901,7 @@ export declare enum CDmxAttributeType {
     VMatrixArray = 28
 }
 
-export declare type CDmxAttributeValue = null | undefined | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
+export declare type CDmxAttributeValue = null | undefined | boolean | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
 
 export declare class CDmxElement {
     type: string;
@@ -4860,6 +4860,8 @@ declare class Choreography {
          declare class OperatorParam {
              #private;
              isOperatorParam: true;
+             constructor(name: string, type: OperatorParamType, value: OperatorParamValueType);
+             getName(): string;
              getType(): OperatorParamType;
              getValueAsBool(): boolean | null;
              getValueAsNumber(): number | null;
@@ -4875,7 +4877,7 @@ declare class Choreography {
              getSubValueAsArray(name: string): OperatorParamValueType[] | null;
              getSubValueAsVec2(name: string, out: vec2): vec2 | null;
              getSubValueAsVec3(name: string, out: vec3): vec3 | null;
-             static fromKv3(kv3: Kv3Element | Kv3Value | null): OperatorParam;
+             static fromKv3(name: string, kv3: Kv3Element | Kv3Value | null): OperatorParam;
          }
 
          declare enum OperatorParamType {
@@ -4909,6 +4911,13 @@ declare class Choreography {
              set autoRotateSpeed(speed: any);
              get zoomScale(): number;
              handleEnabled(): void;
+         }
+
+         export declare class OrientTo2dDirection extends SourceEngineParticleOperator {
+             #private;
+             static functionName: string;
+             paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void;
+             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class OscillateScalar extends SourceEngineParticleOperator {
@@ -5357,9 +5366,10 @@ declare class Choreography {
          }
 
          export declare class PositionFromParentParticles extends SourceEngineParticleOperator {
+             #private;
              static functionName: string;
-             constructor();
-             doInit(particle: any, elapsedTime: any): void;
+             paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class PositionLock extends Operator {
@@ -6472,9 +6482,11 @@ declare class Choreography {
          }
 
          export declare class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOperator {
+             #private;
              static functionName: string;
              constructor();
-             doOperate(particle: any, elapsedTime: any): void;
+             paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void;
+             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class SetControlPointFromObjectScale extends Operator {
@@ -7927,7 +7939,7 @@ declare class Choreography {
 
          export declare const Source2SnapshotLoader: {
              load(repository: string, filename: string): Promise<Source2Snapshot>;
-             "__#249@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+             "__#251@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
@@ -8204,11 +8216,11 @@ declare class Choreography {
              name: string;
              id: any;
              isAlive: boolean;
-             position: vec3;
-             prevPosition: vec3;
-             cpPosition: vec3;
-             cpOrientation: quat;
-             cpOrientationInvert: quat;
+             readonly position: vec3;
+             readonly prevPosition: vec3;
+             readonly cpPosition: vec3;
+             readonly cpOrientation: quat;
+             readonly cpOrientationInvert: quat;
              velocity: vec3;
              color: Color;
              initialColor: Color;
@@ -8290,50 +8302,47 @@ declare class Choreography {
 
          declare class SourceEngineParticleOperator {
              #private;
-             particleSystem: SourceEngineParticleSystem;
-             material: Material;
+             particleSystem?: SourceEngineParticleSystem;
+             material?: Material;
              materialLoaded: boolean;
              paramList: ParamType[];
-             endCapState: number;
-             mesh: Mesh;
+             mesh?: Mesh;
              constructor();
              get functionName(): string;
              static get functionName(): string;
              static getFunctionName(): string;
-             initializeParticle(particle: any, elapsedTime: any): void;
-             operateParticle(particle: any, elapsedTime: any): void;
-             forceParticle(particle: any, elapsedTime: any, accumulatedForces?: any): void;
-             constraintParticle(particle: any): void;
+             initializeParticle(particle: SourceEngineParticle, elapsedTime: number): void;
+             operateParticle(particle: SourceEngineParticle, elapsedTime: number): void;
+             forceParticle(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces?: vec3): void;
+             constraintParticle(particle: SourceEngineParticle): void;
              doEmit(elapsedTime: number): void;
              doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
-             doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: any, strength?: number): void;
+             doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces?: vec3, strength?: number): void;
              applyConstraint(particle: SourceEngineParticle): void;
              doRender(particle: SourceEngineParticle[], elapsedTime: number, material: Material): void;
              initRenderer(particleSystem: SourceEngineParticleSystem): void;
-             updateParticles(particleSystem: any, particleList: any, elapsedTime: any): void;
-             emitParticle(creationTime: any, elapsedTime: any): any;
-             renderParticle(particleList: any, elapsedTime: any, material: any): void;
-             setMaterial(material: any): void;
-             setParticleSystem(particleSystem: any): void;
-             paramChanged(name: any, value: any): void;
-             setParameter(parameter: any, type: any, value: any): this;
-             getParameter(parameter: any): any;
-             getParameters(): {};
-             setParameters(parameters: any): this;
-             setNameId(name: any): void;
+             updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
+             emitParticle(creationTime: number, elapsedTime: number): any;
+             setMaterial(material: Material): void;
+             setParticleSystem(particleSystem: SourceEngineParticleSystem): void;
+             paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void;
+             setParameter(parameter: string, type: string, value: CDmxAttributeValue | CDmxAttributeValue[]): this;
+             getParameter(parameter: string): any;
+             getParameters(): Record<string, any>;
+             setNameId(name: string): void;
              doNothing(): void;
              reset(): void;
              getOperatorFade(): number;
              getOperatorStrength(): number;
              getParamList(): ParamType[];
-             addParam(param: any, type: any, value: any): void;
-             getInputValue(inputField: any, particle: any): any;
-             getInputValueAsVector(inputField: any, particle: any, v: any): void;
-             setOutputValue(outputField: any, value: any, particle: any): void;
+             addParam(param: string, type: string, value: CDmxAttributeValue): void;
+             getInputValue(inputField: number, particle: SourceEngineParticle): any;
+             getInputValueAsVector(inputField: number, particle: SourceEngineParticle, v: vec3): void;
+             setOutputValue(outputField: number, value: any, particle: SourceEngineParticle): void;
              initMultipleOverride(): boolean;
              finished(): boolean;
-             setOrientationType(orientationType: any): void;
+             setOrientationType(orientationType: number): void;
              dispose(): void;
          }
 
@@ -8353,7 +8362,7 @@ declare class Choreography {
              resetable: boolean;
              paramList: ParamType[];
              parameters: Record<string, {
-                 type?: string;
+                 type?: any;
                  value?: string;
              }>;
              minimumTickRate: number;
@@ -8367,8 +8376,6 @@ declare class Choreography {
              isRunning: boolean;
              radius: number;
              attachmentBone: any;
-             livingParticles: any[];
-             poolParticles: any[];
              currentOrientation: quat;
              prevOrientation: quat;
              emitters: Record<string, SourceEngineParticleOperator>;
@@ -8376,7 +8383,6 @@ declare class Choreography {
              operators: Record<string, SourceEngineParticleOperator>;
              forces: Map<string, SourceEngineParticleOperator>;
              constraints: Record<string, SourceEngineParticleOperator>;
-             childrenSystems: SourceEngineParticleSystem[];
              tempChildren: Record<string, string>;
              operatorRandomSampleOffset: number;
              parentSystem?: SourceEngineParticleSystem;
@@ -8405,7 +8411,7 @@ declare class Choreography {
              stepControlPoint(): void;
              setParam(element: CDmxAttribute): this;
              addParam(param: string, type: string, value: any): void;
-             setParameter(parameter: string, type: string, value: any): this;
+             setParameter(parameter: string, type: any, value: any): this;
              propertyChanged(name: string): void;
              getParameter(parameterName: string): any;
              setMaxParticles(max: number): void;
@@ -8424,6 +8430,7 @@ declare class Choreography {
              addConstraint(constraint: SourceEngineParticleOperator, id: string): void;
              addRenderer(renderer: SourceEngineParticleOperator, id: string): void;
              getControlPoint(controlPointId: number): ControlPoint | null;
+             getControlPoints(): ControlPoint[];
              getOwnControlPoint(controlPointId: number): ControlPoint;
              addTempChild(name: string, id: string): void;
              addChildSystem(particleSystem: SourceEngineParticleSystem): void;
@@ -8438,7 +8445,8 @@ declare class Choreography {
               */
              setOrientation(orientation: quat): void;
              setChildControlPointPosition(first: number, last: number, position: vec3): void;
-             getParticle(index?: number): any;
+             setChildControlPointOrientation(first: number, last: number, orientation: quat): void;
+             getParticle(index?: number): SourceEngineParticle;
              getControlPointPosition(cpId: number): vec3;
              setControlPointPosition(cpId: number, position: vec3): void;
              setControlPointParent(controlPointId: number, parentControlPointId: number): void;
@@ -8452,6 +8460,8 @@ declare class Choreography {
              getBounds(min?: vec3, max?: vec3): void;
              static setSpeed(speed: number): void;
              static setSimulationSteps(simulationSteps: number): void;
+             getChildrenSystems(): SourceEngineParticleSystem[];
+             getActiveParticlesCount(): number;
              buildContextMenu(): {
                  visibility: {
                      i18n: string;
@@ -9869,12 +9879,10 @@ declare class Choreography {
          }
 
          export declare class VelocityNoise extends SourceEngineParticleOperator {
+             #private;
              static functionName: string;
-             randX: number;
-             randY: number;
-             randZ: number;
              constructor();
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
@@ -10135,12 +10143,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#219@#webAssembly"?: any;
-             "__#219@#HEAPU8"?: Uint8Array;
+             "__#221@#webAssembly"?: any;
+             "__#221@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#219@#initHeap"(): void;
+             "__#221@#initHeap"(): void;
          };
 
          export { }
