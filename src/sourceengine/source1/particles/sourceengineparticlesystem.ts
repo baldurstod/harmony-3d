@@ -62,9 +62,9 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	attachmentBone = null;
 
 	// List of living particles
-	livingParticles = [];
+	#livingParticles: SourceEngineParticle[] = [];
 	// List of dead but reusable particles
-	poolParticles = [];
+	#poolParticles = [];
 
 	currentOrientation = quat.create();
 	prevOrientation = quat.create();
@@ -76,7 +76,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	constraints: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
 	#controlPoints: ControlPoint[] = [];
 
-	childrenSystems: SourceEngineParticleSystem[] = [];//todo transform to map
+	#childrenSystems: SourceEngineParticleSystem[] = [];//todo transform to map
 	tempChildren: Record<string, string> = {};//new Array();//todo transform to map
 	operatorRandomSampleOffset = 0;
 	parentSystem?: SourceEngineParticleSystem;
@@ -140,25 +140,25 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	#startChildren() {
-		for (let i = 0; i < this.childrenSystems.length; ++i) {
-			this.childrenSystems[i].start();
+		for (let i = 0; i < this.#childrenSystems.length; ++i) {
+			this.#childrenSystems[i].start();
 		}
 	}
 
 	stop() {
 		this.stopChildren();
 		this.isRunning = false;
-		for (let i = 0; i < this.livingParticles.length; ++i) {
-			const particle = this.livingParticles[i];
-			this.poolParticles.push(particle);
-			this.livingParticles.splice(i, 1);
+		for (let i = 0; i < this.#livingParticles.length; ++i) {
+			const particle = this.#livingParticles[i];
+			this.#poolParticles.push(particle);
+			this.#livingParticles.splice(i, 1);
 			--i;
 		}
 	}
 
 	stopChildren() {
-		for (let i = 0; i < this.childrenSystems.length; ++i) {
-			this.childrenSystems[i].stop();
+		for (let i = 0; i < this.#childrenSystems.length; ++i) {
+			this.#childrenSystems[i].stop();
 		}
 	}
 
@@ -186,8 +186,8 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	#resetChilds() {
-		for (let i = 0; i < this.childrenSystems.length; ++i) {
-			this.childrenSystems[i].#reset();
+		for (let i = 0; i < this.#childrenSystems.length; ++i) {
+			this.#childrenSystems[i].#reset();
 		}
 	}
 
@@ -284,8 +284,8 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	 * Step operators for each particle, killing it if necessary.
 	 */
 	#stepOperators() {
-		for (let i = 0; i < this.livingParticles.length; ++i) {
-			const particle = this.livingParticles[i];
+		for (let i = 0; i < this.#livingParticles.length; ++i) {
+			const particle = this.#livingParticles[i];
 			particle.step(this.elapsedTime);
 			this.operatorRandomSampleOffset = 0;
 			for (const j in this.operators) {
@@ -300,13 +300,13 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 			//particle.step(this.elapsedTime);
 
 			if (!particle.isAlive) {
-				this.poolParticles.push(particle);
-				this.livingParticles.splice(i, 1);
+				this.#poolParticles.push(particle);
+				this.#livingParticles.splice(i, 1);
 				--i;
 			}
 		}
 
-		if (this.livingParticles.length == 0) {
+		if (this.#livingParticles.length == 0) {
 			for (const j in this.operators) {
 				const operator = this.operators[j];
 				switch (operator.functionName) {
@@ -344,8 +344,8 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 				return false;
 			}
 		}
-		for (const child of this.childrenSystems) {
-			if ((child.livingParticles.length > 0) || !child.#finished()) {
+		for (const child of this.#childrenSystems) {
+			if ((child.#livingParticles.length > 0) || !child.#finished()) {
 				return false;
 			}
 		}
@@ -353,7 +353,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	#stepOperators1() {
-		if (this.livingParticles.length == 0) {
+		if (this.#livingParticles.length == 0) {
 			for (const j in this.operators) {
 				const operator = this.operators[j];
 				switch (operator.functionName) {
@@ -369,8 +369,8 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	 * Step forces for each particle.
 	 */
 	stepForces() {
-		for (let i = 0; i < this.livingParticles.length; ++i) {
-			const particle = this.livingParticles[i];
+		for (let i = 0; i < this.#livingParticles.length; ++i) {
+			const particle = this.#livingParticles[i];
 			for (const force of this.forces.values()) {
 				//const force = this.forces[j];
 				force.forceParticle(particle, this.elapsedTime);
@@ -388,22 +388,22 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 
 	#stepRenderers(elapsedTime: number) {
 		for (const [_, renderer] of this.#renderers) {
-			renderer.updateParticles(this, this.livingParticles, elapsedTime);
+			renderer.updateParticles(this, this.#livingParticles, elapsedTime);
 		}
 	}
 
 	#stepChildren(elapsedTime: number) {
-		for (const j in this.childrenSystems) {//TODOv3
-			const child = this.childrenSystems[j];
+		for (const j in this.#childrenSystems) {//TODOv3
+			const child = this.#childrenSystems[j];
 			child.#step(elapsedTime);
 		}
 	}
 
 	createParticle(creationTime: number, elapsedTime: number) {//TODOv3
-		if (this.livingParticles.length < this.maxParticles) {
+		if (this.#livingParticles.length < this.maxParticles) {
 			// first try to get one from the pool
-			if (this.poolParticles.length > 0) {
-				const particle = this.poolParticles.pop();
+			if (this.#poolParticles.length > 0) {
+				const particle = this.#poolParticles.pop();
 				//init the particle to its initial state;
 				particle.reset();
 				particle.cTime = creationTime;
@@ -427,7 +427,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	#startParticle(particle: SourceEngineParticle, elapsedTime: number) {
 		this.resetDelay = 0;
 
-		this.livingParticles.push(particle);
+		this.#livingParticles.push(particle);
 		this.#preInitParticle(particle);
 		particle.previousElapsedTime = elapsedTime;
 		particle.start();
@@ -743,7 +743,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	addChildSystem(particleSystem: SourceEngineParticleSystem) {
-		this.childrenSystems.push(particleSystem);
+		this.#childrenSystems.push(particleSystem);
 		particleSystem.setParent(this);
 		this.addChild(particleSystem);
 		particleSystem.serializable = false;
@@ -791,9 +791,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	setChildControlPointPosition(first: number, last: number, position: vec3) {
-		for (let i = 0; i < this.childrenSystems.length; ++i) {
-			const child = this.childrenSystems[i];
-
+		for (const child of this.#childrenSystems) {
 			for (let cpId = first; cpId <= last; ++cpId) {
 				const cp = child.getOwnControlPoint(cpId);
 				if (cp) {
@@ -806,9 +804,23 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		}
 	}
 
+	setChildControlPointOrientation(first: number, last: number, orientation: quat) {
+		for (const child of this.#childrenSystems) {
+			for (let cpId = first; cpId <= last; ++cpId) {
+				const cp = child.getOwnControlPoint(cpId);
+				if (cp) {
+					cp.setQuaternion(orientation);
+					//The control point is now world positioned
+					//Therefore we remove it from the hierarchy
+					//cp.remove();
+				}
+			}
+		}
+	}
+
 	getParticle(index?: number) {
 		if (index == undefined) {
-			index = Math.floor(Math.random() * this.livingParticles.length);
+			index = Math.floor(Math.random() * this.#livingParticles.length);
 		}
 
 		/*if (index >= this.livingParticles.length) {
@@ -816,7 +828,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 			return this.poolParticles[index];
 		}*/
 
-		return this.livingParticles[index];
+		return this.#livingParticles[index];
 	}
 
 
@@ -892,19 +904,19 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 			renderer.dispose();
 		}
 
-		for (const child of this.childrenSystems) {
+		for (const child of this.#childrenSystems) {
 			child.dispose();
 		}
 	}
 
 	getBounds(min = vec3.create(), max = vec3.create()) {
-		if (!this.livingParticles.length) {
+		if (!this.#livingParticles.length) {
 			vec3.set(min, -1, -1, -1);
 			vec3.set(max, 1, 1, 1);
 		} else {
 			vec3.set(min, Infinity, Infinity, Infinity);
 			vec3.set(max, -Infinity, -Infinity, -Infinity);
-			for (const particle of this.livingParticles) {
+			for (const particle of this.#livingParticles) {
 				vec3.min(min, min, particle.position);
 				vec3.max(max, max, particle.position);
 			}
@@ -920,6 +932,14 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		if (simulationSteps > 0 && simulationSteps <= 10) {
 			SourceEngineParticleSystem.#simulationSteps = simulationSteps;
 		}
+	}
+
+	getChildrenSystems(): SourceEngineParticleSystem[] {
+		return this.#childrenSystems;
+	}
+
+	getActiveParticlesCount(): number {
+		return this.#livingParticles.length;//TODO: optimize
 	}
 
 	buildContextMenu() {
