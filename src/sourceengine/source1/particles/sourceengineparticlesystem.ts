@@ -703,6 +703,10 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		return controlPoint;
 	}
 
+	getControlPoints(): ControlPoint[] {
+		return this.#controlPoints;
+	}
+
 	getOwnControlPoint(controlPointId: number) {
 		return this.#controlPoints[controlPointId] ?? this.#createControlPoint(controlPointId);
 	}
