@@ -1,10 +1,10 @@
-import { vec2, vec3 } from 'gl-matrix';
+import { vec2 } from 'gl-matrix';
 import { DEG_TO_RAD } from '../../../../../math/constants';
+import { lerp } from '../../../../../math/functions';
 import { CDmxAttributeValue } from '../../../export';
 import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleOperator } from '../operator';
-import { lerp } from '../../../../../math/functions';
 
 const DEFAULT_ORIENTATION_OFFSET = 0;
 const SPIN_STRENGTH = 1;
