@@ -24,6 +24,12 @@ export class PositionOnModelRandom extends SourceEngineParticleOperator {
 
 	doInit(particle, elapsedTime) {
 		const controlPointNumber = this.getParameter('control_point_number');
+		const forceInModel = this.getParameter('force to be inside model');
+
+		if (forceInModel != 0) {
+			particle.die();
+			return;
+		}
 
 
 		const controlPoint = particle.system.getControlPoint(controlPointNumber);
