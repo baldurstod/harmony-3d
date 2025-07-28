@@ -2,6 +2,7 @@ import { VERBOSE } from '../../../buildoptions';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../geometry/buffergeometry';
 import { getLoader, registerLoader } from '../../../loaders/loaderfactory';
+import { Property, PropertyType } from '../../../utils/properties';
 import { SourceEngineMDLLoader } from './sourceenginemdlloader';
 import { SourceEngineVTXLoader } from './sourceenginevtxloader';
 import { SourceEngineVVDLoader } from './sourceenginevvdloader';
@@ -72,9 +73,6 @@ export class ModelLoader {
 		//console.info('Vertex array :')
 		//console.info(vertexArray);
 
-		let bodypart = null;
-		let model = null;
-		let lod = null;
 		let stripgroup = null;
 		let cumulateVertexOffset = 0;
 		let modelsname = '';
@@ -82,39 +80,59 @@ export class ModelLoader {
 		for (let bodypartIndex = 0; bodypartIndex < bodyparts.length; ++bodypartIndex) {
 			const bodyPart = /*bodyparts[bodypartIndex];//*/mdl.getBodyPart(bodypartIndex);
 			if (bodyPart) {
-				bodypart = bodyparts[bodypartIndex];
+				const vtxBodyPart = bodyparts[bodypartIndex];
+				if (!vtxBodyPart) {
+					continue;
+				}
 				if (VERBOSE) {
 					console.info('Bodypart : ' + bodypartIndex);
 				}
 
-				const bp = bodyPart;
-
 				// iterate models
-				for (let modelIndex = 0; modelIndex < bodypart.models.length; ++modelIndex) {
-					model = bodypart.models[modelIndex];
-					modelsname += bodyPart.models[modelIndex].name + ', ';//TODOV2
+				for (let modelIndex = 0; modelIndex < vtxBodyPart.models.length; ++modelIndex) {
+					const modelTest = bodyPart.models[modelIndex];
+					if (!modelTest) {
+						continue;
+					}
+
+					const model = vtxBodyPart.models[modelIndex];
+					if (!model) {
+						continue;
+					}
+
+					modelsname += modelTest.name + ', ';//TODOV2
 					if (VERBOSE) {
 						console.info('	Model : ' + modelIndex);
 					}
-					lod = model.lods[requiredLod];
-					const modelTest = bodyPart.models[modelIndex];
+					const lod = model.lods[requiredLod];
+					if (!lod) {
+						continue;
+					}
 
 					// iterate meshes
 					for (let meshIndex = 0; meshIndex < lod.meshes.length; ++meshIndex) {
 						const mesh = lod.meshes[meshIndex];
+						if (!mesh) {
+							continue;
+						}
 						if (VERBOSE) {
 							console.info('		Mesh : ' + meshIndex);
 						}
 
-						const msh = modelTest.meshArray[meshIndex]//new SourceModel.MeshTest();
+						const msh = modelTest.meshArray[meshIndex];//new SourceModel.MeshTest();
+						if (!msh) {
+							continue;
+						}
 
 						if (!msh.initialized) {
-
-							//msh.setMaterialId(bodyPart.models[modelIndex].meshArray[meshIndex].material);
-							const vertexOffset = cumulateVertexOffset + bodyPart.models[modelIndex].meshArray[meshIndex].vertexoffset; //TODO
+							//msh.setMaterialId(msh.material);
+							const vertexOffset = cumulateVertexOffset + msh.vertexoffset; //TODO
 							const indices = [];
 							for (let stripgroupIndex = 0; stripgroupIndex < mesh.stripGroups.length; ++stripgroupIndex) {
 								stripgroup = mesh.stripGroups[stripgroupIndex];
+								if (!stripgroup) {
+									continue;
+								}
 								if (VERBOSE) {
 									console.info('			Stripgroup : ' + stripgroupIndex + ' index : ' + stripgroup.indexes.length + ' vertices : ' + stripgroup.vertices.length);
 								}
@@ -127,8 +145,7 @@ export class ModelLoader {
 								}
 
 								//if (this.drawBodyPart[bodyPartName])
-								for (let k = 0; k < indexArray.length; ++k) {
-									const j = indexArray[k];
+								for (const j of indexArray) {
 									const sva = stripVertexArray[j];
 									if (!sva) break;
 									const i = sva.origMeshVertID + vertexOffset;//TODO: rename variable i
@@ -138,7 +155,7 @@ export class ModelLoader {
 
 							// reverse triangles from CW to CCW
 							for (let i = 0, l = indices.length; i < l; i += 3) {//TODOv3: optimize
-								const a: number = indices[i + 1];
+								const a: number = indices[i + 1]!;
 								indices[i + 1] = indices[i + 2];
 								indices[i + 2] = a;
 							}
@@ -151,19 +168,19 @@ export class ModelLoader {
 							geometry.setAttribute('aTextureCoord', textureCoord);
 							geometry.setAttribute('aBoneWeight', vertexWeights);
 							geometry.setAttribute('aBoneIndices', vertexBones);
-							geometry.properties.set('materialId', msh.material);
-							geometry.properties.set('materialType', msh.materialtype);//TODOv3 : setup a better material param
-							geometry.properties.set('materialParam', msh.materialparam);//TODOv3 : setup a better material param
-							geometry.properties.set('eyeballArray', msh.model.eyeballArray);//TODOv3 : setup a better material param
+							geometry.properties.set('materialId', new Property(PropertyType.Number, msh.material));
+							geometry.properties.set('materialType', new Property(PropertyType.Number, msh.materialtype));//TODOv3 : setup a better material param
+							geometry.properties.set('materialParam', new Property(PropertyType.Number, msh.materialparam));//TODOv3 : setup a better material param
+							geometry.properties.set('eyeballArray', new Property(PropertyType.Array, msh.model.eyeballArray));//TODOv3 : setup a better material param
 
 							geometry.count = indices.length;
-							geometry.properties.set('name', modelTest.name);
+							geometry.properties.set('name', new Property(PropertyType.String, modelTest.name));
 
 
 							newSourceModel.addGeometry(msh, geometry, bodyPart.name, modelIndex);
 						}
 					} // mesh
-					cumulateVertexOffset += bodyPart.models[modelIndex].numvertices;
+					cumulateVertexOffset += modelTest.numvertices;
 					if (VERBOSE) {
 						console.info('cumulate vertex offset : ' + cumulateVertexOffset);
 					}

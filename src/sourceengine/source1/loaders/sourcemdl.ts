@@ -5,7 +5,7 @@ import { RemapValClamped } from '../../../math/functions';
 import { FlexController } from '../models/flexcontroller';
 import { MdlBone } from './mdlbone';
 import { MdlStudioSeqDesc } from './mdlstudioseqdesc';
-import { MdlStudioFlexController, MdlStudioHitboxSet, SourceEngineMDLLoader } from './sourceenginemdlloader';
+import { MdlStudioFlexController, MdlStudioHitboxSet, ModelTest, SourceEngineMDLLoader } from './sourceenginemdlloader';
 import { Source1ModelInstance } from '../export';
 import { MdlStudioAnim } from './mdlstudioanim';
 
@@ -40,18 +40,24 @@ export const MAX_STUDIO_FLEX_CTRL = 96;
 
 export type FlexWeight = Record<string, number>;
 
+type Tuple<
+	T,
+	N extends number,
+	R extends readonly T[] = [],
+> = R['length'] extends N ? R : Tuple<T, N, [T, ...R]>;
+
 export class MdlAttachment {
 	name = '';
 	lowcasename = '';
 	mdl: SourceMdl | null = null;
 	flags = 0;
 	localbone = 0;
-	local: number[] = [];
+	local: Tuple<number, 12> = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
 }
 
 export class MdlStudioAnimDesc {//removeme
 	name = '';
-	animSections = [];
+	//animSections = [];
 	mdl: SourceMdl | null = null;
 	startOffset = 0;
 	fps = 0;
@@ -69,7 +75,7 @@ export class MdlStudioAnimDesc {//removeme
 	zeroframespan = 0;
 	zeroframecount = 0;
 	zeroframeOffset = 0;
-	readonly frames:never[] = [];
+	readonly frames: never[] = [];
 
 	pAnim(frameIndex: number/*, flStall TODOv2*/): MdlStudioAnim[] | null {
 		if (this.mdl) {
@@ -89,9 +95,9 @@ export class MdlStudioAnimDesc {//removeme
 	}
 }
 
-export class MdlStudioFlexRule { // mstudioflexrule_t
+export class MdlStudioFlexRule { // mstudioflexrule_t//TODO: turn to type
 	readonly ops: MdlStudioFlexOp[] = [];
-	flex: number;
+	flex!: number;
 }
 
 export class MdlStudioFlexOp { // mstudioflexop_t
@@ -109,28 +115,56 @@ export class MdlStudioPoseParam { // mstudioposeparamdesc_t
 	midpoint = 0;
 }
 
+
+export type SourceMdlHeader = {
+	modelFormatID: number;
+	formatVersionID: number;
+	checkSum: number;
+	modelName: string;
+	dataLength: number;
+	eyeposition: vec3;
+	illumposition: vec3;
+	hull_min: vec3;
+	hull_max: vec3;
+	view_bbmin: vec3;
+	view_bbmax: vec3;
+	flags: number;
+	activitylistversion: number;
+	eventsindexed: number;
+	numFlexDesc: number;
+	mass: number;
+	contents: number;
+	virtualModel: number;
+	animBlocksCount: number;
+	animBlocksIndex: number;
+	animBlockModel: number;
+	directionaldotproduct: number;
+	rootLod: number;
+	numAllowedRootLods: number;
+}
+
 export class SourceMdl {
 	repository: string;
 	readonly externalMdlsV2: Promise<SourceMdl | null>[] = [];
 	readonly attachmentNames = new Map<string, MdlAttachment>();
 	readonly flexController = new FlexController();
 	readonly skinReferences: any[][] = [];
-	readonly textures: MdlTexture[];
-	readonly modelGroups: MdlStudioModelGroup[];
-	header;
-	readonly bodyParts: MdlBodyPart[];
+	readonly textures: MdlTexture[] = [];
+	readonly modelGroups: MdlStudioModelGroup[] = [];
+	header!: SourceMdlHeader;
+	readonly bodyParts: MdlBodyPart[] = [];
 	readonly sequences: MdlStudioSeqDesc[] = [];
 	readonly texturesDir: string[] = [];
 	readonly flexRules: MdlStudioFlexRule[] = [];
 	readonly flexControllers: MdlStudioFlexController[] = [];
-	boneCount: number;
+	boneCount: number = 0;
 	readonly bones: MdlBone[] = [];
 	readonly boneNames = new Map<string, number>();
 	numflexdesc = 0;
 	readonly attachments: MdlAttachment[] = [];
-	readonly animDesc = [];
-	loader: SourceEngineMDLLoader;
-	reader: BinaryReader;
+	readonly animDesc: MdlStudioAnimDesc[] = [];
+	loader!: SourceEngineMDLLoader;
+	reader!: BinaryReader;
 	readonly poseParameters: MdlStudioPoseParam[] = [];
 	readonly hitboxSets: MdlStudioHitboxSet[] = [];
 	boneOffset = 0;
@@ -209,7 +243,7 @@ export class SourceMdl {
 		if (textureId >= this.textures.length) {
 			textureId = 0;
 		}
-		return /*materialOverride[textureId] ? materialOverride[textureId].name : */this.textures[textureId].name;
+		return /*materialOverride[textureId] ? materialOverride[textureId].name : */this.textures[textureId]?.name ?? '';
 	}
 
 	getSkinList(): number[] {
@@ -221,7 +255,7 @@ export class SourceMdl {
 		return skinList;
 	}
 
-	getBodyPart(bodyPartId: number): MdlBodyPart {
+	getBodyPart(bodyPartId: number): MdlBodyPart | undefined {
 		return this.bodyParts[bodyPartId];
 	}
 
@@ -231,8 +265,7 @@ export class SourceMdl {
 
 	async getSequence(sequenceName: string): Promise<MdlStudioSeqDesc | null> {
 		const list = this.sequences;
-		for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
-			const seq = list[seqIndex];
+		for (const seq of list) {
 			if ((seq.name == sequenceName) && seq.flags != 0x800) {//TODOV2: const
 				return seq;
 			}
@@ -253,9 +286,11 @@ export class SourceMdl {
 		return null;
 	}
 
+	/*
 	getModelGroup(modelGroupId: number): MdlStudioModelGroup {
 		return this.modelGroups[modelGroupId];
 	}
+	*/
 
 	getModelGroups(): MdlStudioModelGroup[] {
 		return this.modelGroups;
@@ -348,17 +383,13 @@ export class SourceMdl {
 
 		const flexControllers = this.getFlexControllers();
 		if (flexControllers) {
-			for (let controllerIndex = 0, l = flexControllers.length; controllerIndex < l; ++controllerIndex) {
-				const flexController = flexControllers[controllerIndex];
-
-				//console.error(controllerIndex, flexController.name);
-
+			for (const flexController of flexControllers) {
 				const j = flexController.localToGlobal;
 
 				// remap m_flexweights to full dynamic range, global flexcontroller indexes
 				if (j >= 0 && j < MAX_STUDIO_FLEX_CTRL * 4) {
 					const flexWeight = flexesWeight[flexController.name] ?? this.flexController.getControllerValue(flexController.name);
-					src[j] = flexWeight/*m_flexweight[controllerIndex]*/ * (flexController.max - flexController.min) + flexController.min;
+					src[j] = flexWeight * (flexController.max - flexController.min) + flexController.min;
 				}
 			}
 			this.#runFlexesRules(src, g_flexdescweight);
@@ -373,54 +404,54 @@ export class SourceMdl {
 
 		const flexRules = this.getFlexRules();
 		if (flexRules) {
-			for (let i = 0, l = flexRules.length; i < l; ++i) {
+			for (const rule of flexRules) {
 				const stack = new Float32Array(32);
 				let k = 0;
-				const rule = flexRules[i];
+				//				const rule = flexRules[i];
 
 				const numops = rule.ops.length;
 				for (let j = 0; j < numops; j++) {
-					const op = rule.ops[j];
+					const op = rule.ops[j]!;
 
 					let pCloseLidV;
 					let flCloseLidV;
 					let pCloseLid;
 					let flCloseLid;
-					let nEyeUpDownIndex;
+					let nEyeUpDownIndex: number;
 					let flEyeUpDown;
 					switch (op.op) {
-						case STUDIO_FLEX_OP_ADD: stack[k - 2] = stack[k - 2] + stack[k - 1]; k--; break;
-						case STUDIO_FLEX_OP_SUB: stack[k - 2] = stack[k - 2] - stack[k - 1]; k--; break;
-						case STUDIO_FLEX_OP_MUL: stack[k - 2] = stack[k - 2] * stack[k - 1]; k--; break;
+						case STUDIO_FLEX_OP_ADD: stack[k - 2] = stack[k - 2]! + stack[k - 1]!; k--; break;
+						case STUDIO_FLEX_OP_SUB: stack[k - 2] = stack[k - 2]! - stack[k - 1]!; k--; break;
+						case STUDIO_FLEX_OP_MUL: stack[k - 2] = stack[k - 2]! * stack[k - 1]!; k--; break;
 						case STUDIO_FLEX_OP_DIV:
-							if (stack[k - 1] > 0.0001) {
-								stack[k - 2] = stack[k - 2] / stack[k - 1];
+							if (stack[k - 1]! > 0.0001) {
+								stack[k - 2]! = stack[k - 2]! / stack[k - 1]!;
 							} else {
 								stack[k - 2] = 0;
 							}
 							k--;
 							break;
-						case STUDIO_FLEX_OP_NEG: stack[k - 1] = -stack[k - 1]; break;
-						case STUDIO_FLEX_OP_MAX: stack[k - 2] = Math.max(stack[k - 2], stack[k - 1]); k--; break;
-						case STUDIO_FLEX_OP_MIN: stack[k - 2] = Math.min(stack[k - 2], stack[k - 1]); k--; break;
+						case STUDIO_FLEX_OP_NEG: stack[k - 1] = -stack[k - 1]!; break;
+						case STUDIO_FLEX_OP_MAX: stack[k - 2] = Math.max(stack[k - 2]!, stack[k - 1]!); k--; break;
+						case STUDIO_FLEX_OP_MIN: stack[k - 2] = Math.min(stack[k - 2]!, stack[k - 1]!); k--; break;
 						case STUDIO_FLEX_OP_CONST: stack[k] = op.value; k++; break;
 						case STUDIO_FLEX_OP_FETCH1:
-							const m = this.flexControllers[op.index].localToGlobal;
-							stack[k] = src[m];
+							const m = this.flexControllers[op.index]!.localToGlobal;
+							stack[k] = src[m]!;
 							++k;
 							break;
 						case STUDIO_FLEX_OP_DME_LOWER_EYELID:
 							pCloseLidV = this.flexControllers[op.index];
-							flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal], pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
+							flCloseLidV = RemapValClamped(src[pCloseLidV!.localToGlobal]!, pCloseLidV!.min, pCloseLidV!.max, 0.0, 1.0);
 
-							pCloseLid = this.flexControllers[stack[k - 1]];
-							flCloseLid = RemapValClamped(src[pCloseLid.localToGlobal], pCloseLid.min, pCloseLid.max, 0.0, 1.0);
+							pCloseLid = this.flexControllers[stack[k - 1]!];
+							flCloseLid = RemapValClamped(src[pCloseLid!.localToGlobal]!, pCloseLid!.min, pCloseLid!.max, 0.0, 1.0);
 
-							nEyeUpDownIndex = stack[k - 3];
+							nEyeUpDownIndex = stack[k - 3]!;
 							flEyeUpDown = 0.0;
 							if (nEyeUpDownIndex >= 0) {
-								const pEyeUpDown = this.flexControllers[stack[k - 3]];
-								flEyeUpDown = RemapValClamped(src[pEyeUpDown.localToGlobal], pEyeUpDown.min, pEyeUpDown.max, -1.0, 1.0);
+								const pEyeUpDown = this.flexControllers[stack[k - 3]!];
+								flEyeUpDown = RemapValClamped(src[pEyeUpDown!.localToGlobal]!, pEyeUpDown!.min, pEyeUpDown!.max, -1.0, 1.0);
 							}
 
 							if (flEyeUpDown > 0.0) {
@@ -433,16 +464,16 @@ export class SourceMdl {
 							break;
 						case STUDIO_FLEX_OP_DME_UPPER_EYELID:
 							pCloseLidV = this.flexControllers[op.index];
-							flCloseLidV = RemapValClamped(src[pCloseLidV.localToGlobal], pCloseLidV.min, pCloseLidV.max, 0.0, 1.0);
+							flCloseLidV = RemapValClamped(src[pCloseLidV!.localToGlobal]!, pCloseLidV!.min, pCloseLidV!.max, 0.0, 1.0);
 
-							pCloseLid = this.flexControllers[stack[k - 1]];
-							flCloseLid = RemapValClamped(src[pCloseLid.localToGlobal], pCloseLid.min, pCloseLid.max, 0.0, 1.0);
+							pCloseLid = this.flexControllers[stack[k - 1]!];
+							flCloseLid = RemapValClamped(src[pCloseLid!.localToGlobal]!, pCloseLid!.min, pCloseLid!.max, 0.0, 1.0);
 
-							nEyeUpDownIndex = stack[k - 3];
+							nEyeUpDownIndex = stack[k - 3]!;
 							flEyeUpDown = 0.0;
 							if (nEyeUpDownIndex >= 0) {
-								const pEyeUpDown = this.flexControllers[stack[k - 3]];
-								flEyeUpDown = RemapValClamped(src[pEyeUpDown.localToGlobal], pEyeUpDown.min, pEyeUpDown.max, -1.0, 1.0);
+								const pEyeUpDown = this.flexControllers[stack[k - 3]!];
+								flEyeUpDown = RemapValClamped(src[pEyeUpDown!.localToGlobal]!, pEyeUpDown!.min, pEyeUpDown!.max, -1.0, 1.0);
 							}
 
 							if (flEyeUpDown < 0.0) {
@@ -606,7 +637,7 @@ export class SourceMdl {
 
 					//pops++;
 				}
-				dest[rule.flex] = stack[0];
+				dest[rule.flex] = stack[0]!;
 			}
 		}
 		//console.log(stack);
@@ -629,22 +660,19 @@ export class SourceMdl {
 		return this.bones;
 	}
 
-	getBone(boneIndex: number): MdlBone | null {
+	getBone(boneIndex: number): MdlBone | undefined {
 		const bones = this.getBones();
 		if (bones) {
 			return bones[boneIndex];
 		}
-		return null;
 	}
 
-	getBoneByName(boneName: string): MdlBone | null {
+	getBoneByName(boneName: string): MdlBone | undefined {
 		const bones = this.getBones();
 		const boneIndex = this.boneNames.get(boneName);
 		if (bones && boneIndex !== undefined) {
 			return bones[boneIndex];
 		}
-
-		return null;
 	}
 
 	getBoneId(boneName: string): number {
@@ -660,21 +688,20 @@ export class SourceMdl {
 		return Array.from(this.getAttachments());
 	}
 
-	getAttachmentById(attachmentId: number): MdlAttachment | null {
+	getAttachmentById(attachmentId: number): MdlAttachment | undefined {
 		const list = this.getAttachments();
 		if (list) {
 			return list[attachmentId];
 		}
-		return null;
 	}
 
-	getAttachment(attachmentName: string): MdlAttachment | null {
+	getAttachment(attachmentName: string): MdlAttachment | undefined {
 		attachmentName = attachmentName.toLowerCase();
 
-		return this.attachmentNames.get(attachmentName) ?? null;
+		return this.attachmentNames.get(attachmentName);
 	}
 
-	getSequenceById(sequenceId: number): MdlStudioSeqDesc {
+	getSequenceById(sequenceId: number): MdlStudioSeqDesc | undefined {
 		return this.sequences[sequenceId];
 	}
 
@@ -707,8 +734,7 @@ export class SourceMdl {
 	getSequences(): string[] {
 		const list = this.sequences;
 		const animList: string[] = [];
-		for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
-			const seq = list[seqIndex];
+		for (const seq of list) {
 			animList.push(seq.name);
 		}
 		return animList;
@@ -717,8 +743,7 @@ export class SourceMdl {
 	getSequences2(): string[] {
 		const list = this.sequences;
 		const animList = [];
-		for (let seqIndex = 0; seqIndex < list.length; ++seqIndex) {
-			const seq = list[seqIndex];
+		for (const seq of list) {
 			//if ((seq.activity != -1) && (seq.activityName != '')) {
 			//if (seq.activityName != '') {
 			//if (seq.name == 'run_melee') {
@@ -729,18 +754,18 @@ export class SourceMdl {
 		return animList;
 	}
 
-	getAnimDescription(animIndex: number): null {
-		return this.animDesc[animIndex];
+	getAnimDescription(animIndex: number): MdlStudioAnimDesc | null {
+		return this.animDesc[animIndex] ?? null;
 	}
 
-	getAnimFrame(dynamicProp: Source1ModelInstance, animDesc, frameIndex: number) {
+	getAnimFrame(dynamicProp: Source1ModelInstance, animDesc: MdlStudioAnimDesc, frameIndex: number) {
 		//console.info(frameIndex);
 		//const animDesc = this.getAnimDescription(animIndex);
 		if (animDesc && this.getBones()) {
 			const section = this.loader._parseAnimSection(this.reader, animDesc, frameIndex);//TODOv3
 			//const section = animDesc.animSections[0];
 
-			animDesc.frames = [];
+			//animDesc.frames = [];
 			const frame = dynamicProp.frameframe;// = dynamicProp.frameframe || Object.create(null);
 			//frame.bones = Object.create(null);
 
@@ -758,8 +783,7 @@ export class SourceMdl {
 				//frameIndex % animDesc.sectionframes;
 				const blockList = section;//animDesc.animSections[sectionIndex];
 				if (blockList) {
-					for (let blockIndex = 0; blockIndex < blockList.length; ++blockIndex) {
-						const block = blockList[blockIndex];
+					for (const block of blockList) {
 						const bone = this.bones[block.bone];
 
 						if (bone != undefined) {
@@ -790,7 +814,7 @@ export class SourceMdl {
 		return null;
 	}
 
-	getLocalPoseParameter(poseIndex: number): MdlStudioPoseParam {
+	getLocalPoseParameter(poseIndex: number): MdlStudioPoseParam | undefined {
 		return this.poseParameters[poseIndex];
 	}
 
@@ -827,17 +851,17 @@ export class SourceMdl {
 	}
 }
 
-export class MdlStudioModelGroup {//removeme
-	name;
-	label;
+export class MdlStudioModelGroup {//{//TODO: turn to type
+	name!: string;
+	label!: string;
 }
 
-export class MdlTexture {//removeme
-	name;
-	originalName;
+export class MdlTexture {//{//TODO: turn to type
+	name!: string;
+	originalName!: string;
 }
-export class MdlBodyPart {//removeme
-	name;
-	base;
-	models;
+export class MdlBodyPart {//TODO: turn to type
+	name!: string;
+	base!: number;
+	models!: ModelTest[];
 }

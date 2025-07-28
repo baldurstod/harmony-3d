@@ -37,7 +37,7 @@ export class SourceVvd {
 	vertexDataStart = 0;
 	tangentDataStart = 0;
 
-	getVertices(lodLevel: number) {
+	getVertices(lodLevel: number): SourceVvdVertex[] | null {
 		if (this.vertices) {
 			if (this.numFixups == 0) {
 				return this.vertices;
@@ -49,19 +49,20 @@ export class SourceVvd {
 			*/
 
 			if (this.fixups) {
-				const vertices1 = [];
+				const vertices1: SourceVvdVertex[] = [];
 
-				for (let fixupIndex = 0; fixupIndex < this.fixups.length; ++fixupIndex) {
-					const fixup = this.fixups[fixupIndex];
+				for (const fixup of this.fixups) {
 					if (fixup.lod < lodLevel) {
 						continue;
 					}
 					const last = fixup.sourceVertexID + fixup.numVertexes;
 					for (let vertexIndex = fixup.sourceVertexID; vertexIndex < last; ++vertexIndex) {
-						vertices1.push(this.vertices[vertexIndex]);
+						const a = this.vertices[vertexIndex];
+						if (a) {
+							vertices1.push(a);
+						}
 					}
 				}
-
 				return vertices1;
 			}
 		}

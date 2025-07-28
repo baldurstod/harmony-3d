@@ -17,8 +17,8 @@ const g2RemoveMe = 1;
 //-----------------------------------------------------------------------------
 // Purpose: returns array of animations and weightings for a sequence based on current pose parameters
 //-----------------------------------------------------------------------------
-//void Studio_SeqAnims(const CStudioHdr *pStudioHdr, mstudioseqdesc_t &seqdesc, int iSequence, const float poseParameter[], mstudioanimdesc_t *panim[4], float *weight)
-function Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameter, panim, weight) {
+//void Studio_SeqAnims(const CStudioHdr *pStudioHdr, mstudioseqdesc_t &seqdesc, int iSequence, const float poseParameters[], mstudioanimdesc_t *panim[4], float *weight)
+function Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameters: Map<string, number>, panim, weight) {
 	/*if (!pStudioHdr || iSequence >= pStudioHdr.GetNumSeq())
 	{
 		weight[0] = weight[1] = weight[2] = weight[3] = 0.0;
@@ -28,8 +28,8 @@ function Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameter, panim, 
 	const i0 = 0, i1 = 0;
 	const s0 = 0, s1 = 0;
 
-	//Studio_LocalPoseParameter(pStudioHdr, poseParameter, seqdesc, iSequence, 0, s0, i0);TODOV2
-	//	Studio_LocalPoseParameter(pStudioHdr, poseParameter, seqdesc, iSequence, 1, s1, i1);
+	//Studio_LocalPoseParameter(pStudioHdr, poseParameters, seqdesc, iSequence, 0, s0, i0);TODOV2
+	//	Studio_LocalPoseParameter(pStudioHdr, poseParameters, seqdesc, iSequence, 1, s1, i1);
 
 	//panim[0] = pStudioHdr.pAnimdesc(pStudioHdr.iRelativeAnim(iSequence, seqdesc.anim(i0	, i1)));
 	panim[0] = pStudioHdr.getAnimDescription(seqdesc.getBlend(i0, i1));
@@ -51,12 +51,12 @@ function Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameter, panim, 
 //-----------------------------------------------------------------------------
 // Purpose: returns cycles per second of a sequence (cycles/second)
 //-----------------------------------------------------------------------------
-//float Studio_CPS(const CStudioHdr *pStudioHdr, mstudioseqdesc_t &seqdesc, int iSequence, const float poseParameter[])
-function Studio_CPS2(pStudioHdr, seqdesc, iSequence, poseParameter) {
+//float Studio_CPS(const CStudioHdr *pStudioHdr, mstudioseqdesc_t &seqdesc, int iSequence, const float poseParameters[])
+function Studio_CPS2(pStudioHdr, seqdesc, iSequence, poseParameters: Map<string, number>) {
 	const panim = [];
 	const weight = [];
 
-	Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameter, panim, weight);
+	Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameters, panim, weight);
 
 	let t = 0;
 	for (let i = 0; i < 4; ++i) {
@@ -68,11 +68,11 @@ function Studio_CPS2(pStudioHdr, seqdesc, iSequence, poseParameter) {
 	return t;
 }
 
-function Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameter) {
+function Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameters: Map<string, number>) {
 	const panim = [];
 	const weight = [];
 
-	Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameter, panim, weight);
+	Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameters, panim, weight);
 
 	let t = 0;
 	for (let i = 0; i < 4; ++i) {
@@ -86,19 +86,19 @@ function Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameter) {
 //-----------------------------------------------------------------------------
 // Purpose: returns length (in seconds) of a sequence (seconds/cycle)
 //-----------------------------------------------------------------------------
-//float Studio_Duration(const CStudioHdr *pStudioHdr, int iSequence, const float poseParameter[])
-export function Studio_Duration2(pStudioHdr, iSequence, poseParameter) {
+//float Studio_Duration(const CStudioHdr *pStudioHdr, int iSequence, const float poseParameters[])
+export function Studio_Duration2(pStudioHdr, iSequence, poseParameters: Map<string, number>) {
 	const seqdesc = pStudioHdr.getSequenceById(iSequence);//pStudioHdr.pSeqdesc(iSequence);
-	const cps = Studio_CPS2(pStudioHdr, seqdesc, iSequence, poseParameter);
+	const cps = Studio_CPS2(pStudioHdr, seqdesc, iSequence, poseParameters);
 
 	if (cps == 0)
 		return 0.0;
 
 	return 1.0 / cps;
 }
-export function StudioFrames2(pStudioHdr, iSequence, poseParameter) {
+export function StudioFrames2(pStudioHdr, iSequence, poseParameters: Map<string, number>) {
 	const seqdesc = pStudioHdr.getSequenceById(iSequence);//pStudioHdr.pSeqdesc(iSequence);
-	return Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameter);
+	return Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameters);
 }
 
 const SOURCE_MODEL_MAX_BONES = 256;
@@ -136,8 +136,8 @@ function InitPose2(dynamicProp, pStudioHdr, pos, q, boneMask) {
 // Purpose: calculate a pose for a single sequence
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
-//function CalcPose(pStudioHdr, pIKContext, pos, q, sequence, cycle, poseParameter, boneMask, flWeight = 1.0, flTime = 0.0) {
-export function CalcPose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+//function CalcPose(pStudioHdr, pIKContext, pos, q, sequence, cycle, poseParameters, boneMask, flWeight = 1.0, flTime = 0.0) {
+export function CalcPose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], sequence, cycle, poseParameters: Map<string, number>, boneMask, flWeight, flTime) {
 	cycle = cycle % 1;//TODOv2
 	const seqdesc = pStudioHdr.getSequenceById(sequence);
 	if (seqdesc) {
@@ -155,13 +155,13 @@ export function CalcPose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags
 		}
 			*/
 
-		CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameter, boneMask, flTime);
+		CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flTime);
 
 		if (pIKContext) {
-			pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameter, flWeight);
+			pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
 		}
 
-		AddSequenceLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime);
+		AddSequenceLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flWeight, flTime);
 		/*
 				if (false && seqdesc.numiklocks) {//TODOV2
 					seq_ik.SolveSequenceLocks(seqdesc, pos, q);
@@ -203,7 +203,7 @@ for (let i = 0; i < SOURCE_MODEL_MAX_BONES; i++) {
 	CalcPoseSingle_pos3[i] = vec3.create();
 	CalcPoseSingle_q3[i] = quat.create();
 }
-function CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameter, boneMask, flTime) {
+function CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameters: Map<string, number>, boneMask, flTime) {
 	let bResult = true;
 
 	const pos2 = CalcPoseSingle_pos2;//[];//vec3.create();//TODOv2: optimize (see source)
@@ -228,21 +228,21 @@ function CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], s
 	let i0 = 0, i1 = 0;
 	let s0 = 0, s1 = 0;
 
-	const r0 = Studio_LocalPoseParameter2(pStudioHdr, poseParameter, seqdesc, sequence, 0/*, s0, i0 */);//TODOv2
-	const r1 = Studio_LocalPoseParameter2(pStudioHdr, poseParameter, seqdesc, sequence, 1/*, s1, i1 */);
+	const r0 = Studio_LocalPoseParameter2(pStudioHdr, poseParameters, seqdesc, sequence, 0/*, s0, i0 */);//TODOv2
+	const r1 = Studio_LocalPoseParameter2(pStudioHdr, poseParameters, seqdesc, sequence, 1/*, s1, i1 */);
 	s0 = r0.s;
 	i0 = r0.i;
 	s1 = r1.s;
 	i1 = r1.i;
 
 	if (seqdesc.flags & STUDIO_REALTIME) {
-		const cps = Studio_CPS2(pStudioHdr, seqdesc, sequence, poseParameter);
+		const cps = Studio_CPS2(pStudioHdr, seqdesc, sequence, poseParameters);
 		cycle = flTime * cps;
 		cycle = cycle - Math.floor(cycle);//TODOv2: rounding issues
 	} else if (seqdesc.flags & STUDIO_CYCLEPOSE) {
 		const iPose = pStudioHdr.GetSharedPoseParameter(sequence, seqdesc.cycleposeindex);
 		if (iPose != -1) {
-			cycle = poseParameter[iPose];
+			cycle = poseParameters[iPose];
 		} else {
 			cycle = 0.0;
 		}
@@ -903,7 +903,7 @@ function Calc3WayBlendIndices2(i0, i1, s0, s1, seqdesc, pAnimIndices, pWeight) {
 // Purpose: calculate a pose for a single sequence //TODOv2
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
-const AddSequenceLayers2 = function (dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+const AddSequenceLayers2 = function (dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameters: Map<string, number>, boneMask, flWeight, flTime) {
 	//return;
 	for (let i = 0; i < seqdesc.numautolayers; ++i) {
 		const pLayer = seqdesc.getAutoLayer(i);
@@ -930,7 +930,7 @@ const AddSequenceLayers2 = function (dynamicProp, pStudioHdr, pIKContext, pos, q
 					//const Pose = pStudioHdr.pPoseParameter(iPose);
 					const Pose = pStudioHdr.getLocalPoseParameter(iPose);
 					if (Pose) {
-						index = poseParameter[iPose] * (Pose.end - Pose.start) + Pose.start;
+						index = poseParameters[iPose] * (Pose.end - Pose.start) + Pose.start;
 					} else {
 						index = 0;
 					}
@@ -971,7 +971,7 @@ const AddSequenceLayers2 = function (dynamicProp, pStudioHdr, pIKContext, pos, q
 
 		//const iSequence = pStudioHdr.iRelativeSeq(sequence, pLayer.iSequence);//TODOV2
 		const iSequence = pLayer.iSequence;//pStudioHdr.getSequenceById(pLayer.iSequence);
-		AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, iSequence, layerCycle, poseParameter, boneMask, layerWeight, flTime);
+		AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, iSequence, layerCycle, poseParameters, boneMask, layerWeight, flTime);
 	}
 }
 
@@ -985,7 +985,7 @@ for (let i = 0; i < SOURCE_MODEL_MAX_BONES; i++) {
 	AccumulatePose_pos2[i] = vec3.create();
 	AccumulatePose_q2[i] = quat.create();
 }
-function AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+function AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], sequence, cycle, poseParameters: Map<string, number>, boneMask, flWeight, flTime) {
 	//const pos2 = [];
 	//const q2 = [];
 	const pos2 = AccumulatePose_pos2;
@@ -1014,18 +1014,18 @@ function AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags:
 	}
 
 	/*
-	if (CalcPoseSingle(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, cycle, poseParameter, boneMask, flTime)) {
+	if (CalcPoseSingle(dynamicProp, pStudioHdr, pos2, q2, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flTime)) {
 		// this weight is wrong, the IK rules won't composite at the correct intensity
-		AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos2, q2, boneFlags, seqdesc, sequence, cycle, poseParameter, boneMask, 1.0, flTime);
+		AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos2, q2, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, 1.0, flTime);
 		SlerpBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, flWeight, boneMask);
 	}
 	*/
 
 	if (pIKContext) {
-		pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameter, flWeight);
+		pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
 	}
 
-	AddSequenceLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime);
+	AddSequenceLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flWeight, flTime);
 
 	if (false && seqdesc.numiklocks)//TODOv2
 	{
@@ -1037,7 +1037,7 @@ function AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags:
 // Purpose: calculate a pose for a single sequence
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
-function AddLocalLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameter, boneMask, flWeight, flTime) {
+function AddLocalLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameters: Map<string, number>, boneMask, flWeight, flTime) {
 	if (!(seqdesc.flags & STUDIO_LOCAL)) {
 		return;
 	}
@@ -1084,7 +1084,7 @@ function AddLocalLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags:
 		}
 
 		const iSequence = pLayer.iSequence;//pStudioHdr.iRelativeSeq(sequence, pLayer.iSequence);
-		AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, iSequence, layerCycle, poseParameter, boneMask, layerWeight, flTime);
+		AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, iSequence, layerCycle, poseParameters, boneMask, layerWeight, flTime);
 	}
 }
 
@@ -1416,8 +1416,8 @@ function QuaternionSlerpNoAlign2(p, q, t, qt) {
 //-----------------------------------------------------------------------------
 // Purpose: resolve a global pose parameter to the specific setting for this sequence
 //-----------------------------------------------------------------------------
-//void Studio_LocalPoseParameter(const CStudioHdr *pStudioHdr, const float poseParameter[], mstudioseqdesc_t &seqdesc, int iSequence, int iLocalIndex, float &flSetting, int &index)
-function Studio_LocalPoseParameter2(pStudioHdr, poseParameter, seqdesc, iSequence, iLocalIndex/*, flSetting, index*/) {
+//void Studio_LocalPoseParameter(const CStudioHdr *pStudioHdr, const float poseParameters[], mstudioseqdesc_t &seqdesc, int iSequence, int iLocalIndex, float &flSetting, int &index)
+function Studio_LocalPoseParameter2(pStudioHdr, poseParameters: Map<string, number>, seqdesc, iSequence, iLocalIndex/*, flSetting, index*/) {
 	let flSetting = 0;
 	let index = 0;
 
@@ -1440,8 +1440,9 @@ function Studio_LocalPoseParameter2(pStudioHdr, poseParameter, seqdesc, iSequenc
 
 	//const flValue = poseParameter[iPose];
 	let flValue = Pose.midpoint;
-	if (poseParameter[Pose.name] !== undefined) {
-		flValue = poseParameter[Pose.name];
+	const poseParameter = poseParameters.get(Pose.name);
+	if (poseParameter !== undefined) {
+		flValue = poseParameter;
 	}
 
 

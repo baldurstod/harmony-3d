@@ -1,7 +1,8 @@
-import { mat4, quat, vec3 } from 'gl-matrix';
-import { MdlBone, BONE_USED_BY_ANYTHING } from './mdlbone';
-import { CalcPose, Studio_Duration } from '../animations/calcanimations';
+import { quat, vec3 } from 'gl-matrix';
 import { quatFromEulerRad } from '../../../math/functions';
+import { CalcPose, Studio_Duration } from '../animations/calcanimations';
+import { Source1ModelInstance, Source1ModelSequences } from '../export';
+import { BONE_USED_BY_ANYTHING, MdlBone } from './mdlbone';
 import { SourceModel } from './sourcemodel';
 
 export class SourceAnimation {
@@ -10,10 +11,8 @@ export class SourceAnimation {
 	quaternion = quat.create();//TODOv2
 	tempPos = vec3.create();
 	tempRot = vec3.create();
-	constructor(sourceModel?) {
-	}
 
-	animate2(dynamicProp, poseParameters, position, orientation, sequences/*, bonesScale*/) {
+	animate2(dynamicProp: Source1ModelInstance, poseParameters: Map<string, number>, position: vec3/*TODO: remove param*/, orientation: quat/*TODO: remove param*/, sequences: Source1ModelSequences/*, bonesScale*/) {
 		const model: SourceModel = dynamicProp.sourceModel;
 
 		if (!model) { return };
@@ -31,21 +30,22 @@ export class SourceAnimation {
 		if (seqlist.length) {
 			let s;
 			while (s = seqlist.shift()) {
-				if (sequences[s].s) {
-					const sequenceMdl = sequences[s].s.mdl;
+				const s2 = sequences[s]?.s;
+				if (s2) {
+					const sequenceMdl = s2.mdl;
 
-					const t = Studio_Duration(sequenceMdl, sequences[s].s.id, poseParameters);
+					const t = Studio_Duration(sequenceMdl, s2.id, poseParameters);
 
 					//InitPose(dynamicProp, sequenceMdl, posRemoveMeTemp, quatRemoveMeTemp, BONE_USED_BY_ANYTHING);
-					CalcPose(dynamicProp, sequenceMdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, [], sequences[s].s.id, dynamicProp.frame / t, poseParameters, BONE_USED_BY_ANYTHING, 1.0, dynamicProp.frame / t);
+					CalcPose(dynamicProp, sequenceMdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, [], s2.id, dynamicProp.frame / t, poseParameters, BONE_USED_BY_ANYTHING, 1.0, dynamicProp.frame / t);
 
 					if (sequenceMdl != model.mdl && sequenceMdl.boneNames) {
 						posRemoveMe = [];
 						quatRemoveMe = [];
 						const modelBoneArray = model.mdl.getBones();
 						for (let boneIndex = 0, l = modelBoneArray.length; boneIndex < l; ++boneIndex) {
-							const boneName = modelBoneArray[boneIndex].lowcasename;
-							const seqBoneId = sequenceMdl.boneNames[boneName];
+							const boneName = modelBoneArray[boneIndex]!.lowcasename;
+							const seqBoneId = sequenceMdl.boneNames.get(boneName);
 
 							posRemoveMe[boneIndex] = posRemoveMeTemp[seqBoneId];
 							quatRemoveMe[boneIndex] = quatRemoveMeTemp[seqBoneId];

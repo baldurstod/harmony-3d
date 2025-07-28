@@ -69,7 +69,7 @@ export class SourceModel {
 		//this.geometries.add(geometry);
 	}
 
-	createInstance(isDynamic, preventInit): Source1ModelInstance {
+	createInstance(isDynamic: boolean, preventInit: boolean): Source1ModelInstance {
 		return new Source1ModelInstance({ sourceModel: this, isDynamic: isDynamic, preventInit: preventInit });
 	}
 
@@ -102,46 +102,40 @@ export class SourceModel {
 		return null;
 	}
 
-	getBone(boneIndex): MdlBone | null {
+	getBone(boneIndex: number): MdlBone | undefined {
 		if (this.mdl) {
 			return this.mdl.getBone(boneIndex);
 		}
-		return null;
 	}
 
-	getAttachmentById(attachmentIndex): MdlAttachment | null {
+	getAttachmentById(attachmentIndex: number): MdlAttachment | undefined {
 		if (this.mdl) {
 			return this.mdl.getAttachmentById(attachmentIndex);
 		}
-		return null;
 	}
 
-	getBoneByName(boneName): MdlBone | null {
+	getBoneByName(boneName: string): MdlBone | undefined {
 		if (this.mdl) {
 			return this.mdl.getBoneByName(boneName);
 		}
-		return null;
 	}
 
-	getAttachment(attachmentName): MdlAttachment | null {
+	getAttachment(attachmentName: string): MdlAttachment | undefined {
 		if (this.mdl) {
 			return this.mdl.getAttachment(attachmentName);
 		}
-		return null;
 	}
 
-	getBodyPart(bodyPartId): MdlBodyPart | null {
+	getBodyPart(bodyPartId: number): MdlBodyPart | undefined {
 		if (this.mdl) {
 			return this.mdl.getBodyPart(bodyPartId);
 		}
-		return null;
 	}
 
-	getBodyParts(): MdlBodyPart[] | null {
+	getBodyParts(): MdlBodyPart[] | undefined {
 		if (this.mdl) {
 			return this.mdl.getBodyParts();
 		}
-		return null;
 	}
 
 	async getAnimation(animationName: string, entity: Source1ModelInstance): Promise<Animation> {
@@ -155,11 +149,11 @@ export class SourceModel {
 
 		if (seq) {
 			//const t = Studio_Duration(seq.mdl, seq.id, []);
-			const frameCount = StudioFrames2(seq.mdl, seq.id, []);
+			const frameCount = StudioFrames2(seq.mdl, seq.id, new Map<string, number>());
 			const posRemoveMeTemp: vec3[] = [];
 			const quatRemoveMeTemp: quat[] = [];
 			const boneFlags: number[] = [];
-			const poseParameters = {};
+			//const poseParameters = {};
 
 			for (const [boneId, bone] of animation.bones.entries()) {
 				//posRemoveMeTemp.push(vec3.clone(bone.refPosition));
@@ -172,7 +166,7 @@ export class SourceModel {
 			for (let frame = 0; frame < frameCount; frame++) {
 				const animationFrame = new AnimationFrame(frame);
 				const cycle = frameCount > 1 ? frame / (frameCount - 1) : 0;
-				CalcPose2(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, boneFlags, seq.id, cycle/*entity.frame / t*/, poseParameters, BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t*/);
+				CalcPose2(entity, seq.mdl, undefined, posRemoveMeTemp, quatRemoveMeTemp, boneFlags, seq.id, cycle/*entity.frame / t*/, new Map<string, number>(), BONE_USED_BY_ANYTHING, 1.0, cycle/*dynamicProp.frame / t*/);
 				//console.info(posRemoveMeTemp, quatRemoveMeTemp);
 
 				animationFrame.setDatas('position', AnimationFrameDataType.Vec3, posRemoveMeTemp);

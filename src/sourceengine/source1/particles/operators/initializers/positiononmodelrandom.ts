@@ -3,6 +3,7 @@ import { vec3 } from 'gl-matrix';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 
 const a = vec3.create();
 
@@ -16,13 +17,13 @@ export class PositionOnModelRandom extends SourceEngineParticleOperator {
 		this.addParam('direction bias', PARAM_TYPE_VECTOR, vec3.create());
 
 
-	//	DMXELEMENT_UNPACK_FIELD( 'control_point_number', '0', int, m_nControlPointNumber )
-	//	DMXELEMENT_UNPACK_FIELD( 'force to be inside model', '0', int, m_nForceInModel )
-	//	DMXELEMENT_UNPACK_FIELD( 'hitbox scale', '1.0', int, m_flHitBoxScale )
-	//	DMXELEMENT_UNPACK_FIELD( 'direction bias', '0 0 0', Vector, m_vecDirectionBias )
+		//	DMXELEMENT_UNPACK_FIELD( 'control_point_number', '0', int, m_nControlPointNumber )
+		//	DMXELEMENT_UNPACK_FIELD( 'force to be inside model', '0', int, m_nForceInModel )
+		//	DMXELEMENT_UNPACK_FIELD( 'hitbox scale', '1.0', int, m_flHitBoxScale )
+		//	DMXELEMENT_UNPACK_FIELD( 'direction bias', '0 0 0', Vector, m_vecDirectionBias )
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number) {
 		const controlPointNumber = this.getParameter('control_point_number');
 		const forceInModel = this.getParameter('force to be inside model');
 
@@ -33,15 +34,17 @@ export class PositionOnModelRandom extends SourceEngineParticleOperator {
 
 
 		const controlPoint = particle.system.getControlPoint(controlPointNumber);
+		if (!controlPoint) {
+			return;
+		}
 
 		// TODO : Actually we should get the model parenting the control point
 		const controllingModel = controlPoint.parentModel;
 		if (controllingModel) {
 			//TODOv3
-			const bones = [];
-			particle.bones = bones;
+			particle.bones = [];
 			particle.initialVec = vec3.create();
-			const position = controllingModel.getRandomPointOnModel(vec3.create(), particle.initialVec, bones);
+			const position = controllingModel.getRandomPointOnModel(vec3.create(), particle.initialVec, particle.bones);
 			//vec3.copy(particle.position, position);
 			//vec3.copy(particle.prevPosition, position);
 			if (controlPoint) {

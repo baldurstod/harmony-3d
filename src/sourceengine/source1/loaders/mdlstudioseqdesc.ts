@@ -2,6 +2,7 @@ import { Source1ParticleControler } from '../particles/source1particlecontroler'
 import { Source1SoundManager } from '../sounds/soundmanager';
 import { DEBUG } from '../../../buildoptions';
 import { clamp } from '../../../math/functions';
+import { SourceMdl } from './sourcemdl';
 
 export const STUDIO_AL_POST = 0x0010;
 export const STUDIO_AL_SPLINE = 0x0040;
@@ -18,7 +19,7 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 	blend: number[][] = [];
 	weightlist: number[] = [];
 	groupsize: number[] = [];
-	mdl;
+	mdl: SourceMdl;
 	previousTime: number;
 	currentTime: number;
 	posekeyindex: number;
