@@ -645,7 +645,7 @@ export class Graphics {
 		}
 	}
 
-	savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number) {
+	savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number, type?: string, quality?: number) {
 		const previousWidth = this.#width;
 		const previousHeight = this.#height;
 		const previousAutoResize = this.autoResize;
@@ -653,18 +653,18 @@ export class Graphics {
 			this.autoResize = false;
 			this.setSize(width, height);
 			this.render(scene, camera, 0, { DisableToolRendering: true });
-			this._savePicture(filename);
+			this._savePicture(filename, type, quality);
 		} finally {
 			this.autoResize = previousAutoResize;
 			this.setSize(previousWidth, previousHeight);
 		}
 	}
 
-	async savePictureAsFile(filename: string) {
-		return new File([await this.toBlob() ?? new Blob()], filename)
+	async savePictureAsFile(filename: string, type?: string, quality?: number) {
+		return new File([await this.toBlob(type, quality) ?? new Blob()], filename)
 	}
 
-	async toBlob(): Promise<Blob | null> {
+	async toBlob(type?: string, quality?: number): Promise<Blob | null> {
 		let promiseResolve: (value: Blob | null) => void;
 		const promise = new Promise<Blob | null>((resolve) => {
 			promiseResolve = resolve;
@@ -672,17 +672,17 @@ export class Graphics {
 		const callback = function (blob: Blob | null) {
 			promiseResolve(blob);
 		};
-		this.#canvas!.toBlob(callback);
+		this.#canvas!.toBlob(callback, type, quality);
 		return promise;
 	}
 
-	async _savePicture(filename: string) {
+	async _savePicture(filename: string, type?: string, quality?: number) {
 		/*
 		const callback = function (blob) {
 			//saveFile(filename, blob);
 		};
 		this.#canvas.toBlob(callback);*/
-		saveFile(await this.savePictureAsFile(filename));
+		saveFile(await this.savePictureAsFile(filename, type, quality));
 	}
 
 	startRecording(frameRate = 60, bitsPerSecond: number) {

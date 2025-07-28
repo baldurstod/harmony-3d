@@ -2907,10 +2907,10 @@ declare class Choreography {
              deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void;
              pushRenderTarget(renderTarget: RenderTarget): void;
              popRenderTarget(): RenderTarget;
-             savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number): void;
-             savePictureAsFile(filename: string): Promise<File>;
-             toBlob(): Promise<Blob | null>;
-             _savePicture(filename: string): Promise<void>;
+             savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number, type?: string, quality?: number): void;
+             savePictureAsFile(filename: string, type?: string, quality?: number): Promise<File>;
+             toBlob(type?: string, quality?: number): Promise<Blob | null>;
+             _savePicture(filename: string, type?: string, quality?: number): Promise<void>;
              startRecording(frameRate: number, bitsPerSecond: number): void;
              stopRecording(fileName?: string): void;
              get ready(): Promise<boolean>;
@@ -6937,7 +6937,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7549,7 +7549,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7939,7 +7939,7 @@ declare class Choreography {
 
          export declare const Source2SnapshotLoader: {
              load(repository: string, filename: string): Promise<Source2Snapshot>;
-             "__#251@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+             "__#253@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
@@ -10143,12 +10143,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#221@#webAssembly"?: any;
-             "__#221@#HEAPU8"?: Uint8Array;
+             "__#223@#webAssembly"?: any;
+             "__#223@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#221@#initHeap"(): void;
+             "__#223@#initHeap"(): void;
          };
 
          export { }
