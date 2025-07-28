@@ -12,12 +12,12 @@ export const STUDIO_AL_POSE = 0x4000;
 export const AE_CL_PLAYSOUND = 5004;
 
 export class MdlStudioSeqDesc {//mstudioseqdesc_t
-	paramindex = [];
-	paramstart = [];
-	paramend = [];
-	blend = [];
-	weightlist = [];
-	groupsize = [];
+	paramindex: number[] = [];
+	paramstart: number[] = [];
+	paramend: number[] = [];
+	blend: number[][] = [];
+	weightlist: number[] = [];
+	groupsize: number[] = [];
 	mdl;
 	previousTime: number;
 	currentTime: number;

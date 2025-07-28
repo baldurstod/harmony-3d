@@ -1,8 +1,8 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
-
-import { Color } from './color';
 import { WARN } from '../../../buildoptions';
 import { clamp } from '../../../math/functions';
+import { Bone } from '../../../objects/bone';
+import { Color } from './color';
 import { SourceEngineParticleSystem } from './sourceengineparticlesystem';
 
 /**
@@ -52,6 +52,9 @@ export class SourceEngineParticle {
 	initialCPPosition = null;
 	initialCPQuaternion = null;
 	renderScreenVelocityRotate = false;
+	initialVec?: vec3;
+	bones?: [Bone, number][];
+
 	constructor(id, system) {
 		this.name = 'Particle ' + id;
 		this.id = id;

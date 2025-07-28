@@ -61,7 +61,7 @@ export class MdlBone {
 	_worldPos = vec3.create();
 	_worldQuat = quat.create();
 	_worldMat = mat4.create();
-	_parent = null;/*TODO:remove ?*/
+	_parent: MdlBone | null = null;/*TODO:remove ?*/
 	dirty = true;
 	lastComputed = 0;
 	#skeleton;/*TODO:remove*/

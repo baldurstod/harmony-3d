@@ -67,12 +67,6 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		for (let i = 0; i < bodypart.numModels; ++i) {
 			reader.seek(baseOffset + modelOffset + i * MODEL_HEADER_SIZE);
 			bodypart.models.push(this.#parseModelHeader(reader, vtx));
-			/*const model = this.readModelHeader();
-			if (model) {
-				bodypart.models.push(model);
-			} else {
-				return false;// More data awaiting
-			}*/
 		}
 		return bodypart;
 	}
@@ -88,12 +82,6 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		for (let i = 0; i < model.numLODs; ++i) {
 			reader.seek(baseOffset + lodOffset + i * LOD_HEADER_SIZE);
 			model.lods.push(this.#parseLODHeader(reader, vtx));
-			/*const lod = this.#parseLODHeader(reader, vtx);
-			if (lod) {
-				model.lods.push(lod);
-			} else {
-				return false;// More data awaiting
-			}*/
 		}
 		return model;
 	}
@@ -126,12 +114,6 @@ export class SourceEngineVTXLoader extends SourceBinaryLoader {
 		for (let i = 0; i < mesh.numStripGroups; ++i) {
 			reader.seek(baseOffset + stripGroupHeaderOffset + i * headerSize);
 			mesh.stripGroups.push(this.#parseStripGroupHeader(reader, vtx));
-			/*const stripGroup = this.readStripGroupHeader();
-			if (stripGroup) {
-				mesh.stripGroups.push(stripGroup);
-			} else {
-				return false;// More data awaiting
-			}*/
 		}
 		return mesh;
 	}

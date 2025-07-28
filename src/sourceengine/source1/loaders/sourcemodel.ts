@@ -3,10 +3,12 @@ import { Animation } from '../../../animations/animation';
 import { AnimationBone } from '../../../animations/animationbone';
 import { AnimationFrame } from '../../../animations/animationframe';
 import { AnimationFrameDataType } from '../../../animations/animationframedata';
+import { BufferGeometry } from '../../../geometry/buffergeometry';
 import { FileNameFromPath } from '../../../utils/utils';
 import { CalcPose2, StudioFrames2 } from '../animations/calcanimations2';
 import { Source1ModelInstance } from '../models/source1modelinstance';
 import { BONE_USED_BY_ANYTHING, MdlBone } from './mdlbone';
+import { MeshTest } from './sourceenginemdlloader';
 import { MdlAttachment, MdlBodyPart, SourceMdl } from './sourcemdl';
 import { SourceVtx } from './sourcevtx';
 import { SourceVvd } from './sourcevvd';
@@ -46,7 +48,7 @@ export class SourceModel {
 		//this.geometries = new Set();
 	}
 
-	addGeometry(mesh, geometry, bodyPartName, bodyPartModelId): void {
+	addGeometry(mesh: MeshTest, geometry: BufferGeometry, bodyPartName: string, bodyPartModelId: number): void {
 		const modelMesh = new SourceModelMesh(mesh, geometry);
 
 		if (bodyPartName !== undefined) {
@@ -184,9 +186,9 @@ export class SourceModel {
 }
 
 export class SourceModelMesh {
-	mesh;
-	geometry;
-	constructor(mesh, geometry) {
+	mesh: MeshTest;
+	geometry: BufferGeometry;
+	constructor(mesh: MeshTest, geometry: BufferGeometry) {
 		this.mesh = mesh;
 		this.geometry = geometry;
 	}
