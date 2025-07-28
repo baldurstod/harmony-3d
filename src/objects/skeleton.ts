@@ -83,14 +83,14 @@ export class Skeleton extends Entity {
 		if (bones.length == 0) {
 			pose = this.#rootBone.boneMat;
 			for (let k = 0; k < 16; ++k) {
-				imgData[index++] = pose[k];
+				imgData[index++] = pose[k]!;
 			}
 		}
 
 		for (const bone of bones) {
 			pose = bone.boneMat;
 			for (let k = 0; k < 16; ++k) {
-				imgData[index++] = pose[k];
+				imgData[index++] = pose[k]!;
 			}
 		}
 
@@ -180,7 +180,7 @@ export class Skeleton extends Entity {
 		const jBones = [];
 		const bones = this._bones;
 		for (let i = 0; i < bones.length; ++i) {
-			jBones.push(bones[i].id);
+			jBones.push(bones[i]?.id);
 		}
 		json.bones = jBones;
 		return json;
@@ -194,7 +194,7 @@ export class Skeleton extends Entity {
 			const jBones = json.bones as string[];
 			if (jBones) {
 				for (let i = 0; i < jBones.length; ++i) {
-					const boneEntity = entities.get(jBones[i]) as Bone | undefined;
+					const boneEntity = entities.get(jBones[i] ?? '') as Bone | undefined;
 					if (boneEntity) {
 						entity._bones[i] = boneEntity;
 						entity.#bonesByName.set(boneEntity.name.toLowerCase(), boneEntity);
