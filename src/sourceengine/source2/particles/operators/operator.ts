@@ -6,7 +6,7 @@ import { PARTICLE_ORIENTATION_ALIGN_TO_PARTICLE_NORMAL, PARTICLE_ORIENTATION_FUL
 import { Source2Material } from '../../materials/source2material';
 import { Source2Particle } from '../source2particle';
 import { Source2ParticleSystem } from '../source2particlesystem';
-import { OperatorParam } from './operatorparam';
+import { OperatorParam, OperatorParamType, OperatorParamValueType } from './operatorparam';
 
 export const COLOR_SCALE = 1 / 255;
 
@@ -53,6 +53,8 @@ const DEFAULT_OP_END_FADE_IN_TIME = 0;// TODO: check default value
 const DEFAULT_OP_START_FADE_OUT_TIME = 0;// TODO: check default value
 const DEFAULT_OP_END_FADE_OUT_TIME = 0;// TODO: check default value
 const DEFAULT_OP_FADE_OSCILLATE_PERIOD = 0;// TODO: check default value
+const DEFAULT_FIELD_INPUT = -1;// TODO: check default value
+const DEFAULT_SCALE_CP = -1;// TODO: check default value
 export const DEFAULT_CONTROL_POINT_NUMBER = 0;// TODO: check default value
 
 export class Operator {//TODOv3: rename this class ?
@@ -67,9 +69,9 @@ export class Operator {//TODOv3: rename this class ?
 	#normalizePerLiving = false;
 	disableOperator = false;
 	controlPointNumber = DEFAULT_CONTROL_POINT_NUMBER;
-	#fieldInput = -1;
+	#fieldInput = DEFAULT_FIELD_INPUT;
 	protected fieldOutput = -1;
-	scaleCp?: number;
+	scaleCp: number = DEFAULT_SCALE_CP;
 	mesh?: Mesh;
 	endCapState?: number;
 	currentTime = 0;
@@ -315,11 +317,11 @@ export class Operator {//TODOv3: rename this class ?
 					}
 					break;
 				case 'PVEC_TYPE_CP_VALUE':
-					const cp = this.system.getControlPoint(parameter.m_nControlPoint);
+					const cp = this.system.getControlPoint(parameter.getSubValueAsNumber('m_nControlPoint'));
 					if (cp) {
 						vec3.copy(out as vec3, cp.currentWorldPosition);
-						if (parameter.m_vCPValueScale) {
-							vec3.mul(out as vec3, out as vec3, parameter.m_vCPValueScale);
+						if (parameter.getSubValueAsVec3('m_vCPValueScale', operatorTempVec3_0)) {
+							vec3.mul(out as vec3, out as vec3, operatorTempVec3_0);
 						}
 					}
 					break;
@@ -452,7 +454,7 @@ export class Operator {//TODOv3: rename this class ?
 				if (TESTING && this.#fieldInput === undefined) {
 					throw 'this.fieldInput must have a default value';
 				}
-				this.#fieldInput = (param);
+				this.#fieldInput = param.getValueAsNumber() ?? DEFAULT_FIELD_INPUT;
 				break;
 			case 'm_nFieldOutput': // TODO: check wether is it actually the same field
 			case 'm_nOutputField':
@@ -460,7 +462,7 @@ export class Operator {//TODOv3: rename this class ?
 				break;
 			case 'm_nOpScaleCP':
 				console.error('do this param', paramName, param);
-				this.scaleCp = (param);
+				this.scaleCp = param.getValueAsNumber() ?? DEFAULT_SCALE_CP;
 				break;
 			case 'm_flOpStrength':
 				//this.opStrength = param.getValueAsNumber() ?? DEFAULT_OP_STRENGTH;
@@ -561,18 +563,18 @@ export class Operator {//TODOv3: rename this class ?
 		return 1;
 	}
 
-	setParameter(parameter: string, type: any/*TODO: improve type*/, value: any) {
-		if (parameter == '' || parameter == undefined) {
+	setParameter(name: string, type: OperatorParamType, value: OperatorParamValueType) {
+		if (name == '' || name == undefined) {
 			return this;
 		}
-		if (parameter == 'operator end cap state') {
-			this.endCapState = value;
+		if (name == 'operator end cap state') {
+			this.endCapState = value as number;
 		}
-		if (this.#parameters[parameter] == undefined) {
-			this.#parameters[parameter] = {};
+		if (this.#parameters[name] == undefined) {
+			this.#parameters[name] = new OperatorParam(name, type, value);
 		}
-		this.#parameters[parameter].type = type;
-		this.#parameters[parameter].value = value;
+		//this.#parameters[name].type = type;
+		//this.#parameters[name].value = value;
 		//this.propertyChanged(parameter);
 		return this;
 	}
@@ -604,11 +606,11 @@ export class Operator {//TODOv3: rename this class ?
 			return 0;
 		}
 
-		let start_fadein = this.getParameter('operator start fadein') || 0;
-		let end_fadein = this.getParameter('operator end fadein') || 0;
-		let start_fadeout = this.getParameter('operator start fadeout') || 0;
-		let end_fadeout = this.getParameter('operator end fadeout') || 0;
-		const fade_oscillate = this.getParameter('operator fade oscillate') || 0;
+		let start_fadein = this.getParameter('operator start fadein')?.getValueAsNumber() ?? 0/* TODO: check default value*/;
+		let end_fadein = this.getParameter('operator end fadein')?.getValueAsNumber() ?? 0/* TODO: check default value*/;
+		let start_fadeout = this.getParameter('operator start fadeout')?.getValueAsNumber() ?? 0/* TODO: check default value*/;
+		let end_fadeout = this.getParameter('operator end fadeout')?.getValueAsNumber() ?? 0/* TODO: check default value*/;
+		const fade_oscillate = this.getParameter('operator fade oscillate')?.getValueAsNumber() ?? 0/* TODO: check default value*/;
 
 		if (start_fadein == 0 && end_fadein == 0 && start_fadeout == 0 && end_fadeout == 0) {
 			// if all parms at 0, return 1

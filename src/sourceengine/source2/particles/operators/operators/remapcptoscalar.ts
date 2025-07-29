@@ -37,7 +37,7 @@ export class RemapCPtoScalar extends Operator {
 				break;
 			case 'm_nField':
 				console.error('do this param', paramName, param);
-				this.#field = (param);//TODO check -1 / 0 / 1 / 2
+				this.#field = param.getValueAsNumber() ?? DEFAULT_FIELD;//TODO check -1 / 0 / 1 / 2
 				break;
 			case 'm_flInputMin':// TODO: mutualize
 				this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MIN;
@@ -52,12 +52,10 @@ export class RemapCPtoScalar extends Operator {
 				this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX;
 				break;
 			case 'm_flStartTime':
-				console.error('do this param', paramName, param);
-				this.#startTime = param;
+				this.#startTime = param.getValueAsNumber() ?? DEFAULT_START_TIME;
 				break;
 			case 'm_flEndTime':
-				console.error('do this param', paramName, param);
-				this.#endTime = param;
+				this.#endTime = param.getValueAsNumber() ?? DEFAULT_END_TIME;
 				break;
 			case 'm_flInterpRate':
 				this.#interpRate = param.getValueAsNumber() ?? DEFAULT_INTERP_RATE;

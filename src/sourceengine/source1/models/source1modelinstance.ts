@@ -6,6 +6,7 @@ import { registerEntity } from '../../../entities/entities';
 import { Entity } from '../../../entities/entity';
 import { Animated } from '../../../interfaces/animated';
 import { HasSkeleton } from '../../../interfaces/hasskeleton';
+import { RandomPointOnModel } from '../../../interfaces/randompointonmodel';
 import { Material } from '../../../materials/material';
 import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
 import { vec3RandomBox } from '../../../math/functions';
@@ -33,7 +34,7 @@ const defaultMaterial = new MeshBasicMaterial();
 export type Source1ModelSequences = Record<string, { frame?: number, startTime?: number, s?: MdlStudioSeqDesc }>/*TODO: improve type*/;
 export type Source1ModelAnimation = { name: string, weight: number }/*TODO: improve type*/;
 
-export class Source1ModelInstance extends Entity implements Animated, HasSkeleton {
+export class Source1ModelInstance extends Entity implements Animated, HasSkeleton, RandomPointOnModel {
 	isSource1ModelInstance = true;
 	#poseParameters = new Map<string, number>();
 	#flexParameters = {};

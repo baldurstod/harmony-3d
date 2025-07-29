@@ -1,9 +1,10 @@
 import { vec3 } from 'gl-matrix';
 
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
+import { RandomPointOnModel } from '../../../../../interfaces/randompointonmodel';
 import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { SourceEngineParticle } from '../../particle';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleOperator } from '../operator';
 
 const a = vec3.create();
 
@@ -40,11 +41,11 @@ export class PositionOnModelRandom extends SourceEngineParticleOperator {
 
 		// TODO : Actually we should get the model parenting the control point
 		const controllingModel = controlPoint.parentModel;
-		if (controllingModel) {
+		if (controllingModel && (controllingModel as unknown as RandomPointOnModel).getRandomPointOnModel) {
 			//TODOv3
 			particle.bones = [];
 			particle.initialVec = vec3.create();
-			const position = controllingModel.getRandomPointOnModel(vec3.create(), particle.initialVec, particle.bones);
+			const position = (controllingModel as unknown as RandomPointOnModel).getRandomPointOnModel(vec3.create(), particle.initialVec, particle.bones);
 			//vec3.copy(particle.position, position);
 			//vec3.copy(particle.prevPosition, position);
 			if (controlPoint) {

@@ -7,6 +7,10 @@ import { Source2ParticleSystem } from './export';
 import { Operator } from './operators/operator';
 
 export const DEFAULT_PARTICLE_NORMAL = vec3.fromValues(0, 0, 1);
+export type Source2ParticleSkinning = {
+	bones: [string, string, string, string];
+	weights: [number, number, number, number];
+}
 
 export class Source2Particle {
 	id!: number;
@@ -57,6 +61,7 @@ export class Source2Particle {
 	trailLength = 0.1;
 	MovementRigidAttachToCP = false;
 	previousElapsedTime = 0;
+	skinning?: Source2ParticleSkinning;
 
 
 	static consoleAlphaAlternate = false;
@@ -341,6 +346,48 @@ export class Source2Particle {
 	DEFPARTICLE_ATTRIBUTE(HITBOX_RELATIVE_XYZ, 15);
 	*/
 
+	getScalarField(field = 0, initial = false): number {
+		switch (field) {
+			case 1: // Time to live
+				return initial ? this.initialTimeToLive : this.timeToLive;
+			case 3:
+				return this.radius;
+			case 4:
+				return this.rotationRoll;
+			case 5:
+				return this.rotationSpeedRoll;
+			case 7:
+				return this.alpha;
+			case 8: //creation time
+				return this.cTime;
+			case PARTICLE_FIELD_SEQUENCE_NUMBER:
+				return this.sequence;
+			case PARTICLE_FIELD_TRAIL_LENGTH:
+				return this.trailLength;
+			case 12: //yaw
+				return this.rotationYaw;
+			case 16:
+				if (!Source2Particle.consoleAlphaAlternate) {
+					console.warn('alpha alternate code me');
+					Source2Particle.consoleAlphaAlternate = true;
+				}
+				break;
+			case PARTICLE_FIELD_SCRATCH_FLOAT:
+				return this.scratch;
+				break;
+			case 20:
+				if (!Source2Particle.consolePitch) {
+					console.warn('pitch code me');
+					Source2Particle.consolePitch = true;
+				}
+				break;
+			default:
+				if (WARN) {
+					console.warn('Unknown field ' + field);
+				}
+		}
+		return 0;
+	}
 	getField(field = 0, initial = false) {
 		// TODO: create getScalarField / getVectorField
 
