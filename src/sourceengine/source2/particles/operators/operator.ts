@@ -317,7 +317,7 @@ export class Operator {//TODOv3: rename this class ?
 					}
 					break;
 				case 'PVEC_TYPE_CP_VALUE':
-					const cp = this.system.getControlPoint(parameter.getSubValueAsNumber('m_nControlPoint'));
+					const cp = this.system.getControlPoint(parameter.getSubValueAsNumber('m_nControlPoint') ?? DEFAULT_CONTROL_POINT_NUMBER);
 					if (cp) {
 						vec3.copy(out as vec3, cp.currentWorldPosition);
 						if (parameter.getSubValueAsVec3('m_vCPValueScale', operatorTempVec3_0)) {
@@ -354,6 +354,9 @@ export class Operator {//TODOv3: rename this class ?
 			return null;
 		}
 		let inputValue = this.#getParamScalarValue(floatInterp, particle);
+		if (inputValue === null) {
+			return null;
+		}
 
 		inputValue = RemapValClamped(inputValue, interpInput0, interpInput1, 0.0, 1.0);
 

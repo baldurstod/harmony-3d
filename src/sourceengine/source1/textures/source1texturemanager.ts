@@ -114,7 +114,7 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		return 'source1texturemanager_' + (++internalTextureId);
 	}
 
-	addInternalTexture(repository: string, texture?: AnimatedTexture) {
+	addInternalTexture(repository: string, texture?: AnimatedTexture): { name: string, texture: AnimatedTexture } {
 		const textureName = this.getInternalTextureName();
 		texture = texture ?? new AnimatedTexture();//TODOv3: add params + create animated texture
 		this.setTexture(repository, textureName, texture);

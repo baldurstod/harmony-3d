@@ -14,7 +14,7 @@ export enum Source2ParticleTintBlendMode {//TODO: move enum elsewhere
 	Multiply = 'PARTICLEBLEND_MULTIPLY',
 }
 
-export function stringToTintBlendMode(blend: string | null): Source2ParticleTintBlendMode | undefined {
+export function stringToTintBlendMode(blend: string | null): Source2ParticleTintBlendMode | undefined {//TODO: improve ?
 	switch (blend) {
 		case Source2ParticleTintBlendMode.Replace:
 			return Source2ParticleTintBlendMode.Replace;
@@ -26,6 +26,8 @@ export function stringToTintBlendMode(blend: string | null): Source2ParticleTint
 			return Source2ParticleTintBlendMode.Lighten;
 		case Source2ParticleTintBlendMode.Multiply:
 			return Source2ParticleTintBlendMode.Multiply;
+		default:
+			console.error('unsupported tint blend mode', blend);
 	}
 }
 
