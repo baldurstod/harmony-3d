@@ -34,7 +34,7 @@ export class Kv3File {
 					return null;
 				}
 
-				const value: Kv3ValueType = ((data as Kv3Value).getValue() as Kv3ValueType[])?.[Number(subPath)];
+				const value: Kv3ValueType | undefined = ((data as Kv3Value).getValue() as Kv3ValueType[])?.[Number(subPath)];
 				if (!value || (!(value as Kv3Element).isKv3Element && !(value as Kv3Value).isKv3Value)) {
 					return null;
 				}
@@ -63,6 +63,22 @@ export class Kv3File {
 			return data;
 		}*/
 		return data;
+	}
+
+	getValueAsNumber(path: string): number | null {
+		const value = this.getValue(path);
+		if ((value as Kv3Value | null)?.isKv3Value && (value as Kv3Value).isNumber()) {
+			return (value as Kv3Value).getValue() as number;
+		}
+		return null;
+	}
+
+	getValueAsStringArray(path: string): string[] | null {
+		const value = this.getValue(path);
+		if ((value as Kv3Value | null)?.isKv3Value && (value as Kv3Value).getSubType() == Kv3Type.String) {
+			return (value as Kv3Value).getValue() as string[];
+		}
+		return null;
 	}
 
 	getValueAsElementArray(path: string): Kv3Element[] | null {

@@ -22,7 +22,7 @@ export const Source2SnapshotLoader = new (function () {
 			}
 		}
 
-		#loadSnapshot(snapFile: Source2File) {
+		#loadSnapshot(snapFile: Source2File): Source2Snapshot {
 			const snapShot = new Source2Snapshot();
 			snapShot.file = snapFile;
 
@@ -33,10 +33,10 @@ export const Source2SnapshotLoader = new (function () {
 					console.log(dataBlock);
 					console.log(snapBlock);
 				}
-				const particleCount = Number(dataBlock.getKeyValue('num_particles'));
+				const particleCount = dataBlock.getKeyValueAsNumber('num_particles') ?? 0;
 				snapShot.setParticleCount(particleCount);
 				const snapshotAttributes = dataBlock.getKeyValueAsElementArray('attributes') ?? [];
-				const snapshotStringList = dataBlock.getKeyValueAsElementArray('string_list') ?? [];
+				const snapshotStringList = dataBlock.getKeyValueAsStringArray('string_list') ?? [];
 
 				const reader = new BinaryReader(snapBlock.datas);
 				let attributeValue;
@@ -60,7 +60,7 @@ export const Source2SnapshotLoader = new (function () {
 						case 'skinning':
 							attributeValue = [];
 							for (let i = 0; i < particleCount; ++i) {
-								const skinning = Object.create(null);
+								const skinning = Object.create(null)/*TODO: create type*/;
 								bones = [];
 								weights = [];
 								for (let i = 0; i < 4; ++i) {
@@ -88,12 +88,15 @@ export const Source2SnapshotLoader = new (function () {
 							break;
 						default:
 							attributeValue = null;
-							console.error('Unknown snapshot attribute type', snapshotAttribute.type, snapshotAttribute, snapFile, Number(snapshotAttribute.data_size) / particleCount);
+							console.error('Unknown snapshot attribute type', attributeType, snapshotAttribute, snapFile, particleCount);
 							if (TESTING) {
 								saveFile(new File([new Blob([snapBlock.datas])], 'snap_datas_' + snapBlock.length));
 							}
 					}
-					snapShot.attributes[snapshotAttribute.name] = attributeValue;
+					const name = snapshotAttribute.getSubValueAsString('name');
+					if (name) {
+						snapShot.attributes[name] = attributeValue;
+					}
 
 				}
 			}

@@ -1,6 +1,8 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 import { Entity } from '../../../entities/entity';
 import { Animated } from '../../../interfaces/animated';
+import { HasSkeleton } from '../../../interfaces/hasskeleton';
+import { RandomPointOnModel } from '../../../interfaces/randompointonmodel';
 import { Material } from '../../../materials/material';
 import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
 import { Group } from '../../../objects/group';
@@ -24,7 +26,7 @@ let animSpeed = 1.0;
 
 const defaultMaterial = new MeshBasicMaterial();
 
-export class Source2ModelInstance extends Entity implements Animated {
+export class Source2ModelInstance extends Entity implements Animated, HasSkeleton, RandomPointOnModel {
 	isSource2ModelInstance = true;
 	#skeleton: Skeleton | null = null;
 	#skin = 0;

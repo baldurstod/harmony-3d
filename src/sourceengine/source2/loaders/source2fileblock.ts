@@ -35,6 +35,14 @@ export class Source2FileBlock {
 		return undefined;
 	}
 
+	getKeyValueAsNumber(path: string): number | null {
+		return this.keyValue?.getValueAsNumber(path) ?? null;
+	}
+
+	getKeyValueAsStringArray(path: string): string[] | null {
+		return this.keyValue?.getValueAsStringArray(path) ?? null;
+	}
+
 	getKeyValueAsElementArray(path: string): Kv3Element[] | null {
 		return this.keyValue?.getValueAsElementArray(path) ?? null;
 	}
@@ -157,14 +165,14 @@ export class Source2FileBlock {
 		for (let i = 0, l = normals.length; i < l; i += 4) {
 
 			if (!vertexBuffer.decompressTangentV2) {
-				compressedNormal[0] = normals[i + 0] * 255.0;
-				compressedNormal[1] = normals[i + 1] * 255.0;
-				compressedTangent[0] = normals[i + 2] * 255.0;
-				compressedTangent[1] = normals[i + 3] * 255.0;
+				compressedNormal[0] = normals[i + 0]! * 255.0;
+				compressedNormal[1] = normals[i + 1]! * 255.0;
+				compressedTangent[0] = normals[i + 2]! * 255.0;
+				compressedTangent[1] = normals[i + 3]! * 255.0;
 				decompressNormal(compressedNormal, normalTemp);
 				decompressTangent(compressedTangent, tangentTemp);
 			} else {
-				[normalTemp, tangentTemp] = decompressNormal2(normals[i]);
+				[normalTemp, tangentTemp] = decompressNormal2(normals[i]!);
 			}
 			normalArray.push(normalTemp[0]);
 			normalArray.push(normalTemp[1]);
