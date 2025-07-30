@@ -6,17 +6,20 @@ import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2ParticleScalarField } from '../../enums';
 
-const DEFAULT_OUTPUT_MIN = 0;// TODO: check default value
-const DEFAULT_OUTPUT_MAX = 0;// TODO: check default value
-const DEFAULT_NOISE_SCALE = 0.1;// TODO: check default value
-const DEFAULT_NOISE_SCALE_LOC = 0.001;// TODO: check default value
-const DEFAULT_OFFSET = 0;// TODO: check default value
-const DEFAULT_ABS_VAL = false;// TODO: check default value
-const DEFAULT_ABS_VAL_INV = false;// TODO: check default value
-const DEFAULT_WORLD_TIME_SCALE = 0;// TODO: check default value
+const DEFAULT_FIELD_OUTPUT = Source2ParticleScalarField.Radius;
+const DEFAULT_ABS_VAL = false;
+const DEFAULT_ABS_VAL_INV = false;
+const DEFAULT_OFFSET = 0;
+const DEFAULT_OUTPUT_MIN = 0;
+const DEFAULT_OUTPUT_MAX = 1;
+const DEFAULT_NOISE_SCALE = 0.1;
+const DEFAULT_NOISE_SCALE_LOC = 0.001;
+const DEFAULT_WORLD_TIME_SCALE = 0;
 
-export class CreationNoise extends Operator {
+export class CreationNoise extends Operator {//Remap noise to scalar
+	#fieldOutput = DEFAULT_FIELD_OUTPUT;
 	#absVal = DEFAULT_ABS_VAL;
 	#absValInv = DEFAULT_ABS_VAL_INV;
 	#offset = DEFAULT_OFFSET;
@@ -24,18 +27,19 @@ export class CreationNoise extends Operator {
 	#outputMax = DEFAULT_OUTPUT_MAX;
 	#noiseScale = DEFAULT_NOISE_SCALE;
 	#noiseScaleLoc = DEFAULT_NOISE_SCALE_LOC;
-	#offsetLoc = vec3.create();// TODO: check default value
+	#offsetLoc = vec3.create();//spatial coordinate offset
 	#worldTimeScale = DEFAULT_WORLD_TIME_SCALE;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
+			case 'm_nFieldOutput':
+				this.#fieldOutput = param.getValueAsNumber() ?? DEFAULT_FIELD_OUTPUT;
+				break;
 			case 'm_bAbsVal':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.#absVal = (param) != 0;
+				this.#absVal = param.getValueAsBool() ?? DEFAULT_ABS_VAL;
 				break;
 			case 'm_bAbsValInv':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.#absValInv = (param) != 0;
+				this.#absValInv  = param.getValueAsBool() ?? DEFAULT_ABS_VAL_INV;
 				break;
 			case 'm_flOffset':
 				this.#offset = param.getValueAsNumber() ?? DEFAULT_OFFSET;
@@ -53,8 +57,7 @@ export class CreationNoise extends Operator {
 				this.#noiseScaleLoc = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE_LOC;
 				break;
 			case 'm_vecOffsetLoc':
-				console.error('do this param', paramName, param, this.constructor.name);
-				vec3.copy(this.#offsetLoc, param);
+				param.getValueAsVec3(this.#offsetLoc);
 				break;
 			case 'm_flWorldTimeScale'://TODO: mutualize
 				this.#worldTimeScale = param.getValueAsNumber() ?? DEFAULT_WORLD_TIME_SCALE;

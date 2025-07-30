@@ -40,6 +40,7 @@ export class RenderBase extends Operator {
 					}
 				}
 				break;
+				/*
 			case 'm_ColorScale':
 				const colorScale = vec3.create();
 				colorScale[0] = Number(param[0]) * COLOR_SCALE;
@@ -47,6 +48,7 @@ export class RenderBase extends Operator {
 				colorScale[2] = Number(param[2]) * COLOR_SCALE;
 				this.material?.setUniform('uColorScale', colorScale);
 				break;
+				*/
 			// Renderer parameters
 			case 'm_nOutputBlendMode':
 				const blendMode = param.getValueAsString();

@@ -1,90 +1,40 @@
 import { vec3 } from 'gl-matrix';
-import { Source2ParticlePathParams } from '../utils/pathparams';
+import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Source2Particle } from '../../source2particle';
+import { Source2ParticlePathParams } from '../utils/pathparams';
 
 const vec = vec3.create();
 
+const DEFAULT_LOOP = true;
+const DEFAULT_CP_PAIR = false;
+const DEFAULT_SAVE_OFFSET = false;
+
 export class CreateSequentialPath extends Operator {
-	numToAssign = 100;
-	step = 0.01;
-	loop = true;
-	maxDistance = 0;
-	cpPairs = false;
-	saveOffset = false;
-	/*
-	startControlPointNumber = 0;
-	endControlPointNumber = 0;
-	bulgeControl = 0; => path
-	bulge = 0;
-	*/
-	midPoint = 0.5;
-	startPointOffset = vec3.create();
-	midPointOffset = vec3.create();
-	endOffset = vec3.create();
-	t = 0;
+	#loop = DEFAULT_LOOP;//restart behavior (0 = bounce, 1 = loop )
+	#cpPairs = DEFAULT_CP_PAIR;//use sequential CP pairs between start and end point
+	#saveOffset = DEFAULT_SAVE_OFFSET;
 	#pathParams = new Source2ParticlePathParams();
+	#t = 0;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
-			case 'm_flNumToAssign':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.numToAssign = param;
-				this.step = 1 / param;
-				break;
 			case 'm_bLoop':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.loop = param;
+				this.#loop = param.getValueAsBool() ?? DEFAULT_LOOP;
+				break;
+			case 'm_bCPPairs':
+				this.#cpPairs = param.getValueAsBool() ?? DEFAULT_CP_PAIR;
+				break;
+			case 'm_bSaveOffset':
+				this.#saveOffset = param.getValueAsBool() ?? DEFAULT_SAVE_OFFSET;
 				break;
 			case 'm_PathParams':
-				console.error('do this param', paramName, param, this.constructor.name);
 				Source2ParticlePathParams.fromOperatorParam(param, this.#pathParams);
 				break;
 			case 'm_fMaxDistance':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.maxDistance = param;
-				break;
-			case 'm_bCPPairs':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.cpPairs = param;
-				break;
-			case 'm_bSaveOffset':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.saveOffset = param;
-				break;
-			case 'm_nStartControlPointNumber':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.startControlPointNumber = (param);
-				break;
-			case 'm_nEndControlPointNumber':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.endControlPointNumber = (param);
-				break;
-			case 'm_nBulgeControl':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.bulgeControl = (param);
-				break;
-			case 'm_flBulge':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.bulge = param;
-				break;
-			case 'm_flMidPoint':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.midPoint = param;
-				break;
-			case 'm_vStartPointOffset':
-				console.error('do this param', paramName, param, this.constructor.name);
-				vec3.copy(this.startPointOffset, param);
-				break;
-			case 'm_vMidPointOffset':
-				console.error('do this param', paramName, param, this.constructor.name);
-				vec3.copy(this.midPointOffset, param);
-				break;
-			case 'm_vEndOffset':
-				console.error('do this param', paramName, param, this.constructor.name);
-				vec3.copy(this.endOffset, param);
+			case 'm_flNumToAssign':
+				//used in doInit
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -92,7 +42,8 @@ export class CreateSequentialPath extends Operator {
 	}
 
 	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
-		//TODO: use other parameters
+		//TODO: use other parameters m_fMaxDistance, m_flNumToAssign
+		// TODO: check if m_flNumToAssign is really computed real time
 		const startControlPointNumber = this.#pathParams.startControlPointNumber;
 		const endControlPointNumber = this.#pathParams.endControlPointNumber;
 
@@ -100,16 +51,15 @@ export class CreateSequentialPath extends Operator {
 		const endControlPoint = this.system.getControlPoint(endControlPointNumber);
 
 		if (startControlPoint && endControlPoint) {
-			const numToAssign = this.numToAssign;
 			const delta = startControlPoint.deltaPosFrom(endControlPoint, vec);
 
-			vec3.scale(delta, delta, this.t);
+			vec3.scale(delta, delta, this.#t);
 			vec3.add(particle.position, startControlPoint.currentWorldPosition, delta);
 			vec3.copy(particle.prevPosition, particle.position);
 			//++this.sequence;
-			this.t += this.step;
-			if (this.t > 1.0) {//TODO: handle loop
-				this.t = 0;
+			//this.#t += this.step;
+			if (this.#t > 1.0) {//TODO: handle loop
+				this.#t = 0;
 			}
 		}
 	}

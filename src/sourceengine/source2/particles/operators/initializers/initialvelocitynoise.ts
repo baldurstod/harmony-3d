@@ -3,6 +3,7 @@ import { NoiseSIMD } from '../../../../common/math/noise';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2Particle } from '../../source2particle';
 
 const DEFAULT_OUTPUT_MIN = vec3.create();
 const DEFAULT_OUTPUT_MAX = vec3.fromValues(1, 1, 1);
@@ -17,7 +18,7 @@ const Coord2 = vec3.create();
 const Coord3 = vec3.create();
 const poffset = vec3.create();
 
-const DEFAULT_IGNORE_DT = false;// TODO: check default value
+const DEFAULT_IGNORE_DT = false;
 
 export class InitialVelocityNoise extends Operator {
 	#absVal = vec3.create();
@@ -27,35 +28,37 @@ export class InitialVelocityNoise extends Operator {
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
+			case 'm_vecAbsVal':
+				param.getValueAsVec3(this.#absVal);
+				break;
+			case 'm_vecAbsValInv':
+				param.getValueAsVec3(this.#absValInv);
+				break;
+			case 'm_bLocalSpace'://TODO: put this param in Operator ?
+				this.#localSpace = param.getValueAsBool() ?? false;
+				break;
+			case 'm_bIgnoreDt':
+				this.#ignoreDt = param.getValueAsBool() ?? DEFAULT_IGNORE_DT;
+				break;
+			//TODO: m_TransformInput
 			case 'm_vecOutputMin':
 			case 'm_vecOutputMax':
 			case 'm_vecOffsetLoc':
 			case 'm_flOffset':
 			case 'm_flNoiseScale':
 			case 'm_flNoiseScaleLoc':
-				break;
-			case 'm_vecAbsVal':
-				console.error('do this param', paramName, param);
-				vec3.set(this.#absVal, Number(param[0]) / 255, Number(param[1]) / 255, Number(param[2]) / 255);
-				break;
-			case 'm_vecAbsValInv':
-				console.error('do this param', paramName, param);
-				vec3.set(this.#absValInv, Number(param[0]) / 255, Number(param[1]) / 255, Number(param[2]) / 255);
-				break;
-			case 'm_bLocalSpace'://TODO: put this param in Operator ?
-				this.#localSpace = param.getValueAsBool() ?? false;
-				break;
-			case 'm_bIgnoreDt'://TODO: put this param in Operator ?
-				this.#ignoreDt = param.getValueAsBool() ?? DEFAULT_IGNORE_DT;
+				//used in doInit
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: Source2Particle, elapsedTime: number, strength: number): void {
+		//TODO: use m_vecOffsetLoc, m_vecOutputMin,m_vecOutputMax,  m_flOffset, m_flNoiseScale, m_flNoiseScaleLoc
 		//TODO: fix this operator
-		return;
+		/*
+
 		const outputMin = this.getParamVectorValue('m_vecOutputMin') ?? DEFAULT_OUTPUT_MIN;
 		const outputMax = this.getParamVectorValue('m_vecOutputMax') ?? DEFAULT_OUTPUT_MAX;
 		const offsetLoc = this.getParamVectorValue('m_vecOffsetLoc') ?? DEFAULT_OFFSET_LOC;
@@ -133,17 +136,17 @@ export class InitialVelocityNoise extends Operator {
 
 			/*fvNoise.DuplicateVector( Coord );
 			flNoise128 = NoiseSIMD( fvNoise );
-			float flNoiseX = SubFloat( flNoise128, 0 );*/
+			float flNoiseX = SubFloat( flNoise128, 0 );* /
 			let flNoiseX = NoiseSIMD(Coord, 0, 0);
 
 			/*fvNoise.DuplicateVector( Coord2 + ofs_y );
 			flNoise128 = NoiseSIMD( fvNoise );
-			float flNoiseY = SubFloat( flNoise128, 0 );*/
+			float flNoiseY = SubFloat( flNoise128, 0 );* /
 			let flNoiseY = NoiseSIMD(Coord2, 0, 0);
 
 			/*fvNoise.DuplicateVector( Coord3 + ofs_z );
 			flNoise128 = NoiseSIMD( fvNoise );
-			float flNoiseZ = SubFloat( flNoise128, 0 );*/
+			float flNoiseZ = SubFloat( flNoise128, 0 );* /
 			let flNoiseZ = NoiseSIMD(Coord3, 0, 0);
 
 			//*( (int *) &flNoiseX)  &= nAbsValX;
@@ -186,7 +189,7 @@ export class InitialVelocityNoise extends Operator {
 								pParticles->GetControlPointTransformAtTime( m_nControlPointNumber, *pCreationTime, &mat );
 								Vector vecTransformLocal = vec3_origin;
 								VectorRotate( poffset, mat, vecTransformLocal );
-								poffset = vecTransformLocal;*/
+								poffset = vecTransformLocal;* /
 				const cp = this.system.getControlPoint(this.controlPointNumber);
 				if (cp) {
 					vec3.transformQuat(poffset, poffset, cp.getWorldQuaternion());
@@ -195,9 +198,10 @@ export class InitialVelocityNoise extends Operator {
 			}
 			/*pxyz[0] -= poffset.x;
 			pxyz[4] -= poffset.y;
-			pxyz[8] -= poffset.z;*/
+			pxyz[8] -= poffset.z;* /
 			vec3.sub(particle.prevPosition, particle.prevPosition, poffset);
 		}
+		*/
 	}
 
 	initMultipleOverride() {

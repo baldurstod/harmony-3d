@@ -66,6 +66,8 @@ export class Source2Particle {
 	initialSkinnedNormal?: vec3;
 	snapHitbox?: any/*TODO: improve type*/;
 	snapHitboxOffset?: any/*TODO: improve type*/;
+	bones?: any[]/*TODO: improve type*/;
+	initialVec?: vec3;
 
 
 	static consoleAlphaAlternate = false;
