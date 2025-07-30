@@ -62,6 +62,10 @@ export class Source2Particle {
 	MovementRigidAttachToCP = false;
 	previousElapsedTime = 0;
 	skinning?: Source2ParticleSkinning;
+	initialSkinnedPosition?: vec3;
+	initialSkinnedNormal?: vec3;
+	snapHitbox?: any/*TODO: improve type*/;
+	snapHitboxOffset?: any/*TODO: improve type*/;
 
 
 	static consoleAlphaAlternate = false;

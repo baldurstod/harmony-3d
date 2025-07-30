@@ -150,9 +150,63 @@ export enum Source2ParticleScalarField {
 	Default = Source2ParticleScalarField.Radius,
 }
 
+export enum Source2ParticleVectorField {
+	Position = 0,
+	PreviousPosition = 2,
+	Color = 6,
+	HitboxOffsetPosition = 15,
+	ScratchVector = 17,
+	Disabled = 19,
+	Normal = 21,
+	GlowRgb = 22,
+	ScratchVector2 = 30,
+	BoneWeights = 32,
+	BoxMins = 41,
+	BoxMaxs = 42,
+	BoxAngles = 43,
+
+
+	Default = Source2ParticleVectorField.Position,
+}
 
 export enum Source2ParticleEndCapState {
 	AlwaysEnabled = 'PARTICLE_ENDCAP_ALWAYS_ON',//Always Enabled
 	DisabledDuringEndCap = 'PARTICLE_ENDCAP_ENDCAP_OFF',//Disabled During Endcap
 	EnabledDuringEndCap = 'PARTICLE_ENDCAP_ENDCAP_ON',//Only Enabled During Endcap
+}
+
+export enum Source2ParticleRotationSetType {//lock rotations to bone orientation
+	None = 'PARTICLE_ROTATION_LOCK_NONE',//Don't Set
+	SetRotations = 'PARTICLE_ROTATION_LOCK_ROTATIONS',//Set Rotations
+	SetNormal = 'PARTICLE_ROTATION_LOCK_NORMAL',//Set Normal
+}
+
+export function stringToRotationSetType(rotationSetType: string | null): Source2ParticleRotationSetType | undefined {//TODO: improve ?
+	switch (rotationSetType) {
+		case Source2ParticleRotationSetType.None:
+			return Source2ParticleRotationSetType.None;
+		case Source2ParticleRotationSetType.SetRotations:
+			return Source2ParticleRotationSetType.SetRotations;
+		case Source2ParticleRotationSetType.SetNormal:
+			return Source2ParticleRotationSetType.SetNormal;
+		default:
+			console.error('unsupported rotationSetType', rotationSetType);
+	}
+}
+
+export enum Source2ParticleSnapshotReadType  {
+	Increment = 'SNAPSHOT_INDEX_INCREMENT',
+	Direct = 'SNAPSHOT_INDEX_DIRECT',
+	Default = Source2ParticleSnapshotReadType.Increment,
+}
+
+export function stringToSnapshotReadType(snapshotReadType: string | null): Source2ParticleSnapshotReadType | undefined {//TODO: improve ?
+	switch (snapshotReadType) {
+		case Source2ParticleSnapshotReadType.Increment:
+			return Source2ParticleSnapshotReadType.Increment;
+		case Source2ParticleSnapshotReadType.Direct:
+			return Source2ParticleSnapshotReadType.Direct;
+		default:
+			console.error('unsupported snapshotReadType', snapshotReadType);
+	}
 }

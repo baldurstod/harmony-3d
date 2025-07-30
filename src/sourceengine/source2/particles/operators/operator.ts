@@ -449,7 +449,7 @@ export class Operator {//TODOv3: rename this class ?
 				this.opFadeOscillatePeriod = param.getValueAsNumber() ?? DEFAULT_OP_FADE_OSCILLATE_PERIOD;
 				break;
 			case 'm_nControlPointNumber':
-				this.controlPointNumber = param.getValueAsNumber() ?? 0;
+				this.controlPointNumber = param.getValueAsNumber() ?? DEFAULT_CONTROL_POINT_NUMBER;
 				break;
 			case 'm_nOrientationType':
 				this.setOrientationType(param.getValueAsString() ?? '');//TODO: default value ?
