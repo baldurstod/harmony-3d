@@ -23,7 +23,7 @@ export { NormalLock } from './normallock';
 export { OscillateScalar as Source2OscillateScalar } from './oscillatescalar';
 export { OscillateScalarSimple } from './oscillatescalarsimple';
 export { OscillateVector as Source2OscillateVector } from './oscillatevector';
-export { PercentageBetweenCPs } from './percentagebetweencps';
+//export { PercentageBetweenCPs } from './percentagebetweencps';
 export { PinParticleToCP } from './pinparticletocp';
 export { PlaneCull } from './planecull';
 export { PositionLock } from './positionlock';

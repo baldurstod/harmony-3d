@@ -5,13 +5,14 @@ import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Operator } from '../particles/operators/operator';
 import { GetSource2ParticleOperator } from '../particles/operators/source2particleoperators';
 import { Source2ParticleManager } from '../particles/source2particlemanager';
-import { ControlPointConfiguration, ControlPointConfigurationDriver, SOURCE2_DEFAULT_RADIUS, Source2ParticleSystem } from '../particles/source2particlesystem';
+import { ControlPointConfiguration, ControlPointConfigurationDriver, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES, SOURCE2_DEFAULT_RADIUS, Source2ParticleSystem } from '../particles/source2particlesystem';
 import { Source2File } from './source2file';
 import { Source2FileLoader } from './source2fileloader';
-import { DEFAULT_MAX_PARTICLES } from '../../common/particles/particleconsts';
 import { OperatorParam } from '../particles/operators/operatorparam';
 
 export const CParticleSystemDefinition = 'CParticleSystemDefinition';
+
+const DEFAULT_INITIAL_PARTICLES = 0;
 
 // TODO: remove me when particle are finished
 const messagePerOperator = new Set<string>();
@@ -52,11 +53,11 @@ function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Elem
 		//const value = systemDefinition[key];
 		switch (key) {
 			case 'm_nMaxParticles':
-				system.setMaxParticles(systemDefinition.getValueAsNumber('m_nMaxParticles') ?? DEFAULT_MAX_PARTICLES);
+				system.setMaxParticles(systemDefinition.getValueAsNumber(key) ?? DEFAULT_MAX_PARTICLES);
 				break;
 			case 'm_ConstantColor':
 				//vec4.set(system.baseProperties.color, Number(value[0]) / 255.0, Number(value[1]) / 255.0, Number(value[2]) / 255.0, Number(value[3]) / 255.0);
-				const constantColor = systemDefinition.getValueAsNumberArray('m_ConstantColor');
+				const constantColor = systemDefinition.getValueAsNumberArray(key);
 				if (constantColor && constantColor.length >= 4) {
 					vec4.set(system.baseProperties.color, constantColor[0]! / 255.0, constantColor[1]! / 255.0, constantColor[2]! / 255.0, constantColor[3]! / 255.0);
 				}
@@ -80,10 +81,13 @@ function initProperties(system: Source2ParticleSystem, systemDefinition: Kv3Elem
 				system.baseProperties.snapshotControlPoint = systemDefinition.getValueAsNumber(key) ?? 0;// TODO: check default value
 				break;
 			case 'm_nInitialParticles':
-				system.initialParticles = systemDefinition.getValueAsNumber(key) ?? 0;// TODO: check default value
+				system.initialParticles = systemDefinition.getValueAsNumber(key) ?? DEFAULT_INITIAL_PARTICLES;
 				break;
 			case 'm_flConstantRotationSpeed':
 				system.baseProperties.rotationSpeedRoll = systemDefinition.getValueAsNumber(key) ?? 0;// TODO: check default value
+				break;
+			case 'm_nGroupID':
+				system.groupId = systemDefinition.getValueAsNumber(key) ?? DEFAULT_GROUP_ID;
 				break;
 			default:
 				switch (key) {

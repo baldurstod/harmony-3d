@@ -1,6 +1,6 @@
 
 
-export enum Source2ParticleSetMethod {//TODO: move enum elsewhere
+export enum Source2ParticleSetMethod {
 	SetValue = 'PARTICLE_SET_VALUE',
 	ScaleInitial = 'PARTICLE_SET_SCALE_INITIAL_VALUE',
 	AddInitial = 'PARTICLE_SET_ADD_TO_INITIAL_VALUE',
@@ -26,12 +26,12 @@ export function stringToSetMethod(setMethod: string | null): Source2ParticleSetM
 		case Source2ParticleSetMethod.AddCurrent:
 			return Source2ParticleSetMethod.AddCurrent;
 		default:
-			console.error('unsupported pin break type', setMethod);
+			console.error('unsupported set method', setMethod);
 	}
 }
 
 
-export enum Source2ParticleSelection {//TODO: move enum elsewhere
+export enum Source2ParticleSelection {
 	First = 'PARTICLE_SELECTION_FIRST',
 	Last = 'PARTICLE_SELECTION_LAST',
 	Number = 'PARTICLE_SELECTION_NUMBER',
@@ -50,36 +50,42 @@ export function stringToParticleSelection(selection: string | null): Source2Part
 	}
 }
 
-export enum Source2PinBreakType {//TODO: move enum elsewhere
-	None = 'PARTICLE_PIN_NONE',
-	DistanceNeighbor = 'PARTICLE_PIN_DISTANCE_NEIGHBOR',
-	Farthest = 'PARTICLE_PIN_DISTANCE_FARTHEST',
-	First = 'PARTICLE_PIN_DISTANCE_FIRST',
-	Last = 'PARTICLE_PIN_DISTANCE_LAST',
-	CpPair = 'PARTICLE_PIN_DISTANCE_CP_PAIR_EITHER',//???
-	Speed = 'PARTICLE_PIN_SPEED',
-	Age = 'PARTICLE_PIN_COLLECTION_AGE',
-	FloatValue = 'PARTICLE_PIN_FLOAT_VALUE',
+export enum Source2PinBreakType {
+	None = 'PARTICLE_PIN_DISTANCE_NONE',//Don't Break
+	Neighbor = 'PARTICLE_PIN_DISTANCE_NEIGHBOR',//Distance to Neighboring Particle
+	Farthest = 'PARTICLE_PIN_DISTANCE_FARTHEST',//Distance to Farthest Particle
+	First = 'PARTICLE_PIN_DISTANCE_FIRST',//Distance to First Particle
+	Last = 'PARTICLE_PIN_DISTANCE_LAST',//Distance to Last Particle
+	Center = 'PARTICLE_PIN_DISTANCE_CENTER',//Distance to Particle System Center
+	Cp = 'PARTICLE_PIN_DISTANCE_CP',//Distance to Control Point
+	CpPair = 'PARTICLE_PIN_DISTANCE_CP_PAIR_EITHER',//Distance to Either of Two Control Points
+	Speed = 'PARTICLE_PIN_SPEED',//Particle Speed
+	CollectionAge = 'PARTICLE_PIN_COLLECTION_AGE',//Collection Age
+	FloatValue = 'PARTICLE_PIN_FLOAT_VALUE',//Break Value of >= 1
 }
 
 export function stringToPinBreakType(breakType: string | null): Source2PinBreakType | undefined {//TODO: improve ?
 	switch (breakType) {
 		case Source2PinBreakType.None:
 			return Source2PinBreakType.None;
-		case Source2PinBreakType.DistanceNeighbor:
-			return Source2PinBreakType.DistanceNeighbor;
+		case Source2PinBreakType.Neighbor:
+			return Source2PinBreakType.Neighbor;
 		case Source2PinBreakType.Farthest:
 			return Source2PinBreakType.Farthest;
 		case Source2PinBreakType.First:
 			return Source2PinBreakType.First;
 		case Source2PinBreakType.Last:
 			return Source2PinBreakType.Last;
+		case Source2PinBreakType.Center:
+			return Source2PinBreakType.Center;
+		case Source2PinBreakType.Cp:
+			return Source2PinBreakType.Cp;
 		case Source2PinBreakType.CpPair:
 			return Source2PinBreakType.CpPair;
 		case Source2PinBreakType.Speed:
 			return Source2PinBreakType.Speed;
-		case Source2PinBreakType.Age:
-			return Source2PinBreakType.Age;
+		case Source2PinBreakType.CollectionAge:
+			return Source2PinBreakType.CollectionAge;
 		case Source2PinBreakType.FloatValue:
 			return Source2PinBreakType.FloatValue;
 		default:
@@ -87,7 +93,7 @@ export function stringToPinBreakType(breakType: string | null): Source2PinBreakT
 	}
 }
 
-export enum Source2ParticleTintBlendMode {//TODO: move enum elsewhere
+export enum Source2ParticleTintBlendMode {
 	Replace = 'PARTICLEBLEND_REPLACE',
 	Overlay = 'PARTICLEBLEND_OVERLAY',
 	Darken = 'PARTICLEBLEND_DARKEN',
@@ -112,7 +118,7 @@ export function stringToTintBlendMode(blend: string | null): Source2ParticleTint
 	}
 }
 
-enum Source2ParticleScalarField {
+export enum Source2ParticleScalarField {
 	LifeDuration = 1,
 	Radius = 3,
 	Roll = 4,
@@ -142,4 +148,11 @@ enum Source2ParticleScalarField {
 	UserEventStates = 45,
 	ParentParticleId = 46,
 	Default = Source2ParticleScalarField.Radius,
+}
+
+
+export enum Source2ParticleEndCapState {
+	AlwaysEnabled = 'PARTICLE_ENDCAP_ALWAYS_ON',//Always Enabled
+	DisabledDuringEndCap = 'PARTICLE_ENDCAP_ENDCAP_OFF',//Disabled During Endcap
+	EnabledDuringEndCap = 'PARTICLE_ENDCAP_ENDCAP_ON',//Only Enabled During Endcap
 }

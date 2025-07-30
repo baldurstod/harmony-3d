@@ -4,19 +4,26 @@ import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefiel
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2Particle } from '../../source2particle';
 
 const va = vec3.create();
 const vb = vec3.create();
 
+const DEFAULT_INPUT_MIN = 0;
+const DEFAULT_INPUT_MAX = 1;
+const DEFAULT_INPUT_BIAS = 0.5;
+
+// Disabled: seems to have disappear
+/*
 export class PercentageBetweenCPs extends Operator {
 	#fieldOutput = PARTICLE_FIELD_RADIUS;
-	inputMin = 0;
-	inputMax = 1;
-	outputMin = 0;
-	outputMax = 1;
+	#inputMin = 0;
+	#inputMax = 1;
+	#inputBias = DEFAULT_INPUT_BIAS;
+	#outputMin = 0;
+	#outputMax = 1;
 	startCP = 0;
 	endCP = 1;
-	setMethod = null;
 	activeRange = false;
 	radialCheck = true;
 	scaleInitialRange = false;
@@ -24,16 +31,19 @@ export class PercentageBetweenCPs extends Operator {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flInputMin':
-				this.inputMin = param;
+				this.#inputMin = param.getValueAsNumber() ?? DEFAULT_INPUT_MIN;
 				break;
 			case 'm_flInputMax':
-				this.inputMax = param;
+				this.#inputMax = param.getValueAsNumber() ?? DEFAULT_INPUT_MAX;
+				break;
+			case 'm_flInputBias':
+				this.#inputBias = param.getValueAsNumber() ?? DEFAULT_INPUT_BIAS;
 				break;
 			case 'm_flOutputMin':
-				this.outputMin = param;
+				this.#outputMin = param;
 				break;
 			case 'm_flOutputMax':
-				this.outputMax = param;
+				this.#outputMax = param;
 				break;
 			case 'm_nStartCP':
 				this.startCP = (param);
@@ -58,7 +68,7 @@ export class PercentageBetweenCPs extends Operator {
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: Source2Particle , elapsedTime: number, strength: number): void {
 		const startCpPos = this.system.getControlPoint(this.startCP).currentWorldPosition;
 		const endCPPos = this.system.getControlPoint(this.endCP).currentWorldPosition;
 
@@ -75,13 +85,14 @@ export class PercentageBetweenCPs extends Operator {
 		}
 
 
-		if (percentage < this.inputMin || percentage > this.inputMax) {
+		if (percentage < this.#inputMin || percentage > this.#inputMax) {
 			return;
 		}
 
 
-		const value = RemapValClamped(percentage, this.inputMin, this.inputMax, this.outputMin, this.outputMax);
+		const value = RemapValClamped(percentage, this.#inputMin, this.#inputMax, this.#outputMin, this.#outputMax);
 		particle.setField(this.#fieldOutput, value, this.scaleInitialRange || this.setMethod == 'PARTICLE_SET_SCALE_INITIAL_VALUE');
 	}
 }
 RegisterSource2ParticleOperator('C_OP_PercentageBetweenCPs', PercentageBetweenCPs);
+*/

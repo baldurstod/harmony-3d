@@ -2,7 +2,7 @@ import { quat, vec3, vec4 } from 'gl-matrix';
 import { TESTING } from '../../../buildoptions';
 import { Entity } from '../../../entities/entity';
 import { ControlPoint } from '../../common/particles/controlpoint';
-import { DEFAULT_MAX_PARTICLES, HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
+import { HARD_MAX_PARTICLES } from '../../common/particles/particleconsts';
 import { Source2ModelInstance } from '../export';
 import { Source2SnapshotLoader } from '../loaders/source2snapshotloader';
 import { Operator } from './operators/operator';
@@ -67,6 +67,9 @@ export interface BaseProperties {
 	//this.baseProperties = { color: vec4.fromValues(1.0, 1.0, 1.0, 1.0), radius: 5, lifespan: 1, sequenceNumber: 0, snapshotControlPoint: 0, snapshot: '', rotationSpeedRoll: 0, controlPointConfigurations: { m_drivers: [] } };
 }
 
+export const DEFAULT_MAX_PARTICLES = 1000;
+export const DEFAULT_GROUP_ID = 0;
+
 export class Source2ParticleSystem extends Entity {
 	isParticleSystem = true;
 	isSource2ParticleSystem = true;
@@ -106,6 +109,7 @@ export class Source2ParticleSystem extends Entity {
 	parentSystem: Source2ParticleSystem | null = null;
 	isBounded = false;
 	endCap = false;
+	groupId = DEFAULT_GROUP_ID;
 
 	constructor(repository: string, fileName: string, name: string) {
 		super({ name: name });
@@ -465,7 +469,7 @@ export class Source2ParticleSystem extends Entity {
 
 	stepConstraints(particle: Source2Particle) {
 		//TODOv3: multiple passes
-		for (const constraint of  this.constraints) {
+		for (const constraint of this.constraints) {
 			constraint.constraintParticle(particle);
 		}
 	}
