@@ -7,6 +7,7 @@ import { Source2Material } from '../../materials/source2material';
 import { Source2Particle } from '../source2particle';
 import { Source2ParticleSystem } from '../source2particlesystem';
 import { OperatorParam, OperatorParamType, OperatorParamValueType } from './operatorparam';
+import { Source2ParticleSetMethod, stringToSetMethod } from '../enums';
 
 export const COLOR_SCALE = 1 / 255;
 
@@ -56,6 +57,7 @@ const DEFAULT_OP_FADE_OSCILLATE_PERIOD = 0;// TODO: check default value
 const DEFAULT_FIELD_INPUT = -1;// TODO: check default value
 const DEFAULT_SCALE_CP = -1;// TODO: check default value
 export const DEFAULT_CONTROL_POINT_NUMBER = 0;// TODO: check default value
+export const DEFAULT_SET_METHOD = Source2ParticleSetMethod.ScaleInitial;// TODO: check default value
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
@@ -76,6 +78,7 @@ export class Operator {//TODOv3: rename this class ?
 	endCapState?: number;
 	currentTime = 0;
 	operateAllParticlesRemoveme = false;
+	protected setMethod = DEFAULT_SET_METHOD;
 	//protected opStrength = DEFAULT_OP_STRENGTH;
 
 	constructor(system: Source2ParticleSystem) {
@@ -476,6 +479,8 @@ export class Operator {//TODOv3: rename this class ?
 				//this.opStrength = param.getValueAsNumber() ?? DEFAULT_OP_STRENGTH;
 				// used in operateParticle
 				break;
+			case 'm_nSetMethod':
+				this.setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD;
 			/*
 		case 'm_flAlphaScale':
 			throw 'do m_fSpeedRandExp';

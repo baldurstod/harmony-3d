@@ -3,33 +3,9 @@ import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2ParticleTintBlendMode, stringToTintBlendMode } from '../../enums';
 
 const randomColorTempVec4 = vec4.create();
-
-export enum Source2ParticleTintBlendMode {//TODO: move enum elsewhere
-	Replace = 'PARTICLEBLEND_REPLACE',
-	Overlay = 'PARTICLEBLEND_OVERLAY',
-	Darken = 'PARTICLEBLEND_DARKEN',
-	Lighten = 'PARTICLEBLEND_LIGHTEN',
-	Multiply = 'PARTICLEBLEND_MULTIPLY',
-}
-
-export function stringToTintBlendMode(blend: string | null): Source2ParticleTintBlendMode | undefined {//TODO: improve ?
-	switch (blend) {
-		case Source2ParticleTintBlendMode.Replace:
-			return Source2ParticleTintBlendMode.Replace;
-		case Source2ParticleTintBlendMode.Overlay:
-			return Source2ParticleTintBlendMode.Overlay;
-		case Source2ParticleTintBlendMode.Darken:
-			return Source2ParticleTintBlendMode.Darken;
-		case Source2ParticleTintBlendMode.Lighten:
-			return Source2ParticleTintBlendMode.Lighten;
-		case Source2ParticleTintBlendMode.Multiply:
-			return Source2ParticleTintBlendMode.Multiply;
-		default:
-			console.error('unsupported tint blend mode', blend);
-	}
-}
 
 const DEFAULT_UPDATE_THRESHOLD = 32;// TODO: check default value
 const DEFAULT_TINT_CP = 0;// TODO: check default value
