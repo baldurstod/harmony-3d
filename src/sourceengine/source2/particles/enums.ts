@@ -1,20 +1,30 @@
 
 
 export enum Source2ParticleSetMethod {//TODO: move enum elsewhere
+	SetValue = 'PARTICLE_SET_VALUE',
 	ScaleInitial = 'PARTICLE_SET_SCALE_INITIAL_VALUE',
+	AddInitial = 'PARTICLE_SET_ADD_TO_INITIAL_VALUE',
+	RampCurrent = 'PARTICLE_SET_RAMP_CURRENT_VALUE',//Ramp Current Value at Input Rate Per Second
+	ScaleCurrent = 'PARTICLE_SET_SCALE_CURRENT_VALUE',//Scale Current Value Raw
 	AddCurrent = 'PARTICLE_SET_ADD_TO_CURRENT_VALUE',
-	RampCurrent = 'PARTICLE_SET_RAMP_CURRENT_VALUE',
+	Default = Source2ParticleSetMethod.SetValue,
 	// TODO: find m_nSetMethod
 }
 
 export function stringToSetMethod(setMethod: string | null): Source2ParticleSetMethod | undefined {//TODO: improve ?
 	switch (setMethod) {
+		case Source2ParticleSetMethod.SetValue:
+			return Source2ParticleSetMethod.SetValue;
 		case Source2ParticleSetMethod.ScaleInitial:
 			return Source2ParticleSetMethod.ScaleInitial;
-		case Source2ParticleSetMethod.AddCurrent:
-			return Source2ParticleSetMethod.AddCurrent;
+		case Source2ParticleSetMethod.AddInitial:
+			return Source2ParticleSetMethod.AddInitial;
 		case Source2ParticleSetMethod.RampCurrent:
 			return Source2ParticleSetMethod.RampCurrent;
+		case Source2ParticleSetMethod.ScaleCurrent:
+			return Source2ParticleSetMethod.ScaleCurrent;
+		case Source2ParticleSetMethod.AddCurrent:
+			return Source2ParticleSetMethod.AddCurrent;
 		default:
 			console.error('unsupported pin break type', setMethod);
 	}
@@ -100,4 +110,36 @@ export function stringToTintBlendMode(blend: string | null): Source2ParticleTint
 		default:
 			console.error('unsupported tint blend mode', blend);
 	}
+}
+
+enum Source2ParticleScalarField {
+	LifeDuration = 1,
+	Radius = 3,
+	Roll = 4,
+	RollSpeed = 5,
+	Alpha = 7,
+	CreationTime = 8,
+	SequenceNumber = 9,
+	TrailLength = 10,
+	ParticleId = 11,
+	Yaw = 12,
+	SequenceNumber2 = 13,//Second Sequence Number / Alpha Window Threshold
+	HitboxIndex = 14,
+	AlphaAlternate = 16,
+	ScratchFloat = 18,
+	Disabled = 19,
+	Pitch = 20,
+	GlowAlpha = 23,
+	ScratchFloat2 = 26,
+	ScratchFloat3 = 27,
+	BoneIndice = 31,
+	ParentParticleIndex = 33,
+	ForceScale = 34,
+	ManualAnimationFrame = 38,
+	ShaderExtraData1 = 39,
+	ShaderExtraData2 = 40,
+	BoxFlags = 44,
+	UserEventStates = 45,
+	ParentParticleId = 46,
+	Default = Source2ParticleScalarField.Radius,
 }

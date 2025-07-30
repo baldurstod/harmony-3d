@@ -57,11 +57,11 @@ const DEFAULT_OP_FADE_OSCILLATE_PERIOD = 0;// TODO: check default value
 const DEFAULT_FIELD_INPUT = -1;// TODO: check default value
 const DEFAULT_SCALE_CP = -1;// TODO: check default value
 export const DEFAULT_CONTROL_POINT_NUMBER = 0;// TODO: check default value
-export const DEFAULT_SET_METHOD = Source2ParticleSetMethod.ScaleInitial;// TODO: check default value
+export const DEFAULT_SET_METHOD = Source2ParticleSetMethod.SetValue;// TODO: check default value
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
-	#parameters: Record<string, OperatorParam> = {};// TODO: turn into Map<string,OperatorParam>
+	#parameters = new Map<string, OperatorParam>();
 	system: Source2ParticleSystem
 	protected opStartFadeInTime = DEFAULT_OP_START_FADE_IN_TIME;
 	protected opEndFadeInTime = DEFAULT_OP_END_FADE_IN_TIME;
@@ -105,16 +105,12 @@ export class Operator {//TODOv3: rename this class ?
 			}
 		}
 		*/
-		this.#parameters[paramName] = param;
+		this.#parameters.set(paramName, param);
 		this._paramChanged(paramName, param);
 	}
 
-	getParam(paramName: string) {
-		return this.#parameters[paramName];
-	}
-
 	getParamScalarValue(paramName: string, particle?: Source2Particle): number | null {
-		const parameter = this.#parameters[paramName];
+		const parameter = this.#parameters.get(paramName);
 		if (parameter) {
 			return this.#getParamScalarValue(parameter, particle);
 		}
@@ -278,7 +274,7 @@ export class Operator {//TODOv3: rename this class ?
 
 
 	getParamVectorValue(out: vec4/*not sure about vec4. maybe vec3 ?*/, paramName: string, particle?: Source2Particle): vec4 | undefined | null {
-		const parameter = this.#parameters[paramName];
+		const parameter = this.#parameters.get(paramName);
 		if (!parameter) {
 			return undefined;
 		}
@@ -578,8 +574,8 @@ export class Operator {//TODOv3: rename this class ?
 		if (name == 'operator end cap state') {
 			this.endCapState = value as number;
 		}
-		if (this.#parameters[name] == undefined) {
-			this.#parameters[name] = new OperatorParam(name, type, value);
+		if (!this.#parameters.has(name)) {
+			this.#parameters.set(name, new OperatorParam(name, type, value));
 		}
 		//this.#parameters[name].type = type;
 		//this.#parameters[name].value = value;
@@ -588,7 +584,7 @@ export class Operator {//TODOv3: rename this class ?
 	}
 
 	getParameter(name: string): OperatorParam | null {
-		return this.#parameters[name] ?? null;
+		return this.#parameters.get(name) ?? null;
 	}
 
 	getParameters() {

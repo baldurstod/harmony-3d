@@ -7,7 +7,6 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 export class SetFloat extends Operator {
 	#normalizePerLiving = true;
 	outputField = PARTICLE_FIELD_RADIUS;//TODO: not sure about the default field
-	setMethod = 'PARTICLE_SET_VALUE';// TODO: create a const
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -16,9 +15,6 @@ export class SetFloat extends Operator {
 				break;
 			case 'm_nOutputField':// TODO: mutualize param ?
 				this.outputField = param.getValueAsNumber() ?? PARTICLE_FIELD_RADIUS;
-				break;
-			case 'm_nSetMethod':
-				this.setMethod = param.getValueAsString() ?? 'PARTICLE_SET_VALUE';
 				break;
 			default:
 				super._paramChanged(paramName, param);
