@@ -7,7 +7,6 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const DEFAULT_INPUT_MIN = 0;
 const DEFAULT_INPUT_MAX = 10;
-const DEFAULT_ASSOCIATED_EMITTER_INDEX = -1;// disabled
 const DEFAULT_SCALE_CONTROL_POINT = -1;// TODO: check default value
 const DEFAULT_SCALE_CONTROL_POINT_FIELD = -1;// TODO: check default value
 const DEFAULT_OUTPUT_MIN = 0;// TODO: check default value
@@ -29,7 +28,6 @@ export class RemapParticleCountToScalar extends Operator {
 	#wrap = DEFAULT_WRAP;
 	remapBias = DEFAULT_REMAP_BIAS;
 	//#fieldOutput = PARTICLE_FIELD_RADIUS;
-	#associatedEmitterIndex = DEFAULT_ASSOCIATED_EMITTER_INDEX;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -63,9 +61,6 @@ export class RemapParticleCountToScalar extends Operator {
 				break;
 			case 'm_flRemapBias':
 				this.remapBias  = param.getValueAsNumber() ?? DEFAULT_REMAP_BIAS;
-				break;
-			case 'm_nAssociatedEmitterIndex':
-				this.#associatedEmitterIndex = param.getValueAsNumber() ?? DEFAULT_ASSOCIATED_EMITTER_INDEX;
 				break;
 			default:
 				super._paramChanged(paramName, param);

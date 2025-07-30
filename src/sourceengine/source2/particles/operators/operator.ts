@@ -8,6 +8,7 @@ import { Source2Particle } from '../source2particle';
 import { Source2ParticleSystem } from '../source2particlesystem';
 import { OperatorParam, OperatorParamType, OperatorParamValueType } from './operatorparam';
 import { Source2ParticleSetMethod, stringToSetMethod } from '../enums';
+import { OperatorDefinition } from './operatorparams';
 
 export const COLOR_SCALE = 1 / 255;
 
@@ -58,6 +59,7 @@ const DEFAULT_FIELD_INPUT = -1;// TODO: check default value
 const DEFAULT_SCALE_CP = -1;// TODO: check default value
 export const DEFAULT_CONTROL_POINT_NUMBER = 0;// TODO: check default value
 export const DEFAULT_SET_METHOD = Source2ParticleSetMethod.SetValue;// TODO: check default value
+const DEFAULT_ASSOCIATED_EMITTER_INDEX = -1;// disabled
 
 export class Operator {//TODOv3: rename this class ?
 	static PVEC_TYPE_PARTICLE_VECTOR = false;
@@ -80,6 +82,7 @@ export class Operator {//TODOv3: rename this class ?
 	operateAllParticlesRemoveme = false;
 	protected setMethod = DEFAULT_SET_METHOD;
 	//protected opStrength = DEFAULT_OP_STRENGTH;
+	associatedEmitterIndex = DEFAULT_ASSOCIATED_EMITTER_INDEX;
 
 	constructor(system: Source2ParticleSystem) {
 		this.system = system;
@@ -458,7 +461,6 @@ export class Operator {//TODOv3: rename this class ?
 				}
 				this.#fieldInput = param.getValueAsNumber() ?? DEFAULT_FIELD_INPUT;
 				break;
-			case 'm_nFieldOutput': // TODO: check wether is it actually the same field
 			case 'm_nOutputField':
 				this.fieldOutput = param.getValueAsNumber() ?? -1;
 				break;
@@ -477,6 +479,10 @@ export class Operator {//TODOv3: rename this class ?
 				break;
 			case 'm_nSetMethod':
 				this.setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD;
+				break;
+			case 'm_nAssociatedEmitterIndex':
+				this.associatedEmitterIndex = param.getValueAsNumber() ?? DEFAULT_ASSOCIATED_EMITTER_INDEX;
+				break;
 			/*
 		case 'm_flAlphaScale':
 			throw 'do m_fSpeedRandExp';
