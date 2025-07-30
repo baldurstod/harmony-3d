@@ -4,6 +4,8 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+//disabled: replaced by C_INIT_InitFloat
+/*
 export class RandomRotationSpeed extends Operator {
 	radians = 0;
 	radiansMin = 0;
@@ -47,3 +49,4 @@ export class RandomRotationSpeed extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RandomRotationSpeed', RandomRotationSpeed);
+*/

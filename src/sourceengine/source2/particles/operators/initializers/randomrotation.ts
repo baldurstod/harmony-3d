@@ -5,6 +5,8 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+// Disabled:  replaced by C_INIT_InitFloat
+/*
 export class RandomRotation extends Operator {
 	radians = 0;
 	radiansMin = 0;
@@ -39,7 +41,8 @@ export class RandomRotation extends Operator {
 		if (this.randomlyFlipDirection && (RandomFloat(-1, 1) >= 0)) {
 			rotation -= rotation;
 		}
-		particle.setInitialField(/*this.fieldOutput*/PARTICLE_FIELD_ROTATION_ROLL, rotation);
+		particle.setInitialField(/*this.fieldOutput* /PARTICLE_FIELD_ROTATION_ROLL, rotation);
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RandomRotation', RandomRotation);
+*/
