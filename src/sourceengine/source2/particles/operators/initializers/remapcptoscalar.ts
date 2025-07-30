@@ -17,6 +17,8 @@ const DEFAULT_SET_METHOD = 'PARTICLE_SET_SCALE_INITIAL_VALUE';// TODO: check def
 const DEFAULT_REMAP_BIAS = 0.5;// TODO: check default value//TODO: enum
 const DEFAULT_SCALAR_INITIAL_RANGE = false;// TODO: check default value//TODO: enum
 
+// Disabled: replaced by C_INIT_InitFloat
+/*
 export class RemapCPtoScalar extends Operator {
 	#cpInput = DEFAULT_CP_INPUT;
 	#field = DEFAULT_FIELD;//X
@@ -26,7 +28,7 @@ export class RemapCPtoScalar extends Operator {
 	outputMax = DEFAULT_OUTPUT_MAX;
 	startTime = DEFAULT_START_TIME;
 	endTime = DEFAULT_END_TIME;
-	setMethod = DEFAULT_SET_METHOD;
+	//setMethod = DEFAULT_SET_METHOD;
 	remapBias = DEFAULT_REMAP_BIAS;
 	scaleInitialRange = DEFAULT_SCALAR_INITIAL_RANGE;// TODO: search default value
 
@@ -88,3 +90,4 @@ export class RemapCPtoScalar extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RemapCPtoScalar', RemapCPtoScalar);
+*/

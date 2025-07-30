@@ -13,7 +13,8 @@ const DEFAULT_LOS = false;// TODO: check default value
 const DEFAULT_LOS_SCALE = 0;// TODO: check default value
 const DEFAULT_COLLISION_GROUP_NAME = 'NONE';// TODO: check default value
 const DEFAULT_SET_METHOD = 'PARTICLE_SET_SCALE_INITIAL_VALUE';// TODO: check default value//TODO: enum
-
+// Disabled
+/*
 export class DistanceBetweenCPs extends Operator {
 	#startCP = DEFAULT_START_CP;
 	#endCP = DEFAULT_END_CP;
@@ -21,7 +22,6 @@ export class DistanceBetweenCPs extends Operator {
 	#los = false;
 	#losScale = DEFAULT_LOS_SCALE;
 	#collisionGroupName = DEFAULT_COLLISION_GROUP_NAME;
-	setMethod = DEFAULT_SET_METHOD;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -75,3 +75,4 @@ export class DistanceBetweenCPs extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_OP_DistanceBetweenCPs', DistanceBetweenCPs);
+*/

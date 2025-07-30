@@ -4,6 +4,8 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+// Disabled: replaced by C_INIT_InitFloat
+/*
 export class RandomYaw extends Operator {
 	radians = 0;
 	radiansMin = 0;
@@ -43,3 +45,4 @@ export class RandomYaw extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RandomYaw', RandomYaw);
+*/
