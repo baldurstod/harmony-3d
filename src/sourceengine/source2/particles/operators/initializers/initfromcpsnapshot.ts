@@ -67,27 +67,22 @@ export class InitFromCPSnapshot extends Operator {
 				this.#attributeToRead = param.getValueAsNumber() ?? DEFAULT_ATTRIBUTE_TO_READ;
 				break;
 			case 'm_nAttributeToWrite':
-				console.error('do this param', paramName, param);
-				this.#attributeToWrite = (param);
+				this.#attributeToWrite = param.getValueAsNumber() ?? DEFAULT_ATTRIBUTE_TO_WRITE;
 				break;
 			case 'm_nLocalSpaceCP':
 				this.#localSpaceCP = param.getValueAsNumber() ?? DEFAULT_LOCAL_SPACE_CP;
 				break;
 			case 'm_bRandom':
-				console.error('do this param', paramName, param);
-				this.#random = param;
+				this.#random = param.getValueAsBool() ?? DEFAULT_RANDOM;
 				break;
 			case 'm_bReverse':
-				console.error('do this param', paramName, param);
-				this.#reverse = param;
+				this.#reverse = param.getValueAsBool() ?? DEFAULT_REVERSE;
 				break;
 			case 'm_nRandomSeed':
-				console.error('do this param', paramName, param);
-				this.#randomSeed = (param);
+				this.#randomSeed = param.getValueAsNumber() ?? DEFAULT_RANDOM_SEED;
 				break;
 			case 'm_bLocalSpaceAngles':
-				console.error('do this param', paramName, param);
-				this.#localSpaceAngles = param;
+				this.#localSpaceAngles = param.getValueAsBool() ?? DEFAULT_LOCAL_SPACE_ANGLES;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -102,7 +97,7 @@ export class InitFromCPSnapshot extends Operator {
 		const system = this.system;
 		const snapshot = system.getControlPoint(this.controlPointNumber)?.snapshot;
 		if (snapshot) {
-			const attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.#attributeToRead];
+			const attributeToReadName = ATTRIBUTE_NAME_PER_FIELD[this.#attributeToRead]!;//TODO: check this.#attributeToRead range
 			if (TESTING && attributeToReadName === undefined) {
 				throw 'Unknown field';
 			}

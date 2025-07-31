@@ -26,8 +26,7 @@ export class VelocityRandom extends Operator {
 				// used in doInit
 				break;
 			case 'm_bIgnoreDT':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.#ignoreDT = param;
+				this.#ignoreDT = param.getValueAsBool() ?? DEFAULT_IGNORE_DT;
 				break;
 			default:
 				super._paramChanged(paramName, param);

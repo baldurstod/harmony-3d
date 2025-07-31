@@ -26,8 +26,7 @@ export class DistanceCull extends Operator {
 				this.#distance = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_bCullInside':
-				console.error('do this param', paramName, param);
-				this.#cullInside = param;
+				this.#cullInside = param.getValueAsBool() ?? DEFAULT_CULL_INSIDE;
 				break;
 			default:
 				super._paramChanged(paramName, param);

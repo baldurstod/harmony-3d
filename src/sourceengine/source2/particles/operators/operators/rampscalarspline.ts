@@ -1,61 +1,62 @@
 import { RandomFloat } from '../../../../../math/functions';
-import { PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { Source2ParticleScalarField } from '../../enums';
 import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const DEFAULT_BIAS = 0.5;
-const DEFAULT_EASE_OUT = false;
 const DEFAULT_RATE_MIN = 0;
 const DEFAULT_RATE_MAX = 0;
-const DEFAULT_FIELD = PARTICLE_FIELD_RADIUS;
+const DEFAULT_START_TIME_MIN = 0;
+const DEFAULT_START_TIME_MAX = 0;
+const DEFAULT_END_TIME_MIN = 1;
+const DEFAULT_END_TIME_MAX = 1;
+const DEFAULT_BIAS = 0.5;
+const DEFAULT_PROPORTIONAL_OP = true;
+const DEFAULT_EASE_OUT = false;
+const DEFAULT_FIELD = Source2ParticleScalarField.Radius;
 
-export class RampScalarSpline extends Operator {
-	#rateMin = 0;
-	#rateMax = 0;
-	#startTimeMin = 0;
-	#startTimeMax = 0;
-	#endTimeMin = 1;
-	#endTimeMax = 1;
+export class RampScalarSpline extends Operator {//Ramp scalar spline random
+	#rateMin = DEFAULT_RATE_MIN;
+	#rateMax = DEFAULT_RATE_MAX;
+	#startTimeMin = DEFAULT_START_TIME_MIN;
+	#startTimeMax = DEFAULT_START_TIME_MAX;
+	#endTimeMin = DEFAULT_END_TIME_MIN;
+	#endTimeMax = DEFAULT_END_TIME_MAX;
 	#field = DEFAULT_FIELD;
-	#proportionalOp = true;
+	#proportionalOp = DEFAULT_PROPORTIONAL_OP;
 	#bias = DEFAULT_BIAS;
 	#easeOut = DEFAULT_EASE_OUT;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
-			case 'm_RateMin':// TODO: mutualize ?
+			case 'm_RateMin':
 				this.#rateMin = param.getValueAsNumber() ?? DEFAULT_RATE_MIN;
 				break;
-			case 'm_RateMax':// TODO: mutualize ?
+			case 'm_RateMax':
 				this.#rateMax = param.getValueAsNumber() ?? DEFAULT_RATE_MAX;
 				break;
 			case 'm_flStartTime_min':
-				console.error('do this param', paramName, param);
-				this.#startTimeMin = param;
+				this.#startTimeMin = param.getValueAsNumber() ?? DEFAULT_START_TIME_MIN;
 				break;
 			case 'm_flStartTime_max':
-				console.error('do this param', paramName, param);
-				this.#startTimeMax = param;
+				this.#startTimeMax = param.getValueAsNumber() ?? DEFAULT_START_TIME_MAX;
 				break;
 			case 'm_flEndTime_min':
-				console.error('do this param', paramName, param);
-				this.#endTimeMin = param;
+				this.#endTimeMin = param.getValueAsNumber() ?? DEFAULT_END_TIME_MIN;
 				break;
 			case 'm_flEndTime_max':
-				console.error('do this param', paramName, param);
-				this.#endTimeMax = param;
+				this.#endTimeMax = param.getValueAsNumber() ?? DEFAULT_END_TIME_MAX;
 				break;
-			case 'm_nField':// TODO: mutualize ?
+			case 'm_flBias':
+				this.#bias = param.getValueAsNumber() ?? DEFAULT_BIAS;
+				break;
+			case 'm_nField':
 				this.#field = param.getValueAsNumber() ?? DEFAULT_FIELD;
 				break;
 			case 'm_bProportionalOp':
 				console.error('do this param', paramName, param);
-				this.#proportionalOp = param;
-				break;
-			case 'm_flBias':
-				this.#bias = param.getValueAsNumber() ?? DEFAULT_BIAS;
+				this.#proportionalOp = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL_OP;
 				break;
 			case 'm_bEaseOut':
 				this.#easeOut = param.getValueAsBool() ?? DEFAULT_EASE_OUT;

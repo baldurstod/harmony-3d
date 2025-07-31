@@ -387,6 +387,7 @@ export class Source2Particle {
 					Source2Particle.consolePitch = true;
 				}
 				break;
+				//TODO: add missing fields
 			default:
 				if (WARN) {
 					console.warn('Unknown field ' + field);
@@ -394,6 +395,42 @@ export class Source2Particle {
 		}
 		return 0;
 	}
+
+	getVectorField(out: vec3, field = 0, initial = false): vec3 {
+		switch (field) {
+			case PARTICLE_FIELD_POSITION:
+				vec3.copy(out, this.position);
+				break;
+			case PARTICLE_FIELD_POSITION_PREVIOUS:
+				vec3.copy(out, this.prevPosition);
+				break;
+			case PARTICLE_FIELD_COLOR:
+				vec3.copy(out, this.color as vec3);
+				break;
+			case PARTICLE_FIELD_HITBOX_OFFSET_POSITION:
+				vec3.copy(out, this.hitboxOffsetPosition);
+				break;
+			case PARTICLE_FIELD_SCRATCH_VECTOR:
+				vec3.copy(out, this.scratchVec);
+				break;
+			case 21:
+				vec3.copy(out, this.normal);
+				break;
+			case PARTICLE_FIELD_GLOW_RGB:
+				vec3.copy(out, this.glowRGB);
+				break;
+				//TODO: add missing fields
+			default:
+				if (WARN) {
+					console.warn('Unknown field ' + field);
+				}
+		}
+		return out;
+	}
+
+	/**
+	 * @deprecated Please use getScalarField instead.
+	 */
 	getField(field = 0, initial = false) {
 		// TODO: create getScalarField / getVectorField
 

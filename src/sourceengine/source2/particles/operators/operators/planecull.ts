@@ -8,7 +8,7 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 const vec = vec3.create();
 
 const DEFAULT_PLANE_OFFSET = 0;// TODO: check default value
-const DEFAULT_LOCAL_SPACE = false;// TODO: check default value
+const DEFAULT_LOCAL_SPACE = false;
 const DEFAULT_PLANE_CONTROL_POINT = 0;// TODO: check default value
 
 export class PlaneCull extends Operator {
@@ -33,13 +33,12 @@ export class PlaneCull extends Operator {
 				this.#planeControlPoint = param.getValueAsNumber() ?? DEFAULT_PLANE_CONTROL_POINT;
 				break;
 			case 'm_vecPlaneDirection':
-				console.error('do this param', paramName, param, this.constructor.name);
-				vec3.normalize(this.#planeDirection, param);
+				param.getValueAsVec3(this.#planeDirection);
+				vec3.normalize(this.#planeDirection, this.#planeDirection);
 				this.#update();
 				break;
 			case 'm_bLocalSpace':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.#localSpace = param;
+				this.#localSpace = param.getValueAsBool() ?? DEFAULT_LOCAL_SPACE;
 				break;
 			case 'm_flPlaneOffset':
 				this.#planeOffset = param.getValueAsNumber() ?? DEFAULT_PLANE_OFFSET;

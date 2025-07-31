@@ -23,16 +23,13 @@ export class InheritFromParentParticles extends Operator {
 				this.#scale = param.getValueAsNumber() ?? DEFAULT_SCALE;
 				break;
 			case 'm_nIncrement':
-				console.error('do this param', paramName, param);
-				this.#increment = (param);
+				this.#increment = param.getValueAsNumber() ?? DEFAULT_INCREMENT;
 				break;
 			case 'm_bRandomDistribution':
-				console.error('do this param', paramName, param);
-				this.#randomDistribution = param;
+				this.#randomDistribution = param.getValueAsBool() ?? DEFAULT_RANDOM_DISTRIBUTION;
 				break;
 			case 'm_nRandomSeed':
-				console.error('do this param', paramName, param);
-				this.#randomSeed = (param);
+				this.#randomSeed = param.getValueAsNumber() ?? DEFAULT_RANDOM_SEED;
 				break;
 			default:
 				super._paramChanged(paramName, param);

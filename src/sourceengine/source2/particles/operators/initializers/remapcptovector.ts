@@ -42,49 +42,42 @@ export class RemapCPtoVector extends Operator {
 				this.#cpInput = param.getValueAsNumber() ?? DEFAULT_CP_INPUT;
 				break;
 			case 'm_vInputMin':
-				console.error('do this param', paramName, param);
-				vec3.copy(this.#inputMin, param);
+				param.getValueAsVec3(this.#inputMin);
 				break;
 			case 'm_vInputMax':
 				param.getValueAsVec3(this.#inputMax);
 				break;
 			case 'm_vOutputMin':
-				console.error('do this param', paramName, param);
-				vec3.copy(this.#outputMin, param);
+				param.getValueAsVec3(this.#outputMin);
 				break;
 			case 'm_vOutputMax':
 				param.getValueAsVec3(this.#outputMax);
 				break;
 			case 'm_flStartTime':
 				console.error('do this param', paramName, param);
-				this.#startTime = param;
+				this.#startTime = param.getValueAsNumber() ?? DEFAULT_START_TIME;
 				break;
 			case 'm_flEndTime':
-				console.error('do this param', paramName, param);
-				this.#endTime = param;
+				this.#endTime = param.getValueAsNumber() ?? DEFAULT_END_TIME;
 				break;
 			case 'm_nSetMethod':
 				this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
 				break;
 			case 'm_bOffset':
-				console.error('do this param', paramName, param);
-				this.#offset = param;
+				this.#offset = param.getValueAsBool() ?? DEFAULT_OFFSET;
 				break;
 			case 'm_bAccelerate':
-				console.error('do this param', paramName, param);
-				this.#accelerate = param;
+				this.#accelerate = param.getValueAsBool() ?? DEFAULT_ACCELERATE;
 				break;
 			case 'm_nLocalSpaceCP':
 				console.error('do this param', paramName, param);
-				this.#localSpaceCP = (param);
+				this.#localSpaceCP = param.getValueAsNumber() ?? DEFAULT_LOCAL_SPACE_CP;
 				break;
 			case 'm_flRemapBias':
-				console.error('do this param', paramName, param);
-				this.#remapBias = param;
+				this.#remapBias = param.getValueAsNumber() ?? DEFAULT_REMAP_BIAS;
 				break;
 			case 'm_bScaleInitialRange':
-				console.error('do this param', paramName, param);
-				this.#scaleInitialRange = param;
+				this.#scaleInitialRange = param.getValueAsBool() ?? DEFAULT_SCALE_INITIAL_RANGE;
 				break;
 			default:
 				super._paramChanged(paramName, param);

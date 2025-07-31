@@ -4,17 +4,18 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 import { Source2Particle } from '../../source2particle';
+import { Source2ParticleCpField, Source2ParticleVectorField } from '../../enums';
 
 //const tempMat4 = mat4.create();
 const tempPrevPos = vec3.create();
 const tempPos = vec3.create();
 const v = vec3.create();
 
-const DEFAULT_SCALE_CONTROL_POINT = -1;// TODO: check default value
-const DEFAULT_SCALE_CP_FIELD = 0;// TODO: check default value
-const DEFAULT_FIELD_INPUT = PARTICLE_FIELD_POSITION_PREVIOUS;// TODO: check default value
-const DEFAULT_FIELD_OUTPUT = PARTICLE_FIELD_POSITION;// TODO: check default value
-const DEFAULT_OFFSET_LOCAL = true;// TODO: check default value
+const DEFAULT_SCALE_CONTROL_POINT = -1;//disabled
+const DEFAULT_SCALE_CP_FIELD = Source2ParticleCpField.X;
+const DEFAULT_FIELD_INPUT = Source2ParticleVectorField.PreviousPosition
+const DEFAULT_FIELD_OUTPUT = Source2ParticleVectorField.Position;
+const DEFAULT_OFFSET_LOCAL = true;
 
 export class MovementRigidAttachToCP extends Operator {
 	#scaleControlPoint = DEFAULT_SCALE_CONTROL_POINT;
@@ -27,15 +28,19 @@ export class MovementRigidAttachToCP extends Operator {
 		switch (paramName) {
 			case 'm_nScaleControlPoint':
 				console.error('do this param', paramName, param);
-				this.#scaleControlPoint = (param);
+				this.#scaleControlPoint = param.getValueAsNumber() ?? DEFAULT_SCALE_CONTROL_POINT;
 				break;
 			case 'm_nScaleCPField':
-				console.error('do this param', paramName, param);
-				this.#scaleCPField = (param);
+				this.#scaleCPField = param.getValueAsNumber() ?? DEFAULT_SCALE_CP_FIELD;
+				break;
+			case 'm_nFieldInput':
+				this.#fieldInput = param.getValueAsNumber() ?? DEFAULT_FIELD_INPUT;
+				break;
+			case 'm_nFieldOutput':
+				this.#fieldOutput = param.getValueAsNumber() ?? DEFAULT_FIELD_OUTPUT;
 				break;
 			case 'm_bOffsetLocal':
-				console.error('do this param', paramName, param);
-				this.#offsetLocal = param;
+				this.#offsetLocal = param.getValueAsBool() ?? DEFAULT_OFFSET_LOCAL;
 				break;
 			default:
 				super._paramChanged(paramName, param);

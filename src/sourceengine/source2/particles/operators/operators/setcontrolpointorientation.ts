@@ -10,6 +10,8 @@ const DEFAULT_CP = 1;// TODO: check default value
 const DEFAULT_USE_WORLD_LOCATION = false;// TODO: check default value
 const DEFAULT_HEAD_LOCATION = 0;// TODO: check default value
 
+
+// TODO: check if disabled ?
 export class SetControlPointOrientation extends Operator {
 	#useWorldLocation = DEFAULT_USE_WORLD_LOCATION;
 	#randomize = false;// TODO: check default value
@@ -29,11 +31,11 @@ export class SetControlPointOrientation extends Operator {
 				break;
 			case 'm_bRandomize':
 				console.error('do this param', paramName, param);
-				this.#randomize = param;
+				this.#randomize = param.getValueAsBool() ?? false;// TODO: check default value
 				break;
 			case 'm_bSetOnce':
 				console.error('do this param', paramName, param);
-				this.#setOnce = param;
+				this.#setOnce = param.getValueAsBool() ?? false;// TODO: check default value
 				break;
 			case 'm_nCP'://TODO: mutualize
 				this.#cp = param.getValueAsNumber() ?? DEFAULT_CP;

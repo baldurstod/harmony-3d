@@ -4,42 +4,45 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+const DEFAULT_START_FADE_IN_TIME = 0;
 const DEFAULT_END_FADE_IN_TIME = 0.5;
+const DEFAULT_START_FADE_OUT_TIME = 0.5;
+const DEFAULT_END_FADE_OUT_TIME = 1;
+const DEFAULT_START_ALPHA = 1;
+const DEFAULT_END_ALPHA = 0;
+const DEFAULT_FORCE_PRESERVE_PARTICLE_ORDER = false;
 
 export class FadeAndKill extends Operator {
-	#startAlpha = 1;
-	#startFadeInTime = 0;
+	#startFadeInTime = DEFAULT_START_FADE_IN_TIME;
 	#endFadeInTime = DEFAULT_END_FADE_IN_TIME;
-	#startFadeOutTime = DEFAULT_END_FADE_IN_TIME;
-	#endFadeOutTime = 1.0;
-	#endAlpha = 0;
-	#forcePreserveParticleOrder = false;
+	#startFadeOutTime = DEFAULT_START_FADE_OUT_TIME;
+	#endFadeOutTime = DEFAULT_END_FADE_OUT_TIME;
+	#startAlpha = DEFAULT_START_ALPHA;
+	#endAlpha = DEFAULT_END_ALPHA;
+	#forcePreserveParticleOrder = DEFAULT_FORCE_PRESERVE_PARTICLE_ORDER;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
-			case 'm_flStartAlpha':
-				console.error('do this param', paramName, param);
-				this.#startAlpha = param;
-				break;
 			case 'm_flStartFadeInTime':
-				this.#startFadeInTime = param.getValueAsNumber() ?? 0;
+				this.#startFadeInTime = param.getValueAsNumber() ?? DEFAULT_START_FADE_IN_TIME;
 				break;
 			case 'm_flEndFadeInTime':
 				this.#endFadeInTime = param.getValueAsNumber() ?? DEFAULT_END_FADE_IN_TIME;
 				break;
 			case 'm_flStartFadeOutTime':
-				this.#startFadeOutTime = param.getValueAsNumber() ?? DEFAULT_END_FADE_IN_TIME;
+				this.#startFadeOutTime = param.getValueAsNumber() ?? DEFAULT_START_FADE_OUT_TIME;
 				break;
 			case 'm_flEndFadeOutTime':
-				this.#endFadeOutTime = param.getValueAsNumber() ?? 1;
+				this.#endFadeOutTime = param.getValueAsNumber() ?? DEFAULT_END_FADE_OUT_TIME;
+				break;
+			case 'm_flStartAlpha':
+				this.#startAlpha = param.getValueAsNumber() ?? DEFAULT_START_ALPHA;
 				break;
 			case 'm_flEndAlpha':
-				console.error('do this param', paramName, param);
-				this.#endAlpha = param;
+				this.#endAlpha = param.getValueAsNumber() ?? DEFAULT_END_ALPHA;
 				break;
 			case 'm_bForcePreserveParticleOrder':
-				console.error('do this param', paramName, param);
-				this.#forcePreserveParticleOrder = param;
+				this.#forcePreserveParticleOrder = param.getValueAsBool() ?? DEFAULT_FORCE_PRESERVE_PARTICLE_ORDER;
 				break;
 			default:
 				super._paramChanged(paramName, param);

@@ -118,7 +118,7 @@ export function stringToTintBlendMode(blend: string | null): Source2ParticleTint
 	}
 }
 
-export enum Source2ParticleScalarField {
+export enum Source2ParticleScalarField {// TODO: mutualize: those are the save values as source1
 	LifeDuration = 1,
 	Radius = 3,
 	Roll = 4,
@@ -150,7 +150,7 @@ export enum Source2ParticleScalarField {
 	Default = Source2ParticleScalarField.Radius,
 }
 
-export enum Source2ParticleVectorField {
+export enum Source2ParticleVectorField {// TODO: mutualize: those are the save values as source1
 	Position = 0,
 	PreviousPosition = 2,
 	Color = 6,
@@ -252,4 +252,13 @@ export function stringToTransformType(transformType: string | null): Source2Part
 		default:
 			console.error('unsupported transformType', transformType);
 	}
+}
+
+
+export enum Source2ParticleCpField {
+	Disabled = -1,
+	X = 0,
+	Y = 1,
+	Z = 2,
+	Default = Source2ParticleCpField.X,
 }

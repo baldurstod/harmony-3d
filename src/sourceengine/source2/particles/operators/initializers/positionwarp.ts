@@ -38,28 +38,22 @@ export class PositionWarp extends Operator {
 				this.#scaleControlPointNumber = param.getValueAsNumber() ?? DEFAULT_SCALE_CONTROL_POINT_NUMBER;
 				break;
 			case 'm_nRadiusComponent':
-				console.error('do this param', paramName, param);
-				this.#radiusComponent = (param);//TODO: check [-1 0 1 2]
+				this.#radiusComponent = param.getValueAsNumber() ?? DEFAULT_RADIUS_COMPONENT;//TODO: check [-1 0 1 2]
 				break;
 			case 'm_flWarpTime':
-				console.error('do this param', paramName, param);
-				this.#warpTime = param;
+				this.#warpTime = param.getValueAsNumber() ?? DEFAULT_WARP_TIME;
 				break;
 			case 'm_flWarpStartTime':
-				console.error('do this param', paramName, param);
-				this.#warpStartTime = param;
+				this.#warpStartTime = param.getValueAsNumber() ?? DEFAULT_WARP_START_TIME;
 				break;
 			case 'm_flPrevPosScale':
-				console.error('do this param', paramName, param);
-				this.#prevPosScale = param;
+				this.#prevPosScale = param.getValueAsNumber() ?? DEFAULT_PREV_POS_SCALE;
 				break;
 			case 'm_bInvertWarp':
-				console.error('do this param', paramName, param);
-				this.#invertWarp = param;
+				this.#invertWarp = param.getValueAsBool() ?? DEFAULT_INVERT_WARP;
 				break;
 			case 'm_bUseCount':
-				console.error('do this param', paramName, param);
-				this.#useCount = param;
+				this.#useCount = param.getValueAsBool() ?? DEFAULT_USE_COUNT;
 				break;
 			default:
 				super._paramChanged(paramName, param);
