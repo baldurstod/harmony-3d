@@ -3,49 +3,56 @@ import { vec3RandomBox } from '../../../../../math/functions';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2Particle } from '../../source2particle';
 
 const v = vec3.create();
 
-export class SetRandomControlPointPosition extends Operator {
-	useWorldLocation = false;
-	orient = false;
-	cp1 = 1;
-	headLocation = 0;
-	cpMinPos = vec3.create();
-	cpMaxPos = vec3.create();
+const DEFAULT_USE_WORLD_LOCATION = false;// TODO: check default value
+const DEFAULT_ORIENT = false;// TODO: check default value
+const DEFAULT_CP1 = 1;// TODO: check default value
+const DEFAULT_HEAD_LOCATION = 0;// TODO: check default value
+
+export class SetRandomControlPointPosition extends Operator {//TODO: disable ? not usable in dote tools
+	#useWorldLocation = DEFAULT_USE_WORLD_LOCATION;
+	#orient = DEFAULT_ORIENT;
+	#cp1 = 1;
+	#headLocation = DEFAULT_HEAD_LOCATION;
+	cpMinPos = vec3.create();// TODO: check default value
+	cpMaxPos = vec3.create();// TODO: check default value
 	lastRandomTime = -1;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_bUseWorldLocation':
-				this.useWorldLocation = param;
+				this.#useWorldLocation = param.getValueAsBool() ?? DEFAULT_USE_WORLD_LOCATION;
 				break;
 			case 'm_bOrient':
-				this.orient = param;
+				this.#orient = param.getValueAsBool() ?? DEFAULT_ORIENT;
 				break;
 			case 'm_nCP1':
-				this.cp1 = (param);
+				this.#cp1 = param.getValueAsNumber() ?? DEFAULT_CP1;
 				break;
 			case 'm_nHeadLocation':
-				this.headLocation = (param);
+				this.#headLocation = param.getValueAsNumber() ?? DEFAULT_HEAD_LOCATION;
+				break;
+			case 'm_vecCPMinPos':
+				param.getValueAsVec3(this.cpMinPos);
+				break;
+			case 'm_vecCPMaxPos':
+				param.getValueAsVec3(this.cpMaxPos);
 				break;
 			case 'm_flReRandomRate':
 			case 'm_flInterpolation':
-				break;
-			case 'm_vecCPMinPos':
-				vec3.copy(this.cpMinPos, param);
-				break;
-			case 'm_vecCPMaxPos':
-				vec3.copy(this.cpMaxPos, param);
+				//used in doOperate
 				break;
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	doOperate(particle, elapsedTime) {
-		const reRandomRate = this.getParamScalarValue('m_flReRandomRate') ?? -1;
-		const interpolation = this.getParamScalarValue('m_flInterpolation') ?? 1;
+	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+		const reRandomRate = this.getParamScalarValue('m_flReRandomRate') ?? -1;// TODO: check default value
+		const interpolation = this.getParamScalarValue('m_flInterpolation') ?? 1;// TODO: check default value
 
 		//TODO: do interpolation
 		if ((reRandomRate >= 0 || this.lastRandomTime < 0) && (this.system.currentTime - this.lastRandomTime > reRandomRate)) {
@@ -53,13 +60,13 @@ export class SetRandomControlPointPosition extends Operator {
 
 			vec3RandomBox(v, this.cpMinPos, this.cpMaxPos);
 
-			const headLocation = this.system.getControlPoint(this.headLocation);
-			const cp1 = this.system.getControlPoint(this.cp1);
+			const headLocation = this.system.getControlPoint(this.#headLocation);
+			const cp1 = this.system.getControlPoint(this.#cp1);
 			vec3.transformQuat(v, v, headLocation.currentWorldQuaternion);
 			vec3.add(v, v, headLocation.currentWorldPosition);
 			cp1.position = v;
 
-			if (this.orient) {
+			if (this.#orient) {
 				cp1.setWorldQuaternion(headLocation.currentWorldQuaternion);
 			}
 		}

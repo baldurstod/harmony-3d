@@ -1,11 +1,12 @@
 
-import { Operator, Source2OperatorParamValue } from '../operator';
+import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { } from '../operatorparams';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const DEFAULT_EMIT_RATE = 100;// TODO: check default value
-const DEFAULT_EMISSION_DURATION = 100;// TODO: check default value
+const DEFAULT_EMISSION_DURATION = 0;
+const DEFAULT_EMISSION_START_TIME = 0;
+const DEFAULT_EMIT_RATE = 100;
 
 export class ContinuousEmitter extends Operator {
 	//#emitRate = DEFAULT_EMIT_RATE;
@@ -15,8 +16,8 @@ export class ContinuousEmitter extends Operator {
 		switch (paramName) {
 			case 'm_flEmissionDuration':
 			case 'm_flEmitRate':
+			case 'm_flStartTime':
 				// used in doEmit
-				//this.#emitRate = param.getValueAsNumber() ?? DEFAULT_EMIT_RATE;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -27,17 +28,17 @@ export class ContinuousEmitter extends Operator {
 		// TODO: use m_flEmissionDuration
 		const emissionDuration = this.getParamScalarValue('m_flEmissionDuration') ?? DEFAULT_EMISSION_DURATION;
 
-		const emission_start_time = this.getParameter('emission_start_time') ?? 0;
+		const emissionStartTime = this.getParamScalarValue('m_flStartTime') ??  DEFAULT_EMISSION_START_TIME;
 		//let emitRate = this.#emitRate;
-		const emission_duration = this.getParameter('emission_duration') ?? 0;
+		//const emissionDuration = this.getParameter('emission_duration') ?? 0;
 
 		const fade = this.getOperatorFade();
 		const emitRate = (this.getParamScalarValue('m_flEmitRate') ?? DEFAULT_EMIT_RATE) * fade;
 
 		let currentTime = this.system.currentTime;
 
-		if (currentTime < emission_start_time) return;
-		if (emission_duration != 0 && (currentTime > emission_start_time + emission_duration)) return;
+		if (currentTime < emissionStartTime) return;
+		if (emissionDuration != 0 && (currentTime > emissionStartTime + emissionDuration)) return;
 
 		let nToEmit = this.#remainder + elapsedTime * emitRate;
 		this.#remainder = nToEmit % 1;

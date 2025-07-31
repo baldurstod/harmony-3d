@@ -210,3 +210,46 @@ export function stringToSnapshotReadType(snapshotReadType: string | null): Sourc
 			console.error('unsupported snapshotReadType', snapshotReadType);
 	}
 }
+
+export enum Source2ParticleModelType  {
+	ControlPoint = 'PM_TYPE_CONTROL_POINT',
+	Model = 'PM_TYPE_NAMED_VALUE_MODEL',
+	Entity = 'PM_TYPE_NAMED_VALUE_EHANDLE',
+	Default = Source2ParticleModelType.ControlPoint,
+}
+
+export function stringToModelType(modelType: string | null): Source2ParticleModelType | undefined {//TODO: improve ?
+	switch (modelType) {
+		case Source2ParticleModelType.ControlPoint:
+			return Source2ParticleModelType.ControlPoint;
+		case Source2ParticleModelType.Model:
+			return Source2ParticleModelType.Model;
+		case Source2ParticleModelType.Entity:
+			return Source2ParticleModelType.Entity;
+		default:
+			console.error('unsupported modelType', modelType);
+	}
+}
+
+export enum Source2ParticleTransformType  {
+	Invalid = 'PT_TYPE_INVALID',
+	NamedValue = 'PT_TYPE_NAMED_VALUE',
+	ControlPoint = 'PT_TYPE_CONTROL_POINT',
+	ControlPointRange = 'PT_TYPE_CONTROL_POINT_RANGE',
+	Default = Source2ParticleTransformType.ControlPoint,
+}
+
+export function stringToTransformType(transformType: string | null): Source2ParticleTransformType | undefined {//TODO: improve ?
+	switch (transformType) {
+		case Source2ParticleTransformType.Invalid:
+			return Source2ParticleTransformType.Invalid;
+		case Source2ParticleTransformType.NamedValue:
+			return Source2ParticleTransformType.NamedValue;
+		case Source2ParticleTransformType.ControlPoint:
+			return Source2ParticleTransformType.ControlPoint;
+		case Source2ParticleTransformType.ControlPointRange:
+			return Source2ParticleTransformType.ControlPointRange;
+		default:
+			console.error('unsupported transformType', transformType);
+	}
+}
