@@ -6,16 +6,17 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const DEFAULT_PROPORTIONAL = true;// TODO: check default value
-const DEFAULT_FADE_IN_TIME_MIN = 0.25;// TODO: check default value
-const DEFAULT_FADE_IN_TIME_MAX = 0.25;// TODO: check default value
-const DEFAULT_FADE_IN_TIME_EXP = 1;// TODO: check default value
+const DEFAULT_FADE_IN_TIME_MIN = 0.25;
+const DEFAULT_FADE_IN_TIME_MAX = 0.25;
+const DEFAULT_FADE_IN_TIME_EXP = 1;
+const DEFAULT_PROPORTIONAL = true;
 
 export class FadeIn extends Operator {
 	#fadeInTimeMin = DEFAULT_FADE_IN_TIME_MIN;
 	#fadeInTimeMax = DEFAULT_FADE_IN_TIME_MAX;
 	#fadeInTimeExp = DEFAULT_FADE_IN_TIME_EXP;
 	#proportional = DEFAULT_PROPORTIONAL;
+	//computed
 	#fadeInTime = 0;
 	#invFadeInTime = 0;
 
@@ -33,7 +34,7 @@ export class FadeIn extends Operator {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_flFadeInTimeMin':
-				this.#fadeInTimeMin  = param.getValueAsNumber() ?? DEFAULT_FADE_IN_TIME_MIN;
+				this.#fadeInTimeMin = param.getValueAsNumber() ?? DEFAULT_FADE_IN_TIME_MIN;
 				this.#update();
 				break;
 			case 'm_flFadeInTimeMax':
@@ -41,11 +42,10 @@ export class FadeIn extends Operator {
 				this.#update();
 				break;
 			case 'm_flFadeInTimeExp':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.#fadeInTimeExp = param;
+				this.#fadeInTimeExp = param.getValueAsNumber() ?? DEFAULT_FADE_IN_TIME_EXP;
 				this.#update();
 				break;
-			case 'm_bProportional'://TODO: mutualize
+			case 'm_bProportional':
 				this.#proportional = param.getValueAsBool() ?? DEFAULT_PROPORTIONAL;
 				break;
 			default:

@@ -11,20 +11,20 @@ const tempPos = vec3.create();
 //const tempQuat = quat.create();
 const vec = vec3.create();
 
-export const DEFAULT_JUMP_THRESHOLD = 512;// TODO: check default value
-export const DEFAULT_RANGE = 0;// TODO: check default value
-export const DEFAULT_START_TIME_MIN = 1;// TODO: check default value
-export const DEFAULT_START_TIME_MAX = 1;// TODO: check default value
-export const DEFAULT_START_TIME_EXP = 1;// TODO: check default value
-export const DEFAULT_END_TIME_MIN = 1;// TODO: check default value
-export const DEFAULT_END_TIME_MAX = 1;// TODO: check default value
-export const DEFAULT_END_TIME_EXP = 1;// TODO: check default value
-export const DEFAULT_PREV_POS_SCALE = 1;// TODO: check default value
-export const DEFAULT_LOCK_ROT = false;// TODO: check default value
-export const DEFAULT_START_FADE_OUT_TIME = 0;// TODO: check default value
-export const DEFAULT_END_FADE_OUT_TIME = 0;// TODO: check default value
+const DEFAULT_JUMP_THRESHOLD = 512;
+const DEFAULT_RANGE = 0;// TODO: check default value
+const DEFAULT_START_TIME_MIN = 1;// TODO: check default value
+const DEFAULT_START_TIME_MAX = 1;// TODO: check default value
+const DEFAULT_START_TIME_EXP = 1;// TODO: check default value
+const DEFAULT_END_TIME_MIN = 1;// TODO: check default value
+const DEFAULT_END_TIME_MAX = 1;// TODO: check default value
+const DEFAULT_END_TIME_EXP = 1;// TODO: check default value
+const DEFAULT_PREV_POS_SCALE = 1;
+const DEFAULT_LOCK_ROT = false;// TODO: check default value
+const DEFAULT_START_FADE_OUT_TIME = 0;// TODO: check default value
+const DEFAULT_END_FADE_OUT_TIME = 0;// TODO: check default value
 
-export class PositionLock extends Operator {
+export class PositionLock extends Operator {//Movement lock to control point
 	#startTimeMin = DEFAULT_START_TIME_MIN;
 	#startTimeMax = DEFAULT_START_TIME_MAX;
 	#startTimeExp = DEFAULT_START_TIME_EXP;
@@ -82,8 +82,7 @@ export class PositionLock extends Operator {
 				this.#jumpThreshold = param.getValueAsNumber() ?? DEFAULT_JUMP_THRESHOLD;
 				break;
 			case 'm_flPrevPosScale':
-				console.error('do this param', paramName, param);
-				this.#prevPosScale = param;
+				this.#prevPosScale = param.getValueAsNumber() ?? DEFAULT_PREV_POS_SCALE;
 				break;
 			case 'm_bLockRot':
 				this.#lockRot = param.getValueAsBool() ?? false;

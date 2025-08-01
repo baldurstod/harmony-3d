@@ -2,41 +2,37 @@ import { vec3 } from 'gl-matrix';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2Particle } from '../../source2particle';
 
 const vec = vec3.create();
 
+const DEFAULT_MIN_DISTANCE = 0;
+const DEFAULT_MAX_DISTANCE = 1000;
+const DEFAULT_GLOBAL_CENTER = false;
+
 export class ConstrainDistance extends Operator {
-	minDistance = 0;
-	maxDistance = 100;
-	scaleCP = -1;
-	centerOffset = vec3.create();
-	globalCenter = false;
+	#centerOffset = vec3.create();
+	#globalCenter = DEFAULT_GLOBAL_CENTER;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
-			case 'm_fMinDistance':
-				this.minDistance = (param);
-				break;
-			case 'm_fMaxDistance':
-				this.maxDistance = (param);
-				break;
-			case 'm_nScaleCP':
-				this.scaleCP = (param);
-				break;
 			case 'm_CenterOffset':
-				vec3.copy(this.centerOffset, param);
+				param.getValueAsVec3(this.#centerOffset);
 				break;
 			case 'm_bGlobalCenter':
-				this.globalCenter = param;
+				this.#globalCenter = param.getValueAsBool() ?? DEFAULT_GLOBAL_CENTER;
 				break;
+			case 'm_fMinDistance':
+			case 'm_fMaxDistance':
+				// used in applyConstraint
 			default:
 				super._paramChanged(paramName, param);
 		}
 	}
 
-	applyConstraint(particle) {
-		const minDistance = this.getParameter('minimum distance');
-		const maxDistance = this.getParameter('maximum distance');
+	applyConstraint(particle: Source2Particle) {
+		const minDistance: number = this.getParamScalarValue('m_fMinDistance') ?? DEFAULT_MIN_DISTANCE;
+		const maxDistance: number = this.getParamScalarValue('m_fMaxDistance') ?? DEFAULT_MAX_DISTANCE;
 		const offsetOfCenter = this.getParameter('offset of center');
 		const cpNumber = this.getParameter('control point number');
 
@@ -49,12 +45,12 @@ export class ConstrainDistance extends Operator {
 		const distance = vec3.length(v);
 		if (distance > 0) {
 			vec3.scale(v, v, 1 / distance);
-			if (distance < this.minDistance) {
-				vec3.scale(v, v, this.minDistance);
+			if (distance < minDistance) {
+				vec3.scale(v, v, minDistance);
 				vec3.add(particle.position, cp.getWorldPosition(vec), v);
 			} else {
-				if (distance > this.maxDistance) {
-					vec3.scale(v, v, this.maxDistance);
+				if (distance > maxDistance) {
+					vec3.scale(v, v, maxDistance);
 					vec3.add(particle.position, cp.getWorldPosition(vec), v);
 				}
 			}

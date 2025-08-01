@@ -3,13 +3,14 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
-const DEFAULT_SET_ORIENTATION = false;
-const DEFAULT_NUM_CONTROL_POINTS = 1;
-const DEFAULT_FIRST_SOURCE_CONTROL_POINT = 0;
-const DEFAULT_CHILD_CONTROL_POINT = 0;
+const DEFAULT_SET_ORIENTATION = false;// TODO: check default value
+const DEFAULT_NUM_CONTROL_POINTS = 1;// TODO: check default value
+const DEFAULT_FIRST_SOURCE_CONTROL_POINT = 0;// TODO: check default value
+const DEFAULT_CHILD_CONTROL_POINT = 0;// TODO: check default value
 
+// TODO: check: can't create in dota tools
 export class SetParentControlPointsToChildCP extends Operator {
-	#childGroupID = 0;
+	#childGroupID = 0;// TODO: check default value
 	#childControlPoint = DEFAULT_CHILD_CONTROL_POINT;
 	#numControlPoints = DEFAULT_NUM_CONTROL_POINTS;
 	#firstSourcePoint = DEFAULT_FIRST_SOURCE_CONTROL_POINT;
@@ -18,8 +19,7 @@ export class SetParentControlPointsToChildCP extends Operator {
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
 			case 'm_nChildGroupID':
-				console.error('do this param', paramName, param);
-				this.#childGroupID = (param);
+				this.#childGroupID = param.getValueAsNumber() ?? 0;
 				break;
 			case 'm_nChildControlPoint':
 				this.#childControlPoint = param.getValueAsNumber() ?? DEFAULT_CHILD_CONTROL_POINT;

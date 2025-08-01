@@ -4,12 +4,13 @@ import { Source2Particle } from '../../source2particle';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2ParticleSetMethod, Source2ParticleVectorField, stringToSetMethod } from '../../enums';
 
 const DEFAULT_VECTOR_VALUE = vec4.create();
 const setVecTempVec4 = vec4.create();
 
-const DEFAULT_OUTPUT_FIELD = PARTICLE_FIELD_COLOR;// TODO: check default value
-const DEFAULT_SET_METHOD = 'PARTICLE_SET_VALUE';// TODO: check default value
+const DEFAULT_OUTPUT_FIELD = Source2ParticleVectorField.Color;
+const DEFAULT_SET_METHOD = Source2ParticleSetMethod.SetValue;
 
 export class SetVec extends Operator {
 	#outputField = DEFAULT_OUTPUT_FIELD;
@@ -17,16 +18,15 @@ export class SetVec extends Operator {
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
+			case 'm_nOutputField':
+				this.#outputField = param.getValueAsNumber() ?? DEFAULT_OUTPUT_FIELD;
+				break;
+			case 'm_nSetMethod':
+				this.#setMethod = stringToSetMethod(param.getValueAsString()) ?? DEFAULT_SET_METHOD;
+				break;
 			case 'm_InputValue':
 			case 'm_Lerp':
 				// used in doOperate
-				break;
-			case 'm_nOutputField':
-				console.error('do this param', paramName, param, this.constructor.name);
-				this.#outputField = (param);
-				break;
-			case 'm_nSetMethod':
-				this.#setMethod = param.getValueAsString() ?? DEFAULT_SET_METHOD;
 				break;
 			default:
 				super._paramChanged(paramName, param);

@@ -1,7 +1,8 @@
 import { vec3 } from 'gl-matrix';
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { NoiseSIMD } from '../../../../common/math/noise';
-import { ATTRIBUTES_WHICH_ARE_ANGLES, PARTICLE_FIELD_RADIUS } from '../../../../common/particles/particlefields';
+import { ATTRIBUTES_WHICH_ARE_ANGLES } from '../../../../common/particles/particlefields';
+import { Source2ParticleScalarField } from '../../enums';
 import { Source2Particle } from '../../source2particle';
 import { Source2ParticleSystem } from '../../source2particlesystem';
 import { Operator } from '../operator';
@@ -10,19 +11,21 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const Coord = vec3.create();
 
-const DEFAULT_FIELD_OUTPUT = PARTICLE_FIELD_RADIUS;
+const DEFAULT_FIELD_OUTPUT = Source2ParticleScalarField.Radius;
 const DEFAULT_OUTPUT_MIN = 0;
 const DEFAULT_OUTPUT_MAX = 1;
-const DEFAULT_ADDITIVE = false;
 const DEFAULT_NOISE_SCALE = 0.1;
+const DEFAULT_ADDITIVE = false;
+const DEFAULT_NOISE_ANIMATION_TIME_SCALE = 0;
 
-export class Noise extends Operator {
+export class Noise extends Operator {//Noise scalar
 	#fieldOutput = DEFAULT_FIELD_OUTPUT;
 	#outputMin = DEFAULT_OUTPUT_MIN;
 	#outputMax = DEFAULT_OUTPUT_MAX;
-	#noiseScale = DEFAULT_NOISE_SCALE;
+	#noiseScale = DEFAULT_NOISE_SCALE;//noise coordinate scale
 	#additive = DEFAULT_ADDITIVE;
-	#noiseAnimationTimeScale = 0;
+	#noiseAnimationTimeScale = DEFAULT_NOISE_ANIMATION_TIME_SCALE;
+	// computed
 	#outputMinRad = 0;
 	#outputMaxRad = 0;
 	#valueScale = 0;
@@ -30,10 +33,10 @@ export class Noise extends Operator {
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this._update();
+		this.#update();
 	}
 
-	_update() {
+	#update() {
 		if (ATTRIBUTES_WHICH_ARE_ANGLES & (1 << this.#fieldOutput)) {
 			this.#outputMinRad = this.#outputMin * DEG_TO_RAD;
 			this.#outputMaxRad = this.#outputMax * DEG_TO_RAD;
@@ -50,15 +53,15 @@ export class Noise extends Operator {
 		switch (paramName) {
 			case 'm_nFieldOutput':
 				this.#fieldOutput = param.getValueAsNumber() ?? DEFAULT_FIELD_OUTPUT;
-				this._update();
+				this.#update();
 				break;
 			case 'm_flOutputMin'://TODO: mutualize
 				this.#outputMin = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MIN;
-				this._update();
+				this.#update();
 				break;
 			case 'm_flOutputMax'://TODO: mutualize
 				this.#outputMax = param.getValueAsNumber() ?? DEFAULT_OUTPUT_MAX;
-				this._update();
+				this.#update();
 				break;
 			case 'm_fl4NoiseScale':
 				this.#noiseScale = param.getValueAsNumber() ?? DEFAULT_NOISE_SCALE;
@@ -67,8 +70,7 @@ export class Noise extends Operator {
 				this.#additive = param.getValueAsBool() ?? DEFAULT_ADDITIVE;
 				break;
 			case 'm_flNoiseAnimationTimeScale':
-				console.error('do this param', paramName, param);
-				this.#noiseAnimationTimeScale = param;
+				this.#noiseAnimationTimeScale = param.getValueAsNumber() ?? DEFAULT_NOISE_ANIMATION_TIME_SCALE;
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -76,6 +78,7 @@ export class Noise extends Operator {
 	}
 
 	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
+		// TODO: use other params #additive, noiseAnimationTimeScale
 		vec3.scale(Coord, particle.position, this.#noiseScale);
 		const noise = NoiseSIMD(Coord, 0, 0) * this.#valueScale + this.#valueBase;
 

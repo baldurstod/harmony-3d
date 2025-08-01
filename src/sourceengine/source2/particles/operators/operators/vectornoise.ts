@@ -6,6 +6,7 @@ import { Source2ParticleSystem } from '../../source2particlesystem';
 import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Source2ParticleVectorField } from '../../enums';
 
 const Coord = vec3.create();
 const output = vec3.create();
@@ -16,19 +17,22 @@ const ofs_z = vec3.fromValues(110000.25, 310000.75, 9100000.5);
 const posScale = 0.00;
 const timeScale = 0.1;
 
-const DEFAULT_NOISE_SCALE = 0.1;// TODO: check default value
-const DEFAULT_OFFSET = false;// TODO: check default value
+const DEFAULT_FIELD_OUTPUT = Source2ParticleVectorField.Color;
+const DEFAULT_NOISE_SCALE = 0.1;
+const DEFAULT_ADDITIVE = false;
+const DEFAULT_OFFSET = false;
+const DEFAULT_NOISE_ANIMATION_TIME_SCALE = 0;
 
 export class VectorNoise extends Operator {
+	#fieldOutput = DEFAULT_FIELD_OUTPUT;
 	#outputMin = vec3.create();
 	#outputMax = vec3.fromValues(1, 1, 1);
-	#fieldOutput = PARTICLE_FIELD_COLOR;
-	#noiseScale = DEFAULT_NOISE_SCALE;
-	#additive = false;
-	#offset = DEFAULT_OFFSET;
-	#noiseAnimationTimeScale = 0;
-	#valueScale = vec3.create();
-	#valueBase = vec3.create();
+	#noiseScale = DEFAULT_NOISE_SCALE;//noise coordinate scale
+	#additive = DEFAULT_ADDITIVE;
+	#offset = DEFAULT_OFFSET;//offset instead of accelerate position
+	#noiseAnimationTimeScale = DEFAULT_NOISE_ANIMATION_TIME_SCALE;
+	#valueScale = vec3.create();//computed
+	#valueBase = vec3.create();//computed
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
@@ -48,6 +52,10 @@ export class VectorNoise extends Operator {
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
+			case 'm_nFieldOutput':
+				this.#fieldOutput = param.getValueAsNumber() ?? DEFAULT_FIELD_OUTPUT;
+				this.#update();
+				break;
 			case 'm_vecOutputMin':
 				param.getValueAsVec3(this.#outputMin);
 				this.#update();
@@ -67,8 +75,7 @@ export class VectorNoise extends Operator {
 				this.#offset = param.getValueAsBool() ?? DEFAULT_OFFSET;
 				break;
 			case 'm_flNoiseAnimationTimeScale':
-				console.error('do this param', paramName, param);
-				this.#noiseAnimationTimeScale = param;
+				this.#noiseAnimationTimeScale = param.getValueAsNumber() ??DEFAULT_NOISE_ANIMATION_TIME_SCALE;
 				break;
 			default:
 				super._paramChanged(paramName, param);

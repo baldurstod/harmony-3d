@@ -8,6 +8,7 @@ import { Source2SnapshotLoader } from '../loaders/source2snapshotloader';
 import { Operator } from './operators/operator';
 import { Source2Particle } from './source2particle';
 import { Source2ParticleManager } from './source2particlemanager';
+import { DEFAULT_EMITTER_INDEX } from './operators/emitters/emitter';
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
 
@@ -257,7 +258,7 @@ export class Source2ParticleSystem extends Entity {
 
 	#emitInitialParticles(elapsedTime: number) {
 		for (let i = 0; i < this.initialParticles; ++i) {
-			this.createParticle(0, elapsedTime);
+			this.createParticle(DEFAULT_EMITTER_INDEX, 0, elapsedTime);
 		}
 	}
 
@@ -335,7 +336,7 @@ export class Source2ParticleSystem extends Entity {
 		}
 	}
 
-	createParticle(creationTime: number, elapsedTime: number) {
+	createParticle(emitterIndex: number, creationTime: number, elapsedTime: number) {
 		if (this.livingParticles.length < this.maxParticles) {
 			// first try to get one from the pool
 			if (this.poolParticles.length > 0) {

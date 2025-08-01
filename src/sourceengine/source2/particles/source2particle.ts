@@ -169,6 +169,7 @@ export class Source2Particle {
 	}
 
 	setField(field = 0, value: any, mulInitial = false, setInitial = false, additive = false) {
+		// TODO: create setScalarfield / setvectorfield
 		if (isNaN(field)) { return; }
 		//console.log('Field ' + field + ' ' + value);
 

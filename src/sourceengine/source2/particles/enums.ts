@@ -254,7 +254,6 @@ export function stringToTransformType(transformType: string | null): Source2Part
 	}
 }
 
-
 export enum Source2ParticleCpField {
 	Disabled = -1,
 	X = 0,

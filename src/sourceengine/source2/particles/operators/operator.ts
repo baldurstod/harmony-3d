@@ -534,13 +534,6 @@ export class Operator {//TODOv3: rename this class ?
 		this.applyConstraint(particle);
 	}
 
-	emitParticle(creationTime: number, elapsedTime: number) {
-		if (!this.system || this.disableOperator) {
-			return;
-		}
-		return this.system.createParticle(creationTime, elapsedTime);
-	}
-
 	renderParticle(particleList: Source2Particle, elapsedTime: number, material: Source2Material) {
 		if (!particleList) {
 			return;
