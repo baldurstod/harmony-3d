@@ -1,12 +1,12 @@
-import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Emitter } from './emitter';
 
 const DEFAULT_SNAPSHOT_CONTROL_POINT = -1;// TODO: check default value
 const DEFAULT_MAX_EMITTED_PER_FRAME = -1;// TODO: check default value
 const DEFAULT_INIT_FROM_KILLED_PARENT_PARTICLES = 0;// TODO: check default value
 
-export class InstantaneousEmitter extends Operator {
+export class InstantaneousEmitter extends Emitter {
 	#emitted = 0;
 	#initFromKilledParentParticles = DEFAULT_INIT_FROM_KILLED_PARENT_PARTICLES;
 	#maxEmittedPerFrame = DEFAULT_MAX_EMITTED_PER_FRAME;

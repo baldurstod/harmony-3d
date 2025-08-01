@@ -8,6 +8,8 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 const vecCenter = vec3.create();
 const vec = vec3.create();
 
+const DEFAULT_APPLY_MIN_FORCE = false;// TODO: check default value
+
 export class AttractToControlPoint extends Operator {
 	#componentScale = vec3.fromValues(1, 1, 1);
 	#falloffPower = 0;
@@ -16,21 +18,22 @@ export class AttractToControlPoint extends Operator {
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
-			case 'm_fForceAmount':
-			case 'm_fForceAmountMin':
-				break;
 			case 'm_vecComponentScale':// TODO: mutualize ?
 				param.getValueAsVec3(this.#componentScale);
 				break;
 			case 'm_fFalloffPower':
-				this.#falloffPower = param.getValueAsNumber() ?? 0;
+				this.#falloffPower = param.getValueAsNumber() ?? 0;// TODO: check default value
 				break;
 			case 'm_bScaleLocal':
-				this.#scaleLocal = param.getValueAsBool() ?? false;
+				this.#scaleLocal = param.getValueAsBool() ?? false;// TODO: check default value
 				break;
 			case 'm_bApplyMinForce':
 				console.error('do this param', paramName, param);
-				this.#applyMinForce = param;
+				this.#applyMinForce = param.getValueAsBool() ?? DEFAULT_APPLY_MIN_FORCE;
+				break;
+			case 'm_fForceAmount':
+			case 'm_fForceAmountMin':
+				// used in doForce
 				break;
 			default:
 				super._paramChanged(paramName, param);
@@ -38,8 +41,8 @@ export class AttractToControlPoint extends Operator {
 	}
 
 	doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void {
-		const forceAmount = this.getParamScalarValue('m_fForceAmount') ?? 100;
-		const forceAmountMin = this.getParamScalarValue('m_fForceAmountMin') ?? 0;
+		const forceAmount = this.getParamScalarValue('m_fForceAmount') ?? 100;// TODO: check default value
+		const forceAmountMin = this.getParamScalarValue('m_fForceAmountMin') ?? 0;// TODO: check default value
 
 		const power_frac = (-4.0 * this.#falloffPower) << 0;					// convert to what pow_fixedpoint_exponent_simd wants
 		const fForceScale = -forceAmount * strength/*flStrength*/;

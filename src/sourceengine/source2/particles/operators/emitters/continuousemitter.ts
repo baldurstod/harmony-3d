@@ -1,14 +1,13 @@
 
-import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
-import { } from '../operatorparams';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Emitter } from './emitter';
 
 const DEFAULT_EMISSION_DURATION = 0;
 const DEFAULT_EMISSION_START_TIME = 0;
 const DEFAULT_EMIT_RATE = 100;
 
-export class ContinuousEmitter extends Operator {
+export class ContinuousEmitter extends Emitter {
 	//#emitRate = DEFAULT_EMIT_RATE;
 	#remainder = 0;
 

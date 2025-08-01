@@ -1,12 +1,11 @@
-import { vec3 } from 'gl-matrix';
 
-import { RegisterSource2ParticleOperator } from '../source2particleoperators';
-import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
+import { RegisterSource2ParticleOperator } from '../source2particleoperators';
+import { Emitter } from './emitter';
 
 const DEFAULT_PARTICLES_TO_MAINTAIN = 100;
 
-export class MaintainEmitter extends Operator {
+export class MaintainEmitter extends Emitter {
 	#particlesToMaintain = DEFAULT_PARTICLES_TO_MAINTAIN;
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
