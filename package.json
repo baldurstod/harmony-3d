@@ -17,7 +17,7 @@
 		"harmony-utils": "github:baldurstod/harmony-utils",
 		"harmony-vpk": "github:baldurstod/harmony-vpk",
 		"meshoptimizer": "^0.21.0",
-		"murmurhash-es6": "^1.0.0"
+		"murmurhash": "github:baldurstod/murmurhash"
 	},
 	"devDependencies": {
 		"@eslint/js": "^9.29.0",

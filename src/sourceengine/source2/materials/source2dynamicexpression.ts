@@ -1,19 +1,19 @@
-import { vec3, vec4 } from 'gl-matrix';
-import { murmurhash2_32_gc } from 'murmurhash-es6';
-import { clamp, pow2 } from '../../../math/functions';
+import { vec4 } from 'gl-matrix';
+import { murmurhash2_32_gc } from 'murmurhash';
 import { WARN } from '../../../buildoptions';
+import { clamp, pow2 } from '../../../math/functions';
 
 /**
  * DynamicExpression
  */
-let stack;
-const hashes = {};
+let stack: vec4[];
 const HASH_SEED = 0x31415926;
-hashes[murmurhash2_32_gc('time', HASH_SEED)] = 'time';
+const hashes = new Map<number, string>();
+hashes.set(murmurhash2_32_gc('time', HASH_SEED), 'time');
 
-export function executeDynamicExpression(byteCode, renderAttributes = []) {
+export function executeDynamicExpression(byteCode: Uint8Array, renderAttributes: string[] = []): vec4 | undefined {
 	let pointer = -1;
-	const storage = {};
+	const storage = new Map<number, vec4>();
 	stack = [];
 
 	let storeAddress;
@@ -31,18 +31,18 @@ export function executeDynamicExpression(byteCode, renderAttributes = []) {
 					pointer = location - 1;
 				} else {
 					//TODO: error message
-					return null;
+					return;
 				}
 				break;
 			case 4: // ?
-				const conditionalValue = stack.pop();
+				const conditionalValue = stack.pop()!;
 				// Only the first value is tested
 				location = conditionalValue[0] ? getlocation(byteCode, pointer + 1) : getlocation(byteCode, pointer + 3);
 				if ((location >= 0) && (location < byteCode.length)) {
 					pointer = location - 1;
 				} else {
 					//TODO: error message
-					return null;
+					return;
 				}
 				break;
 			case 6: // function
@@ -52,7 +52,7 @@ export function executeDynamicExpression(byteCode, renderAttributes = []) {
 					pointer += 2;
 				} else {
 					//TODO: error message
-					return null;
+					return;
 				}
 				break;
 			case 7: // float32
@@ -62,21 +62,21 @@ export function executeDynamicExpression(byteCode, renderAttributes = []) {
 			case 8: // save
 				storeAddress = getByte(byteCode, pointer + 1);
 				if (storeAddress >= 0) {
-					storage[storeAddress] = stack.pop();
+					storage.set(storeAddress, stack.pop()!);
 					pointer += 1;
 				} else {
 					//TODO: error message
-					return null;
+					return;
 				}
 				break;
 			case 9: // restore
 				storeAddress = getByte(byteCode, pointer + 1);
 				if (storeAddress >= 0) {
-					stack.push(storage[storeAddress]);
+					stack.push(storage.get(storeAddress)!);
 					pointer += 1;
 				} else {
 					//TODO: error message
-					return null;
+					return;
 				}
 				break;
 			case 12:
@@ -119,14 +119,14 @@ export function executeDynamicExpression(byteCode, renderAttributes = []) {
 				negation()
 				break;
 			case 25: // get value
-				const intValue = (byteCode[pointer + 1] + (byteCode[pointer + 2] << 8) + (byteCode[pointer + 3] << 16) + (byteCode[pointer + 4] << 24)) >>> 0;
-				let stringValue = hashes[intValue];
+				const intValue = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
+				let stringValue = hashes.get(intValue);
 				if (!stringValue) {
 					for (let renderAttribute of renderAttributes) {
 						renderAttribute = renderAttribute.toLowerCase();
-						hashes[murmurhash2_32_gc(renderAttribute, HASH_SEED)] = renderAttribute;
+						hashes.set(murmurhash2_32_gc(renderAttribute, HASH_SEED), renderAttribute);
 					}
-					stringValue = hashes[intValue];
+					stringValue = hashes.get(intValue);
 				}
 
 				if (stringValue) {
@@ -166,8 +166,8 @@ export function executeDynamicExpression(byteCode, renderAttributes = []) {
 	}
 }
 
-function processFunction(functionCode) {
-	let a, b, c, d;
+function processFunction(functionCode: number): void {
+	let a: vec4, b: vec4, c: vec4, d;
 	switch (functionCode) {
 		case 0: // sin
 			sin();
@@ -191,9 +191,9 @@ function processFunction(functionCode) {
 			saturate();
 			break;
 		case 7: // clamp
-			a = stack.pop();
-			b = stack.pop();
-			c = stack.pop();
+			a = stack.pop()!;
+			b = stack.pop()!;
+			c = stack.pop()!;
 			a[0] = clamp(c[0], b[0], a[0]);
 			a[1] = clamp(c[1], b[1], a[1]);
 			a[2] = clamp(c[2], b[2], a[2]);
@@ -201,9 +201,9 @@ function processFunction(functionCode) {
 			stack.push(a);
 			break;
 		case 8: // lerp
-			const factor = stack.pop();
-			const second = stack.pop();
-			const first = stack.pop();
+			const factor = stack.pop()!;
+			const second = stack.pop()!;
+			const first = stack.pop()!;
 			first[0] = first[0] + factor[0] * (second[0] - first[0]);
 			first[1] = first[1] + factor[1] * (second[1] - first[1]);
 			first[2] = first[2] + factor[2] * (second[2] - first[2]);
@@ -256,21 +256,21 @@ function processFunction(functionCode) {
 			smoothstep();
 			break;
 		case 24: // float4
-			a = stack.pop();
-			b = stack.pop();
-			c = stack.pop();
-			d = stack.pop();
+			a = stack.pop()!;
+			b = stack.pop()!;
+			c = stack.pop()!;
+			d = stack.pop()!;
 			stack.push(vec4.fromValues(d[0], c[0], b[0], a[0]));
 			break;
 		case 25: // float3
-			a = stack.pop();
-			b = stack.pop();
-			c = stack.pop();
+			a = stack.pop()!;
+			b = stack.pop()!;
+			c = stack.pop()!;
 			stack.push(vec4.fromValues(c[0], b[0], a[0], a[0]));
 			break;
 		case 26: // float2
-			a = stack.pop();
-			b = stack.pop();
+			a = stack.pop()!;
+			b = stack.pop()!;
 			stack.push(vec4.fromValues(b[0], a[0], a[0], a[0]));
 			break;
 		case 27: // time
@@ -312,14 +312,14 @@ function processFunction(functionCode) {
 	}
 }
 
-function getByte(b, offset) {
-	return (offset > b.length - 1) ? -1 : b[0 + offset];
+function getByte(b: Uint8Array, offset: number): number {
+	return (offset > b.length - 1) ? -1 : b[0 + offset]!;
 }
 
-function getFloat32(b, offset) {//TODO: optimize
-	const sign = 1 - (2 * (b[3 + offset] >> 7)),
-		exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127,
-		mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
+function getFloat32(b: Uint8Array, offset: number) {//TODO: optimize
+	const sign = 1 - (2 * (b[3 + offset]! >> 7)),
+		exponent = (((b[3 + offset]! << 1) & 0xff) | (b[2 + offset]! >> 7)) - 127,
+		mantissa = ((b[2 + offset]! & 0x7f) << 16) | (b[1 + offset]! << 8) | b[0 + offset]!;
 	let ret;
 
 	if (exponent === 128) {
@@ -336,88 +336,92 @@ function getFloat32(b, offset) {//TODO: optimize
 	return vec4.fromValues(ret, ret, ret, ret);
 }
 
-function getlocation(b, offset) {
-	return (offset > b.length - 2) ? -1 : (b[1 + offset] << 8) | b[0 + offset];
+function getlocation(b: Uint8Array, offset: number) {
+	return (offset > b.length - 2) ? -1 : (b[1 + offset]! << 8) | b[0 + offset]!;
 }
+
+/*
 function _saturate(value) {
 	return Math.min(Math.max(value, 0), 1);
 }
-function getRandomArbitrary(min, max) {
+*/
+
+function getRandomArbitrary(min: number, max: number) {
 	return Math.random() * (max - min) + min;
 }
 
 function not() {
-	const a = stack.pop();
-	a[0] = !a[0];
-	a[1] = !a[1];
-	a[2] = !a[2];
-	a[3] = !a[3];
+	const a = stack.pop()!;
+	a[0] = Number(!a[0]);
+	a[1] = Number(!a[1]);
+	a[2] = Number(!a[2]);
+	a[3] = Number(!a[3]);
 	stack.push(a);
 }
 
 function equality() {
-	const a = stack.pop();
-	const b = stack.pop();
-	a[0] = b[0] == a[0];
-	a[1] = b[1] == a[1];
-	a[2] = b[2] == a[2];
-	a[3] = b[3] == a[3];
+	const a = stack.pop()!;
+	const b = stack.pop()!;
+	a[0] = Number(b[0] == a[0]);
+	a[1] = Number(b[1] == a[1]);
+	a[2] = Number(b[2] == a[2]);
+	a[3] = Number(b[3] == a[3]);
 	stack.push(a);
 }
 
 function inequality() {
-	const a = stack.pop();
-	const b = stack.pop();
-	a[0] = b[0] != a[0];
-	a[1] = b[1] != a[1];
-	a[2] = b[2] != a[2];
-	a[3] = b[3] != a[3];
+	const a = stack.pop()!;
+	const b = stack.pop()!;
+	a[0] = Number(b[0] != a[0]);
+	a[1] = Number(b[1] != a[1]);
+	a[2] = Number(b[2] != a[2]);
+	a[3] = Number(b[3] != a[3]);
 	stack.push(a);
 }
 
 function greater() {
-	const a = stack.pop();
-	const b = stack.pop();
-	a[0] = b[0] > a[0];
-	a[1] = b[1] > a[1];
-	a[2] = b[2] > a[2];
-	a[3] = b[3] > a[3];
+	const a = stack.pop()!;
+	const b = stack.pop()!;
+	a[0] = Number(b[0] > a[0]);
+	a[1] = Number(b[1] > a[1]);
+	a[2] = Number(b[2] > a[2]);
+	a[3] = Number(b[3] > a[3]);
 	stack.push(a);
 }
 
 function greaterEqual() {
-	const a = stack.pop();
-	const b = stack.pop();
-	a[0] = b[0] >= a[0];
-	a[1] = b[1] >= a[1];
-	a[2] = b[2] >= a[2];
-	a[3] = b[3] >= a[3];
+	const a = stack.pop()!;
+	const b = stack.pop()!;
+	a[0] = Number(b[0] >= a[0]);
+	a[1] = Number(b[1] >= a[1]);
+	a[2] = Number(b[2] >= a[2]);
+	a[3] = Number(b[3] >= a[3]);
 	stack.push(a);
 }
 
 function less() {
-	const a = stack.pop();
-	const b = stack.pop();
-	a[0] = b[0] < a[0];
-	a[1] = b[1] < a[1];
-	a[2] = b[2] < a[2];
-	a[3] = b[3] < a[3];
+	const a = stack.pop()!;
+	const b = stack.pop()!;
+	a[0] = Number(b[0] < a[0]);
+	a[1] = Number(b[1] < a[1]);
+	a[2] = Number(b[2] < a[2]);
+	a[3] = Number(b[3] < a[3]);
 	stack.push(a);
 }
 
 function lessEqual() {
-	const a = stack.pop();
-	const b = stack.pop();
-	a[0] = b[0] <= a[0];
-	a[1] = b[1] <= a[1];
-	a[2] = b[2] <= a[2];
-	a[3] = b[3] <= a[3];
+	const a = stack.pop()!;
+	const b = stack.pop()!;
+	a[0] = Number(b[0] <= a[0]);
+	a[1] = Number(b[1] <= a[1]);
+	a[2] = Number(b[2] <= a[2]);
+	a[3] = Number(b[3] <= a[3]);
 	stack.push(a);
 }
 
 function add() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = b[0] + a[0];
 	a[1] = b[1] + a[1];
 	a[2] = b[2] + a[2];
@@ -426,8 +430,8 @@ function add() {
 }
 
 function subtract() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = b[0] - a[0];
 	a[1] = b[1] - a[1];
 	a[2] = b[2] - a[2];
@@ -436,8 +440,8 @@ function subtract() {
 }
 
 function multiply() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = b[0] * a[0];
 	a[1] = b[1] * a[1];
 	a[2] = b[2] * a[2];
@@ -446,8 +450,8 @@ function multiply() {
 }
 
 function divide() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = b[0] / a[0];
 	a[1] = b[1] / a[1];
 	a[2] = b[2] / a[2];
@@ -456,8 +460,8 @@ function divide() {
 }
 
 function modulo() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = b[0] % a[0];
 	a[1] = b[1] % a[1];
 	a[2] = b[2] % a[2];
@@ -466,7 +470,7 @@ function modulo() {
 }
 
 function negation() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = -a[0];
 	a[1] = -a[1];
 	a[2] = -a[2];
@@ -474,19 +478,19 @@ function negation() {
 	stack.push(a);
 }
 
-function swizzle(code) {
-	const a = stack.pop();
-	a[0] = a[(code >> 0) & 3];
-	a[1] = a[(code >> 2) & 3];
-	a[2] = a[(code >> 4) & 3];
-	a[3] = a[(code >> 6) & 3];
+function swizzle(code: number) {
+	const a = stack.pop()!;
+	a[0] = a[(code >> 0) & 3]!;
+	a[1] = a[(code >> 2) & 3]!;
+	a[2] = a[(code >> 4) & 3]!;
+	a[3] = a[(code >> 6) & 3]!;
 	stack.push(a);
 }
 
 // Functions
 
 function sin() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.sin(a[0]);
 	a[1] = Math.sin(a[1]);
 	a[2] = Math.sin(a[2]);
@@ -495,7 +499,7 @@ function sin() {
 }
 
 function cos() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.cos(a[0]);
 	a[1] = Math.cos(a[1]);
 	a[2] = Math.cos(a[2]);
@@ -504,7 +508,7 @@ function cos() {
 }
 
 function tan() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.tan(a[0]);
 	a[1] = Math.tan(a[1]);
 	a[2] = Math.tan(a[2]);
@@ -513,7 +517,7 @@ function tan() {
 }
 
 function frac() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = a[0] % 1;
 	a[1] = a[1] % 1;
 	a[2] = a[2] % 1;
@@ -522,7 +526,7 @@ function frac() {
 }
 
 function floor() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.floor(a[0]);
 	a[1] = Math.floor(a[1]);
 	a[2] = Math.floor(a[2]);
@@ -531,7 +535,7 @@ function floor() {
 }
 
 function ceil() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.ceil(a[0]);
 	a[1] = Math.ceil(a[1]);
 	a[2] = Math.ceil(a[2]);
@@ -540,7 +544,7 @@ function ceil() {
 }
 
 function saturate() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = clamp(a[0], 0, 1);
 	a[1] = clamp(a[1], 0, 1);
 	a[2] = clamp(a[2], 0, 1);
@@ -549,28 +553,28 @@ function saturate() {
 }
 
 function dot4() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = a[1] = a[2] = a[3] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
 	stack.push(a);
 }
 
 function dot3() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = a[1] = a[2] = a[3] = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 	stack.push(a);
 }
 
 function dot2() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = a[1] = a[2] = a[3] = a[0] * b[0] + a[1] * b[1];
 	stack.push(a);
 }
 
 function log() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.log(a[0]);
 	a[1] = Math.log(a[1]);
 	a[2] = Math.log(a[2]);
@@ -579,7 +583,7 @@ function log() {
 }
 
 function log2() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.log2(a[0]);
 	a[1] = Math.log2(a[1]);
 	a[2] = Math.log2(a[2]);
@@ -588,7 +592,7 @@ function log2() {
 }
 
 function log10() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.log10(a[0]);
 	a[1] = Math.log10(a[1]);
 	a[2] = Math.log10(a[2]);
@@ -597,7 +601,7 @@ function log10() {
 }
 
 function exp() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.exp(a[0]);
 	a[1] = Math.exp(a[1]);
 	a[2] = Math.exp(a[2]);
@@ -606,7 +610,7 @@ function exp() {
 }
 
 function exp2() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = 2 ** a[0];
 	a[1] = 2 ** a[1];
 	a[2] = 2 ** a[2];
@@ -615,7 +619,7 @@ function exp2() {
 }
 
 function sqrt() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.sqrt(a[0]);
 	a[1] = Math.sqrt(a[1]);
 	a[2] = Math.sqrt(a[2]);
@@ -624,7 +628,7 @@ function sqrt() {
 }
 
 function rsqrt() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = 1 / Math.sqrt(a[0]);
 	a[1] = 1 / Math.sqrt(a[1]);
 	a[2] = 1 / Math.sqrt(a[2]);
@@ -633,7 +637,7 @@ function rsqrt() {
 }
 
 function sign() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.sign(a[0]);
 	a[1] = Math.sign(a[1]);
 	a[2] = Math.sign(a[2]);
@@ -642,7 +646,7 @@ function sign() {
 }
 
 function abs() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = Math.abs(a[0]);
 	a[1] = Math.abs(a[1]);
 	a[2] = Math.abs(a[2]);
@@ -651,8 +655,8 @@ function abs() {
 }
 
 function pow() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = b[0] ** a[0];
 	a[1] = b[1] ** a[1];
 	a[2] = b[2] ** a[2];
@@ -661,8 +665,8 @@ function pow() {
 }
 
 function step() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = b[0] >= a[0] ? 1 : 0;
 	a[1] = b[1] >= a[1] ? 1 : 0;
 	a[2] = b[2] >= a[2] ? 1 : 0;
@@ -670,15 +674,15 @@ function step() {
 	stack.push(a);
 }
 
-function _smoothstep(min, max, x) {
+function _smoothstep(min: number, max: number, x: number) {
 	x = clamp((x - min) / (max - min), 0.0, 1.0);
 	return x * x * (3 - 2 * x);
 }
 
 function smoothstep() {
-	const x = stack.pop();
-	const max = stack.pop();
-	const min = stack.pop();
+	const x = stack.pop()!;
+	const max = stack.pop()!;
+	const min = stack.pop()!;
 	x[0] = _smoothstep(min[0], max[0], x[0]);
 	x[1] = _smoothstep(min[1], max[1], x[1]);
 	x[2] = _smoothstep(min[2], max[2], x[2]);
@@ -687,8 +691,8 @@ function smoothstep() {
 }
 
 function min() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = Math.min(b[0], a[0]);
 	a[1] = Math.min(b[1], a[1]);
 	a[2] = Math.min(b[2], a[2]);
@@ -697,8 +701,8 @@ function min() {
 }
 
 function max() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = Math.max(b[0], a[0]);
 	a[1] = Math.max(b[1], a[1]);
 	a[2] = Math.max(b[2], a[2]);
@@ -707,7 +711,7 @@ function max() {
 }
 
 function SrgbLinearToGamma() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	//saturate
 	a[0] = Math.min(Math.max(a[0], 0), 1);
 	a[1] = Math.min(Math.max(a[1], 0), 1);
@@ -723,7 +727,7 @@ function SrgbLinearToGamma() {
 }
 
 function SrgbGammaToLinear() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	//saturate
 	a[0] = Math.min(Math.max(a[0], 0), 1);
 	a[1] = Math.min(Math.max(a[1], 0), 1);
@@ -739,8 +743,8 @@ function SrgbGammaToLinear() {
 }
 
 function random() {
-	const a = stack.pop();
-	const b = stack.pop();
+	const a = stack.pop()!;
+	const b = stack.pop()!;
 	a[0] = getRandomArbitrary(b[0], a[0]);
 	a[1] = getRandomArbitrary(b[1], a[1]);
 	a[2] = getRandomArbitrary(b[2], a[2]);
@@ -749,19 +753,19 @@ function random() {
 }
 
 function normalize() {
-	const a = stack.pop();
-	vec3.normalize(a, a);
+	const a = stack.pop()!;
+	vec4.normalize(a, a);
 	stack.push(a);
 }
 
 function length() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = a[1] = a[2] = a[3] = Math.hypot(a[0], a[1], a[2]);
 	stack.push(a);
 }
 
 function sqr() {
-	const a = stack.pop();
+	const a = stack.pop()!;
 	a[0] = a[0] * a[0];
 	a[1] = a[1] * a[1];
 	a[2] = a[2] * a[2];
