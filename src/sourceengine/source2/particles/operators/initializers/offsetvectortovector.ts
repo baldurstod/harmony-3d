@@ -8,6 +8,9 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const v = vec3.create();
 
+/*
+DISABLED: replaced by C_INIT_InitVec
+//Create an InitVec that mimics the old 'Offset Vector' operator
 export class OffsetVectorToVector extends Operator {
 	outputMin = vec3.create();
 	outputMax = vec3.fromValues(1, 1, 1);
@@ -39,3 +42,4 @@ export class OffsetVectorToVector extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_OffsetVectorToVector', OffsetVectorToVector);
+*/

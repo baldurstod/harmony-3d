@@ -7,6 +7,9 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
 const tempVec3 = vec3.create();
 
+/*
+DISABLED: replaced by C_INIT_InitVec
+//Create an InitVec that mimics the old 'Random Vector' operator
 export class RandomVector extends Operator {
 	vecMin = vec3.create();
 	vecMax = vec3.create();
@@ -31,3 +34,4 @@ export class RandomVector extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RandomVector', RandomVector);
+*/

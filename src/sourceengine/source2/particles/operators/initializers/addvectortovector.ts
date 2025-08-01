@@ -9,6 +9,9 @@ import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 const va = vec3.create();
 const vb = vec3.create();
 
+/*
+DISABLED: replaced by C_INIT_InitVec
+//Create an InitVec that mimics the old 'Add Vector to Vector' operator
 export class AddVectorToVector extends Operator {
 	#fieldOutput = PARTICLE_FIELD_POSITION;
 	#fieldInput = PARTICLE_FIELD_POSITION;
@@ -49,3 +52,4 @@ export class AddVectorToVector extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_AddVectorToVector', AddVectorToVector);
+*/

@@ -18,10 +18,9 @@ const DEFAULT_SPEED_RAND_EXP = 1;// TODO: check default value
 const DEFAULT_LOCAL_COORDS = false;// TODO: check default value
 
 export class CreateWithinSphere extends Operator {
-	#distanceBias = vec3.fromValues(1, 1, 1);// TODO: check default value
-	#distanceBiasAbs = vec3.create();// TODO: check default value
+	#distanceBiasAbs = vec3.create();
 	#speedRandExp = DEFAULT_SPEED_RAND_EXP;
-	#localCoords = DEFAULT_LOCAL_COORDS;
+	#localCoords = DEFAULT_LOCAL_COORDS;//bias in local system
 
 	_paramChanged(paramName: string, param: OperatorParam): void {
 		switch (paramName) {
@@ -37,10 +36,9 @@ export class CreateWithinSphere extends Operator {
 				param.getValueAsVec3(this.#distanceBiasAbs);
 				break;
 			case 'm_fSpeedRandExp':
-				console.error('do this param', paramName, param);
-				this.#speedRandExp = param;
+				this.#speedRandExp = param.getValueAsNumber() ?? DEFAULT_SPEED_RAND_EXP;
 				break;
-			case 'm_bLocalCoords'://TODO: mutualize
+			case 'm_bLocalCoords':
 				this.#localCoords = param.getValueAsBool() ?? DEFAULT_LOCAL_COORDS;
 				break;
 			default:
@@ -52,10 +50,10 @@ export class CreateWithinSphere extends Operator {
 		const localCoordinateSystemSpeedMin = (this.getParamVectorValue(createWithinSphereSpeedMin, 'm_LocalCoordinateSystemSpeedMin', particle) ?? DEFAULT_SPEED) as vec3;
 		const localCoordinateSystemSpeedMax = (this.getParamVectorValue(createWithinSphereSpeedMax, 'm_LocalCoordinateSystemSpeedMax', particle) ?? DEFAULT_SPEED) as vec3;
 		const m_vecDistanceBias = (this.getParamVectorValue(createWithinSphereDistanceBias, 'm_vecDistanceBias', particle) ?? DEFAULT_DISTANCE_BIAS) as vec3;
-		const radiusMin = this.getParamScalarValue('m_fRadiusMin') ?? 0;
-		const radiusMax = this.getParamScalarValue('m_fRadiusMax') ?? 0;
-		const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;
-		const speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;
+		const radiusMin = this.getParamScalarValue('m_fRadiusMin') ?? 0;// TODO: check default value
+		const radiusMax = this.getParamScalarValue('m_fRadiusMax') ?? 0;// TODO: check default value
+		const speedMin = this.getParamScalarValue('m_fSpeedMin') ?? 0;// TODO: check default value
+		const speedMax = this.getParamScalarValue('m_fSpeedMax') ?? 0;// TODO: check default value
 
 		const m_vecDistanceBiasAbs = this.#distanceBiasAbs;
 		//const controlPointNumber = this.getParameter('control_point_number');

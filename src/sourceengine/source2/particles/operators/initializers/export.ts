@@ -1,4 +1,4 @@
-export { AddVectorToVector } from './addvectortovector';
+//export { AddVectorToVector } from './addvectortovector';
 export { AgeNoise } from './agenoise';
 export { CreateFromParentParticles } from './createfromparentparticles';
 export { CreateOnModel } from './createonmodel';
@@ -15,7 +15,7 @@ export { InitSkinnedPositionFromCPSnapshot } from './initskinnedpositionfromcpsn
 export { InitVec } from './initvec';
 export { NormalAlignToCP } from './normalaligntocp';
 export { NormalOffset } from './normaloffset';
-export { OffsetVectorToVector } from './offsetvectortovector';
+//export { OffsetVectorToVector } from './offsetvectortovector';
 export { PositionOffset } from './positionoffset';
 export { PositionWarp } from './positionwarp';
 export { RadiusFromCPObject } from './radiusfromcpobject';
@@ -29,7 +29,7 @@ export { RandomColor } from './randomcolor';
 export { RandomSecondSequence } from './randomsecondsequence';
 export { RandomSequence } from './randomsequence';
 //export { RandomTrailLength } from './randomtraillength';
-export { RandomVector } from './randomvector';
+//export { RandomVector } from './randomvector';
 //export { RandomYaw } from './randomyaw';
 export { RandomYawFlip } from './randomyawflip';
 //export { RemapCPtoScalar as Source2InitRemapCPtoScalar } from './remapcptoscalar';
