@@ -3,6 +3,9 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+/*
+DISABLED: replaced by C_INIT_InitFloat
+//Create an InitFloat that mimics the old 'Random Alpha' operator
 export class RandomAlpha extends Operator {
 	alphaMin = 255;
 	alphaMax = 255;
@@ -32,3 +35,4 @@ export class RandomAlpha extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RandomAlpha', RandomAlpha);
+*/

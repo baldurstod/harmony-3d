@@ -4,6 +4,9 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+/*
+Disabled: replaced by C_INIT_InitFloat
+/Create an InitFloat that mimics the old 'random scalar' operator
 export class RandomScalar extends Operator {
 	min = 0;
 	max = 0;
@@ -31,3 +34,4 @@ export class RandomScalar extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RandomScalar', RandomScalar);
+*/

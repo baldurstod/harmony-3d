@@ -3,6 +3,9 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+/*
+DISABLED: replaced by C_INIT_InitFloat
+//Create an InitFloat that mimics the old 'random radius' operator
 export class RandomRadius extends Operator {
 	radiusMin = 1;
 	radiusMax = 1;
@@ -29,3 +32,4 @@ export class RandomRadius extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RandomRadius', RandomRadius);
+*/

@@ -3,6 +3,9 @@ import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 import { RegisterSource2ParticleOperator } from '../source2particleoperators';
 
+/*
+DISABLED: replaced by C_INIT_InitFloat
+//Create an InitFloat that mimics the old 'lifetime random' operator
 export class RandomLifeTime extends Operator {
 	lifetimeMin = 0;
 	lifetimeMax = 0;
@@ -29,3 +32,4 @@ export class RandomLifeTime extends Operator {
 	}
 }
 RegisterSource2ParticleOperator('C_INIT_RandomLifeTime', RandomLifeTime);
+*/
