@@ -396,10 +396,10 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 	buildContextMenu() {
 		const skins = this.sourceModel.getSkinList();
 		const skinMenu = [];
-		for (const skin of skins) {
+		for (const [skinId, skin] of skins.entries()) {
 			const item: any = {};
 			item.name = skin;
-			item.f = () => this.skin = skin;
+			item.f = () => this.skin = skinId;
 			skinMenu.push(item);
 		}
 		return Object.assign(super.buildContextMenu(), {

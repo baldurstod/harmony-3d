@@ -4,6 +4,7 @@ export class Source2Sequence {
 	frameCount: number;
 	activities;
 	animNames;
+
 	constructor(name, params: any = {}) {
 		this.name = name;
 		this.fps = params.fps ?? 30;

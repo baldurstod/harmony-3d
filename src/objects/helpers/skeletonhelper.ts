@@ -104,7 +104,7 @@ export class SkeletonHelper extends Entity {
 
 			if (!boneLine) {
 				boneLine = new Line({ material: this.#lineMaterial, parent: this });
-				boneLine.properties.set('bone', bone);
+				boneLine.properties.setObject('bone', bone);
 				this.#lines.set(bone, boneLine);
 				this.addChild(boneLine);
 			}
@@ -115,7 +115,7 @@ export class SkeletonHelper extends Entity {
 			const boneParent = bone.parent;
 			if ((boneParent as Bone)?.isBone) {
 				boneLine.start = boneParent.getWorldPosition(/*TODO: optimize*/);
-				boneLine.properties.set('boneParent', boneParent);
+				boneLine.properties.setObject('boneParent', boneParent);
 			}
 		}
 	}
@@ -150,7 +150,7 @@ export class SkeletonHelper extends Entity {
 		const closest: Line = this.#pickBone(event);
 		this.#highlit(closest);
 		if (closest) {
-			let bone: Bone = closest.properties.get('bone');
+			let bone: Bone = closest.properties.getObject('bone') as Bone;
 			if (closest.isLine) {
 				bone = (bone?.parent as Bone/*TODO case where parent is not Bone*/) ?? bone;
 			}

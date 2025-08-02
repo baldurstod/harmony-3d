@@ -1,3 +1,4 @@
+import { vec4 } from 'gl-matrix';
 import { Kv3Type, Kv3Value, Kv3ValueType } from './kv3value';
 
 /**
@@ -82,6 +83,18 @@ export class Kv3Element {
 		const prop = this.#properties.get(name);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isNumberArray()) {
 			return (prop as Kv3Value).getValue() as number[];
+		}
+		return null;
+	}
+
+	getValueAsVec4(name: string, out: vec4): vec4 | null {
+		const prop = this.#properties.get(name);
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isNumberArray()) {
+			const v = (prop as Kv3Value).getValue() as number[];
+			if (v.length == 4) {
+				vec4.copy(out, v as vec4);
+				return out;
+			}
 		}
 		return null;
 	}
@@ -204,6 +217,14 @@ export class Kv3Element {
 		return null;
 	}
 
+	getSubValueAsUint8Array(path: string): Uint8Array | null {
+		const prop = this.getSubValue(path);
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.Blob) {
+			return (prop as Kv3Value).getValue() as Uint8Array;
+		}
+		return null;
+	}
+
 	getSubValueAsNumber(path: string): number | null {
 		const prop = this.getSubValue(path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isNumber()) {
@@ -212,10 +233,49 @@ export class Kv3Element {
 		return null;
 	}
 
+	getSubValueAsElement(path: string): Kv3Element | null {
+		const prop = this.getSubValue(path);
+		if ((prop as Kv3Element)?.isKv3Element) {
+			return (prop as Kv3Element);
+		}
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.Element) {
+			return (prop as Kv3Value).getValue() as Kv3Element;
+		}
+		return null;
+	}
+
+	getSubValueAsStringArray(path: string): string[] | null {
+		const prop = this.getSubValue(path);
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isArray() && (prop as Kv3Value).getSubType() == Kv3Type.String) {
+			return (prop as Kv3Value).getValue() as string[];
+		}
+		return null;
+	}
+
 	getSubValueAsNumberArray(path: string): number[] | null {
 		const prop = this.getSubValue(path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isNumberArray()) {
 			return (prop as Kv3Value).getValue() as number[];
+		}
+		return null;
+	}
+
+	getSubValueAsVec4(path: string, out: vec4): vec4 | null {
+		const prop = this.getSubValue(path);
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isNumberArray()) {
+			const v = (prop as Kv3Value).getValue() as number[];
+			if (v.length == 4) {
+				vec4.copy(out, v as vec4);
+				return out;
+			}
+		}
+		return null;
+	}
+
+	getSubValueAsElementArray(path: string): Kv3Element[] | null {
+		const prop = this.getSubValue(path);
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isArray() && (prop as Kv3Value).getSubType() == Kv3Type.Element) {
+			return (prop as Kv3Value).getValue() as Kv3Element[];
 		}
 		return null;
 	}

@@ -18,7 +18,7 @@ export class Source2FileBlock {
 	indices?: any/*TODO: create struct*/[];
 	vertices?: any/*TODO: create struct*/[];
 	keyValue?: Kv3File;
-	structs?: never;//TODO: remove me
+	//structs?: never;//TODO: remove me
 
 	constructor(file: Source2File, type: string/*TODO: create enum*/, offset: number, length: number) {
 		this.file = file;

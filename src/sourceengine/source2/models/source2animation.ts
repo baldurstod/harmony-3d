@@ -1,4 +1,5 @@
 import { Kv3Element } from '../../common/keyvalue/kv3element';
+import { Source2SeqGroup } from '../animations/source2seqgroup';
 import { Source2File } from '../loaders/source2file';
 import { Source2AnimationDesc } from './source2animationdesc';
 import { Source2AnimeDecoder, Source2AnimGroup } from './source2animgroup';
@@ -8,15 +9,13 @@ export class Source2Animation {
 	#animArray: Kv3Element[] = [];
 	#animNames = new Map<string, Source2AnimationDesc>();
 	#animGroup: Source2AnimGroup;
-	filePath;
 	file?: Source2File;
 	#decoderArray: Source2AnimeDecoder[] = [];
 	#segmentArray: Kv3Element[] = [];
 	//#frameData;
 
-	constructor(animGroup: Source2AnimGroup, filePath: string) {
+	constructor(animGroup: Source2AnimGroup) {
 		this.#animGroup = animGroup;
-		this.filePath = filePath;
 	}
 
 	setFile(sourceFile: Source2File) {
@@ -73,14 +72,18 @@ export class Source2Animation {
 	async getAnimations(animations = new Set<string>()) {
 		for (let i = 0; i < this.#animArray.length; i++) {
 			const anim = this.#animArray[i];
-			animations.add(anim.m_name);
-			for (const activity of anim.m_activityArray ?? []) {
-				animations.add(activity.m_name);
+			animations.add(anim.getSubValueAsString('m_name'));
+			const activityArray = anim.getSubValueAsElementArray('m_activityArray');
+			if (activityArray) {
+				for (const activity of activityArray) {
+					animations.add(activity.getSubValueAsString('m_name'));
+				}
 			}
 		}
 		return animations;
 	}
 
+	/* disabled for now
 	getAnimationByActivity(activityName, activityModifiers) {
 		if (!this.#animArray) {
 			return [,];
@@ -134,6 +137,7 @@ export class Source2Animation {
 		}
 		return [bestMatch, bestScore];
 	}
+	*/
 
 	getAnimationsByActivity(activityName: string) {
 		const anims = [];

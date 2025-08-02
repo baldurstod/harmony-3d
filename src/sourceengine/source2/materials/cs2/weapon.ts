@@ -42,9 +42,9 @@ export class Source2CsgoWeapon extends Source2Material {
 		return uniforms;
 	}
 
-	getTextureUniforms(): Map<string, string[]>[] {
+	getTextureUniforms(): Map<string, [string, string]>[] {
 		const uniforms = super.getTextureUniforms();
-		const m = new Map<string, string[]>();
+		const m = new Map<string, [string, string]>();
 
 		for (let i = 0; i < STICKER_COUNT; i++) {
 			m.set(`g_tHoloSpectrumSticker${i}`, [`holoSpectrumSticker${i}Map`, `USE_HOLO_SPECTRUM_STICKER${i}_MAP`]);

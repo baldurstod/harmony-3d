@@ -34,23 +34,25 @@ export class Source2AnimGroup {
 		this.file = sourceFile;
 
 		let localAnimArray: string[] | null;
-		let decodeKey;
-		const animationGroupData = sourceFile.getBlockStruct('DATA', 'AnimationGroupResourceData_t');
+		let decodeKey: Kv3Element;
+		const animationGroupData = sourceFile.getBlockStruct('DATA', 'AnimationGroupResourceData_t') as Kv3Element;
 
 		let directHSeqGroup;
 		if (animationGroupData) {
-			localAnimArray = animationGroupData.m_localHAnimArray;
-			decodeKey = animationGroupData.m_decodeKey;
-			directHSeqGroup = animationGroupData.m_directHSeqGroup;
+			// TODO: this part is not tested find a test case
+			localAnimArray = animationGroupData.getValueAsResourceArray('m_localHAnimArray');
+			decodeKey = animationGroupData.getSubValueAsElement('m_decodeKey');
+			directHSeqGroup = animationGroupData.getSubValueAsElement('m_directHSeqGroup');
 		} else {
 			localAnimArray = sourceFile.getBlockStructAsResourceArray('DATA', 'm_localHAnimArray');
-			decodeKey = sourceFile.getBlockStruct('DATA', 'm_decodeKey');
+			decodeKey = sourceFile.getBlockStruct('DATA', 'm_decodeKey') as Kv3Element/*TODO: check type*/;
 			directHSeqGroup = sourceFile.getBlockStruct('DATA', 'm_directHSeqGroup');
 		}
 
 		this.decoderArray = kv3ElementToDecoderArray(sourceFile.getBlockStructAsElementArray('ANIM', 'm_decoderArray'));
 
 		if (directHSeqGroup) {
+			// TODO: this part is not tested find a test case
 			(async () => {
 				this.directHSeqGroup = await getSequenceGroup(this.repository, directHSeqGroup, this);
 			})();
@@ -59,7 +61,7 @@ export class Source2AnimGroup {
 
 		const anims = sourceFile.getBlockKeyValues('ANIM');
 		if (anims) {
-			const loadedAnim = new Source2Animation(this, '');
+			const loadedAnim = new Source2Animation(this);
 			loadedAnim.setAnimDatas(anims);
 			this._changemyname = this._changemyname || [];
 			this._changemyname.push(loadedAnim);
@@ -272,7 +274,7 @@ export async function loadAnim(repository: string, animName: string, animGroup: 
 	//animName = repository + animName;
 	//this.animName = animName;
 
-	const anim = new Source2Animation(animGroup, animName);
+	const anim = new Source2Animation(animGroup);
 	await getVanim(repository, animName, anim);
 
 	return anim;

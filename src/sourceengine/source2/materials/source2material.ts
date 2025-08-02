@@ -25,7 +25,7 @@ const UNIFORMS = new Map([
 	['g_flMaterialCloakFactor', 'g_flMaterialCloakFactor'],
 ]);
 
-const TEXTURE_UNIFORMS = new Map([
+const TEXTURE_UNIFORMS: Map<string, [string, string]> = new Map([
 	['g_tColor', ['colorMap', 'USE_COLOR_MAP']],
 	['TextureColor', ['colorMap', 'USE_COLOR_MAP']],
 	['g_tNormal', ['normalMap', 'USE_NORMAL_MAP']],
@@ -71,6 +71,8 @@ type ProxyParams = Record<string, any>;
 export class Source2Material extends Material {
 	#source2File?: Source2File;
 	repository: string;
+	#detailTexCoordOffset = vec4.create();
+	#detailTexCoordScale = vec4.create();
 
 	constructor(repository: string, source2File?: Source2File) {
 		super();
@@ -139,8 +141,8 @@ export class Source2Material extends Material {
 		}
 
 		const detailBlendMode = this.getIntParam('F_DETAIL');
-		if (detailBlendMode !== null) {
-			this.setDefine('DETAIL_BLEND_MODE', detailBlendMode);
+		if (detailBlendMode != null) {
+			this.setDefine('DETAIL_BLEND_MODE', String(detailBlendMode));
 		} else {
 			this.removeDefine('DETAIL_BLEND_MODE');
 		}
@@ -151,8 +153,8 @@ export class Source2Material extends Material {
 
 
 
-		this.uniforms['g_vDetailTexCoordOffset'] = this.getVectorParam('g_vDetailTexCoordOffset');
-		this.uniforms['g_vDetailTexCoordScale'] = this.getVectorParam('g_vDetailTexCoordScale');
+		this.uniforms['g_vDetailTexCoordOffset'] = this.getVectorParam('g_vDetailTexCoordOffset', this.#detailTexCoordOffset);
+		this.uniforms['g_vDetailTexCoordScale'] = this.getVectorParam('g_vDetailTexCoordScale', this.#detailTexCoordScale);
 		this.uniforms['g_vDetail1ColorTint'] = vec4.fromValues(1, 1, 1, 1);
 		this.uniforms['g_vDetail2ColorTint'] = vec4.fromValues(1, 1, 1, 1);
 		this.uniforms['g_vColorTint'] = vec4.fromValues(1, 1, 1, 0);
@@ -209,8 +211,7 @@ export class Source2Material extends Material {
 			//TODO: use getMaterialResourceData()
 			const textures = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_textureParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_textureParams');
 			if (textures) {
-				for (let textureIndex = 0; textureIndex < textures.length; textureIndex++) {
-					const texture = textures[textureIndex];
+				for (const texture of textures) {
 					if (texture.getValueAsString('m_name') == textureName) {
 						return texture.getValueAsResource('m_pValue');
 					}
@@ -334,7 +335,7 @@ export class Source2Material extends Material {
 		return [UNIFORMS];
 	}
 
-	getTextureUniforms(): Map<string, string[]>[] {
+	getTextureUniforms(): Map<string, [string, string]>[] {
 		return [TEXTURE_UNIFORMS];
 	}
 
@@ -353,7 +354,7 @@ export class Source2Material extends Material {
 		if (paramName.startsWith('g_f')) {
 			return this.getFloatParam(paramName);
 		} else if (paramName.startsWith('g_v')) {
-			return this.getVectorParam(paramName);
+			return this.getVectorParam(paramName, vec4.create()/*TODO: optimize*/);
 		} else if (paramName.startsWith('g_n')) {
 			return this.getIntParam(paramName);
 		}/* else if (paramName.startsWith('g_t')) {
@@ -368,63 +369,65 @@ export class Source2Material extends Material {
 	}
 
 	getIntParam(intName: string) {
-		if (this.#source2File) {
-			const ints = this.#source2File.getBlockStructAsNumberArray('DATA', 'MaterialResourceData_t.m_intParams') ?? this.#source2File.getBlockStructAsNumberArray('DATA', 'm_intParams');
-			if (ints) {
-				for (let intIndex = 0; intIndex < ints.length; intIndex++) {
-					const fl = ints[intIndex];
-					if (fl.m_name == intName) {
-						return fl.m_nValue;
-					}
+		if (!this.#source2File) {
+			return null;
+		}
+
+		const ints = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_intParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_intParams');
+		if (ints) {
+			for (const int of ints) {
+				if (int.getSubValueAsString('m_name') == intName) {
+					return int.getSubValueAsNumber('m_nValue');
 				}
 			}
 		}
-		return null;
 	}
 
 	getFloatParam(floatName: string) {
-		if (this.#source2File) {
-			const floats = this.#source2File.getBlockStruct('DATA', 'MaterialResourceData_t.m_floatParams') ?? this.#source2File.getBlockStruct('DATA', 'm_floatParams');
-			if (floats) {
-				for (let floatIndex = 0; floatIndex < floats.length; floatIndex++) {
-					const fl = floats[floatIndex];
-					if (fl.m_name == floatName) {
-						return fl.m_flValue;
-					}
+		if (!this.#source2File) {
+			return null;
+		}
+		const floats = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_floatParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_floatParams');
+		if (floats) {
+			for (const fl of floats) {
+				if (fl.getSubValueAsString('m_name') == floatName) {
+					return fl.getSubValueAsNumber('m_nValue');
 				}
 			}
 		}
-		return null;
 	}
 
-	getVectorParam(vectorName: string) {
+	getVectorParam(vectorName: string, out: vec4): vec4 {
 		if (this.#source2File) {
-			const vectors = this.#source2File.getBlockStruct('DATA', 'MaterialResourceData_t.m_vectorParams') ?? this.#source2File.getBlockStruct('DATA', 'm_vectorParams');
+			const vectors = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_vectorParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_vectorParams');
 			if (vectors) {
-				for (let vectorIndex = 0; vectorIndex < vectors.length; vectorIndex++) {
-					const vector = vectors[vectorIndex];
-					if (vector.m_name == vectorName) {
-						return vector.m_value;
+				for (const vector of vectors) {
+					if (vector.getSubValueAsString('m_name') == vectorName) {
+						vector.getSubValueAsVec4('m_nValue', out);
 					}
 				}
 			}
 		}
-		return vec4.create();
+		return out;
 	}
 
-	getDynamicParam(dynamicName: string) {
-		if (this.#source2File) {
-			const dynamicParams = this.#source2File.getBlockStruct('DATA', 'm_dynamicParams');// || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
-			if (dynamicParams) {
-				for (let dynamicIndex = 0; dynamicIndex < dynamicParams.length; dynamicIndex++) {
-					const dynamicParam = dynamicParams[dynamicIndex];
-					throw 'TODO: check strict type getDynamicParam';
-					if (dynamicParam.m_name == dynamicName) {
-						return executeDynamicExpression(dynamicParam.m_value, this.#source2File.getBlockStruct('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStruct('DATA', 'm_renderAttributesUsed'));
-					}
+	getDynamicParam(dynamicName: string): vec4 | undefined {
+		if (!this.#source2File) {
+			return;
+		}
+		const dynamicParams = this.#source2File.getBlockStructAsElementArray('DATA', 'm_dynamicParams');// || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
+		if (!dynamicParams) {
+			return;
+		}
+		for (const dynamicParam of dynamicParams) {
+			if (dynamicParam.getSubValueAsString('m_name') == dynamicName) {
+				const bytes = dynamicParam.getSubValueAsUint8Array('m_value');
+				if (bytes) {
+
+					return executeDynamicExpression(bytes, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []);
 				}
 			}
 		}
-		return null;
+		return;
 	}
 }

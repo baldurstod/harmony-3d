@@ -1,5 +1,6 @@
-import { quat, vec3, vec4 } from 'gl-matrix';
+import { quat, vec3 } from 'gl-matrix';
 import { BufferGeometry } from '../../../geometry/buffergeometry';
+import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Source2Animations } from '../animations/source2animations';
 import { Source2SeqGroup } from '../animations/source2seqgroup';
 import { Source2File } from '../loaders/source2file';
@@ -9,8 +10,6 @@ import { Source2AnimationDesc } from './source2animationdesc';
 import { Source2AnimGroup } from './source2animgroup';
 import { Source2ModelAttachment } from './source2modelattachment';
 import { Source2ModelInstance } from './source2modelinstance';
-import { Kv3Element } from '../../common/keyvalue/kv3element';
-import { Kv3Value } from '../../common/keyvalue/kv3value';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
@@ -25,7 +24,7 @@ export type BodyPartMesh = BufferGeometry[];
 
 export class Source2Model {
 	#internalAnimGroup?: Source2AnimGroup;
-	#includeModels = [];
+	#includeModels: Source2Model[] = [];
 	repository: string;
 	vmdl: Source2File;
 	requiredLod = 0;
@@ -174,19 +173,20 @@ export class Source2Model {
 		const materialGroups = this.vmdl.getBlockStructAsElementArray('DATA', 'm_materialGroups');
 		if (materialGroups) {
 			const materials = materialGroups[skin];
-			if ((materials as Kv3Element)?.isKv3Element) {
-				return (materials as Kv3Element).getValueAsResourceArray('m_materials');
-			}
+			return materials.getValueAsResourceArray('m_materials');
 		}
 		return null;
 	}
 
-	getSkinList() {
-		const skinList = [];
-		const materialGroups = this.vmdl.getPermModelData('m_materialGroups');
+	getSkinList(): string[] {
+		const skinList: string[] = [];
+		const materialGroups = this.vmdl.getBlockStructAsElementArray('DATA', 'm_materialGroups');
 		if (materialGroups) {
-			for (let skinIndex = 0; skinIndex < materialGroups.length; skinIndex++) {
-				skinList.push(materialGroups[skinIndex].m_name);
+			for (const materialGroup of materialGroups) {
+				const skin = materialGroup.getSubValueAsString('m_name');
+				if (skin !== null) {
+					skinList.push(skin);
+				}
 			}
 		}
 		return skinList;
@@ -194,10 +194,10 @@ export class Source2Model {
 
 	async loadAnimGroups() {
 		if (this.vmdl) {
-			const m_refAnimGroups = this.vmdl.getPermModelData('m_refAnimGroups');
+			const m_refAnimGroups = this.vmdl.getBlockStructAsArray('DATA', 'm_refAnimGroups');
 			if (m_refAnimGroups) {
-				for (let meshIndex = 0; meshIndex < m_refAnimGroups.length; meshIndex++) {
-					const meshName = m_refAnimGroups[meshIndex];
+				for (const meshName of m_refAnimGroups) {
+					// TODO: not tested: find a test case
 					const animGroup = await AnimManager.getAnimGroup(this, this.repository, meshName);
 					this.animGroups.add(animGroup);
 				}
@@ -219,7 +219,7 @@ export class Source2Model {
 
 				const anims = sourceFile.getBlockKeyValues('ANIM');
 				if (anims) {
-					const loadedAnim = new Source2Animation(animGroup, '');
+					const loadedAnim = new Source2Animation(animGroup);
 					loadedAnim.setAnimDatas(anims);
 					animGroup._changemyname = animGroup._changemyname || [];
 					animGroup._changemyname.push(loadedAnim);
@@ -239,11 +239,11 @@ export class Source2Model {
 		//return refAnimIncludeModels ?? [];
 	}
 
-	addIncludeModel(includeModel) {
+	addIncludeModel(includeModel: Source2Model) {
 		this.#includeModels.push(includeModel);
 	}
 
-	getAnim(activityName, activityModifiers) {
+	getAnim(activityName: string, activityModifiers: Set<string>) {
 		const animations = this.getAnimationsByActivity(activityName);
 
 		for (const model of this.#includeModels) {
@@ -251,6 +251,7 @@ export class Source2Model {
 		}
 
 		return animations.getBestAnimation(activityName, activityModifiers);
+		/*
 		let bestMatch = animations.getAnimation(activityName);
 		let bestScore = bestMatch ? 0 : -1;
 		animations.getAnimation(activityName);
@@ -258,7 +259,7 @@ export class Source2Model {
 
 			/*if (animDesc.matchModifiers(activityName, activityModifiers)) {
 				return animDesc;
-			}*/
+			}* /
 			const score = animDesc.matchModifiers(activityName, activityModifiers);
 			if (score > bestScore) {
 				bestMatch = animDesc;
@@ -266,6 +267,7 @@ export class Source2Model {
 			}
 		}
 		return bestMatch;
+		*/
 
 		// Fallback to no modifier
 		/*for (let animDesc of animations) {
@@ -290,7 +292,7 @@ export class Source2Model {
 		}
 	}
 
-	getAnimationsByActivity(activityName, animations = new Source2Animations()) {
+	getAnimationsByActivity(activityName: string, animations = new Source2Animations()) {
 		const anims = [];
 		if (this.#seqGroup) {
 			anims.push(...this.#seqGroup.getAnimationsByActivity(activityName));
@@ -355,7 +357,7 @@ export class Source2Model {
 							const influenceRotation = influenceRotations[influenceIndex];
 							if (influenceName) {
 								source2ModelAttachment.influenceNames.push(influenceName.toLowerCase());
-								source2ModelAttachment.influenceWeights.push(influenceWeight);
+								source2ModelAttachment.influenceWeights.push(influenceWeight!);
 								source2ModelAttachment.influenceOffsets.push(vec3.clone(influenceOffset as vec3));
 								source2ModelAttachment.influenceRotations.push(quat.clone(influenceRotation as quat));
 							}
@@ -366,7 +368,7 @@ export class Source2Model {
 		}
 	}
 
-	getAnimationByName(animName) {
+	getAnimationByName(animName: string) {
 		//return this.#internalAnimGroup?.getAnimationByName(animName);
 		for (const animGroup of this.animGroups) {
 			const anim = animGroup.getAnimationByName(animName);

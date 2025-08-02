@@ -11,7 +11,7 @@ const HASH_SEED = 0x31415926;
 const hashes = new Map<number, string>();
 hashes.set(murmurhash2_32_gc('time', HASH_SEED), 'time');
 
-export function executeDynamicExpression(byteCode: Uint8Array, renderAttributes: string[] = []): vec4 | undefined {
+export function executeDynamicExpression(byteCode: Uint8Array, renderAttributes: string[]): vec4 | undefined {
 	let pointer = -1;
 	const storage = new Map<number, vec4>();
 	stack = [];

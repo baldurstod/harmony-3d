@@ -3,7 +3,7 @@ import { TESTING } from '../../../buildoptions';
 import { decodeLz4 } from '../../../utils/lz4';
 import { Kv3Element, Source2Kv3Value, SourceKv3String } from '../../common/keyvalue/kv3element';
 import { Kv3File } from '../../common/keyvalue/kv3file';
-import { Kv3Type, Kv3Value, Kv3ValueType } from '../../common/keyvalue/kv3value';
+import { Kv3Type, Kv3Value, Kv3ValueType, Kv3ValueTypeAll, Kv3ValueTypePrimitives } from '../../common/keyvalue/kv3value';
 
 const DATA_TYPE_NULL = 0x01;
 const DATA_TYPE_BOOL = 0x02;
@@ -407,12 +407,12 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 					//typedArraycount = 0;
 				}
 				const subType = shiftArray()/*typeArray.shift()*/;
-				const typesArrayElements: Kv3ValueType[] = new Array(typedArrayCount);
+				const typesArrayElements: Kv3ValueTypePrimitives[] = new Array(typedArrayCount);
 				for (let i = 0; i < typedArrayCount; i++) {
 					const value = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, subType, true, compressionFrameSize, readers0)
 
 					if (value && (value as Kv3Value).isKv3Value) {
-						typesArrayElements[i] = (value as Kv3Value).getValue();
+						typesArrayElements[i] = (value as Kv3Value).getValue() as Kv3ValueTypePrimitives/*TODO: check that*/;
 					} else {
 						typesArrayElements[i] = (value as (Kv3Element | null));
 					}
@@ -637,7 +637,7 @@ function readElement(reader: BinaryReader, stringDictionary: string[], occurence
 			break;
 		case 8: // Array
 			var propertiesCount = reader.getUint32();
-			var elementArray: Kv3ValueType[] = new Array(propertiesCount);
+			var elementArray: Kv3ValueTypeAll[] = new Array(propertiesCount);
 			var propertyName = null;
 			var propertyIndex = null;
 			var property = null;

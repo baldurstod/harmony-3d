@@ -480,7 +480,7 @@ export class Material {
 			const uniforms = this.uniforms;
 			const uniformArray = Object.keys(uniforms);
 			for (const uniformName of uniformArray) {
-				const uniform = uniforms[uniformName];
+				const uniform = uniforms[uniformName]!;
 				this.#disposeUniform(uniform);
 			}
 		}

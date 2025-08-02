@@ -189,18 +189,18 @@ export class Source1ParticleControler {
 	 * @param {String} name Name of the pcf
 	 * @return {Object SourcePCF} Pcf
 	 */
-	static async #getPcf(repositoryName: string, pcfName: string): Promise<SourcePCF> {
+	static async #getPcf(repository: string, pcfName: string): Promise<SourcePCF> {
 		const promise = new Promise<SourcePCF>(resolve => {
 			const pcf = this.#pcfList[pcfName];
 			if (!pcf) {
 				const callback1 = (pcf: SourcePCF) => {
 					if (pcf) {
 						this.#pcfList[pcfName] = pcf;
-						pcf.repositoryName = repositoryName;
+						pcf.repository = repository;
 					}
 					resolve(pcf);
 				}
-				this.#loadPcf(repositoryName, pcfName).then(callback1);
+				this.#loadPcf(repository, pcfName).then(callback1);
 			} else {
 				resolve(pcf);
 			}

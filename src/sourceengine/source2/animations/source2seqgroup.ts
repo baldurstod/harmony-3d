@@ -11,8 +11,8 @@ export class Source2SeqGroup {
 	#animGroup: Source2AnimGroup;
 	#localSequenceNameArray;
 	sequences: Source2Sequence[] = [];
-	file;
-	m_localS1SeqDescArray: Kv3Element[] | null = null;
+	file?: Source2File;
+	#m_localS1SeqDescArray: Kv3Element[] | null = null;
 	#animArray: Kv3Element[] | null = null;
 	loaded = false;
 
@@ -23,23 +23,24 @@ export class Source2SeqGroup {
 	setFile(sourceFile: Source2File) {
 		this.file = sourceFile;
 
-		const sequenceGroupResourceData_t = sourceFile.getBlockStruct('DATA', 'structs.SequenceGroupResourceData_t'/*TODO: check that*/);
+		const sequenceGroupResourceData_t = sourceFile.getBlockStruct('DATA', 'structs.SequenceGroupResourceData_t'/*TODO: check that*/) as Kv3Element;
 		let localSequenceNameArray: string[] | null;
 		if (sequenceGroupResourceData_t) {
-			this.m_localS1SeqDescArray = sequenceGroupResourceData_t.m_localS1SeqDescArray;
-			localSequenceNameArray = sequenceGroupResourceData_t.m_localSequenceNameArray;
+			// TODO: this part is not tested find a test case
+			this.#m_localS1SeqDescArray = sequenceGroupResourceData_t.getSubValueAsElementArray('m_localS1SeqDescArray');
+			localSequenceNameArray = sequenceGroupResourceData_t.getSubValueAsStringArray('m_localSequenceNameArray');
 		} else {
-			this.m_localS1SeqDescArray = sourceFile.getBlockStructAsElementArray('DATA', 'm_localS1SeqDescArray') ?? sourceFile.getBlockStructAsElementArray('ASEQ', 'm_localS1SeqDescArray');
+			this.#m_localS1SeqDescArray = sourceFile.getBlockStructAsElementArray('DATA', 'm_localS1SeqDescArray') ?? sourceFile.getBlockStructAsElementArray('ASEQ', 'm_localS1SeqDescArray');
 			localSequenceNameArray = sourceFile.getBlockStructAsStringArray('DATA', 'm_localSequenceNameArray') ?? sourceFile.getBlockStructAsStringArray('ASEQ', 'm_localSequenceNameArray');
 		}
 		this.#localSequenceNameArray = localSequenceNameArray;
 
 
-		if (this.m_localS1SeqDescArray && localSequenceNameArray) {
-			this.#processSeqDesc(this.m_localS1SeqDescArray, localSequenceNameArray);
+		if (this.#m_localS1SeqDescArray && localSequenceNameArray) {
+			this.#processSeqDesc(this.#m_localS1SeqDescArray, localSequenceNameArray);
 		}
 
-		this.#animArray = this.m_localS1SeqDescArray;
+		this.#animArray = this.#m_localS1SeqDescArray;
 
 		if (this.#animArray) {
 			for (let i = 0; i < this.#animArray.length; i++) {
@@ -53,7 +54,7 @@ export class Source2SeqGroup {
 
 		const anims = sourceFile.getBlockKeyValues('DATA');// ?? sourceFile.getBlockStruct('DATA', ''/*.structs.SequenceGroupResourceData_t'*/);
 		if (anims) {
-			const loadedAnim = new Source2Animation(this, '');
+			const loadedAnim = new Source2Animation(this as unknown as Source2AnimGroup/*TODO: fix this*/);
 			loadedAnim.setAnimDatas(anims);
 			this.#animGroup._changemyname = this.#animGroup._changemyname || [];
 			this.#animGroup._changemyname.push(loadedAnim);

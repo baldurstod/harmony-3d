@@ -76,10 +76,10 @@ export class OutlinePass extends Pass {
 		this.outlineScene.forEach((entity) => {
 			if (entity.properties.get('selected') && entity.isRenderable) {
 				if (visible) {
-					entity.setVisible(entity.properties.get('oldVisible'));
+					entity.setVisible(entity.properties.getBoolean('oldVisible'));
 					entity.properties.delete('oldVisible');
 				} else {
-					entity.properties.set('oldVisible', entity.isVisibleSelf());
+					entity.properties.setBoolean('oldVisible', entity.isVisibleSelf());
 					entity.setVisible(visible);
 				}
 			}
@@ -90,10 +90,10 @@ export class OutlinePass extends Pass {
 		this.outlineScene.forEach((entity) => {
 			if (!entity.properties.get('selected') && entity.isRenderable) {
 				if (visible) {
-					entity.setVisible(entity.properties.get('oldVisible'));
+					entity.setVisible(entity.properties.getBoolean('oldVisible'));
 					entity.properties.delete('oldVisible');
 				} else {
-					entity.properties.set('oldVisible', entity.isVisibleSelf());
+					entity.properties.setBoolean('oldVisible', entity.isVisibleSelf());
 					entity.setVisible(visible);
 				}
 			}

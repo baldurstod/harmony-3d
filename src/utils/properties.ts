@@ -28,6 +28,10 @@ export class Properties {
 		this.#properties.set(name, property);
 	}
 
+	delete(name: string): void {
+		this.#properties.delete(name);
+	}
+
 	get(name: string): Property | undefined {
 		return this.#properties.get(name);
 	}
@@ -56,6 +60,17 @@ export class Properties {
 		const prop = this.#properties.get(name);
 		if (prop?.type == PropertyType.String) {
 			return prop.value as string;
+		}
+	}
+
+	setBoolean(name: string, value: boolean): void {
+		this.#properties.set(name, new Property(PropertyType.Boolean, value));
+	}
+
+	getBoolean(name: string): boolean | undefined {
+		const prop = this.#properties.get(name);
+		if (prop?.type == PropertyType.Boolean) {
+			return prop.value as boolean;
 		}
 	}
 

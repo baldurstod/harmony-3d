@@ -37,10 +37,10 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
 	}
 
-	async getTexture(repository: string, path: string, frame: number) {
+	async getTexture(repository: string, path: string, frame: number): Promise<Texture | null> {
 		frame = Math.floor(frame);
 		const texture = await this.#getTexture(repository, path);
-		return texture ? texture.getFrame(frame) : this.#defaultTexture;//TODOv3
+		return texture ? texture.getFrame(frame) ?? null : this.#defaultTexture;//TODOv3
 	}
 
 	async getVtex(repository: string, path: string): Promise<Source2Texture | null> {

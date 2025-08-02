@@ -66,11 +66,11 @@ export class Source2File {
 	}
 
 	getBlockByType(type: string): Source2FileBlock | null {
-		return this.blocks[type];
+		return this.blocks[type] ?? null;
 	}
 
 	getBlockById(id: number): Source2FileBlock | null {
-		return this.blocksArray[id];
+		return this.blocksArray[id] ?? null;
 	}
 
 	getVertexCount(bufferId: number): number {
@@ -536,7 +536,7 @@ export class Source2File {
 		if (fileName) {
 			const result = /(\w+)\.\w+$/.exec(fileName);
 			if (result && result.length == 2) {
-				return result[1];
+				return result[1]!;
 			}
 		}
 		return ''
@@ -553,7 +553,7 @@ export class Source2File {
 		}
 
 		const starts = remappingTableStarts[meshIndex];
-		if (starts > remappingTable.length) {
+		if (starts === undefined || starts > remappingTable.length) {
 			return null;
 		}
 

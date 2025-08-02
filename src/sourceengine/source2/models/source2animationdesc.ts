@@ -97,8 +97,7 @@ export class Source2AnimationDesc {
 				boneArray.push({ name: decodeKeyBone.getValueAsString('m_name') });
 			}
 
-			for (var i = 0; i < frameBlockArray.length; i++) {
-				frameBlock = frameBlockArray[i];
+			for (const frameBlock of frameBlockArray) {
 				const startFrame = frameBlock.getValueAsNumber('m_nStartFrame') ?? 0;
 				const endFrame = frameBlock.getValueAsNumber('m_nEndFrame') ?? 0;
 				if ((startFrame <= frameIndex) && (endFrame >= frameIndex)) {
@@ -136,19 +135,22 @@ export class Source2AnimationDesc {
 	#readSegment(frameIndex: number, segment: Kv3Element, boneArray: any/*TODO: fix type*/[], dataChannelArray: Kv3Element[], decodeArray: Source2AnimeDecoder[]): void {
 		//console.log(segment);
 		const channel = dataChannelArray[segment.getValueAsNumber('m_nLocalChannel') ?? 0];
+		if (!channel) {
+			return;
+		}
 		const segmentToBoneIndex = new Map<number, number>();
 		const channelVar = channel.getValueAsString('m_szVariableName');
 		const container = segment.getValueAsBlob('m_container');
-		if (!channelVar || !container) {
+		if (!channelVar || !container || container.length < 8) {
 			return;
 		}
 
 		const reader = this.#getReader(segment, container);//segment.dataReader;
 
-		const decoderId = container[0] + (container[1] << 8);
-		let bytesPerBone = container[2] + (container[3] << 8);
-		const boneCount = container[4] + (container[5] << 8);
-		const dataLength = container[6] + (container[7] << 8);
+		const decoderId = container[0]! + (container[1]! << 8);
+		let bytesPerBone = container[2]! + (container[3]! << 8);
+		const boneCount = container[4]! + (container[5]! << 8);
+		const dataLength = container[6]! + (container[7]! << 8);
 		bytesPerBone = 0;
 		const segmentBoneArray = [];
 
@@ -164,6 +166,9 @@ export class Source2AnimationDesc {
 		}
 
 		const decoder = decodeArray[decoderId];
+		if (!decoder) {
+			return;
+		}
 		const decoderName = decoder.name;
 		//console.log(decoderId, bytesPerBone, boneCount, dataLength);
 		if (decoder && decoderName) {
@@ -199,7 +204,7 @@ export class Source2AnimationDesc {
 				default:
 					if (DEBUG && TESTING) {
 						if (!Warning[decoderName]) {
-							console.error('Warning: unknown decoder ' + decoderName + ' in ' + (this.#animationResource).fileName);
+							console.error('Warning: unknown decoder ' + decoderName + ' in ' + (this.#animationResource).file?.fileName);
 							Warning[decoderName] = true;
 						}
 					}
@@ -208,12 +213,12 @@ export class Source2AnimationDesc {
 
 			var byteIndex = 8;
 			for (var boneIndex = 0; boneIndex < boneCount; boneIndex++, byteIndex += 2) {
-				segmentBoneArray.push(container[byteIndex + 0] + (container[byteIndex + 1] << 8));
+				segmentBoneArray.push(container[byteIndex + 0]!/*TODO: actually check value*/ + (container[byteIndex + 1]!/*TODO: actually check value*/ << 8));
 			}
 
 			var byteIndex = 8 + boneCount * 2 + frameIndex * boneCount * bytesPerBone;
 			for (var boneIndex = 0; boneIndex < boneCount; boneIndex++) {
-				const boneIndex2 = segmentToBoneIndex.get(segmentBoneArray[boneIndex]);
+				const boneIndex2 = segmentToBoneIndex.get(segmentBoneArray[boneIndex]!/*TODO: actually check value*/);
 				if (boneIndex2 === undefined) {//removeme
 					continue;
 				}
@@ -252,7 +257,7 @@ export class Source2AnimationDesc {
 					default:
 						if (DEBUG) {
 							if (!Warning[decoderName]) {
-								console.error('Warning: unknown decoder ' + decoderName + ' in ' + this.#animationResource.fileName + ' for bone ' + boneArray[boneIndex2].name);
+								console.error('Warning: unknown decoder ' + decoderName + ' in ' + this.#animationResource.file?.fileName + ' for bone ' + boneArray[boneIndex2].name);
 								Warning[decoderName] = true;
 							}
 						}
@@ -279,6 +284,7 @@ export class Source2AnimationDesc {
 		return false;
 	}
 
+	/*
 	getActivityName() {
 		return this.data?.m_activityArray?.[0]?.m_name;
 	}
@@ -286,12 +292,13 @@ export class Source2AnimationDesc {
 	hasModifiers() {
 		return this.data?.m_activityArray?.length > 1;
 	}
+	*/
 
 
 	modifiersScore(activityName, modifiers) {
-		const activityArray = this.data?.m_activityArray;
+		const activityArray = this.data?.getSubValueAsElementArray('m_activityArray');
 		if (activityArray && activityArray.length > 0) {
-			if (activityArray[0].m_name != activityName) {
+			if (activityArray[0].getSubValueAsString('m_name') != activityName) {
 				return -1;
 			}
 
@@ -303,10 +310,11 @@ export class Source2AnimationDesc {
 			const matchingModifiers = {};
 			for (const modifier of modifiers) {
 				for (const activity of activityArray) {
-					if (activityName == activity.m_name) {
+					const name = activity.getSubValueAsString('m_name');
+					if (activityName == name) {
 						continue;
 					}
-					if (modifier == activity.m_name) {
+					if (modifier == name) {
 						matchingModifiers[modifier] = 1;
 						break;
 					}
@@ -320,7 +328,7 @@ export class Source2AnimationDesc {
 	matchModifiers(activityName: string, modifiers: Set<string>): boolean {
 		const activityArray = this.data.getValueAsElementArray('m_activityArray');
 		if (activityArray && activityArray.length > 0) {
-			if (activityArray[0].getValueAsString('m_name') != activityName) {
+			if (activityArray[0]!.getValueAsString('m_name') != activityName) {
 				return false;
 			}
 
@@ -333,13 +341,14 @@ export class Source2AnimationDesc {
 				return false;
 			}
 
-			const matchingModifiers = {};
+			const matchingModifiers: Record<string, number> = {};
 			for (const modifier of modifiers) {
 				for (const activity of activityArray) {
-					if (activityName == activity.m_name) {
+					const name = activity.getSubValueAsString('m_name');
+					if (activityName == name) {
 						continue;
 					}
-					if (modifier == activity.m_name) {
+					if (modifier == name) {
 						matchingModifiers[modifier] = 1;
 						break;
 					}

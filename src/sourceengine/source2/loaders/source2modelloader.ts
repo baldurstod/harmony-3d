@@ -71,7 +71,7 @@ export class Source2ModelLoader {
 			for (let meshIndex = 0; meshIndex < embeddedMeshes.length; ++meshIndex) {
 				const lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
 				const meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
-				const embeddedMesh = embeddedMeshes[meshIndex];
+				const embeddedMesh = embeddedMeshes[meshIndex]!;
 
 				const dataBlockId = embeddedMesh.getValueAsNumber('data_block');
 				const vbibBlockId = embeddedMesh.getValueAsNumber('vbib_block');
@@ -194,14 +194,18 @@ export class Source2ModelLoader {
 	}
 
 	async #loadExternalMeshes(group: Entity, vmdl: Source2File, model: Source2Model, repository: string) {
-		const callback = (mesh, lodGroupMask, meshIndex, meshGroupMask: number | undefined) => {
+		const callback = (mesh: Source2File, lodGroupMask: number, meshIndex: number, meshGroupMask: number | undefined) => {
 			//TODO: only load highest LOD
-			this.#loadMesh(repository, model, group, mesh.getBlockByType('DATA'), mesh.getBlockByType('VBIB'), lodGroupMask, vmdl, meshIndex, meshGroupMask);
+			const dataBlock = mesh.getBlockByType('DATA');
+			const vbibBlock = mesh.getBlockByType('VBIB');
+			if (dataBlock && vbibBlock) {
+				this.#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
+			}
 		}
-		await this.loadMeshes(vmdl, callback);
+		await this.#loadMeshes(vmdl, callback);
 	}
 
-	async loadMeshes(vmdl: Source2File, callback) {
+	async #loadMeshes(vmdl: Source2File, callback: (arg1: Source2File, arg2: number, arg3: number, arg4: number | undefined) => void/*TODO: remove callback*/) {
 		const promises = new Set<Promise<Source2File>>();
 		//const m_refMeshes = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refMeshes') || vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshes');
 		//const m_refLODGroupMasks = vmdl.getBlockStruct('DATA.structs.PermModelData_t.m_refLODGroupMasks') || vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');

@@ -2,7 +2,7 @@ import { quat, vec3 } from 'gl-matrix';
 import { quatFromEulerRad } from '../../../math/functions';
 import { CalcPose, Studio_Duration } from '../animations/calcanimations';
 import { Source1ModelInstance, Source1ModelSequences } from '../export';
-import { BONE_USED_BY_ANYTHING, MdlBone } from './mdlbone';
+import { BONE_USED_BY_ANYTHING } from './mdlbone';
 import { SourceModel } from './sourcemodel';
 
 export class SourceAnimation {
@@ -74,8 +74,8 @@ export class SourceAnimation {
 				if (sequence) {
 					const sequenceBones = sequence.mdl.getBones();
 					if (sequenceBones) {
-						const g1 = Math.floor(sequence.groupsize1 / 2);
-						const g2 = Math.floor(sequence.groupsize2 / 2);
+						const g1 = Math.floor(sequence.groupsize[0] / 2);
+						const g2 = Math.floor(sequence.groupsize[1] / 2);
 						//g1 = g1RemoveMe;
 						//g2 = g2RemoveMe;
 						//g1 = 2;
@@ -253,7 +253,9 @@ export class SourceAnimation {
 					b.position = posRemoveMeMe ?? b._initialPosition;
 				}
 			} else {
-				b = new MdlBone(dynamicProp.skeleton);
+				throw 'fix me';
+				/*
+				b = new Bone(dynamicProp.skeleton);
 				dynamicProp.skeleton._bones[boneIndex] = b;
 				b.boneId = bone.boneId;
 				b.name = bone.name;
@@ -263,6 +265,7 @@ export class SourceAnimation {
 				b.parent = dynamicProp.skeleton._bones[b.parentBone];
 				b.poseToBone = bone.poseToBone;
 				b.initPoseToBone = bone.initPoseToBone;
+				*/
 			}
 		}
 		return;
