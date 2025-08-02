@@ -5,6 +5,7 @@ import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
 import { quat } from 'gl-matrix';
 import { Source2AnimeDecoder as Source2AnimeDecoder_2 } from '../models/source2animgroup';
+import { Source2Particle as Source2Particle_2 } from '../../source2particle';
 import { Texture as Texture_2 } from '../..';
 import { Texture as Texture_3 } from '../../../../..';
 import { vec2 } from 'gl-matrix';
@@ -22,15 +23,6 @@ export declare class Add extends Proxy_2 {
 }
 
 export declare function addIncludeSource(name: string, source?: string): void;
-
-export declare class AddVectorToVector extends Operator {
-    #private;
-    scale: vec3;
-    offsetMin: vec3;
-    offsetMax: vec3;
-    _paramChanged(paramName: string, param: OperatorParam): void;
-    doInit(particle: any, elapsedTime: any): void;
-}
 
 export declare class AgeNoise extends Operator {
     #private;
@@ -1236,13 +1228,9 @@ declare class Choreography {
      }
 
      export declare class ConstrainDistance extends Operator {
-         minDistance: number;
-         maxDistance: number;
-         scaleCP: number;
-         centerOffset: vec3;
-         globalCenter: boolean;
+         #private;
          _paramChanged(paramName: string, param: OperatorParam): void;
-         applyConstraint(particle: any): void;
+         applyConstraint(particle: Source2Particle): void;
      }
 
      export declare class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
@@ -1267,7 +1255,7 @@ declare class Choreography {
          unobserve(subject: any, dependent: any): void;
      }
 
-     export declare class ContinuousEmitter extends Operator {
+     export declare class ContinuousEmitter extends Emitter {
          #private;
          _paramChanged(paramName: string, param: OperatorParam): void;
          doEmit(elapsedTime: number): void;
@@ -1347,17 +1335,6 @@ declare class Choreography {
 
      export declare class CreateSequentialPath extends Operator {
          #private;
-         numToAssign: number;
-         step: number;
-         loop: boolean;
-         maxDistance: number;
-         cpPairs: boolean;
-         saveOffset: boolean;
-         midPoint: number;
-         startPointOffset: vec3;
-         midPointOffset: vec3;
-         endOffset: vec3;
-         t: number;
          _paramChanged(paramName: string, param: OperatorParam): void;
          doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
      }
@@ -1365,10 +1342,7 @@ declare class Choreography {
      export declare function createTexture(): WebGLTexture | null;
 
      export declare class CreateWithinBox extends Operator {
-         vecMin: vec3;
-         vecMax: vec3;
-         localSpace: boolean;
-         scaleCP: number;
+         #private;
          _paramChanged(paramName: string, param: OperatorParam): void;
          doInit(particle: Source2Particle, elapsedTime: number): void;
      }
@@ -1694,6 +1668,10 @@ declare class Choreography {
 
      export declare function decodeLz4(reader: BinaryReader, decompressBlobArray: Uint8Array, compressedSize: number, uncompressedSize: number, outputIndex?: number): number;
 
+     export declare const DEFAULT_GROUP_ID = 0;
+
+     export declare const DEFAULT_MAX_PARTICLES = 1000;
+
      export declare const DEFAULT_TEXTURE_SIZE = 512;
 
      export declare const DEG_TO_RAD: number;
@@ -1711,13 +1689,6 @@ declare class Choreography {
          static decodeBC4(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
          static decodeBC7(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
          static getWebAssembly(): Promise<any>;
-     }
-
-     export declare class DistanceBetweenCPs extends Operator {
-         #private;
-         setMethod: string;
-         _paramChanged(paramName: string, param: OperatorParam): void;
-         doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
      }
 
      export declare class DistanceCull extends Operator {
@@ -1788,6 +1759,14 @@ declare class Choreography {
          remainder: number;
          constructor();
          doEmit(elapsedTime: any): void;
+     }
+
+     declare class Emitter extends Operator {
+         emitterIndex: number;
+         emissionDuration: number;
+         startTime: number;
+         _paramChanged(paramName: string, param: OperatorParam): void;
+         emitParticle(creationTime: number, elapsedTime: number): Source2Particle_2;
      }
 
      export declare class Entity {
@@ -2032,7 +2011,7 @@ declare class Choreography {
           setMaterialParam(name: string, value: MaterialParam): void;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
-          createChild(entityName: string, parameters: any): Promise<Material | Entity>;
+          createChild(entityName: string, parameters: any): Promise<Entity | Material>;
           fromJSON(json: JSONObject): void;
           static getEntityName(): string;
           is(s: string): boolean;
@@ -3113,11 +3092,23 @@ declare class Choreography {
 
          export declare const HALF_PI: number;
 
+         declare interface HasSkeleton {
+             skeleton: Skeleton | null | undefined;
+         }
+
          export declare class HeartbeatScale extends Proxy_2 {
              #private;
              setParams(datas: any): void;
              init(): void;
              execute(variables: any, proxyParams: any, time: any): void;
+         }
+
+         declare class Hitbox {
+             name: string;
+             boundingBoxMin: vec3;
+             boundingBoxMax: vec3;
+             parent: Bone;
+             constructor(name: string, boundingBoxMin: vec3, boundingBoxMax: vec3, parent: Bone);
          }
 
          export declare class HitboxHelper extends Entity {
@@ -3155,7 +3146,7 @@ declare class Choreography {
          export declare class InitialVelocityNoise extends Operator {
              #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
              initMultipleOverride(): boolean;
          }
 
@@ -3211,7 +3202,7 @@ declare class Choreography {
              FloatArray = 1001
          }
 
-         export declare class InstantaneousEmitter extends Operator {
+         export declare class InstantaneousEmitter extends Emitter {
              #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
              doEmit(elapsedTime: number): void;
@@ -3268,8 +3259,8 @@ declare class Choreography {
          }
 
          export declare class JSONLoader {
-             static fromJSON(rootEntity: object): Promise<Material | Entity>;
-             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Material | Entity>;
+             static fromJSON(rootEntity: object): Promise<Entity | Material>;
+             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material>;
              static registerEntity(ent: typeof Entity | typeof Material): void;
          }
 
@@ -3301,6 +3292,7 @@ declare class Choreography {
              getValueAsBool(name: string): boolean | null;
              getValueAsNumber(name: string): number | null;
              getValueAsNumberArray(name: string): number[] | null;
+             getValueAsVec4(name: string, out: vec4): vec4 | null;
              getValueAsBigint(name: string): bigint | null;
              getValueAsBigintArray(name: string): bigint[] | null;
              getValueAsBlob(name: string): Uint8Array | null;
@@ -3309,8 +3301,13 @@ declare class Choreography {
              getValueAsVectorArray(name: string): number[][] | null;
              getSubValue(path: string): Kv3Element | Kv3Value | null;
              getSubValueAsString(path: string): string | null;
+             getSubValueAsUint8Array(path: string): Uint8Array | null;
              getSubValueAsNumber(path: string): number | null;
+             getSubValueAsElement(path: string): Kv3Element | null;
+             getSubValueAsStringArray(path: string): string[] | null;
              getSubValueAsNumberArray(path: string): number[] | null;
+             getSubValueAsVec4(path: string, out: vec4): vec4 | null;
+             getSubValueAsElementArray(path: string): Kv3Element[] | null;
              exportAsText(linePrefix: string): string;
          }
 
@@ -3323,6 +3320,8 @@ declare class Choreography {
              setRoot(root: Kv3Element): void;
              exportAsText(): string;
              getValue(path: string): Kv3Element | Kv3Value | null;
+             getValueAsNumber(path: string): number | null;
+             getValueAsStringArray(path: string): string[] | null;
              getValueAsElementArray(path: string): Kv3Element[] | null;
          }
 
@@ -3372,7 +3371,11 @@ declare class Choreography {
 
          declare type Kv3ValueType = Kv3ValueTypeAll | Kv3ValueTypeAll[];
 
-         declare type Kv3ValueTypeAll = null | boolean | bigint | number | number[] | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
+         declare type Kv3ValueTypeAll = Kv3ValueTypePrimitives | Kv3ValueTypeArrays;
+
+         declare type Kv3ValueTypeArrays = number[];
+
+         declare type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
 
          export declare function lerp(min: number, max: number, v: number): number;
 
@@ -3630,7 +3633,7 @@ declare class Choreography {
              }>;
          }
 
-         export declare class MaintainEmitter extends Operator {
+         export declare class MaintainEmitter extends Emitter {
              #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
              doEmit(elapsedTime: number): void;
@@ -3904,13 +3907,13 @@ declare class Choreography {
              mdl: SourceMdl | null;
              flags: number;
              localbone: number;
-             local: number[];
+             local: Tuple<number, 12>;
          }
 
          declare class MdlBodyPart {
-             name: any;
-             base: any;
-             models: any;
+             name: string;
+             base: number;
+             models: ModelTest[];
          }
 
          declare class MdlBone {
@@ -3924,7 +3927,7 @@ declare class Choreography {
              _worldPos: vec3;
              _worldQuat: quat;
              _worldMat: mat4;
-             _parent: any;
+             _parent: MdlBone | null;
              dirty: boolean;
              lastComputed: number;
              parentBone: number;
@@ -3948,8 +3951,8 @@ declare class Choreography {
              get quaternion(): quat;
              set position(position: vec3);
              get position(): vec3;
-             set parent(parent: any);
-             get parent(): any;
+             set parent(parent: MdlBone);
+             get parent(): MdlBone;
              set worldPos(worldPos: vec3);
              set worldQuat(worldQuat: quat);
              getWorldPos(offset: vec3, out?: vec3): vec3;
@@ -3971,6 +3974,25 @@ declare class Choreography {
              useBoneMerge(): boolean;
          }
 
+         declare class MdlEyeball {
+             name: string;
+             bone: number;
+             readonly org: vec3;
+             zoffset: number;
+             radius: number;
+             readonly up: vec3;
+             readonly forward: vec3;
+             texture: number;
+             irisScale: number;
+             readonly upperflexdesc: number[];
+             readonly lowerflexdesc: number[];
+             readonly uppertarget: vec3;
+             readonly lowertarget: vec3;
+             upperlidflexdesc: number;
+             lowerlidflexdesc: number;
+             m_bNonFACS: number;
+         }
+
          declare class MdlStripHeader {
              vertices: any[];
              indexes: any[];
@@ -3982,6 +4004,60 @@ declare class Choreography {
              flags: number;
              numBoneStateChanges: number;
              boneStateChangeOffset: number;
+         }
+
+         declare class MdlStudioAnim {
+             readonly animValuePtrRot: MdlStudioAnimValuePtr;
+             readonly animValuePtrPos: MdlStudioAnimValuePtr;
+             readonly rawpos: vec3;
+             readonly rawrot: quat;
+             readonly rawrot2: quat;
+             flags: number;
+             bone: number;
+             nextOffset: number;
+             getRotValue(): MdlStudioAnimValuePtr | null;
+             getPosValue(): MdlStudioAnimValuePtr | null;
+             getQuaternion48(): quat;
+             getQuaternion64(): quat;
+             /**
+              * TODO
+              */
+             getRot(rot: vec3, mdl: SourceMdl, bone: MdlBone, frame: number): vec3;
+             getPos(pos: vec3, mdl: SourceMdl, bone: MdlBone, frame: number): vec3;
+             readValue(mdl: SourceMdl, frame: number, offset: number): number;
+         }
+
+         declare class MdlStudioAnimDesc {
+             name: string;
+             mdl: SourceMdl | null;
+             startOffset: number;
+             fps: number;
+             flags: number;
+             numframes: number;
+             nummovements: number;
+             animblock: number;
+             animIndex: number;
+             numikrules: number;
+             animblockikruleOffset: number;
+             numlocalhierarchy: number;
+             localhierarchyOffset: number;
+             sectionOffset: number;
+             sectionframes: number;
+             zeroframespan: number;
+             zeroframecount: number;
+             zeroframeOffset: number;
+             readonly frames: never[];
+             pAnim(frameIndex: number): MdlStudioAnim[] | null;
+             pZeroFrameData(): null;
+         }
+
+         /**
+          *	MdlStudioAnimValuePtr
+          */
+         declare class MdlStudioAnimValuePtr {
+             offset: number[];
+             base: number;
+             getAnimValue2(i: number): number;
          }
 
          declare class MdlStudioAutoLayer {
@@ -4000,6 +4076,19 @@ declare class Choreography {
              type: any;
              options: any;
              name: any;
+         }
+
+         declare class MdlStudioFlex {
+             flexdesc: number;
+             target0: number;
+             target1: number;
+             target2: number;
+             target3: number;
+             numverts: number;
+             vertindex: number;
+             flexpair: number;
+             vertanimtype: number;
+             readonly vertAnims: MdlStudioVertAnim[];
          }
 
          declare class MdlStudioFlexController {
@@ -4035,8 +4124,8 @@ declare class Choreography {
          }
 
          declare class MdlStudioModelGroup {
-             name: any;
-             label: any;
+             name: string;
+             label: string;
          }
 
          declare class MdlStudioPoseParam {
@@ -4049,13 +4138,13 @@ declare class Choreography {
          }
 
          declare class MdlStudioSeqDesc {
-             paramindex: any[];
-             paramstart: any[];
-             paramend: any[];
-             blend: any[];
-             weightlist: any[];
-             groupsize: any[];
-             mdl: any;
+             paramindex: number[];
+             paramstart: number[];
+             paramend: number[];
+             blend: number[][];
+             weightlist: number[];
+             groupsize: number[];
+             mdl: SourceMdl;
              previousTime: number;
              currentTime: number;
              posekeyindex: number;
@@ -4096,18 +4185,26 @@ declare class Choreography {
              cycleposeindex: any;
              activityName: any;
              keyvalueText: any;
-             pBoneweight(boneIndex: any): any;
-             getBlend(x: any, y: any): any;
-             poseKey(iParam: any, iAnim: any): any;
+             pBoneweight(boneIndex: any): number;
+             getBlend(x: any, y: any): number;
+             poseKey(iParam: any, iAnim: any): number;
              getAutoLayer(autoLayerIndex: any): MdlStudioAutoLayer;
              get length(): number;
              play(dynamicProp: any): any;
              processEvent(event: any, dynamicProp: any): void;
          }
 
+         declare class MdlStudioVertAnim {
+             index: number;
+             speed: number;
+             side: number;
+             readonly flDelta: number[];
+             readonly flNDelta: number[];
+         }
+
          declare class MdlTexture {
-             name: any;
-             originalName: any;
+             name: string;
+             originalName: string;
          }
 
          declare class MdlVertex {
@@ -4356,6 +4453,24 @@ declare class Choreography {
              getShaderSource(): string;
          }
 
+         declare class MeshTest {
+             render: boolean;
+             model: ModelTest;
+             material: number;
+             modelindex: number;
+             numvertices: number;
+             vertexoffset: number;
+             numflexes: number;
+             flexindex: number;
+             materialtype: number;
+             materialparam: number;
+             meshid: number;
+             readonly center: vec3;
+             readonly flexes: MdlStudioFlex[];
+             initialized: boolean;
+             constructor(model: ModelTest);
+         }
+
          export declare class Metaball extends Entity {
              currentWorldPosition: vec3;
              radius: number;
@@ -4580,6 +4695,23 @@ declare class Choreography {
              load(repositoryName: string, fileName: string): Promise<SourceModel | null>;
          }
 
+         declare class ModelTest {
+             render: boolean;
+             name: string;
+             type: number;
+             boundingradius: number;
+             readonly meshArray: MeshTest[];
+             readonly vertexArray: never[];
+             readonly eyeballArray: MdlEyeball[];
+             numvertices: number;
+             vertexindex: number;
+             tangentsindex: number;
+             numattachments: number;
+             attachmentindex: number;
+             numeyeballs: number;
+             eyeballindex: number;
+         }
+
          export declare const MOUSE: {
              LEFT: number;
              MIDDLE: number;
@@ -4734,12 +4866,11 @@ declare class Choreography {
          export declare class Noise extends Operator {
              #private;
              constructor(system: Source2ParticleSystem);
-             _update(): void;
              _paramChanged(paramName: string, param: OperatorParam): void;
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class NoiseEmitter extends Operator {
+         export declare class NoiseEmitter extends Emitter {
              #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
              doEmit(elapsedTime: number): void;
@@ -4752,9 +4883,8 @@ declare class Choreography {
 
          export declare class NormalizeVector extends Operator {
              #private;
-             scale: number;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
          export declare class NormalLock extends Operator {
@@ -4787,14 +4917,6 @@ declare class Choreography {
              static load(txt: any): Mesh;
          }
 
-         export declare class OffsetVectorToVector extends Operator {
-             #private;
-             outputMin: vec3;
-             outputMax: vec3;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
-         }
-
          export declare class OldMoviePass extends Pass {
              constructor(camera: Camera);
              render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
@@ -4814,14 +4936,15 @@ declare class Choreography {
              disableOperator: boolean;
              controlPointNumber: number;
              protected fieldOutput: number;
-             scaleCp?: number;
+             scaleCp: number;
              mesh?: Mesh;
              endCapState?: number;
              currentTime: number;
              operateAllParticlesRemoveme: boolean;
+             protected setMethod: Source2ParticleSetMethod;
+             associatedEmitterIndex: number;
              constructor(system: Source2ParticleSystem);
              setParam(paramName: string, param: OperatorParam): void;
-             getParam(paramName: string): OperatorParam;
              getParamScalarValue(paramName: string, particle?: Source2Particle): number | null;
              getParamVectorValue(out: vec4, paramName: string, particle?: Source2Particle): vec4 | undefined | null;
              _paramChanged(paramName: string, param: OperatorParam): void;
@@ -4829,12 +4952,11 @@ declare class Choreography {
              operateParticle(particle: Source2Particle | null | Source2Particle[], elapsedTime: number): void;
              forceParticle(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3): void;
              constraintParticle(particle: Source2Particle): void;
-             emitParticle(creationTime: number, elapsedTime: number): Source2Particle;
              renderParticle(particleList: Source2Particle, elapsedTime: number, material: Source2Material): void;
              fadeInOut(): number;
-             setParameter(parameter: string, type: any, value: any): this;
+             setParameter(name: string, type: OperatorParamType, value: OperatorParamValueType): this;
              getParameter(name: string): OperatorParam | null;
-             getParameters(): Record<string, OperatorParam>;
+             getParameters(): Map<string, OperatorParam>;
              setParameters(parameters: Record<string, any>): this;
              doNothing(): void;
              reset(): void;
@@ -4927,13 +5049,9 @@ declare class Choreography {
          }
 
          export declare class OscillateScalarSimple extends Operator {
-             rate: number;
-             frequency: number;
-             field: number;
-             oscMult: number;
-             oscAdd: number;
+             #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
          export declare class OscillateVector extends SourceEngineParticleOperator {
@@ -5062,32 +5180,13 @@ declare class Choreography {
              elementsLine: Map<string, number>;
          } | null;
 
-         export declare class PercentageBetweenCPs extends Operator {
-             #private;
-             inputMin: number;
-             inputMax: number;
-             outputMin: number;
-             outputMax: number;
-             startCP: number;
-             endCP: number;
-             setMethod: any;
-             activeRange: boolean;
-             radialCheck: boolean;
-             scaleInitialRange: boolean;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
-         }
-
          export declare const PI: number;
 
          export declare class PinParticleToCP extends Operator {
-             offsetLocal: boolean;
-             particleSelection: any;
-             pinBreakType: any;
-             breakControlPointNumber: number;
-             breakControlPointNumber2: number;
+             #private;
+             static doOnce: boolean;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: Source2Particle | null | Source2Particle[], elapsedTime: number, strength: number): void;
          }
 
          export declare class PixelatePass extends Pass {
@@ -5396,7 +5495,7 @@ declare class Choreography {
          export declare class PositionOnModelRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor();
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class PositionWarp extends Operator {
@@ -5437,13 +5536,21 @@ declare class Choreography {
          export declare class Properties {
              #private;
              set(name: string, property: Property): void;
+             delete(name: string): void;
              get(name: string): Property | undefined;
+             copy(source: Properties, keys?: string[]): void;
              setString(name: string, value: string): void;
              getString(name: string): string | undefined;
+             setBoolean(name: string, value: boolean): void;
+             getBoolean(name: string): boolean | undefined;
              setNumber(name: string, value: number): void;
              getNumber(name: string): number | undefined;
              setBigint(name: string, value: bigint): void;
              getBigint(name: string): bigint | undefined;
+             setArray(name: string, value: any[]): void;
+             getArray(name: string): any[] | undefined;
+             setObject(name: string, value: object): void;
+             getObject(name: string): object | undefined;
          }
 
          export declare class Property {
@@ -5468,7 +5575,8 @@ declare class Choreography {
              Number = "number",
              Bigint = "bigint",
              Boolean = "boolean",
-             Array = "array"
+             Array = "array",
+             Object = "object"
          }
 
          export declare type PropertyValues = string | number | bigint | any | any[];
@@ -5535,9 +5643,7 @@ declare class Choreography {
          export declare const RAD_TO_DEG: number;
 
          export declare class RadiusFromCPObject extends Operator {
-             #private;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
          export declare class RadiusRandom extends SourceEngineParticleOperator {
@@ -5572,14 +5678,6 @@ declare class Choreography {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class RandomAlpha extends Operator {
-             alphaMin: number;
-             alphaMax: number;
-             alphaRandExponent: number;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
-         }
-
          export declare class RandomColor extends Operator {
              #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
@@ -5596,49 +5694,8 @@ declare class Choreography {
              doForce(particle: any, elapsedTime: any, accumulatedForces: any): void;
          }
 
-         export declare class RandomLifeTime extends Operator {
-             lifetimeMin: number;
-             lifetimeMax: number;
-             lifetimeRandExponent: number;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
-         }
-
-         export declare class RandomRadius extends Operator {
-             radiusMin: number;
-             radiusMax: number;
-             radiusRandExponent: number;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
-         }
-
-         export declare class RandomRotation extends Operator {
-             radians: number;
-             radiansMin: number;
-             radiansMax: number;
-             rotationRandExponent: number;
-             randomlyFlipDirection: boolean;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
-         }
-
-         export declare class RandomRotationSpeed extends Operator {
-             radians: number;
-             radiansMin: number;
-             radiansMax: number;
-             rotationRandExponent: number;
-             randomlyFlipDirection: boolean;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
-         }
-
-         export declare class RandomScalar extends Operator {
-             #private;
-             min: number;
-             max: number;
-             exponent: number;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
+         declare interface RandomPointOnModel {
+             getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3;
          }
 
          export declare class RandomSecondSequence extends Operator {
@@ -5653,33 +5710,7 @@ declare class Choreography {
              doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class RandomTrailLength extends Operator {
-             minLength: number;
-             maxLength: number;
-             lengthRandExponent: number;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
-         }
-
-         export declare class RandomVector extends Operator {
-             #private;
-             vecMin: vec3;
-             vecMax: vec3;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
-         }
-
          export declare function RandomVectorInUnitSphere(out: vec3): number;
-
-         export declare class RandomYaw extends Operator {
-             radians: number;
-             radiansMin: number;
-             radiansMax: number;
-             rotationRandExponent: number;
-             randomlyFlipDirection: boolean;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
-         }
 
          export declare class RandomYawFlip extends Operator {
              #private;
@@ -5794,19 +5825,9 @@ declare class Choreography {
 
          export declare class RemapParticleCountToScalar extends Operator {
              #private;
-             inputMin: number;
-             inputMax: number;
-             scaleControlPoint: number;
-             scaleControlPointField: number;
-             outputMin: number;
-             outputMax: number;
-             setMethod: any;
-             activeRange: boolean;
-             invert: boolean;
-             wrap: boolean;
              remapBias: number;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
          export declare class RemapScalar extends SourceEngineParticleOperator {
@@ -6542,7 +6563,6 @@ declare class Choreography {
          export declare class SetFloat extends Operator {
              #private;
              outputField: number;
-             setMethod: string;
              _paramChanged(paramName: string, param: OperatorParam): void;
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
@@ -6555,33 +6575,25 @@ declare class Choreography {
          }
 
          export declare class SetPerChildControlPoint extends Operator {
-             childGroupID: number;
-             firstControlPoint: number;
-             numControlPoints: number;
-             setOrientation: boolean;
-             numBasedOnParticleCount: boolean;
+             #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
          export declare class SetRandomControlPointPosition extends Operator {
-             useWorldLocation: boolean;
-             orient: boolean;
-             cp1: number;
-             headLocation: number;
+             #private;
              cpMinPos: vec3;
              cpMaxPos: vec3;
              lastRandomTime: number;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
              isPreEmission(): boolean;
          }
 
          export declare class SetRigidAttachment extends Operator {
              #private;
-             localSpace: boolean;
              _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
          export declare class SetSingleControlPointPosition extends Operator {
@@ -6769,18 +6781,19 @@ declare class Choreography {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class Source1ModelInstance extends Entity implements Animated {
+         export declare type Source1ModelAnimation = {
+             name: string;
+             weight: number;
+         };
+
+         export declare class Source1ModelInstance extends Entity implements Animated, HasSkeleton, RandomPointOnModel {
              #private;
              isSource1ModelInstance: boolean;
              animable: boolean;
              hasAnimations: true;
              sourceModel: SourceModel;
              bodyParts: Record<string, Entity>;
-             sequences: Record<string, {
-                 frame?: number;
-                 startTime?: any;
-                 s?: any;
-             }>;
+             sequences: Source1ModelSequences;
              meshes: Set<Mesh | SkeletalMesh>;
              frame: number;
              anim: SourceAnimation;
@@ -6794,33 +6807,33 @@ declare class Choreography {
              constructor(params?: any);
              get skeleton(): Skeleton;
              set skeleton(skeleton: Skeleton);
-             addChild(child: any): Entity;
-             removeChild(child: any): void;
+             addChild(child?: Entity | null): Entity;
+             removeChild(child: Entity): void;
              set skin(skin: number);
              get skin(): number;
-             setSkin(skin: any): Promise<void>;
-             set sheen(sheen: any);
-             set tint(tint: any);
+             setSkin(skin: number): Promise<void>;
+             set sheen(sheen: vec3);
+             set tint(tint: vec3 | null);
              getTint(out?: vec4): vec4 | undefined;
-             setPoseParameter(paramName: any, paramValue: any): void;
+             setPoseParameter(paramName: string, paramValue: number): void;
              playAnimation(name: string): void;
              setAnimation(id: number, name: string, weight: number): Promise<void>;
              playSequence(sequenceName: string): void;
              addAnimation(id: number, animationName: string, weight?: number): Promise<void>;
-             update(scene: any, camera: any, delta: any): void;
+             update(scene: Scene, camera: Camera, delta: number): void;
              _playSequences(delta: number): void;
-             setMaterialOverride(materialOverride: any): Promise<void>;
-             getBoneById(boneId: number): Bone;
-             renderBodyParts(render: any): void;
-             renderBodyPart(bodyPartName: any, render: any): void;
+             setMaterialOverride(materialOverride: Material | null): Promise<void>;
+             getBoneById(boneId: number): Bone | undefined;
+             renderBodyParts(render: boolean): void;
+             renderBodyPart(bodyPartName: string, render: boolean): void;
              resetBodyPartModels(): void;
-             setBodyPartIdModel(bodyPartId: string, modelId: number): void;
+             setBodyPartIdModel(bodyPartId: number, modelId: number): void;
              setBodyPartModel(bodyPartName: string, modelId: number): void;
              getBodyGroups(): Map<string, number>;
              toString(): string;
              attachSystem(system: any, attachmentName?: string, cpIndex?: number, offset?: vec3): void;
              attachSystemToBone(system: any, boneName: any, offset: any): void;
-             getAttachment(attachmentName: any): any;
+             getAttachment(attachmentName: any): Bone;
              getBoneByName(boneName: any): Bone;
              set material(material: any);
              buildContextMenu(): {
@@ -6950,7 +6963,7 @@ declare class Choreography {
                  };
              };
              getParentModel(): this;
-             getRandomPointOnModel(vec: any, initialVec: any, bones: any): any;
+             getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3;
              set position(position: vec3);
              get position(): vec3;
              set quaternion(quaternion: vec4);
@@ -6959,7 +6972,7 @@ declare class Choreography {
              setFlexes(flexes?: {}): void;
              resetFlexParameters(): void;
              playDefaultAnim(): Promise<void>;
-             getHitboxes(): any[];
+             getHitboxes(): Hitbox[];
              replaceMaterial(material: any, recursive?: boolean): void;
              resetMaterial(recursive?: boolean): void;
              getAnimations(): Promise<Set<string>>;
@@ -6977,6 +6990,12 @@ declare class Choreography {
              static loadManifest(repositoryName: string): void;
              static getModelList(): Promise<FileSelectorFile>;
          }
+
+         export declare type Source1ModelSequences = Record<string, {
+             frame?: number;
+             startTime?: number;
+             s?: MdlStudioSeqDesc;
+         }>;
 
          /**
           * Multiply proxy. Copies the value of a variable to another.
@@ -7070,9 +7089,8 @@ declare class Choreography {
 
          declare class Source2Animation {
              #private;
-             filePath: any;
              file?: Source2File;
-             constructor(animGroup: Source2AnimGroup, filePath: string);
+             constructor(animGroup: Source2AnimGroup);
              setFile(sourceFile: Source2File): void;
              setAnimDatas(data: Kv3Element): void;
              getAnimDesc(name: string): Source2AnimationDesc | undefined;
@@ -7080,7 +7098,6 @@ declare class Choreography {
              getDecoderArray(): Source2AnimeDecoder[];
              getSegment(segmentIndex: number): Kv3Element;
              getAnimations(animations?: Set<string>): Promise<Set<string>>;
-             getAnimationByActivity(activityName: any, activityModifiers: any): any[];
              getAnimationsByActivity(activityName: string): any[];
              get animArray(): Kv3Element[];
              getAnimationByName(animName: string): Source2AnimationDesc;
@@ -7094,8 +7111,6 @@ declare class Choreography {
              get lastFrame(): number;
              getFrame(frameIndex: number): any[];
              matchActivity(activityName: string): boolean;
-             getActivityName(): any;
-             hasModifiers(): boolean;
              modifiersScore(activityName: any, modifiers: any): number;
              matchModifiers(activityName: string, modifiers: Set<string>): boolean;
          }
@@ -7190,7 +7205,7 @@ declare class Choreography {
          export declare class Source2CsgoWeapon extends Source2Material {
              setupUniformsOnce(): void;
              getUniforms(): Map<string, string>[];
-             getTextureUniforms(): Map<string, string[]>[];
+             getTextureUniforms(): Map<string, [string, string]>[];
              get shaderSource(): string;
          }
 
@@ -7266,9 +7281,10 @@ declare class Choreography {
              indices?: any[];
              vertices?: any[];
              keyValue?: Kv3File;
-             structs?: never;
              constructor(file: Source2File, type: string, offset: number, length: number);
              getKeyValue(path: string): Kv3Element | Kv3Value | undefined | null;
+             getKeyValueAsNumber(path: string): number | null;
+             getKeyValueAsStringArray(path: string): string[] | null;
              getKeyValueAsElementArray(path: string): Kv3Element[] | null;
              getIndices(bufferId: number): number[];
              getVertices(bufferId: number): number[];
@@ -7303,22 +7319,6 @@ declare class Choreography {
              get shaderSource(): string;
          }
 
-         export declare class Source2InitRemapCPtoScalar extends Operator {
-             #private;
-             field: number;
-             inputMin: number;
-             inputMax: number;
-             outputMin: number;
-             outputMax: number;
-             startTime: number;
-             endTime: number;
-             setMethod: any;
-             remapBias: number;
-             scaleInitialRange: any;
-             _paramChanged(paramName: string, param: OperatorParam): void;
-             doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
-         }
-
          export declare class Source2LifespanDecay extends Operator {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
@@ -7346,13 +7346,13 @@ declare class Choreography {
              initFloatUniforms(): void;
              initVectorUniforms(): void;
              getUniforms(): Map<string, string>[];
-             getTextureUniforms(): Map<string, string[]>[];
+             getTextureUniforms(): Map<string, [string, string]>[];
              initTextureUniforms(): Promise<void>;
-             getParam(paramName: string): any;
-             getIntParam(intName: string): any;
-             getFloatParam(floatName: string): any;
-             getVectorParam(vectorName: string): any;
-             getDynamicParam(dynamicName: string): any;
+             getParam(paramName: string): number | vec4;
+             getIntParam(intName: string): number;
+             getFloatParam(floatName: string): number;
+             getVectorParam(vectorName: string, out: vec4): vec4;
+             getDynamicParam(dynamicName: string): vec4 | undefined;
          }
 
          export declare class Source2MaterialManager {
@@ -7385,16 +7385,16 @@ declare class Choreography {
              createInstance(isDynamic: boolean): Source2ModelInstance;
              getBones(): Kv3Element | null;
              getSkinMaterials(skin: number): string[] | null;
-             getSkinList(): any[];
+             getSkinList(): string[];
              loadAnimGroups(): Promise<void>;
              getIncludeModels(): any[];
-             addIncludeModel(includeModel: any): void;
-             getAnim(activityName: any, activityModifiers: any): any;
+             addIncludeModel(includeModel: Source2Model): void;
+             getAnim(activityName: string, activityModifiers: Set<string>): any;
              getAnimation(name: string): Source2AnimationDesc | undefined;
-             getAnimationsByActivity(activityName: any, animations?: Source2Animations): Source2Animations;
+             getAnimationsByActivity(activityName: string, animations?: Source2Animations): Source2Animations;
              getAnimations(): Promise<Set<string>>;
              _addAttachments(attachments: Kv3Element[]): void;
-             getAnimationByName(animName: any): Source2AnimationDesc;
+             getAnimationByName(animName: string): Source2AnimationDesc;
          }
 
          declare class Source2ModelAttachment {
@@ -7416,7 +7416,7 @@ declare class Choreography {
              getWorldQuaternion(q?: quat): quat;
          }
 
-         export declare class Source2ModelInstance extends Entity implements Animated {
+         export declare class Source2ModelInstance extends Entity implements Animated, HasSkeleton, RandomPointOnModel {
              #private;
              isSource2ModelInstance: boolean;
              animable: boolean;
@@ -7568,7 +7568,6 @@ declare class Choreography {
              #private;
              load(repository: string, path: string): Promise<Source2Model | null>;
              testProcess2(vmdl: Source2File, model: Source2Model, repository: string): Promise<Entity>;
-             loadMeshes(vmdl: Source2File, callback: any): Promise<void>;
          }
 
          export declare class Source2ModelManager {
@@ -7646,6 +7645,13 @@ declare class Choreography {
              trailLength: number;
              MovementRigidAttachToCP: boolean;
              previousElapsedTime: number;
+             skinning?: Source2ParticleSkinning;
+             initialSkinnedPosition?: vec3;
+             initialSkinnedNormal?: vec3;
+             snapHitbox?: any;
+             snapHitboxOffset?: any;
+             bones?: any[];
+             initialVec?: vec3;
              static consoleAlphaAlternate: boolean;
              static consolePitch: boolean;
              constructor(id: number, system: Source2ParticleSystem);
@@ -7657,6 +7663,11 @@ declare class Choreography {
              setField(field: number, value: any, mulInitial?: boolean, setInitial?: boolean, additive?: boolean): void;
              /**
               * TODO
+              */
+             getScalarField(field?: number, initial?: boolean): number;
+             getVectorField(out: vec3, field?: number, initial?: boolean): vec3;
+             /**
+              * @deprecated Please use getScalarField instead.
               */
              getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
              /**
@@ -7721,8 +7732,27 @@ declare class Choreography {
              bulge: number;
              startControlPointNumber: number;
              endControlPointNumber: number;
+             midPoint: number;
+             startPointOffset: vec3;
+             midPointOffset: vec3;
+             endOffset: vec3;
              static fromOperatorParam(param: OperatorParam, path: Source2ParticlePathParams): void;
          }
+
+         declare enum Source2ParticleSetMethod {
+             SetValue = "PARTICLE_SET_VALUE",
+             ScaleInitial = "PARTICLE_SET_SCALE_INITIAL_VALUE",
+             AddInitial = "PARTICLE_SET_ADD_TO_INITIAL_VALUE",
+             RampCurrent = "PARTICLE_SET_RAMP_CURRENT_VALUE",//Ramp Current Value at Input Rate Per Second
+             ScaleCurrent = "PARTICLE_SET_SCALE_CURRENT_VALUE",//Scale Current Value Raw
+             AddCurrent = "PARTICLE_SET_ADD_TO_CURRENT_VALUE",
+             Default = "PARTICLE_SET_VALUE"
+         }
+
+         declare type Source2ParticleSkinning = {
+             bones: [string, string, string, string];
+             weights: [number, number, number, number];
+         };
 
          export declare class Source2ParticleSystem extends Entity {
              #private;
@@ -7761,6 +7791,7 @@ declare class Choreography {
              parentSystem: Source2ParticleSystem | null;
              isBounded: boolean;
              endCap: boolean;
+             groupId: number;
              constructor(repository: string, fileName: string, name: string);
              init(snapshotModifiers?: Map<string, string>): Promise<void>;
              start(): void;
@@ -7769,7 +7800,7 @@ declare class Choreography {
              do(action: string, params?: any): void;
              reset(): void;
              step(elapsedTime: number): void;
-             createParticle(creationTime: number, elapsedTime: number): Source2Particle;
+             createParticle(emitterIndex: number, creationTime: number, elapsedTime: number): Source2Particle;
              getWorldPosition(vec?: vec3): vec3;
              getWorldQuaternion(q?: quat): quat;
              getControlPoint(controlPointId: number): ControlPoint;
@@ -7900,8 +7931,7 @@ declare class Choreography {
          declare class Source2SeqGroup {
              #private;
              sequences: Source2Sequence[];
-             file: any;
-             m_localS1SeqDescArray: Kv3Element[] | null;
+             file?: Source2File;
              loaded: boolean;
              constructor(animGroup: Source2AnimGroup);
              setFile(sourceFile: Source2File): void;
@@ -7939,7 +7969,7 @@ declare class Choreography {
 
          export declare const Source2SnapshotLoader: {
              load(repository: string, filename: string): Promise<Source2Snapshot>;
-             "__#253@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+             "__#254@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
@@ -7992,7 +8022,7 @@ declare class Choreography {
              EXT_texture_compression_bptc: any;
              EXT_texture_compression_rgtc: any;
              constructor();
-             getTexture(repository: string, path: string, frame: number): Promise<Texture>;
+             getTexture(repository: string, path: string, frame: number): Promise<Texture | null>;
              getVtex(repository: string, path: string): Promise<Source2Texture | null>;
              getTextureSheet(repository: string, path: string): Promise<Source2SpriteSheet | null>;
              setTexture(path: string, texture: AnimatedTexture): void;
@@ -8066,8 +8096,7 @@ declare class Choreography {
              quaternion: quat;
              tempPos: vec3;
              tempRot: vec3;
-             constructor(sourceModel?: any);
-             animate2(dynamicProp: any, poseParameters: any, position: any, orientation: any, sequences: any): void;
+             animate2(dynamicProp: Source1ModelInstance, poseParameters: Map<string, number>, position: vec3, orientation: quat, sequences: Source1ModelSequences): void;
          }
 
          declare class SourceBinaryLoader {
@@ -8204,7 +8233,7 @@ declare class Choreography {
              #private;
              load(repository: string, path: string): Promise<SourceMdl | null>;
              parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceMdl;
-             _parseAnimSection(reader: any, animDesc: any, frameIndex: any): any[];
+             _parseAnimSection(reader: BinaryReader, animDesc: MdlStudioAnimDesc, frameIndex: number): MdlStudioAnim[] | null;
          }
 
          /**
@@ -8254,6 +8283,8 @@ declare class Choreography {
              initialCPPosition: any;
              initialCPQuaternion: any;
              renderScreenVelocityRotate: boolean;
+             initialVec?: vec3;
+             bones?: [Bone, number][];
              constructor(id: any, system: any);
              step(elapsedTime: any): void;
              start(): void;
@@ -8673,7 +8704,7 @@ declare class Choreography {
              readonly skinReferences: any[][];
              readonly textures: MdlTexture[];
              readonly modelGroups: MdlStudioModelGroup[];
-             header: any;
+             header: SourceMdlHeader;
              readonly bodyParts: MdlBodyPart[];
              readonly sequences: MdlStudioSeqDesc[];
              readonly texturesDir: string[];
@@ -8684,7 +8715,7 @@ declare class Choreography {
              readonly boneNames: Map<string, number>;
              numflexdesc: number;
              readonly attachments: MdlAttachment[];
-             readonly animDesc: any[];
+             readonly animDesc: MdlStudioAnimDesc[];
              loader: SourceEngineMDLLoader;
              reader: BinaryReader;
              readonly poseParameters: MdlStudioPoseParam[];
@@ -8745,10 +8776,9 @@ declare class Choreography {
              constructor(repository: string);
              getMaterialName(skinId: number, materialId: number): string;
              getSkinList(): number[];
-             getBodyPart(bodyPartId: number): MdlBodyPart;
+             getBodyPart(bodyPartId: number): MdlBodyPart | undefined;
              getBodyParts(): MdlBodyPart[];
              getSequence(sequenceName: string): Promise<MdlStudioSeqDesc | null>;
-             getModelGroup(modelGroupId: number): MdlStudioModelGroup;
              getModelGroups(): MdlStudioModelGroup[];
              getExternalMdlCount(): number;
              getExternalMdl(externalId: number): Promise<SourceMdl | null>;
@@ -8763,24 +8793,51 @@ declare class Choreography {
              addExternalMdl(mdlName: string): void;
              getBoneCount(): number;
              getBones(): MdlBone[];
-             getBone(boneIndex: number): MdlBone | null;
-             getBoneByName(boneName: string): MdlBone | null;
+             getBone(boneIndex: number): MdlBone | undefined;
+             getBoneByName(boneName: string): MdlBone | undefined;
              getBoneId(boneName: string): number;
              getAttachments(): MdlAttachment[];
              getAttachmentsNames(out?: string[]): MdlAttachment[];
-             getAttachmentById(attachmentId: number): MdlAttachment | null;
-             getAttachment(attachmentName: string): MdlAttachment | null;
-             getSequenceById(sequenceId: number): MdlStudioSeqDesc;
+             getAttachmentById(attachmentId: number): MdlAttachment | undefined;
+             getAttachment(attachmentName: string): MdlAttachment | undefined;
+             getSequenceById(sequenceId: number): MdlStudioSeqDesc | undefined;
              getSequences(): string[];
              getSequences2(): string[];
-             getAnimDescription(animIndex: number): null;
-             getAnimFrame(dynamicProp: Source1ModelInstance, animDesc: any, frameIndex: number): {
+             getAnimDescription(animIndex: number): MdlStudioAnimDesc | null;
+             getAnimFrame(dynamicProp: Source1ModelInstance, animDesc: MdlStudioAnimDesc, frameIndex: number): {
                  bones: Record<string, any>;
              };
-             getLocalPoseParameter(poseIndex: number): MdlStudioPoseParam;
+             getLocalPoseParameter(poseIndex: number): MdlStudioPoseParam | undefined;
              getPoseParameters(): MdlStudioPoseParam[];
              boneFlags(boneIndex: number): number;
          }
+
+         declare type SourceMdlHeader = {
+             modelFormatID: number;
+             formatVersionID: number;
+             checkSum: number;
+             modelName: string;
+             dataLength: number;
+             eyeposition: vec3;
+             illumposition: vec3;
+             hull_min: vec3;
+             hull_max: vec3;
+             view_bbmin: vec3;
+             view_bbmax: vec3;
+             flags: number;
+             activitylistversion: number;
+             eventsindexed: number;
+             numFlexDesc: number;
+             mass: number;
+             contents: number;
+             virtualModel: number;
+             animBlocksCount: number;
+             animBlocksIndex: number;
+             animBlockModel: number;
+             directionaldotproduct: number;
+             rootLod: number;
+             numAllowedRootLods: number;
+         };
 
          export declare class SourceModel {
              repository: string;
@@ -8798,24 +8855,24 @@ declare class Choreography {
              dirty: boolean;
              bodyParts: Map<string, SourceModelMesh[][]>;
              constructor(repository: string, fileName: string, mdl: SourceMdl, vvd: SourceVvd, vtx: SourceVtx);
-             addGeometry(mesh: any, geometry: any, bodyPartName: any, bodyPartModelId: any): void;
-             createInstance(isDynamic: any, preventInit: any): Source1ModelInstance;
+             addGeometry(mesh: MeshTest, geometry: BufferGeometry, bodyPartName: string, bodyPartModelId: number): void;
+             createInstance(isDynamic: boolean, preventInit: boolean): Source1ModelInstance;
              getBodyNumber(bodygroups: Map<string, number>): number;
              getBones(): MdlBone[] | null;
              getAttachments(): MdlAttachment[] | null;
-             getBone(boneIndex: any): MdlBone | null;
-             getAttachmentById(attachmentIndex: any): MdlAttachment | null;
-             getBoneByName(boneName: any): MdlBone | null;
-             getAttachment(attachmentName: any): MdlAttachment | null;
-             getBodyPart(bodyPartId: any): MdlBodyPart | null;
-             getBodyParts(): MdlBodyPart[] | null;
+             getBone(boneIndex: number): MdlBone | undefined;
+             getAttachmentById(attachmentIndex: number): MdlAttachment | undefined;
+             getBoneByName(boneName: string): MdlBone | undefined;
+             getAttachment(attachmentName: string): MdlAttachment | undefined;
+             getBodyPart(bodyPartId: number): MdlBodyPart | undefined;
+             getBodyParts(): MdlBodyPart[] | undefined;
              getAnimation(animationName: string, entity: Source1ModelInstance): Promise<Animation_2>;
          }
 
          declare class SourceModelMesh {
-             mesh: any;
-             geometry: any;
-             constructor(mesh: any, geometry: any);
+             mesh: MeshTest;
+             geometry: BufferGeometry;
+             constructor(mesh: MeshTest, geometry: BufferGeometry);
          }
 
          export declare class SourcePCF {
@@ -8862,7 +8919,7 @@ declare class Choreography {
              fixupTableStart: number;
              vertexDataStart: number;
              tangentDataStart: number;
-             getVertices(lodLevel: number): any[];
+             getVertices(lodLevel: number): SourceVvdVertex[] | null;
          }
 
          declare class SourceVvdBoneWeight {
@@ -9785,6 +9842,8 @@ declare class Choreography {
              constructor(params?: any);
              updateGeometry(): void;
          }
+
+         declare type Tuple<T, N extends number, R extends readonly T[] = []> = R['length'] extends N ? R : Tuple<T, N, [T, ...R]>;
 
          export declare class TwistAroundAxis extends SourceEngineParticleOperator {
              static functionName: string;

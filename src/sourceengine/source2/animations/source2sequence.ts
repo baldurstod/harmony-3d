@@ -20,7 +20,7 @@ export class Source2Sequence {
 
 	matchActivity(activity: string, modifiers: string[]) {
 		if (modifiers) {
-			if (this.activities.length == modifiers.size + 1) {
+			if (this.activities.length == modifiers.length + 1) {
 				if (this.activities[0].name == activity) {
 					let matchCount = 0;
 					for (let i = 1; i < this.activities.length; i++) {
@@ -30,7 +30,7 @@ export class Source2Sequence {
 							}
 						}
 					}
-					if (matchCount == modifiers.size) {
+					if (matchCount == modifiers.length) {
 						return true;
 					}
 				}
