@@ -1,31 +1,33 @@
 import { Repositories } from '../../../repositories/repositories';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
 import { Source2ModelLoader } from '../loaders/source2modelloader';
+import { Source2Model } from './source2model';
+import { Source2ModelInstance } from './source2modelinstance';
 
 export class Source2ModelManager {
-	static #modelListPerRepository = {};
-	static #modelsPerRepository = {};
+	static #modelListPerRepository: Record<string, JSON | null | undefined/*TODO: improve type*/> = {};//TODO: use a map
+	static #modelsPerRepository: Record<string, Record<string, Source2Model>> = {};//TODO: use a map2
 	static #modelList = new Map();
 	static instances = new Set();
 
-	static async #createModel(repositoryName, fileName) {
-		if (!fileName) {
+	static async #createModel(repository: string, path: string) {
+		if (!path) {
 			return;
 		}
-		fileName = fileName.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
+		path = path.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
 		/*let fullPath = repository + fileName;
 		let model = this.#modelList.get(fullPath);*/
 
-		let model = this.#getModel(repositoryName, fileName);
+		let model = this.#getModel(repository, path);
 		if (model) {
 			return model;
 		}
 
-		model = await new Source2ModelLoader().load(repositoryName, fileName);
+		model = await new Source2ModelLoader().load(repository, path);
 		if (model) {
-			this.#modelsPerRepository[repositoryName][fileName] = model;
+			this.#modelsPerRepository[repository]![path] = model;
 		} else {
-			console.error('Model not found', repositoryName, fileName);
+			console.error('Model not found', repository, path);
 		}
 		return model;
 
@@ -42,14 +44,14 @@ export class Source2ModelManager {
 		}*/
 	}
 
-	static #getModel(repositoryName, fileName) {
-		if (!this.#modelsPerRepository[repositoryName]) {
-			this.#modelsPerRepository[repositoryName] = {};
+	static #getModel(repository: string, path: string): Source2Model | null {
+		if (!this.#modelsPerRepository[repository]) {
+			this.#modelsPerRepository[repository] = {};
 		}
-		return this.#modelsPerRepository[repositoryName][fileName];
+		return this.#modelsPerRepository[repository][path] ?? null;
 	}
 
-	static async createInstance(repository, fileName, dynamic) {
+	static async createInstance(repository: string, fileName: string, dynamic: boolean): Promise<Source2ModelInstance | null> {
 		if (!repository) {
 			//try to get repository from filename
 			for (const repo in this.#modelListPerRepository) {
@@ -68,16 +70,16 @@ export class Source2ModelManager {
 		return null;
 	}
 
-	static async loadManifest(repositoryName) {
-		const modelList = this.#modelListPerRepository[repositoryName];
+	static async loadManifest(repository: string) {
+		const modelList = this.#modelListPerRepository[repository];
 
 		if (modelList === undefined) {
-			this.#modelListPerRepository[repositoryName] = null;
+			this.#modelListPerRepository[repository] = null;
 		}
 	}
 
 	static async getModelList(): Promise<FileSelectorFile> {
-		const repoList = [];
+		const repoList: FileSelectorFile[] = [];
 		const modelListPerRepository = this.#modelListPerRepository;
 		for (const repositoryName in modelListPerRepository) {
 			let repo = modelListPerRepository[repositoryName];
@@ -92,7 +94,7 @@ export class Source2ModelManager {
 			}
 
 			if (repo) {
-				repoList.push({ name: repositoryName, files: [repo] });
+				repoList.push({ name: repositoryName, files: [repo as unknown as FileSelectorFile] });
 			}
 		}
 		return { name: '', path: '', files: repoList };

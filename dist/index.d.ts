@@ -7573,8 +7573,8 @@ declare class Choreography {
          export declare class Source2ModelManager {
              #private;
              static instances: Set<never>;
-             static createInstance(repository: any, fileName: any, dynamic: any): Promise<any>;
-             static loadManifest(repositoryName: any): Promise<void>;
+             static createInstance(repository: string, fileName: string, dynamic: boolean): Promise<Source2ModelInstance | null>;
+             static loadManifest(repository: string): Promise<void>;
              static getModelList(): Promise<FileSelectorFile>;
          }
 

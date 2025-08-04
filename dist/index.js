@@ -26120,27 +26120,27 @@ class Source2ModelLoader {
 _a$2 = Source2ModelLoader;
 
 class Source2ModelManager {
-    static #modelListPerRepository = {};
-    static #modelsPerRepository = {};
+    static #modelListPerRepository = {}; //TODO: use a map
+    static #modelsPerRepository = {}; //TODO: use a map2
     static #modelList = new Map();
     static instances = new Set();
-    static async #createModel(repositoryName, fileName) {
-        if (!fileName) {
+    static async #createModel(repository, path) {
+        if (!path) {
             return;
         }
-        fileName = fileName.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
+        path = path.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
         /*let fullPath = repository + fileName;
         let model = this.#modelList.get(fullPath);*/
-        let model = this.#getModel(repositoryName, fileName);
+        let model = this.#getModel(repository, path);
         if (model) {
             return model;
         }
-        model = await new Source2ModelLoader().load(repositoryName, fileName);
+        model = await new Source2ModelLoader().load(repository, path);
         if (model) {
-            this.#modelsPerRepository[repositoryName][fileName] = model;
+            this.#modelsPerRepository[repository][path] = model;
         }
         else {
-            console.error('Model not found', repositoryName, fileName);
+            console.error('Model not found', repository, path);
         }
         return model;
         /*if (model) {
@@ -26155,11 +26155,11 @@ class Source2ModelManager {
             }
         }*/
     }
-    static #getModel(repositoryName, fileName) {
-        if (!this.#modelsPerRepository[repositoryName]) {
-            this.#modelsPerRepository[repositoryName] = {};
+    static #getModel(repository, path) {
+        if (!this.#modelsPerRepository[repository]) {
+            this.#modelsPerRepository[repository] = {};
         }
-        return this.#modelsPerRepository[repositoryName][fileName];
+        return this.#modelsPerRepository[repository][path] ?? null;
     }
     static async createInstance(repository, fileName, dynamic) {
         if (!repository) {
@@ -26179,10 +26179,10 @@ class Source2ModelManager {
         }
         return null;
     }
-    static async loadManifest(repositoryName) {
-        const modelList = this.#modelListPerRepository[repositoryName];
+    static async loadManifest(repository) {
+        const modelList = this.#modelListPerRepository[repository];
         if (modelList === undefined) {
-            this.#modelListPerRepository[repositoryName] = null;
+            this.#modelListPerRepository[repository] = null;
         }
     }
     static async getModelList() {
