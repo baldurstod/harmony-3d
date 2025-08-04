@@ -37916,10 +37916,12 @@ function cleanSource1MaterialName(name) {
 }
 class SourceEngineMaterialManager {
     static #fileListPerRepository = new Map(); // TODO: use a Map2
-    static #materialList = new Map(); // TODO: use a Map2
+    static #materialList = new Map2();
     static #materialList2 = new Set();
     static #materialListPerRepository = {};
-    static getMaterial(repository, path, searchPaths) {
+    static fallbackRepository = '';
+    static async getMaterial(repository, path, searchPaths) {
+        // TODO: improve this function code
         path = cleanSource1MaterialName(path);
         if (searchPaths) {
             const promises = [];
@@ -37927,7 +37929,7 @@ class SourceEngineMaterialManager {
                 promises.push(this.#getMaterial(repository, 'materials/' + searchPath + path));
             }
             const promise = new Promise(resolve => {
-                Promise.allSettled(promises).then((promises) => {
+                Promise.allSettled(promises).then(async (promises) => {
                     for (const promise of promises) {
                         const value = promise.value;
                         if (value) {
@@ -37935,17 +37937,32 @@ class SourceEngineMaterialManager {
                             return;
                         }
                     }
-                    resolve(this.#getMaterial(repository, 'materials/' + path));
+                    //resolve(this.#getMaterial(repository, 'materials/' + path));
+                    const material = await this.#getMaterial(repository, 'materials/' + path);
+                    if (material) {
+                        resolve(material);
+                    }
+                    if (this.fallbackRepository && this.fallbackRepository != repository) {
+                        resolve(this.getMaterial(this.fallbackRepository, path, searchPaths));
+                    }
+                    resolve(null);
                 });
             });
             return promise;
         }
         else {
-            return this.#getMaterial(repository, 'materials/' + path);
+            const material = await this.#getMaterial(repository, 'materials/' + path);
+            if (material) {
+                return material;
+            }
+            if (this.fallbackRepository && this.fallbackRepository != repository) {
+                return this.getMaterial(this.fallbackRepository, path, searchPaths);
+            }
+            return null;
         }
     }
     static #getMaterial(repository, path) {
-        const material = this.#materialList.get(path);
+        const material = this.#materialList.get(repository, path);
         if (material instanceof Promise) {
             const promise = new Promise(resolve => {
                 material.then((material) => {
@@ -37982,14 +37999,14 @@ class SourceEngineMaterialManager {
                         resolve(material);
                         return;
                     }
-                    this.#materialList.set(path, material);
+                    this.#materialList.set(repository, path, material);
                     const newMaterial = material.clone();
                     newMaterial.init();
                     this.#materialList2.add(newMaterial);
                     resolve(newMaterial);
                 }).catch((value) => resolve(value));
             });
-            this.#materialList.set(path, promise);
+            this.#materialList.set(repository, path, promise);
             return promise;
         }
     }

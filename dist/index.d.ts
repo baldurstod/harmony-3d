@@ -8216,6 +8216,7 @@ declare class Choreography {
 
          export declare class SourceEngineMaterialManager {
              #private;
+             static fallbackRepository: string;
              static getMaterial(repository: string, path: string, searchPaths?: string[]): Promise<SourceEngineMaterial | null>;
              static addRepository(repository: string): void;
              static getMaterialList(): Promise<{
