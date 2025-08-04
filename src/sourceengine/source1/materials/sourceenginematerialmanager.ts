@@ -25,7 +25,7 @@ export class SourceEngineMaterialManager {
 			for (const searchPath of searchPaths) {
 				promises.push(this.#getMaterial(repository, 'materials/' + searchPath + path));
 			}
-			const promise = new Promise<SourceEngineMaterial | null>((resolve) => {
+			const promise = new Promise<SourceEngineMaterial | null>(resolve => {
 				Promise.allSettled(promises).then(
 					(promises) => {
 						for (const promise of promises) {
@@ -35,9 +35,7 @@ export class SourceEngineMaterialManager {
 								return;
 							}
 						}
-						this.#getMaterial(repository, 'materials/' + path).then(
-							material => resolve(material),
-						);
+						resolve(this.#getMaterial(repository, 'materials/' + path));
 					}
 				)
 			});

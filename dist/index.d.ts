@@ -7969,7 +7969,7 @@ declare class Choreography {
 
          export declare const Source2SnapshotLoader: {
              load(repository: string, filename: string): Promise<Source2Snapshot>;
-             "__#37412@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+             "__#254@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
@@ -10202,12 +10202,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#37381@#webAssembly"?: any;
-             "__#37381@#HEAPU8"?: Uint8Array;
+             "__#223@#webAssembly"?: any;
+             "__#223@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#37381@#initHeap"(): void;
+             "__#223@#initHeap"(): void;
          };
 
          export { }

@@ -37926,7 +37926,7 @@ class SourceEngineMaterialManager {
             for (const searchPath of searchPaths) {
                 promises.push(this.#getMaterial(repository, 'materials/' + searchPath + path));
             }
-            const promise = new Promise((resolve) => {
+            const promise = new Promise(resolve => {
                 Promise.allSettled(promises).then((promises) => {
                     for (const promise of promises) {
                         const value = promise.value;
@@ -37935,7 +37935,7 @@ class SourceEngineMaterialManager {
                             return;
                         }
                     }
-                    this.#getMaterial(repository, 'materials/' + path).then(material => resolve(material));
+                    resolve(this.#getMaterial(repository, 'materials/' + path));
                 });
             });
             return promise;
