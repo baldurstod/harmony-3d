@@ -20048,49 +20048,39 @@ class ZipRepository {
             return { error: RepositoryError.RepoInactive };
         }
         await this.#initPromise;
-        cleanupFilename(filename);
-        throw 'code me';
+        const file = this.#zipEntries.get(cleanupFilename(filename));
+        if (!file) {
+            return { error: RepositoryError.FileNotFound };
+        }
+        return { file: file };
     }
     async getFileAsArrayBuffer(filename) {
-        if (!this.active) {
-            return { error: RepositoryError.RepoInactive };
+        const response = await this.getFile(filename);
+        if (response.error) {
+            return { error: response.error };
         }
-        await this.#initPromise;
-        const file = this.#zipEntries.get(cleanupFilename(filename));
-        if (!file) {
-            return { error: RepositoryError.FileNotFound };
-        }
-        return { buffer: await file.arrayBuffer() };
+        return { buffer: await response.file.arrayBuffer() };
     }
     async getFileAsText(filename) {
-        if (!this.active) {
-            return { error: RepositoryError.RepoInactive };
+        const response = await this.getFile(filename);
+        if (response.error) {
+            return { error: response.error };
         }
-        await this.#initPromise;
-        const file = this.#zipEntries.get(cleanupFilename(filename));
-        if (!file) {
-            return { error: RepositoryError.FileNotFound };
-        }
-        return { text: await file.text() };
+        return { text: await response.file.text() };
     }
     async getFileAsBlob(filename) {
-        if (!this.active) {
-            return { error: RepositoryError.RepoInactive };
+        const response = await this.getFile(filename);
+        if (response.error) {
+            return { error: response.error };
         }
-        await this.#initPromise;
-        cleanupFilename(filename);
-        throw 'code me';
+        return { blob: await response.file };
     }
     async getFileAsJson(filename) {
-        if (!this.active) {
-            return { error: RepositoryError.RepoInactive };
+        const response = await this.getFile(filename);
+        if (response.error) {
+            return { error: response.error };
         }
-        await this.#initPromise;
-        const file = this.#zipEntries.get(cleanupFilename(filename));
-        if (!file) {
-            return { error: RepositoryError.FileNotFound };
-        }
-        return { json: JSON.parse(await file.text()) };
+        return { json: JSON.parse(await response.file.text()) };
     }
     async getFileList() {
         await this.#initPromise;

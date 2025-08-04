@@ -50,6 +50,7 @@ export default [
 			'meshoptimizer',
 			'@derschmale/io-rgbe',
 			'@zip.js/zip.js',
+			'murmurhash',
 		],
 	},
 ];
