@@ -1,14 +1,17 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
+import { Camera } from '../../../cameras/camera';
 import { Entity } from '../../../entities/entity';
 import { Animated } from '../../../interfaces/animated';
 import { HasSkeleton } from '../../../interfaces/hasskeleton';
 import { RandomPointOnModel } from '../../../interfaces/randompointonmodel';
 import { Material } from '../../../materials/material';
 import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
+import { Bone } from '../../../objects/bone';
 import { Group } from '../../../objects/group';
 import { Mesh } from '../../../objects/mesh';
 import { SkeletalMesh } from '../../../objects/skeletalmesh';
 import { Skeleton } from '../../../objects/skeleton';
+import { Scene } from '../../../scenes/scene';
 import { Interaction } from '../../../utils/interaction';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { Source2AnimationDesc } from './source2animationdesc';
@@ -31,10 +34,10 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 	#skeleton: Skeleton | null = null;
 	#skin = 0;
 	#materialsUsed = new Set<Material>();
-	#animName;
+	#animName?: string;
 	animable = true;
 	#lod = 1n;
-	bodyParts = {};
+	bodyParts: Record<string, Mesh[][]> = {};
 	poseParameters: Record<string, number> = {};
 	meshes = new Set<Mesh>();
 	attachments = new Map<string, Source2ModelAttachmentInstance>();
@@ -185,7 +188,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 		this.setActivityModifiers(activityModifiers);
 	}
 
-	playAnimation(name) {
+	playAnimation(name: string) {
 		this.#animName = name;
 	}
 
@@ -202,7 +205,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 		}
 	}
 
-	update(scene, camera, delta) {
+	update(scene: Scene, camera: Camera, delta: number) {
 		if (this.#skeleton && this.isPlaying()) {
 			this.#playSequences(delta * animSpeed * this.animationSpeed);
 			this.#skeleton.setBonesMatrix();
@@ -212,12 +215,12 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 		}
 	}
 
-	#playSequences(delta) {//TODO
+	#playSequences(delta: number) {//TODO
 		if (this.#skeleton === null) {
 			return null;
 		}
 
-		let animDesc: Source2AnimationDesc;
+		let animDesc: Source2AnimationDesc | undefined;
 		if (this.#animName) {
 			animDesc = this.sourceModel.getAnimation(this.#animName);
 		} else {
@@ -341,8 +344,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 			const boneRotParent = bones.getValueAsVectorArray('m_boneRotParent');
 			const boneParent = bones.getValueAsBigintArray('m_nParent') ?? bones.getValueAsNumberArray('m_nParent');
 			if (bonesName && bonePosParent && boneRotParent && boneParent && this.#skeleton) {
-				for (let modelBoneIndex = 0, m = bonesName.length; modelBoneIndex < m; ++modelBoneIndex) {
-					const boneName = bonesName[modelBoneIndex];
+				for (const [modelBoneIndex, boneName] of bonesName.entries()) {
 					const bone = this.#skeleton.addBone(modelBoneIndex, boneName);
 					//bone.name = boneName;
 					bone.quaternion = boneRotParent[modelBoneIndex] as quat;
@@ -352,10 +354,11 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 					//const poseToBone = mat4.fromRotationTranslation(mat4.create(), bone.refQuaternion, bone.refPosition);//TODO: optimize
 					//mat4.invert(poseToBone, poseToBone);
 
-					const parent = Number(boneParent[modelBoneIndex]);
-					if (parent >= 0) {
+					const parentIndex = Number(boneParent[modelBoneIndex]);
+					const parentName = bonesName[parentIndex];
+					if (parentName) {
 						//bone.parent = this.#skeleton.getBoneByName(bonesName[parent]);
-						const parentBone = this.#skeleton.getBoneByName(bonesName[parent]);
+						const parentBone = this.#skeleton.getBoneByName(parentName);
 						if (parentBone) {
 							parentBone.addChild(bone);
 
@@ -405,7 +408,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 		return Object.assign(super.buildContextMenu(), {
 			Source2ModelInstance_1: null,
 			skin: { i18n: '#skin', submenu: skinMenu },
-			animation: { i18n: '#animation', f: async (entity) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.getAnimations()); if (animation) { entity.playAnimation(animation); } } },
+			animation: { i18n: '#animation', f: async (entity: Source2ModelInstance) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.getAnimations()); if (animation) { entity.playAnimation(animation); } } },
 			Source2ModelInstance_2: null,
 			animate: { i18n: '#animate', selected: this.animationSpeed != 0.0, f: () => this.animationSpeed == 0 ? this.animationSpeed = 1 : this.animationSpeed = 0 },
 			frame: { i18n: '#frame', f: () => { const frame = prompt('Frame', String(this.mainAnimFrame)); if (frame) { this.animationSpeed = 0; this.mainAnimFrame = Number(frame); } } },
@@ -416,7 +419,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 		return this;
 	}
 
-	getRandomPointOnModel(vec, initialVec, bones) {
+	getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3 {
 		const meshes = this.meshes;
 		for (const mesh of meshes) {
 			(mesh as SkeletalMesh).getRandomPointOnModel(vec, initialVec, bones);
@@ -425,11 +428,11 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 		return vec;
 	}
 
-	getAttachment(name) {
+	getAttachment(name: string) {
 		return this.attachments.get(name.toLowerCase());
 	}
 
-	static set animSpeed(speed) {
+	static set animSpeed(speed: number) {
 		const s = Number(speed);
 		animSpeed = Number.isNaN(s) ? 1 : s;
 	}
