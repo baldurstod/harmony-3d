@@ -6,6 +6,7 @@ import { Source2ModelInstance } from './source2modelinstance';
 const tempPos = vec3.create();
 const tempQuat = quat.create();
 
+
 export class Source2ModelAttachment {
 	name: string;
 	ignoreRotation = false;
@@ -37,8 +38,11 @@ export class Source2ModelAttachmentInstance extends Entity {
 		if (bone) {
 			bone.getWorldPosition(vec);
 			bone.getWorldQuaternion(tempQuat);
-			vec3.transformQuat(tempPos, this.attachment.influenceOffsets[0], tempQuat);
-			vec3.add(vec, vec, tempPos);
+			const offset0 = this.attachment.influenceOffsets[0];
+			if (offset0) {
+				vec3.transformQuat(tempPos, offset0, tempQuat);
+				vec3.add(vec, vec, tempPos);
+			}
 		} else {
 			vec3.copy(vec, this._position);
 		}
@@ -50,7 +54,10 @@ export class Source2ModelAttachmentInstance extends Entity {
 		const bone = this.#getBone(this.attachment.influenceNames[0] ?? '');
 		if (bone) {
 			bone.getWorldQuaternion(q);
-			quat.mul(q, q, this.attachment.influenceRotations[0]);
+			const quat0 = this.attachment.influenceRotations[0];
+			if (quat0) {
+				quat.mul(q, q, quat0);
+			}
 		} else {
 			quat.copy(q, this._quaternion);
 		}
