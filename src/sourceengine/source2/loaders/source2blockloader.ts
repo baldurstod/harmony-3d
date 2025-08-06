@@ -45,7 +45,7 @@ const DATA_TYPE_COLOR = 28;
 const DATA_TYPE_BOOLEAN = 30;
 const DATA_TYPE_NAME = 31;
 
-function sNormUint16(uint16: number) {
+export function sNormUint16(uint16: number) {
 	//https://www.khronos.org/opengl/wiki/Normalized_Integer
 	return Math.max(uint16 / 0x7FFF, -1.0);
 }
@@ -91,6 +91,10 @@ export const Source2BlockLoader = new (function () {
 						decodeMethod1(reader, sa, decodeLength);
 					}
 					(block as Source2SnapBlock).datas = sa;
+					break;
+				case 'MVTX':
+				case 'MIDX':
+					// Loaded along CTRL block
 					break;
 				default:
 					console.info('Unknown block type ' + block.type, block.offset, block.length, block);
@@ -255,26 +259,28 @@ function loadNtro(reader: BinaryReader, block: Source2NtroBlock) {
 	}
 }
 
-const defaultValuesPosition = vec3.create();
-const defaultValuesNormal = vec3.create();
-const defaultValuesTangent = vec4.create();
-const defaultValuesCoord = vec2.create();
-const defaultValuesBoneIndice = vec4.create();
-const defaultValuesBoneWeight = vec4.fromValues(1.0, 0, 0, 0);
-const VERTEX_POSITION_LEN = 3;
-const VERTEX_NORMAL_LEN = 4;
-const VERTEX_TANGENT_LEN = 4;
-const VERTEX_COORD_LEN = 2;
-const VERTEX_BONE_INDICE_LEN = 4;
-const VERTEX_BONE_WEIGHT_LEN = 4;
+export const defaultValuesPosition = vec3.create();
+export const defaultValuesNormal = vec3.create();
+export const defaultValuesTangent = vec4.create();
+export const defaultValuesCoord = vec2.create();
+export const defaultValuesBoneIndice = vec4.create();
+export const defaultValuesBoneWeight = vec4.fromValues(1.0, 0, 0, 0);
 
-const BYTES_PER_VERTEX_POSITION = VERTEX_POSITION_LEN * 4;
-const BYTES_PER_VERTEX_NORMAL = VERTEX_NORMAL_LEN * 4;
-const BYTES_PER_VERTEX_TANGENT = VERTEX_TANGENT_LEN * 4;
-const BYTES_PER_VERTEX_COORD = VERTEX_COORD_LEN * 4;
-const BYTES_PER_VERTEX_BONE_INDICE = VERTEX_BONE_INDICE_LEN * 4;
-const BYTES_PER_VERTEX_BONE_WEIGHT = VERTEX_BONE_WEIGHT_LEN * 4;
-const BYTES_PER_INDEX = 1 * 4;
+export const VERTEX_POSITION_LEN = 3;
+export const VERTEX_NORMAL_LEN = 4;
+export const VERTEX_TANGENT_LEN = 4;
+export const VERTEX_COORD_LEN = 2;
+export const VERTEX_BONE_INDICE_LEN = 4;
+export const VERTEX_BONE_WEIGHT_LEN = 4;
+
+export const BYTES_PER_VERTEX_POSITION = VERTEX_POSITION_LEN * 4;
+export const BYTES_PER_VERTEX_NORMAL = VERTEX_NORMAL_LEN * 4;
+export const BYTES_PER_VERTEX_TANGENT = VERTEX_TANGENT_LEN * 4;
+export const BYTES_PER_VERTEX_COORD = VERTEX_COORD_LEN * 4;
+export const BYTES_PER_VERTEX_BONE_INDICE = VERTEX_BONE_INDICE_LEN * 4;
+export const BYTES_PER_VERTEX_BONE_WEIGHT = VERTEX_BONE_WEIGHT_LEN * 4;
+export const BYTES_PER_INDEX = 1 * 4;
+
 function loadVbib(reader: BinaryReader, block: Source2FileBlock) {
 
 	const VERTEX_HEADER_SIZE = 24;
@@ -287,12 +293,12 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock) {
 	const indexOffset = reader.tell() + reader.getInt32();
 	const indexCount = reader.getInt32();
 
-	block.vertices = [];
-	block.indices = [];
+	//block.file.vertices = [];
+	//block.file.indices = [];
 
 	for (var i = 0; i < vertexCount; i++) { // header size: 24 bytes
 		reader.seek(vertexOffset + i * VERTEX_HEADER_SIZE);
-		const s1: any = {};
+		const s1: any/*TODO: fix typer*/ = {};
 		s1.vertexCount = reader.getInt32();
 		s1.bytesPerVertex = reader.getInt16();
 		reader.skip(2);// TODO: figure out what it is. Used to be 0, now 1024 for pudge model spring 2025
@@ -440,7 +446,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock) {
 						normalFilled = true;
 						break;
 					case 'TANGENT':
-						s1Tangents.set(tempValue, vertexIndex * VERTEX_NORMAL_LEN);//TODOv3
+						s1Tangents.set(tempValue, vertexIndex * VERTEX_TANGENT_LEN);//TODOv3
 						tangentFilled = true;
 						break;
 					case 'TEXCOORD':
@@ -511,7 +517,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock) {
 		if (VERBOSE) {
 			console.log(s1.normals[0], s1.normals[1], s1.normals[2]);
 		}
-		block.vertices.push(s1);
+		block.file.vertices.push(s1);
 	}
 
 	//console.log(block.vertices);
@@ -536,7 +542,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock) {
 			s2.dataOffset = 0;
 		}
 
-		s2.indices = new ArrayBuffer(s2.indexCount * BYTES_PER_INDEX);
+		s2.indices = new ArrayBuffer(s2.indexCount * BYTES_PER_INDEX);/*TODO; use s2.bytesPerIndex and create a Uint16Array / Uint32Array depending on bytesPerIndex*/
 		const s2Indices = new Uint32Array(s2.indices);
 		for (let indicesIndex = 0; indicesIndex < s2.indexCount; indicesIndex++) {
 			indexReader.seek(s2.dataOffset + indicesIndex * s2.bytesPerIndex);
@@ -549,7 +555,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock) {
 			}
 		}
 
-		block.indices.push(s2);
+		block.file.indices.push(s2);
 	}
 }
 

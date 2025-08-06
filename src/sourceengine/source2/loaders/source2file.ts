@@ -52,6 +52,8 @@ export class Source2File {
 	versionMaj = 0;
 	versionMin = 0;
 	maxBlockOffset = 0;
+	readonly indices: any/*TODO: create struct*/[] = [];
+	readonly vertices: any/*TODO: create struct*/[] = [];
 
 	constructor(repository: string, fileName: string) {
 		this.repository = repository;
@@ -74,43 +76,51 @@ export class Source2File {
 	}
 
 	getVertexCount(bufferId: number): number {
+		/*
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return 0;
 		}
+		*/
 
-		return block.indices![bufferId].indices.length;
+		return this.indices?.[bufferId].indices.length;
 	}
 
 	getIndices(bufferId: number): number[] | null {
+		/*
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
+		*/
 
-		const indexBuffer = block.indices![bufferId];
+		const indexBuffer = this.indices?.[bufferId];
 
 		return indexBuffer ? indexBuffer.indices : [];
 	}
 
 	getVertices(bufferId: number): number[] | null {
+		/*
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
+		*/
 
-		const vertexBuffer = block.vertices![bufferId];
+		const vertexBuffer = this.vertices?.[bufferId];
 
 		return vertexBuffer ? vertexBuffer.vertices : [];
 	}
 
 	getNormals(bufferId: number): number[] | null {
+		/*
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
+		*/
 
-		const vertexBuffer = block.vertices![bufferId];
+		const vertexBuffer = this.vertices?.[bufferId];
 		const normals = vertexBuffer.normals;
 		const ret = [];
 		const normalVec4 = vec4.create();
@@ -130,34 +140,40 @@ export class Source2File {
 	}
 
 	getCoords(bufferId: number): number[] | null {
+		/*
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
+		*/
 
-		const vertexBuffer = block.vertices![bufferId];
+		const vertexBuffer = this.vertices?.[bufferId];
 
 		return vertexBuffer ? vertexBuffer.coords : [];
 	}
 
 	getBoneIndices(bufferId: number): number[] | null {
+		/*
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
+		*/
 
-		const vertexBuffer = block.vertices![bufferId];
+		const vertexBuffer = this.vertices?.[bufferId];
 
 		return vertexBuffer ? vertexBuffer.boneIndices : [];
 	}
 
 	getBoneWeight(bufferId: number): number[] | null {
+		/*
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
+		*/
 
-		const vertexBuffer = block.vertices![bufferId];
+		const vertexBuffer = this.vertices?.[bufferId];
 
 		return vertexBuffer ? vertexBuffer.boneWeight : [];
 	}

@@ -1,11 +1,12 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
+import { BinaryReader } from 'harmony-binary-reader';
 import { TWO_PI } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
+import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Kv3File } from '../../common/keyvalue/kv3file';
+import { Kv3Value } from '../../common/keyvalue/kv3value';
 import { Source2SpriteSheet } from '../textures/source2spritesheet';
 import { Source2File } from './source2file';
-import { Kv3Value } from '../../common/keyvalue/kv3value';
-import { Kv3Element } from '../../common/keyvalue/kv3element';
 
 /**
  * Source2 common file block
@@ -13,16 +14,18 @@ import { Kv3Element } from '../../common/keyvalue/kv3element';
 export class Source2FileBlock {
 	file: Source2File;
 	type: string/*TODO: create enum*/;
+	reader: BinaryReader;// TODO: try to improve that, this may be overkill
 	offset: number;
 	length: number;
-	indices?: any/*TODO: create struct*/[];
-	vertices?: any/*TODO: create struct*/[];
+	//indices?: any/*TODO: create struct*/[];
+	//vertices?: any/*TODO: create struct*/[];
 	keyValue?: Kv3File;
 	//structs?: never;//TODO: remove me
 
-	constructor(file: Source2File, type: string/*TODO: create enum*/, offset: number, length: number) {
+	constructor(file: Source2File, type: string/*TODO: create enum*/, reader: BinaryReader, offset: number, length: number) {
 		this.file = file;
 		this.type = type;
+		this.reader = reader;
 		this.offset = offset;
 		this.length = length;
 	}
@@ -48,12 +51,12 @@ export class Source2FileBlock {
 	}
 
 	getIndices(bufferId: number): number[] {
-		const indexBuffer = this.indices?.at(bufferId);
+		const indexBuffer = this.file.indices?.at(bufferId);
 		return indexBuffer ? indexBuffer.indices : [];
 	}
 
 	getVertices(bufferId: number): number[] {
-		const vertexBuffer = this.vertices?.at(bufferId);
+		const vertexBuffer = this.file.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.vertices : [];
 	}
 
@@ -152,7 +155,7 @@ export class Source2FileBlock {
 			return [normals, tangents];
 		}
 
-		const vertexBuffer = this.vertices?.[bufferId];
+		const vertexBuffer = this.file.vertices?.[bufferId];
 		const normals = new Float32Array(vertexBuffer.normals);
 		const normalArray = [];
 		const tangentArray = [];
@@ -187,27 +190,27 @@ export class Source2FileBlock {
 	}
 
 	getCoords(bufferId: number): number[] {
-		const vertexBuffer = this.vertices?.at(bufferId);
+		const vertexBuffer = this.file.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.coords : [];
 	}
 
 	getNormal(bufferId: number): number[] {
-		const vertexBuffer = this.vertices?.at(bufferId);
+		const vertexBuffer = this.file.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.normals : [];
 	}
 
 	getTangent(bufferId: number): number[] {
-		const vertexBuffer = this.vertices?.at(bufferId);
+		const vertexBuffer = this.file.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.tangents : [];
 	}
 
 	getBoneIndices(bufferId: number): ArrayBuffer {
-		const vertexBuffer = this.vertices?.at(bufferId);
+		const vertexBuffer = this.file.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.boneIndices : new ArrayBuffer();
 	}
 
 	getBoneWeight(bufferId: number): number[] {
-		const vertexBuffer = this.vertices?.at(bufferId);
+		const vertexBuffer = this.file.vertices?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.boneWeight : [];
 	}
 }

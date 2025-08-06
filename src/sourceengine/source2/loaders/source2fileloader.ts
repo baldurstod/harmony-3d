@@ -50,7 +50,7 @@ export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make single
 
 			file.maxBlockOffset = Math.max(file.maxBlockOffset, resOffset + resLength);
 
-			block = new Source2FileBlock(file, resType, resOffset, resLength);
+			block = new Source2FileBlock(file, resType, new BinaryReader(reader, resOffset, resLength), resOffset, resLength);
 			file.addBlock(block);
 		}
 		for (const block of file.blocksArray) {

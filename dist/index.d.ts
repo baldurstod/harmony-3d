@@ -7235,6 +7235,8 @@ declare class Choreography {
              versionMaj: number;
              versionMin: number;
              maxBlockOffset: number;
+             readonly indices: any[];
+             readonly vertices: any[];
              constructor(repository: string, fileName: string);
              addBlock(block: Source2FileBlock): void;
              getBlockByType(type: string): Source2FileBlock | null;
@@ -7276,12 +7278,11 @@ declare class Choreography {
          declare class Source2FileBlock {
              file: Source2File;
              type: string;
+             reader: BinaryReader;
              offset: number;
              length: number;
-             indices?: any[];
-             vertices?: any[];
              keyValue?: Kv3File;
-             constructor(file: Source2File, type: string, offset: number, length: number);
+             constructor(file: Source2File, type: string, reader: BinaryReader, offset: number, length: number);
              getKeyValue(path: string): Kv3Element | Kv3Value | undefined | null;
              getKeyValueAsNumber(path: string): number | null;
              getKeyValueAsStringArray(path: string): string[] | null;
@@ -7420,7 +7421,7 @@ declare class Choreography {
              #private;
              isSource2ModelInstance: boolean;
              animable: boolean;
-             bodyParts: {};
+             bodyParts: Record<string, Mesh[][]>;
              poseParameters: Record<string, number>;
              meshes: Set<Mesh>;
              attachments: Map<string, Source2ModelAttachmentInstance>;
@@ -7443,10 +7444,10 @@ declare class Choreography {
              setLOD(lod: number): void;
              setPoseParameter(paramName: string, paramValue: number): void;
              playSequence(activity: string, activityModifiers?: string[]): void;
-             playAnimation(name: any): void;
+             playAnimation(name: string): void;
              setAnimation(id: number, name: string, weight: number): Promise<void>;
              setActivityModifiers(activityModifiers?: string[]): void;
-             update(scene: any, camera: any, delta: any): void;
+             update(scene: Scene, camera: Camera, delta: number): void;
              getAnimations(): Promise<Set<string>>;
              buildContextMenu(): {
                  visibility: {
@@ -7543,7 +7544,7 @@ declare class Choreography {
                  };
                  animation: {
                      i18n: string;
-                     f: (entity: any) => Promise<void>;
+                     f: (entity: Source2ModelInstance) => Promise<void>;
                  };
                  Source2ModelInstance_2: any;
                  animate: {
@@ -7557,9 +7558,9 @@ declare class Choreography {
                  };
              };
              getParentModel(): this;
-             getRandomPointOnModel(vec: any, initialVec: any, bones: any): any;
-             getAttachment(name: any): Source2ModelAttachmentInstance;
-             static set animSpeed(speed: any);
+             getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3;
+             getAttachment(name: string): Source2ModelAttachmentInstance;
+             static set animSpeed(speed: number);
              dispose(): void;
              static getEntityName(): string;
          }
@@ -7669,7 +7670,7 @@ declare class Choreography {
              /**
               * @deprecated Please use getScalarField instead.
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number];
              /**
               * TODO
               */
@@ -8012,6 +8013,7 @@ declare class Choreography {
              isCompressed(): boolean;
              isCubeTexture(): boolean;
              get imageFormat(): number;
+             getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
          }
 
          export declare const Source2TextureManager: Source2TextureManagerClass;

@@ -20864,6 +20864,8 @@ class Source2File {
     versionMaj = 0;
     versionMin = 0;
     maxBlockOffset = 0;
+    indices = [];
+    vertices = [];
     constructor(repository, fileName) {
         this.repository = repository;
         this.fileName = fileName;
@@ -20881,34 +20883,42 @@ class Source2File {
         return this.blocksArray[id] ?? null;
     }
     getVertexCount(bufferId) {
+        /*
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return 0;
         }
-        return block.indices[bufferId].indices.length;
+        */
+        return this.indices?.[bufferId].indices.length;
     }
     getIndices(bufferId) {
+        /*
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        const indexBuffer = block.indices[bufferId];
+        */
+        const indexBuffer = this.indices?.[bufferId];
         return indexBuffer ? indexBuffer.indices : [];
     }
     getVertices(bufferId) {
+        /*
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        const vertexBuffer = block.vertices[bufferId];
+        */
+        const vertexBuffer = this.vertices?.[bufferId];
         return vertexBuffer ? vertexBuffer.vertices : [];
     }
     getNormals(bufferId) {
+        /*
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        const vertexBuffer = block.vertices[bufferId];
+        */
+        const vertexBuffer = this.vertices?.[bufferId];
         const normals = vertexBuffer.normals;
         const ret = [];
         const normalVec4 = vec4.create();
@@ -20926,27 +20936,33 @@ class Source2File {
         return ret; //vertexBuffer ? vertexBuffer.normals : [];
     }
     getCoords(bufferId) {
+        /*
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        const vertexBuffer = block.vertices[bufferId];
+        */
+        const vertexBuffer = this.vertices?.[bufferId];
         return vertexBuffer ? vertexBuffer.coords : [];
     }
     getBoneIndices(bufferId) {
+        /*
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        const vertexBuffer = block.vertices[bufferId];
+        */
+        const vertexBuffer = this.vertices?.[bufferId];
         return vertexBuffer ? vertexBuffer.boneIndices : [];
     }
     getBoneWeight(bufferId) {
+        /*
         const block = this.blocks.VBIB || this.blocks.MBUF;
         if (!block) {
             return null;
         }
-        const vertexBuffer = block.vertices[bufferId];
+        */
+        const vertexBuffer = this.vertices?.[bufferId];
         return vertexBuffer ? vertexBuffer.boneWeight : [];
     }
     /*
@@ -21401,6 +21417,47 @@ class Source2Texture extends Source2File {
         {
             return VTEX_TO_INTERNAL_IMAGE_FORMAT[imageFormat];
         }
+    }
+    async getImageData(mipmap, frame = 0, face = 0) {
+        const imageData = this.blocks.DATA.imageData[0];
+        const imageWidth = this.blocks.DATA.width;
+        const imageHeight = this.blocks.DATA.height;
+        let datas;
+        datas = new Uint8ClampedArray(imageWidth * imageHeight * 4);
+        datas.set(imageData);
+        return new ImageData(datas, imageWidth, imageHeight);
+        /*
+        frame = Math.round(frame) % this.frames;
+
+        const highResDatas = this.getResource(VTF_ENTRY_IMAGE_DATAS);
+        if (!highResDatas) {
+            return null;
+        }
+
+        if (mipmap == undefined) {
+            mipmap = this.mipmapCount - 1;
+        } else {
+            mipmap = Math.min(mipmap, this.mipmapCount - 1);
+        }
+
+        const mipmapDatas = highResDatas.mipMaps![mipmap];
+        if (!mipmapDatas) {
+            return null;
+        }
+
+        let datas: Uint8ClampedArray;
+        const mipmapWidth = mipmapDatas.width;
+        const mipmapHeight = mipmapDatas.height;
+        const mipmapFaceDatas = mipmapDatas.frames[frame][face];
+        if (this.isDxtCompressed()) {
+            datas = await decompressDxt(this.highResImageFormat - 12, mipmapWidth, mipmapHeight, mipmapFaceDatas);
+        } else {
+            datas = new Uint8ClampedArray(mipmapWidth * mipmapHeight * 4);
+            datas.set(mipmapFaceDatas);
+        }
+
+        return new ImageData(datas, mipmapWidth, mipmapHeight);
+        */
     }
 }
 
@@ -22706,6 +22763,10 @@ const Source2BlockLoader = new (function () {
                     }
                     block.datas = sa;
                     break;
+                case 'MVTX':
+                case 'MIDX':
+                    // Loaded along CTRL block
+                    break;
                 default:
                     console.info('Unknown block type ' + block.type, block.offset, block.length, block);
             }
@@ -22739,7 +22800,7 @@ const Source2BlockLoader = new (function () {
             block.keyValue.setRoot(rootElement);
             const structList = introspection.structsArray;
             let startOffset = block.offset;
-            for (let structIndex = 0; structIndex < 1 /*removeme*/ /*structList.length*/; structIndex++) {
+            for (let structIndex = 0; structIndex < 1 /*TODO:removeme*/ /*structList.length*/; structIndex++) {
                 const struct = structList[structIndex]; //introspection.firstStruct;
                 //block.structs[struct.name] = ;
                 rootElement.setProperty(struct.name, loadStruct(reader, reference, struct, block, startOffset, introspection));
@@ -22878,11 +22939,11 @@ function loadVbib(reader, block) {
     const vertexCount = reader.getInt32();
     const indexOffset = reader.tell() + reader.getInt32();
     const indexCount = reader.getInt32();
-    block.vertices = [];
-    block.indices = [];
+    //block.file.vertices = [];
+    //block.file.indices = [];
     for (var i = 0; i < vertexCount; i++) { // header size: 24 bytes
         reader.seek(vertexOffset + i * VERTEX_HEADER_SIZE);
-        const s1 = {};
+        const s1 /*TODO: fix typer*/ = {};
         s1.vertexCount = reader.getInt32();
         s1.bytesPerVertex = reader.getInt16();
         reader.skip(2); // TODO: figure out what it is. Used to be 0, now 1024 for pudge model spring 2025
@@ -23019,7 +23080,7 @@ function loadVbib(reader, block) {
                         normalFilled = true;
                         break;
                     case 'TANGENT':
-                        s1Tangents.set(tempValue, vertexIndex * VERTEX_NORMAL_LEN); //TODOv3
+                        s1Tangents.set(tempValue, vertexIndex * VERTEX_TANGENT_LEN); //TODOv3
                         tangentFilled = true;
                         break;
                     case 'TEXCOORD':
@@ -23085,7 +23146,7 @@ function loadVbib(reader, block) {
                 s1BoneWeight.set(defaultValuesBoneWeight, vertexIndex * VERTEX_BONE_WEIGHT_LEN);
             }
         }
-        block.vertices.push(s1);
+        block.file.vertices.push(s1);
     }
     //console.log(block.vertices);
     for (var i = 0; i < indexCount; i++) { // header size: 24 bytes
@@ -23105,7 +23166,7 @@ function loadVbib(reader, block) {
             indexReader = new BinaryReader(indexBuffer);
             s2.dataOffset = 0;
         }
-        s2.indices = new ArrayBuffer(s2.indexCount * BYTES_PER_INDEX);
+        s2.indices = new ArrayBuffer(s2.indexCount * BYTES_PER_INDEX); /*TODO; use s2.bytesPerIndex and create a Uint16Array / Uint32Array depending on bytesPerIndex*/
         const s2Indices = new Uint32Array(s2.indices);
         for (let indicesIndex = 0; indicesIndex < s2.indexCount; indicesIndex++) {
             indexReader.seek(s2.dataOffset + indicesIndex * s2.bytesPerIndex);
@@ -23117,7 +23178,7 @@ function loadVbib(reader, block) {
                 s2Indices[indicesIndex] = indexReader.getUint32();
             }
         }
-        block.indices.push(s2);
+        block.file.indices.push(s2);
     }
 }
 function getStruct(block, structId) {
@@ -23213,7 +23274,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                             var pos = arrayOffset + 8 * i;
                             reader.seek(pos);
                             var handle = readHandle(reader);
-                            values[i] = reference ? reference.externalFiles[handle] : '';
+                            values[i] = reference.externalFiles[handle] ?? '';
                         }
                         //reader.seek(fieldOffset);
                         //var handle = readHandle(reader);
@@ -23227,7 +23288,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 else {
                     // single field
                     const values = [];
-                    const fieldSize = FIELD_SIZE[field.type2];
+                    const fieldSize = FIELD_SIZE[field.type2] ?? 0;
                     if (field.type2 == 11) ;
                     for (var i = 0; i < arrayCount; i++) {
                         var pos = arrayOffset + fieldSize * i;
@@ -23268,7 +23329,7 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                 reader.seek(fieldOffset);
                 var handle = readHandle(reader);
                 //return reference ? reference.externalFiles[handle] : null;
-                return new Kv3Value(Kv3Type.Resource, reference ? reference.externalFiles[handle] : '');
+                return new Kv3Value(Kv3Type.Resource, reference.externalFiles[handle] ?? '');
             case DATA_TYPE_BYTE: //10
                 return new Kv3Value(Kv3Type.Int32 /*TODO: check if there is a better type*/, reader.getInt8(fieldOffset));
             case DATA_TYPE_UBYTE: //11
@@ -23767,15 +23828,17 @@ function loadVtexCubemapRadiance(reader, block, offset, size) {
 class Source2FileBlock {
     file;
     type;
+    reader; // TODO: try to improve that, this may be overkill
     offset;
     length;
-    indices;
-    vertices;
+    //indices?: any/*TODO: create struct*/[];
+    //vertices?: any/*TODO: create struct*/[];
     keyValue;
     //structs?: never;//TODO: remove me
-    constructor(file, type /*TODO: create enum*/, offset, length) {
+    constructor(file, type /*TODO: create enum*/, reader, offset, length) {
         this.file = file;
         this.type = type;
+        this.reader = reader;
         this.offset = offset;
         this.length = length;
     }
@@ -23796,11 +23859,11 @@ class Source2FileBlock {
         return this.keyValue?.getValueAsElementArray(path) ?? null;
     }
     getIndices(bufferId) {
-        const indexBuffer = this.indices?.at(bufferId);
+        const indexBuffer = this.file.indices?.at(bufferId);
         return indexBuffer ? indexBuffer.indices : [];
     }
     getVertices(bufferId) {
-        const vertexBuffer = this.vertices?.at(bufferId);
+        const vertexBuffer = this.file.vertices?.at(bufferId);
         return vertexBuffer ? vertexBuffer.vertices : [];
     }
     getNormalsTangents(bufferId) {
@@ -23878,7 +23941,7 @@ class Source2FileBlock {
             tangents = vec4.fromValues(tangent[0], tangent[1], tangent[2], (SignBit == 0) ? -1.0 : 1.0); // Bitangent sign bit... inverted (0 = negative
             return [normals, tangents];
         }
-        const vertexBuffer = this.vertices?.[bufferId];
+        const vertexBuffer = this.file.vertices?.[bufferId];
         const normals = new Float32Array(vertexBuffer.normals);
         const normalArray = [];
         const tangentArray = [];
@@ -23909,23 +23972,23 @@ class Source2FileBlock {
         return [normalArray, tangentArray];
     }
     getCoords(bufferId) {
-        const vertexBuffer = this.vertices?.at(bufferId);
+        const vertexBuffer = this.file.vertices?.at(bufferId);
         return vertexBuffer ? vertexBuffer.coords : [];
     }
     getNormal(bufferId) {
-        const vertexBuffer = this.vertices?.at(bufferId);
+        const vertexBuffer = this.file.vertices?.at(bufferId);
         return vertexBuffer ? vertexBuffer.normals : [];
     }
     getTangent(bufferId) {
-        const vertexBuffer = this.vertices?.at(bufferId);
+        const vertexBuffer = this.file.vertices?.at(bufferId);
         return vertexBuffer ? vertexBuffer.tangents : [];
     }
     getBoneIndices(bufferId) {
-        const vertexBuffer = this.vertices?.at(bufferId);
+        const vertexBuffer = this.file.vertices?.at(bufferId);
         return vertexBuffer ? vertexBuffer.boneIndices : new ArrayBuffer();
     }
     getBoneWeight(bufferId) {
-        const vertexBuffer = this.vertices?.at(bufferId);
+        const vertexBuffer = this.file.vertices?.at(bufferId);
         return vertexBuffer ? vertexBuffer.boneWeight : [];
     }
 }
@@ -23963,7 +24026,7 @@ class Source2FileLoader extends SourceBinaryLoader {
             resOffset = reader.tell() + reader.getUint32();
             resLength = reader.getUint32();
             file.maxBlockOffset = Math.max(file.maxBlockOffset, resOffset + resLength);
-            block = new Source2FileBlock(file, resType, resOffset, resLength);
+            block = new Source2FileBlock(file, resType, new BinaryReader(reader, resOffset, resLength), resOffset, resLength);
             file.addBlock(block);
         }
         for (const block of file.blocksArray) {
@@ -25180,8 +25243,11 @@ class Source2ModelAttachmentInstance extends Entity {
         if (bone) {
             bone.getWorldPosition(vec);
             bone.getWorldQuaternion(tempQuat$6);
-            vec3.transformQuat(tempPos$1, this.attachment.influenceOffsets[0], tempQuat$6);
-            vec3.add(vec, vec, tempPos$1);
+            const offset0 = this.attachment.influenceOffsets[0];
+            if (offset0) {
+                vec3.transformQuat(tempPos$1, offset0, tempQuat$6);
+                vec3.add(vec, vec, tempPos$1);
+            }
         }
         else {
             vec3.copy(vec, this._position);
@@ -25193,7 +25259,10 @@ class Source2ModelAttachmentInstance extends Entity {
         const bone = this.#getBone(this.attachment.influenceNames[0] ?? '');
         if (bone) {
             bone.getWorldQuaternion(q);
-            quat.mul(q, q, this.attachment.influenceRotations[0]);
+            const quat0 = this.attachment.influenceRotations[0];
+            if (quat0) {
+                quat.mul(q, q, quat0);
+            }
         }
         else {
             quat.copy(q, this._quaternion);
@@ -25490,8 +25559,7 @@ class Source2ModelInstance extends Entity {
             const boneRotParent = bones.getValueAsVectorArray('m_boneRotParent');
             const boneParent = bones.getValueAsBigintArray('m_nParent') ?? bones.getValueAsNumberArray('m_nParent');
             if (bonesName && bonePosParent && boneRotParent && boneParent && this.#skeleton) {
-                for (let modelBoneIndex = 0, m = bonesName.length; modelBoneIndex < m; ++modelBoneIndex) {
-                    const boneName = bonesName[modelBoneIndex];
+                for (const [modelBoneIndex, boneName] of bonesName.entries()) {
                     const bone = this.#skeleton.addBone(modelBoneIndex, boneName);
                     //bone.name = boneName;
                     bone.quaternion = boneRotParent[modelBoneIndex];
@@ -25500,10 +25568,11 @@ class Source2ModelInstance extends Entity {
                     bone.refPosition = bonePosParent[modelBoneIndex];
                     //const poseToBone = mat4.fromRotationTranslation(mat4.create(), bone.refQuaternion, bone.refPosition);//TODO: optimize
                     //mat4.invert(poseToBone, poseToBone);
-                    const parent = Number(boneParent[modelBoneIndex]);
-                    if (parent >= 0) {
+                    const parentIndex = Number(boneParent[modelBoneIndex]);
+                    const parentName = bonesName[parentIndex];
+                    if (parentName) {
                         //bone.parent = this.#skeleton.getBoneByName(bonesName[parent]);
-                        const parentBone = this.#skeleton.getBoneByName(bonesName[parent]);
+                        const parentBone = this.#skeleton.getBoneByName(parentName);
                         if (parentBone) {
                             parentBone.addChild(bone);
                             bone.getTotalRefQuaternion(initSkeletonTempQuat);
@@ -25958,42 +26027,320 @@ class Source2ModelLoader {
         repoPromises[path] = promise;
         return promise;
     }
-    async testProcess2(vmdl, model, repository) {
+    async testProcess2 /*TODO: rename*/(vmdl, model, repository) {
         const group = new Entity();
         const ctrlRoot = vmdl.getBlockKeyValues('CTRL');
         const m_refLODGroupMasks = vmdl.getBlockStructAsBigintArray('DATA', 'm_refLODGroupMasks') ?? vmdl.getBlockStructAsNumberArray('DATA', 'm_refLODGroupMasks'); // ?? vmdl.getBlockStruct('DATA.keyValue.root.m_refLODGroupMasks');
         const m_refMeshGroupMasks = vmdl.getBlockStructAsNumberArray('DATA', 'm_refMeshGroupMasks'); // ?? vmdl.getBlockStruct('DATA.keyValue.root.m_refMeshGroupMasks');
         const embeddedMeshes = ctrlRoot?.getValueAsElementArray('embedded_meshes');
         if (ctrlRoot && m_refLODGroupMasks && embeddedMeshes) {
-            for (let meshIndex = 0; meshIndex < embeddedMeshes.length; ++meshIndex) {
-                const lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
-                const meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
-                const embeddedMesh = embeddedMeshes[meshIndex];
-                const dataBlockId = embeddedMesh.getValueAsNumber('data_block');
+            for (const [meshIndex, embeddedMesh] of embeddedMeshes.entries()) {
                 const vbibBlockId = embeddedMesh.getValueAsNumber('vbib_block');
-                if (dataBlockId === null || vbibBlockId === null) {
-                    console.error('missing dataBlockId / vbibBlockId', embeddedMesh);
-                    continue;
+                if (vbibBlockId != null) { //TODO: use  m_nVBIBBlock ?
+                    this.#loadEmbeddedMeshesFromVbib(vmdl, model, repository, group, meshIndex, m_refLODGroupMasks, m_refMeshGroupMasks, embeddedMesh);
                 }
-                const dataBlock = vmdl.getBlockById(dataBlockId);
-                const vbibBlock = vmdl.getBlockById(vbibBlockId);
-                if (dataBlock === null || vbibBlock === null) {
-                    console.error('missing dataBlock / vbibBlock', embeddedMesh, dataBlock, vbibBlock);
-                    continue;
+                else {
+                    this.#loadEmbeddedMeshesFromVtxIdx(vmdl, model, repository, group, meshIndex, m_refLODGroupMasks, m_refMeshGroupMasks, embeddedMesh);
                 }
-                this.#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
-                /*data_block: 1
-                mesh_index: 0
-                morph_block: 0
-                morph_texture: "models/heroes/antimage_female/antimage_female/antimage_female_base_vmorf.vtex"
-                name: "antimage_female_base"
-                vbib_block: 2*/
             }
         }
         await this.#loadExternalMeshes(group, vmdl, model, repository);
         return group;
     }
+    #loadEmbeddedMeshesFromVbib(vmdl, model, repository, group, meshIndex, m_refLODGroupMasks, m_refMeshGroupMasks, embeddedMesh) {
+        const lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
+        const meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
+        //const embeddedMesh = embeddedMeshes[meshIndex]!;
+        const dataBlockId = embeddedMesh.getValueAsNumber('data_block');
+        const vbibBlockId = embeddedMesh.getValueAsNumber('vbib_block') ?? embeddedMesh.getValueAsNumber('m_nVBIBBlock');
+        if (dataBlockId === null || vbibBlockId === null) {
+            console.error('missing dataBlockId / vbibBlockId', embeddedMesh);
+            return;
+        }
+        const dataBlock = vmdl.getBlockById(dataBlockId);
+        const vbibBlock = vmdl.getBlockById(vbibBlockId);
+        if (dataBlock === null || vbibBlock === null) {
+            console.error('missing dataBlock / vbibBlock', embeddedMesh, dataBlockId, vbibBlockId, vmdl);
+            return;
+        }
+        this.#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
+        /*data_block: 1
+        mesh_index: 0
+        morph_block: 0
+        morph_texture: "models/heroes/antimage_female/antimage_female/antimage_female_base_vmorf.vtex"
+        name: "antimage_female_base"
+        vbib_block: 2*/
+    }
+    #loadEmbeddedMeshesFromVtxIdx(vmdl, model, repository, group, meshIndex, m_refLODGroupMasks, m_refMeshGroupMasks, embeddedMesh) {
+        const dataBlockId = embeddedMesh.getValueAsNumber('m_nDataBlock') ?? -1;
+        if (dataBlockId < 0) {
+            return;
+        }
+        const dataBlock = vmdl.getBlockById(dataBlockId);
+        if (!dataBlock) {
+            return;
+        }
+        //const vbibBlockId = embeddedMesh.getValueAsNumber('m_nVBIBBlock');
+        console.error(vmdl, embeddedMesh);
+        const lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
+        const meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
+        //vmdl.vertices = [];
+        //vmdl.indices = [];
+        // Load vertex buffers
+        this.#loadBuffer('m_vertexBuffers', vmdl, embeddedMesh, true);
+        this.#loadBuffer('m_indexBuffers', vmdl, embeddedMesh, false);
+        this.#loadMesh(repository, model, group, dataBlock, new Source2FileBlock(vmdl, 'VBIB', new BinaryReader(''), 0, 0) /*TODO: remove*/, lodGroupMask, vmdl, meshIndex, meshGroupMask);
+        //console.error(vertexBuffers);
+    }
+    #loadBuffer(bufferName, vmdl, embeddedMesh, isVertex) {
+        const buffers = embeddedMesh.getValueAsElementArray(bufferName);
+        if (!buffers) {
+            return;
+        }
+        for (const buffer of buffers) {
+            const blockIndex = buffer.getValueAsNumber('m_nBlockIndex') ?? -1;
+            if (blockIndex < 0) {
+                continue;
+            }
+            const sourceBlock = vmdl.blocksArray[blockIndex];
+            if (!sourceBlock) {
+                continue;
+            }
+            const elementCount = buffer.getValueAsNumber('m_nElementCount') ?? 0;
+            const elementSizeInBytes = buffer.getValueAsNumber('m_nElementSizeInBytes') ?? 0;
+            const inputLayoutFields = buffer.getValueAsElementArray('m_inputLayoutFields') ?? [];
+            const meshoptCompressed = buffer.getValueAsBool('m_bMeshoptCompressed');
+            // TODO: also use m_bCompressedZSTD
+            const fieldsCount = inputLayoutFields.length;
+            const fields = [];
+            for (const inputLayoutField of inputLayoutFields) {
+                //const semanticIndex = inputLayoutField.getValueAsNumber('m_nSemanticIndex') ?? 0;
+                const semanticName = inputLayoutField.getValueAsString('m_pSemanticName') ?? '';
+                const format = inputLayoutField.getValueAsNumber('m_Format') ?? 0;
+                const offset = inputLayoutField.getValueAsNumber('m_nOffset') ?? 0;
+                const slot = inputLayoutField.getValueAsNumber('m_nSlot') ?? 0;
+                const slotType = inputLayoutField.getValueAsString('m_nSlotType') ?? ''; /*TODO: create enum*/
+                fields.push({ name: semanticName, format: format, offset: offset, slot: slot, slotType: slotType });
+            }
+            console.info(fields);
+            let reader = sourceBlock.reader;
+            if (meshoptCompressed) {
+                const decompressBuffer = new Uint8Array(new ArrayBuffer(elementCount * elementSizeInBytes));
+                if (isVertex) {
+                    MeshoptDecoder.decodeVertexBuffer(decompressBuffer, elementCount, elementSizeInBytes, new Uint8Array(sourceBlock.reader.buffer.slice(sourceBlock.offset, sourceBlock.offset + sourceBlock.length)));
+                }
+                else {
+                    MeshoptDecoder.decodeIndexBuffer(decompressBuffer, elementCount, elementSizeInBytes, new Uint8Array(sourceBlock.reader.buffer.slice(sourceBlock.offset, sourceBlock.offset + sourceBlock.length)));
+                }
+                reader = new BinaryReader(decompressBuffer);
+            }
+            const s1 /*TODO: fix typer*/ = { vertexCount: elementCount };
+            s1.vertices = new ArrayBuffer(elementCount * BYTES_PER_VERTEX_POSITION);
+            s1.normals = new ArrayBuffer(elementCount * BYTES_PER_VERTEX_NORMAL);
+            s1.tangents = new ArrayBuffer(elementCount * BYTES_PER_VERTEX_TANGENT);
+            s1.coords = new ArrayBuffer(elementCount * BYTES_PER_VERTEX_COORD);
+            s1.boneIndices = new ArrayBuffer(elementCount * BYTES_PER_VERTEX_BONE_INDICE);
+            s1.boneWeight = new ArrayBuffer(elementCount * BYTES_PER_VERTEX_BONE_WEIGHT);
+            //TODO: optimize, we only need either s1 or s2
+            const s2 /*TODO: fix typer*/ = { bytesPerIndex: 4 /*elementSizeInBytes*/ /*TODO: fix that: loadMesh only accept uint32*/ };
+            s2.indexCount = elementCount;
+            //s2.bytesPerIndex = reader.getInt32();
+            //s2.headerOffset = reader.tell() + reader.getInt32();
+            //s2.headerCount = reader.getInt32();
+            //s2.dataOffset = reader.tell() + reader.getInt32();
+            //s2.dataLength = reader.getInt32();
+            const s1Vertices = new Float32Array(s1.vertices);
+            const s1Normals = new Float32Array(s1.normals);
+            const s1Tangents = new Float32Array(s1.tangents);
+            const s1Coords = new Float32Array(s1.coords);
+            const s1BoneIndices = new Float32Array(s1.boneIndices);
+            const s1BoneWeight = new Float32Array(s1.boneWeight);
+            s2.indices = new ArrayBuffer(s2.indexCount * s2.bytesPerIndex);
+            const s2Indices = s2.bytesPerIndex == 4 ? new Uint32Array(s2.indices) : new Uint16Array(s2.indices);
+            for (let elementIndex = 0; elementIndex < elementCount; elementIndex++) {
+                const startOffset = elementIndex * elementSizeInBytes;
+                if (isVertex) {
+                    let tempValue;
+                    let positionFilled = false; //TODOv3: remove this
+                    let normalFilled = false;
+                    let tangentFilled = false;
+                    let texCoordFilled = false;
+                    let blendIndicesFilled = false;
+                    let blendWeightFilled = false;
+                    for (let fieldIndex = 0; fieldIndex < fieldsCount; fieldIndex++) {
+                        const field = fields[fieldIndex];
+                        sourceBlock.reader.seek(startOffset + field.offset);
+                        switch (field.format) {
+                            case DXGI_FORMAT_R32G32B32A32_FLOAT:
+                                tempValue = vec4.create(); //TODO: optimize
+                                tempValue[0] = reader.getFloat32();
+                                tempValue[1] = reader.getFloat32();
+                                tempValue[2] = reader.getFloat32();
+                                tempValue[3] = reader.getFloat32();
+                                break;
+                            case DXGI_FORMAT_R32G32B32_FLOAT: // 3 * float32
+                                tempValue = vec3.create(); //TODO: optimize
+                                tempValue[0] = reader.getFloat32();
+                                tempValue[1] = reader.getFloat32();
+                                tempValue[2] = reader.getFloat32();
+                                break;
+                            case DXGI_FORMAT_R16G16B16A16_SINT:
+                                tempValue = vec4.create(); //TODO: optimize
+                                tempValue[0] = reader.getInt16();
+                                tempValue[1] = reader.getInt16();
+                                tempValue[2] = reader.getInt16();
+                                tempValue[3] = reader.getInt16();
+                                break;
+                            case DXGI_FORMAT_R32G32_FLOAT: // 2 * float32
+                                tempValue = vec2.create(); //TODO: optimize
+                                tempValue[0] = reader.getFloat32();
+                                tempValue[1] = reader.getFloat32();
+                                break;
+                            case DXGI_FORMAT_R8G8B8A8_UNORM:
+                                tempValue = vec4.create(); //TODO: optimize
+                                tempValue[0] = reader.getUint8() / 255;
+                                tempValue[1] = reader.getUint8() / 255;
+                                tempValue[2] = reader.getUint8() / 255;
+                                tempValue[3] = reader.getUint8() / 255;
+                                //reader.getUint8();
+                                break;
+                            case DXGI_FORMAT_R8G8B8A8_UINT: // 4 * uint8
+                                tempValue = vec4.create(); //TODO: optimize
+                                tempValue[0] = reader.getUint8();
+                                tempValue[1] = reader.getUint8();
+                                tempValue[2] = reader.getUint8();
+                                tempValue[3] = reader.getUint8();
+                                break;
+                            case DXGI_FORMAT_R16G16_FLOAT: // 2 * float16
+                                tempValue = vec2.create(); //TODO: optimize
+                                tempValue[0] = reader.getFloat16();
+                                tempValue[1] = reader.getFloat16();
+                                break;
+                            case DXGI_FORMAT_R16G16_SNORM: //New with battlepass 2022
+                                tempValue = vec2.create(); //TODO: optimize
+                                tempValue[0] = sNormUint16(reader.getInt16());
+                                tempValue[1] = sNormUint16(reader.getInt16());
+                                break;
+                            case DXGI_FORMAT_R16G16_SINT:
+                                tempValue = vec2.create(); //TODO: optimize
+                                tempValue[0] = reader.getInt16();
+                                tempValue[1] = reader.getInt16();
+                                break;
+                            case DXGI_FORMAT_R32_FLOAT: // single float32 ??? new in half-life Alyx
+                                tempValue = [];
+                                tempValue[0] = reader.getFloat32();
+                                break;
+                            case DXGI_FORMAT_R32_UINT: // single uint32 ??? new since DOTA2 2023_08_30
+                                tempValue = [];
+                                tempValue[0] = reader.getUint32();
+                                s1.decompressTangentV2 = true;
+                                break;
+                            default:
+                                //TODO add types when needed. see DxgiFormat.js
+                                console.error('Warning: unknown type ' + field.format + ' for value ' + field.name);
+                                tempValue = vec4.create(); //TODO: optimize
+                                tempValue[0] = 0;
+                                tempValue[1] = 0;
+                                tempValue[2] = 0;
+                                tempValue[3] = 0;
+                        }
+                        switch (field.name) {
+                            case 'POSITION':
+                                s1Vertices.set(tempValue, elementIndex * VERTEX_POSITION_LEN);
+                                positionFilled = true;
+                                break;
+                            case 'NORMAL':
+                                s1Normals.set(tempValue, elementIndex * VERTEX_NORMAL_LEN); //TODOv3
+                                normalFilled = true;
+                                break;
+                            case 'TANGENT':
+                                s1Tangents.set(tempValue, elementIndex * VERTEX_TANGENT_LEN); //TODOv3
+                                tangentFilled = true;
+                                break;
+                            case 'TEXCOORD':
+                                if (!texCoordFilled) { //TODO: handle 2 TEXCOORD
+                                    const test = vec2.clone(tempValue); //todov3: fixme see //./Alyx/models/props_industrial/hideout_doorway.vmdl_c
+                                    s1Coords.set(test /*tempValue*/, elementIndex * VERTEX_COORD_LEN);
+                                    texCoordFilled = true;
+                                }
+                                break;
+                            case 'BLENDINDICES':
+                                /*s1.boneIndices.push(tempValue[0]);
+                                s1.boneIndices.push(tempValue[1]);
+                                s1.boneIndices.push(tempValue[2]);
+                                s1.boneIndices.push(tempValue[3]);*/
+                                s1BoneIndices.set(tempValue, elementIndex * VERTEX_BONE_INDICE_LEN);
+                                blendIndicesFilled = true;
+                                break;
+                            case 'BLENDWEIGHT':
+                                /*s1.boneWeight.push(tempValue[0]);
+                                s1.boneWeight.push(tempValue[1]);
+                                s1.boneWeight.push(tempValue[2]);
+                                s1.boneWeight.push(tempValue[3]);*/
+                                //vec4.scale(tempValue, tempValue, 1 / 255.0);
+                                s1BoneWeight.set(tempValue, elementIndex * VERTEX_BONE_WEIGHT_LEN);
+                                blendWeightFilled = true;
+                                break;
+                            //TODOv3: add "texcoord" lowercase maybe a z- tex coord ?
+                        }
+                    }
+                    if (!positionFilled) {
+                        /*s1.vertices.push(0);
+                        s1.vertices.push(0);
+                        s1.vertices.push(0);*/
+                        s1Vertices.set(defaultValuesPosition, elementIndex * VERTEX_POSITION_LEN);
+                    }
+                    if (!normalFilled) {
+                        /*s1.normals.push(0);
+                        s1.normals.push(0);
+                        s1.normals.push(0);*/
+                        s1Normals.set(defaultValuesNormal, elementIndex * VERTEX_NORMAL_LEN);
+                    }
+                    if (!tangentFilled) {
+                        s1Tangents.set(defaultValuesTangent, elementIndex * VERTEX_TANGENT_LEN);
+                    }
+                    if (!texCoordFilled) {
+                        /*s1.coords.push(0);
+                        s1.coords.push(0);*/
+                        s1Coords.set(defaultValuesCoord, elementIndex * VERTEX_COORD_LEN);
+                    }
+                    if (!blendIndicesFilled) {
+                        /*s1.boneIndices.push(0);
+                        s1.boneIndices.push(0);
+                        s1.boneIndices.push(0);
+                        s1.boneIndices.push(0);*/
+                        s1BoneIndices.set(defaultValuesBoneIndice, elementIndex * VERTEX_BONE_INDICE_LEN);
+                    }
+                    if (!blendWeightFilled) {
+                        /*s1.boneWeight.push(255);
+                        s1.boneWeight.push(0);
+                        s1.boneWeight.push(0);
+                        s1.boneWeight.push(0);*/
+                        s1BoneWeight.set(defaultValuesBoneWeight, elementIndex * VERTEX_BONE_WEIGHT_LEN);
+                    }
+                }
+                else {
+                    sourceBlock.reader.seek(startOffset);
+                    //s2.indices.push(indexReader.getUint16());
+                    if (elementSizeInBytes == 2) {
+                        s2Indices[elementIndex] = reader.getUint16();
+                    }
+                    else {
+                        s2Indices[elementIndex] = reader.getUint32();
+                    }
+                }
+            }
+            console.error(s1, s2);
+            if (isVertex) {
+                vmdl.vertices?.push(s1);
+            }
+            else {
+                vmdl.indices?.push(s2);
+            }
+        }
+    }
     #loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask) {
+        // TODO: remove vbibBlock
         const remappingTable = vmdl.getRemappingTable(meshIndex);
         const attachments = dataBlock.getKeyValueAsElementArray('m_attachments');
         if (attachments) {
@@ -26001,6 +26348,7 @@ class Source2ModelLoader {
         }
         const drawCalls = dataBlock.getKeyValueAsElementArray('m_sceneObjects.0.m_drawCalls'); // ?? dataBlock.getKeyValue('root.m_drawCalls');
         if (drawCalls) {
+            // TODO: use m_nPrimitiveType
             for (const drawCall of drawCalls) { //TODOv3: mutualize buffer if used by multiple drawcalls
                 //const drawCall = drawCalls[drawCallIndex];
                 const useCompressedNormalTangent = drawCall.getValueAsBool('m_bUseCompressedNormalTangent'); //drawCall.m_nFlags?.includes('MESH_DRAW_FLAGS_USE_COMPRESSED_NORMAL_TANGENT');
