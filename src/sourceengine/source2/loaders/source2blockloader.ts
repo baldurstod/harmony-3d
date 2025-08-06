@@ -127,8 +127,8 @@ export const Source2BlockLoader = new (function () {
 
 			const structList = introspection.structsArray;
 			let startOffset = block.offset;
-			for (let structIndex = 0; structIndex < 1/*removeme*//*structList.length*/; structIndex++) {
-				const struct = structList[structIndex];//introspection.firstStruct;
+			for (let structIndex = 0; structIndex < 1/*TODO:removeme*//*structList.length*/; structIndex++) {
+				const struct = structList[structIndex]!;//introspection.firstStruct;
 				//block.structs[struct.name] = ;
 				rootElement.setProperty(struct.name, loadStruct(reader, reference, struct, block, startOffset, introspection, 0));
 				startOffset += struct.discSize;
@@ -144,7 +144,7 @@ export const Source2BlockLoader = new (function () {
 function ab2str(arrayBuf: Uint8Array) {
 	let s = '';
 	for (let i = 0; i < arrayBuf.length; i++) {
-		s += String.fromCharCode(arrayBuf[i]);
+		s += String.fromCharCode(arrayBuf[i]!);
 	}
 	return s;
 }
@@ -576,7 +576,7 @@ function loadStruct(reader: BinaryReader, reference: Source2RerlBlock, struct: S
 	const fieldList = struct.fields;
 
 	for (let fieldIndex = 0; fieldIndex < fieldList.length; fieldIndex++) {
-		const field = fieldList[fieldIndex];
+		const field = fieldList[fieldIndex]!;
 		if (field.count) {
 			const data: number[] = /*dataStruct[field.name]*/[];
 			const fieldSize = FIELD_SIZE[field.type2];
@@ -626,7 +626,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 			if (arrayOffset2) {
 				const arrayOffset = fieldOffset + arrayOffset2;
 				const arrayCount = reader.getUint32();
-				const values = [];
+				const values: string[] = [];
 				if (field.type) {
 					if (field.type2 == DATA_TYPE_STRUCT) { // STRUCT
 						const struct = introspection.structs?.[field.type];
@@ -651,7 +651,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 							var pos = arrayOffset + 8 * i;
 							reader.seek(pos);
 							var handle = readHandle(reader);
-							values[i] = reference ? reference.externalFiles[handle] : '';
+							values[i] = reference.externalFiles[handle] ?? '';
 						}
 						//reader.seek(fieldOffset);
 						//var handle = readHandle(reader);
@@ -663,7 +663,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				} else {
 					// single field
 					const values: (Kv3Element | Kv3Value | null)[] = [];
-					const fieldSize = FIELD_SIZE[field.type2];
+					const fieldSize = FIELD_SIZE[field.type2] ?? 0;
 					if (field.type2 == 11) {
 						//console.log(field.type2);//TODOV2
 					}
@@ -705,7 +705,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				reader.seek(fieldOffset);
 				var handle = readHandle(reader);
 				//return reference ? reference.externalFiles[handle] : null;
-				return new Kv3Value(Kv3Type.Resource, reference ? reference.externalFiles[handle] : '');
+				return new Kv3Value(Kv3Type.Resource, reference.externalFiles[handle] ?? '');
 			case DATA_TYPE_BYTE://10
 				return new Kv3Value(Kv3Type.Int32/*TODO: check if there is a better type*/, reader.getInt8(fieldOffset));
 			case DATA_TYPE_UBYTE://11
@@ -809,7 +809,7 @@ function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock) {
 
 
 		for (let i = 0; i < extraDataCount; i++) {
-			const h = headers[i];
+			const h = headers[i]!;
 			const type = h.type;
 			const offset = h.offset;
 			const size = h.size;
@@ -948,8 +948,8 @@ function getImage(reader: BinaryReader, mipmapWidth: number, mipmapHeight: numbe
 
 	if (imageDatas && imageFormat == VTEX_FORMAT_BGRA8888) {
 		for (let i = 0, l = imageDatas.length; i < l; i += 4) {
-			const b = imageDatas[i];
-			imageDatas[i] = imageDatas[i + 2];
+			const b = imageDatas[i]!;
+			imageDatas[i] = imageDatas[i + 2]!;
 			imageDatas[i + 2] = b;
 		}
 	}
@@ -1024,7 +1024,7 @@ async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock, versio
 	reader.seek(block.offset);
 
 	const method = 1;
-	let bufferCount = 1;
+	let bufferCount: 1 | 2 = 1;
 	const uncompressedBufferSize: number[] = [];
 	const compressedBufferSize: number[] = [];
 	const bytesBufferSize1: number[] = [];
@@ -1107,15 +1107,15 @@ async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock, versio
 				if (TESTING && version >= 2 && (compressionDictionaryId != 0 || compressionFrameSize != 0)) {
 					throw 'Error compression method doesn\'t match';
 				}
-				sa = reader.getBytes(uncompressedBufferSize[i]);
+				sa = reader.getBytes(uncompressedBufferSize[i]!);
 				break;
 			case 1:
-				const buf = new ArrayBuffer(uncompressedBufferSize[i]);
+				const buf = new ArrayBuffer(uncompressedBufferSize[i]!);
 				sa = new Uint8Array(buf);
 				if (blobCount > 0) {
-					compressedBlobReader = new BinaryReader(reader, reader.tell() + compressedBufferSize[i]);
+					compressedBlobReader = new BinaryReader(reader, reader.tell() + compressedBufferSize[i]!);
 				}
-				decodeLz4(reader, sa, compressedBufferSize[i], uncompressedBufferSize[i]);
+				decodeLz4(reader, sa, compressedBufferSize[i]!, uncompressedBufferSize[i]!);
 				{
 					if (blobCount > 0) {
 						//SaveFile(new File([new Blob([sa])], 'decodeLz4_' + block.offset + '_' + block.length));
@@ -1128,7 +1128,7 @@ async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock, versio
 				break;
 			case 2://new since spectre arcana
 				//SaveFile(new File([new Blob([reader.getBytes(block.length, block.offset)])], 'block_' + block.offset + '_' + block.length));
-				const compressedBytes = reader.getBytes(compressedBufferSize[i]);
+				const compressedBytes = reader.getBytes(compressedBufferSize[i]!);
 				//SaveFile(new File([new Blob([compressedBytes])], 'block_' + block.offset + '_' + block.length));
 				const decompressedBytes = await Zstd.decompress(compressedBytes);
 				if (!decompressedBytes) {
@@ -1140,7 +1140,7 @@ async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock, versio
 						uncompressedBlobReader = new BinaryReader(decompressedBytes, uncompressedBufferSize[i]);
 					} else {
 						if (i == 1) {
-							const compressedBlobSize = compressedLength - (compressedBufferSize[0] + compressedBufferSize[1]);
+							const compressedBlobSize = compressedLength - (compressedBufferSize[0]! + compressedBufferSize[1]!);
 							const compressedBlobBytes = reader.getBytes(compressedBlobSize);
 							//SaveFile(new File([new Blob([compressedBlobBytes])], 'compressed_zstd' + block.type + '_' + i + '_' + block.length + '_' + block.offset));
 							const decompressedBlobBytes = await Zstd.decompress(compressedBlobBytes);
@@ -1168,7 +1168,7 @@ async function loadDataKv3(reader: BinaryReader, block: Source2FileBlock, versio
 
 		const result = BinaryKv3Loader.getBinaryKv3(version, sa, bytesBufferSize1, bytesBufferSize2, bytesBufferSize4, bytesBufferSize8,
 			dictionaryTypeLength, blobCount, totalUncompressedBlobSize, compressedBlobReader, uncompressedBlobReader, compressionFrameSize,
-			i, stringDictionary, objectCount[i], arrayCount[i], buffer0);
+			i, stringDictionary, objectCount[i]!, arrayCount[i]!, buffer0);
 		if (version >= 5 && i == 0) {
 			stringDictionary = result as string[];
 			buffer0 = sa;
@@ -1193,7 +1193,7 @@ function decodeMethod1(reader: BinaryReader, sa: Uint8Array, decodeLength: numbe
 		if (mask == 0) {
 			/* TODO: copy 16 bytes at once */
 			for (let j = 0; j < 16; j++) {
-				sa[outputIndex++] = reader.getBytes(1)[0];
+				sa[outputIndex++] = reader.getBytes(1)[0]!;
 				++decodedeBytes;
 				if (decodedeBytes >= decodeLength) {
 					break decodeLoop;
@@ -1207,7 +1207,7 @@ function decodeMethod1(reader: BinaryReader, sa: Uint8Array, decodeLength: numbe
 					const decodeOffset = (decodeMask & 0xFFF0) >> 4;
 					const decodeLen = (decodeMask & 0xF) + 3; // Min len is 3
 					for (let k = 0; k < decodeLen; k++) {
-						sa[outputIndex] = sa[outputIndex - decodeOffset - 1];
+						sa[outputIndex] = sa[outputIndex - decodeOffset - 1]!;
 						++decodedeBytes;
 						if (decodedeBytes >= decodeLength) {
 							break decodeLoop;
@@ -1216,7 +1216,7 @@ function decodeMethod1(reader: BinaryReader, sa: Uint8Array, decodeLength: numbe
 					}
 
 				} else { // Single byte
-					sa[outputIndex++] = reader.getBytes(1)[0];
+					sa[outputIndex++] = reader.getBytes(1)[0]!;
 					++decodedeBytes;
 					if (decodedeBytes >= decodeLength) {
 						break decodeLoop;
