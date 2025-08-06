@@ -22,7 +22,7 @@ import {
 	DXGI_FORMAT_R8G8B8A8_UNORM
 } from './dxgiformat';
 import { Source2File } from './source2file';
-import { Source2DataBlock, Source2FileBlock, Source2FileStruct, Source2NtroBlock, Source2RerlBlock, Source2SnapBlock, Source2StructField, Source2StructFieldValue, Source2VtexBlock } from './source2fileblock';
+import { Source2DataBlock, Source2FileBlock, Source2FileStruct, Source2NtroBlock, Source2RerlBlock, Source2SnapBlock, Source2StructField, Source2VtexBlock } from './source2fileblock';
 
 const DATA_TYPE_STRUCT = 1;
 const DATA_TYPE_ENUM = 2;
@@ -699,7 +699,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				return null;
 			case DATA_TYPE_ENUM://2
 				throw 'fix me';
-				//return ['enum', field.name, field.type2, fieldOffset, reader.getInt32(fieldOffset)];
+			//return ['enum', field.name, field.type2, fieldOffset, reader.getInt32(fieldOffset)];
 			case DATA_TYPE_HANDLE://3
 				// Handle to an external ressource in the RERL block
 				reader.seek(fieldOffset);
@@ -712,10 +712,10 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				return new Kv3Value(Kv3Type.UnsignedInt32/*TODO: check if there is a better type*/, reader.getUint8(fieldOffset));
 			case DATA_TYPE_SHORT://12
 				throw 'fix me';
-				//return reader.getInt16(fieldOffset);
+			//return reader.getInt16(fieldOffset);
 			case DATA_TYPE_USHORT://13
 				throw 'fix me';
-				//return reader.getUint16(fieldOffset);
+			//return reader.getUint16(fieldOffset);
 			case DATA_TYPE_INTEGER://14
 				return new Kv3Value(Kv3Type.Int32, reader.getInt32(fieldOffset));
 			//return reader.getInt32(fieldOffset);
@@ -735,10 +735,10 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				return new Kv3Value(Kv3Type.Float, reader.getFloat32(fieldOffset));
 			case DATA_TYPE_VECTOR2://21
 				throw 'fix me';
-				//return reader.getVector2(fieldOffset);
+			//return reader.getVector2(fieldOffset);
 			case DATA_TYPE_VECTOR3://22
 				throw 'fix me';
-				//return reader.getVector3(fieldOffset);
+			//return reader.getVector3(fieldOffset);
 			case DATA_TYPE_VECTOR4://23
 				//return reader.getVector4(fieldOffset);
 				return new Kv3Value(Kv3Type.TypedArray2, reader.getVector4(fieldOffset), Kv3Type.Float);
@@ -747,7 +747,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				return new Kv3Value(Kv3Type.TypedArray2, reader.getVector4(fieldOffset), Kv3Type.Float);
 			case DATA_TYPE_BOOLEAN://30
 				throw 'fix me';
-				//return (reader.getInt8(fieldOffset)) ? true : false;
+			//return (reader.getInt8(fieldOffset)) ? true : false;
 			case DATA_TYPE_NAME://31
 				var strStart = fieldOffset;//reader.tell();
 				var strOffset = reader.getInt32(fieldOffset);
@@ -760,7 +760,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				return new Kv3Value(Kv3Type.String, reader.getNullString());
 			case 40: //DATA_TYPE_VECTOR4://40
 				throw 'fix me';
-				//return reader.getVector4(fieldOffset);
+			//return reader.getVector4(fieldOffset);
 			default:
 				console.error(`Unknown field type: ${field.type2}`);
 		}
