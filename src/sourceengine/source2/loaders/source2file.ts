@@ -573,12 +573,12 @@ export class Source2File {
 			return null;
 		}
 
-		let end = Number(remappingTableStarts[meshIndex + 1]);
+		let end = remappingTableStarts[meshIndex + 1];
 		if (end !== undefined) {
 			end = Number(end); // Converts bigint
 		}
 
-		return remappingTable.slice(Number(starts), end);
+		return remappingTable.slice(Number(starts), end as number/*TODO: remove this cast. for some reason it is needed in non strict mode*/);
 	}
 
 	remapBuffer(buffer: ArrayBuffer, remappingTable: number[] | bigint[] | null): Float32Array {
