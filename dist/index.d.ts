@@ -7670,7 +7670,7 @@ declare class Choreography {
              /**
               * @deprecated Please use getScalarField instead.
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
              /**
               * TODO
               */

@@ -21321,11 +21321,11 @@ class Source2File {
         if (starts === undefined || starts > remappingTable.length) {
             return null;
         }
-        let end = Number(remappingTableStarts[meshIndex + 1]);
+        let end = remappingTableStarts[meshIndex + 1];
         if (end !== undefined) {
             end = Number(end); // Converts bigint
         }
-        return remappingTable.slice(Number(starts), end);
+        return remappingTable.slice(Number(starts), end /*TODO: remove this cast. for some reason it is needed in non strict mode*/);
     }
     remapBuffer(buffer, remappingTable) {
         const inArr = new Float32Array(buffer);
@@ -26081,7 +26081,6 @@ class Source2ModelLoader {
             return;
         }
         //const vbibBlockId = embeddedMesh.getValueAsNumber('m_nVBIBBlock');
-        console.error(vmdl, embeddedMesh);
         const lodGroupMask = Number(m_refLODGroupMasks[meshIndex]);
         const meshGroupMask = m_refMeshGroupMasks?.[meshIndex];
         //vmdl.vertices = [];
@@ -26122,7 +26121,6 @@ class Source2ModelLoader {
                 const slotType = inputLayoutField.getValueAsString('m_nSlotType') ?? ''; /*TODO: create enum*/
                 fields.push({ name: semanticName, format: format, offset: offset, slot: slot, slotType: slotType });
             }
-            console.info(fields);
             let reader = sourceBlock.reader;
             if (meshoptCompressed) {
                 const decompressBuffer = new Uint8Array(new ArrayBuffer(elementCount * elementSizeInBytes));
@@ -26330,7 +26328,6 @@ class Source2ModelLoader {
                     }
                 }
             }
-            console.error(s1, s2);
             if (isVertex) {
                 vmdl.vertices?.push(s1);
             }
