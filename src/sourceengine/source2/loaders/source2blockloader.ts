@@ -885,7 +885,7 @@ function loadDataVtexImageData(reader: BinaryReader, file: Source2Texture, block
 		// Todo : add frame support + depth support
 		for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
 			const compressedLength = compressedMips?.pop() ?? null; //TODO: check how this actually works with depth / frames
-			block.imageData[faceIndex] = getImage(reader, mipmapWidth, mipmapHeight, file.getImageFormat(), compressedLength);
+			block.imageData[faceIndex] = getImage(reader, mipmapWidth, mipmapHeight, file.getVtexImageFormat(), compressedLength);
 			if (false /*&& block.imageFormat == VTEX_FORMAT_BC4*/) {//TODOv3: removeme
 				const str = block.imageData[faceIndex];
 				if (str.length >= 512 * 512) {
@@ -903,7 +903,7 @@ function loadDataVtexImageData(reader: BinaryReader, file: Source2Texture, block
 	}
 }
 
-function getImage(reader: BinaryReader, mipmapWidth: number, mipmapHeight: number, imageFormat: number/*TODO: create enum*/, compressedLength: number | null) {
+function getImage(reader: BinaryReader, mipmapWidth: number, mipmapHeight: number, imageFormat: number/*TODO: change type to ImageFormat*/, compressedLength: number | null) {
 	let entrySize = 0;
 	switch (imageFormat) {
 		case VTEX_FORMAT_DXT1:

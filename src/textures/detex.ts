@@ -1,17 +1,17 @@
-import { TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5 } from './textureconstants';
 import detex from './detex.wasm';
+import { ImageFormat } from './enums';
 
 export class Detex {
 	static #webAssembly: any/*TODO: improve type*/;
 	static #HEAPU8: Uint8Array;
 
-	static async decode(format: number, width: number, height: number, input: Uint8Array, output: Uint8Array) {
+	static async decode(format: ImageFormat, width: number, height: number, input: Uint8Array, output: Uint8Array) {
 		switch (format) {
-			case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1:
+			case ImageFormat.Dxt1:
 				return this.decodeBC1(width, height, input, output);
-			case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3:
+			case ImageFormat.Dxt3:
 				return this.decodeBC2(width, height, input, output);
-			case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5:
+			case ImageFormat.Dxt5:
 				return this.decodeBC3(width, height, input, output);
 			default:
 				console.error('bad texture format in Detex.decode: ' + format);

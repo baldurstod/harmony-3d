@@ -12,6 +12,7 @@ import { Source2FileBlock, Source2TextureBlock, Source2VtexBlock } from '../load
 import { Source2TextureLoader } from '../loaders/source2textureloader';
 import { Source2SpriteSheet } from './source2spritesheet';
 import { Source2Texture } from './source2texture';
+import { formatCompression, ImageFormat, TextureCompressionMethod } from '../../../textures/enums';
 
 class Source2TextureManagerClass extends EventTarget {//TODO: keep event target ?
 	#vtexList = new Map2<string, string, Source2Texture>();
@@ -99,7 +100,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 
 	#initTexture(texture: WebGLTexture, vtexFile: Source2Texture) {
 		const imageData = (vtexFile.blocks.DATA as Source2VtexBlock).imageData;
-		const imageFormat = vtexFile.imageFormat;
+		const imageFormat = vtexFile.getImageFormat();
 		if (imageData) {
 			if (vtexFile.isCubeTexture()) {
 				this.#initCubeTexture(texture, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
@@ -115,11 +116,11 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		}
 	}
 
-	#initCubeTexture(texture: WebGLTexture, imageFormat: number, width: number, height: number, imageData: [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array]) {
+	#initCubeTexture(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, imageData: [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array]) {
 		const glContext = new Graphics().glContext;
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
-		switch (true) {
-			case (imageFormat & TEXTURE_FORMAT_UNCOMPRESSED) == TEXTURE_FORMAT_UNCOMPRESSED:
+		switch (formatCompression(imageFormat)) {
+			case TextureCompressionMethod.Uncompressed:
 				this.fillTexture(imageFormat, width, height, imageData[0], GL_TEXTURE_CUBE_MAP_POSITIVE_X);
 				this.fillTexture(imageFormat, width, height, imageData[1], GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
 				this.fillTexture(imageFormat, width, height, imageData[2], GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
@@ -127,7 +128,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 				this.fillTexture(imageFormat, width, height, imageData[4], GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
 				this.fillTexture(imageFormat, width, height, imageData[5], GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
 				break;
-			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_S3TC) == TEXTURE_FORMAT_COMPRESSED_S3TC:
+			case TextureCompressionMethod.St3c:
 				this.fillTextureDxt(texture, imageFormat, width, height, imageData[0], GL_TEXTURE_CUBE_MAP_POSITIVE_X);
 				this.fillTextureDxt(texture, imageFormat, width, height, imageData[1], GL_TEXTURE_CUBE_MAP_NEGATIVE_X);
 				this.fillTextureDxt(texture, imageFormat, width, height, imageData[2], GL_TEXTURE_CUBE_MAP_POSITIVE_Y);
@@ -135,11 +136,11 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 				this.fillTextureDxt(texture, imageFormat, width, height, imageData[4], GL_TEXTURE_CUBE_MAP_POSITIVE_Z);
 				this.fillTextureDxt(texture, imageFormat, width, height, imageData[5], GL_TEXTURE_CUBE_MAP_NEGATIVE_Z);
 				break;
-			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_BPTC) == TEXTURE_FORMAT_COMPRESSED_BPTC:
+			case TextureCompressionMethod.Bptc:
 				throw 'TODO';
 				this.#fillTextureBptc(texture, width, height, imageData[0]);
 				break;
-			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_RGTC) == TEXTURE_FORMAT_COMPRESSED_RGTC:
+			case TextureCompressionMethod.Rgtc:
 				throw 'TODO';
 				this.#fillTextureRgtc(texture, width, height, imageData[0]);
 				break;
@@ -155,7 +156,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
 	}
 
-	#initFlatTexture(texture: WebGLTexture, imageFormat: number/*TODO create an imageformat enum*/, width: number, height: number, imageData: [Uint8Array]): void {
+	#initFlatTexture(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, imageData: [Uint8Array]): void {
 		const glContext = new Graphics().glContext;
 		if (TESTING) {
 			new Graphics().cleanupGLError();
@@ -164,17 +165,17 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		if (TESTING) {
 			new Graphics().getGLError('bindTexture in fill source2 fillTexture');
 		}
-		switch (true) {
-			case (imageFormat & TEXTURE_FORMAT_UNCOMPRESSED) == TEXTURE_FORMAT_UNCOMPRESSED:
+		switch (formatCompression(imageFormat)) {
+			case TextureCompressionMethod.Uncompressed:
 				this.fillTexture(imageFormat, width, height, imageData[0], GL_TEXTURE_2D);
 				break;
-			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_S3TC) == TEXTURE_FORMAT_COMPRESSED_S3TC:
+			case TextureCompressionMethod.St3c:
 				this.fillTextureDxt(texture, imageFormat, width, height, imageData[0], GL_TEXTURE_2D);
 				break;
-			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_BPTC) == TEXTURE_FORMAT_COMPRESSED_BPTC:
+			case TextureCompressionMethod.Bptc:
 				this.#fillTextureBptc(texture, width, height, imageData[0]);
 				break;
-			case (imageFormat & TEXTURE_FORMAT_COMPRESSED_RGTC) == TEXTURE_FORMAT_COMPRESSED_RGTC:
+			case TextureCompressionMethod.Rgtc:
 				this.#fillTextureRgtc(texture, width, height, imageData[0]);
 				break;
 			default:
@@ -188,16 +189,16 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		glContext.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	fillTexture(imageFormat: number, width: number, height: number, datas: ArrayBufferView | null, target: GLenum) {
+	fillTexture(imageFormat: ImageFormat, width: number, height: number, datas: ArrayBufferView | null, target: GLenum) {
 		const gl = new Graphics().glContext;
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 
 		switch (imageFormat) {
-			case TEXTURE_FORMAT_UNCOMPRESSED_RGBA:
-			case TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888:
+			case ImageFormat.RGBA:
+			case ImageFormat.BGRA8888:
 				gl.texImage2D(target, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, datas);//TODO: params
 				break;
-			case TEXTURE_FORMAT_UNCOMPRESSED_R8:
+			case ImageFormat.R8:
 				gl.texImage2D(target, 0, GL_R8, width, height, 0, GL_RED, GL_UNSIGNED_BYTE, datas);//TODO: params
 				break;
 			default:
@@ -208,7 +209,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 	}
 
-	fillTextureDxt(texture: WebGLTexture, imageFormat: number, width: number, height: number, datas: Uint8Array, target: GLenum) {
+	fillTextureDxt(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, datas: Uint8Array, target: GLenum) {
 		const gl = new Graphics().glContext;
 		const s3tc = this.WEBGL_compressed_texture_s3tc;//gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
 
@@ -218,9 +219,15 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 			gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, true);
 			let dxtFormat = 0;
 			switch (imageFormat) {
-				case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1: dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT1_EXT; break;
-				case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3: dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT3_EXT; break;
-				case TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5: dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT5_EXT; break;
+				case ImageFormat.Dxt1:
+					dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT1_EXT;
+					break;
+				case ImageFormat.Dxt3:
+					dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT3_EXT;
+					break;
+				case ImageFormat.Dxt5:
+					dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT5_EXT;
+					break;
 			}
 
 			//gl.bindTexture(target, texture);
