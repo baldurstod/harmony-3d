@@ -9,6 +9,7 @@ import { Kv3File } from '../../common/keyvalue/kv3file';
 import { Kv3Type, Kv3Value } from '../../common/keyvalue/kv3value';
 import { VTEX_FLAG_CUBE_TEXTURE, VTEX_FORMAT_BC4, VTEX_FORMAT_BC5, VTEX_FORMAT_BC7, VTEX_FORMAT_BGRA8888, VTEX_FORMAT_DXT1, VTEX_FORMAT_DXT5, VTEX_FORMAT_PNG_R8G8B8A8_UINT, VTEX_FORMAT_R8, VTEX_FORMAT_R8G8B8A8_UINT } from '../constants';
 import { Source2SpriteSheet } from '../textures/source2spritesheet';
+import { Source2Texture } from '../textures/source2texture';
 import { BinaryKv3Loader } from './binarykv3loader';
 import {
 	DXGI_FORMAT_R16G16B16A16_SINT,
@@ -74,7 +75,7 @@ export const Source2BlockLoader = new (function () {
 				case 'AGRP':
 				case 'PHYS':
 				case 'LaCo':
-					await this.loadData(reader, reference, block, introspection, parseVtex);
+					await this.#loadData(reader, file, reference, block, introspection, parseVtex);
 					break;
 				case 'VBIB':
 				case 'MBUF':
@@ -101,7 +102,7 @@ export const Source2BlockLoader = new (function () {
 			}
 		}
 
-		async loadData(reader: BinaryReader, reference: Source2RerlBlock, block: Source2DataBlock, introspection: Source2NtroBlock, parseVtex: boolean) {
+		async #loadData(reader: BinaryReader, file: Source2File, reference: Source2RerlBlock, block: Source2DataBlock, introspection: Source2NtroBlock, parseVtex: boolean) {
 			const bytes = reader.getUint32(block.offset);
 			switch (bytes) {
 				case 0x03564B56: // VKV3
@@ -121,7 +122,7 @@ export const Source2BlockLoader = new (function () {
 			}
 			if (!introspection || !introspection.structsArray) {
 				if (parseVtex) {//TODO
-					return loadDataVtex(reader, block as Source2VtexBlock);
+					return loadDataVtex(reader, block as Source2VtexBlock, file as Source2Texture);
 				}
 				return null;
 			}
@@ -774,7 +775,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 	return null;
 }
 
-function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock) {
+function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock, file: Source2Texture) {
 	const DATA_UNKNOWN = 0;
 	const DATA_FALLBACK_BITS = 1;
 	const DATA_SHEET = 2;
@@ -790,7 +791,7 @@ function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock) {
 	block.width = reader.getUint16();
 	block.height = reader.getUint16();
 	block.depth = reader.getUint16();
-	block.imageFormat = reader.getUint8();
+	file.setImageFormat(reader.getUint8());
 	block.numMipLevels = reader.getUint8();
 	block.picmip0Res = reader.getUint32();
 
@@ -864,10 +865,10 @@ function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock) {
 		}
 	}
 
-	loadDataVtexImageData(reader, block, compressedMips);
+	loadDataVtexImageData(reader, file, block, compressedMips);
 }
 
-function loadDataVtexImageData(reader: BinaryReader, block: Source2VtexBlock, compressedMips: number[] | null) {
+function loadDataVtexImageData(reader: BinaryReader, file: Source2Texture, block: Source2VtexBlock, compressedMips: number[] | null) {
 	let faceCount = 1;
 	if ((block.flags & VTEX_FLAG_CUBE_TEXTURE) == VTEX_FLAG_CUBE_TEXTURE) { // Handle cube texture
 		faceCount = 6;
@@ -884,8 +885,8 @@ function loadDataVtexImageData(reader: BinaryReader, block: Source2VtexBlock, co
 		// Todo : add frame support + depth support
 		for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
 			const compressedLength = compressedMips?.pop() ?? null; //TODO: check how this actually works with depth / frames
-			block.imageData[faceIndex] = getImage(reader, mipmapWidth, mipmapHeight, block.imageFormat, compressedLength);
-			if (false && block.imageFormat == VTEX_FORMAT_BC4) {//TODOv3: removeme
+			block.imageData[faceIndex] = getImage(reader, mipmapWidth, mipmapHeight, file.getImageFormat(), compressedLength);
+			if (false /*&& block.imageFormat == VTEX_FORMAT_BC4*/) {//TODOv3: removeme
 				const str = block.imageData[faceIndex];
 				if (str.length >= 512 * 512) {
 					/*const buf = new ArrayBuffer(str.length);

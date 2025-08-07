@@ -5,6 +5,7 @@ import { Source2File, VTEX_TO_INTERNAL_IMAGE_FORMAT } from '../loaders/source2fi
 import { Source2VtexBlock } from '../loaders/source2fileblock';
 
 export class Source2Texture extends Source2File {
+	#imageFormat: number;
 
 	constructor(repository: string, path: string) {
 		super(repository, path);
@@ -36,7 +37,7 @@ export class Source2Texture extends Source2File {
 			return 0;
 		}
 
-		switch (block.imageFormat) {
+		switch (this.#imageFormat) {
 			case 1://TODO DXT1
 				return 1;
 			case 2://TODO DXT5
@@ -51,7 +52,7 @@ export class Source2Texture extends Source2File {
 			return false;
 		}
 
-		return block.imageFormat <= 2;//DXT1 or DXT5
+		return this.#imageFormat <= 2;//DXT1 or DXT5
 	}
 
 	isCubeTexture(): boolean {
@@ -63,14 +64,20 @@ export class Source2Texture extends Source2File {
 		return (block.flags & VTEX_FLAG_CUBE_TEXTURE) == VTEX_FLAG_CUBE_TEXTURE;
 	}
 
+	setImageFormat(imageFormat: number): void {
+		this.#imageFormat = imageFormat;
+	}
 
+	getImageFormat(): number {
+		return this.#imageFormat;
+	}
 
 	get imageFormat(): number {//TODOv3 improve this
 		const block = this.blocks.DATA as Source2VtexBlock;
 		if (!block) {
 			return TEXTURE_FORMAT_UNKNOWN;
 		}
-		const imageFormat = block.imageFormat;
+		const imageFormat = this.#imageFormat;
 		if (DEBUG) {
 			const internalFormat = VTEX_TO_INTERNAL_IMAGE_FORMAT[imageFormat];
 			if (internalFormat === undefined) {
@@ -82,8 +89,21 @@ export class Source2Texture extends Source2File {
 			return VTEX_TO_INTERNAL_IMAGE_FORMAT[imageFormat];
 		}
 	}
-/*
+
 	async getImageData(mipmap?: number, frame = 0, face = 0): Promise<ImageData | null> {
+		const imageData = (this.blocks.DATA as Source2VtexBlock).imageData[0];
+		const imageWidth = (this.blocks.DATA as Source2VtexBlock).width;
+		const imageHeight = (this.blocks.DATA as Source2VtexBlock).height;
+
+		let datas: Uint8ClampedArray;
+
+		datas = new Uint8ClampedArray(imageWidth * imageHeight * 4);
+		datas.set(imageData);
+
+
+		return new ImageData(datas, imageWidth, imageHeight);
+		return null;
+		/*
 		frame = Math.round(frame) % this.frames;
 
 		const highResDatas = this.getResource(VTF_ENTRY_IMAGE_DATAS);
@@ -114,7 +134,6 @@ export class Source2Texture extends Source2File {
 		}
 
 		return new ImageData(datas, mipmapWidth, mipmapHeight);
-	}
 		*/
-
+	}
 }

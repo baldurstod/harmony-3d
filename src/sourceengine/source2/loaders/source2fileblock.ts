@@ -246,7 +246,7 @@ export type Source2VtexBlock = Source2FileBlock & {
 	width: number;
 	height: number;
 	depth: number;
-	imageFormat: number;
+	//imageFormat: number;
 	numMipLevels: number;
 	picmip0Res: number;
 	imageData: any/*TODO: improve type*/;
