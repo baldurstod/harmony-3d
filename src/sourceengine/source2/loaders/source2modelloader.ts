@@ -107,7 +107,7 @@ export class Source2ModelLoader {
 			return;
 		}
 
-		this.#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
+		this.#loadMesh(repository, embeddedMesh.getValueAsString('name') ?? '', model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
 
 		/*data_block: 1
 		mesh_index: 0
@@ -135,14 +135,17 @@ export class Source2ModelLoader {
 		//vmdl.indices = [];
 
 		// Load vertex buffers
-		this.#loadBuffer('m_vertexBuffers', vmdl, embeddedMesh, true);
-		this.#loadBuffer('m_indexBuffers', vmdl, embeddedMesh, false);
-		this.#loadMesh(repository, model, group, dataBlock, new Source2FileBlock(vmdl, 'VBIB', new BinaryReader(''), 0, 0)/*TODO: remove*/, lodGroupMask, vmdl, meshIndex, meshGroupMask);
+
+		vmdl.vertices.set(meshIndex, []);
+		vmdl.indices.set(meshIndex, []);
+		this.#loadBuffer('m_vertexBuffers', vmdl, meshIndex, embeddedMesh, true);
+		this.#loadBuffer('m_indexBuffers', vmdl, meshIndex, embeddedMesh, false);
+		this.#loadMesh(repository, embeddedMesh.getValueAsString('name') ?? '', model, group, dataBlock, new Source2FileBlock(vmdl, -1/*TODO: fix that*/, 'VBIB', new BinaryReader(''), 0, 0)/*TODO: remove*/, lodGroupMask, vmdl, meshIndex, meshGroupMask);
 
 		//console.error(vertexBuffers);
 	}
 
-	#loadBuffer(bufferName: string, vmdl: Source2File, embeddedMesh: Kv3Element, isVertex: boolean): void {
+	#loadBuffer(bufferName: string, vmdl: Source2File, meshIndex: number, embeddedMesh: Kv3Element, isVertex: boolean): void {
 		const buffers = embeddedMesh.getValueAsElementArray(bufferName);
 		if (!buffers) {
 			return;
@@ -397,14 +400,14 @@ export class Source2ModelLoader {
 			}
 
 			if (isVertex) {
-				vmdl.vertices?.push(s1);
+				vmdl.vertices.get(meshIndex).push(s1);
 			} else {
-				vmdl.indices?.push(s2);
+				vmdl.indices.get(meshIndex).push(s2);
 			}
 		}
 	}
 
-	#loadMesh(repository: string, model: Source2Model, group: Entity, dataBlock: Source2FileBlock, vbibBlock: Source2FileBlock, lodGroupMask: number, vmdl: Source2File, meshIndex: number, meshGroupMask: number | undefined) {
+	#loadMesh(repository: string, name: string, model: Source2Model, group: Entity, dataBlock: Source2FileBlock, vbibBlock: Source2FileBlock, lodGroupMask: number, vmdl: Source2File, meshIndex: number, meshGroupMask: number | undefined) {
 		// TODO: remove vbibBlock
 		const remappingTable = vmdl.getRemappingTable(meshIndex);
 
@@ -426,29 +429,33 @@ export class Source2ModelLoader {
 				if (!vertexBuffers) {
 					continue;
 				}
-				const bufferIndex = vertexBuffers.getValueAsNumber('m_hBuffer');
+				const indexBuffer = drawCall.getValueAsElement('m_indexBuffer');
+				if (!indexBuffer) {
+					continue;
+				}
+				const bufferIndex = indexBuffer.getValueAsNumber('m_hBuffer');
 				const startIndex = drawCall.getValueAsNumber('m_nStartIndex');
 				const indexCount = drawCall.getValueAsNumber('m_nIndexCount');
 				if (bufferIndex === null || startIndex === null || indexCount === null) {
 					console.error('missing vertexBuffers in loadMesh', vertexBuffers, bufferIndex, startIndex, indexCount);
 					continue;
 				}
-				const indices = new Uint32BufferAttribute(vbibBlock.getIndices(bufferIndex), 1, startIndex, indexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
-				const vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(bufferIndex), 3);
+				const indices = new Uint32BufferAttribute(vbibBlock.getIndices(meshIndex, bufferIndex), 1, startIndex * 4, indexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
+				const vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(meshIndex, bufferIndex), 3);
 
 				let vertexNormal, vertexTangent;
 				if (useCompressedNormalTangent) {
-					const [normal, tangent] = vbibBlock.getNormalsTangents(bufferIndex);
+					const [normal, tangent] = vbibBlock.getNormalsTangents(meshIndex, bufferIndex);
 					vertexNormal = new Float32BufferAttribute(normal, 3);
 					vertexTangent = new Float32BufferAttribute(tangent, 4);
 				} else {
-					vertexNormal = new Float32BufferAttribute(vbibBlock.getNormal(bufferIndex), 4);
-					vertexTangent = new Float32BufferAttribute(vbibBlock.getTangent(bufferIndex), 4);
+					vertexNormal = new Float32BufferAttribute(vbibBlock.getNormal(meshIndex, bufferIndex), 4);
+					vertexTangent = new Float32BufferAttribute(vbibBlock.getTangent(meshIndex, bufferIndex), 4);
 
 				}
-				const textureCoord = new Float32BufferAttribute(vbibBlock.getCoords(bufferIndex), 2);
-				const vertexWeights = new Float32BufferAttribute(vbibBlock.getBoneWeight(bufferIndex), 4);
-				const vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(bufferIndex), remappingTable), 4);
+				const textureCoord = new Float32BufferAttribute(vbibBlock.getCoords(meshIndex, bufferIndex), 2);
+				const vertexWeights = new Float32BufferAttribute(vbibBlock.getBoneWeight(meshIndex, bufferIndex), 4);
+				const vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(meshIndex, bufferIndex), remappingTable), 4);
 
 				const geometry = new BufferGeometry();
 				geometry.properties.setNumber('lodGroupMask', lodGroupMask);
@@ -486,7 +493,7 @@ export class Source2ModelLoader {
 							}
 						}
 					);
-					model.addGeometry(geometry, FileNameFromPath(materialPath), 0/*TODOv3*/);
+					model.addGeometry(geometry, name, 0/*TODOv3*/);
 				} else {
 					console.error('missing property m_material in draw call', drawCall);
 				}
@@ -502,7 +509,7 @@ export class Source2ModelLoader {
 			const dataBlock = mesh.getBlockByType('DATA');
 			const vbibBlock = mesh.getBlockByType('VBIB');
 			if (dataBlock && vbibBlock) {
-				this.#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
+				this.#loadMesh(repository, ''/*TODO: fix mesh name*/, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
 			}
 		}
 		await this.#loadMeshes(vmdl, callback);

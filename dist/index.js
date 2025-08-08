@@ -21517,8 +21517,8 @@ class Source2File {
     versionMaj = 0;
     versionMin = 0;
     maxBlockOffset = 0;
-    indices = [];
-    vertices = [];
+    indices = new Map();
+    vertices = new Map();
     constructor(repository, fileName) {
         this.repository = repository;
         this.fileName = fileName;
@@ -21535,89 +21535,111 @@ class Source2File {
     getBlockById(id) {
         return this.blocksArray[id] ?? null;
     }
-    getVertexCount(bufferId) {
-        /*
-        const block = this.blocks.VBIB || this.blocks.MBUF;
-        if (!block) {
-            return 0;
+    /*
+        getVertexCount(blockId: number, bufferId: number): number {
+            /*
+            const block = this.blocks.VBIB || this.blocks.MBUF;
+            if (!block) {
+                return 0;
+            }
+            * /
+    
+            return this.indices?.[bufferId].indices.length;
         }
         */
-        return this.indices?.[bufferId].indices.length;
-    }
-    getIndices(bufferId) {
-        /*
-        const block = this.blocks.VBIB || this.blocks.MBUF;
-        if (!block) {
-            return null;
+    /*
+        getIndices(bufferId: number): number[] | null {
+            /*
+            const block = this.blocks.VBIB || this.blocks.MBUF;
+            if (!block) {
+                return null;
+            }
+            * /
+    
+            const indexBuffer = this.indices?.[bufferId];
+    
+            return indexBuffer ? indexBuffer.indices : [];
         }
-        */
-        const indexBuffer = this.indices?.[bufferId];
-        return indexBuffer ? indexBuffer.indices : [];
+            */
+    /*
+getVertices(bufferId: number): number[] | null {
+    /*
+    const block = this.blocks.VBIB || this.blocks.MBUF;
+    if (!block) {
+        return null;
     }
-    getVertices(bufferId) {
-        /*
-        const block = this.blocks.VBIB || this.blocks.MBUF;
-        if (!block) {
-            return null;
-        }
-        */
-        const vertexBuffer = this.vertices?.[bufferId];
-        return vertexBuffer ? vertexBuffer.vertices : [];
+    * /
+
+    const vertexBuffer = this.vertices?.[bufferId];
+
+    return vertexBuffer ? vertexBuffer.vertices : [];
+}
+
+getNormals(bufferId: number): number[] | null {
+    /*
+    const block = this.blocks.VBIB || this.blocks.MBUF;
+    if (!block) {
+        return null;
     }
-    getNormals(bufferId) {
-        /*
-        const block = this.blocks.VBIB || this.blocks.MBUF;
-        if (!block) {
-            return null;
-        }
-        */
-        const vertexBuffer = this.vertices?.[bufferId];
-        const normals = vertexBuffer.normals;
-        const ret = [];
-        const normalVec4 = vec4.create();
-        let normalVec3;
-        for (let i = 0, l = normals.length; i < l; i += 4) {
-            normalVec4[0] = normals[i + 0];
-            normalVec4[1] = normals[i + 1];
-            normalVec4[2] = normals[i + 2];
-            normalVec4[3] = normals[i + 3];
-            normalVec3 = DecompressNormal(normalVec4);
-            ret.push(normalVec3[0]);
-            ret.push(normalVec3[1]);
-            ret.push(normalVec3[2]);
-        }
-        return ret; //vertexBuffer ? vertexBuffer.normals : [];
+    * /
+
+    const vertexBuffer = this.vertices?.[bufferId];
+    const normals = vertexBuffer.normals;
+    const ret = [];
+    const normalVec4 = vec4.create();
+    let normalVec3;
+    for (let i = 0, l = normals.length; i < l; i += 4) {
+        normalVec4[0] = normals[i + 0];
+        normalVec4[1] = normals[i + 1];
+        normalVec4[2] = normals[i + 2];
+        normalVec4[3] = normals[i + 3];
+
+        normalVec3 = DecompressNormal(normalVec4);
+        ret.push(normalVec3[0]);
+        ret.push(normalVec3[1]);
+        ret.push(normalVec3[2]);
     }
-    getCoords(bufferId) {
-        /*
-        const block = this.blocks.VBIB || this.blocks.MBUF;
-        if (!block) {
-            return null;
-        }
-        */
-        const vertexBuffer = this.vertices?.[bufferId];
-        return vertexBuffer ? vertexBuffer.coords : [];
+    return ret;//vertexBuffer ? vertexBuffer.normals : [];
+}
+
+getCoords(bufferId: number): number[] | null {
+    /*
+    const block = this.blocks.VBIB || this.blocks.MBUF;
+    if (!block) {
+        return null;
     }
-    getBoneIndices(bufferId) {
-        /*
-        const block = this.blocks.VBIB || this.blocks.MBUF;
-        if (!block) {
-            return null;
-        }
-        */
-        const vertexBuffer = this.vertices?.[bufferId];
-        return vertexBuffer ? vertexBuffer.boneIndices : [];
+    * /
+
+    const vertexBuffer = this.vertices?.[bufferId];
+
+    return vertexBuffer ? vertexBuffer.coords : [];
+}
+
+getBoneIndices(bufferId: number): number[] | null {
+    /*
+    const block = this.blocks.VBIB || this.blocks.MBUF;
+    if (!block) {
+        return null;
     }
-    getBoneWeight(bufferId) {
-        /*
-        const block = this.blocks.VBIB || this.blocks.MBUF;
-        if (!block) {
-            return null;
-        }
-        */
-        const vertexBuffer = this.vertices?.[bufferId];
-        return vertexBuffer ? vertexBuffer.boneWeight : [];
+    * /
+
+    const vertexBuffer = this.vertices?.[bufferId];
+
+    return vertexBuffer ? vertexBuffer.boneIndices : [];
+}
+
+getBoneWeight(bufferId: number): number[] | null {
+    /*
+    const block = this.blocks.VBIB || this.blocks.MBUF;
+    if (!block) {
+        return null;
     }
+    * /
+
+    const vertexBuffer = this.vertices?.[bufferId];
+
+    return vertexBuffer ? vertexBuffer.boneWeight : [];
+}*/
     /*
     getPositionArray(bufferId: number) {
         const block = this.blocks.VBIB || this.blocks.MBUF;
@@ -21990,27 +22012,6 @@ class Source2File {
         }
         return outArr;
     }
-}
-function DecompressNormal(inputNormal) {
-    const outputNormal = vec3.create();
-    //float2 ztSigns		= (inputNormal.xy - 128.0) < 0;				// sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
-    const ztSigns = vec2.fromValues(Number((inputNormal[0] - 128.0) < 0), Number((inputNormal[1] - 128.0) < 0)); // sign bits for zs and binormal (1 or 0) set-less-than (slt) asm instruction
-    //float2 xyAbs		= abs(inputNormal.xy - 128.0) - ztSigns;		// 0..127
-    const xyAbs = vec2.fromValues(Math.abs(inputNormal[0] - 128.0) - ztSigns[0], Math.abs(inputNormal[1] - 128.0) - ztSigns[1]); // 0..127
-    //float2 xySigns		= (xyAbs - 64.0) < 0;						// sign bits for xs and ys (1 or 0)
-    const xySigns = vec2.fromValues(Number((xyAbs[0] - 64.0) < 0), Number((xyAbs[1] - 64.0) < 0)); // sign bits for xs and ys (1 or 0)
-    //outputNormal.xy		= (abs(xyAbs - 64.0) - xySigns) / 63.0;	// abs({nX, nY})
-    outputNormal[0] = (Math.abs(xyAbs[0] - 64.0) - xySigns[0]) / 63.0; // abs({nX, nY})
-    outputNormal[1] = (Math.abs(xyAbs[1] - 64.0) - xySigns[1]) / 63.0; // abs({nX, nY})
-    //outputNormal.z		= 1.0 - outputNormal.x - outputNormal.y;		// Project onto x+y+z=1
-    outputNormal[2] = 1.0 - outputNormal[0] - outputNormal[1]; // Project onto x+y+z=1
-    //outputNormal.xyz	= normalize(outputNormal.xyz);				// Normalize onto unit sphere
-    vec3.normalize(outputNormal, outputNormal);
-    //outputNormal.xy	 *= lerp(fOne.xx, -fOne.xx, xySigns);			// Restore x and y signs
-    //outputNormal.z	 *= lerp(fOne.x, -fOne.x, ztSigns.x);			// Restore z sign
-    outputNormal[0] *= (1 - xySigns[0]) - xySigns[0];
-    outputNormal[1] *= (1 - xySigns[1]) - xySigns[1];
-    return vec3.normalize(outputNormal, outputNormal);
 }
 
 var VtexImageFormat;
@@ -23416,7 +23417,7 @@ function sNormUint16(uint16) {
 }
 const Source2BlockLoader = new (function () {
     class Source2BlockLoader {
-        async parseBlock(reader, file, block, parseVtex) {
+        async parseBlock(reader, file, block, parseVtex, context) {
             const introspection = file.blocks['NTRO'];
             const reference = file.blocks['RERL'];
             switch (block.type) {
@@ -23441,7 +23442,7 @@ const Source2BlockLoader = new (function () {
                     break;
                 case 'VBIB':
                 case 'MBUF':
-                    loadVbib(reader, block);
+                    loadVbib(reader, block, context.meshIndex++);
                     break;
                 case 'SNAP':
                     let decodeLength, sa;
@@ -23622,7 +23623,7 @@ const BYTES_PER_VERTEX_COORD = VERTEX_COORD_LEN * 4;
 const BYTES_PER_VERTEX_BONE_INDICE = VERTEX_BONE_INDICE_LEN * 4;
 const BYTES_PER_VERTEX_BONE_WEIGHT = VERTEX_BONE_WEIGHT_LEN * 4;
 const BYTES_PER_INDEX = 1 * 4;
-function loadVbib(reader, block) {
+function loadVbib(reader, block, meshIndex) {
     const VERTEX_HEADER_SIZE = 24;
     const INDEX_HEADER_SIZE = 24;
     const DESC_HEADER_SIZE = 56;
@@ -23634,6 +23635,10 @@ function loadVbib(reader, block) {
     const indexCount = reader.getInt32();
     //block.file.vertices = [];
     //block.file.indices = [];
+    const blockVertices = [];
+    const blockIndices = [];
+    block.file.vertices.set(meshIndex, blockVertices);
+    block.file.indices.set(meshIndex, blockIndices);
     for (var i = 0; i < vertexCount; i++) { // header size: 24 bytes
         reader.seek(vertexOffset + i * VERTEX_HEADER_SIZE);
         const s1 /*TODO: fix typer*/ = {};
@@ -23839,7 +23844,7 @@ function loadVbib(reader, block) {
                 s1BoneWeight.set(defaultValuesBoneWeight, vertexIndex * VERTEX_BONE_WEIGHT_LEN);
             }
         }
-        block.file.vertices.push(s1);
+        blockVertices.push(s1);
     }
     //console.log(block.vertices);
     for (var i = 0; i < indexCount; i++) { // header size: 24 bytes
@@ -23871,7 +23876,7 @@ function loadVbib(reader, block) {
                 s2Indices[indicesIndex] = indexReader.getUint32();
             }
         }
-        block.file.indices.push(s2);
+        blockIndices.push(s2);
     }
 }
 function getStruct(block, structId) {
@@ -24521,6 +24526,7 @@ function loadVtexCubemapRadiance(reader, block, offset, size) {
 class Source2FileBlock {
     file;
     type;
+    //id: number;
     reader; // TODO: try to improve that, this may be overkill
     offset;
     length;
@@ -24528,7 +24534,8 @@ class Source2FileBlock {
     //vertices?: any/*TODO: create struct*/[];
     keyValue;
     //structs?: never;//TODO: remove me
-    constructor(file, type /*TODO: create enum*/, reader, offset, length) {
+    constructor(file, id, type /*TODO: create enum*/, reader, offset, length) {
+        //this.id = id;
         this.file = file;
         this.type = type;
         this.reader = reader;
@@ -24551,15 +24558,16 @@ class Source2FileBlock {
     getKeyValueAsElementArray(path) {
         return this.keyValue?.getValueAsElementArray(path) ?? null;
     }
-    getIndices(bufferId) {
-        const indexBuffer = this.file.indices?.at(bufferId);
+    // TODO: move getIndices getVertices getNormalsTangents getCoords getNormal getTangent getBoneIndices getBoneWeight
+    getIndices(meshIndex, bufferId) {
+        const indexBuffer = this.file.indices.get(meshIndex)?.at(bufferId);
         return indexBuffer ? indexBuffer.indices : [];
     }
-    getVertices(bufferId) {
-        const vertexBuffer = this.file.vertices?.at(bufferId);
+    getVertices(meshIndex, bufferId) {
+        const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
         return vertexBuffer ? vertexBuffer.vertices : [];
     }
-    getNormalsTangents(bufferId) {
+    getNormalsTangents(meshIndex, bufferId) {
         function decompressNormal(inputNormal, outputNormal) {
             //let outputNormal = vec3.create();
             //float2 ztSigns		= ( inputNormal.xy - 128.0 ) < 0;				// sign bits for zs and binormal (1 or 0)  set-less-than (slt) asm instruction
@@ -24634,7 +24642,7 @@ class Source2FileBlock {
             tangents = vec4.fromValues(tangent[0], tangent[1], tangent[2], (SignBit == 0) ? -1.0 : 1.0); // Bitangent sign bit... inverted (0 = negative
             return [normals, tangents];
         }
-        const vertexBuffer = this.file.vertices?.[bufferId];
+        const vertexBuffer = this.file.vertices.get(meshIndex)?.[bufferId];
         const normals = new Float32Array(vertexBuffer.normals);
         const normalArray = [];
         const tangentArray = [];
@@ -24664,24 +24672,24 @@ class Source2FileBlock {
         }
         return [normalArray, tangentArray];
     }
-    getCoords(bufferId) {
-        const vertexBuffer = this.file.vertices?.at(bufferId);
+    getCoords(meshIndex, bufferId) {
+        const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
         return vertexBuffer ? vertexBuffer.coords : [];
     }
-    getNormal(bufferId) {
-        const vertexBuffer = this.file.vertices?.at(bufferId);
+    getNormal(meshIndex, bufferId) {
+        const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
         return vertexBuffer ? vertexBuffer.normals : [];
     }
-    getTangent(bufferId) {
-        const vertexBuffer = this.file.vertices?.at(bufferId);
+    getTangent(meshIndex, bufferId) {
+        const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
         return vertexBuffer ? vertexBuffer.tangents : [];
     }
-    getBoneIndices(bufferId) {
-        const vertexBuffer = this.file.vertices?.at(bufferId);
+    getBoneIndices(meshIndex, bufferId) {
+        const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
         return vertexBuffer ? vertexBuffer.boneIndices : new ArrayBuffer();
     }
-    getBoneWeight(bufferId) {
-        const vertexBuffer = this.file.vertices?.at(bufferId);
+    getBoneWeight(meshIndex, bufferId) {
+        const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
         return vertexBuffer ? vertexBuffer.boneWeight : [];
     }
 }
@@ -24719,12 +24727,13 @@ class Source2FileLoader extends SourceBinaryLoader {
             resOffset = reader.tell() + reader.getUint32();
             resLength = reader.getUint32();
             file.maxBlockOffset = Math.max(file.maxBlockOffset, resOffset + resLength);
-            block = new Source2FileBlock(file, resType, new BinaryReader(reader, resOffset, resLength), resOffset, resLength);
+            block = new Source2FileBlock(file, i, resType, new BinaryReader(reader, resOffset, resLength), resOffset, resLength);
             file.addBlock(block);
         }
+        const context = { meshIndex: 0 };
         for (const block of file.blocksArray) {
             if (block.length > 0) {
-                await Source2BlockLoader.parseBlock(reader, file, block, parseVtex);
+                await Source2BlockLoader.parseBlock(reader, file, block, parseVtex, context);
             }
         }
         //return;
@@ -26756,7 +26765,7 @@ class Source2ModelLoader {
             console.error('missing dataBlock / vbibBlock', embeddedMesh, dataBlockId, vbibBlockId, vmdl);
             return;
         }
-        this.#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
+        this.#loadMesh(repository, embeddedMesh.getValueAsString('name') ?? '', model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
         /*data_block: 1
         mesh_index: 0
         morph_block: 0
@@ -26779,12 +26788,14 @@ class Source2ModelLoader {
         //vmdl.vertices = [];
         //vmdl.indices = [];
         // Load vertex buffers
-        this.#loadBuffer('m_vertexBuffers', vmdl, embeddedMesh, true);
-        this.#loadBuffer('m_indexBuffers', vmdl, embeddedMesh, false);
-        this.#loadMesh(repository, model, group, dataBlock, new Source2FileBlock(vmdl, 'VBIB', new BinaryReader(''), 0, 0) /*TODO: remove*/, lodGroupMask, vmdl, meshIndex, meshGroupMask);
+        vmdl.vertices.set(meshIndex, []);
+        vmdl.indices.set(meshIndex, []);
+        this.#loadBuffer('m_vertexBuffers', vmdl, meshIndex, embeddedMesh, true);
+        this.#loadBuffer('m_indexBuffers', vmdl, meshIndex, embeddedMesh, false);
+        this.#loadMesh(repository, embeddedMesh.getValueAsString('name') ?? '', model, group, dataBlock, new Source2FileBlock(vmdl, -1 /*TODO: fix that*/, 'VBIB', new BinaryReader(''), 0, 0) /*TODO: remove*/, lodGroupMask, vmdl, meshIndex, meshGroupMask);
         //console.error(vertexBuffers);
     }
-    #loadBuffer(bufferName, vmdl, embeddedMesh, isVertex) {
+    #loadBuffer(bufferName, vmdl, meshIndex, embeddedMesh, isVertex) {
         const buffers = embeddedMesh.getValueAsElementArray(bufferName);
         if (!buffers) {
             return;
@@ -27022,14 +27033,14 @@ class Source2ModelLoader {
                 }
             }
             if (isVertex) {
-                vmdl.vertices?.push(s1);
+                vmdl.vertices.get(meshIndex).push(s1);
             }
             else {
-                vmdl.indices?.push(s2);
+                vmdl.indices.get(meshIndex).push(s2);
             }
         }
     }
-    #loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask) {
+    #loadMesh(repository, name, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask) {
         // TODO: remove vbibBlock
         const remappingTable = vmdl.getRemappingTable(meshIndex);
         const attachments = dataBlock.getKeyValueAsElementArray('m_attachments');
@@ -27047,28 +27058,32 @@ class Source2ModelLoader {
                 if (!vertexBuffers) {
                     continue;
                 }
-                const bufferIndex = vertexBuffers.getValueAsNumber('m_hBuffer');
+                const indexBuffer = drawCall.getValueAsElement('m_indexBuffer');
+                if (!indexBuffer) {
+                    continue;
+                }
+                const bufferIndex = indexBuffer.getValueAsNumber('m_hBuffer');
                 const startIndex = drawCall.getValueAsNumber('m_nStartIndex');
                 const indexCount = drawCall.getValueAsNumber('m_nIndexCount');
                 if (bufferIndex === null || startIndex === null || indexCount === null) {
                     console.error('missing vertexBuffers in loadMesh', vertexBuffers, bufferIndex, startIndex, indexCount);
                     continue;
                 }
-                const indices = new Uint32BufferAttribute(vbibBlock.getIndices(bufferIndex), 1, startIndex, indexCount); //NOTE: number is here to convert bigint TODO: see if we can do better
-                const vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(bufferIndex), 3);
+                const indices = new Uint32BufferAttribute(vbibBlock.getIndices(meshIndex, bufferIndex), 1, startIndex * 4, indexCount); //NOTE: number is here to convert bigint TODO: see if we can do better
+                const vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(meshIndex, bufferIndex), 3);
                 let vertexNormal, vertexTangent;
                 if (useCompressedNormalTangent) {
-                    const [normal, tangent] = vbibBlock.getNormalsTangents(bufferIndex);
+                    const [normal, tangent] = vbibBlock.getNormalsTangents(meshIndex, bufferIndex);
                     vertexNormal = new Float32BufferAttribute(normal, 3);
                     vertexTangent = new Float32BufferAttribute(tangent, 4);
                 }
                 else {
-                    vertexNormal = new Float32BufferAttribute(vbibBlock.getNormal(bufferIndex), 4);
-                    vertexTangent = new Float32BufferAttribute(vbibBlock.getTangent(bufferIndex), 4);
+                    vertexNormal = new Float32BufferAttribute(vbibBlock.getNormal(meshIndex, bufferIndex), 4);
+                    vertexTangent = new Float32BufferAttribute(vbibBlock.getTangent(meshIndex, bufferIndex), 4);
                 }
-                const textureCoord = new Float32BufferAttribute(vbibBlock.getCoords(bufferIndex), 2);
-                const vertexWeights = new Float32BufferAttribute(vbibBlock.getBoneWeight(bufferIndex), 4);
-                const vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(bufferIndex), remappingTable), 4);
+                const textureCoord = new Float32BufferAttribute(vbibBlock.getCoords(meshIndex, bufferIndex), 2);
+                const vertexWeights = new Float32BufferAttribute(vbibBlock.getBoneWeight(meshIndex, bufferIndex), 4);
+                const vertexBones = new Float32BufferAttribute(vmdl.remapBuffer(vbibBlock.getBoneIndices(meshIndex, bufferIndex), remappingTable), 4);
                 const geometry = new BufferGeometry();
                 geometry.properties.setNumber('lodGroupMask', lodGroupMask);
                 geometry.properties.setBigint('mesh_group_mask', BigInt(meshGroupMask ?? 0xffffffffffffffffn));
@@ -27101,7 +27116,7 @@ class Source2ModelLoader {
                             console.error('unable to find material ' + materialPath);
                         }
                     });
-                    model.addGeometry(geometry, FileNameFromPath(materialPath), 0 /*TODOv3*/);
+                    model.addGeometry(geometry, name, 0 /*TODOv3*/);
                 }
                 else {
                     console.error('missing property m_material in draw call', drawCall);
@@ -27116,7 +27131,7 @@ class Source2ModelLoader {
             const dataBlock = mesh.getBlockByType('DATA');
             const vbibBlock = mesh.getBlockByType('VBIB');
             if (dataBlock && vbibBlock) {
-                this.#loadMesh(repository, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
+                this.#loadMesh(repository, '' /*TODO: fix mesh name*/, model, group, dataBlock, vbibBlock, lodGroupMask, vmdl, meshIndex, meshGroupMask);
             }
         };
         await this.#loadMeshes(vmdl, callback);

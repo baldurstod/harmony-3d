@@ -2,7 +2,7 @@ import { BinaryReader } from 'harmony-binary-reader';
 import { TESTING } from '../../../buildoptions';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
 import { Source2Texture } from '../textures/source2texture';
-import { Source2BlockLoader } from './source2blockloader';
+import { Source2BlockLoader, Source2BlockLoaderContext } from './source2blockloader';
 import { Source2File } from './source2file';
 import { Source2FileBlock } from './source2fileblock';
 
@@ -50,12 +50,13 @@ export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make single
 
 			file.maxBlockOffset = Math.max(file.maxBlockOffset, resOffset + resLength);
 
-			block = new Source2FileBlock(file, resType, new BinaryReader(reader, resOffset, resLength), resOffset, resLength);
+			block = new Source2FileBlock(file, i, resType, new BinaryReader(reader, resOffset, resLength), resOffset, resLength);
 			file.addBlock(block);
 		}
+		const context: Source2BlockLoaderContext = { meshIndex: 0 };
 		for (const block of file.blocksArray) {
 			if (block.length > 0) {
-				await Source2BlockLoader.parseBlock(reader, file, block, parseVtex);
+				await Source2BlockLoader.parseBlock(reader, file, block, parseVtex, context);
 			}
 		}
 		//return;

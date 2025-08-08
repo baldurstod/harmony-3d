@@ -6967,7 +6967,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7252,19 +7252,12 @@ declare class Choreography {
              versionMaj: number;
              versionMin: number;
              maxBlockOffset: number;
-             readonly indices: any[];
-             readonly vertices: any[];
+             readonly indices: Map<number, any[]>;
+             readonly vertices: Map<number, any[]>;
              constructor(repository: string, fileName: string);
              addBlock(block: Source2FileBlock): void;
              getBlockByType(type: string): Source2FileBlock | null;
              getBlockById(id: number): Source2FileBlock | null;
-             getVertexCount(bufferId: number): number;
-             getIndices(bufferId: number): number[] | null;
-             getVertices(bufferId: number): number[] | null;
-             getNormals(bufferId: number): number[] | null;
-             getCoords(bufferId: number): number[] | null;
-             getBoneIndices(bufferId: number): number[] | null;
-             getBoneWeight(bufferId: number): number[] | null;
              getBlockStruct(block: string, path: string): Kv3ValueType | undefined;
              getBlockStructAsArray(block: string, path: string): any[] | null;
              getBlockStructAsElement(block: string, path: string): Kv3Element | null;
@@ -7299,19 +7292,19 @@ declare class Choreography {
              offset: number;
              length: number;
              keyValue?: Kv3File;
-             constructor(file: Source2File, type: string, reader: BinaryReader, offset: number, length: number);
+             constructor(file: Source2File, id: number, type: string, reader: BinaryReader, offset: number, length: number);
              getKeyValue(path: string): Kv3Element | Kv3Value | undefined | null;
              getKeyValueAsNumber(path: string): number | null;
              getKeyValueAsStringArray(path: string): string[] | null;
              getKeyValueAsElementArray(path: string): Kv3Element[] | null;
-             getIndices(bufferId: number): number[];
-             getVertices(bufferId: number): number[];
-             getNormalsTangents(bufferId: number): any[][];
-             getCoords(bufferId: number): number[];
-             getNormal(bufferId: number): number[];
-             getTangent(bufferId: number): number[];
-             getBoneIndices(bufferId: number): ArrayBuffer;
-             getBoneWeight(bufferId: number): number[];
+             getIndices(meshIndex: number, bufferId: number): number[];
+             getVertices(meshIndex: number, bufferId: number): number[];
+             getNormalsTangents(meshIndex: number, bufferId: number): any[][];
+             getCoords(meshIndex: number, bufferId: number): number[];
+             getNormal(meshIndex: number, bufferId: number): number[];
+             getTangent(meshIndex: number, bufferId: number): number[];
+             getBoneIndices(meshIndex: number, bufferId: number): ArrayBuffer;
+             getBoneWeight(meshIndex: number, bufferId: number): number[];
          }
 
          export declare class Source2FileLoader extends SourceBinaryLoader {
@@ -7567,7 +7560,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7687,7 +7680,7 @@ declare class Choreography {
              /**
               * @deprecated Please use getScalarField instead.
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
              /**
               * TODO
               */

@@ -14,6 +14,7 @@ import { Source2File } from './source2file';
 export class Source2FileBlock {
 	file: Source2File;
 	type: string/*TODO: create enum*/;
+	//id: number;
 	reader: BinaryReader;// TODO: try to improve that, this may be overkill
 	offset: number;
 	length: number;
@@ -22,7 +23,8 @@ export class Source2FileBlock {
 	keyValue?: Kv3File;
 	//structs?: never;//TODO: remove me
 
-	constructor(file: Source2File, type: string/*TODO: create enum*/, reader: BinaryReader, offset: number, length: number) {
+	constructor(file: Source2File, id: number, type: string/*TODO: create enum*/, reader: BinaryReader, offset: number, length: number) {
+		//this.id = id;
 		this.file = file;
 		this.type = type;
 		this.reader = reader;
@@ -50,17 +52,18 @@ export class Source2FileBlock {
 		return this.keyValue?.getValueAsElementArray(path) ?? null;
 	}
 
-	getIndices(bufferId: number): number[] {
-		const indexBuffer = this.file.indices?.at(bufferId);
+	// TODO: move getIndices getVertices getNormalsTangents getCoords getNormal getTangent getBoneIndices getBoneWeight
+	getIndices(meshIndex:number, bufferId: number): number[] {
+		const indexBuffer = this.file.indices.get(meshIndex)?.at(bufferId);
 		return indexBuffer ? indexBuffer.indices : [];
 	}
 
-	getVertices(bufferId: number): number[] {
-		const vertexBuffer = this.file.vertices?.at(bufferId);
+	getVertices(meshIndex:number, bufferId: number): number[] {
+		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.vertices : [];
 	}
 
-	getNormalsTangents(bufferId: number) {
+	getNormalsTangents(meshIndex:number, bufferId: number) {
 		function decompressNormal(inputNormal: vec2, outputNormal: vec3): vec3 {				// {nX, nY, nZ}//_DecompressUByte4Normal
 			const fOne = 1.0;
 			//let outputNormal = vec3.create();
@@ -155,7 +158,7 @@ export class Source2FileBlock {
 			return [normals, tangents];
 		}
 
-		const vertexBuffer = this.file.vertices?.[bufferId];
+		const vertexBuffer = this.file.vertices.get(meshIndex)?.[bufferId];
 		const normals = new Float32Array(vertexBuffer.normals);
 		const normalArray = [];
 		const tangentArray = [];
@@ -189,28 +192,28 @@ export class Source2FileBlock {
 		return [normalArray, tangentArray];
 	}
 
-	getCoords(bufferId: number): number[] {
-		const vertexBuffer = this.file.vertices?.at(bufferId);
+	getCoords(meshIndex:number, bufferId: number): number[] {
+		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.coords : [];
 	}
 
-	getNormal(bufferId: number): number[] {
-		const vertexBuffer = this.file.vertices?.at(bufferId);
+	getNormal(meshIndex:number, bufferId: number): number[] {
+		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.normals : [];
 	}
 
-	getTangent(bufferId: number): number[] {
-		const vertexBuffer = this.file.vertices?.at(bufferId);
+	getTangent(meshIndex:number, bufferId: number): number[] {
+		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.tangents : [];
 	}
 
-	getBoneIndices(bufferId: number): ArrayBuffer {
-		const vertexBuffer = this.file.vertices?.at(bufferId);
+	getBoneIndices(meshIndex:number, bufferId: number): ArrayBuffer {
+		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.boneIndices : new ArrayBuffer();
 	}
 
-	getBoneWeight(bufferId: number): number[] {
-		const vertexBuffer = this.file.vertices?.at(bufferId);
+	getBoneWeight(meshIndex:number, bufferId: number): number[] {
+		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.boneWeight : [];
 	}
 }

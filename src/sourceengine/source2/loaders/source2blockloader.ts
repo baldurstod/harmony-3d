@@ -51,10 +51,14 @@ export function sNormUint16(uint16: number) {
 	return Math.max(uint16 / 0x7FFF, -1.0);
 }
 
+export type Source2BlockLoaderContext = {
+	meshIndex: number;
+}
+
 export const Source2BlockLoader = new (function () {
 	class Source2BlockLoader {
 
-		async parseBlock(reader: BinaryReader, file: Source2File, block: Source2FileBlock, parseVtex: boolean) {//TODOv3 parseVtex
+		async parseBlock(reader: BinaryReader, file: Source2File, block: Source2FileBlock, parseVtex: boolean, context: Source2BlockLoaderContext) {//TODOv3 parseVtex
 			const introspection = file.blocks['NTRO'] as Source2NtroBlock;
 			const reference = file.blocks['RERL'] as Source2RerlBlock;
 			switch (block.type) {
@@ -79,7 +83,7 @@ export const Source2BlockLoader = new (function () {
 					break;
 				case 'VBIB':
 				case 'MBUF':
-					loadVbib(reader, block);
+					loadVbib(reader, block, context.meshIndex++);
 					break;
 				case 'SNAP':
 					let decodeLength, sa;
@@ -282,7 +286,7 @@ export const BYTES_PER_VERTEX_BONE_INDICE = VERTEX_BONE_INDICE_LEN * 4;
 export const BYTES_PER_VERTEX_BONE_WEIGHT = VERTEX_BONE_WEIGHT_LEN * 4;
 export const BYTES_PER_INDEX = 1 * 4;
 
-function loadVbib(reader: BinaryReader, block: Source2FileBlock) {
+function loadVbib(reader: BinaryReader, block: Source2FileBlock, meshIndex: number) {
 
 	const VERTEX_HEADER_SIZE = 24;
 	const INDEX_HEADER_SIZE = 24;
@@ -296,6 +300,12 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock) {
 
 	//block.file.vertices = [];
 	//block.file.indices = [];
+
+	const blockVertices: any[] = [];
+	const blockIndices: any[] = [];
+
+	block.file.vertices.set(meshIndex, blockVertices);
+	block.file.indices.set(meshIndex, blockIndices);
 
 	for (var i = 0; i < vertexCount; i++) { // header size: 24 bytes
 		reader.seek(vertexOffset + i * VERTEX_HEADER_SIZE);
@@ -518,7 +528,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock) {
 		if (VERBOSE) {
 			console.log(s1.normals[0], s1.normals[1], s1.normals[2]);
 		}
-		block.file.vertices.push(s1);
+		blockVertices.push(s1);
 	}
 
 	//console.log(block.vertices);
@@ -556,7 +566,7 @@ function loadVbib(reader: BinaryReader, block: Source2FileBlock) {
 			}
 		}
 
-		block.file.indices.push(s2);
+		blockIndices.push(s2);
 	}
 }
 

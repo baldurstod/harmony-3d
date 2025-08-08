@@ -52,8 +52,8 @@ export class Source2File {
 	versionMaj = 0;
 	versionMin = 0;
 	maxBlockOffset = 0;
-	readonly indices: any/*TODO: create struct*/[] = [];
-	readonly vertices: any/*TODO: create struct*/[] = [];
+	readonly indices = new Map<number, any/*TODO: create struct*/[]>();
+	readonly vertices = new Map<number, any/*TODO: create struct*/[]>();
 
 	constructor(repository: string, fileName: string) {
 		this.repository = repository;
@@ -74,38 +74,41 @@ export class Source2File {
 	getBlockById(id: number): Source2FileBlock | null {
 		return this.blocksArray[id] ?? null;
 	}
-
-	getVertexCount(bufferId: number): number {
+/*
+	getVertexCount(blockId: number, bufferId: number): number {
 		/*
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return 0;
 		}
-		*/
+		* /
 
 		return this.indices?.[bufferId].indices.length;
 	}
-
+	*/
+/*
 	getIndices(bufferId: number): number[] | null {
 		/*
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
-		*/
+		* /
 
 		const indexBuffer = this.indices?.[bufferId];
 
 		return indexBuffer ? indexBuffer.indices : [];
 	}
+		*/
 
+		/*
 	getVertices(bufferId: number): number[] | null {
 		/*
 		const block = this.blocks.VBIB || this.blocks.MBUF;
 		if (!block) {
 			return null;
 		}
-		*/
+		* /
 
 		const vertexBuffer = this.vertices?.[bufferId];
 
@@ -118,7 +121,7 @@ export class Source2File {
 		if (!block) {
 			return null;
 		}
-		*/
+		* /
 
 		const vertexBuffer = this.vertices?.[bufferId];
 		const normals = vertexBuffer.normals;
@@ -145,7 +148,7 @@ export class Source2File {
 		if (!block) {
 			return null;
 		}
-		*/
+		* /
 
 		const vertexBuffer = this.vertices?.[bufferId];
 
@@ -158,7 +161,7 @@ export class Source2File {
 		if (!block) {
 			return null;
 		}
-		*/
+		* /
 
 		const vertexBuffer = this.vertices?.[bufferId];
 
@@ -171,12 +174,12 @@ export class Source2File {
 		if (!block) {
 			return null;
 		}
-		*/
+		* /
 
 		const vertexBuffer = this.vertices?.[bufferId];
 
 		return vertexBuffer ? vertexBuffer.boneWeight : [];
-	}
+	}*/
 
 	/*
 	getPositionArray(bufferId: number) {
