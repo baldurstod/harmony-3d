@@ -219,13 +219,13 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 			gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, true);
 			let dxtFormat = 0;
 			switch (imageFormat) {
-				case ImageFormat.Dxt1:
+				case ImageFormat.Bc1:
 					dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT1_EXT;
 					break;
-				case ImageFormat.Dxt3:
+				case ImageFormat.Bc2:
 					dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT3_EXT;
 					break;
-				case ImageFormat.Dxt5:
+				case ImageFormat.Bc3:
 					dxtFormat = s3tc.COMPRESSED_RGBA_S3TC_DXT5_EXT;
 					break;
 			}

@@ -7,11 +7,11 @@ export class Detex {
 
 	static async decode(format: ImageFormat, width: number, height: number, input: Uint8Array, output: Uint8Array) {
 		switch (format) {
-			case ImageFormat.Dxt1:
+			case ImageFormat.Bc1:
 				return this.decodeBC1(width, height, input, output);
-			case ImageFormat.Dxt3:
+			case ImageFormat.Bc2:
 				return this.decodeBC2(width, height, input, output);
-			case ImageFormat.Dxt5:
+			case ImageFormat.Bc3:
 				return this.decodeBC3(width, height, input, output);
 			default:
 				console.error('bad texture format in Detex.decode: ' + format);

@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { ENABLE_S3TC } from '../../../buildoptions';
 import { Graphics } from '../../../graphics/graphics';
 import { Detex } from '../../../textures/detex';
+import { ImageFormat, ImageFormatS3tc } from '../../../textures/enums';
 import { Texture } from '../../../textures/texture';
 import { WebGLAnyRenderingContext } from '../../../types';
 import { GL_CLAMP_TO_EDGE, GL_FLOAT, GL_LINEAR, GL_REPEAT, GL_RGB, GL_RGBA, GL_RGBA16F, GL_SRGB8, GL_SRGB8_ALPHA8, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
@@ -34,7 +35,7 @@ export class SourceEngineVTF {
 	firstFrame = 0;
 	reflectivity = vec3.create();
 	bumpmapScale = 0;
-	highResImageFormat = 0;
+	highResImageFormat = 0;/*TODO: create enume*/
 	mipmapCount = 0;
 	lowResImageFormat = 0;
 	lowResImageWidth = 0;
@@ -222,7 +223,7 @@ export class SourceEngineVTF {
 		texture.height = mipmap.height;
 
 		if (this.isDxtCompressed()) {
-			fillTextureDxt(graphics, glContext, webGLTexture, GL_TEXTURE_2D, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][face], clampS, clampT, srgb && this.isSRGB());
+			fillTextureDxt(graphics, glContext, webGLTexture, GL_TEXTURE_2D, mipmap.width, mipmap.height, vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc, mipmap.frames[frame][face], clampS, clampT, srgb && this.isSRGB());
 		} else {
 			glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 			glContext.texImage2D(GL_TEXTURE_2D, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), mipmap.frames[frame][face]);
@@ -279,12 +280,13 @@ export class SourceEngineVTF {
 
 		if (this.isDxtCompressed()) {
 			const isSRGB = srgb && this.isSRGB();
-			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][0], clampS, clampT, isSRGB);
-			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][1], clampS, clampT, isSRGB);
-			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][2], clampS, clampT, isSRGB);
-			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][3], clampS, clampT, isSRGB);
-			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][4], clampS, clampT, isSRGB);
-			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, mipmap.width, mipmap.height, this.highResImageFormat - 12, mipmap.frames[frame][5], clampS, clampT, isSRGB);
+			const st3cFormat = vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc;
+			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mipmap.width, mipmap.height, st3cFormat, mipmap.frames[frame][0], clampS, clampT, isSRGB);
+			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, mipmap.width, mipmap.height, st3cFormat, mipmap.frames[frame][1], clampS, clampT, isSRGB);
+			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, mipmap.width, mipmap.height, st3cFormat, mipmap.frames[frame][2], clampS, clampT, isSRGB);
+			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mipmap.width, mipmap.height, st3cFormat, mipmap.frames[frame][3], clampS, clampT, isSRGB);
+			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, mipmap.width, mipmap.height, st3cFormat, mipmap.frames[frame][4], clampS, clampT, isSRGB);
+			fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, mipmap.width, mipmap.height, st3cFormat, mipmap.frames[frame][5], clampS, clampT, isSRGB);
 		} else {
 			glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 			glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), mipmap.frames[frame][0]);
@@ -402,7 +404,7 @@ return 0;
 		const mipmapHeight = mipmapDatas.height;
 		const mipmapFaceDatas = mipmapDatas.frames[frame][face];
 		if (this.isDxtCompressed()) {
-			datas = await decompressDxt(this.highResImageFormat - 12, mipmapWidth, mipmapHeight, mipmapFaceDatas);
+			datas = await decompressDxt(vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc, mipmapWidth, mipmapHeight, mipmapFaceDatas);
 		} else {
 			datas = new Uint8ClampedArray(mipmapWidth * mipmapHeight * 4);
 			datas.set(mipmapFaceDatas);
@@ -413,7 +415,7 @@ return 0;
 }
 
 
-
+// TODO: remove thses consts
 export const IMAGE_FORMAT_NONE = -1;
 export const IMAGE_FORMAT_RGBA8888 = 0;
 export const IMAGE_FORMAT_ABGR8888 = 1;
@@ -444,14 +446,15 @@ export const IMAGE_FORMAT_RGBA16161616 = 25;
 export const IMAGE_FORMAT_UVLX8888 = 26;
 
 
-async function decompressDxt(dxtLevel: number, width: number, height: number, datas: Uint8Array | Float32Array): Promise<Uint8ClampedArray> {
+// TODO: move this function elsewhere
+export async function decompressDxt(format: ImageFormatS3tc, width: number, height: number, datas: Uint8Array | Float32Array): Promise<Uint8ClampedArray> {
 	const uncompressedData = new Uint8ClampedArray(width * height * 4);
 
 	let decompressFunc = null;
-	switch (dxtLevel) {
-		case 1: decompressFunc = 'decodeBC1'; break;
-		case 2: decompressFunc = 'decodeBC2'; break;
-		case 3: decompressFunc = 'decodeBC3'; break;
+	switch (format) {
+		case ImageFormat.Bc1: decompressFunc = 'decodeBC1'; break;
+		case ImageFormat.Bc2: decompressFunc = 'decodeBC2'; break;
+		case ImageFormat.Bc3: decompressFunc = 'decodeBC3'; break;
 	}
 	if (decompressFunc) {
 		await (Detex as any)[decompressFunc](width, height, datas, uncompressedData);
@@ -461,7 +464,7 @@ async function decompressDxt(dxtLevel: number, width: number, height: number, da
 }
 
 
-function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, target: GLenum, width: number, height: number, dxtLevel: number, datas: Uint8Array | Float32Array, clampS: boolean, clampT: boolean, srgb: boolean): void {//removeme
+function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, target: GLenum, width: number, height: number, dxtLevel: ImageFormatS3tc, datas: Uint8Array | Float32Array, clampS: boolean, clampT: boolean, srgb: boolean): void {//removeme
 	const s3tc = graphics.getExtension('WEBGL_compressed_texture_s3tc');
 	const s3tcSRGB = graphics.getExtension('WEBGL_compressed_texture_s3tc_srgb');
 
@@ -471,9 +474,9 @@ function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext,
 	if (ENABLE_S3TC && s3tc) {
 		let dxtFormat = 0;
 		switch (dxtLevel) {
-			case 1: dxtFormat = srgb ? s3tcSRGB.COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT : s3tc.COMPRESSED_RGBA_S3TC_DXT1_EXT; break;
-			case 2: dxtFormat = srgb ? s3tcSRGB.COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT : s3tc.COMPRESSED_RGBA_S3TC_DXT3_EXT; break;
-			case 3: dxtFormat = srgb ? s3tcSRGB.COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT : s3tc.COMPRESSED_RGBA_S3TC_DXT5_EXT; break;
+			case ImageFormat.Bc1: dxtFormat = srgb ? s3tcSRGB.COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT : s3tc.COMPRESSED_RGBA_S3TC_DXT1_EXT; break;
+			case ImageFormat.Bc2: dxtFormat = srgb ? s3tcSRGB.COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT : s3tc.COMPRESSED_RGBA_S3TC_DXT3_EXT; break;
+			case ImageFormat.Bc3: dxtFormat = srgb ? s3tcSRGB.COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT : s3tc.COMPRESSED_RGBA_S3TC_DXT5_EXT; break;
 		}
 		glContext.compressedTexImage2D(target, 0, dxtFormat, width, height, 0, datas);
 	} else {
@@ -525,3 +528,18 @@ function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext,
 	//glContext.bindTexture(glContext.TEXTURE_2D, null);
 	glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 };
+
+function vtfToImageFormat(vtfImageFormat: number): ImageFormat {
+	switch (vtfImageFormat) {
+		case IMAGE_FORMAT_DXT1:
+			return ImageFormat.Bc1;
+		case IMAGE_FORMAT_DXT3:
+			return ImageFormat.Bc2;
+		case IMAGE_FORMAT_DXT5:
+			return ImageFormat.Bc3;
+		default:
+			console.error('missing image format ' + vtfImageFormat)
+		//TODO: populate
+	}
+	return ImageFormat.Unknown;
+}
