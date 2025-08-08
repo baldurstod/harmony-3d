@@ -433,7 +433,7 @@ export class Source2ModelLoader {
 					console.error('missing vertexBuffers in loadMesh', vertexBuffers, bufferIndex, startIndex, indexCount);
 					continue;
 				}
-				const indices = new Uint32BufferAttribute(vbibBlock.getIndices(bufferIndex), 1, startIndex * 4, indexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
+				const indices = new Uint32BufferAttribute(vbibBlock.getIndices(bufferIndex), 1, startIndex, indexCount);//NOTE: number is here to convert bigint TODO: see if we can do better
 				const vertexPosition = new Float32BufferAttribute(vbibBlock.getVertices(bufferIndex), 3);
 
 				let vertexNormal, vertexTangent;
