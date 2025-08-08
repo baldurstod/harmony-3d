@@ -1682,7 +1682,7 @@ declare class Choreography {
 
      export declare class Detex {
          #private;
-         static decode(format: number, width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
+         static decode(format: ImageFormat, width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
          static decodeBC1(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
          static decodeBC2(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
          static decodeBC3(width: number, height: number, input: Uint8Array, output: Uint8Array): Promise<void>;
@@ -3121,6 +3121,23 @@ declare class Choreography {
          }
 
          export declare function imageDataToImage(imagedata: ImageData, image?: HTMLImageElement): HTMLImageElement;
+
+         declare enum ImageFormat {
+             Unknown = "Unknown",
+             Bc1 = "Bc1",
+             Bc2 = "Bc2",
+             Bc3 = "Bc3",
+             Bc4 = "Bc4",
+             Bc4Signed = "Bc4Signed",
+             Bc5 = "Bc5",
+             Bc5Signed = "Bc5Signed",
+             Bc6 = "Bc6",
+             Bc7 = "Bc7",
+             R8 = "R8",
+             R8G8B8A8Uint = "R8G8B8A8Uint",
+             BGRA8888 = "BGRA8888",
+             RGBA = "RGBA"
+         }
 
          export declare const Includes: Record<string, string>;
 
@@ -6950,7 +6967,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -7550,7 +7567,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -7670,7 +7687,7 @@ declare class Choreography {
              /**
               * @deprecated Please use getScalarField instead.
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number];
              /**
               * TODO
               */
@@ -7970,7 +7987,7 @@ declare class Choreography {
 
          export declare const Source2SnapshotLoader: {
              load(repository: string, filename: string): Promise<Source2Snapshot>;
-             "__#254@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+             "__#256@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
@@ -8005,6 +8022,7 @@ declare class Choreography {
          }
 
          declare class Source2Texture extends Source2File {
+             #private;
              constructor(repository: string, path: string);
              getAlphaBits(): number;
              getWidth(): number;
@@ -8012,7 +8030,10 @@ declare class Choreography {
              getDxtLevel(): number;
              isCompressed(): boolean;
              isCubeTexture(): boolean;
-             get imageFormat(): number;
+             setImageFormat(imageFormat: number): void;
+             getVtexImageFormat(): number;
+             getImageFormat(): ImageFormat;
+             get disabled_imageFormat(): number;
              getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
          }
 
@@ -8028,8 +8049,8 @@ declare class Choreography {
              getVtex(repository: string, path: string): Promise<Source2Texture | null>;
              getTextureSheet(repository: string, path: string): Promise<Source2SpriteSheet | null>;
              setTexture(path: string, texture: AnimatedTexture): void;
-             fillTexture(imageFormat: number, width: number, height: number, datas: ArrayBufferView | null, target: GLenum): void;
-             fillTextureDxt(texture: WebGLTexture, imageFormat: number, width: number, height: number, datas: Uint8Array, target: GLenum): void;
+             fillTexture(imageFormat: ImageFormat, width: number, height: number, datas: ArrayBufferView | null, target: GLenum): void;
+             fillTextureDxt(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, datas: Uint8Array, target: GLenum): void;
          }
 
          export declare class Source2TwistAroundAxis extends Operator {
@@ -10205,12 +10226,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#223@#webAssembly"?: any;
-             "__#223@#HEAPU8"?: Uint8Array;
+             "__#224@#webAssembly"?: any;
+             "__#224@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#223@#initHeap"(): void;
+             "__#224@#initHeap"(): void;
          };
 
          export { }

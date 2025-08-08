@@ -1,6 +1,7 @@
 import { DEBUG } from '../../../buildoptions';
-import { ImageFormat, TextureCompressionMethod } from '../../../textures/enums';
+import { formatCompression, ImageFormat, ImageFormatS3tc, TextureCompressionMethod } from '../../../textures/enums';
 import { TEXTURE_FORMAT_UNKNOWN } from '../../../textures/textureconstants';
+import { decompressDxt } from '../../source1/textures/sourceenginevtf';
 import { VTEX_FLAG_CUBE_TEXTURE } from '../constants';
 import { Source2File, VTEX_TO_INTERNAL_IMAGE_FORMAT } from '../loaders/source2file';
 import { Source2VtexBlock } from '../loaders/source2fileblock';
@@ -87,11 +88,11 @@ export class Source2Texture extends Source2File {
 		switch (imageFormat) {
 			case VtexImageFormat.Dxt1:
 				this.#compressionMethod = TextureCompressionMethod.St3c;
-				this.#imageFormat = ImageFormat.Dxt1;
+				this.#imageFormat = ImageFormat.Bc1;
 				break;
 			case VtexImageFormat.Dxt5:
 				this.#compressionMethod = TextureCompressionMethod.St3c;
-				this.#imageFormat = ImageFormat.Dxt5;
+				this.#imageFormat = ImageFormat.Bc3;
 				break;
 			case VtexImageFormat.R8:
 				this.#compressionMethod = TextureCompressionMethod.Uncompressed;
@@ -153,46 +154,20 @@ export class Source2Texture extends Source2File {
 		const imageData = (this.blocks.DATA as Source2VtexBlock).imageData[0];
 		const imageWidth = (this.blocks.DATA as Source2VtexBlock).width;
 		const imageHeight = (this.blocks.DATA as Source2VtexBlock).height;
-
 		let datas: Uint8ClampedArray;
 
-		datas = new Uint8ClampedArray(imageWidth * imageHeight * 4);
-		datas.set(imageData);
-
+		switch (formatCompression(this.#imageFormat)) {
+			case TextureCompressionMethod.Uncompressed:
+				datas = new Uint8ClampedArray(imageWidth * imageHeight * 4);
+				datas.set(imageData);
+				break;
+			case TextureCompressionMethod.St3c:
+				datas = await decompressDxt(this.#imageFormat as ImageFormatS3tc, imageWidth, imageHeight, imageData);
+				break;
+			default:
+				console.error(this.#imageFormat);
+		}
 
 		return new ImageData(datas, imageWidth, imageHeight);
-		return null;
-		/*
-		frame = Math.round(frame) % this.frames;
-
-		const highResDatas = this.getResource(VTF_ENTRY_IMAGE_DATAS);
-		if (!highResDatas) {
-			return null;
-		}
-
-		if (mipmap == undefined) {
-			mipmap = this.mipmapCount - 1;
-		} else {
-			mipmap = Math.min(mipmap, this.mipmapCount - 1);
-		}
-
-		const mipmapDatas = highResDatas.mipMaps![mipmap];
-		if (!mipmapDatas) {
-			return null;
-		}
-
-		let datas: Uint8ClampedArray;
-		const mipmapWidth = mipmapDatas.width;
-		const mipmapHeight = mipmapDatas.height;
-		const mipmapFaceDatas = mipmapDatas.frames[frame][face];
-		if (this.isDxtCompressed()) {
-			datas = await decompressDxt(this.highResImageFormat - 12, mipmapWidth, mipmapHeight, mipmapFaceDatas);
-		} else {
-			datas = new Uint8ClampedArray(mipmapWidth * mipmapHeight * 4);
-			datas.set(mipmapFaceDatas);
-		}
-
-		return new ImageData(datas, mipmapWidth, mipmapHeight);
-		*/
 	}
 }
