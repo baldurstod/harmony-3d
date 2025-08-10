@@ -7,6 +7,7 @@ import { Source2File, VTEX_TO_INTERNAL_IMAGE_FORMAT } from '../loaders/source2fi
 import { Source2VtexBlock } from '../loaders/source2fileblock';
 
 export enum VtexImageFormat {
+	Unknown = 0,
 	Dxt1 = 1,
 	Dxt5 = 2,
 	R8 = 3,
@@ -20,8 +21,8 @@ export enum VtexImageFormat {
 }
 
 export class Source2Texture extends Source2File {
-	#vtexImageFormat: VtexImageFormat;// raw image format
-	#compressionMethod = TextureCompressionMethod.Uncompressed;
+	#vtexImageFormat: VtexImageFormat = VtexImageFormat.Unknown;// original image format
+	#compressionMethod = TextureCompressionMethod.Uncompressed;// TODO: remove
 	#imageFormat = ImageFormat.Unknown;
 
 	constructor(repository: string, path: string) {
@@ -132,24 +133,6 @@ export class Source2Texture extends Source2File {
 		return this.#imageFormat;
 	}
 
-	get disabled_imageFormat(): number {//TODOv3 improve this
-		const block = this.blocks.DATA as Source2VtexBlock;
-		if (!block) {
-			return TEXTURE_FORMAT_UNKNOWN;
-		}
-		const imageFormat = this.#vtexImageFormat;
-		if (DEBUG) {
-			const internalFormat = VTEX_TO_INTERNAL_IMAGE_FORMAT[imageFormat];
-			if (internalFormat === undefined) {
-				throw 'Unknown vtex format : ' + imageFormat;
-			} else {
-				return internalFormat;
-			}
-		} else {
-			return VTEX_TO_INTERNAL_IMAGE_FORMAT[imageFormat];
-		}
-	}
-
 	async getImageData(mipmap?: number, frame = 0, face = 0): Promise<ImageData | null> {
 		const imageData = (this.blocks.DATA as Source2VtexBlock).imageData[0];
 		const imageWidth = (this.blocks.DATA as Source2VtexBlock).width;
@@ -166,6 +149,7 @@ export class Source2Texture extends Source2File {
 				break;
 			default:
 				console.error(this.#imageFormat);
+				datas = new Uint8ClampedArray(imageWidth * imageHeight * 4);
 		}
 
 		return new ImageData(datas, imageWidth, imageHeight);
