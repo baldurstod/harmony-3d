@@ -110,7 +110,7 @@ export class Mesh extends Entity {
 		const attributes: Record<string, string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
 		const geometry = this.geometry;
 		for (const objAttribute in attributes) {
-			const geometryAttribute = attributes[objAttribute];
+			const geometryAttribute = attributes[objAttribute]!;
 			if (geometry?.getAttribute(geometryAttribute)) {
 				const webglAttrib = geometry.getAttribute(geometryAttribute);
 				if (webglAttrib) {

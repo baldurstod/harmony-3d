@@ -400,9 +400,9 @@ export class Source2ModelLoader {
 			}
 
 			if (isVertex) {
-				vmdl.vertices.get(meshIndex).push(s1);
+				vmdl.vertices.get(meshIndex)!.push(s1);
 			} else {
-				vmdl.indices.get(meshIndex).push(s2);
+				vmdl.indices.get(meshIndex)!.push(s2);
 			}
 		}
 	}
