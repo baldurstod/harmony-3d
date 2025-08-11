@@ -5184,7 +5184,7 @@ class Scene extends Entity {
     layers = new Set();
     environment;
     activeCamera;
-    constructor(parameters) {
+    constructor(parameters = {}) {
         super(parameters);
         this.activeCamera = parameters.camera;
         this.#layers[Symbol.iterator] = function* () {

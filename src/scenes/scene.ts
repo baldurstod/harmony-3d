@@ -18,7 +18,7 @@ export class Scene extends Entity {
 	environment?: Environment;
 	activeCamera?: Camera;
 
-	constructor(parameters?: SceneParameters) {
+	constructor(parameters: SceneParameters = {}) {
 		super(parameters);
 
 		this.activeCamera = parameters.camera;
