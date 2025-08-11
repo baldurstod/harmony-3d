@@ -1,10 +1,18 @@
-import { PlaneBufferGeometry } from './geometries/planebuffergeometry';
+import { Entity, EntityParameters } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
+import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
-import { Material } from '../materials/material';
 import { JSONObject } from '../types';
-import { Entity } from '../entities/entity';
+import { PlaneBufferGeometry } from './geometries/planebuffergeometry';
+
+export type PlaneParameters = EntityParameters & {
+	width?: number,
+	height?: number,
+	widthSegments?: number,
+	heightSegments?: number,
+	material?: Material,
+};
 
 export class Plane extends Mesh {
 	#widthSegments: number;
@@ -12,10 +20,9 @@ export class Plane extends Mesh {
 	#width: number;
 	#height: number;
 
-	//constructor({ width = 1, height, material = new MeshBasicMaterial(), widthSegments = 1, heightSegments = 1 } = {}) {
-	constructor(params: any = {}) {
+	constructor(params: PlaneParameters = {}) {
 		super(new PlaneBufferGeometry(), params.material ?? new MeshBasicMaterial());
-		super.setParameters(arguments[0]);
+		super.setParameters(params);
 		this.#width = params.width ?? 1;
 		this.#height = params.height ?? this.#width;
 		this.#widthSegments = params.widthSegments ?? 1;
@@ -63,8 +70,8 @@ export class Plane extends Mesh {
 	}
 
 	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
-		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
-		return new Plane({ width: json.width, height: json.height, material: material, widthSegments: json.widthSegments, heightSegments: json.heightSegments });
+		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise) as Material;
+		return new Plane({ width: json.width as number, height: json.height as number, material: material, widthSegments: json.widthSegments as number, heightSegments: json.heightSegments as number});
 	}
 
 	static getEntityName() {

@@ -5,9 +5,14 @@ import { BackGround } from './background';
 
 const tempVec3 = vec3.create();
 
+export interface ColorBackgroundParameters {
+	color?: vec4;
+}
+
 export class ColorBackground extends BackGround {
 	#color = vec4.fromValues(0, 0, 0, 1);
-	constructor(params: any = {}) {
+
+	constructor(params: ColorBackgroundParameters = {}) {
 		super();
 
 		if (params.color) {
