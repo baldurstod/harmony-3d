@@ -772,3 +772,561 @@ function sqr() {
 	a[3] = a[3] * a[3];
 	stack.push(a);
 }
+
+enum Operator {
+	Addition,
+	Subtraction,
+	Multiplication,
+	Division,
+	Function,
+}
+
+enum FunctionCode {
+	Sin = 0,
+	Cos = 1,
+	Tan = 2,
+	Frac = 3,
+	Floor = 4,
+	Ceil = 5,
+	Saturate = 6,
+	Clamp = 7,
+	Lerp = 8,
+	Dot4 = 9,
+	Dot3 = 10,
+	Dot2 = 11,
+	Log = 12,
+	Log2 = 13,
+	Log10 = 14,
+	Exp = 15,
+	Exp2 = 16,
+	Sqrt = 17,
+	Rsqrt = 18,
+	Sign = 19,
+	Abs = 20,
+	Pow = 21,
+	Step = 22,
+	Smoothstep = 23,
+	Float4 = 24,
+	Float3 = 25,
+	Float2 = 26,
+	Time = 27,
+	Min = 28,
+	Max = 29,
+	SrgbLinearToGamma = 30,
+	SrgbGammaToLinear = 31,
+	Random = 32,
+	Normalize = 33,
+	Length = 34,
+	Sqr = 35,
+	TextureSize = 36,
+}
+
+enum OpCode {
+	Stop = 0,
+	Goto = 2,
+	Ternary = 4,
+	Function = 6,
+	Float32 = 7,
+	Addition = 19,
+	Subtraction = 20,
+	Multiplication = 21,
+	Division = 22,
+}
+
+type Operand = number | Operation;
+
+type Operation = {
+	operator: Operator;
+	function?: FunctionCode;
+	operand1?: Operand;
+	operand2?: Operand;
+	operand3?: Operand;// not sure if usefull
+}
+
+let doOnce = false;
+
+export function decompileDynamicExpression(byteCode: Uint8Array, renderAttributes: string[]): string {
+	const operand = toOperation(byteCode, renderAttributes);
+
+	if (!doOnce) {
+		console.info(operand);
+		if (operand) {
+			console.info(operandToString(operand));
+		}
+		doOnce = true;
+
+	}
+	return '';
+}
+
+function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand | null {
+	let pointer = -1;
+	const storage = new Map<number, vec4>();
+	//stack = [];
+
+	const operandStack: Operand[] = [];
+	//const operationStack: Operation[] = [];
+
+	let storeAddress;
+	let location;
+	while (pointer < byteCode.length) {
+		++pointer;
+		const opcode = byteCode[pointer];
+		switch (opcode) {
+			case OpCode.Stop:
+				return operandStack.pop() ?? null;
+			/*
+		case 2: // goto
+			location = getlocation(byteCode, pointer + 1);
+			if ((location >= 0) && (location < byteCode.length)) {
+				pointer = location - 1;
+			} else {
+				//TODO: error message
+				return;
+			}
+			break;
+		case 4: // ?
+			const conditionalValue = stack.pop()!;
+			// Only the first value is tested
+			location = conditionalValue[0] ? getlocation(byteCode, pointer + 1) : getlocation(byteCode, pointer + 3);
+			if ((location >= 0) && (location < byteCode.length)) {
+				pointer = location - 1;
+			} else {
+				//TODO: error message
+				return;
+			}
+			break;
+			*/
+			case OpCode.Function:
+				const operand = functionToOperation(getlocation(byteCode, pointer + 1), operandStack);
+				if (operand) {
+					operandStack.push(operand);
+				}
+				pointer += 2;
+				break;
+			case OpCode.Float32:
+				operandStack.push(getFloat32(byteCode, pointer + 1)[0]);// getFloat32 returns a vec4, but we only need a scalar
+				pointer += 4;
+				break;
+			/*
+		case 8: // save
+			storeAddress = getByte(byteCode, pointer + 1);
+			if (storeAddress >= 0) {
+				storage.set(storeAddress, stack.pop()!);
+				pointer += 1;
+			} else {
+				//TODO: error message
+				return;
+			}
+			break;
+		case 9: // restore
+			storeAddress = getByte(byteCode, pointer + 1);
+			if (storeAddress >= 0) {
+				stack.push(storage.get(storeAddress)!);
+				pointer += 1;
+			} else {
+				//TODO: error message
+				return;
+			}
+			break;
+		case 12:
+			not();
+			break;
+		case 13: // ==
+			equality();
+			break;
+		case 14: // !=
+			inequality();
+			break;
+		case 15: // >
+			greater();
+			break;
+		case 16: // >=
+			greaterEqual();
+			break;
+		case 17: // <
+			less();
+			break;
+		case 18: // <=
+			lessEqual();
+			break;
+		case 19: // +
+			add();
+			break;
+		case 20: // -
+			subtract();
+			break;
+			*/
+			case OpCode.Multiplication:
+				operandStack.push({ operator: Operator.Multiplication, operand2: operandStack.pop(), operand1: operandStack.pop() });
+				break;
+			case OpCode.Division:
+				operandStack.push({ operator: Operator.Division, operand2: operandStack.pop(), operand1: operandStack.pop() });
+				break;
+			/*
+						case 23: // %
+							modulo();
+							break;
+						case 24: // negate
+							negation()
+							break;
+						case 25: // get value
+							const intValue = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
+							let stringValue = hashes.get(intValue);
+							if (!stringValue) {
+								for (let renderAttribute of renderAttributes) {
+									renderAttribute = renderAttribute.toLowerCase();
+									hashes.set(murmurhash2_32_gc(renderAttribute, HASH_SEED), renderAttribute);
+								}
+								stringValue = hashes.get(intValue);
+							}
+
+							if (stringValue) {
+								let value = 0;
+								if (stringValue === 'time') {
+									value = performance.now() * 0.001;
+								} else {
+									//console.log(stringValue);
+									//TODO get an external var
+								}
+								stack.push(vec4.fromValues(value, value, value, value));
+							}
+							pointer += 4;
+							break;
+						//see m_renderAttributesUsed
+						//time : 0: 25 1: 204 2: 133 3: 68 4: 150 5: 0
+						//$gemcolor: 0: 25 1: 230 2: 22 3: 70 4: 81 5: 0
+						//a: 0: 25 1: 225 2: 113 3: 207 4: 30 5: 0
+						//b: 0: 25 1: 42 2: 183 3: 253 4: 183 5: 0
+						//B: 0: 25 1: 42 2: 183 3: 253 4: 183 5: 0
+						//$a: 0: 25 1: 96 2: 46 3: 222 4: 5 5: 0
+						//??? 0: 25 1: 252 2: 99 3: 114 4: 40 5: 0 ==> $PA_ARCANA_DETAIL1SCALE
+						//$gem 0: 25 1: 150 2: 173 3: 217 4: 104 5: 0
+						case 30:
+							swizzle(getByte(byteCode, ++pointer));
+							break;
+						case 31: // exist
+							stack.push(vec4.fromValues(0, 0, 0, 0));//TODO get an external var
+							pointer += 4;
+							break;
+						*/
+			default:
+				if (WARN) {
+					console.warn('Unknown opcode ', opcode, ' at location ', pointer);
+				}
+				break;
+
+		}
+	}
+	return null;
+}
+
+function functionToOperation(functionCode: number, operandStack: Operand[]): Operand | null {
+	let a: vec4, b: vec4, c: vec4, d;
+	switch (functionCode) {
+		case FunctionCode.Time:
+			operandStack.push({ operator: Operator.Function, function: functionCode });
+			break;
+		case FunctionCode.Frac:
+			operandStack.push({ operator: Operator.Function, function: functionCode, operand1: operandStack.pop() });
+			break;
+		case FunctionCode.Sin:
+			sin();
+			break;
+		case FunctionCode.Cos:
+			cos();
+			break;
+		case FunctionCode.Tan:
+			tan();
+			break;
+		case FunctionCode.Floor:
+			floor();
+			break;
+		case FunctionCode.Ceil:
+			ceil();
+			break;
+		case FunctionCode.Saturate:
+			saturate();
+			break;
+		case FunctionCode.Clamp:
+			a = stack.pop()!;
+			b = stack.pop()!;
+			c = stack.pop()!;
+			a[0] = clamp(c[0], b[0], a[0]);
+			a[1] = clamp(c[1], b[1], a[1]);
+			a[2] = clamp(c[2], b[2], a[2]);
+			a[3] = clamp(c[3], b[3], a[3]);
+			stack.push(a);
+			break;
+		case FunctionCode.Lerp:
+			const factor = stack.pop()!;
+			const second = stack.pop()!;
+			const first = stack.pop()!;
+			first[0] = first[0] + factor[0] * (second[0] - first[0]);
+			first[1] = first[1] + factor[1] * (second[1] - first[1]);
+			first[2] = first[2] + factor[2] * (second[2] - first[2]);
+			first[3] = first[3] + factor[3] * (second[3] - first[3]);
+			stack.push(first);
+			break;
+		case FunctionCode.Dot4:
+			dot4();
+			break;
+		case FunctionCode.Dot3:
+			dot3();
+			break;
+		case FunctionCode.Dot2:
+			dot2();
+			break;
+		case FunctionCode.Log:
+			log();
+			break;
+		case FunctionCode.Log2:
+			log2();
+			break;
+		case FunctionCode.Log10:
+			log10();
+			break;
+		case FunctionCode.Exp:
+			exp();
+			break;
+		case FunctionCode.Exp2:
+			exp2();
+			break;
+		case FunctionCode.Sqrt:
+			sqrt();
+			break;
+		case FunctionCode.Rsqrt:
+			rsqrt();
+			break;
+		case FunctionCode.Sign:
+			sign();
+			break;
+		case FunctionCode.Abs:
+			abs();
+			break;
+		case FunctionCode.Pow:
+			pow();
+			break;
+		case FunctionCode.Step:
+			step();
+			break;
+		case FunctionCode.Smoothstep:
+			smoothstep();
+			break;
+		case FunctionCode.Float4:
+			a = stack.pop()!;
+			b = stack.pop()!;
+			c = stack.pop()!;
+			d = stack.pop()!;
+			stack.push(vec4.fromValues(d[0], c[0], b[0], a[0]));
+			break;
+		case FunctionCode.Float3:
+			a = stack.pop()!;
+			b = stack.pop()!;
+			c = stack.pop()!;
+			stack.push(vec4.fromValues(c[0], b[0], a[0], a[0]));
+			break;
+		case FunctionCode.Float2:
+			operandStack.push({ operator: Operator.Function, function: functionCode, operand2: operandStack.pop(), operand1: operandStack.pop() });
+			break;
+		case FunctionCode.Min:
+			min();
+			break;
+		case FunctionCode.Max:
+			max();
+			break;
+		case FunctionCode.SrgbLinearToGamma:
+			SrgbLinearToGamma();
+			break;
+		case FunctionCode.SrgbGammaToLinear:
+			SrgbGammaToLinear();
+			break;
+		case FunctionCode.Random:
+			random();
+			break;
+		case FunctionCode.Normalize:
+			normalize();
+			break;
+		case FunctionCode.Length:
+			length();
+			break;
+		case FunctionCode.Sqr:
+			sqr();
+			break;
+		case FunctionCode.TextureSize:
+			//TextureSize();TODO
+			break;
+		default:
+			if (WARN) {
+				console.warn('Unknown function code ', functionCode);
+			}
+			break;
+	}
+	return null;
+}
+
+enum Precedence {
+	Lowest = 0,
+	Additive = Lowest + 1,
+	Multiplicative = Additive + 1,
+	Function = Multiplicative + 1,
+	Number = Function + 1,
+}
+
+type Ope = {
+	operator: string;
+	precedence: Precedence;
+}
+
+const operations = new Map<Operator, Ope>();
+operations.set(Operator.Addition, { operator: '+', precedence: Precedence.Additive });
+operations.set(Operator.Subtraction, { operator: '-', precedence: Precedence.Additive });
+operations.set(Operator.Multiplication, { operator: '*', precedence: Precedence.Additive });
+operations.set(Operator.Division, { operator: '/', precedence: Precedence.Additive });
+
+/*
+	Addition,
+	Subtraction,
+	Multiplication,
+	Division,
+	Function,
+	*/
+
+
+function operandToString(operand: Operand): [string, Precedence] | null {
+	if (typeof operand == 'number') {
+		return [String(operand), Precedence.Number];
+	}
+
+	let result = '';
+
+
+	if (operand.operator == Operator.Function) {
+		return [functionToString(operand), Precedence.Function];
+
+	}
+
+
+	const ope = operations.get(operand.operator);
+	if (!ope) {
+		console.error('Unknown operator ', operand.operator);
+		return null;
+	}
+
+	let operand1;
+	let operand2;
+	if (operand.operand1) {
+		operand1 = operandToString(operand.operand1);
+	}
+	if (operand.operand2) {
+		operand2 = operandToString(operand.operand2);
+	}
+
+
+	return [`(${operand1?.[0]} ${ope.operator} ${operand2?.[0]})`, ope.precedence];
+
+	/*
+		switch (operand.operator) {
+			case Operator.Addition:
+			/*
+
+		//return `(${operandToString(operand.operand1!)} + ${operandToString(operand.operand2!)})`;
+		case Operator.Subtraction:
+			return `(${operandToString(operand.operand1!)} - ${operandToString(operand.operand2!)})`;
+		case Operator.Multiplication:
+			return `(${operandToString(operand.operand1!)} * ${operandToString(operand.operand2!)})`;
+		case Operator.Division:
+			return `(${operandToString(operand.operand1!)} / ${operandToString(operand.operand2!)})`;
+		case Operator.Function:
+
+
+		/*
+
+			Addition,
+			Subtraction,
+			Multiplication,
+			Division,
+			Function,
+			* /
+
+			default:
+				console.error('Unknown operator ', operand.operator);
+				break;
+		}
+		return null;
+		*/
+}
+
+function functionToString(operand: Operation): string {
+
+	let operand1;
+	let operand2;
+
+	if (operand.operand1 !== undefined) {
+		operand1 = operandToString(operand.operand1);
+	}
+	if (operand.operand2 !== undefined) {
+		operand2 = operandToString(operand.operand2);
+	}
+
+	switch (operand.function!) {
+		case FunctionCode.Frac:
+			if (operand1) {
+				return `frac( ${operand1[0]} )`;
+			}
+			break;
+		case FunctionCode.Float2:
+			if (operand1 && operand2) {
+				return `float2( ${operand1[0]} , ${operand2[0]} )`;
+			}
+			break;
+		case FunctionCode.Time:
+			return `time( )`;
+
+
+		/*
+			Sin = 0,
+			Cos = 1,
+			Tan = 2,
+			Frac = 3,
+			Floor = 4,
+			Ceil = 5,
+			Saturate = 6,
+			Clamp = 7,
+			Lerp = 8,
+			Dot4 = 9,
+			Dot3 = 10,
+			Dot2 = 11,
+			Log = 12,
+			Log2 = 13,
+			Log10 = 14,
+			Exp = 15,
+			Exp2 = 16,
+			Sqrt = 17,
+			Rsqrt = 18,
+			Sign = 19,
+			Abs = 20,
+			Pow = 21,
+			Step = 22,
+			Smoothstep = 23,
+			Float4 = 24,
+			Float3 = 25,
+			Float2 = 26,
+			Time = 27,
+			Min = 28,
+			Max = 29,
+			SrgbLinearToGamma = 30,
+			SrgbGammaToLinear = 31,
+			Random = 32,
+			Normalize = 33,
+			Length = 34,
+			Sqr = 35,
+			TextureSize = 36,
+			*/
+
+		default:
+			console.error('Unknown function ', operand.function);
+			break;
+	}
+	return '';
+}

@@ -208,7 +208,6 @@ export class Kv3Element {
 		return data;
 	}
 
-
 	getSubValueAsString(path: string): string | null {
 		const prop = this.getSubValue(path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.String) {
