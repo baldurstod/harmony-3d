@@ -8,7 +8,6 @@ import { BufferGeometry } from '../../../geometry/buffergeometry';
 import { MeshBasicMaterial } from '../../../materials/meshbasicmaterial';
 import { Mesh } from '../../../objects/mesh';
 import { Property, PropertyType } from '../../../utils/properties';
-import { FileNameFromPath } from '../../../utils/utils';
 import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Source2MaterialManager } from '../materials/source2materialmanager';
 import { MeshManager } from '../models/meshmanager';
@@ -43,7 +42,7 @@ export class Source2ModelLoader {
 			return promise;
 		}
 
-		promise = new Promise((resolve) => {
+		promise = new Promise(resolve => {
 			const vmdlPromise = new Source2FileLoader().load(repository, path + '.vmdl_c') as Promise<Source2File | null>;
 			vmdlPromise.then(
 				async (source2File: Source2File | null) => {
@@ -51,6 +50,7 @@ export class Source2ModelLoader {
 						console.log(source2File);
 					}
 					if (!source2File) {
+						resolve(null);
 						return;
 					}
 					const newSourceModel = new Source2Model(repository, source2File);
