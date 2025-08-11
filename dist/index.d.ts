@@ -2184,6 +2184,8 @@ declare class Choreography {
 
          export declare function flipPixelArray(pixelArray: Uint8ClampedArray, width: number, height: number): void;
 
+         declare type float = number;
+
          export declare class Float32BufferAttribute extends BufferAttribute {
              constructor(array: typeof TypedArrayProto, itemSize: number, offset?: number, length?: number);
          }
@@ -3237,6 +3239,8 @@ declare class Choreography {
              get title(): string;
              setValue(index: any, value: any): void;
          }
+
+         declare type integer = number;
 
          export declare class InterpolateRadius extends Operator {
              #private;
@@ -6981,7 +6985,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -7375,8 +7379,11 @@ declare class Choreography {
              initTextureUniforms(): Promise<void>;
              getParam(paramName: string): number | vec4;
              getIntParam(intName: string): number;
+             getIntParams(): Map<string, integer> | null;
              getFloatParam(floatName: string): number;
+             getFloatParams(): Map<string, float> | null;
              getVectorParam(vectorName: string, out: vec4): vec4;
+             getVectorParams(): Map<string, vec4> | null;
              getDynamicParam(dynamicName: string): vec4 | undefined;
          }
 
@@ -7574,7 +7581,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;

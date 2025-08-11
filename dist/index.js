@@ -60091,6 +60091,24 @@ class Source2Material extends Material {
         }*/
         console.error(`unknown parameter : ${paramName}`, this);
     }
+    #getParams(name, isVector) {
+        if (!this.#source2File) {
+            return null;
+        }
+        const values = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.' + name) ?? this.#source2File.getBlockStructAsElementArray('DATA', name);
+        if (!values) {
+            return null;
+        }
+        const result = new Map();
+        for (const v of values) {
+            const name = v.getSubValueAsString('m_name');
+            const value = isVector ? v.getSubValueAsVec4('m_nValue', vec4.create()) : v.getSubValueAsNumber('m_nValue');
+            if (name && value != null) {
+                result.set(name, value);
+            }
+        }
+        return result;
+    }
     getIntParam(intName) {
         if (!this.#source2File) {
             return null;
@@ -60103,6 +60121,9 @@ class Source2Material extends Material {
                 }
             }
         }
+    }
+    getIntParams() {
+        return this.#getParams('m_intParams', false);
     }
     getFloatParam(floatName) {
         if (!this.#source2File) {
@@ -60117,6 +60138,9 @@ class Source2Material extends Material {
             }
         }
     }
+    getFloatParams() {
+        return this.#getParams('m_floatParams', false);
+    }
     getVectorParam(vectorName, out) {
         if (this.#source2File) {
             const vectors = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_vectorParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_vectorParams');
@@ -60129,6 +60153,9 @@ class Source2Material extends Material {
             }
         }
         return out;
+    }
+    getVectorParams() {
+        return this.#getParams('m_vectorParams', true);
     }
     getDynamicParam(dynamicName) {
         if (!this.#source2File) {

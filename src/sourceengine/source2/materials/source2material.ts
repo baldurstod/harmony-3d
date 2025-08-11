@@ -67,6 +67,8 @@ const TEXTURE_UNIFORMS: Map<string, [string, string]> = new Map([
 const DEFAULT_ALPHA_TEST_REFERENCE = 0.7;
 
 type ProxyParams = Record<string, any>;
+type integer = number;
+type float = number;
 
 export class Source2Material extends Material {
 	#source2File?: Source2File;
@@ -368,6 +370,28 @@ export class Source2Material extends Material {
 		console.error(`unknown parameter : ${paramName}`, this);
 	}
 
+	#getParams(name: string, isVector: boolean): Map<string, number | vec4> | null {
+		if (!this.#source2File) {
+			return null;
+		}
+
+		const values = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.' + name) ?? this.#source2File.getBlockStructAsElementArray('DATA', name);
+		if (!values) {
+			return null;
+		}
+
+		const result = new Map<string, integer | vec4>();
+		for (const v of values) {
+			const name = v.getSubValueAsString('m_name');
+			const value = isVector ? v.getSubValueAsVec4('m_nValue', vec4.create()) : v.getSubValueAsNumber('m_nValue');
+
+			if (name && value != null) {
+				result.set(name, value);
+			}
+		}
+		return result;
+	}
+
 	getIntParam(intName: string) {
 		if (!this.#source2File) {
 			return null;
@@ -381,6 +405,10 @@ export class Source2Material extends Material {
 				}
 			}
 		}
+	}
+
+	getIntParams(): Map<string, integer> | null {
+		return this.#getParams('m_intParams', false) as Map<string, integer>;
 	}
 
 	getFloatParam(floatName: string) {
@@ -397,6 +425,10 @@ export class Source2Material extends Material {
 		}
 	}
 
+	getFloatParams(): Map<string, float> | null {
+		return this.#getParams('m_floatParams', false) as Map<string, integer>;
+	}
+
 	getVectorParam(vectorName: string, out: vec4): vec4 {
 		if (this.#source2File) {
 			const vectors = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_vectorParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_vectorParams');
@@ -409,6 +441,10 @@ export class Source2Material extends Material {
 			}
 		}
 		return out;
+	}
+
+	getVectorParams(): Map<string, vec4> | null {
+		return this.#getParams('m_vectorParams', true) as Map<string, vec4>;
 	}
 
 	getDynamicParam(dynamicName: string): vec4 | undefined {
