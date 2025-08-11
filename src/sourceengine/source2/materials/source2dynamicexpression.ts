@@ -843,17 +843,17 @@ type Operation = {
 	operand3?: Operand;// not sure if usefull
 }
 
-let doOnce = false;
+const done = new Map<string, boolean>();
 
-export function decompileDynamicExpression(byteCode: Uint8Array, renderAttributes: string[]): string {
+export function decompileDynamicExpression(dynamicName: string, byteCode: Uint8Array, renderAttributes: string[]): string {
 	const operand = toOperation(byteCode, renderAttributes);
 
-	if (!doOnce) {
+	if (!done.get(dynamicName)) {
 		console.info(operand);
 		if (operand) {
-			console.info(operandToString(operand));
+			console.error(dynamicName, operandToString(operand));
 		}
-		doOnce = true;
+		done.set(dynamicName, true);
 
 	}
 	return '';
@@ -1184,26 +1184,15 @@ operations.set(Operator.Subtraction, { operator: '-', precedence: Precedence.Add
 operations.set(Operator.Multiplication, { operator: '*', precedence: Precedence.Additive });
 operations.set(Operator.Division, { operator: '/', precedence: Precedence.Additive });
 
-/*
-	Addition,
-	Subtraction,
-	Multiplication,
-	Division,
-	Function,
-	*/
-
-
 function operandToString(operand: Operand): [string, Precedence] | null {
 	if (typeof operand == 'number') {
 		return [String(operand), Precedence.Number];
 	}
 
-	let result = '';
 
 
 	if (operand.operator == Operator.Function) {
 		return [functionToString(operand), Precedence.Function];
-
 	}
 
 
@@ -1213,8 +1202,8 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 		return null;
 	}
 
-	let operand1;
-	let operand2;
+	let operand1: [string, Precedence] | null = null;
+	let operand2: [string, Precedence] | null = null;
 	if (operand.operand1) {
 		operand1 = operandToString(operand.operand1);
 	}
@@ -1222,8 +1211,23 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 		operand2 = operandToString(operand.operand2);
 	}
 
+	if (!operand1 || !operand2) {
+		return null;
+	}
 
-	return [`(${operand1?.[0]} ${ope.operator} ${operand2?.[0]})`, ope.precedence];
+	let ope1 = operand1?.[0];
+	let ope2 = operand2?.[0];
+
+	if (operand1?.[1] < ope.precedence) {
+		ope1 = `(${ope1})`;
+	}
+
+	if (operand2?.[1] < ope.precedence) {
+		ope2 = `(${ope2})`;
+	}
+
+
+	return [`${ope1} ${ope.operator} ${ope2}`, ope.precedence];
 
 	/*
 		switch (operand.operator) {
