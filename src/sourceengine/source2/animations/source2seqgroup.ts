@@ -9,7 +9,7 @@ import { Source2Sequence } from './source2sequence';
 export class Source2SeqGroup {
 	#animNames = new Map<string, Source2AnimationDesc>();
 	#animGroup: Source2AnimGroup;
-	#localSequenceNameArray;
+	#localSequenceNameArray: string[] | null = null;
 	sequences: Source2Sequence[] = [];
 	file?: Source2File;
 	#m_localS1SeqDescArray: Kv3Element[] | null = null;
@@ -43,8 +43,7 @@ export class Source2SeqGroup {
 		this.#animArray = this.#m_localS1SeqDescArray;
 
 		if (this.#animArray) {
-			for (let i = 0; i < this.#animArray.length; i++) {
-				const anim = this.#animArray[i];
+			for (const anim of this.#animArray) {
 				const animName = anim.getValueAsString('m_sName');
 				if (animName) {
 					this.#animNames.set(animName, new Source2AnimationDesc(this.#animGroup.source2Model, anim, this));
@@ -103,8 +102,7 @@ export class Source2SeqGroup {
 	}
 
 	matchActivity(activity: string, modifiers: string[]) {
-		for (let i = 0; i < this.sequences.length; i++) {
-			const sequence = this.sequences[i];
+		for (const sequence of this.sequences) {
 			if (sequence.matchActivity(activity, modifiers)) {
 				return sequence.animNames[0];//TODO
 			}
@@ -112,7 +110,7 @@ export class Source2SeqGroup {
 		return null;
 	}
 
-	getAnimationsByActivity(activityName) {
+	getAnimationsByActivity(activityName: string) {
 		const anims = [];
 		for (const [animName, animDesc] of this.#animNames) {
 			if (animDesc.matchActivity(activityName)) {
