@@ -451,7 +451,7 @@ export class Source2Material extends Material {
 		if (!this.#source2File) {
 			return;
 		}
-		const dynamicParams = this.#source2File.getBlockStructAsElementArray('DATA', 'm_dynamicParams');// || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
+		const dynamicParams = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_dynamicParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_dynamicParams');// || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
 		if (!dynamicParams) {
 			return;
 		}
