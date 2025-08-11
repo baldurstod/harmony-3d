@@ -64,19 +64,24 @@ export class Source2Animation {
 		return this.#decoderArray;
 	}
 
-	getSegment(segmentIndex: number): Kv3Element {
+	getSegment(segmentIndex: number): Kv3Element | null {
 		//TODO: check segement
-		return this.#segmentArray[segmentIndex];
+		return this.#segmentArray[segmentIndex] ?? null;
 	}
 
 	async getAnimations(animations = new Set<string>()) {
-		for (let i = 0; i < this.#animArray.length; i++) {
-			const anim = this.#animArray[i];
-			animations.add(anim.getSubValueAsString('m_name'));
+		for (const anim of this.#animArray) {
+			const animName = anim.getSubValueAsString('m_name');
+			if (animName) {
+				animations.add(animName);
+			}
 			const activityArray = anim.getSubValueAsElementArray('m_activityArray');
 			if (activityArray) {
 				for (const activity of activityArray) {
-					animations.add(activity.getSubValueAsString('m_name'));
+					const activityName = activity.getSubValueAsString('m_name');
+					if (activityName) {
+						animations.add(activityName);
+					}
 				}
 			}
 		}

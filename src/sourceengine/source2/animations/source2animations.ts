@@ -1,16 +1,18 @@
+import { Source2AnimationDesc } from '../models/source2animationdesc';
+
 const EMPTY_MODIFIERS = new Set();
 export class Source2Animations {
-	#animations = [];
+	#animations: Source2AnimationDesc[] = [];
 
-	addAnimations(animations) {
+	addAnimations(animations: Source2AnimationDesc[]): void {
 		this.#animations.push(...animations);
 	}
 
-	getAnimations() {
+	getAnimations(): Source2AnimationDesc[] {
 		return this.#animations;
 	}
 
-	getAnimation(activityName, activityModifiers = EMPTY_MODIFIERS) {
+	getAnimation(activityName: string, activityModifiers = EMPTY_MODIFIERS): Source2AnimationDesc | null {
 		for (const animation of this.#animations) {
 			if (animation.matchModifiers(activityName, activityModifiers)) {
 				return animation;
@@ -23,9 +25,10 @@ export class Source2Animations {
 				return animation;
 			}
 		}
+		return null;
 	}
 
-	getBestAnimation(activityName, activityModifiers) {
+	getBestAnimation(activityName: string, activityModifiers: Set<string>): Source2AnimationDesc | null {
 		let bestMatch = this.getAnimation(activityName);
 		let bestScore = bestMatch ? 0 : -1;
 		for (const animDesc of this.#animations) {

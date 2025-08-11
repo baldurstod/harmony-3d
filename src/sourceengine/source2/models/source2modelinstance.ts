@@ -220,7 +220,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 			return null;
 		}
 
-		let animDesc: Source2AnimationDesc | undefined;
+		let animDesc: Source2AnimationDesc | null;
 		if (this.#animName) {
 			animDesc = this.sourceModel.getAnimation(this.#animName);
 		} else {

@@ -66,18 +66,18 @@ export const BinaryKv3Loader = new (function () {
 			if (version >= 5 && bufferId == 1) {
 				byteCursor = objectCount * 4;
 			}
-			const doubleCursor = Math.ceil((byteCursor + singleByteCount[bufferId]) / 2) * 2;//Math.ceil(byteCursor + singleByteCount[bufferId] / 2) * 2;
-			const quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId] * 2) / 4) * 4;//Math.ceil(singleByteCount / 4) * 4;
-			let eightCursor = Math.ceil((quadCursor + quadByteCount[bufferId] * 4) / 8) * 8;
+			const doubleCursor = Math.ceil((byteCursor + singleByteCount[bufferId]!) / 2) * 2;//Math.ceil(byteCursor + singleByteCount[bufferId] / 2) * 2;
+			const quadCursor = Math.ceil((doubleCursor + doubleByteCount[bufferId]! * 2) / 4) * 4;//Math.ceil(singleByteCount / 4) * 4;
+			let eightCursor = Math.ceil((quadCursor + quadByteCount[bufferId]! * 4) / 8) * 8;
 
 			if (version >= 5 && eightByteCount[bufferId] == 0) {
 				// In this case, don't align cursor
-				eightCursor = quadCursor + quadByteCount[bufferId] * 4;
+				eightCursor = quadCursor + quadByteCount[bufferId]! * 4;
 			}
 
 			//console.info(byteCursor, doubleCursor, quadCursor, eightCursor);
 
-			let dictionaryOffset = eightCursor + eightByteCount[bufferId] * 8;
+			let dictionaryOffset = eightCursor + eightByteCount[bufferId]! * 8;
 			if (version >= 5 && bufferId == 0) {
 				dictionaryOffset = 0;
 			}
@@ -165,9 +165,9 @@ export const BinaryKv3Loader = new (function () {
 				const reader0 = new BinaryReader(buffer0);
 
 				const byteCursorBuf0 = 0;
-				const doubleCursorBuf0 = Math.ceil(singleByteCount[0] / 2) * 2;
-				const quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0] * 2) / 4) * 4;
-				const eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0] * 4) / 8) * 8;
+				const doubleCursorBuf0 = Math.ceil(singleByteCount[0]! / 2) * 2;
+				const quadCursorBuf0 = Math.ceil((doubleCursorBuf0 + doubleByteCount[0]! * 2) / 4) * 4;
+				const eightCursorBuf0 = Math.ceil((quadCursorBuf0 + quadByteCount[0]! * 4) / 8) * 8;
 				//console.info('cursor buff 0', byteCursorBuf0, doubleCursorBuf0, quadCursorBuf0, eightCursorBuf0)
 
 				byteReaderBuf0 = new BinaryReader(reader0);
@@ -314,7 +314,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 			}
 		*/
 		case DATA_TYPE_STRING:
-			return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()]);
+			return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()] ?? '');
 		//return new SourceKv3String(quadReader.getInt32());
 		case DATA_TYPE_BLOB:
 			if (blobCount == 0) {
@@ -394,7 +394,10 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 			for (let i = 0; i < objectCount; i++) {
 				const nameId = quadReader.getUint32();
 				const element = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
-				objectElements.setProperty(stringDictionary[nameId], element);
+				const name = stringDictionary[nameId];
+				if (name !== undefined) {
+					objectElements.setProperty(name, element);
+				}
 				//elements.setProperty(nameId, element);
 			}
 			return objectElements;
@@ -482,7 +485,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 			}
 		case Kv3Type.Resource:
 			//return new SourceKv3String(quadReader.getInt32());
-			return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()]);
+			return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()] ?? '');
 		default:
 			console.error('Unknown element type : ', elementType);
 	}
@@ -611,11 +614,11 @@ function readElement(reader: BinaryReader, stringDictionary: string[], occurence
 			break;
 		case 6: // String
 			if (occurences) {
-				const arr = [];
+				const arr: string[] = [];
 				for (let i = 0; i < occurences; i++) {
 					propertyIndex = reader.getUint32();
 					propertyName = stringDictionary[propertyIndex];
-					arr.push(propertyName);
+					arr.push(propertyName ?? '');
 				}
 				//return arr;//new SE2Kv3Value(type, arr);
 				return new Kv3Value(type, arr);
@@ -623,7 +626,7 @@ function readElement(reader: BinaryReader, stringDictionary: string[], occurence
 				propertyIndex = reader.getUint32();
 				propertyName = stringDictionary[propertyIndex];
 				//return propertyName;//new SE2Kv3Value(type, propertyName);
-				return new Kv3Value(type, propertyName);
+				return new Kv3Value(type, propertyName ?? '');
 			}
 			break;
 		case 0x07: // byte array
@@ -664,7 +667,9 @@ function readElement(reader: BinaryReader, stringDictionary: string[], occurence
 						propertyIndex = reader.getUint32();
 						propertyName = stringDictionary[propertyIndex];
 						property = readElement(reader, stringDictionary);
-						element.setProperty(propertyName, property);
+						if (propertyName !== undefined) {
+							element.setProperty(propertyName, property);
+						}
 					}
 					arr[i] = element;
 				}
@@ -680,7 +685,9 @@ function readElement(reader: BinaryReader, stringDictionary: string[], occurence
 					propertyIndex = reader.getUint32();
 					propertyName = stringDictionary[propertyIndex];
 					property = readElement(reader, stringDictionary);
-					element.setProperty(propertyName, property);
+					if (propertyName !== undefined) {
+						element.setProperty(propertyName, property);
+					}
 				}
 				//return element;
 				return new Kv3Value(type, element);
@@ -769,12 +776,12 @@ function readElement(reader: BinaryReader, stringDictionary: string[], occurence
 			break;
 		case Kv3Type.Resource:
 			if (occurences) {
-				const arr = [];
+				const arr: string[] = [];
 				const test = reader.getUint8();//todo: rename variable
 				for (let i = 0; i < occurences; i++) {
 					propertyIndex = reader.getUint32();
 					propertyName = stringDictionary[propertyIndex];
-					arr.push(propertyName);
+					arr.push(propertyName ?? '');
 				}
 				//return arr;//new SE2Kv3Value(type, arr);
 				return new Kv3Value(type, arr);
@@ -784,7 +791,7 @@ function readElement(reader: BinaryReader, stringDictionary: string[], occurence
 				propertyName = stringDictionary[propertyIndex];
 				//console.error(propertyName, test);
 				//return propertyName;//new SE2Kv3Value(type, propertyName);
-				return new Kv3Value(type, propertyName);
+				return new Kv3Value(type, propertyName ?? '');
 			}
 			break;
 		default:

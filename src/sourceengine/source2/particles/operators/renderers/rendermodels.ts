@@ -76,7 +76,7 @@ export class RenderModels extends Operator {
 		return '';
 	}
 
-	async #getModel(repository: string, modelName: string): Promise<Source2ModelInstance> {
+	async #getModel(repository: string, modelName: string): Promise<Source2ModelInstance | null> {
 		for (const [model, datas] of this.#allModels) {
 			if (!datas.used && (datas.modelName == modelName) && (datas.repository == repository)) {
 				//this.#allModels.delete(model);
@@ -116,7 +116,9 @@ export class RenderModels extends Operator {
 			this.#returnModel(particle);
 			model = await this.#getModel(particleSystem.repository, particle.modelName);
 
-			this.#models.set(particle, model);
+			if (model) {
+				this.#models.set(particle, model);
+			}
 
 			if (this.#skin && model) {
 				model.skin = this.#skin;

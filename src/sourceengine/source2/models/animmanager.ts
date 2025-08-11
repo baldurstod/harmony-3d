@@ -1,11 +1,12 @@
 import { loadAnimGroup } from '../loaders/source2animloader';
 import { Source2AnimGroup } from './source2animgroup';
+import { Source2Model } from './source2model';
 
-export const AnimManager = new (function () {
+export const AnimManager = new (function () {// TODO: remove this class ?  is this even used anymore
 	const animGroupList: Record<string, Source2AnimGroup> = {};
 	class AnimManager {
 
-		async getAnimGroup(source2Model, repository, animGroupName) {
+		async getAnimGroup(source2Model: Source2Model, repository: string, animGroupName: string) {
 			let animGroup = animGroupList[animGroupName];
 			if (!animGroup) {
 
@@ -20,8 +21,8 @@ export const AnimManager = new (function () {
 			return animGroup;
 		}
 
-		removeAnimGroup(animGroupName) {
-			animGroupList[animGroupName] = null;
+		removeAnimGroup(animGroupName:string) {
+			delete animGroupList[animGroupName];
 		}
 
 		/*async getAnim(repository, animName, animGroup) {

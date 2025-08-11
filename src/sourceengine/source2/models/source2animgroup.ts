@@ -17,11 +17,11 @@ export class Source2AnimGroup {
 	#source2Model: Source2Model;
 	#_changemyname: Source2Animation[] = [];
 	repository: string;
-	file;
+	file?: Source2File;
 	decoderArray: Source2AnimeDecoder[] = [];
-	localAnimArray;
+	localAnimArray: string[] | null = null;
 	decodeKey?: Kv3Element;
-	directHSeqGroup;
+	directHSeqGroup?: Source2SeqGroup;
 	loaded = false;
 
 	constructor(source2Model: Source2Model, repository: string) {
@@ -34,7 +34,7 @@ export class Source2AnimGroup {
 		this.file = sourceFile;
 
 		let localAnimArray: string[] | null;
-		let decodeKey: Kv3Element;
+		let decodeKey: Kv3Element | null;
 		const animationGroupData = sourceFile.getBlockStruct('DATA', 'AnimationGroupResourceData_t') as Kv3Element;
 
 		let directHSeqGroup;
@@ -54,10 +54,12 @@ export class Source2AnimGroup {
 		if (directHSeqGroup) {
 			// TODO: this part is not tested find a test case
 			(async () => {
-				this.directHSeqGroup = await getSequenceGroup(this.repository, directHSeqGroup, this);
+				this.directHSeqGroup = await getSequenceGroup(this.repository, directHSeqGroup as string, this);
 			})();
 		}
-		this.setAnimationGroupResourceData(localAnimArray, decodeKey);
+		if (decodeKey) {
+			this.setAnimationGroupResourceData(localAnimArray, decodeKey);
+		}
 
 		const anims = sourceFile.getBlockKeyValues('ANIM');
 		if (anims) {
@@ -72,7 +74,7 @@ export class Source2AnimGroup {
 		this.loaded = true;
 	}
 
-	setAnimationGroupResourceData(localAnimArray, decodeKey: Kv3Element) {
+	setAnimationGroupResourceData(localAnimArray: string[] | null, decodeKey: Kv3Element) {
 		this.localAnimArray = localAnimArray;
 		this.decodeKey = decodeKey;
 		//this.getAnim(0);
@@ -130,7 +132,7 @@ export class Source2AnimGroup {
 		return anims;
 	}
 
-	getAnimationsByActivity(activityName) {
+	getAnimationsByActivity(activityName: string) {
 		const anims = [];
 
 		for (const anim of this._changemyname) {
@@ -165,7 +167,7 @@ export class Source2AnimGroup {
 		return this.#source2Model;
 	}
 
-	getAnimationByName(animName: string): Source2AnimationDesc {
+	getAnimationByName(animName: string): Source2AnimationDesc | null {
 		//return this.#internalAnimGroup?.getAnimationByName(animName);
 		for (const source2Animation of this.getAnims()) {
 			const anim = source2Animation.getAnimationByName(animName);
@@ -173,6 +175,7 @@ export class Source2AnimGroup {
 				return anim;
 			}
 		}
+		return null
 	}
 
 	//TODO: remove setter and getter
@@ -186,12 +189,12 @@ export class Source2AnimGroup {
 }
 
 
-const seqGroupList = {};
+const seqGroupList: Record<string, Source2SeqGroup> = {};
 
-function getSequenceGroup(repository: string, seqGroupName: string, animGroup: Source2AnimGroup) {
+async function getSequenceGroup(repository: string, seqGroupName: string, animGroup: Source2AnimGroup): Promise<Source2SeqGroup | undefined> {
 	let seqGroup = seqGroupList[seqGroupName];
 	if (!seqGroup) {
-		seqGroup = loadSequenceGroup(repository, seqGroupName, animGroup);
+		seqGroup = await loadSequenceGroup(repository, seqGroupName, animGroup);
 	}
 	if (seqGroup) {
 		seqGroupList[seqGroupName] = seqGroup;
@@ -246,10 +249,10 @@ async function loadVseq(repository: string, fileName: string, seqGroup: Source2S
 
 
 
-const animList = {};
-function getAnim(repository: string, animName: string, animGroup: Source2AnimGroup) {
+const animList: Record<string, Source2Animation> = {};
+function getAnim(repository: string, animName: string, animGroup: Source2AnimGroup): Source2Animation | null {
 	if (!animName) {
-		return "";
+		return null;
 	}
 	const anim = animList[animName];
 	if (anim === undefined) {

@@ -3,8 +3,8 @@ import { Source2FileLoader } from '../loaders/source2fileloader';
 /**
  * Mesh manager
  */
-export class MeshManager {
-	static meshList = {};//TODO: create map
+export class MeshManager {// TODO: remove this class ?  meshes seems not used anymore in source2
+	static meshList:Record<string, Source2File> = {};//TODO: create map
 	//this.renderMode = 2;
 
 	static async getMesh(repository: string, meshName: string): Promise<Source2File> {
@@ -13,7 +13,7 @@ export class MeshManager {
 		meshName = meshName.replace(/.vmesh$/, '');
 		let mesh = this.meshList[meshName];
 		if (!mesh) {
-			mesh = await new Source2FileLoader().load(repository, meshName + '.vmesh_c');
+			mesh = await new Source2FileLoader().load(repository, meshName + '.vmesh_c') as Source2File;
 		}
 		if (mesh) {
 			this.meshList[meshName] = mesh;
@@ -25,6 +25,6 @@ export class MeshManager {
 	}
 
 	static removeMesh(meshName: string): void {
-		this.meshList[meshName] = null;
+		delete this.meshList[meshName];
 	}
 }

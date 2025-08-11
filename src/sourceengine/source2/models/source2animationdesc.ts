@@ -113,7 +113,9 @@ export class Source2AnimationDesc {
 							}
 							//console.log(frameIndex, frameIndex - frameBlock.m_nStartFrame);
 							//console.log(frameIndex);
-							this.#readSegment(frameIndex - startFrame, segment, boneArray, decodeKeyDataChannelArray, decodeArray);
+							if (segment) {
+								this.#readSegment(frameIndex - startFrame, segment, boneArray, decodeKeyDataChannelArray, decodeArray);
+							}
 						}
 					}
 				}
@@ -158,7 +160,7 @@ export class Source2AnimationDesc {
 
 		if (elementIndexArray) {
 			for (let i = 0; i < elementIndexArray.length; i++) {
-				segmentToBoneIndex.set(elementIndexArray[i], i);
+				segmentToBoneIndex.set(elementIndexArray[i]!, i);
 			}
 		} else {
 			//TODO
@@ -222,37 +224,37 @@ export class Source2AnimationDesc {
 				if (boneIndex2 === undefined) {//removeme
 					continue;
 				}
-				const bytes = [];
+				const bytes: number[] = [];
 				const byteIndex2 = byteIndex + boneIndex * bytesPerBone;
 				for (let j = 0; j < bytesPerBone; j++) {
-					bytes.push(container[byteIndex2 + j]);
+					bytes.push(container[byteIndex2 + j] ?? 0);
 				}
 
 				let tmpValue = null;
 				switch (decoderName) {
 					case 'CCompressedFullFloat':
 					case 'CCompressedStaticFloat':
-						tmpValue = _getFloat32(bytes, 0);
+						tmpValue = getFloat32(bytes, 0);
 						break;
 					case 'CCompressedStaticFullVector3':
 					case 'CCompressedFullVector3':
 						//case 'CCompressedAnimVector3':
-						var x = _getFloat32(bytes, 0);
-						var y = _getFloat32(bytes, 4);
-						var z = _getFloat32(bytes, 8);
+						var x = getFloat32(bytes, 0);
+						var y = getFloat32(bytes, 4);
+						var z = getFloat32(bytes, 8);
 						tmpValue = vec3.fromValues(x, y, z);
 						break;
 					case 'CCompressedDeltaVector3':
 						tmpValue = decodeCCompressedDeltaVector3(reader, boneCount, boneIndex, frameIndex);
 						break;
 					case 'CCompressedStaticVector3':
-						var x = _getFloat16(bytes, 0);
-						var y = _getFloat16(bytes, 2);
-						var z = _getFloat16(bytes, 4);
+						var x = getFloat16(bytes, 0);
+						var y = getFloat16(bytes, 2);
+						var z = getFloat16(bytes, 4);
 						tmpValue = vec3.fromValues(x, y, z);
 						break;
 					case 'CCompressedAnimQuaternion':
-						tmpValue = _readQuaternion48(bytes, boneIndex2, boneArray[boneIndex2]?.name);
+						tmpValue = readQuaternion48(bytes);
 						break;
 					default:
 						if (DEBUG) {
@@ -295,10 +297,10 @@ export class Source2AnimationDesc {
 	*/
 
 
-	modifiersScore(activityName, modifiers) {
+	modifiersScore(activityName: string, modifiers: Set<string>) {
 		const activityArray = this.data?.getSubValueAsElementArray('m_activityArray');
 		if (activityArray && activityArray.length > 0) {
-			if (activityArray[0].getSubValueAsString('m_name') != activityName) {
+			if (activityArray[0]!.getSubValueAsString('m_name') != activityName) {
 				return -1;
 			}
 
@@ -307,7 +309,7 @@ export class Source2AnimationDesc {
 				return 1;
 			}
 
-			const matchingModifiers = {};
+			const matchingModifiers: Record<string, number> = {};
 			for (const modifier of modifiers) {
 				for (const activity of activityArray) {
 					const name = activity.getSubValueAsString('m_name');
@@ -360,13 +362,10 @@ export class Source2AnimationDesc {
 	}
 }
 
-
-
-
-function _getFloat16(b, offset) {//TODOv3: optimize this function
-	const sign = b[1 + offset] >> 7;
-	const exponent = ((b[1 + offset] & 0x7C) >> 2);
-	const mantissa = ((b[1 + offset] & 0x03) << 8) | b[0 + offset];
+function getFloat16(b: number[], offset: number) {//TODOv3: optimize this function
+	const sign = b[1 + offset]! >> 7;
+	const exponent = ((b[1 + offset]! & 0x7C) >> 2);
+	const mantissa = ((b[1 + offset]! & 0x03) << 8) | b[0 + offset]!;
 
 	if (exponent == 0) {
 		return (sign ? -1 : 1) * Math.pow(2, -14) * (mantissa / Math.pow(2, 10));
@@ -376,10 +375,11 @@ function _getFloat16(b, offset) {//TODOv3: optimize this function
 
 	return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / Math.pow(2, 10)));
 }
-function _getFloat32(b, offset) {//TODOv3: remove these functions or something
-	const sign = 1 - (2 * (b[3 + offset] >> 7)),
-		exponent = (((b[3 + offset] << 1) & 0xff) | (b[2 + offset] >> 7)) - 127,
-		mantissa = ((b[2 + offset] & 0x7f) << 16) | (b[1 + offset] << 8) | b[0 + offset];
+
+function getFloat32(b:number[], offset:number) {//TODOv3: remove these functions or something
+	const sign = 1 - (2 * (b[3 + offset]! >> 7)),
+		exponent = (((b[3 + offset]! << 1) & 0xff) | (b[2 + offset]! >> 7)) - 127,
+		mantissa = ((b[2 + offset]! & 0x7f) << 16) | (b[1 + offset]! << 8) | b[0 + offset]!;
 
 	if (exponent === 128) {
 		if (mantissa !== 0) {
@@ -397,16 +397,16 @@ function _getFloat32(b, offset) {//TODOv3: remove these functions or something
 }
 
 const QUATERNION48_SCALE = Math.SQRT1_2 / 0x4000;
-function _readQuaternion48(bytes, boneIndexRemoveMe, boneNameRemoveMe) {
+function readQuaternion48(bytes: number[]) {
 	// Values
-	const i1 = bytes[0] + ((bytes[1] & 127) << 8) - 0x4000;
-	const i2 = bytes[2] + ((bytes[3] & 127) << 8) - 0x4000;
-	const i3 = bytes[4] + ((bytes[5] & 127) << 8) - 0x4000;
+	const i1 = bytes[0]! + ((bytes[1]! & 127) << 8) - 0x4000;
+	const i2 = bytes[2]! + ((bytes[3]! & 127) << 8) - 0x4000;
+	const i3 = bytes[4]! + ((bytes[5]! & 127) << 8) - 0x4000;
 
 	// Signs
-	const s1 = bytes[1] & 128;
-	const s2 = bytes[3] & 128;
-	const s3 = bytes[5] & 128;
+	const s1 = bytes[1]! & 128;
+	const s2 = bytes[3]! & 128;
+	const s3 = bytes[5]! & 128;
 
 	const x = QUATERNION48_SCALE * i1;
 	const y = QUATERNION48_SCALE * i2;
@@ -421,9 +421,6 @@ function _readQuaternion48(bytes, boneIndexRemoveMe, boneNameRemoveMe) {
 	if (TESTING) {
 		if (s1 == 128 && s2 == 128 && s3 == 128) {
 			//console.log(boneNameRemoveMe, bytes);
-		}
-		if (boneNameRemoveMe == 'left_hook3_0') {
-			//console.log(boneNameRemoveMe, s1, s2, s3, bytes);
 		}
 	}
 	// Apply sign 1 and 2

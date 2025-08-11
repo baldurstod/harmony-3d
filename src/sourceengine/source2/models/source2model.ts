@@ -173,7 +173,9 @@ export class Source2Model {
 		const materialGroups = this.vmdl.getBlockStructAsElementArray('DATA', 'm_materialGroups');
 		if (materialGroups) {
 			const materials = materialGroups[skin];
-			return materials.getValueAsResourceArray('m_materials');
+			if (materials) {
+				return materials.getValueAsResourceArray('m_materials');
+			}
 		}
 		return null;
 	}
@@ -277,7 +279,7 @@ export class Source2Model {
 		}*/
 	}
 
-	getAnimation(name: string): Source2AnimationDesc | undefined {
+	getAnimation(name: string): Source2AnimationDesc | null {
 		let animation: Source2AnimationDesc | undefined;
 		animation = this.#seqGroup?.getAnimDesc(name);
 		if (animation) {
@@ -290,6 +292,7 @@ export class Source2Model {
 				return animation;
 			}
 		}
+		return null;
 	}
 
 	getAnimationsByActivity(activityName: string, animations = new Source2Animations()) {
