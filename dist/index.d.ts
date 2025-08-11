@@ -1055,12 +1055,16 @@ declare class Choreography {
 
      export declare class ColorBackground extends BackGround {
          #private;
-         constructor(params?: any);
+         constructor(params?: ColorBackgroundParameters);
          render(renderer: Renderer, camera: Camera): void;
          setColor(color: vec4): void;
          getColor(out?: vec4): void;
          dispose(): void;
          is(s: string): boolean;
+     }
+
+     declare interface ColorBackgroundParameters {
+         color?: vec4;
      }
 
      export declare class ColorFade extends SourceEngineParticleOperator {
@@ -2011,7 +2015,7 @@ declare class Choreography {
           setMaterialParam(name: string, value: MaterialParam): void;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
-          createChild(entityName: string, parameters: any): Promise<Material | Entity>;
+          createChild(entityName: string, parameters: any): Promise<Entity | Material>;
           fromJSON(json: JSONObject): void;
           static getEntityName(): string;
           is(s: string): boolean;
@@ -2243,7 +2247,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
+         export declare function getHelper(type: any): SpotLightHelper | PointLightHelper | Grid | CameraFrustum;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -3276,8 +3280,8 @@ declare class Choreography {
          }
 
          export declare class JSONLoader {
-             static fromJSON(rootEntity: object): Promise<Material | Entity>;
-             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Material | Entity>;
+             static fromJSON(rootEntity: object): Promise<Entity | Material>;
+             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material>;
              static registerEntity(ent: typeof Entity | typeof Material): void;
          }
 
@@ -5216,7 +5220,7 @@ declare class Choreography {
 
          export declare class Plane extends Mesh {
              #private;
-             constructor(params?: any);
+             constructor(params?: PlaneParameters);
              setWidth(width: number): void;
              setHeight(height: number): void;
              setSize(width: number, height?: number): void;
@@ -5333,6 +5337,14 @@ declare class Choreography {
              _paramChanged(paramName: string, param: OperatorParam): void;
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
+
+         declare type PlaneParameters = EntityParameters & {
+             width?: number;
+             height?: number;
+             widthSegments?: number;
+             heightSegments?: number;
+             material?: Material;
+         };
 
          export declare class PointLight extends Light {
              isPointLight: boolean;
@@ -6488,7 +6500,9 @@ declare class Choreography {
              setJointsRadius(radius: number): void;
          }
 
-         declare type SceneParameters = EntityParameters;
+         declare type SceneParameters = EntityParameters & {
+             camera?: Camera;
+         };
 
          export declare class Select extends Node_2 {
              #private;
@@ -8026,7 +8040,6 @@ declare class Choreography {
              setImageFormat(imageFormat: number): void;
              getVtexImageFormat(): number;
              getImageFormat(): ImageFormat;
-             get disabled_imageFormat(): number;
              getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
          }
 

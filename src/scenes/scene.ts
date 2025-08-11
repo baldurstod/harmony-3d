@@ -6,7 +6,9 @@ import { World } from '../objects/world';
 import { JSONObject } from '../types';
 import { Environment } from './environments/environment';
 
-export type SceneParameters = EntityParameters;
+export type SceneParameters = EntityParameters & {
+	camera?: Camera,
+};
 
 export class Scene extends Entity {
 	#layers = new Map<any/*TODO: create a layer type*/, number>();
@@ -18,6 +20,9 @@ export class Scene extends Entity {
 
 	constructor(parameters?: SceneParameters) {
 		super(parameters);
+
+		this.activeCamera = parameters.camera;
+
 		this.#layers[Symbol.iterator] = function* (): MapIterator<[any, any]> {
 			yield* [...this.entries()].sort(
 				(a, b) => {
