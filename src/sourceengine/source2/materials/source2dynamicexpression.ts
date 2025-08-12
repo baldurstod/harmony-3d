@@ -786,7 +786,8 @@ enum Operator {
 	Multiplication,
 	Division,
 	Function,
-	GetAttribute,
+	AttributeLiteral,
+	Negation,
 }
 
 enum FunctionCode {
@@ -839,7 +840,8 @@ enum OpCode {
 	Subtraction = 20,
 	Multiplication = 21,
 	Division = 22,
-	GetAttribute = 25,
+	Negation = 24,
+	AttributeLiteral = 25,
 }
 
 type Operand = string | number | Operation;
@@ -970,15 +972,21 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 						case 23: // %
 							modulo();
 							break;
+							*/
+
+			case OpCode.Negation:
+				operandStack.push({ operator: Operator.Negation, operand1: operandStack.pop() });
+				break;
+							/*
 						case 24: // negate
 							negation()
 							break;
 							*/
-			case OpCode.GetAttribute:
+			case OpCode.AttributeLiteral:
 				const hash = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
 				pointer += 4;
 				let stringValue = getAttribute(hash, renderAttributes);
-				operandStack.push({ operator: Operator.GetAttribute, operand1: stringValue });
+				operandStack.push({ operator: Operator.AttributeLiteral, operand1: stringValue });
 				break;
 			/*
 			case 25: // get value
@@ -1168,7 +1176,8 @@ operations.set(Operator.Addition, { operator: '+', precedence: Precedence.Additi
 operations.set(Operator.Subtraction, { operator: '-', precedence: Precedence.Additive, operands: 2 });
 operations.set(Operator.Multiplication, { operator: '*', precedence: Precedence.Additive, operands: 2 });
 operations.set(Operator.Division, { operator: '/', precedence: Precedence.Additive, operands: 2 });
-operations.set(Operator.GetAttribute, { operator: '', precedence: Precedence.Literal, operands: 1 });
+operations.set(Operator.AttributeLiteral, { operator: '', precedence: Precedence.Literal, operands: 1 });
+operations.set(Operator.Negation, { operator: '-', precedence: Precedence.Literal, operands: 1 });
 
 function operandToString(operand: Operand): [string, Precedence] | null {
 	if (typeof operand == 'number') {
@@ -1209,7 +1218,7 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 				operandN = operand.operand4;
 				break;
 		}
-		if (operandN) {
+		if (operandN !== undefined) {
 			const o = operandToString(operandN);
 			if (o) {
 				operands.push(o);
@@ -1255,7 +1264,7 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 
 	switch (ope.operands) {
 		case 1:
-			return [`${opes[0]}`, ope.precedence];
+			return [`${ope.operator}${opes[0]}`, ope.precedence];
 		case 2:
 			return [`${opes[0]} ${ope.operator} ${opes[1]}`, ope.precedence];
 		case 3:
