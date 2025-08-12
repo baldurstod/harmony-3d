@@ -779,17 +779,6 @@ function sqr() {
 	stack.push(a);
 }
 
-enum Operator {
-	Goto,
-	Addition,
-	Subtraction,
-	Multiplication,
-	Division,
-	Function,
-	AttributeLiteral,
-	Negation,
-}
-
 enum FunctionCode {
 	Sin = 0,
 	Cos = 1,
@@ -848,7 +837,7 @@ enum OpCode {
 type Operand = string | number | Operation;
 
 type Operation = {
-	operator: Operator;
+	operator: OpCode;
 	function?: FunctionCode;
 	operand1?: Operand;
 	operand2?: Operand;
@@ -885,10 +874,10 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 			case OpCode.Return:
 				return operandStack.pop() ?? null;
 			case OpCode.Goto:
-				operandStack.push({ operator: Operator.Goto, operand1: getlocation(byteCode, pointer + 1) });
+				operandStack.push({ operator: opcode, operand1: getlocation(byteCode, pointer + 1) });
 				break;
 			case OpCode.Ternary:
-				operandStack.push({ operator: Operator.Goto, operand1: getlocation(byteCode, pointer + 1) });
+				operandStack.push({ operator: opcode, operand1: getlocation(byteCode, pointer + 1) });
 				break;
 			/*
 	case 4: // ?
@@ -964,16 +953,16 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 			break;
 			*/
 			case OpCode.Addition:
-				operandStack.push({ operator: Operator.Addition, operand2: operandStack.pop(), operand1: operandStack.pop() });
+				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
 				break;
 			case OpCode.Subtraction:
-				operandStack.push({ operator: Operator.Subtraction, operand2: operandStack.pop(), operand1: operandStack.pop() });
+				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
 				break;
 			case OpCode.Multiplication:
-				operandStack.push({ operator: Operator.Multiplication, operand2: operandStack.pop(), operand1: operandStack.pop() });
+				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
 				break;
 			case OpCode.Division:
-				operandStack.push({ operator: Operator.Division, operand2: operandStack.pop(), operand1: operandStack.pop() });
+				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
 				break;
 			/*
 						case 23: // %
@@ -982,7 +971,7 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 							*/
 
 			case OpCode.Negation:
-				operandStack.push({ operator: Operator.Negation, operand1: operandStack.pop() });
+				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
 				break;
 							/*
 						case 24: // negate
@@ -994,7 +983,7 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 				const hash = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
 				pointer += 4;
 				let stringValue = getAttribute(hash, renderAttributes);
-				operandStack.push({ operator: Operator.AttributeLiteral, operand1: stringValue });
+				operandStack.push({ operator: opcode, operand1: stringValue });
 				break;
 			/*
 			case 25: // get value
@@ -1051,7 +1040,7 @@ function functionToOperation(functionCode: number, operandStack: Operand[]): Ope
 	switch (functionCode) {
 		// No parameters
 		case FunctionCode.Time:
-			operandStack.push({ operator: Operator.Function, function: functionCode });
+			operandStack.push({ operator: OpCode.Function, function: functionCode });
 			break;
 		// 1 parameters
 		case FunctionCode.Frac:
@@ -1062,22 +1051,22 @@ function functionToOperation(functionCode: number, operandStack: Operand[]): Ope
 		case FunctionCode.Ceil:
 		case FunctionCode.Saturate:
 		case FunctionCode.Abs:
-			operandStack.push({ operator: Operator.Function, function: functionCode, operand1: operandStack.pop() });
+			operandStack.push({ operator: OpCode.Function, function: functionCode, operand1: operandStack.pop() });
 			break;
 		// 2 parameters
 		case FunctionCode.Float2:
 		case FunctionCode.Random:
-			operandStack.push({ operator: Operator.Function, function: functionCode, operand2: operandStack.pop(), operand1: operandStack.pop() });
+			operandStack.push({ operator: OpCode.Function, function: functionCode, operand2: operandStack.pop(), operand1: operandStack.pop() });
 			break;
 		// 3 parameters
 		case FunctionCode.Clamp:
 		case FunctionCode.Float3:
 		case FunctionCode.Lerp:
-			operandStack.push({ operator: Operator.Function, function: functionCode, operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
+			operandStack.push({ operator: OpCode.Function, function: functionCode, operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
 			break;
 		// 4 parameters
 		case FunctionCode.Float4:
-			operandStack.push({ operator: Operator.Function, function: functionCode, operand4: operandStack.pop(), operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
+			operandStack.push({ operator: OpCode.Function, function: functionCode, operand4: operandStack.pop(), operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
 			break;
 		case FunctionCode.Dot4:
 			dot4();
@@ -1179,13 +1168,13 @@ type Ope = {
 	operands: 1 | 2 | 3;
 }
 
-const operations = new Map<Operator, Ope>();
-operations.set(Operator.Addition, { operator: '+', precedence: Precedence.Additive, operands: 2 });
-operations.set(Operator.Subtraction, { operator: '-', precedence: Precedence.Additive, operands: 2 });
-operations.set(Operator.Multiplication, { operator: '*', precedence: Precedence.Additive, operands: 2 });
-operations.set(Operator.Division, { operator: '/', precedence: Precedence.Additive, operands: 2 });
-operations.set(Operator.AttributeLiteral, { operator: '', precedence: Precedence.Literal, operands: 1 });
-operations.set(Operator.Negation, { operator: '-', precedence: Precedence.Literal, operands: 1 });
+const operations = new Map<OpCode, Ope>();
+operations.set(OpCode.Addition, { operator: '+', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Subtraction, { operator: '-', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Multiplication, { operator: '*', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Division, { operator: '/', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.AttributeLiteral, { operator: '', precedence: Precedence.Literal, operands: 1 });
+operations.set(OpCode.Negation, { operator: '-', precedence: Precedence.Literal, operands: 1 });
 
 function operandToString(operand: Operand): [string, Precedence] | null {
 	if (typeof operand == 'number') {
@@ -1196,10 +1185,9 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 		return [operand, Precedence.Literal];
 	}
 
-	if (operand.operator == Operator.Function) {
+	if (operand.operator == OpCode.Function) {
 		return [functionToString(operand), Precedence.Function];
 	}
-
 
 	const ope = operations.get(operand.operator);
 	if (!ope) {
