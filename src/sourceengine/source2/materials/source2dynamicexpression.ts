@@ -842,6 +842,7 @@ enum OpCode {
 	Division = 22,
 	Negation = 24,
 	AttributeLiteral = 25,
+	Exists = 31,
 }
 
 type Operand = string | number | Operation;
@@ -962,6 +963,12 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 			subtract();
 			break;
 			*/
+			case OpCode.Addition:
+				operandStack.push({ operator: Operator.Addition, operand2: operandStack.pop(), operand1: operandStack.pop() });
+				break;
+			case OpCode.Subtraction:
+				operandStack.push({ operator: Operator.Subtraction, operand2: operandStack.pop(), operand1: operandStack.pop() });
+				break;
 			case OpCode.Multiplication:
 				operandStack.push({ operator: Operator.Multiplication, operand2: operandStack.pop(), operand1: operandStack.pop() });
 				break;
@@ -983,6 +990,7 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 							break;
 							*/
 			case OpCode.AttributeLiteral:
+			case OpCode.Exists:
 				const hash = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
 				pointer += 4;
 				let stringValue = getAttribute(hash, renderAttributes);
