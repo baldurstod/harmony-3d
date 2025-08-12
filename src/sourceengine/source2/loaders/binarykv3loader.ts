@@ -316,7 +316,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 		case DATA_TYPE_STRING:
 			return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()] ?? '');
 		//return new SourceKv3String(quadReader.getInt32());
-		case DATA_TYPE_BLOB:
+		case Kv3Type.Blob:
 			if (blobCount == 0) {
 				const blobCount = quadReader.getUint32();
 				const blobArray = new Uint8Array(blobCount);

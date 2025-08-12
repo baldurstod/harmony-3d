@@ -122,7 +122,7 @@ export const Source2BlockLoader = new (function () {
 				case 0x4B563305: // KV3 v5 new since frostivus 2024
 					return await loadDataKv3(reader, block, 5);
 				default:
-					console.info('Unknown block data type:', bytes);
+					console.info('Unknown block data type:', bytes, block, file);
 			}
 			if (!introspection || !introspection.structsArray) {
 				if (parseVtex) {//TODO
@@ -683,6 +683,14 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 					const fieldSize = FIELD_SIZE[field.type2] ?? 0;
 					if (field.type2 == 11) {
 						//console.log(field.type2);//TODOV2
+						const arr = new Uint8Array(arrayCount);
+
+						for (var i = 0; i < arrayCount; i++) {
+							arr[i] = reader.getUint8(arrayOffset + i);
+						}
+
+						return new Kv3Value(Kv3Type.Blob, arr);
+
 					}
 					for (var i = 0; i < arrayCount; i++) {
 						var pos = arrayOffset + fieldSize * i;
