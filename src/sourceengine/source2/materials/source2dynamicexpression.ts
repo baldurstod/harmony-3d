@@ -1044,21 +1044,12 @@ function functionToOperation(functionCode: number, operandStack: Operand[]): Ope
 		// 3 parameters
 		case FunctionCode.Clamp:
 		case FunctionCode.Float3:
+		case FunctionCode.Lerp:
 			operandStack.push({ operator: Operator.Function, function: functionCode, operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
 			break;
 		// 4 parameters
 		case FunctionCode.Float4:
 			operandStack.push({ operator: Operator.Function, function: functionCode, operand4: operandStack.pop(), operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
-			break;
-		case FunctionCode.Lerp:
-			const factor = stack.pop()!;
-			const second = stack.pop()!;
-			const first = stack.pop()!;
-			first[0] = first[0] + factor[0] * (second[0] - first[0]);
-			first[1] = first[1] + factor[1] * (second[1] - first[1]);
-			first[2] = first[2] + factor[2] * (second[2] - first[2]);
-			first[3] = first[3] + factor[3] * (second[3] - first[3]);
-			stack.push(first);
 			break;
 		case FunctionCode.Dot4:
 			dot4();
@@ -1170,8 +1161,6 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 		return [String(operand), Precedence.Number];
 	}
 
-
-
 	if (operand.operator == Operator.Function) {
 		return [functionToString(operand), Precedence.Function];
 	}
@@ -1193,6 +1182,7 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 	}
 
 	if (!operand1 || !operand2) {
+		console.error('no operand', operand);
 		return null;
 	}
 
@@ -1243,38 +1233,46 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 }
 
 function functionToString(operand: Operation): string {
-
 	let operand1;
 	let operand2;
+	let operand3;
 
 	if (operand.operand1 !== undefined) {
-		operand1 = operandToString(operand.operand1);
+		operand1 = operandToString(operand.operand1)?.[0];
 	}
 	if (operand.operand2 !== undefined) {
-		operand2 = operandToString(operand.operand2);
+		operand2 = operandToString(operand.operand2)?.[0];
+	}
+	if (operand.operand3 !== undefined) {
+		operand3 = operandToString(operand.operand3)?.[0];
 	}
 
 	switch (operand.function!) {
 		case FunctionCode.Frac:
 			if (operand1) {
-				return `frac( ${operand1[0]} )`;
+				return `frac( ${operand1} )`;
+			}
+			break;
+		case FunctionCode.Lerp:
+			if (operand1 && operand2 && operand3) {
+				return `lerp( ${operand1} , ${operand2} , ${operand3} )`;
 			}
 			break;
 		case FunctionCode.Abs:
 			if (operand1) {
-				return `abs( ${operand1[0]} )`;
+				return `abs( ${operand1} )`;
 			}
 			break;
 		case FunctionCode.Float2:
 			if (operand1 && operand2) {
-				return `float2( ${operand1[0]} , ${operand2[0]} )`;
+				return `float2( ${operand1} , ${operand2} )`;
 			}
 			break;
 		case FunctionCode.Time:
 			return `time( )`;
 		case FunctionCode.Random:
 			if (operand1 && operand2) {
-				return `random( ${operand1[0]} , ${operand2[0]} )`;
+				return `random( ${operand1} , ${operand2} )`;
 			}
 
 
