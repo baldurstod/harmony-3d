@@ -973,11 +973,6 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 			case OpCode.Negation:
 				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
 				break;
-							/*
-						case 24: // negate
-							negation()
-							break;
-							*/
 			case OpCode.AttributeLiteral:
 			case OpCode.Exists:
 				const hash = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
@@ -1175,6 +1170,7 @@ operations.set(OpCode.Multiplication, { operator: '*', precedence: Precedence.Ad
 operations.set(OpCode.Division, { operator: '/', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.AttributeLiteral, { operator: '', precedence: Precedence.Literal, operands: 1 });
 operations.set(OpCode.Negation, { operator: '-', precedence: Precedence.Literal, operands: 1 });
+operations.set(OpCode.Exists, { operator: '', precedence: Precedence.Function, operands: 1 });
 
 function operandToString(operand: Operand): [string, Precedence] | null {
 	if (typeof operand == 'number') {
@@ -1257,6 +1253,10 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 		ope2 = `(${ope2})`;
 	}
 	*/
+
+	if (operand.operator == OpCode.Exists) {
+		return [`exists(${ope.operator}${opes[0]})`, ope.precedence];
+	}
 
 	switch (ope.operands) {
 		case 1:
