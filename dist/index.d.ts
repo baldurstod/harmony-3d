@@ -2015,7 +2015,7 @@ declare class Choreography {
           setMaterialParam(name: string, value: MaterialParam): void;
           toJSON(): any;
           static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
-          createChild(entityName: string, parameters: any): Promise<Entity | Material>;
+          createChild(entityName: string, parameters: any): Promise<Material | Entity>;
           fromJSON(json: JSONObject): void;
           static getEntityName(): string;
           is(s: string): boolean;
@@ -2249,7 +2249,7 @@ declare class Choreography {
 
          export declare function generateRandomUUID(): string;
 
-         export declare function getHelper(type: any): SpotLightHelper | PointLightHelper | Grid | CameraFrustum;
+         export declare function getHelper(type: any): PointLightHelper | SpotLightHelper | CameraFrustum | Grid;
 
          export declare function getIncludeList(): MapIterator<string>;
 
@@ -3284,8 +3284,8 @@ declare class Choreography {
          }
 
          export declare class JSONLoader {
-             static fromJSON(rootEntity: object): Promise<Entity | Material>;
-             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material>;
+             static fromJSON(rootEntity: object): Promise<Material | Entity>;
+             static loadEntity(jsonEntity: any, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Material | Entity>;
              static registerEntity(ent: typeof Entity | typeof Material): void;
          }
 
@@ -6985,7 +6985,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7131,7 +7131,7 @@ declare class Choreography {
              getAnimDesc(name: string): Source2AnimationDesc | undefined;
              getDecodeKey(): Kv3Element;
              getDecoderArray(): Source2AnimeDecoder[];
-             getSegment(segmentIndex: number): Kv3Element;
+             getSegment(segmentIndex: number): Kv3Element | null;
              getAnimations(animations?: Set<string>): Promise<Set<string>>;
              getAnimationsByActivity(activityName: string): any[];
              get animArray(): Kv3Element[];
@@ -7146,16 +7146,16 @@ declare class Choreography {
              get lastFrame(): number;
              getFrame(frameIndex: number): any[];
              matchActivity(activityName: string): boolean;
-             modifiersScore(activityName: any, modifiers: any): number;
+             modifiersScore(activityName: string, modifiers: Set<string>): number;
              matchModifiers(activityName: string, modifiers: Set<string>): boolean;
          }
 
          declare class Source2Animations {
              #private;
-             addAnimations(animations: any): void;
-             getAnimations(): any[];
-             getAnimation(activityName: any, activityModifiers?: Set<never>): any;
-             getBestAnimation(activityName: any, activityModifiers: any): any;
+             addAnimations(animations: Source2AnimationDesc[]): void;
+             getAnimations(): Source2AnimationDesc[];
+             getAnimation(activityName: string, activityModifiers?: Set<never>): Source2AnimationDesc | null;
+             getBestAnimation(activityName: string, activityModifiers: Set<string>): Source2AnimationDesc | null;
          }
 
          declare type Source2AnimeDecoder = {
@@ -7167,23 +7167,23 @@ declare class Choreography {
          declare class Source2AnimGroup {
              #private;
              repository: string;
-             file: any;
+             file?: Source2File;
              decoderArray: Source2AnimeDecoder[];
-             localAnimArray: any;
+             localAnimArray: string[] | null;
              decodeKey?: Kv3Element;
-             directHSeqGroup: any;
+             directHSeqGroup?: Source2SeqGroup;
              loaded: boolean;
              constructor(source2Model: Source2Model, repository: string);
              setFile(sourceFile: Source2File): void;
-             setAnimationGroupResourceData(localAnimArray: any, decodeKey: Kv3Element): void;
-             getAnim(animIndex: number): any;
+             setAnimationGroupResourceData(localAnimArray: string[] | null, decodeKey: Kv3Element): void;
+             getAnim(animIndex: number): Source2Animation;
              getAnimDesc(name: string): Source2AnimationDesc | undefined;
              matchActivity(activity: string, modifiers: string[]): any;
              getAnims(): Set<Source2Animation>;
-             getAnimationsByActivity(activityName: any): any[];
+             getAnimationsByActivity(activityName: string): any[];
              getDecodeKey(): Kv3Element;
              get source2Model(): Source2Model;
-             getAnimationByName(animName: string): Source2AnimationDesc;
+             getAnimationByName(animName: string): Source2AnimationDesc | null;
              set _changemyname(_changemyname: Source2Animation[]);
              get _changemyname(): Source2Animation[];
          }
@@ -7385,6 +7385,7 @@ declare class Choreography {
              getVectorParam(vectorName: string, out: vec4): vec4;
              getVectorParams(): Map<string, vec4> | null;
              getDynamicParam(dynamicName: string): vec4 | undefined;
+             getDynamicParams(): Map<string, string> | null;
          }
 
          export declare class Source2MaterialManager {
@@ -7421,8 +7422,8 @@ declare class Choreography {
              loadAnimGroups(): Promise<void>;
              getIncludeModels(): any[];
              addIncludeModel(includeModel: Source2Model): void;
-             getAnim(activityName: string, activityModifiers: Set<string>): any;
-             getAnimation(name: string): Source2AnimationDesc | undefined;
+             getAnim(activityName: string, activityModifiers: Set<string>): Source2AnimationDesc;
+             getAnimation(name: string): Source2AnimationDesc | null;
              getAnimationsByActivity(activityName: string, animations?: Source2Animations): Source2Animations;
              getAnimations(): Promise<Set<string>>;
              _addAttachments(attachments: Kv3Element[]): void;
@@ -7581,7 +7582,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7969,10 +7970,10 @@ declare class Choreography {
              setFile(sourceFile: Source2File): void;
              getAnimDesc(name: string): Source2AnimationDesc | undefined;
              matchActivity(activity: string, modifiers: string[]): any;
-             getAnimationsByActivity(activityName: any): any[];
+             getAnimationsByActivity(activityName: string): any[];
              getDecodeKey(): Kv3Element;
              getDecoderArray(): Source2AnimeDecoder_2[];
-             get localSequenceNameArray(): any;
+             get localSequenceNameArray(): string[];
          }
 
          declare class Source2Sequence {
@@ -7995,7 +7996,7 @@ declare class Choreography {
          declare class Source2Snapshot {
              particleCount: number;
              attributes: any;
-             file: any;
+             file: Source2File | null;
              setParticleCount(particleCount: number): void;
          }
 

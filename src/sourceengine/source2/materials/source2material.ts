@@ -5,7 +5,7 @@ import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL, Uniform
 import { Mesh } from '../../../objects/mesh';
 import { Source2File } from '../loaders/source2file';
 import { Source2TextureManager } from '../textures/source2texturemanager';
-import { executeDynamicExpression } from './source2dynamicexpression';
+import { decompileDynamicExpression, executeDynamicExpression } from './source2dynamicexpression';
 
 const UNIFORMS = new Map([
 	['g_vColorTint', 'g_vColorTint'],
@@ -459,11 +459,32 @@ export class Source2Material extends Material {
 			if (dynamicParam.getSubValueAsString('m_name') == dynamicName) {
 				const bytes = dynamicParam.getSubValueAsUint8Array('m_value');
 				if (bytes) {
-
 					return executeDynamicExpression(bytes, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []);
 				}
 			}
 		}
 		return;
+	}
+
+	getDynamicParams(): Map<string, string> | null {
+		if (!this.#source2File) {
+			return null;
+		}
+
+		const values = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_dynamicParams' ) ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_dynamicParams');
+		if (!values) {
+			return null;
+		}
+
+		const result = new Map<string, string>();
+		for (const v of values) {
+			const name = v.getSubValueAsString('m_name');
+			const value =  v.getSubValueAsUint8Array('m_nValue');
+
+			if (name && value != null) {
+				result.set(name, decompileDynamicExpression(this.#source2File.fileName + ':' + name, value, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []));
+			}
+		}
+		return result;
 	}
 }
