@@ -840,7 +840,8 @@ type Operation = {
 	function?: FunctionCode;
 	operand1?: Operand;
 	operand2?: Operand;
-	operand3?: Operand;// not sure if usefull
+	operand3?: Operand;
+	operand4?: Operand;
 }
 
 const done = new Map<string, boolean>();
@@ -851,7 +852,7 @@ export function decompileDynamicExpression(dynamicName: string, byteCode: Uint8A
 	if (!done.get(dynamicName)) {
 		console.info(operand);
 		if (operand) {
-			console.error(dynamicName, operandToString(operand));
+			console.error(dynamicName, operandToString(operand)?.[0]);
 		}
 		done.set(dynamicName, true);
 
@@ -1024,39 +1025,34 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 function functionToOperation(functionCode: number, operandStack: Operand[]): Operand | null {
 	let a: vec4, b: vec4, c: vec4, d;
 	switch (functionCode) {
+		// No parameters
 		case FunctionCode.Time:
 			operandStack.push({ operator: Operator.Function, function: functionCode });
 			break;
+		// 1 parameters
 		case FunctionCode.Frac:
+		case FunctionCode.Sin:
+		case FunctionCode.Cos:
+		case FunctionCode.Tan:
+		case FunctionCode.Floor:
+		case FunctionCode.Ceil:
+		case FunctionCode.Saturate:
+		case FunctionCode.Abs:
 			operandStack.push({ operator: Operator.Function, function: functionCode, operand1: operandStack.pop() });
 			break;
-		case FunctionCode.Sin:
-			sin();
+		// 2 parameters
+		case FunctionCode.Float2:
+		case FunctionCode.Random:
+			operandStack.push({ operator: Operator.Function, function: functionCode, operand2: operandStack.pop(), operand1: operandStack.pop() });
 			break;
-		case FunctionCode.Cos:
-			cos();
-			break;
-		case FunctionCode.Tan:
-			tan();
-			break;
-		case FunctionCode.Floor:
-			floor();
-			break;
-		case FunctionCode.Ceil:
-			ceil();
-			break;
-		case FunctionCode.Saturate:
-			saturate();
-			break;
+		// 3 parameters
 		case FunctionCode.Clamp:
-			a = stack.pop()!;
-			b = stack.pop()!;
-			c = stack.pop()!;
-			a[0] = clamp(c[0], b[0], a[0]);
-			a[1] = clamp(c[1], b[1], a[1]);
-			a[2] = clamp(c[2], b[2], a[2]);
-			a[3] = clamp(c[3], b[3], a[3]);
-			stack.push(a);
+		case FunctionCode.Float3:
+			operandStack.push({ operator: Operator.Function, function: functionCode, operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
+			break;
+		// 4 parameters
+		case FunctionCode.Float4:
+			operandStack.push({ operator: Operator.Function, function: functionCode, operand4: operandStack.pop(), operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
 			break;
 		case FunctionCode.Lerp:
 			const factor = stack.pop()!;
@@ -1101,9 +1097,7 @@ function functionToOperation(functionCode: number, operandStack: Operand[]): Ope
 		case FunctionCode.Sign:
 			sign();
 			break;
-		case FunctionCode.Abs:
-			abs();
-			break;
+
 		case FunctionCode.Pow:
 			pow();
 			break;
@@ -1120,15 +1114,8 @@ function functionToOperation(functionCode: number, operandStack: Operand[]): Ope
 			d = stack.pop()!;
 			stack.push(vec4.fromValues(d[0], c[0], b[0], a[0]));
 			break;
-		case FunctionCode.Float3:
-			a = stack.pop()!;
-			b = stack.pop()!;
-			c = stack.pop()!;
-			stack.push(vec4.fromValues(c[0], b[0], a[0], a[0]));
-			break;
-		case FunctionCode.Float2:
-			operandStack.push({ operator: Operator.Function, function: functionCode, operand2: operandStack.pop(), operand1: operandStack.pop() });
-			break;
+
+
 		case FunctionCode.Min:
 			min();
 			break;
@@ -1141,9 +1128,7 @@ function functionToOperation(functionCode: number, operandStack: Operand[]): Ope
 		case FunctionCode.SrgbGammaToLinear:
 			SrgbGammaToLinear();
 			break;
-		case FunctionCode.Random:
-			random();
-			break;
+
 		case FunctionCode.Normalize:
 			normalize();
 			break;
@@ -1279,6 +1264,11 @@ function functionToString(operand: Operation): string {
 				return `frac( ${operand1[0]} )`;
 			}
 			break;
+		case FunctionCode.Abs:
+			if (operand1) {
+				return `abs( ${operand1[0]} )`;
+			}
+			break;
 		case FunctionCode.Float2:
 			if (operand1 && operand2) {
 				return `float2( ${operand1[0]} , ${operand2[0]} )`;
@@ -1286,6 +1276,10 @@ function functionToString(operand: Operation): string {
 			break;
 		case FunctionCode.Time:
 			return `time( )`;
+		case FunctionCode.Random:
+			if (operand1 && operand2) {
+				return `random( ${operand1[0]} , ${operand2[0]} )`;
+			}
 
 
 		/*
