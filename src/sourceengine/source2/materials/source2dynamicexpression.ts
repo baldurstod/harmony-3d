@@ -11,6 +11,19 @@ const HASH_SEED = 0x31415926;
 const hashes = new Map<number, string>();
 hashes.set(murmurhash2_32_gc('time', HASH_SEED), 'time');
 
+function getAttribute(hash: number, renderAttributes: string[]): string | undefined {
+	let stringValue = hashes.get(hash);
+	if (!stringValue) {
+		for (let renderAttribute of renderAttributes) {
+			renderAttribute = renderAttribute.toLowerCase();
+			hashes.set(murmurhash2_32_gc(renderAttribute, HASH_SEED), renderAttribute);
+		}
+		stringValue = hashes.get(hash);
+	}
+
+	return stringValue;
+}
+
 export function executeDynamicExpression(byteCode: Uint8Array, renderAttributes: string[]): vec4 | undefined {
 	let pointer = -1;
 	const storage = new Map<number, vec4>();
@@ -119,15 +132,8 @@ export function executeDynamicExpression(byteCode: Uint8Array, renderAttributes:
 				negation()
 				break;
 			case 25: // get value
-				const intValue = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
-				let stringValue = hashes.get(intValue);
-				if (!stringValue) {
-					for (let renderAttribute of renderAttributes) {
-						renderAttribute = renderAttribute.toLowerCase();
-						hashes.set(murmurhash2_32_gc(renderAttribute, HASH_SEED), renderAttribute);
-					}
-					stringValue = hashes.get(intValue);
-				}
+				const hash = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
+				let stringValue = getAttribute(hash, renderAttributes);
 
 				if (stringValue) {
 					let value = 0;
@@ -774,11 +780,13 @@ function sqr() {
 }
 
 enum Operator {
+	Goto,
 	Addition,
 	Subtraction,
 	Multiplication,
 	Division,
 	Function,
+	GetAttribute,
 }
 
 enum FunctionCode {
@@ -822,7 +830,7 @@ enum FunctionCode {
 }
 
 enum OpCode {
-	Stop = 0,
+	Return = 0,
 	Goto = 2,
 	Ternary = 4,
 	Function = 6,
@@ -831,9 +839,10 @@ enum OpCode {
 	Subtraction = 20,
 	Multiplication = 21,
 	Division = 22,
+	GetAttribute = 25,
 }
 
-type Operand = number | Operation;
+type Operand = string | number | Operation;
 
 type Operation = {
 	operator: Operator;
@@ -870,30 +879,27 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 		++pointer;
 		const opcode = byteCode[pointer];
 		switch (opcode) {
-			case OpCode.Stop:
+			case OpCode.Return:
 				return operandStack.pop() ?? null;
+			case OpCode.Goto:
+				operandStack.push({ operator: Operator.Goto, operand1: getlocation(byteCode, pointer + 1) });
+				break;
+			case OpCode.Ternary:
+				operandStack.push({ operator: Operator.Goto, operand1: getlocation(byteCode, pointer + 1) });
+				break;
 			/*
-		case 2: // goto
-			location = getlocation(byteCode, pointer + 1);
-			if ((location >= 0) && (location < byteCode.length)) {
-				pointer = location - 1;
-			} else {
-				//TODO: error message
-				return;
-			}
-			break;
-		case 4: // ?
-			const conditionalValue = stack.pop()!;
-			// Only the first value is tested
-			location = conditionalValue[0] ? getlocation(byteCode, pointer + 1) : getlocation(byteCode, pointer + 3);
-			if ((location >= 0) && (location < byteCode.length)) {
-				pointer = location - 1;
-			} else {
-				//TODO: error message
-				return;
-			}
-			break;
-			*/
+	case 4: // ?
+		const conditionalValue = stack.pop()!;
+		// Only the first value is tested
+		location = conditionalValue[0] ? getlocation(byteCode, pointer + 1) : getlocation(byteCode, pointer + 3);
+		if ((location >= 0) && (location < byteCode.length)) {
+			pointer = location - 1;
+		} else {
+			//TODO: error message
+			return;
+		}
+		break;
+		*/
 			case OpCode.Function:
 				const operand = functionToOperation(getlocation(byteCode, pointer + 1), operandStack);
 				if (operand) {
@@ -967,50 +973,56 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 						case 24: // negate
 							negation()
 							break;
-						case 25: // get value
-							const intValue = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
-							let stringValue = hashes.get(intValue);
-							if (!stringValue) {
-								for (let renderAttribute of renderAttributes) {
-									renderAttribute = renderAttribute.toLowerCase();
-									hashes.set(murmurhash2_32_gc(renderAttribute, HASH_SEED), renderAttribute);
-								}
-								stringValue = hashes.get(intValue);
-							}
-
-							if (stringValue) {
-								let value = 0;
-								if (stringValue === 'time') {
-									value = performance.now() * 0.001;
-								} else {
-									//console.log(stringValue);
-									//TODO get an external var
-								}
-								stack.push(vec4.fromValues(value, value, value, value));
-							}
-							pointer += 4;
-							break;
-						//see m_renderAttributesUsed
-						//time : 0: 25 1: 204 2: 133 3: 68 4: 150 5: 0
-						//$gemcolor: 0: 25 1: 230 2: 22 3: 70 4: 81 5: 0
-						//a: 0: 25 1: 225 2: 113 3: 207 4: 30 5: 0
-						//b: 0: 25 1: 42 2: 183 3: 253 4: 183 5: 0
-						//B: 0: 25 1: 42 2: 183 3: 253 4: 183 5: 0
-						//$a: 0: 25 1: 96 2: 46 3: 222 4: 5 5: 0
-						//??? 0: 25 1: 252 2: 99 3: 114 4: 40 5: 0 ==> $PA_ARCANA_DETAIL1SCALE
-						//$gem 0: 25 1: 150 2: 173 3: 217 4: 104 5: 0
-						case 30:
-							swizzle(getByte(byteCode, ++pointer));
-							break;
-						case 31: // exist
-							stack.push(vec4.fromValues(0, 0, 0, 0));//TODO get an external var
-							pointer += 4;
-							break;
-						*/
-			default:
-				if (WARN) {
-					console.warn('Unknown opcode ', opcode, ' at location ', pointer);
+							*/
+			case OpCode.GetAttribute:
+				const hash = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
+				pointer += 4;
+				let stringValue = getAttribute(hash, renderAttributes);
+				operandStack.push({ operator: Operator.GetAttribute, operand1: stringValue });
+				break;
+			/*
+			case 25: // get value
+				const intValue = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
+				let stringValue = hashes.get(intValue);
+				if (!stringValue) {
+					for (let renderAttribute of renderAttributes) {
+						renderAttribute = renderAttribute.toLowerCase();
+						hashes.set(murmurhash2_32_gc(renderAttribute, HASH_SEED), renderAttribute);
+					}
+					stringValue = hashes.get(intValue);
 				}
+
+				if (stringValue) {
+					let value = 0;
+					if (stringValue === 'time') {
+						value = performance.now() * 0.001;
+					} else {
+						//console.log(stringValue);
+						//TODO get an external var
+					}
+					stack.push(vec4.fromValues(value, value, value, value));
+				}
+				pointer += 4;
+				break;
+			//see m_renderAttributesUsed
+			//time : 0: 25 1: 204 2: 133 3: 68 4: 150 5: 0
+			//$gemcolor: 0: 25 1: 230 2: 22 3: 70 4: 81 5: 0
+			//a: 0: 25 1: 225 2: 113 3: 207 4: 30 5: 0
+			//b: 0: 25 1: 42 2: 183 3: 253 4: 183 5: 0
+			//B: 0: 25 1: 42 2: 183 3: 253 4: 183 5: 0
+			//$a: 0: 25 1: 96 2: 46 3: 222 4: 5 5: 0
+			//??? 0: 25 1: 252 2: 99 3: 114 4: 40 5: 0 ==> $PA_ARCANA_DETAIL1SCALE
+			//$gem 0: 25 1: 150 2: 173 3: 217 4: 104 5: 0
+			case 30:
+				swizzle(getByte(byteCode, ++pointer));
+				break;
+			case 31: // exist
+				stack.push(vec4.fromValues(0, 0, 0, 0));//TODO get an external var
+				pointer += 4;
+				break;
+			*/
+			default:
+				console.error('Unknown opcode ', opcode, ' at location ', pointer);
 				break;
 
 		}
@@ -1142,23 +1154,29 @@ enum Precedence {
 	Additive = Lowest + 1,
 	Multiplicative = Additive + 1,
 	Function = Multiplicative + 1,
-	Number = Function + 1,
+	Literal = Function + 1,
 }
 
 type Ope = {
 	operator: string;
 	precedence: Precedence;
+	operands: 1 | 2 | 3;
 }
 
 const operations = new Map<Operator, Ope>();
-operations.set(Operator.Addition, { operator: '+', precedence: Precedence.Additive });
-operations.set(Operator.Subtraction, { operator: '-', precedence: Precedence.Additive });
-operations.set(Operator.Multiplication, { operator: '*', precedence: Precedence.Additive });
-operations.set(Operator.Division, { operator: '/', precedence: Precedence.Additive });
+operations.set(Operator.Addition, { operator: '+', precedence: Precedence.Additive, operands: 2 });
+operations.set(Operator.Subtraction, { operator: '-', precedence: Precedence.Additive, operands: 2 });
+operations.set(Operator.Multiplication, { operator: '*', precedence: Precedence.Additive, operands: 2 });
+operations.set(Operator.Division, { operator: '/', precedence: Precedence.Additive, operands: 2 });
+operations.set(Operator.GetAttribute, { operator: '', precedence: Precedence.Literal, operands: 1 });
 
 function operandToString(operand: Operand): [string, Precedence] | null {
 	if (typeof operand == 'number') {
-		return [String(operand), Precedence.Number];
+		return [String(operand), Precedence.Literal];
+	}
+
+	if (typeof operand == 'string') {
+		return [operand, Precedence.Literal];
 	}
 
 	if (operand.operator == Operator.Function) {
@@ -1172,19 +1190,56 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 		return null;
 	}
 
-	let operand1: [string, Precedence] | null = null;
-	let operand2: [string, Precedence] | null = null;
-	if (operand.operand1) {
-		operand1 = operandToString(operand.operand1);
-	}
-	if (operand.operand2) {
-		operand2 = operandToString(operand.operand2);
-	}
+	const opes: string[] = [];
+	const operands: ([string, Precedence])[] = [];
 
-	if (!operand1 || !operand2) {
-		console.error('no operand', operand);
-		return null;
+	for (let i = 0; i < ope.operands; i++) {
+		let operandN;
+		switch (i) {// TODO: improve that code
+			case 0:
+				operandN = operand.operand1;
+				break;
+			case 1:
+				operandN = operand.operand2;
+				break;
+			case 2:
+				operandN = operand.operand3;
+				break;
+			case 3:
+				operandN = operand.operand4;
+				break;
+		}
+		if (operandN) {
+			const o = operandToString(operandN);
+			if (o) {
+				operands.push(o);
+				let oo = o?.[0];
+				if (o?.[1] < ope.precedence) {
+					oo = `(${oo})`;
+				}
+				opes.push(oo);
+			} else {
+				console.error('no operand ' + i, operand);
+			}
+		} else {
+			console.error('missing an operand ' + i, operand);
+		}
 	}
+	/*
+		let operand1: [string, Precedence] | null = null;
+		let operand2: [string, Precedence] | null = null;
+		if (operand.operand1) {
+			operand1 = operandToString(operand.operand1);
+		}
+		if (operand.operand2) {
+			operand2 = operandToString(operand.operand2);
+		}
+
+		if (!operand1 || !operand2) {
+			console.error('no operand', operand, operand1, operand2);
+			return null;
+		}
+			* ,/
 
 	let ope1 = operand1?.[0];
 	let ope2 = operand2?.[0];
@@ -1196,9 +1251,18 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 	if (operand2?.[1] < ope.precedence) {
 		ope2 = `(${ope2})`;
 	}
+	*/
 
+	switch (ope.operands) {
+		case 1:
+			return [`${opes[0]}`, ope.precedence];
+		case 2:
+			return [`${opes[0]} ${ope.operator} ${opes[1]}`, ope.precedence];
+		case 3:
+			return [`${opes[0]} ${ope.operator} ${opes[1]}`, ope.precedence];
+	}
 
-	return [`${ope1} ${ope.operator} ${ope2}`, ope.precedence];
+	//return [`${ope1} ${ope.operator} ${ope2}`, ope.precedence];
 
 	/*
 		switch (operand.operator) {
