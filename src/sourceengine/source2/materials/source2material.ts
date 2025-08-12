@@ -466,20 +466,20 @@ export class Source2Material extends Material {
 		return;
 	}
 
-	getDynamicParams(): Map<string, string> | null {
+	getDynamicParams(): Map<string, string | null> | null {
 		if (!this.#source2File) {
 			return null;
 		}
 
-		const values = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_dynamicParams' ) ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_dynamicParams');
+		const values = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_dynamicParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_dynamicParams');
 		if (!values) {
 			return null;
 		}
 
-		const result = new Map<string, string>();
+		const result = new Map<string, string | null>();
 		for (const v of values) {
 			const name = v.getSubValueAsString('m_name');
-			const value =  v.getSubValueAsUint8Array('m_nValue');
+			const value = v.getSubValueAsUint8Array('m_value');
 
 			if (name && value != null) {
 				result.set(name, decompileDynamicExpression(this.#source2File.fileName + ':' + name, value, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []));

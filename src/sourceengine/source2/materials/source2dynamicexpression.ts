@@ -846,18 +846,14 @@ type Operation = {
 
 const done = new Map<string, boolean>();
 
-export function decompileDynamicExpression(dynamicName: string, byteCode: Uint8Array, renderAttributes: string[]): string {
+export function decompileDynamicExpression(dynamicName: string, byteCode: Uint8Array, renderAttributes: string[]): string | null {
 	const operand = toOperation(byteCode, renderAttributes);
 
-	if (!done.get(dynamicName)) {
-		console.info(operand);
-		if (operand) {
-			console.error(dynamicName, operandToString(operand)?.[0]);
-		}
-		done.set(dynamicName, true);
-
+	if (operand) {
+		//console.error(dynamicName, );
+		return operandToString(operand)?.[0] ?? null;
 	}
-	return '';
+	return null
 }
 
 function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand | null {
