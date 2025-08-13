@@ -1087,17 +1087,17 @@ function functionToOperation(functionCode: FunctionCode, operandStack: Operand[]
 
 	const operand: Operand = { operator: OpCode.Function, function: functionCode };
 
-	if (params[0] > 0) {
-		operand.operand1 = operandStack.pop();
-	}
-	if (params[0] > 1) {
-		operand.operand2 = operandStack.pop();
+	if (params[0] > 3) {
+		operand.operand4 = operandStack.pop();
 	}
 	if (params[0] > 2) {
 		operand.operand3 = operandStack.pop();
 	}
-	if (params[0] > 3) {
-		operand.operand4 = operandStack.pop();
+	if (params[0] > 1) {
+		operand.operand2 = operandStack.pop();
+	}
+	if (params[0] > 0) {
+		operand.operand1 = operandStack.pop();
 	}
 
 	return operand;
