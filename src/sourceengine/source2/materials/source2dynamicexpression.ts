@@ -1035,123 +1035,73 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 	return null;
 }
 
-function functionToOperation(functionCode: number, operandStack: Operand[]): Operand | null {
+const functions = new Map<FunctionCode, number>([
+	[FunctionCode.Sin, 1],
+	[FunctionCode.Cos, 1],
+	[FunctionCode.Tan, 1],
+	[FunctionCode.Frac, 1],
+	[FunctionCode.Floor, 1],
+	[FunctionCode.Ceil, 1],
+	[FunctionCode.Saturate, 1],
+	[FunctionCode.Clamp, 3],
+	[FunctionCode.Lerp, 3],
+	[FunctionCode.Dot4, 2],
+	[FunctionCode.Dot3, 2],
+	[FunctionCode.Dot2, 2],
+	[FunctionCode.Log, 1],
+	[FunctionCode.Log2, 1],
+	[FunctionCode.Log10, 1],
+	[FunctionCode.Exp, 1],
+	[FunctionCode.Exp2, 1],
+	[FunctionCode.Sqrt, 1],
+	[FunctionCode.Rsqrt, 1],
+	[FunctionCode.Sign, 1],
+	[FunctionCode.Abs, 1],
+	[FunctionCode.Pow, 2],
+	[FunctionCode.Step, 2],
+	[FunctionCode.Smoothstep, 3],
+	[FunctionCode.Float4, 4],
+	[FunctionCode.Float3, 3],
+	[FunctionCode.Float2, 2],
+	[FunctionCode.Time, 0],
+	[FunctionCode.Min, 2],
+	[FunctionCode.Max, 2],
+	[FunctionCode.SrgbLinearToGamma, 1],
+	[FunctionCode.SrgbGammaToLinear, 1],
+	[FunctionCode.Random, 0],
+	[FunctionCode.Normalize, 1],
+	[FunctionCode.Length, 1],
+	[FunctionCode.Sqr, 1],
+	[FunctionCode.TextureSize, 1],
+]);
+
+
+function functionToOperation(functionCode: FunctionCode, operandStack: Operand[]): Operand | null {
 	let a: vec4, b: vec4, c: vec4, d;
-	switch (functionCode) {
-		// No parameters
-		case FunctionCode.Time:
-			operandStack.push({ operator: OpCode.Function, function: functionCode });
-			break;
-		// 1 parameters
-		case FunctionCode.Frac:
-		case FunctionCode.Sin:
-		case FunctionCode.Cos:
-		case FunctionCode.Tan:
-		case FunctionCode.Floor:
-		case FunctionCode.Ceil:
-		case FunctionCode.Saturate:
-		case FunctionCode.Abs:
-			operandStack.push({ operator: OpCode.Function, function: functionCode, operand1: operandStack.pop() });
-			break;
-		// 2 parameters
-		case FunctionCode.Float2:
-		case FunctionCode.Random:
-			operandStack.push({ operator: OpCode.Function, function: functionCode, operand2: operandStack.pop(), operand1: operandStack.pop() });
-			break;
-		// 3 parameters
-		case FunctionCode.Clamp:
-		case FunctionCode.Float3:
-		case FunctionCode.Lerp:
-			operandStack.push({ operator: OpCode.Function, function: functionCode, operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
-			break;
-		// 4 parameters
-		case FunctionCode.Float4:
-			operandStack.push({ operator: OpCode.Function, function: functionCode, operand4: operandStack.pop(), operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
-			break;
-		case FunctionCode.Dot4:
-			dot4();
-			break;
-		case FunctionCode.Dot3:
-			dot3();
-			break;
-		case FunctionCode.Dot2:
-			dot2();
-			break;
-		case FunctionCode.Log:
-			log();
-			break;
-		case FunctionCode.Log2:
-			log2();
-			break;
-		case FunctionCode.Log10:
-			log10();
-			break;
-		case FunctionCode.Exp:
-			exp();
-			break;
-		case FunctionCode.Exp2:
-			exp2();
-			break;
-		case FunctionCode.Sqrt:
-			sqrt();
-			break;
-		case FunctionCode.Rsqrt:
-			rsqrt();
-			break;
-		case FunctionCode.Sign:
-			sign();
-			break;
 
-		case FunctionCode.Pow:
-			pow();
-			break;
-		case FunctionCode.Step:
-			step();
-			break;
-		case FunctionCode.Smoothstep:
-			smoothstep();
-			break;
-		case FunctionCode.Float4:
-			a = stack.pop()!;
-			b = stack.pop()!;
-			c = stack.pop()!;
-			d = stack.pop()!;
-			stack.push(vec4.fromValues(d[0], c[0], b[0], a[0]));
-			break;
-
-
-		case FunctionCode.Min:
-			min();
-			break;
-		case FunctionCode.Max:
-			max();
-			break;
-		case FunctionCode.SrgbLinearToGamma:
-			SrgbLinearToGamma();
-			break;
-		case FunctionCode.SrgbGammaToLinear:
-			SrgbGammaToLinear();
-			break;
-
-		case FunctionCode.Normalize:
-			normalize();
-			break;
-		case FunctionCode.Length:
-			length();
-			break;
-		case FunctionCode.Sqr:
-			sqr();
-			break;
-		case FunctionCode.TextureSize:
-			//TextureSize();TODO
-			break;
-		default:
-			if (WARN) {
-				console.warn('Unknown function code ', functionCode);
-			}
-			break;
+	const params = functions.get(functionCode);
+	if (params === undefined) {
+		console.error('undefined function' + functionCode);
+		return null;
 	}
-	return null;
+
+	const operand: Operand = { operator: OpCode.Function, function: functionCode };
+
+	if (params > 0) {
+		operand.operand1 = operandStack.pop();
+	}
+
+	if (params > 1) {
+		operand.operand2 = operandStack.pop();
+	}
+	if (params > 2) {
+		operand.operand3 = operandStack.pop();
+	}
+	if (params > 3) {
+		operand.operand4 = operandStack.pop();
+	}
+
+	return operand;
 }
 
 enum Precedence {
