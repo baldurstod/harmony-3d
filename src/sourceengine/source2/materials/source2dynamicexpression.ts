@@ -875,11 +875,11 @@ export function decompileDynamicExpression(dynamicName: string, byteCode: Uint8A
 	return null
 }
 
-function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPointer = 0): Operand[] | null {
+function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPointer = 0, operandStack: Operand[] = []): Operand[] | null {
 	let pointer = startPointer - 1;
 	const storage = new Map<number, vec4>();
 
-	const operandStack: Operand[] = [];
+	//const operandStack: Operand[] = [];
 
 	while (pointer < byteCode.length) {
 		++pointer;
@@ -889,12 +889,13 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
 				return operandStack
 			case OpCode.Goto:
-				operandStack.push({ operator: opcode, operand1: getlocation(byteCode, pointer + 1) });
+				const branch = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 1), operandStack);
+				return branch;
 				break;
 			case OpCode.Ternary:
 				const conditionalValue = operandStack.pop()!;
 				const branch1 = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 1));
-				const branch2 = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 2));
+				const branch2 = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 3));
 
 				if (branch1 && branch2) {
 					operandStack.push({ operator: opcode, operand1: conditionalValue, branch1: branch1, branch2: branch2 });
@@ -922,28 +923,6 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 				operandStack.push({ operator: opcode, operand1: getByte(byteCode, pointer + 1) });
 				++pointer;
 				break;
-			/*
-		case 8: // save
-			storeAddress = getByte(byteCode, pointer + 1);
-			if (storeAddress >= 0) {
-				storage.set(storeAddress, stack.pop()!);
-				pointer += 1;
-			} else {
-				//TODO: error message
-				return;
-			}
-			break;
-		case 9: // restore
-			storeAddress = getByte(byteCode, pointer + 1);
-			if (storeAddress >= 0) {
-				stack.push(storage.get(storeAddress)!);
-				pointer += 1;
-			} else {
-				//TODO: error message
-				return;
-			}
-			break;
-			*/
 			case OpCode.Not:
 				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
 				break;
@@ -951,9 +930,6 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
 				break;
 			/*
-		case 13: // ==
-			equality();
-			break;
 		case 14: // !=
 			inequality();
 			break;
@@ -1051,6 +1027,11 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 
 		}
 	}
+
+	if (operandStack.length) {
+		return operandStack;
+	}
+
 	return null;
 }
 
@@ -1185,11 +1166,13 @@ enum Precedence {
 type Ope = {
 	operator: string;
 	precedence: Precedence;
-	operands: 1 | 2 | 3;
+	operands: 0 | 1 | 2 | 3;
 }
 
 const operations = new Map<OpCode, Ope>();
 operations.set(OpCode.Return, { operator: 'return ', precedence: Precedence.Lowest, operands: 1 });
+operations.set(OpCode.Goto, { operator: 'goto', precedence: Precedence.Lowest, operands: 0 });
+operations.set(OpCode.Ternary, { operator: '', precedence: Precedence.Ternary, operands: 1/*not counting branches*/ });
 operations.set(OpCode.StoreVariable, { operator: '', precedence: Precedence.Lowest, operands: 2 });
 operations.set(OpCode.LoadVariable, { operator: '', precedence: Precedence.Lowest, operands: 2 });
 operations.set(OpCode.Not, { operator: '!', precedence: Precedence.Additive, operands: 1 });
@@ -1274,6 +1257,8 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 	}
 
 	switch (operand.operator) {
+		case OpCode.Goto:
+			return [`${operandsToString(operand.branch1!)}`, ope.precedence];
 		case OpCode.Ternary:
 			return [`${opes[0]} ? ${operandsToString(operand.branch1!)} : ${operandsToString(operand.branch2!)}`, ope.precedence];
 		case OpCode.StoreVariable:
@@ -1285,6 +1270,8 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 	}
 
 	switch (ope.operands) {
+		case 0:
+			return [`${ope.operator}${opes[0]}`, ope.precedence];
 		case 1:
 			return [`${ope.operator}${opes[0]}`, ope.precedence];
 		case 2:
@@ -1356,6 +1343,11 @@ function functionToString(operand: Operation): string {
 		case FunctionCode.Abs:
 			if (operand1) {
 				return `abs( ${operand1} )`;
+			}
+			break;
+		case FunctionCode.Float3:
+			if (operand1 && operand2 && operand3) {
+				return `float2( ${operand1} , ${operand2} , ${operand3} )`;
 			}
 			break;
 		case FunctionCode.Float2:
