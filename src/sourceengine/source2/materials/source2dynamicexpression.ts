@@ -1068,7 +1068,7 @@ const functions = new Map<FunctionCode, [number, string]>([
 	[FunctionCode.Max, [2, 'max']],
 	[FunctionCode.SrgbLinearToGamma, [1, 'SrgbLinearToGamma']],
 	[FunctionCode.SrgbGammaToLinear, [1, 'SrgbGammaToLinear']],
-	[FunctionCode.Random, [0, 'random']],
+	[FunctionCode.Random, [2, 'random']],
 	[FunctionCode.Normalize, [1, 'normalize']],
 	[FunctionCode.Length, [1, 'length']],
 	[FunctionCode.Sqr, [1, 'sqr']],
