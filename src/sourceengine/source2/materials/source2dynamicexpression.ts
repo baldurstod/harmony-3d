@@ -821,16 +821,32 @@ enum FunctionCode {
 
 enum OpCode {
 	Return = 0,
+	// 1 ?
 	Goto = 2,
+	// 3 ?
 	Ternary = 4,
+	// 5 ?
 	Function = 6,
 	Float32 = 7,
+	StoreVariable = 8,
+	LoadVariable = 9,
+	// 10 ?
+	// 11 ?
+	Not = 12,
+	Equal = 13,
+	NotEqual = 14,
+	Greater = 15,
+	GreaterEqual = 16,
+	Less = 17,
+	LessEqual = 18,
 	Addition = 19,
 	Subtraction = 20,
 	Multiplication = 21,
 	Division = 22,
+	Modulo = 23,
 	Negation = 24,
 	AttributeLiteral = 25,
+	Swizzle = 30,
 	Exists = 31,
 }
 
@@ -843,6 +859,8 @@ type Operation = {
 	operand2?: Operand;
 	operand3?: Operand;
 	operand4?: Operand;
+	branch1?: Operand[];
+	branch2?: Operand[];
 }
 
 const done = new Map<string, boolean>();
@@ -852,27 +870,24 @@ export function decompileDynamicExpression(dynamicName: string, byteCode: Uint8A
 
 	if (operand) {
 		//console.error(dynamicName, );
-		return operandToString(operand)?.[0] ?? null;
+		return operandsToString(operand) ?? null;
 	}
 	return null
 }
 
-function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPointer = 0): Operand | null {
+function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPointer = 0): Operand[] | null {
 	let pointer = startPointer - 1;
 	const storage = new Map<number, vec4>();
-	//stack = [];
 
 	const operandStack: Operand[] = [];
-	//const operationStack: Operation[] = [];
 
-	let storeAddress;
-	let location;
 	while (pointer < byteCode.length) {
 		++pointer;
 		const opcode = byteCode[pointer];
 		switch (opcode) {
 			case OpCode.Return:
-				return operandStack.pop() ?? null;
+				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
+				return operandStack
 			case OpCode.Goto:
 				operandStack.push({ operator: opcode, operand1: getlocation(byteCode, pointer + 1) });
 				break;
@@ -882,25 +897,12 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 				const branch2 = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 2));
 
 				if (branch1 && branch2) {
-					operandStack.push({ operator: opcode, operand1: conditionalValue, operand2: branch1, operand3: branch2 });
+					operandStack.push({ operator: opcode, operand1: conditionalValue, branch1: branch1, branch2: branch2 });
 				} else {
 					console.error('missing branch at', pointer, byteCode);
 				}
 				pointer = Infinity;// Stop
 				break;
-			/*
-	case 4: // ?
-		const conditionalValue = stack.pop()!;
-		// Only the first value is tested
-		location = conditionalValue[0] ? getlocation(byteCode, pointer + 1) : getlocation(byteCode, pointer + 3);
-		if ((location >= 0) && (location < byteCode.length)) {
-			pointer = location - 1;
-		} else {
-			//TODO: error message
-			return;
-		}
-		break;
-		*/
 			case OpCode.Function:
 				const operand = functionToOperation(getlocation(byteCode, pointer + 1), operandStack);
 				if (operand) {
@@ -911,6 +913,14 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 			case OpCode.Float32:
 				operandStack.push(getFloat32(byteCode, pointer + 1)[0]);// getFloat32 returns a vec4, but we only need a scalar
 				pointer += 4;
+				break;
+			case OpCode.StoreVariable:
+				operandStack.push({ operator: opcode, operand1: getByte(byteCode, pointer + 1), operand2: operandStack.pop() });
+				++pointer;
+				break;
+			case OpCode.LoadVariable:
+				operandStack.push({ operator: opcode, operand1: getByte(byteCode, pointer + 1) });
+				++pointer;
 				break;
 			/*
 		case 8: // save
@@ -933,9 +943,14 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 				return;
 			}
 			break;
-		case 12:
-			not();
-			break;
+			*/
+			case OpCode.Not:
+				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
+				break;
+			case OpCode.Equal:
+				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
+				break;
+			/*
 		case 13: // ==
 			equality();
 			break;
@@ -1160,7 +1175,8 @@ function functionToOperation(functionCode: number, operandStack: Operand[]): Ope
 
 enum Precedence {
 	Lowest = 0,
-	Additive = Lowest + 1,
+	Ternary = Lowest + 1,
+	Additive = Ternary + 1,
 	Multiplicative = Additive + 1,
 	Function = Multiplicative + 1,
 	Literal = Function + 1,
@@ -1173,13 +1189,34 @@ type Ope = {
 }
 
 const operations = new Map<OpCode, Ope>();
+operations.set(OpCode.Return, { operator: 'return ', precedence: Precedence.Lowest, operands: 1 });
+operations.set(OpCode.StoreVariable, { operator: '', precedence: Precedence.Lowest, operands: 2 });
+operations.set(OpCode.LoadVariable, { operator: '', precedence: Precedence.Lowest, operands: 2 });
+operations.set(OpCode.Not, { operator: '!', precedence: Precedence.Additive, operands: 1 });
+operations.set(OpCode.Equal, { operator: '==', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.Addition, { operator: '+', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.Subtraction, { operator: '-', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.Multiplication, { operator: '*', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.Division, { operator: '/', precedence: Precedence.Additive, operands: 2 });
-operations.set(OpCode.AttributeLiteral, { operator: '', precedence: Precedence.Literal, operands: 1 });
 operations.set(OpCode.Negation, { operator: '-', precedence: Precedence.Literal, operands: 1 });
+operations.set(OpCode.AttributeLiteral, { operator: '', precedence: Precedence.Literal, operands: 1 });
 operations.set(OpCode.Exists, { operator: '', precedence: Precedence.Function, operands: 1 });
+
+function operandsToString(operands: Operand[]): string | null {
+	if (operands.length == 0) {
+		return null;
+	}
+	let result = '';
+	for (const operand of operands) {
+		const opeResult = operandToString(operand);
+		if (!opeResult) {
+			return null;
+		}
+
+		result += opeResult[0] + '\n';
+	}
+	return result;
+}
 
 function operandToString(operand: Operand): [string, Precedence] | null {
 	if (typeof operand == 'number') {
@@ -1235,36 +1272,16 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 			console.error('missing an operand ' + i, operand);
 		}
 	}
-	/*
-		let operand1: [string, Precedence] | null = null;
-		let operand2: [string, Precedence] | null = null;
-		if (operand.operand1) {
-			operand1 = operandToString(operand.operand1);
-		}
-		if (operand.operand2) {
-			operand2 = operandToString(operand.operand2);
-		}
 
-		if (!operand1 || !operand2) {
-			console.error('no operand', operand, operand1, operand2);
-			return null;
-		}
-			* ,/
-
-	let ope1 = operand1?.[0];
-	let ope2 = operand2?.[0];
-
-	if (operand1?.[1] < ope.precedence) {
-		ope1 = `(${ope1})`;
-	}
-
-	if (operand2?.[1] < ope.precedence) {
-		ope2 = `(${ope2})`;
-	}
-	*/
-
-	if (operand.operator == OpCode.Exists) {
-		return [`exists(${ope.operator}${opes[0]})`, ope.precedence];
+	switch (operand.operator) {
+		case OpCode.Ternary:
+			return [`${opes[0]} ? ${operandsToString(operand.branch1!)} : ${operandsToString(operand.branch2!)}`, ope.precedence];
+		case OpCode.StoreVariable:
+			return [`var${opes[0]} = ${opes[1]}`, ope.precedence];
+		case OpCode.LoadVariable:
+			return [`var${opes[0]}`, ope.precedence];
+		case OpCode.Exists:
+			return [`exists(${ope.operator}${opes[0]})`, ope.precedence];
 	}
 
 	switch (ope.operands) {
