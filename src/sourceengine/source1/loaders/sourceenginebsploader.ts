@@ -3,7 +3,7 @@ import { BinaryReader } from 'harmony-binary-reader';
 import { LOG, WARN } from '../../../buildoptions';
 import { DEG_TO_RAD } from '../../../math/constants';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
-import { DecompressLZMA, StringStrip } from '../utils/utils';
+import { DecompressLZMA, stringStrip } from '../utils/utils';
 import { KvReader } from './kvreader';
 import { SourceBSP } from './sourcebsp';
 import {
@@ -626,7 +626,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 
 		const nameCount = reader.getInt32();
 		for (let nameIndex = 0; nameIndex < nameCount; ++nameIndex) {
-			const name = StringStrip(reader.getString(STATIC_PROP_NAME_LENGTH));
+			const name = stringStrip(reader.getString(STATIC_PROP_NAME_LENGTH));
 			staticDir.name.push(name);
 		}
 

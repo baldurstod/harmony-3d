@@ -4,7 +4,7 @@ import { DEBUG, LOG, TESTING } from '../../../buildoptions';
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
-import { StringStrip } from '../utils/utils';
+import { stringStrip } from '../utils/utils';
 import { MAX_NUM_LODS } from './constants';
 import { MdlBone } from './mdlbone';
 import { MdlStudioAnim, MdlStudioAnimValuePtr, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_RAWROT2 } from './mdlstudioanim';
@@ -228,7 +228,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		header.formatVersionID = reader.getInt32();
 
 		header.checkSum = reader.getInt32();
-		header.modelName = StringStrip(reader.getString(64));
+		header.modelName = stringStrip(reader.getString(64));
 		header.dataLength = reader.getInt32();
 
 		header.eyeposition = reader.getVector3();
@@ -389,7 +389,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 		// Ensure we have enough data for the name
 		const model = new ModelTest();
 
-		model.name = StringStrip(reader.getString(64, startOffset));
+		model.name = stringStrip(reader.getString(64, startOffset));
 		model.type = reader.getInt32();
 		model.boundingradius = reader.getFloat32();
 		const nummeshes = reader.getInt32();
