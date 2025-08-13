@@ -857,8 +857,8 @@ export function decompileDynamicExpression(dynamicName: string, byteCode: Uint8A
 	return null
 }
 
-function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand | null {
-	let pointer = -1;
+function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPointer = 0): Operand | null {
+	let pointer = startPointer - 1;
 	const storage = new Map<number, vec4>();
 	//stack = [];
 
@@ -877,7 +877,16 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[]): Operand 
 				operandStack.push({ operator: opcode, operand1: getlocation(byteCode, pointer + 1) });
 				break;
 			case OpCode.Ternary:
-				operandStack.push({ operator: opcode, operand1: getlocation(byteCode, pointer + 1) });
+				const conditionalValue = operandStack.pop()!;
+				const branch1 = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 1));
+				const branch2 = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 2));
+
+				if (branch1 && branch2) {
+					operandStack.push({ operator: opcode, operand1: conditionalValue, operand2: branch1, operand3: branch2 });
+				} else {
+					console.error('missing branch at', pointer, byteCode);
+				}
+				pointer = Infinity;// Stop
 				break;
 			/*
 	case 4: // ?
