@@ -1035,44 +1035,44 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 	return null;
 }
 
-const functions = new Map<FunctionCode, number>([
-	[FunctionCode.Sin, 1],
-	[FunctionCode.Cos, 1],
-	[FunctionCode.Tan, 1],
-	[FunctionCode.Frac, 1],
-	[FunctionCode.Floor, 1],
-	[FunctionCode.Ceil, 1],
-	[FunctionCode.Saturate, 1],
-	[FunctionCode.Clamp, 3],
-	[FunctionCode.Lerp, 3],
-	[FunctionCode.Dot4, 2],
-	[FunctionCode.Dot3, 2],
-	[FunctionCode.Dot2, 2],
-	[FunctionCode.Log, 1],
-	[FunctionCode.Log2, 1],
-	[FunctionCode.Log10, 1],
-	[FunctionCode.Exp, 1],
-	[FunctionCode.Exp2, 1],
-	[FunctionCode.Sqrt, 1],
-	[FunctionCode.Rsqrt, 1],
-	[FunctionCode.Sign, 1],
-	[FunctionCode.Abs, 1],
-	[FunctionCode.Pow, 2],
-	[FunctionCode.Step, 2],
-	[FunctionCode.Smoothstep, 3],
-	[FunctionCode.Float4, 4],
-	[FunctionCode.Float3, 3],
-	[FunctionCode.Float2, 2],
-	[FunctionCode.Time, 0],
-	[FunctionCode.Min, 2],
-	[FunctionCode.Max, 2],
-	[FunctionCode.SrgbLinearToGamma, 1],
-	[FunctionCode.SrgbGammaToLinear, 1],
-	[FunctionCode.Random, 0],
-	[FunctionCode.Normalize, 1],
-	[FunctionCode.Length, 1],
-	[FunctionCode.Sqr, 1],
-	[FunctionCode.TextureSize, 1],
+const functions = new Map<FunctionCode, [number, string]>([
+	[FunctionCode.Sin, [1, 'sin']],
+	[FunctionCode.Cos, [1, 'cos']],
+	[FunctionCode.Tan, [1, 'tan']],
+	[FunctionCode.Frac, [1, 'frac']],
+	[FunctionCode.Floor, [1, 'floor']],
+	[FunctionCode.Ceil, [1, 'ceil']],
+	[FunctionCode.Saturate, [1, 'saturate']],
+	[FunctionCode.Clamp, [3, 'clamp']],
+	[FunctionCode.Lerp, [3, 'lerp']],
+	[FunctionCode.Dot4, [2, 'dot4']],
+	[FunctionCode.Dot3, [2, 'dot3']],
+	[FunctionCode.Dot2, [2, 'dot2']],
+	[FunctionCode.Log, [1, 'log']],
+	[FunctionCode.Log2, [1, 'log2']],
+	[FunctionCode.Log10, [1, 'log10']],
+	[FunctionCode.Exp, [1, 'exp']],
+	[FunctionCode.Exp2, [1, 'exp2']],
+	[FunctionCode.Sqrt, [1, 'sqrt']],
+	[FunctionCode.Rsqrt, [1, 'rsqrt']],
+	[FunctionCode.Sign, [1, 'sign']],
+	[FunctionCode.Abs, [1, 'abs']],
+	[FunctionCode.Pow, [2, 'pow']],
+	[FunctionCode.Step, [2, 'step']],
+	[FunctionCode.Smoothstep, [3, 'smoothstep']],
+	[FunctionCode.Float4, [4, 'float4']],
+	[FunctionCode.Float3, [3, 'float3']],
+	[FunctionCode.Float2, [2, 'float2']],
+	[FunctionCode.Time, [0, 'time']],
+	[FunctionCode.Min, [2, 'min']],
+	[FunctionCode.Max, [2, 'max']],
+	[FunctionCode.SrgbLinearToGamma, [1, 'SrgbLinearToGamma']],
+	[FunctionCode.SrgbGammaToLinear, [1, 'SrgbGammaToLinear']],
+	[FunctionCode.Random, [0, 'random']],
+	[FunctionCode.Normalize, [1, 'normalize']],
+	[FunctionCode.Length, [1, 'length']],
+	[FunctionCode.Sqr, [1, 'sqr']],
+	[FunctionCode.TextureSize, [1, 'TextureSize']],
 ]);
 
 
@@ -1087,17 +1087,16 @@ function functionToOperation(functionCode: FunctionCode, operandStack: Operand[]
 
 	const operand: Operand = { operator: OpCode.Function, function: functionCode };
 
-	if (params > 0) {
+	if (params[0] > 0) {
 		operand.operand1 = operandStack.pop();
 	}
-
-	if (params > 1) {
+	if (params[0] > 1) {
 		operand.operand2 = operandStack.pop();
 	}
-	if (params > 2) {
+	if (params[0] > 2) {
 		operand.operand3 = operandStack.pop();
 	}
-	if (params > 3) {
+	if (params[0] > 3) {
 		operand.operand4 = operandStack.pop();
 	}
 
@@ -1140,13 +1139,16 @@ function operandsToString(operands: Operand[]): string | null {
 		return null;
 	}
 	let result = '';
-	for (const operand of operands) {
+	for (const [i, operand] of operands.entries()) {
 		const opeResult = operandToString(operand);
 		if (!opeResult) {
 			return null;
 		}
 
-		result += opeResult[0] + '\n';
+		result += opeResult[0];
+		if (i < operands.length - 1) {
+			result += '\n';
+		}
 	}
 	return result;
 }
@@ -1161,7 +1163,12 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 	}
 
 	if (operand.operator == OpCode.Function) {
-		return [functionToString(operand), Precedence.Function];
+		const f = functionToString(operand);
+		if (f) {
+			return [f, Precedence.Function];
+		} else {
+			return null;
+		}
 	}
 
 	const ope = operations.get(operand.operator);
@@ -1230,132 +1237,50 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 			return [`${opes[0]} ${ope.operator} ${opes[1]}`, ope.precedence];
 	}
 
-	//return [`${ope1} ${ope.operator} ${ope2}`, ope.precedence];
-
-	/*
-		switch (operand.operator) {
-			case Operator.Addition:
-			/*
-
-		//return `(${operandToString(operand.operand1!)} + ${operandToString(operand.operand2!)})`;
-		case Operator.Subtraction:
-			return `(${operandToString(operand.operand1!)} - ${operandToString(operand.operand2!)})`;
-		case Operator.Multiplication:
-			return `(${operandToString(operand.operand1!)} * ${operandToString(operand.operand2!)})`;
-		case Operator.Division:
-			return `(${operandToString(operand.operand1!)} / ${operandToString(operand.operand2!)})`;
-		case Operator.Function:
-
-
-		/*
-
-			Addition,
-			Subtraction,
-			Multiplication,
-			Division,
-			Function,
-			* /
-
-			default:
-				console.error('Unknown operator ', operand.operator);
-				break;
-		}
-		return null;
-		*/
 }
 
-function functionToString(operand: Operation): string {
-	let operand1;
-	let operand2;
-	let operand3;
+function functionToString(operand: Operation): string | null {
+	let operands: (string | undefined)[] = [];
+	/*
+	let operand2: string | undefined;
+	let operand3: string | undefined;
+	let operand4: string | undefined;
+	*/
+
+	const params = functions.get(operand.function!);
+	if (params === undefined) {
+		console.error('undefined function' + operand.function);
+		return null;
+	}
+
 
 	if (operand.operand1 !== undefined) {
-		operand1 = operandToString(operand.operand1)?.[0];
+		operands[0] = operandToString(operand.operand1)?.[0];
 	}
 	if (operand.operand2 !== undefined) {
-		operand2 = operandToString(operand.operand2)?.[0];
+		operands[1] = operandToString(operand.operand2)?.[0];
 	}
 	if (operand.operand3 !== undefined) {
-		operand3 = operandToString(operand.operand3)?.[0];
+		operands[2] = operandToString(operand.operand3)?.[0];
+	}
+	if (operand.operand4 !== undefined) {
+		operands[3] = operandToString(operand.operand4)?.[0];
 	}
 
-	switch (operand.function!) {
-		case FunctionCode.Frac:
-			if (operand1) {
-				return `frac( ${operand1} )`;
+	let p = '';
+	for (let i = 0; i < params[0]; i++) {
+		const opeI = operands[i];
+		if (opeI === undefined) {
+			console.error(`Missing param ${i} for function ${params[1]}`);
+			return null;
+		}
+		const ope = operandToString(opeI)?.[0];
+		if (ope) {
+			p += ope;
+			if (i < params[0] - 1) {
+				p += ', ';
 			}
-			break;
-		case FunctionCode.Lerp:
-			if (operand1 && operand2 && operand3) {
-				return `lerp( ${operand1} , ${operand2} , ${operand3} )`;
-			}
-			break;
-		case FunctionCode.Abs:
-			if (operand1) {
-				return `abs( ${operand1} )`;
-			}
-			break;
-		case FunctionCode.Float3:
-			if (operand1 && operand2 && operand3) {
-				return `float2( ${operand1} , ${operand2} , ${operand3} )`;
-			}
-			break;
-		case FunctionCode.Float2:
-			if (operand1 && operand2) {
-				return `float2( ${operand1} , ${operand2} )`;
-			}
-			break;
-		case FunctionCode.Time:
-			return `time( )`;
-		case FunctionCode.Random:
-			if (operand1 && operand2) {
-				return `random( ${operand1} , ${operand2} )`;
-			}
-
-
-		/*
-			Sin = 0,
-			Cos = 1,
-			Tan = 2,
-			Frac = 3,
-			Floor = 4,
-			Ceil = 5,
-			Saturate = 6,
-			Clamp = 7,
-			Lerp = 8,
-			Dot4 = 9,
-			Dot3 = 10,
-			Dot2 = 11,
-			Log = 12,
-			Log2 = 13,
-			Log10 = 14,
-			Exp = 15,
-			Exp2 = 16,
-			Sqrt = 17,
-			Rsqrt = 18,
-			Sign = 19,
-			Abs = 20,
-			Pow = 21,
-			Step = 22,
-			Smoothstep = 23,
-			Float4 = 24,
-			Float3 = 25,
-			Float2 = 26,
-			Time = 27,
-			Min = 28,
-			Max = 29,
-			SrgbLinearToGamma = 30,
-			SrgbGammaToLinear = 31,
-			Random = 32,
-			Normalize = 33,
-			Length = 34,
-			Sqr = 35,
-			TextureSize = 36,
-			*/
-
-		default:
-			console.error('Unknown function ', operand.function);
-			break;
+		}
 	}
-	return '';
+	return `${params[1]}( ${p} )`;
 }
