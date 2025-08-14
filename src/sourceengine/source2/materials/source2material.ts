@@ -163,7 +163,7 @@ export class Source2Material extends Material {
 
 		this.initFloatUniforms();
 		this.initVectorUniforms();
-		this.initTextureUniforms();
+		//this.initTextureUniforms();
 		/*
 		0: {m_name: "g_flDetailBlendToFull", _name: "MaterialParamFloat_t", m_flValue: 0}
 		1: {m_name: "g_flEnvMapBlendToFull", _name: "MaterialParamFloat_t", m_flValue: 0}
