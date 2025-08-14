@@ -323,7 +323,7 @@ export class Source2Material extends Material {
 			if (vectors) {
 				for (const vector of vectors) {
 					const name = vector.getValueAsString('m_name');
-					const value = vector.getValueAsNumberArray('m_value');
+					const value = vector.getValueAsVec4('m_value', vec4.create());
 
 					if (name !== null && value !== null) {
 						this.setUniform(name, value);

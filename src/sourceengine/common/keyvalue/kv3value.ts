@@ -94,6 +94,7 @@ export class Kv3Value {
 			case Kv3Type.DoubleZero:
 			case Kv3Type.DoubleOne:
 			case Kv3Type.Float:
+			case Kv3Type.Double:
 				return this.isArray();
 		}
 		return false;
