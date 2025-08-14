@@ -1153,9 +1153,21 @@ function operandsToString(operands: Operand[]): string | null {
 	return result;
 }
 
+function round(input: number): number {
+	let mul = 1;
+	for (let i = 0; i < 10; ++i) {
+		let r = Math.round(mul * input) / mul;
+		if (Math.abs(r - input) < 0.001) {
+			return r;
+		}
+		mul *= 10;
+	}
+	return input;
+}
+
 function operandToString(operand: Operand): [string, Precedence] | null {
 	if (typeof operand == 'number') {
-		return [String(operand), Precedence.Literal];
+		return [String(round(operand)), Precedence.Literal];
 	}
 
 	if (typeof operand == 'string') {
