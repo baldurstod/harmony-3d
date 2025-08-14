@@ -6,7 +6,7 @@ import { SourceEngineVMTLoader } from '../export';
 import { SourceEngineMaterial } from './sourceenginematerial';
 
 function cleanSource1MaterialName(name: string) {
-	name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '').replace(/^materials\//g, '');
+	name = name.replace(/\\/g, '/').toLowerCase().replace(/\.vmt$/g, '').replace(/^materials\//g, '');
 
 	name = name + '.vmt';
 	//name = 'materials/' + name;

@@ -694,7 +694,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 			const prop = staticDir.props[propIndex];
 			let name = staticDir.name[prop.propType];
 			if (name) {
-				name = name.replace(/.mdl$/g, '');
+				name = name.replace(/\.mdl$/g, '');
 				const model = this._createStaticProp(name);
 				model.visible = true;
 				if (model) {

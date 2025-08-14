@@ -52,8 +52,8 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 		if (false && TESTING && needCubeMap) {
 			return this.#defaultTextureCube;
 		}
-		path = path.replace(/.vtf$/, '');
-		path = path.replace(/.psd/, '');
+		path = path.replace(/\.vtf$/, '');
+		path = path.replace(/\.psd/, '');
 		path = path.toLowerCase();
 
 		const texture = this.#texturesList.get(repository, path);
@@ -85,8 +85,8 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 
 	async getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb = true) {
 		frame = Math.floor(frame);
-		path = path.replace(/.vtf$/, '');
-		path = path.replace(/.psd/, '');
+		path = path.replace(/\.vtf$/, '');
+		path = path.replace(/\.psd/, '');
 		path = path.toLowerCase();
 
 		const texture = this.#texturesList.get(repository, path);

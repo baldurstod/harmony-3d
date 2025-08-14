@@ -29,7 +29,7 @@ export class Source2ModelLoader {
 
 	async load(repository: string, path: string): Promise<Source2Model | null> {
 		// Cleanup filename
-		path = path.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
+		path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
 
 		let repoPromises = Source2ModelLoader.#loadPromisesPerRepo[repository];
 		if (!repoPromises) {

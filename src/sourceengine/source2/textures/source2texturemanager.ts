@@ -64,7 +64,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 	}
 
 	async #getTexture(repository: string, path: string): Promise<AnimatedTexture> {
-		path = path.replace(/.vtex_c$/, '').replace(/.vtex$/, '');
+		path = path.replace(/\.vtex_c$/, '').replace(/\.vtex$/, '');
 		path = path + '.vtex_c';
 		const fullPath = repository + path;
 

@@ -178,7 +178,7 @@ export const Source2ParticleLoader = new (function () {
 	class Source2ParticleLoader {
 		load(repository: string, path: string): Promise<Source2File | null> {
 			const promise = new Promise<Source2File | null>(resolve => {
-				path = path.replace(/.vpcf_c/, '');
+				path = path.replace(/\.vpcf_c/, '');
 				const vpcfPromise = new Source2FileLoader().load(repository, path + '.vpcf_c') as Promise<Source2File | null>;
 				vpcfPromise.then(
 					(source2File: Source2File | null) => {

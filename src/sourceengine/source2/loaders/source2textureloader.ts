@@ -6,7 +6,7 @@ export const Source2TextureLoader = new (function () {
 
 		async load(repository: string, path: string): Promise<Source2Texture | null> {
 
-			path = path.replace(/.vtex_c/, '');
+			path = path.replace(/\.vtex_c/, '');
 			return await new Source2FileLoader(true).load(repository, path + '.vtex_c') as unknown as Promise<Source2Texture | null>;
 		}
 	}

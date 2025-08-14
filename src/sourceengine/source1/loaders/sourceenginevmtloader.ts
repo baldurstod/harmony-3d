@@ -23,7 +23,7 @@ class SourceEngineVMTLoaderClass {
 	}
 
 	async parse(repository: string, path: string, content: string): Promise<SourceEngineMaterial | null> {
-		path = path.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '');
+		path = path.replace(/\\/g, '/').toLowerCase().replace(/\.vmt$/g, '');
 		path = path.replace(/\\/g, '/').toLowerCase();
 
 		const kv = new KvReader();

@@ -14,7 +14,7 @@ export class Source2ModelManager {
 		if (!path) {
 			return;
 		}
-		path = path.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
+		path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
 		/*let fullPath = repository + fileName;
 		let model = this.#modelList.get(fullPath);*/
 

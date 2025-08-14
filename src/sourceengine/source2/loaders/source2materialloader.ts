@@ -8,7 +8,8 @@ export class Source2MaterialLoader {
 	static #materials = new Map<string, typeof Source2Material>();
 
 	static async load(repository: string, path: string): Promise<Source2Material | null> {
-		path = path.replace(/.vmat_c$/, '');
+		// TODO: use cleanSource2MaterialName
+		path = path.replace(/\.vmat_c$/, '');
 		const source2File = await new Source2FileLoader().load(repository, path + '.vmat_c') as (Source2File | null);
 		if (!source2File) {
 			return null;

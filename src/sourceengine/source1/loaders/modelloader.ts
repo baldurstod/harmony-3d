@@ -14,7 +14,7 @@ import { SourceVvd } from './sourcevvd';
 export class ModelLoader {
 	load(repositoryName: string, fileName: string): Promise<SourceModel | null> {
 		const promise = new Promise<SourceModel | null>(async (resolve) => {
-			fileName = fileName.toLowerCase().replace(/.mdl$/, '');
+			fileName = fileName.toLowerCase().replace(/\.mdl$/, '');
 
 			// First load mdl. We need the mdl version to load the vtx
 			const mdlLoader = getLoader('SourceEngineMDLLoader') as typeof SourceEngineMDLLoader;

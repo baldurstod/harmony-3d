@@ -10,7 +10,7 @@ export const Source2SnapshotLoader = new (function () {
 	class Source2SnapshotLoader {
 
 		async load(repository: string, filename: string) {
-			filename = filename.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
+			filename = filename.replace(/\.vsnap_c/, '').replace(/\.vsnap/, '');
 			const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
 			if (snapFile) {
 				return this.#loadSnapshot(snapFile as Source2File);

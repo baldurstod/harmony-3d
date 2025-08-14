@@ -30,7 +30,7 @@ class Source2ParticleManagerClass {// TODO: turn into a proper singleton
 	}
 
 	async getSystem(repository: string, vpcfPath: string, snapshotModifiers?: Map<string, string>) {
-		vpcfPath = vpcfPath.replace(/.vpcf_c/, '').replace(/.vpcf/, '');
+		vpcfPath = vpcfPath.replace(/\.vpcf_c/, '').replace(/\.vpcf/, '');
 		vpcfPath = vpcfPath + '.vpcf_c';
 		const vpcf = await this.#getVpcf(repository, vpcfPath);
 		if (vpcf) {

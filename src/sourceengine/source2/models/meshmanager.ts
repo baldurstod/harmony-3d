@@ -9,8 +9,8 @@ export class MeshManager {// TODO: remove this class ?  meshes seems not used an
 
 	static async getMesh(repository: string, meshName: string): Promise<Source2File> {
 		meshName = meshName.toLowerCase();
-		meshName = meshName.replace(/.vmesh_c$/, '');
-		meshName = meshName.replace(/.vmesh$/, '');
+		meshName = meshName.replace(/\.vmesh_c$/, '');
+		meshName = meshName.replace(/\.vmesh$/, '');
 		let mesh = this.meshList[meshName];
 		if (!mesh) {
 			mesh = await new Source2FileLoader().load(repository, meshName + '.vmesh_c') as Source2File;

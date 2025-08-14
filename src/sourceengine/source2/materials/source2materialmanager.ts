@@ -2,7 +2,7 @@ import { Source2MaterialLoader } from '../loaders/source2materialloader';
 import { Source2Material } from './source2material';
 
 function cleanSource2MaterialName(name: string) {
-	name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmat_c$/g, '').replace(/.vmat$/g, '');
+	name = name.replace(/\\/g, '/').toLowerCase().replace(/\.vmat_c$/, '').replace(/\.vmat$/, '');
 	name = name + '.vmat_c';
 	return name;
 }
