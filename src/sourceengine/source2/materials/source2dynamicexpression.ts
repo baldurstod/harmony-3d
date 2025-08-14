@@ -1123,7 +1123,7 @@ operations.set(OpCode.Return, { operator: 'return ', precedence: Precedence.Lowe
 operations.set(OpCode.Goto, { operator: 'goto', precedence: Precedence.Lowest, operands: 0 });
 operations.set(OpCode.Ternary, { operator: '', precedence: Precedence.Ternary, operands: 1/*not counting branches*/ });
 operations.set(OpCode.StoreVariable, { operator: '', precedence: Precedence.Lowest, operands: 2 });
-operations.set(OpCode.LoadVariable, { operator: '', precedence: Precedence.Lowest, operands: 2 });
+operations.set(OpCode.LoadVariable, { operator: '', precedence: Precedence.Lowest, operands: 1 });
 operations.set(OpCode.Not, { operator: '!', precedence: Precedence.Additive, operands: 1 });
 operations.set(OpCode.Equal, { operator: '==', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.Addition, { operator: '+', precedence: Precedence.Additive, operands: 2 });
