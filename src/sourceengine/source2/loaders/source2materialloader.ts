@@ -9,7 +9,10 @@ export class Source2MaterialLoader {
 
 	static async load(repository: string, path: string): Promise<Source2Material | null> {
 		path = path.replace(/.vmat_c$/, '');
-		const source2File = await new Source2FileLoader().load(repository, path + '.vmat_c') as Source2File;
+		const source2File = await new Source2FileLoader().load(repository, path + '.vmat_c') as (Source2File | null);
+		if (!source2File) {
+			return null;
+		}
 		const material = this.#loadMaterial(repository, source2File);
 		if (VERBOSE) {
 			console.log(source2File);
