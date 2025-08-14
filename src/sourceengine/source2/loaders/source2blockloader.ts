@@ -692,6 +692,20 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 						return new Kv3Value(Kv3Type.Blob, arr);
 
 					}
+					// TODO: fix this: typed array must be loaded for all types
+					if (field.type2 == DATA_TYPE_NAME) {
+						const arr: string[] = new Array(arrayCount);
+
+						for (let i = 0; i < arrayCount; i++) {
+							let pos = arrayOffset + fieldSize * i;
+							let strOffset = reader.getInt32(pos);
+							reader.seek(pos + strOffset);
+
+							arr[i] = reader.getNullString(pos + strOffset);
+						}
+
+						return new Kv3Value(Kv3Type.TypedArray, arr, Kv3Type.String);
+					}
 					for (var i = 0; i < arrayCount; i++) {
 						var pos = arrayOffset + fieldSize * i;
 						/*reader.seek(reader.getUint32(pos) + pos);
