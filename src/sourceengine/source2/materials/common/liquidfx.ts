@@ -1,5 +1,5 @@
-import { Source2Material } from '../source2material';
 import { Source2MaterialLoader } from '../../loaders/source2materialloader';
+import { Source2Material } from '../source2material';
 
 // materials/models/items/venomancer/mechamancer/mechamancer_fluid.vmat_c
 // materials/models/items/pudge/pudge_hungry_clown_car/pudge_hungry_clown_car_fluid.vmat_c

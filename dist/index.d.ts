@@ -8017,6 +8017,10 @@ declare class Choreography {
              isPreEmission(): boolean;
          }
 
+         export declare class Source2Sky extends Source2Material {
+             get shaderSource(): string;
+         }
+
          declare class Source2Snapshot {
              particleCount: number;
              attributes: any;
