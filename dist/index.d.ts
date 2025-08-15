@@ -7192,6 +7192,10 @@ declare class Choreography {
              get shaderSource(): string;
          }
 
+         export declare class Source2ColorCorrection extends Source2Material {
+             get shaderSource(): string;
+         }
+
          export declare class Source2Crystal extends Source2Material {
              setupUniformsOnce(): void;
              getShaderSource(): string;
@@ -7714,7 +7718,7 @@ declare class Choreography {
              /**
               * @deprecated Please use getScalarField instead.
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number];
              /**
               * TODO
               */
