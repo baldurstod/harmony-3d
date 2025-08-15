@@ -60645,7 +60645,7 @@ Source2MaterialLoader.registerMaterial('cables.vfx', Source2CablesMaterial);
 //materials/colorwarps/dota_reef_dead.vmat_c
 class Source2ColorCorrection extends Source2Material {
     get shaderSource() {
-        return 'source2_colorcorrection';
+        return 'source2_color_correction';
     }
 }
 Source2MaterialLoader.registerMaterial('colorcorrection.vfx', Source2ColorCorrection);
@@ -68124,6 +68124,12 @@ class RenderTrails extends RenderBase {
 }
 RegisterSource2ParticleOperator('C_OP_RenderTrails', RenderTrails);
 
+var source2_varying_color_correction = `
+#include varying_standard
+`;
+
+Includes['source2_varying_color_correction'] = source2_varying_color_correction;
+
 var source2_fragment_compute_cs2_stickers = `
 	#pragma unroll
 	for ( int i = 0; i < 5; i ++ ) {
@@ -68342,6 +68348,40 @@ Includes['source2_fragment_compute_mask'] = source2_fragment_compute_mask;
 Includes['source2_fragment_compute_separate_alpha_transform'] = source2_fragment_compute_separate_alpha_transform;
 Includes['source2_fragment_declare_detail_map'] = source2_fragment_declare_detail_map;
 Includes['source2_fragment_declare_separate_alpha_transform'] = source2_fragment_declare_separate_alpha_transform;
+
+var source2_color_correction_fs = `
+
+#include source2_varying_color_correction
+
+void main(void) {
+	if (length(floor((gl_FragCoord.xy + vec2(15.0)) / 30.0) * 30.0 - gl_FragCoord.xy) > 10.0) {
+		discard;
+	}
+	gl_FragColor = vec4(1.0, 0.0, 1.0, 1.0);
+}
+`;
+
+var source2_color_correction_vs = `
+#include declare_attributes
+#include declare_matrix_uniforms
+#include declare_vertex_uv
+#include declare_vertex_skinning
+#include declare_shadow_mapping
+
+#include source2_varying_color_correction
+
+void main(void) {
+	#include compute_vertex_uv
+	#include compute_vertex
+	#include compute_vertex_skinning
+	#include compute_vertex_projection
+	#include compute_vertex_shadow_mapping
+	#include compute_vertex_standard
+}
+`;
+
+Shaders['source2_color_correction.fs'] = source2_color_correction_fs;
+Shaders['source2_color_correction.vs'] = source2_color_correction_vs;
 
 var source2_csgo_environment_fs = `
 #include declare_camera_position
