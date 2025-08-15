@@ -887,7 +887,7 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 		switch (opcode) {
 			case OpCode.Return:
 				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
-				return operandStack
+				return operandStack;
 			case OpCode.Goto:
 				const branch = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 1), operandStack);
 				return branch;
@@ -924,7 +924,9 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 				operandStack.push({ operator: opcode, operand1: getByte(byteCode, pointer + 1) });
 				++pointer;
 				break;
+			// Unary operators
 			case OpCode.Not:
+			case OpCode.Negation:
 				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
 				break;
 			case OpCode.Equal:
@@ -933,25 +935,12 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 			case OpCode.GreaterEqual:
 			case OpCode.Less:
 			case OpCode.LessEqual:
-				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
-				break;
 			case OpCode.Addition:
-				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
-				break;
 			case OpCode.Subtraction:
-				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
-				break;
 			case OpCode.Multiplication:
-				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
-				break;
 			case OpCode.Division:
-				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
-				break;
 			case OpCode.Modulo:
 				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
-				break;
-			case OpCode.Negation:
-				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
 				break;
 			case OpCode.AttributeLiteral:
 			case OpCode.Exists:
@@ -1111,7 +1100,7 @@ function round(input: number): number {
 	return input;
 }
 
-function toSwizzle(code:number):string {
+function toSwizzle(code: number): string {
 	const s = 'xyzw';
 	return `.${s[(code >> 0) & 3]}${s[(code >> 2) & 3]}${s[(code >> 4) & 3]}${s[(code >> 6) & 3]}`;
 }
@@ -1217,7 +1206,6 @@ function functionToString(operand: Operation): string | null {
 		console.error('undefined function' + operand.function);
 		return null;
 	}
-
 
 	if (operand.operand1 !== undefined) {
 		operands[0] = operandToString(operand.operand1)?.[0];
