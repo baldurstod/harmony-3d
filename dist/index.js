@@ -22509,6 +22509,13 @@ class Kv3Element {
         }
         return null;
     }
+    getSubValueAsResource(path) {
+        const prop = this.getSubValue(path);
+        if (prop?.isKv3Value && prop.getType() == Kv3Type.Resource) {
+            return prop.getValue();
+        }
+        return null;
+    }
     exportAsText(linePrefix) {
         const out = [];
         //const keys = Object.keys(this);
@@ -60531,7 +60538,7 @@ class Source2Material extends Material {
         }*/
         console.error(`unknown parameter : ${paramName}`, this);
     }
-    #getParams(name, isVector) {
+    #getParams(name, isVector, isResource) {
         if (!this.#source2File) {
             return null;
         }
@@ -60542,7 +60549,7 @@ class Source2Material extends Material {
         const result = new Map();
         for (const v of values) {
             const name = v.getSubValueAsString('m_name');
-            const value = isVector ? v.getSubValueAsVec4('m_nValue', vec4.create()) : v.getSubValueAsNumber('m_nValue');
+            const value = isVector ? v.getSubValueAsVec4('m_nValue', vec4.create()) : isResource ? v.getSubValueAsResource('m_pValue') : v.getSubValueAsNumber('m_nValue');
             if (name && value != null) {
                 result.set(name, value);
             }
@@ -60563,7 +60570,7 @@ class Source2Material extends Material {
         }
     }
     getIntParams() {
-        return this.#getParams('m_intParams', false);
+        return this.#getParams('m_intParams', false, false);
     }
     getFloatParam(floatName) {
         if (!this.#source2File) {
@@ -60579,7 +60586,7 @@ class Source2Material extends Material {
         }
     }
     getFloatParams() {
-        return this.#getParams('m_floatParams', false);
+        return this.#getParams('m_floatParams', false, false);
     }
     getVectorParam(vectorName, out) {
         if (this.#source2File) {
@@ -60595,7 +60602,7 @@ class Source2Material extends Material {
         return out;
     }
     getVectorParams() {
-        return this.#getParams('m_vectorParams', true);
+        return this.#getParams('m_vectorParams', true, false);
     }
     getDynamicParam(dynamicName) {
         if (!this.#source2File) {
@@ -60632,6 +60639,9 @@ class Source2Material extends Material {
             }
         }
         return result;
+    }
+    getTextureParams() {
+        return this.#getParams('m_textureParams', false, true);
     }
 }
 

@@ -279,6 +279,14 @@ export class Kv3Element {
 		return null;
 	}
 
+	getSubValueAsResource(path: string): string | null {
+		const prop = this.getSubValue(path);
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.Resource) {
+			return (prop as Kv3Value).getValue() as string;
+		}
+		return null;
+	}
+
 	exportAsText(linePrefix: string): string {
 		const out = [];
 		//const keys = Object.keys(this);

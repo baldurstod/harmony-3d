@@ -3333,6 +3333,7 @@ declare class Choreography {
              getSubValueAsNumberArray(path: string): number[] | null;
              getSubValueAsVec4(path: string, out: vec4): vec4 | null;
              getSubValueAsElementArray(path: string): Kv3Element[] | null;
+             getSubValueAsResource(path: string): string | null;
              exportAsText(linePrefix: string): string;
          }
 
@@ -7402,6 +7403,7 @@ declare class Choreography {
              getVectorParams(): Map<string, vec4> | null;
              getDynamicParam(dynamicName: string): vec4 | undefined;
              getDynamicParams(): Map<string, [string | null, Uint8Array]> | null;
+             getTextureParams(): Map<string, string> | null;
          }
 
          export declare class Source2MaterialManager {
@@ -7718,7 +7720,7 @@ declare class Choreography {
              /**
               * @deprecated Please use getScalarField instead.
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
              /**
               * TODO
               */
