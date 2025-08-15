@@ -916,6 +916,7 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 				pointer += 4;
 				break;
 			case OpCode.StoreVariable:
+			case OpCode.Swizzle:
 				operandStack.push({ operator: opcode, operand1: getByte(byteCode, pointer + 1), operand2: operandStack.pop() });
 				++pointer;
 				break;
@@ -927,31 +928,13 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
 				break;
 			case OpCode.Equal:
+			case OpCode.NotEqual:
+			case OpCode.Greater:
+			case OpCode.GreaterEqual:
+			case OpCode.Less:
+			case OpCode.LessEqual:
 				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
 				break;
-			/*
-		case 14: // !=
-			inequality();
-			break;
-		case 15: // >
-			greater();
-			break;
-		case 16: // >=
-			greaterEqual();
-			break;
-		case 17: // <
-			less();
-			break;
-		case 18: // <=
-			lessEqual();
-			break;
-		case 19: // +
-			add();
-			break;
-		case 20: // -
-			subtract();
-			break;
-			*/
 			case OpCode.Addition:
 				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
 				break;
@@ -964,12 +947,9 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 			case OpCode.Division:
 				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
 				break;
-			/*
-						case 23: // %
-							modulo();
-							break;
-							*/
-
+			case OpCode.Modulo:
+				operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
+				break;
 			case OpCode.Negation:
 				operandStack.push({ operator: opcode, operand1: operandStack.pop() });
 				break;
@@ -980,47 +960,6 @@ function toOperation(byteCode: Uint8Array, renderAttributes: string[], startPoin
 				let stringValue = getAttribute(hash, renderAttributes);
 				operandStack.push({ operator: opcode, operand1: stringValue });
 				break;
-			/*
-			case 25: // get value
-				const intValue = (byteCode[pointer + 1]! + (byteCode[pointer + 2]! << 8) + (byteCode[pointer + 3]! << 16) + (byteCode[pointer + 4]! << 24)) >>> 0;
-				let stringValue = hashes.get(intValue);
-				if (!stringValue) {
-					for (let renderAttribute of renderAttributes) {
-						renderAttribute = renderAttribute.toLowerCase();
-						hashes.set(murmurhash2_32_gc(renderAttribute, HASH_SEED), renderAttribute);
-					}
-					stringValue = hashes.get(intValue);
-				}
-
-				if (stringValue) {
-					let value = 0;
-					if (stringValue === 'time') {
-						value = performance.now() * 0.001;
-					} else {
-						//console.log(stringValue);
-						//TODO get an external var
-					}
-					stack.push(vec4.fromValues(value, value, value, value));
-				}
-				pointer += 4;
-				break;
-			//see m_renderAttributesUsed
-			//time : 0: 25 1: 204 2: 133 3: 68 4: 150 5: 0
-			//$gemcolor: 0: 25 1: 230 2: 22 3: 70 4: 81 5: 0
-			//a: 0: 25 1: 225 2: 113 3: 207 4: 30 5: 0
-			//b: 0: 25 1: 42 2: 183 3: 253 4: 183 5: 0
-			//B: 0: 25 1: 42 2: 183 3: 253 4: 183 5: 0
-			//$a: 0: 25 1: 96 2: 46 3: 222 4: 5 5: 0
-			//??? 0: 25 1: 252 2: 99 3: 114 4: 40 5: 0 ==> $PA_ARCANA_DETAIL1SCALE
-			//$gem 0: 25 1: 150 2: 173 3: 217 4: 104 5: 0
-			case 30:
-				swizzle(getByte(byteCode, ++pointer));
-				break;
-			case 31: // exist
-				stack.push(vec4.fromValues(0, 0, 0, 0));//TODO get an external var
-				pointer += 4;
-				break;
-			*/
 			default:
 				console.error('Unknown opcode ', opcode, ' at location ', pointer);
 				break;
@@ -1123,15 +1062,22 @@ operations.set(OpCode.Return, { operator: 'return ', precedence: Precedence.Lowe
 operations.set(OpCode.Goto, { operator: 'goto', precedence: Precedence.Lowest, operands: 0 });
 operations.set(OpCode.Ternary, { operator: '', precedence: Precedence.Ternary, operands: 1/*not counting branches*/ });
 operations.set(OpCode.StoreVariable, { operator: '', precedence: Precedence.Lowest, operands: 2 });
-operations.set(OpCode.LoadVariable, { operator: '', precedence: Precedence.Lowest, operands: 1 });
+operations.set(OpCode.LoadVariable, { operator: '', precedence: Precedence.Literal, operands: 1 });
 operations.set(OpCode.Not, { operator: '!', precedence: Precedence.Additive, operands: 1 });
 operations.set(OpCode.Equal, { operator: '==', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.NotEqual, { operator: '!=', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Greater, { operator: '>', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.GreaterEqual, { operator: '>=', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Less, { operator: '<', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.LessEqual, { operator: '<=', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.Addition, { operator: '+', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.Subtraction, { operator: '-', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.Multiplication, { operator: '*', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.Division, { operator: '/', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Modulo, { operator: '%', precedence: Precedence.Additive, operands: 2 });
 operations.set(OpCode.Negation, { operator: '-', precedence: Precedence.Literal, operands: 1 });
 operations.set(OpCode.AttributeLiteral, { operator: '', precedence: Precedence.Literal, operands: 1 });
+operations.set(OpCode.Swizzle, { operator: '', precedence: Precedence.Function, operands: 2 });
 operations.set(OpCode.Exists, { operator: '', precedence: Precedence.Function, operands: 1 });
 
 function operandsToString(operands: Operand[]): string | null {
@@ -1163,6 +1109,11 @@ function round(input: number): number {
 		mul *= 10;
 	}
 	return input;
+}
+
+function toSwizzle(code:number):string {
+	const s = 'xyzw';
+	return `.${s[(code >> 0) & 3]}${s[(code >> 2) & 3]}${s[(code >> 4) & 3]}${s[(code >> 6) & 3]}`;
 }
 
 function operandToString(operand: Operand): [string, Precedence] | null {
@@ -1234,6 +1185,8 @@ function operandToString(operand: Operand): [string, Precedence] | null {
 			return [`var${opes[0]} = ${opes[1]}`, ope.precedence];
 		case OpCode.LoadVariable:
 			return [`var${opes[0]}`, ope.precedence];
+		case OpCode.Swizzle:
+			return [`${opes[1]}${toSwizzle(Number(opes[0]))}`, ope.precedence];
 		case OpCode.Exists:
 			return [`exists(${ope.operator}${opes[0]})`, ope.precedence];
 	}
