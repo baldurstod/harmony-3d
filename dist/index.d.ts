@@ -7188,6 +7188,10 @@ declare class Choreography {
              get _changemyname(): Source2Animation[];
          }
 
+         export declare class Source2CablesMaterial extends Source2Material {
+             get shaderSource(): string;
+         }
+
          export declare class Source2Crystal extends Source2Material {
              setupUniformsOnce(): void;
              getShaderSource(): string;
@@ -7348,8 +7352,16 @@ declare class Choreography {
              get shaderSource(): string;
          }
 
+         export declare class Source2IceSurfaceDotaMaterial extends Source2Material {
+             get shaderSource(): string;
+         }
+
          export declare class Source2LifespanDecay extends Operator {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+         }
+
+         export declare class Source2LiquidFx extends Source2Material {
+             get shaderSource(): string;
          }
 
          export declare class Source2LockToBone extends Operator {
@@ -7385,7 +7397,7 @@ declare class Choreography {
              getVectorParam(vectorName: string, out: vec4): vec4;
              getVectorParams(): Map<string, vec4> | null;
              getDynamicParam(dynamicName: string): vec4 | undefined;
-             getDynamicParams(): Map<string, string> | null;
+             getDynamicParams(): Map<string, [string | null, Uint8Array]> | null;
          }
 
          export declare class Source2MaterialManager {
@@ -7955,10 +7967,18 @@ declare class Choreography {
              get shaderSource(): string;
          }
 
+         export declare class Source2ProjectedDotaMaterial extends Source2Material {
+             get shaderSource(): string;
+         }
+
          export declare class Source2RandomForce extends Operator {
              #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
              doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
+         }
+
+         export declare class Source2RefractMaterial extends Source2Material {
+             get shaderSource(): string;
          }
 
          declare class Source2SeqGroup {
@@ -8034,6 +8054,10 @@ declare class Choreography {
              duration: number;
              frames: Source2SpriteSheetFrame[];
              addFrame(): Source2SpriteSheetFrame;
+         }
+
+         export declare class Source2StickersMaterial extends Source2Material {
+             get shaderSource(): string;
          }
 
          declare class Source2Texture extends Source2File {

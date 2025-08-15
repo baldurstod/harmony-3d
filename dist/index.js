@@ -21428,6 +21428,7 @@ class Kv3Value {
             case Kv3Type.DoubleZero:
             case Kv3Type.DoubleOne:
             case Kv3Type.Float:
+            case Kv3Type.Double:
                 return this.isArray();
         }
         return false;
@@ -23984,6 +23985,17 @@ function loadField(reader, reference, field, block, startOffset, introspection, 
                         }
                         return new Kv3Value(Kv3Type.Blob, arr);
                     }
+                    // TODO: fix this: typed array must be loaded for all types
+                    if (field.type2 == DATA_TYPE_NAME) {
+                        const arr = new Array(arrayCount);
+                        for (let i = 0; i < arrayCount; i++) {
+                            let pos = arrayOffset + fieldSize * i;
+                            let strOffset = reader.getInt32(pos);
+                            reader.seek(pos + strOffset);
+                            arr[i] = reader.getNullString(pos + strOffset);
+                        }
+                        return new Kv3Value(Kv3Type.TypedArray, arr, Kv3Type.String);
+                    }
                     for (var i = 0; i < arrayCount; i++) {
                         var pos = arrayOffset + fieldSize * i;
                         /*reader.seek(reader.getUint32(pos) + pos);
@@ -24739,8 +24751,12 @@ class Source2FileLoader extends SourceBinaryLoader {
 class Source2MaterialLoader {
     static #materials = new Map();
     static async load(repository, path) {
-        path = path.replace(/.vmat_c$/, '');
+        // TODO: use cleanSource2MaterialName
+        path = path.replace(/\.vmat_c$/, '');
         const source2File = await new Source2FileLoader().load(repository, path + '.vmat_c');
+        if (!source2File) {
+            return null;
+        }
         const material = this.#loadMaterial(repository, source2File);
         return material;
     }
@@ -24766,7 +24782,7 @@ class Source2MaterialLoader {
 }
 
 function cleanSource2MaterialName(name) {
-    name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmat_c$/g, '').replace(/.vmat$/g, '');
+    name = name.replace(/\\/g, '/').toLowerCase().replace(/\.vmat_c$/, '').replace(/\.vmat$/, '');
     name = name + '.vmat_c';
     return name;
 }
@@ -24834,8 +24850,8 @@ class MeshManager {
     //this.renderMode = 2;
     static async getMesh(repository, meshName) {
         meshName = meshName.toLowerCase();
-        meshName = meshName.replace(/.vmesh_c$/, '');
-        meshName = meshName.replace(/.vmesh$/, '');
+        meshName = meshName.replace(/\.vmesh_c$/, '');
+        meshName = meshName.replace(/\.vmesh$/, '');
         let mesh = this.meshList[meshName];
         if (!mesh) {
             mesh = await new Source2FileLoader().load(repository, meshName + '.vmesh_c');
@@ -26710,7 +26726,7 @@ class Source2ModelLoader {
     }
     async load(repository, path) {
         // Cleanup filename
-        path = path.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
+        path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
         let repoPromises = _a$2.#loadPromisesPerRepo[repository];
         if (!repoPromises) {
             repoPromises = {};
@@ -27190,7 +27206,7 @@ class Source2ModelManager {
         if (!path) {
             return;
         }
-        path = path.replace(/.vmdl_c$/, '').replace(/.vmdl$/, '');
+        path = path.replace(/\.vmdl_c$/, '').replace(/\.vmdl$/, '');
         /*let fullPath = repository + fileName;
         let model = this.#modelList.get(fullPath);*/
         let model = this.#getModel(repository, path);
@@ -27289,7 +27305,7 @@ class Source2ParticleManagerClass {
         return vpcf;
     }
     async getSystem(repository, vpcfPath, snapshotModifiers) {
-        vpcfPath = vpcfPath.replace(/.vpcf_c/, '').replace(/.vpcf/, '');
+        vpcfPath = vpcfPath.replace(/\.vpcf_c/, '').replace(/\.vpcf/, '');
         vpcfPath = vpcfPath + '.vpcf_c';
         const vpcf = await this.#getVpcf(repository, vpcfPath);
         if (vpcf) {
@@ -33847,7 +33863,7 @@ class Decoder {
     }
 }
 
-function StringStrip(s) {
+function stringStrip(s) {
     return s.replace(/^[\s\0]+/, '').replace(/[\s\0]+$/, '');
 }
 function DecompressLZMA(properties, compressedDatas, uncompressedSize) {
@@ -33873,14 +33889,6 @@ function DecompressLZMA(properties, compressedDatas, uncompressedSize) {
         }
     };
     if (LZMA.decompress(propStream, inStream, outStream, uncompressedSize)) {
-        /*function Uint8ToString(u8a){
-            const CHUNK_SZ = 0x8000;
-            let c = [];
-            for (let i = 0; i < u8a.length; i += CHUNK_SZ) {
-                c.push(String.fromCharCode.apply(null, u8a.slice(i, i+CHUNK_SZ)));
-            }
-            return c.join('');
-        }*/
         return new Uint8Array(outStream.data); //Uint8ToString(outStream.data);
     }
     return null;
@@ -38971,7 +38979,7 @@ class MdlBodyPart {
 }
 
 function cleanSource1MaterialName(name) {
-    name = name.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '').replace(/^materials\//g, '');
+    name = name.replace(/\\/g, '/').toLowerCase().replace(/\.vmt$/g, '').replace(/^materials\//g, '');
     name = name + '.vmt';
     //name = 'materials/' + name;
     return name;
@@ -40080,7 +40088,7 @@ class SourceModelMesh {
 class ModelLoader {
     load(repositoryName, fileName) {
         const promise = new Promise(async (resolve) => {
-            fileName = fileName.toLowerCase().replace(/.mdl$/, '');
+            fileName = fileName.toLowerCase().replace(/\.mdl$/, '');
             // First load mdl. We need the mdl version to load the vtx
             const mdlLoader = getLoader('SourceEngineMDLLoader');
             const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
@@ -41748,7 +41756,7 @@ class SourceEngineVMTLoaderClass {
         return null;
     }
     async parse(repository, path, content) {
-        path = path.replace(/\\/g, '/').toLowerCase().replace(/.vmt$/g, '');
+        path = path.replace(/\\/g, '/').toLowerCase().replace(/\.vmt$/g, '');
         path = path.replace(/\\/g, '/').toLowerCase();
         const kv = new KvReader();
         kv.readText(content);
@@ -42266,7 +42274,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         const lumpVersion = lump.version;
         const nameCount = reader.getInt32();
         for (let nameIndex = 0; nameIndex < nameCount; ++nameIndex) {
-            const name = StringStrip(reader.getString(STATIC_PROP_NAME_LENGTH));
+            const name = stringStrip(reader.getString(STATIC_PROP_NAME_LENGTH));
             staticDir.name.push(name);
         }
         const leafCount = reader.getInt32();
@@ -42669,7 +42677,7 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
         header.modelFormatID = reader.getInt32();
         header.formatVersionID = reader.getInt32();
         header.checkSum = reader.getInt32();
-        header.modelName = StringStrip(reader.getString(64));
+        header.modelName = stringStrip(reader.getString(64));
         header.dataLength = reader.getInt32();
         header.eyeposition = reader.getVector3();
         header.illumposition = reader.getVector3();
@@ -42782,7 +42790,7 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
     #parseModel(reader, mdl, startOffset) {
         // Ensure we have enough data for the name
         const model = new ModelTest();
-        model.name = StringStrip(reader.getString(64, startOffset));
+        model.name = stringStrip(reader.getString(64, startOffset));
         model.type = reader.getInt32();
         model.boundingradius = reader.getFloat32();
         const nummeshes = reader.getInt32();
@@ -45628,7 +45636,7 @@ class PropDynamic extends MapEntity {
             }
         }*/
     async setModel(modelName) {
-        modelName = modelName.replace(/.mdl$/g, '');
+        modelName = modelName.replace(/\.mdl$/g, '');
         const model = await Source1ModelManager.createInstance(this.map.repository, modelName, true);
         /*model.position = this.position;
         model.quaternion = this._quaternion;*/
@@ -47310,8 +47318,8 @@ class Source1TextureManagerClass extends EventTarget {
         return vtf;
     }
     #getTexture(repository, path, needCubeMap, srgb = true, allocatedTexture) {
-        path = path.replace(/.vtf$/, '');
-        path = path.replace(/.psd/, '');
+        path = path.replace(/\.vtf$/, '');
+        path = path.replace(/\.psd/, '');
         path = path.toLowerCase();
         const texture = this.#texturesList.get(repository, path);
         if (texture !== undefined) {
@@ -47338,8 +47346,8 @@ class Source1TextureManagerClass extends EventTarget {
     }
     async getTextureAsync(repository, path, frame, needCubeMap, defaultTexture, srgb = true) {
         frame = Math.floor(frame);
-        path = path.replace(/.vtf$/, '');
-        path = path.replace(/.psd/, '');
+        path = path.replace(/\.vtf$/, '');
+        path = path.replace(/\.psd/, '');
         path = path.toLowerCase();
         const texture = this.#texturesList.get(repository, path);
         if (texture) {
@@ -56402,7 +56410,7 @@ class Source2Snapshot {
 const Source2SnapshotLoader = new (function () {
     class Source2SnapshotLoader {
         async load(repository, filename) {
-            filename = filename.replace(/.vsnap_c/, '').replace(/.vsnap/, '');
+            filename = filename.replace(/\.vsnap_c/, '').replace(/\.vsnap/, '');
             const snapFile = await new Source2FileLoader(true).load(repository, filename + '.vsnap_c');
             if (snapFile) {
                 return this.#loadSnapshot(snapFile);
@@ -57552,7 +57560,7 @@ const DEFAULT_SCALE_CP = -1; // TODO: check default value
 const DEFAULT_CONTROL_POINT_NUMBER = 0; // TODO: check default value
 const DEFAULT_SET_METHOD$5 = Source2ParticleSetMethod.SetValue; // TODO: check default value
 const DEFAULT_ASSOCIATED_EMITTER_INDEX = -1; // disabled
-let Operator$1 = class Operator {
+class Operator {
     static PVEC_TYPE_PARTICLE_VECTOR = false;
     #parameters = new Map();
     system;
@@ -58165,12 +58173,12 @@ let Operator$1 = class Operator {
     doRender(particle, elapsedTime, material) { }
     initRenderer(particleSystem) { }
     updateParticles(particleSystem, particleList, elapsedTime) { }
-};
+}
 
 const DEFAULT_EMITTER_INDEX = -1;
 const DEFAULT_EMISSION_DURATION$1 = 0;
 const DEFAULT_START_TIME$2 = 0;
-class Emitter extends Operator$1 {
+class Emitter extends Operator {
     emitterIndex = DEFAULT_EMITTER_INDEX;
     emissionDuration = DEFAULT_EMISSION_DURATION$1;
     startTime = DEFAULT_START_TIME$2;
@@ -58801,7 +58809,7 @@ const Source2ParticleLoader = new (function () {
     class Source2ParticleLoader {
         load(repository, path) {
             const promise = new Promise(resolve => {
-                path = path.replace(/.vpcf_c/, '');
+                path = path.replace(/\.vpcf_c/, '');
                 const vpcfPromise = new Source2FileLoader().load(repository, path + '.vpcf_c');
                 vpcfPromise.then((source2File) => {
                     resolve(source2File);
@@ -58839,7 +58847,7 @@ registerLoader('Source2ParticleLoader', Source2ParticleLoader);
 const Source2TextureLoader = new (function () {
     class Source2TextureLoader {
         async load(repository, path) {
-            path = path.replace(/.vtex_c/, '');
+            path = path.replace(/\.vtex_c/, '');
             return await new Source2FileLoader(true).load(repository, path + '.vtex_c');
         }
     }
@@ -58888,7 +58896,7 @@ class Source2TextureManagerClass extends EventTarget {
         return texture?.properties.get('vtex')?.getBlockByType('DATA')?.spriteSheet ?? null;
     }
     async #getTexture(repository, path) {
-        path = path.replace(/.vtex_c$/, '').replace(/.vtex$/, '');
+        path = path.replace(/\.vtex_c$/, '').replace(/\.vtex$/, '');
         path = path + '.vtex_c';
         const fullPath = repository + path;
         if (this.#loadingTexturesList.has(fullPath)) {
@@ -59110,6 +59118,17 @@ let stack;
 const HASH_SEED = 0x31415926;
 const hashes = new Map();
 hashes.set(murmurhash2_32_gc('time', HASH_SEED), 'time');
+function getAttribute(hash, renderAttributes) {
+    let stringValue = hashes.get(hash);
+    if (!stringValue) {
+        for (let renderAttribute of renderAttributes) {
+            renderAttribute = renderAttribute.toLowerCase();
+            hashes.set(murmurhash2_32_gc(renderAttribute, HASH_SEED), renderAttribute);
+        }
+        stringValue = hashes.get(hash);
+    }
+    return stringValue;
+}
 function executeDynamicExpression(byteCode, renderAttributes) {
     let pointer = -1;
     const storage = new Map();
@@ -59221,15 +59240,8 @@ function executeDynamicExpression(byteCode, renderAttributes) {
                 negation();
                 break;
             case 25: // get value
-                const intValue = (byteCode[pointer + 1] + (byteCode[pointer + 2] << 8) + (byteCode[pointer + 3] << 16) + (byteCode[pointer + 4] << 24)) >>> 0;
-                let stringValue = hashes.get(intValue);
-                if (!stringValue) {
-                    for (let renderAttribute of renderAttributes) {
-                        renderAttribute = renderAttribute.toLowerCase();
-                        hashes.set(murmurhash2_32_gc(renderAttribute, HASH_SEED), renderAttribute);
-                    }
-                    stringValue = hashes.get(intValue);
-                }
+                const hash = (byteCode[pointer + 1] + (byteCode[pointer + 2] << 8) + (byteCode[pointer + 3] << 16) + (byteCode[pointer + 4] << 24)) >>> 0;
+                let stringValue = getAttribute(hash, renderAttributes);
                 if (stringValue) {
                     let value = 0;
                     if (stringValue === 'time') {
@@ -59801,14 +59813,6 @@ function sqr() {
     a[3] = a[3] * a[3];
     stack.push(a);
 }
-var Operator;
-(function (Operator) {
-    Operator[Operator["Addition"] = 0] = "Addition";
-    Operator[Operator["Subtraction"] = 1] = "Subtraction";
-    Operator[Operator["Multiplication"] = 2] = "Multiplication";
-    Operator[Operator["Division"] = 3] = "Division";
-    Operator[Operator["Function"] = 4] = "Function";
-})(Operator || (Operator = {}));
 var FunctionCode;
 (function (FunctionCode) {
     FunctionCode[FunctionCode["Sin"] = 0] = "Sin";
@@ -59851,396 +59855,366 @@ var FunctionCode;
 })(FunctionCode || (FunctionCode = {}));
 var OpCode;
 (function (OpCode) {
-    OpCode[OpCode["Stop"] = 0] = "Stop";
+    OpCode[OpCode["Return"] = 0] = "Return";
+    // 1 ?
     OpCode[OpCode["Goto"] = 2] = "Goto";
+    // 3 ?
     OpCode[OpCode["Ternary"] = 4] = "Ternary";
+    // 5 ?
     OpCode[OpCode["Function"] = 6] = "Function";
     OpCode[OpCode["Float32"] = 7] = "Float32";
+    OpCode[OpCode["StoreVariable"] = 8] = "StoreVariable";
+    OpCode[OpCode["LoadVariable"] = 9] = "LoadVariable";
+    // 10 ?
+    // 11 ?
+    OpCode[OpCode["Not"] = 12] = "Not";
+    OpCode[OpCode["Equal"] = 13] = "Equal";
+    OpCode[OpCode["NotEqual"] = 14] = "NotEqual";
+    OpCode[OpCode["Greater"] = 15] = "Greater";
+    OpCode[OpCode["GreaterEqual"] = 16] = "GreaterEqual";
+    OpCode[OpCode["Less"] = 17] = "Less";
+    OpCode[OpCode["LessEqual"] = 18] = "LessEqual";
     OpCode[OpCode["Addition"] = 19] = "Addition";
     OpCode[OpCode["Subtraction"] = 20] = "Subtraction";
     OpCode[OpCode["Multiplication"] = 21] = "Multiplication";
     OpCode[OpCode["Division"] = 22] = "Division";
+    OpCode[OpCode["Modulo"] = 23] = "Modulo";
+    OpCode[OpCode["Negation"] = 24] = "Negation";
+    OpCode[OpCode["AttributeLiteral"] = 25] = "AttributeLiteral";
+    OpCode[OpCode["Swizzle"] = 30] = "Swizzle";
+    OpCode[OpCode["Exists"] = 31] = "Exists";
 })(OpCode || (OpCode = {}));
-const done = new Map();
 function decompileDynamicExpression(dynamicName, byteCode, renderAttributes) {
-    const operand = toOperation(byteCode);
-    if (!done.get(dynamicName)) {
-        console.info(operand);
-        if (operand) {
-            console.error(dynamicName, operandToString(operand)?.[0]);
-        }
-        done.set(dynamicName, true);
+    const operand = toOperation(byteCode, renderAttributes);
+    if (operand) {
+        //console.error(dynamicName, );
+        return operandsToString(operand) ?? null;
     }
-    return '';
+    return null;
 }
-function toOperation(byteCode, renderAttributes) {
-    let pointer = -1;
-    //stack = [];
-    const operandStack = [];
+function toOperation(byteCode, renderAttributes, startPointer = 0, operandStack = []) {
+    let pointer = startPointer - 1;
+    //const operandStack: Operand[] = [];
     while (pointer < byteCode.length) {
         ++pointer;
         const opcode = byteCode[pointer];
         switch (opcode) {
-            case OpCode.Stop:
-                return operandStack.pop() ?? null;
-            /*
-        case 2: // goto
-            location = getlocation(byteCode, pointer + 1);
-            if ((location >= 0) && (location < byteCode.length)) {
-                pointer = location - 1;
-            } else {
-                //TODO: error message
-                return;
-            }
-            break;
-        case 4: // ?
-            const conditionalValue = stack.pop()!;
-            // Only the first value is tested
-            location = conditionalValue[0] ? getlocation(byteCode, pointer + 1) : getlocation(byteCode, pointer + 3);
-            if ((location >= 0) && (location < byteCode.length)) {
-                pointer = location - 1;
-            } else {
-                //TODO: error message
-                return;
-            }
-            break;
-            */
+            case OpCode.Return:
+                operandStack.push({ operator: opcode, operand1: operandStack.pop() });
+                return operandStack;
+            case OpCode.Goto:
+                const branch = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 1), operandStack);
+                return branch;
+            case OpCode.Ternary:
+                const conditionalValue = operandStack.pop();
+                const branch1 = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 1));
+                const branch2 = toOperation(byteCode, renderAttributes, getlocation(byteCode, pointer + 3));
+                if (branch1 && branch2) {
+                    operandStack.push({ operator: opcode, operand1: conditionalValue, branch1: branch1, branch2: branch2 });
+                }
+                else {
+                    console.error('missing branch at', pointer, byteCode);
+                }
+                pointer = Infinity; // Stop
+                break;
             case OpCode.Function:
-                functionToOperation(getlocation(byteCode, pointer + 1), operandStack);
+                const operand = functionToOperation(getlocation(byteCode, pointer + 1), operandStack);
+                if (operand) {
+                    operandStack.push(operand);
+                }
                 pointer += 2;
                 break;
             case OpCode.Float32:
                 operandStack.push(getFloat32(byteCode, pointer + 1)[0]); // getFloat32 returns a vec4, but we only need a scalar
                 pointer += 4;
                 break;
-            /*
-        case 8: // save
-            storeAddress = getByte(byteCode, pointer + 1);
-            if (storeAddress >= 0) {
-                storage.set(storeAddress, stack.pop()!);
-                pointer += 1;
-            } else {
-                //TODO: error message
-                return;
-            }
-            break;
-        case 9: // restore
-            storeAddress = getByte(byteCode, pointer + 1);
-            if (storeAddress >= 0) {
-                stack.push(storage.get(storeAddress)!);
-                pointer += 1;
-            } else {
-                //TODO: error message
-                return;
-            }
-            break;
-        case 12:
-            not();
-            break;
-        case 13: // ==
-            equality();
-            break;
-        case 14: // !=
-            inequality();
-            break;
-        case 15: // >
-            greater();
-            break;
-        case 16: // >=
-            greaterEqual();
-            break;
-        case 17: // <
-            less();
-            break;
-        case 18: // <=
-            lessEqual();
-            break;
-        case 19: // +
-            add();
-            break;
-        case 20: // -
-            subtract();
-            break;
-            */
-            case OpCode.Multiplication:
-                operandStack.push({ operator: Operator.Multiplication, operand2: operandStack.pop(), operand1: operandStack.pop() });
+            case OpCode.StoreVariable:
+            case OpCode.Swizzle:
+                operandStack.push({ operator: opcode, operand1: getByte(byteCode, pointer + 1), operand2: operandStack.pop() });
+                ++pointer;
                 break;
+            case OpCode.LoadVariable:
+                operandStack.push({ operator: opcode, operand1: getByte(byteCode, pointer + 1) });
+                ++pointer;
+                break;
+            // Unary operators
+            case OpCode.Not:
+            case OpCode.Negation:
+                operandStack.push({ operator: opcode, operand1: operandStack.pop() });
+                break;
+            case OpCode.Equal:
+            case OpCode.NotEqual:
+            case OpCode.Greater:
+            case OpCode.GreaterEqual:
+            case OpCode.Less:
+            case OpCode.LessEqual:
+            case OpCode.Addition:
+            case OpCode.Subtraction:
+            case OpCode.Multiplication:
             case OpCode.Division:
-                operandStack.push({ operator: Operator.Division, operand2: operandStack.pop(), operand1: operandStack.pop() });
+            case OpCode.Modulo:
+                operandStack.push({ operator: opcode, operand2: operandStack.pop(), operand1: operandStack.pop() });
+                break;
+            case OpCode.AttributeLiteral:
+            case OpCode.Exists:
+                const hash = (byteCode[pointer + 1] + (byteCode[pointer + 2] << 8) + (byteCode[pointer + 3] << 16) + (byteCode[pointer + 4] << 24)) >>> 0;
+                pointer += 4;
+                let stringValue = getAttribute(hash, renderAttributes);
+                operandStack.push({ operator: opcode, operand1: stringValue });
+                break;
+            default:
+                console.error('Unknown opcode ', opcode, ' at location ', pointer);
                 break;
         }
     }
-    return null;
-}
-function functionToOperation(functionCode, operandStack) {
-    let a, b, c, d;
-    switch (functionCode) {
-        // No parameters
-        case FunctionCode.Time:
-            operandStack.push({ operator: Operator.Function, function: functionCode });
-            break;
-        // 1 parameters
-        case FunctionCode.Frac:
-        case FunctionCode.Sin:
-        case FunctionCode.Cos:
-        case FunctionCode.Tan:
-        case FunctionCode.Floor:
-        case FunctionCode.Ceil:
-        case FunctionCode.Saturate:
-        case FunctionCode.Abs:
-            operandStack.push({ operator: Operator.Function, function: functionCode, operand1: operandStack.pop() });
-            break;
-        // 2 parameters
-        case FunctionCode.Float2:
-        case FunctionCode.Random:
-            operandStack.push({ operator: Operator.Function, function: functionCode, operand2: operandStack.pop(), operand1: operandStack.pop() });
-            break;
-        // 3 parameters
-        case FunctionCode.Clamp:
-        case FunctionCode.Float3:
-            operandStack.push({ operator: Operator.Function, function: functionCode, operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
-            break;
-        // 4 parameters
-        case FunctionCode.Float4:
-            operandStack.push({ operator: Operator.Function, function: functionCode, operand4: operandStack.pop(), operand3: operandStack.pop(), operand2: operandStack.pop(), operand1: operandStack.pop() });
-            break;
-        case FunctionCode.Lerp:
-            const factor = stack.pop();
-            const second = stack.pop();
-            const first = stack.pop();
-            first[0] = first[0] + factor[0] * (second[0] - first[0]);
-            first[1] = first[1] + factor[1] * (second[1] - first[1]);
-            first[2] = first[2] + factor[2] * (second[2] - first[2]);
-            first[3] = first[3] + factor[3] * (second[3] - first[3]);
-            stack.push(first);
-            break;
-        case FunctionCode.Dot4:
-            dot4();
-            break;
-        case FunctionCode.Dot3:
-            dot3();
-            break;
-        case FunctionCode.Dot2:
-            dot2();
-            break;
-        case FunctionCode.Log:
-            log();
-            break;
-        case FunctionCode.Log2:
-            log2();
-            break;
-        case FunctionCode.Log10:
-            log10();
-            break;
-        case FunctionCode.Exp:
-            exp();
-            break;
-        case FunctionCode.Exp2:
-            exp2();
-            break;
-        case FunctionCode.Sqrt:
-            sqrt();
-            break;
-        case FunctionCode.Rsqrt:
-            rsqrt();
-            break;
-        case FunctionCode.Sign:
-            sign();
-            break;
-        case FunctionCode.Pow:
-            pow();
-            break;
-        case FunctionCode.Step:
-            step();
-            break;
-        case FunctionCode.Smoothstep:
-            smoothstep();
-            break;
-        case FunctionCode.Float4:
-            a = stack.pop();
-            b = stack.pop();
-            c = stack.pop();
-            d = stack.pop();
-            stack.push(vec4.fromValues(d[0], c[0], b[0], a[0]));
-            break;
-        case FunctionCode.Min:
-            min$1();
-            break;
-        case FunctionCode.Max:
-            max$1();
-            break;
-        case FunctionCode.SrgbLinearToGamma:
-            SrgbLinearToGamma();
-            break;
-        case FunctionCode.SrgbGammaToLinear:
-            SrgbGammaToLinear();
-            break;
-        case FunctionCode.Normalize:
-            normalize();
-            break;
-        case FunctionCode.Length:
-            length$1();
-            break;
-        case FunctionCode.Sqr:
-            sqr();
-            break;
-        case FunctionCode.TextureSize:
-            //TextureSize();TODO
-            break;
+    if (operandStack.length) {
+        return operandStack;
     }
     return null;
+}
+const functions = new Map([
+    [FunctionCode.Sin, [1, 'sin']],
+    [FunctionCode.Cos, [1, 'cos']],
+    [FunctionCode.Tan, [1, 'tan']],
+    [FunctionCode.Frac, [1, 'frac']],
+    [FunctionCode.Floor, [1, 'floor']],
+    [FunctionCode.Ceil, [1, 'ceil']],
+    [FunctionCode.Saturate, [1, 'saturate']],
+    [FunctionCode.Clamp, [3, 'clamp']],
+    [FunctionCode.Lerp, [3, 'lerp']],
+    [FunctionCode.Dot4, [2, 'dot4']],
+    [FunctionCode.Dot3, [2, 'dot3']],
+    [FunctionCode.Dot2, [2, 'dot2']],
+    [FunctionCode.Log, [1, 'log']],
+    [FunctionCode.Log2, [1, 'log2']],
+    [FunctionCode.Log10, [1, 'log10']],
+    [FunctionCode.Exp, [1, 'exp']],
+    [FunctionCode.Exp2, [1, 'exp2']],
+    [FunctionCode.Sqrt, [1, 'sqrt']],
+    [FunctionCode.Rsqrt, [1, 'rsqrt']],
+    [FunctionCode.Sign, [1, 'sign']],
+    [FunctionCode.Abs, [1, 'abs']],
+    [FunctionCode.Pow, [2, 'pow']],
+    [FunctionCode.Step, [2, 'step']],
+    [FunctionCode.Smoothstep, [3, 'smoothstep']],
+    [FunctionCode.Float4, [4, 'float4']],
+    [FunctionCode.Float3, [3, 'float3']],
+    [FunctionCode.Float2, [2, 'float2']],
+    [FunctionCode.Time, [0, 'time']],
+    [FunctionCode.Min, [2, 'min']],
+    [FunctionCode.Max, [2, 'max']],
+    [FunctionCode.SrgbLinearToGamma, [1, 'SrgbLinearToGamma']],
+    [FunctionCode.SrgbGammaToLinear, [1, 'SrgbGammaToLinear']],
+    [FunctionCode.Random, [2, 'random']],
+    [FunctionCode.Normalize, [1, 'normalize']],
+    [FunctionCode.Length, [1, 'length']],
+    [FunctionCode.Sqr, [1, 'sqr']],
+    [FunctionCode.TextureSize, [1, 'TextureSize']],
+]);
+function functionToOperation(functionCode, operandStack) {
+    const params = functions.get(functionCode);
+    if (params === undefined) {
+        console.error('undefined function' + functionCode);
+        return null;
+    }
+    const operand = { operator: OpCode.Function, function: functionCode };
+    if (params[0] > 3) {
+        operand.operand4 = operandStack.pop();
+    }
+    if (params[0] > 2) {
+        operand.operand3 = operandStack.pop();
+    }
+    if (params[0] > 1) {
+        operand.operand2 = operandStack.pop();
+    }
+    if (params[0] > 0) {
+        operand.operand1 = operandStack.pop();
+    }
+    return operand;
 }
 var Precedence;
 (function (Precedence) {
     Precedence[Precedence["Lowest"] = 0] = "Lowest";
-    Precedence[Precedence["Additive"] = 1] = "Additive";
-    Precedence[Precedence["Multiplicative"] = 2] = "Multiplicative";
-    Precedence[Precedence["Function"] = 3] = "Function";
-    Precedence[Precedence["Number"] = 4] = "Number";
+    Precedence[Precedence["Ternary"] = 1] = "Ternary";
+    Precedence[Precedence["Additive"] = 2] = "Additive";
+    Precedence[Precedence["Multiplicative"] = 3] = "Multiplicative";
+    Precedence[Precedence["Function"] = 4] = "Function";
+    Precedence[Precedence["Literal"] = 5] = "Literal";
 })(Precedence || (Precedence = {}));
 const operations = new Map();
-operations.set(Operator.Addition, { operator: '+', precedence: Precedence.Additive });
-operations.set(Operator.Subtraction, { operator: '-', precedence: Precedence.Additive });
-operations.set(Operator.Multiplication, { operator: '*', precedence: Precedence.Additive });
-operations.set(Operator.Division, { operator: '/', precedence: Precedence.Additive });
+operations.set(OpCode.Return, { operator: 'return ', precedence: Precedence.Lowest, operands: 1 });
+operations.set(OpCode.Goto, { operator: 'goto', precedence: Precedence.Lowest, operands: 0 });
+operations.set(OpCode.Ternary, { operator: '', precedence: Precedence.Ternary, operands: 1 /*not counting branches*/ });
+operations.set(OpCode.StoreVariable, { operator: '', precedence: Precedence.Lowest, operands: 2 });
+operations.set(OpCode.LoadVariable, { operator: '', precedence: Precedence.Literal, operands: 1 });
+operations.set(OpCode.Not, { operator: '!', precedence: Precedence.Additive, operands: 1 });
+operations.set(OpCode.Equal, { operator: '==', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.NotEqual, { operator: '!=', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Greater, { operator: '>', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.GreaterEqual, { operator: '>=', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Less, { operator: '<', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.LessEqual, { operator: '<=', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Addition, { operator: '+', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Subtraction, { operator: '-', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Multiplication, { operator: '*', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Division, { operator: '/', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Modulo, { operator: '%', precedence: Precedence.Additive, operands: 2 });
+operations.set(OpCode.Negation, { operator: '-', precedence: Precedence.Literal, operands: 1 });
+operations.set(OpCode.AttributeLiteral, { operator: '', precedence: Precedence.Literal, operands: 1 });
+operations.set(OpCode.Swizzle, { operator: '', precedence: Precedence.Function, operands: 2 });
+operations.set(OpCode.Exists, { operator: '', precedence: Precedence.Function, operands: 1 });
+function operandsToString(operands) {
+    if (operands.length == 0) {
+        return null;
+    }
+    let result = '';
+    for (const [i, operand] of operands.entries()) {
+        const opeResult = operandToString(operand);
+        if (!opeResult) {
+            return null;
+        }
+        result += opeResult[0];
+        if (i < operands.length - 1) {
+            result += '\n';
+        }
+    }
+    return result;
+}
+function round(input) {
+    let mul = 1;
+    for (let i = 0; i < 10; ++i) {
+        let r = Math.round(mul * input) / mul;
+        if (Math.abs(r - input) < 0.001) {
+            return r;
+        }
+        mul *= 10;
+    }
+    return input;
+}
+function toSwizzle(code) {
+    const s = 'xyzw';
+    return `.${s[(code >> 0) & 3]}${s[(code >> 2) & 3]}${s[(code >> 4) & 3]}${s[(code >> 6) & 3]}`;
+}
 function operandToString(operand) {
     if (typeof operand == 'number') {
-        return [String(operand), Precedence.Number];
+        return [String(round(operand)), Precedence.Literal];
     }
-    if (operand.operator == Operator.Function) {
-        return [functionToString(operand), Precedence.Function];
+    if (typeof operand == 'string') {
+        return [operand, Precedence.Literal];
+    }
+    if (operand.operator == OpCode.Function) {
+        const f = functionToString(operand);
+        if (f) {
+            return [f, Precedence.Function];
+        }
+        else {
+            return null;
+        }
     }
     const ope = operations.get(operand.operator);
     if (!ope) {
         console.error('Unknown operator ', operand.operator);
         return null;
     }
-    let operand1 = null;
-    let operand2 = null;
-    if (operand.operand1) {
-        operand1 = operandToString(operand.operand1);
-    }
-    if (operand.operand2) {
-        operand2 = operandToString(operand.operand2);
-    }
-    if (!operand1 || !operand2) {
-        return null;
-    }
-    let ope1 = operand1?.[0];
-    let ope2 = operand2?.[0];
-    if (operand1?.[1] < ope.precedence) {
-        ope1 = `(${ope1})`;
-    }
-    if (operand2?.[1] < ope.precedence) {
-        ope2 = `(${ope2})`;
-    }
-    return [`${ope1} ${ope.operator} ${ope2}`, ope.precedence];
-    /*
-        switch (operand.operator) {
-            case Operator.Addition:
-            /*
-
-        //return `(${operandToString(operand.operand1!)} + ${operandToString(operand.operand2!)})`;
-        case Operator.Subtraction:
-            return `(${operandToString(operand.operand1!)} - ${operandToString(operand.operand2!)})`;
-        case Operator.Multiplication:
-            return `(${operandToString(operand.operand1!)} * ${operandToString(operand.operand2!)})`;
-        case Operator.Division:
-            return `(${operandToString(operand.operand1!)} / ${operandToString(operand.operand2!)})`;
-        case Operator.Function:
-
-
-        /*
-
-            Addition,
-            Subtraction,
-            Multiplication,
-            Division,
-            Function,
-            * /
-
-            default:
-                console.error('Unknown operator ', operand.operator);
+    const opes = [];
+    for (let i = 0; i < ope.operands; i++) {
+        let operandN;
+        switch (i) { // TODO: improve that code
+            case 0:
+                operandN = operand.operand1;
+                break;
+            case 1:
+                operandN = operand.operand2;
+                break;
+            case 2:
+                operandN = operand.operand3;
+                break;
+            case 3:
+                operandN = operand.operand4;
                 break;
         }
-        return null;
-        */
+        if (operandN !== undefined) {
+            const o = operandToString(operandN);
+            if (o) {
+                let oo = o?.[0];
+                if (o?.[1] < ope.precedence) {
+                    oo = `(${oo})`;
+                }
+                opes.push(oo);
+            }
+            else {
+                console.error('no operand ' + i, operand);
+            }
+        }
+        else {
+            console.error('missing an operand ' + i, operand);
+        }
+    }
+    switch (operand.operator) {
+        case OpCode.Goto:
+            return [`${operandsToString(operand.branch1)}`, ope.precedence];
+        case OpCode.Ternary:
+            return [`${opes[0]} ? ${operandsToString(operand.branch1)} : ${operandsToString(operand.branch2)}`, ope.precedence];
+        case OpCode.StoreVariable:
+            return [`var${opes[0]} = ${opes[1]}`, ope.precedence];
+        case OpCode.LoadVariable:
+            return [`var${opes[0]}`, ope.precedence];
+        case OpCode.Swizzle:
+            return [`${opes[1]}${toSwizzle(Number(opes[0]))}`, ope.precedence];
+        case OpCode.Exists:
+            return [`exists(${ope.operator}${opes[0]})`, ope.precedence];
+    }
+    switch (ope.operands) {
+        case 0:
+            return [`${ope.operator}${opes[0]}`, ope.precedence];
+        case 1:
+            return [`${ope.operator}${opes[0]}`, ope.precedence];
+        case 2:
+            return [`${opes[0]} ${ope.operator} ${opes[1]}`, ope.precedence];
+        case 3:
+            return [`${opes[0]} ${ope.operator} ${opes[1]}`, ope.precedence];
+    }
 }
 function functionToString(operand) {
-    let operand1;
-    let operand2;
+    let operands = [];
+    /*
+    let operand2: string | undefined;
+    let operand3: string | undefined;
+    let operand4: string | undefined;
+    */
+    const params = functions.get(operand.function);
+    if (params === undefined) {
+        console.error('undefined function' + operand.function);
+        return null;
+    }
     if (operand.operand1 !== undefined) {
-        operand1 = operandToString(operand.operand1);
+        operands[0] = operandToString(operand.operand1)?.[0];
     }
     if (operand.operand2 !== undefined) {
-        operand2 = operandToString(operand.operand2);
+        operands[1] = operandToString(operand.operand2)?.[0];
     }
-    switch (operand.function) {
-        case FunctionCode.Frac:
-            if (operand1) {
-                return `frac( ${operand1[0]} )`;
-            }
-            break;
-        case FunctionCode.Abs:
-            if (operand1) {
-                return `abs( ${operand1[0]} )`;
-            }
-            break;
-        case FunctionCode.Float2:
-            if (operand1 && operand2) {
-                return `float2( ${operand1[0]} , ${operand2[0]} )`;
-            }
-            break;
-        case FunctionCode.Time:
-            return `time( )`;
-        case FunctionCode.Random:
-            if (operand1 && operand2) {
-                return `random( ${operand1[0]} , ${operand2[0]} )`;
-            }
-        /*
-            Sin = 0,
-            Cos = 1,
-            Tan = 2,
-            Frac = 3,
-            Floor = 4,
-            Ceil = 5,
-            Saturate = 6,
-            Clamp = 7,
-            Lerp = 8,
-            Dot4 = 9,
-            Dot3 = 10,
-            Dot2 = 11,
-            Log = 12,
-            Log2 = 13,
-            Log10 = 14,
-            Exp = 15,
-            Exp2 = 16,
-            Sqrt = 17,
-            Rsqrt = 18,
-            Sign = 19,
-            Abs = 20,
-            Pow = 21,
-            Step = 22,
-            Smoothstep = 23,
-            Float4 = 24,
-            Float3 = 25,
-            Float2 = 26,
-            Time = 27,
-            Min = 28,
-            Max = 29,
-            SrgbLinearToGamma = 30,
-            SrgbGammaToLinear = 31,
-            Random = 32,
-            Normalize = 33,
-            Length = 34,
-            Sqr = 35,
-            TextureSize = 36,
-            */
-        default:
-            console.error('Unknown function ', operand.function);
-            break;
+    if (operand.operand3 !== undefined) {
+        operands[2] = operandToString(operand.operand3)?.[0];
     }
-    return '';
+    if (operand.operand4 !== undefined) {
+        operands[3] = operandToString(operand.operand4)?.[0];
+    }
+    let p = '';
+    for (let i = 0; i < params[0]; i++) {
+        const opeI = operands[i];
+        if (opeI === undefined) {
+            console.error(`Missing param ${i} for function ${params[1]}`);
+            return null;
+        }
+        const ope = operandToString(opeI)?.[0];
+        if (ope) {
+            p += ope;
+            if (i < params[0] - 1) {
+                p += ', ';
+            }
+        }
+    }
+    return `${params[1]}( ${p} )`;
 }
 
 const UNIFORMS = new Map([
@@ -60371,7 +60345,7 @@ class Source2Material extends Material {
         this.uniforms['g_vColorTint'] = vec4.fromValues(1, 1, 1, 0);
         this.initFloatUniforms();
         this.initVectorUniforms();
-        this.initTextureUniforms();
+        //this.initTextureUniforms();
         /*
         0: {m_name: "g_flDetailBlendToFull", _name: "MaterialParamFloat_t", m_flValue: 0}
         1: {m_name: "g_flEnvMapBlendToFull", _name: "MaterialParamFloat_t", m_flValue: 0}
@@ -60514,7 +60488,7 @@ class Source2Material extends Material {
             if (vectors) {
                 for (const vector of vectors) {
                     const name = vector.getValueAsString('m_name');
-                    const value = vector.getValueAsNumberArray('m_value');
+                    const value = vector.getValueAsVec4('m_value', vec4.create());
                     if (name !== null && value !== null) {
                         this.setUniform(name, value);
                     }
@@ -60652,14 +60626,38 @@ class Source2Material extends Material {
         const result = new Map();
         for (const v of values) {
             const name = v.getSubValueAsString('m_name');
-            const value = v.getSubValueAsUint8Array('m_nValue');
+            const value = v.getSubValueAsUint8Array('m_value');
             if (name && value != null) {
-                result.set(name, decompileDynamicExpression(this.#source2File.fileName + ':' + name, value, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []));
+                result.set(name, [decompileDynamicExpression(this.#source2File.fileName + ':' + name, value, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []), value]);
             }
         }
         return result;
     }
 }
+
+class Source2CablesMaterial extends Source2Material {
+    get shaderSource() {
+        return 'source2_cables';
+    }
+}
+Source2MaterialLoader.registerMaterial('cables.vfx', Source2CablesMaterial);
+
+// materials/models/items/venomancer/mechamancer/mechamancer_fluid.vmat_c
+// materials/models/items/pudge/pudge_hungry_clown_car/pudge_hungry_clown_car_fluid.vmat_c
+// materials/models/items/lion/lion_dungeon_poacher_shoulder/lion_dungeon_poacher_shoulder_jar.vmat_c
+class Source2LiquidFx extends Source2Material {
+    get shaderSource() {
+        return 'source2_liquid_fx';
+    }
+}
+Source2MaterialLoader.registerMaterial('liquid_fx.vfx', Source2LiquidFx);
+
+class Source2RefractMaterial extends Source2Material {
+    get shaderSource() {
+        return 'source2_refract';
+    }
+}
+Source2MaterialLoader.registerMaterial('refract.vfx', Source2RefractMaterial);
 
 class Source2CsgoCharacter extends Source2Material {
     get shaderSource() {
@@ -61246,6 +61244,27 @@ Source2MaterialLoader.registerMaterial('csgo_weapon.vfx', Source2CsgoWeapon);
 }
 */
 
+class Source2IceSurfaceDotaMaterial extends Source2Material {
+    get shaderSource() {
+        return 'source2_ice_surface_dota';
+    }
+}
+Source2MaterialLoader.registerMaterial('ice_surface_dota.vfx', Source2IceSurfaceDotaMaterial);
+
+class Source2ProjectedDotaMaterial extends Source2Material {
+    get shaderSource() {
+        return 'source2_projected_dota';
+    }
+}
+Source2MaterialLoader.registerMaterial('projected_dota.vfx', Source2ProjectedDotaMaterial);
+
+class Source2StickersMaterial extends Source2Material {
+    get shaderSource() {
+        return 'source2_stickers';
+    }
+}
+Source2MaterialLoader.registerMaterial('stickers.vfx', Source2StickersMaterial);
+
 class Source2VrBlackUnlit extends Source2Material {
     get shaderSource() {
         return 'source2_vr_black_unlit';
@@ -61477,7 +61496,7 @@ const vec$6 = vec3.create();
 const DEFAULT_MIN_DISTANCE = 0;
 const DEFAULT_MAX_DISTANCE$1 = 1000;
 const DEFAULT_GLOBAL_CENTER = false;
-class ConstrainDistance extends Operator$1 {
+class ConstrainDistance extends Operator {
     #centerOffset = vec3.create();
     #globalCenter = DEFAULT_GLOBAL_CENTER;
     _paramChanged(paramName, param) {
@@ -61757,7 +61776,7 @@ RegisterSource2ParticleOperator('C_OP_NoiseEmitter', NoiseEmitter);
 const vecCenter = vec3.create();
 const vec$5 = vec3.create();
 const DEFAULT_APPLY_MIN_FORCE = false; // TODO: check default value
-class AttractToControlPoint extends Operator$1 {
+class AttractToControlPoint extends Operator {
     #componentScale = vec3.fromValues(1, 1, 1);
     #falloffPower = 0;
     #scaleLocal = false;
@@ -61806,7 +61825,7 @@ class AttractToControlPoint extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_OP_AttractToControlPoint', AttractToControlPoint);
 
-class CPVelocityForce extends Operator$1 {
+class CPVelocityForce extends Operator {
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flScale':
@@ -61822,7 +61841,7 @@ class CPVelocityForce extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_OP_CPVelocityForce', CPVelocityForce);
 
-class RandomForce extends Operator$1 {
+class RandomForce extends Operator {
     #minForce = vec3.create();
     #maxForce = vec3.create();
     _paramChanged(paramName, param) {
@@ -61844,7 +61863,7 @@ class RandomForce extends Operator$1 {
 RegisterSource2ParticleOperator('C_OP_RandomForce', RandomForce);
 
 const DEFAULT_FORCE_AMOUNT = 100; // TODO: check default value
-class TwistAroundAxis extends Operator$1 {
+class TwistAroundAxis extends Operator {
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_fForceAmount':
@@ -61861,7 +61880,7 @@ RegisterSource2ParticleOperator('C_OP_TwistAroundAxis', TwistAroundAxis);
 
 const DEFAULT_NOISE_SCALE$3 = 1; // TODO: check default value
 const DEFAULT_NOISE_SCALE_LOC$1 = 1; // TODO: check default value
-class AgeNoise extends Operator$1 {
+class AgeNoise extends Operator {
     #noiseScale = DEFAULT_NOISE_SCALE$3;
     #noiseScaleLoc = DEFAULT_NOISE_SCALE_LOC$1;
     _paramChanged(paramName, param) {
@@ -61887,7 +61906,7 @@ const DEFAULT_INCREMENT$1 = 1; // TODO: check default value
 const DEFAULT_RANDOM_DISTRIBUTION$1 = false; // TODO: check default value
 const DEFAULT_RANDOM_SEED$3 = 0; // TODO: check default value
 const DEFAULT_SUB_FRAME = true; // TODO: check default value
-class CreateFromParentParticles extends Operator$1 {
+class CreateFromParentParticles extends Operator {
     #velocityScale = DEFAULT_VELOCITY_SCALE;
     #increment = DEFAULT_INCREMENT$1;
     #randomDistribution = DEFAULT_RANDOM_DISTRIBUTION$1;
@@ -61970,7 +61989,7 @@ const DEFAULT_MAX_BONE_VELOCITY = 0;
 const DEFAULT_HITBOX_SET_NAME$2 = 'default';
 const DEFAULT_LOCAL_COORDS$3 = false;
 const DEFAULT_USE_BONES$1 = false;
-class CreateOnModel extends Operator$1 {
+class CreateOnModel extends Operator {
     #modelInput = new Source2ParticleModelInput();
     #transformInput = new Source2ParticleTransformInput();
     #forceInModel = DEFAULT_FORCE_IN_MODEL;
@@ -62050,7 +62069,7 @@ vec3.create();
 const DEFAULT_HEIGHT_CP = 1;
 const DEFAULT_DESIRED_HEIGHT = 1;
 const DEFAULT_FORCE_Z = false;
-class CreateOnModelAtHeight extends Operator$1 {
+class CreateOnModelAtHeight extends Operator {
     #heightCP = DEFAULT_HEIGHT_CP;
     #desiredHeight = DEFAULT_HEIGHT_CP;
     #forceZ = DEFAULT_FORCE_Z;
@@ -62176,7 +62195,7 @@ const vec$3 = vec3.create();
 const DEFAULT_LOOP$1 = true;
 const DEFAULT_CP_PAIR = false;
 const DEFAULT_SAVE_OFFSET$1 = false;
-class CreateSequentialPath extends Operator$1 {
+class CreateSequentialPath extends Operator {
     #loop = DEFAULT_LOOP$1; //restart behavior (0 = bounce, 1 = loop )
     #cpPairs = DEFAULT_CP_PAIR; //use sequential CP pairs between start and end point
     #saveOffset = DEFAULT_SAVE_OFFSET$1;
@@ -62244,7 +62263,7 @@ const tempVec3$3 = vec3.create();
 const tempVec3_2$1 = vec3.create();
 const DEFAULT_LOCAl_SPACE = false;
 const DEFAULT_USE_NEW_CODE = false;
-class CreateWithinBox extends Operator$1 {
+class CreateWithinBox extends Operator {
     #vecMin = vec4.create();
     #vecMax = vec4.create();
     #localSpace = DEFAULT_LOCAl_SPACE;
@@ -62308,7 +62327,7 @@ const createWithinSphereSpeedMax = vec4.create();
 const createWithinSphereDistanceBias = vec4.create();
 const DEFAULT_SPEED_RAND_EXP = 1; // TODO: check default value
 const DEFAULT_LOCAL_COORDS$2 = false; // TODO: check default value
-class CreateWithinSphere extends Operator$1 {
+class CreateWithinSphere extends Operator {
     #distanceBiasAbs = vec3.create();
     #speedRandExp = DEFAULT_SPEED_RAND_EXP;
     #localCoords = DEFAULT_LOCAL_COORDS$2; //bias in local system
@@ -62427,7 +62446,7 @@ const DEFAULT_OUTPUT_MAX$6 = 1;
 const DEFAULT_NOISE_SCALE$2 = 0.1;
 const DEFAULT_NOISE_SCALE_LOC = 0.001;
 const DEFAULT_WORLD_TIME_SCALE = 0;
-class CreationNoise extends Operator$1 {
+class CreationNoise extends Operator {
     #fieldOutput = DEFAULT_FIELD_OUTPUT$8;
     #absVal = DEFAULT_ABS_VAL;
     #absValInv = DEFAULT_ABS_VAL_INV;
@@ -62545,7 +62564,7 @@ const DEFAULT_FIELD_OUTPUT$7 = PARTICLE_FIELD_RADIUS; // TODO: check default val
 const DEFAULT_INCREMENT = 1; // TODO: check default value
 const DEFAULT_RANDOM_DISTRIBUTION = false; // TODO: check default value
 const DEFAULT_RANDOM_SEED$2 = 0; // TODO: check default value
-class InheritFromParentParticles extends Operator$1 {
+class InheritFromParentParticles extends Operator {
     #scale = DEFAULT_SCALE$2;
     #fieldOutput = DEFAULT_FIELD_OUTPUT$7;
     #increment = DEFAULT_INCREMENT;
@@ -62582,7 +62601,7 @@ class InheritFromParentParticles extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_INIT_InheritFromParentParticles', InheritFromParentParticles);
 
-class InitFloat extends Operator$1 {
+class InitFloat extends Operator {
     #setMethod = '';
     constructor(system) {
         super(system);
@@ -62661,7 +62680,7 @@ const DEFAULT_RANDOM$1 = false; // TODO: check default value
 const DEFAULT_REVERSE = false; // TODO: check default value
 const DEFAULT_RANDOM_SEED$1 = 0; // TODO: check default value
 const DEFAULT_LOCAL_SPACE_ANGLES = false; // TODO: check default value
-class InitFromCPSnapshot extends Operator$1 {
+class InitFromCPSnapshot extends Operator {
     #attributeToRead = DEFAULT_ATTRIBUTE_TO_READ;
     #attributeToWrite = DEFAULT_ATTRIBUTE_TO_WRITE;
     #localSpaceCP = DEFAULT_LOCAL_SPACE_CP$1;
@@ -62744,7 +62763,7 @@ vec3.create();
 vec3.create();
 vec3.create();
 const DEFAULT_IGNORE_DT$3 = false;
-class InitialVelocityNoise extends Operator$1 {
+class InitialVelocityNoise extends Operator {
     #absVal = vec3.create();
     #absValInv = vec3.create();
     #localSpace = false;
@@ -62948,7 +62967,7 @@ const DEFAULT_BONE_VELOCITY_MAX = 0;
 const DEFAULT_COPY_COLOR = false;
 const DEFAULT_COPY_ALPHA = false;
 const DEFAULT_COPY_RADIUS = false;
-class InitSkinnedPositionFromCPSnapshot extends Operator$1 {
+class InitSkinnedPositionFromCPSnapshot extends Operator {
     #rigidOnce = false;
     #snapshotControlPointNumber = DEFAULT_SNAPSHOT_CONTROL_POINT_NUMBER;
     #random = DEFAULT_RANDOM;
@@ -63200,7 +63219,7 @@ const initVecTempVec4 = vec4.create();
 const DEFAULT_FIELD_OUTPUT$6 = PARTICLE_FIELD_COLOR; // TODO: check default value
 const DEFAULT_SET_METHOD$4 = 'PARTICLE_SET_SCALE_INITIAL_VALUE'; // TODO: check default value
 const DEFAULT_SCALE_INITIAL_RANGE$2 = false; // TODO: check default value
-class InitVec extends Operator$1 {
+class InitVec extends Operator {
     #setMethod = DEFAULT_SET_METHOD$4;
     #scaleInitialRange = DEFAULT_SCALE_INITIAL_RANGE$2;
     #fieldOutput = DEFAULT_FIELD_OUTPUT$6;
@@ -63232,7 +63251,7 @@ RegisterSource2ParticleOperator('C_INIT_InitVec', InitVec);
 //Notice this is not the default particle normal.
 //This operator change the default normal from +Z to +X
 const DEFAULT_NORMAL = vec3.fromValues(1, 0, 0);
-class NormalAlignToCP extends Operator$1 {
+class NormalAlignToCP extends Operator {
     _paramChanged(paramName, param) {
         switch (paramName) {
             default:
@@ -63253,7 +63272,7 @@ RegisterSource2ParticleOperator('C_INIT_NormalAlignToCP', NormalAlignToCP);
 const v$b = vec3.create();
 const DEFAULT_LOCAL_COORDS$1 = false; // TODO: check default value
 const DEFAULT_NORMALIZE = false; // TODO: check default value
-class NormalOffset extends Operator$1 {
+class NormalOffset extends Operator {
     #offsetMin = vec3.create(); // TODO: check default value
     #offsetMax = vec3.create(); // TODO: check default value
     #localCoords = DEFAULT_LOCAL_COORDS$1; // TODO: check default value
@@ -63297,7 +63316,7 @@ const DEFAULT_OFFSET$3 = vec3.create();
 const DEFAULT_LOCAL_COORDS = false;
 const DEFAULT_PROPORTIONAL$4 = false;
 const offset$1 = vec3.create();
-class PositionOffset extends Operator$1 {
+class PositionOffset extends Operator {
     #localCoords = DEFAULT_LOCAL_COORDS;
     #proportional = DEFAULT_PROPORTIONAL$4;
     #offsetMin = vec4.create();
@@ -63346,7 +63365,7 @@ const DEFAULT_WARP_START_TIME = 0; // TODO: check default value
 const DEFAULT_PREV_POS_SCALE$2 = 1; // TODO: check default value
 const DEFAULT_INVERT_WARP = false; // TODO: check default value
 const DEFAULT_USE_COUNT = false; // TODO: check default value
-class PositionWarp extends Operator$1 {
+class PositionWarp extends Operator {
     #warpMin = vec3.fromValues(1, 1, 1); // TODO: check default value
     #warpMax = vec3.fromValues(1, 1, 1); // TODO: check default value
     #scaleControlPointNumber = DEFAULT_SCALE_CONTROL_POINT_NUMBER;
@@ -63410,7 +63429,7 @@ class PositionWarp extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_INIT_PositionWarp', PositionWarp);
 
-class RadiusFromCPObject extends Operator$1 {
+class RadiusFromCPObject extends Operator {
     doInit(particle, elapsedTime, strength) {
         //TODO:  I don't really know what it is supposed to do
     }
@@ -63423,7 +63442,7 @@ const DEFAULT_TINT_CP = 0; // TODO: check default value
 const DEFAULT_LIGHT_AMPLIFICATION = 1; // TODO: check default value
 const DEFAULT_TINT_PERC = 0; // TODO: check default value
 const DEFAULT_TINT_BLEND_MODE = Source2ParticleTintBlendMode.Replace; // TODO: check default value
-class RandomColor extends Operator$1 {
+class RandomColor extends Operator {
     #colorMin = vec4.fromValues(1, 1, 1, 1); // TODO: check default value
     #colorMax = vec4.fromValues(1, 1, 1, 1); // TODO: check default value
     #tintMin = vec3.fromValues(0, 0, 0); // TODO: check default value
@@ -63487,7 +63506,7 @@ RegisterSource2ParticleOperator('C_INIT_RandomColor', RandomColor);
 
 const DEFAULT_SEQUENCE_MIN = 0; // TODO: check default value
 const DEFAULT_SEQUENCE_MAX = 0; // TODO: check default value
-class RandomSecondSequence extends Operator$1 {
+class RandomSecondSequence extends Operator {
     #sequenceMin = DEFAULT_SEQUENCE_MIN;
     #sequenceMax = DEFAULT_SEQUENCE_MAX;
     _paramChanged(paramName, param) {
@@ -63508,7 +63527,7 @@ class RandomSecondSequence extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_INIT_RandomSecondSequence', RandomSecondSequence);
 
-class RandomSequence extends Operator$1 {
+class RandomSequence extends Operator {
     #sequenceMin = 0;
     #sequenceMax = 0;
     _paramChanged(paramName, param) {
@@ -63530,7 +63549,7 @@ class RandomSequence extends Operator$1 {
 RegisterSource2ParticleOperator('C_INIT_RandomSequence', RandomSequence);
 
 const DEFAULT_PERCENT = 0.5;
-class RandomYawFlip extends Operator$1 {
+class RandomYawFlip extends Operator {
     #percent = DEFAULT_PERCENT;
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -63562,7 +63581,7 @@ const DEFAULT_LOCAL_SPACE_CP = -1; // TODO: check default value
 const DEFAULT_REMAP_BIAS$1 = 0.5; // TODO: check default value
 const DEFAULT_SCALE_INITIAL_RANGE$1 = false; // TODO: check default value
 const DEFAULT_FIELD_OUTPUT$5 = PARTICLE_FIELD_POSITION; // TODO: check default value
-class RemapCPtoVector extends Operator$1 {
+class RemapCPtoVector extends Operator {
     #cpInput = DEFAULT_CP_INPUT$2;
     #inputMin = vec3.create(); // TODO: check default value
     #inputMax = vec3.create(); // TODO: check default value
@@ -63656,7 +63675,7 @@ const DEFAULT_ACTIVE_RANGE$1 = false; // TODO: check default value
 const DEFAULT_INVERT = false; // TODO: check default value
 const DEFAULT_WRAP = false; // TODO: check default value
 const DEFAULT_REMAP_BIAS = 0.5; // TODO: check default value
-class RemapParticleCountToScalar extends Operator$1 {
+class RemapParticleCountToScalar extends Operator {
     #inputMin = DEFAULT_INPUT_MIN$4;
     #inputMax = DEFAULT_INPUT_MAX$4;
     #scaleControlPoint = DEFAULT_SCALE_CONTROL_POINT$1;
@@ -63723,7 +63742,7 @@ const va = vec3.create();
 const o = vec3.create();
 const DEFAULT_EVEN_DISTRIBUTION = false; // TODO: check default value
 const DEFAULT_XY_VELOCITY_ONLY = true; // TODO: check default value
-class RingWave extends Operator$1 {
+class RingWave extends Operator {
     #evenDistribution = DEFAULT_EVEN_DISTRIBUTION;
     #xyVelocityOnly = DEFAULT_XY_VELOCITY_ONLY;
     t = 0;
@@ -63787,7 +63806,7 @@ class RingWave extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_INIT_RingWave', RingWave);
 
-class SequenceLifeTime extends Operator$1 {
+class SequenceLifeTime extends Operator {
     doInit(particle, elapsedTime, strength) {
         //TODO: I don't know what to do
     }
@@ -63796,7 +63815,7 @@ RegisterSource2ParticleOperator('C_INIT_SequenceLifeTime', SequenceLifeTime);
 
 const v$8 = vec3.create();
 const DEFAULT_LOCAL_SPACE$2 = true; // TODO: check default value
-class SetRigidAttachment extends Operator$1 {
+class SetRigidAttachment extends Operator {
     #localSpace = DEFAULT_LOCAL_SPACE$2;
     #fieldOutput = PARTICLE_FIELD_POSITION_PREVIOUS;
     #fieldInput = PARTICLE_FIELD_POSITION;
@@ -63826,7 +63845,7 @@ const tempVec3$2 = vec3.create();
 const velocityRandomTempVec4_0 = vec4.create();
 const velocityRandomTempVec4_1 = vec4.create();
 const DEFAULT_IGNORE_DT$1 = false; // TODO: check default value
-class VelocityRandom extends Operator$1 {
+class VelocityRandom extends Operator {
     #ignoreDT = DEFAULT_IGNORE_DT$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -63877,7 +63896,7 @@ RegisterSource2ParticleOperator('C_INIT_VelocityRandom', VelocityRandom);
 
 const DEFAULT_MAX_CONSTRAINTS_PASSES = 3;
 vec3.create();
-class BasicMovement extends Operator$1 {
+class BasicMovement extends Operator {
     #gravity = vec3.create();
     #drag = 0;
     #maxConstraintPasses = DEFAULT_MAX_CONSTRAINTS_PASSES;
@@ -63924,7 +63943,7 @@ const DEFAULT_SET_METHOD = 'PARTICLE_SET_SCALE_CURRENT_VALUE';// TODO: check def
 */
 const DEFAULT_OUTPUT_MIN$4 = 0;
 const DEFAULT_OUTPUT_MAX$4 = 1;
-class ClampScalar extends Operator$1 {
+class ClampScalar extends Operator {
     #outputMin = DEFAULT_OUTPUT_MIN$4;
     #outputMax = DEFAULT_OUTPUT_MAX$4;
     /*
@@ -63969,7 +63988,7 @@ const colorInterpolateTempVec4 = vec4.create();
 const DEFAULT_FADE_START_TIME = 0; // TODO: check default value
 const DEFAULT_FADE_END_TIME = 1; // TODO: check default value
 const DEFAULT_EASE_IN_AND_OUT$1 = false; // TODO: check default value
-class ColorInterpolate extends Operator$1 {
+class ColorInterpolate extends Operator {
     #colorFade = vec4.fromValues(1, 1, 1, 1); // TODO: check default value
     #fadeStartTime = DEFAULT_FADE_START_TIME;
     #fadeEndTime = DEFAULT_FADE_END_TIME;
@@ -64024,7 +64043,7 @@ RegisterSource2ParticleOperator('C_OP_ColorInterpolate', ColorInterpolate);
 const v$7 = vec3.create();
 const DEFAULT_RANGE$1 = 100; // TODO: check default value
 const DEFAULT_SCALE$1 = 100; // TODO: check default value
-class DampenToCP extends Operator$1 {
+class DampenToCP extends Operator {
     #range = DEFAULT_RANGE$1;
     #scale = DEFAULT_SCALE$1;
     _paramChanged(paramName, param) {
@@ -64060,7 +64079,7 @@ RegisterSource2ParticleOperator('C_OP_DampenToCP', DampenToCP);
 const vec$2 = vec3.create();
 const DEFAULT_DISTANCE = 0; // TODO: check default value
 const DEFAULT_CULL_INSIDE = false; // TODO: check default value
-class DistanceCull extends Operator$1 {
+class DistanceCull extends Operator {
     #pointOffset = vec3.create(); // TODO: check default value
     #distance = DEFAULT_DISTANCE;
     #cullInside = DEFAULT_CULL_INSIDE;
@@ -64116,7 +64135,7 @@ const DEFAULT_ACTIVE_RANGE = false; // TODO: check default value
 const DEFAULT_ADDITIVE$2 = false; // TODO: check default value
 const DEFAULT_SCALE_INITIAL_RANGE = false; // TODO: check default value
 const DEFAULT_START_CP = 0; // TODO: check default value
-class DistanceToCP extends Operator$1 {
+class DistanceToCP extends Operator {
     //#fieldOutput = PARTICLE_FIELD_RADIUS/*TODO: create enum*/;
     #inputMin = DEFAULT_INPUT_MIN$3;
     #inputMax = DEFAULT_INPUT_MAX$3;
@@ -64270,7 +64289,7 @@ const DEFAULT_END_FADE_OUT_TIME$1 = 1;
 const DEFAULT_START_ALPHA = 1;
 const DEFAULT_END_ALPHA = 0;
 const DEFAULT_FORCE_PRESERVE_PARTICLE_ORDER = false;
-class FadeAndKill extends Operator$1 {
+class FadeAndKill extends Operator {
     #startFadeInTime = DEFAULT_START_FADE_IN_TIME;
     #endFadeInTime = DEFAULT_END_FADE_IN_TIME;
     #startFadeOutTime = DEFAULT_START_FADE_OUT_TIME$1;
@@ -64346,7 +64365,7 @@ const DEFAULT_FADE_IN_TIME_MIN = 0.25;
 const DEFAULT_FADE_IN_TIME_MAX = 0.25;
 const DEFAULT_FADE_IN_TIME_EXP = 1;
 const DEFAULT_PROPORTIONAL$3 = true;
-class FadeIn extends Operator$1 {
+class FadeIn extends Operator {
     #fadeInTimeMin = DEFAULT_FADE_IN_TIME_MIN;
     #fadeInTimeMax = DEFAULT_FADE_IN_TIME_MAX;
     #fadeInTimeExp = DEFAULT_FADE_IN_TIME_EXP;
@@ -64391,7 +64410,7 @@ class FadeIn extends Operator$1 {
 RegisterSource2ParticleOperator('C_OP_FadeIn', FadeIn);
 
 const DEFAULT_FADE_IN_TIME = 0.25; // TODO: check default value
-class FadeInSimple extends Operator$1 {
+class FadeInSimple extends Operator {
     #fadeInTime = DEFAULT_FADE_IN_TIME;
     #invFadeInTime;
     constructor(system) {
@@ -64425,7 +64444,7 @@ const DEFAULT_FADE_OUT_TIME_EXP = 1;
 const DEFAULT_FADE_BIAS = 0.5;
 const DEFAULT_PROPORTIONAL$2 = true;
 const DEFAULT_EASE_IN_AND_OUT = true;
-class FadeOut extends Operator$1 {
+class FadeOut extends Operator {
     #fadeOutTimeMin = DEFAULT_FADE_OUT_TIME_MIN;
     #fadeOutTimeMax = DEFAULT_FADE_OUT_TIME_MAX;
     #fadeOutTimeExp = DEFAULT_FADE_OUT_TIME_EXP;
@@ -64484,7 +64503,7 @@ class FadeOut extends Operator$1 {
 RegisterSource2ParticleOperator('C_OP_FadeOut', FadeOut);
 
 const DEFAULT_FADE_OUT_TIME = 0.25;
-class FadeOutSimple extends Operator$1 {
+class FadeOutSimple extends Operator {
     fadeOutTime = DEFAULT_FADE_OUT_TIME;
     startFadeOutTime;
     invFadeOutTime;
@@ -64514,7 +64533,7 @@ class FadeOutSimple extends Operator$1 {
 RegisterSource2ParticleOperator('C_OP_FadeOutSimple', FadeOutSimple);
 
 const DEFAULT_BIAS$1 = 0.5;
-class InterpolateRadius extends Operator$1 {
+class InterpolateRadius extends Operator {
     #startTime = 0;
     #endTime = 1;
     #startScale = 1;
@@ -64593,7 +64612,7 @@ RegisterSource2ParticleOperator('C_OP_InterpolateRadius', InterpolateRadius);
 
 const DEFAULT_OUTPUT = 0; // TODO: check default value
 const DEFAULT_LERP_TIME = 0; // TODO: check default value
-class LerpEndCapScalar extends Operator$1 {
+class LerpEndCapScalar extends Operator {
     #output = DEFAULT_OUTPUT;
     #lerpTime = DEFAULT_OUTPUT;
     _paramChanged(paramName, param) {
@@ -64614,7 +64633,7 @@ class LerpEndCapScalar extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_OP_LerpEndCapScalar', LerpEndCapScalar);
 
-class LifespanDecay extends Operator$1 {
+class LifespanDecay extends Operator {
     doOperate(particle, elapsedTime, strength) {
         if (particle.timeToLive < particle.currentTime) {
             particle.die();
@@ -64634,7 +64653,7 @@ const DEFAULT_FIELD_OUTPUT$4 = Source2ParticleVectorField.Position;
 const DEFAULT_FIELD_OUTPUT_PREV = Source2ParticleVectorField.Position;
 const DEFAULT_ROTATION_SET_TYPE = Source2ParticleRotationSetType.None;
 const DEFAULT_RIGID_ROTATION_LOCK = false;
-class LockToBone extends Operator$1 {
+class LockToBone extends Operator {
     #lifeTimeFadeStart = DEFAULT_LIFE_TIME_FADE_START;
     #lifeTimeFadeEnd = DEFAULT_LIFE_TIME_FADE_END;
     #jumpThreshold = DEFAULT_JUMP_THRESHOLD$1;
@@ -64718,7 +64737,7 @@ const DEFAULT_MAX_DISTANCE = 0; // TODO: check default value
 const DEFAULT_SAVE_OFFSET = false; // TODO: check default value
 const DEFAULT_CP_PAIRS = false; // TODO: check default value
 const DEFAULT_MID_POINT = 0.5; // TODO: check default value
-class MaintainSequentialPath extends Operator$1 {
+class MaintainSequentialPath extends Operator {
     #numToAssign = DEFAULT_NUM_TO_ASSIGN;
     assignedSoFar = 0;
     #step = 0.01;
@@ -64811,7 +64830,7 @@ const DEFAULT_SCALE_CP_FIELD = Source2ParticleCpField.X;
 const DEFAULT_FIELD_INPUT = Source2ParticleVectorField.PreviousPosition;
 const DEFAULT_FIELD_OUTPUT$3 = Source2ParticleVectorField.Position;
 const DEFAULT_OFFSET_LOCAL$2 = true;
-let MovementRigidAttachToCP$1 = class MovementRigidAttachToCP extends Operator$1 {
+let MovementRigidAttachToCP$1 = class MovementRigidAttachToCP extends Operator {
     #scaleControlPoint = DEFAULT_SCALE_CONTROL_POINT;
     #scaleCPField = DEFAULT_SCALE_CP_FIELD; //-1: disabled, 0: X, 1: Y, 2 :Z
     #fieldInput = DEFAULT_FIELD_INPUT;
@@ -64895,7 +64914,7 @@ const v$5 = vec3.create();
 const movementRotateParticleAroundAxisTempVec4 = vec4.create();
 const DEFAULT_AXIS = vec3.fromValues(0, 0, 1);
 const DEFAULT_LOCAL_SPACE$1 = false; // TODO: check default value
-class MovementRotateParticleAroundAxis extends Operator$1 {
+class MovementRotateParticleAroundAxis extends Operator {
     #localSpace = DEFAULT_LOCAL_SPACE$1;
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -64941,7 +64960,7 @@ const DEFAULT_OUTPUT_MAX$2 = 1;
 const DEFAULT_NOISE_SCALE$1 = 0.1;
 const DEFAULT_ADDITIVE$1 = false;
 const DEFAULT_NOISE_ANIMATION_TIME_SCALE$1 = 0;
-class Noise extends Operator$1 {
+class Noise extends Operator {
     #fieldOutput = DEFAULT_FIELD_OUTPUT$2;
     #outputMin = DEFAULT_OUTPUT_MIN$2;
     #outputMax = DEFAULT_OUTPUT_MAX$2;
@@ -65008,7 +65027,7 @@ RegisterSource2ParticleOperator('C_OP_Noise', Noise);
 
 const normalizeVectorVec3 = vec3.create();
 const DEFAULT_SCALE_FACTOR = 1;
-class NormalizeVector extends Operator$1 {
+class NormalizeVector extends Operator {
     #fieldOutput = Source2ParticleVectorField.Position;
     #scale = DEFAULT_SCALE_FACTOR;
     _paramChanged(paramName, param) {
@@ -65031,7 +65050,7 @@ RegisterSource2ParticleOperator('C_OP_NormalizeVector', NormalizeVector);
 
 //const mat = mat4.create();
 const nmat$1 = mat3.create();
-class NormalLock extends Operator$1 {
+class NormalLock extends Operator {
     doOperate(particle, elapsedTime, strength) {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
@@ -65058,7 +65077,7 @@ const DEFAULT_END_TIME_MIN$4 = 1; // TODO: check default value
 const DEFAULT_END_TIME_MAX$4 = 1; // TODO: check default value
 const DEFAULT_OSC_MULT$2 = 2; // TODO: check default value
 const DEFAULT_OSC_ADD$2 = 0.5; // TODO: check default value
-class OscillateScalar extends Operator$1 {
+class OscillateScalar extends Operator {
     #rateMin = DEFAULT_RATE_MIN$2;
     #rateMax = DEFAULT_RATE_MAX$2;
     #frequencyMin = DEFAULT_FREQUENCY_MIN;
@@ -65170,7 +65189,7 @@ const DEFAULT_FREQUENCY = 1;
 const DEFAULT_FIELD$4 = Source2ParticleScalarField.Alpha;
 const DEFAULT_OSC_MULT$1 = 2;
 const DEFAULT_OSC_ADD$1 = 0.5;
-class OscillateScalarSimple extends Operator$1 {
+class OscillateScalarSimple extends Operator {
     #rate = DEFAULT_RATE;
     #frequency = DEFAULT_FREQUENCY;
     #field = DEFAULT_FIELD$4;
@@ -65219,7 +65238,7 @@ const DEFAULT_START_TIME_MIN$3 = 0; // TODO: check default value
 const DEFAULT_START_TIME_MAX$3 = 0; // TODO: check default value
 const DEFAULT_OSC_MULT = 2; // TODO: check default value
 const DEFAULT_OSC_ADD = 0.5; // TODO: check default value
-class OscillateVector extends Operator$1 {
+class OscillateVector extends Operator {
     #rateMin = vec3.create(); // TODO: check default value
     #rateMax = vec3.create(); // TODO: check default value
     #frequencyMin = vec3.fromValues(1, 1, 1); // TODO: check default value
@@ -65384,7 +65403,7 @@ const DEFAULT_OFFSET_LOCAL$1 = false;
 const DEFAULT_PARTICLE_SELECTION = Source2ParticleSelection.First;
 const DEFAULT_BREAK_CP_NUMBER = -1;
 const DEFAULT_RETAIN_INITIAL_VELOCITY = false;
-class PinParticleToCP extends Operator$1 {
+class PinParticleToCP extends Operator {
     static doOnce = false;
     #offsetLocal = DEFAULT_OFFSET_LOCAL$1;
     #particleSelection = DEFAULT_PARTICLE_SELECTION; //PARTICLE_SELECTION_LAST
@@ -65456,7 +65475,7 @@ const vec = vec3.create();
 const DEFAULT_PLANE_OFFSET = 0; // TODO: check default value
 const DEFAULT_LOCAL_SPACE = false;
 const DEFAULT_PLANE_CONTROL_POINT = 0; // TODO: check default value
-class PlaneCull extends Operator$1 {
+class PlaneCull extends Operator {
     #planeControlPoint = DEFAULT_PLANE_CONTROL_POINT;
     #planeDirection = vec3.fromValues(0, 0, 1); // TODO: check default value
     #localSpace = DEFAULT_LOCAL_SPACE;
@@ -65521,7 +65540,7 @@ const DEFAULT_PREV_POS_SCALE = 1;
 const DEFAULT_LOCK_ROT = false; // TODO: check default value
 const DEFAULT_START_FADE_OUT_TIME = 0; // TODO: check default value
 const DEFAULT_END_FADE_OUT_TIME = 0; // TODO: check default value
-class PositionLock extends Operator$1 {
+class PositionLock extends Operator {
     #startTimeMin = DEFAULT_START_TIME_MIN$2;
     #startTimeMax = DEFAULT_START_TIME_MAX$2;
     #startTimeExp = DEFAULT_START_TIME_EXP;
@@ -65637,7 +65656,7 @@ const DEFAULT_END_TIME_MIN$1 = 0; // TODO: check default value
 const DEFAULT_END_TIME_MAX$1 = 0; // TODO: check default value
 const DEFAULT_FIELD$2 = PARTICLE_FIELD_RADIUS; // TODO: check default value
 const DEFAULT_PROPORTIONAL_OP$1 = true; // TODO: check default value
-class RampScalarLinear extends Operator$1 {
+class RampScalarLinear extends Operator {
     #rateMin = DEFAULT_RATE_MIN$1;
     #rateMax = DEFAULT_RATE_MAX$1;
     #startTimeMin = DEFAULT_START_TIME_MIN$1;
@@ -65702,7 +65721,7 @@ class RampScalarLinear extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_OP_RampScalarLinear', RampScalarLinear);
 
-class RampScalarLinearSimple extends Operator$1 {
+class RampScalarLinearSimple extends Operator {
     #rate = 0;
     #startTime = 0;
     #endTime = 1; //TODO: check default value
@@ -65746,7 +65765,7 @@ const DEFAULT_BIAS = 0.5;
 const DEFAULT_PROPORTIONAL_OP = true;
 const DEFAULT_EASE_OUT = false;
 const DEFAULT_FIELD$1 = Source2ParticleScalarField.Radius;
-class RampScalarSpline extends Operator$1 {
+class RampScalarSpline extends Operator {
     #rateMin = DEFAULT_RATE_MIN;
     #rateMax = DEFAULT_RATE_MAX;
     #startTimeMin = DEFAULT_START_TIME_MIN;
@@ -65824,7 +65843,7 @@ const DEFAULT_VECTOR = vec3.fromValues(1, 0, 0);
 const v$4 = vec3.create();
 const DEFAULT_FIELD_OUTPUT$1 = PARTICLE_FIELD_POSITION; // TODO: check default value
 const DEFAULT_SCALE = 1; // TODO: check default value
-class RemapControlPointDirectionToVector extends Operator$1 {
+class RemapControlPointDirectionToVector extends Operator {
     #fieldOutput = DEFAULT_FIELD_OUTPUT$1;
     #scale = DEFAULT_SCALE;
     _paramChanged(paramName, param) {
@@ -65846,7 +65865,7 @@ RegisterSource2ParticleOperator('C_OP_RemapControlPointDirectionToVector', Remap
 
 const tempQuat$1 = quat.create();
 quat.create();
-class RemapCPOrientationToRotations extends Operator$1 {
+class RemapCPOrientationToRotations extends Operator {
     #vecRotation = vec3.create();
     #controlPointNumber = 0; //m_TransformInput
     _paramChanged(paramName, param) {
@@ -65881,7 +65900,7 @@ const DEFAULT_START_TIME = -1; // TODO: check default value
 const DEFAULT_END_TIME = -1; // TODO: check default value
 const DEFAULT_INTERP_RATE$1 = 0; // TODO: check default value
 const DEFAULT_SET_METHOD$2 = 'PARTICLE_SET_SCALE_INITIAL_VALUE'; // TODO: check default value//TODO: enum
-class RemapCPtoScalar extends Operator$1 {
+class RemapCPtoScalar extends Operator {
     //#fieldOutput = PARTICLE_FIELD_RADIUS;
     #cpInput = DEFAULT_CP_INPUT$1;
     #field = DEFAULT_FIELD;
@@ -65952,7 +65971,7 @@ const DEFAULT_IGNORE_DELTA = false; // TODO: check default value
 const DEFAULT_INPUT_MIN$1 = 0; // TODO: check default value
 const DEFAULT_INPUT_MAX$1 = 1; // TODO: check default value
 const DEFAULT_SET_METHOD$1 = 'PARTICLE_SET_SCALE_CURRENT_VALUE'; // TODO: check default value
-class RemapSpeed extends Operator$1 {
+class RemapSpeed extends Operator {
     #ignoreDelta = DEFAULT_IGNORE_DELTA;
     #inputMin = DEFAULT_INPUT_MIN$1;
     #inputMax = DEFAULT_INPUT_MAX$1;
@@ -65986,7 +66005,7 @@ const DEFAULT_INPUT_MAX = 1; // TODO: check default value
 const DEFAULT_OUTPUT_MIN = 0; // TODO: check default value
 const DEFAULT_OUTPUT_MAX = 1; // TODO: check default value
 const DEFAULT_OUT_CONTROL_POINT_NUMBER = 1; // TODO: check default value
-class RemapSpeedtoCP extends Operator$1 {
+class RemapSpeedtoCP extends Operator {
     #inputMin = DEFAULT_INPUT_MIN;
     #inputMax = DEFAULT_INPUT_MAX;
     #outputMin = DEFAULT_OUTPUT_MIN;
@@ -66019,7 +66038,7 @@ class RemapSpeedtoCP extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_OP_RemapSpeedtoCP', RemapSpeedtoCP);
 
-class RepeatedTriggerChildGroup extends Operator$1 {
+class RepeatedTriggerChildGroup extends Operator {
     _paramChanged(paramName, param) {
         switch (paramName) {
             case 'm_flClusterCooldown':
@@ -66038,7 +66057,7 @@ RegisterSource2ParticleOperator('C_OP_RepeatedTriggerChildGroup', RepeatedTrigge
 
 const DEFAULT_CP_INPUT = 0; // TODO: check default value
 const DEFAULT_CP_OUTPUT = 1; // TODO: check default value
-class SetControlPointFromObjectScale extends Operator$1 {
+class SetControlPointFromObjectScale extends Operator {
     #cpInput = 0;
     #cpOutput = 1;
     _paramChanged(paramName, param) {
@@ -66070,7 +66089,7 @@ const DEFAULT_CP = 1; // TODO: check default value
 const DEFAULT_USE_WORLD_LOCATION$2 = false; // TODO: check default value
 const DEFAULT_HEAD_LOCATION$3 = 0; // TODO: check default value
 // TODO: check if disabled ?
-class SetControlPointOrientation extends Operator$1 {
+class SetControlPointOrientation extends Operator {
     #useWorldLocation = DEFAULT_USE_WORLD_LOCATION$2;
     #randomize = false; // TODO: check default value
     #setOnce = false; // TODO: check default value
@@ -66128,7 +66147,7 @@ const DEFAULT_CP_3 = 3; // TODO: check default value
 const DEFAULT_CP_4 = 4; // TODO: check default value
 const DEFAULT_HEAD_LOCATION$2 = 0; // TODO: check default value
 const DEFAULT_SET_ONCE$1 = false; // TODO: check default value
-class SetControlPointPositions extends Operator$1 {
+class SetControlPointPositions extends Operator {
     #useWorldLocation = DEFAULT_USE_WORLD_LOCATION$1;
     #orient = DEFAULT_ORIENT$1;
     #cp = [DEFAULT_CP_1$2, DEFAULT_CP_2, DEFAULT_CP_3, DEFAULT_CP_4];
@@ -66213,7 +66232,7 @@ const DEFAULT_FIRST_CONTROL_POINT$1 = 0; // TODO: check default value
 const DEFAULT_FIRST_SOURCE_POINT = 0; // TODO: check default value
 const DEFAULT_NUM_CONTROL_POINT = 1; // TODO: check default value
 const DEFAULT_SKIN = false; // TODO: check default value
-class SetControlPointsToModelParticles extends Operator$1 {
+class SetControlPointsToModelParticles extends Operator {
     #followAttachment = DEFAULT_FOLLOW_ATTACHMENT;
     #attachmentName = DEFAULT_ATTACHMENT_NAME;
     #hitboxSetName = DEFAULT_HITBOX_SET_NAME;
@@ -66282,7 +66301,7 @@ RegisterSource2ParticleOperator('C_OP_SetControlPointsToModelParticles', SetCont
 
 const center$1 = vec3.create();
 const DEFAULT_CP_1$1 = 1; // TODO: check default value
-class SetControlPointToCenter extends Operator$1 {
+class SetControlPointToCenter extends Operator {
     #cp1 = DEFAULT_CP_1$1;
     #cp1Pos = vec3.create();
     _paramChanged(paramName, param) {
@@ -66319,7 +66338,7 @@ const DEFAULT_COLLISION_GROUP_NAME = 'NONE'; // TODO: check default value
 const DEFAULT_INPUT_CP = 0; // TODO: check default value
 const DEFAULT_OUTPUT_CP = 1; // TODO: check default value
 const DEFAULT_INCLUDE_WATER = false; // TODO: check default value
-class SetCPOrientationToGroundNormal extends Operator$1 {
+class SetCPOrientationToGroundNormal extends Operator {
     #interpRate = DEFAULT_INTERP_RATE;
     #maxTraceLength = DEFAULT_MAX_TRACE_LENGTH;
     #tolerance = DEFAULT_TOLERANCE;
@@ -66369,7 +66388,7 @@ class SetCPOrientationToGroundNormal extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_OP_SetCPOrientationToGroundNormal', SetCPOrientationToGroundNormal);
 
-class SetFloat extends Operator$1 {
+class SetFloat extends Operator {
     #normalizePerLiving = true;
     outputField = PARTICLE_FIELD_RADIUS; //TODO: not sure about the default field
     _paramChanged(paramName, param) {
@@ -66399,7 +66418,7 @@ const DEFAULT_NUM_CONTROL_POINTS$1 = 1; // TODO: check default value
 const DEFAULT_FIRST_SOURCE_CONTROL_POINT = 0; // TODO: check default value
 const DEFAULT_CHILD_CONTROL_POINT = 0; // TODO: check default value
 // TODO: check: can't create in dota tools
-class SetParentControlPointsToChildCP extends Operator$1 {
+class SetParentControlPointsToChildCP extends Operator {
     #childGroupID = 0; // TODO: check default value
     #childControlPoint = DEFAULT_CHILD_CONTROL_POINT;
     #numControlPoints = DEFAULT_NUM_CONTROL_POINTS$1;
@@ -66455,7 +66474,7 @@ const DEFAULT_NUM_CONTROL_POINTS = 1;
 const DEFAULT_SET_ORIENTATION = false;
 const DEFAULT_ORIENTATION_FIELD = Source2ParticleVectorField.Disabled;
 const DEFAULT_NUM_BASED_ON_PARTICLE_COUNT = false;
-class SetPerChildControlPoint extends Operator$1 {
+class SetPerChildControlPoint extends Operator {
     #childGroupID = DEFAULT_CHILD_GROUP_ID;
     #firstControlPoint = DEFAULT_FIRST_CONTROL_POINT;
     #numControlPoints = DEFAULT_NUM_CONTROL_POINTS;
@@ -66517,7 +66536,7 @@ const DEFAULT_USE_WORLD_LOCATION = false; // TODO: check default value
 const DEFAULT_ORIENT = false; // TODO: check default value
 const DEFAULT_CP1 = 1; // TODO: check default value
 const DEFAULT_HEAD_LOCATION$1 = 0; // TODO: check default value
-class SetRandomControlPointPosition extends Operator$1 {
+class SetRandomControlPointPosition extends Operator {
     #useWorldLocation = DEFAULT_USE_WORLD_LOCATION;
     #orient = DEFAULT_ORIENT;
     #cp1 = 1;
@@ -66583,7 +66602,7 @@ const DEFAULT_CP_1 = 1; // TODO: check default value
 const DEFAULT_USE_WORLD_POSITION = false; // TODO: check default value
 const DEFAULT_SET_ONCE = false; // TODO: check default value
 const DEFAULT_HEAD_LOCATION = 0; // TODO: check default value
-class SetSingleControlPointPosition extends Operator$1 {
+class SetSingleControlPointPosition extends Operator {
     #useWorldLocation = DEFAULT_USE_WORLD_POSITION;
     #setOnce = DEFAULT_SET_ONCE;
     #cp1 = DEFAULT_CP_1;
@@ -66640,7 +66659,7 @@ const tempQuat = quat.create();
 const tempVec3$1 = vec3.create();
 const tempVec3_2 = vec3.create();
 const DEFAULT_OFFSET_LOCAL = false; // TODO: check default value
-class SetToCP extends Operator$1 {
+class SetToCP extends Operator {
     #offset = vec3.create();
     #offsetLocal = DEFAULT_OFFSET_LOCAL;
     _paramChanged(paramName, param) {
@@ -66677,7 +66696,7 @@ const DEFAULT_VECTOR_VALUE = vec4.create();
 const setVecTempVec4 = vec4.create();
 const DEFAULT_OUTPUT_FIELD = Source2ParticleVectorField.Color;
 const DEFAULT_SET_METHOD = Source2ParticleSetMethod.SetValue;
-class SetVec extends Operator$1 {
+class SetVec extends Operator {
     #outputField = DEFAULT_OUTPUT_FIELD;
     #setMethod = DEFAULT_SET_METHOD;
     _paramChanged(paramName, param) {
@@ -66709,7 +66728,7 @@ const mat = mat4.create();
 const nmat = mat3.create();
 const IDENTITY_MAT4 = mat4.create();
 const DEFAULT_TRANSFORM_NORMALS = false; // TODO: check default value
-class SnapshotRigidSkinToBones extends Operator$1 {
+class SnapshotRigidSkinToBones extends Operator {
     #transformNormals = DEFAULT_TRANSFORM_NORMALS;
     _paramChanged(paramName, param) {
         switch (paramName) {
@@ -66802,7 +66821,7 @@ RegisterSource2ParticleOperator('C_OP_SnapshotSkinToBones', SnapshotRigidSkinToB
 const DEFAULT_SPIN_RATE = 0; // TODO: check default value
 const DEFAULT_SPIN_RATE_MIN = 0; // TODO: check default value
 const DEFAULT_SPIN_RATE_STOP_TIME = 0; // TODO: check default value
-class Spin extends Operator$1 {
+class Spin extends Operator {
     #spinRateDegrees = DEFAULT_SPIN_RATE;
     #spinRateMinDegrees = DEFAULT_SPIN_RATE_MIN;
     #spinRateStopTime = DEFAULT_SPIN_RATE_STOP_TIME;
@@ -66880,7 +66899,7 @@ class Spin extends Operator$1 {
 }
 RegisterSource2ParticleOperator('C_OP_Spin', Spin);
 
-class SpinUpdate extends Operator$1 {
+class SpinUpdate extends Operator {
     //This operator has no parameters
     doOperate(particle, elapsedTime, strength) {
         particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
@@ -66897,7 +66916,7 @@ const DEFAULT_NOISE_SCALE = 0.1;
 const DEFAULT_ADDITIVE = false;
 const DEFAULT_OFFSET = false;
 const DEFAULT_NOISE_ANIMATION_TIME_SCALE = 0;
-class VectorNoise extends Operator$1 {
+class VectorNoise extends Operator {
     #fieldOutput = DEFAULT_FIELD_OUTPUT;
     #outputMin = vec3.create();
     #outputMax = vec3.fromValues(1, 1, 1);
@@ -66965,7 +66984,7 @@ class VectorNoise extends Operator$1 {
 RegisterSource2ParticleOperator('C_OP_VectorNoise', VectorNoise);
 
 // Base renderer for common attributes like textures
-class RenderBase extends Operator$1 {
+class RenderBase extends Operator {
     material = new Source2SpriteCard('');
     setDefaultTexture = true; //TODO: remove this property
     spriteSheet = null;
@@ -67149,7 +67168,7 @@ class RenderDeferredLight extends RenderBase {
 RegisterSource2ParticleOperator('C_OP_RenderDeferredLight', RenderDeferredLight);
 
 const tempVec3 = vec3.create();
-class RenderModels extends Operator$1 {
+class RenderModels extends Operator {
     #modelList = new Map();
     #models = new Map();
     #skin = 0;
@@ -71352,4 +71371,4 @@ class RenderTargetViewer {
     }
 }
 
-export { ATTRIBUTE_CHANGED, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, LifespanDecay as Source2LifespanDecay, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, RandomForce as Source2RandomForce, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTF, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { ATTRIBUTE_CHANGED, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2CablesMaterial, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTF, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
