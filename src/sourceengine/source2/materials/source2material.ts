@@ -25,7 +25,7 @@ const UNIFORMS = new Map([
 	['g_flMaterialCloakFactor', 'g_flMaterialCloakFactor'],
 ]);
 
-const TEXTURE_UNIFORMS: Map<string, [string, string]> = new Map([
+const TEXTURE_UNIFORMS = new Map<string, [string, string]>([
 	['g_tColor', ['colorMap', 'USE_COLOR_MAP']],
 	['TextureColor', ['colorMap', 'USE_COLOR_MAP']],
 	['g_tNormal', ['normalMap', 'USE_NORMAL_MAP']],
@@ -87,7 +87,7 @@ export class Source2Material extends Material {
 		}
 	}
 
-	setupUniformsOnce() {
+	setupUniformsOnce(): void {
 		//TODO: F_RENDER_BACKFACES
 		//F_DO_NOT_CAST_SHADOWS
 		//F_MASKS_1
@@ -194,7 +194,7 @@ export class Source2Material extends Material {
 
 	}
 
-	setupUniforms() {
+	setupUniforms(): void {
 		for (const [paramName, uniformName] of UNIFORMS) {
 			//console.error(uniformName);
 			const paramValue = this.getParam(paramName);
@@ -204,7 +204,7 @@ export class Source2Material extends Material {
 		}
 	}
 
-	clone() {
+	clone(): Source2Material {
 		return new (this.constructor as typeof Source2Material)(this.repository, this.#source2File);
 	}
 
@@ -223,11 +223,11 @@ export class Source2Material extends Material {
 		return null;
 	}
 
-	updateMaterial(time: number, mesh: Mesh) {
+	updateMaterial(time: number, mesh: Mesh): void {
 		this.processProxies(time, mesh.materialsParams);
 	}
 
-	processProxies(time: number, proxyParams: ProxyParams) {
+	processProxies(time: number, proxyParams: ProxyParams): void {
 		//todov3//rename function
 
 		/*let proxies = this.proxies;
@@ -238,7 +238,7 @@ export class Source2Material extends Material {
 		this.afterProcessProxies(proxyParams);
 	}
 
-	_afterProcessProxies(proxyParams: ProxyParams) {
+	_afterProcessProxies(proxyParams: ProxyParams): void {
 		//this.setupUniforms();
 		this.initTextureUniforms();//TODO : do this only once
 		/*
@@ -282,7 +282,7 @@ export class Source2Material extends Material {
 
 	}
 
-	setDynamicUniform(uniformName: string) {
+	setDynamicUniform(uniformName: string): void {
 		const value = this.getDynamicParam(uniformName);
 		if (value) {
 			if (uniformName.startsWith('g_fl')) {
@@ -293,15 +293,15 @@ export class Source2Material extends Material {
 		}
 	}
 
-	afterProcessProxies(proxyParams: ProxyParams) {
+	afterProcessProxies(proxyParams: ProxyParams): void {
 
 	}
 
-	setUniform(uniformName: string, uniformValue: UniformValue) {
+	setUniform(uniformName: string, uniformValue: UniformValue): void {
 		this.uniforms[uniformName] = uniformValue;
 	}
 
-	initFloatUniforms() {
+	initFloatUniforms(): void {
 		if (this.#source2File) {
 			const floats = this.#source2File.getMaterialResourceData('m_floatParams');
 			if (floats) {
@@ -317,7 +317,7 @@ export class Source2Material extends Material {
 		}
 	}
 
-	initVectorUniforms() {
+	initVectorUniforms(): void {
 		if (this.#source2File) {
 			const vectors = this.#source2File.getMaterialResourceData('m_vectorParams');
 			if (vectors) {
@@ -341,7 +341,7 @@ export class Source2Material extends Material {
 		return [TEXTURE_UNIFORMS];
 	}
 
-	async initTextureUniforms() {
+	async initTextureUniforms(): Promise<void> {
 		for (const map of this.getTextureUniforms()) {
 			for (const [paramName, [uniformName, defineName]] of map) {
 				const paramValue = this.getTextureParam(paramName);
@@ -352,7 +352,7 @@ export class Source2Material extends Material {
 		}
 	}
 
-	getParam(paramName: string) {
+	getParam(paramName: string): number | vec4 {
 		if (paramName.startsWith('g_f')) {
 			return this.getFloatParam(paramName);
 		} else if (paramName.startsWith('g_v')) {
