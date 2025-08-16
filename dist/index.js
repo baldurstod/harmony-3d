@@ -60538,7 +60538,7 @@ class Source2Material extends Material {
         }*/
         console.error(`unknown parameter : ${paramName}`, this);
     }
-    #getParams(name, isVector, isResource) {
+    #getParams(name, isFloat, isVector, isResource) {
         if (!this.#source2File) {
             return null;
         }
@@ -60549,7 +60549,7 @@ class Source2Material extends Material {
         const result = new Map();
         for (const v of values) {
             const name = v.getSubValueAsString('m_name');
-            const value = isVector ? v.getSubValueAsVec4('m_nValue', vec4.create()) : isResource ? v.getSubValueAsResource('m_pValue') : v.getSubValueAsNumber('m_nValue');
+            const value = isFloat ? v.getSubValueAsNumber('m_flValue') : isVector ? v.getSubValueAsVec4('m_value', vec4.create()) : isResource ? v.getSubValueAsResource('m_pValue') : v.getSubValueAsNumber('m_nValue');
             if (name && value != null) {
                 result.set(name, value);
             }
@@ -60570,7 +60570,7 @@ class Source2Material extends Material {
         }
     }
     getIntParams() {
-        return this.#getParams('m_intParams', false, false);
+        return this.#getParams('m_intParams', false, false, false);
     }
     getFloatParam(floatName) {
         if (!this.#source2File) {
@@ -60580,13 +60580,13 @@ class Source2Material extends Material {
         if (floats) {
             for (const fl of floats) {
                 if (fl.getSubValueAsString('m_name') == floatName) {
-                    return fl.getSubValueAsNumber('m_nValue');
+                    return fl.getSubValueAsNumber('m_flValue');
                 }
             }
         }
     }
     getFloatParams() {
-        return this.#getParams('m_floatParams', false, false);
+        return this.#getParams('m_floatParams', true, false, false);
     }
     getVectorParam(vectorName, out) {
         if (this.#source2File) {
@@ -60594,7 +60594,7 @@ class Source2Material extends Material {
             if (vectors) {
                 for (const vector of vectors) {
                     if (vector.getSubValueAsString('m_name') == vectorName) {
-                        vector.getSubValueAsVec4('m_nValue', out);
+                        vector.getSubValueAsVec4('m_value', out);
                     }
                 }
             }
@@ -60602,7 +60602,7 @@ class Source2Material extends Material {
         return out;
     }
     getVectorParams() {
-        return this.#getParams('m_vectorParams', true, false);
+        return this.#getParams('m_vectorParams', false, true, false);
     }
     getDynamicParam(dynamicName) {
         if (!this.#source2File) {
@@ -60641,7 +60641,7 @@ class Source2Material extends Material {
         return result;
     }
     getTextureParams() {
-        return this.#getParams('m_textureParams', false, true);
+        return this.#getParams('m_textureParams', false, false, true);
     }
 }
 

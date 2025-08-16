@@ -370,7 +370,7 @@ export class Source2Material extends Material {
 		console.error(`unknown parameter : ${paramName}`, this);
 	}
 
-	#getParams(name: string, isVector: boolean, isResource: boolean): Map<string, number | string | vec4> | null {
+	#getParams(name: string, isFloat: boolean, isVector: boolean, isResource: boolean): Map<string, number | string | vec4> | null {
 		if (!this.#source2File) {
 			return null;
 		}
@@ -383,7 +383,7 @@ export class Source2Material extends Material {
 		const result = new Map<string, integer | string | vec4>();
 		for (const v of values) {
 			const name = v.getSubValueAsString('m_name');
-			const value = isVector ? v.getSubValueAsVec4('m_nValue', vec4.create()) : isResource ? v.getSubValueAsResource('m_pValue'): v.getSubValueAsNumber('m_nValue');
+			const value = isFloat ? v.getSubValueAsNumber('m_flValue') : isVector ? v.getSubValueAsVec4('m_value', vec4.create()) : isResource ? v.getSubValueAsResource('m_pValue') : v.getSubValueAsNumber('m_nValue');
 
 			if (name && value != null) {
 				result.set(name, value);
@@ -408,7 +408,7 @@ export class Source2Material extends Material {
 	}
 
 	getIntParams(): Map<string, integer> | null {
-		return this.#getParams('m_intParams', false, false) as Map<string, integer>;
+		return this.#getParams('m_intParams', false, false, false) as Map<string, integer>;
 	}
 
 	getFloatParam(floatName: string) {
@@ -419,14 +419,14 @@ export class Source2Material extends Material {
 		if (floats) {
 			for (const fl of floats) {
 				if (fl.getSubValueAsString('m_name') == floatName) {
-					return fl.getSubValueAsNumber('m_nValue');
+					return fl.getSubValueAsNumber('m_flValue');
 				}
 			}
 		}
 	}
 
 	getFloatParams(): Map<string, float> | null {
-		return this.#getParams('m_floatParams', false, false) as Map<string, integer>;
+		return this.#getParams('m_floatParams', true, false, false) as Map<string, integer>;
 	}
 
 	getVectorParam(vectorName: string, out: vec4): vec4 {
@@ -435,7 +435,7 @@ export class Source2Material extends Material {
 			if (vectors) {
 				for (const vector of vectors) {
 					if (vector.getSubValueAsString('m_name') == vectorName) {
-						vector.getSubValueAsVec4('m_nValue', out);
+						vector.getSubValueAsVec4('m_value', out);
 					}
 				}
 			}
@@ -444,7 +444,7 @@ export class Source2Material extends Material {
 	}
 
 	getVectorParams(): Map<string, vec4> | null {
-		return this.#getParams('m_vectorParams', true, false) as Map<string, vec4>;
+		return this.#getParams('m_vectorParams', false, true, false) as Map<string, vec4>;
 	}
 
 	getDynamicParam(dynamicName: string): vec4 | undefined {
@@ -489,6 +489,6 @@ export class Source2Material extends Material {
 	}
 
 	getTextureParams(): Map<string, string> | null {
-		return this.#getParams('m_textureParams', false, true) as Map<string, string>;
+		return this.#getParams('m_textureParams', false, false, true) as Map<string, string>;
 	}
 }

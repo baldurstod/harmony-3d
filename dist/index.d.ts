@@ -6986,7 +6986,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -7600,7 +7600,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 0 | 1;
+                     f: () => 1 | 0;
                  };
                  frame: {
                      i18n: string;
@@ -7720,7 +7720,7 @@ declare class Choreography {
              /**
               * @deprecated Please use getScalarField instead.
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number];
              /**
               * TODO
               */
