@@ -30,11 +30,12 @@ References:
 
 class OutWindow {
 	#windowSize = 0;
-	#buffer;
-	#pos: number;
-	#streamPos: number;
-	#stream;
-	create(windowSize) {
+	#buffer!: Uint8Array;
+	#pos!: number;
+	#streamPos!: number;
+	#stream: OutStream | null = null;
+
+	create(windowSize: number) {
 		if ((!this.#buffer) || (this.#windowSize !== windowSize)) {
 			// using a typed array here gives a big boost on Firefox
 			// not much change in chrome (but more memory efficient)
@@ -46,13 +47,16 @@ class OutWindow {
 	}
 
 	flush() {
+		if (!this.#stream) {
+			return;
+		}
 		const size = this.#pos - this.#streamPos;
 		if (size !== 0) {
 			if (this.#stream.writeBytes) {
 				this.#stream.writeBytes(this.#buffer, size);
 			} else {
 				for (let i = 0; i < size; i++) {
-					this.#stream.writeByte(this.#buffer[i]);
+					this.#stream.writeByte(this.#buffer[i]!);
 				}
 			}
 			if (this.#pos >= this.#windowSize) {
@@ -67,19 +71,19 @@ class OutWindow {
 		this.#stream = null;
 	}
 
-	setStream(stream) {
+	setStream(stream: OutStream) {
 		this.releaseStream();
 		this.#stream = stream;
 	}
 
-	init(solid) {
+	init(solid: boolean) {
 		if (!solid) {
 			this.#streamPos = 0;
 			this.#pos = 0;
 		}
 	}
 
-	copyBlock(distance, len) {
+	copyBlock(distance: number, len: number) {
 		let pos = this.#pos - distance - 1;
 		if (pos < 0) {
 			pos += this.#windowSize;
@@ -88,21 +92,21 @@ class OutWindow {
 			if (pos >= this.#windowSize) {
 				pos = 0;
 			}
-			this.#buffer[this.#pos++] = this.#buffer[pos++];
+			this.#buffer[this.#pos++] = this.#buffer[pos++]!;
 			if (this.#pos >= this.#windowSize) {
 				this.flush();
 			}
 		}
 	}
 
-	putByte(b) {
+	putByte(b: number) {
 		this.#buffer[this.#pos++] = b;
 		if (this.#pos >= this.#windowSize) {
 			this.flush();
 		}
 	}
 
-	getByte(distance) {
+	getByte(distance: number) {
 		let pos = this.#pos - distance - 1;
 		if (pos < 0) {
 			pos += this.#windowSize;
@@ -112,11 +116,11 @@ class OutWindow {
 }
 
 class RangeDecoder {
-	#stream;
-	#code;
-	#range;
+	#stream: InStream | null = null;
+	#code: number = 0;
+	#range: number = 0;
 
-	setStream(stream) {
+	setStream(stream: InStream) {
 		this.#stream = stream;
 	}
 
@@ -131,11 +135,11 @@ class RangeDecoder {
 		this.#range = -1;
 
 		while (i--) {
-			this.#code = (this.#code << 8) | this.#stream.readByte();
+			this.#code = (this.#code << 8) | this.#stream!.readByte()!;
 		}
 	}
 
-	decodeDirectBits(numTotalBits) {
+	decodeDirectBits(numTotalBits: number) {
 		let result = 0, i = numTotalBits, t;
 
 		while (i--) {
@@ -145,7 +149,7 @@ class RangeDecoder {
 			result = (result << 1) | (1 - t);
 
 			if ((this.#range & 0xff000000) === 0) {
-				this.#code = (this.#code << 8) | this.#stream.readByte();
+				this.#code = (this.#code << 8) | this.#stream!.readByte()!;
 				this.#range <<= 8;
 			}
 		}
@@ -153,15 +157,15 @@ class RangeDecoder {
 		return result;
 	}
 
-	decodeBit(probs, index) {
-		const prob = probs[index],
+	decodeBit(probs: number[], index: number) {
+		const prob = probs[index]!,
 			newBound = (this.#range >>> 11) * prob;
 
 		if ((this.#code ^ 0x80000000) < (newBound ^ 0x80000000)) {
 			this.#range = newBound;
-			probs[index] += (2048 - prob) >>> 5;
+			probs[index]! += (2048 - prob) >>> 5;
 			if ((this.#range & 0xff000000) === 0) {
-				this.#code = (this.#code << 8) | this.#stream.readByte();
+				this.#code = (this.#code << 8) | this.#stream!.readByte()!;
 				this.#range <<= 8;
 			}
 			return 0;
@@ -169,22 +173,39 @@ class RangeDecoder {
 
 		this.#range -= newBound;
 		this.#code -= newBound;
-		probs[index] -= prob >>> 5;
+		probs[index]! -= prob >>> 5;
 		if ((this.#range & 0xff000000) === 0) {
-			this.#code = (this.#code << 8) | this.#stream.readByte();
+			this.#code = (this.#code << 8) | this.#stream!.readByte()!;
 			this.#range <<= 8;
 		}
 		return 1;
 	}
 
 }
+
+type PropStream = {
+	offset: number;
+	size: number;
+	readByte: () => number | undefined;
+}
+
+type InStream = {
+	size: number;
+	readByte: () => number | undefined;
+}
+
+type OutStream = {
+	writeByte: (value: number) => void,
+	writeBytes?: (buffer: Uint8Array, size: number) => void,
+}
+
 export class LZMA {
-	static initBitModels(probs, len) {
+	static initBitModels(probs: number[], len: number) {
 		while (len--) {
 			probs[len] = 1024;
 		}
 	}
-	static reverseDecode2(models, startIndex, rangeDecoder, numBitLevels) {
+	static reverseDecode2(models: number[], startIndex: number, rangeDecoder: RangeDecoder, numBitLevels: number) {
 		let m = 1, symbol = 0, i = 0, bit;
 
 		for (; i < numBitLevels; ++i) {
@@ -195,7 +216,7 @@ export class LZMA {
 		return symbol;
 	}
 
-	static decompress(properties, inStream, outStream, outSize) {
+	static decompress(properties: PropStream, inStream: InStream, outStream: OutStream, outSize: number) {
 		const decoder = new Decoder();
 
 		if (!decoder.setDecoderProperties(properties)) {
@@ -213,7 +234,8 @@ export class LZMA {
 class BitTreeDecoder {
 	#models = [];
 	#numBitLevels;
-	constructor(numBitLevels) {
+
+	constructor(numBitLevels: number) {
 		this.#numBitLevels = numBitLevels;
 	}
 
@@ -222,7 +244,7 @@ class BitTreeDecoder {
 		LZMA.initBitModels(this.#models, 1 << this.#numBitLevels);
 	}
 
-	decode(rangeDecoder) {
+	decode(rangeDecoder: RangeDecoder) {
 		let m = 1, i = this.#numBitLevels;
 
 		while (i--) {
@@ -231,7 +253,7 @@ class BitTreeDecoder {
 		return m - (1 << this.#numBitLevels);
 	}
 
-	reverseDecode(rangeDecoder) {
+	reverseDecode(rangeDecoder: RangeDecoder) {
 		let m = 1, symbol = 0, i = 0, bit;
 
 		for (; i < this.#numBitLevels; ++i) {
@@ -245,13 +267,13 @@ class BitTreeDecoder {
 
 class LenDecoder {
 	#choice = [];
-	#lowCoder = [];
-	#midCoder = [];
+	#lowCoder: BitTreeDecoder[] = [];
+	#midCoder: BitTreeDecoder[] = [];
 	#highCoder = new BitTreeDecoder(8);
 	#numPosStates = 0;
 
 
-	create(numPosStates) {
+	create(numPosStates: number) {
 		for (; this.#numPosStates < numPosStates; ++this.#numPosStates) {
 			this.#lowCoder[this.#numPosStates] = new BitTreeDecoder(3);
 			this.#midCoder[this.#numPosStates] = new BitTreeDecoder(3);
@@ -262,18 +284,18 @@ class LenDecoder {
 		let i = this.#numPosStates;
 		LZMA.initBitModels(this.#choice, 2);
 		while (i--) {
-			this.#lowCoder[i].init();
-			this.#midCoder[i].init();
+			this.#lowCoder[i]!.init();
+			this.#midCoder[i]!.init();
 		}
 		this.#highCoder.init();
 	}
 
-	decode(rangeDecoder, posState) {
+	decode(rangeDecoder: RangeDecoder, posState: number) {
 		if (rangeDecoder.decodeBit(this.#choice, 0) === 0) {
-			return this.#lowCoder[posState].decode(rangeDecoder);
+			return this.#lowCoder[posState]!.decode(rangeDecoder);
 		}
 		if (rangeDecoder.decodeBit(this.#choice, 1) === 0) {
-			return 8 + this.#midCoder[posState].decode(rangeDecoder);
+			return 8 + this.#midCoder[posState]!.decode(rangeDecoder);
 		}
 		return 16 + this.#highCoder.decode(rangeDecoder);
 	}
@@ -287,7 +309,7 @@ class Decoder2 {
 		LZMA.initBitModels(this.#decoders, 0x300);
 	}
 
-	decodeNormal(rangeDecoder) {
+	decodeNormal(rangeDecoder: RangeDecoder) {
 		let symbol = 1;
 
 		do {
@@ -297,7 +319,7 @@ class Decoder2 {
 		return symbol & 0xff;
 	}
 
-	decodeWithMatchByte(rangeDecoder, matchByte) {
+	decodeWithMatchByte(rangeDecoder: RangeDecoder, matchByte: number) {
 		let symbol = 1, matchBit, bit;
 
 		do {
@@ -318,11 +340,12 @@ class Decoder2 {
 }
 
 class LiteralDecoder {
-	#coders;
-	#numPrevBits;
-	#numPosBits;
-	#posMask;
-	create(numPosBits, numPrevBits) {
+	#coders?: Decoder2[];
+	#numPrevBits: number = 0;
+	#numPosBits: number = 0;
+	#posMask: number = 0;
+
+	create(numPosBits: number, numPrevBits: number) {
 		let i;
 
 		if (this.#coders
@@ -345,12 +368,12 @@ class LiteralDecoder {
 	init() {
 		let i = 1 << (this.#numPrevBits + this.#numPosBits);
 		while (i--) {
-			this.#coders[i].init();
+			this.#coders![i]!.init();
 		}
 	}
 
-	getDecoder(pos, prevByte) {
-		return this.#coders[((pos & this.#posMask) << this.#numPrevBits)
+	getDecoder(pos: number, prevByte: number) {
+		return this.#coders![((pos & this.#posMask) << this.#numPrevBits)
 			+ ((prevByte & 0xff) >>> (8 - this.#numPrevBits))];
 	}
 }
@@ -365,16 +388,16 @@ class Decoder {
 	#isRepG2Decoders = [];
 	#isRep0LongDecoders = [];
 	#posSlotDecoder = [new BitTreeDecoder(6), new BitTreeDecoder(6), new BitTreeDecoder(6), new BitTreeDecoder(6)];
-	#posDecoders = [];
+	#posDecoders: number[] = [];
 	#posAlignDecoder = new BitTreeDecoder(4);
 	#lenDecoder = new LenDecoder();
 	#repLenDecoder = new LenDecoder();
 	#literalDecoder = new LiteralDecoder();
 	#dictionarySize = -1;
 	#dictionarySizeCheck = -1;
-	#posStateMask: number;
+	#posStateMask?: number;
 
-	setDictionarySize(dictionarySize) {
+	setDictionarySize(dictionarySize: number) {
 		if (dictionarySize < 0) {
 			return false;
 		}
@@ -386,7 +409,7 @@ class Decoder {
 		return true;
 	}
 
-	setLcLpPb(lc, lp, pb) {
+	setLcLpPb(lc: number, lp: number, pb: number) {
 		const numPosStates = 1 << pb;
 
 		if (lc > 8 || lp > 4 || pb > 4) {
@@ -402,7 +425,7 @@ class Decoder {
 		return true;
 	}
 
-	setProperties(props) {
+	setProperties(props: { lc: number, lp: number, pb: number, dictionarySize: number }) {
 		if (!this.setLcLpPb(props.lc, props.lp, props.pb)) {
 			throw Error("Incorrect stream properties");
 		}
@@ -411,11 +434,11 @@ class Decoder {
 		}
 	}
 
-	decodeHeader(inStream) {
+	decodeHeader(inStream: InStream) {
 
-		let properties, lc, lp, pb,
-			uncompressedSize,
-			dictionarySize;
+		let properties: number, lc: number, lp: number, pb: number,
+			uncompressedSize: number,
+			dictionarySize: number;
 
 		if (inStream.size < 13) {
 			return false;
@@ -425,21 +448,21 @@ class Decoder {
 		// | Properties |	Dictionary Size	|	 Uncompressed Size	 |
 		// +------------+----+----+----+----+--+--+--+--+--+--+--+--+
 
-		properties = inStream.readByte();
+		properties = inStream.readByte()!;
 		lc = properties % 9;
 		properties = ~~(properties / 9);
 		lp = properties % 5;
 		pb = ~~(properties / 5);
 
-		dictionarySize = inStream.readByte();
-		dictionarySize |= inStream.readByte() << 8;
-		dictionarySize |= inStream.readByte() << 16;
-		dictionarySize += inStream.readByte() * 16777216;
+		dictionarySize = inStream.readByte()!;
+		dictionarySize |= inStream.readByte()! << 8;
+		dictionarySize |= inStream.readByte()! << 16;
+		dictionarySize += inStream.readByte()! * 16777216;
 
-		uncompressedSize = inStream.readByte();
-		uncompressedSize |= inStream.readByte() << 8;
-		uncompressedSize |= inStream.readByte() << 16;
-		uncompressedSize += inStream.readByte() * 16777216;
+		uncompressedSize = inStream.readByte()!;
+		uncompressedSize |= inStream.readByte()! << 8;
+		uncompressedSize |= inStream.readByte()! << 16;
+		uncompressedSize += inStream.readByte()! * 16777216;
 
 		inStream.readByte();
 		inStream.readByte();
@@ -484,7 +507,7 @@ class Decoder {
 		this.#literalDecoder.init();
 
 		while (i--) {
-			this.#posSlotDecoder[i].init();
+			this.#posSlotDecoder[i]!.init();
 		}
 
 		this.#lenDecoder.init();
@@ -493,7 +516,7 @@ class Decoder {
 		this.#rangeDecoder.init();
 	}
 
-	decodeBody(inStream, outStream, maxSize) {
+	decodeBody(inStream: InStream, outStream: OutStream, maxSize: number) {
 		let state = 0, rep0 = 0, rep1 = 0, rep2 = 0, rep3 = 0, nowPos64 = 0, prevByte = 0,
 			posState, decoder2, len, distance, posSlot, numDirectBits;
 
@@ -503,15 +526,15 @@ class Decoder {
 		this.init();
 
 		while (maxSize < 0 || nowPos64 < maxSize) {
-			posState = nowPos64 & this.#posStateMask;
+			posState = nowPos64 & this.#posStateMask!;
 
 			if (this.#rangeDecoder.decodeBit(this.#isMatchDecoders, (state << 4) + posState) === 0) {
 				decoder2 = this.#literalDecoder.getDecoder(nowPos64++, prevByte);
 
 				if (state >= 7) {
-					prevByte = decoder2.decodeWithMatchByte(this.#rangeDecoder, this.#outWindow.getByte(rep0));
+					prevByte = decoder2!.decodeWithMatchByte(this.#rangeDecoder, this.#outWindow.getByte(rep0)!);
 				} else {
-					prevByte = decoder2.decodeNormal(this.#rangeDecoder);
+					prevByte = decoder2!.decodeNormal(this.#rangeDecoder);
 				}
 				this.#outWindow.putByte(prevByte);
 
@@ -553,7 +576,7 @@ class Decoder {
 					len = 2 + this.#lenDecoder.decode(this.#rangeDecoder, posState);
 					state = state < 7 ? 7 : 10;
 
-					posSlot = this.#posSlotDecoder[len <= 5 ? len - 2 : 3].decode(this.#rangeDecoder);
+					posSlot = this.#posSlotDecoder[len <= 5 ? len - 2 : 3]!.decode(this.#rangeDecoder);
 					if (posSlot >= 4) {
 
 						numDirectBits = (posSlot >> 1) - 1;
@@ -583,7 +606,7 @@ class Decoder {
 
 				this.#outWindow.copyBlock(rep0, len);
 				nowPos64 += len;
-				prevByte = this.#outWindow.getByte(0);
+				prevByte = this.#outWindow.getByte(0)!;
 			}
 		}
 
@@ -594,14 +617,14 @@ class Decoder {
 		return true;
 	}
 
-	setDecoderProperties(properties) {
+	setDecoderProperties(properties: PropStream) {
 		let value, lc, lp, pb, dictionarySize;
 
 		if (properties.size < 5) {
 			return false;
 		}
 
-		value = properties.readByte();
+		value = properties.readByte()!;
 		lc = value % 9;
 		value = ~~(value / 9);
 		lp = value % 5;
@@ -611,10 +634,10 @@ class Decoder {
 			return false;
 		}
 
-		dictionarySize = properties.readByte();
-		dictionarySize |= properties.readByte() << 8;
-		dictionarySize |= properties.readByte() << 16;
-		dictionarySize += properties.readByte() * 16777216;
+		dictionarySize = properties.readByte()!;
+		dictionarySize |= properties.readByte()! << 8;
+		dictionarySize |= properties.readByte()! << 16;
+		dictionarySize += properties.readByte()! * 16777216;
 
 		return this.setDictionarySize(dictionarySize);
 	}

@@ -352,7 +352,7 @@ export class Source2Material extends Material {
 		}
 	}
 
-	getParam(paramName: string): number | vec4 {
+	getParam(paramName: string): number | vec4 | null {
 		if (paramName.startsWith('g_f')) {
 			return this.getFloatParam(paramName);
 		} else if (paramName.startsWith('g_v')) {
@@ -367,6 +367,7 @@ export class Source2Material extends Material {
 				return null;//TODO: disable texture;
 			}
 		}*/
+		return null;
 		console.error(`unknown parameter : ${paramName}`, this);
 	}
 
@@ -405,6 +406,7 @@ export class Source2Material extends Material {
 				}
 			}
 		}
+		return null;
 	}
 
 	getIntParams(): Map<string, integer> | null {
@@ -423,6 +425,7 @@ export class Source2Material extends Material {
 				}
 			}
 		}
+		return null;
 	}
 
 	getFloatParams(): Map<string, float> | null {
@@ -441,6 +444,7 @@ export class Source2Material extends Material {
 				}
 			}
 		}
+		return null;
 	}
 
 	getVectorParams(): Map<string, vec4> | null {
@@ -448,12 +452,9 @@ export class Source2Material extends Material {
 	}
 
 	#getDynamicParam(name: string): Uint8Array | null {
-		if (!this.#source2File) {
-			return;
-		}
-		const dynamicParams = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_dynamicParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_dynamicParams');// || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
+		const dynamicParams = this.#source2File!.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_dynamicParams') ?? this.#source2File!.getBlockStructAsElementArray('DATA', 'm_dynamicParams');// || this.#source2File.getBlockStruct('DATA.keyValue.root.m_dynamicParams');
 		if (!dynamicParams) {
-			return;
+			return null;
 		}
 		for (const dynamicParam of dynamicParams) {
 			if (dynamicParam.getSubValueAsString('m_name') == name) {
@@ -463,20 +464,29 @@ export class Source2Material extends Material {
 				}
 			}
 		}
+		return null;
 	}
 
 	getDynamicParam(name: string): vec4 | null {
+		if (!this.#source2File) {
+			return null;
+		}
 		const bytes = this.#getDynamicParam(name);
 		if (bytes) {
-			return executeDynamicExpression(bytes, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []);
+			return executeDynamicExpression(bytes, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []) ?? null;
 		}
+		return null;
 	}
 
 	getDecompiledDynamicParam(name: string): [string | null, Uint8Array] | null {
+		if (!this.#source2File) {
+			return null;
+		}
 		const bytes = this.#getDynamicParam(name);
 		if (bytes) {
 			return [decompileDynamicExpression(this.#source2File.fileName + ':' + name, bytes, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []), bytes]
 		}
+		return null;
 	}
 
 	getDynamicParams(): Map<string, [string | null, Uint8Array]> | null {
