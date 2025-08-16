@@ -447,7 +447,7 @@ export class Source2Material extends Material {
 		return this.#getParams('m_vectorParams', false, true, false) as Map<string, vec4>;
 	}
 
-	getDynamicParam(dynamicName: string): vec4 | undefined {
+	#getDynamicParam(name: string): Uint8Array | null {
 		if (!this.#source2File) {
 			return;
 		}
@@ -456,14 +456,27 @@ export class Source2Material extends Material {
 			return;
 		}
 		for (const dynamicParam of dynamicParams) {
-			if (dynamicParam.getSubValueAsString('m_name') == dynamicName) {
+			if (dynamicParam.getSubValueAsString('m_name') == name) {
 				const bytes = dynamicParam.getSubValueAsUint8Array('m_value');
 				if (bytes) {
-					return executeDynamicExpression(bytes, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []);
+					return bytes;
 				}
 			}
 		}
-		return;
+	}
+
+	getDynamicParam(name: string): vec4 | null {
+		const bytes = this.#getDynamicParam(name);
+		if (bytes) {
+			return executeDynamicExpression(bytes, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []);
+		}
+	}
+
+	getDecompiledDynamicParam(name: string): [string | null, Uint8Array] | null {
+		const bytes = this.#getDynamicParam(name);
+		if (bytes) {
+			return [decompileDynamicExpression(this.#source2File.fileName + ':' + name, bytes, this.#source2File.getBlockStructAsStringArray('DATA', 'MaterialResourceData_t.m_renderAttributesUsed') ?? this.#source2File.getBlockStructAsStringArray('DATA', 'm_renderAttributesUsed') ?? []), bytes]
+		}
 	}
 
 	getDynamicParams(): Map<string, [string | null, Uint8Array]> | null {
