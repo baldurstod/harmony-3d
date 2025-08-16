@@ -208,7 +208,7 @@ export class Source2Material extends Material {
 		return new (this.constructor as typeof Source2Material)(this.repository, this.#source2File);
 	}
 
-	getTextureByName(textureName: string): string | null {
+	getTextureParam(textureName: string): string | null {
 		if (this.#source2File) {
 			//TODO: use getMaterialResourceData()
 			const textures = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_textureParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_textureParams');
@@ -344,7 +344,7 @@ export class Source2Material extends Material {
 	async initTextureUniforms() {
 		for (const map of this.getTextureUniforms()) {
 			for (const [paramName, [uniformName, defineName]] of map) {
-				const paramValue = this.getTextureByName(paramName);
+				const paramValue = this.getTextureParam(paramName);
 				if (paramValue) {
 					this.setTexture(uniformName, paramValue ? await Source2TextureManager.getTexture(this.repository, paramValue, 0) : null, defineName);
 				}
