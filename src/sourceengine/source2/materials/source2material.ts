@@ -392,7 +392,7 @@ export class Source2Material extends Material {
 		return result;
 	}
 
-	getIntParam(intName: string) {
+	getIntParam(intName: string): number | null {
 		if (!this.#source2File) {
 			return null;
 		}
@@ -411,7 +411,7 @@ export class Source2Material extends Material {
 		return this.#getParams('m_intParams', false, false, false) as Map<string, integer>;
 	}
 
-	getFloatParam(floatName: string) {
+	getFloatParam(floatName: string): number | null {
 		if (!this.#source2File) {
 			return null;
 		}
@@ -429,18 +429,18 @@ export class Source2Material extends Material {
 		return this.#getParams('m_floatParams', true, false, false) as Map<string, integer>;
 	}
 
-	getVectorParam(vectorName: string, out: vec4): vec4 {
+	getVectorParam(vectorName: string, out: vec4): vec4 | null {
 		if (this.#source2File) {
 			const vectors = this.#source2File.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t.m_vectorParams') ?? this.#source2File.getBlockStructAsElementArray('DATA', 'm_vectorParams');
 			if (vectors) {
 				for (const vector of vectors) {
 					if (vector.getSubValueAsString('m_name') == vectorName) {
 						vector.getSubValueAsVec4('m_value', out);
+						return out;
 					}
 				}
 			}
 		}
-		return out;
 	}
 
 	getVectorParams(): Map<string, vec4> | null {
