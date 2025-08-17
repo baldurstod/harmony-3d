@@ -1,3 +1,4 @@
+import { Queue } from 'harmony-utils';
 import { Repository } from './repository';
 
 export interface RepositoryFilter { name?: string | RegExp, extension?: string | RegExp, directories?: boolean, files?: boolean, maxDepth?: number }
@@ -95,15 +96,15 @@ export class RepositoryEntry {
 	getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry> {
 		const childs = new Set<RepositoryEntry>();
 		let current: RepositoryEntry | undefined;
-		const stack: RepositoryEntry[] = [this];
+		const stack: Queue<RepositoryEntry> = new Queue([this]);
 		do {
-			current = stack.pop();
+			current = stack.dequeue();
 			if (current && !childs.has(current)) {
 				if ((filter === undefined) || current.#matchFilter(filter)) {
 					childs.add(current);
 				}
 				for (const [_, child] of current.#childs) {
-					stack.push(child);
+					stack.enqueue(child);
 				}
 			}
 		} while (current);
