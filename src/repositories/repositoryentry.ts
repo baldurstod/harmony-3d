@@ -112,6 +112,25 @@ export class RepositoryEntry {
 		return childs;
 	}
 
+	getAllChildsSorted(filter?: RepositoryFilter): Set<RepositoryEntry> {
+		const childs = new Set<RepositoryEntry>();
+
+		this.#getAllChildsSorted(childs, filter);
+
+		return childs;
+	}
+
+	#getAllChildsSorted(childs: Set<RepositoryEntry>, filter?: RepositoryFilter): void {
+		if ((filter === undefined) || this.#matchFilter(filter)) {
+			childs.add(this);
+		}
+
+		const sortedChilds = new Map([...this.#childs].sort());
+		for (const [_, child] of sortedChilds) {
+			child.#getAllChildsSorted(childs, filter);
+		}
+	}
+
 	#matchFilter(filter: RepositoryFilter): boolean {
 		if (filter.directories !== undefined && filter.directories != this.#isDirectory) {
 			return false;
