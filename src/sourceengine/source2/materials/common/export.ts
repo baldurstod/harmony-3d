@@ -1,5 +1,10 @@
 export { Source2CablesMaterial } from './cables';
 export { Source2ColorCorrection } from './colorcorrection';
+export { Source2GrassTile } from './grasstile';
 export { Source2LiquidFx } from './liquidfx';
+export { Source2Panorama } from './panorama';
+export { Source2PanoramaFancyQuad } from './panoramafancyquad';
+export { Source2PhyscisWireframe } from './physicswireframe';
 export { Source2RefractMaterial } from './refract';
 export { Source2Sky } from './sky';
+//export * from './tools/export';
