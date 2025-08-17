@@ -2,6 +2,7 @@ import { vec4 } from 'gl-matrix';
 import { murmurhash2_32_gc } from 'murmurhash';
 import { WARN } from '../../../buildoptions';
 import { clamp, pow2 } from '../../../math/functions';
+import { smartRound } from '../../../math/round';
 
 /**
  * DynamicExpression
@@ -1088,18 +1089,6 @@ function operandsToString(operands: Operand[]): string | null {
 	return result;
 }
 
-function round(input: number): number {
-	let mul = 1;
-	for (let i = 0; i < 10; ++i) {
-		let r = Math.round(mul * input) / mul;
-		if (Math.abs(r - input) < 0.001) {
-			return r;
-		}
-		mul *= 10;
-	}
-	return input;
-}
-
 function toSwizzle(code: number): string {
 	const s = 'xyzw';
 	return `.${s[(code >> 0) & 3]}${s[(code >> 2) & 3]}${s[(code >> 4) & 3]}${s[(code >> 6) & 3]}`;
@@ -1107,7 +1096,7 @@ function toSwizzle(code: number): string {
 
 function operandToString(operand: Operand): [string, Precedence] | null {
 	if (typeof operand == 'number') {
-		return [String(round(operand)), Precedence.Literal];
+		return [String(smartRound(operand)), Precedence.Literal];
 	}
 
 	if (typeof operand == 'string') {
