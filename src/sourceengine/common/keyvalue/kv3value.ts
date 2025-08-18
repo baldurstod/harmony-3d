@@ -28,7 +28,7 @@ export enum Kv3Type {
 }
 
 export type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
-export type Kv3ValueTypeArrays = number[] ;
+export type Kv3ValueTypeArrays = number[];
 export type Kv3ValueTypeAll = Kv3ValueTypePrimitives | Kv3ValueTypeArrays;
 export type Kv3ValueType = Kv3ValueTypeAll | Kv3ValueTypeAll[];
 
@@ -68,6 +68,7 @@ export class Kv3Value {
 			case Kv3Type.UnsignedInt32:
 			case Kv3Type.IntZero:
 			case Kv3Type.IntOne:
+			case Kv3Type.Float:
 			case Kv3Type.Double:
 			case Kv3Type.DoubleZero:
 			case Kv3Type.DoubleOne:
