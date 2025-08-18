@@ -52,6 +52,7 @@ export class VTFFile {
 	#highResImageFormat = 0;//todo
 	#resources: VTFResource[] = [];
 	#highResResource = new VTFResource(HIGH_RES_IMAGE);
+
 	constructor(width = 512, height = 512, imageFormat = 0/*TODO*/, frames = 1, faces = 1, slices = 1) {
 		this.#width = width;
 		this.#height = height;
@@ -63,82 +64,85 @@ export class VTFFile {
 		this.addResource(this.#highResResource);
 	}
 
-	addResource(resource: VTFResource) {
+	addResource(resource: VTFResource): void {
 		this.#resources.push(resource);
 	}
 
-	get height() {
+	get height(): number {
 		return this.#height;
 	}
 
-	get width() {
+	get width(): number {
 		return this.#width;
 	}
 
-	setFlag(flag: number) {
+	setFlag(flag: number): void {
 		this.#flags |= flag;
 	}
 
-	unsetFlag(flag: number) {
+	unsetFlag(flag: number): void {
 		this.#flags &= ~flag;
 	}
 
-	get flags() {
+	get flags(): number {
 		return this.#flags;
 	}
 
-	get frames() {
+	get frames(): number {
 		return 1;//TODO
 	}
 
-	get bumpmapScale() {
+	get bumpmapScale(): number {
 		return this.#bumpmapScale;
 	}
 
-	get highResImageFormat() {
+	get highResImageFormat(): number {
 		return this.#highResImageFormat;
 	}
 
-	get mipmapCount() {
+	get mipmapCount(): number {
 		return 1;//TODO
 	}
 
-	get lowResImageFormat() {
+	get lowResImageFormat(): number {
 		return -1;//TODO
 	}
 
-	get lowResImageWidth() {
+	get lowResImageWidth(): number {
 		return 0;//TODO
 	}
 
-	get lowResImageHeight() {
+	get lowResImageHeight(): number {
 		return 0;//TODO
 	}
 
-	get depth() {
+	get depth(): number {
 		return 1;//TODO
 	}
 
-	get numResources() {
+	get numResources(): number {
 		return this.#resources.length;//TODO
 	}
 
-	get resources() {
+	get resources(): VTFResource[] {
 		return this.#resources;
 	}
 
-	getMipMaps() {
+	getMipMaps(): Uint8ClampedArray[][][][] {
 		return this.#mipMaps;
 	}
 
-	setImageData(imageData: Uint8ClampedArray, frame = 0, face = 0, slice = 0, mipmap = 0) {
+	setImageData(imageData: Uint8ClampedArray, frame = 0, face = 0, slice = 0, mipmap = 0): void {
+		this.#mipMaps[mipmap] = this.#mipMaps[mipmap] ?? [];
+		this.#mipMaps[mipmap][frame] = this.#mipMaps[mipmap][frame] ?? [];
+		this.#mipMaps[mipmap][frame][face] = this.#mipMaps[mipmap][frame][face] ?? [];
 		this.#mipMaps[mipmap][frame][face][slice] = imageData;//TODO: check values;
 		this.#highResResource.data = imageData;
 	}
 }
 
 export class VTFWriter {
-	static writeAndSave(vtffile: VTFFile, filename: string) {
+	static writeAndSave(vtffile: VTFFile, filename: string): void {
 		const arrayBuffer = this.write(vtffile);
 		const dataView = new DataView(arrayBuffer);
 
@@ -146,19 +150,19 @@ export class VTFWriter {
 		saveFile(new File([new Blob([dataView])], filename));
 	}
 
-	static write(vtffile: VTFFile) {
+	static write(vtffile: VTFFile): ArrayBuffer {
 		//TODO: check vtffile
 		const writer = new BinaryReader(new Uint8Array(this.#computeLength(vtffile)));
 		this.#writeHeader(writer, vtffile);
 		return writer.buffer;
 	}
 
-	static #computeLength(vtffile: VTFFile) {
+	static #computeLength(vtffile: VTFFile): number {
 		let result = 80 + vtffile.numResources * 8;
 
 		const resArray = vtffile.resources;
-		for (const i in resArray) {
-			const resource = resArray[i];
+		for (const resource of resArray) {
+			//	const resource = resArray[i];
 			if (resource.flag != 2) {
 				result += resource.length;
 			}
@@ -167,7 +171,7 @@ export class VTFWriter {
 		return result;
 	}
 
-	static #writeHeader(writer: BinaryReader, vtffile: VTFFile) {
+	static #writeHeader(writer: BinaryReader, vtffile: VTFFile): void {
 		const fixedHeaderLength = 80;
 		writer.seek(0);
 		writer.setUint32(0x00465456);//VTF\0
@@ -202,9 +206,9 @@ export class VTFWriter {
 		const resArray = vtffile.resources;
 		let dataOffset = headerLength;
 		let resHeaderOffset = fixedHeaderLength;
-		for (const i in resArray) {
+		for (const resource of resArray) {
 			writer.seek(resHeaderOffset);
-			const resource = resArray[i];
+			//const resource = resArray[i];
 			writer.setUint32(resource.type);
 			/*writer.skip(-1);
 			writer.setUint8(resource.flag);*/
@@ -221,7 +225,7 @@ export class VTFWriter {
 		}
 	}
 
-	static #writeResource(writer: BinaryReader, vtffile: VTFFile, resource: VTFResource, dataOffset: number) {
+	static #writeResource(writer: BinaryReader, vtffile: VTFFile, resource: VTFResource, dataOffset: number): void {
 		switch (resource.type) {
 			case LOW_RES_IMAGE:
 				break;
@@ -231,16 +235,19 @@ export class VTFWriter {
 		}
 	}
 
-	static #writeHighResImage(writer: BinaryReader, vtffile: VTFFile, resource: VTFResource, dataOffset: number) {
+	static #writeHighResImage(writer: BinaryReader, vtffile: VTFFile, resource: VTFResource, dataOffset: number): void {
 		writer.seek(dataOffset);
-		writer.setBytes(vtffile.getMipMaps()[0][0][0][0]);
+		const b = vtffile.getMipMaps()[0]?.[0]?.[0]?.[0];
+		if (b) {
+			writer.setBytes(b);
+		}
 	}
 
-	static get majorVersion() {
+	static get majorVersion(): number {
 		return 7;
 	}
 
-	static get minorVersion() {
+	static get minorVersion(): number {
 		return 5;
 	}
 }
