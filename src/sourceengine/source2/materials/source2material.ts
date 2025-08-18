@@ -80,7 +80,7 @@ export class Source2Material extends Material {
 		super();
 		this.repository = repository;
 		this.#source2File = source2File;
-		//this.setupUniforms();
+		this.#setupUniforms();
 		this.setupUniformsOnce();
 		if (false && DEBUG && source2File) {
 			//console.log(source2File!.getBlockByType('DATA')?.keyValue?.root || source2File!.getBlockByType('DATA')?.structs?.MaterialResourceData_t);
@@ -132,7 +132,7 @@ export class Source2Material extends Material {
 
 		if (this.getIntParam('F_ALPHA_TEST') == 1) {
 			this.setDefine('ALPHA_TEST');//TODOv3: set this automaticaly
-			this.uniforms['uAlphaTestReference'] = this.getParam('g_flAlphaTestReference') ?? DEFAULT_ALPHA_TEST_REFERENCE;
+			this.uniforms['uAlphaTestReference'] = this.#getParam('g_flAlphaTestReference') ?? DEFAULT_ALPHA_TEST_REFERENCE;
 		}
 
 		if (this.getIntParam('F_SEPARATE_ALPHA_TRANSFORM')) {
@@ -194,10 +194,10 @@ export class Source2Material extends Material {
 
 	}
 
-	setupUniforms(): void {
+	#setupUniforms(): void {
 		for (const [paramName, uniformName] of UNIFORMS) {
 			//console.error(uniformName);
-			const paramValue = this.getParam(paramName);
+			const paramValue = this.#getParam(paramName);
 			if (paramValue) {
 				this.setUniform(uniformName, paramValue);
 			}
@@ -352,7 +352,7 @@ export class Source2Material extends Material {
 		}
 	}
 
-	getParam(paramName: string): number | vec4 | null {
+	#getParam(paramName: string): number | vec4 | null {
 		if (paramName.startsWith('g_f')) {
 			return this.getFloatParam(paramName);
 		} else if (paramName.startsWith('g_v')) {
