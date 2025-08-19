@@ -54,8 +54,8 @@ export interface EntityParameters {
 	visible?: boolean;
 }
 
-export type MaterialParams = { [key: string]: MaterialParam }//TODO: create a map;
-export type MaterialParam = any/*TODO: create an actual type*/;
+export type DynamicParams = { [key: string]: DynamicParam }//TODO: create a map;
+export type DynamicParam = any/*TODO: create an actual type*/;
 
 export class Entity {
 	static addSubMenu: any;
@@ -81,7 +81,7 @@ export class Entity {
 	_mvMatrix = mat4.create();
 	_normalMatrix = mat3.create();
 	_parent: Entity | null = null;
-	materialsParams: MaterialParams = {};
+	materialsParams: DynamicParams = {};
 	isRenderable = false;
 	lockPos = false;
 	lockRot = false;
@@ -1084,7 +1084,7 @@ export class Entity {
 		}
 	}
 
-	setMaterialParam(name: string, value: MaterialParam) {
+	setMaterialParam(name: string, value: DynamicParam) {
 		this.materialsParams[name] = value;
 	}
 
@@ -1170,7 +1170,7 @@ export class Entity {
 		}
 		this.castShadow = json.castshadow as boolean;
 		this.receiveShadow = json.receiveshadow as boolean;
-		this.materialsParams = json.materialsparams as { [key: string]: MaterialParam };
+		this.materialsParams = json.materialsparams as { [key: string]: DynamicParam };
 		this.#hideInExplorer = json.hideinexplorer as boolean ?? false;
 		this.wireframe = json.wireframe as number;
 		this.#layer = json.layer as number;

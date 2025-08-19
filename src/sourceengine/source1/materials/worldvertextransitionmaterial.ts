@@ -1,4 +1,4 @@
-import { MaterialParams } from '../../../entities/entity';
+import { DynamicParams } from '../../../entities/entity';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
 
@@ -13,7 +13,7 @@ export class WorldVertexTransitionMaterial extends SourceEngineMaterial {
 		super.init();
 	}
 
-	afterProcessProxies(proxyParams: MaterialParams) {
+	afterProcessProxies(proxyParams: DynamicParams) {
 		const variables = this.variables;
 		const parameters = this.vmt;
 

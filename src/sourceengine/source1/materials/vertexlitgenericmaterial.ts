@@ -1,5 +1,5 @@
 import { vec3, vec4 } from 'gl-matrix';
-import { MaterialParams } from '../../../entities/entity';
+import { DynamicParams } from '../../../entities/entity';
 import { MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NONE } from '../../../materials/material';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './sourceenginematerial';
@@ -63,7 +63,7 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 		this.variables.set('$SheenMaskDirection', 0.0);
 	}
 
-	afterProcessProxies(proxyParams: MaterialParams) {
+	afterProcessProxies(proxyParams: DynamicParams) {
 		const variables = this.variables;
 		const parameters = this.vmt;
 

@@ -2,7 +2,7 @@ import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_FLOAT, SHADER_PARAM_TYPE_INTEGER, SHADER_PARAM_TYPE_STRING, SourceEngineMaterial, TextureRole, VmtParameters, readColor } from './sourceenginematerial';
 
-import { MaterialParams } from '../../../entities/entity';
+import { DynamicParams } from '../../../entities/entity';
 import { lerp } from '../../../math/functions';
 
 const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
@@ -36,7 +36,7 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 
 	}
 
-	afterProcessProxies(proxyParams: MaterialParams) {
+	afterProcessProxies(proxyParams: DynamicParams) {
 		const variables = this.variables;
 		const parameters = this.vmt;
 		this.setDefine('DECALSTYLE', variables.get('$decalstyle') ?? 0);//TODO: set this on variable change

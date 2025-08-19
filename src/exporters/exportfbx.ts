@@ -2,7 +2,7 @@ import { mat4, quat, vec3, vec4 } from 'gl-matrix';
 import { FBX_PROPERTY_FLAG_STATIC, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_TYPE_DOUBLE, FBX_SKELETON_TYPE_LIMB, FBXAnimCurveNode, FBXAnimLayer, FBXAnimStack, FBXCamera, FBXCluster, FBXExporter, FBXManager, FBXMesh, FBXNode, FBXPose, FBXScene, fbxSceneToFBXFile, FBXSkeleton, FBXSkin, FBXSurfacePhong, FBXTexture, FBXVideo } from 'harmony-fbx';
 import { DEBUG } from '../buildoptions';
 import { Camera } from '../cameras/camera';
-import { Entity, MaterialParams } from '../entities/entity';
+import { Entity, DynamicParams } from '../entities/entity';
 import { Graphics } from '../graphics/graphics';
 import { Material } from '../materials/material';
 import { HALF_PI } from '../math/constants';
@@ -498,7 +498,7 @@ export async function entitytoFBXFile(entity) {
 }
 */
 
-async function configureMaterial(material: Material, fbxMaterial: FBXSurfacePhong, materialsParams: MaterialParams) {
+async function configureMaterial(material: Material, fbxMaterial: FBXSurfacePhong, materialsParams: DynamicParams) {
 	const fbxManager = fbxMaterial.manager;
 	if (material.uniforms['colorMap']) {
 		const fbxTexture = fbxManager.createObject('FBXTexture', 'DiffuseColor') as FBXTexture;
@@ -547,7 +547,7 @@ enum RenderMode {
 	Color = 0,
 	Normal = 1,
 }
-async function renderMaterial(material: Material, materialsParams: MaterialParams, renderMode: RenderMode): Promise<ArrayBuffer | null> {
+async function renderMaterial(material: Material, materialsParams: DynamicParams, renderMode: RenderMode): Promise<ArrayBuffer | null> {
 	if (!scene) {
 		scene = new Scene();
 		camera = new Camera();
