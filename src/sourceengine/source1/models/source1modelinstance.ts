@@ -774,17 +774,10 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	}
 
 	setPosition(position: vec3) {
-		super.position = position;
+		super.setPosition(position);
 		if (this.#skeleton) {
 			this.#skeleton.dirty();
 		}
-	}
-
-	/**
-	 * @deprecated Please use `setPosition` instead.
-	 */
-	set position(position: vec3) {
-		this.setPosition(position);
 	}
 
 	set quaternion(quaternion) {
