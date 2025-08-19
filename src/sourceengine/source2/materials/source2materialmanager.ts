@@ -8,7 +8,7 @@ function cleanSource2MaterialName(name: string) {
 }
 
 export class Source2MaterialManager {
-	static #materialList = new Map<string, Source2Material | Promise<Source2Material | null>>();
+	static #materialList = new Map<string, Source2Material | Promise<Source2Material | null>>();// TODO: turn to Map2
 	static #materialList2 = new Set<Source2Material>();
 
 	static addMaterial(material: Source2Material) {

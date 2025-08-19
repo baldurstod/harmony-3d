@@ -131,6 +131,7 @@ export class RepositoryEntry {
 		}
 	}
 
+
 	#matchFilter(filter: RepositoryFilter): boolean {
 		if (filter.directories !== undefined && filter.directories != this.#isDirectory) {
 			return false;

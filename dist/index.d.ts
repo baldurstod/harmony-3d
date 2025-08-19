@@ -6251,6 +6251,7 @@ declare class Choreography {
              getChild(name: string): RepositoryEntry | undefined;
              getChilds(filter?: RepositoryFilter): Generator<RepositoryEntry, null, undefined>;
              getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry>;
+             getAllChildsSorted(filter?: RepositoryFilter): Set<RepositoryEntry>;
              getPath(path: string): RepositoryEntry | null;
              isDirectory(): boolean;
              toJSON(): JSON;
@@ -6811,6 +6812,8 @@ declare class Choreography {
              render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
+         export declare function smartRound(input: number, precision?: number): number;
+
          export declare class SnapshotRigidSkinToBones extends Operator {
              #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
@@ -6986,7 +6989,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7349,6 +7352,10 @@ declare class Choreography {
              getShaderSource(): string;
          }
 
+         export declare class Source2GrassTile extends Source2Material {
+             get shaderSource(): string;
+         }
+
          export declare class Source2Hero extends Source2Material {
              get shaderSource(): string;
          }
@@ -7380,9 +7387,8 @@ declare class Choreography {
              repository: string;
              constructor(repository: string, source2File?: Source2File);
              setupUniformsOnce(): void;
-             setupUniforms(): void;
              clone(): Source2Material;
-             getTextureByName(textureName: string): string | null;
+             getTextureParam(textureName: string): string | null;
              updateMaterial(time: number, mesh: Mesh): void;
              processProxies(time: number, proxyParams: ProxyParams): void;
              _afterProcessProxies(proxyParams: ProxyParams): void;
@@ -7394,14 +7400,14 @@ declare class Choreography {
              getUniforms(): Map<string, string>[];
              getTextureUniforms(): Map<string, [string, string]>[];
              initTextureUniforms(): Promise<void>;
-             getParam(paramName: string): number | vec4;
-             getIntParam(intName: string): number;
+             getIntParam(intName: string): number | null;
              getIntParams(): Map<string, integer> | null;
-             getFloatParam(floatName: string): number;
+             getFloatParam(floatName: string): number | null;
              getFloatParams(): Map<string, float> | null;
-             getVectorParam(vectorName: string, out: vec4): vec4;
+             getVectorParam(vectorName: string, out: vec4): vec4 | null;
              getVectorParams(): Map<string, vec4> | null;
-             getDynamicParam(dynamicName: string): vec4 | undefined;
+             getDynamicParam(name: string): vec4 | null;
+             getDecompiledDynamicParam(name: string): [string | null, Uint8Array] | null;
              getDynamicParams(): Map<string, [string | null, Uint8Array]> | null;
              getTextureParams(): Map<string, string> | null;
          }
@@ -7600,7 +7606,7 @@ declare class Choreography {
                  animate: {
                      i18n: string;
                      selected: boolean;
-                     f: () => 1 | 0;
+                     f: () => 0 | 1;
                  };
                  frame: {
                      i18n: string;
@@ -7645,6 +7651,14 @@ declare class Choreography {
              #private;
              _paramChanged(paramName: string, param: OperatorParam): void;
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
+         }
+
+         export declare class Source2Panorama extends Source2Material {
+             get shaderSource(): string;
+         }
+
+         export declare class Source2PanoramaFancyQuad extends Source2Material {
+             get shaderSource(): string;
          }
 
          declare class Source2Particle {
@@ -7720,7 +7734,7 @@ declare class Choreography {
              /**
               * @deprecated Please use getScalarField instead.
               */
-             getField(field?: number, initial?: boolean): number | [number, number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number];
+             getField(field?: number, initial?: boolean): number | [number, number, number] | Float32Array<ArrayBufferLike> | [number, number, number, number];
              /**
               * TODO
               */
@@ -7973,6 +7987,10 @@ declare class Choreography {
              get shaderSource(): string;
          }
 
+         export declare class Source2PhyscisWireframe extends Source2Material {
+             get shaderSource(): string;
+         }
+
          export declare class Source2ProjectedDotaMaterial extends Source2Material {
              get shaderSource(): string;
          }
@@ -8032,7 +8050,7 @@ declare class Choreography {
 
          export declare const Source2SnapshotLoader: {
              load(repository: string, filename: string): Promise<Source2Snapshot>;
-             "__#256@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+             "__#257@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
@@ -10274,12 +10292,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#224@#webAssembly"?: any;
-             "__#224@#HEAPU8"?: Uint8Array;
+             "__#225@#webAssembly"?: any;
+             "__#225@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#224@#initHeap"(): void;
+             "__#225@#initHeap"(): void;
          };
 
          export { }
