@@ -75,10 +75,12 @@ export class Source2Material extends Material {
 	repository: string;
 	#detailTexCoordOffset = vec4.create();
 	#detailTexCoordScale = vec4.create();
+	readonly shader: string;
 
-	constructor(repository: string, source2File?: Source2File) {
+	constructor(repository: string, shader: string, source2File?: Source2File) {
 		super();
 		this.repository = repository;
+		this.shader = shader;
 		this.#source2File = source2File;
 		this.#setupUniforms();
 		this.setupUniformsOnce();
@@ -205,7 +207,7 @@ export class Source2Material extends Material {
 	}
 
 	clone(): Source2Material {
-		return new (this.constructor as typeof Source2Material)(this.repository, this.#source2File);
+		return new (this.constructor as typeof Source2Material)(this.repository, this.shader, this.#source2File);
 	}
 
 	getTextureParam(textureName: string): string | null {

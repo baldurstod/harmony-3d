@@ -30,7 +30,7 @@ export class Source2MaterialLoader {
 		let material: Source2Material | null = null;
 		const materialClass = this.#materials.get(shaderName.toLowerCase());
 		if (materialClass !== undefined) {
-			material = new materialClass(repository, file);
+			material = new materialClass(repository, shaderName, file);
 		} else {
 			console.error(`Unknown material : ${shaderName} in ${file.fileName}`);
 		}

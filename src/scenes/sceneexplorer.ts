@@ -600,7 +600,7 @@ function initEntitySubmenu() {
 							show(new SceneExplorer().htmlFileSelector);
 							new Interaction().selectFile(new SceneExplorer().htmlFileSelector, await Source1ParticleControler.getSystemList(), async (repository, systemPath) => {
 								const systemName = systemPath.split('/');
-								const sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]);
+								const sys = await Source1ParticleControler.createSystem(repository, systemName[systemName.length - 1]!);
 								sys.start();
 								(new SceneExplorer().getSelectedEntity() ?? entity).addChild(sys);
 							});
