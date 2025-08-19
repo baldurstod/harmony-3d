@@ -2,6 +2,7 @@ import { mat4, quat, vec3 } from 'gl-matrix';
 import { Camera } from '../../../cameras/camera';
 import { Entity } from '../../../entities/entity';
 import { Animated } from '../../../interfaces/animated';
+import { HasMaterials } from '../../../interfaces/hasmaterials';
 import { HasSkeleton } from '../../../interfaces/hasskeleton';
 import { RandomPointOnModel } from '../../../interfaces/randompointonmodel';
 import { Material } from '../../../materials/material';
@@ -13,7 +14,7 @@ import { SkeletalMesh } from '../../../objects/skeletalmesh';
 import { Skeleton } from '../../../objects/skeleton';
 import { Scene } from '../../../scenes/scene';
 import { Interaction } from '../../../utils/interaction';
-import { Source2MaterialManager } from '../materials/source2materialmanager';
+import { cleanSource2MaterialName, Source2MaterialManager } from '../materials/source2materialmanager';
 import { Source2AnimationDesc } from './source2animationdesc';
 import { Source2Model } from './source2model';
 import { Source2ModelAttachmentInstance } from './source2modelattachment';
@@ -29,7 +30,7 @@ let animSpeed = 1.0;
 
 const defaultMaterial = new MeshBasicMaterial();
 
-export class Source2ModelInstance extends Entity implements Animated, HasSkeleton, RandomPointOnModel {
+export class Source2ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel {
 	isSource2ModelInstance = true;
 	#skeleton: Skeleton | null = null;
 	#skin = 0;
@@ -121,15 +122,11 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 		return this.#skeleton;
 	}
 
-	set position(position) {
-		super.position = position;
+	setPosition(position: vec3) {
+		super.setPosition(position);
 		if (this.#skeleton) {
 			this.#skeleton.dirty();
 		}
-	}
-
-	get position() {
-		return vec3.clone(this._position);
 	}
 
 	addChild(child: Entity) {
@@ -296,6 +293,27 @@ export class Source2ModelInstance extends Entity implements Animated, HasSkeleto
 				);
 			}
 		}
+	}
+
+	async getSkins(): Promise<Set<string>> {
+		const skins = this.sourceModel.getSkinList();
+		if (skins.length == 0) {
+			skins.push('default');
+		}
+		return new Set(skins);
+	}
+
+	async getMaterialsName(skin: string): Promise<[string, Set<string>]> {
+		const materials = new Set<string>();
+
+		for (const mesh of this.meshes) {
+			const path = mesh.geometry?.properties.getString('materialPath');
+			if (path) {
+				materials.add(cleanSource2MaterialName(path));
+			}
+		}
+
+		return [this.sourceModel.repository, materials];
 	}
 
 	#init() {
