@@ -1,25 +1,22 @@
 import { vec3, vec4 } from 'gl-matrix';
+import { MaterialParams } from '../../../entities/entity';
 import { MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NONE } from '../../../materials/material';
-import { MaterialManager } from '../../../materials/materialmanager';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
-import { SourceEngineMaterialManager } from './sourceenginematerialmanager';
+import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './sourceenginematerial';
 
 export class VertexLitGenericMaterial extends SourceEngineMaterial {
-	diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+	#diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 	#initialized = false;
 
-	constructor(params: any = {}) {
+	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
 		params.useSrgb = false;
-		super(params/*repository, fileName, parameters*/);
-		this.setValues(params);
+		super(repository, path, vmt, params);
 	}
 
 	init(): void {
 		if (this.#initialized) {
 			return;
 		}
-		const params = this.parameters;
 		this.#initialized = true;
 		super.init();
 
@@ -30,7 +27,7 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 		float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
 		float fVertexAlpha = bHasVertexAlpha ? 1 : 0;*/
 		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
-		this.uniforms['g_DiffuseModulation'] = this.diffuseModulation;
+		this.uniforms['g_DiffuseModulation'] = this.#diffuseModulation;
 
 		const btbba = this.variables.get('$blendtintbybasealpha');
 		if (btbba == 1) {
@@ -66,9 +63,9 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 		this.variables.set('$SheenMaskDirection', 0.0);
 	}
 
-	afterProcessProxies(proxyParams) {
+	afterProcessProxies(proxyParams: MaterialParams) {
 		const variables = this.variables;
-		const parameters = this.parameters;
+		const parameters = this.vmt;
 
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
@@ -96,11 +93,11 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 
 
 		//TODOv3: only do this if a variable is changed
-		this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.diffuseModulation);
+		this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.#diffuseModulation);
 	}
 
 	clone() {
-		return new VertexLitGenericMaterial(/*this.repository, this.fileName, */this.parameters);
+		return new VertexLitGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
 	get shaderSource() {
@@ -108,4 +105,4 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 	}
 }
 SourceEngineVMTLoader.registerMaterial('vertexlitgeneric', VertexLitGenericMaterial);
-MaterialManager.registerMaterial('VertexLitGeneric', VertexLitGenericMaterial, SourceEngineMaterialManager);
+//MaterialManager.registerMaterial('VertexLitGeneric', VertexLitGenericMaterial, SourceEngineMaterialManager);

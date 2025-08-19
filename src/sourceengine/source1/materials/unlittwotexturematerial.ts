@@ -14,18 +14,18 @@ export class UnlitTwoTextureMaterial extends SourceEngineMaterial {
 		if (this.#initialized) {
 			return;
 		}
-		const params = this.parameters;
+		const vmt = this.vmt;
 		this.#initialized = true;
 		super.init();
 
-		if (params['$texture2']) {
-			this.setColor2Map(this.getTexture(TextureRole.Color2, this.repository, params['$texture2'], params['$frame2'] as number ?? 0));
+		if (vmt['$texture2']) {
+			this.setColor2Map(this.getTexture(TextureRole.Color2, this.repository, vmt['$texture2'], vmt['$frame2'] as number ?? 0));
 		} else {
 			this.setColor2Map(TextureManager.createCheckerTexture());
 		}
 
 		this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-		if (params['$additive'] == 1) {
+		if (vmt['$additive'] == 1) {
 			this.setTransparency(GL_SRC_ALPHA, GL_ONE);
 			//this.setBlending('additive');
 		}
@@ -41,7 +41,7 @@ export class UnlitTwoTextureMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new UnlitTwoTextureMaterial(this.parameters);
+		return new UnlitTwoTextureMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
 	get shaderSource() {
@@ -50,7 +50,7 @@ export class UnlitTwoTextureMaterial extends SourceEngineMaterial {
 
 	afterProcessProxies() {
 		const variables = this.variables;
-		const parameters = this.parameters;
+		const parameters = this.vmt;
 		const texture2Transform = variables.get('$texture2transform');
 		if (texture2Transform) {
 			this.uniforms['uTexture2Transform'] = texture2Transform;

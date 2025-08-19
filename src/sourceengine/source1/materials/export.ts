@@ -1,8 +1,8 @@
-export * from './proxies/export';
 export { CharacterMaterial } from './charactermaterial';
 export { CustomWeaponMaterial } from './customweaponmaterial';
 export { EyeRefractMaterial } from './eyerefractmaterial';
 export { LightMappedGenericMaterial } from './lightmappedgenericmaterial';
+export * from './proxies/export';
 export { RefractMaterial } from './refract';
 export { SourceEngineMaterialManager } from './sourceenginematerialmanager';
 export { SpriteCardMaterial } from './spritecardmaterial';

@@ -1,15 +1,16 @@
 import { vec3, vec4 } from 'gl-matrix';
+import { MaterialParams } from '../../../entities/entity';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, TextureRole, readColor } from './sourceenginematerial';
+import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole, readColor } from './sourceenginematerial';
 
 const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
 
 //TODO: deprecate
 export class CustomWeaponMaterial extends SourceEngineMaterial {
 	diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-	constructor(params: any = {}) {
-		super(params);
-		this.setValues(params);
+
+	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
+		super(repository, path, vmt, params);
 
 
 		//this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
@@ -39,9 +40,9 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 		this.variables.set('$SheenMaskDirection', 0.0);
 	}
 
-	afterProcessProxies(proxyParams) {
+	afterProcessProxies(proxyParams: MaterialParams) {
 		const variables = this.variables;
-		const parameters = this.parameters;
+		const parameters = this.vmt;
 
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
@@ -164,11 +165,11 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 		this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.diffuseModulation);
 	}
 
-	set style(style) {
+	set style(style: string) {
 		this.setDefine('PAINT_STYLE', style);
 	}
 
-	setColorUniform(uniformName, value) {
+	setColorUniform(uniformName: string, value: string) {
 		const color = readColor(value);
 		if (color) {
 			//vec3.scale(color, color, 1 / 255.0);
@@ -176,19 +177,19 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 		}
 	}
 
-	set color0(color) {
+	set color0(color: string) {
 		this.setColorUniform('uCamoColor0', color);
 	}
 
-	set color1(color) {
+	set color1(color: string) {
 		this.setColorUniform('uCamoColor1', color);
 	}
 
-	set color2(color) {
+	set color2(color: string) {
 		this.setColorUniform('uCamoColor2', color);
 	}
 
-	set color3(color) {
+	set color3(color: string) {
 		this.setColorUniform('uCamoColor3', color);
 	}
 	/*
@@ -213,8 +214,8 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 		}
 	*/
 
-	setPatternScale(scale) {
-		this.uniforms['g_PreviewPhongBoosts'][2] = scale;
+	setPatternScale(scale:number) {
+		(this.uniforms['g_PreviewPhongBoosts'] as vec3)[2] = scale;
 	}
 
 	/*
@@ -243,7 +244,7 @@ export class CustomWeaponMaterial extends SourceEngineMaterial {
 		*/
 
 	clone() {
-		return new CustomWeaponMaterial(this.parameters);
+		return new CustomWeaponMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
 

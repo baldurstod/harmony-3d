@@ -1,3 +1,4 @@
+import { MaterialParams } from '../../../entities/entity';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
 import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
 
@@ -8,14 +9,13 @@ export class WorldVertexTransitionMaterial extends SourceEngineMaterial {
 		if (this.#initialized) {
 			return;
 		}
-		const params = this.parameters;
 		this.#initialized = true;
 		super.init();
 	}
 
-	afterProcessProxies(proxyParams) {
+	afterProcessProxies(proxyParams: MaterialParams) {
 		const variables = this.variables;
-		const parameters = this.parameters;
+		const parameters = this.vmt;
 
 		const baseTexture2 = this.variables.get('$basetexture2');
 		this.setColor2Map(baseTexture2 ? this.getTexture(TextureRole.Color2, this.repository, baseTexture2, 0, true) : null);
@@ -27,7 +27,7 @@ export class WorldVertexTransitionMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new WorldVertexTransitionMaterial(this.parameters);
+		return new WorldVertexTransitionMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
 	getShaderSource() {

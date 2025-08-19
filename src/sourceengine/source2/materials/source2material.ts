@@ -224,10 +224,10 @@ export class Source2Material extends Material {
 	}
 
 	updateMaterial(time: number, mesh: Mesh): void {
-		this.processProxies(time, mesh.materialsParams);
+		this.#processProxies(time, mesh.materialsParams);
 	}
 
-	processProxies(time: number, proxyParams: ProxyParams): void {
+	#processProxies(time: number, proxyParams: ProxyParams): void {
 		//todov3//rename function
 
 		/*let proxies = this.proxies;

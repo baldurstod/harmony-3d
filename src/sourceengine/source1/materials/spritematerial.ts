@@ -1,7 +1,7 @@
 import { RenderFace } from '../../../materials/constants';
 import { GL_MAX, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial } from './sourceenginematerial';
+import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt } from './sourceenginematerial';
 
 enum RenderMode {
 	Normal = 0,			// src
@@ -20,8 +20,8 @@ enum RenderMode {
 export class SpriteMaterial extends SourceEngineMaterial {
 	#initialized = false;
 
-	constructor(params: any = {}) {
-		super(params);
+	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
+		super(repository, path, vmt, params);
 
 		// Disable back face culling
 		this.renderFace(RenderFace.Both);
@@ -33,21 +33,21 @@ export class SpriteMaterial extends SourceEngineMaterial {
 		if (this.#initialized) {
 			return;
 		}
-		const params = this.parameters;
+		const vmt = this.vmt;
 		this.#initialized = true;
 		super.init();
 
-		if ( /*bAdditive2ndTexture || bAddOverBlend || */params['$addself'] !== undefined) {
+		if ( /*bAdditive2ndTexture || bAddOverBlend || */vmt['$addself'] !== undefined) {
 			this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		} else {
-			if (params['$additive'] == 1) {
+			if (vmt['$additive'] == 1) {
 				this.setTransparency(GL_SRC_ALPHA, GL_ONE);
 			} else {
 				this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			}
 		}
 
-		switch (Number(params['$spriterendermode'])) {
+		switch (Number(vmt['$spriterendermode'])) {
 			//TODO: add other modes
 			case RenderMode.TransAdd:
 				this.setTransparency(GL_SRC_ALPHA, GL_ONE);
@@ -58,7 +58,7 @@ export class SpriteMaterial extends SourceEngineMaterial {
 
 		// this material always has blending
 		//this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-		if (params['$additive'] == 1) {
+		if (vmt['$additive'] == 1) {
 			//this.setTransparency(GL_SRC_ALPHA, GL_ONE);
 		}
 
@@ -68,8 +68,8 @@ export class SpriteMaterial extends SourceEngineMaterial {
 			this.setDefine('ALPHA_TEST');
 			this.uniforms['uAlphaTestReference'] = Number.parseFloat(parameters['$alphatestreference'] || 0.5);
 		}*/
-		if (params['$addself'] !== undefined) {
-			this.uniforms['uAddSelf'] = Number.parseFloat(params['$addself']);
+		if (vmt['$addself'] !== undefined) {
+			this.uniforms['uAddSelf'] = Number.parseFloat(vmt['$addself']);
 			this.setDefine('ADD_SELF');
 			//this.setTransparency(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 		}
@@ -85,7 +85,7 @@ export class SpriteMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new SpriteMaterial(this.parameters);
+		return new SpriteMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
 	get shaderSource() {

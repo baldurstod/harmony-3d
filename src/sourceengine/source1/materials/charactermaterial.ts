@@ -1,13 +1,14 @@
 import { vec3, vec4 } from 'gl-matrix';
+import { MaterialParams } from '../../../entities/entity';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
+import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './sourceenginematerial';
 
 //TODO: deprecate
 export class CharacterMaterial extends SourceEngineMaterial {
-	diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-	constructor(params: any = {}) {//fixme
-		super(params);
-		this.setValues(params);
+	#diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+
+	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
+		super(repository, path, vmt, params);
 		const variables = this.variables;
 
 
@@ -38,7 +39,7 @@ export class CharacterMaterial extends SourceEngineMaterial {
 		float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
 		float fVertexAlpha = bHasVertexAlpha ? 1 : 0;*/
 		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
-		this.uniforms['g_DiffuseModulation'] = this.diffuseModulation;
+		this.uniforms['g_DiffuseModulation'] = this.#diffuseModulation;
 
 		const btbba = this.variables.get('$blendtintbybasealpha');
 		if (btbba && btbba == 1) {
@@ -58,9 +59,9 @@ export class CharacterMaterial extends SourceEngineMaterial {
 		this.variables.set('$SheenMaskDirection', 0.0);
 	}
 
-	afterProcessProxies(proxyParams) {
+	afterProcessProxies(proxyParams: MaterialParams = {}) {
 		const variables = this.variables;
-		const parameters = this.parameters;
+		const parameters = this.vmt;
 
 		const sheenMapMaskFrame = variables.get('$sheenmapmaskframe');//variables.get('$sheenmapmaskframe')
 		if (parameters['$sheenmapmask']) {
@@ -102,11 +103,11 @@ export class CharacterMaterial extends SourceEngineMaterial {
 
 
 		//TODOv3: only do this if a variable is changed
-		this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.diffuseModulation);
+		this.uniforms['g_DiffuseModulation'] = this.computeModulationColor(this.#diffuseModulation);
 	}
 
 	clone() {
-		return new CharacterMaterial(this.parameters);
+		return new CharacterMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
 	get shaderSource() {

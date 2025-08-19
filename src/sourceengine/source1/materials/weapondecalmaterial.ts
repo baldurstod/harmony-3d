@@ -1,7 +1,8 @@
 import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_FLOAT, SHADER_PARAM_TYPE_INTEGER, SHADER_PARAM_TYPE_STRING, SourceEngineMaterial, TextureRole, readColor } from './sourceenginematerial';
+import { SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_FLOAT, SHADER_PARAM_TYPE_INTEGER, SHADER_PARAM_TYPE_STRING, SourceEngineMaterial, TextureRole, VmtParameters, readColor } from './sourceenginematerial';
 
+import { MaterialParams } from '../../../entities/entity';
 import { lerp } from '../../../math/functions';
 
 const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
@@ -10,20 +11,15 @@ const DEFAULT_BASE_TEXTURE = 'models/weapons/customization/stickers/default/stic
 const DEFAULT_AO_TEXTURE = 'models/weapons/customization/stickers/default/ao_default';
 const DEFAULT_GRUNGE_TEXTURE = 'models/weapons/customization/shared/sticker_paper';
 const DEFAULT_WEAR_TEXTURE = 'models/weapons/customization/shared/paint_wear';
+
 //TODO: deprecate
 export class WeaponDecalMaterial extends SourceEngineMaterial {
 	#initialized = false;
-
-	constructor(params: any = {}) {
-		super(params);
-		this.setValues(params);
-	}
 
 	init(): void {
 		if (this.#initialized) {
 			return;
 		}
-		const params = this.parameters;
 		this.#initialized = true;
 		super.init();
 		const variables = this.variables;
@@ -40,9 +36,9 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 
 	}
 
-	afterProcessProxies(proxyParams) {
+	afterProcessProxies(proxyParams: MaterialParams) {
 		const variables = this.variables;
-		const parameters = this.parameters;
+		const parameters = this.vmt;
 		this.setDefine('DECALSTYLE', variables.get('$decalstyle') ?? 0);//TODO: set this on variable change
 
 		const baseTexture = variables.get('$basetexture');
@@ -179,11 +175,11 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 		this.uniforms['uWearParams'] = vec4.fromValues(wearProgress, flLerpedWearWidth, flRemappedWear, variables.get('$unwearstrength'));
 	}
 
-	set style(style) {
+	set style(style: string) {
 		this.setDefine('PAINT_STYLE', style);
 	}
 
-	setColorUniform(uniformName, value) {
+	setColorUniform(uniformName: string, value: string) {
 		const color = readColor(value);
 		if (color) {
 			//vec3.scale(color, color, 1 / 255.0);
@@ -191,31 +187,31 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 		}
 	}
 
-	set color0(color) {
+	set color0(color: string) {
 		this.setColorUniform('uCamoColor0', color);
 	}
 
-	set color1(color) {
+	set color1(color: string) {
 		this.setColorUniform('uCamoColor1', color);
 	}
 
-	set color2(color) {
+	set color2(color: string) {
 		this.setColorUniform('uCamoColor2', color);
 	}
 
-	set color3(color) {
+	set color3(color: string) {
 		this.setColorUniform('uCamoColor3', color);
 	}
 
-	setPatternTexCoordTransform(scale, translation, rotation) {
-		const transformMatrix = this.getTexCoordTransform(scale, translation, rotation);
+	setPatternTexCoordTransform(scale: vec2, translation: vec2, rotation: number) {
+		const transformMatrix = this.#getTexCoordTransform(scale, translation, rotation);
 		this.uniforms['g_patternTexCoordTransform[0]'] = new Float32Array([
 			transformMatrix[0], transformMatrix[4], transformMatrix[8], transformMatrix[12],
 			transformMatrix[1], transformMatrix[5], transformMatrix[9], transformMatrix[13]
 		]);
 	}
 
-	getTexCoordTransform(scale, translation, rotation) {
+	#getTexCoordTransform(scale: vec2, translation: vec2, rotation: number) {
 		const transformMatrix = mat4.create();
 		const tempMatrix = mat4.create();
 		const tempVec3 = vec3.create();
@@ -250,7 +246,7 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new WeaponDecalMaterial(this.parameters);
+		return new WeaponDecalMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
 	get shaderSource() {
@@ -260,7 +256,7 @@ export class WeaponDecalMaterial extends SourceEngineMaterial {
 SourceEngineVMTLoader.registerMaterial('weapondecal', WeaponDecalMaterial);
 
 
-const WEAPON_DECAL_DEFAULT_PARAMETERS = {
+const WEAPON_DECAL_DEFAULT_PARAMETERS: VmtParameters = {
 	//$basetexture : [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/stickers/default/sticker_default'],
 	//$aotexture : [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/stickers/default/ao_default'],
 	$grungetexture: [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/shared/sticker_paper'],

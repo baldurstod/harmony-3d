@@ -50,7 +50,7 @@ class SourceEngineVMTLoaderClass {
 			if (material) {
 				for (const insertIndex in insert) {
 					material.variables.set(insertIndex, insert[insertIndex]);
-					material.parameters[insertIndex] = insert[insertIndex];
+					throw 'material.parameters[insertIndex] = insert[insertIndex];'
 				}
 			}
 			//materialList[fileNameRemoveMe] = material;removeme
@@ -60,9 +60,7 @@ class SourceEngineVMTLoaderClass {
 		} else {
 			const materialClass = this.#materials.get(shaderName);
 			if (materialClass) {
-				vmt.repository = repository;
-				vmt.filename = path;
-				material = new materialClass(vmt);
+				material = new materialClass(repository, path, vmt);
 			} else {
 				console.error('Unknown material : ' + shaderName);
 			}

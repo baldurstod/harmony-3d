@@ -4,6 +4,7 @@ import { RenderFace } from '../../../materials/constants';
 import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL, MaterialParams } from '../../../materials/material';
 import { DEG_TO_RAD } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
+import { Mesh } from '../../../objects/mesh';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Texture } from '../../../textures/texture';
 import { TextureManager } from '../../../textures/texturemanager';
@@ -16,7 +17,7 @@ import { MatrixBuildScale, MatrixBuildTranslation } from './proxies/texturetrans
 
 const IDENTITY_MAT4 = mat4.create();
 
-function GetTextureTransform(str, mat = mat4.create()) {
+function GetTextureTransform(str: string, mat = mat4.create()) {
 	const center = vec2.fromValues(0.5, 0.5);
 	//const mat = mat4.create();
 	const temp = mat4.create();
@@ -51,6 +52,7 @@ function GetTextureTransform(str, mat = mat4.create()) {
 	return mat;
 }
 
+// TODO: create an enum
 export const SHADER_PARAM_TYPE_TEXTURE = 0;
 export const SHADER_PARAM_TYPE_INTEGER = 1;
 export const SHADER_PARAM_TYPE_COLOR = 2;
@@ -66,7 +68,14 @@ export const SHADER_PARAM_TYPE_MATERIAL = 11;
 export const SHADER_PARAM_TYPE_STRING = 12;
 export const SHADER_PARAM_TYPE_MATRIX4X2 = 13;
 
-const VMT_PARAMETERS = {
+
+export type VmtParameter = [
+	typeof SHADER_PARAM_TYPE_TEXTURE | typeof SHADER_PARAM_TYPE_INTEGER | typeof SHADER_PARAM_TYPE_COLOR | typeof SHADER_PARAM_TYPE_VEC2 | typeof SHADER_PARAM_TYPE_VEC3 | typeof SHADER_PARAM_TYPE_VEC4 | typeof SHADER_PARAM_TYPE_ENVMAP | typeof SHADER_PARAM_TYPE_FLOAT | typeof SHADER_PARAM_TYPE_BOOL | typeof SHADER_PARAM_TYPE_FOURCC | typeof SHADER_PARAM_TYPE_MATRIX | typeof SHADER_PARAM_TYPE_MATERIAL | typeof SHADER_PARAM_TYPE_STRING | typeof SHADER_PARAM_TYPE_MATRIX4X2
+	, any//TODO: improve type
+]
+export type VmtParameters = Record<string, VmtParameter>;
+
+const VMT_PARAMETERS: VmtParameters = {//TODO: tunr into map
 	$alpha: [SHADER_PARAM_TYPE_FLOAT, 1.0],
 	$color: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
 	$color2: [SHADER_PARAM_TYPE_COLOR, [1, 1, 1]],
@@ -84,11 +93,11 @@ const VMT_PARAMETERS = {
 	$no_draw: [SHADER_PARAM_TYPE_BOOL, false],
 }
 
-function initDefaultParameters(defaultParameters, parameters, variables) {
+function initDefaultParameters(defaultParameters: VmtParameters, parameters: VmtParameters, variables: Map<string, SourceEngineMaterialVariables>) {
 	if (defaultParameters) {
 		for (const parameterName in defaultParameters) {
 			if (parameters[parameterName] === undefined) {
-				const defaultParam = defaultParameters[parameterName];
+				const defaultParam = defaultParameters[parameterName]!;
 				//variables.set(parameterName, defaultParam[1]);
 				switch (defaultParam[0]) {
 					case SHADER_PARAM_TYPE_COLOR:
@@ -141,30 +150,32 @@ export enum TextureRole {
 }
 
 export type SourceEngineMaterialParams = MaterialParams & {
-	repository: string;
-	path: string;
+	//repository: string;
+	//path: string;
 	useSrgb?: boolean;
 };
+
+export type SourceEngineMaterialVariables = any;/*TODO: improve type*/
+
+export type SourceEngineMaterialVmt = Record<string, any>;/*TODO: improve type*/
 
 export class SourceEngineMaterial extends Material {
 	#initialized = false;
 	#detailTextureTransform = mat4.create();
+	readonly vmt: SourceEngineMaterialVmt;
 	//static #defaultTexture;
-	repository: string;
-	path: string;
+	readonly repository: string;
+	readonly path: string;
 	proxyParams: any/*TODO: create type*/ = {};
 	proxies: Proxy[] = [];
-	variables = new Map<string, any/*TODO: create type*/>();
-	numFrames: number;
-	frameX: number;
-	frameY: number;
-	sequenceLength: number;
+	variables = new Map<string, SourceEngineMaterialVariables>();
 	#textures = new Map<TextureRole, AnimatedTexture>();
 
-	constructor(params: SourceEngineMaterialParams /*repository, fileName, parameters = Object.create(null)*/) {
+	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
 		super(params);
-		this.repository = params.repository;
-		this.path = params.path;
+		this.vmt = vmt;
+		this.repository = repository;
+		this.path = path;
 		if (DEBUG) {
 			//this.proxyParams.StatTrakNumber = 192837;//TODOv3 removeme
 			//this.proxyParams.WeaponLabelText = 'AVCDEFGHIJKLMONPQRSTU';//TODOv3 removeme
@@ -177,18 +188,18 @@ export class SourceEngineMaterial extends Material {
 		if (this.#initialized) {
 			return;
 		}
-		const params = this.parameters;
+		const vmt = this.vmt;
 		this.#initialized = true;
 
 		this.#initUniforms();
 
 		const variables = this.variables;
-		initDefaultParameters(VMT_PARAMETERS, params, variables);
-		initDefaultParameters(this.getDefaultParameters(), params, variables);
+		initDefaultParameters(VMT_PARAMETERS, this.vmt, variables);
+		initDefaultParameters(this.getDefaultParameters(), this.vmt, variables);
 
-		const readParameters = (parameters) => {
+		const readParameters = (parameters: SourceEngineMaterialVmt) => {
 			for (const parameterName in parameters) {
-				const value = parameters[parameterName];
+				const value = parameters[parameterName]!;
 
 				const sanitized = this.sanitizeValue(parameterName, value);
 				if (sanitized) {
@@ -220,26 +231,26 @@ export class SourceEngineMaterial extends Material {
 				}
 			}
 		}
-		readParameters(params);
-		if (params['>=dx90']) {
-			readParameters(params['>=dx90']);
+		readParameters(vmt);
+		if (vmt['>=dx90']) {
+			readParameters(vmt['>=dx90']);
 		}
 
 		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
-			this.setColorMap(this.getTexture(TextureRole.Color, this.repository, baseTexture, params['$frame'] ?? 0, false, params.useSrgb ?? true));
+			this.setColorMap(this.getTexture(TextureRole.Color, this.repository, baseTexture, vmt['$frame'] ?? 0, false, vmt.useSrgb ?? true));
 		} else {
 			this.setColorMap(getDefaultTexture());
 		}
 
-		if (params['$bumpmap']) {
-			this.setNormalMap(this.getTexture(TextureRole.Normal, this.repository, params['$bumpmap'], 0, false, false));
+		if (vmt['$bumpmap']) {
+			this.setNormalMap(this.getTexture(TextureRole.Normal, this.repository, vmt['$bumpmap'], 0, false, false));
 		} else {
 			this.setNormalMap(null);
 		}
 
 		let translucent = false;
-		if (params['$alpha']) {
+		if (vmt['$alpha']) {
 			this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			this.setDefine('IS_TRANSLUCENT');
 			//TODOv3: adjust opacity accordinly
@@ -248,19 +259,19 @@ export class SourceEngineMaterial extends Material {
 			}
 			translucent = true;
 		}
-		if (params['$vertexalpha'] == 1) {
+		if (vmt['$vertexalpha'] == 1) {
 			this.setTransparency(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			this.setDefine('IS_TRANSLUCENT');
 			translucent = true;
 			//TODOv3 activate proper define in shader
 			//also add vertexcolor
 		}
-		if (params['$translucent'] == 1) {
+		if (vmt['$translucent'] == 1) {
 			this.setBlending(MATERIAL_BLENDING_NORMAL);
 			this.setDefine('IS_TRANSLUCENT');
 			translucent = true;
 		}
-		if (params['$additive'] == 1) {
+		if (vmt['$additive'] == 1) {
 			if (translucent) {
 				this.setBlending(MATERIAL_BLENDING_ADDITIVE);
 			} else {
@@ -268,14 +279,14 @@ export class SourceEngineMaterial extends Material {
 			}
 			this.setDefine('IS_ADDITIVE');
 		}
-		if (params['$alphatest'] == 1) {
+		if (vmt['$alphatest'] == 1) {
 			this.alphaTest = true;
-			this.alphaTestReference = Number.parseFloat(params['$alphatestreference'] ?? 0.5);
+			this.alphaTestReference = Number.parseFloat(vmt['$alphatestreference'] ?? 0.5);
 		}
-		if (params['$vertexalpha'] == 1) {
+		if (vmt['$vertexalpha'] == 1) {
 			this.setDefine('VERTEX_ALPHA');
 		}
-		if (params['$vertexcolor'] == 1) {
+		if (vmt['$vertexcolor'] == 1) {
 			this.setDefine('VERTEX_COLOR');
 		}
 
@@ -295,26 +306,26 @@ export class SourceEngineMaterial extends Material {
 		}
 
 		this.uniforms['uTextureTransform'] = IDENTITY_MAT4;
-		if (params['$basetexturetransform']) {
-			const textureTransform = GetTextureTransform(params['$basetexturetransform']);
+		if (vmt['$basetexturetransform']) {
+			const textureTransform = GetTextureTransform(vmt['$basetexturetransform']);
 			if (textureTransform) {
 				this.variables.set('$basetexturetransform', textureTransform);
 				this.uniforms['uTextureTransform'] = textureTransform;
 			}
 		}
 
-		if (params['$nocull'] == 1) {
+		if (vmt['$nocull'] == 1) {
 			this.renderFace(RenderFace.Both);
 		}
 
-		const lightWarpTexture = params['$lightwarptexture'];
+		const lightWarpTexture = vmt['$lightwarptexture'];
 		this.setTexture('lightWarpMap', lightWarpTexture ? this.getTexture(TextureRole.LightWarp, this.repository, lightWarpTexture, 0) : null, 'USE_LIGHT_WARP_MAP');
 
-		if (params['$phong'] == 1) {
+		if (vmt['$phong'] == 1) {
 			this.setDefine('USE_PHONG_SHADING');
 
 			// The $phongexponenttexture is overrided by $phongexponent
-			const phongExponentTexture = params['$phongexponenttexture'];
+			const phongExponentTexture = vmt['$phongexponenttexture'];
 			this.setTexture('phongExponentMap', phongExponentTexture ? this.getTexture(TextureRole.PhongExponent, this.repository, phongExponentTexture, 0) : null, 'USE_PHONG_EXPONENT_MAP');
 			if (phongExponentTexture) {
 				this.uniforms['uPhongExponentFactor'] = variables.get('$phongexponentfactor');
@@ -323,10 +334,10 @@ export class SourceEngineMaterial extends Material {
 			this.uniforms['uPhongExponent'] = variables.get('$phongexponent');
 			this.uniforms['uPhongBoost'] = variables.get('$phongboost');
 
-			if (params['$basemapalphaphongmask'] == 1) {
+			if (vmt['$basemapalphaphongmask'] == 1) {
 				this.setDefine('USE_COLOR_ALPHA_AS_PHONG_MASK');
 			}
-			if (params['$phongalbedotint'] == 1) {
+			if (vmt['$phongalbedotint'] == 1) {
 				this.setDefine('USE_PHONG_ALBEDO_TINT');
 			}
 
@@ -401,9 +412,9 @@ export class SourceEngineMaterial extends Material {
 		}
 
 
-		const proxies = params['proxies'];
+		const proxies = vmt['proxies'];
 		if (proxies) {
-			this.initProxies(proxies);
+			this.#initProxies(proxies);
 		}
 		//this.blend = true;
 		//this.blendFuncSource = GL_SRC_ALPHA;
@@ -412,31 +423,24 @@ export class SourceEngineMaterial extends Material {
 		//TODO: $ignorez
 	}
 
-	getTexture(role: TextureRole, repository: string, path: string, frame: number, needCubeMap = false, srgb = true): Texture {
+	getTexture(role: TextureRole, repository: string, path: string, frame: number, needCubeMap = false, srgb = true): Texture | null {
 		const animated = Source1TextureManager.getTexture(repository, path, needCubeMap, srgb);
 
 		const previousTexture = this.#textures.get(role);
-		if (previousTexture != animated) {
+		if (animated && (previousTexture != animated)) {
 			previousTexture?.removeUser(this);
 			animated.addUser(this);
 			this.#textures.set(role, animated);
 		}
 
-		return animated.getFrame(frame);
+		return animated?.getFrame(frame) ?? null;
 	}
 
 	#initUniforms() {
 		this.uniforms['uDetailTextureTransform'] = this.#detailTextureTransform;
 	}
 
-	setNumFrames(frames, frameX, frameY, sequenceLength) {
-		this.numFrames = frames;
-		this.frameX = frameX;
-		this.frameY = frameY;
-		this.sequenceLength = sequenceLength;
-	}
-
-	getTexCoords(flCreationTime, flCurTime, flAgeScale, nSequence) {
+	getTexCoords(flCreationTime: number, flCurTime: number, flAgeScale: number, nSequence: number) {
 		const texture = this.uniforms['colorMap'] as Texture;
 		if (!texture) {
 			return;
@@ -474,7 +478,7 @@ export class SourceEngineMaterial extends Material {
 		return null;
 	}
 
-	getFrameSpan(sequence) {
+	getFrameSpan(sequence: number) {
 		const texture = this.uniforms['colorMap'] as Texture;
 		if (!texture) {
 			return;
@@ -503,7 +507,7 @@ export class SourceEngineMaterial extends Material {
 	 * Init proxies
 	 * @param proxies {Array} List of proxies
 	 */
-	initProxies(proxies) {
+	#initProxies(proxies: SourceEngineMaterialVmt) {
 		if (!proxies) { return; }
 
 		for (const proxyIndex in proxies) {
@@ -522,29 +526,29 @@ export class SourceEngineMaterial extends Material {
 		}
 	}
 
-	updateMaterial(time, mesh) {
-		this.processProxies(time, mesh.materialsParams);
+	updateMaterial(time: number, mesh: Mesh) {
+		this.#processProxies(time, mesh.materialsParams);
 	}
 
 	/**
 	 * Process proxies
 	 * @param proxyParams {Object} Param passed to proxies
 	 */
-	processProxies(time, proxyParams = {}) {
+	#processProxies(time: number, proxyParams = {}) {
 		if (false && DEBUG) {
 			this.proxyParams.ItemTintColor = vec3.fromValues(Math.cos(time * 2) * 0.5 + 0.5, Math.cos(time * 3) * 0.5 + 0.5, Math.cos(time * 5) * 0.5 + 0.5);
 		}
-		const proxies = this.proxies;
-		for (let proxyIndex = 0, l = proxies.length; proxyIndex < l; ++proxyIndex) {
-			proxies[proxyIndex].execute(this.variables, proxyParams, time);
+
+		for (const proxy of this.proxies) {
+			proxy.execute(this.variables, proxyParams, time);
 		}
 		this._afterProcessProxies(proxyParams);
 		this.afterProcessProxies(proxyParams);
 	}
 
-	_afterProcessProxies(proxyParams) {
+	_afterProcessProxies(proxyParams = {}/*TODO: improve type*/) {
 		const variables = this.variables;
-		const parameters = this.parameters;
+		const parameters = this.vmt;
 
 		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
@@ -630,7 +634,7 @@ export class SourceEngineMaterial extends Material {
 
 	}
 
-	afterProcessProxies(proxyParams) {
+	afterProcessProxies(proxyParams = {}/*TODO: improve type*/) {
 
 	}
 
@@ -638,7 +642,7 @@ export class SourceEngineMaterial extends Material {
 		return clamp(this.variables.get('$alpha'), 0.0, 1.0);
 	}
 
-	computeModulationColor(out) {
+	computeModulationColor(out: vec4) {
 		const color = this.variables.get('$color');//TODOv3: check variable type
 		const color2 = this.variables.get('$color2');//TODOv3: check variable type
 		if (color2) {
@@ -655,11 +659,11 @@ export class SourceEngineMaterial extends Material {
 		return out;
 	}
 
-	getDefaultParameters() {
+	getDefaultParameters(): VmtParameters {
 		return {};
 	}
 
-	sanitizeValue(parameterName, value) {
+	sanitizeValue(parameterName: string, value: any/*TODO: create type */) {
 		const param = VMT_PARAMETERS[parameterName] ?? this.getDefaultParameters()[parameterName];
 		if (param) {
 			switch (param[0]) {
@@ -694,7 +698,7 @@ export class SourceEngineMaterial extends Material {
 		return null;
 	}
 
-	setKeyValue(key, value) {
+	setKeyValue(key: string, value: any/*TODO: create type*/) {
 		const sanitized = this.sanitizeValue(key, value);
 		if (sanitized) {
 			this.variables.set(key, sanitized);
@@ -704,7 +708,7 @@ export class SourceEngineMaterial extends Material {
 	}
 
 	clone(): SourceEngineMaterial {
-		return new SourceEngineMaterial(this.parameters);
+		return new SourceEngineMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
 	dispose() {
@@ -718,7 +722,7 @@ export class SourceEngineMaterial extends Material {
 }
 
 //TODO: store regexes
-export function readColor(value, color?: vec3) {
+export function readColor(value: string, color?: vec3) {
 	color = color || vec3.create();
 	// With { } : color values in 0-255 range
 	value = value.trim();
@@ -757,7 +761,7 @@ export function readColor(value, color?: vec3) {
 	return null;
 }
 
-export function readVec2(value, vec?: vec2) {
+export function readVec2(value: string, vec?: vec2) {
 	vec = vec || vec2.create();
 	const regex = /\[ *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *\]/i;
 

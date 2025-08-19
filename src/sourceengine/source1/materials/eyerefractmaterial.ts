@@ -3,7 +3,7 @@ import { Camera } from '../../../cameras/camera';
 import { Skeleton } from '../../../objects/skeleton';
 import { TextureManager } from '../../../textures/texturemanager';
 import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
+import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './sourceenginematerial';
 
 const tempVec3 = vec3.create();
 
@@ -16,10 +16,9 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 	#irisProjectionU = vec4.create();
 	#irisProjectionV = vec4.create();
 
-	constructor(params: any = {}) {
+	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
 		params.useSrgb = false;
-		super(params);
-		this.setValues(params);
+		super(repository, path, vmt, params);
 
 		//this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
 	}
@@ -31,10 +30,10 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 		this.#initialized = true;
 
 		super.init();
-		const params = this.parameters;
+		const vmt = this.vmt;
 
-		if (params['$iris']) {
-			this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, params['$iris'], params['$frame'] || 0));
+		if (vmt['$iris']) {
+			this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, vmt['$iris'], vmt['$frame'] || 0));
 		} else {
 			this.setColorMap(TextureManager.createCheckerTexture());
 		}
@@ -42,7 +41,7 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 
 	afterProcessProxies() {
 		const variables = this.variables;
-		const parameters = this.parameters;
+		const parameters = this.vmt;
 		if (parameters['$iris']) {
 			this.setColorMap(this.getTexture(TextureRole.Iris, this.repository, parameters['$iris'], parameters['$frame'] || 0));
 		}
@@ -104,7 +103,7 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 	}
 
 	clone() {
-		return new EyeRefractMaterial(this.parameters);
+		return new EyeRefractMaterial(this.repository, this.path, this.vmt, this.parameters);
 	}
 
 	get shaderSource() {
