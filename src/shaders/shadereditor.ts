@@ -1,13 +1,11 @@
 import { createElement, hide, I18n } from 'harmony-ui';
-
-import { Graphics } from '../graphics/graphics';
-import { ShaderManager } from '../managers/shadermanager';
-import { ShaderEventTarget } from './shadereventtarget';
-import { getIncludeList, getIncludeSource, setCustomIncludeSource } from './includemanager';
-
 import { TESTING } from '../buildoptions';
 import { ACE_EDITOR_URI } from '../constants';
+import { Graphics } from '../graphics/graphics';
+import { ShaderManager } from '../managers/shadermanager';
 import { ShaderType } from '../webgl/shadersource';
+import { getIncludeList, getIncludeSource, setCustomIncludeSource } from './includemanager';
+import { ShaderEventTarget } from './shadereventtarget';
 
 const EDIT_MODE_SHADER = 0;
 const EDIT_MODE_INCLUDE = 1;
@@ -17,14 +15,14 @@ export class ShaderEditor extends HTMLElement {
 	#recompileDelay = 1000;
 	#annotationsDelay = 500;
 	#editMode = EDIT_MODE_SHADER;
-	#shadowRoot;
-	#shaderEditor;
-	#htmlShaderNameSelect: HTMLSelectElement;
-	#htmlShaderRenderMode: HTMLInputElement;
-	#recompileTimeout: number;
-	#editorShaderName: string;
-	#editorIncludeName: string;
-	#shaderType: ShaderType;
+	#shadowRoot?: ShadowRoot;
+	#shaderEditor?: any/*TODO: fix type*/;
+	#htmlShaderNameSelect?: HTMLSelectElement;
+	#htmlShaderRenderMode?: HTMLInputElement;
+	#recompileTimeout?: number;
+	#editorShaderName: string = '';
+	#editorIncludeName: string = '';
+	#shaderType: ShaderType = ShaderType.Vertex;
 
 	initEditor(options: any = {}) {
 		if (this.#initialized) {
@@ -92,8 +90,8 @@ export class ShaderEditor extends HTMLElement {
 		ShaderEventTarget.addEventListener('includeadded', event => this.#reloadGLSLList());
 	}
 
-	#initEditor2(id) {
-		this.#shaderEditor = globalThis.ace.edit(id);
+	#initEditor2(id: HTMLElement) {
+		this.#shaderEditor = (globalThis as any).ace.edit(id);
 		this.#shaderEditor.renderer.attachToShadowRoot();
 		this.#shaderEditor.$blockScrolling = Infinity;
 		this.#shaderEditor.setTheme('ace/theme/monokai');
@@ -117,7 +115,7 @@ export class ShaderEditor extends HTMLElement {
 		if (!this.#shaderEditor) {
 			return;
 		}
-		this.#htmlShaderNameSelect.innerText = '';
+		this.#htmlShaderNameSelect!.innerText = '';
 
 		const shaderGroup = createElement('optgroup', { i18n: { label: '#shader_editor_shaders', }, parent: this.#htmlShaderNameSelect });
 
@@ -153,7 +151,7 @@ export class ShaderEditor extends HTMLElement {
 		}
 
 		if (!this.editorShaderName && !this.editorIncludeName) {
-			const selectedOption = this.#htmlShaderNameSelect.selectedOptions[0];
+			const selectedOption = this.#htmlShaderNameSelect!.selectedOptions[0];
 			if (selectedOption) {
 				if (selectedOption.getAttribute('data-shader')) {
 					this.editorShaderName = selectedOption.value;
@@ -169,7 +167,7 @@ export class ShaderEditor extends HTMLElement {
 	set editorShaderName(shaderName) {
 		if (shaderName) {
 			this.#editorShaderName = shaderName;
-			const source = ShaderManager.getShaderSource(undefined, this.#editorShaderName, true);
+			const source = ShaderManager.getShaderSource(ShaderType.Vertex, this.#editorShaderName, true);
 			if (source) {
 				if (this.#shaderEditor) {
 					this.#shaderEditor.setValue(source.getSource());
@@ -263,8 +261,8 @@ if (window.customElements) {
 	customElements.define('shader-editor', ShaderEditor);
 }
 
-function loadScripts(array, callback) {
-	const loader = function (src, handler) {
+function loadScripts(array: string[], callback: () => void) {
+	const loader = function (src: string, handler: () => void) {
 		const script = createElement('script') as HTMLScriptElement;
 		script.src = src;
 		script.onload = () => {
@@ -276,7 +274,7 @@ function loadScripts(array, callback) {
 	};
 	(function run() {
 		if (array.length != 0) {
-			loader(array.shift(), run);
+			loader(array.shift()!, run);
 		} else {
 			callback && callback();
 		}
