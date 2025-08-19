@@ -11,6 +11,7 @@ export * from './geometry/export';
 export * from './graphics/export';
 export * from './helpers/export';
 export * from './importers/export';
+export * from './interfaces/export';
 export * from './lights/export';
 export * from './loaders/export';
 export * from './managers/export';
