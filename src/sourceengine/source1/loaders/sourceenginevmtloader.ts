@@ -12,7 +12,7 @@ class SourceEngineVMTLoaderClass {
 	async load(repository: string, path: string): Promise<SourceEngineMaterial | null> {
 		const response = await Repositories.getFileAsText(repository, path);
 		if (!response.error) {
-			return this.parse(repository, path, response.text);
+			return this.parse(repository, path, response.text!);
 		} else {
 			const fileContent = this.#extraMaterials.get(path);
 			if (fileContent) {
@@ -46,32 +46,12 @@ class SourceEngineVMTLoaderClass {
 			const include = vmt['include'];
 			const insert = vmt['insert'];
 
-			const patchResolve = (material) => {
+			const material = await SourceEngineMaterialManager.getMaterial(repository, include);
+			if (material) {
 				for (const insertIndex in insert) {
 					material.variables.set(insertIndex, insert[insertIndex]);
 					material.parameters[insertIndex] = insert[insertIndex];
 				}
-				//materialList[fileNameRemoveMe] = material;removeme
-				return material;
-			};
-
-			const patchReject = function () {
-				//TODOv3: handle error
-				let rejectionCount = 0;
-				const patchResolve2 = function (material) {
-					rejectionCount = Infinity;
-					patchResolve(material);
-				};
-				const patchReject2 = function (fileName) {
-					if (rejectionCount == 0) {
-						return fileName;
-					}
-				};
-			}
-			const material = await SourceEngineMaterialManager.getMaterial(repository, include);
-			for (const insertIndex in insert) {
-				material.variables.set(insertIndex, insert[insertIndex]);
-				material.parameters[insertIndex] = insert[insertIndex];
 			}
 			//materialList[fileNameRemoveMe] = material;removeme
 			return (material);
@@ -87,14 +67,14 @@ class SourceEngineVMTLoaderClass {
 				console.error('Unknown material : ' + shaderName);
 			}
 		}
-		return (material);
+		return material;
 	}
 
-	setMaterial(fileName, fileContent) {
+	setMaterial(fileName: string, fileContent: string) {
 		this.#extraMaterials.set(fileName, fileContent);
 	}
 
-	registerMaterial(materialName, materialClass) {
+	registerMaterial(materialName: string, materialClass: typeof SourceEngineMaterial) {
 		this.#materials.set(materialName.toLowerCase(), materialClass);
 	}
 }
