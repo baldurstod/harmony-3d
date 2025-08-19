@@ -54,7 +54,7 @@ export class Material {
 	#parameters = new Map<string, MateriaParameter>();
 	uniforms: Record<string, UniformValue> = {};// TODO: transform to map ?
 	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ?
-	parameters: any;
+	parameters: MaterialParams;
 	depthTest: boolean;
 	depthFunc: any;
 	depthMask: boolean;
@@ -71,7 +71,7 @@ export class Material {
 	polygonOffsetUnits: number;
 	_dirtyProgram: boolean;
 	#colorMode: MaterialColorMode = MaterialColorMode.None;
-	colorMap?: Texture;
+	colorMap: Texture | null = null;
 	properties = new Map<string, any>();
 	static materialList: Record<string, typeof Material> = {};
 
@@ -332,24 +332,24 @@ export class Material {
 		}
 	}
 
-	setColorMap(texture: Texture) {
+	setColorMap(texture: Texture | null) {
 		this.setTexture('colorMap', texture, 'USE_COLOR_MAP');
 		this.colorMap = texture;
 	}
 
-	setColor2Map(texture: Texture) {
+	setColor2Map(texture: Texture | null) {
 		this.setTexture('color2Map', texture, 'USE_COLOR2_MAP');
 	}
 
-	setDetailMap(texture: Texture) {
+	setDetailMap(texture: Texture | null) {
 		this.setTexture('detailMap', texture, 'USE_DETAIL_MAP');
 	}
 
-	setNormalMap(texture: Texture) {
+	setNormalMap(texture: Texture | null) {
 		this.setTexture('normalMap', texture, 'USE_NORMAL_MAP');
 	}
 
-	setCubeMap(texture: Texture) {
+	setCubeMap(texture: Texture | null) {
 		this.setTexture('cubeMap', texture, 'USE_CUBE_MAP');
 	}
 

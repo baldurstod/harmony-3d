@@ -57,7 +57,7 @@ export class KvReader {
 	keyStack;
 	arrayStack;
 	rootElement;
-	rootName;
+	rootName: string;
 	currentKey;
 
 	constructor(carSize = 1) {

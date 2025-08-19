@@ -16,7 +16,7 @@ import { SourceVvd } from './sourcevvd';
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
 export class SourceModel {
-	repository: string;
+	readonly repository: string;
 	fileName: string;
 	name: string;
 	mdl: SourceMdl;//TODO: set private ?

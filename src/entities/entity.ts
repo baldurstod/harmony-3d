@@ -1137,7 +1137,7 @@ export class Entity {
 		return json;
 	}
 
-	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | null> {
 		const entity = new Entity({ name: json.name as string });
 		entity.fromJSON(json);
 		return entity;
