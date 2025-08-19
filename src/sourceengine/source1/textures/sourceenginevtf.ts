@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { ENABLE_S3TC } from '../../../buildoptions';
 import { Graphics } from '../../../graphics/graphics';
 import { Detex } from '../../../textures/detex';
-import { ImageFormat, ImageFormatS3tc } from '../../../textures/enums';
+import { ImageFormat, ImageFormatBptc, ImageFormatRgtc, ImageFormatS3tc } from '../../../textures/enums';
 import { Texture } from '../../../textures/texture';
 import { WebGLAnyRenderingContext } from '../../../types';
 import { GL_CLAMP_TO_EDGE, GL_FLOAT, GL_LINEAR, GL_REPEAT, GL_RGB, GL_RGBA, GL_RGBA16F, GL_SRGB8, GL_SRGB8_ALPHA8, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
@@ -452,22 +452,13 @@ export const IMAGE_FORMAT_UVLX8888 = 26;
 
 
 // TODO: move this function elsewhere
-export async function decompressDxt(format: ImageFormatS3tc, width: number, height: number, datas: Uint8Array | Float32Array): Promise<Uint8ClampedArray> {
+export async function decompressDxt(format: ImageFormatS3tc | ImageFormatRgtc | ImageFormatBptc, width: number, height: number, datas: Uint8Array | Float32Array): Promise<Uint8ClampedArray> {
 	const uncompressedData = new Uint8ClampedArray(width * height * 4);
 
-	let decompressFunc = null;
-	switch (format) {
-		case ImageFormat.Bc1: decompressFunc = 'decodeBC1'; break;
-		case ImageFormat.Bc2: decompressFunc = 'decodeBC2'; break;
-		case ImageFormat.Bc3: decompressFunc = 'decodeBC3'; break;
-	}
-	if (decompressFunc) {
-		await (Detex as any)[decompressFunc](width, height, datas, uncompressedData);
-	}
+	await (Detex as any).decode(format, width, height, datas, uncompressedData);
 
 	return uncompressedData;
 }
-
 
 function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, target: GLenum, width: number, height: number, dxtLevel: ImageFormatS3tc, datas: Uint8Array | Float32Array, clampS: boolean, clampT: boolean, srgb: boolean): void {//removeme
 	const s3tc = graphics.getExtension('WEBGL_compressed_texture_s3tc');

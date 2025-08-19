@@ -15,15 +15,22 @@ export enum ImageFormat {
 	Dxt4 = 'Dxt4',
 	Dxt5 = 'Dxt5',
 	*/
+
+	// S3TC formats
 	Bc1 = 'Bc1',
 	Bc2 = 'Bc2',
 	Bc3 = 'Bc3',
+
+	// RGTC formats
 	Bc4 = 'Bc4',
 	Bc4Signed = 'Bc4Signed',
 	Bc5 = 'Bc5',
 	Bc5Signed = 'Bc5Signed',
+
+	// BPTC formats
 	Bc6 = 'Bc6',
 	Bc7 = 'Bc7',
+
 	/*
 	Rgtc1 = 'Rgtc1',
 	Rgtc1Signed = 'Rgtc1Signed',
@@ -37,6 +44,8 @@ export enum ImageFormat {
 }
 
 export type ImageFormatS3tc = ImageFormat.Bc1 | ImageFormat.Bc2 | ImageFormat.Bc3;
+export type ImageFormatRgtc = ImageFormat.Bc4 | ImageFormat.Bc4Signed | ImageFormat.Bc5 | ImageFormat.Bc5Signed;
+export type ImageFormatBptc = ImageFormat.Bc6 | ImageFormat.Bc7;
 /*
 export enum ImageFormat {
 	Unknown = 0,
@@ -83,12 +92,12 @@ export function formatCompression(format: ImageFormat): TextureCompressionMethod
 		case ImageFormat.Bc6:
 		case ImageFormat.Bc7:
 			return TextureCompressionMethod.Bptc;
-			/*
-		case ImageFormat.Rgtc1:
-		case ImageFormat.Rgtc1Signed:
-		case ImageFormat.Rgtc2:
-		case ImageFormat.Rgtc2Signed:
-			*/
+		/*
+	case ImageFormat.Rgtc1:
+	case ImageFormat.Rgtc1Signed:
+	case ImageFormat.Rgtc2:
+	case ImageFormat.Rgtc2Signed:
+		*/
 	}
 	return TextureCompressionMethod.Uncompressed;
 }

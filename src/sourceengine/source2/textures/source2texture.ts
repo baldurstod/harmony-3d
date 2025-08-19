@@ -1,9 +1,7 @@
-import { DEBUG } from '../../../buildoptions';
 import { formatCompression, ImageFormat, ImageFormatS3tc, TextureCompressionMethod } from '../../../textures/enums';
-import { TEXTURE_FORMAT_UNKNOWN } from '../../../textures/textureconstants';
 import { decompressDxt } from '../../source1/textures/sourceenginevtf';
 import { VTEX_FLAG_CUBE_TEXTURE } from '../constants';
-import { Source2File, VTEX_TO_INTERNAL_IMAGE_FORMAT } from '../loaders/source2file';
+import { Source2File } from '../loaders/source2file';
 import { Source2VtexBlock } from '../loaders/source2fileblock';
 
 export enum VtexImageFormat {
@@ -145,6 +143,8 @@ export class Source2Texture extends Source2File {
 				datas.set(imageData);
 				break;
 			case TextureCompressionMethod.St3c:
+			case TextureCompressionMethod.Rgtc:
+			case TextureCompressionMethod.Bptc:
 				datas = await decompressDxt(this.#imageFormat as ImageFormatS3tc, imageWidth, imageHeight, imageData);
 				break;
 			default:

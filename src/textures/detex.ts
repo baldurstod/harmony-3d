@@ -13,6 +13,10 @@ export class Detex {
 				return this.decodeBC2(width, height, input, output);
 			case ImageFormat.Bc3:
 				return this.decodeBC3(width, height, input, output);
+			case ImageFormat.Bc4:
+				return this.decodeBC4(width, height, input, output);
+			case ImageFormat.Bc7:
+				return this.decodeBC7(width, height, input, output);
 			default:
 				console.error('bad texture format in Detex.decode: ' + format);
 		}
