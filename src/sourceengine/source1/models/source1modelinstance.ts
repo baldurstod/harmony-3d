@@ -5,6 +5,7 @@ import { Camera } from '../../../cameras/camera';
 import { registerEntity } from '../../../entities/entities';
 import { Entity } from '../../../entities/entity';
 import { Animated } from '../../../interfaces/animated';
+import { HasMaterials } from '../../../interfaces/hasmaterials';
 import { HasSkeleton } from '../../../interfaces/hasskeleton';
 import { RandomPointOnModel } from '../../../interfaces/randompointonmodel';
 import { Material } from '../../../materials/material';
@@ -26,6 +27,7 @@ import { SourceAnimation } from '../loaders/sourceanimation';
 import { MdlStudioFlex, MeshTest } from '../loaders/sourceenginemdlloader';
 import { MAX_STUDIO_FLEX_DESC } from '../loaders/sourcemdl';
 import { SourceModel } from '../loaders/sourcemodel';
+import { SourceEngineMaterial } from '../materials/sourceenginematerial';
 import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
 
@@ -34,7 +36,7 @@ const defaultMaterial = new MeshBasicMaterial();
 export type Source1ModelSequences = Record<string, { frame?: number, startTime?: number, s?: MdlStudioSeqDesc }>/*TODO: improve type*/;
 export type Source1ModelAnimation = { name: string, weight: number }/*TODO: improve type*/;
 
-export class Source1ModelInstance extends Entity implements Animated, HasSkeleton, RandomPointOnModel {
+export class Source1ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel {
 	isSource1ModelInstance = true;
 	#poseParameters = new Map<string, number>();
 	#flexParameters = {};
@@ -454,6 +456,32 @@ export class Source1ModelInstance extends Entity implements Animated, HasSkeleto
 				material.properties.set('skeleton', (mesh as SkeletalMesh).skeleton);//TODOv3 : setup a better material param
 			}
 		}
+	}
+
+	async getSkins(): Promise<Set<string>> {
+		const skinReferences = this.sourceModel.mdl.skinReferences;
+		const skins = new Set<string>();
+		for (const skin of skinReferences.keys()) {
+			skins.add(String(skin));
+		}
+		return skins;
+	}
+
+	async getMaterialsName(skin: string): Promise<[string, Set<string>]> {
+		const skinReferences = this.sourceModel.mdl.skinReferences;
+		const materials = new Set<string>();
+
+		for (const mesh of this.meshes) {
+			let material: SourceEngineMaterial | null;
+			let materialName: string;
+			materialName = this.sourceModel.mdl.getMaterialName(Number(skin), mesh.properties.getNumber('materialId') ?? 0);
+			material = await SourceEngineMaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
+			if (material) {
+				materials.add(material.path);
+			}
+		}
+
+		return [this.sourceModel.repository, materials];
 	}
 
 	#init() {
