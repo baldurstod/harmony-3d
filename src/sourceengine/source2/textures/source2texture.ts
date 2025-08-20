@@ -1,10 +1,13 @@
-import { saveFile } from 'harmony-browser-utils';
+import { decode } from 'fast-png';
 import { formatCompression, ImageFormat, ImageFormatS3tc, TextureCompressionMethod } from '../../../textures/enums';
 import { decompressDxt } from '../../source1/textures/sourceenginevtf';
 import { VTEX_FLAG_CUBE_TEXTURE } from '../constants';
 import { Source2File } from '../loaders/source2file';
 import { Source2VtexBlock } from '../loaders/source2fileblock';
-import { decode } from 'fast-png';
+
+const TEXTURE_COMPILER = 'CompileTexture';
+const TEXTURE_YCOCG = 'Texture Compiler Version Image YCoCg Conversion';
+const TEXTURE_NORMALIZED_NORMALS = 'Texture Compiler Version Image NormalizeNormals';
 
 export enum VtexImageFormat {
 	Unknown = 0,
@@ -23,6 +26,7 @@ export enum VtexImageFormat {
 export enum TextureCodec {
 	None = 0,
 	YCoCg = 1,
+	NormalizeNormals = 2,
 }
 
 export class Source2Texture extends Source2File {
@@ -188,6 +192,20 @@ export class Source2Texture extends Source2File {
 
 	setCodec(codec: TextureCodec): void {
 		this.#codec = codec;
+	}
+
+	setSpecialDependency(compilerIdentifier: string, string: string): void {
+		if (compilerIdentifier == TEXTURE_COMPILER) {
+			//const s =  specialDependency.getSubValueAsString('m_String');
+			switch (string) {
+				case TEXTURE_YCOCG:
+					this.setCodec(TextureCodec.YCoCg);
+					break;
+				case TEXTURE_NORMALIZED_NORMALS:
+					this.setCodec(TextureCodec.NormalizeNormals);
+					break;
+			}
+		}
 	}
 }
 

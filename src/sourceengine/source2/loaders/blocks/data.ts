@@ -4,12 +4,12 @@ import { Kv3Element } from '../../../common/keyvalue/kv3element';
 import { Kv3File } from '../../../common/keyvalue/kv3file';
 import { Source2Texture } from '../../textures/source2texture';
 import { Source2File } from '../source2file';
-import { Source2NtroBlock, Source2RerlBlock, Source2ResEditInfoBlock, Source2VtexBlock } from '../source2fileblock';
+import { Source2DataBlock, Source2NtroBlock, Source2RerlBlock, Source2VtexBlock } from '../source2fileblock';
 import { loadKeyValue } from './kv3/keyvalue';
 import { loadStruct } from './structs';
 import { loadDataVtex } from './vtex';
 
-export async function loadData(reader: BinaryReader, file: Source2File, reference: Source2RerlBlock, block: Source2ResEditInfoBlock, introspection: Source2NtroBlock, parseVtex: boolean): Promise<boolean> {
+export async function loadData(reader: BinaryReader, file: Source2File, reference: Source2RerlBlock, block: Source2DataBlock, introspection: Source2NtroBlock, parseVtex: boolean): Promise<boolean> {
 	if (await loadKeyValue(reader, file, block)) {
 		return true;
 	}

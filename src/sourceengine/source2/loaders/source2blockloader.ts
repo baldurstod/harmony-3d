@@ -1,16 +1,11 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
 import { MeshoptDecoder } from 'meshoptimizer';
-import { INFO, TESTING, VERBOSE } from '../../../buildoptions';
-import { decodeLz4 } from '../../../utils/lz4';
-import { Zstd } from '../../../utils/zstd';
-import { Kv3Element } from '../../common/keyvalue/kv3element';
-import { Kv3File } from '../../common/keyvalue/kv3file';
-import { Kv3Type, Kv3Value } from '../../common/keyvalue/kv3value';
-import { VTEX_FLAG_CUBE_TEXTURE, VTEX_FORMAT_BGRA8888 } from '../constants';
-import { Source2SpriteSheet } from '../textures/source2spritesheet';
-import { Source2Texture, VtexImageFormat } from '../textures/source2texture';
-import { BinaryKv3Loader } from './binarykv3loader';
+import { VERBOSE } from '../../../buildoptions';
+import { loadData } from './blocks/data';
+import { readHandle } from './blocks/handle';
+import { decodeBlockCompressed } from './blocks/kv3/blockcompressed';
+import { loadRedi } from './blocks/redi';
 import {
 	DXGI_FORMAT_R16G16B16A16_SINT,
 	DXGI_FORMAT_R16G16_FLOAT,
@@ -23,15 +18,7 @@ import {
 	DXGI_FORMAT_R8G8B8A8_UNORM
 } from './dxgiformat';
 import { Source2File } from './source2file';
-import { Source2DataBlock, Source2FileBlock, Source2FileStruct, Source2NtroBlock, Source2RerlBlock, Source2SnapBlock, Source2StructField, Source2VtexBlock } from './source2fileblock';
-import { decodeBlockCompressed } from './blocks/kv3/blockcompressed';
-import { loadDataVkv } from './blocks/kv3/vkv';
-import { loadDataKv3 } from './blocks/kv3/kv3';
-import { loadDataVtex } from './blocks/vtex';
-import { loadStruct } from './blocks/structs';
-import { readHandle } from './blocks/handle';
-import { loadData } from './blocks/data';
-import { loadRedi } from './blocks/redi';
+import { Source2FileBlock, Source2NtroBlock, Source2RerlBlock, Source2ResEditInfoBlock, Source2SnapBlock } from './source2fileblock';
 
 
 export function sNormUint16(uint16: number) {
@@ -72,7 +59,7 @@ export const Source2BlockLoader = new (function () {
 					break
 				case 'REDI':
 				case 'RED2':
-					await loadRedi(reader, file, reference, block, introspection, false);
+					await loadRedi(reader, file, block as Source2ResEditInfoBlock);
 					break;
 				case 'VBIB':
 				case 'MBUF':

@@ -6,6 +6,9 @@ import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Kv3File } from '../../common/keyvalue/kv3file';
 import { Kv3Value } from '../../common/keyvalue/kv3value';
 import { Source2SpriteSheet } from '../textures/source2spritesheet';
+import { ArgumentDependency } from './files/blocks/argumentdependency';
+import { InputDependency } from './files/blocks/inputdependency';
+import { SpecialDependency } from './files/blocks/specialdependency';
 import { Source2File } from './source2file';
 
 /**
@@ -53,17 +56,17 @@ export class Source2FileBlock {
 	}
 
 	// TODO: move getIndices getVertices getNormalsTangents getCoords getNormal getTangent getBoneIndices getBoneWeight
-	getIndices(meshIndex:number, bufferId: number): number[] {
+	getIndices(meshIndex: number, bufferId: number): number[] {
 		const indexBuffer = this.file.indices.get(meshIndex)?.at(bufferId);
 		return indexBuffer ? indexBuffer.indices : [];
 	}
 
-	getVertices(meshIndex:number, bufferId: number): number[] {
+	getVertices(meshIndex: number, bufferId: number): number[] {
 		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.vertices : [];
 	}
 
-	getNormalsTangents(meshIndex:number, bufferId: number) {
+	getNormalsTangents(meshIndex: number, bufferId: number) {
 		function decompressNormal(inputNormal: vec2, outputNormal: vec3): vec3 {				// {nX, nY, nZ}//_DecompressUByte4Normal
 			const fOne = 1.0;
 			//let outputNormal = vec3.create();
@@ -192,27 +195,27 @@ export class Source2FileBlock {
 		return [normalArray, tangentArray];
 	}
 
-	getCoords(meshIndex:number, bufferId: number): number[] {
+	getCoords(meshIndex: number, bufferId: number): number[] {
 		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.coords : [];
 	}
 
-	getNormal(meshIndex:number, bufferId: number): number[] {
+	getNormal(meshIndex: number, bufferId: number): number[] {
 		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.normals : [];
 	}
 
-	getTangent(meshIndex:number, bufferId: number): number[] {
+	getTangent(meshIndex: number, bufferId: number): number[] {
 		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.tangents : [];
 	}
 
-	getBoneIndices(meshIndex:number, bufferId: number): ArrayBuffer {
+	getBoneIndices(meshIndex: number, bufferId: number): ArrayBuffer {
 		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.boneIndices : new ArrayBuffer();
 	}
 
-	getBoneWeight(meshIndex:number, bufferId: number): number[] {
+	getBoneWeight(meshIndex: number, bufferId: number): number[] {
 		const vertexBuffer = this.file.vertices.get(meshIndex)?.at(bufferId);
 		return vertexBuffer ? vertexBuffer.boneWeight : [];
 	}
@@ -243,7 +246,12 @@ export type Source2DataBlock = Source2FileBlock & {
 }
 
 export type Source2ResEditInfoBlock = Source2FileBlock & {
-	structs?: Record<string, Source2DataStruct>;
+	//structs?: Record<string, Source2DataStruct>;
+	inputDependencies: InputDependency[];
+	additionalInputDependencies: InputDependency[];
+	argumentDependencies: ArgumentDependency[];
+	specialDependencies: SpecialDependency[];
+	// TODO: add other datas
 }
 
 export type Source2VtexBlock = Source2FileBlock & {

@@ -1,40 +1,49 @@
 import { BinaryReader } from 'harmony-binary-reader';
-import { VERBOSE } from '../../../../buildoptions';
-import { Kv3Element } from '../../../common/keyvalue/kv3element';
-import { Kv3File } from '../../../common/keyvalue/kv3file';
-import { Source2Texture } from '../../textures/source2texture';
+import { ArgumentDependency } from '../files/blocks/argumentdependency';
+import { InputDependency } from '../files/blocks/inputdependency';
+import { RediBlockConstructor } from '../files/blocks/redi';
+import { SpecialDependency } from '../files/blocks/specialdependency';
 import { Source2File } from '../source2file';
-import { Source2NtroBlock, Source2RerlBlock, Source2ResEditInfoBlock, Source2VtexBlock } from '../source2fileblock';
+import { Source2ResEditInfoBlock } from '../source2fileblock';
 import { loadKeyValue } from './kv3/keyvalue';
-import { loadStruct } from './structs';
-import { loadDataVtex } from './vtex';
 
-export async function loadRedi(reader: BinaryReader, file: Source2File, reference: Source2RerlBlock, block: Source2ResEditInfoBlock, introspection: Source2NtroBlock, parseVtex: boolean): Promise<boolean> {
+const rediBlockConstructors: [RediBlockConstructor, 'inputDependencies' | 'additionalInputDependencies' | 'argumentDependencies' | 'specialDependencies'][] = [
+	[InputDependency, 'inputDependencies'],
+	[InputDependency, 'additionalInputDependencies'],
+	[ArgumentDependency, 'argumentDependencies'],
+	[SpecialDependency, 'specialDependencies'],
+	// TODO: add other stuff
+];
+
+export async function loadRedi(reader: BinaryReader, file: Source2File, block: Source2ResEditInfoBlock): Promise<boolean> {
 	if (await loadKeyValue(reader, file, block)) {
 		return true;
 	}
 
-	if (!introspection || !introspection.structsArray) {
-		if (parseVtex) {//TODO
-			loadDataVtex(reader, block as Source2VtexBlock, file as Source2Texture);
-			return true
-		}
-		return false;
-	}
-	block.keyValue = new Kv3File();
-	const rootElement = new Kv3Element();
-	block.keyValue.setRoot(rootElement);
+	block.inputDependencies = [];
+	block.additionalInputDependencies = [];
+	block.argumentDependencies = [];
+	block.specialDependencies = [];
 
-	const structList = introspection.structsArray;
-	let startOffset = block.offset;
-	for (let structIndex = 0; structIndex < 1/*TODO:removeme*//*structList.length*/; structIndex++) {
-		const struct = structList[structIndex]!;//introspection.firstStruct;
-		//block.structs[struct.name] = ;
-		rootElement.setProperty(struct.name, loadStruct(reader, reference, struct, block, startOffset, introspection, 0));
-		startOffset += struct.discSize;
+	reader = new BinaryReader(reader, block.offset);
+
+	for (let i = 0; i < rediBlockConstructors.length; i++) {
+		reader.seek(i * 8 /*size of offset + count*/);
+
+		const startOffset = reader.tell() + reader.getUint32();
+		const count = reader.getUint32();
+
+		let offset = startOffset;
+		for (let j = 0; j < count; j++) {
+			const rediBock = new rediBlockConstructors[i]![0]();
+
+			rediBock.fromReader(new BinaryReader(reader, offset));
+			offset += rediBock.getLength();
+			console.info(rediBock);
+
+			block[rediBlockConstructors[i]![1]].push(rediBock as any/*evil*/);
+		}
 	}
-	if (VERBOSE) {
-		console.log(block.structs);
-	}
+
 	return true;
 }

@@ -1,10 +1,10 @@
 import { BinaryReader } from 'harmony-binary-reader';
 import { Source2File } from '../../source2file';
-import { Source2ResEditInfoBlock } from '../../source2fileblock';
+import { Source2DataBlock } from '../../source2fileblock';
 import { loadDataKv3 } from './kv3';
 import { loadDataVkv } from './vkv';
 
-export async function loadKeyValue(reader: BinaryReader, file: Source2File, block: Source2ResEditInfoBlock): Promise<boolean> {
+export async function loadKeyValue(reader: BinaryReader, file: Source2File, block: Source2DataBlock): Promise<boolean> {
 	const bytes = reader.getUint32(block.offset);
 	switch (bytes) {
 		case 0x03564B56: // VKV3
