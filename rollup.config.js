@@ -37,6 +37,7 @@ export default [
 			},
 		],
 		external: [
+			'fast-png',
 			'gl-matrix',
 			'harmony-binary-reader',
 			'harmony-browser-utils',

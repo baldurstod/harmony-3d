@@ -1,8 +1,10 @@
+import { saveFile } from 'harmony-browser-utils';
 import { formatCompression, ImageFormat, ImageFormatS3tc, TextureCompressionMethod } from '../../../textures/enums';
 import { decompressDxt } from '../../source1/textures/sourceenginevtf';
 import { VTEX_FLAG_CUBE_TEXTURE } from '../constants';
 import { Source2File } from '../loaders/source2file';
 import { Source2VtexBlock } from '../loaders/source2fileblock';
+import { decode } from 'fast-png';
 
 export enum VtexImageFormat {
 	Unknown = 0,
@@ -117,13 +119,21 @@ export class Source2Texture extends Source2File {
 				this.#compressionMethod = TextureCompressionMethod.Uncompressed;
 				this.#imageFormat = ImageFormat.BGRA8888;
 				break;
+			case VtexImageFormat.PngR8G8B8A8Uint:
+				this.#compressionMethod = TextureCompressionMethod.Uncompressed;
+				this.#imageFormat = ImageFormat.PngR8G8B8A8Uint;
+				break;
+			case VtexImageFormat.PngDXT5:
+				this.#compressionMethod = TextureCompressionMethod.Uncompressed;
+				this.#imageFormat = ImageFormat.PngDXT5;
+				break;
 			default:
 				console.error(`Unknown vtex format ${imageFormat}`);
 				break;
 		}
 	}
 
-	getVtexImageFormat(): number {
+	getVtexImageFormat(): VtexImageFormat {
 		return this.#vtexImageFormat;
 	}
 
@@ -139,8 +149,20 @@ export class Source2Texture extends Source2File {
 
 		switch (formatCompression(this.#imageFormat)) {
 			case TextureCompressionMethod.Uncompressed:
-				datas = new Uint8ClampedArray(imageWidth * imageHeight * 4);
-				datas.set(imageData);
+				switch (this.#imageFormat) {
+					case ImageFormat.PngR8G8B8A8Uint:
+					case ImageFormat.PngDXT5:
+						datas = new Uint8ClampedArray(imageWidth * imageHeight * 4);
+						const png = decode(imageData);
+						if (png) {
+							datas.set(png.data);
+						}
+						break;
+					default:
+						datas = new Uint8ClampedArray(imageWidth * imageHeight * 4);
+						datas.set(imageData);
+						break;
+				}
 				break;
 			case TextureCompressionMethod.St3c:
 			case TextureCompressionMethod.Rgtc:

@@ -8,6 +8,7 @@
 	"dependencies": {
 		"@derschmale/io-rgbe": "github:baldurstod/io-rgbe",
 		"@zip.js/zip.js": "github:baldurstod/zip.js",
+		"fast-png": "^7.0.1",
 		"gl-matrix": "^3.4.3",
 		"harmony-binary-reader": "github:baldurstod/harmony-binary-reader",
 		"harmony-browser-utils": "github:baldurstod/harmony-browser-utils",

@@ -41,6 +41,9 @@ export enum ImageFormat {
 	R8G8B8A8Uint = 'R8G8B8A8Uint',
 	BGRA8888 = 'BGRA8888',
 	RGBA = 'RGBA',
+
+	PngR8G8B8A8Uint = 'PngR8G8B8A8Uint',
+	PngDXT5 = 'PngDXT5',
 }
 
 export type ImageFormatS3tc = ImageFormat.Bc1 | ImageFormat.Bc2 | ImageFormat.Bc3;
