@@ -7,9 +7,9 @@ import { Zstd } from '../../../utils/zstd';
 import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Kv3File } from '../../common/keyvalue/kv3file';
 import { Kv3Type, Kv3Value } from '../../common/keyvalue/kv3value';
-import { VTEX_FLAG_CUBE_TEXTURE, VTEX_FORMAT_BC4, VTEX_FORMAT_BC5, VTEX_FORMAT_BC7, VTEX_FORMAT_BGRA8888, VTEX_FORMAT_DXT1, VTEX_FORMAT_DXT5, VTEX_FORMAT_PNG_R8G8B8A8_UINT, VTEX_FORMAT_R8, VTEX_FORMAT_R8G8B8A8_UINT } from '../constants';
+import { VTEX_FLAG_CUBE_TEXTURE, VTEX_FORMAT_BGRA8888 } from '../constants';
 import { Source2SpriteSheet } from '../textures/source2spritesheet';
-import { Source2Texture } from '../textures/source2texture';
+import { Source2Texture, VtexImageFormat } from '../textures/source2texture';
 import { BinaryKv3Loader } from './binarykv3loader';
 import {
 	DXGI_FORMAT_R16G16B16A16_SINT,
@@ -935,38 +935,41 @@ function loadDataVtexImageData(reader: BinaryReader, file: Source2Texture, block
 	}
 }
 
-function getImage(reader: BinaryReader, mipmapWidth: number, mipmapHeight: number, imageFormat: number/*TODO: change type to ImageFormat*/, compressedLength: number | null) {
+function getImage(reader: BinaryReader, mipmapWidth: number, mipmapHeight: number, imageFormat: VtexImageFormat, compressedLength: number | null) {
 	let entrySize = 0;
 	switch (imageFormat) {
-		case VTEX_FORMAT_DXT1:
+		case VtexImageFormat.Dxt1:
 			entrySize = Math.max(mipmapWidth * mipmapHeight * 0.5, 8); // 0.5 byte per pixel
 			break;
-		case VTEX_FORMAT_DXT5:
+		case VtexImageFormat.Dxt5:
 			entrySize = Math.max(mipmapWidth, 4) * Math.max(mipmapHeight, 4); // 1 byte per pixel
 			break;
-		case VTEX_FORMAT_R8:
+		case VtexImageFormat.R8:
 			entrySize = Math.max(mipmapWidth, 1) * Math.max(mipmapHeight, 1); // 1 byte per pixel;
 			break;
-		case VTEX_FORMAT_R8G8B8A8_UINT:
-		case VTEX_FORMAT_BGRA8888:
+		case VtexImageFormat.R8G8B8A8Uint:
+		case VtexImageFormat.BGRA8888:
 			// 4 bytes per pixel
 			entrySize = mipmapWidth * mipmapHeight * 4;
 			break;
-		case VTEX_FORMAT_PNG_R8G8B8A8_UINT:
+		case VtexImageFormat.PngR8G8B8A8Uint:
+		case VtexImageFormat.PngDXT5:
 			entrySize = reader.byteLength - reader.tell();
+			/*
 			const a = reader.tell();
-			//SaveFile('loadout.obj', b64toBlob(encode64(reader.getString(entrySize))));//TODOv3: removeme
+			SaveFile('loadout.obj', b64toBlob(encode64(reader.getString(entrySize))));//TODOv3: removeme
 			reader.seek(a);
+			*/
 			break;
-		case VTEX_FORMAT_BC4:
-		case VTEX_FORMAT_BC5:
+		case VtexImageFormat.Bc4:
+		case VtexImageFormat.Bc5:
 			entrySize = Math.ceil(mipmapWidth / 4) * Math.ceil(mipmapHeight / 4) * 8;// 0.5 byte per pixel
 			break;
-		case VTEX_FORMAT_BC7:
+		case VtexImageFormat.Bc7:
 			entrySize = Math.max(mipmapWidth, 4) * Math.max(mipmapHeight, 4);// 1 byte per pixel, blocks of 16 bytes
 			break;
 		default:
-			console.warn('Unknown image format ' + imageFormat, reader, mipmapWidth, mipmapHeight, compressedLength);
+			console.error('Unknown image format ' + imageFormat, reader, mipmapWidth, mipmapHeight, compressedLength);
 	}
 	let imageDatas;
 	if (compressedLength === null || compressedLength === entrySize) {
