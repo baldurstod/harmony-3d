@@ -5,8 +5,8 @@ import { RenderFace } from '../../../materials/constants';
 import { Source2File } from '../loaders/source2file';
 
 export class Source2Error extends Source2Material{
-	constructor(repository: string, source2File?: Source2File) {
-		super(repository, source2File);
+	constructor(repository: string, shader: string, source2File?: Source2File) {
+		super(repository, shader, source2File);
 		if (TESTING) {
 			console.log(source2File);
 		}

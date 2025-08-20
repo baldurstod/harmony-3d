@@ -9,8 +9,8 @@ import { Source2Material } from './source2material';
 export class Source2SpriteCard extends Source2Material {
 	#texturePath = '';
 
-	constructor(repository: string, source2File?: Source2File) {
-		super(repository, source2File);
+	constructor(repository: string, shader: string = 'spritecard.vfx', source2File?: Source2File) {
+		super(repository, shader, source2File);
 
 		//TODO: we should adapt transparency depending on particle renderer params ?
 		this.setTransparency(GL_SRC_ALPHA, GL_DST_ALPHA);
