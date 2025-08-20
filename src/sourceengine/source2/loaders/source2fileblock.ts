@@ -15,9 +15,9 @@ export class Source2FileBlock {
 	file: Source2File;
 	type: string/*TODO: create enum*/;
 	//id: number;
-	reader: BinaryReader;// TODO: try to improve that, this may be overkill
-	offset: number;
-	length: number;
+	readonly reader: BinaryReader;// TODO: try to improve that, this may be overkill
+	readonly offset: number;
+	readonly length: number;
 	//indices?: any/*TODO: create struct*/[];
 	//vertices?: any/*TODO: create struct*/[];
 	keyValue?: Kv3File;
@@ -239,6 +239,10 @@ export type Source2NtroBlock = Source2FileBlock & {
 }
 
 export type Source2DataBlock = Source2FileBlock & {
+	structs?: Record<string, Source2DataStruct>;
+}
+
+export type Source2ResEditInfoBlock = Source2FileBlock & {
 	structs?: Record<string, Source2DataStruct>;
 }
 

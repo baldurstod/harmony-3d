@@ -193,10 +193,10 @@ export class Source2Texture extends Source2File {
 
 function decodeYCoCg(datas: Uint8ClampedArray): void {
 	for (let i = 0; i < datas.length; i += 4) {
-		const scale = 1 / ((datas[i + 2] >> 3) + 1);
-		const co = (datas[i + 0] - 128) * scale;
-		const cg = (datas[i + 1] - 128) * scale;
-		const y = datas[i + 3];
+		const scale = 1 / ((datas[i + 2]! >> 3) + 1);
+		const co = (datas[i + 0]! - 128) * scale;
+		const cg = (datas[i + 1]! - 128) * scale;
+		const y = datas[i + 3]!;
 
 		const tmp = y - cg;
 		datas[i] = tmp + co;

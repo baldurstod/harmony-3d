@@ -29,12 +29,12 @@ export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make single
 		if (this.vtex) {
 			// TODO: improve detection
 			const specialDependencies = file.getBlockStructAsElementArray('RED2', 'm_SpecialDependencies');
-			console.error(specialDependencies);
 
-			for (const specialDependency of specialDependencies) {
-
-				if (specialDependency.getSubValueAsString('m_String') == 'Texture Compiler Version Image YCoCg Conversion') {
-					(file as Source2Texture).setCodec(TextureCodec.YCoCg);
+			if (specialDependencies) {
+				for (const specialDependency of specialDependencies) {
+					if (specialDependency.getSubValueAsString('m_String') == 'Texture Compiler Version Image YCoCg Conversion') {
+						(file as Source2Texture).setCodec(TextureCodec.YCoCg);
+					}
 				}
 			}
 		}
