@@ -65,12 +65,10 @@ export const Source2BlockLoader = new (function () {
 				case 'RERL':
 					loadRerl(reader, block as Source2RerlBlock);
 					break;
-				case 'REDI':
-					break;
 				case 'NTRO':
 					loadNtro(reader, block as Source2NtroBlock);
 					break;
-				case 'DATA':
+				//case 'DATA':
 				case 'ANIM':
 				case 'CTRL':
 				case 'MRPH':
@@ -79,8 +77,13 @@ export const Source2BlockLoader = new (function () {
 				case 'AGRP':
 				case 'PHYS':
 				case 'LaCo':
-					await this.#loadData(reader, file, reference, block, introspection, parseVtex);
+				case 'REDI':
+				case 'RED2':
+					await this.#loadData(reader, file, reference, block, introspection, false);
 					break;
+				case 'DATA':
+					await this.#loadData(reader, file, reference, block, introspection, parseVtex);
+					break
 				case 'VBIB':
 				case 'MBUF':
 					loadVbib(reader, block, context.meshIndex++);

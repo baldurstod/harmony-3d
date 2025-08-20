@@ -20,10 +20,16 @@ export enum VtexImageFormat {
 	BGRA8888 = 28,
 }
 
+export enum TextureCodec {
+	None = 0,
+	YCoCg = 1,
+}
+
 export class Source2Texture extends Source2File {
 	#vtexImageFormat: VtexImageFormat = VtexImageFormat.Unknown;// original image format
 	#compressionMethod = TextureCompressionMethod.Uncompressed;// TODO: remove
 	#imageFormat = ImageFormat.Unknown;
+	#codec: TextureCodec = TextureCodec.None;
 
 	constructor(repository: string, path: string) {
 		super(repository, path);
@@ -82,7 +88,7 @@ export class Source2Texture extends Source2File {
 		return (block.flags & VTEX_FLAG_CUBE_TEXTURE) == VTEX_FLAG_CUBE_TEXTURE;
 	}
 
-	setImageFormat(imageFormat: number): void {
+	setImageFormat(imageFormat: VtexImageFormat): void {
 		this.#vtexImageFormat = imageFormat;
 
 		// TODO: improve code
@@ -168,6 +174,9 @@ export class Source2Texture extends Source2File {
 			case TextureCompressionMethod.Rgtc:
 			case TextureCompressionMethod.Bptc:
 				datas = await decompressDxt(this.#imageFormat as ImageFormatS3tc, imageWidth, imageHeight, imageData);
+				if (this.#codec == TextureCodec.YCoCg) {
+					decodeYCoCg(datas);
+				}
 				break;
 			default:
 				console.error(this.#imageFormat);
@@ -175,5 +184,25 @@ export class Source2Texture extends Source2File {
 		}
 
 		return new ImageData(datas, imageWidth, imageHeight);
+	}
+
+	setCodec(codec: TextureCodec): void {
+		this.#codec = codec;
+	}
+}
+
+function decodeYCoCg(datas: Uint8ClampedArray): void {
+	for (let i = 0; i < datas.length; i += 4) {
+		const scale = 1 / ((datas[i + 2] >> 3) + 1);
+		const co = (datas[i + 0] - 128) * scale;
+		const cg = (datas[i + 1] - 128) * scale;
+		const y = datas[i + 3];
+
+		const tmp = y - cg;
+		datas[i] = tmp + co;
+		datas[i + 1] = y + cg;
+		datas[i + 2] = tmp - co;
+		datas[i + 3] = 255;
+
 	}
 }
