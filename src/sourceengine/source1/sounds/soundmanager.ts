@@ -17,9 +17,9 @@ export class Source1SoundManager {
 	 * Play a sound
 	 * @param {String} soundName soundName
 	 */
-	static async playSound(repositoryName: string, soundName: string) {
+	static async playSound(repositoryName: string, soundName: string): Promise<HTMLAudioElement | null> {
 		if (this.#mute) {
-			return;
+			return null;
 		}
 
 		const sound = await this.#getSound(repositoryName, soundName);
@@ -41,25 +41,28 @@ export class Source1SoundManager {
 					audio.volume = 0.1;
 					//audio.play();
 					AudioMixer.playAudio('master', audio);//TODO: change master per actual channel
+				} else {
+					return null;
 				}
 			} else {
 				AudioMixer.playAudio('master', audio);
 			}
 			return audio;
 		}
+		return null;
 	}
 
-	static async #getSound(repositoryName: string, soundName: string) {
+	static async #getSound(repositoryName: string, soundName: string): Promise<Sound | null> {
 		await this.#fetchManifests(repositoryName);
 		/*const repo = this.#soundsPerRepository[repositoryName];
 		if (repo) {
 			return repo[soundName];
 		}*/
 
-		return this.#soundsPerRepository.get(repositoryName)?.get(soundName);
+		return this.#soundsPerRepository.get(repositoryName)?.get(soundName) ?? null;
 	}
 
-	static async #fetchManifests(repositoryName: string) {
+	static async #fetchManifests(repositoryName: string): Promise<void> {
 		if (this.#promisePerRepository.has(repositoryName)) {
 			await this.#promisePerRepository.get(repositoryName);
 		}
@@ -83,14 +86,14 @@ export class Source1SoundManager {
 		promiseResolve!(true);
 	}
 
-	static async #fetchManifest(repositoryName: string, manifestPath: string) {
+	static async #fetchManifest(repositoryName: string, manifestPath: string): Promise<void> {
 		const response = await Repositories.getFileAsText(repositoryName, manifestPath);
 		if (!response.error) {
 			this.#loadManifest(repositoryName, response.text as string);
 		}
 	}
 
-	static #loadManifest(repositoryName: string, manifestTxt: string) {
+	static #loadManifest(repositoryName: string, manifestTxt: string): void {
 		const sounds = this.#soundsPerRepository.get(repositoryName);
 
 		const kv = new KvReader();
@@ -98,7 +101,7 @@ export class Source1SoundManager {
 		const list = kv.rootElements as Record<string, KvElement>;
 		const keyArray = Object.keys(list);
 		for (let i = 0; i < keyArray.length; ++i) {
-			const soundKey = keyArray[i];
+			const soundKey = keyArray[i]!;
 			const sound = list[soundKey] as any/*TODO: improve type*/;
 			let wave;
 			if (sound.rndwave) {
@@ -116,7 +119,7 @@ export class Source1SoundManager {
 		}
 
 	}
-	static loadManifest(repositoryName: string, fileName: string) {
+	static loadManifest(repositoryName: string, fileName: string): void {
 		let manifests = this.#manifestsPerRepository.get(repositoryName);
 
 		if (!manifests) {
@@ -126,11 +129,11 @@ export class Source1SoundManager {
 		manifests.push(fileName);
 	}
 
-	static mute() {
+	static mute(): void {
 		this.#mute = true;
 	}
 
-	static unmute() {
+	static unmute(): void {
 		this.#mute = false;
 	}
 }

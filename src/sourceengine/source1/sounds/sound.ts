@@ -9,20 +9,20 @@ export class Sound {
 		this.#channel = channel;
 	}
 
-	getRepository() {
+	getRepository(): string {
 		return this.#repository;
 	}
 
-	getWave() {
+	getWave(): string {
 		if (Array.isArray(this.#wave)) {
 			const index = Math.floor(Math.random() * this.#wave.length);
-			return this.#wave[index];
+			return this.#wave[index]!;
 		} else {
 			return this.#wave;
 		}
 	}
 
-	getChannel() {
+	getChannel(): string {
 		return this.#channel;
 	}
 }
