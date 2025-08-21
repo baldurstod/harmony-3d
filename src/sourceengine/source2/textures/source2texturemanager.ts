@@ -80,7 +80,7 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 				animatedTexture.properties.set('vtex', vtex);
 				const texture = TextureManager.createTexture();//TODOv3: add params
 				if (vtex) {
-					this.#initTexture(texture.texture!, vtex);
+					this.#initTexture(texture, vtex);
 				}
 				animatedTexture.addFrame(0, texture);
 				resolve(animatedTexture);
@@ -98,14 +98,14 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 		this.#texturesList.set(path, texture);
 	}
 
-	#initTexture(texture: WebGLTexture, vtexFile: Source2Texture) {
+	#initTexture(texture: Texture, vtexFile: Source2Texture) {
 		const imageData = (vtexFile.blocks.DATA as Source2VtexBlock).imageData;
 		const imageFormat = vtexFile.getImageFormat();
 		if (imageData) {
 			if (vtexFile.isCubeTexture()) {
-				this.#initCubeTexture(texture, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
+				this.#initCubeTexture(texture.texture!, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
 			} else {
-				this.#initFlatTexture(texture, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
+				this.#initFlatTexture(texture.texture!, imageFormat, vtexFile.getWidth(), vtexFile.getHeight(), imageData);
 				/*if (imageFormat & TEXTURE_FORMAT_COMPRESSED_S3TC) {
 					this.fillTextureDxt(texture, vtexFile.getWidth(), vtexFile.getHeight(), vtexFile.getDxtLevel(), imageData[0]);
 				} else {
@@ -113,6 +113,10 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 				}*/
 			}
 			//new Graphics().glContext.bindTexture(GL_TEXTURE_2D, null);
+		}
+
+		if (vtexFile.decodeNormalizeNormals()) {
+			texture.defines.set('NORMALIZE_NORMALS', 'NORMALIZE_NORMALS');
 		}
 	}
 

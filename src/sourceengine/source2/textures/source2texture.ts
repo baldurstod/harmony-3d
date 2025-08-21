@@ -1,4 +1,5 @@
 import { decode } from 'fast-png';
+import { vec2 } from 'gl-matrix';
 import { formatCompression, ImageFormat, ImageFormatS3tc, TextureCompressionMethod } from '../../../textures/enums';
 import { decompressDxt } from '../../source1/textures/sourceenginevtf';
 import { VTEX_FLAG_CUBE_TEXTURE } from '../constants';
@@ -24,7 +25,6 @@ export enum VtexImageFormat {
 }
 
 export enum TextureCodec {
-	None = 0,
 	YCoCg = 1,
 	NormalizeNormals = 2,
 }
@@ -33,7 +33,7 @@ export class Source2Texture extends Source2File {
 	#vtexImageFormat: VtexImageFormat = VtexImageFormat.Unknown;// original image format
 	#compressionMethod = TextureCompressionMethod.Uncompressed;// TODO: remove
 	#imageFormat = ImageFormat.Unknown;
-	#codec: TextureCodec = TextureCodec.None;
+	#codecs: number = 0;
 
 	constructor(repository: string, path: string) {
 		super(repository, path);
@@ -178,20 +178,32 @@ export class Source2Texture extends Source2File {
 			case TextureCompressionMethod.Rgtc:
 			case TextureCompressionMethod.Bptc:
 				datas = await decompressDxt(this.#imageFormat as ImageFormatS3tc, imageWidth, imageHeight, imageData);
-				if (this.#codec == TextureCodec.YCoCg) {
-					decodeYCoCg(datas);
-				}
 				break;
 			default:
 				console.error(this.#imageFormat);
 				datas = new Uint8ClampedArray(imageWidth * imageHeight * 4);
 		}
 
+		if (this.decodeYCoCg()) {
+			decodeYCoCg(datas);
+		}
+		if (this.decodeNormalizeNormals()) {
+			decodeNormals(datas);
+		}
+
 		return new ImageData(datas, imageWidth, imageHeight);
 	}
 
 	setCodec(codec: TextureCodec): void {
-		this.#codec = codec;
+		this.#codecs |= codec;
+	}
+
+	decodeYCoCg():boolean {
+		return (this.#codecs & TextureCodec.YCoCg) == TextureCodec.YCoCg;
+	}
+
+	decodeNormalizeNormals():boolean {
+		return (this.#codecs & TextureCodec.NormalizeNormals) == TextureCodec.NormalizeNormals;
 	}
 
 	setSpecialDependency(compilerIdentifier: string, string: string): void {
@@ -222,5 +234,18 @@ function decodeYCoCg(datas: Uint8ClampedArray): void {
 		datas[i + 2] = tmp - co;
 		datas[i + 3] = 255;
 
+	}
+}
+
+function decodeNormals(datas: Uint8ClampedArray): void {
+	const v = vec2.create();
+	for (let i = 0; i < datas.length; i += 4) {
+		// map alpha, green to red, green. Blue is computed
+		v[0] = datas[i + 3]! * 2 - 255;
+		v[1] = -(datas[i + 1]! * 2 - 255);
+
+		datas[i + 0] = v[0] * 0.5 + 128;
+		datas[i + 1] = v[1] * 0.5 + 128;
+		datas[i + 2] = Math.sqrt(255 * 255 - vec2.dot(v, v)) * 0.5 + 128;
 	}
 }

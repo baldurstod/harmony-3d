@@ -7,6 +7,7 @@ export default `
 #include declare_fragment_specular_map
 #include source2_fragment_declare_detail_map
 #include declare_fragment_cube_map
+#include source2_decode_texture
 //#include source1_declare_phong
 
 #include declare_lights
@@ -31,6 +32,10 @@ void main(void) {
 	#include source2_fragment_compute_mask
 	#include source2_fragment_compute_detail
 	diffuseColor *= texelColor;
+
+#ifdef NORMALIZE_NORMALS
+	texelNormal = normalizeNormals(texelNormal);
+#endif
 
 #define DETAIL_MASK texelMask1.r
 //#define FRESNEL_WARP texelMask1.g

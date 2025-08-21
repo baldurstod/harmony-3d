@@ -53,7 +53,7 @@ export class Material {
 	#users = new Set<any>();
 	#parameters = new Map<string, MateriaParameter>();
 	uniforms: Record<string, UniformValue> = {};// TODO: transform to map ?
-	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ?
+	defines: Record<string, any> = {};//TODOv3: put defines in meshes too ? TODO: transform to map ?
 	parameters: MaterialParams;
 	depthTest: boolean;
 	depthFunc: any;

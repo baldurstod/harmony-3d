@@ -348,7 +348,14 @@ export class Source2Material extends Material {
 			for (const [paramName, [uniformName, defineName]] of map) {
 				const paramValue = this.getTextureParam(paramName);
 				if (paramValue) {
-					this.setTexture(uniformName, paramValue ? await Source2TextureManager.getTexture(this.repository, paramValue, 0) : null, defineName);
+					const texture = await Source2TextureManager.getTexture(this.repository, paramValue, 0);
+					this.setTexture(uniformName, texture, defineName);
+
+					if (texture) {
+						for (const [name, define] of texture.defines) {
+							this.defines[name] = define;
+						}
+					}
 				}
 			}
 		}
