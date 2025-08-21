@@ -39,7 +39,7 @@ export async function loadRedi(reader: BinaryReader, file: Source2File, block: S
 
 			rediBock.fromReader(new BinaryReader(reader, offset));
 			offset += rediBock.getLength();
-			console.info(rediBock);
+			//console.info(rediBock);
 
 			block[rediBlockConstructors[i]![1]].push(rediBock as any/*evil*/);
 		}
