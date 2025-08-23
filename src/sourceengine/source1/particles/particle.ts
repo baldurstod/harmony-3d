@@ -2,6 +2,7 @@ import { quat, vec3, vec4 } from 'gl-matrix';
 import { WARN } from '../../../buildoptions';
 import { clamp } from '../../../math/functions';
 import { Bone } from '../../../objects/bone';
+import { SourceParticleFieldValue } from '../../common/particles/types';
 import { Color } from './color';
 import { SourceEngineParticleSystem } from './sourceengineparticlesystem';
 
@@ -12,7 +13,7 @@ export class SourceEngineParticle {
 	currentTime = 0;
 	previousElapsedTime = 0;
 	name: string;
-	id;
+	id: string;
 	isAlive = false;
 	readonly position = vec3.create();
 	readonly prevPosition = vec3.create();
@@ -28,9 +29,9 @@ export class SourceEngineParticle {
 	vMax = 1;
 	system: SourceEngineParticleSystem;
 	cTime = 0;
-	timeToLive: number;
-	initialTimeToLive: number;
-	proportionOfLife: number;
+	timeToLive: number = 0;
+	initialTimeToLive: number = 0;
+	proportionOfLife: number = 0;
 	u = 0;
 	v = 0;
 	radius = 1;
@@ -55,7 +56,7 @@ export class SourceEngineParticle {
 	initialVec?: vec3;
 	bones?: [Bone, number][];
 
-	constructor(id, system) {
+	constructor(id: string, system: SourceEngineParticleSystem) {
 		this.name = 'Particle ' + id;
 		this.id = id;
 		//this.offsetPosition = vec3.create();
@@ -80,25 +81,25 @@ export class SourceEngineParticle {
 			SetAttributeToConstant(PARTICLE_ATTRIBUTE_YAW, 0);*/
 	}
 
-	step(elapsedTime) {
+	step(elapsedTime: number): void {
 		this.currentTime += elapsedTime;
 		if (this.timeToLive) {
 			this.proportionOfLife = this.currentTime / this.timeToLive;
 		}
 	}
 
-	start() {
+	start(): void {
 		this.isAlive = true;
 		this.currentTime = 0;
 		this.proportionOfLife = 0;
 		//this.trail = new Array();
 	}
 
-	die() {
+	die(): void {
 		this.isAlive = false;
 	}
 
-	reset() {
+	reset(): void {
 		//this.firstRender = true;
 		this.currentTime = 0;
 		this.proportionOfLife = 0;
@@ -134,11 +135,11 @@ export class SourceEngineParticle {
 		this.renderScreenVelocityRotate = false;
 	}
 
-	setInitialField(field, value, mulInitial) {
+	setInitialField(field: number/*TODO: use enum*/, value: SourceParticleFieldValue, mulInitial: boolean): void {
 		this.setField(field, value, mulInitial, true);
 	}
 
-	setField(field = 0, value, mulInitial = false, setInitial = false) {
+	setField(field = 0, value: SourceParticleFieldValue, mulInitial = false, setInitial = false): void {
 		if (isNaN(field)) { return; }
 		//console.log('Field ' + field + ' ' + value);
 
@@ -270,7 +271,7 @@ export class SourceEngineParticle {
 	DEFPARTICLE_ATTRIBUTE( ALPHA2, 16 );
 	*/
 
-	getField(field = 0, initial = false) {
+	getField(field = 0, initial = false): SourceParticleFieldValue {
 
 		switch (field) {
 			case 1: // Time to live
@@ -309,7 +310,7 @@ export class SourceEngineParticle {
 	/**
 	* TODO
 	*/
-	setInitialSequence(sequence) {
+	setInitialSequence(sequence: number): void {
 		this.sequence = sequence;
 		this.initialSequence = sequence;
 	}
@@ -317,21 +318,21 @@ export class SourceEngineParticle {
 	/**
 	* TODO
 	*/
-	setInitialRadius(radius) {
+	setInitialRadius(radius: number): void {
 		this.radius = radius;
 		this.initialRadius = radius;
 	}
 	/**
 	* TODO
 	*/
-	setInitialTTL(timeToLive) {
+	setInitialTTL(timeToLive: number): void {
 		this.timeToLive = timeToLive;
 		this.initialTimeToLive = timeToLive;
 	}
 	/**
 	* TODO
 	*/
-	setInitialColor(color) {
+	setInitialColor(color: Color): void {
 		this.color = color;
 		this.initialColor = color;
 	}
@@ -339,7 +340,7 @@ export class SourceEngineParticle {
 	* Set particle initial rotation roll.
 	* @param {Number} roll Initial rotation roll.
 	*/
-	setInitialRoll(roll) {
+	setInitialRoll(roll: number): void {
 		this.rotationRoll = roll;
 		this.initialRoll = roll;
 	}
@@ -350,7 +351,7 @@ export class SourceEngineParticle {
 	* @param {vec3|null} The receiving vector. Created if null.
 	* @return {vec3} The world position.
 	*/
-	getWorldPos(worldPos) {
+	getWorldPos(worldPos: vec3): vec3 {
 		worldPos = worldPos || vec3.create();
 		//vec3.transformQuat(worldPos, this.position, this.cpOrientation);
 		//vec3.transformQuat(worldPos, this.position, quat.create());
@@ -369,7 +370,7 @@ export class SourceEngineParticle {
 	* @param {vec3|null} The receiving vector. Created if null.
 	* @return {vec3} The world position.
 	*/
-	getLocalPos(worldPos) {
+	getLocalPos(worldPos: vec3): vec3 {
 		worldPos = worldPos || vec3.create();
 		vec3.transformQuat(worldPos, this.position, this.cpOrientation);
 		vec3.transformQuat(worldPos, this.position, quat.create());
