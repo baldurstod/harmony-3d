@@ -10,7 +10,7 @@ import { CDmxAttributeValue } from '../../export';
 
 export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 	#parameters: Record<string, any> = {};
-	particleSystem: SourceEngineParticleSystem;
+	protected particleSystem: SourceEngineParticleSystem;
 	material?: Material;//for renderers// TODO: put  in a subclas ?
 	materialLoaded = false;
 	paramList: ParamType[] = [];
@@ -19,6 +19,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 
 	constructor(system: SourceEngineParticleSystem) {
 		this.setNameId(this.functionName);
+		this.particleSystem = system;
 	}
 
 	get functionName() {
