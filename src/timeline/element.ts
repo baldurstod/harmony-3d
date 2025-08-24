@@ -53,7 +53,7 @@ export class TimelineElement {
 			const oldValue = property.getValue();
 			property.setValue(value);
 
-			new TimelineObserver().propertyChanged(this, name, oldValue, value);
+			TimelineObserver.propertyChanged(this, name, oldValue, value);
 		}
 
 	}
