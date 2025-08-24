@@ -1,7 +1,6 @@
 import { ShaderEventTarget } from '../shaders/shadereventtarget';
-
-import { ShaderType, WebGLShaderSource } from '../webgl/shadersource';
 import { Shaders } from '../shaders/shaders';
+import { ShaderType, WebGLShaderSource } from '../webgl/shadersource';
 
 export class ShaderManager {
 	static #displayCompileError = false;
