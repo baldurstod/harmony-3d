@@ -7,10 +7,10 @@ export class SpriteCardMaterial extends SourceEngineMaterial {
 	#initialized = false;
 
 	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
-		if (vmt['$color']) {
-			params.useSrgb = false;
-		}
 		super(repository, path, vmt, params);
+		if (vmt['$color']) {
+			this.useSrgb = false;
+		}
 
 		// Disable back face culling
 		this.renderFace(RenderFace.Both);

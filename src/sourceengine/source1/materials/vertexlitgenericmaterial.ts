@@ -7,11 +7,7 @@ import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialV
 export class VertexLitGenericMaterial extends SourceEngineMaterial {
 	#diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 	#initialized = false;
-
-	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
-		params.useSrgb = false;
-		super(repository, path, vmt, params);
-	}
+	useSrgb = false;
 
 	init(): void {
 		if (this.#initialized) {

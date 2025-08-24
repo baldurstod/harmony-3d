@@ -152,7 +152,7 @@ export enum TextureRole {
 export type SourceEngineMaterialParams = MaterialParams & {
 	//repository: string;
 	//path: string;
-	useSrgb?: boolean;
+	//useSrgb?: boolean;
 };
 
 export type SourceEngineMaterialVariables = any;/*TODO: improve type*/
@@ -170,6 +170,7 @@ export class SourceEngineMaterial extends Material {
 	proxies: Proxy[] = [];
 	variables = new Map<string, SourceEngineMaterialVariables>();
 	#textures = new Map<TextureRole, AnimatedTexture>();
+	protected useSrgb = true;
 
 	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
 		super(params);
@@ -238,7 +239,7 @@ export class SourceEngineMaterial extends Material {
 
 		const baseTexture = variables.get('$basetexture');
 		if (baseTexture) {
-			this.setColorMap(this.getTexture(TextureRole.Color, this.repository, baseTexture, vmt['$frame'] ?? 0, false, vmt.useSrgb ?? true));
+			this.setColorMap(this.getTexture(TextureRole.Color, this.repository, baseTexture, vmt['$frame'] ?? 0, false, this.useSrgb ?? true));
 		} else {
 			this.setColorMap(getDefaultTexture());
 		}

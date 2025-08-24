@@ -15,13 +15,7 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 	#eyeRight = vec3.create();
 	#irisProjectionU = vec4.create();
 	#irisProjectionV = vec4.create();
-
-	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
-		params.useSrgb = false;
-		super(repository, path, vmt, params);
-
-		//this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
-	}
+	useSrgb = false;
 
 	init(): void {
 		if (this.#initialized) {
