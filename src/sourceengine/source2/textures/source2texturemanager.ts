@@ -14,7 +14,7 @@ import { Source2SpriteSheet } from './source2spritesheet';
 import { Source2Texture } from './source2texture';
 import { formatCompression, ImageFormat, TextureCompressionMethod } from '../../../textures/enums';
 
-class Source2TextureManagerClass extends EventTarget {//TODO: keep event target ?
+class Source2TextureManagerClass {//TODO: keep event target ?
 	#vtexList = new Map2<string, string, Source2Texture>();
 	#texturesList = new Map<string, AnimatedTexture>();
 	#loadingTexturesList = new Map<string, Promise<AnimatedTexture>>();
@@ -24,8 +24,6 @@ class Source2TextureManagerClass extends EventTarget {//TODO: keep event target 
 	EXT_texture_compression_rgtc: any;
 
 	constructor() {
-		super();
-
 		new Graphics().ready.then(() => {
 			this.#defaultTexture = TextureManager.createCheckerTexture([127, 190, 255]);
 			this.#defaultTexture.addUser(this);

@@ -9,7 +9,7 @@ import { SourceEngineVTFLoader } from '../loaders/sourceenginevtfloader';
 import { SourceEngineVTF } from './sourceenginevtf';
 
 let internalTextureId = 0;
-class Source1TextureManagerClass extends EventTarget {//TODO: keep event target ?
+class Source1TextureManagerClass {
 	#texturesList = new Map2<string, string, AnimatedTexture>();
 	#vtfList = new Map2<string, string, SourceEngineVTF>();
 	#defaultTexture = new AnimatedTexture();
@@ -17,7 +17,6 @@ class Source1TextureManagerClass extends EventTarget {//TODO: keep event target 
 	fallbackRepository = '';
 
 	constructor() {
-		super();
 		new Graphics().ready.then(() => {
 			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255]));
 			this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255], undefined, undefined, true));
