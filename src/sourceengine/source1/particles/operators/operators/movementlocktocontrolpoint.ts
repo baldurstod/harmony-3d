@@ -4,12 +4,14 @@ import { SourceEngineParticleOperators } from '../../sourceengineparticleoperato
 import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { ERROR } from '../../../../../buildoptions';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 
 export class MovementLocktoControlPoint extends SourceEngineParticleOperator {
 	static functionName = 'Movement Lock to Control Point';
 	static once;
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 		this.addParam('distance fade range', PARAM_TYPE_INT, 0);
 

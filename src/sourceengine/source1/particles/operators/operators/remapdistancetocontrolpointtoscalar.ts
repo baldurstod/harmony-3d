@@ -4,13 +4,15 @@ import { SourceEngineParticleOperators } from '../../sourceengineparticleoperato
 import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { lerp, RemapValClamped } from '../../../../../math/functions';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 
 const tempVec3 = vec3.create();
 
 export class RemapDistanceToControlPointToScalar extends SourceEngineParticleOperator {
 	static functionName = 'Remap Distance to Control Point to Scalar';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('control point', PARAM_TYPE_INT, 0);
 		this.addParam('distance fade range', PARAM_TYPE_INT, 0);
 

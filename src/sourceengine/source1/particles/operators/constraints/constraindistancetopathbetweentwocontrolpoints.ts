@@ -1,8 +1,9 @@
 import { vec3 } from 'gl-matrix';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { clamp } from '../../../../../math/functions';
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const a = vec3.create();
 const b = vec3.create();
@@ -23,8 +24,9 @@ const b = vec3.create();
 
 export class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngineParticleOperator {
 	static functionName = 'Constrain distance to path between two control points';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		//this.setNameId('constrain distance to path between two control points');
 		this.addParam('start control point number', PARAM_TYPE_INT, 0);
 		this.addParam('end control point number', PARAM_TYPE_INT, 0);

@@ -1,15 +1,16 @@
 import { vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
 export class RemapDistanceToControlPointToVector extends SourceEngineParticleOperator {
 	static functionName = 'Remap Distance to Control Point to Vector';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('control point', PARAM_TYPE_INT, 0);
 		//this.addParam('distance fade range', PARAM_TYPE_INT, 0);
 

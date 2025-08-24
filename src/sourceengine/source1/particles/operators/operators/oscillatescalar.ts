@@ -1,27 +1,29 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { clamp } from '../../../../../math/functions';
 import { ParticleRandomFloat } from '../../../../common/particles/randomfloats';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class OscillateScalar extends SourceEngineParticleOperator {
 	static functionName = 'Oscillate Scalar';
-	constructor() {
-		super();
-			this.setNameId('Oscillate Scalar');
-			this.addParam('oscillation field', PARAM_TYPE_INT, 7);//Alpha
-			this.addParam('oscillation rate min', PARAM_TYPE_FLOAT, 0);
-			this.addParam('oscillation rate max', PARAM_TYPE_FLOAT, 0);
-			this.addParam('oscillation frequency min', PARAM_TYPE_FLOAT, 1);
-			this.addParam('oscillation frequency max', PARAM_TYPE_FLOAT, 1);
-			this.addParam('proportional 0/1', PARAM_TYPE_BOOL, true);
-			this.addParam('start time min', PARAM_TYPE_FLOAT, 0);
-			this.addParam('start time max', PARAM_TYPE_FLOAT, 0);
-			this.addParam('end time min', PARAM_TYPE_FLOAT, 0);
-			this.addParam('end time max', PARAM_TYPE_FLOAT, 0);
-			this.addParam('start/end proportional', PARAM_TYPE_BOOL, true);
-			this.addParam('oscillation multiplier', PARAM_TYPE_FLOAT, 2);
-			this.addParam('oscillation start phase', PARAM_TYPE_FLOAT, 0.5);
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
+		this.setNameId('Oscillate Scalar');
+		this.addParam('oscillation field', PARAM_TYPE_INT, 7);//Alpha
+		this.addParam('oscillation rate min', PARAM_TYPE_FLOAT, 0);
+		this.addParam('oscillation rate max', PARAM_TYPE_FLOAT, 0);
+		this.addParam('oscillation frequency min', PARAM_TYPE_FLOAT, 1);
+		this.addParam('oscillation frequency max', PARAM_TYPE_FLOAT, 1);
+		this.addParam('proportional 0/1', PARAM_TYPE_BOOL, true);
+		this.addParam('start time min', PARAM_TYPE_FLOAT, 0);
+		this.addParam('start time max', PARAM_TYPE_FLOAT, 0);
+		this.addParam('end time min', PARAM_TYPE_FLOAT, 0);
+		this.addParam('end time max', PARAM_TYPE_FLOAT, 0);
+		this.addParam('start/end proportional', PARAM_TYPE_BOOL, true);
+		this.addParam('oscillation multiplier', PARAM_TYPE_FLOAT, 2);
+		this.addParam('oscillation start phase', PARAM_TYPE_FLOAT, 0.5);
 		//	DMXELEMENT_UNPACK_FIELD_USERDATA('oscillation field', '7', int, m_nField, 'intchoice particlefield_scalar')
 		//	DMXELEMENT_UNPACK_FIELD('oscillation rate min', '0', float, m_RateMin)
 		//	DMXELEMENT_UNPACK_FIELD('oscillation rate max', '0', float, m_RateMax)
@@ -86,13 +88,13 @@ export class OscillateScalar extends SourceEngineParticleOperator {
 				let fl4Frequency = ParticleRandomFloat(particle.id, particle.system.operatorRandomSampleOffset);
 				fl4Frequency = m_FrequencyMin + fl4FrequencyWidth * fl4Frequency;
 
-				let fl4Rate= ParticleRandomFloat(particle.id, particle.system.operatorRandomSampleOffset + 1);
-				fl4Rate = m_RateMin +	fl4RateWidth * fl4Rate;
+				let fl4Rate = ParticleRandomFloat(particle.id, particle.system.operatorRandomSampleOffset + 1);
+				fl4Rate = m_RateMin + fl4RateWidth * fl4Rate;
 
 				let fl4Cos;
 				if (m_bProportional) {
 					fl4LifeTime = (particle.currentTime - particle.cTime) / particle.timeToLive;
-					fl4Cos = ((m_flOscMult *(fl4LifeTime * fl4Frequency)) + m_flOscAdd);
+					fl4Cos = ((m_flOscMult * (fl4LifeTime * fl4Frequency)) + m_flOscAdd);
 				} else {
 					fl4Cos = fl4CosFactor * fl4Frequency;
 				}

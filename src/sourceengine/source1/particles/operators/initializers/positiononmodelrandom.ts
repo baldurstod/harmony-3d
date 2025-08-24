@@ -1,17 +1,18 @@
 import { vec3 } from 'gl-matrix';
-
 import { RandomPointOnModel } from '../../../../../interfaces/randompointonmodel';
 import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
 
 const a = vec3.create();
 
 export class PositionOnModelRandom extends SourceEngineParticleOperator {
 	static functionName = 'Position on Model Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 		this.addParam('force to be inside model', PARAM_TYPE_INT, 0);
 		this.addParam('hitbox scale', PARAM_TYPE_INT, 1);

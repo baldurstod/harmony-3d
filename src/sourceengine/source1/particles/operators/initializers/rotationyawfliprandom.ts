@@ -1,10 +1,12 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 export class RotationYawFlipRandom extends SourceEngineParticleOperator {
 	static functionName = 'Rotation Yaw Flip Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('Flip Percentage', PARAM_TYPE_FLOAT, 0.5);
 	//DMXELEMENT_UNPACK_FIELD('Flip Percentage', '.5', float, m_flPercent)
 	}

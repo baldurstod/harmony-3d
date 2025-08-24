@@ -10,13 +10,14 @@ import { CDmxAttributeValue } from '../../export';
 
 export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 	#parameters: Record<string, any> = {};
-	particleSystem?: SourceEngineParticleSystem;
+	particleSystem: SourceEngineParticleSystem;
 	material?: Material;//for renderers// TODO: put  in a subclas ?
 	materialLoaded = false;
 	paramList: ParamType[] = [];
 	#endCapState = -1;
 	mesh?: Mesh;//for renderers// TODO: put  in a subclas ?
-	constructor() {
+
+	constructor(system: SourceEngineParticleSystem) {
 		this.setNameId(this.functionName);
 	}
 
@@ -71,14 +72,11 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 
 	doRender(particle: SourceEngineParticle[], elapsedTime: number, material: Material) { }
 
-	initRenderer(particleSystem: SourceEngineParticleSystem) { }
+	initRenderer(/*particleSystem: SourceEngineParticleSystem*/) { }
 
 	updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number) { }
 
 	emitParticle(creationTime: number, elapsedTime: number) {
-		if (!this.particleSystem) {
-			return;
-		}
 		return this.particleSystem.createParticle(creationTime, elapsedTime);
 	}
 
@@ -93,10 +91,6 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 
 	setMaterial(material: Material) {
 		this.material = material;
-	}
-
-	setParticleSystem(particleSystem: SourceEngineParticleSystem) {
-		this.particleSystem = particleSystem;
 	}
 
 	paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]) {

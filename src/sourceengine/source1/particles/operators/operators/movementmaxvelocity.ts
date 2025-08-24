@@ -1,15 +1,16 @@
 import { vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
 export class MovementMaxVelocity extends SourceEngineParticleOperator {
 	static functionName = 'Movement Max Velocity';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('Maximum Velocity', PARAM_TYPE_FLOAT, 0);
 	}
 

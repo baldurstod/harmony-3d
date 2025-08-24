@@ -1,13 +1,15 @@
 import { vec3 } from 'gl-matrix';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_FLOAT, PARAM_TYPE_VECTOR } from '../../constants';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class RandomForce extends SourceEngineParticleOperator {
 	static functionName = 'random force';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('min force', PARAM_TYPE_VECTOR, vec3.create());
 		this.addParam('max force', PARAM_TYPE_VECTOR, vec3.create());
 		this.addParam('amount of force', PARAM_TYPE_FLOAT, 0);

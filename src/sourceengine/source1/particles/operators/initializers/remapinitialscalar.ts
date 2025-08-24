@@ -1,11 +1,13 @@
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_FLOAT } from '../../constants';
 
 export class RemapInitialScalar extends SourceEngineParticleOperator {
 	static functionName = 'Remap Initial Scalar';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('input minimum', PARAM_TYPE_FLOAT, 0);
 		this.addParam('input maximum', PARAM_TYPE_FLOAT, 1);
 
@@ -27,8 +29,8 @@ export class RemapInitialScalar extends SourceEngineParticleOperator {
 
 
 		const currentTime = this.particleSystem.currentTime;
-		if ((emitterStartTime!=-1)&&(currentTime<emitterStartTime)) return;
-		if ((emitterEndTime!=-1)&&(currentTime>emitterEndTime)) return;
+		if ((emitterStartTime != -1) && (currentTime < emitterStartTime)) return;
+		if ((emitterEndTime != -1) && (currentTime > emitterEndTime)) return;
 
 
 		const inputMinimum = this.getParameter('input minimum');
@@ -41,8 +43,8 @@ export class RemapInitialScalar extends SourceEngineParticleOperator {
 
 		//const v = this.getInputValue(inputField, particle);
 		const v = particle.getField(inputField);
-		const d = (v-inputMinimum)/(inputMaximum-inputMinimum);
-		const out = d*(outputMaximum-outputMinimum)+outputMinimum;
+		const d = (v - inputMinimum) / (inputMaximum - inputMinimum);
+		const out = d * (outputMaximum - outputMinimum) + outputMinimum;
 		//out = clamp(out, outputMinimum, outputMaximum);
 
 		//this.setOutputValue(outputField, out, particle);

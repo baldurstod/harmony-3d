@@ -1,11 +1,13 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class LifetimeFromSequence extends SourceEngineParticleOperator {
 	static functionName = 'Lifetime From Sequence';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('Frames Per Second', PARAM_TYPE_FLOAT, 30);
 	}
 

@@ -1,11 +1,14 @@
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
+
 export class EmitNoise extends SourceEngineParticleOperator {
 	static functionName = 'emit noise';
-	remainder = 0;
-	constructor() {
-		super();
+	#remainder = 0;
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('emission_start_time', PARAM_TYPE_FLOAT, 0);
 		this.addParam('emission_duration', PARAM_TYPE_FLOAT, 0);
 		this.addParam('scale emission to used control points', PARAM_TYPE_FLOAT, 0);
@@ -33,11 +36,11 @@ export class EmitNoise extends SourceEngineParticleOperator {
 
 		let currentTime = this.particleSystem.currentTime;
 
-		if (currentTime<emission_start_time) return;
-		if (emission_duration!=0 && (currentTime>emission_start_time + emission_duration)) return;
+		if (currentTime < emission_start_time) return;
+		if (emission_duration != 0 && (currentTime > emission_start_time + emission_duration)) return;
 
-		let nToEmit = this.remainder + elapsedTime * emission_rate;
-		this.remainder = nToEmit % 1;
+		let nToEmit = this.#remainder + elapsedTime * emission_rate;
+		this.#remainder = nToEmit % 1;
 		nToEmit = Math.floor(nToEmit);
 
 		const timeStampStep = elapsedTime / nToEmit;

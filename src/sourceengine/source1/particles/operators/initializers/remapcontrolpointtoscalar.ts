@@ -1,15 +1,16 @@
 import { vec3 } from 'gl-matrix';
-
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_FLOAT } from '../../constants';
 
 const a = vec3.create();
 
 export class RemapControlPointToScalar extends SourceEngineParticleOperator {
 	static functionName = 'remap control point to scalar';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('operator strength scale control point', PARAM_TYPE_INT, 1);
 		this.addParam('input control point number', PARAM_TYPE_INT, 0);
 
@@ -24,23 +25,23 @@ export class RemapControlPointToScalar extends SourceEngineParticleOperator {
 
 		this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
 
-	/*
-				'operator start fadein' 'float' '0'
-				'operator end fadein' 'float' '0'
-				'operator start fadeout' 'float' '0'
-				'operator end fadeout' 'float' '0'
-				'operator fade oscillate' 'float' '0'
-				'emitter lifetime start time (seconds)' 'float' '-1'
-				'emitter lifetime end time (seconds)' 'float' '-1'
-				'input control point number' 'int' '1'
-				'input minimum' 'float' '0.25'
-				'input maximum' 'float' '1'
-				'input field 0-2 X/Y/Z' 'int' '0'
-				'output field' 'int' '7'
-				'output minimum' 'float' '1'
-				'output maximum' 'float' '0'
-				'output is scalar of initial random range' 'bool' '0'
-				*/
+		/*
+					'operator start fadein' 'float' '0'
+					'operator end fadein' 'float' '0'
+					'operator start fadeout' 'float' '0'
+					'operator end fadeout' 'float' '0'
+					'operator fade oscillate' 'float' '0'
+					'emitter lifetime start time (seconds)' 'float' '-1'
+					'emitter lifetime end time (seconds)' 'float' '-1'
+					'input control point number' 'int' '1'
+					'input minimum' 'float' '0.25'
+					'input maximum' 'float' '1'
+					'input field 0-2 X/Y/Z' 'int' '0'
+					'output field' 'int' '7'
+					'output minimum' 'float' '1'
+					'output maximum' 'float' '0'
+					'output is scalar of initial random range' 'bool' '0'
+					*/
 	}
 
 	doInit(particle, elapsedTime) {
@@ -59,10 +60,10 @@ export class RemapControlPointToScalar extends SourceEngineParticleOperator {
 		const cpNumber = this.getParameter('input control point number');
 
 		const cp = this.particleSystem.getControlPoint(cpNumber);
-		if (cp&&(inputField==0||inputField==1||inputField==2)) {
+		if (cp && (inputField == 0 || inputField == 1 || inputField == 2)) {
 			const v = cp._position[inputField];//this.getInputValue(inputField, cpNumber);
-			const d = (v-inputMinimum)/(inputMaximum-inputMinimum);
-			const out = d*(outputMaximum-outputMinimum)+outputMinimum;
+			const d = (v - inputMinimum) / (inputMaximum - inputMinimum);
+			const out = d * (outputMaximum - outputMinimum) + outputMinimum;
 			//out = Clamp(out, outputMinimum, outputMaximum);
 
 			this.setOutputValue(outputField, out, particle);
@@ -72,7 +73,7 @@ export class RemapControlPointToScalar extends SourceEngineParticleOperator {
 
 	getInputValue(inputField, cpNumber) {
 		console.log('Input field ' + inputField + ' ' + cpNumber);
-		if (inputField==0||inputField==1||inputField==2) {
+		if (inputField == 0 || inputField == 1 || inputField == 2) {
 			const cp = this.particleSystem.getControlPoint(cpNumber);
 			if (cp) {
 				return cp.getWorldPosition(a)[inputField];

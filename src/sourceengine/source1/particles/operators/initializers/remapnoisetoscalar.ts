@@ -1,12 +1,14 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_FLOAT } from '../../constants';
 import { TESTING } from '../../../../../buildoptions';
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class RemapNoiseToScalar extends SourceEngineParticleOperator {
 	static functionName = 'remap noise to scalar';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		if (TESTING) {
 			console.error('Fix this operator');
 		}

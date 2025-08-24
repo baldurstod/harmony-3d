@@ -1,8 +1,8 @@
 import { vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3_1 = vec3.create();
 const tempVec3_2 = vec3.create();
@@ -14,8 +14,9 @@ const a = vec3.create();
 
 export class RemapControlPointToVector extends SourceEngineParticleOperator {
 	static functionName = 'remap control point to vector';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('operator strength scale control point', PARAM_TYPE_INT, 1);
 		this.addParam('input control point number', PARAM_TYPE_INT, 0);
 
@@ -29,11 +30,11 @@ export class RemapControlPointToVector extends SourceEngineParticleOperator {
 
 		this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
 
-				/*'operator strength scale control point' 'int' '16'
-				'input control point number' 'int' '15'
-				'input maximum' 'vector3' '255 255 255'
-				'output field' 'int' '6'
-				'output maximum' 'vector3' '1 1 1'*/
+		/*'operator strength scale control point' 'int' '16'
+		'input control point number' 'int' '15'
+		'input maximum' 'vector3' '255 255 255'
+		'output field' 'int' '6'
+		'output maximum' 'vector3' '1 1 1'*/
 	}
 
 	doInit(particle, elapsedTime) {
@@ -53,7 +54,7 @@ export class RemapControlPointToVector extends SourceEngineParticleOperator {
 			const v1Delta = vec3.div(tempVec3_4, vDelta, iDelta);
 
 			const v2Delta = vec3.mul(tempVec3_5, v1Delta, oDelta);
-			vec3.add(v2Delta, v2Delta,outputMinimum);
+			vec3.add(v2Delta, v2Delta, outputMinimum);
 
 			particle.setInitialField(outputField, v2Delta, init);
 		}
@@ -61,7 +62,7 @@ export class RemapControlPointToVector extends SourceEngineParticleOperator {
 
 	getInputValue(inputField, cpNumber) {
 		console.log('Input field ' + inputField + ' ' + cpNumber);
-		if (inputField==0||inputField==1||inputField==2) {
+		if (inputField == 0 || inputField == 1 || inputField == 2) {
 			const cp = this.particleSystem.getControlPoint(cpNumber);
 			if (cp) {
 				return cp.getWorldPosition(a)[inputField];

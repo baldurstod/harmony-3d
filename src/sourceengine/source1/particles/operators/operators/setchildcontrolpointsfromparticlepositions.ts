@@ -1,6 +1,5 @@
 import { quat, vec3 } from 'gl-matrix';
-import { RAD_TO_DEG } from '../../../../../math/constants';
-import { CDmxAttributeValue } from '../../../export';
+import { CDmxAttributeValue, SourceEngineParticleSystem } from '../../../export';
 import { PARAM_TYPE_INT } from '../../constants';
 import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
@@ -16,8 +15,8 @@ export class SetChildControlPointsFromParticlePositions extends SourceEnginePart
 	static functionName = 'Set child control points from particle positions';
 	#setCpOrientation = DEFAULT_SET_CP_ORIENTATION_FOR_PARTICLES;
 
-	constructor() {
-		super();
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('# of control points to set', PARAM_TYPE_INT, 1);
 		this.addParam('First control point to set', PARAM_TYPE_INT, 0);
 	}

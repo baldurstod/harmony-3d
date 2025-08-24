@@ -1,17 +1,18 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { DEG_TO_RAD } from '../../../../../math/constants';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
 export class MovementRotateParticleAroundAxis extends SourceEngineParticleOperator {
 	static functionName = 'Movement Rotate Particle Around Axis';
 	once = true;
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('Rotation Axis', PARAM_TYPE_VECTOR, vec3.fromValues(0, 0, 1));
 		this.addParam('Rotation Rate', PARAM_TYPE_FLOAT, 180);
 		this.addParam('Control Point', PARAM_TYPE_INT, 0);
@@ -58,14 +59,14 @@ export class MovementRotateParticleAroundAxis extends SourceEngineParticleOperat
 			vec3.transformQuat(axis2, axis2, q);
 
 
-			mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate*elapsedTime), axis2);
+			mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis2);
 			vec3.transformMat4(particle.position, particle.position, modelView);
 			vec3.add(particle.position, particle.position, tempVec3);
 
 			vec3.transformMat4(particle.prevPosition, particle.prevPosition, modelView);
 			vec3.add(particle.prevPosition, particle.prevPosition, tempVec3);
 		} else {
-			mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate*elapsedTime), axis);
+			mat4.rotate(modelView, modelView, DEG_TO_RAD * (rate * elapsedTime), axis);
 			vec3.transformMat4(particle.position, particle.position, modelView);
 		}
 	}

@@ -1,11 +1,13 @@
+import { PARAM_TYPE_FLOAT } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_INT, PARAM_TYPE_FLOAT } from '../../constants';
 
 export class RotationSpinYaw extends SourceEngineParticleOperator {
 	static functionName = 'Rotation Spin Yaw';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('yaw_rate_degrees', PARAM_TYPE_FLOAT, 0);
 	}
 

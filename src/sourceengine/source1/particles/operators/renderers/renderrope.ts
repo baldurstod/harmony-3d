@@ -1,20 +1,20 @@
 import { vec2 } from 'gl-matrix';
 
 import { Graphics } from '../../../../../graphics/graphics';
+import { RenderFace } from '../../../../../materials/constants';
+import { DEG_TO_RAD } from '../../../../../math/constants';
 import { Mesh } from '../../../../../objects/mesh';
 import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geometries/beambuffergeometry';
+import { Texture } from '../../../../../textures/texture';
 import { TextureManager } from '../../../../../textures/texturemanager';
+import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../../../../../webgl/constants';
+import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
+import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { Source1ParticleControler } from '../../source1particlecontroler';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_INT, PARAM_TYPE_FLOAT } from '../../constants';
-import { DEG_TO_RAD } from '../../../../../math/constants';
-import { GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_NEAREST, GL_FLOAT, GL_RGBA, GL_RGBA32F, } from '../../../../../webgl/constants';
-import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
-import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
-import { RenderFace } from '../../../../../materials/constants';
-import { Texture } from '../../../../../textures/texture';
-import { BufferGeometry } from '../../../../../geometry/buffergeometry';
 
 const tempVec2 = vec2.create();
 
@@ -24,8 +24,9 @@ export class RenderRope extends SourceEngineParticleOperator {
 	texture: Texture;
 	geometry: BeamBufferGeometry;
 	imgData;
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('subdivision_count', PARAM_TYPE_INT, 3);
 		this.addParam('texel_size', PARAM_TYPE_FLOAT, 4.0);
 		this.addParam('texture_scroll_rate', PARAM_TYPE_FLOAT, 0.0);
@@ -126,9 +127,9 @@ export class RenderRope extends SourceEngineParticleOperator {
 		//this._initBuffers();
 	}
 
-	initRenderer(particleSystem) {
+	initRenderer() {
 		this.geometry = new BeamBufferGeometry();
-		this.mesh = new Mesh(this.geometry, particleSystem.material);
+		this.mesh = new Mesh(this.geometry, this.particleSystem.material);
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('IS_ROPE');
@@ -136,11 +137,11 @@ export class RenderRope extends SourceEngineParticleOperator {
 		this.#createParticlesTexture();
 		this.mesh.setUniform('uParticles', this.texture);
 
-		this.maxParticles = particleSystem.maxParticles;
-		particleSystem.addChild(this.mesh);
+		this.maxParticles = this.particleSystem.maxParticles;
+		this.particleSystem.addChild(this.mesh);
 
 		this.setOrientationType(this.getParameter('orientation_type'));//TODO: remove orientation_type : only for RenderAnimatedSprites
-		particleSystem.material.renderFace(RenderFace.Both);
+		this.particleSystem.material.renderFace(RenderFace.Both);
 /*
 		switch (orientation) {
 			case 0: //always face camera

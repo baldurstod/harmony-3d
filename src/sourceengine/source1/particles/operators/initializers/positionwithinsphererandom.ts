@@ -1,16 +1,17 @@
 import { quat, vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
+import { lerp, RandomVectorInUnitSphere, vec3RandomBox } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { vec3RandomBox, lerp, RandomVectorInUnitSphere } from '../../../../../math/functions';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
 export class PositionWithinSphereRandom extends SourceEngineParticleOperator {
 	static functionName = 'Position Within Sphere Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('distance_min', PARAM_TYPE_FLOAT, 0);
 		this.addParam('distance_max', PARAM_TYPE_FLOAT, 0);
 		this.addParam('distance_bias', PARAM_TYPE_VECTOR, vec3.fromValues(1, 1, 1));
@@ -20,20 +21,20 @@ export class PositionWithinSphereRandom extends SourceEngineParticleOperator {
 		this.addParam('speed_min', PARAM_TYPE_FLOAT, 0);
 		this.addParam('speed_max', PARAM_TYPE_FLOAT, 0);
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
-	//	DMXELEMENT_UNPACK_FIELD('distance_min', '0', float, m_fRadiusMin)
-	//	DMXELEMENT_UNPACK_FIELD('distance_max', '0', float, m_fRadiusMax)
-	//	DMXELEMENT_UNPACK_FIELD('distance_bias', '1 1 1', Vector, m_vecDistanceBias)
-	//	DMXELEMENT_UNPACK_FIELD('distance_bias_absolute_value', '0 0 0', Vector, m_vecDistanceBiasAbs)
-	//	DMXELEMENT_UNPACK_FIELD('bias in local system', '0', bool, m_bLocalCoords)
-	//	DMXELEMENT_UNPACK_FIELD('control_point_number', '0', int, m_nControlPointNumber)
-	//	DMXELEMENT_UNPACK_FIELD('speed_min', '0', float, m_fSpeedMin)
-	//	DMXELEMENT_UNPACK_FIELD('speed_max', '0', float, m_fSpeedMax)
-	//	DMXELEMENT_UNPACK_FIELD('speed_random_exponent', '1', float, m_fSpeedRandExp)
-	//	DMXELEMENT_UNPACK_FIELD('speed_in_local_coordinate_system_min', '0 0 0', Vector, m_LocalCoordinateSystemSpeedMin)
-	//	DMXELEMENT_UNPACK_FIELD('speed_in_local_coordinate_system_max', '0 0 0', Vector, m_LocalCoordinateSystemSpeedMax)
-	//	DMXELEMENT_UNPACK_FIELD('create in model', '0', int, m_nCreateInModel)
-	//	DMXELEMENT_UNPACK_FIELD('randomly distribute to highest supplied Control Point', '0', bool, m_bUseHighestEndCP)
-	//	DMXELEMENT_UNPACK_FIELD('randomly distribution growth time', '0', float, m_flEndCPGrowthTime)
+		//	DMXELEMENT_UNPACK_FIELD('distance_min', '0', float, m_fRadiusMin)
+		//	DMXELEMENT_UNPACK_FIELD('distance_max', '0', float, m_fRadiusMax)
+		//	DMXELEMENT_UNPACK_FIELD('distance_bias', '1 1 1', Vector, m_vecDistanceBias)
+		//	DMXELEMENT_UNPACK_FIELD('distance_bias_absolute_value', '0 0 0', Vector, m_vecDistanceBiasAbs)
+		//	DMXELEMENT_UNPACK_FIELD('bias in local system', '0', bool, m_bLocalCoords)
+		//	DMXELEMENT_UNPACK_FIELD('control_point_number', '0', int, m_nControlPointNumber)
+		//	DMXELEMENT_UNPACK_FIELD('speed_min', '0', float, m_fSpeedMin)
+		//	DMXELEMENT_UNPACK_FIELD('speed_max', '0', float, m_fSpeedMax)
+		//	DMXELEMENT_UNPACK_FIELD('speed_random_exponent', '1', float, m_fSpeedRandExp)
+		//	DMXELEMENT_UNPACK_FIELD('speed_in_local_coordinate_system_min', '0 0 0', Vector, m_LocalCoordinateSystemSpeedMin)
+		//	DMXELEMENT_UNPACK_FIELD('speed_in_local_coordinate_system_max', '0 0 0', Vector, m_LocalCoordinateSystemSpeedMax)
+		//	DMXELEMENT_UNPACK_FIELD('create in model', '0', int, m_nCreateInModel)
+		//	DMXELEMENT_UNPACK_FIELD('randomly distribute to highest supplied Control Point', '0', bool, m_bUseHighestEndCP)
+		//	DMXELEMENT_UNPACK_FIELD('randomly distribution growth time', '0', float, m_flEndCPGrowthTime)
 	}
 
 	doInit(particle, elapsedTime) {
@@ -56,7 +57,7 @@ export class PositionWithinSphereRandom extends SourceEngineParticleOperator {
 		const speed = (speed_max - speed_min) * Math.random() + speed_min;
 
 		//const v = vec3.random(vec3.create(), distance);
-				//Lerp(flLength, m_fRadiusMin, m_fRadiusMax);
+		//Lerp(flLength, m_fRadiusMin, m_fRadiusMax);
 
 
 		const randpos = vec3.create();//, randDir;
@@ -66,7 +67,7 @@ export class PositionWithinSphereRandom extends SourceEngineParticleOperator {
 			const flLength = RandomVectorInUnitSphere(randpos);
 
 			// Absolute value and biasing for creating hemispheres and ovoids.
-			if (m_bDistanceBiasAbs	) {
+			if (m_bDistanceBiasAbs) {
 				if (m_vecDistanceBiasAbs[0] != 0.0) {
 					randpos[0] = Math.abs(randpos[0]);
 				}

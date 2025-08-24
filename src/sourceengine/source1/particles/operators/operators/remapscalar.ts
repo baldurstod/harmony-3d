@@ -1,10 +1,13 @@
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
+
 export class RemapScalar extends SourceEngineParticleOperator {
 	static functionName = 'remap scalar';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('input minimum', PARAM_TYPE_FLOAT, 0);
 		this.addParam('input maximum', PARAM_TYPE_FLOAT, 1);
 
@@ -28,8 +31,8 @@ export class RemapScalar extends SourceEngineParticleOperator {
 
 		//const v = this.getInputValue(inputField, particle);
 		const v = particle.getField(inputField, init);
-		const d = (v-inputMinimum)/(inputMaximum-inputMinimum);
-		const out = d*(outputMaximum-outputMinimum)+outputMinimum;
+		const d = (v - inputMinimum) / (inputMaximum - inputMinimum);
+		const out = d * (outputMaximum - outputMinimum) + outputMinimum;
 
 		this.setOutputValue(outputField, out, particle);
 

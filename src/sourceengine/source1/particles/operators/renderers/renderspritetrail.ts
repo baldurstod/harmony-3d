@@ -1,29 +1,30 @@
 import { vec3 } from 'gl-matrix';
-
-import { Graphics } from '../../../../../graphics/graphics';
-import { Mesh } from '../../../../../objects/mesh';
-import { BufferGeometry } from '../../../../../geometry/buffergeometry';
-import { TextureManager } from '../../../../../textures/texturemanager';
-import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
-import { Source1ParticleControler } from '../../source1particlecontroler';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_FLOAT } from '../../constants';
-import { GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_NEAREST, GL_FLOAT, GL_RGBA, GL_RGBA32F, } from '../../../../../webgl/constants';
-import { DEG_TO_RAD } from '../../../../../math/constants';
-import { clamp, ceilPowerOfTwo } from '../../../../../math/functions';
 import { TESTING } from '../../../../../buildoptions';
+import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
+import { BufferGeometry } from '../../../../../geometry/buffergeometry';
+import { Graphics } from '../../../../../graphics/graphics';
+import { DEG_TO_RAD } from '../../../../../math/constants';
+import { ceilPowerOfTwo, clamp } from '../../../../../math/functions';
+import { Mesh } from '../../../../../objects/mesh';
+import { Texture } from '../../../../../textures/texture';
+import { TextureManager } from '../../../../../textures/texturemanager';
+import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../../../../../webgl/constants';
 import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
-import { Texture } from '../../../../../textures/texture';
+import { PARAM_TYPE_FLOAT } from '../../constants';
+import { Source1ParticleControler } from '../../source1particlecontroler';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class RenderSpriteTrail extends SourceEngineParticleOperator {
 	static functionName = 'render_sprite_trail';
 	texture: Texture;
 	geometry: BufferGeometry;
 	imgData;
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('animation rate', PARAM_TYPE_FLOAT, 0.1);
 		this.addParam('length fade in time', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('max length', PARAM_TYPE_FLOAT, 2000.0);
@@ -78,8 +79,8 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		}
 	}
 
-	initRenderer(particleSystem) {
-		const maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+	initRenderer() {
+		const maxParticles = new Graphics().isWebGL2 ? this.particleSystem.maxParticles : ceilPowerOfTwo(this.particleSystem.maxParticles);
 		this.createParticlesArray(maxParticles);
 		this.#createParticlesTexture();
 		const vertices = [];
@@ -106,15 +107,15 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 
 		geometry.count = indices.length;
 
-		this.mesh = new Mesh(geometry, particleSystem.material);
+		this.mesh = new Mesh(geometry, this.particleSystem.material);
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
 		this.mesh.setUniform('uParticles', this.texture);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
-		particleSystem.addChild(this.mesh);
+		this.particleSystem.addChild(this.mesh);
 		this.geometry = geometry;
-		particleSystem.material.setDefine('RENDER_SPRITE_TRAIL');
+		this.particleSystem.material.setDefine('RENDER_SPRITE_TRAIL');
 		//particleSystem.material.setDefine('PARTICLE_ORIENTATION_SCREEN_ALIGNED');
 		this.setOrientationType(0);
 	}

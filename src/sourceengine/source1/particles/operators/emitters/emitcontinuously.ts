@@ -1,12 +1,14 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class EmitContinuously extends SourceEngineParticleOperator {
 	static functionName = 'emit continuously';
 	remainder = 0;
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		//this.setNameId('Emit Continuously');
 		this.addParam('emission_start_time', PARAM_TYPE_FLOAT, 0);
 		this.addParam('emission_rate', PARAM_TYPE_FLOAT, 100);

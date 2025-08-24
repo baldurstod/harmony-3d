@@ -88,7 +88,7 @@ export class SourcePCF {
 		for (let i = 0; i < list.length; ++i) {
 			const ope = list[i] as CDmxElement/*TODO: check actual value*/;
 			if (ope.type == 'DmeParticleOperator') {
-				const operator = SourceEngineParticleOperators.getOperator(ope.name);
+				const operator = SourceEngineParticleOperators.getOperator(system, ope.name);
 				if (operator) {
 					system.addSub(listType, operator, generateRandomUUID());
 					this.addAttributes(operator, ope.attributes);

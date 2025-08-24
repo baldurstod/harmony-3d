@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { ExponentialDecay } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
 
 const gravity_const = 0.5;
@@ -11,8 +12,9 @@ const tempVec3_3 = vec3.create();
 
 export class MovementBasic extends SourceEngineParticleOperator {
 	static functionName = 'Movement Basic';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('drag', PARAM_TYPE_FLOAT, 0);
 		this.addParam('gravity', PARAM_TYPE_VECTOR, vec3.create());
 		this.addParam('max constraint passes', PARAM_TYPE_INT, 3);

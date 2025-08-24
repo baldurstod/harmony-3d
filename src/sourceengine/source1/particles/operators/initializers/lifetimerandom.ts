@@ -1,12 +1,14 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_FLOAT } from '../../constants';
 import { RandomFloatExp } from '../../../../../math/functions';
+import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class LifetimeRandom extends SourceEngineParticleOperator {
 	static functionName = 'Lifetime Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('lifetime_min', PARAM_TYPE_FLOAT, 0);
 		this.addParam('lifetime_max', PARAM_TYPE_FLOAT, 0);
 		this.addParam('lifetime_random_exponent', PARAM_TYPE_FLOAT, 1);

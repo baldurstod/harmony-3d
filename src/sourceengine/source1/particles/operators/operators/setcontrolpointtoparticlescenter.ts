@@ -1,16 +1,18 @@
 import { vec3 } from 'gl-matrix';
 
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3_min = vec3.create();
 const tempVec3_max = vec3.create();
 
 export class SetControlPointToParticlesCenter extends SourceEngineParticleOperator {
 	static functionName = 'Set Control Point to Particles\' Center';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('Control Point Number to Set', PARAM_TYPE_INT, 1);
 		this.addParam('Center Offset', PARAM_TYPE_VECTOR3, vec3.fromValues(0, 0, 0));
 	}

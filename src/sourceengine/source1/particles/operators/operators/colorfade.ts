@@ -3,11 +3,13 @@ import { SourceEngineParticleOperator } from '../operator';
 import { Color, WHITE } from '../../color';
 import { PARAM_TYPE_COLOR, PARAM_TYPE_FLOAT, PARAM_TYPE_BOOL } from '../../constants';
 import { clamp, SimpleSpline } from '../../../../../math/functions';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 
 export class ColorFade extends SourceEngineParticleOperator {
 	static functionName = 'Color Fade';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('color_fade', PARAM_TYPE_COLOR, WHITE);
 		this.addParam('fade_start_time', PARAM_TYPE_FLOAT, 0);
 		this.addParam('fade_end_time', PARAM_TYPE_FLOAT, 1);

@@ -1,13 +1,15 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
-import { AddSIMD, AndSIMD, Bias, BiasSIMD, CmpGeSIMD, CmpGtSIMD, CmpLtSIMD, MulSIMD, ReciprocalEstSIMD, ReciprocalSIMD, SubSIMD } from '../../../../common/math/sse';
 import { SimpleSpline } from '../../../../../math/functions';
+import { AddSIMD, AndSIMD, BiasSIMD, CmpGeSIMD, CmpGtSIMD, CmpLtSIMD, MulSIMD, ReciprocalEstSIMD, ReciprocalSIMD, SubSIMD } from '../../../../common/math/sse';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class RadiusScale extends SourceEngineParticleOperator {
 	static functionName = 'Radius Scale';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('radius_start_scale', PARAM_TYPE_FLOAT, 1);
 		this.addParam('radius_end_scale', PARAM_TYPE_FLOAT, 1);
 		this.addParam('start_time', PARAM_TYPE_FLOAT, 0);
@@ -32,7 +34,7 @@ export class RadiusScale extends SourceEngineParticleOperator {
 
 		const fl4OOTimeWidth = ReciprocalSIMD(SubSIMD(end_time, start_time));
 
-		const biasParam =	1 / scaleBias - 2;
+		const biasParam = 1 / scaleBias - 2;
 		const fl4LifeDuration = particle.timeToLive;
 		let fl4GoodMask = CmpGtSIMD(fl4LifeDuration, 0);
 		const fl4CurTime = this.particleSystem.currentTime;
@@ -45,7 +47,7 @@ export class RadiusScale extends SourceEngineParticleOperator {
 		if (fl4GoodMask/* IsAnyNegative(fl4GoodMask) */) {
 			let fl4FadeWindow = MulSIMD(SubSIMD(fl4LifeTime, start_time), fl4OOTimeWidth);
 			if (easeInAndOut) {
-					fl4FadeWindow = AddSIMD(radius_start_scale, MulSIMD(SimpleSpline(fl4FadeWindow), fl4ScaleWidth));
+				fl4FadeWindow = AddSIMD(radius_start_scale, MulSIMD(SimpleSpline(fl4FadeWindow), fl4ScaleWidth));
 			} else {
 				if (scaleBias != 0.5) {
 					fl4FadeWindow = AddSIMD(radius_start_scale, MulSIMD(BiasSIMD(fl4FadeWindow, biasParam), fl4ScaleWidth));

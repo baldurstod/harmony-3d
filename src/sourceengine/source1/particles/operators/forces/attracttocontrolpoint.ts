@@ -1,21 +1,23 @@
 import { vec3 } from 'gl-matrix';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { FLT_EPSILON } from '../../../../../math/constants';
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
 export class AttractToControlPoint extends SourceEngineParticleOperator {
-	static functionName =  'Pull towards control point';
-	constructor() {
-		super();
+	static functionName = 'Pull towards control point';
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('control point number', PARAM_TYPE_INT, 0);
 		this.addParam('amount of force', PARAM_TYPE_FLOAT, 0);
 		this.addParam('falloff power', PARAM_TYPE_FLOAT, 2);
-	//	DMXELEMENT_UNPACK_FIELD('amount of force', '0', float, m_fForceAmount)
-	//	DMXELEMENT_UNPACK_FIELD('falloff power', '2', float, m_fFalloffPower)
-	//	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
+		//	DMXELEMENT_UNPACK_FIELD('amount of force', '0', float, m_fForceAmount)
+		//	DMXELEMENT_UNPACK_FIELD('falloff power', '2', float, m_fFalloffPower)
+		//	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
 	}
 
 	doForce(particle, elapsedTime, accumulatedForces) {

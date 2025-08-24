@@ -1,14 +1,16 @@
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_INT, PARAM_TYPE_FLOAT } from '../../constants';
 /**
  *TODO
  */
 export class EmitInstantaneously extends SourceEngineParticleOperator {
 	static functionName = 'emit_instantaneously';
-	emitted = false;
-	constructor() {
-		super();
+	#emitted = false;
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		//this.setNameId('Emit Instantaneously');
 		this.addParam('emission_start_time', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('num_to_emit_minimum', PARAM_TYPE_INT, -1);
@@ -17,17 +19,17 @@ export class EmitInstantaneously extends SourceEngineParticleOperator {
 		this.addParam('emission count scale control point', PARAM_TYPE_INT, -1);
 		this.addParam('emission count scale control point field', PARAM_TYPE_INT, 0);
 
-	//	DMXELEMENT_UNPACK_FIELD('emission_start_time', '0', float, m_flStartTime)
-	//	DMXELEMENT_UNPACK_FIELD('num_to_emit_minimum', '-1', int, m_nMinParticlesToEmit)
-	//	DMXELEMENT_UNPACK_FIELD('num_to_emit', '100', int, m_nParticlesToEmit)
-	//	DMXELEMENT_UNPACK_FIELD('maximum emission per frame', '-1', int, m_nPerFrameNum)
-	//	DMXELEMENT_UNPACK_FIELD('emission count scale control point', '-1', int, m_nScaleControlPoint)
-	//	DMXELEMENT_UNPACK_FIELD('emission count scale control point field', '0', int, m_nScaleControlPointField)
+		//	DMXELEMENT_UNPACK_FIELD('emission_start_time', '0', float, m_flStartTime)
+		//	DMXELEMENT_UNPACK_FIELD('num_to_emit_minimum', '-1', int, m_nMinParticlesToEmit)
+		//	DMXELEMENT_UNPACK_FIELD('num_to_emit', '100', int, m_nParticlesToEmit)
+		//	DMXELEMENT_UNPACK_FIELD('maximum emission per frame', '-1', int, m_nPerFrameNum)
+		//	DMXELEMENT_UNPACK_FIELD('emission count scale control point', '-1', int, m_nScaleControlPoint)
+		//	DMXELEMENT_UNPACK_FIELD('emission count scale control point field', '0', int, m_nScaleControlPointField)
 
 	}
 
 	doEmit(elapsedTime) {
-		if (this.emitted) {
+		if (this.#emitted) {
 			return;
 		}
 
@@ -37,21 +39,21 @@ export class EmitInstantaneously extends SourceEngineParticleOperator {
 		const currentTime = this.particleSystem.currentTime;
 		if (currentTime < m_flStartTime) return;
 
-		for (let i = 0; i<num_to_emit; ++i) {
+		for (let i = 0; i < num_to_emit; ++i) {
 			const particle = this.emitParticle(currentTime, elapsedTime);//TODO: change particle time ?
-			if (particle==null) {
+			if (particle == null) {
 				break; // Break if a particule can't emitted (max reached)
 			}
 		}
-		this.emitted = true;
+		this.#emitted = true;
 	}
 
 	reset() {
-		this.emitted = false;
+		this.#emitted = false;
 	}
 
 	finished() {
-		return this.emitted;
+		return this.#emitted;
 	}
 }
 SourceEngineParticleOperators.registerOperator(EmitInstantaneously);

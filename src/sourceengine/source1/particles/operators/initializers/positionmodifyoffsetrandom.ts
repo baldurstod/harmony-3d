@@ -1,26 +1,27 @@
 import { vec2, vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { vec3RandomBox } from '../../../../../math/functions';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
 export class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
 	static functionName = 'Position Modify Offset Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('offset min', PARAM_TYPE_VECTOR, vec3.create());
 		this.addParam('offset max', PARAM_TYPE_VECTOR, vec3.create());
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 		this.addParam('offset in local space 0/1', PARAM_TYPE_BOOL, 0);
 		this.addParam('offset proportional to radius 0/1', PARAM_TYPE_BOOL, 0);
-	//	DMXELEMENT_UNPACK_FIELD('control_point_number', '0', int, m_nControlPointNumber)
-	//	DMXELEMENT_UNPACK_FIELD('offset min', '0 0 0', Vector, m_OffsetMin)
-	//	DMXELEMENT_UNPACK_FIELD('offset max', '0 0 0', Vector, m_OffsetMax)
-	//	DMXELEMENT_UNPACK_FIELD('offset in local space 0/1', '0', bool, m_bLocalCoords)
-	//	DMXELEMENT_UNPACK_FIELD('offset proportional to radius 0/1', '0', bool, m_bProportional)
+		//	DMXELEMENT_UNPACK_FIELD('control_point_number', '0', int, m_nControlPointNumber)
+		//	DMXELEMENT_UNPACK_FIELD('offset min', '0 0 0', Vector, m_OffsetMin)
+		//	DMXELEMENT_UNPACK_FIELD('offset max', '0 0 0', Vector, m_OffsetMax)
+		//	DMXELEMENT_UNPACK_FIELD('offset in local space 0/1', '0', bool, m_bLocalCoords)
+		//	DMXELEMENT_UNPACK_FIELD('offset proportional to radius 0/1', '0', bool, m_bProportional)
 	}
 
 	doInit(particle, elapsedTime) {

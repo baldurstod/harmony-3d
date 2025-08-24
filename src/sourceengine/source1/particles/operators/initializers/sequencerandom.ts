@@ -1,10 +1,13 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
+
 export class SequenceRandom extends SourceEngineParticleOperator {
 	static functionName = 'Sequence Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('sequence_min', PARAM_TYPE_FLOAT, 0);
 		this.addParam('sequence_max', PARAM_TYPE_FLOAT, 0);
 	}

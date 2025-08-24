@@ -14,6 +14,7 @@ import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { Source1ParticleControler } from '../../source1particlecontroler';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
 
 const tempQuat = quat.create()
@@ -28,8 +29,8 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 	#maxParticles;
 	imgData;
 
-	constructor() {
-		super();
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('animation rate', PARAM_TYPE_FLOAT, 0.1);
 		this.addParam('animation_fit_lifetime', PARAM_TYPE_BOOL, 0);
 		this.addParam('orientation_type', PARAM_TYPE_INT, 0);
@@ -139,17 +140,17 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 		this.mesh.setUniform('uMaxParticles', this.#maxParticles);//TODOv3:optimize
 	}
 
-	initRenderer(particleSystem) {
+	initRenderer(): void {
 		this.geometry = new BufferGeometry();
-		this.mesh = new Mesh(this.geometry, particleSystem.material);
+		this.mesh = new Mesh(this.geometry, this.particleSystem.material);
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
 		this.#createParticlesTexture();
 		this.mesh.setUniform('uParticles', this.#texture);
 
-		this.maxParticles = particleSystem.maxParticles;
-		particleSystem.addChild(this.mesh);
+		this.maxParticles = this.particleSystem.maxParticles;
+		this.particleSystem.addChild(this.mesh);
 
 		this.#orientationType = this.getParameter('orientation_type');
 		this.setOrientationType(this.#orientationType);

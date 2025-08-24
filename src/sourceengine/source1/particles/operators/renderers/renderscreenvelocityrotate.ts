@@ -1,24 +1,26 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_FLOAT } from '../../constants';
 import { DEG_TO_RAD } from '../../../../../math/constants';
+import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 // Note: this operator doesn't render anything, it simply orientate the particle for other renderers
 export class RenderScreenVelocityRotate extends SourceEngineParticleOperator {
 	static functionName = 'render_screen_velocity_rotate';
 	isScreenVelocityRotate = true;
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('rotate_rate(dps)', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('forward_angle', PARAM_TYPE_FLOAT, -90.0);
 	}
-/*
-	doRender(particleList, elapsedTime, material) {
-		for (let i = 0; i < particleList.length; ++i) {
-			this.renderAnimatedSprites(particleList[i], elapsedTime, material);
+	/*
+		doRender(particleList, elapsedTime, material) {
+			for (let i = 0; i < particleList.length; ++i) {
+				this.renderAnimatedSprites(particleList[i], elapsedTime, material);
+			}
 		}
-	}
-*/
+	*/
 
 	updateParticles(particleSystem, particleList) {//TODOv3
 		const m_flRotateRate = this.getParameter('rotate_rate(dps)') * DEG_TO_RAD;
@@ -32,7 +34,7 @@ export class RenderScreenVelocityRotate extends SourceEngineParticleOperator {
 		}
 	}
 
-	initRenderer(particleSystem) {
+	initRenderer() {
 		// Nothing to do
 	}
 }

@@ -610,27 +610,27 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		switch (type) {
 			case 'operator':
 			case 'operators':
-				this.addOperator(object, id);
+				this.#addOperator(object, id);
 				break;
 			case 'force':
 			case 'forces':
-				this.addForce(object, id);
+				this.#addForce(object, id);
 				break;
 			case 'constraint':
 			case 'constraints':
-				this.addConstraint(object, id);
+				this.#addConstraint(object, id);
 				break;
 			case 'emitter':
 			case 'emitters':
-				this.addEmitter(object, id);
+				this.#addEmitter(object, id);
 				break;
 			case 'initializer':
 			case 'initializers':
-				this.addInitializer(object, id);
+				this.#addInitializer(object, id);
 				break;
 			case 'renderer':
 			case 'renderers':
-				this.addRenderer(object, id);
+				this.#addRenderer(object, id);
 				break;
 			default:
 				if (WARN) { console.warn('Unknown sub type ' + type); }
@@ -639,21 +639,19 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 
-	addEmitter(emitter: SourceEngineParticleOperator, id: string) {
+	#addEmitter(emitter: SourceEngineParticleOperator, id: string) {
 		this.emitters[id] = emitter;
-		emitter.setParticleSystem(this);
 	}
 
-	addInitializer(initializer: SourceEngineParticleOperator, id: string) {
+	#addInitializer(initializer: SourceEngineParticleOperator, id: string) {
 		this.initializers[id] = initializer;
-		initializer.setParticleSystem(this);
 	}
 
-	addOperator(operator: SourceEngineParticleOperator, id: string) {
+	#addOperator(operator: SourceEngineParticleOperator, id: string) {
 		this.operators[id] = operator;
-		operator.setParticleSystem(this);
 	}
 
+	/*
 	removeOperator(id: string) {//TODOv3 improve
 		delete this.emitters[id];
 		delete this.initializers[id];
@@ -664,23 +662,21 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		//delete this.childrenSystems[id];
 		//this.removeChild(id);
 	}
+	*/
 
 
-	addForce(force: SourceEngineParticleOperator, id: string) {
+	#addForce(force: SourceEngineParticleOperator, id: string) {
 		this.forces.set(id, force);
-		force.setParticleSystem(this);
 	}
 
-	addConstraint(constraint: SourceEngineParticleOperator, id: string) {
+	#addConstraint(constraint: SourceEngineParticleOperator, id: string) {
 		this.constraints[id] = constraint;
-		constraint.setParticleSystem(this);
 	}
 
-	addRenderer(renderer: SourceEngineParticleOperator, id: string) {
+	#addRenderer(renderer: SourceEngineParticleOperator, id: string) {
 		this.#renderers.set(id, renderer);
-		renderer.setParticleSystem(this);
 
-		this.#getMaterial().then((material) => renderer.initRenderer(this));
+		this.#getMaterial().then((material) => renderer.initRenderer());
 	}
 
 	getControlPoint(controlPointId: number): ControlPoint | null {

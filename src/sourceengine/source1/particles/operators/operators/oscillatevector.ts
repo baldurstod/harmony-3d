@@ -1,10 +1,10 @@
 import { vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
-import { AddSIMD, MaxSIMD, MinSIMD, MulSIMD, SinEst01SIMD, MaskedAssign, Four_Ones, Four_Zeros } from '../../../../common/math/sse';
+import { AddSIMD, Four_Ones, Four_Zeros, MaskedAssign, MaxSIMD, MinSIMD, MulSIMD, SinEst01SIMD } from '../../../../common/math/sse';
 import { ParticleRandomFloat, ParticleRandomVec3 } from '../../../../common/particles/randomfloats';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 /*					'oscillation field' 'int' '0'
 					'oscillation field' 'int' '16'
@@ -17,8 +17,9 @@ const tempVec3Rate = vec3.create();
 
 export class OscillateVector extends SourceEngineParticleOperator {
 	static functionName = 'Oscillate Vector';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('oscillation field', PARAM_TYPE_INT, 0);
 		this.addParam('oscillation rate min', PARAM_TYPE_VECTOR3, vec3.create());
 		this.addParam('oscillation rate max', PARAM_TYPE_VECTOR3, vec3.create());
@@ -135,9 +136,9 @@ export class OscillateVector extends SourceEngineParticleOperator {
 				const fvOutput = vec3.create();//TODO: perf//todov3optimize
 				this.getInputValueAsVector(m_nField, particle, fvOutput);//*pOscField;
 
-				fvOscVal[0] = AddSIMD (fvOutput[0], MulSIMD (fvOscMultiplier[0], SinEst01SIMD(fvCos[0])));
-				fvOscVal[1] = AddSIMD (fvOutput[1], MulSIMD (fvOscMultiplier[1], SinEst01SIMD(fvCos[1])));
-				fvOscVal[2] = AddSIMD (fvOutput[2], MulSIMD (fvOscMultiplier[2], SinEst01SIMD(fvCos[2])));
+				fvOscVal[0] = AddSIMD(fvOutput[0], MulSIMD(fvOscMultiplier[0], SinEst01SIMD(fvCos[0])));
+				fvOscVal[1] = AddSIMD(fvOutput[1], MulSIMD(fvOscMultiplier[1], SinEst01SIMD(fvCos[1])));
+				fvOscVal[2] = AddSIMD(fvOutput[2], MulSIMD(fvOscMultiplier[2], SinEst01SIMD(fvCos[2])));
 
 				const pOscField = vec3.create();//todov3optimize
 				if (m_nField == 6) {
@@ -161,7 +162,7 @@ export class OscillateVector extends SourceEngineParticleOperator {
 			//++pLifeDuration;
 			//++pOscField;
 			//++pParticleId;
-		//} while (--nCtr);
+			//} while (--nCtr);
 		}
 	}
 }

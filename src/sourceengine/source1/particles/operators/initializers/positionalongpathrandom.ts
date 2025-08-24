@@ -1,16 +1,17 @@
 import { vec3 } from 'gl-matrix';
-
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_BOOL } from '../../constants';
 
 const a = vec3.create();
 
 export class PositionAlongPathRandom extends SourceEngineParticleOperator {
 	static functionName = 'Position Along Path Random';
-	sequence = 0;
-	constructor() {
-		super();
+	#sequence = 0;
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('restart behavior (0 = bounce, 1 = loop )', PARAM_TYPE_BOOL, 0);
 		this.addParam('particles to map from start to end', PARAM_TYPE_FLOAT, 2);
 		this.addParam('mid point position', PARAM_TYPE_FLOAT, 0.5);
@@ -32,18 +33,18 @@ export class PositionAlongPathRandom extends SourceEngineParticleOperator {
 
 		const delta = startCP.deltaPosFrom(endCP);
 
-		const s = this.sequence / nbPart;
+		const s = this.#sequence / nbPart;
 		vec3.scale(delta, delta, Math.random());
 		vec3.add(particle.position, startCP.getWorldPosition(a), delta);
 		vec3.copy(particle.prevPosition, particle.position);
-		++this.sequence;
-		if (this.sequence>nbPart) {//TODO: handle loop
-			this.sequence = 0;
+		++this.#sequence;
+		if (this.#sequence > nbPart) {//TODO: handle loop
+			this.#sequence = 0;
 		}
 	}
 
 	reset() {
-		this.sequence = 0;
+		this.#sequence = 0;
 	}
 }
 SourceEngineParticleOperators.registerOperator(PositionAlongPathRandom);

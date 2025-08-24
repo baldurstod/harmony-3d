@@ -13,7 +13,7 @@ export class SourceEngineParticle {
 	currentTime = 0;
 	previousElapsedTime = 0;
 	name: string;
-	id: string;
+	id: number;
 	isAlive = false;
 	readonly position = vec3.create();
 	readonly prevPosition = vec3.create();
@@ -56,7 +56,7 @@ export class SourceEngineParticle {
 	initialVec?: vec3;
 	bones?: [Bone, number][];
 
-	constructor(id: string, system: SourceEngineParticleSystem) {
+	constructor(id: number, system: SourceEngineParticleSystem) {
 		this.name = 'Particle ' + id;
 		this.id = id;
 		//this.offsetPosition = vec3.create();

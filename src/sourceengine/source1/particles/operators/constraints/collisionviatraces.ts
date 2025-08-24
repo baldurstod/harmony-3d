@@ -1,11 +1,11 @@
 import { vec3 } from 'gl-matrix';
-
-import { Raycaster } from '../../../../../raycasting/raycaster';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR, PARAM_TYPE_STRING } from '../../constants';
 import { TESTING } from '../../../../../buildoptions';
+import { Raycaster } from '../../../../../raycasting/raycaster';
 import { Scene } from '../../../../../scenes/scene';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_STRING, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const COLLISION_MODE_PER_PARTICLE_TRACE = 0;
 const COLLISION_MODE_PER_FRAME_PLANESET = 1;
@@ -20,8 +20,9 @@ export class CollisionViaTraces extends SourceEngineParticleOperator {
 	#raycaster = new Raycaster();
 	#world;
 	#collisionMode;
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('collision mode', PARAM_TYPE_INT, 0);
 		this.addParam('amount of bounce', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('amount of slide', PARAM_TYPE_FLOAT, 0.0);
@@ -33,16 +34,16 @@ export class CollisionViaTraces extends SourceEngineParticleOperator {
 		this.addParam('kill particle on collision', PARAM_TYPE_BOOL, 0.0);
 		this.addParam('trace accuracy tolerance', PARAM_TYPE_FLOAT, 24.0);
 
-	//DMXELEMENT_UNPACK_FIELD( "collision mode", "0", int, m_nCollisionMode )
-	//DMXELEMENT_UNPACK_FIELD( "amount of bounce", "0", float, m_flBounceAmount )
-	//DMXELEMENT_UNPACK_FIELD( "amount of slide", "0", float, m_flSlideAmount )
-	//DMXELEMENT_UNPACK_FIELD( "radius scale", "1", float, m_flRadiusScale )
-	//DMXELEMENT_UNPACK_FIELD( "brush only", "0", bool, m_bBrushOnly )
-	//DMXELEMENT_UNPACK_FIELD_STRING( "collision group", "NONE", m_CollisionGroupName )
-	//DMXELEMENT_UNPACK_FIELD( "control point offset for fast collisions", "0 0 0", Vector, m_vecCpOffset )
-	//DMXELEMENT_UNPACK_FIELD( "control point movement distance tolerance", "5", float, m_flCpMovementTolerance )
-	//DMXELEMENT_UNPACK_FIELD( "kill particle on collision", "0", bool, m_bKillonContact )
-	//DMXELEMENT_UNPACK_FIELD( "trace accuracy tolerance", "24", float, m_flTraceTolerance )
+		//DMXELEMENT_UNPACK_FIELD( "collision mode", "0", int, m_nCollisionMode )
+		//DMXELEMENT_UNPACK_FIELD( "amount of bounce", "0", float, m_flBounceAmount )
+		//DMXELEMENT_UNPACK_FIELD( "amount of slide", "0", float, m_flSlideAmount )
+		//DMXELEMENT_UNPACK_FIELD( "radius scale", "1", float, m_flRadiusScale )
+		//DMXELEMENT_UNPACK_FIELD( "brush only", "0", bool, m_bBrushOnly )
+		//DMXELEMENT_UNPACK_FIELD_STRING( "collision group", "NONE", m_CollisionGroupName )
+		//DMXELEMENT_UNPACK_FIELD( "control point offset for fast collisions", "0 0 0", Vector, m_vecCpOffset )
+		//DMXELEMENT_UNPACK_FIELD( "control point movement distance tolerance", "5", float, m_flCpMovementTolerance )
+		//DMXELEMENT_UNPACK_FIELD( "kill particle on collision", "0", bool, m_bKillonContact )
+		//DMXELEMENT_UNPACK_FIELD( "trace accuracy tolerance", "24", float, m_flTraceTolerance )
 	}
 
 	paramChanged(name, value) {

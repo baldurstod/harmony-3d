@@ -1,15 +1,17 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_INT, PARAM_TYPE_FLOAT } from '../../constants';
 import { DEG_TO_RAD, TWO_PI } from '../../../../../math/constants';
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 /**
  * TODO
  */
 export class RotationSpinRoll extends SourceEngineParticleOperator {
 	static functionName = 'Rotation Spin Roll';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('spin_rate_degrees', PARAM_TYPE_INT, 0);
 		this.addParam('spin_stop_time', PARAM_TYPE_FLOAT, 0);
 		this.addParam('spin_rate_min', PARAM_TYPE_INT, 0);
@@ -87,14 +89,14 @@ export class RotationSpinRoll extends SourceEngineParticleOperator {
 		NewRot = OrSIMD(AndSIMD(Toosmall, AddSIMD(NewRot, Pi_2)),
 		AndNotSIMD(Toosmall, NewRot));*/
 
-				//NewRot = Math.min(Math.max(-Math.TWO_PI, NewRot), Math.TWO_PI);
+		//NewRot = Math.min(Math.max(-Math.TWO_PI, NewRot), Math.TWO_PI);
 
 		particle.rotationRoll = NewRot;
 
 
 
 		// Note: this should be PI / 180, but for some reason there is a bug in source engine
-//		particle.rotationRoll += spin_rate_degrees*elapsedTime * Math.PI * Math.PI / 90.0;
+		//		particle.rotationRoll += spin_rate_degrees*elapsedTime * Math.PI * Math.PI / 90.0;
 	}
 }
 SourceEngineParticleOperators.registerOperator(RotationSpinRoll);

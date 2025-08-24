@@ -1,7 +1,8 @@
 import { quat, vec3 } from 'gl-matrix';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 const tempVec3_2 = vec3.create();
@@ -10,8 +11,9 @@ const tempQuat = quat.create();
 
 export class TwistAroundAxis extends SourceEngineParticleOperator {
 	static functionName = 'twist around axis';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('twist axis', PARAM_TYPE_VECTOR, vec3.fromValues(0, 0, 1));
 		this.addParam('amount of force', PARAM_TYPE_FLOAT, 0);
 		this.addParam('object local space axis 0/1', PARAM_TYPE_BOOL, 0);
@@ -24,12 +26,12 @@ export class TwistAroundAxis extends SourceEngineParticleOperator {
 
 		const cp = particle.system.getControlPoint(0);
 		const offsetToAxis = vec3.sub(tempVec3, particle.position, cp.getWorldPosition(tempVec3));
-/*
-		if (!localSpace) {
-			cp.getWorldQuaternion(tempQuat);
-			axis = vec3.transformQuat(tempAxis, axis, tempQuat);
-		}
-			*/
+		/*
+				if (!localSpace) {
+					cp.getWorldQuaternion(tempQuat);
+					axis = vec3.transformQuat(tempAxis, axis, tempQuat);
+				}
+					*/
 		vec3.normalize(offsetToAxis, offsetToAxis);
 		vec3.scale(tempVec3_2, offsetToAxis, vec3.dot(offsetToAxis, axis));
 		vec3.sub(offsetToAxis, offsetToAxis, tempVec3_2);

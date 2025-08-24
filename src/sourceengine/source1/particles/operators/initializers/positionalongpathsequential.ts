@@ -1,17 +1,18 @@
 import { vec3 } from 'gl-matrix';
-
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_BOOL } from '../../constants';
 
 const tempVec3_1 = vec3.create();
 const tempVec3_2 = vec3.create();
 
 export class PositionAlongPathSequential extends SourceEngineParticleOperator {
 	static functionName = 'Position Along Path Sequential';
-	sequence = 0;
-	constructor() {
-		super();
+	#sequence = 0;
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('maximum distance', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('bulge', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('start control point number', PARAM_TYPE_INT, 0);
@@ -33,23 +34,23 @@ export class PositionAlongPathSequential extends SourceEngineParticleOperator {
 
 		startCP.deltaPosFrom(endCP, tempVec3_1);
 
-		const s = this.sequence / nbPart;
+		const s = this.#sequence / nbPart;
 		vec3.scale(tempVec3_1, tempVec3_1, s);
 		vec3.add(particle.position, startCP.getWorldPosition(tempVec3_2), tempVec3_1);
 		vec3.copy(particle.prevPosition, particle.position);
-		++this.sequence;
-		if (this.sequence > nbPart) {
+		++this.#sequence;
+		if (this.#sequence > nbPart) {
 			const restartBehavior = this.getParameter('restart behavior (0 = bounce, 1 = loop )');
 			if (restartBehavior == 1) {
-				this.sequence = 0;
+				this.#sequence = 0;
 			} else {
-				this.sequence = nbPart;
+				this.#sequence = nbPart;
 			}
 		}
 	}
 
 	reset() {
-		this.sequence = 0;
+		this.#sequence = 0;
 	}
 }
 SourceEngineParticleOperators.registerOperator(PositionAlongPathSequential);

@@ -1,13 +1,15 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { RandomFloatExp } from '../../../../../math/functions';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class RotationSpeedRandom extends SourceEngineParticleOperator {
 	static functionName = 'Rotation Speed Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('rotation_speed_constant', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('rotation_speed_random_min', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('rotation_speed_random_max', PARAM_TYPE_FLOAT, 360.0);

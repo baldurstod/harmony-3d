@@ -1,9 +1,10 @@
 import { vec3 } from 'gl-matrix';
 import { NoiseSIMD } from '../../../../common/math/noise';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { SourceEngineParticle } from '../../particle';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class VelocityNoise extends SourceEngineParticleOperator {
 	static functionName = 'Velocity Noise';
@@ -11,8 +12,8 @@ export class VelocityNoise extends SourceEngineParticleOperator {
 	#randY = Math.random() * 1000;
 	#randZ = Math.random() * 1000;
 
-	constructor() {
-		super();
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('', PARAM_TYPE_INT, 0);
 		this.addParam('Control Point Number', PARAM_TYPE_INT, 0);
 		this.addParam('Time Noise Coordinate Scale', PARAM_TYPE_FLOAT, 1.0);

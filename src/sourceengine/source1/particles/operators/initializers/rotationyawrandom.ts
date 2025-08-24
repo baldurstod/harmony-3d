@@ -1,11 +1,13 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class RotationYawRandom extends SourceEngineParticleOperator {
 	static functionName = 'Rotation Yaw Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('Percentage', PARAM_TYPE_FLOAT, 0.5);
 		this.addParam('yaw_offset_min', PARAM_TYPE_FLOAT, 0);
 		this.addParam('yaw_offset_max', PARAM_TYPE_FLOAT, 360);

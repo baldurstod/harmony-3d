@@ -1,15 +1,16 @@
 import { quat, vec3 } from 'gl-matrix';
-
+import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
 
 const tempVec3 = vec3.create();
 
 export class SetControlPointPositions extends SourceEngineParticleOperator {
 	static functionName = 'set control point positions';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('Control Point to offset positions from', PARAM_TYPE_INT, 0);
 		this.addParam('Set positions in world space', PARAM_TYPE_BOOL, false);
 		this.addParam('Control Point to offset positions from', PARAM_TYPE_INT, 0);

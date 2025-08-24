@@ -1,16 +1,17 @@
 import { vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { RemapValClamped } from '../../../../../math/functions';
+import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const a = vec3.create();
 
 export class RemapCPSpeedToCP extends SourceEngineParticleOperator {
 	static functionName = 'remap cp speed to cp';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('operator strength scale control point', PARAM_TYPE_INT, 1);
 		this.addParam('input control point', PARAM_TYPE_INT, 0);
 
@@ -35,7 +36,7 @@ export class RemapCPSpeedToCP extends SourceEngineParticleOperator {
 
 		const incp = this.particleSystem.getControlPoint(inCPNumber);
 		const outcp = this.particleSystem.getControlPoint(outCPNumber);
-		if (incp&&outcp&&(outputField==0||outputField==1||outputField==2)) {
+		if (incp && outcp && (outputField == 0 || outputField == 1 || outputField == 2)) {
 			const v = vec3.length(incp.getWorldPosition(a));
 
 			const position = outcp.position;//TODO optimize

@@ -1,8 +1,8 @@
 import { mat4, vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 const tempMat4 = mat4.create();
@@ -10,8 +10,9 @@ const IDENTITY_MAT4 = mat4.create();
 
 export class LockToBone extends SourceEngineParticleOperator {
 	static functionName = 'Movement Lock to Bone';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 	}
 
@@ -25,10 +26,10 @@ export class LockToBone extends SourceEngineParticleOperator {
 				const initialVec = particle.initialVec;
 				if (bones && initialVec) {
 
-					tempMat4[0] = 0;tempMat4[1] = 0;tempMat4[2] = 0;
-					tempMat4[4] = 0;tempMat4[5] = 0;tempMat4[6] = 0;
-					tempMat4[8] = 0;tempMat4[9] = 0;tempMat4[10] = 0;
-					tempMat4[12] = 0;tempMat4[13] = 0;tempMat4[14] = 0;
+					tempMat4[0] = 0; tempMat4[1] = 0; tempMat4[2] = 0;
+					tempMat4[4] = 0; tempMat4[5] = 0; tempMat4[6] = 0;
+					tempMat4[8] = 0; tempMat4[9] = 0; tempMat4[10] = 0;
+					tempMat4[12] = 0; tempMat4[13] = 0; tempMat4[14] = 0;
 
 					vec3.copy(tempVec3, initialVec);
 
@@ -41,16 +42,16 @@ export class LockToBone extends SourceEngineParticleOperator {
 						}
 
 						if (boneWeight && boneMat) {
-							tempMat4[ 0] += boneWeight * boneMat[ 0];
-							tempMat4[ 1] += boneWeight * boneMat[ 1];
-							tempMat4[ 2] += boneWeight * boneMat[ 2];
+							tempMat4[0] += boneWeight * boneMat[0];
+							tempMat4[1] += boneWeight * boneMat[1];
+							tempMat4[2] += boneWeight * boneMat[2];
 
-							tempMat4[ 4] += boneWeight * boneMat[ 4];
-							tempMat4[ 5] += boneWeight * boneMat[ 5];
-							tempMat4[ 6] += boneWeight * boneMat[ 6];
+							tempMat4[4] += boneWeight * boneMat[4];
+							tempMat4[5] += boneWeight * boneMat[5];
+							tempMat4[6] += boneWeight * boneMat[6];
 
-							tempMat4[ 8] += boneWeight * boneMat[ 8];
-							tempMat4[ 9] += boneWeight * boneMat[ 9];
+							tempMat4[8] += boneWeight * boneMat[8];
+							tempMat4[9] += boneWeight * boneMat[9];
 							tempMat4[10] += boneWeight * boneMat[10];
 
 							tempMat4[12] += boneWeight * boneMat[12];

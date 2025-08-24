@@ -1,12 +1,14 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_FLOAT } from '../../constants';
 import { SimpleSplineRemapValWithDeltasClamped } from '../../../../common/math/sse';
+import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class AlphaFadeAndDecay extends SourceEngineParticleOperator {
 	static functionName = 'Alpha Fade and Decay';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('start_alpha', PARAM_TYPE_FLOAT, 1.0);
 		this.addParam('end_alpha', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('start_fade_in_time', PARAM_TYPE_FLOAT, 0);
@@ -35,10 +37,9 @@ export class AlphaFadeAndDecay extends SourceEngineParticleOperator {
 		const fl4OOFadeOutDuration = 1.0 / fl4FadeOutDuration;
 
 		let fl4Goal, fl4NewAlpha;
-		switch (true)
-		{
+		switch (true) {
 			case proportionOfLife <= m_flStartFadeInTime:
-//				alpha = start_alpha;
+				//				alpha = start_alpha;
 				break;
 			case proportionOfLife < m_flEndFadeInTime:
 				fl4Goal = particle.startAlpha * start_alpha;
@@ -59,7 +60,7 @@ export class AlphaFadeAndDecay extends SourceEngineParticleOperator {
 		//alpha *= particle.startAlpha;
 		//particle.alpha = alpha;
 
-		if (particle.timeToLive<particle.currentTime) {
+		if (particle.timeToLive < particle.currentTime) {
 			particle.die();
 		}
 	}

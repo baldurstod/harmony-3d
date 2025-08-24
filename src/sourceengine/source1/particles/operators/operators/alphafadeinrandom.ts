@@ -1,12 +1,14 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
 import { ParticleRandomFloat } from '../../../../common/particles/randomfloats';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class AlphaFadeInRandom extends SourceEngineParticleOperator {
 	static functionName = 'Alpha Fade In Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('fade in time min', PARAM_TYPE_FLOAT, 0.25);
 		this.addParam('fade in time max', PARAM_TYPE_FLOAT, 0.25);
 		this.addParam('fade in time exponent', PARAM_TYPE_FLOAT, 1);
@@ -16,7 +18,7 @@ export class AlphaFadeInRandom extends SourceEngineParticleOperator {
 	doOperate(particle, elapsedTime) {
 		const proportional = this.getParameter('proportional 0/1');
 
-		const fade_in_time_min	= this.getParameter('fade in time min');
+		const fade_in_time_min = this.getParameter('fade in time min');
 		const fade_in_time_max = this.getParameter('fade in time max');
 		const m_flFadeInTimeExp = this.getParameter('fade in time exponent');
 
@@ -34,7 +36,7 @@ export class AlphaFadeInRandom extends SourceEngineParticleOperator {
 		let d, d2
 		if (time < fade_in_time) {
 			d = fade_in_time;
-			if (d!=0) {
+			if (d != 0) {
 				d2 = particle.startAlpha;
 				particle.alpha = d2 / d * (time);
 			}

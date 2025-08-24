@@ -1,13 +1,15 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
 import { Bias } from '../../../../common/math/sse';
 import { ParticleRandomFloat } from '../../../../common/particles/randomfloats';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class AlphaFadeOutRandom extends SourceEngineParticleOperator {
 	static functionName = 'Alpha Fade Out Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('fade out time min', PARAM_TYPE_FLOAT, 0.25);
 		this.addParam('fade out time max', PARAM_TYPE_FLOAT, 0.25);
 		this.addParam('fade out time exponent', PARAM_TYPE_FLOAT, 1);
@@ -18,7 +20,7 @@ export class AlphaFadeOutRandom extends SourceEngineParticleOperator {
 	doOperate(particle, elapsedTime) {
 		const proportional = this.getParameter('proportional 0/1');
 
-		const fade_out_time_min	= this.getParameter('fade out time min');
+		const fade_out_time_min = this.getParameter('fade out time min');
 		const fade_out_time_max = this.getParameter('fade out time max');
 		const fadeBias = this.getParameter('fade bias');
 		const m_flFadeOutTimeExp = this.getParameter('fade in time exponent');
@@ -36,23 +38,22 @@ export class AlphaFadeOutRandom extends SourceEngineParticleOperator {
 		}
 		else {
 			time = particle.currentTime;
-			start_fade_out_time =	particle.timeToLive-fade_out_time;
+			start_fade_out_time = particle.timeToLive - fade_out_time;
 			lifeSpan = particle.timeToLive - time;
 		}
 
 		let alpha = 0;
-		switch (true)
-		{
+		switch (true) {
 			case time > start_fade_out_time:
 				const d = fade_out_time;
-				if (d!=0) {
+				if (d != 0) {
 					const d2 = particle.startAlpha;
 					alpha = d2 * (lifeSpan);
 				}
 				Bias(alpha, fadeBias);//TODOv3
 				break;
 			default:
-				alpha=particle.startAlpha;
+				alpha = particle.startAlpha;
 				break;
 		}
 		particle.alpha = alpha;

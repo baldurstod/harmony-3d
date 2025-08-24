@@ -1,11 +1,13 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class RadiusRandom extends SourceEngineParticleOperator {
 	static functionName = 'Radius Random';
-	constructor() {
-		super();
+
+	constructor(system: SourceEngineParticleSystem) {
+		super(system);
 		this.addParam('radius_min', PARAM_TYPE_FLOAT, 1);
 		this.addParam('radius_max', PARAM_TYPE_FLOAT, 1);
 	}
