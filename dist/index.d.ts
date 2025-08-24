@@ -1255,9 +1255,11 @@ declare class Choreography {
          #private;
          constructor();
          handleEvent(event: any): void;
-         observe(subject: EventTarget, dependent: any): void;
+         observe(subject: ContextObserverSubject, dependent: any): void;
          unobserve(subject: any, dependent: any): void;
      }
+
+     declare type ContextObserverSubject = EventTarget | typeof GraphicsEvents;
 
      export declare class ContinuousEmitter extends Emitter {
          #private;
@@ -2931,22 +2933,23 @@ declare class Choreography {
              TouchCancel = "touchcancel"
          }
 
-         export declare const GraphicsEvents: {
-             tick(delta: number, time: number, speed: number): void;
-             resize(width: number, height: number): void;
-             mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
-             mouseDown(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
-             mouseUp(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
-             wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent): void;
-             keyDown(keyboardEvent: KeyboardEvent): void;
-             keyUp(keyboardEvent: KeyboardEvent): void;
-             touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
-             touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
-             touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
-             addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void;
-             dispatchEvent(event: Event): boolean;
-             removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
-         };
+         export declare class GraphicsEvents {
+             static isGraphicsEvents: true;
+             static readonly eventTarget: EventTarget;
+             static addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void;
+             static removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
+             static tick(delta: number, time: number, speed: number): void;
+             static resize(width: number, height: number): void;
+             static mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
+             static mouseDown(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
+             static mouseUp(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
+             static wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent): void;
+             static keyDown(keyboardEvent: KeyboardEvent): void;
+             static keyUp(keyboardEvent: KeyboardEvent): void;
+             static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
+             static touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
+             static touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent): void;
+         }
 
          declare interface GraphicsInitOptions {
              canvas?: HTMLCanvasElement;
@@ -4793,7 +4796,7 @@ declare class Choreography {
              dispose(): void;
          }
 
-         declare class Node_2 extends EventTarget {
+         declare class Node_2 {
              #private;
              id: string;
              editor: NodeImageEditor;
@@ -4835,16 +4838,17 @@ declare class Choreography {
              dispose(): void;
              set hasPreview(hasPreview: boolean);
              get hasPreview(): boolean;
+             addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void;
+             removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
          }
          export { Node_2 as Node }
 
-         export declare class NodeImageEditor extends EventTarget {
+         export declare class NodeImageEditor {
              #private;
              textureSize: number;
              constructor();
              render(material: Material): void;
              addNode(operationName: string, params?: any): Node_2;
-             NodeImageEditor: any;
              removeNode(node: any): void;
              removeAllNodes(): void;
              getVariable(name: any): number;
@@ -4852,6 +4856,8 @@ declare class Choreography {
              deleteVariable(name: any): boolean;
              clearVariables(): void;
              getNodes(): Set<Node_2>;
+             addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void;
+             removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
          }
 
          export declare class NodeImageEditorGui {
@@ -7135,7 +7141,7 @@ declare class Choreography {
 
          export declare const Source1TextureManager: Source1TextureManagerClass;
 
-         declare class Source1TextureManagerClass extends EventTarget {
+         declare class Source1TextureManagerClass {
              #private;
              fallbackRepository: string;
              constructor();
@@ -8078,7 +8084,7 @@ declare class Choreography {
 
          export declare const Source2SnapshotLoader: {
              load(repository: string, filename: string): Promise<Source2Snapshot>;
-             "__#261@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+             "__#260@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
@@ -8137,7 +8143,7 @@ declare class Choreography {
 
          export declare const Source2TextureManager: Source2TextureManagerClass;
 
-         declare class Source2TextureManagerClass extends EventTarget {
+         declare class Source2TextureManagerClass {
              #private;
              WEBGL_compressed_texture_s3tc: any;
              EXT_texture_compression_bptc: any;
@@ -10312,12 +10318,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#230@#webAssembly"?: any;
-             "__#230@#HEAPU8"?: Uint8Array;
+             "__#229@#webAssembly"?: any;
+             "__#229@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#230@#initHeap"(): void;
+             "__#229@#initHeap"(): void;
          };
 
          export { }

@@ -4620,6 +4620,8 @@ registerEntity(Box);
 
 const ShaderEventTarget = new EventTarget();
 
+const Shaders = {};
+
 const Includes = {};
 
 const includeSources = new Map();
@@ -4939,8 +4941,6 @@ class WebGLShaderSource {
         return new Map(this.#sourceRowToInclude);
     }
 }
-
-const Shaders = {};
 
 class ShaderManager {
     static #displayCompileError = false;
@@ -7342,52 +7342,49 @@ var GraphicsEvent;
     GraphicsEvent["TouchMove"] = "touchmove";
     GraphicsEvent["TouchCancel"] = "touchcancel";
 })(GraphicsEvent || (GraphicsEvent = {}));
-const GraphicsEvents = new (function () {
-    class GraphicsEvents extends EventTarget {
-        static #instance;
-        constructor() {
-            if (GraphicsEvents.#instance) {
-                return GraphicsEvents.#instance;
-            }
-            super();
-            GraphicsEvents.#instance = this;
-        }
-        tick(delta, time, speed) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
-        }
-        resize(width, height) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
-        }
-        mouseMove(x, y, pickedEntity, mouseEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-        }
-        mouseDown(x, y, pickedEntity, mouseEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-        }
-        mouseUp(x, y, pickedEntity, mouseEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-        }
-        wheel(x, y, pickedEntity, wheelEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
-        }
-        keyDown(keyboardEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
-        }
-        keyUp(keyboardEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
-        }
-        touchStart(pickedEntity, touchEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-        }
-        touchMove(pickedEntity, touchEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-        }
-        touchCancel(pickedEntity, touchEvent) {
-            this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-        }
+class GraphicsEvents {
+    static isGraphicsEvents = true;
+    static eventTarget = new EventTarget();
+    static addEventListener(type, callback, options) {
+        this.eventTarget.addEventListener(type, callback, options);
     }
-    return GraphicsEvents;
-}());
+    static removeEventListener(type, callback, options) {
+        this.eventTarget.removeEventListener(type, callback, options);
+    }
+    static tick(delta, time, speed) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
+    }
+    static resize(width, height) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
+    }
+    static mouseMove(x, y, pickedEntity, mouseEvent) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    }
+    static mouseDown(x, y, pickedEntity, mouseEvent) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    }
+    static mouseUp(x, y, pickedEntity, mouseEvent) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    }
+    static wheel(x, y, pickedEntity, wheelEvent) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
+    }
+    static keyDown(keyboardEvent) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
+    }
+    static keyUp(keyboardEvent) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
+    }
+    static touchStart(pickedEntity, touchEvent) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+    }
+    static touchMove(pickedEntity, touchEvent) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+    }
+    static touchCancel(pickedEntity, touchEvent) {
+        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+    }
+}
 
 const VEC4_ALL_1 = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 var ShaderPrecision;
@@ -11774,6 +11771,9 @@ class ContextObserverClass {
         }
     }
     #addObserver(subject, dependent) {
+        if (subject.isGraphicsEvents) {
+            subject = subject.eventTarget;
+        }
         if (!this.#observed.has(subject)) {
             this.#observed.set(subject, new Set());
         }
@@ -14465,7 +14465,7 @@ var DrawState;
     DrawState[DrawState["Valid"] = 1] = "Valid";
 })(DrawState || (DrawState = {}));
 const PREVIEW_PICTURE_SIZE = 256;
-class Node extends EventTarget {
+class Node {
     #hasPreview = false;
     id = generateRandomUUID();
     editor;
@@ -14480,8 +14480,8 @@ class Node extends EventTarget {
     #operation;
     material;
     #pixelArray;
+    #eventTarget = new EventTarget();
     constructor(editor, params) {
-        super();
         this.editor = editor;
         this.setParams(params);
     }
@@ -14647,8 +14647,8 @@ class Node extends EventTarget {
         throw 'This function must be overriden';
     }
     #dispatchEvent(eventName, eventDetail) {
-        this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-        this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+        this.#eventTarget.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
+        this.#eventTarget.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
     }
     updatePreview(context = {}) {
         const previewSize = context.previewSize ?? this.previewSize;
@@ -14721,6 +14721,12 @@ class Node extends EventTarget {
     }
     get hasPreview() {
         return this.#hasPreview;
+    }
+    addEventListener(type, callback, options) {
+        this.#eventTarget.addEventListener(type, callback, options);
+    }
+    removeEventListener(type, callback, options) {
+        this.#eventTarget.removeEventListener(type, callback, options);
     }
 }
 
@@ -16450,15 +16456,15 @@ Shaders['imageeditor.fs'] = imageeditor_fs;
 Shaders['imageeditor.vs'] = imageeditor_vs;
 
 const DEFAULT_TEXTURE_SIZE = 512;
-class NodeImageEditor extends EventTarget {
+class NodeImageEditor {
     #variables = new Map();
     #scene = new Scene();
     #nodes = new Set();
     #camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
     #fullScreenQuadMesh = new FullScreenQuad();
     textureSize = DEFAULT_TEXTURE_SIZE;
+    #eventTarget = new EventTarget();
     constructor() {
-        super();
         this.#scene.addChild(this.#fullScreenQuadMesh);
     }
     render(material) {
@@ -16484,10 +16490,9 @@ class NodeImageEditor extends EventTarget {
         return node;
     }*/
     #dispatchEvent(eventName, eventDetail) {
-        this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-        this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+        this.#eventTarget.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
+        this.#eventTarget.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
     }
-    NodeImageEditor;
     /*addNode(node) {
         if (node instanceof Node && node.editor == this) {
             this.#nodes.add(node);
@@ -16521,6 +16526,12 @@ class NodeImageEditor extends EventTarget {
     }
     getNodes() {
         return new Set(this.#nodes);
+    }
+    addEventListener(type, callback, options) {
+        this.#eventTarget.addEventListener(type, callback, options);
+    }
+    removeEventListener(type, callback, options) {
+        this.#eventTarget.removeEventListener(type, callback, options);
     }
 }
 
@@ -32302,14 +32313,13 @@ Includes['source_declare_particle'] = source_declare_particle;
 
 const PROPERTY_ADDED = 'propertyadded';
 const PROPERTY_CHANGED = 'propertychanged';
-class TimelineObserver extends EventTarget {
-    static #instance;
-    constructor() {
-        if (TimelineObserver.#instance) {
-            return TimelineObserver.#instance;
-        }
-        super();
-        TimelineObserver.#instance = this;
+class TimelineObserver {
+    static #eventTarget = new EventTarget();
+    static addEventListener(type, callback, options) {
+        this.#eventTarget.addEventListener(type, callback, options);
+    }
+    static removeEventListener(type, callback, options) {
+        this.#eventTarget.removeEventListener(type, callback, options);
     }
     /*
         parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null) {
@@ -32328,11 +32338,11 @@ class TimelineObserver extends EventTarget {
             this.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
         }
     */
-    propertyAdded(element, propertyName, type, value) {
-        this.dispatchEvent(new CustomEvent(PROPERTY_ADDED, { detail: { element: element, name: propertyName, type: type, value: value } }));
+    static propertyAdded(element, propertyName, type, value) {
+        this.#eventTarget.dispatchEvent(new CustomEvent(PROPERTY_ADDED, { detail: { element: element, name: propertyName, type: type, value: value } }));
     }
-    propertyChanged(element, propertyName, oldValue, newValue) {
-        this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { element: element, name: propertyName, value: newValue, oldValue: oldValue } }));
+    static propertyChanged(element, propertyName, oldValue, newValue) {
+        this.#eventTarget.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { element: element, name: propertyName, value: newValue, oldValue: oldValue } }));
     }
 }
 
@@ -32405,7 +32415,7 @@ class TimelineElement {
         if (property) {
             const oldValue = property.getValue();
             property.setValue(value);
-            new TimelineObserver().propertyChanged(this, name, oldValue, value);
+            TimelineObserver.propertyChanged(this, name, oldValue, value);
         }
     }
     getPropertyValue(name) {
@@ -46556,14 +46566,13 @@ function str2abABGR(reader, start, length) {
 }
 
 let internalTextureId = 0;
-class Source1TextureManagerClass extends EventTarget {
+class Source1TextureManagerClass {
     #texturesList = new Map2();
     #vtfList = new Map2();
     #defaultTexture = new AnimatedTexture();
     #defaultTextureCube = new AnimatedTexture();
     fallbackRepository = '';
     constructor() {
-        super();
         new Graphics().ready.then(() => {
             this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255]));
             this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255], undefined, undefined, true));
@@ -59053,7 +59062,7 @@ const Source2TextureLoader = new (function () {
     return Source2TextureLoader;
 }());
 
-class Source2TextureManagerClass extends EventTarget {
+class Source2TextureManagerClass {
     #vtexList = new Map2();
     #texturesList = new Map();
     #loadingTexturesList = new Map();
@@ -59062,7 +59071,6 @@ class Source2TextureManagerClass extends EventTarget {
     EXT_texture_compression_bptc;
     EXT_texture_compression_rgtc;
     constructor() {
-        super();
         new Graphics().ready.then(() => {
             this.#defaultTexture = TextureManager.createCheckerTexture([127, 190, 255]);
             this.#defaultTexture.addUser(this);
