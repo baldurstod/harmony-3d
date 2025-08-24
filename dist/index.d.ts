@@ -32,25 +32,25 @@ export declare class AgeNoise extends Operator {
 
 export declare class AlphaFadeAndDecay extends SourceEngineParticleOperator {
     static functionName: string;
-    constructor();
+    constructor(system: SourceEngineParticleSystem);
     doOperate(particle: any, elapsedTime: any): void;
 }
 
 export declare class AlphaFadeInRandom extends SourceEngineParticleOperator {
     static functionName: string;
-    constructor();
+    constructor(system: SourceEngineParticleSystem);
     doOperate(particle: any, elapsedTime: any): void;
 }
 
 export declare class AlphaFadeOutRandom extends SourceEngineParticleOperator {
     static functionName: string;
-    constructor();
+    constructor(system: SourceEngineParticleSystem);
     doOperate(particle: any, elapsedTime: any): void;
 }
 
 export declare class AlphaRandom extends SourceEngineParticleOperator {
     static functionName: string;
-    constructor();
+    constructor(system: SourceEngineParticleSystem);
     doInit(particle: any, elapsedTime: any): void;
 }
 
@@ -64,7 +64,7 @@ export declare class AmbientLight extends Light {
 
 declare type AmbientLightParameters = LightParameters;
 
-declare interface Animated {
+export declare interface Animated {
     hasAnimations: true;
     getAnimations: () => Promise<Set<string>>;
     playSequence: (name: string) => void;
@@ -907,9 +907,9 @@ export declare class CDmxElement {
 export declare function ceilPowerOfTwo(n: number): number;
 
 export declare class CharacterMaterial extends SourceEngineMaterial {
-    diffuseModulation: vec4;
-    constructor(params?: any);
-    afterProcessProxies(proxyParams: any): void;
+    #private;
+    constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
+    afterProcessProxies(proxyParams?: DynamicParams): void;
     clone(): CharacterMaterial;
     get shaderSource(): string;
 }
@@ -1026,7 +1026,7 @@ declare class Choreography {
      export declare class CollisionViaTraces extends SourceEngineParticleOperator {
          #private;
          static functionName: string;
-         constructor();
+         constructor(system: SourceEngineParticleSystem);
          paramChanged(name: any, value: any): void;
          applyConstraint(particle: any): void;
      }
@@ -1069,7 +1069,7 @@ declare class Choreography {
 
      export declare class ColorFade extends SourceEngineParticleOperator {
          static functionName: string;
-         constructor();
+         constructor(system: SourceEngineParticleSystem);
          doOperate(particle: any, elapsedTime: any): void;
      }
 
@@ -1082,7 +1082,7 @@ declare class Choreography {
 
      export declare class ColorRandom extends SourceEngineParticleOperator {
          static functionName: string;
-         constructor();
+         constructor(system: SourceEngineParticleSystem);
          doInit(particle: any, elapsedTime: any): void;
      }
 
@@ -1239,13 +1239,13 @@ declare class Choreography {
 
      export declare class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
          static functionName: string;
-         constructor();
+         constructor(system: SourceEngineParticleSystem);
          applyConstraint(particle: any): void;
      }
 
      export declare class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngineParticleOperator {
          static functionName: string;
-         constructor();
+         constructor(system: SourceEngineParticleSystem);
          applyConstraint(particle: any): void;
      }
 
@@ -1426,15 +1426,15 @@ declare class Choreography {
 
      export declare class CustomWeaponMaterial extends SourceEngineMaterial {
          diffuseModulation: vec4;
-         constructor(params?: any);
-         afterProcessProxies(proxyParams: any): void;
-         set style(style: any);
-         setColorUniform(uniformName: any, value: any): void;
-         set color0(color: any);
-         set color1(color: any);
-         set color2(color: any);
-         set color3(color: any);
-         setPatternScale(scale: any): void;
+         constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
+         afterProcessProxies(proxyParams: DynamicParams): void;
+         set style(style: string);
+         setColorUniform(uniformName: string, value: string): void;
+         set color0(color: string);
+         set color1(color: string);
+         set color2(color: string);
+         set color3(color: string);
+         setPatternScale(scale: number): void;
          clone(): CustomWeaponMaterial;
          get shaderSource(): string;
      }
@@ -1738,10 +1738,16 @@ declare class Choreography {
          setKeyValues(kvElement: any): void;
      }
 
+     declare type DynamicParam = any;
+
+     declare type DynamicParams = {
+         [key: string]: DynamicParam;
+     };
+
      export declare class EmitContinuously extends SourceEngineParticleOperator {
          static functionName: string;
          remainder: number;
-         constructor();
+         constructor(system: SourceEngineParticleSystem);
          doEmit(elapsedTime: number): void;
          finished(): boolean;
      }
@@ -1750,18 +1756,18 @@ declare class Choreography {
       *TODO
       */
      export declare class EmitInstantaneously extends SourceEngineParticleOperator {
+         #private;
          static functionName: string;
-         emitted: boolean;
-         constructor();
+         constructor(system: SourceEngineParticleSystem);
          doEmit(elapsedTime: any): void;
          reset(): void;
          finished(): boolean;
      }
 
      export declare class EmitNoise extends SourceEngineParticleOperator {
+         #private;
          static functionName: string;
-         remainder: number;
-         constructor();
+         constructor(system: SourceEngineParticleSystem);
          doEmit(elapsedTime: any): void;
      }
 
@@ -1786,7 +1792,7 @@ declare class Choreography {
          _mvMatrix: mat4;
          _normalMatrix: mat3;
          _parent: Entity | null;
-         materialsParams: MaterialParams;
+         materialsParams: DynamicParams;
          isRenderable: boolean;
          lockPos: boolean;
          lockRot: boolean;
@@ -2012,9 +2018,9 @@ declare class Choreography {
           setProperty(name: string, value: Property): void;
           setLayer(layer?: number): void;
           getLayer(): number | undefined;
-          setMaterialParam(name: string, value: MaterialParam): void;
+          setMaterialParam(name: string, value: DynamicParam): void;
           toJSON(): any;
-          static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity>;
+          static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | null>;
           createChild(entityName: string, parameters: any): Promise<Material | Entity>;
           fromJSON(json: JSONObject): void;
           static getEntityName(): string;
@@ -2075,7 +2081,7 @@ declare class Choreography {
 
          export declare class EyeRefractMaterial extends SourceEngineMaterial {
              #private;
-             constructor(params?: any);
+             useSrgb: boolean;
              init(): void;
              afterProcessProxies(): void;
              beforeRender(camera: Camera): void;
@@ -3098,7 +3104,12 @@ declare class Choreography {
 
          export declare const HALF_PI: number;
 
-         declare interface HasSkeleton {
+         export declare interface HasMaterials {
+             getSkins: () => Promise<Set<string>>;
+             getMaterialsName: (skin: string) => Promise<[string, Set<string>]>;
+         }
+
+         export declare interface HasSkeleton {
              skeleton: Skeleton | null | undefined;
          }
 
@@ -3142,7 +3153,9 @@ declare class Choreography {
              R8 = "R8",
              R8G8B8A8Uint = "R8G8B8A8Uint",
              BGRA8888 = "BGRA8888",
-             RGBA = "RGBA"
+             RGBA = "RGBA",
+             PngR8G8B8A8Uint = "PngR8G8B8A8Uint",
+             PngDXT5 = "PngDXT5"
          }
 
          export declare const Includes: Record<string, string>;
@@ -3417,20 +3430,19 @@ declare class Choreography {
 
          export declare class LifespanDecay extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
              doOperate(particle: any, elapsedTime: any): void;
          }
 
          export declare class LifetimeFromSequence extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class LifetimeRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
          }
 
@@ -3559,7 +3571,6 @@ declare class Choreography {
          }
 
          export declare class LightMappedGenericMaterial extends SourceEngineMaterial {
-             constructor(params?: any);
              clone(): LightMappedGenericMaterial;
              getShaderSource(): string;
          }
@@ -3632,7 +3643,7 @@ declare class Choreography {
 
          export declare function loadAnimGroup(source2Model: Source2Model, repository: string, animGroupName: string): Promise<Source2AnimGroup>;
 
-         declare interface Lockable {
+         export declare interface Lockable {
              isLockable: true;
              setLocked: (locked: boolean) => void;
              isLocked: () => boolean;
@@ -3640,11 +3651,11 @@ declare class Choreography {
 
          export declare class LockToBone extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
-         declare interface Loopable {
+         export declare interface Loopable {
              isLoopable: true;
              setLooping: (looping: boolean) => void;
              getLooping: () => boolean;
@@ -3777,7 +3788,7 @@ declare class Choreography {
              name: string;
              uniforms: Record<string, UniformValue>;
              defines: Record<string, any>;
-             parameters: any;
+             parameters: MaterialParams;
              depthTest: boolean;
              depthFunc: any;
              depthMask: boolean;
@@ -3793,10 +3804,10 @@ declare class Choreography {
              polygonOffsetFactor: number;
              polygonOffsetUnits: number;
              _dirtyProgram: boolean;
-             colorMap?: Texture;
+             colorMap: Texture | null;
              properties: Map<string, any>;
              static materialList: Record<string, typeof Material>;
-             constructor(params?: MaterialParams_2);
+             constructor(params?: MaterialParams);
              get transparent(): boolean;
              set renderLights(renderLights: boolean);
              get renderLights(): boolean;
@@ -3830,11 +3841,11 @@ declare class Choreography {
              setMeshColor(color?: vec4): void;
              setTexture(uniformName: string, texture: Texture | null, shaderDefine?: string): void;
              setTextureArray(uniformName: string, textureArray: Texture[]): void;
-             setColorMap(texture: Texture): void;
-             setColor2Map(texture: Texture): void;
-             setDetailMap(texture: Texture): void;
-             setNormalMap(texture: Texture): void;
-             setCubeMap(texture: Texture): void;
+             setColorMap(texture: Texture | null): void;
+             setColor2Map(texture: Texture | null): void;
+             setDetailMap(texture: Texture | null): void;
+             setNormalMap(texture: Texture | null): void;
+             setCubeMap(texture: Texture | null): void;
              setAlphaTest(alphaTest: boolean): void;
              /**
               * @deprecated Please use `setAlphaTest` instead.
@@ -3881,13 +3892,7 @@ declare class Choreography {
              PerMesh = 2
          }
 
-         declare type MaterialParam = any;
-
          declare type MaterialParams = {
-             [key: string]: MaterialParam;
-         };
-
-         declare type MaterialParams_2 = {
              depthTest?: boolean;
              renderFace?: RenderFace;
              polygonOffset?: boolean;
@@ -4750,20 +4755,20 @@ declare class Choreography {
 
          export declare class MovementBasic extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
          export declare class MovementLocktoControlPoint extends SourceEngineParticleOperator {
              static functionName: string;
              static once: any;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
          export declare class MovementMaxVelocity extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
@@ -4776,7 +4781,7 @@ declare class Choreography {
          export declare class MovementRotateParticleAroundAxis extends SourceEngineParticleOperator {
              static functionName: string;
              once: boolean;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
@@ -5070,7 +5075,7 @@ declare class Choreography {
 
          export declare class OscillateScalar extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
@@ -5082,7 +5087,7 @@ declare class Choreography {
 
          export declare class OscillateVector extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
@@ -5483,17 +5488,17 @@ declare class Choreography {
          export declare function polygonise(/*GRIDCELL */ grid: GRIDCELL, /*double */ isolevel: number, /*TRIANGLE **/ triangles: TRIANGLE[]): number;
 
          export declare class PositionAlongPathRandom extends SourceEngineParticleOperator {
+             #private;
              static functionName: string;
-             sequence: number;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
              reset(): void;
          }
 
          export declare class PositionAlongPathSequential extends SourceEngineParticleOperator {
+             #private;
              static functionName: string;
-             sequence: number;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
              reset(): void;
          }
@@ -5514,7 +5519,7 @@ declare class Choreography {
 
          export declare class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
              initMultipleOverride(): boolean;
          }
@@ -5528,7 +5533,7 @@ declare class Choreography {
 
          export declare class PositionOnModelRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
@@ -5540,13 +5545,13 @@ declare class Choreography {
 
          export declare class PositionWithinBoxRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
          }
 
          export declare class PositionWithinSphereRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
          }
 
@@ -5653,7 +5658,7 @@ declare class Choreography {
 
          export declare class PullTowardsControlPoint extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doForce(particle: any, elapsedTime: any, accumulatedForces: any): void;
          }
 
@@ -5682,13 +5687,13 @@ declare class Choreography {
 
          export declare class RadiusRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
          }
 
          export declare class RadiusScale extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
@@ -5724,11 +5729,11 @@ declare class Choreography {
 
          export declare class RandomForce extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doForce(particle: any, elapsedTime: any, accumulatedForces: any): void;
          }
 
-         declare interface RandomPointOnModel {
+         export declare interface RandomPointOnModel {
              getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3;
          }
 
@@ -5794,7 +5799,7 @@ declare class Choreography {
 
          export declare class RemapControlPointToScalar extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
              getInputValue(inputField: any, cpNumber: any): number;
              initMultipleOverride(): boolean;
@@ -5802,7 +5807,7 @@ declare class Choreography {
 
          export declare class RemapControlPointToVector extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
              getInputValue(inputField: any, cpNumber: any): number;
              initMultipleOverride(): boolean;
@@ -5816,7 +5821,7 @@ declare class Choreography {
 
          export declare class RemapCPSpeedToCP extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
@@ -5834,26 +5839,26 @@ declare class Choreography {
 
          export declare class RemapDistanceToControlPointToScalar extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
          export declare class RemapDistanceToControlPointToVector extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any): void;
          }
 
          export declare class RemapInitialScalar extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class RemapNoiseToScalar extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
          }
 
@@ -5866,13 +5871,13 @@ declare class Choreography {
 
          export declare class RemapScalar extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
          export declare class RemapScalarToVector extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
@@ -5930,13 +5935,11 @@ declare class Choreography {
          export declare class RenderAnimatedSprites extends SourceEngineParticleOperator {
              #private;
              static functionName: string;
-             geometry: BufferGeometry;
-             imgData: any;
-             constructor();
-             updateParticles(particleSystem: any, particleList: any): void;
-             set maxParticles(maxParticles: any);
-             initRenderer(particleSystem: any): void;
-             updateParticlesTexture(): void;
+             geometry?: BufferGeometry;
+             constructor(system: SourceEngineParticleSystem);
+             updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
+             set maxParticles(maxParticles: number);
+             initRenderer(): void;
              dispose(): void;
          }
 
@@ -6079,14 +6082,13 @@ declare class Choreography {
          export declare class RenderRope extends SourceEngineParticleOperator {
              #private;
              static functionName: string;
-             texture: Texture;
-             geometry: BeamBufferGeometry;
-             imgData: any;
-             constructor();
-             updateParticles(particleSystem: any, particleList: any): void;
-             set maxParticles(maxParticles: any);
-             initRenderer(particleSystem: any): void;
-             updateParticlesTexture(): void;
+             texture?: Texture;
+             geometry?: BeamBufferGeometry;
+             imgData?: Float32Array;
+             constructor(system: SourceEngineParticleSystem);
+             updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
+             set maxParticles(maxParticles: number);
+             initRenderer(): void;
              dispose(): void;
          }
 
@@ -6105,9 +6107,9 @@ declare class Choreography {
          export declare class RenderScreenVelocityRotate extends SourceEngineParticleOperator {
              static functionName: string;
              isScreenVelocityRotate: boolean;
-             constructor();
-             updateParticles(particleSystem: any, particleList: any): void;
-             initRenderer(particleSystem: any): void;
+             constructor(system: SourceEngineParticleSystem);
+             updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
+             initRenderer(): void;
          }
 
          export declare class RenderSprites extends RenderBase {
@@ -6132,15 +6134,13 @@ declare class Choreography {
          export declare class RenderSpriteTrail extends SourceEngineParticleOperator {
              #private;
              static functionName: string;
-             texture: Texture;
-             geometry: BufferGeometry;
-             imgData: any;
-             constructor();
-             updateParticles(particleSystem: any, particleList: any, elapsedTime: any): void;
-             initRenderer(particleSystem: any): void;
-             createParticlesArray(maxParticles: any): void;
-             updateParticlesTexture(maxParticles: any, pixels: any): void;
-             setupParticlesTexture1(particleList: any, maxParticles: any, elapsedTime: any): void;
+             texture?: Texture;
+             geometry?: BufferGeometry;
+             imgData?: Float32Array;
+             constructor(system: SourceEngineParticleSystem);
+             updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
+             initRenderer(): void;
+             createParticlesArray(maxParticles: number): void;
              dispose(): void;
          }
 
@@ -6310,7 +6310,6 @@ declare class Choreography {
 
          export declare class RotationBasic extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
              doOperate(particle: any, elapsedTime: any): void;
          }
 
@@ -6423,14 +6422,14 @@ declare class Choreography {
 
          export declare class RotationRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class RotationSpeedRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
          }
 
@@ -6439,26 +6438,26 @@ declare class Choreography {
           */
          export declare class RotationSpinRoll extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
          export declare class RotationSpinYaw extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
          export declare class RotationYawFlipRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class RotationYawRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
          }
 
@@ -6535,14 +6534,14 @@ declare class Choreography {
 
          export declare class SequenceRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
          }
 
          export declare class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOperator {
              #private;
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void;
              doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
          }
@@ -6563,7 +6562,7 @@ declare class Choreography {
 
          export declare class SetControlPointPositions extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any): void;
          }
 
@@ -6583,7 +6582,7 @@ declare class Choreography {
 
          export declare class SetControlPointToParticlesCenter extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doOperate(particle: any, elapsedTime: any): void;
          }
 
@@ -6654,6 +6653,34 @@ declare class Choreography {
              _paramChanged(paramName: string, param: OperatorParam): void;
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
+
+         declare const SHADER_PARAM_TYPE_BOOL = 8;
+
+         declare const SHADER_PARAM_TYPE_COLOR = 2;
+
+         declare const SHADER_PARAM_TYPE_ENVMAP = 6;
+
+         declare const SHADER_PARAM_TYPE_FLOAT = 7;
+
+         declare const SHADER_PARAM_TYPE_FOURCC = 9;
+
+         declare const SHADER_PARAM_TYPE_INTEGER = 1;
+
+         declare const SHADER_PARAM_TYPE_MATERIAL = 11;
+
+         declare const SHADER_PARAM_TYPE_MATRIX = 10;
+
+         declare const SHADER_PARAM_TYPE_MATRIX4X2 = 13;
+
+         declare const SHADER_PARAM_TYPE_STRING = 12;
+
+         declare const SHADER_PARAM_TYPE_TEXTURE = 0;
+
+         declare const SHADER_PARAM_TYPE_VEC2 = 3;
+
+         declare const SHADER_PARAM_TYPE_VEC3 = 4;
+
+         declare const SHADER_PARAM_TYPE_VEC4 = 5;
 
          export declare enum ShaderDebugMode {
              None = 0
@@ -6825,7 +6852,7 @@ declare class Choreography {
              weight: number;
          };
 
-         export declare class Source1ModelInstance extends Entity implements Animated, HasSkeleton, RandomPointOnModel {
+         export declare class Source1ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel {
              #private;
              isSource1ModelInstance: boolean;
              animable: boolean;
@@ -6862,6 +6889,8 @@ declare class Choreography {
              update(scene: Scene, camera: Camera, delta: number): void;
              _playSequences(delta: number): void;
              setMaterialOverride(materialOverride: Material | null): Promise<void>;
+             getSkins(): Promise<Set<string>>;
+             getMaterialsName(skin: string): Promise<[string, Set<string>]>;
              getBoneById(boneId: number): Bone | undefined;
              renderBodyParts(render: boolean): void;
              renderBodyPart(bodyPartName: string, render: boolean): void;
@@ -6870,11 +6899,10 @@ declare class Choreography {
              setBodyPartModel(bodyPartName: string, modelId: number): void;
              getBodyGroups(): Map<string, number>;
              toString(): string;
-             attachSystem(system: any, attachmentName?: string, cpIndex?: number, offset?: vec3): void;
-             attachSystemToBone(system: any, boneName: any, offset: any): void;
-             getAttachment(attachmentName: any): Bone;
-             getBoneByName(boneName: any): Bone;
-             set material(material: any);
+             attachSystem(system: SourceEngineParticleSystem, attachmentName?: string, cpIndex?: number, offset?: vec3): void;
+             getAttachment(attachmentName: string): Bone;
+             getBoneByName(boneName: string): Bone;
+             set material(material: Material);
              buildContextMenu(): {
                  visibility: {
                      i18n: string;
@@ -6970,20 +6998,20 @@ declare class Choreography {
                  };
                  tint: {
                      i18n: string;
-                     f: (entity: any) => Promise<vec4>;
+                     f: (entity: Source1ModelInstance) => Promise<vec4>;
                  };
                  reset_tint: {
                      i18n: string;
-                     f: (entity: any) => any;
+                     f: (entity: Source1ModelInstance) => any;
                      disabled: boolean;
                  };
                  animation: {
                      i18n: string;
-                     f: (entity: any) => Promise<void>;
+                     f: (entity: Source1ModelInstance) => Promise<void>;
                  };
                  overrideallmaterials: {
                      i18n: string;
-                     f: (entity: any) => Promise<void>;
+                     f: (entity: Source1ModelInstance) => Promise<void>;
                  };
                  Source1ModelInstance_2: any;
                  animate: {
@@ -7001,26 +7029,25 @@ declare class Choreography {
                      f: () => Promise<void>;
                  };
              };
-             getParentModel(): this;
+             getParentModel(): Source1ModelInstance;
              getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]): vec3;
-             set position(position: vec3);
-             get position(): vec3;
+             setPosition(position: vec3): void;
              set quaternion(quaternion: vec4);
              get quaternion(): vec4;
-             static set animSpeed(speed: any);
+             static set animSpeed(speed: number);
              setFlexes(flexes?: {}): void;
              resetFlexParameters(): void;
              playDefaultAnim(): Promise<void>;
              getHitboxes(): Hitbox[];
-             replaceMaterial(material: any, recursive?: boolean): void;
+             replaceMaterial(material: Material, recursive?: boolean): void;
              resetMaterial(recursive?: boolean): void;
              getAnimations(): Promise<Set<string>>;
              toJSON(): any;
-             static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Entity>;
-             fromJSON(json: any): void;
+             static constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | null>;
+             fromJSON(json: JSONObject): void;
              dispose(): void;
              static getEntityName(): string;
-             is(s: any): boolean;
+             is(s: string): boolean;
          }
 
          export declare class Source1ModelManager {
@@ -7100,7 +7127,7 @@ declare class Choreography {
               * Play a sound
               * @param {String} soundName soundName
               */
-             static playSound(repositoryName: string, soundName: string): Promise<HTMLAudioElement>;
+             static playSound(repositoryName: string, soundName: string): Promise<HTMLAudioElement | null>;
              static loadManifest(repositoryName: string, fileName: string): void;
              static mute(): void;
              static unmute(): void;
@@ -7266,7 +7293,7 @@ declare class Choreography {
          }
 
          export declare class Source2Error extends Source2Material {
-             constructor(repository: string, source2File?: Source2File);
+             constructor(repository: string, shader: string, source2File?: Source2File);
              get shaderSource(): string;
          }
 
@@ -7318,9 +7345,9 @@ declare class Choreography {
          declare class Source2FileBlock {
              file: Source2File;
              type: string;
-             reader: BinaryReader;
-             offset: number;
-             length: number;
+             readonly reader: BinaryReader;
+             readonly offset: number;
+             readonly length: number;
              keyValue?: Kv3File;
              constructor(file: Source2File, id: number, type: string, reader: BinaryReader, offset: number, length: number);
              getKeyValue(path: string): Kv3Element | Kv3Value | undefined | null;
@@ -7385,12 +7412,12 @@ declare class Choreography {
          export declare class Source2Material extends Material {
              #private;
              repository: string;
-             constructor(repository: string, source2File?: Source2File);
+             readonly shader: string;
+             constructor(repository: string, shader: string, source2File?: Source2File);
              setupUniformsOnce(): void;
              clone(): Source2Material;
              getTextureParam(textureName: string): string | null;
              updateMaterial(time: number, mesh: Mesh): void;
-             processProxies(time: number, proxyParams: ProxyParams): void;
              _afterProcessProxies(proxyParams: ProxyParams): void;
              setDynamicUniform(uniformName: string): void;
              afterProcessProxies(proxyParams: ProxyParams): void;
@@ -7473,7 +7500,7 @@ declare class Choreography {
              getWorldQuaternion(q?: quat): quat;
          }
 
-         export declare class Source2ModelInstance extends Entity implements Animated, HasSkeleton, RandomPointOnModel {
+         export declare class Source2ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel {
              #private;
              isSource2ModelInstance: boolean;
              animable: boolean;
@@ -7491,8 +7518,7 @@ declare class Choreography {
              constructor(sourceModel: Source2Model, isDynamic: boolean);
              setBodyGroup(name: string, choice: number): void;
              get skeleton(): Skeleton;
-             set position(position: vec3);
-             get position(): vec3;
+             setPosition(position: vec3): void;
              addChild(child: Entity): Entity;
              removeChild(child: Entity): void;
              set skin(skin: number);
@@ -7504,6 +7530,8 @@ declare class Choreography {
              setAnimation(id: number, name: string, weight: number): Promise<void>;
              setActivityModifiers(activityModifiers?: string[]): void;
              update(scene: Scene, camera: Camera, delta: number): void;
+             getSkins(): Promise<Set<string>>;
+             getMaterialsName(skin: string): Promise<[string, Set<string>]>;
              getAnimations(): Promise<Set<string>>;
              buildContextMenu(): {
                  visibility: {
@@ -8050,7 +8078,7 @@ declare class Choreography {
 
          export declare const Source2SnapshotLoader: {
              load(repository: string, filename: string): Promise<Source2Snapshot>;
-             "__#257@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+             "__#261@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
@@ -8059,7 +8087,7 @@ declare class Choreography {
 
          export declare class Source2SpriteCard extends Source2Material {
              #private;
-             constructor(repository: string, source2File?: Source2File);
+             constructor(repository: string, shader?: string, source2File?: Source2File);
              setOutputBlendMode(outputBlendMode: number): void;
              setTexturePath(texturePath: string): Promise<void>;
              initTextureUniforms(): Promise<void>;
@@ -8097,10 +8125,14 @@ declare class Choreography {
              getDxtLevel(): number;
              isCompressed(): boolean;
              isCubeTexture(): boolean;
-             setImageFormat(imageFormat: number): void;
-             getVtexImageFormat(): number;
+             setImageFormat(imageFormat: VtexImageFormat): void;
+             getVtexImageFormat(): VtexImageFormat;
              getImageFormat(): ImageFormat;
              getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
+             setCodec(codec: TextureCodec): void;
+             decodeYCoCg(): boolean;
+             decodeNormalizeNormals(): boolean;
+             setSpecialDependency(compilerIdentifier: string, string: string): void;
          }
 
          export declare const Source2TextureManager: Source2TextureManagerClass;
@@ -8266,39 +8298,26 @@ declare class Choreography {
 
          declare class SourceEngineMaterial extends Material {
              #private;
-             repository: string;
-             path: string;
+             readonly vmt: SourceEngineMaterialVmt;
+             readonly repository: string;
+             readonly path: string;
              proxyParams: any;
              proxies: Proxy_2[];
              variables: Map<string, any>;
-             numFrames: number;
-             frameX: number;
-             frameY: number;
-             sequenceLength: number;
-             constructor(params: SourceEngineMaterialParams);
+             protected useSrgb: boolean;
+             constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
              init(): void;
-             getTexture(role: TextureRole, repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture;
-             setNumFrames(frames: any, frameX: any, frameY: any, sequenceLength: any): void;
-             getTexCoords(flCreationTime: any, flCurTime: any, flAgeScale: any, nSequence: any): any;
-             getFrameSpan(sequence: any): any;
-             /**
-              * Init proxies
-              * @param proxies {Array} List of proxies
-              */
-             initProxies(proxies: any): void;
-             updateMaterial(time: any, mesh: any): void;
-             /**
-              * Process proxies
-              * @param proxyParams {Object} Param passed to proxies
-              */
-             processProxies(time: any, proxyParams?: {}): void;
-             _afterProcessProxies(proxyParams: any): void;
-             afterProcessProxies(proxyParams: any): void;
+             getTexture(role: TextureRole, repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture | null;
+             getTexCoords(flCreationTime: number, flCurTime: number, flAgeScale: number, nSequence: number): any;
+             getFrameSpan(sequence: number): any;
+             updateMaterial(time: number, mesh: Mesh): void;
+             _afterProcessProxies(proxyParams?: {}): void;
+             afterProcessProxies(proxyParams?: {}): void;
              getAlpha(): number;
-             computeModulationColor(out: any): any;
-             getDefaultParameters(): {};
-             sanitizeValue(parameterName: any, value: any): any;
-             setKeyValue(key: any, value: any): void;
+             computeModulationColor(out: vec4): vec4;
+             getDefaultParameters(): VmtParameters;
+             sanitizeValue(parameterName: string, value: any): any;
+             setKeyValue(key: string, value: any): void;
              clone(): SourceEngineMaterial;
              dispose(): void;
          }
@@ -8313,11 +8332,9 @@ declare class Choreography {
              }>;
          }
 
-         declare type SourceEngineMaterialParams = MaterialParams_2 & {
-             repository: string;
-             path: string;
-             useSrgb?: boolean;
-         };
+         declare type SourceEngineMaterialParams = MaterialParams & {};
+
+         declare type SourceEngineMaterialVmt = Record<string, any>;
 
          export declare class SourceEngineMDLLoader extends SourceBinaryLoader {
              #private;
@@ -8333,7 +8350,7 @@ declare class Choreography {
              currentTime: number;
              previousElapsedTime: number;
              name: string;
-             id: any;
+             id: number;
              isAlive: boolean;
              readonly position: vec3;
              readonly prevPosition: vec3;
@@ -8375,60 +8392,62 @@ declare class Choreography {
              renderScreenVelocityRotate: boolean;
              initialVec?: vec3;
              bones?: [Bone, number][];
-             constructor(id: any, system: any);
-             step(elapsedTime: any): void;
+             m_flRotateRate: number;
+             m_flForward: number;
+             constructor(id: number, system: SourceEngineParticleSystem);
+             step(elapsedTime: number): void;
              start(): void;
              die(): void;
              reset(): void;
-             setInitialField(field: any, value: any, mulInitial: any): void;
-             setField(field: number, value: any, mulInitial?: boolean, setInitial?: boolean): void;
+             setInitialField(field: number, value: SourceParticleFieldValue, mulInitial: boolean): void;
+             setField(field: number, value: SourceParticleFieldValue, mulInitial?: boolean, setInitial?: boolean): void;
              /**
               * TODO
               */
-             getField(field?: number, initial?: boolean): number;
+             getField(field?: number, initial?: boolean): SourceParticleFieldValue;
              /**
               * TODO
               */
-             setInitialSequence(sequence: any): void;
+             setInitialSequence(sequence: number): void;
              /**
               * TODO
               */
-             setInitialRadius(radius: any): void;
+             setInitialRadius(radius: number): void;
              /**
               * TODO
               */
-             setInitialTTL(timeToLive: any): void;
+             setInitialTTL(timeToLive: number): void;
              /**
               * TODO
               */
-             setInitialColor(color: any): void;
+             setInitialColor(color: Color): void;
              /**
               * Set particle initial rotation roll.
               * @param {Number} roll Initial rotation roll.
               */
-             setInitialRoll(roll: any): void;
+             setInitialRoll(roll: number): void;
              /**
               * Get particle world position
               * @param {vec3|null} The receiving vector. Created if null.
               * @return {vec3} The world position.
               */
-             getWorldPos(worldPos: any): any;
+             getWorldPos(worldPos: vec3): vec3;
              /**
               * Get particle world position
               * @param {vec3|null} The receiving vector. Created if null.
               * @return {vec3} The world position.
               */
-             getLocalPos(worldPos: any): any;
+             getLocalPos(worldPos: vec3): vec3;
          }
 
          declare class SourceEngineParticleOperator {
              #private;
-             particleSystem?: SourceEngineParticleSystem;
+             protected particleSystem: SourceEngineParticleSystem;
              material?: Material;
              materialLoaded: boolean;
              paramList: ParamType[];
              mesh?: Mesh;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              get functionName(): string;
              static get functionName(): string;
              static getFunctionName(): string;
@@ -8442,11 +8461,10 @@ declare class Choreography {
              doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces?: vec3, strength?: number): void;
              applyConstraint(particle: SourceEngineParticle): void;
              doRender(particle: SourceEngineParticle[], elapsedTime: number, material: Material): void;
-             initRenderer(particleSystem: SourceEngineParticleSystem): void;
+             initRenderer(): void;
              updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
-             emitParticle(creationTime: number, elapsedTime: number): any;
+             emitParticle(creationTime: number, elapsedTime: number): SourceEngineParticle;
              setMaterial(material: Material): void;
-             setParticleSystem(particleSystem: SourceEngineParticleSystem): void;
              paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void;
              setParameter(parameter: string, type: string, value: CDmxAttributeValue | CDmxAttributeValue[]): this;
              getParameter(parameter: string): any;
@@ -8469,9 +8487,9 @@ declare class Choreography {
 
          export declare class SourceEngineParticleOperators {
              #private;
-             static getOperator(name: any): any;
-             static getOperators(type: any): any;
-             static registerOperator(name: any, className?: any): void;
+             static getOperator(system: SourceEngineParticleSystem, name: string): SourceEngineParticleOperator;
+             static getOperators(type: string): string[];
+             static registerOperator(name: string | typeof SourceEngineParticleOperator, operator?: typeof SourceEngineParticleOperator): void;
          }
 
          export declare class SourceEngineParticleSystem extends Entity implements Loopable {
@@ -8527,7 +8545,7 @@ declare class Choreography {
               */
              stepForces(): void;
              stepConstraints(particle: SourceEngineParticle): void;
-             createParticle(creationTime: number, elapsedTime: number): any;
+             createParticle(creationTime: number, elapsedTime: number): SourceEngineParticle;
              getWorldPosition(vec?: vec3): vec3;
              stepControlPoint(): void;
              setParam(element: CDmxAttribute): this;
@@ -8540,16 +8558,9 @@ declare class Choreography {
              setInitialParticles(initial: number): void;
              setMinimumTickRate(minimum: number): void;
              setMaximumTickRate(maximum: number): void;
-             setMaterialName(materialName: string): void;
+             setMaterialName(materialName: string): Promise<void>;
              setSnapshot(snapshot: any): void;
              addSub(type: string, object: SourceEngineParticleOperator, id: string): void;
-             addEmitter(emitter: SourceEngineParticleOperator, id: string): void;
-             addInitializer(initializer: SourceEngineParticleOperator, id: string): void;
-             addOperator(operator: SourceEngineParticleOperator, id: string): void;
-             removeOperator(id: string): void;
-             addForce(force: SourceEngineParticleOperator, id: string): void;
-             addConstraint(constraint: SourceEngineParticleOperator, id: string): void;
-             addRenderer(renderer: SourceEngineParticleOperator, id: string): void;
              getControlPoint(controlPointId: number): ControlPoint | null;
              getControlPoints(): ControlPoint[];
              getOwnControlPoint(controlPointId: number): ControlPoint;
@@ -8699,8 +8710,8 @@ declare class Choreography {
              #private;
              load(repository: string, path: string): Promise<SourceEngineMaterial | null>;
              parse(repository: string, path: string, content: string): Promise<SourceEngineMaterial | null>;
-             setMaterial(fileName: any, fileContent: any): void;
-             registerMaterial(materialName: any, materialClass: any): void;
+             setMaterial(fileName: string, fileContent: string): void;
+             registerMaterial(materialName: string, materialClass: typeof SourceEngineMaterial): void;
          }
 
          export declare class SourceEngineVTF {
@@ -8930,7 +8941,7 @@ declare class Choreography {
          };
 
          export declare class SourceModel {
-             repository: string;
+             readonly repository: string;
              fileName: string;
              name: string;
              mdl: SourceMdl;
@@ -8964,6 +8975,8 @@ declare class Choreography {
              geometry: BufferGeometry;
              constructor(mesh: MeshTest, geometry: BufferGeometry);
          }
+
+         declare type SourceParticleFieldValue = any;
 
          export declare class SourcePCF {
              repository: string;
@@ -9306,7 +9319,7 @@ declare class Choreography {
 
          export declare class SpriteCardMaterial extends SourceEngineMaterial {
              #private;
-             constructor(params: SourceEngineMaterialParams);
+             constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
              init(): void;
              clone(): SpriteCardMaterial;
              get shaderSource(): string;
@@ -9314,7 +9327,7 @@ declare class Choreography {
 
          export declare class SpriteMaterial extends SourceEngineMaterial {
              #private;
-             constructor(params?: any);
+             constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
              init(): void;
              clone(): SpriteMaterial;
              get shaderSource(): string;
@@ -9505,6 +9518,7 @@ declare class Choreography {
              name: string;
              isRenderTargetTexture: boolean;
              properties: Map<string, any>;
+             readonly defines: Map<string, string>;
              constructor(textureParams?: TextureParams);
              setParameters(glContext: WebGLAnyRenderingContext, target: GLenum): void;
              texImage2D(glContext: WebGLAnyRenderingContext, target: TextureTarget, width: number, height: number, format: TextureFormat, type: TextureType, pixels?: ArrayBufferView | null, level?: number): void;
@@ -9555,6 +9569,11 @@ declare class Choreography {
          export declare const TEXTURE_FORMAT_UNCOMPRESSED_RGBA: number;
 
          export declare const TEXTURE_FORMAT_UNKNOWN = 0;
+
+         declare enum TextureCodec {
+             YCoCg = 1,
+             NormalizeNormals = 2
+         }
 
          export declare const TextureFactoryEventTarget: EventTarget;
 
@@ -9812,7 +9831,7 @@ declare class Choreography {
 
          export declare class TrailLengthRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
          }
 
@@ -9937,7 +9956,7 @@ declare class Choreography {
 
          export declare class TwistAroundAxis extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doForce(particle: any, elapsedTime: any, accumulatedForces: any, strength?: number): void;
          }
 
@@ -9974,8 +9993,7 @@ declare class Choreography {
 
          export declare class UnlitGenericMaterial extends SourceEngineMaterial {
              #private;
-             diffuseModulation: vec4;
-             constructor(params?: any);
+             constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
              init(): void;
              clone(): UnlitGenericMaterial;
              get shaderSource(): string;
@@ -10030,27 +10048,33 @@ declare class Choreography {
          export declare class VelocityNoise extends SourceEngineParticleOperator {
              #private;
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class VelocityRandom extends SourceEngineParticleOperator {
              static functionName: string;
-             constructor();
+             constructor(system: SourceEngineParticleSystem);
              doInit(particle: any, elapsedTime: any): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class VertexLitGenericMaterial extends SourceEngineMaterial {
              #private;
-             diffuseModulation: vec4;
-             constructor(params?: any);
+             useSrgb: boolean;
              init(): void;
-             afterProcessProxies(proxyParams: any): void;
+             afterProcessProxies(proxyParams: DynamicParams): void;
              clone(): VertexLitGenericMaterial;
              get shaderSource(): string;
          }
+
+         declare type VmtParameter = [
+         typeof SHADER_PARAM_TYPE_TEXTURE | typeof SHADER_PARAM_TYPE_INTEGER | typeof SHADER_PARAM_TYPE_COLOR | typeof SHADER_PARAM_TYPE_VEC2 | typeof SHADER_PARAM_TYPE_VEC3 | typeof SHADER_PARAM_TYPE_VEC4 | typeof SHADER_PARAM_TYPE_ENVMAP | typeof SHADER_PARAM_TYPE_FLOAT | typeof SHADER_PARAM_TYPE_BOOL | typeof SHADER_PARAM_TYPE_FOURCC | typeof SHADER_PARAM_TYPE_MATRIX | typeof SHADER_PARAM_TYPE_MATERIAL | typeof SHADER_PARAM_TYPE_STRING | typeof SHADER_PARAM_TYPE_MATRIX4X2,
+         any
+         ];
+
+         declare type VmtParameters = Record<string, VmtParameter>;
 
          export declare class VpkRepository implements Repository {
              #private;
@@ -10063,6 +10087,20 @@ declare class Choreography {
              getFileAsBlob(filename: string): Promise<RepositoryBlobResponse>;
              getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
              getFileList(): Promise<RepositoryFileListResponse>;
+         }
+
+         declare enum VtexImageFormat {
+             Unknown = 0,
+             Dxt1 = 1,
+             Dxt5 = 2,
+             R8 = 3,
+             R8G8B8A8Uint = 4,
+             PngR8G8B8A8Uint = 16,
+             PngDXT5 = 18,
+             Bc7 = 20,
+             Bc5 = 21,
+             Bc4 = 27,
+             BGRA8888 = 28
          }
 
          declare interface VTFMipMap {
@@ -10123,34 +10161,16 @@ declare class Choreography {
 
          export declare class WeaponDecalMaterial extends SourceEngineMaterial {
              #private;
-             constructor(params?: any);
              init(): void;
-             afterProcessProxies(proxyParams: any): void;
-             set style(style: any);
-             setColorUniform(uniformName: any, value: any): void;
-             set color0(color: any);
-             set color1(color: any);
-             set color2(color: any);
-             set color3(color: any);
-             setPatternTexCoordTransform(scale: any, translation: any, rotation: any): void;
-             getTexCoordTransform(scale: any, translation: any, rotation: any): mat4;
-             getDefaultParameters(): {
-                 $grungetexture: (string | number)[];
-                 $weartexture: (string | number)[];
-                 $decalstyle: number[];
-                 $colortint: (number | number[])[];
-                 $colortint2: (number | number[])[];
-                 $colortint3: (number | number[])[];
-                 $colortint4: (number | number[])[];
-                 $unwearstrength: number[];
-                 $wearremapmin: number[];
-                 $wearremapmid: number[];
-                 $wearremapmax: number[];
-                 $wearwidthmin: number[];
-                 $wearwidthmax: number[];
-                 $wearbias: number[];
-                 $desatbasetint: number[];
-             };
+             afterProcessProxies(proxyParams: DynamicParams): void;
+             set style(style: string);
+             setColorUniform(uniformName: string, value: string): void;
+             set color0(color: string);
+             set color1(color: string);
+             set color2(color: string);
+             set color3(color: string);
+             setPatternTexCoordTransform(scale: vec2, translation: vec2, rotation: number): void;
+             getDefaultParameters(): VmtParameters;
              clone(): WeaponDecalMaterial;
              get shaderSource(): string;
          }
@@ -10267,7 +10287,7 @@ declare class Choreography {
          export declare class WorldVertexTransitionMaterial extends SourceEngineMaterial {
              #private;
              init(): void;
-             afterProcessProxies(proxyParams: any): void;
+             afterProcessProxies(proxyParams: DynamicParams): void;
              clone(): WorldVertexTransitionMaterial;
              getShaderSource(): string;
          }
@@ -10292,12 +10312,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#225@#webAssembly"?: any;
-             "__#225@#HEAPU8"?: Uint8Array;
+             "__#230@#webAssembly"?: any;
+             "__#230@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#225@#initHeap"(): void;
+             "__#230@#initHeap"(): void;
          };
 
          export { }
