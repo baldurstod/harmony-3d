@@ -2,6 +2,7 @@ import { Camera } from '../cameras/camera';
 import { FirstPersonControl } from '../controls/firstpersoncontrol';
 import { OrbitControl } from '../controls/orbitcontrol';
 import { Graphics } from '../graphics/graphics';
+import { GraphicsEvents } from '../graphics/graphicsevents';
 import { RenderTargetViewer } from '../utils/rendertargetviewer';
 
 function resizeCamera(context, camera) {
@@ -17,9 +18,11 @@ function resizeCamera(context, camera) {
 
 export type ContextObserverTarget = Camera | FirstPersonControl | OrbitControl | RenderTargetViewer;
 
+export type ContextObserverSubject = EventTarget | typeof GraphicsEvents;
+
 class ContextObserverClass {
-	#observed = new Map<EventTarget, Set<ContextObserverTarget>>();
-	#listeners = new Map<EventTarget, Set<string>>();
+	#observed = new Map<ContextObserverSubject, Set<ContextObserverTarget>>();
+	#listeners = new Map<ContextObserverSubject, Set<string>>();
 	static #instance: ContextObserverClass;
 
 	constructor() {
@@ -54,7 +57,11 @@ class ContextObserverClass {
 		}
 	}
 
-	#addObserver(subject: EventTarget, dependent: ContextObserverTarget) {
+	#addObserver(subject: ContextObserverSubject, dependent: ContextObserverTarget) {
+		if ((subject as typeof GraphicsEvents).isGraphicsEvents) {
+			subject = (subject as typeof GraphicsEvents).eventTarget;
+		}
+
 		if (!this.#observed.has(subject)) {
 			this.#observed.set(subject, new Set());
 		}
@@ -71,7 +78,7 @@ class ContextObserverClass {
 
 	}
 
-	#createListeners(subject: EventTarget, dependent) {
+	#createListeners(subject: ContextObserverSubject, dependent) {
 		switch (true) {
 			case dependent.is('Camera'):
 			case dependent instanceof FirstPersonControl://TODO do it for any CameraControl?
@@ -95,7 +102,7 @@ class ContextObserverClass {
 		}
 	}
 
-	#addListener(target: EventTarget, type: string) {
+	#addListener(target: ContextObserverSubject, type: string) {
 		if (!this.#listeners.has(target)) {
 			this.#listeners.set(target, new Set());
 		}
@@ -117,7 +124,7 @@ class ContextObserverClass {
 		}
 	}
 
-	observe(subject: EventTarget, dependent) {
+	observe(subject: ContextObserverSubject, dependent) {
 		this.#addObserver(subject, dependent);
 
 		switch (true) {

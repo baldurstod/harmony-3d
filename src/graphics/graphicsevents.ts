@@ -43,60 +43,59 @@ export interface GraphicKeyboardEventData {
 	keyboardEvent: KeyboardEvent,
 }
 
-export const GraphicsEvents = new (function () {
-	class GraphicsEvents extends EventTarget {
-		static #instance: GraphicsEvents;
-		constructor() {
-			if (GraphicsEvents.#instance) {
-				return GraphicsEvents.#instance;
-			}
-			super();
-			GraphicsEvents.#instance = this;
-		}
+export class GraphicsEvents {
+	static isGraphicsEvents: true = true;
+	static readonly eventTarget = new EventTarget();
 
-		tick(delta: number, time: number, speed: number) {
-			this.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
-		}
-
-		resize(width: number, height: number) {
-			this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
-		}
-
-		mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-			this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-		}
-
-		mouseDown(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-			this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-		}
-
-		mouseUp(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-			this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-		}
-
-		wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent) {
-			this.dispatchEvent(new CustomEvent<GraphicWheelEventData>(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
-		}
-
-		keyDown(keyboardEvent: KeyboardEvent) {
-			this.dispatchEvent(new CustomEvent<GraphicKeyboardEventData>(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
-		}
-
-		keyUp(keyboardEvent: KeyboardEvent) {
-			this.dispatchEvent(new CustomEvent<GraphicKeyboardEventData>(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
-		}
-
-		touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent) {
-			this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-		}
-
-		touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent) {
-			this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-		}
-
-		touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent) {
-			this.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-		}
+	static addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void {
+		this.eventTarget.addEventListener(type, callback, options);
 	}
-	return GraphicsEvents;
-}());
+
+	static removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void {
+		this.eventTarget.removeEventListener(type, callback, options);
+	}
+
+	static tick(delta: number, time: number, speed: number) {
+		this.eventTarget.dispatchEvent(new CustomEvent<GraphicTickEvent>(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
+	}
+
+	static resize(width: number, height: number) {
+		this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
+	}
+
+	static mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
+		this.eventTarget.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	}
+
+	static mouseDown(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
+		this.eventTarget.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	}
+
+	static mouseUp(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
+		this.eventTarget.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	}
+
+	static wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent) {
+		this.eventTarget.dispatchEvent(new CustomEvent<GraphicWheelEventData>(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
+	}
+
+	static keyDown(keyboardEvent: KeyboardEvent) {
+		this.eventTarget.dispatchEvent(new CustomEvent<GraphicKeyboardEventData>(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
+	}
+
+	static keyUp(keyboardEvent: KeyboardEvent) {
+		this.eventTarget.dispatchEvent(new CustomEvent<GraphicKeyboardEventData>(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
+	}
+
+	static touchStart(pickedEntity: Entity | null, touchEvent: TouchEvent) {
+		this.eventTarget.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+	}
+
+	static touchMove(pickedEntity: Entity | null, touchEvent: TouchEvent) {
+		this.eventTarget.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+	}
+
+	static touchCancel(pickedEntity: Entity | null, touchEvent: TouchEvent) {
+		this.eventTarget.dispatchEvent(new CustomEvent<GraphicTouchEventData>(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+	}
+}
