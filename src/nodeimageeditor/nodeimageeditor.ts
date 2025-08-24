@@ -1,27 +1,27 @@
 import { Node } from './node';
 import { getOperation } from './operations';
 
+import { vec3 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
+import { Graphics } from '../graphics/graphics';
+import { Material } from '../materials/material';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Scene } from '../scenes/scene';
-import { Graphics } from '../graphics/graphics';
-import { vec3 } from 'gl-matrix';
-import { Material } from '../materials/material';
 
 export const DEFAULT_TEXTURE_SIZE = 512;
 
 export type NodeImageVariableType = number;
 
-export class NodeImageEditor extends EventTarget {
+export class NodeImageEditor {
 	#variables = new Map<string, NodeImageVariableType>();
 	#scene = new Scene();
 	#nodes = new Set<Node>();
 	#camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
 	#fullScreenQuadMesh = new FullScreenQuad();
 	textureSize = DEFAULT_TEXTURE_SIZE;
+	#eventTarget = new EventTarget();
 
 	constructor() {
-		super();
 		this.#scene.addChild(this.#fullScreenQuadMesh);
 	}
 
@@ -52,9 +52,9 @@ export class NodeImageEditor extends EventTarget {
 	}*/
 
 	#dispatchEvent(eventName, eventDetail) {
-		this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-		this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
-	}NodeImageEditor
+		this.#eventTarget.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
+		this.#eventTarget.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+	}
 
 	/*addNode(node) {
 		if (node instanceof Node && node.editor == this) {
@@ -96,5 +96,13 @@ export class NodeImageEditor extends EventTarget {
 
 	getNodes() {
 		return new Set(this.#nodes);
+	}
+
+	addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void {
+		this.#eventTarget.addEventListener(type, callback, options);
+	}
+
+	removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void {
+		this.#eventTarget.removeEventListener(type, callback, options);
 	}
 }
