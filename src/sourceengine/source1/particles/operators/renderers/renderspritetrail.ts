@@ -12,6 +12,7 @@ import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MA
 import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { Source1ParticleControler } from '../../source1particlecontroler';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
@@ -19,9 +20,9 @@ import { SourceEngineParticleOperator } from '../operator';
 
 export class RenderSpriteTrail extends SourceEngineParticleOperator {
 	static functionName = 'render_sprite_trail';
-	texture: Texture;
-	geometry: BufferGeometry;
-	imgData;
+	texture?: Texture;
+	geometry?: BufferGeometry;
+	imgData?: Float32Array;
 
 	constructor(system: SourceEngineParticleSystem) {
 		super(system);
@@ -41,7 +42,10 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 			this.renderSpriteTrail(particleList[i], elapsedTime, material);
 		}
 	}*/
-	updateParticles(particleSystem, particleList, elapsedTime) {//TODOv3
+	updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number) {
+		if (!this.geometry || !this.mesh || !this.particleSystem.material) {
+			return;
+		}
 		const rate = this.getParameter('animation rate') ?? 30;
 		this.geometry.count = particleList.length * 6;
 		const maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
@@ -53,7 +57,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		for (const particle of particleList) {
 			let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, rate * SEQUENCE_SAMPLE_COUNT, particle.sequence);
 			if (coords) {
-				const uvs = this.geometry.attributes.get('aTextureCoord')._array;
+				const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
 				coords = coords.m_TextureCoordData[0];
 				const uMin = coords.m_fLeft_U0;
 				const vMin = coords.m_fTop_V0;
@@ -71,7 +75,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 				index += 8;
 			}
 		}
-		this.geometry.attributes.get('aTextureCoord').dirty = true;
+		this.geometry.attributes.get('aTextureCoord')!.dirty = true;
 
 		//this.geometry.attributes.get('aTextureCoord').dirty = true;
 		if (TESTING) {
@@ -111,16 +115,16 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
-		this.mesh.setUniform('uParticles', this.texture);
+		this.mesh.setUniform('uParticles', this.texture!);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.particleSystem.addChild(this.mesh);
 		this.geometry = geometry;
-		this.particleSystem.material.setDefine('RENDER_SPRITE_TRAIL');
+		this.particleSystem.material!.setDefine('RENDER_SPRITE_TRAIL');
 		//particleSystem.material.setDefine('PARTICLE_ORIENTATION_SCREEN_ALIGNED');
 		this.setOrientationType(0);
 	}
 
-	createParticlesArray(maxParticles) {
+	createParticlesArray(maxParticles: number) {
 		this.imgData = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
 	}
 
@@ -134,10 +138,10 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	updateParticlesTexture(maxParticles, pixels) {//removeme
+	#updateParticlesTexture(maxParticles: number, pixels: Float32Array) {
 		const gl = new Graphics().glContext;
 
-		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
+		gl.bindTexture(GL_TEXTURE_2D, this.texture!.texture);
 		if (new Graphics().isWebGL2) {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, maxParticles, 0, GL_RGBA, GL_FLOAT, pixels);
 		} else {
@@ -146,7 +150,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#setupParticlesTexture(particleList, maxParticles, elapsedTime) {
+	#setupParticlesTexture(particleList: SourceEngineParticle[], maxParticles: number, elapsedTime: number) {
 		const m_flMaxLength = this.getParameter('max length');
 		const m_flMinLength = this.getParameter('min length');
 		const m_flLengthFadeInTime = this.getParameter('length fade in time');
@@ -203,9 +207,10 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 			index += 16;
 		}
 
-		this.updateParticlesTexture(maxParticles, a);
+		this.#updateParticlesTexture(maxParticles, a);
 	}
 
+	/*
 	setupParticlesTexture1(particleList, maxParticles, elapsedTime) {
 		const m_flMaxLength = this.getParameter('max length');
 		const m_flMinLength = this.getParameter('min length');
@@ -216,7 +221,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 				if (fit) {
 					rate = material.sequenceLength / particle.timeToLive;
 				}
-		*/
+		* /
 
 		const a = new Float32Array(maxParticles * 4 * TEXTURE_WIDTH);
 		let index = 0;
@@ -261,12 +266,13 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 			index += 16;
 		}
 
-		this.updateParticlesTexture(maxParticles, a);
+		this.#updateParticlesTexture(maxParticles, a);
 	}
+	*/
 
 	dispose() {
 		this.mesh?.dispose();
-		this.texture.removeUser(this);
+		this.texture?.removeUser(this);
 	}
 }
 SourceEngineParticleOperators.registerOperator(RenderSpriteTrail);

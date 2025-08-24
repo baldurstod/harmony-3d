@@ -55,6 +55,8 @@ export class SourceEngineParticle {
 	renderScreenVelocityRotate = false;
 	initialVec?: vec3;
 	bones?: [Bone, number][];
+	m_flRotateRate = 0;// TODO: rename, default value
+	m_flForward = 0;// TODO: rename, default value
 
 	constructor(id: number, system: SourceEngineParticleSystem) {
 		this.name = 'Particle ' + id;
