@@ -1,14 +1,15 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
 
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { ERROR } from '../../../../../buildoptions';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class MovementLocktoControlPoint extends SourceEngineParticleOperator {
 	static functionName = 'Movement Lock to Control Point';
-	static once;
+	static once = false;
 
 	constructor(system: SourceEngineParticleSystem) {
 		super(system);
@@ -22,16 +23,16 @@ export class MovementLocktoControlPoint extends SourceEngineParticleOperator {
 		this.addParam('end_fadeout_max', PARAM_TYPE_FLOAT, 1);
 		this.addParam('lock rotation', PARAM_TYPE_BOOL, false);
 
-				/*'start_fadeout_min' 'float' '0.1000000015'
-				'start_fadeout_max' 'float' '0.200000003'
-				'start_fadeout_exponent' 'float' '1'
-				'end_fadeout_min' 'float' '0.3000000119'
-				'end_fadeout_max' 'float' '0.400000006'*/
+		/*'start_fadeout_min' 'float' '0.1000000015'
+		'start_fadeout_max' 'float' '0.200000003'
+		'start_fadeout_exponent' 'float' '1'
+		'end_fadeout_min' 'float' '0.3000000119'
+		'end_fadeout_max' 'float' '0.400000006'*/
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		if (!MovementLocktoControlPoint.once) {
-			if (ERROR) {console.error('Fix me');}
+			if (ERROR) { console.error('Fix me'); }
 			MovementLocktoControlPoint.once = true;
 		}
 		//return;
@@ -49,9 +50,8 @@ export class MovementLocktoControlPoint extends SourceEngineParticleOperator {
 		const end_fadeout = (end_fadeout_max - end_fadeout_min) * Math.random() + end_fadeout_min;
 
 
-		switch (true)
-		{
-			case end_fadeout ==1:
+		switch (true) {
+			case end_fadeout == 1:
 				break;
 			case particle.proportionOfLife >= end_fadeout:
 				particle.posLockedToCP = -1;
@@ -76,8 +76,8 @@ export class MovementLocktoControlPoint extends SourceEngineParticleOperator {
 				particle.initialCPQuaternion = quat.clone(particle.cpOrientation);
 			}
 
-			particle.cpPosition = cp.getWorldPosition();
-			particle.cpOrientation = cp.getWorldQuaternion();
+			cp.getWorldPosition(particle.cpPosition);
+			cp.getWorldQuaternion(particle.cpOrientation);
 
 			const invertQuat = quat.invert(quat.create(), particle.initialCPQuaternion);//TODO: optimize
 
@@ -105,7 +105,7 @@ export class MovementLocktoControlPoint extends SourceEngineParticleOperator {
 			vec3.add(particle.position, particle.position, delta);
 			vec3.add(particle.prevPosition, particle.prevPosition, delta);
 			if (lockRotation) {
-				particle.cpOrientation = quat.clone(cp.getWorldQuaternion());
+				cp.getWorldQuaternion(particle.cpOrientation);
 				//TODO
 			} else {
 				vec4.zero(particle.cpOrientation);

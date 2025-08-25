@@ -47,16 +47,17 @@ export class SourceEngineParticle {
 	initialSequence = 0;
 	frame = 0;
 	PositionFromParentParticles = false;
-	posLockedToCP = false;
-	rotLockedToCP = false;
+	posLockedToCP = -1;
+	rotLockedToCP = -1;
 	trailLength = 0.1;
-	initialCPPosition = null;
-	initialCPQuaternion = null;
+	initialCPPosition: vec3 | null = null;
+	initialCPQuaternion: quat | null = null;
 	renderScreenVelocityRotate = false;
 	initialVec?: vec3;
 	bones?: [Bone, number][];
 	m_flRotateRate = 0;// TODO: rename, default value
 	m_flForward = 0;// TODO: rename, default value
+	deltaL = 0;
 
 	constructor(id: number, system: SourceEngineParticleSystem) {
 		this.name = 'Particle ' + id;
@@ -129,8 +130,8 @@ export class SourceEngineParticle {
 		this.sequence = 0;
 		this.frame = 0;
 		this.PositionFromParentParticles = false;
-		this.posLockedToCP = false;
-		this.rotLockedToCP = false;
+		this.posLockedToCP = -1;
+		this.rotLockedToCP = -1;
 		this.trailLength = 0.1;
 		this.initialCPPosition = null;
 		this.initialCPQuaternion = null;
