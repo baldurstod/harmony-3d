@@ -3,9 +3,11 @@ import { HarmonyMenuItems } from 'harmony-ui';
 import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
+import { MyEventTarget } from 'harmony-utils';
 import { quat } from 'gl-matrix';
 import { Source2AnimeDecoder as Source2AnimeDecoder_2 } from '../models/source2animgroup';
 import { Source2Particle as Source2Particle_2 } from '../../source2particle';
+import { StaticEventTarget } from 'harmony-utils';
 import { Texture as Texture_2 } from '../..';
 import { Texture as Texture_3 } from '../../../../..';
 import { vec2 } from 'gl-matrix';
@@ -2037,15 +2039,13 @@ declare class Choreography {
 
          export declare const EntityObserver: EntityObserverClass;
 
-         declare class EntityObserverClass {
-             #private;
+         declare class EntityObserverClass extends MyEventTarget {
              parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null): void;
              childAdded(parent: Entity, child: Entity): void;
              childRemoved(parent: Entity, child: Entity): void;
              entityDeleted(entity: Entity): void;
              propertyChanged(entity: Entity, propertyName: string, oldValue: any, newValue: any): void;
              attributeChanged(entity: Entity, attributeName: string, oldValue: any, newValue: any): void;
-             addEventListener(type: string, callback: (evt: CustomEvent<EntityObserverEventsData>) => void, options?: AddEventListenerOptions | boolean): void;
          }
 
          export declare type EntityObserverEventsData = ParentChangedEventData | ChildAddedEventData | ChildRemovedEventData | EntityDeletedEventData | PropertyChangedEventData | AttributeChangedEventData;
@@ -2933,11 +2933,8 @@ declare class Choreography {
              TouchCancel = "touchcancel"
          }
 
-         export declare class GraphicsEvents {
+         export declare class GraphicsEvents extends StaticEventTarget {
              static readonly isGraphicsEvents: true;
-             static readonly eventTarget: EventTarget;
-             static addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void;
-             static removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
              static tick(delta: number, time: number, speed: number): void;
              static resize(width: number, height: number): void;
              static mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent): void;
@@ -4796,7 +4793,7 @@ declare class Choreography {
              dispose(): void;
          }
 
-         declare class Node_2 {
+         declare class Node_2 extends MyEventTarget {
              #private;
              id: string;
              editor: NodeImageEditor;
@@ -4838,12 +4835,10 @@ declare class Choreography {
              dispose(): void;
              set hasPreview(hasPreview: boolean);
              get hasPreview(): boolean;
-             addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void;
-             removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
          }
          export { Node_2 as Node }
 
-         export declare class NodeImageEditor {
+         export declare class NodeImageEditor extends MyEventTarget {
              #private;
              textureSize: number;
              constructor();
@@ -4856,8 +4851,6 @@ declare class Choreography {
              deleteVariable(name: any): boolean;
              clearVariables(): void;
              getNodes(): Set<Node_2>;
-             addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void;
-             removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
          }
 
          export declare class NodeImageEditorGui {
@@ -8082,7 +8075,7 @@ declare class Choreography {
 
          export declare const Source2SnapshotLoader: {
              load(repository: string, filename: string): Promise<Source2Snapshot>;
-             "__#260@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+             "__#259@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
@@ -10318,12 +10311,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#229@#webAssembly"?: any;
-             "__#229@#HEAPU8"?: Uint8Array;
+             "__#228@#webAssembly"?: any;
+             "__#228@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#229@#initHeap"(): void;
+             "__#228@#initHeap"(): void;
          };
 
          export { }

@@ -1,11 +1,11 @@
 import { vec3, vec4, vec2, quat, mat4, mat3 } from 'gl-matrix';
+import { MyEventTarget, StaticEventTarget, setTimeoutPromise, Queue, Map2, once as once$1 } from 'harmony-utils';
 import { display, createElement, hide, show, createShadowRoot, defineHarmonyColorPicker, defineHarmony2dManipulator, defineHarmonyToggleButton, ManipulatorDirection, I18n, toggle, defineHarmonyAccordion, defineHarmonyMenu } from 'harmony-ui';
 import { ShortcutHandler, saveFile } from 'harmony-browser-utils';
 import { FBXManager, fbxSceneToFBXFile, FBXExporter, FBX_SKELETON_TYPE_LIMB, FBX_PROPERTY_TYPE_COLOR_3, FBX_PROPERTY_FLAG_STATIC } from 'harmony-fbx';
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader, TWO_POW_MINUS_14, TWO_POW_10 } from 'harmony-binary-reader';
 import { zoomOutSVG, zoomInSVG, contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, runSVG, walkSVG, repeatSVG, repeatOnSVG, lockOpenRightSVG, lockSVG, restartSVG, visibilityOnSVG, visibilityOffSVG, playSVG, pauseSVG } from 'harmony-svg';
-import { setTimeoutPromise, Queue, Map2, once as once$1 } from 'harmony-utils';
 import { Vpk } from 'harmony-vpk';
 import { ZipReader, BlobReader, BlobWriter } from '@zip.js/zip.js';
 import { MeshoptDecoder } from 'meshoptimizer';
@@ -2248,28 +2248,24 @@ const CHILD_REMOVED = 'childremoved';
 const ENTITY_DELETED = 'entitydeleted';
 const PROPERTY_CHANGED$1 = 'propertychanged';
 const ATTRIBUTE_CHANGED = 'attributechanged';
-class EntityObserverClass {
-    #eventTarget = new EventTarget();
+class EntityObserverClass extends MyEventTarget {
     parentChanged(child, oldParent, newParent) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
+        this.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
     }
     childAdded(parent, child) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
+        this.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
     }
     childRemoved(parent, child) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
+        this.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
     }
     entityDeleted(entity) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
+        this.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
     }
     propertyChanged(entity, propertyName, oldValue, newValue) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(PROPERTY_CHANGED$1, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
+        this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED$1, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
     }
     attributeChanged(entity, attributeName, oldValue, newValue) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
-    }
-    addEventListener(type, callback, options) {
-        this.#eventTarget.addEventListener(type, callback, options);
+        this.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
     }
 }
 const EntityObserver = new EntityObserverClass();
@@ -7342,47 +7338,40 @@ var GraphicsEvent;
     GraphicsEvent["TouchMove"] = "touchmove";
     GraphicsEvent["TouchCancel"] = "touchcancel";
 })(GraphicsEvent || (GraphicsEvent = {}));
-class GraphicsEvents {
+class GraphicsEvents extends StaticEventTarget {
     static isGraphicsEvents = true;
-    static eventTarget = new EventTarget();
-    static addEventListener(type, callback, options) {
-        this.eventTarget.addEventListener(type, callback, options);
-    }
-    static removeEventListener(type, callback, options) {
-        this.eventTarget.removeEventListener(type, callback, options);
-    }
     static tick(delta, time, speed) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
     }
     static resize(width, height) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
     }
     static mouseMove(x, y, pickedEntity, mouseEvent) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
     }
     static mouseDown(x, y, pickedEntity, mouseEvent) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
     }
     static mouseUp(x, y, pickedEntity, mouseEvent) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
     }
     static wheel(x, y, pickedEntity, wheelEvent) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
     }
     static keyDown(keyboardEvent) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
     }
     static keyUp(keyboardEvent) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
     }
     static touchStart(pickedEntity, touchEvent) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
     }
     static touchMove(pickedEntity, touchEvent) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
     }
     static touchCancel(pickedEntity, touchEvent) {
-        this.eventTarget.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
     }
 }
 
@@ -14466,7 +14455,7 @@ var DrawState;
     DrawState[DrawState["Valid"] = 1] = "Valid";
 })(DrawState || (DrawState = {}));
 const PREVIEW_PICTURE_SIZE = 256;
-class Node {
+class Node extends MyEventTarget {
     #hasPreview = false;
     id = generateRandomUUID();
     editor;
@@ -14481,8 +14470,8 @@ class Node {
     #operation;
     material;
     #pixelArray;
-    #eventTarget = new EventTarget();
     constructor(editor, params) {
+        super();
         this.editor = editor;
         this.setParams(params);
     }
@@ -14648,8 +14637,8 @@ class Node {
         throw 'This function must be overriden';
     }
     #dispatchEvent(eventName, eventDetail) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-        this.#eventTarget.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+        this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
+        this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
     }
     updatePreview(context = {}) {
         const previewSize = context.previewSize ?? this.previewSize;
@@ -14722,12 +14711,6 @@ class Node {
     }
     get hasPreview() {
         return this.#hasPreview;
-    }
-    addEventListener(type, callback, options) {
-        this.#eventTarget.addEventListener(type, callback, options);
-    }
-    removeEventListener(type, callback, options) {
-        this.#eventTarget.removeEventListener(type, callback, options);
     }
 }
 
@@ -16457,15 +16440,15 @@ Shaders['imageeditor.fs'] = imageeditor_fs;
 Shaders['imageeditor.vs'] = imageeditor_vs;
 
 const DEFAULT_TEXTURE_SIZE = 512;
-class NodeImageEditor {
+class NodeImageEditor extends MyEventTarget {
     #variables = new Map();
     #scene = new Scene();
     #nodes = new Set();
     #camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
     #fullScreenQuadMesh = new FullScreenQuad();
     textureSize = DEFAULT_TEXTURE_SIZE;
-    #eventTarget = new EventTarget();
     constructor() {
+        super();
         this.#scene.addChild(this.#fullScreenQuadMesh);
     }
     render(material) {
@@ -16491,8 +16474,8 @@ class NodeImageEditor {
         return node;
     }*/
     #dispatchEvent(eventName, eventDetail) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-        this.#eventTarget.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+        this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
+        this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
     }
     /*addNode(node) {
         if (node instanceof Node && node.editor == this) {
@@ -16527,12 +16510,6 @@ class NodeImageEditor {
     }
     getNodes() {
         return new Set(this.#nodes);
-    }
-    addEventListener(type, callback, options) {
-        this.#eventTarget.addEventListener(type, callback, options);
-    }
-    removeEventListener(type, callback, options) {
-        this.#eventTarget.removeEventListener(type, callback, options);
     }
 }
 
@@ -32314,14 +32291,7 @@ Includes['source_declare_particle'] = source_declare_particle;
 
 const PROPERTY_ADDED = 'propertyadded';
 const PROPERTY_CHANGED = 'propertychanged';
-class TimelineObserver {
-    static #eventTarget = new EventTarget();
-    static addEventListener(type, callback, options) {
-        this.#eventTarget.addEventListener(type, callback, options);
-    }
-    static removeEventListener(type, callback, options) {
-        this.#eventTarget.removeEventListener(type, callback, options);
-    }
+class TimelineObserver extends StaticEventTarget {
     /*
         parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null) {
             this.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
@@ -32340,10 +32310,10 @@ class TimelineObserver {
         }
     */
     static propertyAdded(element, propertyName, type, value) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(PROPERTY_ADDED, { detail: { element: element, name: propertyName, type: type, value: value } }));
+        this.dispatchEvent(new CustomEvent(PROPERTY_ADDED, { detail: { element: element, name: propertyName, type: type, value: value } }));
     }
     static propertyChanged(element, propertyName, oldValue, newValue) {
-        this.#eventTarget.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { element: element, name: propertyName, value: newValue, oldValue: oldValue } }));
+        this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { element: element, name: propertyName, value: newValue, oldValue: oldValue } }));
     }
 }
 

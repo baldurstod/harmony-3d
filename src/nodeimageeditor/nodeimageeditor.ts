@@ -1,7 +1,7 @@
 import { Node } from './node';
 import { getOperation } from './operations';
-
 import { vec3 } from 'gl-matrix';
+import { MyEventTarget } from 'harmony-utils';
 import { Camera } from '../cameras/camera';
 import { Graphics } from '../graphics/graphics';
 import { Material } from '../materials/material';
@@ -12,16 +12,16 @@ export const DEFAULT_TEXTURE_SIZE = 512;
 
 export type NodeImageVariableType = number;
 
-export class NodeImageEditor {
+export class NodeImageEditor extends MyEventTarget {
 	#variables = new Map<string, NodeImageVariableType>();
 	#scene = new Scene();
 	#nodes = new Set<Node>();
 	#camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
 	#fullScreenQuadMesh = new FullScreenQuad();
 	textureSize = DEFAULT_TEXTURE_SIZE;
-	#eventTarget = new EventTarget();
 
 	constructor() {
+		super();
 		this.#scene.addChild(this.#fullScreenQuadMesh);
 	}
 
@@ -52,8 +52,8 @@ export class NodeImageEditor {
 	}*/
 
 	#dispatchEvent(eventName, eventDetail) {
-		this.#eventTarget.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-		this.#eventTarget.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+		this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
+		this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
 	}
 
 	/*addNode(node) {
@@ -96,13 +96,5 @@ export class NodeImageEditor {
 
 	getNodes() {
 		return new Set(this.#nodes);
-	}
-
-	addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void {
-		this.#eventTarget.addEventListener(type, callback, options);
-	}
-
-	removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void {
-		this.#eventTarget.removeEventListener(type, callback, options);
 	}
 }

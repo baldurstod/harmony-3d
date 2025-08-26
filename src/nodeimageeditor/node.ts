@@ -12,6 +12,7 @@ import { Input } from './input';
 import { NodeImageEditor } from './nodeimageeditor';
 import { NodeParam } from './nodeparam';
 import { Output } from './output';
+import { MyEventTarget } from 'harmony-utils';
 
 enum DrawState {
 	Invalid = 0,
@@ -29,7 +30,7 @@ export const NODE_PARAM_TYPE_STICKER_ADJUST = 8;
 
 export const PREVIEW_PICTURE_SIZE = 256;
 
-export class Node {
+export class Node extends MyEventTarget {
 	#hasPreview = false;
 	id = generateRandomUUID();
 	editor: NodeImageEditor;
@@ -44,9 +45,9 @@ export class Node {
 	#operation;
 	protected material: Material;
 	#pixelArray?: Uint8ClampedArray;
-	#eventTarget = new EventTarget();
 
 	constructor(editor: NodeImageEditor, params?: any) {
+		super();
 		this.editor = editor;
 		this.setParams(params);
 	}
@@ -234,8 +235,8 @@ export class Node {
 	}
 
 	#dispatchEvent(eventName, eventDetail) {
-		this.#eventTarget.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-		this.#eventTarget.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+		this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
+		this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
 	}
 
 	updatePreview(context: any = {}) {
@@ -321,13 +322,5 @@ export class Node {
 
 	get hasPreview() {
 		return this.#hasPreview;
-	}
-
-	addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void {
-		this.#eventTarget.addEventListener(type, callback, options);
-	}
-
-	removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void {
-		this.#eventTarget.removeEventListener(type, callback, options);
 	}
 }

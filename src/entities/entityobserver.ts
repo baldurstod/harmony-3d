@@ -1,3 +1,4 @@
+import { MyEventTarget } from 'harmony-utils';
 import { Entity } from './entity';
 
 export const PARENT_CHANGED = 'parentchanged';
@@ -18,35 +19,30 @@ export type EntityObserverEventsData = ParentChangedEventData | ChildAddedEventD
 	EntityDeletedEventData | PropertyChangedEventData | AttributeChangedEventData;
 
 
-class EntityObserverClass {
-	#eventTarget = new EventTarget();
+class EntityObserverClass extends MyEventTarget {
 
 	parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null) {
-		this.#eventTarget.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
+		this.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
 	}
 
 	childAdded(parent: Entity, child: Entity) {
-		this.#eventTarget.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
+		this.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
 	}
 
 	childRemoved(parent: Entity, child: Entity) {
-		this.#eventTarget.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
+		this.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
 	}
 
 	entityDeleted(entity: Entity) {
-		this.#eventTarget.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
+		this.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
 	}
 
 	propertyChanged(entity: Entity, propertyName: string, oldValue: any, newValue: any) {
-		this.#eventTarget.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
+		this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
 	}
 
 	attributeChanged(entity: Entity, attributeName: string, oldValue: any, newValue: any) {
-		this.#eventTarget.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
-	}
-
-	addEventListener(type: string, callback: (evt: CustomEvent<EntityObserverEventsData>) => void, options?: AddEventListenerOptions | boolean): void {
-		this.#eventTarget.addEventListener(type, callback as EventListener, options);
+		this.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
 	}
 }
 

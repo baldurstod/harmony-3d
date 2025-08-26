@@ -49,6 +49,7 @@ export class SourceBSP extends World {
 	characterSpawn;
 	#geometries;
 	loader;
+
 	constructor(params?: any) {
 		super(params);
 		this.repository = params.repository;
