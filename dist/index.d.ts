@@ -51,7 +51,7 @@ export declare class AlphaFadeOutRandom extends SourceEngineParticleOperator {
 export declare class AlphaRandom extends SourceEngineParticleOperator {
     static functionName: string;
     constructor(system: SourceEngineParticleSystem);
-    doInit(particle: any, elapsedTime: any): void;
+    doInit(particle: SourceEngineParticle, elapsedTime: number): void;
 }
 
 export declare class AmbientLight extends Light {
@@ -1083,7 +1083,7 @@ declare class Choreography {
      export declare class ColorRandom extends SourceEngineParticleOperator {
          static functionName: string;
          constructor(system: SourceEngineParticleSystem);
-         doInit(particle: any, elapsedTime: any): void;
+         doInit(particle: SourceEngineParticle, elapsedTime: number): void;
      }
 
      export declare enum ColorSpace {
@@ -2934,7 +2934,7 @@ declare class Choreography {
          }
 
          export declare class GraphicsEvents {
-             static isGraphicsEvents: true;
+             static readonly isGraphicsEvents: true;
              static readonly eventTarget: EventTarget;
              static addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void;
              static removeEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: EventListenerOptions | boolean): void;
@@ -3439,14 +3439,14 @@ declare class Choreography {
          export declare class LifetimeFromSequence extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class LifetimeRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class Light extends Entity {
@@ -4764,9 +4764,9 @@ declare class Choreography {
 
          export declare class MovementLocktoControlPoint extends SourceEngineParticleOperator {
              static functionName: string;
-             static once: any;
+             static once: boolean;
              constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: any, elapsedTime: any): void;
+             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class MovementMaxVelocity extends SourceEngineParticleOperator {
@@ -5497,7 +5497,7 @@ declare class Choreography {
              #private;
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              reset(): void;
          }
 
@@ -5505,7 +5505,7 @@ declare class Choreography {
              #private;
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              reset(): void;
          }
 
@@ -5526,7 +5526,7 @@ declare class Choreography {
          export declare class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
@@ -5552,13 +5552,13 @@ declare class Choreography {
          export declare class PositionWithinBoxRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class PositionWithinSphereRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare function pow2(n: number): number;
@@ -5694,7 +5694,7 @@ declare class Choreography {
          export declare class RadiusRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class RadiusScale extends SourceEngineParticleOperator {
@@ -5806,16 +5806,14 @@ declare class Choreography {
          export declare class RemapControlPointToScalar extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
-             getInputValue(inputField: any, cpNumber: any): number;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class RemapControlPointToVector extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
-             getInputValue(inputField: any, cpNumber: any): number;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
@@ -5858,14 +5856,14 @@ declare class Choreography {
          export declare class RemapInitialScalar extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class RemapNoiseToScalar extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class RemapParticleCountToScalar extends Operator {
@@ -6429,14 +6427,14 @@ declare class Choreography {
          export declare class RotationRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class RotationSpeedRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          /**
@@ -6457,14 +6455,14 @@ declare class Choreography {
          export declare class RotationYawFlipRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
          export declare class RotationYawRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class SaturatePass extends Pass {
@@ -6541,7 +6539,7 @@ declare class Choreography {
          export declare class SequenceRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOperator {
@@ -8390,16 +8388,18 @@ declare class Choreography {
              initialSequence: number;
              frame: number;
              PositionFromParentParticles: boolean;
-             posLockedToCP: boolean;
-             rotLockedToCP: boolean;
+             posLockedToCP: number;
+             rotLockedToCP: number;
              trailLength: number;
-             initialCPPosition: any;
-             initialCPQuaternion: any;
+             initialCPPosition: vec3 | null;
+             initialVecOffset: vec3 | null;
+             initialCPQuaternion: quat | null;
              renderScreenVelocityRotate: boolean;
              initialVec?: vec3;
              bones?: [Bone, number][];
              m_flRotateRate: number;
              m_flForward: number;
+             deltaL: number;
              constructor(id: number, system: SourceEngineParticleSystem);
              step(elapsedTime: number): void;
              start(): void;
@@ -9838,7 +9838,7 @@ declare class Choreography {
          export declare class TrailLengthRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
          }
 
          export declare class TranslationControl extends Entity {
@@ -10062,7 +10062,7 @@ declare class Choreography {
          export declare class VelocityRandom extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doInit(particle: any, elapsedTime: any): void;
+             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 

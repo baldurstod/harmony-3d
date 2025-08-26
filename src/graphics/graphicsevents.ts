@@ -44,7 +44,7 @@ export interface GraphicKeyboardEventData {
 }
 
 export class GraphicsEvents {
-	static isGraphicsEvents: true = true;
+	static readonly isGraphicsEvents: true = true;
 	static readonly eventTarget = new EventTarget();
 
 	static addEventListener(type: string, callback: EventListenerOrEventListenerObject | null, options?: AddEventListenerOptions | boolean): void {

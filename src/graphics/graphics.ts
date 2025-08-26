@@ -216,6 +216,7 @@ export class Graphics {
 		const y = event.offsetY;
 		GraphicsEvents.wheel(x, y, this.#pickedEntity, event);
 		this.#pickedEntity = null;
+		event.preventDefault();
 	}
 
 	getDefinesAsString(material: Material) {//TODOv3 rename var material

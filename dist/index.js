@@ -7133,7 +7133,7 @@ class Renderer {
 }
 
 const CLEAR_COLOR$1 = vec4.fromValues(1, 0, 1, 1);
-const a$a = vec4.create();
+const a$8 = vec4.create();
 const mapSize = vec2.create();
 const lightPos = vec3.create();
 const viewPort = vec4.create();
@@ -7149,7 +7149,7 @@ class ShadowMap {
         const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
         const scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
         const depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
-        WebGLRenderingState.getClearColor(a$a);
+        WebGLRenderingState.getClearColor(a$8);
         WebGLRenderingState.disable(GL_BLEND);
         WebGLRenderingState.disable(GL_SCISSOR_TEST);
         WebGLRenderingState.enable(GL_DEPTH_TEST);
@@ -7181,7 +7181,7 @@ class ShadowMap {
         blendCapability ? WebGLRenderingState.enable(GL_BLEND) : WebGLRenderingState.disable(GL_BLEND);
         scissorCapability ? WebGLRenderingState.enable(GL_SCISSOR_TEST) : WebGLRenderingState.disable(GL_SCISSOR_TEST);
         depthCapability ? WebGLRenderingState.enable(GL_DEPTH_TEST) : WebGLRenderingState.disable(GL_DEPTH_TEST);
-        WebGLRenderingState.clearColor(a$a);
+        WebGLRenderingState.clearColor(a$8);
         this.#graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
     }
 }
@@ -7526,6 +7526,7 @@ class Graphics {
         const y = event.offsetY;
         GraphicsEvents.wheel(x, y, this.#pickedEntity, event);
         this.#pickedEntity = null;
+        event.preventDefault();
     }
     getDefinesAsString(material) {
         const defines = [];
@@ -16829,7 +16830,7 @@ class Line extends Mesh {
 }
 registerEntity(Line);
 
-const a$9 = vec3.create();
+const a$7 = vec3.create();
 const b$4 = vec3.create();
 const c$1 = vec3.create();
 class Raycaster {
@@ -16850,7 +16851,7 @@ class Raycaster {
     }
     castCameraRay(camera, normalizedX, normalizedY, entities, recursive) {
         const projectionMatrixInverse = camera.projectionMatrixInverse;
-        const nearP = vec3.set(a$9, normalizedX, normalizedY, -1);
+        const nearP = vec3.set(a$7, normalizedX, normalizedY, -1);
         const farP = vec3.set(b$4, normalizedX, normalizedY, 1);
         vec3.transformMat4(nearP, nearP, projectionMatrixInverse);
         vec3.transformMat4(farP, farP, projectionMatrixInverse);
@@ -18955,7 +18956,7 @@ class Metaball extends Entity {
 }
 
 var _a$4;
-const a$8 = vec3.create();
+const a$6 = vec3.create();
 const b$3 = vec3.create();
 const THRESHOLD = 0.99;
 class MetaballsBufferGeometry extends BufferGeometry {
@@ -18977,9 +18978,9 @@ class MetaballsBufferGeometry extends BufferGeometry {
             vertices.push(...triangles[triangleIndex][0]);
             vertices.push(...triangles[triangleIndex][1]);
             vertices.push(...triangles[triangleIndex][2]);
-            vec3.sub(a$8, triangles[triangleIndex][1], triangles[triangleIndex][0]);
+            vec3.sub(a$6, triangles[triangleIndex][1], triangles[triangleIndex][0]);
             vec3.sub(b$3, triangles[triangleIndex][2], triangles[triangleIndex][0]);
-            vec3.cross(normal, a$8, b$3);
+            vec3.cross(normal, a$6, b$3);
             vec3.normalize(normal, normal);
             normals.push(...normal);
             normals.push(...normal);
@@ -18997,8 +18998,8 @@ class MetaballsBufferGeometry extends BufferGeometry {
         const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
         for (const ball of balls) {
             vec3.set(b$3, ball.radius, ball.radius, ball.radius);
-            vec3.min(min, min, vec3.sub(a$8, ball.currentWorldPosition, b$3));
-            vec3.max(max, max, vec3.add(a$8, ball.currentWorldPosition, b$3));
+            vec3.min(min, min, vec3.sub(a$6, ball.currentWorldPosition, b$3));
+            vec3.max(max, max, vec3.add(a$6, ball.currentWorldPosition, b$3));
         }
         return [min, max];
     }
@@ -19121,7 +19122,7 @@ class Metaballs extends Mesh {
     }
 }
 
-const a$7 = vec3.create();
+const a$5 = vec3.create();
 const b$2 = vec3.create();
 class TrianglesBufferGeometry extends BufferGeometry {
     constructor(triangles) {
@@ -19140,9 +19141,9 @@ class TrianglesBufferGeometry extends BufferGeometry {
             vertices.push(...triangles[triangleIndex][0]);
             vertices.push(...triangles[triangleIndex][1]);
             vertices.push(...triangles[triangleIndex][2]);
-            vec3.sub(a$7, triangles[triangleIndex][1], triangles[triangleIndex][0]);
+            vec3.sub(a$5, triangles[triangleIndex][1], triangles[triangleIndex][0]);
             vec3.sub(b$2, triangles[triangleIndex][2], triangles[triangleIndex][0]);
-            vec3.cross(normal, a$7, b$2);
+            vec3.cross(normal, a$5, b$2);
             vec3.normalize(normal, normal);
             normals.push(...normal);
             normals.push(...normal);
@@ -43908,16 +43909,18 @@ class SourceEngineParticle {
     initialSequence = 0;
     frame = 0;
     PositionFromParentParticles = false;
-    posLockedToCP = false;
-    rotLockedToCP = false;
+    posLockedToCP = -1;
+    rotLockedToCP = -1;
     trailLength = 0.1;
     initialCPPosition = null;
+    initialVecOffset = null;
     initialCPQuaternion = null;
     renderScreenVelocityRotate = false;
     initialVec;
     bones;
     m_flRotateRate = 0; // TODO: rename, default value
     m_flForward = 0; // TODO: rename, default value
+    deltaL = 0;
     constructor(id, system) {
         this.name = 'Particle ' + id;
         this.id = id;
@@ -43985,8 +43988,8 @@ class SourceEngineParticle {
         this.sequence = 0;
         this.frame = 0;
         this.PositionFromParentParticles = false;
-        this.posLockedToCP = false;
-        this.rotLockedToCP = false;
+        this.posLockedToCP = -1;
+        this.rotLockedToCP = -1;
         this.trailLength = 0.1;
         this.initialCPPosition = null;
         this.initialCPQuaternion = null;
@@ -49821,7 +49824,7 @@ class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(ConstrainDistanceToControlPoint);
 
-const a$6 = vec3.create();
+const a$4 = vec3.create();
 const b$1 = vec3.create();
 /*
     DMXELEMENT_UNPACK_FIELD( "minimum distance", "0", float, m_fMinDistance )
@@ -49856,8 +49859,8 @@ class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngineParticl
         const startCP = this.particleSystem.getControlPoint(startNumber);
         const endCP = this.particleSystem.getControlPoint(endNumber);
         if (startCP && endCP) {
-            const delta = vec3.sub(vec3.create(), endCP.getWorldPosition(b$1), startCP.getWorldPosition(a$6));
-            vec3.scaleAndAdd(particle.position, a$6, delta, travelTime);
+            const delta = vec3.sub(vec3.create(), endCP.getWorldPosition(b$1), startCP.getWorldPosition(a$4));
+            vec3.scaleAndAdd(particle.position, a$4, delta, travelTime);
         }
     }
 }
@@ -50168,7 +50171,7 @@ class LifetimeRandom extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(LifetimeRandom);
 
-const a$5 = vec3.create();
+const a$3 = vec3.create();
 class PositionAlongPathRandom extends SourceEngineParticleOperator {
     static functionName = 'Position Along Path Random';
     #sequence = 0;
@@ -50188,11 +50191,14 @@ class PositionAlongPathRandom extends SourceEngineParticleOperator {
         const endNumber = this.getParameter('end control point number') ?? 2;
         const startCP = this.particleSystem.getControlPoint(startNumber);
         const endCP = this.particleSystem.getControlPoint(endNumber);
+        if (!startCP || !endCP) {
+            return;
+        }
         const nbPart = this.getParameter('particles to map from start to end') || 2;
         const delta = startCP.deltaPosFrom(endCP);
         this.#sequence / nbPart;
         vec3.scale(delta, delta, Math.random());
-        vec3.add(particle.position, startCP.getWorldPosition(a$5), delta);
+        vec3.add(particle.position, startCP.getWorldPosition(a$3), delta);
         vec3.copy(particle.prevPosition, particle.position);
         ++this.#sequence;
         if (this.#sequence > nbPart) { //TODO: handle loop
@@ -50227,6 +50233,9 @@ class PositionAlongPathSequential extends SourceEngineParticleOperator {
         const startCP = this.particleSystem.getControlPoint(startControlPointNumber);
         const endCP = this.particleSystem.getControlPoint(endControlPointNumber);
         const nbPart = this.getParameter('particles to map from start to end');
+        if (!startCP || !endCP) {
+            return;
+        }
         startCP.deltaPosFrom(endCP, tempVec3_1$1);
         const s = this.#sequence / nbPart;
         vec3.scale(tempVec3_1$1, tempVec3_1$1, s);
@@ -50350,7 +50359,7 @@ void VectorRotate(const float *in1, const matrix3x4_t& in2, float *out)
 }
 SourceEngineParticleOperators.registerOperator(PositionModifyOffsetRandom);
 
-const a$4 = vec3.create();
+const a$2 = vec3.create();
 class PositionOnModelRandom extends SourceEngineParticleOperator {
     static functionName = 'Position on Model Random';
     constructor(system) {
@@ -50391,7 +50400,7 @@ class PositionOnModelRandom extends SourceEngineParticleOperator {
         }
         else {
             if (controlPoint) {
-                vec3.copy(particle.position, controlPoint.getWorldPosition(a$4));
+                vec3.copy(particle.position, controlPoint.getWorldPosition(a$2));
                 vec3.copy(particle.prevPosition, particle.position);
             }
         }
@@ -50522,7 +50531,7 @@ class PositionWithinSphereRandom extends SourceEngineParticleOperator {
         //vec3.add(particle.position, particle.position, v);
         //const cp = particle.system.getControlPoint(controlPointNumber);
         if (cp) {
-            particle.cpOrientation = quat.clone(cp.getWorldQuaternion());
+            cp.getWorldQuaternion(particle.cpOrientation);
         }
         vec3.copy(particle.position, randpos);
         vec3RandomBox(particle.velocity, speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max); //particle.velocity.randomize(speed_in_local_coordinate_system_min, speed_in_local_coordinate_system_max);
@@ -50572,7 +50581,7 @@ class RadiusRandom extends SourceEngineParticleOperator {
 }
 SourceEngineParticleOperators.registerOperator(RadiusRandom);
 
-const a$3 = vec3.create();
+vec3.create();
 class RemapControlPointToScalar extends SourceEngineParticleOperator {
     static functionName = 'remap control point to scalar';
     constructor(system) {
@@ -50627,16 +50636,6 @@ class RemapControlPointToScalar extends SourceEngineParticleOperator {
             this.setOutputValue(outputField, out, particle);
         }
     }
-    getInputValue(inputField, cpNumber) {
-        console.log('Input field ' + inputField + ' ' + cpNumber);
-        if (inputField == 0 || inputField == 1 || inputField == 2) {
-            const cp = this.particleSystem.getControlPoint(cpNumber);
-            if (cp) {
-                return cp.getWorldPosition(a$3)[inputField];
-            }
-        }
-        return 0;
-    }
     initMultipleOverride() {
         return true;
     }
@@ -50648,7 +50647,7 @@ const tempVec3_2$4 = vec3.create();
 const tempVec3_3$1 = vec3.create();
 const tempVec3_4 = vec3.create();
 const tempVec3_5 = vec3.create();
-const a$2 = vec3.create();
+vec3.create();
 class RemapControlPointToVector extends SourceEngineParticleOperator {
     static functionName = 'remap control point to vector';
     constructor(system) {
@@ -50685,16 +50684,6 @@ class RemapControlPointToVector extends SourceEngineParticleOperator {
             vec3.add(v2Delta, v2Delta, outputMinimum);
             particle.setInitialField(outputField, v2Delta, init);
         }
-    }
-    getInputValue(inputField, cpNumber) {
-        console.log('Input field ' + inputField + ' ' + cpNumber);
-        if (inputField == 0 || inputField == 1 || inputField == 2) {
-            const cp = this.particleSystem.getControlPoint(cpNumber);
-            if (cp) {
-                return cp.getWorldPosition(a$2)[inputField];
-            }
-        }
-        return 0;
     }
     initMultipleOverride() {
         return true;
@@ -50759,7 +50748,7 @@ class RemapNoiseToScalar extends SourceEngineParticleOperator {
         const maximum = this.getParameter('output maximum') || 1.0;
         //TODO: do a proper noise
         const noise = (maximum - minimum) * Math.random() + minimum;
-        particle.setInitialField(field, noise);
+        particle.setInitialField(field, noise, false);
     }
 }
 SourceEngineParticleOperators.registerOperator(RemapNoiseToScalar);
@@ -50823,7 +50812,7 @@ class RemapScalarToVector extends SourceEngineParticleOperator {
         tempVec3$c[1] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[1], m_vecOutputMax[1]);
         tempVec3$c[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
         const cp = this.particleSystem.getControlPoint(m_nControlPointNumber);
-        if (m_nFieldOutput == 0) { // Position
+        if (m_nFieldOutput == 0 && cp) { // Position
             if (!m_bLocalCoords) {
                 vec3.add(tempVec3$c, cp.getWorldPosition(tempVec3_2$3), tempVec3$c);
             }
@@ -51787,7 +51776,7 @@ SourceEngineParticleOperators.registerOperator('basic movement', MovementBasic);
 
 class MovementLocktoControlPoint extends SourceEngineParticleOperator {
     static functionName = 'Movement Lock to Control Point';
-    static once;
+    static once = false;
     constructor(system) {
         super(system);
         this.addParam('control_point_number', PARAM_TYPE_INT, 0);
@@ -51841,8 +51830,8 @@ class MovementLocktoControlPoint extends SourceEngineParticleOperator {
             else {
                 particle.initialCPQuaternion = quat.clone(particle.cpOrientation);
             }
-            particle.cpPosition = cp.getWorldPosition();
-            particle.cpOrientation = cp.getWorldQuaternion();
+            cp.getWorldPosition(particle.cpPosition);
+            cp.getWorldQuaternion(particle.cpOrientation);
             const invertQuat = quat.invert(quat.create(), particle.initialCPQuaternion); //TODO: optimize
             const delta = vec3.subtract(vec3.create(), particle.cpPosition, particle.initialCPPosition); //TODO: optimize
             const deltaQuaternion = quat.mul(quat.create(), particle.cpOrientation, invertQuat);
@@ -51864,7 +51853,7 @@ class MovementLocktoControlPoint extends SourceEngineParticleOperator {
             vec3.add(particle.position, particle.position, delta);
             vec3.add(particle.prevPosition, particle.prevPosition, delta);
             if (lockRotation) {
-                particle.cpOrientation = quat.clone(cp.getWorldQuaternion());
+                cp.getWorldQuaternion(particle.cpOrientation);
                 //TODO
             }
             else {
