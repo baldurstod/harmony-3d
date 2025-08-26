@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -44,7 +45,7 @@ export class RemapControlPointToScalar extends SourceEngineParticleOperator {
 					*/
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		/*if (!this.firstTime) {
 			console.error('I don\'t know what i\'m supposed to do ' + this.functionName);
 			console.log(this.parameters);
@@ -61,7 +62,7 @@ export class RemapControlPointToScalar extends SourceEngineParticleOperator {
 
 		const cp = this.particleSystem.getControlPoint(cpNumber);
 		if (cp && (inputField == 0 || inputField == 1 || inputField == 2)) {
-			const v = cp._position[inputField];//this.getInputValue(inputField, cpNumber);
+			const v = cp._position[inputField]!;//this.getInputValue(inputField, cpNumber);
 			const d = (v - inputMinimum) / (inputMaximum - inputMinimum);
 			const out = d * (outputMaximum - outputMinimum) + outputMinimum;
 			//out = Clamp(out, outputMinimum, outputMaximum);
@@ -69,17 +70,6 @@ export class RemapControlPointToScalar extends SourceEngineParticleOperator {
 			this.setOutputValue(outputField, out, particle);
 		}
 
-	}
-
-	getInputValue(inputField, cpNumber) {
-		console.log('Input field ' + inputField + ' ' + cpNumber);
-		if (inputField == 0 || inputField == 1 || inputField == 2) {
-			const cp = this.particleSystem.getControlPoint(cpNumber);
-			if (cp) {
-				return cp.getWorldPosition(a)[inputField];
-			}
-		}
-		return 0;
 	}
 
 	initMultipleOverride() {

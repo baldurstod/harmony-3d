@@ -51,6 +51,7 @@ export class SourceEngineParticle {
 	rotLockedToCP = -1;
 	trailLength = 0.1;
 	initialCPPosition: vec3 | null = null;
+	initialVecOffset: vec3 | null = null;
 	initialCPQuaternion: quat | null = null;
 	renderScreenVelocityRotate = false;
 	initialVec?: vec3;

@@ -1,4 +1,5 @@
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -13,7 +14,7 @@ export class RotationYawRandom extends SourceEngineParticleOperator {
 		this.addParam('yaw_offset_max', PARAM_TYPE_FLOAT, 360);
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const percent = this.getParameter('Percentage') ?? 0.5;//TODO
 		const yaw_offset_min = this.getParameter('yaw_offset_min') ?? 0;
 		const yaw_offset_max = this.getParameter('yaw_offset_max') ?? 360;

@@ -1,6 +1,7 @@
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { RandomFloatExp } from '../../../../../math/functions';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -15,14 +16,14 @@ export class RotationSpeedRandom extends SourceEngineParticleOperator {
 		this.addParam('rotation_speed_random_max', PARAM_TYPE_FLOAT, 360.0);
 		this.addParam('rotation_speed_random_exponent', PARAM_TYPE_FLOAT, 1.0);
 		this.addParam('randomly_flip_direction', PARAM_TYPE_BOOL, 1);
-	//	DMXELEMENT_UNPACK_FIELD('rotation_speed_constant', '0', float, m_flDegrees)
-	//	DMXELEMENT_UNPACK_FIELD('rotation_speed_random_min', '0', float, m_flDegreesMin)
-	//	DMXELEMENT_UNPACK_FIELD('rotation_speed_random_max', '360', float, m_flDegreesMax)
-	//	DMXELEMENT_UNPACK_FIELD('rotation_speed_random_exponent', '1', float, m_flRotationRandExponent)
-	//	DMXELEMENT_UNPACK_FIELD('randomly_flip_direction', '1', bool, m_bRandomlyFlipDirection)
+		//	DMXELEMENT_UNPACK_FIELD('rotation_speed_constant', '0', float, m_flDegrees)
+		//	DMXELEMENT_UNPACK_FIELD('rotation_speed_random_min', '0', float, m_flDegreesMin)
+		//	DMXELEMENT_UNPACK_FIELD('rotation_speed_random_max', '360', float, m_flDegreesMax)
+		//	DMXELEMENT_UNPACK_FIELD('rotation_speed_random_exponent', '1', float, m_flRotationRandExponent)
+		//	DMXELEMENT_UNPACK_FIELD('randomly_flip_direction', '1', bool, m_bRandomlyFlipDirection)
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const m_flDegrees = this.getParameter('rotation_speed_constant');
 		const m_flDegreesMin = this.getParameter('rotation_speed_random_min');
 		const m_flDegreesMax = this.getParameter('rotation_speed_random_max');

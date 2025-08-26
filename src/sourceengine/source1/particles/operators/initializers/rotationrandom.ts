@@ -1,5 +1,6 @@
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -18,7 +19,7 @@ export class RotationRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('rotation_random_exponent', '1', float, m_flRotationRandExponent)
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const rotation_initial = this.getParameter('rotation_initial');
 		const rotation_offset_min = this.getParameter('rotation_offset_min');
 		const rotation_offset_max = this.getParameter('rotation_offset_max');

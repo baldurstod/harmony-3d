@@ -1,5 +1,6 @@
 import { RandomFloatExp } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -17,7 +18,7 @@ export class AlphaRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('alpha_random_exponent', '1', float, m_flAlphaRandExponent)
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const alpha_min = this.getParameter('alpha_min') / 255.0;
 		const alpha_max = this.getParameter('alpha_max') / 255.0;
 		const alpha_random_exponent = this.getParameter('alpha_random_exponent');

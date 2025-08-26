@@ -1,5 +1,6 @@
 import { RandomFloatExp } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -14,7 +15,7 @@ export class LifetimeRandom extends SourceEngineParticleOperator {
 		this.addParam('lifetime_random_exponent', PARAM_TYPE_FLOAT, 1);
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const lifetime_min = this.getParameter('lifetime_min');
 		const lifetime_max = this.getParameter('lifetime_max');
 		const lifetime_random_exponent = this.getParameter('lifetime_random_exponent');

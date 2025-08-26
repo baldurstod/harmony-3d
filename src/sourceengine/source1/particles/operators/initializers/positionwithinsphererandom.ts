@@ -1,6 +1,7 @@
 import { quat, vec3 } from 'gl-matrix';
 import { lerp, RandomVectorInUnitSphere, vec3RandomBox } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -37,7 +38,7 @@ export class PositionWithinSphereRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('randomly distribution growth time', '0', float, m_flEndCPGrowthTime)
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const m_fRadiusMin = this.getParameter('distance_min');
 		const m_fRadiusMax = this.getParameter('distance_max');
 		const speed_min = this.getParameter('speed_min');
@@ -115,7 +116,7 @@ export class PositionWithinSphereRandom extends SourceEngineParticleOperator {
 		//vec3.add(particle.position, particle.position, v);
 		//const cp = particle.system.getControlPoint(controlPointNumber);
 		if (cp) {
-			particle.cpOrientation = quat.clone(cp.getWorldQuaternion());
+			 cp.getWorldQuaternion(particle.cpOrientation);
 		}
 		vec3.copy(particle.position, randpos);
 

@@ -1,5 +1,6 @@
 import { RandomFloatExp } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -17,7 +18,7 @@ export class TrailLengthRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('length_random_exponent', '1', float, m_flLengthRandExponent)
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const length_min = this.getParameter('length_min');
 		const length_max = this.getParameter('length_max');
 		const length_random_exponent = this.getParameter('length_random_exponent');

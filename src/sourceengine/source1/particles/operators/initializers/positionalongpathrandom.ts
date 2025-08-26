@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -22,12 +23,16 @@ export class PositionAlongPathRandom extends SourceEngineParticleOperator {
 		this.addParam('maximum distance', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const startNumber = this.getParameter('start control point number') ?? 1;
 		const endNumber = this.getParameter('end control point number') ?? 2;
 
 		const startCP = this.particleSystem.getControlPoint(startNumber);
 		const endCP = this.particleSystem.getControlPoint(endNumber);
+
+		if (!startCP || !endCP) {
+			return;
+		}
 
 		const nbPart = this.getParameter('particles to map from start to end') || 2;
 

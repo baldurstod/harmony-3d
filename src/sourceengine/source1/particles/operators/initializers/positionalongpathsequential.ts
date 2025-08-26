@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -23,7 +24,7 @@ export class PositionAlongPathSequential extends SourceEngineParticleOperator {
 		this.addParam('restart behavior (0 = bounce, 1 = loop )', PARAM_TYPE_BOOL, 1);
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const startControlPointNumber = this.getParameter('start control point number');
 		const endControlPointNumber = this.getParameter('end control point number');
 
@@ -31,6 +32,10 @@ export class PositionAlongPathSequential extends SourceEngineParticleOperator {
 		const endCP = this.particleSystem.getControlPoint(endControlPointNumber);
 
 		const nbPart = this.getParameter('particles to map from start to end');
+
+		if (!startCP || !endCP) {
+			return;
+		}
 
 		startCP.deltaPosFrom(endCP, tempVec3_1);
 

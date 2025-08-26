@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -37,7 +38,7 @@ export class RemapControlPointToVector extends SourceEngineParticleOperator {
 		'output maximum' 'vector3' '1 1 1'*/
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const inputMinimum = this.getParameter('input minimum');
 		const inputMaximum = this.getParameter('input maximum');
 		const outputMinimum = this.getParameter('output minimum');
@@ -58,17 +59,6 @@ export class RemapControlPointToVector extends SourceEngineParticleOperator {
 
 			particle.setInitialField(outputField, v2Delta, init);
 		}
-	}
-
-	getInputValue(inputField, cpNumber) {
-		console.log('Input field ' + inputField + ' ' + cpNumber);
-		if (inputField == 0 || inputField == 1 || inputField == 2) {
-			const cp = this.particleSystem.getControlPoint(cpNumber);
-			if (cp) {
-				return cp.getWorldPosition(a)[inputField];
-			}
-		}
-		return 0;
 	}
 
 	initMultipleOverride() {

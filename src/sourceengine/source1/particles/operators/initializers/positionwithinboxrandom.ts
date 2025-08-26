@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { vec3RandomBox } from '../../../../../math/functions';
 import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -21,7 +22,7 @@ export class PositionWithinBoxRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const min = this.getParameter('min');
 		const max = this.getParameter('max');
 		const controlPointNumber = this.getParameter('control point number');

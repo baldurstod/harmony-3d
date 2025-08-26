@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { vec3RandomBox } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -18,14 +19,14 @@ export class VelocityRandom extends SourceEngineParticleOperator {
 		this.addParam('random_speed_max', PARAM_TYPE_FLOAT, 0);
 		this.addParam('speed_in_local_coordinate_system_min', PARAM_TYPE_VECTOR, vec3.create());
 		this.addParam('speed_in_local_coordinate_system_max', PARAM_TYPE_VECTOR, vec3.create());
-	//	DMXELEMENT_UNPACK_FIELD('control_point_number', '0', int, m_nControlPointNumber)
-	//	DMXELEMENT_UNPACK_FIELD('random_speed_min', '0', float, m_fSpeedMin)
-	//	DMXELEMENT_UNPACK_FIELD('random_speed_max', '0', float, m_fSpeedMax)
-	//	DMXELEMENT_UNPACK_FIELD('speed_in_local_coordinate_system_min', '0 0 0', Vector, m_LocalCoordinateSystemSpeedMin)
-	//	DMXELEMENT_UNPACK_FIELD('speed_in_local_coordinate_system_max', '0 0 0', Vector, m_LocalCoordinateSystemSpeedMax)
+		//	DMXELEMENT_UNPACK_FIELD('control_point_number', '0', int, m_nControlPointNumber)
+		//	DMXELEMENT_UNPACK_FIELD('random_speed_min', '0', float, m_fSpeedMin)
+		//	DMXELEMENT_UNPACK_FIELD('random_speed_max', '0', float, m_fSpeedMax)
+		//	DMXELEMENT_UNPACK_FIELD('speed_in_local_coordinate_system_min', '0 0 0', Vector, m_LocalCoordinateSystemSpeedMin)
+		//	DMXELEMENT_UNPACK_FIELD('speed_in_local_coordinate_system_max', '0 0 0', Vector, m_LocalCoordinateSystemSpeedMax)
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const speed_in_local_coordinate_system_min = this.getParameter('speed_in_local_coordinate_system_min');
 		const speed_in_local_coordinate_system_max = this.getParameter('speed_in_local_coordinate_system_max');
 		const random_speed_min = this.getParameter('random_speed_min');

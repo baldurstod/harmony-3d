@@ -1,4 +1,5 @@
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -11,7 +12,7 @@ export class LifetimeFromSequence extends SourceEngineParticleOperator {
 		this.addParam('Frames Per Second', PARAM_TYPE_FLOAT, 30);
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const paramFramesPerSecond = this.getParameter('Frames Per Second');
 
 		if (this.particleSystem.material) {

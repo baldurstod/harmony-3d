@@ -1,4 +1,5 @@
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -12,7 +13,7 @@ export class SequenceRandom extends SourceEngineParticleOperator {
 		this.addParam('sequence_max', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const sequence_min = this.getParameter('sequence_min');
 		const sequence_max = this.getParameter('sequence_max');
 

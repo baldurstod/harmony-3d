@@ -58,7 +58,7 @@ export class RemapScalarToVector extends SourceEngineParticleOperator {
 		tempVec3[2] = RemapValClamped(input, m_flInputMin, m_flInputMax, m_vecOutputMin[2], m_vecOutputMax[2]);
 
 		const cp = this.particleSystem.getControlPoint(m_nControlPointNumber);
-		if (m_nFieldOutput == 0) { // Position
+		if (m_nFieldOutput == 0 && cp) { // Position
 			if (!m_bLocalCoords) {
 				vec3.add(tempVec3, cp.getWorldPosition(tempVec3_2), tempVec3);
 			} else {

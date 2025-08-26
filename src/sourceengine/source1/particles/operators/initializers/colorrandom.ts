@@ -1,8 +1,9 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
+import { BLACK, WHITE } from '../../color';
 import { PARAM_TYPE_COLOR } from '../../constants';
-import { BLACK, Color, WHITE } from '../../color';
+import { SourceEngineParticle } from '../../particle';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class ColorRandom extends SourceEngineParticleOperator {
 	static functionName = 'Color Random';
@@ -13,7 +14,7 @@ export class ColorRandom extends SourceEngineParticleOperator {
 		this.addParam('color2', PARAM_TYPE_COLOR, WHITE);
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		particle.color.randomize(this.getParameter('color1'), this.getParameter('color2'));
 		particle.initialColor.setColor(particle.color);
 	}

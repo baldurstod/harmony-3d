@@ -1,4 +1,5 @@
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -23,7 +24,7 @@ export class RemapInitialScalar extends SourceEngineParticleOperator {
 		this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
 	}
 
-	doInit(particle, elapsedTime) {
+	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
 		const emitterStartTime = this.getParameter('emitter lifetime start time (seconds)');
 		const emitterEndTime = this.getParameter('emitter lifetime end time (seconds)');
 
