@@ -9678,11 +9678,15 @@ MapControls.prototype.constructor = MapControls;*/
 const Z_VECTOR$1 = vec3.fromValues(0, 0, 1);
 const tempQuat$a = quat.create();
 class RotationControl extends Entity {
-    #rotationSpeed = 1;
+    #rotationSpeed;
     #axis = vec3.clone(Z_VECTOR$1);
     constructor(params) {
         super(params);
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => this.#update(event.detail.delta));
+        if (params.axis) {
+            this.axis = params.axis;
+        }
+        this.#rotationSpeed = params.speed ?? 1;
     }
     set rotationSpeed(rotationSpeed) {
         this.#rotationSpeed = rotationSpeed;
@@ -49984,7 +49988,7 @@ let AttractToControlPoint$1 = class AttractToControlPoint extends SourceEnginePa
         //	DMXELEMENT_UNPACK_FIELD('falloff power', '2', float, m_fFalloffPower)
         //	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
     }
-    doForce(particle, elapsedTime, accumulatedForces) {
+    doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
         //console.log(particle.position);
         const m_fForceAmount = this.getParameter('amount of force');
         const cpNumber = this.getParameter('control point number');
@@ -50017,7 +50021,7 @@ let RandomForce$1 = class RandomForce extends SourceEngineParticleOperator {
         this.addParam('max force', PARAM_TYPE_VECTOR, vec3.create());
         this.addParam('amount of force', PARAM_TYPE_FLOAT, 0);
     }
-    doForce(particle, elapsedTime, accumulatedForces) {
+    doForce(particle, elapsedTime, accumulatedForces, strength = 1) {
         const minForce = this.getParameter('min force') || vec3.create();
         const maxForce = this.getParameter('max force') || vec3.create();
         const f = vec3RandomBox(vec3.create(), minForce, maxForce);

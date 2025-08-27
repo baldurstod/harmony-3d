@@ -5658,7 +5658,7 @@ declare class Choreography {
          export declare class PullTowardsControlPoint extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doForce(particle: any, elapsedTime: any, accumulatedForces: any): void;
+             doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
          }
 
          export declare class QuadraticBezierCurve extends Curve {
@@ -5729,7 +5729,7 @@ declare class Choreography {
          export declare class RandomForce extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doForce(particle: any, elapsedTime: any, accumulatedForces: any): void;
+             doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
          }
 
          export declare interface RandomPointOnModel {
@@ -6312,7 +6312,7 @@ declare class Choreography {
 
          export declare class RotationControl extends Entity {
              #private;
-             constructor(params?: any);
+             constructor(params?: RotationControlParameters);
              set rotationSpeed(rotationSpeed: number);
              get rotationSpeed(): number;
              set axis(axis: vec3);
@@ -6416,6 +6416,11 @@ declare class Choreography {
                  };
              };
          }
+
+         declare type RotationControlParameters = EntityParameters & {
+             axis?: vec3;
+             speed?: number;
+         };
 
          export declare class RotationRandom extends SourceEngineParticleOperator {
              static functionName: string;
@@ -9956,7 +9961,7 @@ declare class Choreography {
          export declare class TwistAroundAxis extends SourceEngineParticleOperator {
              static functionName: string;
              constructor(system: SourceEngineParticleSystem);
-             doForce(particle: any, elapsedTime: any, accumulatedForces: any, strength?: number): void;
+             doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
          }
 
          export declare const TWO_PI: number;

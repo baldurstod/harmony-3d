@@ -1,19 +1,31 @@
 import { quat, vec3 } from 'gl-matrix';
-
-import { Entity } from '../entities/entity';
-import { GraphicsEvents, GraphicsEvent } from '../graphics/graphicsevents';
+import { Entity, EntityParameters } from '../entities/entity';
+import { GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { stringToVec3 } from '../utils/utils';
 
 const Z_VECTOR = vec3.fromValues(0, 0, 1);
 const tempQuat = quat.create();
 
+export type RotationControlParameters = EntityParameters & {
+	axis?: vec3;
+	speed?: number;
+
+};
+
 export class RotationControl extends Entity {
-	#rotationSpeed = 1;
+	#rotationSpeed: number;
 	#axis: vec3 = vec3.clone(Z_VECTOR);
-	constructor(params?: any) {
+
+	constructor(params?: RotationControlParameters) {
 		super(params);
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: CustomEvent) => this.#update(event.detail.delta));
+
+		if (params.axis) {
+			this.axis = params.axis;
+		}
+
+		this.#rotationSpeed = params.speed ?? 1;
 	}
 
 	set rotationSpeed(rotationSpeed) {
