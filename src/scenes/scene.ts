@@ -7,7 +7,9 @@ import { JSONObject } from '../types';
 import { Environment } from './environments/environment';
 
 export type SceneParameters = EntityParameters & {
-	camera?: Camera,
+	camera?: Camera;
+	background?: BackGround;
+	environment?: Environment;
 };
 
 export class Scene extends Entity {
@@ -22,6 +24,8 @@ export class Scene extends Entity {
 		super(parameters);
 
 		this.activeCamera = parameters.camera;
+		this.background = parameters.background;
+		this.environment = parameters.environment;
 
 		this.#layers[Symbol.iterator] = function* (): MapIterator<[any, any]> {
 			yield* [...this.entries()].sort(

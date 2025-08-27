@@ -6509,6 +6509,8 @@ declare class Choreography {
 
          declare type SceneParameters = EntityParameters & {
              camera?: Camera;
+             background?: BackGround;
+             environment?: Environment;
          };
 
          export declare class Select extends Node_2 {

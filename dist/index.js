@@ -5184,6 +5184,8 @@ class Scene extends Entity {
     constructor(parameters = {}) {
         super(parameters);
         this.activeCamera = parameters.camera;
+        this.background = parameters.background;
+        this.environment = parameters.environment;
         this.#layers[Symbol.iterator] = function* () {
             yield* [...this.entries()].sort((a, b) => {
                 return a[1] < b[1] ? -1 : 1;
