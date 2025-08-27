@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { FLT_EPSILON } from '../../../../../math/constants';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -20,7 +21,7 @@ export class AttractToControlPoint extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
 	}
 
-	doForce(particle, elapsedTime, accumulatedForces) {
+	doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: vec3, strength = 1) {
 		//console.log(particle.position);
 		const m_fForceAmount = this.getParameter('amount of force');
 		const cpNumber = this.getParameter('control point number');

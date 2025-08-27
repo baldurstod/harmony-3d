@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { vec3RandomBox } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -15,7 +16,7 @@ export class RandomForce extends SourceEngineParticleOperator {
 		this.addParam('amount of force', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doForce(particle, elapsedTime, accumulatedForces) {
+	doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: vec3, strength = 1) {
 		const minForce = this.getParameter('min force') || vec3.create();
 		const maxForce = this.getParameter('max force') || vec3.create();
 
