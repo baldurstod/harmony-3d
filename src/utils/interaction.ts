@@ -132,10 +132,11 @@ export class Interaction {
 				const animOption = document.createElement('option');
 				(this.#htmlInputDataList as HTMLDataListElement).append(animOption);
 				if (isMap) {
-					animOption.innerHTML = value[0];
+					animOption.innerText = value[0];
 					animOption.value = value[1];
 				} else {
-					animOption.innerHTML = value as string;
+					animOption.innerText = value as string;
+					animOption.value = value as string;
 				}
 			}
 		}

@@ -3645,7 +3645,7 @@ class HTMLFileSelectorTileElement extends HTMLElement {
     }
     #updateHtml() {
         if (this.#visible && this.#file) {
-            this.innerHTML = this.#file.name;
+            this.innerText = this.#file.name;
         }
     }
 }
@@ -3686,7 +3686,7 @@ class HTMLFileSelectorFileElement extends HTMLElement {
     }
     #updateHtml() {
         if (this.#file) {
-            this.innerHTML = this.#file.name;
+            this.innerText = this.#file.name;
         }
     }
     refreshFilter() {
@@ -3875,7 +3875,7 @@ class FileSelectorDirectory extends HTMLElement {
                 this.sort();
             }
             if (this.#file) {
-                this.#header.innerHTML = this.#name;
+                this.#header.innerText = this.#name;
             }
         }
         if (this.#expanded) {
@@ -4173,11 +4173,12 @@ class Interaction {
                 const animOption = document.createElement('option');
                 this.#htmlInputDataList.append(animOption);
                 if (isMap) {
-                    animOption.innerHTML = value[0];
+                    animOption.innerText = value[0];
                     animOption.value = value[1];
                 }
                 else {
-                    animOption.innerHTML = value;
+                    animOption.innerText = value;
+                    animOption.value = value;
                 }
             }
         }
@@ -20151,9 +20152,9 @@ function getUniformsHtml(uniforms /*TODO: create a proper type for uniforms*/) {
 function addHtmlParameter(name, value) {
     const htmlParameter = createElement('div');
     const htmlParameterName = createElement('span');
-    htmlParameterName.innerHTML = name;
+    htmlParameterName.innerText = name;
     const htmlParameterValue = createElement('span');
-    htmlParameterValue.innerHTML = value;
+    htmlParameterValue.innerText = value;
     htmlParameter.append(htmlParameterName, htmlParameterValue);
     return htmlParameter;
 }
@@ -52369,7 +52370,7 @@ class RemapDistanceToControlPointToVector extends SourceEngineParticleOperator {
         //this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
         this.addParam('only active within specified distance', PARAM_TYPE_BOOL, 0);
     }
-    doOperate(particle) {
+    doOperate(particle, elapsedTime) {
         const cpNumber = this.getParameter('control point');
         const distanceMin = this.getParameter('distance minimum');
         const distanceMax = this.getParameter('distance maximum');
@@ -52614,7 +52615,7 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends SourceEn
         this.addParam('Fourth Control Point Number', PARAM_TYPE_INT, 4);
         this.addParam('Fourth Control Point Parent', PARAM_TYPE_INT, 0);
     }
-    doOperate(particle) {
+    doOperate(particle, elapsedTime) {
         const list = ['First', 'Second', 'Third', 'Fourth'];
         const useWorldLocation = this.getParameter('Set positions in world space');
         const headLocation = this.getParameter('Control Point to offset positions from');

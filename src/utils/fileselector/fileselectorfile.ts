@@ -36,7 +36,7 @@ export class HTMLFileSelectorFileElement extends HTMLElement {
 
 	#updateHtml() {
 		if (this.#file) {
-			this.innerHTML = this.#file.name;
+			this.innerText = this.#file.name;
 		}
 	}
 

@@ -20,9 +20,9 @@ function getUniformsHtml(uniforms: any/*TODO: create a proper type for uniforms*
 function addHtmlParameter(name: string, value: any) {
 	const htmlParameter = createElement('div');
 	const htmlParameterName = createElement('span');
-	htmlParameterName.innerHTML = name;
+	htmlParameterName.innerText = name;
 	const htmlParameterValue = createElement('span');
-	htmlParameterValue.innerHTML = value;
+	htmlParameterValue.innerText = value;
 
 	htmlParameter.append(htmlParameterName, htmlParameterValue);
 	return htmlParameter;

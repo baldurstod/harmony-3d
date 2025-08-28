@@ -43,7 +43,7 @@ export class HTMLFileSelectorTileElement extends HTMLElement {
 
 	#updateHtml() {
 		if (this.#visible && this.#file) {
-			this.innerHTML = this.#file.name;
+			this.innerText = this.#file.name;
 		}
 	}
 }

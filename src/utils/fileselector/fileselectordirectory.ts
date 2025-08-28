@@ -181,7 +181,7 @@ export class FileSelectorDirectory extends HTMLElement {
 			}
 
 			if (this.#file) {
-				this.#header.innerHTML = this.#name;
+				this.#header.innerText = this.#name;
 			}
 		}
 
