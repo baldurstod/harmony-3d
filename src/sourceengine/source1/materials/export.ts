@@ -4,6 +4,7 @@ export { EyeRefractMaterial } from './eyerefractmaterial';
 export { LightMappedGenericMaterial } from './lightmappedgenericmaterial';
 export * from './proxies/export';
 export { RefractMaterial } from './refract';
+export { SourceEngineMaterial } from './sourceenginematerial';
 export { SourceEngineMaterialManager } from './sourceenginematerialmanager';
 export { SpriteCardMaterial } from './spritecardmaterial';
 export { SpriteMaterial } from './spritematerial';
