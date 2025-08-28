@@ -1,6 +1,7 @@
 import { Bias } from '../../../../common/math/sse';
 import { ParticleRandomFloat } from '../../../../common/particles/randomfloats';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -17,7 +18,7 @@ export class AlphaFadeOutRandom extends SourceEngineParticleOperator {
 		this.addParam('fade bias', PARAM_TYPE_FLOAT, 0.5); //Neutral bias
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const proportional = this.getParameter('proportional 0/1');
 
 		const fade_out_time_min = this.getParameter('fade out time min');

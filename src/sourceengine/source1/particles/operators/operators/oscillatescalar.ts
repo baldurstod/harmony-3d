@@ -1,6 +1,7 @@
 import { clamp } from '../../../../../math/functions';
 import { ParticleRandomFloat } from '../../../../common/particles/randomfloats';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -39,7 +40,7 @@ export class OscillateScalar extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('oscillation start phase', '.5', float, m_flOscAdd)
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const m_bProportional = this.getParameter('proportional 0/1');
 		const m_bProportionalOp = this.getParameter('start/end proportional');
 		const oscillationField = this.getParameter('oscillation field');

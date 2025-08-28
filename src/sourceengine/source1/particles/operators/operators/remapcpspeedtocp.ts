@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { RemapValClamped } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -25,7 +26,7 @@ export class RemapCPSpeedToCP extends SourceEngineParticleOperator {
 		this.addParam('output control point', PARAM_TYPE_INT, 1);
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const inputMinimum = this.getParameter('input minimum');
 		const inputMaximum = this.getParameter('input maximum');
 		const outputMinimum = this.getParameter('output minimum');

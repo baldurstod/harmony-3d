@@ -1,5 +1,6 @@
 import { quat, vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -34,7 +35,7 @@ export class SetControlPointPositions extends SourceEngineParticleOperator {
 		this.addParam('Fourth Control Point Parent', PARAM_TYPE_INT, 0);
 	}
 
-	doOperate(particle) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const list = ['First', 'Second', 'Third', 'Fourth'];
 
 		const useWorldLocation = this.getParameter('Set positions in world space');

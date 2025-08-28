@@ -1,5 +1,4 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
-
 import { ERROR } from '../../../../../buildoptions';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { SourceEngineParticle } from '../../particle';

@@ -1,6 +1,7 @@
 import { SimpleSpline } from '../../../../../math/functions';
 import { AddSIMD, AndSIMD, BiasSIMD, CmpGeSIMD, CmpGtSIMD, CmpLtSIMD, MulSIMD, ReciprocalEstSIMD, ReciprocalSIMD, SubSIMD } from '../../../../common/math/sse';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -24,7 +25,7 @@ export class RadiusScale extends SourceEngineParticleOperator {
 		DMXELEMENT_UNPACK_FIELD('scale_bias', '0.5', float, m_flBias)*/
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const radius_start_scale = this.getParameter('radius_start_scale');
 		const radius_end_scale = this.getParameter('radius_end_scale');
 		const start_time = this.getParameter('start_time');

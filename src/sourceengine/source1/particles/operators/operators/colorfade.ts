@@ -1,9 +1,10 @@
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { Color, WHITE } from '../../color';
-import { PARAM_TYPE_COLOR, PARAM_TYPE_FLOAT, PARAM_TYPE_BOOL } from '../../constants';
 import { clamp, SimpleSpline } from '../../../../../math/functions';
+import { Color, WHITE } from '../../color';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_COLOR, PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 export class ColorFade extends SourceEngineParticleOperator {
 	static functionName = 'Color Fade';
@@ -20,7 +21,7 @@ export class ColorFade extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('ease_in_and_out', '1', bool, m_bEaseInOut)
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const color_fade = this.getParameter('color_fade');
 
 		const fade_start_time = this.getParameter('fade_start_time');

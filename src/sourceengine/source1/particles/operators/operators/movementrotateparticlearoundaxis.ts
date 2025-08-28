@@ -1,6 +1,7 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -24,7 +25,7 @@ export class MovementRotateParticleAroundAxis extends SourceEngineParticleOperat
 		DMXELEMENT_UNPACK_FIELD( "Use Local Space", "0", bool, m_bLocalSpace )*/
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const axis = this.getParameter('Rotation Axis');
 		const rate = this.getParameter('Rotation Rate');
 		const useLocalSpace = this.getParameter('Use Local Space');

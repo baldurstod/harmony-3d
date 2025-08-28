@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { ExponentialDecay } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -20,7 +21,7 @@ export class MovementBasic extends SourceEngineParticleOperator {
 		this.addParam('max constraint passes', PARAM_TYPE_INT, 3);
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const drag = this.getParameter('drag');
 		const gravity = this.getParameter('gravity');
 		const maxConstraintPasses = this.getParameter('max constraint passes');//TODO

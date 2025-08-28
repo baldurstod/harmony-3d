@@ -1,5 +1,6 @@
 import { DEG_TO_RAD, TWO_PI } from '../../../../../math/constants';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -20,7 +21,7 @@ export class RotationSpinRoll extends SourceEngineParticleOperator {
 		//DMXELEMENT_UNPACK_FIELD('spin_rate_min', '0', int, m_nSpinRateMinDegrees)
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const m_nSpinRateDegrees = this.getParameter('spin_rate_degrees');
 		const m_fSpinRateStopTime = this.getParameter('spin_stop_time');
 		const m_nSpinRateMinDegrees = this.getParameter('spin_rate_min');

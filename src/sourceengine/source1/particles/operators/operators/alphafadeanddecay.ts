@@ -1,5 +1,6 @@
 import { SimpleSplineRemapValWithDeltasClamped } from '../../../../common/math/sse';
 import { PARAM_TYPE_FLOAT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -17,7 +18,7 @@ export class AlphaFadeAndDecay extends SourceEngineParticleOperator {
 		this.addParam('end_fade_out_time', PARAM_TYPE_FLOAT, 1.0);
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const start_alpha = this.getParameter('start_alpha');
 		const end_alpha = this.getParameter('end_alpha');
 

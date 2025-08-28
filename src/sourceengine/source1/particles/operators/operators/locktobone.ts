@@ -1,5 +1,6 @@
 import { mat4, vec3 } from 'gl-matrix';
 import { PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -16,7 +17,7 @@ export class LockToBone extends SourceEngineParticleOperator {
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const controlPoint = particle.system.getControlPoint(this.getParameter('control_point_number'));
 		if (controlPoint) {
 			// TODO : Actually we should get the model parenting the control point

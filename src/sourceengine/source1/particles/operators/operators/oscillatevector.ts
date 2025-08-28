@@ -2,6 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { AddSIMD, Four_Ones, Four_Zeros, MaskedAssign, MaxSIMD, MinSIMD, MulSIMD, SinEst01SIMD } from '../../../../common/math/sse';
 import { ParticleRandomFloat, ParticleRandomVec3 } from '../../../../common/particles/randomfloats';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -35,7 +36,7 @@ export class OscillateVector extends SourceEngineParticleOperator {
 		this.addParam('oscillation start phase', PARAM_TYPE_FLOAT, 0.5);
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const m_nField = this.getParameter('oscillation field');
 		const m_RateMin = this.getParameter('oscillation rate min');
 		const m_RateMax = this.getParameter('oscillation rate max');

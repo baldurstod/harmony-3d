@@ -20,7 +20,7 @@ export class OrientTo2dDirection extends SourceEngineParticleOperator {
 	paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]) {
 		switch (name) {
 			case 'Rotation Offset':
-				this.#rotationOffset = (param as number) * DEG_TO_RAD + Math.PI/*Add PI right away*/ ;//TODO: convert to number
+				this.#rotationOffset = (param as number) * DEG_TO_RAD + Math.PI/*Add PI right away*/;//TODO: convert to number
 				break;
 			case 'Spin Strength':
 				this.#spinStrength = param as number;//TODO: convert to boolean

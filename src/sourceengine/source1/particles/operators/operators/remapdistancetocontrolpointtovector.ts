@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -26,7 +27,7 @@ export class RemapDistanceToControlPointToVector extends SourceEngineParticleOpe
 		this.addParam('only active within specified distance', PARAM_TYPE_BOOL, 0);
 	}
 
-	doOperate(particle) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const cpNumber = this.getParameter('control point');
 		const distanceMin = this.getParameter('distance minimum');
 		const distanceMax = this.getParameter('distance maximum');

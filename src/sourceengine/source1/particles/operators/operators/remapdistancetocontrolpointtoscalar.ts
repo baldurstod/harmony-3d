@@ -1,10 +1,10 @@
 import { vec3 } from 'gl-matrix';
-
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleOperator } from '../operator';
-import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { lerp, RemapValClamped } from '../../../../../math/functions';
+import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
+import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
@@ -27,7 +27,7 @@ export class RemapDistanceToControlPointToScalar extends SourceEngineParticleOpe
 		this.addParam('only active within specified distance', PARAM_TYPE_BOOL, 0);
 	}
 
-	doOperate(particle, elapsedTime) {
+	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
 		const cpNumber = this.getParameter('control point');
 		const dMin = this.getParameter('distance minimum');
 		const dMax = this.getParameter('distance maximum');
@@ -48,7 +48,7 @@ export class RemapDistanceToControlPointToScalar extends SourceEngineParticleOpe
 			if (active && ((deltaL < dMin) || (deltaL > dMax))) {
 				return;
 			}
-			const output = RemapValClamped(deltaL,dMin, dMax, oMin, oMax);//(deltaL-dMin)/(dMax-dMin) * (oMax-oMin) + oMin;
+			const output = RemapValClamped(deltaL, dMin, dMax, oMin, oMax);//(deltaL-dMin)/(dMax-dMin) * (oMax-oMin) + oMin;
 			const strength = this.getOperatorStrength();
 
 			if (strength == 1) {
