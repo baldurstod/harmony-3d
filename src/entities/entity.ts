@@ -45,6 +45,7 @@ export enum EngineEntityAttributes {
 export interface EntityParameters {
 	name?: string;
 	parent?: Entity;
+	childs?: Entity[];
 	position?: vec3;
 	quaternion?: quat;
 	scale?: vec3;
@@ -110,6 +111,9 @@ export class Entity {
 		}
 		if (parameters.parent) {
 			this.parent = parameters.parent;
+		}
+		if (parameters.childs) {
+			parameters.childs.forEach((child: Entity) => this.addChild(child));
 		}
 		if (parameters.position) {
 			this.position = parameters.position;

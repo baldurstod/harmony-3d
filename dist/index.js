@@ -2344,6 +2344,9 @@ class Entity {
         if (parameters.parent) {
             this.parent = parameters.parent;
         }
+        if (parameters.childs) {
+            parameters.childs.forEach((child) => this.addChild(child));
+        }
         if (parameters.position) {
             this.position = parameters.position;
         }

@@ -2053,6 +2053,7 @@ declare class Choreography {
          declare interface EntityParameters {
              name?: string;
              parent?: Entity;
+             childs?: Entity[];
              position?: vec3;
              quaternion?: quat;
              scale?: vec3;
