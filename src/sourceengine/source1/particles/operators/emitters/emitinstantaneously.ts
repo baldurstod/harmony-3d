@@ -28,7 +28,7 @@ export class EmitInstantaneously extends SourceEngineParticleOperator {
 
 	}
 
-	doEmit(elapsedTime) {
+	doEmit(elapsedTime: number) {
 		if (this.#emitted) {
 			return;
 		}

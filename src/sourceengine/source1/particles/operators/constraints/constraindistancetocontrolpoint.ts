@@ -1,5 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -25,7 +26,7 @@ export class ConstrainDistanceToControlPoint extends SourceEngineParticleOperato
 		//	DMXELEMENT_UNPACK_FIELD('global center point', '0', bool, m_bGlobalCenter)
 	}
 
-	applyConstraint(particle) {
+	applyConstraint(particle: SourceEngineParticle) {
 		const minDistance = this.getParameter('minimum distance');
 		const maxDistance = this.getParameter('maximum distance');
 		const offsetOfCenter = this.getParameter('offset of center');

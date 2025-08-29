@@ -1,8 +1,11 @@
 import { vec3 } from 'gl-matrix';
 import { TESTING } from '../../../../../buildoptions';
+import { World } from '../../../../../objects/world';
 import { Raycaster } from '../../../../../raycasting/raycaster';
 import { Scene } from '../../../../../scenes/scene';
+import { CDmxAttributeValue } from '../../../export';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_STRING, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -18,8 +21,8 @@ const tempVec3_2 = vec3.create();
 export class CollisionViaTraces extends SourceEngineParticleOperator {
 	static functionName = 'Collision via traces';
 	#raycaster = new Raycaster();
-	#world;
-	#collisionMode;
+	#world?: World;
+	#collisionMode: number = -1;/*TODO: create enum*/;
 
 	constructor(system: SourceEngineParticleSystem) {
 		super(system);
@@ -46,16 +49,16 @@ export class CollisionViaTraces extends SourceEngineParticleOperator {
 		//DMXELEMENT_UNPACK_FIELD( "trace accuracy tolerance", "24", float, m_flTraceTolerance )
 	}
 
-	paramChanged(name, value) {
+	paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]) {
 		switch (name) {
 			case 'collision mode':
-				this.#collisionMode = value;
+				this.#collisionMode = value as number;
 				console.log('collisionMode', this.#collisionMode);
 				break;
 		}
 	}
 
-	applyConstraint(particle) {
+	applyConstraint(particle: SourceEngineParticle) {
 		const world = TESTING && (this.#world ?? this.#getWorld());
 		if (world) {
 			this.#worldCollision(particle, world);
@@ -67,7 +70,7 @@ export class CollisionViaTraces extends SourceEngineParticleOperator {
 		//TODO: do a proper collision
 	}
 
-	#worldCollision(particle, world) {
+	#worldCollision(particle: SourceEngineParticle, world: World) {
 		//const cp = this.particleSystem.getControlPoint(0);
 		//particle.prevPosition[2] = 50;
 

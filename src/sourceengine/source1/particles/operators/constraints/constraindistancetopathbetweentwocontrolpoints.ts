@@ -1,6 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { clamp } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
+import { SourceEngineParticle } from '../../particle';
 import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
 import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
 import { SourceEngineParticleOperator } from '../operator';
@@ -37,7 +38,7 @@ export class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngine
 		// TODO: add more parameters
 	}
 
-	applyConstraint(particle) {
+	applyConstraint(particle: SourceEngineParticle) {
 		const startNumber = this.getParameter('start control point number') || 0;
 		const endNumber = this.getParameter('end control point number') || 1;
 		let travelTime = this.getParameter('travel time') || 1;
