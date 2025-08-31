@@ -1,6 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { ProxyManager } from './proxymanager';
+import { DynamicParams } from '../../../../entities/entity';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 
 /**
  * Multiply proxy. Copies the value of a variable to another.
@@ -12,27 +14,27 @@ export class Multiply extends Proxy {
 	init() {
 	}
 
-	execute(variables) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		super.setResult(variables, variables.get(this.getData('srcvar1')));
 
 		const v1 = variables.get(this.getData('srcvar1'));
 		const v2 = variables.get(this.getData('srcvar2'));
-		if ((v1===null) || (v2===null) || (v1=== undefined) || (v2===undefined)) {
+		if ((v1 === null) || (v2 === null) || (v1 === undefined) || (v2 === undefined)) {
 			super.setResult(variables, null);
 			return;
 		}
 
-		if (typeof v1=='number') {
-			if (typeof v2=='number') {
-				super.setResult(variables, v1*v2);
+		if (typeof v1 == 'number') {
+			if (typeof v2 == 'number') {
+				super.setResult(variables, v1 * v2);
 			} else {//array
-				super.setResult(variables, vec3.fromValues(v1*v2[0], v1*v2[1], v1*v2[2]));
+				super.setResult(variables, vec3.fromValues(v1 * v2[0], v1 * v2[1], v1 * v2[2]));
 			}
 		} else {
-			if (typeof v2=='number') {
-				super.setResult(variables, vec3.fromValues(v1[0]*v2, v1[1]*v2, v1[2]*v2));
+			if (typeof v2 == 'number') {
+				super.setResult(variables, vec3.fromValues(v1[0] * v2, v1[1] * v2, v1[2] * v2));
 			} else {//array
-				super.setResult(variables, vec3.fromValues(v1[0]*v2[0], v1[1]*v2[1], v1[2]*v2[2]));
+				super.setResult(variables, vec3.fromValues(v1[0] * v2[0], v1[1] * v2[1], v1[2] * v2[2]));
 			}
 		}
 	}

@@ -1,6 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { ProxyManager } from './proxymanager';
+import { DynamicParams } from '../../../../entities/entity';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 
 /**
  * Add proxy. Copies the value of a variable to another.
@@ -9,7 +11,7 @@ import { Proxy } from './proxy';
  * @comment ouput variable name: resultVar
  */
 export class Add extends Proxy {
-	execute(variables) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		super.setResult(variables, variables.get(this.getData('srcvar1')));
 
 		const v1 = variables.get(this.getData('srcvar1'));

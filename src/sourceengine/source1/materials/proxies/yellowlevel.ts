@@ -1,6 +1,8 @@
 import { vec3 } from 'gl-matrix';
-import { ProxyManager } from './proxymanager';
+import { DynamicParams } from '../../../../entities/entity';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 
 /**
  * YellowLevel proxy.
@@ -11,12 +13,13 @@ const URINE_RED = vec3.fromValues(6, 9, 2);
 const URINE_BLU = vec3.fromValues(7, 5, 1);
 
 export class YellowLevel extends Proxy {
-	#resultVar;
+	#resultVar = '';
+
 	init() {
 		this.#resultVar = this.datas['resultvar'];
 	}
 
-	execute(variables, proxyParams) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		if (!proxyParams.jarate) {
 			variables.set(this.#resultVar, vec3.fromValues(1, 1, 1));
 		} else {

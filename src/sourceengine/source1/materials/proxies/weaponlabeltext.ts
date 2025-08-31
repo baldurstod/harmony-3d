@@ -1,17 +1,21 @@
 import { mat4 } from 'gl-matrix';
-import { ProxyManager } from './proxymanager';
+import { DynamicParams } from '../../../../entities/entity';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 import { MatrixBuildTranslation } from './texturetransform';
 
 const RESULT_VAR = '$basetexturetransform';
 
+// TODO: deprecate ?  afaik was only used for csgo
 export class WeaponLabelText extends Proxy {
-	#displayDigit: number;
+	#displayDigit: number = 0;
+
 	init() {
 		this.#displayDigit = this.datas['displaydigit'] ?? 0;
 	}
 
-	execute(variables, proxyParams, time) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		const text = proxyParams.WeaponLabelText || '';
 		const car = text.charCodeAt(this.#displayDigit);
 		const mat = mat4.create();//TODOv3 optimize

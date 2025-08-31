@@ -1,13 +1,15 @@
-import { ProxyManager } from './proxymanager';
+import { DynamicParams } from '../../../../entities/entity';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 
 export class Clamp extends Proxy {
-	#srcvar1;
-	#resultvar;
-	#minVal;
-	#maxVal;
+	#srcvar1 = '';
+	#resultvar = '';
+	#minVal = 0;
+	#maxVal = 1;
 
-	init(variables) {
+	init() {
 		//TODO : removeme
 		this.#srcvar1 = this.datas['srcvar1'];
 		this.#resultvar = this.datas['resultvar'];
@@ -15,7 +17,7 @@ export class Clamp extends Proxy {
 		this.#maxVal = this.datas['max'] ?? 1;
 	}
 
-	execute(variables) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		const v1 = variables.get(this.getData('srcvar1'));
 		if ((v1 === null) || (v1 === undefined)) {
 			variables.set(this.#resultvar, null);
@@ -25,9 +27,9 @@ export class Clamp extends Proxy {
 		if (typeof v1 == 'number') {
 			super.setResult(variables, Math.min(Math.max(v1, this.#minVal), this.#maxVal));
 		} else {//array
-			const clampedArray = [];
+			const clampedArray: number[] = [];
 			for (const i in v1) {
-				clampedArray[i] = Math.min(Math.max(v1[i], this.#minVal), this.#maxVal);
+				clampedArray[i as unknown as number] = Math.min(Math.max(v1[i], this.#minVal), this.#maxVal);
 			}
 			super.setResult(variables, clampedArray);
 			/*if (typeof v2=='number') {

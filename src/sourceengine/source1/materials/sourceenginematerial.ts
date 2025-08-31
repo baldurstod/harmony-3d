@@ -1,5 +1,6 @@
 import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { DEBUG, TESTING, WARN } from '../../../buildoptions';
+import { DynamicParams } from '../../../entities/entity';
 import { RenderFace } from '../../../materials/constants';
 import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL, MaterialParams } from '../../../materials/material';
 import { DEG_TO_RAD } from '../../../math/constants';
@@ -33,7 +34,7 @@ function GetTextureTransform(str: string, mat = mat4.create()) {
 	}
 
 	if (scaleResult) {
-		MatrixBuildScale(temp, scaleResult[1], scaleResult[2], 1.0);
+		MatrixBuildScale(temp, Number(scaleResult[1]), Number(scaleResult[2]), 1.0);
 		mat4.mul(mat, temp, mat);
 	}
 
@@ -46,7 +47,7 @@ function GetTextureTransform(str: string, mat = mat4.create()) {
 	mat4.mul(mat, temp, mat);
 
 	if (translateResult) {
-		MatrixBuildTranslation(temp, translateResult[1], translateResult[2], 0.0);
+		MatrixBuildTranslation(temp, Number(translateResult[1]), Number(translateResult[2]), 0.0);
 		mat4.mul(mat, temp, mat);
 	}
 	return mat;
@@ -535,7 +536,7 @@ export class SourceEngineMaterial extends Material {
 	 * Process proxies
 	 * @param proxyParams {Object} Param passed to proxies
 	 */
-	#processProxies(time: number, proxyParams = {}) {
+	#processProxies(time: number, proxyParams: DynamicParams = {}) {
 		if (false && DEBUG) {
 			this.proxyParams.ItemTintColor = vec3.fromValues(Math.cos(time * 2) * 0.5 + 0.5, Math.cos(time * 3) * 0.5 + 0.5, Math.cos(time * 5) * 0.5 + 0.5);
 		}

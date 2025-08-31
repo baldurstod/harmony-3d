@@ -1,15 +1,18 @@
 import { mat4, vec2 } from 'gl-matrix';
-import { ProxyManager } from './proxymanager';
-import { Proxy } from './proxy';
+import { DynamicParams } from '../../../../entities/entity';
 import { DEG_TO_RAD } from '../../../../math/constants';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
+import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 
 export class TextureTransform extends Proxy {
-	centerVar;
-	translateVar;
-	rotateVar;
-	scaleVar;
-	resultVar;
-	init(variables) {
+	centerVar = '';
+	translateVar = '';
+	rotateVar = '';
+	scaleVar = '';
+	resultVar = '';
+
+	init(variables: Map<string, SourceEngineMaterialVariables>) {
 		this.centerVar = this.getData('centervar');
 		this.translateVar = this.getData('translatevar');
 		this.rotateVar = this.getData('rotatevar');
@@ -18,7 +21,7 @@ export class TextureTransform extends Proxy {
 		variables.set(this.resultVar, mat4.create());//TODO: fixme
 	}
 
-	execute(variables, proxyParams, time) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		let center = vec2.fromValues(0.5, 0.5);
 
 		const mat = mat4.create();//TODOv3 optimize
@@ -71,24 +74,24 @@ export class TextureTransform extends Proxy {
 }
 ProxyManager.registerProxy('TextureTransform', TextureTransform);
 
-export function MatrixBuildTranslation(dst, x, y, z) {
+export function MatrixBuildTranslation(dst: mat4, x: number, y: number, z: number) {
 	mat4.identity(dst);
 	dst[12] = x;
 	dst[13] = y;
 	dst[14] = z;
 }
 // Builds a scale matrix
-export function MatrixBuildScale(dst, x, y, z) {
-	dst[ 0] = x;
-	dst[ 1] = 0;
-	dst[ 2] = 0;
-	dst[ 3] = 0;
-	dst[ 4] = 0;
-	dst[ 5] = y;
-	dst[ 6] = 0;
-	dst[ 7] = 0;
-	dst[ 8] = 0;
-	dst[ 9] = 0;
+export function MatrixBuildScale(dst: mat4, x: number, y: number, z: number) {
+	dst[0] = x;
+	dst[1] = 0;
+	dst[2] = 0;
+	dst[3] = 0;
+	dst[4] = 0;
+	dst[5] = y;
+	dst[6] = 0;
+	dst[7] = 0;
+	dst[8] = 0;
+	dst[9] = 0;
 	dst[10] = z;
 	dst[11] = 0;
 	dst[12] = 0;

@@ -1,5 +1,5 @@
-import { ProxyManager } from './proxymanager';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 /**
  * Invis proxy.
  * @comment ouput variable name: resultVar

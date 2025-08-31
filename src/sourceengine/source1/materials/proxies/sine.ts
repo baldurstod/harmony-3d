@@ -1,12 +1,15 @@
-import { ProxyManager } from './proxymanager';
+import { DynamicParams } from '../../../../entities/entity';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 
 export class Sine extends Proxy {
 	//#delta;
 	//#mid;
-	#period;
-	#sineperiod: number;
-	#timeoffset: number;
+	#period = 1;
+	#sineperiod: number = 1;
+	#timeoffset: number = 1;
+
 	init() {
 		this.#sineperiod = Number(this.datas['sineperiod'] ?? 1);
 		//this.sinemin = this.datas['sinemin']*1; //TODO: check number
@@ -18,7 +21,8 @@ export class Sine extends Proxy {
 		//this.#delta = 1.0;
 	}
 
-	execute(variables, proxyParams, time) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+		//TODO: use timeoffset
 		const sineMin = this.getVariable(variables, 'sinemin') * 1;
 		const sineMax = this.getVariable(variables, 'sinemax') * 1;
 		const delta = (sineMax - sineMin) * 0.5;

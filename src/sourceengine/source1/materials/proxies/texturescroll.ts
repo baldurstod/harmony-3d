@@ -1,9 +1,11 @@
 import { mat4 } from 'gl-matrix';
-import { ProxyManager } from './proxymanager';
-import { Proxy } from './proxy';
+import { DynamicParams } from '../../../../entities/entity';
 import { DEG_TO_RAD } from '../../../../math/constants';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
+import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 
-function toNumber(string) {
+function toNumber(string: string) {
 	const num = Number(string);
 	if (!Number.isNaN(num)) {
 		return num;
@@ -11,23 +13,23 @@ function toNumber(string) {
 }
 
 export class TextureScroll extends Proxy {
-	#textureScrollVar;
-	#textureScrollRate;
-	#textureScrollAngle;
-	#textureScale;
+	#textureScrollVar = '';
+	#textureScrollRate = 1;
+	#textureScrollAngle = 0;
+	#textureScale = 1;
 
-	init(variables) {
+	init(variables: Map<string, SourceEngineMaterialVariables>) {
 		this.#textureScrollVar = (this.datas['texturescrollvar'] ?? '').toLowerCase();
 		this.#textureScrollRate = toNumber(this.datas['texturescrollrate']) ?? 1;
-		this.#textureScrollAngle = toNumber(DEG_TO_RAD * (this.datas['texturescrollangle'])) ?? 0;
+		this.#textureScrollAngle = toNumber(String(DEG_TO_RAD * (this.datas['texturescrollangle']))) ?? 0;
 		this.#textureScale = toNumber(this.datas['texturescale']) ?? 1;
 		variables.set(this.#textureScrollVar, mat4.create());//TODO: fixme
 	}
 
-	execute(variables, proxyParams, time) {
-		const rate		= this.#textureScrollRate;
-		const angle		= this.#textureScrollAngle;
-		const scale		= this.#textureScale;
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+		const rate = this.#textureScrollRate;
+		const angle = this.#textureScrollAngle;
+		const scale = this.#textureScale;
 
 		const sOffset = time * Math.cos(angle) * rate;
 		const tOffset = time * Math.sin(angle) * rate;
@@ -46,16 +48,16 @@ export class TextureScroll extends Proxy {
 
 		const v = variables.get(this.#textureScrollVar);
 		if (v) {
-			v[ 0] = scale;
-			v[ 1] = 0;
-			v[ 2] = 0;
-			v[ 3] = 0;
-			v[ 4] = 0;
-			v[ 5] = scale;
-			v[ 6] = 0;
-			v[ 7] = 0;
-			v[ 8] = 0;
-			v[ 9] = 0;
+			v[0] = scale;
+			v[1] = 0;
+			v[2] = 0;
+			v[3] = 0;
+			v[4] = 0;
+			v[5] = scale;
+			v[6] = 0;
+			v[7] = 0;
+			v[8] = 0;
+			v[9] = 0;
 			v[10] = 1;
 			v[11] = 0;
 			v[12] = sOffset;
@@ -63,19 +65,19 @@ export class TextureScroll extends Proxy {
 			v[14] = 0;
 			v[15] = 1;
 		}
-	/*
-		if (m_pTextureScrollVar->GetType() == MATERIAL_VAR_TYPE_MATRIX)
-		{
-			VMatrix mat(scale, 0.0f, 0.0f, sOffset,
-				0.0f, scale, 0.0f, tOffset,
-				0.0f, 0.0f, 1.0f, 0.0f,
-				0.0f, 0.0f, 0.0f, 1.0f);
-			m_pTextureScrollVar->SetMatrixValue(mat);
-		}
-		else
-		{
-			m_pTextureScrollVar->SetVecValue(sOffset, tOffset, 0.0f);
-		}*/
+		/*
+			if (m_pTextureScrollVar->GetType() == MATERIAL_VAR_TYPE_MATRIX)
+			{
+				VMatrix mat(scale, 0.0f, 0.0f, sOffset,
+					0.0f, scale, 0.0f, tOffset,
+					0.0f, 0.0f, 1.0f, 0.0f,
+					0.0f, 0.0f, 0.0f, 1.0f);
+				m_pTextureScrollVar->SetMatrixValue(mat);
+			}
+			else
+			{
+				m_pTextureScrollVar->SetVecValue(sOffset, tOffset, 0.0f);
+			}*/
 	}
 }
 ProxyManager.registerProxy('TextureScroll', TextureScroll);

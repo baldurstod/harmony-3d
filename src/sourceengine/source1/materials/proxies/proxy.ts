@@ -16,16 +16,20 @@
 	}
 }
 */
+
+import { DynamicParams } from "../../../../entities/entity";
+import { SourceEngineMaterialVariables, SourceEngineMaterialVmt } from "../sourceenginematerial";
+
 /**
  * Source engine material interface
  */
 export class Proxy {
-	datas: any = null;
+	protected datas: any = null;
 
 	/**
 	 * TODO
 	 */
-	setParams(datas, variables) {
+	setParams(datas: SourceEngineMaterialVmt/*TODO: improve type*/, variables: Map<string, SourceEngineMaterialVariables>) {
 		this.datas = datas;
 		this.init(variables);
 	}
@@ -33,7 +37,7 @@ export class Proxy {
 	/**
 	 * TODO
 	 */
-	getData(name) {
+	getData(name: string) {
 		const result = this.datas[name];
 		if (typeof result == 'string') {
 			return result.toLowerCase();
@@ -44,29 +48,29 @@ export class Proxy {
 	/**
 	 * Dummy function
 	 */
-	init(variables) {
+	init(variables: Map<string, SourceEngineMaterialVariables>) {
 	}
 
 	/**
 	 * Dummy function
 	 */
-	execute(variables, proxyParams, time) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 	}
 
-	setResult(variables, value) {
+	setResult(variables: Map<string, SourceEngineMaterialVariables>, value: any/*TODO: improve type*/) {
 		let resultVarName = this.getData('resultvar');
 		if (resultVarName) {
 			resultVarName = resultVarName.toLowerCase();
 			if (resultVarName.indexOf('[') != -1) {
 				const result = (/([^\[]*)\[(\d*)\]/g).exec(resultVarName);
 				if (result && result.length == 3) {
-					const v = variables.get(result[1].toLowerCase());
+					const v = variables.get(result[1]!.toLowerCase());
 					if (v) {
 
 						if (typeof value == 'number') {
-							v[result[2]] = value;
+							v[result[2]!] = value;
 						} else {//array
-							v[result[2]] = value[result[2]];
+							v[result[2]!] = value[result[2]!];
 						}
 					}
 				}
@@ -89,7 +93,7 @@ export class Proxy {
 		}
 	}
 
-	getVariable(variables, name) {
+	getVariable(variables: Map<string, SourceEngineMaterialVariables>, name: string) {
 		const result = this.datas[name];
 		if (typeof result == 'string') {
 			if (result.startsWith('$')) {

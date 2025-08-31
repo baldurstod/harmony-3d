@@ -1,20 +1,23 @@
-import { ProxyManager } from './proxymanager';
+import { DynamicParams } from '../../../../entities/entity';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 /**
  * StatTrakDigit Proxy
  */
 
 export class StatTrakDigit extends Proxy {
 	#displayDigit = 0;
-	#resultVar;
-	#trimZeros: boolean;
+	#resultVar = '';
+	#trimZeros: boolean = false;
+
 	init() {
 		this.#trimZeros = this.datas['trimzeros'];
 		this.#resultVar = this.datas['resultvar'];
 		this.#displayDigit = this.datas['displaydigit'] ?? 0;
 	}
 
-	execute(variables, proxyParams, time) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		const number = proxyParams.StatTrakNumber || 0;
 		const numberasstring = String(number);
 		let digit = Math.floor(number / (Math.pow(10, this.#displayDigit)) % 10);

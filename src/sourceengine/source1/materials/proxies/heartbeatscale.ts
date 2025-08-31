@@ -1,33 +1,30 @@
-import { ProxyManager } from './proxymanager';
+import { DynamicParams } from '../../../../entities/entity';
 import { TWO_PI } from '../../../../math/constants';
 import { clamp } from '../../../../math/functions';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 
 const scale = 0.6;
 const loBeat = 1.0 * scale;
 const hiBeat = 0.8 * scale;
 
 export class HeartbeatScale extends Proxy {
-	#datas;
-	#sineperiod: number;
-	#resultVar;
-	#delta;
-	#mid;
-	#p;
-	setParams(datas) {
-		this.#datas = datas;
-		this.init();
-	}
+	#sineperiod: number = 1;
+	#resultVar = '';
+	#delta = 0;
+	#mid = 0;
+	#p = 0;
 
 	init() {
 		this.#sineperiod = 1;
-		this.#resultVar = this.#datas['resultvar'];
+		this.#resultVar = this.datas['resultvar'];
 		this.#delta = 0.2;
 		this.#mid = 1.0;
 		this.#p = 2 * Math.PI / this.#sineperiod;
 	}
 
-	execute(variables, proxyParams, time) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		let s1 = Math.sin(time * TWO_PI);
 		s1 = clamp(s1, 0.0, 1.0);
 		s1 *= s1;

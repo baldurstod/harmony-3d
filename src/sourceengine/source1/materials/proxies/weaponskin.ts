@@ -1,10 +1,12 @@
-import { ProxyManager } from './proxymanager';
+import { DynamicParams } from '../../../../entities/entity';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 
 export class WeaponSkin extends Proxy {
 	#defaultTexture = null;
 
-	execute(variables, proxyParams) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		if (!this.#defaultTexture) {
 			this.#defaultTexture = variables.get('$basetexture');
 		}

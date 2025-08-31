@@ -1,3 +1,5 @@
+import { DynamicParams } from '../../../../entities/entity';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
@@ -6,14 +8,9 @@ import { ProxyManager } from './proxymanager';
  * @comment ouput variable name: resultVar
  */
 export class CustomSteamImageOnModel extends Proxy {
-	#defaultTexture;
-	setParams(datas) {
-	}
+	#defaultTexture = '';
 
-	init() {
-	}
-
-	execute(variables, proxyParams) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		if (!this.#defaultTexture) {
 			this.#defaultTexture = variables.get('$basetexture');
 		}

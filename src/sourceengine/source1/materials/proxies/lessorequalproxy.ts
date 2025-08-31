@@ -1,8 +1,10 @@
-import { ProxyManager } from './proxymanager';
+import { DynamicParams } from '../../../../entities/entity';
+import { SourceEngineMaterialVariables } from '../sourceenginematerial';
 import { Proxy } from './proxy';
+import { ProxyManager } from './proxymanager';
 
 export class LessOrEqualProxy extends Proxy {
-	execute(variables) {
+	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
 		super.setResult(variables, variables.get(this.getData('srcvar1')));
 
 		const srcVar1 = variables.get(this.getData('srcvar1'));
