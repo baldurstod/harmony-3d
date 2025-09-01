@@ -217,8 +217,6 @@ export class SkeletalMesh extends Mesh {
 	}
 
 	getBoundingBox(boundingBox = new BoundingBox()) {
-		boundingBox.reset();
-
 		const ret = {};
 		const skeletonBones = this.skeleton._bones;
 		const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
