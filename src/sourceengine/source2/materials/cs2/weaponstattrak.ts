@@ -1,10 +1,10 @@
-import { Source2Material } from '../source2material';
+import { DynamicParams } from '../../../../entities/entity';
 import { Source2MaterialLoader } from '../../loaders/source2materialloader';
-import { TESTING } from '../../../../buildoptions';
+import { Source2Material } from '../source2material';
 
-export class Source2CsgoWeaponStattrak extends Source2Material{
+export class Source2CsgoWeaponStattrak extends Source2Material {
 
-	_afterProcessProxies(proxyParams) {
+	_afterProcessProxies(proxyParams: DynamicParams) {
 		//Proxy param: $ent_stattrak
 		super._afterProcessProxies(proxyParams);
 		this.setDynamicUniform('g_nStatTrakValue');

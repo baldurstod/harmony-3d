@@ -1,5 +1,6 @@
 import { vec4 } from 'gl-matrix';
 import { DEBUG } from '../../../buildoptions';
+import { DynamicParams } from '../../../entities/entity';
 import { RenderFace } from '../../../materials/constants';
 import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL, UniformValue } from '../../../materials/material';
 import { Mesh } from '../../../objects/mesh';
@@ -66,7 +67,6 @@ const TEXTURE_UNIFORMS = new Map<string, [string, string]>([
 
 const DEFAULT_ALPHA_TEST_REFERENCE = 0.7;
 
-type ProxyParams = Record<string, any>;
 type integer = number;
 type float = number;
 
@@ -229,7 +229,7 @@ export class Source2Material extends Material {
 		this.#processProxies(time, mesh.materialsParams);
 	}
 
-	#processProxies(time: number, proxyParams: ProxyParams): void {
+	#processProxies(time: number, proxyParams: DynamicParams): void {
 		//todov3//rename function
 
 		/*let proxies = this.proxies;
@@ -240,7 +240,7 @@ export class Source2Material extends Material {
 		this.afterProcessProxies(proxyParams);
 	}
 
-	_afterProcessProxies(proxyParams: ProxyParams): void {
+	_afterProcessProxies(proxyParams: DynamicParams): void {
 		//this.setupUniforms();
 		this.initTextureUniforms();//TODO : do this only once
 		/*
@@ -295,7 +295,7 @@ export class Source2Material extends Material {
 		}
 	}
 
-	afterProcessProxies(proxyParams: ProxyParams): void {
+	afterProcessProxies(proxyParams: DynamicParams): void {
 
 	}
 

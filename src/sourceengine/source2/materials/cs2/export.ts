@@ -9,5 +9,5 @@ export { Source2CsgoSimple } from './simple';
 export { Source2CsgoStaticOverlay } from './static_overlay';
 export { Source2CsgoUnlitGeneric } from './unlitgeneric';
 export { Source2CsgoVertexLitGeneric } from './vertexlitgeneric';
-export { Source2CsgoWeaponStattrak } from './weapon_stattrak';
+export { Source2CsgoWeaponStattrak } from './weaponstattrak';
 export { Source2CsgoWeapon } from './weapon';
