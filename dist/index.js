@@ -531,6 +531,58 @@ class ColorBackground extends BackGround {
     }
 }
 
+const entities$1 = new Map();
+function registerEntity(ent) {
+    if (entities$1.has(ent.getEntityName().toLowerCase())) {
+        console.error(`${ent.getEntityName().toLowerCase()} is already registered`);
+    }
+    entities$1.set(ent.getEntityName().toLowerCase(), ent);
+}
+function getEntity(name) {
+    return entities$1.get(name.toLowerCase());
+}
+
+class JSONLoader {
+    static async fromJSON(rootEntity) {
+        let loadedResolve = () => { }; // Note: typescript falsely complains about loadedResolve not being assigned without this.
+        const loadedPromise = new Promise(resolve => {
+            loadedResolve = resolve;
+        });
+        const entities = new Map();
+        const root = await this.loadEntity(rootEntity, entities, loadedPromise);
+        loadedResolve(true);
+        return root;
+    }
+    static async loadEntity(jsonEntity, entities, loadedPromise) {
+        if (jsonEntity) {
+            const constructor = getEntity(jsonEntity.constructor);
+            if (constructor) {
+                const entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
+                entity.fromJSON(jsonEntity);
+                entities.set(entity.id, entity);
+                if (jsonEntity.children) {
+                    for (const child of jsonEntity.children) {
+                        const childEntity = await this.loadEntity(child, entities, loadedPromise);
+                        if (childEntity && entity['addChild']) {
+                            entity['addChild'](childEntity);
+                        }
+                    }
+                }
+                return entity;
+            }
+            else {
+                console.error('Unknown constructor', jsonEntity.constructor);
+            }
+        }
+    }
+    static registerEntity(ent) {
+        registerEntity(ent);
+    }
+}
+
+const __DISABLE_WEBGL2__ = false;
+const DISABLE_WEBGL2 = __DISABLE_WEBGL2__; // Set to true to force webgl1
+
 //See https://developer.mozilla.org/en-US/docs/Web/API/WebGL_API/Constants
 const GL_NONE = 0;
 const GL_ZERO = 0;
@@ -836,580 +888,6 @@ const GL_STENCIL_INDEX8 = 0x8D48;
 const GL_DEPTH_STENCIL = 0x84F9;
 const GL_DEPTH24_STENCIL8 = 0x88F0;
 const GL_DEPTH32F_STENCIL8 = 0x8CAD;
-
-const __DISABLE_WEBGL2__ = false;
-const DISABLE_WEBGL2 = __DISABLE_WEBGL2__; // Set to true to force webgl1
-
-const TypedArrayProto = Object.getPrototypeOf(Int8Array); // we can't use TypedArray directly
-var BufferUsage;
-(function (BufferUsage) {
-    BufferUsage[BufferUsage["StaticDraw"] = 35044] = "StaticDraw";
-    BufferUsage[BufferUsage["DynamicDraw"] = 35048] = "DynamicDraw";
-    BufferUsage[BufferUsage["StreamDraw"] = 35040] = "StreamDraw";
-    BufferUsage[BufferUsage["StaticRead"] = 35045] = "StaticRead";
-    BufferUsage[BufferUsage["DynamicRead"] = 35049] = "DynamicRead";
-    BufferUsage[BufferUsage["StreamRead"] = 35041] = "StreamRead";
-    BufferUsage[BufferUsage["StaticCopy"] = 35046] = "StaticCopy";
-    BufferUsage[BufferUsage["DynamicCopy"] = 35050] = "DynamicCopy";
-    BufferUsage[BufferUsage["StreamCopy"] = 35042] = "StreamCopy";
-})(BufferUsage || (BufferUsage = {}));
-class BufferAttribute {
-    #type;
-    #usage = BufferUsage.StaticDraw;
-    #target;
-    #wireframeDirty = true;
-    #solidWireframeDirty = true;
-    itemSize;
-    dirty;
-    _array;
-    count = 0;
-    _buffer;
-    #source;
-    divisor = 0;
-    constructor(array, itemSize) {
-        this.itemSize = itemSize;
-        if (isNaN(this.itemSize)) {
-            throw new TypeError('Argument itemSize must be an Integer');
-        }
-        this.#target = GL_ARRAY_BUFFER;
-        this.#type = 0;
-        //TODO: normalized ?
-        this.dirty = true;
-        if (array) {
-            this.array = array;
-        }
-        return this;
-    }
-    get type() {
-        return this.#type;
-    }
-    set usage(usage) {
-        this.#usage = usage;
-        this.dirty = true;
-        this.#wireframeDirty = true;
-        this.#solidWireframeDirty = true;
-    }
-    set target(target) {
-        this.#target = target;
-        this.dirty = true;
-        this.#wireframeDirty = true;
-        this.#solidWireframeDirty = true;
-    }
-    set array(array) {
-        this.setArray(array);
-    }
-    setArray(array) {
-        if (!(array instanceof TypedArrayProto)) {
-            throw new TypeError('Argument array must be a TypedArray');
-        }
-        this._array = array;
-        this.count = array.length / this.itemSize;
-        this.dirty = true;
-        this.#wireframeDirty = true;
-        this.#solidWireframeDirty = true;
-        switch (true) {
-            case array instanceof Float32Array:
-                this.#type = GL_FLOAT;
-                break;
-            case array instanceof Int8Array:
-                this.#type = GL_BYTE;
-                break;
-            case array instanceof Int16Array:
-                this.#type = GL_SHORT;
-                break;
-            case array instanceof Int32Array:
-                this.#type = GL_INT;
-                break;
-            case array instanceof Uint8Array:
-                this.#type = GL_UNSIGNED_BYTE;
-                break;
-            case array instanceof Uint16Array:
-                this.#type = GL_UNSIGNED_SHORT;
-                break;
-            case array instanceof Uint32Array:
-                this.#type = GL_UNSIGNED_INT;
-                break;
-            default:
-                throw 'Unsupported array type';
-        }
-    }
-    update(glContext) {
-        if (this.dirty) {
-            if (this._buffer === undefined) {
-                this._buffer = glContext.createBuffer(); //TODOv3: createBuffer in graphics
-            }
-            glContext.bindBuffer(this.#target, this._buffer);
-            glContext.bufferData(this.#target, this._array, this.#usage);
-            this.dirty = false;
-            this.#wireframeDirty = true;
-            this.#solidWireframeDirty = true;
-        }
-    }
-    updateWireframe(glContext) {
-        if (this.#wireframeDirty) {
-            if (this._buffer === undefined) {
-                this._buffer = glContext.createBuffer(); //TODOv3: createBuffer in graphics
-            }
-            const lineArray = new Uint32Array(2 * this._array.length);
-            let a, b, c;
-            const arr = this._array;
-            let j = 0;
-            for (let i = 0; i < arr.length; i += 3) {
-                a = arr[i + 0];
-                b = arr[i + 1];
-                c = arr[i + 2];
-                //lineArray.push(a, b, b, c, c, a);
-                lineArray[j++] = a;
-                lineArray[j++] = b;
-                lineArray[j++] = b;
-                lineArray[j++] = c;
-                lineArray[j++] = c;
-                lineArray[j++] = a;
-            }
-            glContext.bindBuffer(this.#target, this._buffer);
-            glContext.bufferData(this.#target, lineArray, this.#usage);
-            this.dirty = true;
-            this.#wireframeDirty = false;
-        }
-    }
-    clone() {
-        return new this.constructor(this.#source, this.itemSize /*, this._array.byteOffset, this._array.byteLength*/);
-    }
-    setSource(source) {
-        this.#source = source;
-    }
-    getBuffer() {
-        return this._buffer;
-    }
-}
-class Uint8BufferAttribute extends BufferAttribute {
-    constructor(array, itemSize, offset, length) {
-        super(null, itemSize);
-        this.setSource(array);
-        this.array = new Uint8Array(array);
-    }
-}
-class Uint16BufferAttribute extends BufferAttribute {
-    constructor(array, itemSize, offset, length) {
-        super(null, itemSize);
-        this.setSource(array);
-        this.array = new Uint16Array(array, offset, length);
-    }
-}
-class Uint32BufferAttribute extends BufferAttribute {
-    constructor(array, itemSize, offset, length) {
-        super(null, itemSize);
-        this.setSource(array);
-        this.array = new Uint32Array(array, offset, length);
-    }
-}
-class Float32BufferAttribute extends BufferAttribute {
-    constructor(array, itemSize, offset, length) {
-        super(null, itemSize);
-        this.setSource(array);
-        this.array = new Float32Array(array, offset, length);
-    }
-}
-
-var PropertyType;
-(function (PropertyType) {
-    PropertyType["Null"] = "null";
-    PropertyType["Undefined"] = "undefined";
-    PropertyType["String"] = "string";
-    PropertyType["Number"] = "number";
-    PropertyType["Bigint"] = "bigint";
-    PropertyType["Boolean"] = "boolean";
-    PropertyType["Array"] = "array";
-    PropertyType["Object"] = "object";
-})(PropertyType || (PropertyType = {}));
-class Property {
-    type;
-    value;
-    constructor(type, value) {
-        this.type = type;
-        this.value = value;
-    }
-}
-class Properties {
-    #properties = new Map();
-    set(name, property) {
-        this.#properties.set(name, property);
-    }
-    delete(name) {
-        this.#properties.delete(name);
-    }
-    get(name) {
-        return this.#properties.get(name);
-    }
-    copy(source, keys) {
-        if (keys) {
-            for (const key of keys) {
-                const value = source.get(key);
-                if (value) {
-                    this.set(key, value);
-                }
-            }
-        }
-        else {
-            for (const [key, value] of source.#properties) {
-                this.set(key, value);
-            }
-        }
-    }
-    setString(name, value) {
-        this.#properties.set(name, new Property(PropertyType.String, value));
-    }
-    getString(name) {
-        const prop = this.#properties.get(name);
-        if (prop?.type == PropertyType.String) {
-            return prop.value;
-        }
-    }
-    setBoolean(name, value) {
-        this.#properties.set(name, new Property(PropertyType.Boolean, value));
-    }
-    getBoolean(name) {
-        const prop = this.#properties.get(name);
-        if (prop?.type == PropertyType.Boolean) {
-            return prop.value;
-        }
-    }
-    setNumber(name, value) {
-        this.#properties.set(name, new Property(PropertyType.Number, value));
-    }
-    getNumber(name) {
-        const prop = this.#properties.get(name);
-        if (prop?.type == PropertyType.Number) {
-            return prop.value;
-        }
-    }
-    setBigint(name, value) {
-        this.#properties.set(name, new Property(PropertyType.Bigint, value));
-    }
-    getBigint(name) {
-        const prop = this.#properties.get(name);
-        if (prop?.type == PropertyType.Bigint) {
-            return prop.value;
-        }
-    }
-    setArray(name, value) {
-        this.#properties.set(name, new Property(PropertyType.Array, value));
-    }
-    getArray(name) {
-        const prop = this.#properties.get(name);
-        if (prop?.type == PropertyType.Array) {
-            return prop.value;
-        }
-    }
-    setObject(name, value) {
-        this.#properties.set(name, new Property(PropertyType.Object, value));
-    }
-    getObject(name) {
-        const prop = this.#properties.get(name);
-        if (prop?.type == PropertyType.Object) {
-            return prop.value;
-        }
-    }
-}
-
-class BufferGeometry {
-    #elementArrayType = GL_UNSIGNED_INT;
-    #users = new Set();
-    attributes = new Map();
-    dirty = true;
-    count = 0;
-    properties = new Properties(); //new Map<string, any>();
-    getAttribute(name) {
-        return this.attributes.get(name);
-    }
-    setAttribute(name, attribute) {
-        this.attributes.set(name, attribute);
-    }
-    hasAttribute(name) {
-        return this.attributes.has(name);
-    }
-    deleteAttribute(name) {
-        this.attributes.delete(name);
-    }
-    get elementArrayType() {
-        return this.#elementArrayType;
-    }
-    /*getUniform(name) {
-        return this.uniforms.get(name);
-    }
-
-    setUniform(name, uniform) {
-        this.uniforms.set(name, uniform);
-    }
-
-    deleteUniform(name) {
-        this.uniforms.delete(name);
-    }*/
-    setIndex(attribute) {
-        this.#elementArrayType = attribute instanceof Uint32BufferAttribute ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT;
-        attribute.target = GL_ELEMENT_ARRAY_BUFFER;
-        this.setAttribute('index', attribute);
-        return;
-        /*let attribute;
-        if (Array.isArray(index)) {
-            attribute = new (arrayMax(index) > 65535 ? Uint32BufferAttribute : Uint16BufferAttribute)(index, 1, offset, length);
-        } else {
-            attribute = index;
-        }
-
-        this.#elementArrayType = attribute instanceof Uint32BufferAttribute ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT;
-        attribute.target = GL_ELEMENT_ARRAY_BUFFER;
-        this.setAttribute('index', attribute);
-*/
-    }
-    update(glContext) {
-        throw 'error';
-    }
-    computeVertexNormals() {
-        /* TODO
-        var index = this.index;
-        var attributes = this.attributes;
-
-        if (attributes.position) {
-            var positions = attributes.position.array;
-            if (attributes.normal === undefined) {
-                this.setAttribute('normal', new BufferAttribute(new Float32Array(positions.length), 3));//TODOV3: replace with a Float32BufferAttribute
-            } else {
-                // reset existing normals to zero
-                var array = attributes.normal.array;
-                for (var i = 0, il = array.length; i < il; i++) {
-                    array[i] = 0;
-                }
-            }
-
-            var normals = attributes.normal.array;
-
-            var vA, vB, vC;
-            var pA = new Vector3(), pB = new Vector3(), pC = new Vector3();
-            var cb = new Vector3(), ab = new Vector3();
-
-            // indexed elements
-
-            if (index) {
-                var indices = index.array;
-                for (var i = 0, il = index.count; i < il; i += 3) {
-                    vA = indices[i + 0] * 3;
-                    vB = indices[i + 1] * 3;
-                    vC = indices[i + 2] * 3;
-
-                    pA.fromArray(positions, vA);
-                    pB.fromArray(positions, vB);
-                    pC.fromArray(positions, vC);
-
-                    cb.subVectors(pC, pB);
-                    ab.subVectors(pA, pB);
-                    cb.cross(ab);
-
-                    normals[vA] += cb.x;
-                    normals[vA + 1] += cb.y;
-                    normals[vA + 2] += cb.z;
-
-                    normals[vB] += cb.x;
-                    normals[vB + 1] += cb.y;
-                    normals[vB + 2] += cb.z;
-
-                    normals[vC] += cb.x;
-                    normals[vC + 1] += cb.y;
-                    normals[vC + 2] += cb.z;
-                }
-            } else {
-                // non-indexed elements (unconnected triangle soup)
-                for (var i = 0, il = positions.length; i < il; i += 9) {
-                    pA.fromArray(positions, i);
-                    pB.fromArray(positions, i + 3);
-                    pC.fromArray(positions, i + 6);
-
-                    cb.subVectors(pC, pB);
-                    ab.subVectors(pA, pB);
-                    cb.cross(ab);
-
-                    normals[i] = cb.x;
-                    normals[i + 1] = cb.y;
-                    normals[i + 2] = cb.z;
-
-                    normals[i + 3] = cb.x;
-                    normals[i + 4] = cb.y;
-                    normals[i + 5] = cb.z;
-
-                    normals[i + 6] = cb.x;
-                    normals[i + 7] = cb.y;
-                    normals[i + 8] = cb.z;
-                }
-            }
-            this.normalizeNormals();
-            attributes.normal.needsUpdate = true;
-        }
-            */
-    }
-    clone() {
-        const clone = new BufferGeometry();
-        for (const [attributeName, attribute] of this.attributes) {
-            clone.attributes.set(attributeName, attribute);
-        }
-        clone.count = this.count;
-        clone.#elementArrayType = this.#elementArrayType;
-        this.dirty = true; //TODO: or should we copy this.dirty ?
-        return clone;
-    }
-    addUser(user) {
-        this.#users.add(user);
-    }
-    removeUser(user) {
-        this.#users.delete(user);
-        this.dispose();
-    }
-    hasNoUser() {
-        return this.#users.size == 0;
-    }
-    hasOnlyUser(user) {
-        return (this.#users.size == 1) && (this.#users.has(user));
-    }
-    dispose() {
-        if (this.hasNoUser()) ;
-    }
-}
-
-class BoxBufferGeometry extends BufferGeometry {
-    #indices;
-    #vertices;
-    #normals;
-    #uvs;
-    #numberOfVertices;
-    updateGeometry(width, height, depth, widthSegments, heightSegments, depthSegments) {
-        widthSegments = Math.floor(widthSegments);
-        heightSegments = Math.floor(heightSegments);
-        depthSegments = Math.floor(depthSegments);
-        // buffers
-        this.#indices = [];
-        this.#vertices = [];
-        this.#normals = [];
-        this.#uvs = [];
-        // helper variables
-        this.#numberOfVertices = 0;
-        // build each side of the box geometry
-        this.#buildPlane(2, 1, 0, -1, -1, depth, height, width, depthSegments, heightSegments); // px
-        this.#buildPlane(2, 1, 0, 1, -1, depth, height, -width, depthSegments, heightSegments); // nx
-        this.#buildPlane(0, 2, 1, 1, 1, width, depth, height, widthSegments, depthSegments); // py
-        this.#buildPlane(0, 2, 1, 1, -1, width, depth, -height, widthSegments, depthSegments); // ny
-        this.#buildPlane(0, 1, 2, 1, -1, width, height, depth, widthSegments, heightSegments); // pz
-        this.#buildPlane(0, 1, 2, -1, -1, width, height, -depth, widthSegments, heightSegments); // nz
-        // build geometry
-        this.setIndex(new Uint16BufferAttribute(this.#indices, 1));
-        this.setAttribute('aVertexPosition', new Float32BufferAttribute(this.#vertices, 3));
-        this.setAttribute('aVertexNormal', new Float32BufferAttribute(this.#normals, 3));
-        this.setAttribute('aTextureCoord', new Float32BufferAttribute(this.#uvs, 2));
-        this.count = this.#indices.length;
-    }
-    #buildPlane(u, v, w, udir, vdir, width, height, depth, gridX, gridY) {
-        const segmentWidth = width / gridX;
-        const segmentHeight = height / gridY;
-        const widthHalf = width / 2;
-        const heightHalf = height / 2;
-        const depthHalf = depth / 2;
-        const gridX1 = gridX + 1;
-        const gridY1 = gridY + 1;
-        let vertexCounter = 0;
-        let ix, iy;
-        const vector = vec3.create();
-        // generate vertices, normals and uvs
-        for (iy = 0; iy < gridY1; iy++) {
-            const y = iy * segmentHeight - heightHalf;
-            for (ix = 0; ix < gridX1; ix++) {
-                const x = ix * segmentWidth - widthHalf;
-                // set values to correct vector component
-                vector[u] = x * udir;
-                vector[v] = y * vdir;
-                vector[w] = depthHalf;
-                // now apply vector to vertex buffer
-                this.#vertices.push(...vector);
-                // set values to correct vector component
-                vector[u] = 0;
-                vector[v] = 0;
-                vector[w] = depth > 0 ? 1 : -1;
-                // now apply vector to normal buffer
-                this.#normals.push(...vector);
-                // uvs
-                this.#uvs.push(ix / gridX);
-                this.#uvs.push(1 - (iy / gridY));
-                // counters
-                vertexCounter += 1;
-            }
-        }
-        // indices
-        // 1. you need three indices to draw a single face
-        // 2. a single segment consists of two faces
-        // 3. so we need to generate six (2*3) indices per segment
-        for (iy = 0; iy < gridY; iy++) {
-            for (ix = 0; ix < gridX; ix++) {
-                const a = this.#numberOfVertices + ix + gridX1 * iy;
-                const b = this.#numberOfVertices + ix + gridX1 * (iy + 1);
-                const c = this.#numberOfVertices + (ix + 1) + gridX1 * (iy + 1);
-                const d = this.#numberOfVertices + (ix + 1) + gridX1 * iy;
-                // faces
-                this.#indices.push(a, b, d);
-                this.#indices.push(b, c, d);
-            }
-        }
-        // add a group to the geometry. this will ensure multi material support
-        // calculate new start value for groups
-        // update total number of vertices
-        this.#numberOfVertices += vertexCounter;
-    }
-}
-
-const entities$1 = new Map();
-function registerEntity(ent) {
-    if (entities$1.has(ent.getEntityName().toLowerCase())) {
-        console.error(`${ent.getEntityName().toLowerCase()} is already registered`);
-    }
-    entities$1.set(ent.getEntityName().toLowerCase(), ent);
-}
-function getEntity(name) {
-    return entities$1.get(name.toLowerCase());
-}
-
-class JSONLoader {
-    static async fromJSON(rootEntity) {
-        let loadedResolve = () => { }; // Note: typescript falsely complains about loadedResolve not being assigned without this.
-        const loadedPromise = new Promise(resolve => {
-            loadedResolve = resolve;
-        });
-        const entities = new Map();
-        const root = await this.loadEntity(rootEntity, entities, loadedPromise);
-        loadedResolve(true);
-        return root;
-    }
-    static async loadEntity(jsonEntity, entities, loadedPromise) {
-        if (jsonEntity) {
-            const constructor = getEntity(jsonEntity.constructor);
-            if (constructor) {
-                const entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
-                entity.fromJSON(jsonEntity);
-                entities.set(entity.id, entity);
-                if (jsonEntity.children) {
-                    for (const child of jsonEntity.children) {
-                        const childEntity = await this.loadEntity(child, entities, loadedPromise);
-                        if (childEntity && entity['addChild']) {
-                            entity['addChild'](childEntity);
-                        }
-                    }
-                }
-                return entity;
-            }
-            else {
-                console.error('Unknown constructor', jsonEntity.constructor);
-            }
-        }
-    }
-    static registerEntity(ent) {
-        registerEntity(ent);
-    }
-}
 
 var BlendingFactor;
 (function (BlendingFactor) {
@@ -2222,6 +1700,107 @@ function generateRandomUUID() {
     });
 }
 
+var PropertyType;
+(function (PropertyType) {
+    PropertyType["Null"] = "null";
+    PropertyType["Undefined"] = "undefined";
+    PropertyType["String"] = "string";
+    PropertyType["Number"] = "number";
+    PropertyType["Bigint"] = "bigint";
+    PropertyType["Boolean"] = "boolean";
+    PropertyType["Array"] = "array";
+    PropertyType["Object"] = "object";
+})(PropertyType || (PropertyType = {}));
+class Property {
+    type;
+    value;
+    constructor(type, value) {
+        this.type = type;
+        this.value = value;
+    }
+}
+class Properties {
+    #properties = new Map();
+    set(name, property) {
+        this.#properties.set(name, property);
+    }
+    delete(name) {
+        this.#properties.delete(name);
+    }
+    get(name) {
+        return this.#properties.get(name);
+    }
+    copy(source, keys) {
+        if (keys) {
+            for (const key of keys) {
+                const value = source.get(key);
+                if (value) {
+                    this.set(key, value);
+                }
+            }
+        }
+        else {
+            for (const [key, value] of source.#properties) {
+                this.set(key, value);
+            }
+        }
+    }
+    setString(name, value) {
+        this.#properties.set(name, new Property(PropertyType.String, value));
+    }
+    getString(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.type == PropertyType.String) {
+            return prop.value;
+        }
+    }
+    setBoolean(name, value) {
+        this.#properties.set(name, new Property(PropertyType.Boolean, value));
+    }
+    getBoolean(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.type == PropertyType.Boolean) {
+            return prop.value;
+        }
+    }
+    setNumber(name, value) {
+        this.#properties.set(name, new Property(PropertyType.Number, value));
+    }
+    getNumber(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.type == PropertyType.Number) {
+            return prop.value;
+        }
+    }
+    setBigint(name, value) {
+        this.#properties.set(name, new Property(PropertyType.Bigint, value));
+    }
+    getBigint(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.type == PropertyType.Bigint) {
+            return prop.value;
+        }
+    }
+    setArray(name, value) {
+        this.#properties.set(name, new Property(PropertyType.Array, value));
+    }
+    getArray(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.type == PropertyType.Array) {
+            return prop.value;
+        }
+    }
+    setObject(name, value) {
+        this.#properties.set(name, new Property(PropertyType.Object, value));
+    }
+    getObject(name) {
+        const prop = this.#properties.get(name);
+        if (prop?.type == PropertyType.Object) {
+            return prop.value;
+        }
+    }
+}
+
 function FileNameFromPath(path) {
     const startIndex = path.lastIndexOf('/') + 1;
     const endIndex = path.lastIndexOf('.');
@@ -2888,7 +2467,9 @@ class Entity {
         boundingBox.reset();
         const childBoundingBox = new BoundingBox();
         for (const child of this.#children) {
-            boundingBox.addBoundingBox(child.getBoundingBox(childBoundingBox));
+            if (child.isVisible()) {
+                boundingBox.addBoundingBox(child.getBoundingBox(childBoundingBox));
+            }
         }
         return boundingBox;
     }
@@ -4529,18 +4110,437 @@ class Mesh extends Entity {
     }
 }
 
+const TypedArrayProto = Object.getPrototypeOf(Int8Array); // we can't use TypedArray directly
+var BufferUsage;
+(function (BufferUsage) {
+    BufferUsage[BufferUsage["StaticDraw"] = 35044] = "StaticDraw";
+    BufferUsage[BufferUsage["DynamicDraw"] = 35048] = "DynamicDraw";
+    BufferUsage[BufferUsage["StreamDraw"] = 35040] = "StreamDraw";
+    BufferUsage[BufferUsage["StaticRead"] = 35045] = "StaticRead";
+    BufferUsage[BufferUsage["DynamicRead"] = 35049] = "DynamicRead";
+    BufferUsage[BufferUsage["StreamRead"] = 35041] = "StreamRead";
+    BufferUsage[BufferUsage["StaticCopy"] = 35046] = "StaticCopy";
+    BufferUsage[BufferUsage["DynamicCopy"] = 35050] = "DynamicCopy";
+    BufferUsage[BufferUsage["StreamCopy"] = 35042] = "StreamCopy";
+})(BufferUsage || (BufferUsage = {}));
+class BufferAttribute {
+    #type;
+    #usage = BufferUsage.StaticDraw;
+    #target;
+    #wireframeDirty = true;
+    #solidWireframeDirty = true;
+    itemSize;
+    dirty;
+    _array;
+    count = 0;
+    _buffer;
+    #source;
+    divisor = 0;
+    constructor(array, itemSize) {
+        this.itemSize = itemSize;
+        if (isNaN(this.itemSize)) {
+            throw new TypeError('Argument itemSize must be an Integer');
+        }
+        this.#target = GL_ARRAY_BUFFER;
+        this.#type = 0;
+        //TODO: normalized ?
+        this.dirty = true;
+        if (array) {
+            this.array = array;
+        }
+        return this;
+    }
+    get type() {
+        return this.#type;
+    }
+    set usage(usage) {
+        this.#usage = usage;
+        this.dirty = true;
+        this.#wireframeDirty = true;
+        this.#solidWireframeDirty = true;
+    }
+    set target(target) {
+        this.#target = target;
+        this.dirty = true;
+        this.#wireframeDirty = true;
+        this.#solidWireframeDirty = true;
+    }
+    set array(array) {
+        this.setArray(array);
+    }
+    setArray(array) {
+        if (!(array instanceof TypedArrayProto)) {
+            throw new TypeError('Argument array must be a TypedArray');
+        }
+        this._array = array;
+        this.count = array.length / this.itemSize;
+        this.dirty = true;
+        this.#wireframeDirty = true;
+        this.#solidWireframeDirty = true;
+        switch (true) {
+            case array instanceof Float32Array:
+                this.#type = GL_FLOAT;
+                break;
+            case array instanceof Int8Array:
+                this.#type = GL_BYTE;
+                break;
+            case array instanceof Int16Array:
+                this.#type = GL_SHORT;
+                break;
+            case array instanceof Int32Array:
+                this.#type = GL_INT;
+                break;
+            case array instanceof Uint8Array:
+                this.#type = GL_UNSIGNED_BYTE;
+                break;
+            case array instanceof Uint16Array:
+                this.#type = GL_UNSIGNED_SHORT;
+                break;
+            case array instanceof Uint32Array:
+                this.#type = GL_UNSIGNED_INT;
+                break;
+            default:
+                throw 'Unsupported array type';
+        }
+    }
+    update(glContext) {
+        if (this.dirty) {
+            if (this._buffer === undefined) {
+                this._buffer = glContext.createBuffer(); //TODOv3: createBuffer in graphics
+            }
+            glContext.bindBuffer(this.#target, this._buffer);
+            glContext.bufferData(this.#target, this._array, this.#usage);
+            this.dirty = false;
+            this.#wireframeDirty = true;
+            this.#solidWireframeDirty = true;
+        }
+    }
+    updateWireframe(glContext) {
+        if (this.#wireframeDirty) {
+            if (this._buffer === undefined) {
+                this._buffer = glContext.createBuffer(); //TODOv3: createBuffer in graphics
+            }
+            const lineArray = new Uint32Array(2 * this._array.length);
+            let a, b, c;
+            const arr = this._array;
+            let j = 0;
+            for (let i = 0; i < arr.length; i += 3) {
+                a = arr[i + 0];
+                b = arr[i + 1];
+                c = arr[i + 2];
+                //lineArray.push(a, b, b, c, c, a);
+                lineArray[j++] = a;
+                lineArray[j++] = b;
+                lineArray[j++] = b;
+                lineArray[j++] = c;
+                lineArray[j++] = c;
+                lineArray[j++] = a;
+            }
+            glContext.bindBuffer(this.#target, this._buffer);
+            glContext.bufferData(this.#target, lineArray, this.#usage);
+            this.dirty = true;
+            this.#wireframeDirty = false;
+        }
+    }
+    clone() {
+        return new this.constructor(this.#source, this.itemSize /*, this._array.byteOffset, this._array.byteLength*/);
+    }
+    setSource(source) {
+        this.#source = source;
+    }
+    getBuffer() {
+        return this._buffer;
+    }
+}
+class Uint8BufferAttribute extends BufferAttribute {
+    constructor(array, itemSize, offset, length) {
+        super(null, itemSize);
+        this.setSource(array);
+        this.array = new Uint8Array(array);
+    }
+}
+class Uint16BufferAttribute extends BufferAttribute {
+    constructor(array, itemSize, offset, length) {
+        super(null, itemSize);
+        this.setSource(array);
+        this.array = new Uint16Array(array, offset, length);
+    }
+}
+class Uint32BufferAttribute extends BufferAttribute {
+    constructor(array, itemSize, offset, length) {
+        super(null, itemSize);
+        this.setSource(array);
+        this.array = new Uint32Array(array, offset, length);
+    }
+}
+class Float32BufferAttribute extends BufferAttribute {
+    constructor(array, itemSize, offset, length) {
+        super(null, itemSize);
+        this.setSource(array);
+        this.array = new Float32Array(array, offset, length);
+    }
+}
+
+class BufferGeometry {
+    #elementArrayType = GL_UNSIGNED_INT;
+    #users = new Set();
+    attributes = new Map();
+    dirty = true;
+    count = 0;
+    properties = new Properties(); //new Map<string, any>();
+    getAttribute(name) {
+        return this.attributes.get(name);
+    }
+    setAttribute(name, attribute) {
+        this.attributes.set(name, attribute);
+    }
+    hasAttribute(name) {
+        return this.attributes.has(name);
+    }
+    deleteAttribute(name) {
+        this.attributes.delete(name);
+    }
+    get elementArrayType() {
+        return this.#elementArrayType;
+    }
+    /*getUniform(name) {
+        return this.uniforms.get(name);
+    }
+
+    setUniform(name, uniform) {
+        this.uniforms.set(name, uniform);
+    }
+
+    deleteUniform(name) {
+        this.uniforms.delete(name);
+    }*/
+    setIndex(attribute) {
+        this.#elementArrayType = attribute instanceof Uint32BufferAttribute ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT;
+        attribute.target = GL_ELEMENT_ARRAY_BUFFER;
+        this.setAttribute('index', attribute);
+        return;
+        /*let attribute;
+        if (Array.isArray(index)) {
+            attribute = new (arrayMax(index) > 65535 ? Uint32BufferAttribute : Uint16BufferAttribute)(index, 1, offset, length);
+        } else {
+            attribute = index;
+        }
+
+        this.#elementArrayType = attribute instanceof Uint32BufferAttribute ? GL_UNSIGNED_INT : GL_UNSIGNED_SHORT;
+        attribute.target = GL_ELEMENT_ARRAY_BUFFER;
+        this.setAttribute('index', attribute);
+*/
+    }
+    update(glContext) {
+        throw 'error';
+    }
+    computeVertexNormals() {
+        /* TODO
+        var index = this.index;
+        var attributes = this.attributes;
+
+        if (attributes.position) {
+            var positions = attributes.position.array;
+            if (attributes.normal === undefined) {
+                this.setAttribute('normal', new BufferAttribute(new Float32Array(positions.length), 3));//TODOV3: replace with a Float32BufferAttribute
+            } else {
+                // reset existing normals to zero
+                var array = attributes.normal.array;
+                for (var i = 0, il = array.length; i < il; i++) {
+                    array[i] = 0;
+                }
+            }
+
+            var normals = attributes.normal.array;
+
+            var vA, vB, vC;
+            var pA = new Vector3(), pB = new Vector3(), pC = new Vector3();
+            var cb = new Vector3(), ab = new Vector3();
+
+            // indexed elements
+
+            if (index) {
+                var indices = index.array;
+                for (var i = 0, il = index.count; i < il; i += 3) {
+                    vA = indices[i + 0] * 3;
+                    vB = indices[i + 1] * 3;
+                    vC = indices[i + 2] * 3;
+
+                    pA.fromArray(positions, vA);
+                    pB.fromArray(positions, vB);
+                    pC.fromArray(positions, vC);
+
+                    cb.subVectors(pC, pB);
+                    ab.subVectors(pA, pB);
+                    cb.cross(ab);
+
+                    normals[vA] += cb.x;
+                    normals[vA + 1] += cb.y;
+                    normals[vA + 2] += cb.z;
+
+                    normals[vB] += cb.x;
+                    normals[vB + 1] += cb.y;
+                    normals[vB + 2] += cb.z;
+
+                    normals[vC] += cb.x;
+                    normals[vC + 1] += cb.y;
+                    normals[vC + 2] += cb.z;
+                }
+            } else {
+                // non-indexed elements (unconnected triangle soup)
+                for (var i = 0, il = positions.length; i < il; i += 9) {
+                    pA.fromArray(positions, i);
+                    pB.fromArray(positions, i + 3);
+                    pC.fromArray(positions, i + 6);
+
+                    cb.subVectors(pC, pB);
+                    ab.subVectors(pA, pB);
+                    cb.cross(ab);
+
+                    normals[i] = cb.x;
+                    normals[i + 1] = cb.y;
+                    normals[i + 2] = cb.z;
+
+                    normals[i + 3] = cb.x;
+                    normals[i + 4] = cb.y;
+                    normals[i + 5] = cb.z;
+
+                    normals[i + 6] = cb.x;
+                    normals[i + 7] = cb.y;
+                    normals[i + 8] = cb.z;
+                }
+            }
+            this.normalizeNormals();
+            attributes.normal.needsUpdate = true;
+        }
+            */
+    }
+    clone() {
+        const clone = new BufferGeometry();
+        for (const [attributeName, attribute] of this.attributes) {
+            clone.attributes.set(attributeName, attribute);
+        }
+        clone.count = this.count;
+        clone.#elementArrayType = this.#elementArrayType;
+        this.dirty = true; //TODO: or should we copy this.dirty ?
+        return clone;
+    }
+    addUser(user) {
+        this.#users.add(user);
+    }
+    removeUser(user) {
+        this.#users.delete(user);
+        this.dispose();
+    }
+    hasNoUser() {
+        return this.#users.size == 0;
+    }
+    hasOnlyUser(user) {
+        return (this.#users.size == 1) && (this.#users.has(user));
+    }
+    dispose() {
+        if (this.hasNoUser()) ;
+    }
+}
+
+class BoxBufferGeometry extends BufferGeometry {
+    #indices;
+    #vertices;
+    #normals;
+    #uvs;
+    #numberOfVertices;
+    updateGeometry(width, height, depth, widthSegments, heightSegments, depthSegments) {
+        widthSegments = Math.floor(widthSegments);
+        heightSegments = Math.floor(heightSegments);
+        depthSegments = Math.floor(depthSegments);
+        // buffers
+        this.#indices = [];
+        this.#vertices = [];
+        this.#normals = [];
+        this.#uvs = [];
+        // helper variables
+        this.#numberOfVertices = 0;
+        // build each side of the box geometry
+        this.#buildPlane(2, 1, 0, -1, -1, depth, height, width, depthSegments, heightSegments); // px
+        this.#buildPlane(2, 1, 0, 1, -1, depth, height, -width, depthSegments, heightSegments); // nx
+        this.#buildPlane(0, 2, 1, 1, 1, width, depth, height, widthSegments, depthSegments); // py
+        this.#buildPlane(0, 2, 1, 1, -1, width, depth, -height, widthSegments, depthSegments); // ny
+        this.#buildPlane(0, 1, 2, 1, -1, width, height, depth, widthSegments, heightSegments); // pz
+        this.#buildPlane(0, 1, 2, -1, -1, width, height, -depth, widthSegments, heightSegments); // nz
+        // build geometry
+        this.setIndex(new Uint16BufferAttribute(this.#indices, 1));
+        this.setAttribute('aVertexPosition', new Float32BufferAttribute(this.#vertices, 3));
+        this.setAttribute('aVertexNormal', new Float32BufferAttribute(this.#normals, 3));
+        this.setAttribute('aTextureCoord', new Float32BufferAttribute(this.#uvs, 2));
+        this.count = this.#indices.length;
+    }
+    #buildPlane(u, v, w, udir, vdir, width, height, depth, gridX, gridY) {
+        const segmentWidth = width / gridX;
+        const segmentHeight = height / gridY;
+        const widthHalf = width / 2;
+        const heightHalf = height / 2;
+        const depthHalf = depth / 2;
+        const gridX1 = gridX + 1;
+        const gridY1 = gridY + 1;
+        let vertexCounter = 0;
+        let ix, iy;
+        const vector = vec3.create();
+        // generate vertices, normals and uvs
+        for (iy = 0; iy < gridY1; iy++) {
+            const y = iy * segmentHeight - heightHalf;
+            for (ix = 0; ix < gridX1; ix++) {
+                const x = ix * segmentWidth - widthHalf;
+                // set values to correct vector component
+                vector[u] = x * udir;
+                vector[v] = y * vdir;
+                vector[w] = depthHalf;
+                // now apply vector to vertex buffer
+                this.#vertices.push(...vector);
+                // set values to correct vector component
+                vector[u] = 0;
+                vector[v] = 0;
+                vector[w] = depth > 0 ? 1 : -1;
+                // now apply vector to normal buffer
+                this.#normals.push(...vector);
+                // uvs
+                this.#uvs.push(ix / gridX);
+                this.#uvs.push(1 - (iy / gridY));
+                // counters
+                vertexCounter += 1;
+            }
+        }
+        // indices
+        // 1. you need three indices to draw a single face
+        // 2. a single segment consists of two faces
+        // 3. so we need to generate six (2*3) indices per segment
+        for (iy = 0; iy < gridY; iy++) {
+            for (ix = 0; ix < gridX; ix++) {
+                const a = this.#numberOfVertices + ix + gridX1 * iy;
+                const b = this.#numberOfVertices + ix + gridX1 * (iy + 1);
+                const c = this.#numberOfVertices + (ix + 1) + gridX1 * (iy + 1);
+                const d = this.#numberOfVertices + (ix + 1) + gridX1 * iy;
+                // faces
+                this.#indices.push(a, b, d);
+                this.#indices.push(b, c, d);
+            }
+        }
+        // add a group to the geometry. this will ensure multi material support
+        // calculate new start value for groups
+        // update total number of vertices
+        this.#numberOfVertices += vertexCounter;
+    }
+}
+
 class Box extends Mesh {
     #widthSegments;
     #heightSegments;
     #depthSegments;
-    #width;
-    #height;
-    #depth;
+    #size = vec3.create(); // width, height, depth
     constructor(params = {}) {
         super(new BoxBufferGeometry(), params.material ?? new MeshBasicMaterial());
-        this.#width = params.width ?? 1;
-        this.#height = params.height ?? this.#width;
-        this.#depth = params.depth ?? this.#width;
+        this.#size[0] = params.width ?? 1;
+        this.#size[1] = params.height ?? this.#size[0];
+        this.#size[2] = params.depth ?? this.#size[0];
         this.#widthSegments = params.widthSegments ?? 1;
         this.#heightSegments = params.heightSegments ?? 1;
         this.#depthSegments = params.depthSegments ?? 1;
@@ -4548,37 +4548,37 @@ class Box extends Mesh {
         super.setParameters(params);
     }
     #updateGeometry() {
-        this.geometry.updateGeometry(this.#width, this.#height, this.#depth, this.#widthSegments, this.#heightSegments, this.#depthSegments);
+        this.geometry.updateGeometry(this.#size[0], this.#size[1], this.#size[2], this.#widthSegments, this.#heightSegments, this.#depthSegments);
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Box_1: null,
-            width: { i18n: '#width', f: () => { const width = prompt('Width', String(this.#width)); if (width) {
-                    this.#width = Number(width);
+            width: { i18n: '#width', f: () => { const width = prompt('Width', String(this.#size[0])); if (width) {
+                    this.#size[0] = Number(width);
                     this.#updateGeometry();
                 } } },
-            height: { i18n: '#height', f: () => { const height = prompt('Height', String(this.#height)); if (height) {
-                    this.#height = Number(height);
+            height: { i18n: '#height', f: () => { const height = prompt('Height', String(this.#size[1])); if (height) {
+                    this.#size[1] = Number(height);
                     this.#updateGeometry();
                 } } },
-            depth: { i18n: '#depth', f: () => { const depth = prompt('Depth', String(this.#depth)); if (depth) {
-                    this.#depth = Number(depth);
+            depth: { i18n: '#depth', f: () => { const depth = prompt('Depth', String(this.#size[2])); if (depth) {
+                    this.#size[2] = Number(depth);
                     this.#updateGeometry();
                 } } },
             cube: { i18n: '#cube', f: () => { let size = prompt('Cube size', '0'); if (size) {
                     size = Number(size);
-                    this.#width = size;
-                    this.#height = size;
-                    this.#depth = size;
+                    this.#size[0] = size;
+                    this.#size[1] = size;
+                    this.#size[2] = size;
                     this.#updateGeometry();
                 } } },
         });
     }
     toJSON() {
         const json = super.toJSON();
-        json.width = this.#width;
-        json.height = this.#height;
-        json.depth = this.#depth;
+        json.width = this.#size[0];
+        json.height = this.#size[1];
+        json.depth = this.#size[2];
         json.widthSegments = this.#widthSegments;
         json.heightSegments = this.#heightSegments;
         json.depthSegments = this.#depthSegments;
@@ -4598,21 +4598,25 @@ class Box extends Mesh {
         return 'Box';
     }
     setSize(width, height, depth) {
-        this.#width = width;
-        this.#height = height;
-        this.#depth = depth;
+        this.#size[0] = width;
+        this.#size[1] = height;
+        this.#size[2] = depth;
         this.#updateGeometry();
     }
-    setwidth(width) {
-        this.#width = width;
+    setSizeVec(size) {
+        vec3.copy(this.#size, size);
+        this.#updateGeometry();
+    }
+    setWidth(width) {
+        this.#size[0] = width;
         this.#updateGeometry();
     }
     setHeight(height) {
-        this.#height = height;
+        this.#size[1] = height;
         this.#updateGeometry();
     }
     setDepth(depth) {
-        this.#depth = depth;
+        this.#size[2] = depth;
         this.#updateGeometry();
     }
 }
@@ -17774,12 +17778,15 @@ class SkeletalMesh extends Mesh {
         return ret;
     }
     getBoundingBox(boundingBox = new BoundingBox()) {
-        boundingBox.reset();
         const skeletonBones = this.skeleton._bones;
         const geometry = this.geometry;
-        const vertexCount = geometry.getAttribute('aVertexPosition').count;
+        const indexAttribute = geometry.getAttribute('index' /*TODO: create a constant*/);
+        const vertexAttribute = geometry.getAttribute('aVertexPosition');
+        const indexCount = indexAttribute.count;
+        const vertexCount = vertexAttribute.count;
         const skinnedVertexPosition = new Float32Array(vertexCount * 3);
-        const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+        const indexValue = indexAttribute._array;
+        const vertexPosition = vertexAttribute._array;
         geometry.getAttribute('aVertexNormal')._array;
         const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
         const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
@@ -17787,7 +17794,8 @@ class SkeletalMesh extends Mesh {
         const tempVertex = vec3.create();
         const accumulateMat = mat4.create();
         if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
-            for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+            for (let index = 0; index < indexCount; ++index) {
+                const vertexIndex = indexValue[index];
                 const vertexArrayIndex = vertexIndex * 3;
                 const boneArrayIndex = vertexIndex * boneCount;
                 accumulateMat[0] = 0;
@@ -39412,7 +39420,7 @@ class Source1ModelInstance extends Entity {
     sourceModel;
     bodyParts = {}; //TODO: create map
     sequences = {};
-    meshes = new Set();
+    #meshes = new Set();
     frame = 0;
     anim = new SourceAnimation(); //TODO: removeme
     animationSpeed = 1.0;
@@ -39581,7 +39589,7 @@ class Source1ModelInstance extends Entity {
             this._playSequences(delta * Source1ModelInstance.#animSpeed * this.animationSpeed);
             this.#skeleton.setBonesMatrix();
         }
-        for (const mesh of this.meshes) {
+        for (const mesh of this.#meshes) {
             if (mesh.skeleton) {
                 mesh.skeleton.setBonesMatrix();
             }
@@ -39745,7 +39753,7 @@ class Source1ModelInstance extends Entity {
         await this.#updateMaterials();
     }
     async #updateMaterials() {
-        for (const mesh of this.meshes) {
+        for (const mesh of this.#meshes) {
             let material;
             let materialName;
             materialName = this.sourceModel.mdl.getMaterialName(this.#skin, mesh.properties.getNumber('materialId') ?? 0);
@@ -39776,7 +39784,7 @@ class Source1ModelInstance extends Entity {
     async getMaterialsName(skin) {
         this.sourceModel.mdl.skinReferences;
         const materials = new Set();
-        for (const mesh of this.meshes) {
+        for (const mesh of this.#meshes) {
             let material;
             let materialName;
             materialName = this.sourceModel.mdl.getMaterialName(Number(skin), mesh.properties.getNumber('materialId') ?? 0);
@@ -39823,7 +39831,7 @@ class Source1ModelInstance extends Entity {
                         mesh.properties.copy(geometry.properties, ['materialId', 'materialType', 'materialParam', 'eyeballArray',]);
                         mesh.materialsParams = this.materialsParams;
                         //this.addChild(mesh);
-                        this.meshes.add(mesh);
+                        this.#meshes.add(mesh);
                         group2.addChild(mesh);
                     }
                     //newBodyPart.push(newModel);
@@ -40083,7 +40091,7 @@ class Source1ModelInstance extends Entity {
     }
     #refreshFlexes() {
         this.sourceModel.mdl.runFlexesRules(this.#flexParameters, this.#flexesWeight);
-        for (const mesh of this.meshes) {
+        for (const mesh of this.#meshes) {
             if (mesh && mesh.geometry) {
                 const attribute = mesh.geometry.getAttribute('aVertexPosition');
                 const newAttribute = attribute.clone();
@@ -40167,7 +40175,7 @@ class Source1ModelInstance extends Entity {
     }
     replaceMaterial(material, recursive = true) {
         super.replaceMaterial(material, recursive);
-        for (const mesh of this.meshes) {
+        for (const mesh of this.#meshes) {
             mesh.material = material;
         }
     }
@@ -40225,7 +40233,7 @@ class Source1ModelInstance extends Entity {
         for (const material of this.#materialsUsed) {
             material.removeUser(this);
         }
-        for (const mesh of this.meshes) {
+        for (const mesh of this.#meshes) {
             mesh.dispose();
         }
     }
@@ -46680,7 +46688,7 @@ function vtfToTexture(vtf, animatedTexture, srgb) {
  * Proxy manager
  */
 class ProxyManager {
-    static #proxyList = {};
+    static #proxyList = {}; //TODO: turn into map
     static getProxy(proxyName) {
         if (!proxyName) {
             return;
@@ -46727,7 +46735,7 @@ class Proxy {
     /**
      * TODO
      */
-    setParams(datas, variables) {
+    setParams(datas /*TODO: improve type*/, variables) {
         this.datas = datas;
         this.init(variables);
     }
@@ -46751,7 +46759,7 @@ class Proxy {
      */
     execute(variables, proxyParams, time) {
     }
-    setResult(variables, value) {
+    setResult(variables, value /*TODO: improve type*/) {
         let resultVarName = this.getData('resultvar');
         if (resultVarName) {
             resultVarName = resultVarName.toLowerCase();
@@ -46802,11 +46810,11 @@ class Proxy {
 }
 
 class TextureTransform extends Proxy {
-    centerVar;
-    translateVar;
-    rotateVar;
-    scaleVar;
-    resultVar;
+    centerVar = '';
+    translateVar = '';
+    rotateVar = '';
+    scaleVar = '';
+    resultVar = '';
     init(variables) {
         this.centerVar = this.getData('centervar');
         this.translateVar = this.getData('translatevar');
@@ -46920,7 +46928,7 @@ function GetTextureTransform(str, mat = mat4.create()) {
         MatrixBuildTranslation(mat, -center[0], -center[1], 0.0);
     }
     if (scaleResult) {
-        MatrixBuildScale(temp, scaleResult[1], scaleResult[2], 1.0);
+        MatrixBuildScale(temp, Number(scaleResult[1]), Number(scaleResult[2]), 1.0);
         mat4.mul(mat, temp, mat);
     }
     if (rotateResult) {
@@ -46931,7 +46939,7 @@ function GetTextureTransform(str, mat = mat4.create()) {
     MatrixBuildTranslation(temp, center[0], center[1], 0.0);
     mat4.mul(mat, temp, mat);
     if (translateResult) {
-        MatrixBuildTranslation(temp, translateResult[1], translateResult[2], 0.0);
+        MatrixBuildTranslation(temp, Number(translateResult[1]), Number(translateResult[2]), 0.0);
         mat4.mul(mat, temp, mat);
     }
     return mat;
@@ -48033,7 +48041,7 @@ SourceEngineVMTLoader.registerMaterial('lightmappedgeneric', LightMappedGenericM
  * @comment ouput variable name: resultVar
  */
 class Add extends Proxy {
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const v1 = variables.get(this.getData('srcvar1'));
         const v2 = variables.get(this.getData('srcvar2'));
@@ -48062,15 +48070,16 @@ class Add extends Proxy {
 ProxyManager.registerProxy('Add', Add);
 
 class AnimatedTextureProxy extends Proxy {
-    #animatedtexturevar;
-    #animatedtextureframenumvar;
-    #animatedtextureframerate;
+    #animatedtexturevar = '';
+    #animatedtextureframenumvar = '';
+    #animatedtextureframerate = 1;
     init() {
         this.#animatedtexturevar = this.datas['animatedtexturevar'];
         this.#animatedtextureframenumvar = this.datas['animatedtextureframenumvar'];
         this.#animatedtextureframerate = this.datas['animatedtextureframerate'];
     }
     execute(variables, proxyParams, time) {
+        //TODO: use #animatedtexturevar
         variables.set(this.#animatedtextureframenumvar, time * this.#animatedtextureframerate);
     }
 }
@@ -48092,9 +48101,9 @@ Framerate in frames per second. Fixed; cannot be changed once set.
 */
 
 class AnimatedWeaponSheen extends Proxy {
-    #animatedtexturevar;
-    #animatedtextureframenumvar;
-    #animatedtextureframerate;
+    #animatedtexturevar = '';
+    #animatedtextureframenumvar = '';
+    #animatedtextureframerate = 1;
     init() {
         this.#animatedtexturevar = this.datas['animatedtexturevar'];
         this.#animatedtextureframenumvar = this.datas['animatedtextureframenumvar'];
@@ -48136,16 +48145,11 @@ Framerate in frames per second. Fixed; cannot be changed once set.
 const minValue = 5.0;
 const maxValue = 1.0;
 class BenefactorLevel extends Proxy {
-    #datas;
-    #resultVar;
-    setParams(datas) {
-        this.#datas = datas;
-        this.init();
-    }
+    #resultVar = '';
     init() {
-        this.#resultVar = this.#datas['resultvar'];
+        this.#resultVar = this.datas['resultvar'];
     }
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         const value = 1.0;
         variables.set(this.#resultVar, minValue + (maxValue - minValue) * value);
     }
@@ -48158,16 +48162,11 @@ ProxyManager.registerProxy('building_invis', BuildingInvis);
 
 const TEMP_MAT4 = mat4.create();
 class BuildingRescueLevel extends Proxy {
-    #datas;
-    #r;
-    setParams(datas) {
-        this.#datas = datas;
-        this.init();
-    }
+    #r = '';
     init() {
-        this.#r = this.#datas['resultvar'];
+        this.#r = this.datas['resultvar'];
     }
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         const v = variables.get(this.#r);
         if (v) {
             const iAmmo = 200;
@@ -48195,29 +48194,29 @@ ProxyManager.registerProxy('BuildingRescueLevel', BuildingRescueLevel);
  * @comment ouput variable name: resultVar
  */
 class BurnLevel extends Proxy {
-    #r;
+    #r = '';
     init() {
         this.#r = this.datas['resultvar'];
     }
-    execute(variables, proxyParams) {
+    execute(variables, proxyParams, time) {
         variables.set(this.#r, proxyParams.burnlevel ?? 0);
     }
 }
 ProxyManager.registerProxy('BurnLevel', BurnLevel);
 
 class Clamp extends Proxy {
-    #srcvar1;
-    #resultvar;
-    #minVal;
-    #maxVal;
-    init(variables) {
+    #srcvar1 = '';
+    #resultvar = '';
+    #minVal = 0;
+    #maxVal = 1;
+    init() {
         //TODO : removeme
         this.#srcvar1 = this.datas['srcvar1'];
         this.#resultvar = this.datas['resultvar'];
         this.#minVal = this.datas['min'] ?? 0;
         this.#maxVal = this.datas['max'] ?? 1;
     }
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         const v1 = variables.get(this.getData('srcvar1'));
         if ((v1 === null) || (v1 === undefined)) {
             variables.set(this.#resultvar, null);
@@ -48253,12 +48252,8 @@ ProxyManager.registerProxy('communityweapon', CommunityWeapon);
  * @comment ouput variable name: resultVar
  */
 class CustomSteamImageOnModel extends Proxy {
-    #defaultTexture;
-    setParams(datas) {
-    }
-    init() {
-    }
-    execute(variables, proxyParams) {
+    #defaultTexture = '';
+    execute(variables, proxyParams, time) {
         if (!this.#defaultTexture) {
             this.#defaultTexture = variables.get('$basetexture');
         }
@@ -48279,12 +48274,7 @@ ProxyManager.registerProxy('customsteamimageonmodel', CustomSteamImageOnModel);
  * @comment ouput variable name: resultVar
  */
 class Divide extends Proxy {
-    init(variables) {
-        //this.s1 = this.datas['srcvar1'];
-        //this.s2 = this.datas['srcvar2'];
-        //this.r = this.datas['resultvar'];
-    }
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const v1 = variables.get(this.getData('srcvar1'));
         const v2 = variables.get(this.getData('srcvar2'));
@@ -48322,7 +48312,7 @@ ProxyManager.registerProxy('Divide', Divide);
  * @comment ouput variable name: resultVar
  */
 class Equals extends Proxy {
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
     }
 }
@@ -48332,19 +48322,14 @@ const scale = 0.6;
 const loBeat = 1.0 * scale;
 const hiBeat = 0.8 * scale;
 class HeartbeatScale extends Proxy {
-    #datas;
-    #sineperiod;
-    #resultVar;
-    #delta;
-    #mid;
-    #p;
-    setParams(datas) {
-        this.#datas = datas;
-        this.init();
-    }
+    #sineperiod = 1;
+    #resultVar = '';
+    #delta = 0;
+    #mid = 0;
+    #p = 0;
     init() {
         this.#sineperiod = 1;
-        this.#resultVar = this.#datas['resultvar'];
+        this.#resultVar = this.datas['resultvar'];
         this.#delta = 0.2;
         this.#mid = 1.0;
         this.#p = 2 * Math.PI / this.#sineperiod;
@@ -48374,7 +48359,7 @@ ProxyManager.registerProxy('HeartbeatScale', HeartbeatScale);
 class IntProxy extends Proxy {
     init() {
     }
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const v1 = variables.get(this.getData('srcvar1'));
         //const v2 = variables.get(this.getData('srcvar2'));
@@ -48404,18 +48389,18 @@ ProxyManager.registerProxy('Invis', Invis);
  * ItemTintColor Proxy
  */
 class ItemTintColor extends Proxy {
-    #resultvar;
+    #resultvar = '';
     init() {
         this.#resultvar = this.datas['resultvar'];
     }
-    execute(variables, proxyParams) {
+    execute(variables, proxyParams, time) {
         variables.set(this.#resultvar, proxyParams.ItemTintColor);
     }
 }
 ProxyManager.registerProxy('ItemTintColor', ItemTintColor);
 
 class LessOrEqualProxy extends Proxy {
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const srcVar1 = variables.get(this.getData('srcvar1'));
         const srcVar2 = variables.get(this.getData('srcvar2'));
@@ -48445,7 +48430,7 @@ ProxyManager.registerProxy('LessOrEqual', LessOrEqualProxy);
 */
 
 class LinearRamp extends Proxy {
-    #rate;
+    #rate = 1;
     init() {
         this.#rate = Number(this.datas['rate'] ?? 1);
     }
@@ -48461,11 +48446,11 @@ ProxyManager.registerProxy('LinearRamp', LinearRamp);
  * @comment ouput variable name: resultVar
  */
 class ModelGlowColor extends Proxy {
-    #resultVar;
+    #resultVar = '';
     init() {
         this.#resultVar = this.datas['resultvar'];
     }
-    execute(variables, proxyParams) {
+    execute(variables, proxyParams, time) {
         variables.set(this.#resultVar, proxyParams.ModelGlowColor ?? [1, 1, 1]);
     }
 }
@@ -48480,7 +48465,7 @@ ProxyManager.registerProxy('ModelGlowColor', ModelGlowColor);
 class Multiply extends Proxy {
     init() {
     }
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const v1 = variables.get(this.getData('srcvar1'));
         const v2 = variables.get(this.getData('srcvar2'));
@@ -48512,16 +48497,16 @@ ProxyManager.registerProxy('Multiply', Multiply);
  * SelectFirstIfNonZero Proxy
  */
 class SelectFirstIfNonZero extends Proxy {
-    #srcVar1;
-    #srcVar2;
+    #srcVar1 = '';
+    #srcVar2 = '';
     init() {
         this.#srcVar1 = (this.datas['srcvar1'] ?? '').toLowerCase();
         this.#srcVar2 = (this.datas['srcvar2'] ?? '').toLowerCase();
     }
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         super.setResult(variables, this.isNonZero(variables.get(this.#srcVar1)) ? variables.get(this.#srcVar1) : variables.get(this.#srcVar2));
     }
-    isNonZero(value) {
+    isNonZero(value /*TODO: improve type*/) {
         if (!value)
             return false;
         if (value instanceof Array || value instanceof Float32Array) {
@@ -48539,9 +48524,9 @@ ProxyManager.registerProxy('SelectFirstIfNonZero', SelectFirstIfNonZero);
 class Sine extends Proxy {
     //#delta;
     //#mid;
-    #period;
-    #sineperiod;
-    #timeoffset;
+    #period = 1;
+    #sineperiod = 1;
+    #timeoffset = 1;
     init() {
         this.#sineperiod = Number(this.datas['sineperiod'] ?? 1);
         //this.sinemin = this.datas['sinemin']*1; //TODO: check number
@@ -48553,6 +48538,7 @@ class Sine extends Proxy {
         //this.#delta = 1.0;
     }
     execute(variables, proxyParams, time) {
+        //TODO: use timeoffset
         const sineMin = this.getVariable(variables, 'sinemin') * 1;
         const sineMax = this.getVariable(variables, 'sinemax') * 1;
         const delta = (sineMax - sineMin) * 0.5;
@@ -48591,8 +48577,8 @@ ProxyManager.registerProxy('Spy_Invis', SpyInvis);
  */
 class StatTrakDigit extends Proxy {
     #displayDigit = 0;
-    #resultVar;
-    #trimZeros;
+    #resultVar = '';
+    #trimZeros = false;
     init() {
         this.#trimZeros = this.datas['trimzeros'];
         this.#resultVar = this.datas['resultvar'];
@@ -48612,15 +48598,15 @@ class StatTrakDigit extends Proxy {
 ProxyManager.registerProxy('StatTrakDigit', StatTrakDigit);
 
 class StatTrakIllum extends Proxy {
-    #resultVar;
-    #minVal;
-    #maxVal;
+    #resultVar = '';
+    #minVal = 0;
+    #maxVal = 0;
     init() {
         this.#resultVar = this.datas['resultvar'];
         this.#minVal = Number(this.datas['minval'] ?? 0);
         this.#maxVal = Number(this.datas['maxval'] ?? 1);
     }
-    execute(variables, proxyParams) {
+    execute(variables, proxyParams, time) {
         const glowMultiplier = proxyParams.GlowMultiplier ?? 0.5;
         const value = lerp(this.#minVal, this.#maxVal, glowMultiplier);
         variables.set(this.#resultVar, vec3.fromValues(value, value, value));
@@ -48629,11 +48615,11 @@ class StatTrakIllum extends Proxy {
 ProxyManager.registerProxy('StatTrakIllum', StatTrakIllum);
 
 class StickybombGlowColor extends Proxy {
-    #resultVar;
+    #resultVar = '';
     init() {
         this.#resultVar = this.datas['resultvar'];
     }
-    execute(variables, proxyParams) {
+    execute(variables, proxyParams, time) {
         variables.set(this.#resultVar, [1, 1, 1]);
     }
 }
@@ -48646,14 +48632,14 @@ function toNumber(string) {
     }
 }
 class TextureScroll extends Proxy {
-    #textureScrollVar;
-    #textureScrollRate;
-    #textureScrollAngle;
-    #textureScale;
+    #textureScrollVar = '';
+    #textureScrollRate = 1;
+    #textureScrollAngle = 0;
+    #textureScale = 1;
     init(variables) {
         this.#textureScrollVar = (this.datas['texturescrollvar'] ?? '').toLowerCase();
         this.#textureScrollRate = toNumber(this.datas['texturescrollrate']) ?? 1;
-        this.#textureScrollAngle = toNumber(DEG_TO_RAD * (this.datas['texturescrollangle'])) ?? 0;
+        this.#textureScrollAngle = toNumber(String(DEG_TO_RAD * (this.datas['texturescrollangle']))) ?? 0;
         this.#textureScale = toNumber(this.datas['texturescale']) ?? 1;
         variables.set(this.#textureScrollVar, mat4.create()); //TODO: fixme
     }
@@ -48727,7 +48713,7 @@ Angle of rotation to move along. (90 = up, 180 = left, etc)
 */
 
 class UniformNoiseProxy extends Proxy {
-    execute(variables) {
+    execute(variables, proxyParams, time) {
         super.setResult(variables, variables.get(this.getData('srcvar1')));
         const minVal = (this.getData('minval') ?? 0) * 1;
         const maxVal = (this.getData('maxval') ?? 1) * 1;
@@ -48753,8 +48739,9 @@ class WeaponInvis extends Proxy {
 ProxyManager.registerProxy('weapon_invis', WeaponInvis);
 
 const RESULT_VAR = '$basetexturetransform';
+// TODO: deprecate ?  afaik was only used for csgo
 class WeaponLabelText extends Proxy {
-    #displayDigit;
+    #displayDigit = 0;
     init() {
         this.#displayDigit = this.datas['displaydigit'] ?? 0;
     }
@@ -48793,7 +48780,7 @@ ProxyManager.registerProxy('WeaponLabelTextPreview', WeaponLabelText);
 
 class WeaponSkin extends Proxy {
     #defaultTexture = null;
-    execute(variables, proxyParams) {
+    execute(variables, proxyParams, time) {
         if (!this.#defaultTexture) {
             this.#defaultTexture = variables.get('$basetexture');
         }
@@ -48814,11 +48801,11 @@ ProxyManager.registerProxy('WeaponSkin', WeaponSkin);
 const URINE_RED = vec3.fromValues(6, 9, 2);
 const URINE_BLU = vec3.fromValues(7, 5, 1);
 class YellowLevel extends Proxy {
-    #resultVar;
+    #resultVar = '';
     init() {
         this.#resultVar = this.datas['resultvar'];
     }
-    execute(variables, proxyParams) {
+    execute(variables, proxyParams, time) {
         if (!proxyParams.jarate) {
             variables.set(this.#resultVar, vec3.fromValues(1, 1, 1));
         }
@@ -49682,7 +49669,8 @@ class CollisionViaTraces extends SourceEngineParticleOperator {
     static functionName = 'Collision via traces';
     #raycaster = new Raycaster();
     #world;
-    #collisionMode;
+    #collisionMode = -1; /*TODO: create enum*/
+    ;
     constructor(system) {
         super(system);
         this.addParam('collision mode', PARAM_TYPE_INT, 0);

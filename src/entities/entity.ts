@@ -738,7 +738,9 @@ export class Entity {
 		boundingBox.reset();
 		const childBoundingBox = new BoundingBox();
 		for (const child of this.#children) {
-			boundingBox.addBoundingBox(child.getBoundingBox(childBoundingBox));
+			if (child.isVisible()) {
+				boundingBox.addBoundingBox(child.getBoundingBox(childBoundingBox));
+			}
 		}
 		return boundingBox;
 	}

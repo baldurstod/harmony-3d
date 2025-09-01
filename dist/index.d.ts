@@ -21,7 +21,7 @@ import { vec4 } from 'gl-matrix';
  * @comment ouput variable name: resultVar
  */
 export declare class Add extends Proxy_2 {
-    execute(variables: any): void;
+    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 export declare function addIncludeSource(name: string, source?: string): void;
@@ -85,13 +85,13 @@ declare class AnimatedTexture extends Texture {
 export declare class AnimatedTextureProxy extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: any, proxyParams: any, time: any): void;
+    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 export declare class AnimatedWeaponSheen extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: any, proxyParams: any, time: any): void;
+    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 declare class Animation_2 {
@@ -230,9 +230,8 @@ export declare class BeamSegment {
 
 export declare class BenefactorLevel extends Proxy_2 {
     #private;
-    setParams(datas: any): void;
     init(): void;
-    execute(variables: any): void;
+    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 export declare function Bias(value: number, bias: number): number;
@@ -452,7 +451,7 @@ export declare class BoundingBoxHelper extends Box {
 
 export declare class Box extends Mesh {
     #private;
-    constructor(params?: any);
+    constructor(params?: BoxParameters);
     buildContextMenu(): {
         visibility: {
             i18n: string;
@@ -563,10 +562,21 @@ export declare class Box extends Mesh {
     static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Box>;
     static getEntityName(): string;
     setSize(width: number, height: number, depth: number): void;
-    setwidth(width: number): void;
+    setSizeVec(size: vec3): void;
+    setWidth(width: number): void;
     setHeight(height: number): void;
     setDepth(depth: number): void;
 }
+
+declare type BoxParameters = EntityParameters & {
+    width?: number;
+    height?: number;
+    depth?: number;
+    widthSegments?: number;
+    heightSegments?: number;
+    depthSegments?: number;
+    material?: Material;
+};
 
 export declare class BufferAttribute {
     #private;
@@ -628,9 +638,8 @@ export declare class BuildingInvis extends Proxy_2 {
 
 export declare class BuildingRescueLevel extends Proxy_2 {
     #private;
-    setParams(datas: any): void;
     init(): void;
-    execute(variables: any): void;
+    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 /**
@@ -640,7 +649,7 @@ export declare class BuildingRescueLevel extends Proxy_2 {
 export declare class BurnLevel extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: any, proxyParams: any): void;
+    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 export declare class Camera extends Entity {
@@ -999,8 +1008,8 @@ declare class Choreography {
 
      export declare class Clamp extends Proxy_2 {
          #private;
-         init(variables: any): void;
-         execute(variables: any): void;
+         init(): void;
+         execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
      }
 
      export declare function clamp(val: number, min: number, max: number): number;
@@ -1029,8 +1038,8 @@ declare class Choreography {
          #private;
          static functionName: string;
          constructor(system: SourceEngineParticleSystem);
-         paramChanged(name: any, value: any): void;
-         applyConstraint(particle: any): void;
+         paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void;
+         applyConstraint(particle: SourceEngineParticle): void;
      }
 
      declare class Color {
@@ -1242,13 +1251,13 @@ declare class Choreography {
      export declare class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
          static functionName: string;
          constructor(system: SourceEngineParticleSystem);
-         applyConstraint(particle: any): void;
+         applyConstraint(particle: SourceEngineParticle): void;
      }
 
      export declare class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngineParticleOperator {
          static functionName: string;
          constructor(system: SourceEngineParticleSystem);
-         applyConstraint(particle: any): void;
+         applyConstraint(particle: SourceEngineParticle): void;
      }
 
      export declare const ContextObserver: ContextObserverClass;
@@ -1423,9 +1432,7 @@ declare class Choreography {
       */
      export declare class CustomSteamImageOnModel extends Proxy_2 {
          #private;
-         setParams(datas: any): void;
-         init(): void;
-         execute(variables: any, proxyParams: any): void;
+         execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
      }
 
      export declare class CustomWeaponMaterial extends SourceEngineMaterial {
@@ -1718,8 +1725,7 @@ declare class Choreography {
       * @comment ouput variable name: resultVar
       */
      export declare class Divide extends Proxy_2 {
-         init(variables: any): void;
-         execute(variables: any): void;
+         execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
      }
 
      export declare const DmeElement = "DmeElement";
@@ -1763,7 +1769,7 @@ declare class Choreography {
          #private;
          static functionName: string;
          constructor(system: SourceEngineParticleSystem);
-         doEmit(elapsedTime: any): void;
+         doEmit(elapsedTime: number): void;
          reset(): void;
          finished(): boolean;
      }
@@ -1772,7 +1778,7 @@ declare class Choreography {
          #private;
          static functionName: string;
          constructor(system: SourceEngineParticleSystem);
-         doEmit(elapsedTime: any): void;
+         doEmit(elapsedTime: number): void;
      }
 
      declare class Emitter extends Operator {
@@ -2075,7 +2081,7 @@ declare class Choreography {
           * @comment ouput variable name: resultVar
           */
          export declare class Equals extends Proxy_2 {
-             execute(variables: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare function ExponentialDecay(decayTo: number, decayTime: number, dt: number): number;
@@ -3116,9 +3122,8 @@ declare class Choreography {
 
          export declare class HeartbeatScale extends Proxy_2 {
              #private;
-             setParams(datas: any): void;
              init(): void;
-             execute(variables: any, proxyParams: any, time: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          declare class Hitbox {
@@ -3276,7 +3281,7 @@ declare class Choreography {
 
          export declare class IntProxy extends Proxy_2 {
              init(): void;
-             execute(variables: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          /**
@@ -3294,7 +3299,7 @@ declare class Choreography {
          export declare class ItemTintColor extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: any, proxyParams: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class JSONLoader {
@@ -3426,7 +3431,7 @@ declare class Choreography {
          }
 
          export declare class LessOrEqualProxy extends Proxy_2 {
-             execute(variables: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class LifespanDecay extends SourceEngineParticleOperator {
@@ -3622,7 +3627,7 @@ declare class Choreography {
          export declare class LinearRamp extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: any, proxyParams: any, time: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class LineMaterial extends Material {
@@ -4719,7 +4724,7 @@ declare class Choreography {
          export declare class ModelGlowColor extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: any, proxyParams: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class ModelLoader {
@@ -5624,25 +5629,25 @@ declare class Choreography {
           * Source engine material interface
           */
          declare class Proxy_2 {
-             datas: any;
+             protected datas: any;
              /**
               * TODO
               */
-             setParams(datas: any, variables: any): void;
+             setParams(datas: SourceEngineMaterialVmt, variables: Map<string, SourceEngineMaterialVariables>): void;
              /**
               * TODO
               */
-             getData(name: any): any;
+             getData(name: string): any;
              /**
               * Dummy function
               */
-             init(variables: any): void;
+             init(variables: Map<string, SourceEngineMaterialVariables>): void;
              /**
               * Dummy function
               */
-             execute(variables: any, proxyParams: any, time: any): void;
-             setResult(variables: any, value: any): void;
-             getVariable(variables: any, name: any): any;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             setResult(variables: Map<string, SourceEngineMaterialVariables>, value: any): void;
+             getVariable(variables: Map<string, SourceEngineMaterialVariables>, name: string): any;
          }
 
          /**
@@ -5650,11 +5655,9 @@ declare class Choreography {
           */
          export declare class ProxyManager {
              #private;
-             static getProxy(proxyName: any): any;
-             static registerProxy(proxyName: any, proxyClass: typeof Proxy_2): void;
+             static getProxy(proxyName: string): Proxy_2;
+             static registerProxy(proxyName: string, proxyClass: typeof Proxy_2): void;
          }
-
-         declare type ProxyParams = Record<string, any>;
 
          export declare class PullTowardsControlPoint extends SourceEngineParticleOperator {
              static functionName: string;
@@ -6529,7 +6532,7 @@ declare class Choreography {
          export declare class SelectFirstIfNonZero extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
              isNonZero(value: any): boolean;
          }
 
@@ -6772,7 +6775,7 @@ declare class Choreography {
          export declare class Sine extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: any, proxyParams: any, time: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class SkeletalMesh extends Mesh {
@@ -6865,7 +6868,6 @@ declare class Choreography {
              sourceModel: SourceModel;
              bodyParts: Record<string, Entity>;
              sequences: Source1ModelSequences;
-             meshes: Set<Mesh | SkeletalMesh>;
              frame: number;
              anim: SourceAnimation;
              animationSpeed: number;
@@ -7076,7 +7078,7 @@ declare class Choreography {
           */
          export declare class Source1Multiply extends Proxy_2 {
              init(): void;
-             execute(variables: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class Source1ParticleControler {
@@ -7289,7 +7291,7 @@ declare class Choreography {
          }
 
          export declare class Source2CsgoWeaponStattrak extends Source2Material {
-             _afterProcessProxies(proxyParams: any): void;
+             _afterProcessProxies(proxyParams: DynamicParams): void;
              get shaderSource(): string;
          }
 
@@ -7423,9 +7425,9 @@ declare class Choreography {
              clone(): Source2Material;
              getTextureParam(textureName: string): string | null;
              updateMaterial(time: number, mesh: Mesh): void;
-             _afterProcessProxies(proxyParams: ProxyParams): void;
+             _afterProcessProxies(proxyParams: DynamicParams): void;
              setDynamicUniform(uniformName: string): void;
-             afterProcessProxies(proxyParams: ProxyParams): void;
+             afterProcessProxies(proxyParams: DynamicParams): void;
              setUniform(uniformName: string, uniformValue: UniformValue): void;
              initFloatUniforms(): void;
              initVectorUniforms(): void;
@@ -8338,6 +8340,8 @@ declare class Choreography {
          }
 
          declare type SourceEngineMaterialParams = MaterialParams & {};
+
+         declare type SourceEngineMaterialVariables = any;
 
          declare type SourceEngineMaterialVmt = Record<string, any>;
 
@@ -9353,19 +9357,19 @@ declare class Choreography {
          export declare class StatTrakDigit extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: any, proxyParams: any, time: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class StatTrakIllum extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: any, proxyParams: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class StickybombGlowColor extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: any, proxyParams: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare function stringToQuat(s: string, q?: quat): quat;
@@ -9712,8 +9716,8 @@ declare class Choreography {
 
          export declare class TextureScroll extends Proxy_2 {
              #private;
-             init(variables: any): void;
-             execute(variables: any, proxyParams: any, time: any): void;
+             init(variables: Map<string, SourceEngineMaterialVariables>): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare enum TextureTarget {
@@ -9727,13 +9731,13 @@ declare class Choreography {
          }
 
          export declare class TextureTransform extends Proxy_2 {
-             centerVar: any;
-             translateVar: any;
-             rotateVar: any;
-             scaleVar: any;
-             resultVar: any;
-             init(variables: any): void;
-             execute(variables: any, proxyParams: any, time: any): void;
+             centerVar: string;
+             translateVar: string;
+             rotateVar: string;
+             scaleVar: string;
+             resultVar: string;
+             init(variables: Map<string, SourceEngineMaterialVariables>): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare enum TextureType {
@@ -9993,7 +9997,7 @@ declare class Choreography {
          }
 
          export declare class UniformNoiseProxy extends Proxy_2 {
-             execute(variables: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          declare type UniformValue = boolean | number | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;
@@ -10188,12 +10192,12 @@ declare class Choreography {
          export declare class WeaponLabelText extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: any, proxyParams: any, time: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class WeaponSkin extends Proxy_2 {
              #private;
-             execute(variables: any, proxyParams: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          declare type WebGLAnyRenderingContext = WebGLRenderingContext | WebGL2RenderingContext;
@@ -10302,7 +10306,7 @@ declare class Choreography {
          export declare class YellowLevel extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: any, proxyParams: any): void;
+             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class ZipRepository implements Repository {
