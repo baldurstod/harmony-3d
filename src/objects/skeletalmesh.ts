@@ -221,10 +221,14 @@ export class SkeletalMesh extends Mesh {
 		const skeletonBones = this.skeleton._bones;
 		const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
 		const geometry = this.geometry;
-		const vertexCount = geometry.getAttribute('aVertexPosition').count;
+		const indexAttribute = geometry.getAttribute('index'/*TODO: create a constant*/);
+		const vertexAttribute = geometry.getAttribute('aVertexPosition');
+		const indexCount = indexAttribute.count;
+		const vertexCount = vertexAttribute.count;
 		const skinnedVertexPosition = new Float32Array(vertexCount * 3);
 		const skinnedVertexNormal = new Float32Array(vertexCount * 3);
-		const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
+		const indexValue = indexAttribute._array;
+		const vertexPosition = vertexAttribute._array;
 		const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
 		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
 		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
@@ -234,7 +238,9 @@ export class SkeletalMesh extends Mesh {
 		const accumulateMat = mat4.create();
 
 		if (vertexPosition && vertexBoneIndice && vertexBoneWeight) {
-			for (let vertexIndex = 0; vertexIndex < vertexCount; ++vertexIndex) {
+			for (let index = 0; index < indexCount; ++index) {
+				const vertexIndex = indexValue[index];
+
 				const vertexArrayIndex = vertexIndex * 3;
 				const boneArrayIndex = vertexIndex * boneCount;
 
