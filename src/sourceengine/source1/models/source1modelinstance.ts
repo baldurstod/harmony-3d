@@ -52,7 +52,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	sourceModel: SourceModel;
 	bodyParts: Record<string, Entity> = {};//TODO: create map
 	sequences: Source1ModelSequences = {};
-	meshes = new Set<Mesh | SkeletalMesh>();
+	#meshes = new Set<Mesh | SkeletalMesh>();
 	frame = 0;
 	anim = new SourceAnimation();//TODO: removeme
 	animationSpeed = 1.0;
@@ -255,7 +255,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 			this._playSequences(delta * Source1ModelInstance.#animSpeed * this.animationSpeed);
 			this.#skeleton.setBonesMatrix();
 		}
-		for (const mesh of this.meshes) {
+		for (const mesh of this.#meshes) {
 			if ((mesh as SkeletalMesh).skeleton) {
 				(mesh as SkeletalMesh).skeleton.setBonesMatrix();
 			}
@@ -437,7 +437,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	}
 
 	async #updateMaterials() {
-		for (const mesh of this.meshes) {
+		for (const mesh of this.#meshes) {
 			let material: Material | null;
 			let materialName;
 			materialName = this.sourceModel.mdl.getMaterialName(this.#skin, mesh.properties.getNumber('materialId') ?? 0);
@@ -471,7 +471,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		const skinReferences = this.sourceModel.mdl.skinReferences;
 		const materials = new Set<string>();
 
-		for (const mesh of this.meshes) {
+		for (const mesh of this.#meshes) {
 			let material: SourceEngineMaterial | null;
 			let materialName: string;
 			materialName = this.sourceModel.mdl.getMaterialName(Number(skin), mesh.properties.getNumber('materialId') ?? 0);
@@ -522,7 +522,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 						mesh.materialsParams = this.materialsParams;
 						newModel.push(mesh);
 						//this.addChild(mesh);
-						this.meshes.add(mesh);
+						this.#meshes.add(mesh);
 						group2.addChild(mesh);
 					}
 					//newBodyPart.push(newModel);
@@ -808,7 +808,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 	#refreshFlexes() {
 		this.sourceModel.mdl.runFlexesRules(this.#flexParameters, this.#flexesWeight);
 
-		for (const mesh of this.meshes) {
+		for (const mesh of this.#meshes) {
 			if (mesh && mesh.geometry) {
 				const attribute = mesh.geometry.getAttribute('aVertexPosition')!;
 				const newAttribute = attribute.clone();
@@ -903,7 +903,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 	replaceMaterial(material: Material, recursive = true) {
 		super.replaceMaterial(material, recursive);
-		for (const mesh of this.meshes) {
+		for (const mesh of this.#meshes) {
 			mesh.material = material;
 		}
 	}
@@ -967,7 +967,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		for (const material of this.#materialsUsed) {
 			material.removeUser(this);
 		}
-		for (const mesh of this.meshes) {
+		for (const mesh of this.#meshes) {
 			mesh.dispose();
 		}
 	}
