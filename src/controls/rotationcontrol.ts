@@ -28,21 +28,49 @@ export class RotationControl extends Entity {
 		this.#rotationSpeed = params.speed ?? 1;
 	}
 
-	set rotationSpeed(rotationSpeed) {
+	setSpeed(rotationSpeed): void {
 		this.#rotationSpeed = rotationSpeed;
 	}
 
-	get rotationSpeed() {
+	/**
+	 * @deprecated Please use `setSpeed` instead.
+	 */
+	set rotationSpeed(rotationSpeed) {
+		this.setSpeed(rotationSpeed);
+	}
+
+	getSpeed(): number {
 		return this.#rotationSpeed;
 	}
 
-	set axis(axis: vec3) {
+	/**
+	 * @deprecated Please use `getSpeed` instead.
+	 */
+	get rotationSpeed() {
+		return this.getSpeed();
+	}
+
+	setAxis(axis: vec3): void {
 		vec3.copy(this.#axis, axis);
 		quat.identity(this._quaternion);
 	}
 
-	get axis() {
+	/**
+	 * @deprecated Please use `setAxis` instead.
+	 */
+	set axis(axis: vec3) {
+		this.setAxis(axis);
+	}
+
+	getAxis() {
 		return vec3.clone(this.#axis);
+	}
+
+	/**
+	 * @deprecated Please use `getAxis` instead.
+	 */
+	get axis() {
+		return this.getAxis();
 	}
 
 	#update(delta: number) {
