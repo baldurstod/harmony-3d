@@ -6317,9 +6317,25 @@ declare class Choreography {
          export declare class RotationControl extends Entity {
              #private;
              constructor(params?: RotationControlParameters);
+             setSpeed(rotationSpeed: number): void;
+             /**
+              * @deprecated Please use `setSpeed` instead.
+              */
              set rotationSpeed(rotationSpeed: number);
+             getSpeed(): number;
+             /**
+              * @deprecated Please use `getSpeed` instead.
+              */
              get rotationSpeed(): number;
+             setAxis(axis: vec3): void;
+             /**
+              * @deprecated Please use `setAxis` instead.
+              */
              set axis(axis: vec3);
+             getAxis(): vec3;
+             /**
+              * @deprecated Please use `getAxis` instead.
+              */
              get axis(): vec3;
              buildContextMenu(): {
                  visibility: {

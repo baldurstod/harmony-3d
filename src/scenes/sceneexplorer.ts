@@ -550,12 +550,7 @@ function initEntitySubmenu() {
 				[
 					{
 						i18n: '#rotation_control', f: (entity: Entity) => {
-							const control = new RotationControl();
-							const parent = entity.parent;
-							if (parent) {
-								parent.addChild(control);
-							}
-							control.addChild(entity);
+							new RotationControl({ parent: entity });
 						}
 					},
 					{

@@ -9690,30 +9690,58 @@ const tempQuat$a = quat.create();
 class RotationControl extends Entity {
     #rotationSpeed;
     #axis = vec3.clone(Z_VECTOR$1);
-    constructor(params) {
+    constructor(params = {}) {
         super(params);
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event) => this.#update(event.detail.delta));
         if (params.axis) {
-            this.axis = params.axis;
+            this.setAxis(params.axis);
         }
         this.#rotationSpeed = params.speed ?? 1;
     }
-    set rotationSpeed(rotationSpeed) {
+    setSpeed(rotationSpeed) {
         this.#rotationSpeed = rotationSpeed;
     }
-    get rotationSpeed() {
+    /**
+     * @deprecated Please use `setSpeed` instead.
+     */
+    set rotationSpeed(rotationSpeed) {
+        this.setSpeed(rotationSpeed);
+    }
+    getSpeed() {
         return this.#rotationSpeed;
     }
-    set axis(axis) {
+    /**
+     * @deprecated Please use `getSpeed` instead.
+     */
+    get rotationSpeed() {
+        return this.getSpeed();
+    }
+    setAxis(axis) {
         vec3.copy(this.#axis, axis);
         quat.identity(this._quaternion);
     }
-    get axis() {
+    /**
+     * @deprecated Please use `setAxis` instead.
+     */
+    set axis(axis) {
+        this.setAxis(axis);
+    }
+    getAxis() {
         return vec3.clone(this.#axis);
     }
+    /**
+     * @deprecated Please use `getAxis` instead.
+     */
+    get axis() {
+        return this.getAxis();
+    }
     #update(delta) {
+        const parent = this._parent;
+        if (!parent) {
+            return;
+        }
         quat.setAxisAngle(tempQuat$a, this.#axis, this.#rotationSpeed * delta);
-        const quaternion = this._quaternion;
+        const quaternion = parent._quaternion;
         quat.mul(quaternion, quaternion, tempQuat$a);
     }
     buildContextMenu() {
@@ -28513,12 +28541,7 @@ function initEntitySubmenu() {
             i18n: '#control', submenu: [
                 {
                     i18n: '#rotation_control', f: (entity) => {
-                        const control = new RotationControl();
-                        const parent = entity.parent;
-                        if (parent) {
-                            parent.addChild(control);
-                        }
-                        control.addChild(entity);
+                        new RotationControl({ parent: entity });
                     }
                 },
                 {

@@ -1,6 +1,6 @@
 import { quat, vec3 } from 'gl-matrix';
 import { Entity, EntityParameters } from '../entities/entity';
-import { GraphicsEvent, GraphicsEvents } from '../graphics/graphicsevents';
+import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { stringToVec3 } from '../utils/utils';
 
@@ -17,18 +17,18 @@ export class RotationControl extends Entity {
 	#rotationSpeed: number;
 	#axis: vec3 = vec3.clone(Z_VECTOR);
 
-	constructor(params?: RotationControlParameters) {
+	constructor(params: RotationControlParameters = {}) {
 		super(params);
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: CustomEvent) => this.#update(event.detail.delta));
+		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => this.#update((event as CustomEvent<GraphicTickEvent>).detail.delta));
 
 		if (params.axis) {
-			this.axis = params.axis;
+			this.setAxis(params.axis);
 		}
 
 		this.#rotationSpeed = params.speed ?? 1;
 	}
 
-	setSpeed(rotationSpeed): void {
+	setSpeed(rotationSpeed: number): void {
 		this.#rotationSpeed = rotationSpeed;
 	}
 
@@ -62,7 +62,7 @@ export class RotationControl extends Entity {
 		this.setAxis(axis);
 	}
 
-	getAxis() {
+	getAxis(): vec3 {
 		return vec3.clone(this.#axis);
 	}
 
@@ -73,9 +73,13 @@ export class RotationControl extends Entity {
 		return this.getAxis();
 	}
 
-	#update(delta: number) {
+	#update(delta: number): void {
+		const parent = this._parent;
+		if (!parent) {
+			return;
+		}
 		quat.setAxisAngle(tempQuat, this.#axis, this.#rotationSpeed * delta);
-		const quaternion = this._quaternion;
+		const quaternion = parent._quaternion;
 		quat.mul(quaternion, quaternion, tempQuat);
 	}
 
