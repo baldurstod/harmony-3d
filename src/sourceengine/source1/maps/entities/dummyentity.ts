@@ -1,19 +1,20 @@
-import { MapEntity, ParseVector } from '../mapentity';
+import { KvElement } from '../../loaders/kvreader';
 import { MapEntities } from '../mapentities';
+import { MapEntity, ParseVector } from '../mapentity';
 /**
  * DummyEntity
  */
 export class DummyEntity extends MapEntity {
-	constructor(classname) {
+	constructor(classname: string) {
 		super(classname);
 	}
 
-	setKeyValues(kvElement) {
+	setKeyValues(kvElement: KvElement) {
 		super.setKeyValues(kvElement);
-		const result = /^\*(\d*)$/.exec(kvElement.model);
+		const result = /^\*(\d*)$/.exec((kvElement as any/*TODO: fix that*/).model);
 
 		if (result) {
-			this.map.funcBrushesRemoveMe.push({model:result[1], origin: kvElement.origin ? ParseVector(kvElement.origin) : null});
+			this.map.funcBrushesRemoveMe.push({ model: result[1], origin: (kvElement as any/*TODO: fix that*/).origin ? ParseVector((kvElement as any/*TODO: fix that*/).origin) : null });
 		}
 	}
 }

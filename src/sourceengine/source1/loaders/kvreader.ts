@@ -1,5 +1,6 @@
 import { ERROR } from '../../../buildoptions';
 
+// TODO can this be merged with kv3element ?
 class KvAttribute {
 	name: string;
 	value: any;
