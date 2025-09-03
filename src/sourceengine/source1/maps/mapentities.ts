@@ -1,21 +1,22 @@
+import { SourceBSP } from '../export';
+import { MapEntity } from './mapentity';
+
 /**
  * Map entities
  */
-export const MapEntities = function() {//TODOv3 class
+export class MapEntities {
+	static #entities = new Map<string, typeof MapEntity>();
 
-}
-MapEntities.entities = Object.create(null)
-
-MapEntities.registerEntity = function(className, entityClass) {
-	this.entities[className] = entityClass;
-}
-
-MapEntities.createEntity = function(map, className) {
-	const entityClass = this.entities[className];
-	if (!entityClass) {
-		return null;
+	static registerEntity(className: string, entityClass: typeof MapEntity): void {
+		this.#entities.set(className, entityClass);
 	}
-	const entity = new entityClass(className);
-	entity.map = map;
-	return entity;
+
+	static createEntity(map: SourceBSP, className: string): MapEntity | null {
+		const entityClass = this.#entities.get(className);
+		if (!entityClass) {
+			return null;
+		}
+		const entity = new entityClass({ className: className, map: map });
+		return entity;
+	}
 }

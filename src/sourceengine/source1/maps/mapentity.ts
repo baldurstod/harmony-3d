@@ -1,49 +1,54 @@
-import { vec3, vec4 } from 'gl-matrix';
-import { Entity } from '../../../entities/entity';
+import { quat, vec3, vec4 } from 'gl-matrix';
+import { Camera } from '../../../cameras/camera';
+import { Entity, EntityParameters } from '../../../entities/entity';
+import { Light } from '../../../lights/light';
+import { Scene } from '../../../scenes/scene';
+import { SourceBSP } from '../export';
+import { KvElement } from '../loaders/kvreader';
 
-export function ParseVector(str) {
+export function ParseVector(out: vec3, str: string): vec3 | null {// TODO: pass vector as input
 	const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
 
 	const result = regex.exec(str);
-	if (result) {
-		return vec3.fromValues(Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
+	if (result && result.length >= 6) {
+		return vec3.set(out, Number.parseFloat(result[1]!), Number.parseFloat(result[3]!), Number.parseFloat(result[5]!));
 	}
 	return null;
 }
 
-export function ParseVector2(out, str) {
+export function ParseVector2(out: vec3, str: string): vec3 | null {
 	const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
 
 	const result = regex.exec(str);
-	if (result) {
-		return vec3.set(out, Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
+	if (result && result.length >= 6) {
+		return vec3.set(out, Number.parseFloat(result[1]!), Number.parseFloat(result[3]!), Number.parseFloat(result[5]!));
 	}
 	return null;
 }
 
-export function ParseVec4(out, str) {
+export function ParseVec4(out: vec4, str: string): vec4 | null {
 	const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
 
 	const result = regex.exec(str);
-	if (result) {
-		return vec4.set(out, Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]), Number.parseFloat(result[7]));
+	if (result && result.length >= 8) {
+		return vec4.set(out, Number.parseFloat(result[1]!), Number.parseFloat(result[3]!), Number.parseFloat(result[5]!), Number.parseFloat(result[7]!));
 	}
 	return null;
 }
 
-export function parseLightColorIntensity(value, light, intensityMultiplier = 1) {
+export function parseLightColorIntensity(value: string, light: Light, intensityMultiplier = 1): void {
 	const colorValue = vec3.create();
 	const arrayValue = value.split(' ');
 
-	colorValue[0] = Math.pow(arrayValue[0] / 255.0, 2.2);
-	colorValue[1] = Math.pow(arrayValue[1] / 255.0, 2.2);
-	colorValue[2] = Math.pow(arrayValue[2] / 255.0, 2.2);
+	colorValue[0] = Math.pow(Number(arrayValue[0]) / 255.0, 2.2);
+	colorValue[1] = Math.pow(Number(arrayValue[1]) / 255.0, 2.2);
+	colorValue[2] = Math.pow(Number(arrayValue[2]) / 255.0, 2.2);
 
 	light.color = colorValue;
-	light.intensity = arrayValue[3] / 255.0 * intensityMultiplier;
+	light.intensity = Number(arrayValue[3]) / 255.0 * intensityMultiplier;
 }
 
-export function AngleQuaternion(angles, outQuat) {
+export function AngleQuaternion(angles: vec3, outQuat: quat): quat {
 	const sy = Math.sin(angles[1] * 0.5);
 	const cy = Math.cos(angles[1] * 0.5);
 	const sp = Math.sin(angles[0] * 0.5);
@@ -66,7 +71,7 @@ export function AngleQuaternion(angles, outQuat) {
 }
 
 //angles[PITCH, YAW, ROLL]
-export function AngleVectors(angles, forward) {
+export function AngleVectors(angles: vec3, forward: vec3): void {
 	const sy = Math.sin(angles[1]);
 	const cy = Math.cos(angles[1]);
 	const sp = Math.sin(angles[0]);
@@ -77,20 +82,27 @@ export function AngleVectors(angles, forward) {
 	forward[2] = -sp;
 }
 
-export function ParseAngles(str) {
-	const angles = ParseVector(str)
+export function ParseAngles(out: vec3, str: string): vec3 | null {
+	const angles = ParseVector(out, str)
 	if (angles) {
 		return vec3.scale(angles, angles, Math.PI / 180);
 	}
 	return null;
 }
 
-export function ParseAngles2(out, str) {
+export function ParseAngles2(out: vec3, str: string): vec3 | null {
 	if (ParseVector2(out, str)) {
 		return vec3.scale(out, out, Math.PI / 180);
 	}
 	return null;
 }
+
+export type MapEntityValue = any /*TODO: improve type*/
+
+export type MapEntityParameters = EntityParameters & {
+	map: SourceBSP,
+	className: string,
+};
 
 /**
  * Map entity
@@ -98,38 +110,40 @@ export function ParseAngles2(out, str) {
 export class MapEntity extends Entity {
 	static incrementalId = 0;
 	classname: string;
-	outputs = [];
+	outputs: MapEntityConnection[] = [];
 	readonly m_vecVelocity = vec3.create();
 	m_flMoveDoneTime = -1;
 	m_flLocalTime = 0;
 	f = 0;
-	keys = new Map<string, any/*TODO: improve type*/>();
-	targetName;
-	parentName;
-	m;
+	keys = new Map<string, MapEntityValue>();
+	targetName = '';
+	parentName?: string;
+	readonly map: SourceBSP;
+	#parentEntity: MapEntity | null = null;
 
-	constructor(classname: string) {
-		super({ name: classname });
-		this.classname = classname;
+	constructor(params: MapEntityParameters) {
+		super(params);
+		this.name = params.className;
+		this.map = params.map;
+		this.classname = params.className;
 		this.id = String(++MapEntity.incrementalId);
 		//this.children = Object.create(null);
 	}
 
-	setKeyValues(kvElement) {
+	setKeyValues(kvElement: KvElement): void {
 		if (kvElement) {
-			if (kvElement.spawnflags) {
-				this.f = kvElement.spawnflags * 1;
+			if ((kvElement as any/*TODO: fix that*/).spawnflags) {
+				this.f = Number((kvElement as any/*TODO: fix that*/).spawnflags);
 			}
 
 			const entityParams = Object.keys(kvElement);
-			for (let i = 0, l = entityParams.length; i < l; i++) {
-				const key = entityParams[i];
-				this.setKeyValue(key, kvElement[key]);
+			for (const key of entityParams) {
+				this.setKeyValue(key, (kvElement as any/*TODO: fix that*/)[key]);
 			}
 		}
 	}
 
-	setKeyValue(key, value) {
+	setKeyValue(key: string, value: MapEntityValue): void {
 		if (key) {
 			this.keys.set(key, value);
 			if (key.indexOf('on') == 0) {
@@ -140,10 +154,13 @@ export class MapEntity extends Entity {
 					this.targetName = value;
 					break;
 				case 'origin':
-					this._position = ParseVector(value);
+					ParseVector(this._position, value);
 					break;
 				case 'angles':
-					AngleQuaternion(ParseAngles(value), this._quaternion);
+					const angles = ParseAngles(vec3.create()/*TODO: optimize*/, value);
+					if (angles) {
+						AngleQuaternion(angles, this._quaternion);
+					}
 					break;
 				case 'parentname':
 					this.parentName = value;
@@ -152,35 +169,27 @@ export class MapEntity extends Entity {
 		}
 	}
 
-	getValue(key) {
+	getValue(key: string): MapEntityValue {
 		return this.keys.get(key);
 	}
 
-	addOutput(outputName, outputValue) {
+	addOutput(outputName: string, outputValue: any/*TODO: improve type*/): void {
 		const output = new MapEntityConnection(outputName);
-		this.m.addConnection(output);
+		this.map.addConnection(output);
 		this.outputs.push(output);
 		output.fromString(outputValue);
 		//console.log(output.outputName, output.getTargetName(), output.getTargetInput(), output.getTargetParameter(), output.getDelay(), output.getFireOnlyOnce());
 	}
 
-	setInput(input, parameter) {
+	setInput(input: string, parameters: any/*TODO: improve type*/): void {
 	}
 
-	getFlag(position) {
+	getFlag(position: number): number {
 		return (this.f >> position) & 1;
 	}
 
-	set map(map) {
-		this.m = map;
-	}
-
-	get map() {
-		return this.m;
-	}
-
-	move(delta) {
-		this.position = vec3.add(vec3.create(), this._position, delta);//todo remove me
+	move(delta: vec3) {
+		this.setPosition(vec3.add(vec3.create(), this._position, delta));//todo remove me
 	}
 
 	/*set position(o) {
@@ -203,34 +212,36 @@ export class MapEntity extends Entity {
 	}
 		*/
 
-	getAbsOrigin() {
-		return null;
+	getAbsOrigin(): vec3 {//TODO: optimize
+		return vec3.create();
 	}
 
-	getLocalOrigin() {//removeme ??
+	getLocalOrigin(): vec3 {//removeme ??
 		return this._position;
 	}
 
-	getLocalVelocity() {
+	getLocalVelocity(): vec3 {
 		return this.m_vecVelocity;
 	}
 
-	update(map, delta) {
+	update(scene: Scene, camera: Camera, delta: number): void {
 		this.m_flLocalTime += delta
 		if (this.parentName) {
-			const parent = map.getEntityByTargetName(this.parentName);
+			throw 'uncomment next line';
+			/*const parent = this.map.getEntityByTargetName(this.parentName);
 			if (parent) {
 				this.setParent(parent);
 				delete this.parentName;
 			}
+			*/
 		}
 		this.position = vec3.scaleAndAdd(vec3.create(), this.getLocalOrigin(), this.getLocalVelocity(), delta);//TODO removeme : optimize
 	}
 
-	setParent(parent) {
+	setParent(parent: MapEntity) {
 		//void CBaseEntity::SetParent(CBaseEntity *pParentEntity, int iAttachment)
 		const oldParent = this.parent;
-		this.parent = parent;
+		this.#parentEntity = parent;
 		if (parent == this) {
 			this.parent = null;
 		}
@@ -254,11 +265,11 @@ export class MapEntity extends Entity {
 		}
 	}*/
 
-	setLocalVelocity(vecVelocity) {
+	setLocalVelocity(vecVelocity: vec3): void {
 		vec3.copy(this.m_vecVelocity, vecVelocity);
 	}
 
-	setMoveDoneTime(delay) {
+	setMoveDoneTime(delay: number): void {
 		if (delay >= 0) {
 			this.m_flMoveDoneTime = this.getLocalTime() + delay;
 		} else {
@@ -266,24 +277,20 @@ export class MapEntity extends Entity {
 		}
 	}
 
-	getLocalTime() {
+	getLocalTime(): number {
 		return this.m_flLocalTime;
 	}
 
-	fireOutput(outputName) {
-		const outputs = this.outputs;
-		const result = [];
-		for (let i = 0, l = outputs.length; i < l; i++) {
-			const output = outputs[i];
+	fireOutput(outputName: string): void {
+		for (const output of this.outputs) {
 			if (outputName == output.outputName) {
 				//result.push(connection);
-				output.fire(this.m);
+				output.fire(this.map);
 			}
 		}
-		return result;
 	}
 
-	toString() {
+	toString(): string {
 		return this.classname;
 	}
 }
@@ -294,56 +301,65 @@ MapEntity.incrementalId = 0;
  */
 class MapEntityConnection {
 	//'OnMapSpawn' 'tonemap_global,SetAutoExposureMax,.8,0,-1'
-	n;
-	p;
-	constructor(name) {
-		this.n = name;
-		this.p = null;
+	name: string;
+	parameters: string[] | null = null;
+
+	constructor(name: string) {
+		this.name = name;
+		this.parameters = null;
 	}
-	fromString(stringDatas) {
+
+	fromString(stringDatas: string) {
 		const parameters = stringDatas.split(',');
 		if (parameters && parameters.length == 5) {
-			this.p = parameters;
+			this.parameters = parameters;
 		}
 	}
+
 	get outputName() {
-		return this.n;
+		return this.name;
 	}
+
 	getTargetName() {
-		const parameters = this.p;
+		const parameters = this.parameters;
 		if (parameters) {
 			return parameters[0];
 		}
 	}
+
 	getTargetInput() {
-		const parameters = this.p;
+		const parameters = this.parameters;
 		if (parameters) {
 			return parameters[1];
 		}
 	}
+
 	getTargetParameter() {
-		const parameters = this.p;
+		const parameters = this.parameters;
 		if (parameters) {
 			return parameters[2];
 		}
 	}
+
 	getDelay() {
-		const parameters = this.p;
+		const parameters = this.parameters;
 		if (parameters) {
 			return parameters[3];
 		}
 	}
+
 	getFireOnlyOnce() {
-		const parameters = this.p;
+		const parameters = this.parameters;
 		if (parameters) {
 			return parameters[4];
 		}
 	}
 
-	fire(map) {//TODO: delay, fire once
-		const parameters = this.p;
+	fire(map: SourceBSP) {//TODO: delay, fire once
+		const parameters = this.parameters;
 		if (parameters) {
-			map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
+			throw 'uncomment next line';
+			//map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
 		}
 	}
 }

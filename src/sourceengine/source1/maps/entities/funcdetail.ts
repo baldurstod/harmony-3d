@@ -1,5 +1,6 @@
-import { MapEntity, ParseVector } from '../mapentity';
+import { vec3 } from 'gl-matrix';
 import { MapEntities } from '../mapentities';
+import { MapEntity, ParseVector } from '../mapentity';
 /**
  * func_detail
  */
@@ -13,7 +14,7 @@ export class FuncDetail extends MapEntity {
 		const result = /^\*(\d*)$/.exec(kvElement.model);
 
 		if (result) {
-			this.map.funcBrushesRemoveMe.push({model:result[1], origin: kvElement.origin ? ParseVector(kvElement.origin) : null});
+			this.map.funcBrushesRemoveMe.push({ model: result[1], origin: ParseVector(vec3.create(), kvElement.origin) });
 		}
 	}
 }

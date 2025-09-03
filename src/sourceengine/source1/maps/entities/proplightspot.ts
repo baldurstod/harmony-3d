@@ -1,9 +1,10 @@
 import { quat, vec3 } from 'gl-matrix';
-
-import { MapEntity,  AngleQuaternion, ParseAngles2, parseLightColorIntensity } from '../mapentity';
-import { MapEntities } from '../mapentities';
+import { Camera } from '../../../../cameras/camera';
 import { SpotLight } from '../../../../lights/spotlight';
 import { DEG_TO_RAD } from '../../../../math/constants';
+import { Scene } from '../../../../scenes/scene';
+import { MapEntities } from '../mapentities';
+import { AngleQuaternion, MapEntity, ParseAngles2, parseLightColorIntensity } from '../mapentity';
 
 const tempQuaternion = quat.create();
 const tempVec3 = vec3.create();
@@ -21,7 +22,7 @@ export class PropLightSpot extends MapEntity {
 
 	setKeyValues(kvElement) {//TODOv3 fix me
 		super.setKeyValues(kvElement);
-		this.m.addChild(this.spotLight);
+		this.map.addChild(this.spotLight);
 		this.spotLight.position = this._position;
 		this.spotLight.quaternion = this._quaternion;
 	}
@@ -75,7 +76,7 @@ export class PropLightSpot extends MapEntity {
 		quat.mul(this._quaternion, SPOTLIGHT_DEFAULT_QUATERNION, tempQuaternion);
 	}
 
-	setInput(inputName, parameter) {
+	setInput(input: string, parameters: any/*TODO: improve type*/): void {
 		throw 'code me';
 		/*
 		switch (inputName.toLowerCase()) {
@@ -85,9 +86,9 @@ export class PropLightSpot extends MapEntity {
 		}*/
 	}
 
-	update(map, delta) {
-		super.update(map, delta);
-		this.spotLight.position = this._position;
+	update(scene: Scene, camera: Camera, delta: number): void {
+		super.update(scene, camera, delta);
+		this.spotLight.setPosition(this._position);
 		this.spotLight.quaternion = this._quaternion;
 	}
 }

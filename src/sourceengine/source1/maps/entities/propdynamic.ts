@@ -1,6 +1,8 @@
-import { MapEntity } from '../mapentity';
-import { MapEntities } from '../mapentities';
+import { Camera } from '../../../../cameras/camera';
+import { Scene } from '../../../../scenes/scene';
 import { Source1ModelManager } from '../../models/source1modelmanager';
+import { MapEntities } from '../mapentities';
+import { MapEntity } from '../mapentity';
 
 export class PropDynamic extends MapEntity {
 	model;
@@ -64,7 +66,7 @@ export class PropDynamic extends MapEntity {
 		/*model.position = this.position;
 		model.quaternion = this._quaternion;*/
 		this.model = model;
-		this.m.dynamicProps.addChild(model);
+		this.map.dynamicProps.addChild(model);
 		/*.then(
 			(model) => {
 				this.map.dynamicProps.addChild(model);
@@ -84,8 +86,8 @@ export class PropDynamic extends MapEntity {
 		}
 	}
 
-	update(map, delta) {
-		super.update(map, delta);
+	update(scene: Scene, camera: Camera, delta: number): void {
+		super.update(scene, camera, delta);
 		const model = this.model;//fixme this
 		if (model) {
 			model.position = this._position;

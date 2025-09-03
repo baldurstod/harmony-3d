@@ -1,20 +1,22 @@
+import { vec3 } from 'gl-matrix';
 import { KvElement } from '../../loaders/kvreader';
 import { MapEntities } from '../mapentities';
 import { MapEntity, ParseVector } from '../mapentity';
+
 /**
  * DummyEntity
  */
 export class DummyEntity extends MapEntity {
-	constructor(classname: string) {
-		super(classname);
-	}
 
 	setKeyValues(kvElement: KvElement) {
 		super.setKeyValues(kvElement);
 		const result = /^\*(\d*)$/.exec((kvElement as any/*TODO: fix that*/).model);
 
-		if (result) {
-			this.map.funcBrushesRemoveMe.push({ model: result[1], origin: (kvElement as any/*TODO: fix that*/).origin ? ParseVector((kvElement as any/*TODO: fix that*/).origin) : null });
+		if (result && result.length >= 2) {
+			this.map.funcBrushesRemoveMe.push({
+				model: result[1]!,
+				origin: ParseVector(vec3.create(), (kvElement as any/*TODO: fix that*/).origin) ?? vec3.create(),
+			});
 		}
 	}
 }

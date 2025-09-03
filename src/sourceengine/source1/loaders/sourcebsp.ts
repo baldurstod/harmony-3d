@@ -18,6 +18,13 @@ const DISPLACEMENT_DELTA = 1.0; // max distance from start position
 
 const LIGTH_MAP_TEXTURE_SIZE = 1024;
 
+export type FuncBrush = {
+	model: string;
+	origin: vec3;
+	position?: vec3;
+	dirty?: boolean;
+};
+
 export class SourceBSP extends World {
 	repository: string;
 	bspFileVersion = null;
@@ -40,7 +47,7 @@ export class SourceBSP extends World {
 	bspTree: SourceEngineBspTree;
 	frameCount = 0;
 	mustParseHeader = true;
-	funcBrushesRemoveMe = [];
+	funcBrushesRemoveMe: FuncBrush[] = [];
 	partialLoading = false;
 	eventTarget = new EventTarget();//TODOv3
 	staticProps = new Group({ name: 'Static props' });

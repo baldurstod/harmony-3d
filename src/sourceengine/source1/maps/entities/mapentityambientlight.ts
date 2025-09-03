@@ -1,6 +1,8 @@
-import { MapEntity, parseLightColorIntensity } from '../mapentity';
-import { MapEntities } from '../mapentities';
+import { Camera } from '../../../../cameras/camera';
 import { AmbientLight } from '../../../../lights/ambientlight';
+import { Scene } from '../../../../scenes/scene';
+import { MapEntities } from '../mapentities';
+import { MapEntity, parseLightColorIntensity } from '../mapentity';
 
 export class MapEntityAmbientLight extends MapEntity {
 	#ambientLight = new AmbientLight();
@@ -10,7 +12,7 @@ export class MapEntityAmbientLight extends MapEntity {
 
 	setKeyValues(kvElement) {//TODOv3 fix me
 		super.setKeyValues(kvElement);
-		this.m.addChild(this.#ambientLight);
+		this.map.addChild(this.#ambientLight);
 		this.#ambientLight.position = this._position;
 	}
 
@@ -21,15 +23,15 @@ export class MapEntityAmbientLight extends MapEntity {
 			case '_ambient':
 				parseLightColorIntensity(value, ambientLight, 0.1);
 				break;
-				//TODO: other parameters
+			//TODO: other parameters
 			default:
 				super.setKeyValue(key, value);
 		}
 	}
 
-	update(map, delta) {
-		super.update(map, delta);
-		this.#ambientLight.position = this._position;
+	update(scene: Scene, camera: Camera, delta: number): void {
+		super.update(scene, camera, delta);
+		this.#ambientLight.setPosition(this._position);
 	}
 }
 MapEntities.registerEntity('light_environment', MapEntityAmbientLight);

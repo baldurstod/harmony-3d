@@ -1,6 +1,8 @@
-import { MapEntity, parseLightColorIntensity } from '../mapentity';
-import { MapEntities } from '../mapentities';
+import { Camera } from '../../../../cameras/camera';
 import { PointLight } from '../../../../lights/pointlight';
+import { Scene } from '../../../../scenes/scene';
+import { MapEntities } from '../mapentities';
+import { MapEntity, parseLightColorIntensity } from '../mapentity';
 
 //const colorIntensity = vec4.create();
 
@@ -9,7 +11,7 @@ export class MapEntityLight extends MapEntity {
 
 	setKeyValues(kvElement) {//TODOv3 fix me
 		super.setKeyValues(kvElement);
-		this.m.addChild(this.pointLight);
+		this.map.addChild(this.pointLight);
 		this.pointLight.position = this._position;
 	}
 
@@ -23,15 +25,15 @@ export class MapEntityLight extends MapEntity {
 			case '_light':
 				parseLightColorIntensity(value, pointLight, 1.0);
 				break;
-				//TODO: other parameters
+			//TODO: other parameters
 			default:
 				super.setKeyValue(key, value);
 		}
 	}
 
-	update(map, delta) {
-		super.update(map, delta);
-		this.pointLight.position = this._position;
+	update(scene: Scene, camera: Camera, delta: number): void {
+		super.update(scene, camera, delta);
+		this.pointLight.setPosition(this._position);
 	}
 }
 MapEntities.registerEntity('light', MapEntityLight);

@@ -1,7 +1,9 @@
 import { vec3 } from 'gl-matrix';
-
-import { MapEntity, ParseVector, AngleVectors, ParseAngles } from '../mapentity';
+import { Camera } from '../../../../cameras/camera';
+import { Scene } from '../../../../scenes/scene';
+import { KvElement } from '../../loaders/kvreader';
 import { MapEntities } from '../mapentities';
+import { AngleVectors, MapEntity, ParseAngles, ParseVector } from '../mapentity';
 import { OutputEvent } from './outputevent';
 
 /**
@@ -10,42 +12,48 @@ import { OutputEvent } from './outputevent';
 export class FuncDoor extends MapEntity {
 	onFullyOpen = new OutputEvent('OnFullyOpen');
 	onFullyClosed = new OutputEvent('OnFullyClosed');
-	model = null;
+	model: null | { model: string, origin: vec3, position: vec3, dirty: boolean } = null;
 	speed = 0;
 	moveDir = vec3.create();
 	pos1 = vec3.create();
 	pos2 = vec3.create();
 	finalDest = vec3.create();
 
-	setKeyValues(kvElement) {
+	setKeyValues(kvElement: KvElement): void {
 		super.setKeyValues(kvElement);
 
-		const result = /^\*(\d*)$/.exec(kvElement.model);
-		if (result) {
-			this.model = {model:result[1], origin: ParseVector(kvElement.origin)};
+		const result = /^\*(\d*)$/.exec((kvElement as any/*TODO: fix that*/).model);
+		if (result && result.length >= 2) {
+			this.model = { model: result[1]!, origin: ParseVector(vec3.create(), (kvElement as any/*TODO: fix that*/).origin) ?? vec3.create(), position: vec3.create(), dirty: true };
 			//if (kvElement.rendermode && kvElement.rendermode != 10) {
-				this.map.funcBrushesRemoveMe.push(this.model);
+			this.map.funcBrushesRemoveMe.push(this.model);
 			//}
 		}
 
-		if (kvElement) {
-			const movedistance = kvElement.movedistance;
-			this.speed = kvElement.speed;
-			vec3.zero(this.moveDir);
-			AngleVectors(ParseAngles(kvElement.movedir), this.moveDir);
+		const movedistance = (kvElement as any/*TODO: fix that*/).movedistance;
+		this.speed = (kvElement as any/*TODO: fix that*/).speed;
+		vec3.zero(this.moveDir);
+		const moveDir = ParseAngles(vec3.create() /*TODO: optimize*/, (kvElement as any/*TODO: fix that*/).movedir);
+		if (moveDir) {
+			AngleVectors(moveDir, this.moveDir);
+		}
 
-			const vecOBB = this.m.getOBBSize(this.model.model);
+		if (!this.model?.model) {
+			return;
+		}
+
+		const vecOBB = this.map.getOBBSize(this.model.model);
+		if (vecOBB) {
 			this.pos1 = this.getAbsOrigin();//vec3.scaleAndAdd(vec3.create(), this.getAbsOrigin(), this.moveDir, -movedistance * kvElement.startposition);
 			const a = this.moveDir;
 			const b = vecOBB;
 			const dotProductAbs = Math.abs(a[0] * b[0]) + Math.abs(a[1] * b[1]) + Math.abs(a[2] * b[2]);//vec3.dot(vec3.create(), this.moveDir, vecOBB);
 			this.pos2 = vec3.scaleAndAdd(this.pos2, this.pos1, this.moveDir, dotProductAbs);//todo : lip
 			vec3.copy(this.finalDest, this.getAbsOrigin());
-
 		}
 	}
 
-	setInput(inputName, parameter) {
+	setInput(inputName: string): void {
 		switch (inputName.toLowerCase()) {
 			case 'open':
 				this.inputOpen();
@@ -54,18 +62,18 @@ export class FuncDoor extends MapEntity {
 				this.inputClose();
 				break;
 
-/*
-DEFINE_INPUTFUNC(FIELD_VOID,	'Open', InputOpen),
-DEFINE_INPUTFUNC(FIELD_VOID,	'Close', InputClose),
-DEFINE_INPUTFUNC(FIELD_FLOAT, 'SetPosition', InputSetPosition),
-DEFINE_INPUTFUNC(FIELD_FLOAT, 'SetSpeed', InputSetSpeed),
-*/
+			/*
+			DEFINE_INPUTFUNC(FIELD_VOID,	'Open', InputOpen),
+			DEFINE_INPUTFUNC(FIELD_VOID,	'Close', InputClose),
+			DEFINE_INPUTFUNC(FIELD_FLOAT, 'SetPosition', InputSetPosition),
+			DEFINE_INPUTFUNC(FIELD_FLOAT, 'SetSpeed', InputSetSpeed),
+			*/
 		}
 	}
 
-	update(map, delta) {
-		super.update(map, delta);
-		if (this.model) {
+	update(scene: Scene, camera: Camera, delta: number) {
+		super.update(scene, camera, delta);
+		if (this.model && this.model.origin) {
 			if ((this._position[0] != this.model.origin[0]) || (this._position[1] != this.model.origin[1]) || (this._position[2] != this.model.origin[2])) {
 				//vec3.copy(this.model.origin, this._position);
 				this.model.position = this._position;
@@ -82,25 +90,25 @@ DEFINE_INPUTFUNC(FIELD_FLOAT, 'SetSpeed', InputSetSpeed),
 		}
 	}
 
-	inputOpen() {
+	inputOpen(): void {
 		if (vec3.squaredDistance(this.getAbsOrigin(), this.pos2) != 0) {
-				this.moveTo(this.pos2, this.speed);
+			this.moveTo(this.pos2, this.speed);
 		}
 	}
 
-	inputClose() {
+	inputClose(): void {
 		if (vec3.squaredDistance(this.getAbsOrigin(), this.pos1) != 0) {
-				this.moveTo(this.pos1, this.speed);
+			this.moveTo(this.pos1, this.speed);
 		}
 	}
 
-	moveTo(position, speed) {
+	moveTo(position: vec3, speed: number): void {
 		if (speed) {
-				this.linearMove(position, speed);
+			this.linearMove(position, speed);
 		}
 	}
 
-	linearMove(destination, speed) {
+	linearMove(destination: vec3, speed: number): void {
 		this.finalDest = vec3.clone(destination);
 		const origin = this.getLocalOrigin();
 		if (vec3.squaredDistance(origin, destination) < 0.001) {
@@ -113,7 +121,7 @@ DEFINE_INPUTFUNC(FIELD_FLOAT, 'SetSpeed', InputSetSpeed),
 		this.setLocalVelocity(vec3.scale(vecDelta, vecDelta, 1.0 / travelTime));
 	}
 
-	moveDone() {
+	moveDone(): void {
 		if (vec3.squaredDistance(this.getAbsOrigin(), this.pos2) == 0) {
 			this.onFullyOpen.fireOutput(this, this);
 		} else if (vec3.squaredDistance(this.getAbsOrigin(), this.pos1) == 0) {
@@ -121,7 +129,7 @@ DEFINE_INPUTFUNC(FIELD_FLOAT, 'SetSpeed', InputSetSpeed),
 		}
 	}
 
-	getAbsOrigin() {
+	getAbsOrigin(): vec3 {
 		return this._position;
 	}
 }
