@@ -1,7 +1,7 @@
 import { mat4, vec2 } from 'gl-matrix';
 import { DynamicParams } from '../../../../entities/entity';
 import { DEG_TO_RAD } from '../../../../math/constants';
-import { SourceEngineMaterialVariables } from '../source1material';
+import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
@@ -12,7 +12,7 @@ export class TextureTransform extends Proxy {
 	scaleVar = '';
 	resultVar = '';
 
-	init(variables: Map<string, SourceEngineMaterialVariables>) {
+	init(variables: Map<string, Source1MaterialVariables>) {
 		this.centerVar = this.getData('centervar');
 		this.translateVar = this.getData('translatevar');
 		this.rotateVar = this.getData('rotatevar');
@@ -21,7 +21,7 @@ export class TextureTransform extends Proxy {
 		variables.set(this.resultVar, mat4.create());//TODO: fixme
 	}
 
-	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
 		let center = vec2.fromValues(0.5, 0.5);
 
 		const mat = mat4.create();//TODOv3 optimize

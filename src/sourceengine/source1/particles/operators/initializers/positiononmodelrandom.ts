@@ -1,17 +1,17 @@
 import { vec3 } from 'gl-matrix';
 import { RandomPointOnModel } from '../../../../../interfaces/randompointonmodel';
 import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const a = vec3.create();
 
-export class PositionOnModelRandom extends SourceEngineParticleOperator {
+export class PositionOnModelRandom extends Source1ParticleOperator {
 	static functionName = 'Position on Model Random';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 		this.addParam('force to be inside model', PARAM_TYPE_INT, 0);
@@ -25,7 +25,7 @@ export class PositionOnModelRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD( 'direction bias', '0 0 0', Vector, m_vecDirectionBias )
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number) {
+	doInit(particle: Source1Particle, elapsedTime: number) {
 		const controlPointNumber = this.getParameter('control_point_number');
 		const forceInModel = this.getParameter('force to be inside model');
 
@@ -61,4 +61,4 @@ export class PositionOnModelRandom extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(PositionOnModelRandom);
+Source1ParticleOperators.registerOperator(PositionOnModelRandom);

@@ -1,5 +1,5 @@
 import { DynamicParams } from '../../../../entities/entity';
-import { SourceEngineMaterialVariables } from '../source1material';
+import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
@@ -13,7 +13,7 @@ export class ItemTintColor extends Proxy {
 		this.#resultvar = this.datas['resultvar'];
 	}
 
-	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
 		variables.set(this.#resultvar, proxyParams.ItemTintColor);
 	}
 }

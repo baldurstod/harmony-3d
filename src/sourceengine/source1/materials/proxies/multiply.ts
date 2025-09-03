@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { DynamicParams } from '../../../../entities/entity';
-import { SourceEngineMaterialVariables } from '../source1material';
+import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
@@ -14,7 +14,7 @@ export class Multiply extends Proxy {
 	init() {
 	}
 
-	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
 		super.setResult(variables, variables.get(this.getData('srcvar1')));
 
 		const v1 = variables.get(this.getData('srcvar1'));

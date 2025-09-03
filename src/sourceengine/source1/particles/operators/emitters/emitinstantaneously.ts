@@ -1,15 +1,15 @@
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 /**
  *TODO
  */
-export class EmitInstantaneously extends SourceEngineParticleOperator {
+export class EmitInstantaneously extends Source1ParticleOperator {
 	static functionName = 'emit_instantaneously';
 	#emitted = false;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		//this.setNameId('Emit Instantaneously');
 		this.addParam('emission_start_time', PARAM_TYPE_FLOAT, 0.0);
@@ -56,4 +56,4 @@ export class EmitInstantaneously extends SourceEngineParticleOperator {
 		return this.#emitted;
 	}
 }
-SourceEngineParticleOperators.registerOperator(EmitInstantaneously);
+Source1ParticleOperators.registerOperator(EmitInstantaneously);

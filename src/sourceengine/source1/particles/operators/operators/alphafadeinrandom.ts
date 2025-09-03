@@ -1,14 +1,14 @@
 import { ParticleRandomFloat } from '../../../../common/particles/randomfloats';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class AlphaFadeInRandom extends SourceEngineParticleOperator {
+export class AlphaFadeInRandom extends Source1ParticleOperator {
 	static functionName = 'Alpha Fade In Random';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('fade in time min', PARAM_TYPE_FLOAT, 0.25);
 		this.addParam('fade in time max', PARAM_TYPE_FLOAT, 0.25);
@@ -16,7 +16,7 @@ export class AlphaFadeInRandom extends SourceEngineParticleOperator {
 		this.addParam('proportional 0/1', PARAM_TYPE_BOOL, 1);
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const proportional = this.getParameter('proportional 0/1');
 
 		const fade_in_time_min = this.getParameter('fade in time min');
@@ -44,4 +44,4 @@ export class AlphaFadeInRandom extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(AlphaFadeInRandom);
+Source1ParticleOperators.registerOperator(AlphaFadeInRandom);

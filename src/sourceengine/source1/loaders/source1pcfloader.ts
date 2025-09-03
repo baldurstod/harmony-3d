@@ -16,7 +16,7 @@ const data_size = [
 
 const BINARY_FORMAT_POS = 25;
 
-export class SourceEnginePCFLoader extends SourceBinaryLoader {
+export class Source1PcfLoader extends SourceBinaryLoader {
 	parse(repository: string, path: string, content: ArrayBuffer): SourcePCF | null {
 		const pcf = new SourcePCF(repository, path);
 		const reader = new BinaryReader(content);
@@ -214,7 +214,7 @@ export class SourceEnginePCFLoader extends SourceBinaryLoader {
 	}
 
 }
-registerLoader('SourceEnginePCFLoader', SourceEnginePCFLoader);
+registerLoader('Source1PcfLoader', Source1PcfLoader);
 
 export class CDmxElement {
 	type!: string;

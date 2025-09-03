@@ -1,13 +1,12 @@
 import { vec3, vec4 } from 'gl-matrix';
-
 import { Camera } from '../cameras/camera';
+import { Entity } from '../entities/entity';
 import { Graphics } from '../graphics/graphics';
+import { LoopSubdivision } from '../meshes/loopsubdivision';
+import { Mesh } from '../objects/mesh';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Scene } from '../scenes/scene';
-import { LoopSubdivision } from '../meshes/loopsubdivision';
-import { Entity } from '../entities/entity';
-import { Source2ParticleSystem, SourceEngineParticleSystem } from '../sourceengine/export';
-import { Mesh } from '../objects/mesh';
+import { Source1ParticleSystem, Source2ParticleSystem } from '../sourceengine/export';
 
 export class ObjExporter {
 	static #instance: ObjExporter;
@@ -39,7 +38,7 @@ export class ObjExporter {
 			if (!mesh.is('Mesh')) {
 				continue;
 			}
-			if ((mesh.parent as null | SourceEngineParticleSystem | Source2ParticleSystem)?.isParticleSystem) {
+			if ((mesh.parent as null | Source1ParticleSystem | Source2ParticleSystem)?.isParticleSystem) {
 				continue;
 			}
 			this.#fullScreenQuadMesh.material = (mesh as Mesh).material;

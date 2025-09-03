@@ -5,13 +5,13 @@ import { Graphics } from '../../../graphics/graphics';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Texture } from '../../../textures/texture';
 import { TextureManager } from '../../../textures/texturemanager';
-import { SourceEngineVTFLoader } from '../loaders/source1vtfloader';
-import { SourceEngineVTF } from './source1vtf';
+import { Source1VtfLoader } from '../loaders/source1vtfloader';
+import { Source1Vtf } from './source1vtf';
 
 let internalTextureId = 0;
 class Source1TextureManagerClass {
 	#texturesList = new Map2<string, string, AnimatedTexture>();
-	#vtfList = new Map2<string, string, SourceEngineVTF>();
+	#vtfList = new Map2<string, string, Source1Vtf>();
 	#defaultTexture = new AnimatedTexture();
 	#defaultTextureCube = new AnimatedTexture();
 	fallbackRepository = '';
@@ -33,14 +33,14 @@ class Source1TextureManagerClass {
 		return animatedTexture ?? (needCubeMap ? this.#defaultTextureCube : this.#defaultTexture);
 	}
 
-	async getVtf(repository: string, path: string): Promise<SourceEngineVTF | null> {
+	async getVtf(repository: string, path: string): Promise<Source1Vtf | null> {
 		// TODO: fix that concurent calls of the same texture will load it multiple times
-		let vtf: SourceEngineVTF | null | undefined = this.#vtfList.get(repository, path);
+		let vtf: Source1Vtf | null | undefined = this.#vtfList.get(repository, path);
 		if (vtf !== undefined) {
 			return vtf;
 		}
 
-		vtf = await new SourceEngineVTFLoader().load(repository, path);
+		vtf = await new Source1VtfLoader().load(repository, path);
 		if (vtf) {
 			this.#vtfList.set(repository, path, vtf);
 		}
@@ -67,9 +67,9 @@ class Source1TextureManagerClass {
 			this.setTexture(repository, path, animatedTexture);
 
 			this.getVtf(repository, pathWithMaterials).then(
-				(vtf: SourceEngineVTF | null) => {
+				(vtf: Source1Vtf | null) => {
 					if (vtf) {
-						vtfToTexture(vtf as SourceEngineVTF, animatedTexture, srgb);
+						vtfToTexture(vtf as Source1Vtf, animatedTexture, srgb);
 					} else {
 						const texture = this.#getTexture(this.fallbackRepository, path, needCubeMap, srgb, animatedTexture);
 						if (texture) {
@@ -145,7 +145,7 @@ class Source1TextureManagerClass {
 }
 export const Source1TextureManager = new Source1TextureManagerClass();
 
-export function vtfToTexture(vtf: SourceEngineVTF, animatedTexture: AnimatedTexture, srgb: boolean) {
+export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, srgb: boolean) {
 	const alphaBits = vtf.getAlphaBits();
 	//animatedTexture.vtf = vtf;
 	animatedTexture.setAlphaBits(alphaBits);

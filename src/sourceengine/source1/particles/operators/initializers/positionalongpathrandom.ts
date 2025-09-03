@@ -1,17 +1,17 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const a = vec3.create();
 
-export class PositionAlongPathRandom extends SourceEngineParticleOperator {
+export class PositionAlongPathRandom extends Source1ParticleOperator {
 	static functionName = 'Position Along Path Random';
 	#sequence = 0;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('restart behavior (0 = bounce, 1 = loop )', PARAM_TYPE_BOOL, 0);
 		this.addParam('particles to map from start to end', PARAM_TYPE_FLOAT, 2);
@@ -23,7 +23,7 @@ export class PositionAlongPathRandom extends SourceEngineParticleOperator {
 		this.addParam('maximum distance', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const startNumber = this.getParameter('start control point number') ?? 1;
 		const endNumber = this.getParameter('end control point number') ?? 2;
 
@@ -52,4 +52,4 @@ export class PositionAlongPathRandom extends SourceEngineParticleOperator {
 		this.#sequence = 0;
 	}
 }
-SourceEngineParticleOperators.registerOperator(PositionAlongPathRandom);
+Source1ParticleOperators.registerOperator(PositionAlongPathRandom);

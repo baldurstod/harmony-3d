@@ -1,14 +1,14 @@
 import { RandomFloatExp } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class AlphaRandom extends SourceEngineParticleOperator {
+export class AlphaRandom extends Source1ParticleOperator {
 	static functionName = 'Alpha Random';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('alpha_min', PARAM_TYPE_INT, 0);
 		this.addParam('alpha_max', PARAM_TYPE_INT, 255);
@@ -18,7 +18,7 @@ export class AlphaRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('alpha_random_exponent', '1', float, m_flAlphaRandExponent)
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const alpha_min = this.getParameter('alpha_min') / 255.0;
 		const alpha_max = this.getParameter('alpha_max') / 255.0;
 		const alpha_random_exponent = this.getParameter('alpha_random_exponent');
@@ -28,4 +28,4 @@ export class AlphaRandom extends SourceEngineParticleOperator {
 		particle.startAlpha = alpha;
 	}
 }
-SourceEngineParticleOperators.registerOperator(AlphaRandom);
+Source1ParticleOperators.registerOperator(AlphaRandom);

@@ -12,19 +12,19 @@ import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MA
 import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
 import { PARAM_TYPE_FLOAT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
+import { Source1Particle } from '../../particle';
 import { Source1ParticleControler } from '../../source1particlecontroler';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class RenderSpriteTrail extends SourceEngineParticleOperator {
+export class RenderSpriteTrail extends Source1ParticleOperator {
 	static functionName = 'render_sprite_trail';
 	texture?: Texture;
 	geometry?: BufferGeometry;
 	imgData?: Float32Array;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('animation rate', PARAM_TYPE_FLOAT, 0.1);
 		this.addParam('length fade in time', PARAM_TYPE_FLOAT, 0.0);
@@ -42,7 +42,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 			this.renderSpriteTrail(particleList[i], elapsedTime, material);
 		}
 	}*/
-	updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number) {
+	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number) {
 		if (!this.geometry || !this.mesh || !this.particleSystem.material) {
 			return;
 		}
@@ -150,7 +150,7 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#setupParticlesTexture(particleList: SourceEngineParticle[], maxParticles: number, elapsedTime: number) {
+	#setupParticlesTexture(particleList: Source1Particle[], maxParticles: number, elapsedTime: number) {
 		const m_flMaxLength = this.getParameter('max length');
 		const m_flMinLength = this.getParameter('min length');
 		const m_flLengthFadeInTime = this.getParameter('length fade in time');
@@ -275,4 +275,4 @@ export class RenderSpriteTrail extends SourceEngineParticleOperator {
 		this.texture?.removeUser(this);
 	}
 }
-SourceEngineParticleOperators.registerOperator(RenderSpriteTrail);
+Source1ParticleOperators.registerOperator(RenderSpriteTrail);

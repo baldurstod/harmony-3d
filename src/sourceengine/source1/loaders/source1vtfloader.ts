@@ -1,17 +1,17 @@
 import { BinaryReader, TWO_POW_10, TWO_POW_MINUS_14 } from 'harmony-binary-reader';
 import { DEBUG } from '../../../buildoptions';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
-import { IMAGE_FORMAT_ABGR8888, IMAGE_FORMAT_BGR888, IMAGE_FORMAT_BGR888_BLUESCREEN, IMAGE_FORMAT_BGRA8888, IMAGE_FORMAT_DXT1, IMAGE_FORMAT_DXT3, IMAGE_FORMAT_DXT5, IMAGE_FORMAT_RGB888, IMAGE_FORMAT_RGB888_BLUESCREEN, IMAGE_FORMAT_RGBA16161616F, IMAGE_FORMAT_RGBA8888, SourceEngineVTF, VTF_ENTRY_IMAGE_DATAS, VTFMipMap, VTFResourceEntry } from '../textures/source1vtf';
+import { IMAGE_FORMAT_ABGR8888, IMAGE_FORMAT_BGR888, IMAGE_FORMAT_BGR888_BLUESCREEN, IMAGE_FORMAT_BGRA8888, IMAGE_FORMAT_DXT1, IMAGE_FORMAT_DXT3, IMAGE_FORMAT_DXT5, IMAGE_FORMAT_RGB888, IMAGE_FORMAT_RGB888_BLUESCREEN, IMAGE_FORMAT_RGBA16161616F, IMAGE_FORMAT_RGBA8888, Source1Vtf, VTF_ENTRY_IMAGE_DATAS, VTFMipMap, VTFResourceEntry } from '../textures/source1vtf';
 import { GetInterpolationData, MAX_IMAGES_PER_FRAME_IN_MEMORY, MAX_IMAGES_PER_FRAME_ON_DISK, SEQUENCE_SAMPLE_COUNT, SheetSequenceSample_t } from './sheet';
 
-export class SourceEngineVTFLoader extends SourceBinaryLoader {
+export class Source1VtfLoader extends SourceBinaryLoader {
 
-	async load(repositoryName: string, path: string): Promise<SourceEngineVTF | null> {
-		return super.load(repositoryName, path) as Promise<SourceEngineVTF | null>;
+	async load(repositoryName: string, path: string): Promise<Source1Vtf | null> {
+		return super.load(repositoryName, path) as Promise<Source1Vtf | null>;
 	}
 
-	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceEngineVTF | null {
-		const vtf = new SourceEngineVTF(repository, fileName);
+	parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Source1Vtf | null {
+		const vtf = new Source1Vtf(repository, fileName);
 		try {
 			const reader = new BinaryReader(arrayBuffer);
 			this.#parseHeader(reader, vtf);
@@ -46,7 +46,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		return vtf;
 	}
 
-	#parseHeader(reader: BinaryReader, vtf: SourceEngineVTF) {
+	#parseHeader(reader: BinaryReader, vtf: Source1Vtf) {
 		reader.seek(4); //skip first 4 char TODO: check == 'VTF\0' ?
 
 		vtf.setVerionMaj(reader.getUint32());
@@ -77,7 +77,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseResEntries(reader: BinaryReader, vtf: SourceEngineVTF) {
+	#parseResEntries(reader: BinaryReader, vtf: Source1Vtf) {
 		const startOffset = reader.tell();
 
 		for (let resIndex = 0; resIndex < vtf.resEntries.length; ++resIndex) {
@@ -85,7 +85,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseResEntry(reader: BinaryReader, vtf: SourceEngineVTF, entry: VTFResourceEntry) {
+	#parseResEntry(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry) {
 		switch (entry.type) {
 			case 1: // Low-res image data
 				//TODO
@@ -106,7 +106,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseImageData(reader: BinaryReader, vtf: SourceEngineVTF, entry: VTFResourceEntry) {
+	#parseImageData(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry) {
 		reader.seek(entry.resData);
 		let mipmapWidth = vtf.width * Math.pow(0.5, vtf.mipmapCount - 1);
 		let mipmapHeight = vtf.height * Math.pow(0.5, vtf.mipmapCount - 1);
@@ -119,7 +119,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseSheet(reader: BinaryReader, vtf: SourceEngineVTF, entry: VTFResourceEntry) {
+	#parseSheet(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry) {
 		reader.seek(entry.resData);
 		const sheet = Object.create(null);
 		vtf.sheet = sheet;
@@ -239,7 +239,7 @@ export class SourceEngineVTFLoader extends SourceBinaryLoader {
 		}
 	}
 
-	#parseMipMap(reader: BinaryReader, vtf: SourceEngineVTF, entry: VTFResourceEntry, mipmaplvl: number, mipmapWidth: number, mipmapHeight: number) {
+	#parseMipMap(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry, mipmaplvl: number, mipmapWidth: number, mipmapHeight: number) {
 		//TODO: frame face, zlice
 		let startingByte = reader.tell();
 

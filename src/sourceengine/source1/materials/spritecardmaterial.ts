@@ -1,12 +1,12 @@
 import { RenderFace } from '../../../materials/constants';
 import { GL_MAX, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
-import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt } from './source1material';
+import { Source1VmtLoader } from '../loaders/source1vmtloader';
+import { Source1Material, Source1MaterialParams, Source1MaterialVmt } from './source1material';
 
-export class SpriteCardMaterial extends SourceEngineMaterial {
+export class SpriteCardMaterial extends Source1Material {
 	#initialized = false;
 
-	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
+	constructor(repository: string, path: string, vmt: Source1MaterialVmt, params: Source1MaterialParams = {}) {
 		super(repository, path, vmt, params);
 		if (vmt['$color']) {
 			this.useSrgb = false;
@@ -75,4 +75,4 @@ export class SpriteCardMaterial extends SourceEngineMaterial {
 		return 'source1_spritecard';
 	}
 }
-SourceEngineVMTLoader.registerMaterial('spritecard', SpriteCardMaterial);
+Source1VmtLoader.registerMaterial('spritecard', SpriteCardMaterial);

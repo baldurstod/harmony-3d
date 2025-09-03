@@ -1,5 +1,5 @@
 import { getLoader } from '../loaders/loaderfactory';
-import { SourceEnginePCFLoader } from '../sourceengine/export';
+import { Source1PcfLoader } from '../sourceengine/export';
 import { SourcePCF } from '../sourceengine/source1/loaders/sourcepcf';
 import { OverrideRepository } from './overriderepository';
 import { Repository, RepositoryArrayBufferResponse, RepositoryBlobResponse, RepositoryError, RepositoryFileListResponse, RepositoryFileResponse, RepositoryJsonResponse, RepositoryTextResponse } from './repository';
@@ -78,7 +78,7 @@ export class ManifestRepository implements Repository {
 
 		const manifestFiles = [];
 		for (const file of files) {
-			const pcfLoader = getLoader('SourceEnginePCFLoader') as typeof SourceEnginePCFLoader;
+			const pcfLoader = getLoader('Source1PcfLoader') as typeof Source1PcfLoader;
 			const pcf = await new pcfLoader().load(this.name, file.getFullName()) as SourcePCF;
 
 			const systems: string[] = [];

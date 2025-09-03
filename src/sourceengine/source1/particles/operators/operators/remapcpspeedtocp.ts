@@ -1,17 +1,17 @@
 import { vec3 } from 'gl-matrix';
 import { RemapValClamped } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const a = vec3.create();
 
-export class RemapCPSpeedToCP extends SourceEngineParticleOperator {
+export class RemapCPSpeedToCP extends Source1ParticleOperator {
 	static functionName = 'remap cp speed to cp';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('operator strength scale control point', PARAM_TYPE_INT, 1);
 		this.addParam('input control point', PARAM_TYPE_INT, 0);
@@ -26,7 +26,7 @@ export class RemapCPSpeedToCP extends SourceEngineParticleOperator {
 		this.addParam('output control point', PARAM_TYPE_INT, 1);
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const inputMinimum = this.getParameter('input minimum');
 		const inputMaximum = this.getParameter('input maximum');
 		const outputMinimum = this.getParameter('output minimum');
@@ -46,4 +46,4 @@ export class RemapCPSpeedToCP extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(RemapCPSpeedToCP);
+Source1ParticleOperators.registerOperator(RemapCPSpeedToCP);

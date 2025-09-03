@@ -10,21 +10,21 @@ import { TextureManager } from '../../../../../textures/texturemanager';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../../../../../webgl/constants';
 import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempVec2 = vec2.create();
 
-export class RenderRope extends SourceEngineParticleOperator {
+export class RenderRope extends Source1ParticleOperator {
 	static functionName = 'render rope';
 	#maxParticles = 0;
 	texture?: Texture;
 	geometry?: BeamBufferGeometry;
 	imgData?: Float32Array;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('subdivision_count', PARAM_TYPE_INT, 3);
 		this.addParam('texel_size', PARAM_TYPE_FLOAT, 4.0);
@@ -37,7 +37,7 @@ export class RenderRope extends SourceEngineParticleOperator {
 		}
 	}
 		*/
-	updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number) {
+	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number) {
 		if (!this.geometry || !this.mesh || !this.particleSystem.material) {
 			return;
 		}
@@ -59,7 +59,7 @@ export class RenderRope extends SourceEngineParticleOperator {
 		let previousSegment = null;
 		for (let i = 0, l = particleList.length; i < l; i++) {
 			//for (let i = 0, l = (particleList.length - 1) * subdivCount + 1; i < l; i++) {
-			const particle: SourceEngineParticle = particleList[i]!;
+			const particle: Source1Particle = particleList[i]!;
 			const segment = new BeamSegment(particle.position, [particle.color.r, particle.color.g, particle.color.b, particle.alpha], 0.0, particle.radius);
 			if (previousSegment) {
 				ropeLength += segment.distanceTo(previousSegment);
@@ -137,7 +137,7 @@ export class RenderRope extends SourceEngineParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#setupParticlesTexture(particleList: SourceEngineParticle[]) {
+	#setupParticlesTexture(particleList: Source1Particle[]) {
 		const a = this.imgData!;
 
 		let index = 0;
@@ -173,4 +173,4 @@ export class RenderRope extends SourceEngineParticleOperator {
 		this.texture?.removeUser(this);
 	}
 }
-SourceEngineParticleOperators.registerOperator(RenderRope);
+Source1ParticleOperators.registerOperator(RenderRope);

@@ -4,26 +4,26 @@ import { generateRandomUUID } from '../../../../math/functions';
 import { Mesh } from '../../../../objects/mesh';
 import { PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED, PARTICLE_ORIENTATION_WORLD_Z_ALIGNED } from '../../../common/particles/particleconsts';
 import { PARAM_TYPE_ID, PARAM_TYPE_STRING } from '../constants';
-import { SourceEngineParticle } from '../particle';
-import { ParamType, SourceEngineParticleSystem } from '../source1particlesystem';
+import { Source1Particle } from '../particle';
+import { ParamType, Source1ParticleSystem } from '../source1particlesystem';
 import { CDmxAttributeValue } from '../../export';
 
-export class SourceEngineParticleOperator {//TODOv3: rename this class ?
+export class Source1ParticleOperator {
 	#parameters: Record<string, any> = {};
-	protected particleSystem: SourceEngineParticleSystem;
+	protected particleSystem: Source1ParticleSystem;
 	material?: Material;//for renderers// TODO: put  in a subclas ?
 	materialLoaded = false;
 	paramList: ParamType[] = [];
 	#endCapState = -1;
 	mesh?: Mesh;//for renderers// TODO: put  in a subclas ?
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		this.setNameId(this.functionName);
 		this.particleSystem = system;
 	}
 
 	get functionName() {
-		return (this.constructor as typeof SourceEngineParticleOperator).getFunctionName();
+		return (this.constructor as typeof Source1ParticleOperator).getFunctionName();
 	}
 
 	static get functionName() {
@@ -34,27 +34,27 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		return this.functionName;
 	}
 
-	initializeParticle(particle: SourceEngineParticle, elapsedTime: number) {
+	initializeParticle(particle: Source1Particle, elapsedTime: number) {
 		if (!particle) {
 			return;
 		}
 		this.doInit(particle, elapsedTime);
 	}
 
-	operateParticle(particle: SourceEngineParticle, elapsedTime: number) {
+	operateParticle(particle: Source1Particle, elapsedTime: number) {
 		if (this.#endCapState != 1) {
 			this.doOperate(particle, elapsedTime);
 		}
 	}
 
-	forceParticle(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces?: vec3) {
+	forceParticle(particle: Source1Particle, elapsedTime: number, accumulatedForces?: vec3) {
 		if (!particle) {
 			return;
 		}
 		this.doForce(particle, elapsedTime, accumulatedForces);
 	}
 
-	constraintParticle(particle: SourceEngineParticle) {
+	constraintParticle(particle: Source1Particle) {
 		if (!particle) {
 			return;
 		}
@@ -63,19 +63,19 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 
 	doEmit(elapsedTime: number) { }
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number) { }
+	doInit(particle: Source1Particle, elapsedTime: number) { }
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) { }
+	doOperate(particle: Source1Particle, elapsedTime: number) { }
 
-	doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces?: vec3, strength?: number) { }
+	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces?: vec3, strength?: number) { }
 
-	applyConstraint(particle: SourceEngineParticle) { }
+	applyConstraint(particle: Source1Particle) { }
 
-	doRender(particle: SourceEngineParticle[], elapsedTime: number, material: Material) { }
+	doRender(particle: Source1Particle[], elapsedTime: number, material: Material) { }
 
-	initRenderer(/*particleSystem: SourceEngineParticleSystem*/) { }
+	initRenderer(/*particleSystem: Source1ParticleSystem*/) { }
 
-	updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number) { }
+	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number) { }
 
 	emitParticle(creationTime: number, elapsedTime: number) {
 		return this.particleSystem.createParticle(creationTime, elapsedTime);
@@ -283,7 +283,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		}
 	*/
 
-	getInputValue(inputField: number/*TODO: create enum*/, particle: SourceEngineParticle) {
+	getInputValue(inputField: number/*TODO: create enum*/, particle: Source1Particle) {
 		let input: any = 0;
 		switch (inputField) {
 			case 0: //creation time
@@ -296,7 +296,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		return input;
 	}
 
-	getInputValueAsVector(inputField: number, particle: SourceEngineParticle, v: vec3) {
+	getInputValueAsVector(inputField: number, particle: Source1Particle, v: vec3) {
 		let input;
 		switch (inputField) {
 			case 0: //creation time
@@ -315,7 +315,7 @@ export class SourceEngineParticleOperator {//TODOv3: rename this class ?
 		}
 	}
 
-	setOutputValue(outputField: number, value: any/*TODO: imrpove type*/, particle: SourceEngineParticle) {
+	setOutputValue(outputField: number, value: any/*TODO: imrpove type*/, particle: Source1Particle) {
 		particle.setInitialField(outputField, value, false /*TODO*/);
 	}
 

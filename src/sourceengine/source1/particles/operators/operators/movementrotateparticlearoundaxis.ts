@@ -1,18 +1,18 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
-export class MovementRotateParticleAroundAxis extends SourceEngineParticleOperator {
+export class MovementRotateParticleAroundAxis extends Source1ParticleOperator {
 	static functionName = 'Movement Rotate Particle Around Axis';
 	once = true;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('Rotation Axis', PARAM_TYPE_VECTOR, vec3.fromValues(0, 0, 1));
 		this.addParam('Rotation Rate', PARAM_TYPE_FLOAT, 180);
@@ -25,7 +25,7 @@ export class MovementRotateParticleAroundAxis extends SourceEngineParticleOperat
 		DMXELEMENT_UNPACK_FIELD( "Use Local Space", "0", bool, m_bLocalSpace )*/
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const axis = this.getParameter('Rotation Axis');
 		const rate = this.getParameter('Rotation Rate');
 		const useLocalSpace = this.getParameter('Use Local Space');
@@ -72,4 +72,4 @@ export class MovementRotateParticleAroundAxis extends SourceEngineParticleOperat
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(MovementRotateParticleAroundAxis);
+Source1ParticleOperators.registerOperator(MovementRotateParticleAroundAxis);

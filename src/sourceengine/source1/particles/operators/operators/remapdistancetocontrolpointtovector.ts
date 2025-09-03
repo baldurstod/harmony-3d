@@ -1,16 +1,16 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
-export class RemapDistanceToControlPointToVector extends SourceEngineParticleOperator {
+export class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
 	static functionName = 'Remap Distance to Control Point to Vector';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('control point', PARAM_TYPE_INT, 0);
 		//this.addParam('distance fade range', PARAM_TYPE_INT, 0);
@@ -27,7 +27,7 @@ export class RemapDistanceToControlPointToVector extends SourceEngineParticleOpe
 		this.addParam('only active within specified distance', PARAM_TYPE_BOOL, 0);
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const cpNumber = this.getParameter('control point');
 		const distanceMin = this.getParameter('distance minimum');
 		const distanceMax = this.getParameter('distance maximum');
@@ -58,7 +58,7 @@ export class RemapDistanceToControlPointToVector extends SourceEngineParticleOpe
 	}
 }
 
-SourceEngineParticleOperators.registerOperator(RemapDistanceToControlPointToVector);
+Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToVector);
 
 
 /*

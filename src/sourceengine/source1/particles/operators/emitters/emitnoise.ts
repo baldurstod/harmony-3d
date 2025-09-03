@@ -1,13 +1,13 @@
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class EmitNoise extends SourceEngineParticleOperator {
+export class EmitNoise extends Source1ParticleOperator {
 	static functionName = 'emit noise';
 	#remainder = 0;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('emission_start_time', PARAM_TYPE_FLOAT, 0);
 		this.addParam('emission_duration', PARAM_TYPE_FLOAT, 0);
@@ -53,4 +53,4 @@ export class EmitNoise extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(EmitNoise);
+Source1ParticleOperators.registerOperator(EmitNoise);

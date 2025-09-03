@@ -1,14 +1,14 @@
 import { SimpleSplineRemapValWithDeltasClamped } from '../../../../common/math/sse';
 import { PARAM_TYPE_FLOAT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class AlphaFadeAndDecay extends SourceEngineParticleOperator {
+export class AlphaFadeAndDecay extends Source1ParticleOperator {
 	static functionName = 'Alpha Fade and Decay';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('start_alpha', PARAM_TYPE_FLOAT, 1.0);
 		this.addParam('end_alpha', PARAM_TYPE_FLOAT, 0.0);
@@ -18,7 +18,7 @@ export class AlphaFadeAndDecay extends SourceEngineParticleOperator {
 		this.addParam('end_fade_out_time', PARAM_TYPE_FLOAT, 1.0);
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const start_alpha = this.getParameter('start_alpha');
 		const end_alpha = this.getParameter('end_alpha');
 
@@ -66,4 +66,4 @@ export class AlphaFadeAndDecay extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(AlphaFadeAndDecay);
+Source1ParticleOperators.registerOperator(AlphaFadeAndDecay);

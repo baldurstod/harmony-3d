@@ -1,9 +1,10 @@
 import { quat, vec3 } from 'gl-matrix';
-import { CDmxAttributeValue, SourceEngineParticleSystem } from '../../../export';
+import { CDmxAttributeValue} from '../../../export';
 import { PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const DEFAULT_SET_CP_ORIENTATION_FOR_PARTICLES = false;/* TODO: check default value*/
 
@@ -11,11 +12,11 @@ const setChildControlPointsFromParticlePositionsTempQuat = quat.create();
 const setChildControlPointsFromParticlePositionsTempVec3 = vec3.create();
 const setChildControlPointsFromParticlePositionsXUnitVec3 = vec3.fromValues(1, 0, 0);
 
-export class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOperator {
+export class SetChildControlPointsFromParticlePositions extends Source1ParticleOperator {
 	static functionName = 'Set child control points from particle positions';
 	#setCpOrientation = DEFAULT_SET_CP_ORIENTATION_FOR_PARTICLES;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('# of control points to set', PARAM_TYPE_INT, 1);
 		this.addParam('First control point to set', PARAM_TYPE_INT, 0);
@@ -40,7 +41,7 @@ export class SetChildControlPointsFromParticlePositions extends SourceEnginePart
 		}
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const number = this.getParameter('# of control points to set');
 		const first = this.getParameter('First control point to set');
 		//const v = vec3.clone(particle.position);
@@ -60,4 +61,4 @@ export class SetChildControlPointsFromParticlePositions extends SourceEnginePart
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);
+Source1ParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);

@@ -2,12 +2,12 @@ import { vec3, vec4 } from 'gl-matrix';
 import { Camera } from '../../../cameras/camera';
 import { Skeleton } from '../../../objects/skeleton';
 import { TextureManager } from '../../../textures/texturemanager';
-import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './source1material';
+import { Source1VmtLoader } from '../loaders/source1vmtloader';
+import { Source1Material, Source1MaterialParams, Source1MaterialVmt, TextureRole } from './source1material';
 
 const tempVec3 = vec3.create();
 
-export class EyeRefractMaterial extends SourceEngineMaterial {
+export class EyeRefractMaterial extends Source1Material {
 	#initialized = false;
 	#eyeOrigin = vec3.create();
 	#eyeForward = vec3.create();
@@ -104,4 +104,4 @@ export class EyeRefractMaterial extends SourceEngineMaterial {
 		return 'source1_eyerefract';
 	}
 }
-SourceEngineVMTLoader.registerMaterial('eyerefract', EyeRefractMaterial);
+Source1VmtLoader.registerMaterial('eyerefract', EyeRefractMaterial);

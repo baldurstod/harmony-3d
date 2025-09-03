@@ -1,5 +1,5 @@
 import { DynamicParams } from '../../../../entities/entity';
-import { SourceEngineMaterialVariables } from '../source1material';
+import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
@@ -14,7 +14,7 @@ export class AnimatedTextureProxy extends Proxy {
 		this.#animatedtextureframerate = this.datas['animatedtextureframerate'];
 	}
 
-	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
 		//TODO: use #animatedtexturevar
 		variables.set(this.#animatedtextureframenumvar, time * this.#animatedtextureframerate);
 	}

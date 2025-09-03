@@ -1,15 +1,15 @@
 import { DEBUG } from '../../../buildoptions';
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
-import { SourceEngineMaterial } from '../materials/source1material';
-import { SourceEngineMaterialManager } from '../materials/source1materialmanager';
+import { Source1Material } from '../materials/source1material';
+import { Source1MaterialManager } from '../materials/source1materialmanager';
 import { KvReader } from './kvreader';
 
-class SourceEngineVMTLoaderClass {
-	#materials = new Map<string, typeof SourceEngineMaterial>();
+class Source1VmtLoaderClass {// TODO: improve singleton
+	#materials = new Map<string, typeof Source1Material>();
 	#extraMaterials = new Map<string, string>();//TODO: this is used for maps create a map repo instead
 
-	async load(repository: string, path: string): Promise<SourceEngineMaterial | null> {
+	async load(repository: string, path: string): Promise<Source1Material | null> {
 		const response = await Repositories.getFileAsText(repository, path);
 		if (!response.error) {
 			return this.parse(repository, path, response.text!);
@@ -22,7 +22,7 @@ class SourceEngineVMTLoaderClass {
 		return null;
 	}
 
-	async parse(repository: string, path: string, content: string): Promise<SourceEngineMaterial | null> {
+	async parse(repository: string, path: string, content: string): Promise<Source1Material | null> {
 		path = path.replace(/(\/)+/g, '/').replace(/(\\)+/g, '/').toLowerCase();
 
 		const kv = new KvReader();
@@ -37,7 +37,7 @@ class SourceEngineVMTLoaderClass {
 		}
 
 		const shaderName = kv.getRootName().toLowerCase();
-		let material: SourceEngineMaterial | null = null;
+		let material: Source1Material | null = null;
 
 		if (shaderName === 'patch') {
 			//TODO: check patch
@@ -45,7 +45,7 @@ class SourceEngineVMTLoaderClass {
 			const include = vmt['include'];
 			const insert = vmt['insert'];
 
-			const material = await SourceEngineMaterialManager.getMaterial(repository, include);
+			const material = await Source1MaterialManager.getMaterial(repository, include);
 			if (material) {
 				for (const insertIndex in insert) {
 					material.variables.set(insertIndex, insert[insertIndex]);
@@ -71,11 +71,11 @@ class SourceEngineVMTLoaderClass {
 		this.#extraMaterials.set(fileName, fileContent);
 	}
 
-	registerMaterial(materialName: string, materialClass: typeof SourceEngineMaterial) {
+	registerMaterial(materialName: string, materialClass: typeof Source1Material) {
 		this.#materials.set(materialName.toLowerCase(), materialClass);
 	}
 }
 
-export const SourceEngineVMTLoader = new SourceEngineVMTLoaderClass();
+export const Source1VmtLoader = new Source1VmtLoaderClass();
 
-registerLoader('SourceEngineVMTLoader', SourceEngineVMTLoader);
+registerLoader('Source1VmtLoader', Source1VmtLoader);

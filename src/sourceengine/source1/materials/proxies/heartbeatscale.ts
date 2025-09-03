@@ -1,7 +1,7 @@
 import { DynamicParams } from '../../../../entities/entity';
 import { TWO_PI } from '../../../../math/constants';
 import { clamp } from '../../../../math/functions';
-import { SourceEngineMaterialVariables } from '../source1material';
+import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
@@ -24,7 +24,7 @@ export class HeartbeatScale extends Proxy {
 		this.#p = 2 * Math.PI / this.#sineperiod;
 	}
 
-	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
 		let s1 = Math.sin(time * TWO_PI);
 		s1 = clamp(s1, 0.0, 1.0);
 		s1 *= s1;

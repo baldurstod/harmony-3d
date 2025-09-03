@@ -1,10 +1,10 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { DynamicParams } from '../../../entities/entity';
 import { MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NONE } from '../../../materials/material';
-import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './source1material';
+import { Source1VmtLoader } from '../loaders/source1vmtloader';
+import { Source1Material, Source1MaterialParams, Source1MaterialVmt, TextureRole } from './source1material';
 
-export class VertexLitGenericMaterial extends SourceEngineMaterial {
+export class VertexLitGenericMaterial extends Source1Material {
 	#diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 	#initialized = false;
 	useSrgb = false;
@@ -17,7 +17,7 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 		super.init();
 
 
-		//this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
+		//this.uniforms['phongfresnelranges'] = Source1Material.readColor(parameters['$phongfresnelranges']);
 		/*float fPixelFogType = pShaderAPI->GetPixelFogCombo() == 1 ? 1 : 0;
 		float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
 		float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
@@ -100,5 +100,5 @@ export class VertexLitGenericMaterial extends SourceEngineMaterial {
 		return 'source1_vertexlitgeneric';
 	}
 }
-SourceEngineVMTLoader.registerMaterial('vertexlitgeneric', VertexLitGenericMaterial);
-//MaterialManager.registerMaterial('VertexLitGeneric', VertexLitGenericMaterial, SourceEngineMaterialManager);
+Source1VmtLoader.registerMaterial('vertexlitgeneric', VertexLitGenericMaterial);
+//MaterialManager.registerMaterial('VertexLitGeneric', VertexLitGenericMaterial, Source1MaterialManager);

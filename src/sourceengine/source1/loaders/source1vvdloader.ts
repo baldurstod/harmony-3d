@@ -10,7 +10,7 @@ const FIXUP_STRUCT_SIZE = 12; // size in bytes of a vertex vertexFileFixup
 
 const MAX_NUM_BONES_PER_VERT = 3;
 
-export class SourceEngineVVDLoader extends SourceBinaryLoader {
+export class Source1VvdLoader extends SourceBinaryLoader {
 
 	async load(repository: string, path: string): Promise<SourceVvd | null> {
 		return super.load(repository, path) as Promise<SourceVvd | null>;

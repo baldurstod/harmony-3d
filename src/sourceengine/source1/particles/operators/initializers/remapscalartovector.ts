@@ -1,19 +1,19 @@
 import { quat, vec3 } from 'gl-matrix';
 import { RemapValClamped } from '../../../../../math/functions';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempQuat = quat.create();
 const tempVec3 = vec3.create();
 const tempVec3_2 = vec3.create();
 
-export class RemapScalarToVector extends SourceEngineParticleOperator {
+export class RemapScalarToVector extends Source1ParticleOperator {
 	static functionName = 'Remap Scalar to Vector';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('emitter lifetime start time (seconds)', PARAM_TYPE_FLOAT, -1);
 		this.addParam('emitter lifetime end time (seconds)', PARAM_TYPE_FLOAT, -1);
@@ -32,7 +32,7 @@ export class RemapScalarToVector extends SourceEngineParticleOperator {
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number) {
+	doInit(particle: Source1Particle, elapsedTime: number) {
 		const m_flStartTime = this.getParameter('emitter lifetime start time (seconds)');
 		const m_flEndTime = this.getParameter('emitter lifetime end time (seconds)');
 
@@ -80,4 +80,4 @@ export class RemapScalarToVector extends SourceEngineParticleOperator {
 	}
 }
 
-SourceEngineParticleOperators.registerOperator(RemapScalarToVector);
+Source1ParticleOperators.registerOperator(RemapScalarToVector);

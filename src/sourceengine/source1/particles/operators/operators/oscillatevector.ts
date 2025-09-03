@@ -2,10 +2,10 @@ import { vec3 } from 'gl-matrix';
 import { AddSIMD, Four_Ones, Four_Zeros, MaskedAssign, MaxSIMD, MinSIMD, MulSIMD, SinEst01SIMD } from '../../../../common/math/sse';
 import { ParticleRandomFloat, ParticleRandomVec3 } from '../../../../common/particles/randomfloats';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR3 } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 /*					'oscillation field' 'int' '0'
 					'oscillation field' 'int' '16'
@@ -16,10 +16,10 @@ import { SourceEngineParticleOperator } from '../operator';
 const tempVec3Freq = vec3.create();
 const tempVec3Rate = vec3.create();
 
-export class OscillateVector extends SourceEngineParticleOperator {
+export class OscillateVector extends Source1ParticleOperator {
 	static functionName = 'Oscillate Vector';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('oscillation field', PARAM_TYPE_INT, 0);
 		this.addParam('oscillation rate min', PARAM_TYPE_VECTOR3, vec3.create());
@@ -36,7 +36,7 @@ export class OscillateVector extends SourceEngineParticleOperator {
 		this.addParam('oscillation start phase', PARAM_TYPE_FLOAT, 0.5);
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const m_nField = this.getParameter('oscillation field');
 		const m_RateMin = this.getParameter('oscillation rate min');
 		const m_RateMax = this.getParameter('oscillation rate max');
@@ -167,4 +167,4 @@ export class OscillateVector extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(OscillateVector);
+Source1ParticleOperators.registerOperator(OscillateVector);

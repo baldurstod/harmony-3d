@@ -9,7 +9,7 @@ const MESH_HEADER_SIZE = 9;
 const STRIP_GROUP_HEADER_SIZE = 25;
 const STRIP_HEADER_SIZE = 27;
 
-export class SourceEngineVTXLoader extends SourceBinaryLoader {
+export class Source1VtxLoader extends SourceBinaryLoader {
 	#mdlVersion: number;
 
 	constructor(mdlVersion: number) {

@@ -1,15 +1,15 @@
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { RandomFloatExp } from '../../../../../math/functions';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class RotationSpeedRandom extends SourceEngineParticleOperator {
+export class RotationSpeedRandom extends Source1ParticleOperator {
 	static functionName = 'Rotation Speed Random';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('rotation_speed_constant', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('rotation_speed_random_min', PARAM_TYPE_FLOAT, 0.0);
@@ -23,7 +23,7 @@ export class RotationSpeedRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('randomly_flip_direction', '1', bool, m_bRandomlyFlipDirection)
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const m_flDegrees = this.getParameter('rotation_speed_constant');
 		const m_flDegreesMin = this.getParameter('rotation_speed_random_min');
 		const m_flDegreesMax = this.getParameter('rotation_speed_random_max');
@@ -41,4 +41,4 @@ export class RotationSpeedRandom extends SourceEngineParticleOperator {
 		particle.rotationSpeedRoll = rotationSpeed;
 	}
 }
-SourceEngineParticleOperators.registerOperator(RotationSpeedRandom);
+Source1ParticleOperators.registerOperator(RotationSpeedRandom);

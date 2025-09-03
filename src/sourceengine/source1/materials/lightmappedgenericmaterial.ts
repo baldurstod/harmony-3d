@@ -1,7 +1,7 @@
-import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
-import { SourceEngineMaterial } from './source1material';
+import { Source1VmtLoader } from '../loaders/source1vmtloader';
+import { Source1Material } from './source1material';
 
-export class LightMappedGenericMaterial extends SourceEngineMaterial {//TODOv3 removeme
+export class LightMappedGenericMaterial extends Source1Material {//TODOv3 removeme
 
 	clone() {
 		return new LightMappedGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
@@ -11,4 +11,4 @@ export class LightMappedGenericMaterial extends SourceEngineMaterial {//TODOv3 r
 		return 'source1_lightmappedgeneric';
 	}
 }
-SourceEngineVMTLoader.registerMaterial('lightmappedgeneric', LightMappedGenericMaterial);
+Source1VmtLoader.registerMaterial('lightmappedgeneric', LightMappedGenericMaterial);

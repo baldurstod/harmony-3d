@@ -1,17 +1,17 @@
 import { vec3 } from 'gl-matrix';
 import { FLT_EPSILON } from '../../../../../math/constants';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
-export class AttractToControlPoint extends SourceEngineParticleOperator {
+export class AttractToControlPoint extends Source1ParticleOperator {
 	static functionName = 'Pull towards control point';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('control point number', PARAM_TYPE_INT, 0);
 		this.addParam('amount of force', PARAM_TYPE_FLOAT, 0);
@@ -21,7 +21,7 @@ export class AttractToControlPoint extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
 	}
 
-	doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: vec3, strength = 1) {
+	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength = 1) {
 		//console.log(particle.position);
 		const m_fForceAmount = this.getParameter('amount of force');
 		const cpNumber = this.getParameter('control point number');
@@ -48,4 +48,4 @@ export class AttractToControlPoint extends SourceEngineParticleOperator {
 		vec3.add(accumulatedForces, accumulatedForces, ofs);
 	}
 }
-SourceEngineParticleOperators.registerOperator(AttractToControlPoint);
+Source1ParticleOperators.registerOperator(AttractToControlPoint);

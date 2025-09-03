@@ -3,9 +3,9 @@ import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../geometry
 import { BufferGeometry } from '../../../geometry/buffergeometry';
 import { getLoader, registerLoader } from '../../../loaders/loaderfactory';
 import { Property, PropertyType } from '../../../utils/properties';
-import { SourceEngineMDLLoader } from './source1mdlloader';
-import { SourceEngineVTXLoader } from './source1vtxloader';
-import { SourceEngineVVDLoader } from './source1vvdloader';
+import { Source1MdlLoader } from './source1mdlloader';
+import { Source1VtxLoader } from './source1vtxloader';
+import { Source1VvdLoader } from './source1vvdloader';
 import { SourceMdl } from './sourcemdl';
 import { SourceModel } from './sourcemodel';
 import { SourceVtx } from './sourcevtx';
@@ -17,15 +17,15 @@ export class ModelLoader {
 			fileName = fileName.toLowerCase().replace(/\.mdl$/, '');
 
 			// First load mdl. We need the mdl version to load the vtx
-			const mdlLoader = getLoader('SourceEngineMDLLoader') as typeof SourceEngineMDLLoader;
+			const mdlLoader = getLoader('Source1MdlLoader') as typeof Source1MdlLoader;
 			const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
 			if (!mdl) {
 				resolve(null);
 				return;
 			}
 
-			const vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
-			const vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
+			const vvdPromise = new Source1VvdLoader().load(repositoryName, fileName + '.vvd');
+			const vtxPromise = new Source1VtxLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
 
 			Promise.all([vvdPromise, vtxPromise]).then(([vvd, vtx]) => {
 				if (vvd && vtx) {

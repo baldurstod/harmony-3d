@@ -1,14 +1,14 @@
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleOperator } from '../operator';
 
-export class LifespanDecay extends SourceEngineParticleOperator {
+export class LifespanDecay extends Source1ParticleOperator {
 	static functionName = 'Lifespan Decay';
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		if (particle.timeToLive < particle.currentTime) {
 			particle.die();
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(LifespanDecay);
+Source1ParticleOperators.registerOperator(LifespanDecay);

@@ -1,10 +1,10 @@
 import { vec3 } from 'gl-matrix';
 import { clamp } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const a = vec3.create();
 const b = vec3.create();
@@ -23,10 +23,10 @@ const b = vec3.create();
 	*/
 
 
-export class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngineParticleOperator {
+export class ConstrainDistanceToPathBetweenTwoControlPoints extends Source1ParticleOperator {
 	static functionName = 'Constrain distance to path between two control points';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		//this.setNameId('constrain distance to path between two control points');
 		this.addParam('start control point number', PARAM_TYPE_INT, 0);
@@ -38,7 +38,7 @@ export class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngine
 		// TODO: add more parameters
 	}
 
-	applyConstraint(particle: SourceEngineParticle) {
+	applyConstraint(particle: Source1Particle) {
 		const startNumber = this.getParameter('start control point number') || 0;
 		const endNumber = this.getParameter('end control point number') || 1;
 		let travelTime = this.getParameter('travel time') || 1;
@@ -53,4 +53,4 @@ export class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngine
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(ConstrainDistanceToPathBetweenTwoControlPoints);
+Source1ParticleOperators.registerOperator(ConstrainDistanceToPathBetweenTwoControlPoints);

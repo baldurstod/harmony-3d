@@ -1,27 +1,27 @@
 import { vec3 } from 'gl-matrix';
 import { ExponentialDecay } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const gravity_const = 0.5;
 const tempVec3 = vec3.create();
 const tempVec3_2 = vec3.create();
 const tempVec3_3 = vec3.create();
 
-export class MovementBasic extends SourceEngineParticleOperator {
+export class MovementBasic extends Source1ParticleOperator {
 	static functionName = 'Movement Basic';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('drag', PARAM_TYPE_FLOAT, 0);
 		this.addParam('gravity', PARAM_TYPE_VECTOR, vec3.create());
 		this.addParam('max constraint passes', PARAM_TYPE_INT, 3);
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const drag = this.getParameter('drag');
 		const gravity = this.getParameter('gravity');
 		const maxConstraintPasses = this.getParameter('max constraint passes');//TODO
@@ -57,5 +57,5 @@ export class MovementBasic extends SourceEngineParticleOperator {
 		this.particleSystem.stepConstraints(particle);
 	}
 }
-SourceEngineParticleOperators.registerOperator(MovementBasic);
-SourceEngineParticleOperators.registerOperator('basic movement', MovementBasic);
+Source1ParticleOperators.registerOperator(MovementBasic);
+Source1ParticleOperators.registerOperator('basic movement', MovementBasic);

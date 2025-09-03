@@ -50,7 +50,7 @@ import {
 	SourceBSPLumpTexData,
 	SourceBSPLumpTexInfo
 } from './sourcebsplump';
-import { SourceEngineVMTLoader } from './source1vmtloader';
+import { Source1VmtLoader } from './source1vmtloader';
 
 const BSP_HEADER_LUMPS_COUNT = 64;
 const BYTES_PER_LUMP_HEADER = 16;
@@ -70,7 +70,7 @@ function InitLZMALump(reader, lump) {
 	return reader;
 }
 
-export class SourceEngineBSPLoader extends SourceBinaryLoader {
+export class Source1BspLoader extends SourceBinaryLoader {
 	parse(repository, fileName, arrayBuffer) {
 		const bsp = new SourceBSP({ repository: repository, name: fileName });
 		bsp.loader = this;
@@ -777,7 +777,7 @@ export class SourceEngineBSPLoader extends SourceBinaryLoader {
 		for (const [fileName, file] of lumpData) {
 			if (fileName.match(/^materials\/.*\.vmt$/)) {
 				const fileContent = this.#getFileData(reader, file);
-				SourceEngineVMTLoader.setMaterial(fileName, fileContent);
+				Source1VmtLoader.setMaterial(fileName, fileContent);
 			}
 		}
 		lump.setLumpData(lumpData);

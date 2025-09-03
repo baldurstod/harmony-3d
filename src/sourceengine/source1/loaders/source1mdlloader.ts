@@ -191,7 +191,7 @@ function readQuaternion48(reader: BinaryReader, q: quat = quat.create()): quat {
 }
 
 
-export class SourceEngineMDLLoader extends SourceBinaryLoader {
+export class Source1MdlLoader extends SourceBinaryLoader {
 	#parseAnimSectionOnce = false;
 
 	async load(repository: string, path: string): Promise<SourceMdl | null> {
@@ -1105,7 +1105,7 @@ export class SourceEngineMDLLoader extends SourceBinaryLoader {
 	}
 }
 
-registerLoader('SourceEngineMDLLoader', SourceEngineMDLLoader);
+registerLoader('Source1MdlLoader', Source1MdlLoader);
 
 
 function readMatrix3x4(reader: BinaryReader) {

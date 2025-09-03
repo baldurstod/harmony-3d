@@ -18,7 +18,7 @@
 */
 
 import { DynamicParams } from "../../../../entities/entity";
-import { SourceEngineMaterialVariables, SourceEngineMaterialVmt } from "../source1material";
+import { Source1MaterialVariables, Source1MaterialVmt } from "../source1material";
 
 /**
  * Source engine material interface
@@ -29,7 +29,7 @@ export class Proxy {
 	/**
 	 * TODO
 	 */
-	setParams(datas: SourceEngineMaterialVmt/*TODO: improve type*/, variables: Map<string, SourceEngineMaterialVariables>) {
+	setParams(datas: Source1MaterialVmt/*TODO: improve type*/, variables: Map<string, Source1MaterialVariables>) {
 		this.datas = datas;
 		this.init(variables);
 	}
@@ -48,16 +48,16 @@ export class Proxy {
 	/**
 	 * Dummy function
 	 */
-	init(variables: Map<string, SourceEngineMaterialVariables>) {
+	init(variables: Map<string, Source1MaterialVariables>) {
 	}
 
 	/**
 	 * Dummy function
 	 */
-	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
 	}
 
-	setResult(variables: Map<string, SourceEngineMaterialVariables>, value: any/*TODO: improve type*/) {
+	setResult(variables: Map<string, Source1MaterialVariables>, value: any/*TODO: improve type*/) {
 		let resultVarName = this.getData('resultvar');
 		if (resultVarName) {
 			resultVarName = resultVarName.toLowerCase();
@@ -93,7 +93,7 @@ export class Proxy {
 		}
 	}
 
-	getVariable(variables: Map<string, SourceEngineMaterialVariables>, name: string) {
+	getVariable(variables: Map<string, Source1MaterialVariables>, name: string) {
 		const result = this.datas[name];
 		if (typeof result == 'string') {
 			if (result.startsWith('$')) {

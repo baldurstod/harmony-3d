@@ -1,18 +1,18 @@
 import { vec3 } from 'gl-matrix';
 import { NoiseSIMD } from '../../../../common/math/noise';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class VelocityNoise extends SourceEngineParticleOperator {
+export class VelocityNoise extends Source1ParticleOperator {
 	static functionName = 'Velocity Noise';
 	#randX = Math.random() * 1000;
 	#randY = Math.random() * 1000;
 	#randZ = Math.random() * 1000;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('', PARAM_TYPE_INT, 0);
 		this.addParam('Control Point Number', PARAM_TYPE_INT, 0);
@@ -37,7 +37,7 @@ export class VelocityNoise extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('Apply Velocity in Local Space (0/1)','0', bool, m_bLocalSpace)
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number) {
+	doInit(particle: Source1Particle, elapsedTime: number) {
 		const m_nControlPointNumber = this.getParameter('Control Point Number');
 		const m_flNoiseScale = this.getParameter('Time Noise Coordinate Scale');
 		const m_flNoiseScaleLoc = this.getParameter('Spatial Noise Coordinate Scale');
@@ -207,7 +207,7 @@ export class VelocityNoise extends SourceEngineParticleOperator {
 		return true;
 	}
 }
-SourceEngineParticleOperators.registerOperator(VelocityNoise);
+Source1ParticleOperators.registerOperator(VelocityNoise);
 /*
 
 VelocityNoise.prototype.getNoise = function (particle, time) {

@@ -1,23 +1,23 @@
 import { mat4, vec3 } from 'gl-matrix';
 import { PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 const tempMat4 = mat4.create();
 const IDENTITY_MAT4 = mat4.create();
 
-export class LockToBone extends SourceEngineParticleOperator {
+export class LockToBone extends Source1ParticleOperator {
 	static functionName = 'Movement Lock to Bone';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const controlPoint = particle.system.getControlPoint(this.getParameter('control_point_number'));
 		if (controlPoint) {
 			// TODO : Actually we should get the model parenting the control point
@@ -72,4 +72,4 @@ export class LockToBone extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(LockToBone);
+Source1ParticleOperators.registerOperator(LockToBone);

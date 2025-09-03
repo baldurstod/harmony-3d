@@ -1,15 +1,15 @@
 import { clamp } from '../../../../../math/functions';
 import { ParticleRandomFloat } from '../../../../common/particles/randomfloats';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class OscillateScalar extends SourceEngineParticleOperator {
+export class OscillateScalar extends Source1ParticleOperator {
 	static functionName = 'Oscillate Scalar';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.setNameId('Oscillate Scalar');
 		this.addParam('oscillation field', PARAM_TYPE_INT, 7);//Alpha
@@ -40,7 +40,7 @@ export class OscillateScalar extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('oscillation start phase', '.5', float, m_flOscAdd)
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const m_bProportional = this.getParameter('proportional 0/1');
 		const m_bProportionalOp = this.getParameter('start/end proportional');
 		const oscillationField = this.getParameter('oscillation field');
@@ -110,4 +110,4 @@ export class OscillateScalar extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(OscillateScalar);
+Source1ParticleOperators.registerOperator(OscillateScalar);

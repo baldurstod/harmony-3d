@@ -1,15 +1,15 @@
 import { Bias } from '../../../../common/math/sse';
 import { ParticleRandomFloat } from '../../../../common/particles/randomfloats';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class AlphaFadeOutRandom extends SourceEngineParticleOperator {
+export class AlphaFadeOutRandom extends Source1ParticleOperator {
 	static functionName = 'Alpha Fade Out Random';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('fade out time min', PARAM_TYPE_FLOAT, 0.25);
 		this.addParam('fade out time max', PARAM_TYPE_FLOAT, 0.25);
@@ -18,7 +18,7 @@ export class AlphaFadeOutRandom extends SourceEngineParticleOperator {
 		this.addParam('fade bias', PARAM_TYPE_FLOAT, 0.5); //Neutral bias
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const proportional = this.getParameter('proportional 0/1');
 
 		const fade_out_time_min = this.getParameter('fade out time min');
@@ -60,4 +60,4 @@ export class AlphaFadeOutRandom extends SourceEngineParticleOperator {
 		particle.alpha = alpha;
 	}
 }
-SourceEngineParticleOperators.registerOperator(AlphaFadeOutRandom);
+Source1ParticleOperators.registerOperator(AlphaFadeOutRandom);

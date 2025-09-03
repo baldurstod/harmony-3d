@@ -2062,12 +2062,16 @@ class Entity {
     getQuaternion(quaternion = quat.create()) {
         return quat.copy(quaternion, this._quaternion);
     }
+    /**
+     * @deprecated Please use `setQuaternion` instead.
+     */
     set quaternion(quaternion) {
-        // TODO: deprecate
         this.setQuaternion(quaternion);
     }
+    /**
+     * @deprecated Please use `getQuaternion` instead.
+     */
     get quaternion() {
-        // TODO: deprecate
         return this.getQuaternion();
     }
     get quaternionAsString() {
@@ -3001,7 +3005,7 @@ const h = vec3.create();
 const h2 = vec3.create();
 const s$1 = vec3.create();
 const q$2 = vec3.create();
-const m$1 = mat4.create();
+const m = mat4.create();
 const _segCenter = vec3.create();
 const _segDir = vec3.create();
 const _diff = vec3.create();
@@ -3025,14 +3029,14 @@ class Ray {
         vec3.copy(this.direction, other.direction);
     }
     copyTransform(other, worldMatrix) {
-        mat4.invert(m$1, worldMatrix);
-        vec3.transformMat4(this.origin, other.origin, m$1);
+        mat4.invert(m, worldMatrix);
+        vec3.transformMat4(this.origin, other.origin, m);
         const x = other.direction[0];
         const y = other.direction[1];
         const z = other.direction[2];
-        this.direction[0] = m$1[0] * x + m$1[4] * y + m$1[8] * z;
-        this.direction[1] = m$1[1] * x + m$1[5] * y + m$1[9] * z;
-        this.direction[2] = m$1[2] * x + m$1[6] * y + m$1[10] * z;
+        this.direction[0] = m[0] * x + m[4] * y + m[8] * z;
+        this.direction[1] = m[1] * x + m[5] * y + m[9] * z;
+        this.direction[2] = m[2] * x + m[6] * y + m[10] * z;
     }
     setOrigin(origin) {
         vec3.copy(this.origin, origin);
@@ -19333,7 +19337,7 @@ class ManifestRepository {
         const files = response.root.getAllChilds({ extension: 'pcf', directories: false });
         const manifestFiles = [];
         for (const file of files) {
-            const pcfLoader = getLoader('SourceEnginePCFLoader');
+            const pcfLoader = getLoader('Source1PcfLoader');
             const pcf = await new pcfLoader().load(this.name, file.getFullName());
             const systems = [];
             for (const name in pcf.systems) {
@@ -20678,7 +20682,7 @@ class Source1ParticleControler {
     static async #loadPcf(repositoryName, pcfName) {
         //TODO: return an empty system if not found?
         const promise = new Promise(resolve => {
-            const pcfLoader = getLoader('SourceEnginePCFLoader');
+            const pcfLoader = getLoader('Source1PcfLoader');
             new pcfLoader().load(repositoryName, pcfName).then((pcf) => resolve(pcf));
         });
         return promise;
@@ -20944,7 +20948,7 @@ class Detex {
 }
 
 const VTF_ENTRY_IMAGE_DATAS = 48;
-class SourceEngineVTF {
+class Source1Vtf {
     repository;
     fileName;
     versionMaj = 0;
@@ -32827,6 +32831,7 @@ class FlexAnimationTrack {
     }
 }
 
+// TODO can this be merged with kv3element ?
 class KvAttribute {
     name;
     value;
@@ -34730,7 +34735,7 @@ const LOD_HEADER_SIZE = 12;
 const MESH_HEADER_SIZE = 9;
 const STRIP_GROUP_HEADER_SIZE = 25;
 const STRIP_HEADER_SIZE = 27;
-class SourceEngineVTXLoader extends SourceBinaryLoader {
+class Source1VtxLoader extends SourceBinaryLoader {
     #mdlVersion;
     constructor(mdlVersion) {
         super();
@@ -34937,7 +34942,7 @@ const VERTEX_SIZE = 48; // size in bytes of a vertex
 const TANGENT_SIZE = 16; // size in bytes of a vertex
 const FIXUP_STRUCT_SIZE = 12; // size in bytes of a vertex vertexFileFixup
 const MAX_NUM_BONES_PER_VERT = 3;
-class SourceEngineVVDLoader extends SourceBinaryLoader {
+class Source1VvdLoader extends SourceBinaryLoader {
     async load(repository, path) {
         return super.load(repository, path);
     }
@@ -38909,7 +38914,7 @@ class SourceMdl {
         const modelGroup = this.modelGroups[externalId];
         if (modelGroup) {
             const p = new Promise(async (resolve) => {
-                const mdlLoader = getLoader('SourceEngineMDLLoader');
+                const mdlLoader = getLoader('Source1MdlLoader');
                 const mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
                 if (mdl) {
                     //this.externalMdlsV2[externalId] = mdl;
@@ -39297,7 +39302,7 @@ function cleanSource1MaterialName(name) {
     //name = 'materials/' + name;
     return name;
 }
-class SourceEngineMaterialManager {
+class Source1MaterialManager {
     static #fileListPerRepository = new Map(); // TODO: use a Map2
     static #materialList = new Map2();
     static #materialList2 = new Set();
@@ -39376,7 +39381,7 @@ class SourceEngineMaterialManager {
         }
         else {
             const promise = new Promise(resolve => {
-                const vmtLoader = getLoader('SourceEngineVMTLoader');
+                const vmtLoader = getLoader('Source1VmtLoader');
                 vmtLoader.load(repository, path).then((material) => {
                     if (!material) {
                         resolve(material);
@@ -39395,7 +39400,7 @@ class SourceEngineMaterialManager {
     }
     /*
     static async copyMaterial(repository:string, sourcePath:string, destPath:string, searchPaths?: string[]) {
-        const material: SourceEngineMaterial = await this.getMaterial(repository, sourcePath, searchPaths);
+        const material: Source1Material = await this.getMaterial(repository, sourcePath, searchPaths);
         this.#materialList.set(destPath, material.clone());
         material.init();
     }
@@ -39780,7 +39785,7 @@ class Source1ModelInstance extends Entity {
             let material;
             let materialName;
             materialName = this.sourceModel.mdl.getMaterialName(this.#skin, mesh.properties.getNumber('materialId') ?? 0);
-            material = await SourceEngineMaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
+            material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
             if (this.#materialOverride) {
                 material = this.#materialOverride;
             }
@@ -39811,7 +39816,7 @@ class Source1ModelInstance extends Entity {
             let material;
             let materialName;
             materialName = this.sourceModel.mdl.getMaterialName(Number(skin), mesh.properties.getNumber('materialId') ?? 0);
-            material = await SourceEngineMaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
+            material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
             if (material) {
                 materials.add(material.path);
             }
@@ -40427,14 +40432,14 @@ class ModelLoader {
         const promise = new Promise(async (resolve) => {
             fileName = fileName.toLowerCase().replace(/\.mdl$/, '');
             // First load mdl. We need the mdl version to load the vtx
-            const mdlLoader = getLoader('SourceEngineMDLLoader');
+            const mdlLoader = getLoader('Source1MdlLoader');
             const mdl = await new mdlLoader().load(repositoryName, fileName + '.mdl');
             if (!mdl) {
                 resolve(null);
                 return;
             }
-            const vvdPromise = new SourceEngineVVDLoader().load(repositoryName, fileName + '.vvd');
-            const vtxPromise = new SourceEngineVTXLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
+            const vvdPromise = new Source1VvdLoader().load(repositoryName, fileName + '.vvd');
+            const vtxPromise = new Source1VtxLoader(mdl.header.formatVersionID).load(repositoryName, fileName + '.dx90.vtx');
             Promise.all([vvdPromise, vtxPromise]).then(([vvd, vtx]) => {
                 if (vvd && vtx) {
                     this.#fileLoaded(resolve, repositoryName, fileName, mdl, vvd, vtx);
@@ -40566,34 +40571,33 @@ registerLoader('ModelLoader', ModelLoader);
 /**
  * Map entities
  */
-const MapEntities = function () {
-};
-MapEntities.entities = Object.create(null);
-MapEntities.registerEntity = function (className, entityClass) {
-    this.entities[className] = entityClass;
-};
-MapEntities.createEntity = function (map, className) {
-    const entityClass = this.entities[className];
-    if (!entityClass) {
-        return null;
+class MapEntities {
+    static #entities = new Map();
+    static registerEntity(className, entityClass) {
+        this.#entities.set(className, entityClass);
     }
-    const entity = new entityClass(className);
-    entity.map = map;
-    return entity;
-};
+    static createEntity(map, className) {
+        const entityClass = this.#entities.get(className);
+        if (!entityClass) {
+            return null;
+        }
+        const entity = new entityClass({ className: className, map: map });
+        return entity;
+    }
+}
 
-function ParseVector(str) {
+function ParseVector(out, str) {
     const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
     const result = regex.exec(str);
-    if (result) {
-        return vec3.fromValues(Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
+    if (result && result.length >= 6) {
+        return vec3.set(out, Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
     }
     return null;
 }
 function ParseVector2(out, str) {
     const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
     const result = regex.exec(str);
-    if (result) {
+    if (result && result.length >= 6) {
         return vec3.set(out, Number.parseFloat(result[1]), Number.parseFloat(result[3]), Number.parseFloat(result[5]));
     }
     return null;
@@ -40601,11 +40605,11 @@ function ParseVector2(out, str) {
 function parseLightColorIntensity(value, light, intensityMultiplier = 1) {
     const colorValue = vec3.create();
     const arrayValue = value.split(' ');
-    colorValue[0] = Math.pow(arrayValue[0] / 255.0, 2.2);
-    colorValue[1] = Math.pow(arrayValue[1] / 255.0, 2.2);
-    colorValue[2] = Math.pow(arrayValue[2] / 255.0, 2.2);
+    colorValue[0] = Math.pow(Number(arrayValue[0]) / 255.0, 2.2);
+    colorValue[1] = Math.pow(Number(arrayValue[1]) / 255.0, 2.2);
+    colorValue[2] = Math.pow(Number(arrayValue[2]) / 255.0, 2.2);
     light.color = colorValue;
-    light.intensity = arrayValue[3] / 255.0 * intensityMultiplier;
+    light.intensity = Number(arrayValue[3]) / 255.0 * intensityMultiplier;
 }
 function AngleQuaternion(angles, outQuat) {
     const sy = Math.sin(angles[1] * 0.5);
@@ -40636,8 +40640,8 @@ function AngleVectors(angles, forward) {
     forward[1] = cp * sy;
     forward[2] = -sp;
 }
-function ParseAngles(str) {
-    const angles = ParseVector(str);
+function ParseAngles(out, str) {
+    const angles = ParseVector(out, str);
     if (angles) {
         return vec3.scale(angles, angles, Math.PI / 180);
     }
@@ -40661,24 +40665,26 @@ class MapEntity extends Entity {
     m_flLocalTime = 0;
     f = 0;
     keys = new Map();
-    targetName;
+    targetName = '';
     parentName;
-    m;
-    constructor(classname) {
-        super({ name: classname });
-        this.classname = classname;
+    map;
+    #parentEntity = null;
+    constructor(params) {
+        super(params);
+        this.name = params.className;
+        this.map = params.map;
+        this.classname = params.className;
         this.id = String(++MapEntity.incrementalId);
         //this.children = Object.create(null);
     }
     setKeyValues(kvElement) {
         if (kvElement) {
-            if (kvElement.spawnflags) {
-                this.f = kvElement.spawnflags * 1;
+            if (kvElement /*TODO: fix that*/.spawnflags) {
+                this.f = Number(kvElement /*TODO: fix that*/.spawnflags);
             }
             const entityParams = Object.keys(kvElement);
-            for (let i = 0, l = entityParams.length; i < l; i++) {
-                const key = entityParams[i];
-                this.setKeyValue(key, kvElement[key]);
+            for (const key of entityParams) {
+                this.setKeyValue(key, kvElement /*TODO: fix that*/[key]);
             }
         }
     }
@@ -40693,10 +40699,13 @@ class MapEntity extends Entity {
                     this.targetName = value;
                     break;
                 case 'origin':
-                    this._position = ParseVector(value);
+                    ParseVector(this._position, value);
                     break;
                 case 'angles':
-                    AngleQuaternion(ParseAngles(value), this._quaternion);
+                    const angles = ParseAngles(vec3.create() /*TODO: optimize*/, value);
+                    if (angles) {
+                        AngleQuaternion(angles, this._quaternion);
+                    }
                     break;
                 case 'parentname':
                     this.parentName = value;
@@ -40707,26 +40716,20 @@ class MapEntity extends Entity {
     getValue(key) {
         return this.keys.get(key);
     }
-    addOutput(outputName, outputValue) {
+    addOutput(outputName, outputValue /*TODO: improve type*/) {
         const output = new MapEntityConnection(outputName);
-        this.m.addConnection(output);
+        this.map.addConnection(output);
         this.outputs.push(output);
         output.fromString(outputValue);
         //console.log(output.outputName, output.getTargetName(), output.getTargetInput(), output.getTargetParameter(), output.getDelay(), output.getFireOnlyOnce());
     }
-    setInput(input, parameter) {
+    setInput(input, parameters /*TODO: improve type*/) {
     }
     getFlag(position) {
         return (this.f >> position) & 1;
     }
-    set map(map) {
-        this.m = map;
-    }
-    get map() {
-        return this.m;
-    }
     move(delta) {
-        this.position = vec3.add(vec3.create(), this._position, delta); //todo remove me
+        this.setPosition(vec3.add(vec3.create(), this._position, delta)); //todo remove me
     }
     /*set position(o) {
         if (o) {
@@ -40747,7 +40750,7 @@ class MapEntity extends Entity {
     }
         */
     getAbsOrigin() {
-        return null;
+        return vec3.create();
     }
     getLocalOrigin() {
         return this._position;
@@ -40755,21 +40758,23 @@ class MapEntity extends Entity {
     getLocalVelocity() {
         return this.m_vecVelocity;
     }
-    update(map, delta) {
+    update(scene, camera, delta) {
         this.m_flLocalTime += delta;
         if (this.parentName) {
-            const parent = map.getEntityByTargetName(this.parentName);
+            throw 'uncomment next line';
+            /*const parent = this.map.getEntityByTargetName(this.parentName);
             if (parent) {
                 this.setParent(parent);
                 delete this.parentName;
             }
+            */
         }
         this.position = vec3.scaleAndAdd(vec3.create(), this.getLocalOrigin(), this.getLocalVelocity(), delta); //TODO removeme : optimize
     }
     setParent(parent) {
         //void CBaseEntity::SetParent(CBaseEntity *pParentEntity, int iAttachment)
         const oldParent = this.parent;
-        this.parent = parent;
+        this.#parentEntity = parent;
         if (parent == this) {
             this.parent = null;
         }
@@ -40806,16 +40811,12 @@ class MapEntity extends Entity {
         return this.m_flLocalTime;
     }
     fireOutput(outputName) {
-        const outputs = this.outputs;
-        const result = [];
-        for (let i = 0, l = outputs.length; i < l; i++) {
-            const output = outputs[i];
+        for (const output of this.outputs) {
             if (outputName == output.outputName) {
                 //result.push(connection);
-                output.fire(this.m);
+                output.fire(this.map);
             }
         }
-        return result;
     }
     toString() {
         return this.classname;
@@ -40827,55 +40828,56 @@ MapEntity.incrementalId = 0;
  */
 class MapEntityConnection {
     //'OnMapSpawn' 'tonemap_global,SetAutoExposureMax,.8,0,-1'
-    n;
-    p;
+    name;
+    parameters = null;
     constructor(name) {
-        this.n = name;
-        this.p = null;
+        this.name = name;
+        this.parameters = null;
     }
     fromString(stringDatas) {
         const parameters = stringDatas.split(',');
         if (parameters && parameters.length == 5) {
-            this.p = parameters;
+            this.parameters = parameters;
         }
     }
     get outputName() {
-        return this.n;
+        return this.name;
     }
     getTargetName() {
-        const parameters = this.p;
+        const parameters = this.parameters;
         if (parameters) {
             return parameters[0];
         }
     }
     getTargetInput() {
-        const parameters = this.p;
+        const parameters = this.parameters;
         if (parameters) {
             return parameters[1];
         }
     }
     getTargetParameter() {
-        const parameters = this.p;
+        const parameters = this.parameters;
         if (parameters) {
             return parameters[2];
         }
     }
     getDelay() {
-        const parameters = this.p;
+        const parameters = this.parameters;
         if (parameters) {
             return parameters[3];
         }
     }
     getFireOnlyOnce() {
-        const parameters = this.p;
+        const parameters = this.parameters;
         if (parameters) {
             return parameters[4];
         }
     }
     fire(map) {
-        const parameters = this.p;
+        const parameters = this.parameters;
         if (parameters) {
-            map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
+            throw 'uncomment next line';
+            //map.setTargetsInput(parameters[0], parameters[1], parameters[2]);
         }
     }
 }
@@ -41382,7 +41384,7 @@ class SourceBSPLumpOverlay {
 /**
  * BSP Tree
  */
-class SourceEngineBspTree {
+class Source1BspTree {
     map;
     visibilityClusters = undefined;
     clustersCount = 0;
@@ -41642,7 +41644,7 @@ class SourceBSP extends World {
         super(params);
         this.repository = params.repository;
         //this.staticProps = [];
-        this.bspTree = new SourceEngineBspTree(this);
+        this.bspTree = new Source1BspTree(this);
         //this.loadFile(root, fileName);
         //BspMap.defaultMaterial = BspMap.defaultMaterial ||	SourceEngine.Materials.MaterialManager._loadMaterial('', SourceEngine.Settings.Materials.defaultLightMappedMaterial).then(function(material){BspMap.defaultMaterial = material;});TODOv3
         this.addChild(this.staticProps);
@@ -42011,7 +42013,7 @@ class SourceBSP extends World {
             bufferGeometry.count = geometry.indices.length;
             const staticMesh = new Mesh(bufferGeometry, null);
             staticMesh.name = textureName;
-            SourceEngineMaterialManager.getMaterial(this.repository, textureName).then((material) => staticMesh.setMaterial(material)).catch(() => console.error('unable to find material ' + textureName));
+            Source1MaterialManager.getMaterial(this.repository, textureName).then((material) => staticMesh.setMaterial(material)).catch(() => console.error('unable to find material ' + textureName));
             this.mapFaces.addChild(staticMesh);
         }
     }
@@ -42076,7 +42078,7 @@ class SourceBSP extends World {
     }
 }
 
-class SourceEngineVMTLoaderClass {
+class Source1VmtLoaderClass {
     #materials = new Map();
     #extraMaterials = new Map(); //TODO: this is used for maps create a map repo instead
     async load(repository, path) {
@@ -42106,7 +42108,7 @@ class SourceEngineVMTLoaderClass {
             //TODO: check patch
             const include = vmt['include'];
             const insert = vmt['insert'];
-            const material = await SourceEngineMaterialManager.getMaterial(repository, include);
+            const material = await Source1MaterialManager.getMaterial(repository, include);
             if (material) {
                 for (const insertIndex in insert) {
                     material.variables.set(insertIndex, insert[insertIndex]);
@@ -42135,8 +42137,8 @@ class SourceEngineVMTLoaderClass {
         this.#materials.set(materialName.toLowerCase(), materialClass);
     }
 }
-const SourceEngineVMTLoader = new SourceEngineVMTLoaderClass();
-registerLoader('SourceEngineVMTLoader', SourceEngineVMTLoader);
+const Source1VmtLoader = new Source1VmtLoaderClass();
+registerLoader('Source1VmtLoader', Source1VmtLoader);
 
 const BSP_HEADER_LUMPS_COUNT = 64;
 function InitLZMALump(reader, lump) {
@@ -42151,7 +42153,7 @@ function InitLZMALump(reader, lump) {
     }
     return reader;
 }
-class SourceEngineBSPLoader extends SourceBinaryLoader {
+class Source1BspLoader extends SourceBinaryLoader {
     parse(repository, fileName, arrayBuffer) {
         const bsp = new SourceBSP({ repository: repository, name: fileName });
         bsp.loader = this;
@@ -42713,7 +42715,7 @@ class SourceEngineBSPLoader extends SourceBinaryLoader {
         for (const [fileName, file] of lumpData) {
             if (fileName.match(/^materials\/.*\.vmt$/)) {
                 const fileContent = this.#getFileData(reader, file);
-                SourceEngineVMTLoader.setMaterial(fileName, fileContent);
+                Source1VmtLoader.setMaterial(fileName, fileContent);
             }
         }
         lump.setLumpData(lumpData);
@@ -42980,7 +42982,7 @@ function readQuaternion48(reader, q = quat.create()) {
     }
     return quat.set(q, tmpx, tmpy, tmpz, tmpw);
 }
-class SourceEngineMDLLoader extends SourceBinaryLoader {
+class Source1MdlLoader extends SourceBinaryLoader {
     #parseAnimSectionOnce = false;
     async load(repository, path) {
         return super.load(repository, path);
@@ -43662,7 +43664,7 @@ class SourceEngineMDLLoader extends SourceBinaryLoader {
         return flexController;
     }
 }
-registerLoader('SourceEngineMDLLoader', SourceEngineMDLLoader);
+registerLoader('Source1MdlLoader', Source1MdlLoader);
 function readMatrix3x4(reader) {
     const matrix = mat4.create();
     matrix[0] = reader.getFloat32();
@@ -43842,7 +43844,7 @@ const ELEMENT_TYPES = [
     '', //TODO verctor4
 ];
 
-class SourceEngineParticleOperators {
+class Source1ParticleOperators {
     static #functions = {}; //TODO: create Map
     static #functionsType = {}; //TODO: create Map
     static getOperator(system, name) {
@@ -43882,7 +43884,7 @@ const PARTICLE_ORIENTATION_FULL_3AXIS_ROTATION = 5;
 /**
  * TODO
  */
-class SourceEngineParticle {
+class Source1Particle {
     currentTime = 0;
     previousElapsedTime = 0;
     name;
@@ -44310,7 +44312,7 @@ class ParamType {
         this.type = type;
     }
 }
-class SourceEngineParticleSystem extends Entity {
+class Source1ParticleSystem extends Entity {
     isParticleSystem = true;
     repository;
     #autoKill = false;
@@ -44641,7 +44643,7 @@ class SourceEngineParticleSystem extends Entity {
                 this.#startParticle(particle, elapsedTime);
                 return particle;
             }
-            const particle = new SourceEngineParticle(/*'Particle ' + */ (this.#randomSeed + this.#particleCount++) % MAX_FLOATS, this);
+            const particle = new Source1Particle(/*'Particle ' + */ (this.#randomSeed + this.#particleCount++) % MAX_FLOATS, this);
             particle.cTime = creationTime;
             this.#initControlPoint(particle);
             this.#startParticle(particle, elapsedTime);
@@ -44787,7 +44789,7 @@ class SourceEngineParticleSystem extends Entity {
             return;
         }
         this.materialName = materialName;
-        const material = await SourceEngineMaterialManager.getMaterial(this.repository, materialName);
+        const material = await Source1MaterialManager.getMaterial(this.repository, materialName);
         if (material) {
             this.material = material;
             material.addUser(this);
@@ -45126,10 +45128,10 @@ class SourceEngineParticleSystem extends Entity {
         return 'Source1ParticleSystem';
     }
 }
-_a = SourceEngineParticleSystem;
-SourceEngineParticleSystem.prototype.isParticleSystem = true;
-registerEntity(SourceEngineParticleSystem);
-Source1ParticleControler.setParticleConstructor(SourceEngineParticleSystem);
+_a = Source1ParticleSystem;
+Source1ParticleSystem.prototype.isParticleSystem = true;
+registerEntity(Source1ParticleSystem);
+Source1ParticleControler.setParticleConstructor(Source1ParticleSystem);
 
 class SourcePCF {
     repository;
@@ -45156,7 +45158,7 @@ class SourcePCF {
             return null;
         }
         const attributes = element.attributes;
-        const ps = new SourceEngineParticleSystem({ repository: this.repository, name: systemName });
+        const ps = new Source1ParticleSystem({ repository: this.repository, name: systemName });
         ps.pcf = this; // Store PCF to load children
         ps.repository = this.repository;
         for (const attribute of attributes) {
@@ -45205,7 +45207,7 @@ class SourcePCF {
         for (let i = 0; i < list.length; ++i) {
             const ope = list[i] /*TODO: check actual value*/;
             if (ope.type == 'DmeParticleOperator') {
-                const operator = SourceEngineParticleOperators.getOperator(system, ope.name);
+                const operator = Source1ParticleOperators.getOperator(system, ope.name);
                 if (operator) {
                     system.addSub(listType, operator, generateRandomUUID());
                     this.addAttributes(operator, ope.attributes);
@@ -45237,7 +45239,7 @@ const data_size = [
     4, 4, 4, 1, 0, 0, 4, 4, 8, 12, 16, 12, 16, 64,
 ];
 const BINARY_FORMAT_POS = 25;
-class SourceEnginePCFLoader extends SourceBinaryLoader {
+class Source1PcfLoader extends SourceBinaryLoader {
     parse(repository, path, content) {
         const pcf = new SourcePCF(repository, path);
         const reader = new BinaryReader(content);
@@ -45413,7 +45415,7 @@ class SourceEnginePCFLoader extends SourceBinaryLoader {
         return null;
     }
 }
-registerLoader('SourceEnginePCFLoader', SourceEnginePCFLoader);
+registerLoader('Source1PcfLoader', Source1PcfLoader);
 class CDmxElement {
     type;
     name;
@@ -45628,14 +45630,14 @@ function makeTabs(count) {
  * DummyEntity
  */
 class DummyEntity extends MapEntity {
-    constructor(classname) {
-        super(classname);
-    }
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
-        const result = /^\*(\d*)$/.exec(kvElement.model);
-        if (result) {
-            this.map.funcBrushesRemoveMe.push({ model: result[1], origin: kvElement.origin ? ParseVector(kvElement.origin) : null });
+        const result = /^\*(\d*)$/.exec(kvElement /*TODO: fix that*/.model);
+        if (result && result.length >= 2) {
+            this.map.funcBrushesRemoveMe.push({
+                model: result[1],
+                origin: ParseVector(vec3.create(), kvElement /*TODO: fix that*/.origin) ?? vec3.create(),
+            });
         }
     }
 }
@@ -45685,16 +45687,13 @@ MapEntities.registerEntity('info_target', DummyEntity);
 MapEntities.registerEntity('math_counter', DummyEntity);
 
 class FuncBrush extends MapEntity {
-    constructor(classname) {
-        super(classname);
-    }
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
-        const result = /^\*(\d*)$/.exec(kvElement.model);
-        if (result) {
-            if (kvElement.rendermode && kvElement.rendermode != 10) {
-                this.map.funcBrushesRemoveMe.push({ model: result[1], origin: ParseVector(kvElement.origin) });
-                console.error(kvElement.origin, kvElement);
+        const result = /^\*(\d*)$/.exec(kvElement /*TODO: fix that*/.model);
+        if (result && result.length >= 2) {
+            if (kvElement /*TODO: fix that*/.rendermode && kvElement /*TODO: fix that*/.rendermode != 10) {
+                this.map.funcBrushesRemoveMe.push({ model: result[1], origin: ParseVector(vec3.create(), kvElement /*TODO: fix that*/.origin) ?? vec3.create() });
+                console.error(kvElement /*TODO: fix that*/.origin, kvElement);
             }
         }
     }
@@ -45712,7 +45711,7 @@ class FuncDetail extends MapEntity {
         super.setKeyValues(kvElement);
         const result = /^\*(\d*)$/.exec(kvElement.model);
         if (result) {
-            this.map.funcBrushesRemoveMe.push({ model: result[1], origin: kvElement.origin ? ParseVector(kvElement.origin) : null });
+            this.map.funcBrushesRemoveMe.push({ model: result[1], origin: ParseVector(vec3.create(), kvElement.origin) });
         }
     }
 }
@@ -45747,19 +45746,25 @@ class FuncDoor extends MapEntity {
     finalDest = vec3.create();
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
-        const result = /^\*(\d*)$/.exec(kvElement.model);
-        if (result) {
-            this.model = { model: result[1], origin: ParseVector(kvElement.origin) };
+        const result = /^\*(\d*)$/.exec(kvElement /*TODO: fix that*/.model);
+        if (result && result.length >= 2) {
+            this.model = { model: result[1], origin: ParseVector(vec3.create(), kvElement /*TODO: fix that*/.origin) ?? vec3.create(), position: vec3.create(), dirty: true };
             //if (kvElement.rendermode && kvElement.rendermode != 10) {
             this.map.funcBrushesRemoveMe.push(this.model);
             //}
         }
-        if (kvElement) {
-            kvElement.movedistance;
-            this.speed = kvElement.speed;
-            vec3.zero(this.moveDir);
-            AngleVectors(ParseAngles(kvElement.movedir), this.moveDir);
-            const vecOBB = this.m.getOBBSize(this.model.model);
+        kvElement /*TODO: fix that*/.movedistance;
+        this.speed = kvElement /*TODO: fix that*/.speed;
+        vec3.zero(this.moveDir);
+        const moveDir = ParseAngles(vec3.create() /*TODO: optimize*/, kvElement /*TODO: fix that*/.movedir);
+        if (moveDir) {
+            AngleVectors(moveDir, this.moveDir);
+        }
+        if (!this.model?.model) {
+            return;
+        }
+        const vecOBB = this.map.getOBBSize(this.model.model);
+        if (vecOBB) {
             this.pos1 = this.getAbsOrigin(); //vec3.scaleAndAdd(vec3.create(), this.getAbsOrigin(), this.moveDir, -movedistance * kvElement.startposition);
             const a = this.moveDir;
             const b = vecOBB;
@@ -45768,7 +45773,7 @@ class FuncDoor extends MapEntity {
             vec3.copy(this.finalDest, this.getAbsOrigin());
         }
     }
-    setInput(inputName, parameter) {
+    setInput(inputName) {
         switch (inputName.toLowerCase()) {
             case 'open':
                 this.inputOpen();
@@ -45784,9 +45789,9 @@ class FuncDoor extends MapEntity {
             */
         }
     }
-    update(map, delta) {
-        super.update(map, delta);
-        if (this.model) {
+    update(scene, camera, delta) {
+        super.update(scene, camera, delta);
+        if (this.model && this.model.origin) {
             if ((this._position[0] != this.model.origin[0]) || (this._position[1] != this.model.origin[1]) || (this._position[2] != this.model.origin[2])) {
                 //vec3.copy(this.model.origin, this._position);
                 this.model.position = this._position;
@@ -45849,7 +45854,7 @@ class MapEntityAmbientLight extends MapEntity {
     }
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
-        this.m.addChild(this.#ambientLight);
+        this.map.addChild(this.#ambientLight);
         this.#ambientLight.position = this._position;
     }
     setKeyValue(key, value) {
@@ -45864,9 +45869,9 @@ class MapEntityAmbientLight extends MapEntity {
                 super.setKeyValue(key, value);
         }
     }
-    update(map, delta) {
-        super.update(map, delta);
-        this.#ambientLight.position = this._position;
+    update(scene, camera, delta) {
+        super.update(scene, camera, delta);
+        this.#ambientLight.setPosition(this._position);
     }
 }
 MapEntities.registerEntity('light_environment', MapEntityAmbientLight);
@@ -45892,7 +45897,7 @@ class MapEntityLight extends MapEntity {
     pointLight = new PointLight();
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
-        this.m.addChild(this.pointLight);
+        this.map.addChild(this.pointLight);
         this.pointLight.position = this._position;
     }
     setKeyValue(key, value) {
@@ -45910,9 +45915,9 @@ class MapEntityLight extends MapEntity {
                 super.setKeyValue(key, value);
         }
     }
-    update(map, delta) {
-        super.update(map, delta);
-        this.pointLight.position = this._position;
+    update(scene, camera, delta) {
+        super.update(scene, camera, delta);
+        this.pointLight.setPosition(this._position);
     }
 }
 MapEntities.registerEntity('light', MapEntityLight);
@@ -45974,7 +45979,7 @@ class PropDynamic extends MapEntity {
         /*model.position = this.position;
         model.quaternion = this._quaternion;*/
         this.model = model;
-        this.m.dynamicProps.addChild(model);
+        this.map.dynamicProps.addChild(model);
         /*.then(
             (model) => {
                 this.map.dynamicProps.addChild(model);
@@ -45992,8 +45997,8 @@ class PropDynamic extends MapEntity {
                 break;
         }
     }
-    update(map, delta) {
-        super.update(map, delta);
+    update(scene, camera, delta) {
+        super.update(scene, camera, delta);
         const model = this.model; //fixme this
         if (model) {
             model.position = this._position;
@@ -46020,7 +46025,7 @@ class PropLightSpot extends MapEntity {
     }
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
-        this.m.addChild(this.spotLight);
+        this.map.addChild(this.spotLight);
         this.spotLight.position = this._position;
         this.spotLight.quaternion = this._quaternion;
     }
@@ -46071,7 +46076,7 @@ class PropLightSpot extends MapEntity {
         AngleQuaternion(this._angles, tempQuaternion$1);
         quat.mul(this._quaternion, SPOTLIGHT_DEFAULT_QUATERNION, tempQuaternion$1);
     }
-    setInput(inputName, parameter) {
+    setInput(input, parameters /*TODO: improve type*/) {
         throw 'code me';
         /*
         switch (inputName.toLowerCase()) {
@@ -46080,9 +46085,9 @@ class PropLightSpot extends MapEntity {
                 break;
         }*/
     }
-    update(map, delta) {
-        super.update(map, delta);
-        this.spotLight.position = this._position;
+    update(scene, camera, delta) {
+        super.update(scene, camera, delta);
+        this.spotLight.setPosition(this._position);
         this.spotLight.quaternion = this._quaternion;
     }
 }
@@ -46212,12 +46217,12 @@ class AnimatedTexture extends Texture {
     }
 }
 
-class SourceEngineVTFLoader extends SourceBinaryLoader {
+class Source1VtfLoader extends SourceBinaryLoader {
     async load(repositoryName, path) {
         return super.load(repositoryName, path);
     }
     parse(repository, fileName, arrayBuffer) {
-        const vtf = new SourceEngineVTF(repository, fileName);
+        const vtf = new Source1Vtf(repository, fileName);
         try {
             const reader = new BinaryReader(arrayBuffer);
             this.#parseHeader(reader, vtf);
@@ -46605,7 +46610,7 @@ class Source1TextureManagerClass {
         if (vtf !== undefined) {
             return vtf;
         }
-        vtf = await new SourceEngineVTFLoader().load(repository, path);
+        vtf = await new Source1VtfLoader().load(repository, path);
         if (vtf) {
             this.#vtfList.set(repository, path, vtf);
         }
@@ -47012,7 +47017,7 @@ let defaultTexture;
 function getDefaultTexture() {
     if (!defaultTexture) {
         defaultTexture = TextureManager.createFlatTexture([255, 255, 255]);
-        defaultTexture.addUser(SourceEngineMaterial);
+        defaultTexture.addUser(Source1Material);
     }
     return defaultTexture;
 }
@@ -47044,7 +47049,7 @@ var TextureRole;
     TextureRole[TextureRole["HoloSpectrum"] = 22] = "HoloSpectrum";
     TextureRole[TextureRole["Scratches"] = 23] = "Scratches";
 })(TextureRole || (TextureRole = {}));
-class SourceEngineMaterial extends Material {
+class Source1Material extends Material {
     #initialized = false;
     #detailTextureTransform = mat4.create();
     vmt;
@@ -47512,7 +47517,7 @@ class SourceEngineMaterial extends Material {
         }
     }
     clone() {
-        return new SourceEngineMaterial(this.repository, this.path, this.vmt, this.parameters);
+        return new Source1Material(this.repository, this.path, this.vmt, this.parameters);
     }
     dispose() {
         super.dispose();
@@ -47651,7 +47656,7 @@ static const char* s_pShaderStateString[] =
 */
 
 //TODO: deprecate
-class CharacterMaterial extends SourceEngineMaterial {
+class CharacterMaterial extends Source1Material {
     #diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
     constructor(repository, path, vmt, params = {}) {
         super(repository, path, vmt, params);
@@ -47674,7 +47679,7 @@ class CharacterMaterial extends SourceEngineMaterial {
         else {
             this.removeDefine('USE_MASK2_MAP'); //TODOv3: set this automaticaly
         }
-        //this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
+        //this.uniforms['phongfresnelranges'] = Source1Material.readColor(parameters['$phongfresnelranges']);
         /*float fPixelFogType = pShaderAPI->GetPixelFogCombo() == 1 ? 1 : 0;
         float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
         float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
@@ -47741,15 +47746,15 @@ class CharacterMaterial extends SourceEngineMaterial {
         return 'source1_character'; //TODO: setup proper shader
     }
 }
-SourceEngineVMTLoader.registerMaterial('character', CharacterMaterial);
+Source1VmtLoader.registerMaterial('character', CharacterMaterial);
 
 const DEFAULT_WEAR_PROGRESS = 0.0; //0.45;
 //TODO: deprecate
-class CustomWeaponMaterial extends SourceEngineMaterial {
+class CustomWeaponMaterial extends Source1Material {
     diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
     constructor(repository, path, vmt, params = {}) {
         super(repository, path, vmt, params);
-        //this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
+        //this.uniforms['phongfresnelranges'] = Source1Material.readColor(parameters['$phongfresnelranges']);
         /*float fPixelFogType = pShaderAPI->GetPixelFogCombo() == 1 ? 1 : 0;
         float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
         float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
@@ -47957,10 +47962,10 @@ class CustomWeaponMaterial extends SourceEngineMaterial {
         return 'source1_customweapon';
     }
 }
-SourceEngineVMTLoader.registerMaterial('customweapon', CustomWeaponMaterial);
+Source1VmtLoader.registerMaterial('customweapon', CustomWeaponMaterial);
 
 vec3.create();
-class EyeRefractMaterial extends SourceEngineMaterial {
+class EyeRefractMaterial extends Source1Material {
     #initialized = false;
     #eyeOrigin = vec3.create();
     #eyeForward = vec3.create();
@@ -48045,9 +48050,9 @@ class EyeRefractMaterial extends SourceEngineMaterial {
         return 'source1_eyerefract';
     }
 }
-SourceEngineVMTLoader.registerMaterial('eyerefract', EyeRefractMaterial);
+Source1VmtLoader.registerMaterial('eyerefract', EyeRefractMaterial);
 
-class LightMappedGenericMaterial extends SourceEngineMaterial {
+class LightMappedGenericMaterial extends Source1Material {
     clone() {
         return new LightMappedGenericMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
@@ -48055,7 +48060,7 @@ class LightMappedGenericMaterial extends SourceEngineMaterial {
         return 'source1_lightmappedgeneric';
     }
 }
-SourceEngineVMTLoader.registerMaterial('lightmappedgeneric', LightMappedGenericMaterial);
+Source1VmtLoader.registerMaterial('lightmappedgeneric', LightMappedGenericMaterial);
 
 /**
  * Add proxy. Copies the value of a variable to another.
@@ -48844,7 +48849,7 @@ class YellowLevel extends Proxy {
 }
 ProxyManager.registerProxy('YellowLevel', YellowLevel);
 
-class RefractMaterial extends SourceEngineMaterial {
+class RefractMaterial extends Source1Material {
     clone() {
         return new RefractMaterial(this.repository, this.path, this.vmt, this.parameters);
     }
@@ -48852,9 +48857,9 @@ class RefractMaterial extends SourceEngineMaterial {
         return 'source1_refract';
     }
 }
-SourceEngineVMTLoader.registerMaterial('refract', RefractMaterial);
+Source1VmtLoader.registerMaterial('refract', RefractMaterial);
 
-class SpriteCardMaterial extends SourceEngineMaterial {
+class SpriteCardMaterial extends Source1Material {
     #initialized = false;
     constructor(repository, path, vmt, params = {}) {
         super(repository, path, vmt, params);
@@ -48913,7 +48918,7 @@ class SpriteCardMaterial extends SourceEngineMaterial {
         return 'source1_spritecard';
     }
 }
-SourceEngineVMTLoader.registerMaterial('spritecard', SpriteCardMaterial);
+Source1VmtLoader.registerMaterial('spritecard', SpriteCardMaterial);
 
 var RenderMode;
 (function (RenderMode) {
@@ -48929,7 +48934,7 @@ var RenderMode;
     RenderMode[RenderMode["WorldGlow"] = 9] = "WorldGlow";
     RenderMode[RenderMode["None"] = 10] = "None";
 })(RenderMode || (RenderMode = {}));
-class SpriteMaterial extends SourceEngineMaterial {
+class SpriteMaterial extends Source1Material {
     #initialized = false;
     constructor(repository, path, vmt, params = {}) {
         super(repository, path, vmt, params);
@@ -48989,9 +48994,9 @@ class SpriteMaterial extends SourceEngineMaterial {
         return 'source1_sprite';
     }
 }
-SourceEngineVMTLoader.registerMaterial('sprite', SpriteMaterial);
+Source1VmtLoader.registerMaterial('sprite', SpriteMaterial);
 
-class UnlitGenericMaterial extends SourceEngineMaterial {
+class UnlitGenericMaterial extends Source1Material {
     #diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
     #initialized = false;
     constructor(repository, path, vmt, params = {}) {
@@ -49019,10 +49024,10 @@ class UnlitGenericMaterial extends SourceEngineMaterial {
         return 'source1_unlitgeneric';
     }
 }
-SourceEngineVMTLoader.registerMaterial('unlitgeneric', UnlitGenericMaterial);
+Source1VmtLoader.registerMaterial('unlitgeneric', UnlitGenericMaterial);
 
 const IDENTITY_MATRIX = mat4.create();
-class UnlitTwoTextureMaterial extends SourceEngineMaterial {
+class UnlitTwoTextureMaterial extends Source1Material {
     #initialized = false;
     init() {
         if (this.#initialized) {
@@ -49068,9 +49073,9 @@ class UnlitTwoTextureMaterial extends SourceEngineMaterial {
         }
     }
 }
-SourceEngineVMTLoader.registerMaterial('unlittwotexture', UnlitTwoTextureMaterial);
+Source1VmtLoader.registerMaterial('unlittwotexture', UnlitTwoTextureMaterial);
 
-class VertexLitGenericMaterial extends SourceEngineMaterial {
+class VertexLitGenericMaterial extends Source1Material {
     #diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
     #initialized = false;
     useSrgb = false;
@@ -49080,7 +49085,7 @@ class VertexLitGenericMaterial extends SourceEngineMaterial {
         }
         this.#initialized = true;
         super.init();
-        //this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
+        //this.uniforms['phongfresnelranges'] = Source1Material.readColor(parameters['$phongfresnelranges']);
         /*float fPixelFogType = pShaderAPI->GetPixelFogCombo() == 1 ? 1 : 0;
         float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
         float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
@@ -49149,10 +49154,10 @@ class VertexLitGenericMaterial extends SourceEngineMaterial {
         return 'source1_vertexlitgeneric';
     }
 }
-SourceEngineVMTLoader.registerMaterial('vertexlitgeneric', VertexLitGenericMaterial);
-//MaterialManager.registerMaterial('VertexLitGeneric', VertexLitGenericMaterial, SourceEngineMaterialManager);
+Source1VmtLoader.registerMaterial('vertexlitgeneric', VertexLitGenericMaterial);
+//MaterialManager.registerMaterial('VertexLitGeneric', VertexLitGenericMaterial, Source1MaterialManager);
 
-class WaterMaterial extends SourceEngineMaterial {
+class WaterMaterial extends Source1Material {
     #initialized = false;
     init() {
         if (this.#initialized) {
@@ -49172,10 +49177,10 @@ class WaterMaterial extends SourceEngineMaterial {
         return 'source1_water';
     }
 }
-SourceEngineVMTLoader.registerMaterial('water', WaterMaterial);
+Source1VmtLoader.registerMaterial('water', WaterMaterial);
 
 //TODO: deprecate
-class WeaponDecalMaterial extends SourceEngineMaterial {
+class WeaponDecalMaterial extends Source1Material {
     #initialized = false;
     init() {
         if (this.#initialized) {
@@ -49374,7 +49379,7 @@ class WeaponDecalMaterial extends SourceEngineMaterial {
         return 'source1_weapondecal';
     }
 }
-SourceEngineVMTLoader.registerMaterial('weapondecal', WeaponDecalMaterial);
+Source1VmtLoader.registerMaterial('weapondecal', WeaponDecalMaterial);
 const WEAPON_DECAL_DEFAULT_PARAMETERS = {
     //$basetexture : [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/stickers/default/sticker_default'],
     //$aotexture : [SHADER_PARAM_TYPE_STRING, 'models/weapons/customization/stickers/default/ao_default'],
@@ -49395,7 +49400,7 @@ const WEAPON_DECAL_DEFAULT_PARAMETERS = {
     $desatbasetint: [SHADER_PARAM_TYPE_FLOAT, 0.0],
 };
 
-class WorldVertexTransitionMaterial extends SourceEngineMaterial {
+class WorldVertexTransitionMaterial extends Source1Material {
     #initialized = false;
     init() {
         if (this.#initialized) {
@@ -49421,9 +49426,9 @@ class WorldVertexTransitionMaterial extends SourceEngineMaterial {
         return 'source1_worldvertextransition';
     }
 }
-SourceEngineVMTLoader.registerMaterial('worldvertextransition', WorldVertexTransitionMaterial);
+Source1VmtLoader.registerMaterial('worldvertextransition', WorldVertexTransitionMaterial);
 
-class SourceEngineParticleOperator {
+class Source1ParticleOperator {
     #parameters = {};
     particleSystem;
     material; //for renderers// TODO: put  in a subclas ?
@@ -49473,7 +49478,7 @@ class SourceEngineParticleOperator {
     doForce(particle, elapsedTime, accumulatedForces, strength) { }
     applyConstraint(particle) { }
     doRender(particle, elapsedTime, material) { }
-    initRenderer( /*particleSystem: SourceEngineParticleSystem*/) { }
+    initRenderer( /*particleSystem: Source1ParticleSystem*/) { }
     updateParticles(particleSystem, particleList, elapsedTime) { }
     emitParticle(creationTime, elapsedTime) {
         return this.particleSystem.createParticle(creationTime, elapsedTime);
@@ -49688,7 +49693,7 @@ class SourceEngineParticleOperator {
 
 const tempVec3_1$2 = vec3.create();
 const tempVec3_2$8 = vec3.create();
-class CollisionViaTraces extends SourceEngineParticleOperator {
+class CollisionViaTraces extends Source1ParticleOperator {
     static functionName = 'Collision via traces';
     #raycaster = new Raycaster();
     #world;
@@ -49767,11 +49772,11 @@ class CollisionViaTraces extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(CollisionViaTraces);
+Source1ParticleOperators.registerOperator(CollisionViaTraces);
 
 const cpPosition$1 = vec3.create();
 const tempVec3_2$7 = vec3.create();
-class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
+class ConstrainDistanceToControlPoint extends Source1ParticleOperator {
     static functionName = 'Constrain distance to control point';
     constructor(system) {
         super(system);
@@ -49813,7 +49818,7 @@ class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(ConstrainDistanceToControlPoint);
+Source1ParticleOperators.registerOperator(ConstrainDistanceToControlPoint);
 
 const a$4 = vec3.create();
 const b$1 = vec3.create();
@@ -49829,7 +49834,7 @@ const b$1 = vec3.create();
     DMXELEMENT_UNPACK_FIELD( "bulge control 0=random 1=orientation of start pnt 2=orientation of end point", "0", int, m_PathParameters.m_nBulgeControl )
     DMXELEMENT_UNPACK_FIELD( "mid point position", "0.5", float, m_PathParameters.m_flMidPoint )
     */
-class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngineParticleOperator {
+class ConstrainDistanceToPathBetweenTwoControlPoints extends Source1ParticleOperator {
     static functionName = 'Constrain distance to path between two control points';
     constructor(system) {
         super(system);
@@ -49855,9 +49860,9 @@ class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngineParticl
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(ConstrainDistanceToPathBetweenTwoControlPoints);
+Source1ParticleOperators.registerOperator(ConstrainDistanceToPathBetweenTwoControlPoints);
 
-class EmitContinuously extends SourceEngineParticleOperator {
+class EmitContinuously extends Source1ParticleOperator {
     static functionName = 'emit continuously';
     remainder = 0;
     constructor(system) {
@@ -49898,12 +49903,12 @@ class EmitContinuously extends SourceEngineParticleOperator {
         return emission_duration != 0 && (currentTime > emission_start_time + emission_duration);
     }
 }
-SourceEngineParticleOperators.registerOperator(EmitContinuously);
+Source1ParticleOperators.registerOperator(EmitContinuously);
 
 /**
  *TODO
  */
-class EmitInstantaneously extends SourceEngineParticleOperator {
+class EmitInstantaneously extends Source1ParticleOperator {
     static functionName = 'emit_instantaneously';
     #emitted = false;
     constructor(system) {
@@ -49946,9 +49951,9 @@ class EmitInstantaneously extends SourceEngineParticleOperator {
         return this.#emitted;
     }
 }
-SourceEngineParticleOperators.registerOperator(EmitInstantaneously);
+Source1ParticleOperators.registerOperator(EmitInstantaneously);
 
-class EmitNoise extends SourceEngineParticleOperator {
+class EmitNoise extends Source1ParticleOperator {
     static functionName = 'emit noise';
     #remainder = 0;
     constructor(system) {
@@ -49991,10 +49996,10 @@ class EmitNoise extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(EmitNoise);
+Source1ParticleOperators.registerOperator(EmitNoise);
 
 const tempVec3$h = vec3.create();
-let AttractToControlPoint$1 = class AttractToControlPoint extends SourceEngineParticleOperator {
+let AttractToControlPoint$1 = class AttractToControlPoint extends Source1ParticleOperator {
     static functionName = 'Pull towards control point';
     constructor(system) {
         super(system);
@@ -50028,9 +50033,9 @@ let AttractToControlPoint$1 = class AttractToControlPoint extends SourceEnginePa
         vec3.add(accumulatedForces, accumulatedForces, ofs);
     }
 };
-SourceEngineParticleOperators.registerOperator(AttractToControlPoint$1);
+Source1ParticleOperators.registerOperator(AttractToControlPoint$1);
 
-let RandomForce$1 = class RandomForce extends SourceEngineParticleOperator {
+let RandomForce$1 = class RandomForce extends Source1ParticleOperator {
     static functionName = 'random force';
     constructor(system) {
         super(system);
@@ -50048,13 +50053,13 @@ let RandomForce$1 = class RandomForce extends SourceEngineParticleOperator {
         vec3.add(accumulatedForces, accumulatedForces, f);
     }
 };
-SourceEngineParticleOperators.registerOperator(RandomForce$1);
+Source1ParticleOperators.registerOperator(RandomForce$1);
 
 const tempVec3$g = vec3.create();
 const tempVec3_2$6 = vec3.create();
 vec3.create();
 quat.create();
-let TwistAroundAxis$1 = class TwistAroundAxis extends SourceEngineParticleOperator {
+let TwistAroundAxis$1 = class TwistAroundAxis extends Source1ParticleOperator {
     static functionName = 'twist around axis';
     constructor(system) {
         super(system);
@@ -50083,9 +50088,9 @@ let TwistAroundAxis$1 = class TwistAroundAxis extends SourceEngineParticleOperat
         vec3.add(accumulatedForces, accumulatedForces, f);
     }
 };
-SourceEngineParticleOperators.registerOperator(TwistAroundAxis$1);
+Source1ParticleOperators.registerOperator(TwistAroundAxis$1);
 
-class AlphaRandom extends SourceEngineParticleOperator {
+class AlphaRandom extends Source1ParticleOperator {
     static functionName = 'Alpha Random';
     constructor(system) {
         super(system);
@@ -50105,9 +50110,9 @@ class AlphaRandom extends SourceEngineParticleOperator {
         particle.startAlpha = alpha;
     }
 }
-SourceEngineParticleOperators.registerOperator(AlphaRandom);
+Source1ParticleOperators.registerOperator(AlphaRandom);
 
-class ColorRandom extends SourceEngineParticleOperator {
+class ColorRandom extends Source1ParticleOperator {
     static functionName = 'Color Random';
     constructor(system) {
         super(system);
@@ -50119,9 +50124,9 @@ class ColorRandom extends SourceEngineParticleOperator {
         particle.initialColor.setColor(particle.color);
     }
 }
-SourceEngineParticleOperators.registerOperator(ColorRandom);
+Source1ParticleOperators.registerOperator(ColorRandom);
 
-class LifetimeFromSequence extends SourceEngineParticleOperator {
+class LifetimeFromSequence extends Source1ParticleOperator {
     static functionName = 'Lifetime From Sequence';
     constructor(system) {
         super(system);
@@ -50142,9 +50147,9 @@ class LifetimeFromSequence extends SourceEngineParticleOperator {
         return true;
     }
 }
-SourceEngineParticleOperators.registerOperator(LifetimeFromSequence);
+Source1ParticleOperators.registerOperator(LifetimeFromSequence);
 
-class LifetimeRandom extends SourceEngineParticleOperator {
+class LifetimeRandom extends Source1ParticleOperator {
     static functionName = 'Lifetime Random';
     constructor(system) {
         super(system);
@@ -50160,10 +50165,10 @@ class LifetimeRandom extends SourceEngineParticleOperator {
         particle.setInitialTTL(RandomFloatExp(lifetime_min, lifetime_max, lifetime_random_exponent));
     }
 }
-SourceEngineParticleOperators.registerOperator(LifetimeRandom);
+Source1ParticleOperators.registerOperator(LifetimeRandom);
 
 const a$3 = vec3.create();
-class PositionAlongPathRandom extends SourceEngineParticleOperator {
+class PositionAlongPathRandom extends Source1ParticleOperator {
     static functionName = 'Position Along Path Random';
     #sequence = 0;
     constructor(system) {
@@ -50200,11 +50205,11 @@ class PositionAlongPathRandom extends SourceEngineParticleOperator {
         this.#sequence = 0;
     }
 }
-SourceEngineParticleOperators.registerOperator(PositionAlongPathRandom);
+Source1ParticleOperators.registerOperator(PositionAlongPathRandom);
 
 const tempVec3_1$1 = vec3.create();
 const tempVec3_2$5 = vec3.create();
-class PositionAlongPathSequential extends SourceEngineParticleOperator {
+class PositionAlongPathSequential extends Source1ParticleOperator {
     static functionName = 'Position Along Path Sequential';
     #sequence = 0;
     constructor(system) {
@@ -50247,12 +50252,12 @@ class PositionAlongPathSequential extends SourceEngineParticleOperator {
         this.#sequence = 0;
     }
 }
-SourceEngineParticleOperators.registerOperator(PositionAlongPathSequential);
+Source1ParticleOperators.registerOperator(PositionAlongPathSequential);
 
 vec3.create();
 vec3.create();
 const DEFAULT_VELOCITY_SCALE$1 = 0; /* TODO: check default value*/
-let PositionFromParentParticles$1 = class PositionFromParentParticles extends SourceEngineParticleOperator {
+let PositionFromParentParticles$1 = class PositionFromParentParticles extends Source1ParticleOperator {
     static functionName = 'Position From Parent Particles';
     #velocitySCale = DEFAULT_VELOCITY_SCALE$1;
     paramChanged(name, param) {
@@ -50293,10 +50298,10 @@ let PositionFromParentParticles$1 = class PositionFromParentParticles extends So
         particle.PositionFromParentParticles = true;
     }
 };
-SourceEngineParticleOperators.registerOperator(PositionFromParentParticles$1);
+Source1ParticleOperators.registerOperator(PositionFromParentParticles$1);
 
 const tempVec3$f = vec3.create();
-class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
+class PositionModifyOffsetRandom extends Source1ParticleOperator {
     static functionName = 'Position Modify Offset Random';
     constructor(system) {
         super(system);
@@ -50348,10 +50353,10 @@ void VectorRotate(const float *in1, const matrix3x4_t& in2, float *out)
         return true;
     }
 }
-SourceEngineParticleOperators.registerOperator(PositionModifyOffsetRandom);
+Source1ParticleOperators.registerOperator(PositionModifyOffsetRandom);
 
 const a$2 = vec3.create();
-class PositionOnModelRandom extends SourceEngineParticleOperator {
+class PositionOnModelRandom extends Source1ParticleOperator {
     static functionName = 'Position on Model Random';
     constructor(system) {
         super(system);
@@ -50397,10 +50402,10 @@ class PositionOnModelRandom extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(PositionOnModelRandom);
+Source1ParticleOperators.registerOperator(PositionOnModelRandom);
 
 const tempVec3$e = vec3.create();
-class PositionWithinBoxRandom extends SourceEngineParticleOperator {
+class PositionWithinBoxRandom extends Source1ParticleOperator {
     static functionName = 'Position Within Box Random';
     constructor(system) {
         super(system);
@@ -50425,10 +50430,10 @@ class PositionWithinBoxRandom extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(PositionWithinBoxRandom);
+Source1ParticleOperators.registerOperator(PositionWithinBoxRandom);
 
 const tempVec3$d = vec3.create();
-class PositionWithinSphereRandom extends SourceEngineParticleOperator {
+class PositionWithinSphereRandom extends Source1ParticleOperator {
     static functionName = 'Position Within Sphere Random';
     constructor(system) {
         super(system);
@@ -50553,10 +50558,10 @@ class PositionWithinSphereRandom extends SourceEngineParticleOperator {
         //vec3.copy(particle.prevPosition, particle.position, particle.velocity);//TODO: fix
     }
 }
-SourceEngineParticleOperators.registerOperator(PositionWithinSphereRandom);
-SourceEngineParticleOperators.registerOperator('Position Within Sphere', PositionWithinSphereRandom);
+Source1ParticleOperators.registerOperator(PositionWithinSphereRandom);
+Source1ParticleOperators.registerOperator('Position Within Sphere', PositionWithinSphereRandom);
 
-class RadiusRandom extends SourceEngineParticleOperator {
+class RadiusRandom extends Source1ParticleOperator {
     static functionName = 'Radius Random';
     constructor(system) {
         super(system);
@@ -50570,10 +50575,10 @@ class RadiusRandom extends SourceEngineParticleOperator {
         particle.setInitialRadius(radius);
     }
 }
-SourceEngineParticleOperators.registerOperator(RadiusRandom);
+Source1ParticleOperators.registerOperator(RadiusRandom);
 
 vec3.create();
-class RemapControlPointToScalar extends SourceEngineParticleOperator {
+class RemapControlPointToScalar extends Source1ParticleOperator {
     static functionName = 'remap control point to scalar';
     constructor(system) {
         super(system);
@@ -50631,7 +50636,7 @@ class RemapControlPointToScalar extends SourceEngineParticleOperator {
         return true;
     }
 }
-SourceEngineParticleOperators.registerOperator(RemapControlPointToScalar);
+Source1ParticleOperators.registerOperator(RemapControlPointToScalar);
 
 const tempVec3_1 = vec3.create();
 const tempVec3_2$4 = vec3.create();
@@ -50639,7 +50644,7 @@ const tempVec3_3$1 = vec3.create();
 const tempVec3_4 = vec3.create();
 const tempVec3_5 = vec3.create();
 vec3.create();
-class RemapControlPointToVector extends SourceEngineParticleOperator {
+class RemapControlPointToVector extends Source1ParticleOperator {
     static functionName = 'remap control point to vector';
     constructor(system) {
         super(system);
@@ -50680,9 +50685,9 @@ class RemapControlPointToVector extends SourceEngineParticleOperator {
         return true;
     }
 }
-SourceEngineParticleOperators.registerOperator(RemapControlPointToVector);
+Source1ParticleOperators.registerOperator(RemapControlPointToVector);
 
-class RemapInitialScalar extends SourceEngineParticleOperator {
+class RemapInitialScalar extends Source1ParticleOperator {
     static functionName = 'Remap Initial Scalar';
     constructor(system) {
         super(system);
@@ -50723,9 +50728,9 @@ class RemapInitialScalar extends SourceEngineParticleOperator {
         return true;
     }
 }
-SourceEngineParticleOperators.registerOperator(RemapInitialScalar);
+Source1ParticleOperators.registerOperator(RemapInitialScalar);
 
-class RemapNoiseToScalar extends SourceEngineParticleOperator {
+class RemapNoiseToScalar extends Source1ParticleOperator {
     static functionName = 'remap noise to scalar';
     constructor(system) {
         super(system);
@@ -50742,7 +50747,7 @@ class RemapNoiseToScalar extends SourceEngineParticleOperator {
         particle.setInitialField(field, noise, false);
     }
 }
-SourceEngineParticleOperators.registerOperator(RemapNoiseToScalar);
+Source1ParticleOperators.registerOperator(RemapNoiseToScalar);
 /*
 
                     'id' 'elementid' '7668c8af-2f2a-4c07-9e93-f9e6123b172e'
@@ -50768,7 +50773,7 @@ SourceEngineParticleOperators.registerOperator(RemapNoiseToScalar);
 const tempQuat$4 = quat.create();
 const tempVec3$c = vec3.create();
 const tempVec3_2$3 = vec3.create();
-class RemapScalarToVector extends SourceEngineParticleOperator {
+class RemapScalarToVector extends Source1ParticleOperator {
     static functionName = 'Remap Scalar to Vector';
     constructor(system) {
         super(system);
@@ -50825,9 +50830,9 @@ class RemapScalarToVector extends SourceEngineParticleOperator {
         return true;
     }
 }
-SourceEngineParticleOperators.registerOperator(RemapScalarToVector);
+Source1ParticleOperators.registerOperator(RemapScalarToVector);
 
-class RotationRandom extends SourceEngineParticleOperator {
+class RotationRandom extends Source1ParticleOperator {
     static functionName = 'Rotation Random';
     constructor(system) {
         super(system);
@@ -50851,9 +50856,9 @@ class RotationRandom extends SourceEngineParticleOperator {
         return true;
     }
 }
-SourceEngineParticleOperators.registerOperator(RotationRandom);
+Source1ParticleOperators.registerOperator(RotationRandom);
 
-class RotationSpeedRandom extends SourceEngineParticleOperator {
+class RotationSpeedRandom extends Source1ParticleOperator {
     static functionName = 'Rotation Speed Random';
     constructor(system) {
         super(system);
@@ -50884,9 +50889,9 @@ class RotationSpeedRandom extends SourceEngineParticleOperator {
         particle.rotationSpeedRoll = rotationSpeed;
     }
 }
-SourceEngineParticleOperators.registerOperator(RotationSpeedRandom);
+Source1ParticleOperators.registerOperator(RotationSpeedRandom);
 
-class RotationYawFlipRandom extends SourceEngineParticleOperator {
+class RotationYawFlipRandom extends Source1ParticleOperator {
     static functionName = 'Rotation Yaw Flip Random';
     constructor(system) {
         super(system);
@@ -50901,9 +50906,9 @@ class RotationYawFlipRandom extends SourceEngineParticleOperator {
         return true;
     }
 }
-SourceEngineParticleOperators.registerOperator(RotationYawFlipRandom);
+Source1ParticleOperators.registerOperator(RotationYawFlipRandom);
 
-class RotationYawRandom extends SourceEngineParticleOperator {
+class RotationYawRandom extends Source1ParticleOperator {
     static functionName = 'Rotation Yaw Random';
     constructor(system) {
         super(system);
@@ -50919,9 +50924,9 @@ class RotationYawRandom extends SourceEngineParticleOperator {
         particle.rotationYaw = yaw_initial + (yaw_offset_max - yaw_offset_min) * Math.random() + yaw_offset_min;
     }
 }
-SourceEngineParticleOperators.registerOperator(RotationYawRandom);
+Source1ParticleOperators.registerOperator(RotationYawRandom);
 
-class SequenceRandom extends SourceEngineParticleOperator {
+class SequenceRandom extends Source1ParticleOperator {
     static functionName = 'Sequence Random';
     constructor(system) {
         super(system);
@@ -50935,9 +50940,9 @@ class SequenceRandom extends SourceEngineParticleOperator {
         particle.setInitialSequence(sequence);
     }
 }
-SourceEngineParticleOperators.registerOperator(SequenceRandom);
+Source1ParticleOperators.registerOperator(SequenceRandom);
 
-class TrailLengthRandom extends SourceEngineParticleOperator {
+class TrailLengthRandom extends Source1ParticleOperator {
     static functionName = 'Trail Length Random';
     constructor(system) {
         super(system);
@@ -50955,7 +50960,7 @@ class TrailLengthRandom extends SourceEngineParticleOperator {
         particle.trailLength = RandomFloatExp(length_min, length_max, length_random_exponent);
     }
 }
-SourceEngineParticleOperators.registerOperator(TrailLengthRandom);
+Source1ParticleOperators.registerOperator(TrailLengthRandom);
 
 const Four_Zeros = 0;
 const Four_Ones = 1;
@@ -51212,7 +51217,7 @@ function NoiseSIMD(x, y, z) {
     return MulSIMD(Four_Twos, SubSIMD(rslt, Four_PointFives));
 }
 
-class VelocityNoise extends SourceEngineParticleOperator {
+class VelocityNoise extends Source1ParticleOperator {
     static functionName = 'Velocity Noise';
     #randX = Math.random() * 1000;
     #randY = Math.random() * 1000;
@@ -51380,7 +51385,7 @@ class VelocityNoise extends SourceEngineParticleOperator {
         return true;
     }
 }
-SourceEngineParticleOperators.registerOperator(VelocityNoise);
+Source1ParticleOperators.registerOperator(VelocityNoise);
 /*
 
 VelocityNoise.prototype.getNoise = function (particle, time) {
@@ -51411,7 +51416,7 @@ const g_SIMD_clear_signmask = 0x7fffffff;
 
 const identityVec3 = vec3.create();
 const tempVec3$b = vec3.create();
-let VelocityRandom$1 = class VelocityRandom extends SourceEngineParticleOperator {
+let VelocityRandom$1 = class VelocityRandom extends Source1ParticleOperator {
     static functionName = 'Velocity Random';
     constructor(system) {
         super(system);
@@ -51458,9 +51463,9 @@ let VelocityRandom$1 = class VelocityRandom extends SourceEngineParticleOperator
         return true;
     }
 };
-SourceEngineParticleOperators.registerOperator(VelocityRandom$1);
+Source1ParticleOperators.registerOperator(VelocityRandom$1);
 
-class AlphaFadeAndDecay extends SourceEngineParticleOperator {
+class AlphaFadeAndDecay extends Source1ParticleOperator {
     static functionName = 'Alpha Fade and Decay';
     constructor(system) {
         super(system);
@@ -51508,9 +51513,9 @@ class AlphaFadeAndDecay extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(AlphaFadeAndDecay);
+Source1ParticleOperators.registerOperator(AlphaFadeAndDecay);
 
-class AlphaFadeInRandom extends SourceEngineParticleOperator {
+class AlphaFadeInRandom extends Source1ParticleOperator {
     static functionName = 'Alpha Fade In Random';
     constructor(system) {
         super(system);
@@ -51543,9 +51548,9 @@ class AlphaFadeInRandom extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(AlphaFadeInRandom);
+Source1ParticleOperators.registerOperator(AlphaFadeInRandom);
 
-class AlphaFadeOutRandom extends SourceEngineParticleOperator {
+class AlphaFadeOutRandom extends Source1ParticleOperator {
     static functionName = 'Alpha Fade Out Random';
     constructor(system) {
         super(system);
@@ -51591,9 +51596,9 @@ class AlphaFadeOutRandom extends SourceEngineParticleOperator {
         particle.alpha = alpha;
     }
 }
-SourceEngineParticleOperators.registerOperator(AlphaFadeOutRandom);
+Source1ParticleOperators.registerOperator(AlphaFadeOutRandom);
 
-class ColorFade extends SourceEngineParticleOperator {
+class ColorFade extends Source1ParticleOperator {
     static functionName = 'Color Fade';
     constructor(system) {
         super(system);
@@ -51642,9 +51647,9 @@ class ColorFade extends SourceEngineParticleOperator {
                     }*/
     }
 }
-SourceEngineParticleOperators.registerOperator(ColorFade);
+Source1ParticleOperators.registerOperator(ColorFade);
 
-let LifespanDecay$1 = class LifespanDecay extends SourceEngineParticleOperator {
+let LifespanDecay$1 = class LifespanDecay extends Source1ParticleOperator {
     static functionName = 'Lifespan Decay';
     doOperate(particle, elapsedTime) {
         if (particle.timeToLive < particle.currentTime) {
@@ -51652,12 +51657,12 @@ let LifespanDecay$1 = class LifespanDecay extends SourceEngineParticleOperator {
         }
     }
 };
-SourceEngineParticleOperators.registerOperator(LifespanDecay$1);
+Source1ParticleOperators.registerOperator(LifespanDecay$1);
 
 const tempVec3$a = vec3.create();
 const tempMat4 = mat4.create();
 const IDENTITY_MAT4$2 = mat4.create();
-let LockToBone$1 = class LockToBone extends SourceEngineParticleOperator {
+let LockToBone$1 = class LockToBone extends Source1ParticleOperator {
     static functionName = 'Movement Lock to Bone';
     constructor(system) {
         super(system);
@@ -51719,12 +51724,12 @@ let LockToBone$1 = class LockToBone extends SourceEngineParticleOperator {
         }
     }
 };
-SourceEngineParticleOperators.registerOperator(LockToBone$1);
+Source1ParticleOperators.registerOperator(LockToBone$1);
 
 const tempVec3$9 = vec3.create();
 const tempVec3_2$2 = vec3.create();
 const tempVec3_3 = vec3.create();
-class MovementBasic extends SourceEngineParticleOperator {
+class MovementBasic extends Source1ParticleOperator {
     static functionName = 'Movement Basic';
     constructor(system) {
         super(system);
@@ -51762,10 +51767,10 @@ class MovementBasic extends SourceEngineParticleOperator {
         this.particleSystem.stepConstraints(particle);
     }
 }
-SourceEngineParticleOperators.registerOperator(MovementBasic);
-SourceEngineParticleOperators.registerOperator('basic movement', MovementBasic);
+Source1ParticleOperators.registerOperator(MovementBasic);
+Source1ParticleOperators.registerOperator('basic movement', MovementBasic);
 
-class MovementLocktoControlPoint extends SourceEngineParticleOperator {
+class MovementLocktoControlPoint extends Source1ParticleOperator {
     static functionName = 'Movement Lock to Control Point';
     static once = false;
     constructor(system) {
@@ -51856,9 +51861,9 @@ class MovementLocktoControlPoint extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(MovementLocktoControlPoint);
+Source1ParticleOperators.registerOperator(MovementLocktoControlPoint);
 //TODO: postion lock to controlpoint
-//SourceEngineParticleOperators.registerOperator('postion lock to controlpoint', MovementLocktoControlPoint);
+//Source1ParticleOperators.registerOperator('postion lock to controlpoint', MovementLocktoControlPoint);
 /*
 Movement Lock to Controlpoint
 Forces the position of a particle to that of some control point on the emitter.
@@ -51882,7 +51887,7 @@ This will update a particle relative to a Control Point's rotation as well as po
 */
 
 const tempVec3$8 = vec3.create();
-class MovementMaxVelocity extends SourceEngineParticleOperator {
+class MovementMaxVelocity extends Source1ParticleOperator {
     static functionName = 'Movement Max Velocity';
     constructor(system) {
         super(system);
@@ -51898,10 +51903,10 @@ class MovementMaxVelocity extends SourceEngineParticleOperator {
         vec3.scaleAndAdd(particle.position, particle.prevPosition, velocity, speed);
     }
 }
-SourceEngineParticleOperators.registerOperator(MovementMaxVelocity);
+Source1ParticleOperators.registerOperator(MovementMaxVelocity);
 
 const tempVec3$7 = vec3.create();
-let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis extends SourceEngineParticleOperator {
+let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis extends Source1ParticleOperator {
     static functionName = 'Movement Rotate Particle Around Axis';
     once = true;
     constructor(system) {
@@ -51950,13 +51955,13 @@ let MovementRotateParticleAroundAxis$1 = class MovementRotateParticleAroundAxis 
         }
     }
 };
-SourceEngineParticleOperators.registerOperator(MovementRotateParticleAroundAxis$1);
+Source1ParticleOperators.registerOperator(MovementRotateParticleAroundAxis$1);
 
 const DEFAULT_ORIENTATION_OFFSET = 0;
 const SPIN_STRENGTH = 1;
 const orientTo2dDirectionTempVelocity = vec2.create();
 //const orientTo2dDirectionTempVec3_1 = vec3.create();
-class OrientTo2dDirection extends SourceEngineParticleOperator {
+class OrientTo2dDirection extends Source1ParticleOperator {
     static functionName = 'Rotation Orient to 2D Direction';
     #rotationOffset = DEFAULT_ORIENTATION_OFFSET;
     #spinStrength = SPIN_STRENGTH;
@@ -51982,9 +51987,9 @@ class OrientTo2dDirection extends SourceEngineParticleOperator {
         particle.rotationRoll = lerp(currentRotation, velocityRotation, this.#spinStrength);
     }
 }
-SourceEngineParticleOperators.registerOperator(OrientTo2dDirection);
+Source1ParticleOperators.registerOperator(OrientTo2dDirection);
 
-let OscillateScalar$1 = class OscillateScalar extends SourceEngineParticleOperator {
+let OscillateScalar$1 = class OscillateScalar extends Source1ParticleOperator {
     static functionName = 'Oscillate Scalar';
     constructor(system) {
         super(system);
@@ -52073,7 +52078,7 @@ let OscillateScalar$1 = class OscillateScalar extends SourceEngineParticleOperat
         }
     }
 };
-SourceEngineParticleOperators.registerOperator(OscillateScalar$1);
+Source1ParticleOperators.registerOperator(OscillateScalar$1);
 
 /*					'oscillation field' 'int' '0'
                     'oscillation field' 'int' '16'
@@ -52082,7 +52087,7 @@ SourceEngineParticleOperators.registerOperator(OscillateScalar$1);
                     'oscillation field' 'int' '7'*/
 const tempVec3Freq = vec3.create();
 const tempVec3Rate = vec3.create();
-let OscillateVector$1 = class OscillateVector extends SourceEngineParticleOperator {
+let OscillateVector$1 = class OscillateVector extends Source1ParticleOperator {
     static functionName = 'Oscillate Vector';
     constructor(system) {
         super(system);
@@ -52211,9 +52216,9 @@ let OscillateVector$1 = class OscillateVector extends SourceEngineParticleOperat
         }
     }
 };
-SourceEngineParticleOperators.registerOperator(OscillateVector$1);
+Source1ParticleOperators.registerOperator(OscillateVector$1);
 
-class RadiusScale extends SourceEngineParticleOperator {
+class RadiusScale extends Source1ParticleOperator {
     static functionName = 'Radius Scale';
     constructor(system) {
         super(system);
@@ -52266,10 +52271,10 @@ class RadiusScale extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(RadiusScale);
+Source1ParticleOperators.registerOperator(RadiusScale);
 
 const a$1 = vec3.create();
-class RemapCPSpeedToCP extends SourceEngineParticleOperator {
+class RemapCPSpeedToCP extends Source1ParticleOperator {
     static functionName = 'remap cp speed to cp';
     constructor(system) {
         super(system);
@@ -52300,10 +52305,10 @@ class RemapCPSpeedToCP extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(RemapCPSpeedToCP);
+Source1ParticleOperators.registerOperator(RemapCPSpeedToCP);
 
 const tempVec3$6 = vec3.create();
-class RemapDistanceToControlPointToScalar extends SourceEngineParticleOperator {
+class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
     static functionName = 'Remap Distance to Control Point to Scalar';
     constructor(system) {
         super(system);
@@ -52345,7 +52350,7 @@ class RemapDistanceToControlPointToScalar extends SourceEngineParticleOperator {
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(RemapDistanceToControlPointToScalar);
+Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToScalar);
 /*
                     'id' 'elementid' '141980ed-af1c-4ffb-9890-b42e39fc0d28'
                     'name' 'string' 'Remap Distance to Control Point to Scalar'
@@ -52370,7 +52375,7 @@ SourceEngineParticleOperators.registerOperator(RemapDistanceToControlPointToScal
                     */
 
 const tempVec3$5 = vec3.create();
-class RemapDistanceToControlPointToVector extends SourceEngineParticleOperator {
+class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
     static functionName = 'Remap Distance to Control Point to Vector';
     constructor(system) {
         super(system);
@@ -52407,7 +52412,7 @@ class RemapDistanceToControlPointToVector extends SourceEngineParticleOperator {
         particle.setField(field, tempVec3$5);
     }
 }
-SourceEngineParticleOperators.registerOperator(RemapDistanceToControlPointToVector);
+Source1ParticleOperators.registerOperator(RemapDistanceToControlPointToVector);
 /*
         "DmeParticleOperator"
         {
@@ -52431,7 +52436,7 @@ SourceEngineParticleOperators.registerOperator(RemapDistanceToControlPointToVect
     ]
                     */
 
-class RemapScalar extends SourceEngineParticleOperator {
+class RemapScalar extends Source1ParticleOperator {
     static functionName = 'remap scalar';
     constructor(system) {
         super(system);
@@ -52458,20 +52463,20 @@ class RemapScalar extends SourceEngineParticleOperator {
         this.setOutputValue(outputField, out, particle);
     }
 }
-SourceEngineParticleOperators.registerOperator(RemapScalar);
+Source1ParticleOperators.registerOperator(RemapScalar);
 
-class RotationBasic extends SourceEngineParticleOperator {
+class RotationBasic extends Source1ParticleOperator {
     static functionName = 'Rotation Basic';
     doOperate(particle, elapsedTime) {
         particle.rotationRoll += particle.rotationSpeedRoll * elapsedTime;
     }
 }
-SourceEngineParticleOperators.registerOperator(RotationBasic);
+Source1ParticleOperators.registerOperator(RotationBasic);
 
 /**
  * TODO
  */
-class RotationSpinRoll extends SourceEngineParticleOperator {
+class RotationSpinRoll extends Source1ParticleOperator {
     static functionName = 'Rotation Spin Roll';
     constructor(system) {
         super(system);
@@ -52542,10 +52547,10 @@ class RotationSpinRoll extends SourceEngineParticleOperator {
         //		particle.rotationRoll += spin_rate_degrees*elapsedTime * Math.PI * Math.PI / 90.0;
     }
 }
-SourceEngineParticleOperators.registerOperator(RotationSpinRoll);
-SourceEngineParticleOperators.registerOperator('Rotation Spin', RotationSpinRoll);
+Source1ParticleOperators.registerOperator(RotationSpinRoll);
+Source1ParticleOperators.registerOperator('Rotation Spin', RotationSpinRoll);
 
-class RotationSpinYaw extends SourceEngineParticleOperator {
+class RotationSpinYaw extends Source1ParticleOperator {
     static functionName = 'Rotation Spin Yaw';
     constructor(system) {
         super(system);
@@ -52556,13 +52561,13 @@ class RotationSpinYaw extends SourceEngineParticleOperator {
         particle.rotationYaw += yaw_rate_degrees * elapsedTime; //TODO
     }
 }
-SourceEngineParticleOperators.registerOperator(RotationSpinYaw);
+Source1ParticleOperators.registerOperator(RotationSpinYaw);
 
 const DEFAULT_SET_CP_ORIENTATION_FOR_PARTICLES = false; /* TODO: check default value*/
 const setChildControlPointsFromParticlePositionsTempQuat = quat.create();
 const setChildControlPointsFromParticlePositionsTempVec3 = vec3.create();
 const setChildControlPointsFromParticlePositionsXUnitVec3 = vec3.fromValues(1, 0, 0);
-class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOperator {
+class SetChildControlPointsFromParticlePositions extends Source1ParticleOperator {
     static functionName = 'Set child control points from particle positions';
     #setCpOrientation = DEFAULT_SET_CP_ORIENTATION_FOR_PARTICLES;
     constructor(system) {
@@ -52604,10 +52609,10 @@ class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOpe
         }
     }
 }
-SourceEngineParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);
+Source1ParticleOperators.registerOperator(SetChildControlPointsFromParticlePositions);
 
 const tempVec3$4 = vec3.create();
-let SetControlPointPositions$1 = class SetControlPointPositions extends SourceEngineParticleOperator {
+let SetControlPointPositions$1 = class SetControlPointPositions extends Source1ParticleOperator {
     static functionName = 'set control point positions';
     constructor(system) {
         super(system);
@@ -52657,11 +52662,11 @@ let SetControlPointPositions$1 = class SetControlPointPositions extends SourceEn
         }
     }
 };
-SourceEngineParticleOperators.registerOperator(SetControlPointPositions$1);
+Source1ParticleOperators.registerOperator(SetControlPointPositions$1);
 
 const tempVec3_min = vec3.create();
 const tempVec3_max = vec3.create();
-class SetControlPointToParticlesCenter extends SourceEngineParticleOperator {
+class SetControlPointToParticlesCenter extends Source1ParticleOperator {
     static functionName = 'Set Control Point to Particles\' Center';
     constructor(system) {
         super(system);
@@ -52678,14 +52683,14 @@ class SetControlPointToParticlesCenter extends SourceEngineParticleOperator {
         this.particleSystem.setChildControlPointPosition(cpNumber, cpNumber, tempVec3_min);
     }
 }
-SourceEngineParticleOperators.registerOperator(SetControlPointToParticlesCenter);
+Source1ParticleOperators.registerOperator(SetControlPointToParticlesCenter);
 
 const TEXTURE_WIDTH = 8;
 
 const tempQuat$3 = quat.create();
 const IDENTITY_QUAT = quat.create();
 const vecDelta = vec3.create();
-class RenderAnimatedSprites extends SourceEngineParticleOperator {
+class RenderAnimatedSprites extends Source1ParticleOperator {
     static functionName = 'render_animated_sprites';
     #orientationType = 0 /*TODO: create enum*/;
     #texture;
@@ -52904,10 +52909,10 @@ class RenderAnimatedSprites extends SourceEngineParticleOperator {
         this.#texture?.removeUser(this);
     }
 }
-SourceEngineParticleOperators.registerOperator(RenderAnimatedSprites);
+Source1ParticleOperators.registerOperator(RenderAnimatedSprites);
 
 const tempVec2$1 = vec2.create();
-class RenderRope extends SourceEngineParticleOperator {
+class RenderRope extends Source1ParticleOperator {
     static functionName = 'render rope';
     #maxParticles = 0;
     texture;
@@ -53044,10 +53049,10 @@ class RenderRope extends SourceEngineParticleOperator {
         this.texture?.removeUser(this);
     }
 }
-SourceEngineParticleOperators.registerOperator(RenderRope);
+Source1ParticleOperators.registerOperator(RenderRope);
 
 // Note: this operator doesn't render anything, it simply orientate the particle for other renderers
-class RenderScreenVelocityRotate extends SourceEngineParticleOperator {
+class RenderScreenVelocityRotate extends Source1ParticleOperator {
     static functionName = 'render_screen_velocity_rotate';
     isScreenVelocityRotate = true;
     constructor(system) {
@@ -53076,9 +53081,9 @@ class RenderScreenVelocityRotate extends SourceEngineParticleOperator {
         // Nothing to do
     }
 }
-SourceEngineParticleOperators.registerOperator(RenderScreenVelocityRotate);
+Source1ParticleOperators.registerOperator(RenderScreenVelocityRotate);
 
-class RenderSpriteTrail extends SourceEngineParticleOperator {
+class RenderSpriteTrail extends Source1ParticleOperator {
     static functionName = 'render_sprite_trail';
     texture;
     geometry;
@@ -53309,7 +53314,7 @@ class RenderSpriteTrail extends SourceEngineParticleOperator {
         this.texture?.removeUser(this);
     }
 }
-SourceEngineParticleOperators.registerOperator(RenderSpriteTrail);
+Source1ParticleOperators.registerOperator(RenderSpriteTrail);
 
 var source1_blend_pixel_fog_const = `
 vec3 BlendPixelFogConst( const vec3 vShaderColor, float pixelFogFactor, const vec3 vFogColor, float fPixelFogType )
@@ -71722,4 +71727,4 @@ class RenderTargetViewer {
     }
 }
 
-export { ATTRIBUTE_CHANGED, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1SoundManager, Source1TextureManager, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceEngineBSPLoader, SourceEngineMDLLoader, SourceEngineMaterial, SourceEngineMaterialManager, SourceEnginePCFLoader, SourceEngineParticleOperators, SourceEngineParticleSystem, SourceEngineVMTLoader, SourceEngineVTF, SourceEngineVTXLoader, SourceEngineVVDLoader, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { ATTRIBUTE_CHANGED, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };

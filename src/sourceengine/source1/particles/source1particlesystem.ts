@@ -9,12 +9,12 @@ import { DEFAULT_MAX_PARTICLES, HARD_MAX_PARTICLES } from '../../common/particle
 import { MAX_FLOATS } from '../../common/particles/randomfloats';
 import { CDmxAttribute } from '../loaders/source1pcfloader';
 import { SourcePCF } from '../loaders/sourcepcf';
-import { SourceEngineMaterial } from '../materials/source1material';
-import { SourceEngineMaterialManager } from '../materials/source1materialmanager';
+import { Source1Material } from '../materials/source1material';
+import { Source1MaterialManager } from '../materials/source1materialmanager';
 import { Color, WHITE } from './color';
 import { PARAM_TYPE_COLOR, PARAM_TYPE_FLOAT, PARAM_TYPE_ID, PARAM_TYPE_INT, PARAM_TYPE_STRING } from './constants';
-import { SourceEngineParticleOperator } from './operators/operator';
-import { SourceEngineParticle } from './particle';
+import { Source1ParticleOperator } from './operators/operator';
+import { Source1Particle } from './particle';
 import { Source1ParticleControler } from './source1particlecontroler';
 
 export const MAX_PARTICLE_CONTROL_POINTS = 64;
@@ -30,16 +30,16 @@ export class ParamType {
 	}
 }
 
-export class SourceEngineParticleSystem extends Entity implements Loopable {
+export class Source1ParticleSystem extends Entity implements Loopable {
 	isParticleSystem = true;
 	repository: string;
 	#autoKill = false;
 	#looping = false;
 	isLoopable: true = true;
 	#sequenceNumber = 0;
-	#materialPromiseResolve?: (value: SourceEngineMaterial) => void;
-	#materialPromise?: Promise<SourceEngineMaterial>;
-	#renderers = new Map<string, SourceEngineParticleOperator>();
+	#materialPromiseResolve?: (value: Source1Material) => void;
+	#materialPromise?: Promise<Source1Material>;
+	#renderers = new Map<string, Source1ParticleOperator>();
 	#particleCount = 0;
 	#randomSeed = Math.floor(Math.random() * Number.MAX_SAFE_INTEGER);
 	#maximumTimeStep = 0.1;
@@ -62,27 +62,27 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	attachmentBone = null;
 
 	// List of living particles
-	#livingParticles: SourceEngineParticle[] = [];// TODO: turn into queue ?
+	#livingParticles: Source1Particle[] = [];// TODO: turn into queue ?
 	// List of dead but reusable particles
-	#poolParticles: SourceEngineParticle[] = [];// TODO: turn into queue ?
+	#poolParticles: Source1Particle[] = [];// TODO: turn into queue ?
 
 	currentOrientation = quat.create();
 	prevOrientation = quat.create();
 
-	emitters: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
-	initializers: Record<string, SourceEngineParticleOperator> = {};// = new Array();//todo transform to map
-	operators: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
-	forces = new Map<string, SourceEngineParticleOperator>();
-	constraints: Record<string, SourceEngineParticleOperator> = {};//new Array();//todo transform to map
+	emitters: Record<string, Source1ParticleOperator> = {};//new Array();//todo transform to map
+	initializers: Record<string, Source1ParticleOperator> = {};// = new Array();//todo transform to map
+	operators: Record<string, Source1ParticleOperator> = {};//new Array();//todo transform to map
+	forces = new Map<string, Source1ParticleOperator>();
+	constraints: Record<string, Source1ParticleOperator> = {};//new Array();//todo transform to map
 	#controlPoints: ControlPoint[] = [];
 
-	#childrenSystems: SourceEngineParticleSystem[] = [];//todo transform to map
+	#childrenSystems: Source1ParticleSystem[] = [];//todo transform to map
 	tempChildren: Record<string, string> = {};//new Array();//todo transform to map
 	operatorRandomSampleOffset = 0;
-	parentSystem?: SourceEngineParticleSystem;
+	parentSystem?: Source1ParticleSystem;
 	firstStep = false;
 	pcf?: SourcePCF;
-	material?: SourceEngineMaterial;
+	material?: Source1Material;
 	materialName?: string;
 	maxParticles: number = DEFAULT_MAX_PARTICLES;
 	resetDelay = 0;
@@ -218,13 +218,13 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		if (!this.isPlaying()) {
 			elapsedTime = 0.0000001;
 		}
-		for (let i = 0; i < SourceEngineParticleSystem.#simulationSteps; i++) {
-			this.#step(elapsedTime / SourceEngineParticleSystem.#simulationSteps);
+		for (let i = 0; i < Source1ParticleSystem.#simulationSteps; i++) {
+			this.#step(elapsedTime / Source1ParticleSystem.#simulationSteps);
 		}
 	}
 
 	#step(elapsedTime: number) {
-		if (!this.isRunning || SourceEngineParticleSystem.#speed == 0) {
+		if (!this.isRunning || Source1ParticleSystem.#speed == 0) {
 			return
 		};
 		elapsedTime = Math.min(elapsedTime, this.#maximumTimeStep);
@@ -240,7 +240,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 			this.#emitInitialParticles(elapsedTime);
 		}
 
-		this.elapsedTime = elapsedTime * this.speed * SourceEngineParticleSystem.#speed;
+		this.elapsedTime = elapsedTime * this.speed * Source1ParticleSystem.#speed;
 		this.#stepOperators1();
 		this.stepControlPoint();
 		this.#stepEmitters();
@@ -374,7 +374,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		}
 	}
 
-	stepConstraints(particle: SourceEngineParticle) {
+	stepConstraints(particle: Source1Particle) {
 		//TODOv3: multiple passes
 		for (const j in this.constraints) {
 			const constraint = this.constraints[j]!;
@@ -408,7 +408,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 				return particle;
 			}
 
-			const particle = new SourceEngineParticle(/*'Particle ' + */(this.#randomSeed + this.#particleCount++) % MAX_FLOATS, this);
+			const particle = new Source1Particle(/*'Particle ' + */(this.#randomSeed + this.#particleCount++) % MAX_FLOATS, this);
 			particle.cTime = creationTime;
 			this.#initControlPoint(particle);
 			this.#startParticle(particle, elapsedTime);
@@ -420,7 +420,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		return null;
 	}
 
-	#startParticle(particle: SourceEngineParticle, elapsedTime: number) {
+	#startParticle(particle: Source1Particle, elapsedTime: number) {
 		this.resetDelay = 0;
 
 		this.#livingParticles.push(particle);
@@ -443,7 +443,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		}
 	}
 
-	#preInitParticle(particle: SourceEngineParticle) {
+	#preInitParticle(particle: Source1Particle) {
 		const radius = this.getParameter('radius') || 1;
 		const color = this.getParameter('color') as Color ?? WHITE;
 
@@ -455,7 +455,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		//particle.creationTime = this.currentTime;
 	}
 
-	#initControlPoint(particle: SourceEngineParticle) {
+	#initControlPoint(particle: Source1Particle) {
 		this.getWorldPosition(particle.cpPosition);
 	}
 
@@ -578,7 +578,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		}
 		this.materialName = materialName;
 
-		const material = await SourceEngineMaterialManager.getMaterial(this.repository, materialName);
+		const material = await Source1MaterialManager.getMaterial(this.repository, materialName);
 		if (material) {
 			this.material = material;
 
@@ -606,7 +606,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		}
 	}
 
-	addSub(type: string, object: SourceEngineParticleOperator, id: string) {
+	addSub(type: string, object: Source1ParticleOperator, id: string) {
 		switch (type) {
 			case 'operator':
 			case 'operators':
@@ -639,15 +639,15 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 
-	#addEmitter(emitter: SourceEngineParticleOperator, id: string) {
+	#addEmitter(emitter: Source1ParticleOperator, id: string) {
 		this.emitters[id] = emitter;
 	}
 
-	#addInitializer(initializer: SourceEngineParticleOperator, id: string) {
+	#addInitializer(initializer: Source1ParticleOperator, id: string) {
 		this.initializers[id] = initializer;
 	}
 
-	#addOperator(operator: SourceEngineParticleOperator, id: string) {
+	#addOperator(operator: Source1ParticleOperator, id: string) {
 		this.operators[id] = operator;
 	}
 
@@ -665,15 +665,15 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	*/
 
 
-	#addForce(force: SourceEngineParticleOperator, id: string) {
+	#addForce(force: Source1ParticleOperator, id: string) {
 		this.forces.set(id, force);
 	}
 
-	#addConstraint(constraint: SourceEngineParticleOperator, id: string) {
+	#addConstraint(constraint: Source1ParticleOperator, id: string) {
 		this.constraints[id] = constraint;
 	}
 
-	#addRenderer(renderer: SourceEngineParticleOperator, id: string) {
+	#addRenderer(renderer: Source1ParticleOperator, id: string) {
 		this.#renderers.set(id, renderer);
 
 		this.#getMaterial().then((material) => renderer.initRenderer());
@@ -734,7 +734,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		this.tempChildren[id] = name;
 	}
 
-	addChildSystem(particleSystem: SourceEngineParticleSystem) {
+	addChildSystem(particleSystem: Source1ParticleSystem) {
 		this.#childrenSystems.push(particleSystem);
 		particleSystem.setParent(this);
 		this.addChild(particleSystem);
@@ -753,7 +753,7 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		//particleSystem.setSkyBox(this.skybox);TODOv3
 	}
 
-	setParent(parentSystem: SourceEngineParticleSystem) {
+	setParent(parentSystem: Source1ParticleSystem) {
 		return this.parentSystem = parentSystem;
 	}
 
@@ -916,17 +916,17 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 	}
 
 	static setSpeed(speed: number) {
-		SourceEngineParticleSystem.#speed = speed;
+		Source1ParticleSystem.#speed = speed;
 	}
 
 	static setSimulationSteps(simulationSteps: number) {
 		simulationSteps = Math.round(simulationSteps);
 		if (simulationSteps > 0 && simulationSteps <= 10) {
-			SourceEngineParticleSystem.#simulationSteps = simulationSteps;
+			Source1ParticleSystem.#simulationSteps = simulationSteps;
 		}
 	}
 
-	getChildrenSystems(): SourceEngineParticleSystem[] {
+	getChildrenSystems(): Source1ParticleSystem[] {
 		return this.#childrenSystems;
 	}
 
@@ -986,6 +986,6 @@ export class SourceEngineParticleSystem extends Entity implements Loopable {
 		return 'Source1ParticleSystem';
 	}
 }
-SourceEngineParticleSystem.prototype.isParticleSystem = true;
-registerEntity(SourceEngineParticleSystem);
-Source1ParticleControler.setParticleConstructor(SourceEngineParticleSystem);
+Source1ParticleSystem.prototype.isParticleSystem = true;
+registerEntity(Source1ParticleSystem);
+Source1ParticleControler.setParticleConstructor(Source1ParticleSystem);

@@ -1,7 +1,7 @@
 import { mat4 } from 'gl-matrix';
 import { DynamicParams } from '../../../../entities/entity';
 import { DEG_TO_RAD } from '../../../../math/constants';
-import { SourceEngineMaterialVariables } from '../source1material';
+import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
@@ -18,7 +18,7 @@ export class TextureScroll extends Proxy {
 	#textureScrollAngle = 0;
 	#textureScale = 1;
 
-	init(variables: Map<string, SourceEngineMaterialVariables>) {
+	init(variables: Map<string, Source1MaterialVariables>) {
 		this.#textureScrollVar = (this.datas['texturescrollvar'] ?? '').toLowerCase();
 		this.#textureScrollRate = toNumber(this.datas['texturescrollrate']) ?? 1;
 		this.#textureScrollAngle = toNumber(String(DEG_TO_RAD * (this.datas['texturescrollangle']))) ?? 0;
@@ -26,7 +26,7 @@ export class TextureScroll extends Proxy {
 		variables.set(this.#textureScrollVar, mat4.create());//TODO: fixme
 	}
 
-	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
 		const rate = this.#textureScrollRate;
 		const angle = this.#textureScrollAngle;
 		const scale = this.#textureScale;

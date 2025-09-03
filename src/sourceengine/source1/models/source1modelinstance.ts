@@ -20,16 +20,16 @@ import { Scene } from '../../../scenes/scene';
 import { JSONObject } from '../../../types';
 import { Interaction } from '../../../utils/interaction';
 import { getRandomInt } from '../../../utils/random';
-import { SourceEngineParticleSystem } from '../export';
 import { STUDIO_ANIM_DELTA } from '../loaders/mdlstudioanim';
 import { MdlStudioSeqDesc } from '../loaders/mdlstudioseqdesc';
-import { SourceAnimation } from '../loaders/sourceanimation';
 import { MdlStudioFlex, MeshTest } from '../loaders/source1mdlloader';
+import { SourceAnimation } from '../loaders/sourceanimation';
 import { MAX_STUDIO_FLEX_DESC } from '../loaders/sourcemdl';
 import { SourceModel } from '../loaders/sourcemodel';
-import { SourceEngineMaterial } from '../materials/source1material';
-import { SourceEngineMaterialManager } from '../materials/source1materialmanager';
+import { Source1Material } from '../materials/source1material';
+import { Source1MaterialManager } from '../materials/source1materialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
+import { Source1ParticleSystem } from '../particles/source1particlesystem';
 
 const defaultMaterial = new MeshBasicMaterial();
 
@@ -441,7 +441,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 			let material: Material | null;
 			let materialName;
 			materialName = this.sourceModel.mdl.getMaterialName(this.#skin, mesh.properties.getNumber('materialId') ?? 0);
-			material = await SourceEngineMaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
+			material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
 			if (this.#materialOverride) {
 				material = this.#materialOverride;
 			}
@@ -472,10 +472,10 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		const materials = new Set<string>();
 
 		for (const mesh of this.#meshes) {
-			let material: SourceEngineMaterial | null;
+			let material: Source1Material | null;
 			let materialName: string;
 			materialName = this.sourceModel.mdl.getMaterialName(Number(skin), mesh.properties.getNumber('materialId') ?? 0);
-			material = await SourceEngineMaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
+			material = await Source1MaterialManager.getMaterial(this.sourceModel.repository, materialName, this.sourceModel.mdl.getTextureDir());
 			if (material) {
 				materials.add(material.path);
 			}
@@ -670,7 +670,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		return 'Source1ModelInstance ' + super.toString();
 	}
 
-	attachSystem(system: SourceEngineParticleSystem, attachmentName = '', cpIndex = 0, offset?: vec3) {
+	attachSystem(system: Source1ParticleSystem, attachmentName = '', cpIndex = 0, offset?: vec3) {
 		this.addChild(system);
 
 		const attachment = this.getAttachment(attachmentName);
@@ -686,7 +686,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	#attachSystemToBone(system: SourceEngineParticleSystem, boneName: string) {
+	#attachSystemToBone(system: Source1ParticleSystem, boneName: string) {
 		if (!this.#skeleton) {
 			return;
 		}

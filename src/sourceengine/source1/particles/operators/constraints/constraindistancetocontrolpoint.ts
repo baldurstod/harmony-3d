@@ -1,17 +1,17 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const cpPosition = vec3.create();
 const tempVec3_2 = vec3.create();
 
-export class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
+export class ConstrainDistanceToControlPoint extends Source1ParticleOperator {
 	static functionName = 'Constrain distance to control point';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		//this.setNameId('Constrain distance to control point');
 		this.addParam('minimum distance', PARAM_TYPE_FLOAT, 0.0);
@@ -26,7 +26,7 @@ export class ConstrainDistanceToControlPoint extends SourceEngineParticleOperato
 		//	DMXELEMENT_UNPACK_FIELD('global center point', '0', bool, m_bGlobalCenter)
 	}
 
-	applyConstraint(particle: SourceEngineParticle) {
+	applyConstraint(particle: Source1Particle) {
 		const minDistance = this.getParameter('minimum distance');
 		const maxDistance = this.getParameter('maximum distance');
 		const offsetOfCenter = this.getParameter('offset of center');
@@ -53,4 +53,4 @@ export class ConstrainDistanceToControlPoint extends SourceEngineParticleOperato
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(ConstrainDistanceToControlPoint);
+Source1ParticleOperators.registerOperator(ConstrainDistanceToControlPoint);

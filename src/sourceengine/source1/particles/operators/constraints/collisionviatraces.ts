@@ -5,10 +5,10 @@ import { Raycaster } from '../../../../../raycasting/raycaster';
 import { Scene } from '../../../../../scenes/scene';
 import { CDmxAttributeValue } from '../../../export';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_STRING, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const COLLISION_MODE_PER_PARTICLE_TRACE = 0;
 const COLLISION_MODE_PER_FRAME_PLANESET = 1;
@@ -18,13 +18,13 @@ const COLLISION_MODE_USE_NEAREST_TRACE = 3;
 const tempVec3_1 = vec3.create();
 const tempVec3_2 = vec3.create();
 
-export class CollisionViaTraces extends SourceEngineParticleOperator {
+export class CollisionViaTraces extends Source1ParticleOperator {
 	static functionName = 'Collision via traces';
 	#raycaster = new Raycaster();
 	#world?: World;
 	#collisionMode: number = -1;/*TODO: create enum*/;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('collision mode', PARAM_TYPE_INT, 0);
 		this.addParam('amount of bounce', PARAM_TYPE_FLOAT, 0.0);
@@ -58,7 +58,7 @@ export class CollisionViaTraces extends SourceEngineParticleOperator {
 		}
 	}
 
-	applyConstraint(particle: SourceEngineParticle) {
+	applyConstraint(particle: Source1Particle) {
 		const world = TESTING && (this.#world ?? this.#getWorld());
 		if (world) {
 			this.#worldCollision(particle, world);
@@ -70,7 +70,7 @@ export class CollisionViaTraces extends SourceEngineParticleOperator {
 		//TODO: do a proper collision
 	}
 
-	#worldCollision(particle: SourceEngineParticle, world: World) {
+	#worldCollision(particle: Source1Particle, world: World) {
 		//const cp = this.particleSystem.getControlPoint(0);
 		//particle.prevPosition[2] = 50;
 
@@ -113,4 +113,4 @@ export class CollisionViaTraces extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(CollisionViaTraces);
+Source1ParticleOperators.registerOperator(CollisionViaTraces);

@@ -1,7 +1,7 @@
 import { RenderFace } from '../../../materials/constants';
 import { GL_MAX, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
-import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt } from './source1material';
+import { Source1VmtLoader } from '../loaders/source1vmtloader';
+import { Source1Material, Source1MaterialParams, Source1MaterialVmt } from './source1material';
 
 enum RenderMode {
 	Normal = 0,			// src
@@ -17,10 +17,10 @@ enum RenderMode {
 	None,				// Don't render.
 }
 
-export class SpriteMaterial extends SourceEngineMaterial {
+export class SpriteMaterial extends Source1Material {
 	#initialized = false;
 
-	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
+	constructor(repository: string, path: string, vmt: Source1MaterialVmt, params: Source1MaterialParams = {}) {
 		super(repository, path, vmt, params);
 
 		// Disable back face culling
@@ -92,4 +92,4 @@ export class SpriteMaterial extends SourceEngineMaterial {
 		return 'source1_sprite';
 	}
 }
-SourceEngineVMTLoader.registerMaterial('sprite', SpriteMaterial);
+Source1VmtLoader.registerMaterial('sprite', SpriteMaterial);

@@ -22,7 +22,7 @@ export interface VTFResourceEntry {
 
 export const VTF_ENTRY_IMAGE_DATAS = 48;
 
-export class SourceEngineVTF {
+export class Source1Vtf {
 	repository: string;
 	fileName: string;
 	versionMaj = 0;

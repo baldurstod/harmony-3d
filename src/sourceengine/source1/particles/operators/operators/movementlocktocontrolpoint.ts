@@ -1,16 +1,16 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
 import { ERROR } from '../../../../../buildoptions';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class MovementLocktoControlPoint extends SourceEngineParticleOperator {
+export class MovementLocktoControlPoint extends Source1ParticleOperator {
 	static functionName = 'Movement Lock to Control Point';
 	static once = false;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 		this.addParam('distance fade range', PARAM_TYPE_INT, 0);
@@ -29,7 +29,7 @@ export class MovementLocktoControlPoint extends SourceEngineParticleOperator {
 		'end_fadeout_max' 'float' '0.400000006'*/
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		if (!MovementLocktoControlPoint.once) {
 			if (ERROR) { console.error('Fix me'); }
 			MovementLocktoControlPoint.once = true;
@@ -115,11 +115,11 @@ export class MovementLocktoControlPoint extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(MovementLocktoControlPoint);
+Source1ParticleOperators.registerOperator(MovementLocktoControlPoint);
 
 
 //TODO: postion lock to controlpoint
-//SourceEngineParticleOperators.registerOperator('postion lock to controlpoint', MovementLocktoControlPoint);
+//Source1ParticleOperators.registerOperator('postion lock to controlpoint', MovementLocktoControlPoint);
 
 /*
 Movement Lock to Controlpoint

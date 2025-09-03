@@ -1,18 +1,18 @@
 import { vec3 } from 'gl-matrix';
 import { vec3RandomBox } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const identityVec3 = vec3.create();
 const tempVec3 = vec3.create();
 
-export class VelocityRandom extends SourceEngineParticleOperator {
+export class VelocityRandom extends Source1ParticleOperator {
 	static functionName = 'Velocity Random';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('control_point_number', PARAM_TYPE_INT, 0);
 		this.addParam('random_speed_min', PARAM_TYPE_FLOAT, 0);
@@ -26,7 +26,7 @@ export class VelocityRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('speed_in_local_coordinate_system_max', '0 0 0', Vector, m_LocalCoordinateSystemSpeedMax)
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const speed_in_local_coordinate_system_min = this.getParameter('speed_in_local_coordinate_system_min');
 		const speed_in_local_coordinate_system_max = this.getParameter('speed_in_local_coordinate_system_max');
 		const random_speed_min = this.getParameter('random_speed_min');
@@ -62,4 +62,4 @@ export class VelocityRandom extends SourceEngineParticleOperator {
 		return true;
 	}
 }
-SourceEngineParticleOperators.registerOperator(VelocityRandom);
+Source1ParticleOperators.registerOperator(VelocityRandom);

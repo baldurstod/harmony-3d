@@ -3,17 +3,17 @@ import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
 import { SourcePCF } from '../loaders/sourcepcf';
-import { SourceEngineParticleSystem } from './source1particlesystem';
+import { Source1ParticleSystem } from './source1particlesystem';
 
 export class Source1ParticleControler {
 	static #loadManifestPromises: Record<string, Promise<boolean>> = {};
 	static speed = 1.0;
 	static visible?: boolean = true;
-	static #systemList: Record<string, SourceEngineParticleSystem> = {};//TODOv3: make map
-	static #activeSystemList = new Map<string, SourceEngineParticleSystem>();
+	static #systemList: Record<string, Source1ParticleSystem> = {};//TODOv3: make map
+	static #activeSystemList = new Map<string, Source1ParticleSystem>();
 	static #pcfList: Record<string, SourcePCF> = {};
 	static #systemNameToPcf: Record<string, Record<string, string> | null> = {};
-	static #sourceEngineParticleSystem: typeof SourceEngineParticleSystem;
+	static #sourceEngineParticleSystem: typeof Source1ParticleSystem;
 	static fixedTime?: number;
 
 	static {
@@ -22,7 +22,7 @@ export class Source1ParticleControler {
 		});
 	}
 
-	static setParticleConstructor(ps: typeof SourceEngineParticleSystem) {
+	static setParticleConstructor(ps: typeof Source1ParticleSystem) {
 		this.#sourceEngineParticleSystem = ps;
 	}
 
@@ -54,7 +54,7 @@ export class Source1ParticleControler {
 	 * Add system TODO
 	 * @param {Number} elapsedTime Step time
 	 */
-	static addSystem2(system: SourceEngineParticleSystem) {
+	static addSystem2(system: Source1ParticleSystem) {
 		this.#systemList[system.id] = system;
 	}
 
@@ -89,7 +89,7 @@ export class Source1ParticleControler {
 	 * Create system
 	 * @param {Number} elapsedTime Step time
 	 */
-	static async #createSystem(repositoryName: string, system: SourceEngineParticleSystem) {
+	static async #createSystem(repositoryName: string, system: Source1ParticleSystem) {
 		const pcfName = await this.#getPcfBySystemName(repositoryName, system.name);
 		if (pcfName) {
 			const pcf = await this.#getPcf(repositoryName, 'particles/' + pcfName);
@@ -167,7 +167,7 @@ export class Source1ParticleControler {
 	/**
 	 * Set a system active
 	 */
-	static setActive(system: SourceEngineParticleSystem) {
+	static setActive(system: Source1ParticleSystem) {
 		if (!system) {
 			return;
 		}
@@ -177,7 +177,7 @@ export class Source1ParticleControler {
 	/**
 	 * Set a system inactive
 	 */
-	static setInactive(system: SourceEngineParticleSystem) {
+	static setInactive(system: Source1ParticleSystem) {
 		if (!system) {
 			return;
 		}
@@ -216,7 +216,7 @@ export class Source1ParticleControler {
 	static async #loadPcf(repositoryName: string, pcfName: string): Promise<SourcePCF> {
 		//TODO: return an empty system if not found?
 		const promise = new Promise<SourcePCF>(resolve => {
-			const pcfLoader = getLoader('SourceEnginePCFLoader');
+			const pcfLoader = getLoader('Source1PcfLoader');
 			new pcfLoader().load(repositoryName, pcfName).then(
 				(pcf: SourcePCF) => resolve(pcf)
 			);

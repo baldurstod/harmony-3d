@@ -2,7 +2,7 @@ import { mat4 } from 'gl-matrix';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 import { MatrixBuildScale, MatrixBuildTranslation } from './texturetransform';
-import { SourceEngineMaterialVariables } from '../source1material';
+import { Source1MaterialVariables } from '../source1material';
 import { DynamicParams } from '../../../../entities/entity';
 
 const TEMP_MAT4 = mat4.create();
@@ -14,7 +14,7 @@ export class BuildingRescueLevel extends Proxy {
 		this.#r = this.datas['resultvar'];
 	}
 
-	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
 		const v = variables.get(this.#r);
 		if (v) {
 			const iAmmo = 200;

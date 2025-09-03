@@ -8,10 +8,10 @@ import { Mesh } from '../../../objects/mesh';
 import { World } from '../../../objects/world';
 import { MapEntities } from '../maps/mapentities';
 import { AngleQuaternion } from '../maps/mapentity';
-import { SourceEngineMaterialManager } from '../materials/source1materialmanager';
+import { Source1MaterialManager } from '../materials/source1materialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
 import { LUMP_DISP_VERTS, LUMP_DISPINFO, LUMP_EDGES, LUMP_ENTITIES, LUMP_FACES, LUMP_GAME_LUMP, LUMP_LEAFFACES, LUMP_LEAFS, LUMP_LIGHTING, LUMP_MODELS, LUMP_SURFEDGES, LUMP_TEXDATA, LUMP_TEXDATA_STRING_DATA, LUMP_TEXINFO, LUMP_VERTEXES } from './sourcebsplump';
-import { SourceEngineBspTree } from './source1bsptree';
+import { Source1BspTree } from './source1bsptree';
 import { SELightMapNode } from './sourcelightmap';
 
 const DISPLACEMENT_DELTA = 1.0; // max distance from start position
@@ -44,7 +44,7 @@ export class SourceBSP extends World {
 	connections = [];
 	mapSpawn = true;
 	lastLeaf = undefined;
-	bspTree: SourceEngineBspTree;
+	bspTree: Source1BspTree;
 	frameCount = 0;
 	mustParseHeader = true;
 	funcBrushesRemoveMe: FuncBrush[] = [];
@@ -61,7 +61,7 @@ export class SourceBSP extends World {
 		super(params);
 		this.repository = params.repository;
 		//this.staticProps = [];
-		this.bspTree = new SourceEngineBspTree(this);
+		this.bspTree = new Source1BspTree(this);
 
 		//this.loadFile(root, fileName);
 		//BspMap.defaultMaterial = BspMap.defaultMaterial ||	SourceEngine.Materials.MaterialManager._loadMaterial('', SourceEngine.Settings.Materials.defaultLightMappedMaterial).then(function(material){BspMap.defaultMaterial = material;});TODOv3
@@ -518,7 +518,7 @@ export class SourceBSP extends World {
 
 			const staticMesh = new Mesh(bufferGeometry, null);
 			staticMesh.name = textureName;
-			SourceEngineMaterialManager.getMaterial(this.repository, textureName).then(
+			Source1MaterialManager.getMaterial(this.repository, textureName).then(
 				(material) => staticMesh.setMaterial(material)
 			).catch(
 				() => console.error('unable to find material ' + textureName)

@@ -4,12 +4,12 @@ import { clamp } from '../../../math/functions';
 import { Bone } from '../../../objects/bone';
 import { SourceParticleFieldValue } from '../../common/particles/types';
 import { Color } from './color';
-import { SourceEngineParticleSystem } from './source1particlesystem';
+import { Source1ParticleSystem } from './source1particlesystem';
 
 /**
  * TODO
  */
-export class SourceEngineParticle {
+export class Source1Particle {
 	currentTime = 0;
 	previousElapsedTime = 0;
 	name: string;
@@ -27,7 +27,7 @@ export class SourceEngineParticle {
 	uMax = 1;
 	vMin = 0;
 	vMax = 1;
-	system: SourceEngineParticleSystem;
+	system: Source1ParticleSystem;
 	cTime = 0;
 	timeToLive: number = 0;
 	initialTimeToLive: number = 0;
@@ -60,7 +60,7 @@ export class SourceEngineParticle {
 	m_flForward = 0;// TODO: rename, default value
 	deltaL = 0;
 
-	constructor(id: number, system: SourceEngineParticleSystem) {
+	constructor(id: number, system: Source1ParticleSystem) {
 		this.name = 'Particle ' + id;
 		this.id = id;
 		//this.offsetPosition = vec3.create();

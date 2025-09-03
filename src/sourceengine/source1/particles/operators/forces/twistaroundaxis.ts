@@ -1,27 +1,27 @@
 import { quat, vec3 } from 'gl-matrix';
 import { ControlPoint } from '../../../../export';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 const tempVec3_2 = vec3.create();
 const tempAxis = vec3.create();
 const tempQuat = quat.create();
 
-export class TwistAroundAxis extends SourceEngineParticleOperator {
+export class TwistAroundAxis extends Source1ParticleOperator {
 	static functionName = 'twist around axis';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('twist axis', PARAM_TYPE_VECTOR, vec3.fromValues(0, 0, 1));
 		this.addParam('amount of force', PARAM_TYPE_FLOAT, 0);
 		this.addParam('object local space axis 0/1', PARAM_TYPE_BOOL, 0);
 	}
 
-	doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: vec3, strength = 1) {
+	doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength = 1) {
 		const axis = this.getParameter('twist axis');//TODO: set in world space
 		const amountOfForce = this.getParameter('amount of force');
 		const localSpace = this.getParameter('object local space axis 0/1');
@@ -44,4 +44,4 @@ export class TwistAroundAxis extends SourceEngineParticleOperator {
 		vec3.add(accumulatedForces, accumulatedForces, f);
 	}
 }
-SourceEngineParticleOperators.registerOperator(TwistAroundAxis);
+Source1ParticleOperators.registerOperator(TwistAroundAxis);

@@ -1,18 +1,18 @@
 import { PARAM_TYPE_FLOAT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class LifetimeFromSequence extends SourceEngineParticleOperator {
+export class LifetimeFromSequence extends Source1ParticleOperator {
 	static functionName = 'Lifetime From Sequence';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('Frames Per Second', PARAM_TYPE_FLOAT, 30);
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const paramFramesPerSecond = this.getParameter('Frames Per Second');
 
 		if (this.particleSystem.material) {
@@ -29,4 +29,4 @@ export class LifetimeFromSequence extends SourceEngineParticleOperator {
 		return true;
 	}
 }
-SourceEngineParticleOperators.registerOperator(LifetimeFromSequence);
+Source1ParticleOperators.registerOperator(LifetimeFromSequence);

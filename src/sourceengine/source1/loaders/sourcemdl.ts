@@ -5,7 +5,7 @@ import { RemapValClamped } from '../../../math/functions';
 import { FlexController } from '../models/flexcontroller';
 import { MdlBone } from './mdlbone';
 import { MdlStudioSeqDesc } from './mdlstudioseqdesc';
-import { MdlStudioFlexController, MdlStudioHitboxSet, ModelTest, SourceEngineMDLLoader } from './source1mdlloader';
+import { MdlStudioFlexController, MdlStudioHitboxSet, ModelTest, Source1MdlLoader } from './source1mdlloader';
 import { Source1ModelInstance } from '../export';
 import { MdlStudioAnim } from './mdlstudioanim';
 
@@ -163,7 +163,7 @@ export class SourceMdl {
 	numflexdesc = 0;
 	readonly attachments: MdlAttachment[] = [];
 	readonly animDesc: MdlStudioAnimDesc[] = [];
-	loader!: SourceEngineMDLLoader;
+	loader!: Source1MdlLoader;
 	reader!: BinaryReader;
 	readonly poseParameters: MdlStudioPoseParam[] = [];
 	readonly hitboxSets: MdlStudioHitboxSet[] = [];
@@ -308,7 +308,7 @@ export class SourceMdl {
 		const modelGroup = this.modelGroups[externalId];
 		if (modelGroup) {
 			const p = new Promise<SourceMdl | null>(async resolve => {
-				const mdlLoader = getLoader('SourceEngineMDLLoader') as typeof SourceEngineMDLLoader;
+				const mdlLoader = getLoader('Source1MdlLoader') as typeof Source1MdlLoader;
 				const mdl = await (new mdlLoader().load(this.repository, modelGroup.name));
 				if (mdl) {
 					//this.externalMdlsV2[externalId] = mdl;

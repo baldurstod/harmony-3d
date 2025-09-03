@@ -1,13 +1,13 @@
 import { vec4 } from 'gl-matrix';
 import { MATERIAL_BLENDING_ADDITIVE } from '../../../materials/material';
-import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt } from './source1material';
+import { Source1VmtLoader } from '../loaders/source1vmtloader';
+import { Source1Material, Source1MaterialParams, Source1MaterialVmt } from './source1material';
 
-export class UnlitGenericMaterial extends SourceEngineMaterial {
+export class UnlitGenericMaterial extends Source1Material {
 	#diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 	#initialized = false;
 
-	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
+	constructor(repository: string, path: string, vmt: Source1MaterialVmt, params: Source1MaterialParams = {}) {
 		super(repository, path, vmt, params);
 
 		this.uniforms['g_ShaderControls'] = vec4.fromValues(1, 0, 1, 0);//TODOv3
@@ -37,4 +37,4 @@ export class UnlitGenericMaterial extends SourceEngineMaterial {
 		return 'source1_unlitgeneric';
 	}
 }
-SourceEngineVMTLoader.registerMaterial('unlitgeneric', UnlitGenericMaterial);
+Source1VmtLoader.registerMaterial('unlitgeneric', UnlitGenericMaterial);

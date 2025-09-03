@@ -1,17 +1,17 @@
 import { vec3 } from 'gl-matrix';
 import { vec3RandomBox } from '../../../../../math/functions';
 import { PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
-export class PositionWithinBoxRandom extends SourceEngineParticleOperator {
+export class PositionWithinBoxRandom extends Source1ParticleOperator {
 	static functionName = 'Position Within Box Random';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 
 		this.addParam('min', PARAM_TYPE_VECTOR, vec3.create());
@@ -22,7 +22,7 @@ export class PositionWithinBoxRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('control point number', '0', int, m_nControlPointNumber)
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const min = this.getParameter('min');
 		const max = this.getParameter('max');
 		const controlPointNumber = this.getParameter('control point number');
@@ -38,4 +38,4 @@ export class PositionWithinBoxRandom extends SourceEngineParticleOperator {
 		}
 	}
 }
-SourceEngineParticleOperators.registerOperator(PositionWithinBoxRandom);
+Source1ParticleOperators.registerOperator(PositionWithinBoxRandom);

@@ -1,16 +1,16 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const a = vec3.create();
 
-export class RemapControlPointToScalar extends SourceEngineParticleOperator {
+export class RemapControlPointToScalar extends Source1ParticleOperator {
 	static functionName = 'remap control point to scalar';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('operator strength scale control point', PARAM_TYPE_INT, 1);
 		this.addParam('input control point number', PARAM_TYPE_INT, 0);
@@ -45,7 +45,7 @@ export class RemapControlPointToScalar extends SourceEngineParticleOperator {
 					*/
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		/*if (!this.firstTime) {
 			console.error('I don\'t know what i\'m supposed to do ' + this.functionName);
 			console.log(this.parameters);
@@ -76,4 +76,4 @@ export class RemapControlPointToScalar extends SourceEngineParticleOperator {
 		return true;
 	}
 }
-SourceEngineParticleOperators.registerOperator(RemapControlPointToScalar);
+Source1ParticleOperators.registerOperator(RemapControlPointToScalar);

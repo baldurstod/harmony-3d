@@ -1,13 +1,13 @@
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class RemapScalar extends SourceEngineParticleOperator {
+export class RemapScalar extends Source1ParticleOperator {
 	static functionName = 'remap scalar';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('input minimum', PARAM_TYPE_FLOAT, 0);
 		this.addParam('input maximum', PARAM_TYPE_FLOAT, 1);
@@ -21,7 +21,7 @@ export class RemapScalar extends SourceEngineParticleOperator {
 		this.addParam('output is scalar of initial random range', PARAM_TYPE_BOOL, 0);
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const inputMinimum = this.getParameter('input minimum');
 		const inputMaximum = this.getParameter('input maximum');
 		const outputMinimum = this.getParameter('output minimum');
@@ -39,4 +39,4 @@ export class RemapScalar extends SourceEngineParticleOperator {
 
 	}
 }
-SourceEngineParticleOperators.registerOperator(RemapScalar);
+Source1ParticleOperators.registerOperator(RemapScalar);

@@ -5,7 +5,7 @@ import { SourceBSP } from './sourcebsp';
 /**
  * BSP Tree
  */
-export class SourceEngineBspTree {
+export class Source1BspTree {
 	map: SourceBSP;
 	visibilityClusters = undefined;
 	clustersCount = 0;

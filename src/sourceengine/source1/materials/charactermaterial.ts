@@ -1,13 +1,13 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { DynamicParams } from '../../../entities/entity';
-import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './source1material';
+import { Source1VmtLoader } from '../loaders/source1vmtloader';
+import { Source1Material, Source1MaterialParams, Source1MaterialVmt, TextureRole } from './source1material';
 
 //TODO: deprecate
-export class CharacterMaterial extends SourceEngineMaterial {
+export class CharacterMaterial extends Source1Material {
 	#diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 
-	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
+	constructor(repository: string, path: string, vmt: Source1MaterialVmt, params: Source1MaterialParams = {}) {
 		super(repository, path, vmt, params);
 		const variables = this.variables;
 
@@ -33,7 +33,7 @@ export class CharacterMaterial extends SourceEngineMaterial {
 
 
 
-		//this.uniforms['phongfresnelranges'] = SourceEngineMaterial.readColor(parameters['$phongfresnelranges']);
+		//this.uniforms['phongfresnelranges'] = Source1Material.readColor(parameters['$phongfresnelranges']);
 		/*float fPixelFogType = pShaderAPI->GetPixelFogCombo() == 1 ? 1 : 0;
 		float fWriteDepthToAlpha = bWriteDepthToAlpha && IsPC() ? 1 : 0;
 		float fWriteWaterFogToDestAlpha = (pShaderAPI->GetPixelFogCombo() == 1 && bWriteWaterFogToAlpha) ? 1 : 0;
@@ -114,4 +114,4 @@ export class CharacterMaterial extends SourceEngineMaterial {
 		return 'source1_character';//TODO: setup proper shader
 	}
 }
-SourceEngineVMTLoader.registerMaterial('character', CharacterMaterial);
+Source1VmtLoader.registerMaterial('character', CharacterMaterial);

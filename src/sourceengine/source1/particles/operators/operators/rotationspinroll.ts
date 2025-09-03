@@ -1,17 +1,17 @@
 import { DEG_TO_RAD, TWO_PI } from '../../../../../math/constants';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 /**
  * TODO
  */
-export class RotationSpinRoll extends SourceEngineParticleOperator {
+export class RotationSpinRoll extends Source1ParticleOperator {
 	static functionName = 'Rotation Spin Roll';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('spin_rate_degrees', PARAM_TYPE_INT, 0);
 		this.addParam('spin_stop_time', PARAM_TYPE_FLOAT, 0);
@@ -21,7 +21,7 @@ export class RotationSpinRoll extends SourceEngineParticleOperator {
 		//DMXELEMENT_UNPACK_FIELD('spin_rate_min', '0', int, m_nSpinRateMinDegrees)
 	}
 
-	doOperate(particle: SourceEngineParticle, elapsedTime: number) {
+	doOperate(particle: Source1Particle, elapsedTime: number) {
 		const m_nSpinRateDegrees = this.getParameter('spin_rate_degrees');
 		const m_fSpinRateStopTime = this.getParameter('spin_stop_time');
 		const m_nSpinRateMinDegrees = this.getParameter('spin_rate_min');
@@ -100,5 +100,5 @@ export class RotationSpinRoll extends SourceEngineParticleOperator {
 		//		particle.rotationRoll += spin_rate_degrees*elapsedTime * Math.PI * Math.PI / 90.0;
 	}
 }
-SourceEngineParticleOperators.registerOperator(RotationSpinRoll);
-SourceEngineParticleOperators.registerOperator('Rotation Spin', RotationSpinRoll);
+Source1ParticleOperators.registerOperator(RotationSpinRoll);
+Source1ParticleOperators.registerOperator('Rotation Spin', RotationSpinRoll);

@@ -1,14 +1,14 @@
 import { TESTING } from '../../../../../buildoptions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class RemapNoiseToScalar extends SourceEngineParticleOperator {
+export class RemapNoiseToScalar extends Source1ParticleOperator {
 	static functionName = 'remap noise to scalar';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		if (TESTING) {
 			console.error('Fix this operator');
@@ -18,7 +18,7 @@ export class RemapNoiseToScalar extends SourceEngineParticleOperator {
 		this.addParam('output maximum', PARAM_TYPE_FLOAT, 0);
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const field = this.getParameter('output field') || 1;
 		const minimum = this.getParameter('output minimum') || 0.0;
 		const maximum = this.getParameter('output maximum') || 1.0;
@@ -29,7 +29,7 @@ export class RemapNoiseToScalar extends SourceEngineParticleOperator {
 		particle.setInitialField(field, noise, false);
 	}
 }
-SourceEngineParticleOperators.registerOperator(RemapNoiseToScalar);
+Source1ParticleOperators.registerOperator(RemapNoiseToScalar);
 
 /*
 

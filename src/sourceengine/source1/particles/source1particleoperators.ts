@@ -1,11 +1,11 @@
-import { SourceEngineParticleOperator } from './operators/operator';
-import { SourceEngineParticleSystem } from './source1particlesystem';
+import { Source1ParticleOperator } from './operators/operator';
+import { Source1ParticleSystem } from './source1particlesystem';
 
-export class SourceEngineParticleOperators {
-	static #functions: Record<string, typeof SourceEngineParticleOperator> = {};//TODO: create Map
+export class Source1ParticleOperators {
+	static #functions: Record<string, typeof Source1ParticleOperator> = {};//TODO: create Map
 	static #functionsType: Record<string, string[]> = {};//TODO: create Map
 
-	static getOperator(system: SourceEngineParticleSystem, name: string) {
+	static getOperator(system: Source1ParticleSystem, name: string) {
 		const n = name.replace(/\_/g, ' ').toLowerCase();
 		if (!this.#functions[n]) {
 			return null;
@@ -13,7 +13,7 @@ export class SourceEngineParticleOperators {
 		return new this.#functions[n](system);
 	}
 
-	static #register(type: string, name: string, className: typeof SourceEngineParticleOperator) {
+	static #register(type: string, name: string, className: typeof Source1ParticleOperator) {
 		this.#functions[name.replace(/\_/g, ' ').toLowerCase()] = className;
 
 		this.#functionsType[type] = this.#functionsType[type] ?? [];
@@ -24,12 +24,12 @@ export class SourceEngineParticleOperators {
 		return this.#functionsType[type] ?? [];
 	}
 
-	static registerOperator(name: string | typeof SourceEngineParticleOperator, operator?: typeof SourceEngineParticleOperator) {
+	static registerOperator(name: string | typeof Source1ParticleOperator, operator?: typeof Source1ParticleOperator) {
 
 		if (operator) {
 			this.#register('Operators', name as string, operator);
 		} else {
-			this.#register('Operators', (name as typeof SourceEngineParticleOperator).functionName, name as typeof SourceEngineParticleOperator);
+			this.#register('Operators', (name as typeof Source1ParticleOperator).functionName, name as typeof Source1ParticleOperator);
 		}
 	}
 

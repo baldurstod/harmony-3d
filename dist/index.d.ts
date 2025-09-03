@@ -21,7 +21,7 @@ import { vec4 } from 'gl-matrix';
  * @comment ouput variable name: resultVar
  */
 export declare class Add extends Proxy_2 {
-    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 export declare function addIncludeSource(name: string, source?: string): void;
@@ -32,28 +32,28 @@ export declare class AgeNoise extends Operator {
     doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
 }
 
-export declare class AlphaFadeAndDecay extends SourceEngineParticleOperator {
+export declare class AlphaFadeAndDecay extends Source1ParticleOperator {
     static functionName: string;
-    constructor(system: SourceEngineParticleSystem);
-    doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+    constructor(system: Source1ParticleSystem);
+    doOperate(particle: Source1Particle, elapsedTime: number): void;
 }
 
-export declare class AlphaFadeInRandom extends SourceEngineParticleOperator {
+export declare class AlphaFadeInRandom extends Source1ParticleOperator {
     static functionName: string;
-    constructor(system: SourceEngineParticleSystem);
-    doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+    constructor(system: Source1ParticleSystem);
+    doOperate(particle: Source1Particle, elapsedTime: number): void;
 }
 
-export declare class AlphaFadeOutRandom extends SourceEngineParticleOperator {
+export declare class AlphaFadeOutRandom extends Source1ParticleOperator {
     static functionName: string;
-    constructor(system: SourceEngineParticleSystem);
-    doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+    constructor(system: Source1ParticleSystem);
+    doOperate(particle: Source1Particle, elapsedTime: number): void;
 }
 
-export declare class AlphaRandom extends SourceEngineParticleOperator {
+export declare class AlphaRandom extends Source1ParticleOperator {
     static functionName: string;
-    constructor(system: SourceEngineParticleSystem);
-    doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+    constructor(system: Source1ParticleSystem);
+    doInit(particle: Source1Particle, elapsedTime: number): void;
 }
 
 export declare class AmbientLight extends Light {
@@ -85,13 +85,13 @@ declare class AnimatedTexture extends Texture {
 export declare class AnimatedTextureProxy extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 export declare class AnimatedWeaponSheen extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 declare class Animation_2 {
@@ -231,7 +231,7 @@ export declare class BeamSegment {
 export declare class BenefactorLevel extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 export declare function Bias(value: number, bias: number): number;
@@ -639,7 +639,7 @@ export declare class BuildingInvis extends Proxy_2 {
 export declare class BuildingRescueLevel extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 /**
@@ -649,7 +649,7 @@ export declare class BuildingRescueLevel extends Proxy_2 {
 export declare class BurnLevel extends Proxy_2 {
     #private;
     init(): void;
-    execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+    execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
 export declare class Camera extends Entity {
@@ -917,9 +917,9 @@ export declare class CDmxElement {
 
 export declare function ceilPowerOfTwo(n: number): number;
 
-export declare class CharacterMaterial extends SourceEngineMaterial {
+export declare class CharacterMaterial extends Source1Material {
     #private;
-    constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
+    constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
     afterProcessProxies(proxyParams?: DynamicParams): void;
     clone(): CharacterMaterial;
     get shaderSource(): string;
@@ -1009,7 +1009,7 @@ declare class Choreography {
      export declare class Clamp extends Proxy_2 {
          #private;
          init(): void;
-         execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+         execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
      }
 
      export declare function clamp(val: number, min: number, max: number): number;
@@ -1034,12 +1034,12 @@ declare class Choreography {
 
      export declare const COLLISION_GROUP_NONE = 0;
 
-     export declare class CollisionViaTraces extends SourceEngineParticleOperator {
+     export declare class CollisionViaTraces extends Source1ParticleOperator {
          #private;
          static functionName: string;
-         constructor(system: SourceEngineParticleSystem);
+         constructor(system: Source1ParticleSystem);
          paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void;
-         applyConstraint(particle: SourceEngineParticle): void;
+         applyConstraint(particle: Source1Particle): void;
      }
 
      declare class Color {
@@ -1078,10 +1078,10 @@ declare class Choreography {
          color?: vec4;
      }
 
-     export declare class ColorFade extends SourceEngineParticleOperator {
+     export declare class ColorFade extends Source1ParticleOperator {
          static functionName: string;
-         constructor(system: SourceEngineParticleSystem);
-         doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+         constructor(system: Source1ParticleSystem);
+         doOperate(particle: Source1Particle, elapsedTime: number): void;
      }
 
      export declare class ColorInterpolate extends Operator {
@@ -1091,10 +1091,10 @@ declare class Choreography {
          doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
      }
 
-     export declare class ColorRandom extends SourceEngineParticleOperator {
+     export declare class ColorRandom extends Source1ParticleOperator {
          static functionName: string;
-         constructor(system: SourceEngineParticleSystem);
-         doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+         constructor(system: Source1ParticleSystem);
+         doInit(particle: Source1Particle, elapsedTime: number): void;
      }
 
      export declare enum ColorSpace {
@@ -1248,16 +1248,16 @@ declare class Choreography {
          applyConstraint(particle: Source2Particle): void;
      }
 
-     export declare class ConstrainDistanceToControlPoint extends SourceEngineParticleOperator {
+     export declare class ConstrainDistanceToControlPoint extends Source1ParticleOperator {
          static functionName: string;
-         constructor(system: SourceEngineParticleSystem);
-         applyConstraint(particle: SourceEngineParticle): void;
+         constructor(system: Source1ParticleSystem);
+         applyConstraint(particle: Source1Particle): void;
      }
 
-     export declare class ConstrainDistanceToPathBetweenTwoControlPoints extends SourceEngineParticleOperator {
+     export declare class ConstrainDistanceToPathBetweenTwoControlPoints extends Source1ParticleOperator {
          static functionName: string;
-         constructor(system: SourceEngineParticleSystem);
-         applyConstraint(particle: SourceEngineParticle): void;
+         constructor(system: Source1ParticleSystem);
+         applyConstraint(particle: Source1Particle): void;
      }
 
      export declare const ContextObserver: ContextObserverClass;
@@ -1432,12 +1432,12 @@ declare class Choreography {
       */
      export declare class CustomSteamImageOnModel extends Proxy_2 {
          #private;
-         execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+         execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
      }
 
-     export declare class CustomWeaponMaterial extends SourceEngineMaterial {
+     export declare class CustomWeaponMaterial extends Source1Material {
          diffuseModulation: vec4;
-         constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
+         constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
          afterProcessProxies(proxyParams: DynamicParams): void;
          set style(style: string);
          setColorUniform(uniformName: string, value: string): void;
@@ -1725,7 +1725,7 @@ declare class Choreography {
       * @comment ouput variable name: resultVar
       */
      export declare class Divide extends Proxy_2 {
-         execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+         execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
      }
 
      export declare const DmeElement = "DmeElement";
@@ -1744,8 +1744,7 @@ declare class Choreography {
       * DummyEntity
       */
      export declare class DummyEntity extends MapEntity {
-         constructor(classname: any);
-         setKeyValues(kvElement: any): void;
+         setKeyValues(kvElement: KvElement): void;
      }
 
      declare type DynamicParam = any;
@@ -1754,10 +1753,10 @@ declare class Choreography {
          [key: string]: DynamicParam;
      };
 
-     export declare class EmitContinuously extends SourceEngineParticleOperator {
+     export declare class EmitContinuously extends Source1ParticleOperator {
          static functionName: string;
          remainder: number;
-         constructor(system: SourceEngineParticleSystem);
+         constructor(system: Source1ParticleSystem);
          doEmit(elapsedTime: number): void;
          finished(): boolean;
      }
@@ -1765,19 +1764,19 @@ declare class Choreography {
      /**
       *TODO
       */
-     export declare class EmitInstantaneously extends SourceEngineParticleOperator {
+     export declare class EmitInstantaneously extends Source1ParticleOperator {
          #private;
          static functionName: string;
-         constructor(system: SourceEngineParticleSystem);
+         constructor(system: Source1ParticleSystem);
          doEmit(elapsedTime: number): void;
          reset(): void;
          finished(): boolean;
      }
 
-     export declare class EmitNoise extends SourceEngineParticleOperator {
+     export declare class EmitNoise extends Source1ParticleOperator {
          #private;
          static functionName: string;
-         constructor(system: SourceEngineParticleSystem);
+         constructor(system: Source1ParticleSystem);
          doEmit(elapsedTime: number): void;
      }
 
@@ -1837,7 +1836,13 @@ declare class Choreography {
          get positionAsString(): string;
          setQuaternion(quaternion: quat): void;
          getQuaternion(quaternion?: quat): vec4;
+         /**
+          * @deprecated Please use `setQuaternion` instead.
+          */
          set quaternion(quaternion: quat);
+         /**
+          * @deprecated Please use `getQuaternion` instead.
+          */
          get quaternion(): quat;
          get quaternionAsString(): string;
          set scale(scale: vec3);
@@ -2081,14 +2086,14 @@ declare class Choreography {
           * @comment ouput variable name: resultVar
           */
          export declare class Equals extends Proxy_2 {
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare function ExponentialDecay(decayTo: number, decayTime: number, dt: number): number;
 
          export declare function exportToBinaryFBX(entity: Entity): Promise<ArrayBufferLike>;
 
-         export declare class EyeRefractMaterial extends SourceEngineMaterial {
+         export declare class EyeRefractMaterial extends Source1Material {
              #private;
              useSrgb: boolean;
              init(): void;
@@ -2261,6 +2266,13 @@ declare class Choreography {
          export declare class FullScreenQuad extends Mesh {
              constructor(params?: any);
          }
+
+         declare type FuncBrush = {
+             model: string;
+             origin: vec3;
+             position?: vec3;
+             dirty?: boolean;
+         };
 
          export declare function generateRandomUUID(): string;
 
@@ -3123,7 +3135,7 @@ declare class Choreography {
          export declare class HeartbeatScale extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          declare class Hitbox {
@@ -3281,7 +3293,7 @@ declare class Choreography {
 
          export declare class IntProxy extends Proxy_2 {
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          /**
@@ -3299,7 +3311,7 @@ declare class Choreography {
          export declare class ItemTintColor extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class JSONLoader {
@@ -3422,6 +3434,11 @@ declare class Choreography {
 
          declare type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
 
+         declare class KvElement {
+             addElement(name: any, value: any): void;
+             toString(linePrefix: any): string;
+         }
+
          export declare function lerp(min: number, max: number, v: number): number;
 
          export declare class LerpEndCapScalar extends Operator {
@@ -3431,25 +3448,25 @@ declare class Choreography {
          }
 
          export declare class LessOrEqualProxy extends Proxy_2 {
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
-         export declare class LifespanDecay extends SourceEngineParticleOperator {
+         export declare class LifespanDecay extends Source1ParticleOperator {
              static functionName: string;
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class LifetimeFromSequence extends SourceEngineParticleOperator {
+         export declare class LifetimeFromSequence extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
-         export declare class LifetimeRandom extends SourceEngineParticleOperator {
+         export declare class LifetimeRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class Light extends Entity {
@@ -3576,7 +3593,7 @@ declare class Choreography {
              is(s: string): boolean;
          }
 
-         export declare class LightMappedGenericMaterial extends SourceEngineMaterial {
+         export declare class LightMappedGenericMaterial extends Source1Material {
              clone(): LightMappedGenericMaterial;
              getShaderSource(): string;
          }
@@ -3627,7 +3644,7 @@ declare class Choreography {
          export declare class LinearRamp extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class LineMaterial extends Material {
@@ -3655,10 +3672,10 @@ declare class Choreography {
              isLocked: () => boolean;
          }
 
-         export declare class LockToBone extends SourceEngineParticleOperator {
+         export declare class LockToBone extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare interface Loopable {
@@ -3744,49 +3761,71 @@ declare class Choreography {
          /**
           * Map entities
           */
-         export declare const MapEntities: {
-             (): void;
-             entities: any;
-             registerEntity(className: any, entityClass: any): void;
-             createEntity(map: any, className: any): any;
-         };
+         export declare class MapEntities {
+             #private;
+             static registerEntity(className: string, entityClass: typeof MapEntity): void;
+             static createEntity(map: SourceBSP, className: string): MapEntity | null;
+         }
 
          /**
           * Map entity
           */
          declare class MapEntity extends Entity {
+             #private;
              static incrementalId: number;
              classname: string;
-             outputs: any[];
+             outputs: MapEntityConnection[];
              readonly m_vecVelocity: vec3;
              m_flMoveDoneTime: number;
              m_flLocalTime: number;
              f: number;
              keys: Map<string, any>;
-             targetName: any;
-             parentName: any;
-             m: any;
-             constructor(classname: string);
-             setKeyValues(kvElement: any): void;
-             setKeyValue(key: any, value: any): void;
-             getValue(key: any): any;
-             addOutput(outputName: any, outputValue: any): void;
-             setInput(input: any, parameter: any): void;
-             getFlag(position: any): number;
-             set map(map: any);
-             get map(): any;
-             move(delta: any): void;
-             getAbsOrigin(): any;
+             targetName: string;
+             parentName?: string;
+             readonly map: SourceBSP;
+             constructor(params: MapEntityParameters);
+             setKeyValues(kvElement: KvElement): void;
+             setKeyValue(key: string, value: MapEntityValue): void;
+             getValue(key: string): MapEntityValue;
+             addOutput(outputName: string, outputValue: any): void;
+             setInput(input: string, parameters: any): void;
+             getFlag(position: number): number;
+             move(delta: vec3): void;
+             getAbsOrigin(): vec3;
              getLocalOrigin(): vec3;
              getLocalVelocity(): vec3;
-             update(map: any, delta: any): void;
-             setParent(parent: any): void;
-             setLocalVelocity(vecVelocity: any): void;
-             setMoveDoneTime(delay: any): void;
+             update(scene: Scene, camera: Camera, delta: number): void;
+             setParent(parent: MapEntity): void;
+             setLocalVelocity(vecVelocity: vec3): void;
+             setMoveDoneTime(delay: number): void;
              getLocalTime(): number;
-             fireOutput(outputName: any): any[];
+             fireOutput(outputName: string): void;
              toString(): string;
          }
+
+         /**
+          * Entity connection
+          */
+         declare class MapEntityConnection {
+             name: string;
+             parameters: string[] | null;
+             constructor(name: string);
+             fromString(stringDatas: string): void;
+             get outputName(): string;
+             getTargetName(): string;
+             getTargetInput(): string;
+             getTargetParameter(): string;
+             getDelay(): string;
+             getFireOnlyOnce(): string;
+             fire(map: SourceBSP): void;
+         }
+
+         declare type MapEntityParameters = EntityParameters & {
+             map: SourceBSP;
+             className: string;
+         };
+
+         declare type MapEntityValue = any;
 
          export declare class Material {
              #private;
@@ -4724,7 +4763,7 @@ declare class Choreography {
          export declare class ModelGlowColor extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class ModelLoader {
@@ -4759,23 +4798,23 @@ declare class Choreography {
              NONE: number;
          };
 
-         export declare class MovementBasic extends SourceEngineParticleOperator {
+         export declare class MovementBasic extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class MovementLocktoControlPoint extends SourceEngineParticleOperator {
+         export declare class MovementLocktoControlPoint extends Source1ParticleOperator {
              static functionName: string;
              static once: boolean;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class MovementMaxVelocity extends SourceEngineParticleOperator {
+         export declare class MovementMaxVelocity extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class MovementRigidAttachToCP extends Operator {
@@ -4784,11 +4823,11 @@ declare class Choreography {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class MovementRotateParticleAroundAxis extends SourceEngineParticleOperator {
+         export declare class MovementRotateParticleAroundAxis extends Source1ParticleOperator {
              static functionName: string;
              once: boolean;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class Multiply extends Node_2 {
@@ -5071,17 +5110,17 @@ declare class Choreography {
              handleEnabled(): void;
          }
 
-         export declare class OrientTo2dDirection extends SourceEngineParticleOperator {
+         export declare class OrientTo2dDirection extends Source1ParticleOperator {
              #private;
              static functionName: string;
              paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void;
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class OscillateScalar extends SourceEngineParticleOperator {
+         export declare class OscillateScalar extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class OscillateScalarSimple extends Operator {
@@ -5090,10 +5129,10 @@ declare class Choreography {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class OscillateVector extends SourceEngineParticleOperator {
+         export declare class OscillateVector extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class OutlinePass extends Pass {
@@ -5492,27 +5531,27 @@ declare class Choreography {
 
          export declare function polygonise(/*GRIDCELL */ grid: GRIDCELL, /*double */ isolevel: number, /*TRIANGLE **/ triangles: TRIANGLE[]): number;
 
-         export declare class PositionAlongPathRandom extends SourceEngineParticleOperator {
+         export declare class PositionAlongPathRandom extends Source1ParticleOperator {
              #private;
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              reset(): void;
          }
 
-         export declare class PositionAlongPathSequential extends SourceEngineParticleOperator {
+         export declare class PositionAlongPathSequential extends Source1ParticleOperator {
              #private;
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              reset(): void;
          }
 
-         export declare class PositionFromParentParticles extends SourceEngineParticleOperator {
+         export declare class PositionFromParentParticles extends Source1ParticleOperator {
              #private;
              static functionName: string;
              paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void;
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class PositionLock extends Operator {
@@ -5522,10 +5561,10 @@ declare class Choreography {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
+         export declare class PositionModifyOffsetRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
@@ -5536,10 +5575,10 @@ declare class Choreography {
              initMultipleOverride(): boolean;
          }
 
-         export declare class PositionOnModelRandom extends SourceEngineParticleOperator {
+         export declare class PositionOnModelRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class PositionWarp extends Operator {
@@ -5548,16 +5587,16 @@ declare class Choreography {
              doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class PositionWithinBoxRandom extends SourceEngineParticleOperator {
+         export declare class PositionWithinBoxRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class PositionWithinSphereRandom extends SourceEngineParticleOperator {
+         export declare class PositionWithinSphereRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare function pow2(n: number): number;
@@ -5633,7 +5672,7 @@ declare class Choreography {
              /**
               * TODO
               */
-             setParams(datas: SourceEngineMaterialVmt, variables: Map<string, SourceEngineMaterialVariables>): void;
+             setParams(datas: Source1MaterialVmt, variables: Map<string, Source1MaterialVariables>): void;
              /**
               * TODO
               */
@@ -5641,13 +5680,13 @@ declare class Choreography {
              /**
               * Dummy function
               */
-             init(variables: Map<string, SourceEngineMaterialVariables>): void;
+             init(variables: Map<string, Source1MaterialVariables>): void;
              /**
               * Dummy function
               */
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
-             setResult(variables: Map<string, SourceEngineMaterialVariables>, value: any): void;
-             getVariable(variables: Map<string, SourceEngineMaterialVariables>, name: string): any;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             setResult(variables: Map<string, Source1MaterialVariables>, value: any): void;
+             getVariable(variables: Map<string, Source1MaterialVariables>, name: string): any;
          }
 
          /**
@@ -5659,10 +5698,10 @@ declare class Choreography {
              static registerProxy(proxyName: string, proxyClass: typeof Proxy_2): void;
          }
 
-         export declare class PullTowardsControlPoint extends SourceEngineParticleOperator {
+         export declare class PullTowardsControlPoint extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
+             constructor(system: Source1ParticleSystem);
+             doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
          }
 
          export declare class QuadraticBezierCurve extends Curve {
@@ -5688,16 +5727,16 @@ declare class Choreography {
              doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class RadiusRandom extends SourceEngineParticleOperator {
+         export declare class RadiusRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class RadiusScale extends SourceEngineParticleOperator {
+         export declare class RadiusScale extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare function radToDeg(rad: number): number;
@@ -5730,10 +5769,10 @@ declare class Choreography {
 
          export declare function RandomFloatExp(min: number, max: number, exponent: number): number;
 
-         export declare class RandomForce extends SourceEngineParticleOperator {
+         export declare class RandomForce extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
+             constructor(system: Source1ParticleSystem);
+             doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
          }
 
          export declare interface RandomPointOnModel {
@@ -5787,7 +5826,7 @@ declare class Choreography {
              intersectEntity(entity: Entity, intersections: Intersection[], recursive: boolean): void;
          }
 
-         export declare class RefractMaterial extends SourceEngineMaterial {
+         export declare class RefractMaterial extends Source1Material {
              clone(): RefractMaterial;
              getShaderSource(): string;
          }
@@ -5800,17 +5839,17 @@ declare class Choreography {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class RemapControlPointToScalar extends SourceEngineParticleOperator {
+         export declare class RemapControlPointToScalar extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
-         export declare class RemapControlPointToVector extends SourceEngineParticleOperator {
+         export declare class RemapControlPointToVector extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
@@ -5820,10 +5859,10 @@ declare class Choreography {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class RemapCPSpeedToCP extends SourceEngineParticleOperator {
+         export declare class RemapCPSpeedToCP extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class RemapCPtoScalar extends Operator {
@@ -5838,29 +5877,29 @@ declare class Choreography {
              doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class RemapDistanceToControlPointToScalar extends SourceEngineParticleOperator {
+         export declare class RemapDistanceToControlPointToScalar extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class RemapDistanceToControlPointToVector extends SourceEngineParticleOperator {
+         export declare class RemapDistanceToControlPointToVector extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class RemapInitialScalar extends SourceEngineParticleOperator {
+         export declare class RemapInitialScalar extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
-         export declare class RemapNoiseToScalar extends SourceEngineParticleOperator {
+         export declare class RemapNoiseToScalar extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class RemapParticleCountToScalar extends Operator {
@@ -5870,16 +5909,16 @@ declare class Choreography {
              doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class RemapScalar extends SourceEngineParticleOperator {
+         export declare class RemapScalar extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class RemapScalarToVector extends SourceEngineParticleOperator {
+         export declare class RemapScalarToVector extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
@@ -5933,12 +5972,12 @@ declare class Choreography {
              dispose(): void;
          }
 
-         export declare class RenderAnimatedSprites extends SourceEngineParticleOperator {
+         export declare class RenderAnimatedSprites extends Source1ParticleOperator {
              #private;
              static functionName: string;
              geometry?: BufferGeometry;
-             constructor(system: SourceEngineParticleSystem);
-             updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
              set maxParticles(maxParticles: number);
              initRenderer(): void;
              dispose(): void;
@@ -6080,14 +6119,14 @@ declare class Choreography {
              render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
          }
 
-         export declare class RenderRope extends SourceEngineParticleOperator {
+         export declare class RenderRope extends Source1ParticleOperator {
              #private;
              static functionName: string;
              texture?: Texture;
              geometry?: BeamBufferGeometry;
              imgData?: Float32Array;
-             constructor(system: SourceEngineParticleSystem);
-             updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
              set maxParticles(maxParticles: number);
              initRenderer(): void;
              dispose(): void;
@@ -6105,11 +6144,11 @@ declare class Choreography {
              init(): void;
          }
 
-         export declare class RenderScreenVelocityRotate extends SourceEngineParticleOperator {
+         export declare class RenderScreenVelocityRotate extends Source1ParticleOperator {
              static functionName: string;
              isScreenVelocityRotate: boolean;
-             constructor(system: SourceEngineParticleSystem);
-             updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
              initRenderer(): void;
          }
 
@@ -6132,14 +6171,14 @@ declare class Choreography {
              init(): void;
          }
 
-         export declare class RenderSpriteTrail extends SourceEngineParticleOperator {
+         export declare class RenderSpriteTrail extends Source1ParticleOperator {
              #private;
              static functionName: string;
              texture?: Texture;
              geometry?: BufferGeometry;
              imgData?: Float32Array;
-             constructor(system: SourceEngineParticleSystem);
-             updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
              initRenderer(): void;
              createParticlesArray(maxParticles: number): void;
              dispose(): void;
@@ -6309,9 +6348,9 @@ declare class Choreography {
              doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class RotationBasic extends SourceEngineParticleOperator {
+         export declare class RotationBasic extends Source1ParticleOperator {
              static functionName: string;
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class RotationControl extends Entity {
@@ -6442,45 +6481,45 @@ declare class Choreography {
              speed?: number;
          };
 
-         export declare class RotationRandom extends SourceEngineParticleOperator {
+         export declare class RotationRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
-         export declare class RotationSpeedRandom extends SourceEngineParticleOperator {
+         export declare class RotationSpeedRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
          /**
           * TODO
           */
-         export declare class RotationSpinRoll extends SourceEngineParticleOperator {
+         export declare class RotationSpinRoll extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class RotationSpinYaw extends SourceEngineParticleOperator {
+         export declare class RotationSpinYaw extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class RotationYawFlipRandom extends SourceEngineParticleOperator {
+         export declare class RotationYawFlipRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
-         export declare class RotationYawRandom extends SourceEngineParticleOperator {
+         export declare class RotationYawRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class SaturatePass extends Pass {
@@ -6548,7 +6587,7 @@ declare class Choreography {
          export declare class SelectFirstIfNonZero extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
              isNonZero(value: any): boolean;
          }
 
@@ -6556,18 +6595,18 @@ declare class Choreography {
              doInit(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class SequenceRandom extends SourceEngineParticleOperator {
+         export declare class SequenceRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
-         export declare class SetChildControlPointsFromParticlePositions extends SourceEngineParticleOperator {
+         export declare class SetChildControlPointsFromParticlePositions extends Source1ParticleOperator {
              #private;
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
+             constructor(system: Source1ParticleSystem);
              paramChanged(name: string, param: CDmxAttributeValue | CDmxAttributeValue[]): void;
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class SetControlPointFromObjectScale extends Operator {
@@ -6584,10 +6623,10 @@ declare class Choreography {
              isPreEmission(): boolean;
          }
 
-         export declare class SetControlPointPositions extends SourceEngineParticleOperator {
+         export declare class SetControlPointPositions extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class SetControlPointsToModelParticles extends Operator {
@@ -6604,10 +6643,10 @@ declare class Choreography {
              isPreEmission(): boolean;
          }
 
-         export declare class SetControlPointToParticlesCenter extends SourceEngineParticleOperator {
+         export declare class SetControlPointToParticlesCenter extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class SetCPOrientationToGroundNormal extends Operator {
@@ -6791,7 +6830,7 @@ declare class Choreography {
          export declare class Sine extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class SkeletalMesh extends Mesh {
@@ -6871,6 +6910,78 @@ declare class Choreography {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
+         export declare class Source1BspLoader extends SourceBinaryLoader {
+             #private;
+             parse(repository: any, fileName: any, arrayBuffer: any): SourceBSP;
+             _parseLumpDirectory(reader: any, bsp: any): void;
+         }
+
+         /**
+          * BSP Tree
+          */
+         declare class Source1BspTree {
+             map: SourceBSP;
+             visibilityClusters: any;
+             clustersCount: number;
+             countRemoveMe: number;
+             leavesRemoveme: any[];
+             constructor(map: SourceBSP);
+             set clusters(clusters: any);
+             getLeafId(pos: any): number;
+             isLeafVisible(fromLeafId: any, toLeafId: any): any;
+             isVisLeaf(leafId: any): boolean;
+             addPropToLeaf(leafId: any, propId: any): void;
+         }
+
+         export declare class Source1Material extends Material {
+             #private;
+             readonly vmt: Source1MaterialVmt;
+             readonly repository: string;
+             readonly path: string;
+             proxyParams: any;
+             proxies: Proxy_2[];
+             variables: Map<string, any>;
+             protected useSrgb: boolean;
+             constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
+             init(): void;
+             getTexture(role: TextureRole, repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture | null;
+             getTexCoords(flCreationTime: number, flCurTime: number, flAgeScale: number, nSequence: number): any;
+             getFrameSpan(sequence: number): any;
+             updateMaterial(time: number, mesh: Mesh): void;
+             _afterProcessProxies(proxyParams?: {}): void;
+             afterProcessProxies(proxyParams?: {}): void;
+             getAlpha(): number;
+             computeModulationColor(out: vec4): vec4;
+             getDefaultParameters(): VmtParameters;
+             sanitizeValue(parameterName: string, value: any): any;
+             setKeyValue(key: string, value: any): void;
+             clone(): Source1Material;
+             dispose(): void;
+         }
+
+         export declare class Source1MaterialManager {
+             #private;
+             static fallbackRepository: string;
+             static getMaterial(repository: string, path: string, searchPaths?: string[]): Promise<Source1Material | null>;
+             static addRepository(repository: string): void;
+             static getMaterialList(): Promise<{
+                 files: any[];
+             }>;
+         }
+
+         declare type Source1MaterialParams = MaterialParams & {};
+
+         declare type Source1MaterialVariables = any;
+
+         declare type Source1MaterialVmt = Record<string, any>;
+
+         export declare class Source1MdlLoader extends SourceBinaryLoader {
+             #private;
+             load(repository: string, path: string): Promise<SourceMdl | null>;
+             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceMdl;
+             _parseAnimSection(reader: BinaryReader, animDesc: MdlStudioAnimDesc, frameIndex: number): MdlStudioAnim[] | null;
+         }
+
          export declare type Source1ModelAnimation = {
              name: string;
              weight: number;
@@ -6922,7 +7033,7 @@ declare class Choreography {
              setBodyPartModel(bodyPartName: string, modelId: number): void;
              getBodyGroups(): Map<string, number>;
              toString(): string;
-             attachSystem(system: SourceEngineParticleSystem, attachmentName?: string, cpIndex?: number, offset?: vec3): void;
+             attachSystem(system: Source1ParticleSystem, attachmentName?: string, cpIndex?: number, offset?: vec3): void;
              getAttachment(attachmentName: string): Bone;
              getBoneByName(boneName: string): Bone;
              set material(material: Material);
@@ -7094,7 +7205,106 @@ declare class Choreography {
           */
          export declare class Source1Multiply extends Proxy_2 {
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
+         }
+
+         /**
+          * TODO
+          */
+         declare class Source1Particle {
+             currentTime: number;
+             previousElapsedTime: number;
+             name: string;
+             id: number;
+             isAlive: boolean;
+             readonly position: vec3;
+             readonly prevPosition: vec3;
+             readonly cpPosition: vec3;
+             readonly cpOrientation: quat;
+             readonly cpOrientationInvert: quat;
+             velocity: vec3;
+             color: Color;
+             initialColor: Color;
+             uMin: number;
+             uMax: number;
+             vMin: number;
+             vMax: number;
+             system: Source1ParticleSystem;
+             cTime: number;
+             timeToLive: number;
+             initialTimeToLive: number;
+             proportionOfLife: number;
+             u: number;
+             v: number;
+             radius: number;
+             initialRadius: number;
+             rotationRoll: number;
+             initialRoll: number;
+             rotationSpeedRoll: number;
+             rotationYaw: number;
+             startAlpha: number;
+             alpha: number;
+             alpha2: number;
+             sequence: number;
+             initialSequence: number;
+             frame: number;
+             PositionFromParentParticles: boolean;
+             posLockedToCP: number;
+             rotLockedToCP: number;
+             trailLength: number;
+             initialCPPosition: vec3 | null;
+             initialVecOffset: vec3 | null;
+             initialCPQuaternion: quat | null;
+             renderScreenVelocityRotate: boolean;
+             initialVec?: vec3;
+             bones?: [Bone, number][];
+             m_flRotateRate: number;
+             m_flForward: number;
+             deltaL: number;
+             constructor(id: number, system: Source1ParticleSystem);
+             step(elapsedTime: number): void;
+             start(): void;
+             die(): void;
+             reset(): void;
+             setInitialField(field: number, value: SourceParticleFieldValue, mulInitial: boolean): void;
+             setField(field: number, value: SourceParticleFieldValue, mulInitial?: boolean, setInitial?: boolean): void;
+             /**
+              * TODO
+              */
+             getField(field?: number, initial?: boolean): SourceParticleFieldValue;
+             /**
+              * TODO
+              */
+             setInitialSequence(sequence: number): void;
+             /**
+              * TODO
+              */
+             setInitialRadius(radius: number): void;
+             /**
+              * TODO
+              */
+             setInitialTTL(timeToLive: number): void;
+             /**
+              * TODO
+              */
+             setInitialColor(color: Color): void;
+             /**
+              * Set particle initial rotation roll.
+              * @param {Number} roll Initial rotation roll.
+              */
+             setInitialRoll(roll: number): void;
+             /**
+              * Get particle world position
+              * @param {vec3|null} The receiving vector. Created if null.
+              * @return {vec3} The world position.
+              */
+             getWorldPos(worldPos: vec3): vec3;
+             /**
+              * Get particle world position
+              * @param {vec3|null} The receiving vector. Created if null.
+              * @return {vec3} The world position.
+              */
+             getLocalPos(worldPos: vec3): vec3;
          }
 
          export declare class Source1ParticleControler {
@@ -7102,7 +7312,7 @@ declare class Choreography {
              static speed: number;
              static visible?: boolean;
              static fixedTime?: number;
-             static setParticleConstructor(ps: typeof SourceEngineParticleSystem): void;
+             static setParticleConstructor(ps: typeof Source1ParticleSystem): void;
              /**
               * Reset all active systems
               */
@@ -7116,12 +7326,12 @@ declare class Choreography {
               * Add system TODO
               * @param {Number} elapsedTime Step time
               */
-             static addSystem2(system: SourceEngineParticleSystem): void;
+             static addSystem2(system: Source1ParticleSystem): void;
              /**
               * Create system
               * @param {Number} elapsedTime Step time
               */
-             static createSystem(repository: string, systemName: string): Promise<SourceEngineParticleSystem>;
+             static createSystem(repository: string, systemName: string): Promise<Source1ParticleSystem>;
              static loadManifest(repository: string): Promise<void>;
              /**
               * Start all systems
@@ -7134,14 +7344,278 @@ declare class Choreography {
              /**
               * Set a system active
               */
-             static setActive(system: SourceEngineParticleSystem): void;
+             static setActive(system: Source1ParticleSystem): void;
              /**
               * Set a system inactive
               */
-             static setInactive(system: SourceEngineParticleSystem): void;
+             static setInactive(system: Source1ParticleSystem): void;
              static setSpeed(s: number): void;
              static getSystemList(): Promise<FileSelectorFile>;
              static set renderSystems(renderSystems: boolean);
+         }
+
+         declare class Source1ParticleOperator {
+             #private;
+             protected particleSystem: Source1ParticleSystem;
+             material?: Material;
+             materialLoaded: boolean;
+             paramList: ParamType[];
+             mesh?: Mesh;
+             constructor(system: Source1ParticleSystem);
+             get functionName(): string;
+             static get functionName(): string;
+             static getFunctionName(): string;
+             initializeParticle(particle: Source1Particle, elapsedTime: number): void;
+             operateParticle(particle: Source1Particle, elapsedTime: number): void;
+             forceParticle(particle: Source1Particle, elapsedTime: number, accumulatedForces?: vec3): void;
+             constraintParticle(particle: Source1Particle): void;
+             doEmit(elapsedTime: number): void;
+             doInit(particle: Source1Particle, elapsedTime: number): void;
+             doOperate(particle: Source1Particle, elapsedTime: number): void;
+             doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces?: vec3, strength?: number): void;
+             applyConstraint(particle: Source1Particle): void;
+             doRender(particle: Source1Particle[], elapsedTime: number, material: Material): void;
+             initRenderer(): void;
+             updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number): void;
+             emitParticle(creationTime: number, elapsedTime: number): Source1Particle;
+             setMaterial(material: Material): void;
+             paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void;
+             setParameter(parameter: string, type: string, value: CDmxAttributeValue | CDmxAttributeValue[]): this;
+             getParameter(parameter: string): any;
+             getParameters(): Record<string, any>;
+             setNameId(name: string): void;
+             doNothing(): void;
+             reset(): void;
+             getOperatorFade(): number;
+             getOperatorStrength(): number;
+             getParamList(): ParamType[];
+             addParam(param: string, type: string, value: CDmxAttributeValue): void;
+             getInputValue(inputField: number, particle: Source1Particle): any;
+             getInputValueAsVector(inputField: number, particle: Source1Particle, v: vec3): void;
+             setOutputValue(outputField: number, value: any, particle: Source1Particle): void;
+             initMultipleOverride(): boolean;
+             finished(): boolean;
+             setOrientationType(orientationType: number): void;
+             dispose(): void;
+         }
+
+         export declare class Source1ParticleOperators {
+             #private;
+             static getOperator(system: Source1ParticleSystem, name: string): Source1ParticleOperator;
+             static getOperators(type: string): string[];
+             static registerOperator(name: string | typeof Source1ParticleOperator, operator?: typeof Source1ParticleOperator): void;
+         }
+
+         export declare class Source1ParticleSystem extends Entity implements Loopable {
+             #private;
+             isParticleSystem: boolean;
+             repository: string;
+             isLoopable: true;
+             animable: boolean;
+             resetable: boolean;
+             paramList: ParamType[];
+             parameters: Record<string, {
+                 type?: any;
+                 value?: string;
+             }>;
+             minimumTickRate: number;
+             maximumTickRate: number;
+             initialParticles: number;
+             currentParticles: number;
+             currentTime: number;
+             elapsedTime: number;
+             previousElapsedTime: number;
+             speed: number;
+             isRunning: boolean;
+             radius: number;
+             attachmentBone: any;
+             currentOrientation: quat;
+             prevOrientation: quat;
+             emitters: Record<string, Source1ParticleOperator>;
+             initializers: Record<string, Source1ParticleOperator>;
+             operators: Record<string, Source1ParticleOperator>;
+             forces: Map<string, Source1ParticleOperator>;
+             constraints: Record<string, Source1ParticleOperator>;
+             tempChildren: Record<string, string>;
+             operatorRandomSampleOffset: number;
+             parentSystem?: Source1ParticleSystem;
+             firstStep: boolean;
+             pcf?: SourcePCF;
+             material?: Source1Material;
+             materialName?: string;
+             maxParticles: number;
+             resetDelay: number;
+             snapshot: any;
+             constructor(params?: any);
+             start(): void;
+             stop(): void;
+             stopChildren(): void;
+             do(action: string, params: any): void;
+             reset(): void;
+             updateChilds(): void;
+             step(elapsedTime: number): void;
+             /**
+              * Step forces for each particle.
+              */
+             stepForces(): void;
+             stepConstraints(particle: Source1Particle): void;
+             createParticle(creationTime: number, elapsedTime: number): Source1Particle;
+             getWorldPosition(vec?: vec3): vec3;
+             stepControlPoint(): void;
+             setParam(element: CDmxAttribute): this;
+             addParam(param: string, type: string, value: any): void;
+             setParameter(parameter: string, type: any, value: any): this;
+             propertyChanged(name: string): void;
+             getParameter(parameterName: string): any;
+             setMaxParticles(max: number): void;
+             setRadius(radius: number): void;
+             setInitialParticles(initial: number): void;
+             setMinimumTickRate(minimum: number): void;
+             setMaximumTickRate(maximum: number): void;
+             setMaterialName(materialName: string): Promise<void>;
+             setSnapshot(snapshot: any): void;
+             addSub(type: string, object: Source1ParticleOperator, id: string): void;
+             getControlPoint(controlPointId: number): ControlPoint | null;
+             getControlPoints(): ControlPoint[];
+             getOwnControlPoint(controlPointId: number): ControlPoint;
+             addTempChild(name: string, id: string): void;
+             addChildSystem(particleSystem: Source1ParticleSystem): void;
+             setParent(parentSystem: Source1ParticleSystem): Source1ParticleSystem;
+             /**
+              * Orient all particles relative to control point #0.
+              */
+             setCpOrientation(): void;
+             /**
+              * Set control point orientation
+              * @param (Object quat) orientation New orientation
+              */
+             setOrientation(orientation: quat): void;
+             setChildControlPointPosition(first: number, last: number, position: vec3): void;
+             setChildControlPointOrientation(first: number, last: number, orientation: quat): void;
+             getParticle(index?: number): Source1Particle;
+             getControlPointPosition(cpId: number): vec3;
+             setControlPointPosition(cpId: number, position: vec3): void;
+             setControlPointParent(controlPointId: number, parentControlPointId: number): void;
+             getWorldQuaternion(q?: quat): quat;
+             getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
+             set autoKill(autoKill: boolean);
+             get autoKill(): boolean;
+             setLooping(looping: boolean): void;
+             getLooping(): boolean;
+             dispose(): void;
+             getBounds(min?: vec3, max?: vec3): void;
+             static setSpeed(speed: number): void;
+             static setSimulationSteps(simulationSteps: number): void;
+             getChildrenSystems(): Source1ParticleSystem[];
+             getActiveParticlesCount(): number;
+             buildContextMenu(): {
+                 visibility: {
+                     i18n: string;
+                     selected: boolean;
+                     f: () => void;
+                 };
+                 remove: {
+                     i18n: string;
+                     f: () => void;
+                 };
+                 destroy: {
+                     i18n: string;
+                     f: () => void;
+                 };
+                 remove_more: {
+                     i18n: string;
+                     submenu: {
+                         i18n: string;
+                         f: () => void;
+                     }[];
+                 };
+                 name: {
+                     i18n: string;
+                     f: () => void;
+                 };
+                 add: {
+                     i18n: string;
+                     submenu: any;
+                 };
+                 entitynull_1: any;
+                 position: {
+                     i18n: string;
+                     f: () => void;
+                 };
+                 translate: {
+                     i18n: string;
+                     f: () => void;
+                 };
+                 reset_position: {
+                     i18n: string;
+                     f: () => vec3;
+                 };
+                 entitynull_2: any;
+                 quaternion: {
+                     i18n: string;
+                     f: () => void;
+                 };
+                 rotate: {
+                     i18n: string;
+                     submenu: {
+                         i18n: string;
+                         f: () => void;
+                     }[];
+                 };
+                 reset_rotation: {
+                     i18n: string;
+                     f: () => quat;
+                 };
+                 entitynull_3: any;
+                 scale: {
+                     i18n: string;
+                     f: () => void;
+                 };
+                 reset_scale: {
+                     i18n: string;
+                     f: () => vec3;
+                 };
+                 entitynull_4: any;
+                 wireframe: {
+                     i18n: string;
+                     selected: boolean;
+                     f: () => void;
+                 };
+                 cast_shadows: {
+                     i18n: string;
+                     selected: boolean;
+                     f: () => void;
+                 };
+                 receive_shadows: {
+                     i18n: string;
+                     selected: boolean;
+                     f: () => void;
+                 };
+                 material: {
+                     i18n: string;
+                     submenu: {};
+                 };
+             } & {
+                 SourceEngineParticleSystem_1: any;
+                 startStop: {
+                     i18n: string;
+                     f: () => void;
+                 };
+                 reset: {
+                     i18n: string;
+                     f: () => void;
+                 };
+             };
+             toJSON(): any;
+             static constructFromJSON(json: any, entities: Map<string, Entity>, loadedPromise: Promise<void>): Promise<Source1ParticleSystem>;
+             static getEntityName(): string;
+         }
+
+         export declare class Source1PcfLoader extends SourceBinaryLoader {
+             #private;
+             parse(repository: string, path: string, content: ArrayBuffer): SourcePCF | null;
+             getString(pcf: SourcePCF, index: number): string;
+             getElement(pcf: SourcePCF, index: number): CDmxElement | null;
          }
 
          export declare class Source1SoundManager {
@@ -7163,7 +7637,7 @@ declare class Choreography {
              fallbackRepository: string;
              constructor();
              getTexture(repository: string, path: string, needCubeMap?: boolean, srgb?: boolean): AnimatedTexture | null;
-             getVtf(repository: string, path: string): Promise<SourceEngineVTF | null>;
+             getVtf(repository: string, path: string): Promise<Source1Vtf | null>;
              getTextureAsync(repository: string, path: string, frame: number, needCubeMap: boolean, defaultTexture?: Texture, srgb?: boolean): Promise<Texture>;
              getInternalTextureName(): string;
              addInternalTexture(repository: string, texture?: AnimatedTexture): {
@@ -7172,6 +7646,98 @@ declare class Choreography {
              };
              setTexture(repository: string, path: string, texture: AnimatedTexture): void;
              removeTexture(repository: string, path: string): void;
+         }
+
+         export declare const Source1VmtLoader: Source1VmtLoaderClass;
+
+         declare class Source1VmtLoaderClass {
+             #private;
+             load(repository: string, path: string): Promise<Source1Material | null>;
+             parse(repository: string, path: string, content: string): Promise<Source1Material | null>;
+             setMaterial(fileName: string, fileContent: string): void;
+             registerMaterial(materialName: string, materialClass: typeof Source1Material): void;
+         }
+
+         export declare class Source1Vtf {
+             #private;
+             repository: string;
+             fileName: string;
+             versionMaj: number;
+             versionMin: number;
+             width: number;
+             height: number;
+             flags: number;
+             frames: number;
+             faceCount: number;
+             firstFrame: number;
+             reflectivity: vec3;
+             bumpmapScale: number;
+             highResImageFormat: number;
+             mipmapCount: number;
+             lowResImageFormat: number;
+             lowResImageWidth: number;
+             lowResImageHeight: number;
+             depth: number;
+             resEntries: VTFResourceEntry[];
+             currentFrame: number;
+             numResources: number;
+             headerSize: number;
+             sheet?: any;
+             constructor(repository: string, fileName: string);
+             setVerionMin(value: number): void;
+             /**
+              * TODO
+              */
+             setFlags(flags: number): void;
+             getFlag(flag: number): boolean;
+             getAlphaBits(): number;
+             /**
+              * TODO
+              */
+             setVerionMaj(value: number): void;
+             /**
+              * TODO
+              */
+             isHigherThan71(): boolean;
+             /**
+              * TODO
+              */
+             isHigherThan72(): boolean;
+             /**
+              * TODO
+              */
+             isHigherThan73(): boolean;
+             /**
+              * TODO
+              */
+             isHigherThan74(): boolean;
+             /**
+              * TODO
+              */
+             getResource(type: number): VTFResourceEntry | null;
+             fillTexture(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1?: number, srgb?: boolean): void;
+             getFormat(): number;
+             getType(): number;
+             /**
+              * Return whether the texture is compressed or not
+              * @return {bool} true if texture is dxt compressed
+              */
+             isDxtCompressed(): boolean;
+             isSRGB(): boolean;
+             getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
+         }
+
+         export declare class Source1VtxLoader extends SourceBinaryLoader {
+             #private;
+             constructor(mdlVersion: number);
+             load(repository: string, path: string): Promise<SourceVtx | null>;
+             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVtx;
+         }
+
+         export declare class Source1VvdLoader extends SourceBinaryLoader {
+             #private;
+             load(repository: string, path: string): Promise<SourceVvd | null>;
+             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVvd;
          }
 
          export declare const SOURCE2_DEFAULT_RADIUS = 5;
@@ -8101,7 +8667,7 @@ declare class Choreography {
 
          export declare const Source2SnapshotLoader: {
              load(repository: string, filename: string): Promise<Source2Snapshot>;
-             "__#259@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+             "__#261@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
          };
 
          export declare class Source2SpringMeteor extends Source2Material {
@@ -8245,8 +8811,8 @@ declare class Choreography {
 
          declare class SourceBinaryLoader {
              repository: string;
-             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMdl | SourceVvd | SourceVtx | SourceBSP | SourcePCF | SourceEngineVTF | null>;
-             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVvd | SourceVtx | SourceEngineVTF | SourcePCF | SourceMdl | SourceBSP | null;
+             load(repositoryName: string, fileName: string): Promise<Source2File | SourceMdl | SourceVvd | SourceVtx | SourceBSP | SourcePCF | Source1Vtf | null>;
+             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): Promise<Source2File | any> | SourceVvd | SourceVtx | Source1Vtf | SourcePCF | SourceMdl | SourceBSP | null;
          }
 
          export declare class SourceBSP extends World {
@@ -8269,10 +8835,10 @@ declare class Choreography {
              connections: any[];
              mapSpawn: boolean;
              lastLeaf: any;
-             bspTree: SourceEngineBspTree;
+             bspTree: Source1BspTree;
              frameCount: number;
              mustParseHeader: boolean;
-             funcBrushesRemoveMe: any[];
+             funcBrushesRemoveMe: FuncBrush[];
              partialLoading: boolean;
              eventTarget: EventTarget;
              staticProps: Group;
@@ -8296,533 +8862,6 @@ declare class Choreography {
              static getEntityName(): string;
          }
 
-         export declare class SourceEngineBSPLoader extends SourceBinaryLoader {
-             #private;
-             parse(repository: any, fileName: any, arrayBuffer: any): SourceBSP;
-             _parseLumpDirectory(reader: any, bsp: any): void;
-         }
-
-         /**
-          * BSP Tree
-          */
-         declare class SourceEngineBspTree {
-             map: SourceBSP;
-             visibilityClusters: any;
-             clustersCount: number;
-             countRemoveMe: number;
-             leavesRemoveme: any[];
-             constructor(map: SourceBSP);
-             set clusters(clusters: any);
-             getLeafId(pos: any): number;
-             isLeafVisible(fromLeafId: any, toLeafId: any): any;
-             isVisLeaf(leafId: any): boolean;
-             addPropToLeaf(leafId: any, propId: any): void;
-         }
-
-         export declare class SourceEngineMaterial extends Material {
-             #private;
-             readonly vmt: SourceEngineMaterialVmt;
-             readonly repository: string;
-             readonly path: string;
-             proxyParams: any;
-             proxies: Proxy_2[];
-             variables: Map<string, any>;
-             protected useSrgb: boolean;
-             constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
-             init(): void;
-             getTexture(role: TextureRole, repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture | null;
-             getTexCoords(flCreationTime: number, flCurTime: number, flAgeScale: number, nSequence: number): any;
-             getFrameSpan(sequence: number): any;
-             updateMaterial(time: number, mesh: Mesh): void;
-             _afterProcessProxies(proxyParams?: {}): void;
-             afterProcessProxies(proxyParams?: {}): void;
-             getAlpha(): number;
-             computeModulationColor(out: vec4): vec4;
-             getDefaultParameters(): VmtParameters;
-             sanitizeValue(parameterName: string, value: any): any;
-             setKeyValue(key: string, value: any): void;
-             clone(): SourceEngineMaterial;
-             dispose(): void;
-         }
-
-         export declare class SourceEngineMaterialManager {
-             #private;
-             static fallbackRepository: string;
-             static getMaterial(repository: string, path: string, searchPaths?: string[]): Promise<SourceEngineMaterial | null>;
-             static addRepository(repository: string): void;
-             static getMaterialList(): Promise<{
-                 files: any[];
-             }>;
-         }
-
-         declare type SourceEngineMaterialParams = MaterialParams & {};
-
-         declare type SourceEngineMaterialVariables = any;
-
-         declare type SourceEngineMaterialVmt = Record<string, any>;
-
-         export declare class SourceEngineMDLLoader extends SourceBinaryLoader {
-             #private;
-             load(repository: string, path: string): Promise<SourceMdl | null>;
-             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceMdl;
-             _parseAnimSection(reader: BinaryReader, animDesc: MdlStudioAnimDesc, frameIndex: number): MdlStudioAnim[] | null;
-         }
-
-         /**
-          * TODO
-          */
-         declare class SourceEngineParticle {
-             currentTime: number;
-             previousElapsedTime: number;
-             name: string;
-             id: number;
-             isAlive: boolean;
-             readonly position: vec3;
-             readonly prevPosition: vec3;
-             readonly cpPosition: vec3;
-             readonly cpOrientation: quat;
-             readonly cpOrientationInvert: quat;
-             velocity: vec3;
-             color: Color;
-             initialColor: Color;
-             uMin: number;
-             uMax: number;
-             vMin: number;
-             vMax: number;
-             system: SourceEngineParticleSystem;
-             cTime: number;
-             timeToLive: number;
-             initialTimeToLive: number;
-             proportionOfLife: number;
-             u: number;
-             v: number;
-             radius: number;
-             initialRadius: number;
-             rotationRoll: number;
-             initialRoll: number;
-             rotationSpeedRoll: number;
-             rotationYaw: number;
-             startAlpha: number;
-             alpha: number;
-             alpha2: number;
-             sequence: number;
-             initialSequence: number;
-             frame: number;
-             PositionFromParentParticles: boolean;
-             posLockedToCP: number;
-             rotLockedToCP: number;
-             trailLength: number;
-             initialCPPosition: vec3 | null;
-             initialVecOffset: vec3 | null;
-             initialCPQuaternion: quat | null;
-             renderScreenVelocityRotate: boolean;
-             initialVec?: vec3;
-             bones?: [Bone, number][];
-             m_flRotateRate: number;
-             m_flForward: number;
-             deltaL: number;
-             constructor(id: number, system: SourceEngineParticleSystem);
-             step(elapsedTime: number): void;
-             start(): void;
-             die(): void;
-             reset(): void;
-             setInitialField(field: number, value: SourceParticleFieldValue, mulInitial: boolean): void;
-             setField(field: number, value: SourceParticleFieldValue, mulInitial?: boolean, setInitial?: boolean): void;
-             /**
-              * TODO
-              */
-             getField(field?: number, initial?: boolean): SourceParticleFieldValue;
-             /**
-              * TODO
-              */
-             setInitialSequence(sequence: number): void;
-             /**
-              * TODO
-              */
-             setInitialRadius(radius: number): void;
-             /**
-              * TODO
-              */
-             setInitialTTL(timeToLive: number): void;
-             /**
-              * TODO
-              */
-             setInitialColor(color: Color): void;
-             /**
-              * Set particle initial rotation roll.
-              * @param {Number} roll Initial rotation roll.
-              */
-             setInitialRoll(roll: number): void;
-             /**
-              * Get particle world position
-              * @param {vec3|null} The receiving vector. Created if null.
-              * @return {vec3} The world position.
-              */
-             getWorldPos(worldPos: vec3): vec3;
-             /**
-              * Get particle world position
-              * @param {vec3|null} The receiving vector. Created if null.
-              * @return {vec3} The world position.
-              */
-             getLocalPos(worldPos: vec3): vec3;
-         }
-
-         declare class SourceEngineParticleOperator {
-             #private;
-             protected particleSystem: SourceEngineParticleSystem;
-             material?: Material;
-             materialLoaded: boolean;
-             paramList: ParamType[];
-             mesh?: Mesh;
-             constructor(system: SourceEngineParticleSystem);
-             get functionName(): string;
-             static get functionName(): string;
-             static getFunctionName(): string;
-             initializeParticle(particle: SourceEngineParticle, elapsedTime: number): void;
-             operateParticle(particle: SourceEngineParticle, elapsedTime: number): void;
-             forceParticle(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces?: vec3): void;
-             constraintParticle(particle: SourceEngineParticle): void;
-             doEmit(elapsedTime: number): void;
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
-             doOperate(particle: SourceEngineParticle, elapsedTime: number): void;
-             doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces?: vec3, strength?: number): void;
-             applyConstraint(particle: SourceEngineParticle): void;
-             doRender(particle: SourceEngineParticle[], elapsedTime: number, material: Material): void;
-             initRenderer(): void;
-             updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number): void;
-             emitParticle(creationTime: number, elapsedTime: number): SourceEngineParticle;
-             setMaterial(material: Material): void;
-             paramChanged(name: string, value: CDmxAttributeValue | CDmxAttributeValue[]): void;
-             setParameter(parameter: string, type: string, value: CDmxAttributeValue | CDmxAttributeValue[]): this;
-             getParameter(parameter: string): any;
-             getParameters(): Record<string, any>;
-             setNameId(name: string): void;
-             doNothing(): void;
-             reset(): void;
-             getOperatorFade(): number;
-             getOperatorStrength(): number;
-             getParamList(): ParamType[];
-             addParam(param: string, type: string, value: CDmxAttributeValue): void;
-             getInputValue(inputField: number, particle: SourceEngineParticle): any;
-             getInputValueAsVector(inputField: number, particle: SourceEngineParticle, v: vec3): void;
-             setOutputValue(outputField: number, value: any, particle: SourceEngineParticle): void;
-             initMultipleOverride(): boolean;
-             finished(): boolean;
-             setOrientationType(orientationType: number): void;
-             dispose(): void;
-         }
-
-         export declare class SourceEngineParticleOperators {
-             #private;
-             static getOperator(system: SourceEngineParticleSystem, name: string): SourceEngineParticleOperator;
-             static getOperators(type: string): string[];
-             static registerOperator(name: string | typeof SourceEngineParticleOperator, operator?: typeof SourceEngineParticleOperator): void;
-         }
-
-         export declare class SourceEngineParticleSystem extends Entity implements Loopable {
-             #private;
-             isParticleSystem: boolean;
-             repository: string;
-             isLoopable: true;
-             animable: boolean;
-             resetable: boolean;
-             paramList: ParamType[];
-             parameters: Record<string, {
-                 type?: any;
-                 value?: string;
-             }>;
-             minimumTickRate: number;
-             maximumTickRate: number;
-             initialParticles: number;
-             currentParticles: number;
-             currentTime: number;
-             elapsedTime: number;
-             previousElapsedTime: number;
-             speed: number;
-             isRunning: boolean;
-             radius: number;
-             attachmentBone: any;
-             currentOrientation: quat;
-             prevOrientation: quat;
-             emitters: Record<string, SourceEngineParticleOperator>;
-             initializers: Record<string, SourceEngineParticleOperator>;
-             operators: Record<string, SourceEngineParticleOperator>;
-             forces: Map<string, SourceEngineParticleOperator>;
-             constraints: Record<string, SourceEngineParticleOperator>;
-             tempChildren: Record<string, string>;
-             operatorRandomSampleOffset: number;
-             parentSystem?: SourceEngineParticleSystem;
-             firstStep: boolean;
-             pcf?: SourcePCF;
-             material?: SourceEngineMaterial;
-             materialName?: string;
-             maxParticles: number;
-             resetDelay: number;
-             snapshot: any;
-             constructor(params?: any);
-             start(): void;
-             stop(): void;
-             stopChildren(): void;
-             do(action: string, params: any): void;
-             reset(): void;
-             updateChilds(): void;
-             step(elapsedTime: number): void;
-             /**
-              * Step forces for each particle.
-              */
-             stepForces(): void;
-             stepConstraints(particle: SourceEngineParticle): void;
-             createParticle(creationTime: number, elapsedTime: number): SourceEngineParticle;
-             getWorldPosition(vec?: vec3): vec3;
-             stepControlPoint(): void;
-             setParam(element: CDmxAttribute): this;
-             addParam(param: string, type: string, value: any): void;
-             setParameter(parameter: string, type: any, value: any): this;
-             propertyChanged(name: string): void;
-             getParameter(parameterName: string): any;
-             setMaxParticles(max: number): void;
-             setRadius(radius: number): void;
-             setInitialParticles(initial: number): void;
-             setMinimumTickRate(minimum: number): void;
-             setMaximumTickRate(maximum: number): void;
-             setMaterialName(materialName: string): Promise<void>;
-             setSnapshot(snapshot: any): void;
-             addSub(type: string, object: SourceEngineParticleOperator, id: string): void;
-             getControlPoint(controlPointId: number): ControlPoint | null;
-             getControlPoints(): ControlPoint[];
-             getOwnControlPoint(controlPointId: number): ControlPoint;
-             addTempChild(name: string, id: string): void;
-             addChildSystem(particleSystem: SourceEngineParticleSystem): void;
-             setParent(parentSystem: SourceEngineParticleSystem): SourceEngineParticleSystem;
-             /**
-              * Orient all particles relative to control point #0.
-              */
-             setCpOrientation(): void;
-             /**
-              * Set control point orientation
-              * @param (Object quat) orientation New orientation
-              */
-             setOrientation(orientation: quat): void;
-             setChildControlPointPosition(first: number, last: number, position: vec3): void;
-             setChildControlPointOrientation(first: number, last: number, orientation: quat): void;
-             getParticle(index?: number): SourceEngineParticle;
-             getControlPointPosition(cpId: number): vec3;
-             setControlPointPosition(cpId: number, position: vec3): void;
-             setControlPointParent(controlPointId: number, parentControlPointId: number): void;
-             getWorldQuaternion(q?: quat): quat;
-             getBoundingBox(boundingBox?: BoundingBox): BoundingBox;
-             set autoKill(autoKill: boolean);
-             get autoKill(): boolean;
-             setLooping(looping: boolean): void;
-             getLooping(): boolean;
-             dispose(): void;
-             getBounds(min?: vec3, max?: vec3): void;
-             static setSpeed(speed: number): void;
-             static setSimulationSteps(simulationSteps: number): void;
-             getChildrenSystems(): SourceEngineParticleSystem[];
-             getActiveParticlesCount(): number;
-             buildContextMenu(): {
-                 visibility: {
-                     i18n: string;
-                     selected: boolean;
-                     f: () => void;
-                 };
-                 remove: {
-                     i18n: string;
-                     f: () => void;
-                 };
-                 destroy: {
-                     i18n: string;
-                     f: () => void;
-                 };
-                 remove_more: {
-                     i18n: string;
-                     submenu: {
-                         i18n: string;
-                         f: () => void;
-                     }[];
-                 };
-                 name: {
-                     i18n: string;
-                     f: () => void;
-                 };
-                 add: {
-                     i18n: string;
-                     submenu: any;
-                 };
-                 entitynull_1: any;
-                 position: {
-                     i18n: string;
-                     f: () => void;
-                 };
-                 translate: {
-                     i18n: string;
-                     f: () => void;
-                 };
-                 reset_position: {
-                     i18n: string;
-                     f: () => vec3;
-                 };
-                 entitynull_2: any;
-                 quaternion: {
-                     i18n: string;
-                     f: () => void;
-                 };
-                 rotate: {
-                     i18n: string;
-                     submenu: {
-                         i18n: string;
-                         f: () => void;
-                     }[];
-                 };
-                 reset_rotation: {
-                     i18n: string;
-                     f: () => quat;
-                 };
-                 entitynull_3: any;
-                 scale: {
-                     i18n: string;
-                     f: () => void;
-                 };
-                 reset_scale: {
-                     i18n: string;
-                     f: () => vec3;
-                 };
-                 entitynull_4: any;
-                 wireframe: {
-                     i18n: string;
-                     selected: boolean;
-                     f: () => void;
-                 };
-                 cast_shadows: {
-                     i18n: string;
-                     selected: boolean;
-                     f: () => void;
-                 };
-                 receive_shadows: {
-                     i18n: string;
-                     selected: boolean;
-                     f: () => void;
-                 };
-                 material: {
-                     i18n: string;
-                     submenu: {};
-                 };
-             } & {
-                 SourceEngineParticleSystem_1: any;
-                 startStop: {
-                     i18n: string;
-                     f: () => void;
-                 };
-                 reset: {
-                     i18n: string;
-                     f: () => void;
-                 };
-             };
-             toJSON(): any;
-             static constructFromJSON(json: any, entities: Map<string, Entity>, loadedPromise: Promise<void>): Promise<SourceEngineParticleSystem>;
-             static getEntityName(): string;
-         }
-
-         export declare class SourceEnginePCFLoader extends SourceBinaryLoader {
-             #private;
-             parse(repository: string, path: string, content: ArrayBuffer): SourcePCF | null;
-             getString(pcf: SourcePCF, index: number): string;
-             getElement(pcf: SourcePCF, index: number): CDmxElement | null;
-         }
-
-         export declare const SourceEngineVMTLoader: SourceEngineVMTLoaderClass;
-
-         declare class SourceEngineVMTLoaderClass {
-             #private;
-             load(repository: string, path: string): Promise<SourceEngineMaterial | null>;
-             parse(repository: string, path: string, content: string): Promise<SourceEngineMaterial | null>;
-             setMaterial(fileName: string, fileContent: string): void;
-             registerMaterial(materialName: string, materialClass: typeof SourceEngineMaterial): void;
-         }
-
-         export declare class SourceEngineVTF {
-             #private;
-             repository: string;
-             fileName: string;
-             versionMaj: number;
-             versionMin: number;
-             width: number;
-             height: number;
-             flags: number;
-             frames: number;
-             faceCount: number;
-             firstFrame: number;
-             reflectivity: vec3;
-             bumpmapScale: number;
-             highResImageFormat: number;
-             mipmapCount: number;
-             lowResImageFormat: number;
-             lowResImageWidth: number;
-             lowResImageHeight: number;
-             depth: number;
-             resEntries: VTFResourceEntry[];
-             currentFrame: number;
-             numResources: number;
-             headerSize: number;
-             sheet?: any;
-             constructor(repository: string, fileName: string);
-             setVerionMin(value: number): void;
-             /**
-              * TODO
-              */
-             setFlags(flags: number): void;
-             getFlag(flag: number): boolean;
-             getAlphaBits(): number;
-             /**
-              * TODO
-              */
-             setVerionMaj(value: number): void;
-             /**
-              * TODO
-              */
-             isHigherThan71(): boolean;
-             /**
-              * TODO
-              */
-             isHigherThan72(): boolean;
-             /**
-              * TODO
-              */
-             isHigherThan73(): boolean;
-             /**
-              * TODO
-              */
-             isHigherThan74(): boolean;
-             /**
-              * TODO
-              */
-             getResource(type: number): VTFResourceEntry | null;
-             fillTexture(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1?: number, srgb?: boolean): void;
-             getFormat(): number;
-             getType(): number;
-             /**
-              * Return whether the texture is compressed or not
-              * @return {bool} true if texture is dxt compressed
-              */
-             isDxtCompressed(): boolean;
-             isSRGB(): boolean;
-             getImageData(mipmap?: number, frame?: number, face?: number): Promise<ImageData | null>;
-         }
-
-         export declare class SourceEngineVTXLoader extends SourceBinaryLoader {
-             #private;
-             constructor(mdlVersion: number);
-             load(repository: string, path: string): Promise<SourceVtx | null>;
-             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVtx;
-         }
-
-         export declare class SourceEngineVVDLoader extends SourceBinaryLoader {
-             #private;
-             load(repository: string, path: string): Promise<SourceVvd | null>;
-             parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVvd;
-         }
-
          declare class SourceMdl {
              #private;
              repository: string;
@@ -8844,7 +8883,7 @@ declare class Choreography {
              numflexdesc: number;
              readonly attachments: MdlAttachment[];
              readonly animDesc: MdlStudioAnimDesc[];
-             loader: SourceEngineMDLLoader;
+             loader: Source1MdlLoader;
              reader: BinaryReader;
              readonly poseParameters: MdlStudioPoseParam[];
              readonly hitboxSets: MdlStudioHitboxSet[];
@@ -9016,10 +9055,10 @@ declare class Choreography {
              constructor(repository: string, path: string);
              getSystemElement(systemName: string): CDmxElement | undefined;
              addSystem(element: CDmxElement): void;
-             getSystem(systemName: string): SourceEngineParticleSystem | null;
-             initSystem(system: SourceEngineParticleSystem): SourceEngineParticleSystem | null;
-             addOperators(system: SourceEngineParticleSystem, list: CDmxAttributeValue[], listType: string): void;
-             addAttributes(operator: SourceEngineParticleOperator, list: CDmxAttribute[]): void;
+             getSystem(systemName: string): Source1ParticleSystem | null;
+             initSystem(system: Source1ParticleSystem): Source1ParticleSystem | null;
+             addOperators(system: Source1ParticleSystem, list: CDmxAttributeValue[], listType: string): void;
+             addAttributes(operator: Source1ParticleOperator, list: CDmxAttribute[]): void;
          }
 
          declare class SourceVtx {
@@ -9344,17 +9383,17 @@ declare class Choreography {
              parentChanged(parent?: Entity | null): void;
          }
 
-         export declare class SpriteCardMaterial extends SourceEngineMaterial {
+         export declare class SpriteCardMaterial extends Source1Material {
              #private;
-             constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
+             constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
              init(): void;
              clone(): SpriteCardMaterial;
              get shaderSource(): string;
          }
 
-         export declare class SpriteMaterial extends SourceEngineMaterial {
+         export declare class SpriteMaterial extends Source1Material {
              #private;
-             constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
+             constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
              init(): void;
              clone(): SpriteMaterial;
              get shaderSource(): string;
@@ -9373,19 +9412,19 @@ declare class Choreography {
          export declare class StatTrakDigit extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class StatTrakIllum extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class StickybombGlowColor extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare function stringToQuat(s: string, q?: quat): quat;
@@ -9732,8 +9771,8 @@ declare class Choreography {
 
          export declare class TextureScroll extends Proxy_2 {
              #private;
-             init(variables: Map<string, SourceEngineMaterialVariables>): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             init(variables: Map<string, Source1MaterialVariables>): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare enum TextureTarget {
@@ -9752,8 +9791,8 @@ declare class Choreography {
              rotateVar: string;
              scaleVar: string;
              resultVar: string;
-             init(variables: Map<string, SourceEngineMaterialVariables>): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             init(variables: Map<string, Source1MaterialVariables>): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare enum TextureType {
@@ -9856,10 +9895,10 @@ declare class Choreography {
              ReinhardExtended = 3
          }
 
-         export declare class TrailLengthRandom extends SourceEngineParticleOperator {
+         export declare class TrailLengthRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
          }
 
          export declare class TranslationControl extends Entity {
@@ -9981,10 +10020,10 @@ declare class Choreography {
 
          declare type Tuple<T, N extends number, R extends readonly T[] = []> = R['length'] extends N ? R : Tuple<T, N, [T, ...R]>;
 
-         export declare class TwistAroundAxis extends SourceEngineParticleOperator {
+         export declare class TwistAroundAxis extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doForce(particle: SourceEngineParticle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
+             constructor(system: Source1ParticleSystem);
+             doForce(particle: Source1Particle, elapsedTime: number, accumulatedForces: vec3, strength?: number): void;
          }
 
          export declare const TWO_PI: number;
@@ -10013,20 +10052,20 @@ declare class Choreography {
          }
 
          export declare class UniformNoiseProxy extends Proxy_2 {
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          declare type UniformValue = boolean | number | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;
 
-         export declare class UnlitGenericMaterial extends SourceEngineMaterial {
+         export declare class UnlitGenericMaterial extends Source1Material {
              #private;
-             constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params?: SourceEngineMaterialParams);
+             constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
              init(): void;
              clone(): UnlitGenericMaterial;
              get shaderSource(): string;
          }
 
-         export declare class UnlitTwoTextureMaterial extends SourceEngineMaterial {
+         export declare class UnlitTwoTextureMaterial extends Source1Material {
              #private;
              init(): void;
              clone(): UnlitTwoTextureMaterial;
@@ -10072,22 +10111,22 @@ declare class Choreography {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         export declare class VelocityNoise extends SourceEngineParticleOperator {
+         export declare class VelocityNoise extends Source1ParticleOperator {
              #private;
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
-         export declare class VelocityRandom extends SourceEngineParticleOperator {
+         export declare class VelocityRandom extends Source1ParticleOperator {
              static functionName: string;
-             constructor(system: SourceEngineParticleSystem);
-             doInit(particle: SourceEngineParticle, elapsedTime: number): void;
+             constructor(system: Source1ParticleSystem);
+             doInit(particle: Source1Particle, elapsedTime: number): void;
              initMultipleOverride(): boolean;
          }
 
-         export declare class VertexLitGenericMaterial extends SourceEngineMaterial {
+         export declare class VertexLitGenericMaterial extends Source1Material {
              #private;
              useSrgb: boolean;
              init(): void;
@@ -10179,14 +10218,14 @@ declare class Choreography {
          export declare class WaterLod extends Proxy_2 {
          }
 
-         export declare class WaterMaterial extends SourceEngineMaterial {
+         export declare class WaterMaterial extends Source1Material {
              #private;
              init(): void;
              clone(): WaterMaterial;
              getShaderSource(): string;
          }
 
-         export declare class WeaponDecalMaterial extends SourceEngineMaterial {
+         export declare class WeaponDecalMaterial extends Source1Material {
              #private;
              init(): void;
              afterProcessProxies(proxyParams: DynamicParams): void;
@@ -10208,12 +10247,12 @@ declare class Choreography {
          export declare class WeaponLabelText extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class WeaponSkin extends Proxy_2 {
              #private;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          declare type WebGLAnyRenderingContext = WebGLRenderingContext | WebGL2RenderingContext;
@@ -10311,7 +10350,7 @@ declare class Choreography {
              is(s: string): boolean;
          }
 
-         export declare class WorldVertexTransitionMaterial extends SourceEngineMaterial {
+         export declare class WorldVertexTransitionMaterial extends Source1Material {
              #private;
              init(): void;
              afterProcessProxies(proxyParams: DynamicParams): void;
@@ -10322,7 +10361,7 @@ declare class Choreography {
          export declare class YellowLevel extends Proxy_2 {
              #private;
              init(): void;
-             execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number): void;
+             execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
          }
 
          export declare class ZipRepository implements Repository {
@@ -10339,12 +10378,12 @@ declare class Choreography {
          }
 
          export declare const Zstd: {
-             "__#228@#webAssembly"?: any;
-             "__#228@#HEAPU8"?: Uint8Array;
+             "__#230@#webAssembly"?: any;
+             "__#230@#HEAPU8"?: Uint8Array;
              decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer>>;
              decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
              getWebAssembly(): Promise<any>;
-             "__#228@#initHeap"(): void;
+             "__#230@#initHeap"(): void;
          };
 
          export { }

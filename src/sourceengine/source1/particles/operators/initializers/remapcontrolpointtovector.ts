@@ -1,9 +1,9 @@
 import { vec3 } from 'gl-matrix';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempVec3_1 = vec3.create();
 const tempVec3_2 = vec3.create();
@@ -13,10 +13,10 @@ const tempVec3_5 = vec3.create();
 
 const a = vec3.create();
 
-export class RemapControlPointToVector extends SourceEngineParticleOperator {
+export class RemapControlPointToVector extends Source1ParticleOperator {
 	static functionName = 'remap control point to vector';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('operator strength scale control point', PARAM_TYPE_INT, 1);
 		this.addParam('input control point number', PARAM_TYPE_INT, 0);
@@ -38,7 +38,7 @@ export class RemapControlPointToVector extends SourceEngineParticleOperator {
 		'output maximum' 'vector3' '1 1 1'*/
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const inputMinimum = this.getParameter('input minimum');
 		const inputMaximum = this.getParameter('input maximum');
 		const outputMinimum = this.getParameter('output minimum');
@@ -65,4 +65,4 @@ export class RemapControlPointToVector extends SourceEngineParticleOperator {
 		return true;
 	}
 }
-SourceEngineParticleOperators.registerOperator(RemapControlPointToVector);
+Source1ParticleOperators.registerOperator(RemapControlPointToVector);

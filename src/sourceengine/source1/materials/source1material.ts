@@ -94,7 +94,7 @@ const VMT_PARAMETERS: VmtParameters = {//TODO: tunr into map
 	$no_draw: [SHADER_PARAM_TYPE_BOOL, false],
 }
 
-function initDefaultParameters(defaultParameters: VmtParameters, parameters: VmtParameters, variables: Map<string, SourceEngineMaterialVariables>) {
+function initDefaultParameters(defaultParameters: VmtParameters, parameters: VmtParameters, variables: Map<string, Source1MaterialVariables>) {
 	if (defaultParameters) {
 		for (const parameterName in defaultParameters) {
 			if (parameters[parameterName] === undefined) {
@@ -117,7 +117,7 @@ let defaultTexture: Texture;
 function getDefaultTexture(): Texture {
 	if (!defaultTexture) {
 		defaultTexture = TextureManager.createFlatTexture([255, 255, 255]);
-		defaultTexture.addUser(SourceEngineMaterial);
+		defaultTexture.addUser(Source1Material);
 	}
 	return defaultTexture;
 }
@@ -150,30 +150,30 @@ export enum TextureRole {
 	Scratches,
 }
 
-export type SourceEngineMaterialParams = MaterialParams & {
+export type Source1MaterialParams = MaterialParams & {
 	//repository: string;
 	//path: string;
 	//useSrgb?: boolean;
 };
 
-export type SourceEngineMaterialVariables = any;/*TODO: improve type*/
+export type Source1MaterialVariables = any;/*TODO: improve type*/
 
-export type SourceEngineMaterialVmt = Record<string, any>;/*TODO: improve type*/
+export type Source1MaterialVmt = Record<string, any>;/*TODO: improve type*/
 
-export class SourceEngineMaterial extends Material {
+export class Source1Material extends Material {
 	#initialized = false;
 	#detailTextureTransform = mat4.create();
-	readonly vmt: SourceEngineMaterialVmt;
+	readonly vmt: Source1MaterialVmt;
 	//static #defaultTexture;
 	readonly repository: string;
 	readonly path: string;
 	proxyParams: any/*TODO: create type*/ = {};
 	proxies: Proxy[] = [];
-	variables = new Map<string, SourceEngineMaterialVariables>();
+	variables = new Map<string, Source1MaterialVariables>();
 	#textures = new Map<TextureRole, AnimatedTexture>();
 	protected useSrgb = true;
 
-	constructor(repository: string, path: string, vmt: SourceEngineMaterialVmt, params: SourceEngineMaterialParams = {}) {
+	constructor(repository: string, path: string, vmt: Source1MaterialVmt, params: Source1MaterialParams = {}) {
 		super(params);
 		this.vmt = vmt;
 		this.repository = repository;
@@ -199,7 +199,7 @@ export class SourceEngineMaterial extends Material {
 		initDefaultParameters(VMT_PARAMETERS, this.vmt, variables);
 		initDefaultParameters(this.getDefaultParameters(), this.vmt, variables);
 
-		const readParameters = (parameters: SourceEngineMaterialVmt) => {
+		const readParameters = (parameters: Source1MaterialVmt) => {
 			for (const parameterName in parameters) {
 				const value = parameters[parameterName]!;
 
@@ -509,7 +509,7 @@ export class SourceEngineMaterial extends Material {
 	 * Init proxies
 	 * @param proxies {Array} List of proxies
 	 */
-	#initProxies(proxies: SourceEngineMaterialVmt) {
+	#initProxies(proxies: Source1MaterialVmt) {
 		if (!proxies) { return; }
 
 		for (const proxyIndex in proxies) {
@@ -709,8 +709,8 @@ export class SourceEngineMaterial extends Material {
 		}
 	}
 
-	clone(): SourceEngineMaterial {
-		return new SourceEngineMaterial(this.repository, this.path, this.vmt, this.parameters);
+	clone(): Source1Material {
+		return new Source1Material(this.repository, this.path, this.vmt, this.parameters);
 	}
 
 	dispose() {

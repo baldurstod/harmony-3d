@@ -1,17 +1,17 @@
 import { vec2, vec3 } from 'gl-matrix';
 import { vec3RandomBox } from '../../../../../math/functions';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
-export class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
+export class PositionModifyOffsetRandom extends Source1ParticleOperator {
 	static functionName = 'Position Modify Offset Random';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('offset min', PARAM_TYPE_VECTOR, vec3.create());
 		this.addParam('offset max', PARAM_TYPE_VECTOR, vec3.create());
@@ -25,7 +25,7 @@ export class PositionModifyOffsetRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('offset proportional to radius 0/1', '0', bool, m_bProportional)
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const localSpace = this.getParameter('offset in local space 0/1');
 		const offsetMin = this.getParameter('offset min');
 		const offsetMax = this.getParameter('offset max');
@@ -68,4 +68,4 @@ void VectorRotate(const float *in1, const matrix3x4_t& in2, float *out)
 		return true;
 	}
 }
-SourceEngineParticleOperators.registerOperator(PositionModifyOffsetRandom);
+Source1ParticleOperators.registerOperator(PositionModifyOffsetRandom);

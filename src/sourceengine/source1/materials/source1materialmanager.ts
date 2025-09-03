@@ -2,8 +2,8 @@ import { Map2 } from 'harmony-utils';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { JSONObject } from '../../../types';
 import { customFetch } from '../../../utils/customfetch';
-import { SourceEngineVMTLoader } from '../export';
-import { SourceEngineMaterial } from './source1material';
+import { Source1VmtLoader } from '../export';
+import { Source1Material } from './source1material';
 
 function cleanSource1MaterialName(name: string) {
 	name = name.replace(/\\/g, '/').toLowerCase().replace(/\.vmt$/g, '').replace(/^materials\//g, '');
@@ -13,26 +13,26 @@ function cleanSource1MaterialName(name: string) {
 	return name;
 }
 
-export class SourceEngineMaterialManager {
+export class Source1MaterialManager {
 	static #fileListPerRepository = new Map<string, null | JSONObject | Promise<JSONObject>/*TODO: remove alternative*/>(); // TODO: use a Map2
-	static #materialList = new Map2<string, string, SourceEngineMaterial | null | Promise<SourceEngineMaterial | null>/*TODO: remove alternative*/>();
-	static #materialList2 = new Set<SourceEngineMaterial>();
+	static #materialList = new Map2<string, string, Source1Material | null | Promise<Source1Material | null>/*TODO: remove alternative*/>();
+	static #materialList2 = new Set<Source1Material>();
 	static #materialListPerRepository = {};
 	static fallbackRepository = '';
 
-	static async getMaterial(repository: string, path: string, searchPaths?: string[]): Promise<SourceEngineMaterial | null> {
+	static async getMaterial(repository: string, path: string, searchPaths?: string[]): Promise<Source1Material | null> {
 		// TODO: improve this function code
 		path = cleanSource1MaterialName(path);
 		if (searchPaths) {
-			const promises: Promise<SourceEngineMaterial | null>[] = [];
+			const promises: Promise<Source1Material | null>[] = [];
 			for (const searchPath of searchPaths) {
 				promises.push(this.#getMaterial(repository, 'materials/' + searchPath + path));
 			}
-			const promise = new Promise<SourceEngineMaterial | null>(resolve => {
+			const promise = new Promise<Source1Material | null>(resolve => {
 				Promise.allSettled(promises).then(
 					async (promises) => {
 						for (const promise of promises) {
-							const value = (promise as PromiseFulfilledResult<SourceEngineMaterial | null>).value;
+							const value = (promise as PromiseFulfilledResult<Source1Material | null>).value;
 							if (value) {
 								resolve(value);
 								return;
@@ -63,11 +63,11 @@ export class SourceEngineMaterialManager {
 		}
 	}
 
-	static #getMaterial(repository: string, path: string): Promise<SourceEngineMaterial | null> {
+	static #getMaterial(repository: string, path: string): Promise<Source1Material | null> {
 		const material = this.#materialList.get(repository, path);
 
 		if (material instanceof Promise) {
-			const promise = new Promise<SourceEngineMaterial | null>(resolve => {
+			const promise = new Promise<Source1Material | null>(resolve => {
 				material.then((material) => {
 					if (!material) {
 						resolve(material);
@@ -95,8 +95,8 @@ export class SourceEngineMaterialManager {
 				resolve(newMaterial);
 			});
 		} else {
-			const promise = new Promise<SourceEngineMaterial | null>(resolve => {
-				const vmtLoader = getLoader('SourceEngineVMTLoader') as typeof SourceEngineVMTLoader;
+			const promise = new Promise<Source1Material | null>(resolve => {
+				const vmtLoader = getLoader('Source1VmtLoader') as typeof Source1VmtLoader;
 				vmtLoader.load(repository, path).then(
 					(material) => {
 						if (!material) {
@@ -120,7 +120,7 @@ export class SourceEngineMaterialManager {
 
 	/*
 	static async copyMaterial(repository:string, sourcePath:string, destPath:string, searchPaths?: string[]) {
-		const material: SourceEngineMaterial = await this.getMaterial(repository, sourcePath, searchPaths);
+		const material: Source1Material = await this.getMaterial(repository, sourcePath, searchPaths);
 		this.#materialList.set(destPath, material.clone());
 		material.init();
 	}

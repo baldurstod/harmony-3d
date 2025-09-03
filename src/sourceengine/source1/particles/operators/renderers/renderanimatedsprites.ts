@@ -12,17 +12,17 @@ import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MA
 import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
+import { Source1Particle } from '../../particle';
 import { Source1ParticleControler } from '../../source1particlecontroler';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempQuat = quat.create()
 const IDENTITY_QUAT = quat.create()
 const vecDelta = vec3.create()
 
-export class RenderAnimatedSprites extends SourceEngineParticleOperator {
+export class RenderAnimatedSprites extends Source1ParticleOperator {
 	static functionName = 'render_animated_sprites';
 	#orientationType = 0/*TODO: create enum*/;
 	#texture?: Texture;
@@ -30,7 +30,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 	#maxParticles = 0;/*TODO: put in parent*/
 	#imgData?: Float32Array;
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('animation rate', PARAM_TYPE_FLOAT, 0.1);
 		this.addParam('animation_fit_lifetime', PARAM_TYPE_BOOL, 0);
@@ -49,7 +49,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 		}
 	}
 		*/
-	updateParticles(particleSystem: SourceEngineParticleSystem, particleList: SourceEngineParticle[], elapsedTime: number) {//TODOv3
+	updateParticles(particleSystem: Source1ParticleSystem, particleList: Source1Particle[], elapsedTime: number) {//TODOv3
 		if (!this.geometry || !this.mesh || !this.particleSystem.material) {
 			return;
 		}
@@ -74,7 +74,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 		const uvs = this.geometry.attributes.get('aTextureCoord')!._array;
 		let index = 0;
 		for (let i = 0; i < particleList.length; i++) {
-			const particle: SourceEngineParticle = particleList[i]!;
+			const particle: Source1Particle = particleList[i]!;
 			const sequence = particle.sequence;
 			let flAgeScale;
 			if (m_bFitCycleToLifetime) {
@@ -208,7 +208,7 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#setupParticlesTexture(particleList:SourceEngineParticle[]) {
+	#setupParticlesTexture(particleList:Source1Particle[]) {
 		const a = this.#imgData!;
 
 		let index = 0;
@@ -255,4 +255,4 @@ export class RenderAnimatedSprites extends SourceEngineParticleOperator {
 		this.#texture?.removeUser(this);
 	}
 }
-SourceEngineParticleOperators.registerOperator(RenderAnimatedSprites);
+Source1ParticleOperators.registerOperator(RenderAnimatedSprites);

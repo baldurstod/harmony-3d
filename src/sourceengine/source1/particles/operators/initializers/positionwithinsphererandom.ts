@@ -1,17 +1,17 @@
 import { quat, vec3 } from 'gl-matrix';
 import { lerp, RandomVectorInUnitSphere, vec3RandomBox } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
 const tempVec3 = vec3.create();
 
-export class PositionWithinSphereRandom extends SourceEngineParticleOperator {
+export class PositionWithinSphereRandom extends Source1ParticleOperator {
 	static functionName = 'Position Within Sphere Random';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('distance_min', PARAM_TYPE_FLOAT, 0);
 		this.addParam('distance_max', PARAM_TYPE_FLOAT, 0);
@@ -38,7 +38,7 @@ export class PositionWithinSphereRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('randomly distribution growth time', '0', float, m_flEndCPGrowthTime)
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const m_fRadiusMin = this.getParameter('distance_min');
 		const m_fRadiusMax = this.getParameter('distance_max');
 		const speed_min = this.getParameter('speed_min');
@@ -150,5 +150,5 @@ export class PositionWithinSphereRandom extends SourceEngineParticleOperator {
 		//vec3.copy(particle.prevPosition, particle.position, particle.velocity);//TODO: fix
 	}
 }
-SourceEngineParticleOperators.registerOperator(PositionWithinSphereRandom);
-SourceEngineParticleOperators.registerOperator('Position Within Sphere', PositionWithinSphereRandom);
+Source1ParticleOperators.registerOperator(PositionWithinSphereRandom);
+Source1ParticleOperators.registerOperator('Position Within Sphere', PositionWithinSphereRandom);

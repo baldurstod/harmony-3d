@@ -1,5 +1,5 @@
 import { DynamicParams } from '../../../../entities/entity';
-import { SourceEngineMaterialVariables } from '../source1material';
+import { Source1MaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
@@ -17,7 +17,7 @@ export class Clamp extends Proxy {
 		this.#maxVal = this.datas['max'] ?? 1;
 	}
 
-	execute(variables: Map<string, SourceEngineMaterialVariables>, proxyParams: DynamicParams, time: number) {
+	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
 		const v1 = variables.get(this.getData('srcvar1'));
 		if ((v1 === null) || (v1 === undefined)) {
 			variables.set(this.#resultvar, null);

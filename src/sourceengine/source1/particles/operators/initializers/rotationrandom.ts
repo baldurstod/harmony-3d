@@ -1,14 +1,14 @@
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { PARAM_TYPE_FLOAT } from '../../constants';
-import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../source1particleoperators';
-import { SourceEngineParticleSystem } from '../../source1particlesystem';
-import { SourceEngineParticleOperator } from '../operator';
+import { Source1Particle } from '../../particle';
+import { Source1ParticleOperators } from '../../source1particleoperators';
+import { Source1ParticleSystem } from '../../source1particlesystem';
+import { Source1ParticleOperator } from '../operator';
 
-export class RotationRandom extends SourceEngineParticleOperator {
+export class RotationRandom extends Source1ParticleOperator {
 	static functionName = 'Rotation Random';
 
-	constructor(system: SourceEngineParticleSystem) {
+	constructor(system: Source1ParticleSystem) {
 		super(system);
 		this.addParam('rotation_initial', PARAM_TYPE_FLOAT, 0.0);
 		this.addParam('rotation_offset_min', PARAM_TYPE_FLOAT, 0.0);
@@ -19,7 +19,7 @@ export class RotationRandom extends SourceEngineParticleOperator {
 		//	DMXELEMENT_UNPACK_FIELD('rotation_random_exponent', '1', float, m_flRotationRandExponent)
 	}
 
-	doInit(particle: SourceEngineParticle, elapsedTime: number): void {
+	doInit(particle: Source1Particle, elapsedTime: number): void {
 		const rotation_initial = this.getParameter('rotation_initial');
 		const rotation_offset_min = this.getParameter('rotation_offset_min');
 		const rotation_offset_max = this.getParameter('rotation_offset_max');
@@ -33,4 +33,4 @@ export class RotationRandom extends SourceEngineParticleOperator {
 		return true;
 	}
 }
-SourceEngineParticleOperators.registerOperator(RotationRandom);
+Source1ParticleOperators.registerOperator(RotationRandom);

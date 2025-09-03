@@ -1,8 +1,8 @@
 import { DynamicParams } from '../../../entities/entity';
-import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
-import { SourceEngineMaterial, TextureRole } from './source1material';
+import { Source1VmtLoader } from '../loaders/source1vmtloader';
+import { Source1Material, TextureRole } from './source1material';
 
-export class WorldVertexTransitionMaterial extends SourceEngineMaterial {
+export class WorldVertexTransitionMaterial extends Source1Material {
 	#initialized = false;
 
 	init(): void {
@@ -34,4 +34,4 @@ export class WorldVertexTransitionMaterial extends SourceEngineMaterial {
 		return 'source1_worldvertextransition';
 	}
 }
-SourceEngineVMTLoader.registerMaterial('worldvertextransition', WorldVertexTransitionMaterial);
+Source1VmtLoader.registerMaterial('worldvertextransition', WorldVertexTransitionMaterial);
