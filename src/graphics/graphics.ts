@@ -49,6 +49,7 @@ export function getGraphics() {
 
 export interface RenderContext {
 	DisableToolRendering?: boolean;
+	imageBitmap?: ImageBitmapRenderingContext | null;
 }
 
 interface GraphicsInitOptions {
@@ -240,7 +241,7 @@ export class Graphics {
 
 		if (USE_OFF_SCREEN_CANVAS) {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
-			this.#bipmapContext?.transferFromImageBitmap(bitmap);
+			(context.imageBitmap ?? this.#bipmapContext)?.transferFromImageBitmap(bitmap);
 		}
 
 		if (MEASURE_PERFORMANCE) {
