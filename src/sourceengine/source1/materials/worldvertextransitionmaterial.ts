@@ -1,6 +1,6 @@
 import { DynamicParams } from '../../../entities/entity';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
+import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
+import { SourceEngineMaterial, TextureRole } from './source1material';
 
 export class WorldVertexTransitionMaterial extends SourceEngineMaterial {
 	#initialized = false;

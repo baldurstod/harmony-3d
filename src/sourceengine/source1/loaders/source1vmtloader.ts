@@ -1,8 +1,8 @@
 import { DEBUG } from '../../../buildoptions';
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
-import { SourceEngineMaterial } from '../materials/sourceenginematerial';
-import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
+import { SourceEngineMaterial } from '../materials/source1material';
+import { SourceEngineMaterialManager } from '../materials/source1materialmanager';
 import { KvReader } from './kvreader';
 
 class SourceEngineVMTLoaderClass {

@@ -1,7 +1,7 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { DynamicParams } from '../../../entities/entity';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './sourceenginematerial';
+import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
+import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './source1material';
 
 //TODO: deprecate
 export class CharacterMaterial extends SourceEngineMaterial {

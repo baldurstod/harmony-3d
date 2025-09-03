@@ -3,7 +3,7 @@ import { DEG_TO_RAD } from '../../../../../math/constants';
 import { lerp } from '../../../../../math/functions';
 import { CDmxAttributeValue } from '../../../export';
 import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleOperators } from '../../source1particleoperators';
 import { SourceEngineParticleOperator } from '../operator';
 
 const DEFAULT_ORIENTATION_OFFSET = 0;

@@ -1,5 +1,5 @@
 import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleOperators } from '../../source1particleoperators';
 import { SourceEngineParticleOperator } from '../operator';
 
 export class RotationBasic extends SourceEngineParticleOperator {

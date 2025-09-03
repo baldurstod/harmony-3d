@@ -2,9 +2,9 @@ import { LOG, WARN } from '../../../buildoptions';
 import { generateRandomUUID } from '../../../math/functions';
 import { ELEMENT_TYPES } from '../particles/constants';
 import { SourceEngineParticleOperator } from '../particles/operators/operator';
-import { SourceEngineParticleOperators } from '../particles/sourceengineparticleoperators';
-import { SourceEngineParticleSystem } from '../particles/sourceengineparticlesystem';
-import { CDmxAttribute, CDmxAttributeValue, CDmxElement } from './sourceenginepcfloader';
+import { SourceEngineParticleOperators } from '../particles/source1particleoperators';
+import { SourceEngineParticleSystem } from '../particles/source1particlesystem';
+import { CDmxAttribute, CDmxAttributeValue, CDmxElement } from './source1pcfloader';
 
 export class SourcePCF {
 	repository: string;

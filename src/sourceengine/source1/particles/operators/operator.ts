@@ -5,7 +5,7 @@ import { Mesh } from '../../../../objects/mesh';
 import { PARTICLE_ORIENTATION_SCREEN_ALIGNED, PARTICLE_ORIENTATION_SCREEN_Z_ALIGNED, PARTICLE_ORIENTATION_WORLD_Z_ALIGNED } from '../../../common/particles/particleconsts';
 import { PARAM_TYPE_ID, PARAM_TYPE_STRING } from '../constants';
 import { SourceEngineParticle } from '../particle';
-import { ParamType, SourceEngineParticleSystem } from '../sourceengineparticlesystem';
+import { ParamType, SourceEngineParticleSystem } from '../source1particlesystem';
 import { CDmxAttributeValue } from '../../export';
 
 export class SourceEngineParticleOperator {//TODOv3: rename this class ?

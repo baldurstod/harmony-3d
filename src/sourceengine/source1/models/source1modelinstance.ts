@@ -24,11 +24,11 @@ import { SourceEngineParticleSystem } from '../export';
 import { STUDIO_ANIM_DELTA } from '../loaders/mdlstudioanim';
 import { MdlStudioSeqDesc } from '../loaders/mdlstudioseqdesc';
 import { SourceAnimation } from '../loaders/sourceanimation';
-import { MdlStudioFlex, MeshTest } from '../loaders/sourceenginemdlloader';
+import { MdlStudioFlex, MeshTest } from '../loaders/source1mdlloader';
 import { MAX_STUDIO_FLEX_DESC } from '../loaders/sourcemdl';
 import { SourceModel } from '../loaders/sourcemodel';
-import { SourceEngineMaterial } from '../materials/sourceenginematerial';
-import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
+import { SourceEngineMaterial } from '../materials/source1material';
+import { SourceEngineMaterialManager } from '../materials/source1materialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
 
 const defaultMaterial = new MeshBasicMaterial();

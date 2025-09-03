@@ -2,7 +2,7 @@ import { mat4 } from 'gl-matrix';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 import { MatrixBuildScale, MatrixBuildTranslation } from './texturetransform';
-import { SourceEngineMaterialVariables } from '../sourceenginematerial';
+import { SourceEngineMaterialVariables } from '../source1material';
 import { DynamicParams } from '../../../../entities/entity';
 
 const TEMP_MAT4 = mat4.create();

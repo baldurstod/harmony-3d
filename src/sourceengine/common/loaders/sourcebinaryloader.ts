@@ -4,7 +4,7 @@ import { SourceMdl } from '../../source1/loaders/sourcemdl';
 import { SourcePCF } from '../../source1/loaders/sourcepcf';
 import { SourceVtx } from '../../source1/loaders/sourcevtx';
 import { SourceVvd } from '../../source1/loaders/sourcevvd';
-import { SourceEngineVTF } from '../../source1/textures/sourceenginevtf';
+import { SourceEngineVTF } from '../../source1/textures/source1vtf';
 import { Source2File } from '../../source2/loaders/source2file';
 
 export class SourceBinaryLoader {

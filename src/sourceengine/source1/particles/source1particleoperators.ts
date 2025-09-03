@@ -1,5 +1,5 @@
 import { SourceEngineParticleOperator } from './operators/operator';
-import { SourceEngineParticleSystem } from './sourceengineparticlesystem';
+import { SourceEngineParticleSystem } from './source1particlesystem';
 
 export class SourceEngineParticleOperators {
 	static #functions: Record<string, typeof SourceEngineParticleOperator> = {};//TODO: create Map

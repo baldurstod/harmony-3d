@@ -14,8 +14,8 @@ import { SEQUENCE_SAMPLE_COUNT } from '../../../loaders/sheet';
 import { PARAM_TYPE_FLOAT } from '../../constants';
 import { SourceEngineParticle } from '../../particle';
 import { Source1ParticleControler } from '../../source1particlecontroler';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperators } from '../../source1particleoperators';
+import { SourceEngineParticleSystem } from '../../source1particlesystem';
 import { SourceEngineParticleOperator } from '../operator';
 
 export class RenderSpriteTrail extends SourceEngineParticleOperator {

@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { DynamicParams } from '../../../../entities/entity';
 import { lerp } from '../../../../math/functions';
-import { SourceEngineMaterialVariables } from '../sourceenginematerial';
+import { SourceEngineMaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 

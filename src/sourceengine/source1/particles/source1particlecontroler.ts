@@ -3,7 +3,7 @@ import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
 import { SourcePCF } from '../loaders/sourcepcf';
-import { SourceEngineParticleSystem } from './sourceengineparticlesystem';
+import { SourceEngineParticleSystem } from './source1particlesystem';
 
 export class Source1ParticleControler {
 	static #loadManifestPromises: Record<string, Promise<boolean>> = {};

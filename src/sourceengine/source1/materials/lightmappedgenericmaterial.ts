@@ -1,5 +1,5 @@
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial } from './sourceenginematerial';
+import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
+import { SourceEngineMaterial } from './source1material';
 
 export class LightMappedGenericMaterial extends SourceEngineMaterial {//TODOv3 removeme
 

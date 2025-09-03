@@ -2,8 +2,8 @@ import { vec3 } from 'gl-matrix';
 import { ExponentialDecay } from '../../../../../math/functions';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT, PARAM_TYPE_VECTOR } from '../../constants';
 import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperators } from '../../source1particleoperators';
+import { SourceEngineParticleSystem } from '../../source1particlesystem';
 import { SourceEngineParticleOperator } from '../operator';
 
 const gravity_const = 0.5;

@@ -1,7 +1,7 @@
 import { RenderFace } from '../../../materials/constants';
 import { GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial } from './sourceenginematerial';
+import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
+import { SourceEngineMaterial } from './source1material';
 
 export class WaterMaterial extends SourceEngineMaterial {
 	#initialized = false;

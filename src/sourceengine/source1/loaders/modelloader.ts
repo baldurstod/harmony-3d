@@ -3,9 +3,9 @@ import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../geometry
 import { BufferGeometry } from '../../../geometry/buffergeometry';
 import { getLoader, registerLoader } from '../../../loaders/loaderfactory';
 import { Property, PropertyType } from '../../../utils/properties';
-import { SourceEngineMDLLoader } from './sourceenginemdlloader';
-import { SourceEngineVTXLoader } from './sourceenginevtxloader';
-import { SourceEngineVVDLoader } from './sourceenginevvdloader';
+import { SourceEngineMDLLoader } from './source1mdlloader';
+import { SourceEngineVTXLoader } from './source1vtxloader';
+import { SourceEngineVVDLoader } from './source1vvdloader';
 import { SourceMdl } from './sourcemdl';
 import { SourceModel } from './sourcemodel';
 import { SourceVtx } from './sourcevtx';

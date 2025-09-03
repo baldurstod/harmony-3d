@@ -1,7 +1,7 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { DynamicParams } from '../../../entities/entity';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole, readColor } from './sourceenginematerial';
+import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
+import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole, readColor } from './source1material';
 
 const DEFAULT_WEAR_PROGRESS = 0.0;//0.45;
 

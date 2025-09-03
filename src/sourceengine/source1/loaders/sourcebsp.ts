@@ -8,10 +8,10 @@ import { Mesh } from '../../../objects/mesh';
 import { World } from '../../../objects/world';
 import { MapEntities } from '../maps/mapentities';
 import { AngleQuaternion } from '../maps/mapentity';
-import { SourceEngineMaterialManager } from '../materials/sourceenginematerialmanager';
+import { SourceEngineMaterialManager } from '../materials/source1materialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
 import { LUMP_DISP_VERTS, LUMP_DISPINFO, LUMP_EDGES, LUMP_ENTITIES, LUMP_FACES, LUMP_GAME_LUMP, LUMP_LEAFFACES, LUMP_LEAFS, LUMP_LIGHTING, LUMP_MODELS, LUMP_SURFEDGES, LUMP_TEXDATA, LUMP_TEXDATA_STRING_DATA, LUMP_TEXINFO, LUMP_VERTEXES } from './sourcebsplump';
-import { SourceEngineBspTree } from './sourceenginebsptree';
+import { SourceEngineBspTree } from './source1bsptree';
 import { SELightMapNode } from './sourcelightmap';
 
 const DISPLACEMENT_DELTA = 1.0; // max distance from start position

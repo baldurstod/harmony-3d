@@ -4,7 +4,7 @@ import { clamp } from '../../../math/functions';
 import { Bone } from '../../../objects/bone';
 import { SourceParticleFieldValue } from '../../common/particles/types';
 import { Color } from './color';
-import { SourceEngineParticleSystem } from './sourceengineparticlesystem';
+import { SourceEngineParticleSystem } from './source1particlesystem';
 
 /**
  * TODO

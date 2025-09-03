@@ -1,7 +1,7 @@
 import { mat4 } from 'gl-matrix';
 import { DynamicParams } from '../../../../entities/entity';
 import { DEG_TO_RAD } from '../../../../math/constants';
-import { SourceEngineMaterialVariables } from '../sourceenginematerial';
+import { SourceEngineMaterialVariables } from '../source1material';
 import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 

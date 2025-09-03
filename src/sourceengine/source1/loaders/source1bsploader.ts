@@ -50,7 +50,7 @@ import {
 	SourceBSPLumpTexData,
 	SourceBSPLumpTexInfo
 } from './sourcebsplump';
-import { SourceEngineVMTLoader } from './sourceenginevmtloader';
+import { SourceEngineVMTLoader } from './source1vmtloader';
 
 const BSP_HEADER_LUMPS_COUNT = 64;
 const BYTES_PER_LUMP_HEADER = 16;

@@ -2,8 +2,8 @@ import { vec3, vec4 } from 'gl-matrix';
 import { Camera } from '../../../cameras/camera';
 import { Skeleton } from '../../../objects/skeleton';
 import { TextureManager } from '../../../textures/texturemanager';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './sourceenginematerial';
+import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
+import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt, TextureRole } from './source1material';
 
 const tempVec3 = vec3.create();
 

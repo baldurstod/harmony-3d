@@ -11,8 +11,8 @@ import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MA
 import { TEXTURE_WIDTH } from '../../../../common/particles/constants';
 import { PARAM_TYPE_FLOAT, PARAM_TYPE_INT } from '../../constants';
 import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperators } from '../../source1particleoperators';
+import { SourceEngineParticleSystem } from '../../source1particlesystem';
 import { SourceEngineParticleOperator } from '../operator';
 
 const tempVec2 = vec2.create();

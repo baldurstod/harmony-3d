@@ -2,7 +2,7 @@ import { quat, vec3 } from 'gl-matrix';
 import { CDmxAttributeValue, SourceEngineParticleSystem } from '../../../export';
 import { PARAM_TYPE_INT } from '../../constants';
 import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
+import { SourceEngineParticleOperators } from '../../source1particleoperators';
 import { SourceEngineParticleOperator } from '../operator';
 
 const DEFAULT_SET_CP_ORIENTATION_FOR_PARTICLES = false;/* TODO: check default value*/

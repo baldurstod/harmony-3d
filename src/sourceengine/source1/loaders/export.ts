@@ -1,10 +1,10 @@
 export { ModelLoader } from './modelloader';
 export { SourceBSP } from './sourcebsp';
-export { SourceEngineBSPLoader } from './sourceenginebsploader';
-export { SourceEngineMDLLoader } from './sourceenginemdlloader';
-export * from './sourceenginepcfloader';
-export { SourceEngineVMTLoader } from './sourceenginevmtloader';
-export { SourceEngineVTXLoader } from './sourceenginevtxloader';
-export { SourceEngineVVDLoader } from './sourceenginevvdloader';
+export { SourceEngineBSPLoader } from './source1bsploader';
+export { SourceEngineMDLLoader } from './source1mdlloader';
+export * from './source1pcfloader';
+export { SourceEngineVMTLoader } from './source1vmtloader';
+export { SourceEngineVTXLoader } from './source1vtxloader';
+export { SourceEngineVVDLoader } from './source1vvdloader';
 export { SourceModel } from './sourcemodel';
 export * from './sourcepcf';

@@ -18,7 +18,7 @@
 */
 
 import { DynamicParams } from "../../../../entities/entity";
-import { SourceEngineMaterialVariables, SourceEngineMaterialVmt } from "../sourceenginematerial";
+import { SourceEngineMaterialVariables, SourceEngineMaterialVmt } from "../source1material";
 
 /**
  * Source engine material interface

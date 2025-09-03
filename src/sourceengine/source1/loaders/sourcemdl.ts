@@ -5,7 +5,7 @@ import { RemapValClamped } from '../../../math/functions';
 import { FlexController } from '../models/flexcontroller';
 import { MdlBone } from './mdlbone';
 import { MdlStudioSeqDesc } from './mdlstudioseqdesc';
-import { MdlStudioFlexController, MdlStudioHitboxSet, ModelTest, SourceEngineMDLLoader } from './sourceenginemdlloader';
+import { MdlStudioFlexController, MdlStudioHitboxSet, ModelTest, SourceEngineMDLLoader } from './source1mdlloader';
 import { Source1ModelInstance } from '../export';
 import { MdlStudioAnim } from './mdlstudioanim';
 

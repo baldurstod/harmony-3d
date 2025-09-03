@@ -1,7 +1,7 @@
 import { RenderFace } from '../../../materials/constants';
 import { GL_MAX, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt } from './sourceenginematerial';
+import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
+import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt } from './source1material';
 
 export class SpriteCardMaterial extends SourceEngineMaterial {
 	#initialized = false;

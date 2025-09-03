@@ -1,7 +1,7 @@
 import { decode } from 'fast-png';
 import { vec2 } from 'gl-matrix';
 import { formatCompression, ImageFormat, ImageFormatS3tc, TextureCompressionMethod } from '../../../textures/enums';
-import { decompressDxt } from '../../source1/textures/sourceenginevtf';
+import { decompressDxt } from '../../source1/textures/source1vtf';
 import { VTEX_FLAG_CUBE_TEXTURE } from '../constants';
 import { Source2File } from '../loaders/source2file';
 import { Source2VtexBlock } from '../loaders/source2fileblock';

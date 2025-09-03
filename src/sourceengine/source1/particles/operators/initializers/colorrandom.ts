@@ -1,8 +1,8 @@
 import { BLACK, WHITE } from '../../color';
 import { PARAM_TYPE_COLOR } from '../../constants';
 import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperators } from '../../source1particleoperators';
+import { SourceEngineParticleSystem } from '../../source1particlesystem';
 import { SourceEngineParticleOperator } from '../operator';
 
 export class ColorRandom extends SourceEngineParticleOperator {

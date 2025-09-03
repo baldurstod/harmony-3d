@@ -2,8 +2,8 @@ import { SimpleSpline } from '../../../../../math/functions';
 import { AddSIMD, AndSIMD, BiasSIMD, CmpGeSIMD, CmpGtSIMD, CmpLtSIMD, MulSIMD, ReciprocalEstSIMD, ReciprocalSIMD, SubSIMD } from '../../../../common/math/sse';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_FLOAT } from '../../constants';
 import { SourceEngineParticle } from '../../particle';
-import { SourceEngineParticleOperators } from '../../sourceengineparticleoperators';
-import { SourceEngineParticleSystem } from '../../sourceengineparticlesystem';
+import { SourceEngineParticleOperators } from '../../source1particleoperators';
+import { SourceEngineParticleSystem } from '../../source1particlesystem';
 import { SourceEngineParticleOperator } from '../operator';
 
 export class RadiusScale extends SourceEngineParticleOperator {

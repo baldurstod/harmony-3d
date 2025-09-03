@@ -5,8 +5,8 @@ import { Graphics } from '../../../graphics/graphics';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Texture } from '../../../textures/texture';
 import { TextureManager } from '../../../textures/texturemanager';
-import { SourceEngineVTFLoader } from '../loaders/sourceenginevtfloader';
-import { SourceEngineVTF } from './sourceenginevtf';
+import { SourceEngineVTFLoader } from '../loaders/source1vtfloader';
+import { SourceEngineVTF } from './source1vtf';
 
 let internalTextureId = 0;
 class Source1TextureManagerClass {

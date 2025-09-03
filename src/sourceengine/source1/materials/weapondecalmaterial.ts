@@ -1,6 +1,6 @@
 import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_FLOAT, SHADER_PARAM_TYPE_INTEGER, SHADER_PARAM_TYPE_STRING, SourceEngineMaterial, TextureRole, VmtParameters, readColor } from './sourceenginematerial';
+import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
+import { SHADER_PARAM_TYPE_COLOR, SHADER_PARAM_TYPE_FLOAT, SHADER_PARAM_TYPE_INTEGER, SHADER_PARAM_TYPE_STRING, SourceEngineMaterial, TextureRole, VmtParameters, readColor } from './source1material';
 
 import { DynamicParams } from '../../../entities/entity';
 import { lerp } from '../../../math/functions';

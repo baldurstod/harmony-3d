@@ -1,8 +1,8 @@
 import { mat4 } from 'gl-matrix';
 import { TextureManager } from '../../../textures/texturemanager';
 import { GL_MAX, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, TextureRole } from './sourceenginematerial';
+import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
+import { SourceEngineMaterial, TextureRole } from './source1material';
 
 const IDENTITY_MATRIX = mat4.create();
 const USE_FRAME2 = true;

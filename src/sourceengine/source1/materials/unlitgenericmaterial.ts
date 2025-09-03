@@ -1,7 +1,7 @@
 import { vec4 } from 'gl-matrix';
 import { MATERIAL_BLENDING_ADDITIVE } from '../../../materials/material';
-import { SourceEngineVMTLoader } from '../loaders/sourceenginevmtloader';
-import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt } from './sourceenginematerial';
+import { SourceEngineVMTLoader } from '../loaders/source1vmtloader';
+import { SourceEngineMaterial, SourceEngineMaterialParams, SourceEngineMaterialVmt } from './source1material';
 
 export class UnlitGenericMaterial extends SourceEngineMaterial {
 	#diffuseModulation = vec4.fromValues(1.0, 1.0, 1.0, 1.0);

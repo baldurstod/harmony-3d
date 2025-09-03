@@ -3,7 +3,7 @@ import { getLoader } from '../../../loaders/loaderfactory';
 import { JSONObject } from '../../../types';
 import { customFetch } from '../../../utils/customfetch';
 import { SourceEngineVMTLoader } from '../export';
-import { SourceEngineMaterial } from './sourceenginematerial';
+import { SourceEngineMaterial } from './source1material';
 
 function cleanSource1MaterialName(name: string) {
 	name = name.replace(/\\/g, '/').toLowerCase().replace(/\.vmt$/g, '').replace(/^materials\//g, '');
