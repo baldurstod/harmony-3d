@@ -264,13 +264,17 @@ export class Entity {
 		return quat.copy(quaternion, this._quaternion);
 	}
 
+	/**
+	 * @deprecated Please use `setQuaternion` instead.
+	 */
 	set quaternion(quaternion: quat) {
-		// TODO: deprecate
 		this.setQuaternion(quaternion);
 	}
 
+	/**
+	 * @deprecated Please use `getQuaternion` instead.
+	 */
 	get quaternion() {
-		// TODO: deprecate
 		return this.getQuaternion();
 	}
 
