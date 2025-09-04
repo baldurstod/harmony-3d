@@ -49,7 +49,11 @@ export function getGraphics() {
 
 export interface RenderContext {
 	DisableToolRendering?: boolean;
-	imageBitmap?: ImageBitmapRenderingContext | null;
+	imageBitmap?: {
+		context: ImageBitmapRenderingContext;
+		width: number;
+		height: number;
+	};
 }
 
 interface GraphicsInitOptions {
@@ -143,9 +147,11 @@ export class Graphics {
 
 	initCanvas(contextAttributes: GraphicsInitOptions = {}) {
 		this.#canvas = contextAttributes.canvas ?? createElement('canvas') as HTMLCanvasElement;
+		/*
 		if (!this.#canvas.hasAttribute('tabindex')) {
 			this.#canvas.setAttribute('tabindex', "1");
 		}
+		*/
 		ShortcutHandler.addContext('3dview', this.#canvas!);
 
 		this.#width = this.#canvas!.width;
@@ -215,7 +221,7 @@ export class Graphics {
 		const pixels = new Uint8Array(4);
 		this.glContext?.readPixels(x, this.#canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
-		const pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
+		const pickedEntityIndex = (pixels[0]! << 16) + (pixels[1]! << 8) + (pixels[2]!);
 		return pickList.get(pickedEntityIndex) ?? null;
 	}
 
@@ -264,12 +270,19 @@ export class Graphics {
 		if (MEASURE_PERFORMANCE) {
 			WebGLStats.beginRender();
 		}
+
+		if (USE_OFF_SCREEN_CANVAS && context.imageBitmap && this.#offscreenCanvas) {
+			this.#offscreenCanvas.width = context.imageBitmap.width;
+			this.#offscreenCanvas.height = context.imageBitmap.height;
+			this.viewport = vec4.fromValues(0, 0, context.imageBitmap.width, context.imageBitmap.height);
+		}
+
 		this.renderBackground();//TODOv3 put in rendering pipeline
 		this.#forwardRenderer!.render(scene, camera, delta, context);
 
 		if (USE_OFF_SCREEN_CANVAS) {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
-			(context.imageBitmap ?? this.#bipmapContext)?.transferFromImageBitmap(bitmap);
+			(context.imageBitmap?.context ?? this.#bipmapContext)?.transferFromImageBitmap(bitmap);
 		}
 
 		if (MEASURE_PERFORMANCE) {
@@ -653,11 +666,11 @@ export class Graphics {
 		this.#setRenderTarget(renderTarget);
 	}
 
-	popRenderTarget(): RenderTarget {
+	popRenderTarget(): RenderTarget | null {
 		this.#renderTargetStack.pop();
 		const renderTarget = this.#renderTargetStack[this.#renderTargetStack.length - 1];
 		this.#setRenderTarget(renderTarget);
-		return renderTarget;
+		return renderTarget ?? null;
 	}
 
 	#setRenderTarget(renderTarget?: RenderTarget) {
@@ -731,7 +744,7 @@ export class Graphics {
 		}
 		this.#mediaRecorder.stop();
 		//Stop the canvas stream
-		this.#mediaRecorder.stream.getVideoTracks()[0].stop();
+		this.#mediaRecorder?.stream.getVideoTracks()?.[0]?.stop();
 	}
 
 	get ready() {
