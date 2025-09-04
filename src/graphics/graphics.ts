@@ -1,7 +1,7 @@
 import { vec2, vec4 } from 'gl-matrix';
 import { saveFile, ShortcutHandler } from 'harmony-browser-utils';
 import { createElement } from 'harmony-ui';
-import { DEBUG, DISABLE_WEBGL2, ENABLE_GET_ERROR, MEASURE_PERFORMANCE, TESTING, USE_OFF_SCREEN_CANVAS, USE_STATS, VERBOSE } from '../buildoptions';
+import { DEBUG, DISABLE_WEBGL2, ENABLE_GET_ERROR, MEASURE_PERFORMANCE, TESTING, USE_STATS, VERBOSE } from '../buildoptions';
 import { Camera } from '../cameras/camera';
 import { MAX_HARDWARE_BONES, RECORDER_DEFAULT_FILENAME, RECORDER_MIME_TYPE } from '../constants';
 import { Entity } from '../entities/entity';
@@ -57,9 +57,18 @@ export interface RenderContext {
 }
 
 interface GraphicsInitOptions {
+	/**
+	 * The canvas to render into. Method getContext() must not have been called on the canvas.
+	 * If no canvas is provided, one will be created.
+	 * If useOffscreenCanvas is true, the canvas will be ignored.
+	*/
 	canvas?: HTMLCanvasElement,
+	/** Render using an OffscreenCanvas. Allow rendering to several canvas on a page. Default to false. */
+	useOffscreenCanvas?: boolean,
+	/** Auto resize the canvas to fit its parent. Default to false. */
 	autoResize?: boolean,
 
+	/** WebGL attributes passed to getContext() */
 	webGL?: {
 		alpha?: boolean,
 		depth?: boolean,
@@ -99,8 +108,8 @@ export class Graphics {
 	#readyPromiseResolve!: (value: boolean) => void;
 	#readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
 	#canvas?: HTMLCanvasElement;
-	#width = 0;
-	#height = 0;
+	#width = 300;
+	#height = 150;
 	#offscreenCanvas?: OffscreenCanvas;
 	#forwardRenderer?: ForwardRenderer;
 	glContext!: WebGLAnyRenderingContext;
@@ -146,19 +155,20 @@ export class Graphics {
 	}
 
 	initCanvas(contextAttributes: GraphicsInitOptions = {}) {
-		this.#canvas = contextAttributes.canvas ?? createElement('canvas') as HTMLCanvasElement;
+		if (contextAttributes.useOffscreenCanvas) {
+			this.#offscreenCanvas = new OffscreenCanvas(this.#width, this.#height);
+		} else {
+			this.#canvas = contextAttributes.canvas ?? createElement('canvas') as HTMLCanvasElement;
+			ShortcutHandler.addContext('3dview', this.#canvas);
+			this.#width = this.#canvas.width;
+			this.#height = this.#canvas.height;
+			this.listenCanvas(this.#canvas);
+		}
 		/*
 		if (!this.#canvas.hasAttribute('tabindex')) {
 			this.#canvas.setAttribute('tabindex', "1");
 		}
 		*/
-		ShortcutHandler.addContext('3dview', this.#canvas!);
-
-		this.#width = this.#canvas!.width;
-		this.#height = this.#canvas!.height;
-		if (USE_OFF_SCREEN_CANVAS) {
-			this.#offscreenCanvas = new OffscreenCanvas(this.#width, this.#height);
-		}
 
 		this.#initContext(contextAttributes);
 		this.#initObserver();
@@ -176,7 +186,6 @@ export class Graphics {
 			this.autoResize = autoResize;
 		}
 
-		this.listenCanvas(this.#canvas!);
 
 		this.#readyPromiseResolve(true);
 		return this;
@@ -226,7 +235,7 @@ export class Graphics {
 	}
 
 	#mouseDown(event: MouseEvent) {
-		this.#canvas!.focus();
+		(event.target as HTMLCanvasElement).focus?.();
 		const x = event.offsetX;
 		const y = event.offsetY;
 		this.#pickedEntity = this.pickEntity(x, y);
@@ -271,7 +280,7 @@ export class Graphics {
 			WebGLStats.beginRender();
 		}
 
-		if (USE_OFF_SCREEN_CANVAS && context.imageBitmap && this.#offscreenCanvas) {
+		if (this.#offscreenCanvas && context.imageBitmap) {
 			this.#offscreenCanvas.width = context.imageBitmap.width;
 			this.#offscreenCanvas.height = context.imageBitmap.height;
 			this.viewport = vec4.fromValues(0, 0, context.imageBitmap.width, context.imageBitmap.height);
@@ -280,7 +289,7 @@ export class Graphics {
 		this.renderBackground();//TODOv3 put in rendering pipeline
 		this.#forwardRenderer!.render(scene, camera, delta, context);
 
-		if (USE_OFF_SCREEN_CANVAS) {
+		if (this.#offscreenCanvas) {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
 			(context.imageBitmap?.context ?? this.#bipmapContext)?.transferFromImageBitmap(bitmap);
 		}
@@ -340,9 +349,9 @@ export class Graphics {
 	}
 
 	#initContext(contextAttributes: GraphicsInitOptions) {
-		const canvas = USE_OFF_SCREEN_CANVAS ? this.#offscreenCanvas : this.#canvas;
-		if (USE_OFF_SCREEN_CANVAS) {
-			this.#bipmapContext = this.#canvas!.getContext('bitmaprenderer');
+		const canvas = this.#offscreenCanvas ?? this.#canvas;
+		if (this.#offscreenCanvas) {
+			//this.#bipmapContext = this.#canvas.getContext('bitmaprenderer');
 		}
 		if (!canvas) {
 			return;
@@ -545,7 +554,7 @@ export class Graphics {
 		}
 		this.#canvas.width = this.#width * this.#pixelRatio;
 		this.#canvas.height = this.#height * this.#pixelRatio;
-		if (USE_OFF_SCREEN_CANVAS) {
+		if (this.#offscreenCanvas) {
 			this.#offscreenCanvas!.width = this.#canvas.width;
 			this.#offscreenCanvas!.height = this.#canvas.height;
 		}
@@ -715,7 +724,7 @@ export class Graphics {
 		const callback = function (blob: Blob | null) {
 			promiseResolve(blob);
 		};
-		this.#canvas!.toBlob(callback, type, quality);
+		this.#canvas?.toBlob(callback, type, quality);
 		return promise;
 	}
 
@@ -729,9 +738,11 @@ export class Graphics {
 	}
 
 	startRecording(frameRate = 60, bitsPerSecond: number) {
-		const stream = this.#canvas!.captureStream(frameRate);
-		this.#mediaRecorder = new MediaRecorder(stream, { mimeType: RECORDER_MIME_TYPE, bitsPerSecond: bitsPerSecond });
-		this.#mediaRecorder.start();
+		if (this.#canvas) {
+			const stream = this.#canvas.captureStream(frameRate);
+			this.#mediaRecorder = new MediaRecorder(stream, { mimeType: RECORDER_MIME_TYPE, bitsPerSecond: bitsPerSecond });
+			this.#mediaRecorder.start();
+		}
 	}
 
 	stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {

@@ -7,7 +7,6 @@ const __VERBOSE__ = false;
 const __USE_STATS__ = false;
 const __MEASURE_PERFORMANCE__ = false;
 const __TESTING__ = false;
-const __USE_OFF_SCREEN_CANVAS__ = false;
 const __DISABLE_WEBGL2__ = false;
 const __ENABLE_S3TC__ = true;
 const __ENABLE_GET_ERROR__ = false;
@@ -23,8 +22,6 @@ export const USE_STATS = __USE_STATS__;
 export const MEASURE_PERFORMANCE = __MEASURE_PERFORMANCE__;
 
 export const TESTING = __TESTING__;// Don't use in production
-
-export const USE_OFF_SCREEN_CANVAS = false && __USE_OFF_SCREEN_CANVAS__;
 
 export const DISABLE_WEBGL2 = __DISABLE_WEBGL2__;// Set to true to force webgl1
 export const ENABLE_S3TC = __ENABLE_S3TC__;// Set to false to force decompression DXT1/3/5 using webassembly
