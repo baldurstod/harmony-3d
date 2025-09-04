@@ -107,6 +107,15 @@ export class Graphics {
 	OES_texture_float_linear: any;
 	#mediaRecorder?: MediaRecorder;
 	dragging = false;
+	#mouseDownFunc = (event: MouseEvent) => this.#mouseDown(event);
+	#mouseMoveFunc = (event: MouseEvent) => this.#mouseMove(event);
+	#mouseUpFunc = (event: MouseEvent) => this.#mouseUp(event);
+	#keyDownFunc = (event: KeyboardEvent) => GraphicsEvents.keyDown(event);
+	#keyUpFunc = (event: KeyboardEvent) => GraphicsEvents.keyUp(event);
+	#wheelFunc = (event: WheelEvent) => this.#wheel(event);
+	#touchStartFunc = (event: TouchEvent) => GraphicsEvents.touchStart(this.#pickedEntity, event);
+	#touchMoveFunc = (event: TouchEvent) => GraphicsEvents.touchMove(this.#pickedEntity, event);
+	#touchCancelFunc = (event: TouchEvent) => GraphicsEvents.touchCancel(this.#pickedEntity, event);
 
 	constructor() {
 		if (Graphics.#instance) {
@@ -161,18 +170,37 @@ export class Graphics {
 			this.autoResize = autoResize;
 		}
 
-		this.#canvas!.addEventListener('mousedown', (event: MouseEvent) => this.#mouseDown(event));
-		this.#canvas!.addEventListener('mousemove', (event: MouseEvent) => this.#mouseMove(event));
-		this.#canvas!.addEventListener('mouseup', (event: MouseEvent) => this.#mouseUp(event));
-		this.#canvas!.addEventListener('keydown', (event: KeyboardEvent) => GraphicsEvents.keyDown(event));
-		this.#canvas!.addEventListener('keyup', (event: KeyboardEvent) => GraphicsEvents.keyUp(event));
-		this.#canvas!.addEventListener('wheel', (event: WheelEvent) => this.#wheel(event));
-		this.#canvas!.addEventListener('touchstart', (event: TouchEvent) => GraphicsEvents.touchStart(this.#pickedEntity, event));
-		this.#canvas!.addEventListener('touchmove', (event: TouchEvent) => GraphicsEvents.touchMove(this.#pickedEntity, event));
-		this.#canvas!.addEventListener('touchcancel', (event: TouchEvent) => GraphicsEvents.touchCancel(this.#pickedEntity, event));
+		this.listenCanvas(this.#canvas!);
 
 		this.#readyPromiseResolve(true);
 		return this;
+	}
+
+	listenCanvas(canvas: HTMLCanvasElement): void {
+		canvas.addEventListener('mousedown', this.#mouseDownFunc);
+		canvas.addEventListener('mousemove', this.#mouseMoveFunc);
+		canvas.addEventListener('mouseup', this.#mouseUpFunc);
+		canvas.addEventListener('keydown', this.#keyDownFunc);
+		canvas.addEventListener('keyup', this.#keyUpFunc);
+		canvas.addEventListener('wheel', this.#wheelFunc);
+		canvas.addEventListener('touchstart', this.#touchStartFunc);
+		canvas.addEventListener('touchmove', this.#touchMoveFunc);
+		canvas.addEventListener('touchcancel', this.#touchCancelFunc);
+		if (!canvas.hasAttribute('tabindex')) {
+			canvas.setAttribute('tabindex', "1");
+		}
+	}
+
+	unlistenCanvas(canvas: HTMLCanvasElement): void {
+		canvas.removeEventListener('mousedown', this.#mouseDownFunc);
+		canvas.removeEventListener('mousemove', this.#mouseMoveFunc);
+		canvas.removeEventListener('mouseup', this.#mouseUpFunc);
+		canvas.removeEventListener('keydown', this.#keyDownFunc);
+		canvas.removeEventListener('keyup', this.#keyUpFunc);
+		canvas.removeEventListener('wheel', this.#wheelFunc);
+		canvas.removeEventListener('touchstart', this.#touchStartFunc);
+		canvas.removeEventListener('touchmove', this.#touchMoveFunc);
+		canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
 	}
 
 	pickEntity(x: number, y: number) {
