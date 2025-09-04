@@ -559,16 +559,30 @@ export class Graphics {
 			this.#offscreenCanvas!.height = this.#canvas.height;
 		}
 
-		this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
+		this.setViewport(vec4.fromValues(0, 0, this.#width, this.#height));///ODO: optimize
 	}
 
-	set viewport(viewport) {
+	setViewport(viewport: vec4): void {
 		vec4.copy(this.#viewport, viewport);
 		WebGLRenderingState.viewport(viewport);
 	}
 
+	/**
+	 * @deprecated Please use `setViewport` instead.
+	 */
+	set viewport(viewport: vec4) {
+		this.setViewport(viewport);
+	}
+
+	getViewport(out: vec4): vec4 {
+		return vec4.copy(out, this.#viewport);
+	}
+
+	/**
+	 * @deprecated Please use `getViewport` instead.
+	 */
 	get viewport() {
-		return vec4.clone(this.#viewport);
+		return this.getViewport(vec4.create());
 	}
 
 	set scissor(scissor: vec4) {
