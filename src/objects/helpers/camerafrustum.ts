@@ -1,12 +1,11 @@
 import { vec3 } from 'gl-matrix';
-
-import { Mesh } from '../mesh';
-import { Float32BufferAttribute, Uint8BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { Float32BufferAttribute, Uint16BufferAttribute, Uint8BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
-import { GraphicsEvents, GraphicsEvent } from '../../graphics/graphicsevents';
+import { GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
 import { LineBasicMaterial } from '../../materials/linebasicmaterial';
-import { GL_LINES } from '../../webgl/constants';
 import { MaterialColorMode } from '../../materials/material';
+import { GL_LINES } from '../../webgl/constants';
+import { Mesh, MeshParameters } from '../mesh';
 
 const BASE_COLOR = [1, 1, 1, 1];
 const FRUSTRUM_COLOR = [1, 0, 0, 1];
@@ -96,8 +95,11 @@ const Lines = [
 export class CameraFrustum extends Mesh {
 	#camera;
 	#vertexPositionAttribute;
-	constructor() {
-		super(new BufferGeometry(), new LineBasicMaterial());
+
+	constructor(params: MeshParameters = {}) {
+		params.geometry = new BufferGeometry();
+		params.material = new LineBasicMaterial();
+		super(params);
 		this.renderMode = GL_LINES;
 		this.#createVertices();
 		this.material.setColorMode(MaterialColorMode.PerVertex);

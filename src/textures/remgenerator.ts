@@ -281,7 +281,7 @@ export class RemGenerator {
 	}
 
 	#compileMaterial(material: Material) {
-		const tmpMesh = new Mesh(this.#lodPlanes[0], material);
+		const tmpMesh = new Mesh({ geometry: this.#lodPlanes[0], material: material });
 		//this.#renderer.compile(tmpMesh, flatCamera);
 
 	}
@@ -395,7 +395,7 @@ export class RemGenerator {
 			material = this.#equirectMaterial;
 		}
 
-		const mesh = new Mesh(this.#lodPlanes[0], material);
+		const mesh = new Mesh({ geometry: this.#lodPlanes[0], material: material });
 		const scene = new Scene();
 		scene.addChild(mesh);
 
@@ -481,7 +481,7 @@ export class RemGenerator {
 		// Number of standard deviations at which to cut off the discrete approximation.
 		const STANDARD_DEVIATIONS = 3;
 
-		const blurMesh = new Mesh(this.#lodPlanes[lodOut], this.#blurMaterial);
+		const blurMesh = new Mesh({ geometry: this.#lodPlanes[lodOut], material: this.#blurMaterial });
 		const blurUniforms = this.#blurMaterial.uniforms;
 		const scene = new Scene();
 		scene.addChild(blurMesh);

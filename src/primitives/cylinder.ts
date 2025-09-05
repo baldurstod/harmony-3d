@@ -1,16 +1,28 @@
-import { CylinderBufferGeometry } from './geometries/cylinderbuffergeometry';
-import { JSONLoader } from '../importers/jsonloader';
-import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
-import { Mesh } from '../objects/mesh';
 import { registerEntity } from '../entities/entities';
+import { JSONLoader } from '../importers/jsonloader';
+import { Material } from '../materials/material';
+import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
+import { Mesh, MeshParameters } from '../objects/mesh';
+import { CylinderBufferGeometry } from './geometries/cylinderbuffergeometry';
+
+export type CylinderParameters = MeshParameters & {
+	radius?: number,
+	height?: number,
+	segments?: number,
+	hasCap?: boolean,
+	material?: Material,
+};
 
 export class Cylinder extends Mesh {
 	#radius: number;
 	#height: number;
 	#segments: number;
 	#hasCap: boolean;
-	constructor(params: any = {}) {
-		super(new CylinderBufferGeometry(), params.material ?? new MeshBasicMaterial());
+
+	constructor(params: CylinderParameters = {}) {
+		params.geometry = new CylinderBufferGeometry();
+		params.material = params.material ?? new MeshBasicMaterial();
+		super(params);
 		super.setParameters(params);
 		this.#radius = params.radius ?? 1;
 		this.#height = params.height ?? 1;
@@ -44,7 +56,7 @@ export class Cylinder extends Mesh {
 	}
 
 	static async constructFromJSON(json, entities, loadedPromise) {
-		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise) as Material;
 		return new Cylinder({ radius: json.radius, height: json.height, material: material, segments: json.segments, hasCap: json.hasCap });
 	}
 

@@ -1,6 +1,6 @@
-import { GL_ARRAY_BUFFER, GL_STATIC_DRAW, GL_BYTE, GL_SHORT, GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_FLOAT, GL_HALF_FLOAT, GL_UNSIGNED_INT, GL_INT, GL_DYNAMIC_DRAW, GL_STREAM_DRAW, GL_STATIC_READ, GL_DYNAMIC_READ, GL_STREAM_READ, GL_STATIC_COPY, GL_DYNAMIC_COPY, GL_STREAM_COPY } from '../webgl/constants';
 import { VERBOSE } from '../buildoptions';
 import { WebGLAnyRenderingContext } from '../types';
+import { GL_ARRAY_BUFFER, GL_BYTE, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_FLOAT, GL_INT, GL_SHORT, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_SHORT } from '../webgl/constants';
 
 const TypedArrayProto = Object.getPrototypeOf(Int8Array);// we can't use TypedArray directly
 
@@ -26,9 +26,10 @@ export class BufferAttribute {
 	dirty: boolean;
 	_array: typeof TypedArrayProto;
 	count = 0;
-	_buffer?: WebGLBuffer;
+	_buffer: WebGLBuffer | null = null;
 	#source: any;
 	divisor = 0;
+
 	constructor(array: typeof TypedArrayProto, itemSize: number) {
 		this.itemSize = itemSize;
 		if (isNaN(this.itemSize)) {

@@ -1,14 +1,24 @@
-import { PlaneBufferGeometry } from '../../primitives/geometries/planebuffergeometry';
 import { GridMaterial } from '../../materials/gridmaterial';
-import { Mesh } from '../../objects/mesh';
+import { Mesh, MeshParameters } from '../../objects/mesh';
+import { PlaneBufferGeometry } from '../../primitives/geometries/planebuffergeometry';
+
+export type GridParameters = MeshParameters & {
+	size?: number,
+	spacing?: number,
+	normal?: number,
+};
+
 
 export class Grid extends Mesh {
 	#size: number;
 	#spacing: number;
 	#normal: number;
-	constructor(params: any = {}) {
+
+	constructor(params: GridParameters = {}) {
 		const spacing = params.spacing ?? 10;
-		super(new PlaneBufferGeometry(), new GridMaterial({ spacing: spacing }));
+		params.geometry = new PlaneBufferGeometry();
+		params.material = new GridMaterial({ spacing: spacing });
+		super(params);
 		this.#size = params.size ?? 100;
 		this.#spacing = spacing;
 		this.#normal = params.normal ?? 2;

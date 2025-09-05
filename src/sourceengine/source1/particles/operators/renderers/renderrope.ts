@@ -79,7 +79,7 @@ export class RenderRope extends Source1ParticleOperator {
 
 	initRenderer() {
 		this.geometry = new BeamBufferGeometry();
-		this.mesh = new Mesh(this.geometry, this.particleSystem.material);
+		this.mesh = new Mesh({ geometry: this.geometry, material: this.particleSystem.material });
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('IS_ROPE');

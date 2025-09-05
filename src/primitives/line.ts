@@ -1,19 +1,28 @@
 import { vec3 } from 'gl-matrix';
 
-import { LineSegmentsGeometry } from './geometries/linesegmentsgeometry';
+import { registerEntity } from '../entities/entities';
 import { JSONLoader } from '../importers/jsonloader';
 import { LineMaterial } from '../materials/linematerial';
-import { Mesh } from '../objects/mesh';
-import { registerEntity } from '../entities/entities';
+import { Material } from '../materials/material';
+import { Mesh, MeshParameters } from '../objects/mesh';
+import { LineSegmentsGeometry } from './geometries/linesegmentsgeometry';
 
 const DEFAULT_VEC3 = vec3.create();
+
+export type LineParameters = MeshParameters & {
+	start?: vec3,
+	end?: vec3,
+};
 
 export class Line extends Mesh {
 	isLine = true;
 	#start = vec3.create();
 	#end = vec3.create();
-	constructor(params: any = {}) {
-		super(new LineSegmentsGeometry(), params.material ?? new LineMaterial());
+
+	constructor(params: LineParameters = {}) {
+		params.geometry = new LineSegmentsGeometry();
+		params.material = params.material ?? new LineMaterial();
+		super(params);
 		if (params.start) {
 			vec3.copy(this.#start, params.start);
 		}
@@ -64,7 +73,7 @@ export class Line extends Mesh {
 	}
 
 	static async constructFromJSON(json, entities, loadedPromise) {
-		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise) as Material;
 		return new Line({ start: json.start, end: json.end, material: material });
 	}
 

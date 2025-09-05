@@ -3,15 +3,27 @@ import { vec3 } from 'gl-matrix';
 import { SphereBufferGeometry } from './geometries/spherebuffergeometry';
 import { JSONLoader } from '../importers/jsonloader';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
-import { Mesh } from '../objects/mesh';
+import { Mesh, MeshParameters } from '../objects/mesh';
 import { PI, TAU } from '../math/constants';
 import { registerEntity } from '../entities/entities';
+import { Material } from '../materials/material';
 
 const intersectionPoint1 = vec3.create();
 const intersectionPoint2 = vec3.create();
 const intersectionNormal = vec3.create();
 const tempVec3 = vec3.create();
 const v = vec3.create();
+
+export type SphereParameters = MeshParameters & {
+	radius?: number,
+	segments?: number,
+	rings?: number,
+	phiStart?: number,
+	phiLength?: number,
+	thetaStart?: number,
+	thetaLength?: number,
+	material?: Material,
+};
 
 export class Sphere extends Mesh {
 	radius: number;
@@ -23,8 +35,10 @@ export class Sphere extends Mesh {
 	thetaLength: number;
 	isSphere = true;
 
-	constructor(params: any = {}) {
-		super(new SphereBufferGeometry(), params.material ?? new MeshBasicMaterial());
+	constructor(params: SphereParameters = {}) {
+		params.geometry = new SphereBufferGeometry();
+		params.material = params.material ?? new MeshBasicMaterial();
+		super(params);
 		this.radius = params.radius ?? 1;
 		this.segments = params.segments ?? 8;
 		this.rings = params.rings ?? 8;
@@ -85,7 +99,7 @@ export class Sphere extends Mesh {
 	}
 
 	static async constructFromJSON(json, entities, loadedPromise) {
-		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise) as Material;
 		return new Sphere({ radius: json.radius, material: material, segments: json.segments, rings: json.rings, phiStart: json.phistart, phiLength: json.philength, thetaStart: json.thetastart, thetaLength: json.thetalength });
 	}
 

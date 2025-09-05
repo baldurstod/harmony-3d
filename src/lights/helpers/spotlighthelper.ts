@@ -1,14 +1,14 @@
 import { vec3, vec4 } from 'gl-matrix';
 
-import { GraphicsEvents, GraphicsEvent } from '../../graphics/graphicsevents';
-import { Mesh } from '../../objects/mesh';
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
-import { BufferGeometry } from '../../geometry/buffergeometry';
-import { LineBasicMaterial } from '../../materials/linebasicmaterial';
-import { SpotLight } from '../spotlight';
-import { TWO_PI } from '../../math/constants';
-import { GL_LINES } from '../../webgl/constants';
 import { Entity } from '../../entities/entity';
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
+import { BufferGeometry } from '../../geometry/buffergeometry';
+import { GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
+import { LineBasicMaterial } from '../../materials/linebasicmaterial';
+import { TWO_PI } from '../../math/constants';
+import { Mesh, MeshParameters } from '../../objects/mesh';
+import { GL_LINES } from '../../webgl/constants';
+import { SpotLight } from '../spotlight';
 
 const DIVISIONS = 32;
 const tempVec4: vec4 = vec4.create();
@@ -19,8 +19,11 @@ export class SpotLightHelper extends Mesh {
 	#range;
 	#spotLight: SpotLight;
 	#vertexPositionAttribute;
-	constructor() {
-		super(new BufferGeometry(), new LineBasicMaterial());
+
+	constructor(params: MeshParameters = {}) {
+		params.geometry = new BufferGeometry();
+		params.material = new LineBasicMaterial();
+		super(params);
 		this.renderMode = GL_LINES;
 		this.#createVertices();
 		this.material.setMeshColor();

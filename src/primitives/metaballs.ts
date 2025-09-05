@@ -1,19 +1,25 @@
+import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
-import { Mesh } from '../objects/mesh';
+import { Mesh, MeshParameters } from '../objects/mesh';
 import { MetaballsBufferGeometry } from './geometries/metaballsbuffergeometry';
 import { Metaball } from './metaball';
+
+export type MetaballsParameters = MeshParameters & {
+	cubeWidth?: number,
+};
 
 export class Metaballs extends Mesh {
 	cubeWidth: number;
 	#balls: Metaball[] = [];
 
-	constructor(material = new MeshBasicMaterial(), cubeWidth = 1) {
-		super(new MetaballsBufferGeometry(), material);
+	constructor(params: MetaballsParameters = {}) {
+		params.geometry = new MetaballsBufferGeometry();
+		params.material = params.material ?? new MeshBasicMaterial();
+		super(params);
 
 		/*this.setGeometry(new MetaballsBufferGeometry());
 		this.setMaterial(material);*/
-		this.cubeWidth = cubeWidth;
-
+		this.cubeWidth = params.cubeWidth ?? 1;
 	}
 
 	addBall(ball = new Metaball()) {

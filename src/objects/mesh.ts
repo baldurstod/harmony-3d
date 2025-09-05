@@ -1,5 +1,5 @@
 import { vec2, vec3 } from 'gl-matrix';
-import { Entity } from '../entities/entity';
+import { Entity, EntityParameters } from '../entities/entity';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { Material, UniformValue } from '../materials/material';
 import { MaterialManager } from '../materials/materialmanager';
@@ -27,9 +27,17 @@ const intersectionNormal = vec3.create();
 const ray = new Ray();
 const uv = vec2.create();
 
+export type MeshParameters = EntityParameters & {
+	geometry?: BufferGeometry,
+	material?: Material,
+};
+
+const meshDefaultBufferGeometry = new BufferGeometry();
+const meshDefaultMaterial = new Material();
+
 export class Mesh extends Entity {
-	#geometry?: BufferGeometry;
-	#material?: Material;
+	#geometry!: BufferGeometry;
+	#material!: Material;
 	#dirtyProgram = true;//TODOv3 use another method
 	renderMode = GL_TRIANGLES;
 	isRenderable = true;
@@ -37,21 +45,27 @@ export class Mesh extends Entity {
 	defines = Object.create(null);
 	isMesh = true;
 
-	constructor(geometry?: BufferGeometry, material?: Material) {
-		super();
-		this.setGeometry(geometry);
-		this.setMaterial(material);
+	constructor(params: MeshParameters) {
+		super(params);
+		this.setGeometry(params.geometry ?? meshDefaultBufferGeometry);
+		this.setMaterial(params.material ?? meshDefaultMaterial);
 	}
 
+	/**
+	 * @deprecated Please use `setMaterial` instead.
+	 */
 	set material(material) {
 		this.setMaterial(material);
 	}
 
+	/**
+	 * @deprecated Please use `getMaterial` instead.
+	 */
 	get material() {
 		return this.getMaterial();
 	}
 
-	setGeometry(geometry?: BufferGeometry) {
+	setGeometry(geometry: BufferGeometry) {
 		if (this.#geometry == geometry) {
 			return;
 		}
@@ -64,11 +78,18 @@ export class Mesh extends Entity {
 		this.#geometry = geometry;
 	}
 
+	/**
+	 * @deprecated Please use `getGeometry` instead.
+	 */
 	get geometry() {
 		return this.#geometry;
 	}
 
-	setMaterial(material?: Material) {
+	getGeometry() {
+		return this.#geometry;
+	}
+
+	setMaterial(material: Material) {
 		if (this.#material != material) {
 			if (this.#material) {
 				this.#material.removeUser(this);
@@ -108,7 +129,7 @@ export class Mesh extends Entity {
 	exportObj() {
 		const ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
 		const attributes: Record<string, string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
-		const geometry = this.geometry;
+		const geometry = this.#geometry;
 		for (const objAttribute in attributes) {
 			const geometryAttribute = attributes[objAttribute]!;
 			if (geometry?.getAttribute(geometryAttribute)) {
@@ -145,7 +166,7 @@ export class Mesh extends Entity {
 		max[1] = -Infinity;
 		max[2] = -Infinity;
 
-		const vertexPosition = this.geometry?.getAttribute('aVertexPosition')?._array;
+		const vertexPosition = this.#geometry.getAttribute('aVertexPosition')?._array;
 		for (let i = 0, l = vertexPosition.length; i < l; i += 3) {
 			tempVec3[0] = vertexPosition[i + 0];
 			tempVec3[1] = vertexPosition[i + 1];
@@ -158,7 +179,7 @@ export class Mesh extends Entity {
 
 	getBoundingBox(boundingBox = new BoundingBox()) {
 		boundingBox.reset();
-		boundingBox.setPoints(this.geometry?.getAttribute('aVertexPosition')?._array);
+		boundingBox.setPoints(this.#geometry.getAttribute('aVertexPosition')?._array);
 		return boundingBox;
 	}
 
@@ -192,7 +213,7 @@ export class Mesh extends Entity {
 	}
 
 	raycast(raycaster: Raycaster, intersections: Intersection[]) {
-		const geometry = this.geometry;
+		const geometry = this.#geometry;
 		const indices = geometry?.getAttribute('index')?._array;
 		const vertices = geometry?.getAttribute('aVertexPosition')?._array;
 		const textureCoords = geometry?.getAttribute('aTextureCoord')?._array;

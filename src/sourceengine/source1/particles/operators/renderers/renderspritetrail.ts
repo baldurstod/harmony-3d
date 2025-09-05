@@ -111,7 +111,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 
 		geometry.count = indices.length;
 
-		this.mesh = new Mesh(geometry, this.particleSystem.material);
+		this.mesh = new Mesh({ geometry: geometry, material: this.particleSystem.material });
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');

@@ -1,20 +1,24 @@
 import { mat4, vec3 } from 'gl-matrix';
-
-import { Mesh } from './mesh';
+import { registerEntity } from '../entities/entities';
 import { Float32BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
 import { BufferGeometry } from '../geometry/buffergeometry';
-import { JSONLoader } from '../importers/jsonloader';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { stringToVec3 } from '../utils/utils';
-import { registerEntity } from '../entities/entities';
+import { Mesh, MeshParameters } from './mesh';
 
 const DEFAULT_SIZE = vec3.fromValues(1, 1, 1);
 
+export type DecalParameters = MeshParameters & {
+	size?: vec3,
+};
+
 export class Decal extends Mesh {
 	#size = vec3.create();
-	//constructor(size = DEFAULT_SIZE, material = new MeshBasicMaterial({polygonOffset:true})) {
-	constructor(params: any = {}) {
-		super(new DecalGeometry(), params.material ?? new MeshBasicMaterial({ polygonOffset: true }));
+
+	constructor(params: DecalParameters = {}) {
+		params.geometry = new DecalGeometry();
+		params.material = params.material ?? new MeshBasicMaterial({ polygonOffset: true });
+		super(params);
 		this.setSize(params.size ?? DEFAULT_SIZE);
 	}
 

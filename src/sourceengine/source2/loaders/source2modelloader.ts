@@ -478,7 +478,7 @@ export class Source2ModelLoader {
 				}
 
 				const material = defaultMaterial;
-				const staticMesh = new Mesh(geometry, material);
+				const staticMesh = new Mesh({ geometry: geometry, material: material });
 				group.addChild(staticMesh);
 
 				const materialPath = drawCall.getValueAsResource('m_material');

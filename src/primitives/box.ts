@@ -3,11 +3,10 @@ import { registerEntity } from '../entities/entities';
 import { JSONLoader } from '../importers/jsonloader';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
-import { Mesh } from '../objects/mesh';
+import { Mesh, MeshParameters } from '../objects/mesh';
 import { BoxBufferGeometry } from './geometries/boxbuffergeometry';
-import { EntityParameters } from '../entities/entity';
 
-export type BoxParameters = EntityParameters & {
+export type BoxParameters = MeshParameters & {
 	width?: number,
 	height?: number,
 	depth?: number,
@@ -24,7 +23,9 @@ export class Box extends Mesh {
 	#size = vec3.create();// width, height, depth
 
 	constructor(params: BoxParameters = {}) {
-		super(new BoxBufferGeometry(), params.material ?? new MeshBasicMaterial());
+		params.geometry = new BoxBufferGeometry();
+		params.material = params.material ?? new MeshBasicMaterial();
+		super(params);
 		this.#size[0] = params.width ?? 1;
 		this.#size[1] = params.height ?? this.#size[0];
 		this.#size[2] = params.depth ?? this.#size[0];

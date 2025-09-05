@@ -516,12 +516,10 @@ export class SourceBSP extends World {
 
 			bufferGeometry.count = geometry.indices.length;
 
-			const staticMesh = new Mesh(bufferGeometry, null);
+			const staticMesh = new Mesh({ geometry: bufferGeometry });
 			staticMesh.name = textureName;
 			Source1MaterialManager.getMaterial(this.repository, textureName).then(
 				(material) => staticMesh.setMaterial(material)
-			).catch(
-				() => console.error('unable to find material ' + textureName)
 			);
 
 			this.mapFaces.addChild(staticMesh);

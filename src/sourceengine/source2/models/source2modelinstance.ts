@@ -326,11 +326,11 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 					for (const geometry of model) {
 						let mesh: Mesh;
 						if (this.#skeleton) {
-							mesh = new SkeletalMesh(geometry, defaultMaterial, this.#skeleton);
+							mesh = new SkeletalMesh({ geometry: geometry, material: defaultMaterial, skeleton: this.#skeleton });
 							mesh.name = bodyPartName;
 							(mesh as SkeletalMesh).bonesPerVertex = 4;
 						} else {
-							mesh = new Mesh(geometry, defaultMaterial);
+							mesh = new Mesh({ geometry: geometry, material: defaultMaterial });
 						}
 						if (geometry.hasAttribute('aVertexTangent')) {
 							mesh.setDefine('USE_VERTEX_TANGENT');

@@ -1,10 +1,19 @@
 import { registerEntity } from '../entities/entities';
 import { ExtrudeGeometry } from '../geometry/extrudegeometry';
 import { FontManager } from '../managers/fontmanager';
+import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { DEG_TO_RAD } from '../math/constants';
 import { Interaction } from '../utils/interaction';
-import { Mesh } from './mesh';
+import { Mesh, MeshParameters } from './mesh';
+
+export type Text3DParameters = MeshParameters & {
+	text?: string,
+	size?: number,
+	depth?: number,
+	font?: string,
+	style?: string,
+};
 
 export class Text3D extends Mesh {
 	isText3D = true;
@@ -15,8 +24,11 @@ export class Text3D extends Mesh {
 	#depth: number;
 	#font: string;
 	#style: string;
-	constructor(params: any = {}) {
-		super(new ExtrudeGeometry(), params.material ?? new MeshBasicMaterial());
+
+	constructor(params: Text3DParameters = {}) {
+		params.geometry = new ExtrudeGeometry();
+		params.material = params.material ?? new MeshBasicMaterial();
+		super(params);
 		this.#text = params.text;
 		this.#size = params.size ?? 100;
 		this.#depth = params.depth ?? 10;

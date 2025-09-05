@@ -507,9 +507,9 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 						const geometry = modelMesh.geometry;
 						let mesh: Mesh | SkeletalMesh;
 						if (this.#skeleton) {
-							mesh = new SkeletalMesh(geometry.clone(), defaultMaterial, this.#skeleton);
+							mesh = new SkeletalMesh({ geometry: geometry.clone(), material: defaultMaterial, skeleton: this.#skeleton });
 						} else {
-							mesh = new Mesh(geometry, defaultMaterial);
+							mesh = new Mesh({ geometry: geometry, material: defaultMaterial });
 						}
 						mesh.name = geometry.properties.getString('name') ?? '';
 						mesh.properties.setObject('sourceModelMesh', modelMesh.mesh);

@@ -150,7 +150,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 
 	initRenderer(): void {
 		this.geometry = new BufferGeometry();
-		this.mesh = new Mesh(this.geometry, this.particleSystem.material);
+		this.mesh = new Mesh({ geometry: this.geometry, material: this.particleSystem.material });
 		this.mesh.serializable = false;
 		this.mesh.hideInExplorer = true;
 		this.mesh.setDefine('HARDWARE_PARTICLES');
@@ -208,7 +208,7 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 		gl.bindTexture(GL_TEXTURE_2D, null);
 	}
 
-	#setupParticlesTexture(particleList:Source1Particle[]) {
+	#setupParticlesTexture(particleList: Source1Particle[]) {
 		const a = this.#imgData!;
 
 		let index = 0;

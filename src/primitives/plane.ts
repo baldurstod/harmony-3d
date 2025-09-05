@@ -1,12 +1,12 @@
-import { Entity, EntityParameters } from '../entities/entity';
+import { Entity } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
-import { Mesh } from '../objects/mesh';
+import { Mesh, MeshParameters } from '../objects/mesh';
 import { JSONObject } from '../types';
 import { PlaneBufferGeometry } from './geometries/planebuffergeometry';
 
-export type PlaneParameters = EntityParameters & {
+export type PlaneParameters = MeshParameters & {
 	width?: number,
 	height?: number,
 	widthSegments?: number,
@@ -21,8 +21,9 @@ export class Plane extends Mesh {
 	#height: number;
 
 	constructor(params: PlaneParameters = {}) {
-		super(new PlaneBufferGeometry(), params.material ?? new MeshBasicMaterial());
-		super.setParameters(params);
+		params.geometry = new PlaneBufferGeometry();
+		params.material = params.material ?? new MeshBasicMaterial();
+		super(params);
 		this.#width = params.width ?? 1;
 		this.#height = params.height ?? this.#width;
 		this.#widthSegments = params.widthSegments ?? 1;
@@ -71,7 +72,7 @@ export class Plane extends Mesh {
 
 	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
 		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise) as Material;
-		return new Plane({ width: json.width as number, height: json.height as number, material: material, widthSegments: json.widthSegments as number, heightSegments: json.heightSegments as number});
+		return new Plane({ width: json.width as number, height: json.height as number, material: material, widthSegments: json.widthSegments as number, heightSegments: json.heightSegments as number });
 	}
 
 	static getEntityName() {

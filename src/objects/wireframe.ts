@@ -46,7 +46,7 @@ export class Wireframe extends Entity {
 			const segments: number[] = [];
 			const line = new LineSegmentsGeometry();
 			line.addUser(this);
-			const me = new Mesh(line, this.#material);
+			const me = new Mesh({ geometry: line, material: this.#material });
 			this.#meshes.add(me);
 			this.addChild(me);
 

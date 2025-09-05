@@ -1,9 +1,8 @@
 import { mat4, vec2, vec3 } from 'gl-matrix';
-
-import { Mesh } from './mesh';
 import { BoundingBox } from '../math/boundingbox';
-import { getUV, getNormal } from '../math/triangle';
+import { getNormal, getUV } from '../math/triangle';
 import { Ray } from '../raycasting/ray';
+import { Mesh, MeshParameters } from './mesh';
 import { Skeleton } from './skeleton';
 
 const IDENTITY_MAT4 = mat4.create();
@@ -22,15 +21,20 @@ const intersectionNormal = vec3.create();
 const ray = new Ray();
 const uv = vec2.create();
 
+export type SkeletalMeshParameters = MeshParameters & {
+	skeleton: Skeleton,
+};
+
 export class SkeletalMesh extends Mesh {
 	isSkeletalMesh = true;
 	#bonesPerVertex = 3;
 	skeleton: Skeleton;
 	skinnedVertexPosition;
 	skinnedVertexNormal;
-	constructor(geometry, material, skeleton) {
-		super(geometry, material);
-		this.skeleton = skeleton;
+
+	constructor(params: SkeletalMeshParameters) {
+		super(params);
+		this.skeleton = params.skeleton;
 
 		this.setUniform('uBoneMatrix', this.skeleton.getTexture());
 		this.setDefine('HARDWARE_SKINNING');//TODOv3 proper defines

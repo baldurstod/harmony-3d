@@ -64,7 +64,7 @@ export class RenderSprites extends RenderBase {
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
-		this.mesh = new Mesh(this.geometry, this.material);
+		this.mesh = new Mesh({ geometry: this.geometry, material: this.material });
 		this.setMaxParticles(1000);//TODO: default value
 		this.setOrientationType(PARTICLE_ORIENTATION_SCREEN_ALIGNED);
 		Source2MaterialManager.addMaterial(this.material);

@@ -12,8 +12,8 @@ export class WireframeHelper extends Entity {
 			const meshes = parent.getChildList('Mesh');
 			for (const mesh of meshes) {
 				if ((mesh as Mesh).renderMode !== GL_LINES) {//TODO: improve wireframe detection
-					const wireframeGeometry = (mesh as Mesh).geometry.clone();
-					const wireframeMesh = new Mesh(wireframeGeometry, (mesh as Mesh).material);
+					const wireframeGeometry = (mesh as Mesh).getGeometry().clone();
+					const wireframeMesh = new Mesh({ geometry: wireframeGeometry, material: (mesh as Mesh).getMaterial() });
 					wireframeMesh.renderMode = GL_LINES;
 					this.#meshToWireframe.set(mesh, wireframeMesh)
 					this.#wireframeToMesh.set(wireframeMesh, mesh);

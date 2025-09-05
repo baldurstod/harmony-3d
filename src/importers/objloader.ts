@@ -58,7 +58,7 @@ function buildMesh(obj) {
 	geometry.setAttribute('aTextureCoord', new Float32BufferAttribute(m.t, 2));
 	geometry.count = m.i.length;
 
-	return new Mesh(geometry, material);
+	return new Mesh({ geometry: geometry, material: material });
 }
 
 export class OBJImporter {
