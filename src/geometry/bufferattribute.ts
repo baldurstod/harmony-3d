@@ -112,7 +112,7 @@ export class BufferAttribute {
 
 	update(glContext: WebGLAnyRenderingContext) {
 		if (this.dirty) {
-			if (this._buffer === undefined) {
+			if (!this._buffer) {
 				this._buffer = glContext.createBuffer();//TODOv3: createBuffer in graphics
 			}
 
