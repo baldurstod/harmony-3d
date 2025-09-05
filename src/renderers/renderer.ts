@@ -1,27 +1,27 @@
-import { mat3, mat4, vec3 } from 'gl-matrix';
-
-import { Camera, CameraProjection } from '../cameras/camera';
-import { GL_ELEMENT_ARRAY_BUFFER, GL_ARRAY_BUFFER, GL_UNSIGNED_INT } from '../webgl/constants';
-import { Program } from '../webgl/program';
-import { WebGLStats } from '../utils/webglstats';
-import { GL_LINES } from '../webgl/constants';
+import { mat3, mat4, vec3, vec4 } from 'gl-matrix';
 import { DEBUG, ENABLE_GET_ERROR, USE_STATS } from '../buildoptions';
-import { ToneMapping } from '../textures/constants';
-import { WebGLRenderingState } from '../webgl/renderingstate';
+import { Camera, CameraProjection } from '../cameras/camera';
+import { EngineEntityAttributes, Entity } from '../entities/entity';
 import { Graphics, RenderContext } from '../graphics/graphics';
-import { WebGLAnyRenderingContext } from '../types';
-import { Mesh } from '../objects/mesh';
 import { Material } from '../materials/material';
+import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
+import { ToneMapping } from '../textures/constants';
+import { WebGLAnyRenderingContext } from '../types';
+import { WebGLStats } from '../utils/webglstats';
+import { GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_LINES, GL_UNSIGNED_INT } from '../webgl/constants';
+import { Program } from '../webgl/program';
+import { WebGLRenderingState } from '../webgl/renderingstate';
 import { RenderList } from './renderlist';
-import { EngineEntityAttributes } from '../entities/entity';
+import { BufferGeometry } from '../geometry/buffergeometry';
+import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
 
-function getDefinesAsString(material) {//TODOv3 rename var material
+function getDefinesAsString(meshOrMaterial: Material | Mesh) {
 	const defines = [];
-	for (const [name, value] of Object.entries(material.defines)) {
+	for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
 		if (value === false) {
 			defines.push('#undef ' + name);
 		} else {
@@ -38,13 +38,13 @@ export class Renderer {
 	#glContext: WebGLAnyRenderingContext;
 	#materialsProgram = new Map<string, Program>();
 	#globalIncludeCode = '';
+
 	constructor(graphics: Graphics) {
 		this.#graphics = graphics;
 		this.#glContext = graphics.glContext;
 	}
 
 	getProgram(mesh: Mesh, material: Material) {
-		let program: Program;
 
 		let includeCode = this.#graphics.getIncludeCode();
 		includeCode += this.#globalIncludeCode;
@@ -52,9 +52,8 @@ export class Renderer {
 		includeCode += getDefinesAsString(material);
 		includeCode += material.getShaderSource();
 
-		if (this.#materialsProgram.has(includeCode)) {
-			program = this.#materialsProgram.get(includeCode);
-		} else {
+		let program: Program | undefined = this.#materialsProgram.get(includeCode);
+		if (!program) {
 			const shaderSource = material.getShaderSource();
 
 			program = new Program(this.#glContext, shaderSource + '.vs', shaderSource + '.fs');
@@ -72,7 +71,7 @@ export class Renderer {
 		return program;
 	}
 
-	#setupVertexAttributes(program, geometry, wireframe) {
+	#setupVertexAttributes(program: Program, geometry: BufferGeometry, wireframe: number) {
 		WebGLRenderingState.initUsedAttributes();
 		const geometryAttributes = geometry.attributes;
 		const programAttributes = program.attributes;
@@ -95,16 +94,16 @@ export class Renderer {
 		WebGLRenderingState.disableUnusedAttributes();
 	}
 
-	#setupVertexUniforms(program, mesh) {
+	#setupVertexUniforms(program: Program, mesh: Mesh) {
 		for (const uniform in mesh.uniforms) {
 			program.setUniformValue(uniform, mesh.uniforms[uniform]);
 		}
 	}
 
-	applyMaterial(program, material) {
+	applyMaterial(program: Program, material: Material) {
 	}
 
-	setupLights(renderList: RenderList, camera, program, viewMatrix) {
+	setupLights(renderList: RenderList, camera: Camera, program: Program, viewMatrix: mat4) {
 		const lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
 		const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
 		const colorIntensity = vec3.create();//TODO: do not create a vec3
@@ -191,7 +190,7 @@ export class Renderer {
 		program.setUniformValue('uAmbientLight', ambientAccumulator);
 	}
 
-	setLights(pointLights, spotLights, pointLightShadows, spotLightShadows) {
+	#setLights(pointLights: number, spotLights: number, pointLightShadows: number, spotLightShadows: number) {
 		this.#graphics.setIncludeCode('USE_SHADOW_MAPPING', '#define USE_SHADOW_MAPPING');
 		this.#graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS ' + pointLights);
 		this.#graphics.setIncludeCode('NUM_PBR_LIGHTS', '#define NUM_PBR_LIGHTS ' + pointLights);
@@ -201,7 +200,7 @@ export class Renderer {
 		//TODO: other lights of disable lighting all together
 	}
 
-	unsetLights() {
+	#unsetLights() {
 		this.#graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
 		this.#graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS 0');
 		this.#graphics.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS 0');
@@ -210,7 +209,7 @@ export class Renderer {
 		//TODO: other lights of disable lighting all together
 	}
 
-	renderObject(renderList: RenderList, object: Mesh, camera, geometry, material, renderLights = true, lightPos) {//fixme
+	renderObject(renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights = true, lightPos?: vec3) {
 		if (!object.isRenderable) {
 			return;
 		}
@@ -240,12 +239,12 @@ export class Renderer {
 		mat4.mul(tempViewProjectionMatrix, projectionMatrix, cameraMatrix);//TODO: compute this in camera
 
 		if (renderLights) {
-			this.setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
+			this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
 			if (!object.receiveShadow) {
 				this.#graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
 			}
 		} else {
-			this.unsetLights();
+			this.#unsetLights();
 		}
 
 		if (camera.projection == CameraProjection.Perspective) {
@@ -296,7 +295,7 @@ export class Renderer {
 				this.#glContext.getError();//empty the error
 			}
 
-			if (geometry.instanceCount === undefined) {
+			if ((geometry as InstancedBufferGeometry).instanceCount === undefined) {
 				if (wireframe == 1) {
 					//TODO: case where original geometry is GL_LINES
 					this.#glContext.drawElements(GL_LINES, geometry.count * 2, GL_UNSIGNED_INT, 0);
@@ -305,9 +304,9 @@ export class Renderer {
 				}
 			} else {
 				if (this.#graphics.isWebGL2) {
-					(this.#glContext as WebGL2RenderingContext).drawElementsInstanced(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
+					(this.#glContext as WebGL2RenderingContext).drawElementsInstanced(object.renderMode, geometry.count, geometry.elementArrayType, 0, (geometry as InstancedBufferGeometry).instanceCount);
 				} else {
-					this.#graphics.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
+					this.#graphics.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, (geometry as InstancedBufferGeometry).instanceCount);
 				}
 			}
 
@@ -325,7 +324,7 @@ export class Renderer {
 
 	_prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: RenderContext) {
 		renderList.reset();
-		let currentObject = scene;
+		let currentObject: Entity | undefined = scene;
 		const objectStack = [];
 		//scene.pointLights = scene.getChildList(PointLight);
 		//scene.ambientLights = scene.getChildList(AmbientLight);
@@ -367,7 +366,7 @@ export class Renderer {
 	render(scene: Scene, camera: Camera, delta: number, context: RenderContext) {
 	}
 
-	clear(color, depth, stencil) {
+	clear(color: boolean, depth: boolean, stencil: boolean) {
 		WebGLRenderingState.clear(color, depth, stencil);
 	}
 	/*
@@ -385,18 +384,18 @@ export class Renderer {
 		}
 	}
 
-	clearColor(clearColor) {
+	clearColor(clearColor: vec4) {
 		WebGLRenderingState.clearColor(clearColor);
 	}
-	clearDepth(clearDepth) {
+	clearDepth(clearDepth: GLclampf) {
 		WebGLRenderingState.clearDepth(clearDepth);
 	}
 
-	clearStencil(clearStencil) {
+	clearStencil(clearStencil: GLint) {
 		WebGLRenderingState.clearStencil(clearStencil);
 	}
 
-	setToneMapping(toneMapping) {
+	setToneMapping(toneMapping: ToneMapping) {
 		this.#toneMapping = toneMapping;
 		this.#graphics.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
 	}
@@ -405,7 +404,7 @@ export class Renderer {
 		return this.#toneMapping;
 	}
 
-	setToneMappingExposure(exposure) {
+	setToneMappingExposure(exposure: number) {
 		this.#toneMappingExposure = exposure;
 		this.#graphics.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
 	}
