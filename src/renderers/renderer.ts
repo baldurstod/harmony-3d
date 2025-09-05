@@ -2,6 +2,8 @@ import { mat3, mat4, vec3, vec4 } from 'gl-matrix';
 import { DEBUG, ENABLE_GET_ERROR, USE_STATS } from '../buildoptions';
 import { Camera, CameraProjection } from '../cameras/camera';
 import { EngineEntityAttributes, Entity } from '../entities/entity';
+import { BufferGeometry } from '../geometry/buffergeometry';
+import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 import { Graphics, RenderContext } from '../graphics/graphics';
 import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
@@ -13,8 +15,6 @@ import { GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER, GL_LINES, GL_UNSIGNED_INT } f
 import { Program } from '../webgl/program';
 import { WebGLRenderingState } from '../webgl/renderingstate';
 import { RenderList } from './renderlist';
-import { BufferGeometry } from '../geometry/buffergeometry';
-import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 
 const tempViewProjectionMatrix = mat4.create();
 const lightDirection = vec3.create();
@@ -209,7 +209,7 @@ export class Renderer {
 		//TODO: other lights of disable lighting all together
 	}
 
-	renderObject(renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights = true, lightPos?: vec3) {
+	renderObject(context: RenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights = true, lightPos?: vec3) {
 		if (!object.isRenderable) {
 			return;
 		}
@@ -353,12 +353,12 @@ export class Renderer {
 
 	_renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: RenderContext, lightPos?: vec3) {
 		for (const child of renderList.opaqueList) {
-			this.renderObject(renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+			this.renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
 		}
 
 		if (renderLights) {
 			for (const child of renderList.transparentList) {
-				this.renderObject(renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+				this.renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
 			}
 		}
 	}
@@ -387,6 +387,7 @@ export class Renderer {
 	clearColor(clearColor: vec4) {
 		WebGLRenderingState.clearColor(clearColor);
 	}
+
 	clearDepth(clearDepth: GLclampf) {
 		WebGLRenderingState.clearDepth(clearDepth);
 	}

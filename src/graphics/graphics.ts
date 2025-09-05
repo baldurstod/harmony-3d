@@ -49,6 +49,8 @@ export function getGraphics() {
 
 export interface RenderContext {
 	DisableToolRendering?: boolean;
+	width?: number;
+	height?: number;
 	imageBitmap?: {
 		context: ImageBitmapRenderingContext;
 		width: number;
@@ -156,7 +158,7 @@ export class Graphics {
 
 	initCanvas(contextAttributes: GraphicsInitOptions = {}) {
 		if (contextAttributes.useOffscreenCanvas) {
-			this.#offscreenCanvas = new OffscreenCanvas(this.#width, this.#height);
+			this.#offscreenCanvas = new OffscreenCanvas(0, 0);
 		} else {
 			this.#canvas = contextAttributes.canvas ?? createElement('canvas') as HTMLCanvasElement;
 			ShortcutHandler.addContext('3dview', this.#canvas);
@@ -283,7 +285,7 @@ export class Graphics {
 		if (this.#offscreenCanvas && context.imageBitmap) {
 			this.#offscreenCanvas.width = context.imageBitmap.width;
 			this.#offscreenCanvas.height = context.imageBitmap.height;
-			this.viewport = vec4.fromValues(0, 0, context.imageBitmap.width, context.imageBitmap.height);
+			this.setViewport(vec4.fromValues(0, 0, context.imageBitmap.width, context.imageBitmap.height));
 		}
 
 		this.renderBackground();//TODOv3 put in rendering pipeline
