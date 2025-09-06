@@ -18,6 +18,7 @@ import { GL_COLOR_BUFFER_BIT, GL_CULL_FACE, GL_DEPTH_BUFFER_BIT, GL_FRAMEBUFFER,
 import { WebGLRenderingState } from '../webgl/renderingstate';
 import { WebGLShaderSource } from '../webgl/shadersource';
 import { GraphicsEvents } from './graphicsevents';
+import { Viewport } from './viewport';
 
 const FULL_PATATE = false;
 
@@ -51,7 +52,7 @@ export interface RenderContext {
 	DisableToolRendering?: boolean;
 	width?: number;
 	height?: number;
-	imageBitmap?: {
+	imageBitmap?: { // TODO: remove
 		context: ImageBitmapRenderingContext;
 		width: number;
 		height: number;
@@ -71,17 +72,31 @@ interface GraphicsInitOptions {
 	autoResize?: boolean,
 
 	/** WebGL attributes passed to getContext() */
-	webGL?: {
-		alpha?: boolean,
-		depth?: boolean,
-		stencil?: boolean,
-		desynchronized?: boolean,
-		antialias?: boolean,
-		failIfMajorPerformanceCaveat?: boolean,
-		powerPreference?: string,
-		premultipliedAlpha?: boolean,
-		preserveDrawingBuffer?: boolean,
-	}
+	webGL?: WebGLContextAttributes
+}
+
+interface AddCanvasOptions {
+	/** Set the canvas state to enabled. A disabled canvas will not render. Default to true. */
+	enabled?: boolean;
+	/** Auto resize the canvas to fit its parent. Default to false. */
+	autoResize?: boolean;
+	/** Add a single scene to the canvas. A scene can be part of several canvases. If scenes is provided, this property will be ignored. */
+	scene?: Scene;
+	/** Add several scenes to the canvas. */
+	scenes?: CanvasScene[];
+}
+
+export type CanvasScene = {
+	scene: Scene,
+	viewport: Viewport,
+}
+
+export type MultiCanvas = {
+	enabled: boolean;
+	canvas: HTMLCanvasElement;
+	context: ImageBitmapRenderingContext;
+	scenes: CanvasScene[];
+	autoresize: boolean;
 }
 
 export class Graphics {
@@ -110,6 +125,7 @@ export class Graphics {
 	#readyPromiseResolve!: (value: boolean) => void;
 	#readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
 	#canvas?: HTMLCanvasElement;
+	#canvases = new Map<HTMLCanvasElement, MultiCanvas>();
 	#width = 300;
 	#height = 150;
 	#offscreenCanvas?: OffscreenCanvas;
@@ -191,6 +207,44 @@ export class Graphics {
 
 		this.#readyPromiseResolve(true);
 		return this;
+	}
+
+	addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): HTMLCanvasElement {
+		canvas = canvas ?? createElement('canvas') as HTMLCanvasElement;
+		if (this.#canvases.has(canvas)) {
+			return canvas;
+		}
+
+		this.listenCanvas(canvas);
+
+		try {
+			const bipmapContext = canvas.getContext('bitmaprenderer');
+			if (!bipmapContext) {
+				return canvas;
+			}
+
+			let scenes: CanvasScene[];
+			if (options.scenes) {
+				scenes = options.scenes;
+			} else {
+				if (options.scene) {
+					scenes = [{ scene: options.scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }];
+
+				} else {
+					scenes = [];
+				}
+			}
+
+			this.#canvases.set(canvas, {
+				enabled: true,
+				canvas: canvas,
+				context: bipmapContext,
+				scenes: scenes,
+				autoresize: options.autoResize ?? false,
+			});
+		} catch (e) { }
+
+		return canvas;
 	}
 
 	listenCanvas(canvas: HTMLCanvasElement): void {
@@ -295,6 +349,47 @@ export class Graphics {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
 			(context.imageBitmap?.context ?? this.#bipmapContext)?.transferFromImageBitmap(bitmap);
 		}
+
+		if (MEASURE_PERFORMANCE) {
+			const t1 = performance.now();
+			if (USE_STATS) {
+				WebGLStats.endRender();
+			}
+		}
+	}
+
+	renderMultiCanvas(delta: number, context: RenderContext = {}) {
+		// TODO: mutualize with the method render()
+		for (const [_, canvas] of this.#canvases) {
+			if (canvas.enabled) {
+				this.#renderMultiCanvas(canvas, delta, context);
+			}
+		}
+	}
+
+	#renderMultiCanvas(canvas: MultiCanvas, delta: number, context: RenderContext) {
+		// TODO: mutualize with the method render()
+		if (MEASURE_PERFORMANCE) {
+			WebGLStats.beginRender();
+		}
+
+		if (this.#offscreenCanvas) {
+			this.#offscreenCanvas.width = canvas.canvas.width;
+			this.#offscreenCanvas.height = canvas.canvas.height;
+			this.setViewport(vec4.fromValues(0, 0, canvas.canvas.width, canvas.canvas.height));
+		}
+
+		this.renderBackground();//TODOv3 put in rendering pipeline
+
+		for (const canvasScene of canvas.scenes) {
+			if (canvasScene.scene.activeCamera) {
+				this.#forwardRenderer!.render(canvasScene.scene, canvasScene.scene.activeCamera, delta, context);
+			}
+
+		}
+
+		const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
+		canvas.context.transferFromImageBitmap(bitmap);
 
 		if (MEASURE_PERFORMANCE) {
 			const t1 = performance.now();
@@ -528,7 +623,7 @@ export class Graphics {
 		return this.#pixelRatio;
 	}
 
-	setSize(width: number, height: number) {
+	setSize(width: number, height: number): [number, number] {
 		width = Math.max(width, 1);
 		height = Math.max(height, 1);
 		const previousWidth = this.#width;
