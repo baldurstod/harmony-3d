@@ -14,5 +14,6 @@
     "declarationDir": "dist/dts",
     //"noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
+    "strictNullChecks": true,
   }
 }
