@@ -33,7 +33,7 @@ export class ObjExporter {
 		new Graphics().clearColor(vec4.fromValues(0, 0, 0, 0));
 
 		let meshId = 0;
-		const promises = [];
+		const promises: Promise<File>[] = [];
 		for (const mesh of meshes) {
 			if (!mesh.is('Mesh')) {
 				continue;
@@ -75,7 +75,7 @@ export class ObjExporter {
 		}
 
 		this.#lines = [];
-		const mtlLines = [];
+		const mtlLines: string[] = [];
 		this.#addLine('mtllib export.mtl');
 		let objectId = 0;
 		this.#startIndex = 1;
@@ -141,7 +141,10 @@ export class ObjExporter {
 				for (let i = 0; i < arr.length; i += attributesLength, ++vertexIndex) {
 					line = attribute.name;
 					for (let j = 0; j < attributesLength; ++j) {
-						line += ' ' + arr[i + j].toFixed(digits);
+						const value = arr[i + j];
+						if (value) {
+							line += ' ' + value.toFixed(digits);
+						}
 					}
 					this.#addLine(line);
 					if (attribute.name == 'v') {
@@ -152,9 +155,9 @@ export class ObjExporter {
 		}
 
 		for (let i = 0; i < indices.length; i += 3) {
-			const i0 = startIndex + indices[i];
-			const i1 = startIndex + indices[i + 1];
-			const i2 = startIndex + indices[i + 2];
+			const i0 = startIndex + indices[i]!;
+			const i1 = startIndex + indices[i + 1]!;
+			const i2 = startIndex + indices[i + 2]!;
 			let uv0 = '';
 			let uv1 = '';
 			let uv2 = '';
