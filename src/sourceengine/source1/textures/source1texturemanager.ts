@@ -17,7 +17,7 @@ class Source1TextureManagerClass {
 	fallbackRepository = '';
 
 	constructor() {
-		new Graphics().ready.then(() => {
+		Graphics.ready.then(() => {
 			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255]));
 			this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255], undefined, undefined, true));
 			this.#defaultTexture.addUser(this);
@@ -149,13 +149,13 @@ export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, 
 	const alphaBits = vtf.getAlphaBits();
 	//animatedTexture.vtf = vtf;
 	animatedTexture.setAlphaBits(alphaBits);
-	const glContext = new Graphics().glContext;
+	const glContext = Graphics.glContext;
 	for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
 		const texture = TextureManager.createTexture();//TODOv3: add params
 		texture.properties.set('vtf', vtf);
 		texture.setAlphaBits(alphaBits);
 		const currentMipMap = vtf.mipmapCount;//TODOv3: choose mipmap
-		vtf.fillTexture(new Graphics(), glContext, texture, currentMipMap, frameIndex, srgb);
+		vtf.fillTexture(Graphics, glContext, texture, currentMipMap, frameIndex, srgb);
 		animatedTexture.addFrame(frameIndex, texture);
 	}
 }

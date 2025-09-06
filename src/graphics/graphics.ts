@@ -40,14 +40,6 @@ export enum ShaderDebugMode {
 	None = 0,
 }
 
-let graphics: Graphics | null = null;
-export function getGraphics() {
-	if (!graphics) {
-		graphics = new Graphics();
-	}
-	return graphics;
-}
-
 export interface RenderContext {
 	DisableToolRendering?: boolean;
 	width?: number;
@@ -100,59 +92,54 @@ export type MultiCanvas = {
 }
 
 export class Graphics {
-	static #instance: Graphics;
-	#pixelRatio = /*window.devicePixelRatio ?? */1.0;
-	#viewport = vec4.create();
-	#scissor = vec4.create();
-	#extensions = new Map<string, any>();
-	#autoResize = false;
-	isWebGL = false;
-	isWebGL2 = false;
-	autoClear = true;
-	autoClearColor = false;
-	autoClearDepth = true;
-	autoClearStencil = true;
-	#includeCode = new Map<string, string>();
-	#globalIncludeCode = '';
-	speed = 1.0;
-	#timeOrigin = performance.now();
-	#time = 0;
-	#running = false;
-	#lastTick = performance.now();
-	currentTick = 0;
-	#renderBuffers = new Set<WebGLRenderbuffer>();
-	#renderTargetStack: RenderTarget[] = [];
-	#readyPromiseResolve!: (value: boolean) => void;
-	#readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
-	#canvas?: HTMLCanvasElement;
-	#canvases = new Map<HTMLCanvasElement, MultiCanvas>();
-	#width = 300;
-	#height = 150;
-	#offscreenCanvas?: OffscreenCanvas;
-	#forwardRenderer?: ForwardRenderer;
-	glContext!: WebGLAnyRenderingContext;
-	#bipmapContext?: ImageBitmapRenderingContext | null;
-	#pickedEntity: Entity | null = null;
-	#animationFrame = 0;
-	ANGLE_instanced_arrays: any;
-	OES_texture_float_linear: any;
-	#mediaRecorder?: MediaRecorder;
-	dragging = false;
-	#mouseDownFunc = (event: MouseEvent) => this.#mouseDown(event);
-	#mouseMoveFunc = (event: MouseEvent) => this.#mouseMove(event);
-	#mouseUpFunc = (event: MouseEvent) => this.#mouseUp(event);
-	#keyDownFunc = (event: KeyboardEvent) => GraphicsEvents.keyDown(event);
-	#keyUpFunc = (event: KeyboardEvent) => GraphicsEvents.keyUp(event);
-	#wheelFunc = (event: WheelEvent) => this.#wheel(event);
-	#touchStartFunc = (event: TouchEvent) => GraphicsEvents.touchStart(this.#pickedEntity, event);
-	#touchMoveFunc = (event: TouchEvent) => GraphicsEvents.touchMove(this.#pickedEntity, event);
-	#touchCancelFunc = (event: TouchEvent) => GraphicsEvents.touchCancel(this.#pickedEntity, event);
+	static #pixelRatio = /*window.devicePixelRatio ?? */1.0;
+	static #viewport = vec4.create();
+	static #scissor = vec4.create();
+	static #extensions = new Map<string, any>();
+	static #autoResize = false;
+	static isWebGL = false;
+	static isWebGL2 = false;
+	static autoClear = true;
+	static autoClearColor = false;
+	static autoClearDepth = true;
+	static autoClearStencil = true;
+	static #includeCode = new Map<string, string>();
+	static #globalIncludeCode = '';
+	static speed = 1.0;
+	static #timeOrigin = performance.now();
+	static #time = 0;
+	static #running = false;
+	static #lastTick = performance.now();
+	static currentTick = 0;
+	static #renderBuffers = new Set<WebGLRenderbuffer>();
+	static #renderTargetStack: RenderTarget[] = [];
+	static #readyPromiseResolve: (value: boolean) => void;
+	static #readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
+	static #canvas?: HTMLCanvasElement;
+	static #canvases = new Map<HTMLCanvasElement, MultiCanvas>();
+	static #width = 300;
+	static #height = 150;
+	static #offscreenCanvas?: OffscreenCanvas;
+	static #forwardRenderer?: ForwardRenderer;
+	static glContext: WebGLAnyRenderingContext;
+	static #bipmapContext?: ImageBitmapRenderingContext | null;
+	static #pickedEntity: Entity | null = null;
+	static #animationFrame = 0;
+	static ANGLE_instanced_arrays: any;
+	static OES_texture_float_linear: any;
+	static #mediaRecorder?: MediaRecorder;
+	static dragging = false;
+	static #mouseDownFunc = (event: MouseEvent) => this.#mouseDown(event);
+	static #mouseMoveFunc = (event: MouseEvent) => this.#mouseMove(event);
+	static #mouseUpFunc = (event: MouseEvent) => this.#mouseUp(event);
+	static #keyDownFunc = (event: KeyboardEvent) => GraphicsEvents.keyDown(event);
+	static #keyUpFunc = (event: KeyboardEvent) => GraphicsEvents.keyUp(event);
+	static #wheelFunc = (event: WheelEvent) => this.#wheel(event);
+	static #touchStartFunc = (event: TouchEvent) => GraphicsEvents.touchStart(this.#pickedEntity, event);
+	static #touchMoveFunc = (event: TouchEvent) => GraphicsEvents.touchMove(this.#pickedEntity, event);
+	static #touchCancelFunc = (event: TouchEvent) => GraphicsEvents.touchCancel(this.#pickedEntity, event);
 
-	constructor() {
-		if (Graphics.#instance) {
-			return Graphics.#instance;
-		}
-		Graphics.#instance = this;
+	static {
 		this.setShaderPrecision(ShaderPrecision.Medium);
 		this.setShaderQuality(ShaderQuality.Medium);
 		this.setShaderDebugMode(ShaderDebugMode.None);
@@ -172,7 +159,7 @@ export class Graphics {
 		this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
 	}
 
-	initCanvas(contextAttributes: GraphicsInitOptions = {}) {
+	static initCanvas(contextAttributes: GraphicsInitOptions = {}) {
 		if (contextAttributes.useOffscreenCanvas) {
 			this.#offscreenCanvas = new OffscreenCanvas(0, 0);
 		} else {
@@ -191,13 +178,13 @@ export class Graphics {
 		this.#initContext(contextAttributes);
 		this.#initObserver();
 
-		WebGLRenderingState.setGraphics(this);
+		WebGLRenderingState.setGraphics();
 
 		// init state
 		WebGLRenderingState.enable(GL_CULL_FACE);
 		// init state end
 		//this.clearColor = vec4.fromValues(0, 0, 0, 255);
-		this.#forwardRenderer = new ForwardRenderer(this);
+		this.#forwardRenderer = new ForwardRenderer();
 
 		const autoResize = contextAttributes.autoResize;
 		if (autoResize !== undefined) {
@@ -209,7 +196,7 @@ export class Graphics {
 		return this;
 	}
 
-	addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): HTMLCanvasElement {
+	static addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): HTMLCanvasElement {
 		canvas = canvas ?? createElement('canvas') as HTMLCanvasElement;
 		if (this.#canvases.has(canvas)) {
 			return canvas;
@@ -247,7 +234,7 @@ export class Graphics {
 		return canvas;
 	}
 
-	listenCanvas(canvas: HTMLCanvasElement): void {
+	static listenCanvas(canvas: HTMLCanvasElement): void {
 		canvas.addEventListener('mousedown', this.#mouseDownFunc);
 		canvas.addEventListener('mousemove', this.#mouseMoveFunc);
 		canvas.addEventListener('mouseup', this.#mouseUpFunc);
@@ -262,7 +249,7 @@ export class Graphics {
 		}
 	}
 
-	unlistenCanvas(canvas: HTMLCanvasElement): void {
+	static unlistenCanvas(canvas: HTMLCanvasElement): void {
 		canvas.removeEventListener('mousedown', this.#mouseDownFunc);
 		canvas.removeEventListener('mousemove', this.#mouseMoveFunc);
 		canvas.removeEventListener('mouseup', this.#mouseUpFunc);
@@ -274,7 +261,7 @@ export class Graphics {
 		canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
 	}
 
-	pickEntity(x: number, y: number) {
+	static pickEntity(x: number, y: number) {
 		if (!this.#canvas) {
 			return null;
 		}
@@ -290,7 +277,7 @@ export class Graphics {
 		return pickList.get(pickedEntityIndex) ?? null;
 	}
 
-	#mouseDown(event: MouseEvent) {
+	static #mouseDown(event: MouseEvent) {
 		(event.target as HTMLCanvasElement).focus?.();
 		const x = event.offsetX;
 		const y = event.offsetY;
@@ -298,20 +285,20 @@ export class Graphics {
 		GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
 	}
 
-	#mouseMove(event: MouseEvent) {
+	static #mouseMove(event: MouseEvent) {
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.mouseMove(x, y, this.#pickedEntity, event);
 	}
 
-	#mouseUp(event: MouseEvent) {
+	static #mouseUp(event: MouseEvent) {
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.mouseUp(x, y, this.#pickedEntity, event);
 		this.#pickedEntity = null;
 	}
 
-	#wheel(event: WheelEvent) {
+	static #wheel(event: WheelEvent) {
 		const x = event.offsetX;
 		const y = event.offsetY;
 		GraphicsEvents.wheel(x, y, this.#pickedEntity, event);
@@ -319,7 +306,7 @@ export class Graphics {
 		event.preventDefault();
 	}
 
-	getDefinesAsString(material: Material) {//TODOv3 rename var material
+	static getDefinesAsString(material: Material) {//TODOv3 rename var material
 		const defines: string[] = [];
 		for (const [name, value] of Object.entries(material.defines)) {
 			if (value === false) {
@@ -331,7 +318,7 @@ export class Graphics {
 		return defines.join('\n') + '\n';
 	}
 
-	render(scene: Scene, camera: Camera, delta: number, context: RenderContext) {
+	static render(scene: Scene, camera: Camera, delta: number, context: RenderContext) {
 		if (MEASURE_PERFORMANCE) {
 			WebGLStats.beginRender();
 		}
@@ -358,7 +345,7 @@ export class Graphics {
 		}
 	}
 
-	renderMultiCanvas(delta: number, context: RenderContext = {}) {
+	static renderMultiCanvas(delta: number, context: RenderContext = {}) {
 		// TODO: mutualize with the method render()
 		for (const [_, canvas] of this.#canvases) {
 			if (canvas.enabled) {
@@ -367,7 +354,7 @@ export class Graphics {
 		}
 	}
 
-	#renderMultiCanvas(canvas: MultiCanvas, delta: number, context: RenderContext) {
+	static #renderMultiCanvas(canvas: MultiCanvas, delta: number, context: RenderContext) {
 		// TODO: mutualize with the method render()
 		if (MEASURE_PERFORMANCE) {
 			WebGLStats.beginRender();
@@ -399,13 +386,13 @@ export class Graphics {
 		}
 	}
 
-	renderBackground() {
+	static renderBackground() {
 		if (this.autoClear) {
 			this.clear(this.autoClearColor, this.autoClearDepth, this.autoClearStencil);
 		}
 	}
 
-	clear(color: boolean, depth: boolean, stencil: boolean) {
+	static clear(color: boolean, depth: boolean, stencil: boolean) {
 		let bits = 0;
 		if (color) bits |= GL_COLOR_BUFFER_BIT;
 		if (depth) bits |= GL_DEPTH_BUFFER_BIT;
@@ -419,7 +406,7 @@ export class Graphics {
 		this.glContext?.clear(bits);
 	}
 
-	_tick() {
+	static _tick() {
 		cancelAnimationFrame(this.#animationFrame);
 		let queueTask;
 		if (FULL_PATATE && TESTING) {
@@ -445,7 +432,7 @@ export class Graphics {
 		}
 	}
 
-	#initContext(contextAttributes: GraphicsInitOptions) {
+	static #initContext(contextAttributes: GraphicsInitOptions) {
 		const canvas = this.#offscreenCanvas ?? this.#canvas;
 		if (this.#offscreenCanvas) {
 			//this.#bipmapContext = this.#canvas.getContext('bitmaprenderer');
@@ -510,11 +497,14 @@ export class Graphics {
 		}
 	}
 
-	set shaderPrecision(shaderPrecision: ShaderPrecision) {
+	/**
+	 * @deprecated Please use `setShaderPrecision` instead.
+	 */
+	static set shaderPrecision(shaderPrecision: ShaderPrecision) {
 		this.setShaderPrecision(shaderPrecision);
 	}
 
-	setShaderPrecision(shaderPrecision: ShaderPrecision) {
+	static setShaderPrecision(shaderPrecision: ShaderPrecision) {
 		switch (shaderPrecision) {
 			case ShaderPrecision.Low:
 				this.setIncludeCode('SHADER_PRECISION', '#define LOW_PRECISION');
@@ -528,39 +518,39 @@ export class Graphics {
 		}
 	}
 
-	setShaderQuality(shaderQuality: ShaderQuality) {
+	static setShaderQuality(shaderQuality: ShaderQuality) {
 		this.setIncludeCode('SHADER_QUALITY', `#define SHADER_QUALITY ${shaderQuality}`);
 	}
 
-	setShaderDebugMode(shaderDebugMode: ShaderDebugMode) {
+	static setShaderDebugMode(shaderDebugMode: ShaderDebugMode) {
 		this.setIncludeCode('SHADER_DEBUG_MODE', `#define SHADER_DEBUG_MODE ${shaderDebugMode}`);
 	}
 
-	setIncludeCode(key: string, code: string) {
+	static setIncludeCode(key: string, code: string) {
 		this.#includeCode.set(key, code);
 		this.#refreshIncludeCode();
 	}
 
-	removeIncludeCode(key: string) {
+	static removeIncludeCode(key: string) {
 		this.#includeCode.delete(key);
 		this.#refreshIncludeCode();
 	}
 
-	#refreshIncludeCode() {
+	static #refreshIncludeCode() {
 		this.#globalIncludeCode = '';
 		for (const code of this.#includeCode.values()) {
 			this.#globalIncludeCode += code + '\n';
 		}
 	}
 
-	getIncludeCode() {
+	static getIncludeCode() {
 		return this.#globalIncludeCode;
 	}
 
 	/**
 	 * Invalidate all shader (force recompile)
 	 */
-	invalidateShaders() {
+	static invalidateShaders() {
 		if (this.#forwardRenderer) {
 			this.#forwardRenderer.invalidateShaders();
 		}
@@ -570,38 +560,38 @@ export class Graphics {
 		}*/
 	}
 
-	clearColor(clearColor: vec4) {
+	static clearColor(clearColor: vec4) {
 		WebGLRenderingState.clearColor(clearColor);
 	}
 
-	getClearColor(clearColor?: vec4) {
+	static getClearColor(clearColor?: vec4) {
 		return WebGLRenderingState.getClearColor(clearColor);
 	}
 
-	clearDepth(clearDepth: GLclampf) {
+	static clearDepth(clearDepth: GLclampf) {
 		WebGLRenderingState.clearDepth(clearDepth);
 	}
 
-	clearStencil(clearStencil: GLint) {
+	static clearStencil(clearStencil: GLint) {
 		WebGLRenderingState.clearStencil(clearStencil);
 	}
 
-	setColorMask(mask: vec4) {
+	static setColorMask(mask: vec4) {
 		WebGLRenderingState.colorMask(mask);
 	}
 
-	set autoResize(autoResize) {
+	static set autoResize(autoResize) {
 		this.#autoResize = autoResize;
 		if (autoResize) {
 			this.checkCanvasSize();
 		}
 	}
 
-	get autoResize() {
+	static get autoResize() {
 		return this.#autoResize;
 	}
 
-	getExtension(name: string) {
+	static getExtension(name: string) {
 		if (this.glContext) {
 			if (this.#extensions.has(name)) {
 				return this.#extensions.get(name);
@@ -614,16 +604,16 @@ export class Graphics {
 		return null;
 	}
 
-	set pixelRatio(pixelRatio) {
+	static set pixelRatio(pixelRatio) {
 		this.#pixelRatio = pixelRatio;
 		this.#updateSize();
 	}
 
-	get pixelRatio() {
+	static get pixelRatio() {
 		return this.#pixelRatio;
 	}
 
-	setSize(width: number, height: number): [number, number] {
+	static setSize(width: number, height: number): [number, number] {
 		width = Math.max(width, 1);
 		height = Math.max(height, 1);
 		const previousWidth = this.#width;
@@ -639,13 +629,13 @@ export class Graphics {
 		return [previousWidth, previousHeight];
 	}
 
-	getSize(ret = vec2.create()) {
+	static getSize(ret = vec2.create()) {
 		ret[0] = this.#width;
 		ret[1] = this.#height;
 		return ret;
 	}
 
-	#updateSize() {
+	static #updateSize() {
 		if (!this.#canvas) {
 			return;
 		}
@@ -659,7 +649,7 @@ export class Graphics {
 		this.setViewport(vec4.fromValues(0, 0, this.#width, this.#height));///ODO: optimize
 	}
 
-	setViewport(viewport: vec4): void {
+	static setViewport(viewport: vec4): void {
 		vec4.copy(this.#viewport, viewport);
 		WebGLRenderingState.viewport(viewport);
 	}
@@ -667,27 +657,27 @@ export class Graphics {
 	/**
 	 * @deprecated Please use `setViewport` instead.
 	 */
-	set viewport(viewport: vec4) {
+	static set viewport(viewport: vec4) {
 		this.setViewport(viewport);
 	}
 
-	getViewport(out: vec4): vec4 {
+	static getViewport(out: vec4): vec4 {
 		return vec4.copy(out, this.#viewport);
 	}
 
 	/**
 	 * @deprecated Please use `getViewport` instead.
 	 */
-	get viewport() {
+	static get viewport() {
 		return this.getViewport(vec4.create());
 	}
 
-	set scissor(scissor: vec4) {
+	static set scissor(scissor: vec4) {
 		vec4.copy(this.#scissor, scissor);
 		WebGLRenderingState.scissor(scissor);
 	}
 
-	set scissorTest(scissorTest: boolean) {
+	static set scissorTest(scissorTest: boolean) {
 		if (scissorTest) {
 			WebGLRenderingState.enable(GL_SCISSOR_TEST);
 		} else {
@@ -695,7 +685,7 @@ export class Graphics {
 		}
 	}
 
-	checkCanvasSize() {
+	static checkCanvasSize() {
 		if (!this.#autoResize) {
 			return;
 		}
@@ -715,7 +705,7 @@ export class Graphics {
 		}
 	}
 
-	#initObserver() {
+	static #initObserver() {
 		const callback: ResizeObserverCallback = (entries, observer) => {
 			entries.forEach(entry => {
 				this.checkCanvasSize();
@@ -727,20 +717,20 @@ export class Graphics {
 		}
 	}
 
-	play() {
+	static play() {
 		this.#running = true;
 		this._tick();
 	}
 
-	pause() {
+	static pause() {
 		this.#running = false;
 	}
 
-	isRunning() {
+	static isRunning() {
 		return this.#running;
 	}
 
-	createFramebuffer() {
+	static createFramebuffer() {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
@@ -752,11 +742,11 @@ export class Graphics {
 		return frameBuffer;
 	}
 
-	deleteFramebuffer(frameBuffer: WebGLFramebuffer) {
+	static deleteFramebuffer(frameBuffer: WebGLFramebuffer) {
 		this.glContext!.deleteFramebuffer(frameBuffer);
 	}
 
-	createRenderbuffer() {
+	static createRenderbuffer() {
 		if (ENABLE_GET_ERROR && DEBUG) {
 			this.cleanupGLError();
 		}
@@ -770,7 +760,7 @@ export class Graphics {
 		return renderBuffer;
 	}
 
-	deleteRenderbuffer(renderBuffer: WebGLRenderbuffer) {
+	static deleteRenderbuffer(renderBuffer: WebGLRenderbuffer) {
 		this.glContext!.deleteRenderbuffer(renderBuffer);
 	}
 
@@ -781,19 +771,19 @@ export class Graphics {
 	}
 	*/
 
-	pushRenderTarget(renderTarget: RenderTarget) {
+	static pushRenderTarget(renderTarget: RenderTarget) {
 		this.#renderTargetStack.push(renderTarget);
 		this.#setRenderTarget(renderTarget);
 	}
 
-	popRenderTarget(): RenderTarget | null {
+	static popRenderTarget(): RenderTarget | null {
 		this.#renderTargetStack.pop();
 		const renderTarget = this.#renderTargetStack[this.#renderTargetStack.length - 1];
 		this.#setRenderTarget(renderTarget);
 		return renderTarget ?? null;
 	}
 
-	#setRenderTarget(renderTarget?: RenderTarget) {
+	static #setRenderTarget(renderTarget?: RenderTarget) {
 		if (renderTarget == undefined) {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.cleanupGLError();
@@ -808,7 +798,7 @@ export class Graphics {
 		}
 	}
 
-	savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number, type?: string, quality?: number) {
+	static savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number, type?: string, quality?: number) {
 		const previousWidth = this.#width;
 		const previousHeight = this.#height;
 		const previousAutoResize = this.autoResize;
@@ -823,11 +813,11 @@ export class Graphics {
 		}
 	}
 
-	async savePictureAsFile(filename: string, type?: string, quality?: number) {
+	static async savePictureAsFile(filename: string, type?: string, quality?: number) {
 		return new File([await this.toBlob(type, quality) ?? new Blob()], filename)
 	}
 
-	async toBlob(type?: string, quality?: number): Promise<Blob | null> {
+	static async toBlob(type?: string, quality?: number): Promise<Blob | null> {
 		let promiseResolve: (value: Blob | null) => void;
 		const promise = new Promise<Blob | null>((resolve) => {
 			promiseResolve = resolve;
@@ -839,7 +829,7 @@ export class Graphics {
 		return promise;
 	}
 
-	async _savePicture(filename: string, type?: string, quality?: number) {
+	static async _savePicture(filename: string, type?: string, quality?: number) {
 		/*
 		const callback = function (blob) {
 			//saveFile(filename, blob);
@@ -848,7 +838,7 @@ export class Graphics {
 		saveFile(await this.savePictureAsFile(filename, type, quality));
 	}
 
-	startRecording(frameRate = 60, bitsPerSecond: number) {
+	static startRecording(frameRate = 60, bitsPerSecond: number) {
 		if (this.#canvas) {
 			const stream = this.#canvas.captureStream(frameRate);
 			this.#mediaRecorder = new MediaRecorder(stream, { mimeType: RECORDER_MIME_TYPE, bitsPerSecond: bitsPerSecond });
@@ -856,7 +846,7 @@ export class Graphics {
 		}
 	}
 
-	stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
+	static stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
 		if (!this.#mediaRecorder) {
 			return;
 		}
@@ -869,50 +859,50 @@ export class Graphics {
 		this.#mediaRecorder?.stream.getVideoTracks()?.[0]?.stop();
 	}
 
-	get ready() {
+	static get ready() {
 		return this.#readyPromise;
 	}
 
-	async isReady() {
+	static async isReady() {
 		await this.#readyPromise;
 	}
 
-	getParameter(param: GLenum) {
+	static getParameter(param: GLenum) {
 		return this.glContext?.getParameter(param);
 	}
 
-	cleanupGLError() {
+	static cleanupGLError() {
 		this.glContext?.getError();//empty the error
 	}
 
-	getGLError(context: string) {
+	static getGLError(context: string) {
 		const glError = this.glContext?.getError() ?? 0;
 		if (glError) {
 			console.error(`GL Error in ${context} : `, glError);
 		}
 	}
 
-	useLogDepth(use: boolean) {
+	static useLogDepth(use: boolean) {
 		this.setIncludeCode('LOG_DEPTH', use ? '#define USE_LOG_DEPTH' : '');
 	}
 
-	getTime() {
+	static getTime() {
 		return this.#time;
 	}
 
-	getWidth() {
+	static getWidth() {
 		return this.#width;
 	}
 
-	getHeight() {
+	static getHeight() {
 		return this.#height;
 	}
 
-	getCanvas() {
+	static getCanvas() {
 		return this.#canvas;
 	}
 
-	getForwardRenderer() {
+	static getForwardRenderer() {
 		return this.#forwardRenderer;
 	}
 }

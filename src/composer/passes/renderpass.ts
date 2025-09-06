@@ -12,9 +12,9 @@ export class RenderPass extends Pass {
 		this.camera = camera;
 	}
 
-	render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
-		renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		renderer.render(this.scene, this.camera, delta, context);
-		renderer.popRenderTarget();
+	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
+		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+		Graphics.render(this.scene, this.camera, delta, context);
+		Graphics.popRenderTarget();
 	}
 }

@@ -182,7 +182,7 @@ export class RenderRopes extends RenderBase {
 
 	#createParticlesTexture() {
 		this.#texture = TextureManager.createTexture();
-		const gl = new Graphics().glContext;//TODO
+		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -190,14 +190,14 @@ export class RenderRopes extends RenderBase {
 	}
 
 	updateParticlesTexture() {
-		const gl = new Graphics().glContext;
+		const gl = Graphics.glContext;
 
 		if (!this.#imgData || !this.#texture) {
 			return;
 		}
 
 		gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-		if (new Graphics().isWebGL2) {
+		if (Graphics.isWebGL2) {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
 		} else {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);

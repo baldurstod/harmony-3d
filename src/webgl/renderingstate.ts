@@ -1,9 +1,7 @@
 import { vec4 } from 'gl-matrix';
-
-import { GL_BACK, GL_CCW, GL_FUNC_ADD, GL_LESS, GL_MAX_VERTEX_ATTRIBS, GL_ONE, GL_POLYGON_OFFSET_FILL, GL_ZERO } from './constants';
-import { GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_STENCIL_BUFFER_BIT } from './constants';
 import { Graphics } from '../graphics/graphics';
 import { WebGLAnyRenderingContext } from '../types';
+import { GL_BACK, GL_CCW, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_FUNC_ADD, GL_LESS, GL_MAX_VERTEX_ATTRIBS, GL_ONE, GL_POLYGON_OFFSET_FILL, GL_STENCIL_BUFFER_BIT, GL_ZERO } from './constants';
 
 export class WebGLRenderingState {
 	static #viewport = vec4.create();
@@ -48,9 +46,8 @@ export class WebGLRenderingState {
 	static #usedVertexAttribArray: Uint8Array;
 	static #vertexAttribDivisor: Uint8Array;
 
-	static setGraphics(graphics: Graphics) {
-		this.#graphics = graphics;
-		this.#glContext = graphics.glContext;
+	static setGraphics() {
+		this.#glContext = Graphics.glContext;
 
 		const maxVertexAttribs = this.#glContext.getParameter(GL_MAX_VERTEX_ATTRIBS);
 		this.#enabledVertexAttribArray = new Uint8Array(maxVertexAttribs);
@@ -167,10 +164,10 @@ export class WebGLRenderingState {
 
 		if (this.#vertexAttribDivisor[index] !== divisor) {
 			this.#vertexAttribDivisor[index] = divisor;
-			if (this.#graphics.isWebGL2) {
+			if (Graphics.isWebGL2) {
 				(this.#glContext as WebGL2RenderingContext).vertexAttribDivisor(index, divisor);
 			} else {
-				this.#graphics.ANGLE_instanced_arrays?.vertexAttribDivisorANGLE(index, divisor);
+				Graphics.ANGLE_instanced_arrays?.vertexAttribDivisorANGLE(index, divisor);
 			}
 		}
 	}

@@ -24,6 +24,17 @@ export declare class Add extends Proxy_2 {
     execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number): void;
 }
 
+declare interface AddCanvasOptions {
+    /** Set the canvas state to enabled. A disabled canvas will not render. Default to true. */
+    enabled?: boolean;
+    /** Auto resize the canvas to fit its parent. Default to false. */
+    autoResize?: boolean;
+    /** Add a single scene to the canvas. A scene can be part of several canvases. If scenes is provided, this property will be ignored. */
+    scene?: Scene;
+    /** Add several scenes to the canvas. */
+    scenes?: CanvasScene[];
+}
+
 export declare function addIncludeSource(name: string, source?: string): void;
 
 export declare class AgeNoise extends Operator {
@@ -568,7 +579,7 @@ export declare class Box extends Mesh {
     setDepth(depth: number): void;
 }
 
-declare type BoxParameters = EntityParameters & {
+declare type BoxParameters = MeshParameters & {
     width?: number;
     height?: number;
     depth?: number;
@@ -584,7 +595,7 @@ export declare class BufferAttribute {
     dirty: boolean;
     _array: typeof TypedArrayProto;
     count: number;
-    _buffer?: WebGLBuffer;
+    _buffer: WebGLBuffer | null;
     divisor: number;
     constructor(array: typeof TypedArrayProto, itemSize: number);
     get type(): any;
@@ -840,7 +851,7 @@ export declare class CameraControl {
 
 export declare class CameraFrustum extends Mesh {
     #private;
-    constructor();
+    constructor(params?: MeshParameters);
     update(): void;
     parentChanged(parent: any): void;
 }
@@ -865,6 +876,11 @@ export declare enum CameraProjection {
     Orthographic = 1,
     Mixed = 2
 }
+
+declare type CanvasScene = {
+    scene: Scene;
+    viewport: Viewport;
+};
 
 export declare type CDmxAttribute = {
     typeName: string;
@@ -1140,7 +1156,7 @@ declare class Choreography {
 
      export declare class Cone extends Mesh {
          #private;
-         constructor(params?: any);
+         constructor(params?: ConeParameters);
          buildContextMenu(): {
              visibility: {
                  i18n: string;
@@ -1241,6 +1257,14 @@ declare class Choreography {
          };
          static getEntityName(): string;
      }
+
+     declare type ConeParameters = MeshParameters & {
+         radius?: number;
+         height?: number;
+         segments?: number;
+         hasCap?: boolean;
+         material?: Material;
+     };
 
      export declare class ConstrainDistance extends Operator {
          #private;
@@ -1452,7 +1476,7 @@ declare class Choreography {
 
      export declare class Cylinder extends Mesh {
          #private;
-         constructor(params?: any);
+         constructor(params?: CylinderParameters);
          buildContextMenu(): {
              visibility: {
                  i18n: string;
@@ -1564,6 +1588,14 @@ declare class Choreography {
          static getEntityName(): string;
      }
 
+     declare type CylinderParameters = MeshParameters & {
+         radius?: number;
+         height?: number;
+         segments?: number;
+         hasCap?: boolean;
+         material?: Material;
+     };
+
      export declare class DampenToCP extends Operator {
          #private;
          _paramChanged(paramName: string, param: OperatorParam): void;
@@ -1572,7 +1604,7 @@ declare class Choreography {
 
      export declare class Decal extends Mesh {
          #private;
-         constructor(params?: any);
+         constructor(params?: DecalParameters);
          set position(position: vec3);
          get position(): vec3;
          parentChanged(parent: any): void;
@@ -1680,6 +1712,10 @@ declare class Choreography {
          static constructFromJSON(json: any): Promise<Decal>;
          static getEntityName(): string;
      }
+
+     declare type DecalParameters = MeshParameters & {
+         size?: vec3;
+     };
 
      export declare function decodeLz4(reader: BinaryReader, decompressBlobArray: Uint8Array, compressedSize: number, uncompressedSize: number, outputIndex?: number): number;
 
@@ -2240,7 +2276,7 @@ declare class Choreography {
 
          declare class ForwardRenderer extends Renderer {
              #private;
-             constructor(graphics: Graphics);
+             constructor();
              applyMaterial(program: Program, material: Material): void;
              render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
              set scissorTest(scissorTest: any);
@@ -2264,7 +2300,7 @@ declare class Choreography {
          }
 
          export declare class FullScreenQuad extends Mesh {
-             constructor(params?: any);
+             constructor(params?: MeshParameters);
          }
 
          declare type FuncBrush = {
@@ -2862,80 +2898,94 @@ declare class Choreography {
 
          export declare class Graphics {
              #private;
-             isWebGL: boolean;
-             isWebGL2: boolean;
-             autoClear: boolean;
-             autoClearColor: boolean;
-             autoClearDepth: boolean;
-             autoClearStencil: boolean;
-             speed: number;
-             currentTick: number;
-             glContext: WebGLAnyRenderingContext;
-             ANGLE_instanced_arrays: any;
-             OES_texture_float_linear: any;
-             dragging: boolean;
-             constructor();
-             initCanvas(contextAttributes?: GraphicsInitOptions): this;
-             pickEntity(x: number, y: number): Entity;
-             getDefinesAsString(material: Material): string;
-             render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
-             renderBackground(): void;
-             clear(color: boolean, depth: boolean, stencil: boolean): void;
-             _tick(): void;
-             set shaderPrecision(shaderPrecision: ShaderPrecision);
-             setShaderPrecision(shaderPrecision: ShaderPrecision): void;
-             setShaderQuality(shaderQuality: ShaderQuality): void;
-             setShaderDebugMode(shaderDebugMode: ShaderDebugMode): void;
-             setIncludeCode(key: string, code: string): void;
-             removeIncludeCode(key: string): void;
-             getIncludeCode(): string;
+             static isWebGL: boolean;
+             static isWebGL2: boolean;
+             static autoClear: boolean;
+             static autoClearColor: boolean;
+             static autoClearDepth: boolean;
+             static autoClearStencil: boolean;
+             static speed: number;
+             static currentTick: number;
+             static glContext: WebGLAnyRenderingContext;
+             static ANGLE_instanced_arrays: any;
+             static OES_texture_float_linear: any;
+             static dragging: boolean;
+             static initCanvas(contextAttributes?: GraphicsInitOptions): typeof Graphics;
+             static addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): HTMLCanvasElement;
+             static listenCanvas(canvas: HTMLCanvasElement): void;
+             static unlistenCanvas(canvas: HTMLCanvasElement): void;
+             static pickEntity(x: number, y: number): Entity;
+             static getDefinesAsString(material: Material): string;
+             static render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
+             static renderMultiCanvas(delta: number, context?: RenderContext): void;
+             static renderBackground(): void;
+             static clear(color: boolean, depth: boolean, stencil: boolean): void;
+             static _tick(): void;
+             /**
+              * @deprecated Please use `setShaderPrecision` instead.
+              */
+             static set shaderPrecision(shaderPrecision: ShaderPrecision);
+             static setShaderPrecision(shaderPrecision: ShaderPrecision): void;
+             static setShaderQuality(shaderQuality: ShaderQuality): void;
+             static setShaderDebugMode(shaderDebugMode: ShaderDebugMode): void;
+             static setIncludeCode(key: string, code: string): void;
+             static removeIncludeCode(key: string): void;
+             static getIncludeCode(): string;
              /**
               * Invalidate all shader (force recompile)
               */
-             invalidateShaders(): void;
-             clearColor(clearColor: vec4): void;
-             getClearColor(clearColor?: vec4): vec4;
-             clearDepth(clearDepth: GLclampf): void;
-             clearStencil(clearStencil: GLint): void;
-             setColorMask(mask: vec4): void;
-             set autoResize(autoResize: boolean);
-             get autoResize(): boolean;
-             getExtension(name: string): any;
-             set pixelRatio(pixelRatio: number);
-             get pixelRatio(): number;
-             setSize(width: number, height: number): number[];
-             getSize(ret?: vec2): vec2;
-             set viewport(viewport: vec4);
-             get viewport(): vec4;
-             set scissor(scissor: vec4);
-             set scissorTest(scissorTest: boolean);
-             checkCanvasSize(): void;
-             play(): void;
-             pause(): void;
-             isRunning(): boolean;
-             createFramebuffer(): WebGLFramebuffer;
-             deleteFramebuffer(frameBuffer: WebGLFramebuffer): void;
-             createRenderbuffer(): WebGLRenderbuffer;
-             deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void;
-             pushRenderTarget(renderTarget: RenderTarget): void;
-             popRenderTarget(): RenderTarget;
-             savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number, type?: string, quality?: number): void;
-             savePictureAsFile(filename: string, type?: string, quality?: number): Promise<File>;
-             toBlob(type?: string, quality?: number): Promise<Blob | null>;
-             _savePicture(filename: string, type?: string, quality?: number): Promise<void>;
-             startRecording(frameRate: number, bitsPerSecond: number): void;
-             stopRecording(fileName?: string): void;
-             get ready(): Promise<boolean>;
-             isReady(): Promise<void>;
-             getParameter(param: GLenum): any;
-             cleanupGLError(): void;
-             getGLError(context: string): void;
-             useLogDepth(use: boolean): void;
-             getTime(): number;
-             getWidth(): number;
-             getHeight(): number;
-             getCanvas(): HTMLCanvasElement;
-             getForwardRenderer(): ForwardRenderer;
+             static invalidateShaders(): void;
+             static clearColor(clearColor: vec4): void;
+             static getClearColor(clearColor?: vec4): vec4;
+             static clearDepth(clearDepth: GLclampf): void;
+             static clearStencil(clearStencil: GLint): void;
+             static setColorMask(mask: vec4): void;
+             static set autoResize(autoResize: boolean);
+             static get autoResize(): boolean;
+             static getExtension(name: string): any;
+             static set pixelRatio(pixelRatio: number);
+             static get pixelRatio(): number;
+             static setSize(width: number, height: number): [number, number];
+             static getSize(ret?: vec2): vec2;
+             static setViewport(viewport: vec4): void;
+             /**
+              * @deprecated Please use `setViewport` instead.
+              */
+             static set viewport(viewport: vec4);
+             static getViewport(out: vec4): vec4;
+             /**
+              * @deprecated Please use `getViewport` instead.
+              */
+             static get viewport(): vec4;
+             static set scissor(scissor: vec4);
+             static set scissorTest(scissorTest: boolean);
+             static checkCanvasSize(): void;
+             static play(): void;
+             static pause(): void;
+             static isRunning(): boolean;
+             static createFramebuffer(): WebGLFramebuffer;
+             static deleteFramebuffer(frameBuffer: WebGLFramebuffer): void;
+             static createRenderbuffer(): WebGLRenderbuffer;
+             static deleteRenderbuffer(renderBuffer: WebGLRenderbuffer): void;
+             static pushRenderTarget(renderTarget: RenderTarget): void;
+             static popRenderTarget(): RenderTarget | null;
+             static savePicture(scene: Scene, camera: Camera, filename: string, width: number, height: number, type?: string, quality?: number): void;
+             static savePictureAsFile(filename: string, type?: string, quality?: number): Promise<File>;
+             static toBlob(type?: string, quality?: number): Promise<Blob | null>;
+             static _savePicture(filename: string, type?: string, quality?: number): Promise<void>;
+             static startRecording(frameRate: number, bitsPerSecond: number): void;
+             static stopRecording(fileName?: string): void;
+             static get ready(): Promise<boolean>;
+             static isReady(): Promise<void>;
+             static getParameter(param: GLenum): any;
+             static cleanupGLError(): void;
+             static getGLError(context: string): void;
+             static useLogDepth(use: boolean): void;
+             static getTime(): number;
+             static getWidth(): number;
+             static getHeight(): number;
+             static getCanvas(): HTMLCanvasElement;
+             static getForwardRenderer(): ForwardRenderer;
          }
 
          export declare enum GraphicsEvent {
@@ -2968,19 +3018,18 @@ declare class Choreography {
          }
 
          declare interface GraphicsInitOptions {
+             /**
+              * The canvas to render into. Method getContext() must not have been called on the canvas.
+              * If no canvas is provided, one will be created.
+              * If useOffscreenCanvas is true, the canvas will be ignored.
+              */
              canvas?: HTMLCanvasElement;
+             /** Render using an OffscreenCanvas. Allow rendering to several canvas on a page. Default to false. */
+             useOffscreenCanvas?: boolean;
+             /** Auto resize the canvas to fit its parent. Default to false. */
              autoResize?: boolean;
-             webGL?: {
-                 alpha?: boolean;
-                 depth?: boolean;
-                 stencil?: boolean;
-                 desynchronized?: boolean;
-                 antialias?: boolean;
-                 failIfMajorPerformanceCaveat?: boolean;
-                 powerPreference?: string;
-                 premultipliedAlpha?: boolean;
-                 preserveDrawingBuffer?: boolean;
-             };
+             /** WebGL attributes passed to getContext() */
+             webGL?: WebGLContextAttributes;
          }
 
          export declare interface GraphicTickEvent {
@@ -3003,7 +3052,7 @@ declare class Choreography {
 
          export declare class Grid extends Mesh {
              #private;
-             constructor(params?: any);
+             constructor(params?: GridParameters);
              buildContextMenu(): {
                  visibility: {
                      i18n: string;
@@ -3115,6 +3164,12 @@ declare class Choreography {
              set spacing(spacing: number);
              getShaderSource(): string;
          }
+
+         declare type GridParameters = MeshParameters & {
+             size?: number;
+             spacing?: number;
+             normal?: number;
+         };
 
          export declare class Group extends Entity {
              static constructFromJSON(json: any): Promise<Group>;
@@ -3254,6 +3309,11 @@ declare class Choreography {
              Texture2D = 8,
              IntArray = 1000,
              FloatArray = 1001
+         }
+
+         declare class InstancedBufferGeometry extends BufferGeometry {
+             instanceCount: number;
+             constructor(count?: number);
          }
 
          export declare class InstantaneousEmitter extends Emitter {
@@ -3621,7 +3681,7 @@ declare class Choreography {
          export declare class Line extends Mesh {
              #private;
              isLine: boolean;
-             constructor(params?: any);
+             constructor(params?: LineParameters);
              set start(start: vec3);
              getStart(start?: vec3): vec3;
              set end(end: vec3);
@@ -3658,11 +3718,20 @@ declare class Choreography {
              static getEntityName(): string;
          }
 
+         declare type LineParameters = MeshParameters & {
+             start?: vec3;
+             end?: vec3;
+         };
+
          export declare class LineSegments extends Mesh {
              #private;
-             constructor(params?: any);
+             constructor(params?: LineSegmentsParameters);
              setSegments(positions: any, colors?: any): void;
          }
+
+         declare type LineSegmentsParameters = MeshParameters & {
+             lineStrip?: boolean;
+         };
 
          export declare function loadAnimGroup(source2Model: Source2Model, repository: string, animGroupName: string): Promise<Source2AnimGroup>;
 
@@ -4343,12 +4412,22 @@ declare class Choreography {
              uniforms: Record<string, any>;
              defines: any;
              isMesh: boolean;
-             constructor(geometry?: BufferGeometry, material?: Material);
+             constructor(params: MeshParameters);
+             /**
+              * @deprecated Please use `setMaterial` instead.
+              */
              set material(material: Material);
+             /**
+              * @deprecated Please use `getMaterial` instead.
+              */
              get material(): Material;
-             setGeometry(geometry?: BufferGeometry): void;
+             setGeometry(geometry: BufferGeometry): void;
+             /**
+              * @deprecated Please use `getGeometry` instead.
+              */
              get geometry(): BufferGeometry;
-             setMaterial(material?: Material): void;
+             getGeometry(): BufferGeometry;
+             setMaterial(material: Material): void;
              getMaterial(): Material;
              getUniform(name: string): any;
              setUniform(name: string, uniform: UniformValue): void;
@@ -4507,6 +4586,11 @@ declare class Choreography {
              getShaderSource(): string;
          }
 
+         declare type MeshParameters = EntityParameters & {
+             geometry?: BufferGeometry;
+             material?: Material;
+         };
+
          export declare class MeshPhongMaterial extends Material {
              map: any;
              lightMap: any;
@@ -4652,7 +4736,7 @@ declare class Choreography {
          export declare class Metaballs extends Mesh {
              #private;
              cubeWidth: number;
-             constructor(material?: MeshBasicMaterial, cubeWidth?: number);
+             constructor(params?: MetaballsParameters);
              addBall(ball?: Metaball): Metaball;
              setBalls(balls: Metaball[]): void;
              updateGeometry(): void;
@@ -4755,6 +4839,10 @@ declare class Choreography {
                  };
              };
          }
+
+         declare type MetaballsParameters = MeshParameters & {
+             cubeWidth?: number;
+         };
 
          /**
           * ModelGlowColor proxy.
@@ -5392,7 +5480,7 @@ declare class Choreography {
              doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void;
          }
 
-         declare type PlaneParameters = EntityParameters & {
+         declare type PlaneParameters = MeshParameters & {
              width?: number;
              height?: number;
              widthSegments?: number;
@@ -5522,7 +5610,7 @@ declare class Choreography {
 
          export declare class PointLightHelper extends Mesh {
              #private;
-             constructor();
+             constructor(params?: MeshParameters);
          }
 
          declare type PointLightParameters = LightParameters & {
@@ -6050,6 +6138,13 @@ declare class Choreography {
 
          declare interface RenderContext {
              DisableToolRendering?: boolean;
+             width?: number;
+             height?: number;
+             imageBitmap?: {
+                 context: ImageBitmapRenderingContext;
+                 width: number;
+                 height: number;
+             };
          }
 
          export declare class RenderDeferredLight extends RenderBase {
@@ -6061,27 +6156,25 @@ declare class Choreography {
 
          declare class Renderer {
              #private;
-             constructor(graphics: Graphics);
+             constructor();
              getProgram(mesh: Mesh, material: Material): Program;
-             applyMaterial(program: any, material: any): void;
-             setupLights(renderList: RenderList, camera: any, program: any, viewMatrix: any): void;
-             setLights(pointLights: any, spotLights: any, pointLightShadows: any, spotLightShadows: any): void;
-             unsetLights(): void;
-             renderObject(renderList: RenderList, object: Mesh, camera: any, geometry: any, material: any, renderLights: boolean, lightPos: any): void;
+             applyMaterial(program: Program, material: Material): void;
+             setupLights(renderList: RenderList, camera: Camera, program: Program, viewMatrix: mat4): void;
+             renderObject(context: RenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights?: boolean, lightPos?: vec3): void;
              _prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
              _renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: RenderContext, lightPos?: vec3): void;
              render(scene: Scene, camera: Camera, delta: number, context: RenderContext): void;
-             clear(color: any, depth: any, stencil: any): void;
+             clear(color: boolean, depth: boolean, stencil: boolean): void;
              /**
               * Invalidate all shader (force recompile)
               */
              invalidateShaders(): void;
-             clearColor(clearColor: any): void;
-             clearDepth(clearDepth: any): void;
-             clearStencil(clearStencil: any): void;
-             setToneMapping(toneMapping: any): void;
+             clearColor(clearColor: vec4): void;
+             clearDepth(clearDepth: GLclampf): void;
+             clearStencil(clearStencil: GLint): void;
+             setToneMapping(toneMapping: ToneMapping): void;
              getToneMapping(): ToneMapping;
-             setToneMappingExposure(exposure: any): void;
+             setToneMappingExposure(exposure: number): void;
              getToneMappingExposure(): number;
          }
 
@@ -6809,7 +6902,7 @@ declare class Choreography {
 
          export declare class ShadowMap {
              #private;
-             constructor(graphics: Graphics);
+             constructor();
              render(renderer: Renderer, renderList: RenderList, camera: Camera, context: RenderContext): void;
          }
 
@@ -6839,7 +6932,7 @@ declare class Choreography {
              skeleton: Skeleton;
              skinnedVertexPosition: any;
              skinnedVertexNormal: any;
-             constructor(geometry: any, material: any, skeleton: any);
+             constructor(params: SkeletalMeshParameters);
              set bonesPerVertex(bonesPerVertex: number);
              get bonesPerVertex(): number;
              exportObj(): {
@@ -6855,6 +6948,10 @@ declare class Choreography {
              raycast(raycaster: any, intersections: any): void;
              static getEntityName(): string;
          }
+
+         declare type SkeletalMeshParameters = MeshParameters & {
+             skeleton: Skeleton;
+         };
 
          export declare class Skeleton extends Entity {
              #private;
@@ -9123,7 +9220,7 @@ declare class Choreography {
              thetaStart: number;
              thetaLength: number;
              isSphere: boolean;
-             constructor(params?: any);
+             constructor(params?: SphereParameters);
              setRadius(radius: number): void;
              updateGeometry(): void;
              buildContextMenu(): {
@@ -9233,6 +9330,17 @@ declare class Choreography {
              static constructFromJSON(json: any, entities: any, loadedPromise: any): Promise<Sphere>;
              static getEntityName(): string;
          }
+
+         declare type SphereParameters = MeshParameters & {
+             radius?: number;
+             segments?: number;
+             rings?: number;
+             phiStart?: number;
+             phiLength?: number;
+             thetaStart?: number;
+             thetaLength?: number;
+             material?: Material;
+         };
 
          export declare class Spin extends Operator {
              #private;
@@ -9378,7 +9486,7 @@ declare class Choreography {
 
          export declare class SpotLightHelper extends Mesh {
              #private;
-             constructor();
+             constructor(params?: MeshParameters);
              update(): void;
              parentChanged(parent?: Entity | null): void;
          }
@@ -9443,7 +9551,7 @@ declare class Choreography {
              isText3D: boolean;
              static defaultFont: string;
              static defaultStyle: string;
-             constructor(params?: any);
+             constructor(params?: Text3DParameters);
              set text(text: string);
              set size(size: number);
              set depth(depth: number);
@@ -9560,6 +9668,14 @@ declare class Choreography {
              };
              static getEntityName(): string;
          }
+
+         declare type Text3DParameters = MeshParameters & {
+             text?: string;
+             size?: number;
+             depth?: number;
+             font?: string;
+             style?: string;
+         };
 
          export declare class Texture {
              #private;
@@ -10135,6 +10251,13 @@ declare class Choreography {
              get shaderSource(): string;
          }
 
+         declare type Viewport = {
+             x: number;
+             y: number;
+             width: number;
+             height: number;
+         };
+
          declare type VmtParameter = [
          typeof SHADER_PARAM_TYPE_TEXTURE | typeof SHADER_PARAM_TYPE_INTEGER | typeof SHADER_PARAM_TYPE_COLOR | typeof SHADER_PARAM_TYPE_VEC2 | typeof SHADER_PARAM_TYPE_VEC3 | typeof SHADER_PARAM_TYPE_VEC4 | typeof SHADER_PARAM_TYPE_ENVMAP | typeof SHADER_PARAM_TYPE_FLOAT | typeof SHADER_PARAM_TYPE_BOOL | typeof SHADER_PARAM_TYPE_FOURCC | typeof SHADER_PARAM_TYPE_MATRIX | typeof SHADER_PARAM_TYPE_MATERIAL | typeof SHADER_PARAM_TYPE_STRING | typeof SHADER_PARAM_TYPE_MATRIX4X2,
          any
@@ -10259,7 +10382,7 @@ declare class Choreography {
 
          export declare class WebGLRenderingState {
              #private;
-             static setGraphics(graphics: Graphics): void;
+             static setGraphics(): void;
              static clearColor(clearColor: vec4): void;
              static getClearColor(out?: vec4): vec4;
              static clearDepth(clearDepth: GLclampf): void;

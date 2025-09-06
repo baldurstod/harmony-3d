@@ -16,12 +16,10 @@ const lightPos = vec3.create();
 const viewPort = vec4.create();
 
 export class ShadowMap {
-	#graphics: Graphics;
 	#glContext: WebGLAnyRenderingContext;
 
-	constructor(graphics: Graphics) {
-		this.#graphics = graphics;
-		this.#glContext = this.#graphics.glContext;
+	constructor() {
+		this.#glContext = Graphics.glContext;
 	}
 
 	render(renderer: Renderer, renderList: RenderList, camera: Camera, context: RenderContext) {
@@ -36,7 +34,7 @@ export class ShadowMap {
 		WebGLRenderingState.disable(GL_SCISSOR_TEST);
 		WebGLRenderingState.enable(GL_DEPTH_TEST);
 		WebGLRenderingState.clearColor(CLEAR_COLOR);
-		this.#graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
+		Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
 
 		let renderTarget;
 		let shadowViewport;
@@ -47,9 +45,9 @@ export class ShadowMap {
 					light.getWorldPosition(lightPos);
 					renderTarget = shadow.renderTarget;
 					vec2.copy(mapSize, shadow.textureSize);
-					this.#graphics.pushRenderTarget(renderTarget);
+					Graphics.pushRenderTarget(renderTarget);
 					WebGLRenderingState.clear(true, true, true);
-					this.#graphics.setIncludeCode('IS_POINT_LIGHT', (light as PointLight).isPointLight ? '#define IS_POINT_LIGHT' : '');
+					Graphics.setIncludeCode('IS_POINT_LIGHT', (light as PointLight).isPointLight ? '#define IS_POINT_LIGHT' : '');
 					for (let viewPortIndex = 0; viewPortIndex < shadow.viewPortsLength; ++viewPortIndex) {
 						shadowViewport = shadow.viewPorts[viewPortIndex]!;
 						vec4.set(viewPort,
@@ -61,10 +59,10 @@ export class ShadowMap {
 
 
 						shadow.computeShadowMatrix(viewPortIndex);
-						this.#graphics.viewport = viewPort;
+						Graphics.viewport = viewPort;
 						renderer._renderRenderList(renderList, shadow.camera, false, context, lightPos);
 					}
-					this.#graphics.popRenderTarget();
+					Graphics.popRenderTarget();
 				}
 			}
 		}
@@ -73,6 +71,6 @@ export class ShadowMap {
 		scissorCapability ? WebGLRenderingState.enable(GL_SCISSOR_TEST) : WebGLRenderingState.disable(GL_SCISSOR_TEST);
 		depthCapability ? WebGLRenderingState.enable(GL_DEPTH_TEST) : WebGLRenderingState.disable(GL_DEPTH_TEST);
 		WebGLRenderingState.clearColor(a);
-		this.#graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
+		Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
 	}
 }

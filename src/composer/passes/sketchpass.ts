@@ -1,9 +1,9 @@
-import { Pass } from '../pass';
+import { Graphics, RenderContext } from '../../graphics/graphics';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
-import { Graphics, RenderContext } from '../../graphics/graphics';
-import { RenderTarget } from '../../textures/rendertarget';
 import { Scene } from '../../scenes/scene';
+import { RenderTarget } from '../../textures/rendertarget';
+import { Pass } from '../pass';
 
 export class SketchPass extends Pass {
 	constructor(camera) {//TODO: camera is not really needed
@@ -16,11 +16,11 @@ export class SketchPass extends Pass {
 		this.camera = camera;
 	}
 
-	render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
+	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
 
-		renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		renderer.render(this.scene, this.camera, 0, context);
-		renderer.popRenderTarget();
+		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.popRenderTarget();
 	}
 }

@@ -48,7 +48,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 		}
 		const rate = this.getParameter('animation rate') ?? 30;
 		this.geometry.count = particleList.length * 6;
-		const maxParticles = new Graphics().isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+		const maxParticles = Graphics.isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
 		this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
 		this.mesh.setUniform('uMaxParticles', maxParticles);//TODOv3:optimize
 		this.mesh.setVisible(Source1ParticleControler.visible);
@@ -84,7 +84,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	}
 
 	initRenderer() {
-		const maxParticles = new Graphics().isWebGL2 ? this.particleSystem.maxParticles : ceilPowerOfTwo(this.particleSystem.maxParticles);
+		const maxParticles = Graphics.isWebGL2 ? this.particleSystem.maxParticles : ceilPowerOfTwo(this.particleSystem.maxParticles);
 		this.createParticlesArray(maxParticles);
 		this.#createParticlesTexture();
 		const vertices = [];
@@ -131,7 +131,7 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	#createParticlesTexture() {
 		this.texture = TextureManager.createTexture();
 		this.texture.addUser(this);
-		const gl = new Graphics().glContext;//TODO
+		const gl = Graphics.glContext;//TODO
 		gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
@@ -139,10 +139,10 @@ export class RenderSpriteTrail extends Source1ParticleOperator {
 	}
 
 	#updateParticlesTexture(maxParticles: number, pixels: Float32Array) {
-		const gl = new Graphics().glContext;
+		const gl = Graphics.glContext;
 
 		gl.bindTexture(GL_TEXTURE_2D, this.texture!.texture);
-		if (new Graphics().isWebGL2) {
+		if (Graphics.isWebGL2) {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, maxParticles, 0, GL_RGBA, GL_FLOAT, pixels);
 		} else {
 			gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA, TEXTURE_WIDTH, maxParticles, 0, GL_RGBA, GL_FLOAT, pixels);

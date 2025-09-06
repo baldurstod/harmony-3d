@@ -1,6 +1,6 @@
 {
 	"name": "harmony-3d",
-	"version": "0.15.0",
+	"version": "0.16.0",
 	"description": "3D viewer",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",

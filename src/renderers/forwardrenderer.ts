@@ -13,9 +13,9 @@ import { Program } from '../webgl/program';
 export class ForwardRenderer extends Renderer {
 	#shadowMap: ShadowMap;
 	#frame = 0;
-	constructor(graphics: Graphics) {
-		super(graphics);
-		this.#shadowMap = new ShadowMap(graphics);
+	constructor() {
+		super();
+		this.#shadowMap = new ShadowMap();
 	}
 
 	applyMaterial(program: Program, material: Material) {

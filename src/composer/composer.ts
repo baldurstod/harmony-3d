@@ -18,7 +18,7 @@ export class Composer {
 
 	constructor(renderTarget?: RenderTarget) {
 		if (!renderTarget) {
-			const rendererSize = new Graphics().getSize();
+			const rendererSize = Graphics.getSize();
 			renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
 		}
 		this.#setRenderTarget(renderTarget);
@@ -28,7 +28,7 @@ export class Composer {
 		let pass: Pass;
 		let swapBuffer;
 
-		new Graphics().getSize(tempVec2);
+		Graphics.getSize(tempVec2);
 		this.setSize(tempVec2[0], tempVec2[1]);
 
 		let lastPass = -1;
@@ -53,7 +53,7 @@ export class Composer {
 				this.writeBuffer = swapBuffer;
 			}
 
-			pass.render(new Graphics(), this.readBuffer, this.writeBuffer, i == lastPass, delta, context);
+			pass.render(Graphics, this.readBuffer, this.writeBuffer, i == lastPass, delta, context);
 
 		}
 	}
@@ -61,12 +61,12 @@ export class Composer {
 	savePicture(filename: string, width: number, height: number) {
 		this.setSize(width, height);
 		this.render(0, { DisableToolRendering: true });
-		new Graphics()._savePicture(filename);
+		Graphics._savePicture(filename);
 	}
 
 	addPass(pass) {
 		this.passes.push(pass);
-		new Graphics().getSize(tempVec2);
+		Graphics.getSize(tempVec2);
 		pass.setSize(tempVec2[0], tempVec2[1]);
 	}
 

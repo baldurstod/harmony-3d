@@ -460,9 +460,9 @@ export async function decompressDxt(format: ImageFormatS3tc | ImageFormatRgtc | 
 	return uncompressedData;
 }
 
-function fillTextureDxt(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, target: GLenum, width: number, height: number, dxtLevel: ImageFormatS3tc, datas: Uint8Array | Float32Array, clampS: boolean, clampT: boolean, srgb: boolean): void {//removeme
-	const s3tc = graphics.getExtension('WEBGL_compressed_texture_s3tc');
-	const s3tcSRGB = graphics.getExtension('WEBGL_compressed_texture_s3tc_srgb');
+function fillTextureDxt(graphics: Graphics/*TODO: remove*/, glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, target: GLenum, width: number, height: number, dxtLevel: ImageFormatS3tc, datas: Uint8Array | Float32Array, clampS: boolean, clampT: boolean, srgb: boolean): void {//removeme
+	const s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
+	const s3tcSRGB = Graphics.getExtension('WEBGL_compressed_texture_s3tc_srgb');
 
 	glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
 	//glContext.bindTexture(target, texture);

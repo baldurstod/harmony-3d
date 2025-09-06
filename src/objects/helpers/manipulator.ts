@@ -175,7 +175,7 @@ export class Manipulator extends Entity {
 						this.startScale(detail.x, detail.y);
 						break;
 				}
-				new Graphics().dragging = true;
+				Graphics.dragging = true;
 				this.#setAxisSelected(true);
 			}
 		});
@@ -200,7 +200,7 @@ export class Manipulator extends Entity {
 		});
 		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: Event) => {
 			if (this.#entityAxis.has((event as CustomEvent<GraphicMouseEventData>).detail.entity!)) {
-				new Graphics().dragging = false;
+				Graphics.dragging = false;
 				this.#setAxisSelected(false);
 			}
 		});
@@ -582,8 +582,8 @@ export class Manipulator extends Entity {
 			const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
 
 			// transform the screen coordinates to normalized coordinates
-			this.#cursorPos[0] = (x / new Graphics().getWidth()) * 2.0 - 1.0;
-			this.#cursorPos[1] = 1.0 - (y / new Graphics().getHeight()) * 2.0;
+			this.#cursorPos[0] = (x / Graphics.getWidth()) * 2.0 - 1.0;
+			this.#cursorPos[1] = 1.0 - (y / Graphics.getHeight()) * 2.0;
 
 			this.#near[0] = this.#far[0] = this.#cursorPos[0];
 			this.#near[1] = this.#far[1] = this.#cursorPos[1];
@@ -665,8 +665,8 @@ export class Manipulator extends Entity {
 		}
 
 		// transform the screen coordinates to normalized coordinates
-		const normalizedX = (x / new Graphics().getWidth()) * 2.0 - 1.0;
-		const normalizedY = 1.0 - (y / new Graphics().getHeight()) * 2.0;
+		const normalizedX = (x / Graphics.getWidth()) * 2.0 - 1.0;
+		const normalizedY = 1.0 - (y / Graphics.getHeight()) * 2.0;
 
 		this.getWorldPosition(tempVec3);
 		vec3.transformMat4(tempVec3, tempVec3, camera.cameraMatrix);
@@ -687,8 +687,8 @@ export class Manipulator extends Entity {
 			const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
 			const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
 
-			this.#cursorPos[0] = (x / new Graphics().getWidth()) * 2.0 - 1.0;
-			this.#cursorPos[1] = 1.0 - (y / new Graphics().getHeight()) * 2.0;
+			this.#cursorPos[0] = (x / Graphics.getWidth()) * 2.0 - 1.0;
+			this.#cursorPos[1] = 1.0 - (y / Graphics.getHeight()) * 2.0;
 
 			this.#near[0] = this.#far[0] = this.#cursorPos[0];
 			this.#near[1] = this.#far[1] = this.#cursorPos[1];
@@ -778,7 +778,7 @@ export class Manipulator extends Entity {
 		this.#rotationManipulator.setVisible(false);
 		this.#scaleManipulator.setVisible(false);
 		this.#setAxisSelected(false);
-		new Graphics().dragging = false;
+		Graphics.dragging = false;
 
 		this.#mode = mode;
 		switch (mode) {

@@ -38,13 +38,13 @@ export async function exportToBinaryFBX(entity: Entity) {
 
 export async function entityToFBXScene(fbxManager: FBXManager, entity: Entity): Promise<FBXScene> {
 	const fbxScene = fbxManager.createObject('FBXScene', 'Scene') as FBXScene;
-	const playing = new Graphics().isRunning();
-	new Graphics().pause();
+	const playing = Graphics.isRunning();
+	Graphics.pause();
 
 	await createFBXSceneEntity(fbxScene, entity);
 
 	if (playing) {
-		new Graphics().play();
+		Graphics.play();
 	}
 	return fbxScene;
 }
@@ -556,32 +556,32 @@ async function renderMaterial(material: Material, materialsParams: DynamicParams
 		scene.addChild(fullScreenQuadMesh);
 	}
 
-	const [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024);//TODOv3: constant
-	const previousClearColor = new Graphics().getClearColor();
-	new Graphics().clearColor(vec4.fromValues(0, 0, 0, 0));
-	new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-	new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-	new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+	const [previousWidth, previousHeight] = Graphics.setSize(1024, 1024);//TODOv3: constant
+	const previousClearColor = Graphics.getClearColor();
+	Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
+	Graphics.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
+	Graphics.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
+	Graphics.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
 
 	switch (renderMode) {
 		case RenderMode.Normal:
-			new Graphics().setIncludeCode('RENDER_MODE', '#define RENDER_MODE 12');
+			Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE 12');
 			break;
 	}
 
 
 	fullScreenQuadMesh.material = material;
 	fullScreenQuadMesh.materialsParams = materialsParams;
-	new Graphics().render(scene, camera, 0, { DisableToolRendering: true });
+	Graphics.render(scene, camera, 0, { DisableToolRendering: true });
 
-	const imgContent = await new Graphics().toBlob();
+	const imgContent = await Graphics.toBlob();
 
-	new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
-	new Graphics().setIncludeCode('SKIP_PROJECTION', '');
-	new Graphics().setIncludeCode('SKIP_LIGHTING', '');
-	new Graphics().removeIncludeCode('RENDER_MODE');
-	new Graphics().setSize(previousWidth, previousHeight);
-	new Graphics().clearColor(previousClearColor);
+	Graphics.setIncludeCode('EXPORT_TEXTURES', '');
+	Graphics.setIncludeCode('SKIP_PROJECTION', '');
+	Graphics.setIncludeCode('SKIP_LIGHTING', '');
+	Graphics.removeIncludeCode('RENDER_MODE');
+	Graphics.setSize(previousWidth, previousHeight);
+	Graphics.clearColor(previousClearColor);
 
 	return imgContent?.arrayBuffer() ?? null;
 }

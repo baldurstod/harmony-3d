@@ -38,7 +38,7 @@ function dropFiles(evt, node) {
 					texture.wrapS = GL_CLAMP_TO_EDGE;
 					texture.wrapT = GL_CLAMP_TO_EDGE;
 				}
-				texture.setParameters(new Graphics().glContext, GL_TEXTURE_2D);
+				texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
 
 				const image = new Image();
 				image.onload = () => {
@@ -77,7 +77,7 @@ function dropFilesSpecular(evt, node) {
 					texture.wrapS = GL_CLAMP_TO_EDGE;
 					texture.wrapT = GL_CLAMP_TO_EDGE;
 				}
-				texture.setParameters(new Graphics().glContext, GL_TEXTURE_2D);
+				texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
 
 				const image = new Image();
 				image.onload = () => {

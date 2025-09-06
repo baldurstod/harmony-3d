@@ -28,25 +28,25 @@ export class ClearPass extends Pass {
 		this.#clearStencil = clearStencil ?? null;
 	}
 
-	render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
+	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		const clearColor = this.#clearColor != null;
 		const clearDepth = this.#clearDepth != null;
 		const clearStencil = this.#clearStencil != null;
 
 		if (clearColor) {
-			renderer.clearColor(this.#clearColor);
+			Graphics.clearColor(this.#clearColor);
 		}
 
 		if (clearDepth) {
-			renderer.clearDepth(this.#clearDepth);
+			Graphics.clearDepth(this.#clearDepth);
 		}
 
 		if (clearStencil) {
-			renderer.clearStencil(this.#clearStencil);
+			Graphics.clearStencil(this.#clearStencil);
 		}
 
-		renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		renderer.clear(clearColor, clearDepth, clearStencil);
-		renderer.popRenderTarget();
+		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+		Graphics.clear(clearColor, clearDepth, clearStencil);
+		Graphics.popRenderTarget();
 	}
 }

@@ -76,8 +76,8 @@ export class ControlPoint extends Entity {
 	}
 
 	step() {
-		if (this.lastComputed < new Graphics().currentTick) {
-			this.lastComputed = new Graphics().currentTick;
+		if (this.lastComputed < Graphics.currentTick) {
+			this.lastComputed = Graphics.currentTick;
 			vec3.copy(this.prevWorldPosition, this.currentWorldPosition);
 			quat.copy(this.prevWorldQuaternion, this.currentWorldQuaternion);
 			mat4.copy(this.prevWorldTransformation, this.currentWorldTransformation);

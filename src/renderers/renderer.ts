@@ -34,19 +34,17 @@ function getDefinesAsString(meshOrMaterial: Material | Mesh) {
 export class Renderer {
 	#toneMapping = ToneMapping.None;
 	#toneMappingExposure = 1.;
-	#graphics: Graphics;
 	#glContext: WebGLAnyRenderingContext;
 	#materialsProgram = new Map<string, Program>();
 	#globalIncludeCode = '';
 
-	constructor(graphics: Graphics) {
-		this.#graphics = graphics;
-		this.#glContext = graphics.glContext;
+	constructor() {
+		this.#glContext = Graphics.glContext;
 	}
 
 	getProgram(mesh: Mesh, material: Material) {
 
-		let includeCode = this.#graphics.getIncludeCode();
+		let includeCode = Graphics.getIncludeCode();
 		includeCode += this.#globalIncludeCode;
 		includeCode += getDefinesAsString(mesh);
 		includeCode += getDefinesAsString(material);
@@ -61,7 +59,7 @@ export class Renderer {
 		}
 
 		if (!program.isValid()) {
-			let includeCode = this.#graphics.getIncludeCode();
+			let includeCode = Graphics.getIncludeCode();
 			includeCode += this.#globalIncludeCode;
 			includeCode += getDefinesAsString(mesh);
 			includeCode += getDefinesAsString(material);
@@ -191,21 +189,21 @@ export class Renderer {
 	}
 
 	#setLights(pointLights: number, spotLights: number, pointLightShadows: number, spotLightShadows: number) {
-		this.#graphics.setIncludeCode('USE_SHADOW_MAPPING', '#define USE_SHADOW_MAPPING');
-		this.#graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS ' + pointLights);
-		this.#graphics.setIncludeCode('NUM_PBR_LIGHTS', '#define NUM_PBR_LIGHTS ' + pointLights);
-		this.#graphics.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS ' + spotLights);
-		this.#graphics.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHT_SHADOWS ' + pointLightShadows);
-		this.#graphics.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHT_SHADOWS ' + spotLightShadows);
+		Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#define USE_SHADOW_MAPPING');
+		Graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS ' + pointLights);
+		Graphics.setIncludeCode('NUM_PBR_LIGHTS', '#define NUM_PBR_LIGHTS ' + pointLights);
+		Graphics.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS ' + spotLights);
+		Graphics.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHT_SHADOWS ' + pointLightShadows);
+		Graphics.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHT_SHADOWS ' + spotLightShadows);
 		//TODO: other lights of disable lighting all together
 	}
 
 	#unsetLights() {
-		this.#graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
-		this.#graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS 0');
-		this.#graphics.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS 0');
-		this.#graphics.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHTS 0');
-		this.#graphics.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHTS 0');
+		Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
+		Graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS 0');
+		Graphics.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS 0');
+		Graphics.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHTS 0');
+		Graphics.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHTS 0');
 		//TODO: other lights of disable lighting all together
 	}
 
@@ -227,7 +225,7 @@ export class Renderer {
 
 		renderLights &&= material.renderLights;
 
-		material.updateMaterial(this.#graphics.getTime(), object);//TODO: frame delta
+		material.updateMaterial(Graphics.getTime(), object);//TODO: frame delta
 
 		const cameraMatrix = camera.cameraMatrix;
 		const projectionMatrix = camera.projectionMatrix;
@@ -241,16 +239,16 @@ export class Renderer {
 		if (renderLights) {
 			this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
 			if (!object.receiveShadow) {
-				this.#graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
+				Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
 			}
 		} else {
 			this.#unsetLights();
 		}
 
 		if (camera.projection == CameraProjection.Perspective) {
-			this.#graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_PERSPECTIVE_CAMERA');
+			Graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_PERSPECTIVE_CAMERA');
 		} else {
-			this.#graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
+			Graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
 		}
 
 		const program = this.getProgram(object, material);
@@ -276,9 +274,9 @@ export class Renderer {
 
 
 			//TODO: set this on resolution change
-			program.setUniformValue('uResolution', [this.#graphics.getWidth(), this.#graphics.getHeight(), camera.aspectRatio, 0]);
+			program.setUniformValue('uResolution', [Graphics.getWidth(), Graphics.getHeight(), camera.aspectRatio, 0]);
 			//TODO: set this at start of the frame
-			program.setUniformValue('uTime', [this.#graphics.getTime(), this.#graphics.currentTick, 0, 0]);
+			program.setUniformValue('uTime', [Graphics.getTime(), Graphics.currentTick, 0, 0]);
 
 			if (renderLights) {
 				this.setupLights(renderList, camera, program, cameraMatrix);
@@ -303,10 +301,10 @@ export class Renderer {
 					this.#glContext.drawElements(object.renderMode, geometry.count, geometry.elementArrayType, 0);
 				}
 			} else {
-				if (this.#graphics.isWebGL2) {
+				if (Graphics.isWebGL2) {
 					(this.#glContext as WebGL2RenderingContext).drawElementsInstanced(object.renderMode, geometry.count, geometry.elementArrayType, 0, (geometry as InstancedBufferGeometry).instanceCount);
 				} else {
-					this.#graphics.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, (geometry as InstancedBufferGeometry).instanceCount);
+					Graphics.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, (geometry as InstancedBufferGeometry).instanceCount);
 				}
 			}
 
@@ -398,7 +396,7 @@ export class Renderer {
 
 	setToneMapping(toneMapping: ToneMapping) {
 		this.#toneMapping = toneMapping;
-		this.#graphics.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
+		Graphics.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
 	}
 
 	getToneMapping() {
@@ -407,7 +405,7 @@ export class Renderer {
 
 	setToneMappingExposure(exposure: number) {
 		this.#toneMappingExposure = exposure;
-		this.#graphics.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
+		Graphics.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
 	}
 
 	getToneMappingExposure() {

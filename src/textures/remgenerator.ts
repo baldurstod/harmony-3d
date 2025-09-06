@@ -210,7 +210,7 @@ export class RemGenerator {
 	#cleanup(outputTarget: RenderTarget) {
 
 		//this.#renderer.setRenderTarget(_oldTarget, _oldActiveCubeFace, _oldActiveMipmapLevel);
-		//new Graphics().pushRenderTarget();
+		//Graphics.pushRenderTarget();
 		outputTarget.setScissorTest(false);
 		//outputTarget.setViewport(0, 0, outputTarget.width, outputTarget.height);
 
@@ -295,12 +295,12 @@ export class RemGenerator {
 		const forwardSign = [1, 1, 1, - 1, - 1, - 1];
 		const renderer = this.#renderer;
 
-		const originalAutoClear = new Graphics().autoClear;
+		const originalAutoClear = Graphics.autoClear;
 		const toneMapping = renderer.getToneMapping();
-		new Graphics().getClearColor(clearColor);
+		Graphics.getClearColor(clearColor);
 
 		renderer.setToneMapping(ToneMapping.None);
-		new Graphics().autoClear = false;
+		Graphics.autoClear = false;
 
 		const backgroundMaterial = new MeshBasicMaterial({
 			name: 'PMREM.Background',
@@ -357,19 +357,19 @@ export class RemGenerator {
 
 			cubeUVRenderTarget.setViewport(col * size, i > 2 ? size : 0, size, size);
 
-			new Graphics().pushRenderTarget(cubeUVRenderTarget);
+			Graphics.pushRenderTarget(cubeUVRenderTarget);
 			if (useSolidColor) {
 				renderer.render(scene2, cubeCamera, 0, { DisableToolRendering: true });
 			}
 			renderer.render(scene, cubeCamera, 0, { DisableToolRendering: true });
-			new Graphics().popRenderTarget();
+			Graphics.popRenderTarget();
 		}
 
 		backgroundBox.dispose();
 
 		//renderer.toneMapping = toneMapping;
 		renderer.setToneMapping(toneMapping);
-		new Graphics().autoClear = originalAutoClear;
+		Graphics.autoClear = originalAutoClear;
 		scene.background = background;
 
 	}
@@ -407,17 +407,17 @@ export class RemGenerator {
 
 		cubeUVRenderTarget.setViewport(0, 0, 3 * size, 2 * size);
 
-		new Graphics().pushRenderTarget(cubeUVRenderTarget);
+		Graphics.pushRenderTarget(cubeUVRenderTarget);
 		renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
-		new Graphics().popRenderTarget();
+		Graphics.popRenderTarget();
 
 	}
 
 	#applyPMREM(cubeUVRenderTarget: RenderTarget) {
 
 		const renderer = this.#renderer;
-		const autoClear = new Graphics().autoClear;
-		new Graphics().autoClear = false;
+		const autoClear = Graphics.autoClear;
+		Graphics.autoClear = false;
 
 		for (let i = 1; i < this.#lodPlanes.length; i++) {
 
@@ -429,7 +429,7 @@ export class RemGenerator {
 
 		}
 
-		new Graphics().autoClear = autoClear;
+		Graphics.autoClear = autoClear;
 
 	}
 
@@ -543,9 +543,9 @@ export class RemGenerator {
 		const y = 4 * (this.#cubeSize - outputSize);
 
 		targetOut.setViewport(x, y, 3 * outputSize, 2 * outputSize);
-		new Graphics().pushRenderTarget(targetOut);
+		Graphics.pushRenderTarget(targetOut);
 		renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
-		new Graphics().popRenderTarget();
+		Graphics.popRenderTarget();
 
 	}
 

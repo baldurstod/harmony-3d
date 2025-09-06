@@ -276,7 +276,7 @@ export class Bone extends Entity implements Lockable {
 		}
 
 		this.dirty = false;
-		this.lastComputed = new Graphics().currentTick;
+		this.lastComputed = Graphics.currentTick;
 	}
 
 	set boneId(boneId) {

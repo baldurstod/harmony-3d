@@ -30,11 +30,11 @@ export class PixelatePass extends Pass {
 		this.#material.setDefine('PIXEL_STYLE', pixelStyle);
 	}
 
-	render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
+	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		this.#material.uniforms['colorMap'] = readBuffer.getTexture();
 
-		renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		renderer.render(this.scene, this.camera, 0, context);
-		renderer.popRenderTarget();
+		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.popRenderTarget();
 	}
 }

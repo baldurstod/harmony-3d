@@ -24,13 +24,13 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 	EXT_texture_compression_rgtc: any;
 
 	constructor() {
-		new Graphics().ready.then(() => {
+		Graphics.ready.then(() => {
 			this.#defaultTexture = TextureManager.createCheckerTexture([127, 190, 255]);
 			this.#defaultTexture.addUser(this);
 			//this._missingTexture = TextureManager.createCheckerTexture();
-			this.WEBGL_compressed_texture_s3tc = new Graphics().getExtension('WEBGL_compressed_texture_s3tc');
-			this.EXT_texture_compression_bptc = new Graphics().getExtension('EXT_texture_compression_bptc');
-			this.EXT_texture_compression_rgtc = new Graphics().getExtension('EXT_texture_compression_rgtc');
+			this.WEBGL_compressed_texture_s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
+			this.EXT_texture_compression_bptc = Graphics.getExtension('EXT_texture_compression_bptc');
+			this.EXT_texture_compression_rgtc = Graphics.getExtension('EXT_texture_compression_rgtc');
 		});
 
 		setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
@@ -110,7 +110,7 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 					this.fillTexture(texture, vtexFile.getWidth(), vtexFile.getHeight(), imageData[0]);
 				}*/
 			}
-			//new Graphics().glContext.bindTexture(GL_TEXTURE_2D, null);
+			//Graphics.glContext.bindTexture(GL_TEXTURE_2D, null);
 		}
 
 		if (vtexFile.decodeNormalizeNormals()) {
@@ -119,7 +119,7 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 	}
 
 	#initCubeTexture(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, imageData: [Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array, Uint8Array]) {
-		const glContext = new Graphics().glContext;
+		const glContext = Graphics.glContext;
 		glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
 		switch (formatCompression(imageFormat)) {
 			case TextureCompressionMethod.Uncompressed:
@@ -159,13 +159,13 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 	}
 
 	#initFlatTexture(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, imageData: [Uint8Array]): void {
-		const glContext = new Graphics().glContext;
+		const glContext = Graphics.glContext;
 		if (TESTING) {
-			new Graphics().cleanupGLError();
+			Graphics.cleanupGLError();
 		}
 		glContext.bindTexture(GL_TEXTURE_2D, texture);
 		if (TESTING) {
-			new Graphics().getGLError('bindTexture in fill source2 fillTexture');
+			Graphics.getGLError('bindTexture in fill source2 fillTexture');
 		}
 		switch (formatCompression(imageFormat)) {
 			case TextureCompressionMethod.Uncompressed:
@@ -192,7 +192,7 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 	}
 
 	fillTexture(imageFormat: ImageFormat, width: number, height: number, datas: ArrayBufferView | null, target: GLenum) {
-		const gl = new Graphics().glContext;
+		const gl = Graphics.glContext;
 		gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 
 		switch (imageFormat) {
@@ -212,7 +212,7 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 	}
 
 	fillTextureDxt(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, datas: Uint8Array, target: GLenum) {
-		const gl = new Graphics().glContext;
+		const gl = Graphics.glContext;
 		const s3tc = this.WEBGL_compressed_texture_s3tc;//gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
 
 		gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
@@ -255,7 +255,7 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 	}
 
 	#fillTextureBptc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array) {
-		const gl = new Graphics().glContext;
+		const gl = Graphics.glContext;
 		const bptc = this.EXT_texture_compression_bptc;
 
 		gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
@@ -278,9 +278,9 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 		}
 
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-		new Graphics().getGLError('texParameteri');
+		Graphics.getGLError('texParameteri');
 		gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		new Graphics().getGLError('texParameteri');
+		Graphics.getGLError('texParameteri');
 		//gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
 		//gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
@@ -289,7 +289,7 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 	}
 
 	#fillTextureRgtc(texture: WebGLTexture, width: number, height: number, datas: Uint8Array) {
-		const gl = new Graphics().glContext;
+		const gl = Graphics.glContext;
 		const rgtc = this.EXT_texture_compression_rgtc;
 
 		gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);

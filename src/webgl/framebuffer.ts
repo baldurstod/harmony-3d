@@ -20,7 +20,7 @@ export class Framebuffer {
 	#dirty = true;
 	constructor(target: FrameBufferTarget) {
 		this.#target = target;
-		this.#frameBuffer = new Graphics().createFramebuffer() as WebGLFramebuffer;
+		this.#frameBuffer = Graphics.createFramebuffer() as WebGLFramebuffer;
 	}
 	/*
 	createRenderTarget(colorFormat, colorType, depth, stencil) {
@@ -33,11 +33,11 @@ export class Framebuffer {
 	_createTexture(internalFormat, width, height, format, type) {
 		let texture = TextureManager.createTexture();
 
-		new Graphics().glContext.bindTexture(GL_TEXTURE_2D, texture);
-		new Graphics().glContext.texImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
-		new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-		new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-		new Graphics().glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		Graphics.glContext.bindTexture(GL_TEXTURE_2D, texture);
+		Graphics.glContext.texImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
+		Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		return texture;
 	}
 */
@@ -54,46 +54,46 @@ export class Framebuffer {
 
 	#setupAttachments() {
 		if (ENABLE_GET_ERROR && DEBUG) {
-			new Graphics().cleanupGLError();
+			Graphics.cleanupGLError();
 		}
 		for (const [attachmentPoint, attachmentParams] of this.#attachments) {
 			switch (attachmentParams.type) {
 				case ATTACHMENT_TYPE_RENDER_BUFFER:
-					//new Graphics().glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
-					//new Graphics().renderbufferStorage(GL_RENDERBUFFER, GL_RGBA4, 256, 256);
-					new Graphics().glContext!.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
+					//Graphics.glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
+					//Graphics.renderbufferStorage(GL_RENDERBUFFER, GL_RGBA4, 256, 256);
+					Graphics.glContext!.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
 					if (ENABLE_GET_ERROR && DEBUG) {
-						new Graphics().getGLError('framebufferRenderbuffer');
+						Graphics.getGLError('framebufferRenderbuffer');
 					}
-					//new Graphics().bindRenderbuffer(GL_RENDERBUFFER, null);
+					//Graphics.bindRenderbuffer(GL_RENDERBUFFER, null);
 					break;
 				case ATTACHMENT_TYPE_TEXTURE2D:
-					//console.error(new Graphics().getError());
+					//console.error(Graphics.getError());
 					const webGLTexture = attachmentParams.texture.texture;
-					new Graphics().glContext!.bindTexture(attachmentParams.target, null);
-					new Graphics().glContext!.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
+					Graphics.glContext!.bindTexture(attachmentParams.target, null);
+					Graphics.glContext!.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
 					if (ENABLE_GET_ERROR && DEBUG) {
-						new Graphics().getGLError('framebufferTexture2D');
+						Graphics.getGLError('framebufferTexture2D');
 					}
 					break;
 			}
 		}
 		this.#dirty = false;
-		//console.error(new Graphics().checkFramebufferStatus(this.#target));
+		//console.error(Graphics.checkFramebufferStatus(this.#target));
 		//TODO: checkFramebufferStatus
 	}
 
 	bind() {
 		if (ENABLE_GET_ERROR && DEBUG) {
-			new Graphics().cleanupGLError();
+			Graphics.cleanupGLError();
 		}
-		new Graphics().glContext!.bindFramebuffer(this.#target, this.#frameBuffer);
+		Graphics.glContext!.bindFramebuffer(this.#target, this.#frameBuffer);
 		if (ENABLE_GET_ERROR && DEBUG) {
-			new Graphics().getGLError('bindFramebuffer');
+			Graphics.getGLError('bindFramebuffer');
 		}
-		/*console.error(new Graphics().getError());
+		/*console.error(Graphics.getError());
 		this.#setupAttachments();//TODOv3
-		console.error(new Graphics().getError());
+		console.error(Graphics.getError());
 		return;*/
 		if (this.#dirty) {
 			this.#setupAttachments();
@@ -101,7 +101,7 @@ export class Framebuffer {
 	}
 
 	dispose() {
-		new Graphics().deleteFramebuffer(this.#frameBuffer);
+		Graphics.deleteFramebuffer(this.#frameBuffer);
 		for (const [attachmentPoint, attachment] of this.#attachments) {
 			switch (attachment.type) {
 				case ATTACHMENT_TYPE_RENDER_BUFFER:

@@ -1,13 +1,12 @@
 import { vec2, vec4 } from 'gl-matrix';
-
-import { Pass } from '../pass';
+import { Camera } from '../../cameras/camera';
+import { Graphics, RenderContext } from '../../graphics/graphics';
 import { MATERIAL_BLENDING_ADDITIVE } from '../../materials/material';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
-import { RenderTarget } from '../../textures/rendertarget';
 import { Scene } from '../../scenes/scene';
-import { Camera } from '../../cameras/camera';
-import { Graphics, RenderContext } from '../../graphics/graphics';
+import { RenderTarget } from '../../textures/rendertarget';
+import { Pass } from '../pass';
 
 const CLEAR_COLOR = vec4.fromValues(0, 0, 0, 0);
 
@@ -100,34 +99,34 @@ export class OutlinePass extends Pass {
 		});
 	}
 
-	render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
-		renderer.getSize(tempVec2);
+	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
+		Graphics.getSize(tempVec2);
 		const width = tempVec2[0];
 		const height = tempVec2[1];
 
 
-		renderer.clearColor(CLEAR_COLOR);
+		Graphics.clearColor(CLEAR_COLOR);
 
-		renderer.pushRenderTarget(this.#renderTargetDepthBuffer);
-		renderer.clear(true, true, false);
+		Graphics.pushRenderTarget(this.#renderTargetDepthBuffer);
+		Graphics.clear(true, true, false);
 
 
 		//renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
 
 		this.changeVisibilityOfSelectedObjects(false);
-		renderer.setColorMask([0, 0, 0, 0]);
-		renderer.render(this.outlineScene, this.camera, 0, context);
-		renderer.setColorMask([1, 1, 1, 1]);
+		Graphics.setColorMask([0, 0, 0, 0]);
+		Graphics.render(this.outlineScene, this.camera, 0, context);
+		Graphics.setColorMask([1, 1, 1, 1]);
 		this.changeVisibilityOfSelectedObjects(true);
 		//renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
 
 		this.changeVisibilityOfNonSelectedObjects(false);
-		renderer.setIncludeCode('outline_pass_silhouette_mode', '#define SILHOUETTE_MODE');
-		renderer.setIncludeCode('silhouetteColor', '#define SILHOUETTE_COLOR vec4(1.0)');
-		renderer.render(this.outlineScene, this.camera, 0, context);
-		renderer.setIncludeCode('outline_pass_silhouette_mode', '#undef SILHOUETTE_MODE');
+		Graphics.setIncludeCode('outline_pass_silhouette_mode', '#define SILHOUETTE_MODE');
+		Graphics.setIncludeCode('silhouetteColor', '#define SILHOUETTE_COLOR vec4(1.0)');
+		Graphics.render(this.outlineScene, this.camera, 0, context);
+		Graphics.setIncludeCode('outline_pass_silhouette_mode', '#undef SILHOUETTE_MODE');
 		this.changeVisibilityOfNonSelectedObjects(true);
-		renderer.popRenderTarget();
+		Graphics.popRenderTarget();
 
 		/**************/
 		this.#edgedetectionMaterial.uniforms['colorMap'] = this.#renderTargetDepthBuffer.getTexture();//TODO: optiùmize this
@@ -135,29 +134,29 @@ export class OutlinePass extends Pass {
 		this.#edgedetectionMaterial.uniforms['uVisibleEdgeColor'] = [1, 1, 1];
 		this.#edgedetectionMaterial.uniforms['uHiddenEdgeColor'] = [0, 1, 0];
 		this.quad.setMaterial(this.#edgedetectionMaterial);
-		renderer.pushRenderTarget(this.#renderTargetEdgeBuffer1);
-		renderer.clear(true, true, false);
-		renderer.render(this.scene, this.camera, 0, context);
-		renderer.popRenderTarget();
+		Graphics.pushRenderTarget(this.#renderTargetEdgeBuffer1);
+		Graphics.clear(true, true, false);
+		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.popRenderTarget();
 
 		/**************/
 
 
 		this.#copyMaterial.uniforms['colorMap'] = readBuffer.getTexture();
 		this.quad.setMaterial(this.#copyMaterial);
-		renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		renderer.clear(true, true, false);
-		renderer.render(this.scene, this.camera, 0, context);
-		renderer.popRenderTarget();
+		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+		Graphics.clear(true, true, false);
+		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.popRenderTarget();
 
 
 		/***************/
 
 		this.#copyMaterial.uniforms['colorMap'] = this.#renderTargetEdgeBuffer1.getTexture();
 		this.quad.setMaterial(this.#copyMaterial);
-		renderer.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		renderer.render(this.scene, this.camera, 0, context);
-		renderer.popRenderTarget();
+		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
+		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.popRenderTarget();
 
 	}
 }

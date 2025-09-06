@@ -246,11 +246,11 @@ export class Node extends MyEventTarget {
 			renderTarget2.resize(previewSize, previewSize);
 		}
 		this.#previewRenderTarget = renderTarget2;
-		new Graphics().pushRenderTarget(renderTarget2);
+		Graphics.pushRenderTarget(renderTarget2);
 		this.editor.render(this.material);
 
 		const pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
-		new Graphics().glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+		Graphics.glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
 		this.#pixelArray = new Uint8ClampedArray(pixelArray);
 
 		//set alpha to 1
@@ -265,7 +265,7 @@ export class Node extends MyEventTarget {
 		this.previewPic.width = previewSize;
 		this.previewPic.height = previewSize;
 
-		new Graphics().popRenderTarget();
+		Graphics.popRenderTarget();
 	}
 
 	async savePicture(filename: string = 'texture.png') {

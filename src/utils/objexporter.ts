@@ -24,13 +24,13 @@ export class ObjExporter {
 	}
 
 	async #renderMeshes(files: Set<File>, meshes: Set<Entity>) {
-		const [previousWidth, previousHeight] = new Graphics().setSize(1024, 1024);//TODOv3: constant
-		new Graphics().setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-		new Graphics().setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-		new Graphics().setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+		const [previousWidth, previousHeight] = Graphics.setSize(1024, 1024);//TODOv3: constant
+		Graphics.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
+		Graphics.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
+		Graphics.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
 
-		const previousClearColor = new Graphics().getClearColor();
-		new Graphics().clearColor(vec4.fromValues(0, 0, 0, 0));
+		const previousClearColor = Graphics.getClearColor();
+		Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
 
 		let meshId = 0;
 		const promises: Promise<File>[] = [];
@@ -43,22 +43,22 @@ export class ObjExporter {
 			}
 			this.#fullScreenQuadMesh.material = (mesh as Mesh).material;
 			this.#fullScreenQuadMesh.materialsParams = mesh.materialsParams;
-			new Graphics().render(this.scene, this.camera, 0, { DisableToolRendering: true });
+			Graphics.render(this.scene, this.camera, 0, { DisableToolRendering: true });
 
-			//let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
-			/*				let file = await new Graphics().savePictureAsFile(`mat_${meshId}.png`);
+			//let file = await Graphics.savePictureAsFile(`mat_${meshId}.png`);
+			/*				let file = await Graphics.savePictureAsFile(`mat_${meshId}.png`);
 						files.add(file);*/
-			const promise = new Graphics().savePictureAsFile(`mat_${meshId}.png`);
+			const promise = Graphics.savePictureAsFile(`mat_${meshId}.png`);
 			promise.then((file) => files.add(file));
 			promises.push(promise);
 
 			++meshId;
 		}
-		new Graphics().setIncludeCode('EXPORT_TEXTURES', '');
-		new Graphics().setIncludeCode('SKIP_PROJECTION', '');
-		new Graphics().setIncludeCode('SKIP_LIGHTING', '');
-		new Graphics().setSize(previousWidth, previousHeight);
-		new Graphics().clearColor(previousClearColor);
+		Graphics.setIncludeCode('EXPORT_TEXTURES', '');
+		Graphics.setIncludeCode('SKIP_PROJECTION', '');
+		Graphics.setIncludeCode('SKIP_LIGHTING', '');
+		Graphics.setSize(previousWidth, previousHeight);
+		Graphics.clearColor(previousClearColor);
 		await Promise.all(promises);
 	}
 
