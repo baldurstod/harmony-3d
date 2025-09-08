@@ -232,7 +232,7 @@ export class LZMA {
 }
 
 class BitTreeDecoder {
-	#models = [];
+	#models: number[] = [];
 	#numBitLevels;
 
 	constructor(numBitLevels: number) {
@@ -266,7 +266,7 @@ class BitTreeDecoder {
 }
 
 class LenDecoder {
-	#choice = [];
+	#choice: number[] = [];
 	#lowCoder: BitTreeDecoder[] = [];
 	#midCoder: BitTreeDecoder[] = [];
 	#highCoder = new BitTreeDecoder(8);
@@ -302,7 +302,7 @@ class LenDecoder {
 }
 
 class Decoder2 {
-	#decoders = [];
+	#decoders: number[] = [];
 
 
 	init() {
@@ -381,12 +381,12 @@ class LiteralDecoder {
 class Decoder {
 	#outWindow = new OutWindow();
 	#rangeDecoder = new RangeDecoder();
-	#isMatchDecoders = [];
-	#isRepDecoders = [];
-	#isRepG0Decoders = [];
-	#isRepG1Decoders = [];
-	#isRepG2Decoders = [];
-	#isRep0LongDecoders = [];
+	#isMatchDecoders: number[] = [];
+	#isRepDecoders: number[] = [];
+	#isRepG0Decoders: number[] = [];
+	#isRepG1Decoders: number[] = [];
+	#isRepG2Decoders: number[] = [];
+	#isRep0LongDecoders: number[] = [];
 	#posSlotDecoder = [new BitTreeDecoder(6), new BitTreeDecoder(6), new BitTreeDecoder(6), new BitTreeDecoder(6)];
 	#posDecoders: number[] = [];
 	#posAlignDecoder = new BitTreeDecoder(4);
