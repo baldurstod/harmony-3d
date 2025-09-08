@@ -30,9 +30,6 @@ const MAX_SAMPLES = 20;
 
 const flatCamera = new Camera({ projection: CameraProjection.Orthographic, position: vec3.fromValues(0, 0, 1) });
 const clearColor = vec4.create();
-const _oldTarget = null;
-const _oldActiveCubeFace = 0;
-const _oldActiveMipmapLevel = 0;
 
 // Golden Ratio
 const PHI = (1 + Math.sqrt(5)) / 2;
