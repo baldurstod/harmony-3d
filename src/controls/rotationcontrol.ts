@@ -83,6 +83,15 @@ export class RotationControl extends Entity {
 		quat.mul(quaternion, quaternion, tempQuat);
 	}
 
+	reset():void {
+		const parent = this._parent;
+		if (!parent) {
+			return;
+		}
+
+		quat.identity(parent._quaternion);
+	}
+
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			RotationControl_1: null,
