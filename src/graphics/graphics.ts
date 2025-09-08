@@ -88,7 +88,7 @@ export type MultiCanvas = {
 	canvas: HTMLCanvasElement;
 	context: ImageBitmapRenderingContext;
 	scenes: CanvasScene[];
-	autoresize: boolean;
+	autoResize: boolean;
 }
 
 export class Graphics {
@@ -227,7 +227,7 @@ export class Graphics {
 				canvas: canvas,
 				context: bipmapContext,
 				scenes: scenes,
-				autoresize: options.autoResize ?? false,
+				autoResize: options.autoResize ?? false,
 			});
 		} catch (e) { }
 
@@ -361,8 +361,19 @@ export class Graphics {
 		}
 
 		if (this.#offscreenCanvas) {
-			this.#offscreenCanvas.width = canvas.canvas.width;
-			this.#offscreenCanvas.height = canvas.canvas.height;
+			const parentElement =  canvas.canvas.parentElement;
+			if (canvas.autoResize && parentElement) {
+				const width = parentElement.clientWidth;
+				const height = parentElement.clientHeight;
+				this.#offscreenCanvas.width = width;
+				this.#offscreenCanvas.height = height;
+
+				canvas.canvas.width = width * this.#pixelRatio;
+				canvas.canvas.height = height * this.#pixelRatio;
+			} else {
+				this.#offscreenCanvas.width = canvas.canvas.width;
+				this.#offscreenCanvas.height = canvas.canvas.height;
+			}
 			this.setViewport(vec4.fromValues(0, 0, canvas.canvas.width, canvas.canvas.height));
 		}
 
