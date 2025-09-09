@@ -1,3 +1,4 @@
+import { Map2 } from 'harmony-utils';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { Repositories } from '../../../repositories/repositories';
 import { FileSelectorFile } from '../../../utils/fileselector/file';
@@ -6,28 +7,23 @@ import { SourceModel } from '../loaders/sourcemodel';
 
 export class Source1ModelManager {
 	static #modelListPerRepository = new Map<string, any>();
-	static #modelsPerRepository = new Map<string, Map<string, SourceModel>>();
+	static #modelsPerRepository = new Map2<string, string, Promise<SourceModel | null>>();
 
 	static async #createModel(repositoryName: string, fileName: string): Promise<SourceModel | null> {
-		let model = this.#getModel(repositoryName, fileName);
-		if (model) {
-			return model;
+		let promise = this.#modelsPerRepository.get(repositoryName, fileName);
+		if (promise) {
+			return promise;
 		}
+
+		let loadedResolve: (value: SourceModel | null) => void;
+		promise = new Promise<SourceModel | null>(resolve => loadedResolve = resolve);
+		this.#modelsPerRepository.set(repositoryName, fileName, promise);
 
 		const modelLoader = getLoader('ModelLoader') as typeof ModelLoader;
-		model = await new modelLoader().load(repositoryName, fileName);
-		if (model) {
-			this.#modelsPerRepository.get(repositoryName)?.set(fileName, model);
-		}
+		let model = await new modelLoader().load(repositoryName, fileName);
+		loadedResolve!/*assigned during promise creation*/(model);
 
 		return model;
-	}
-
-	static #getModel(repositoryName: string, fileName: string): SourceModel | null {
-		if (!this.#modelsPerRepository.has(repositoryName)) {
-			this.#modelsPerRepository.set(repositoryName, new Map<string, SourceModel>());
-		}
-		return this.#modelsPerRepository.get(repositoryName)?.get(fileName) ?? null;
 	}
 
 	static async createInstance(repository: string, fileName: string, dynamic: boolean, preventInit = false): Promise<Source1ModelInstance | null> {
