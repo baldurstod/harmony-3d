@@ -744,7 +744,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 			Source1ModelInstance_1: null,
 			skin: { i18n: '#skin', submenu: skinMenu },
 			tint: { i18n: '#tint', f: async (entity: Source1ModelInstance) => new Interaction().getColor(0, 0, undefined, (tint) => { entity.tint = tint as vec3; }, (tint = entity.tint) => { entity.tint = tint; }) },
-			reset_tint: { i18n: '#reset_tint', f: (entity: Source1ModelInstance) => entity.tint = null, disabled: this.#tint === undefined },
+			reset_tint: { i18n: '#reset_tint', f: (entity: Source1ModelInstance): void => entity.tint = null, disabled: this.#tint === undefined },
 			animation: { i18n: '#animation', f: async (entity: Source1ModelInstance) => { const animation = await new Interaction().getString(0, 0, await entity.sourceModel.mdl.getAnimList()); if (animation) { entity.playSequence(animation); } } },
 			overrideallmaterials: { i18n: '#overrideallmaterials', f: async (entity: Source1ModelInstance) => { const material = await new Interaction().getString(0, 0, Object.keys(Material.materialList)); if (material) { entity.material = new Material.materialList[material]!; } } },
 			Source1ModelInstance_2: null,

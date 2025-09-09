@@ -4,7 +4,7 @@ import { Proxy } from './proxy';
 import { ProxyManager } from './proxymanager';
 
 export class WeaponSkin extends Proxy {
-	#defaultTexture = null;
+	#defaultTexture: string | null = null;
 
 	execute(variables: Map<string, Source1MaterialVariables>, proxyParams: DynamicParams, time: number) {
 		if (!this.#defaultTexture) {

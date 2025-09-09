@@ -1,21 +1,24 @@
 import { Camera } from '../../../../cameras/camera';
 import { Scene } from '../../../../scenes/scene';
+import { Source1ModelInstance } from '../../export';
+import { KvElement } from '../../loaders/kvreader';
 import { Source1ModelManager } from '../../models/source1modelmanager';
 import { MapEntities } from '../mapentities';
 import { MapEntity } from '../mapentity';
 
 export class PropDynamic extends MapEntity {
-	model;
-	setKeyValues(kvElement) {//TODOv3 fix me
+	#model: Source1ModelInstance;
+
+	setKeyValues(kvElement: KvElement) {//TODOv3 fix me
 		super.setKeyValues(kvElement);
 		this.setupModel(kvElement);
 	}
 
-	async setupModel(kvElement) {
+	async setupModel(kvElement: KvElement) {
 		const entity = kvElement;
-		if (entity && entity.model) {
-			const model = await this.setModel(entity.model);
-			const skin = entity.skin || 0;
+		if (entity && (kvElement as any/*TODO: fix that*/).model) {
+			const model = await this.setModel((kvElement as any/*TODO: fix that*/).model);
+			const skin = (kvElement as any/*TODO: fix that*/).skin ?? 0;
 			if (model) {
 				model.skin = skin;
 
@@ -24,13 +27,13 @@ export class PropDynamic extends MapEntity {
 					model.quaternion = this._quaternion;
 				}
 
-				if (entity.defaultanim) {
-					model.playSequence(entity.defaultanim);
+				if ((kvElement as any/*TODO: fix that*/).defaultanim) {
+					model.playSequence((kvElement as any/*TODO: fix that*/).defaultanim);
 				} else {
 					model.playDefaultAnim();
 				}//TODO: RandomAnimation, StartDisabled, SetBodyGroup
-				if (entity.startdisabled == 1) {
-					this.model.visible = false;
+				if ((kvElement as any/*TODO: fix that*/).startdisabled == 1) {
+					this.#model.visible = false;
 				}
 			}
 		}
@@ -59,13 +62,13 @@ export class PropDynamic extends MapEntity {
 			}
 		}*/
 
-	async setModel(modelName) {
+	async setModel(modelName: string) {
 		modelName = modelName.replace(/\.mdl$/g, '');
 
 		const model = await Source1ModelManager.createInstance(this.map.repository, modelName, true);
 		/*model.position = this.position;
 		model.quaternion = this._quaternion;*/
-		this.model = model;
+		this.#model = model;
 		this.map.dynamicProps.addChild(model);
 		/*.then(
 			(model) => {
@@ -78,17 +81,17 @@ export class PropDynamic extends MapEntity {
 		return model;
 	}
 
-	setInput(inputName, parameter) {
+	setInput(inputName: string, parameters: any/*TODO: improve type*/) {
 		switch (inputName.toLowerCase()) {
 			case 'skin':
-				this.model.setSkin(parameter);
+				this.#model.setSkin(parameters);
 				break;
 		}
 	}
 
 	update(scene: Scene, camera: Camera, delta: number): void {
 		super.update(scene, camera, delta);
-		const model = this.model;//fixme this
+		const model = this.#model;//fixme this
 		if (model) {
 			model.position = this._position;
 			model.quaternion = this._quaternion;

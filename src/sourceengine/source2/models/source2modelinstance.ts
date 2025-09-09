@@ -212,9 +212,9 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	#playSequences(delta: number) {//TODO
+	#playSequences(delta: number): void {
 		if (this.#skeleton === null) {
-			return null;
+			return;
 		}
 
 		let animDesc: Source2AnimationDesc | null;

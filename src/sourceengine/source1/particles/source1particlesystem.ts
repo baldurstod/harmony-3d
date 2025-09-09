@@ -59,7 +59,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 	speed = 1;
 	isRunning = false;
 	radius = 1;
-	attachmentBone = null;
+	//attachmentBone = null;
 
 	// List of living particles
 	#livingParticles: Source1Particle[] = [];// TODO: turn into queue ?

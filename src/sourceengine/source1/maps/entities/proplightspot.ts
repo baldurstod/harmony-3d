@@ -4,7 +4,8 @@ import { SpotLight } from '../../../../lights/spotlight';
 import { DEG_TO_RAD } from '../../../../math/constants';
 import { Scene } from '../../../../scenes/scene';
 import { MapEntities } from '../mapentities';
-import { AngleQuaternion, MapEntity, ParseAngles2, parseLightColorIntensity } from '../mapentity';
+import { AngleQuaternion, MapEntity, MapEntityParameters, MapEntityValue, ParseAngles2, parseLightColorIntensity } from '../mapentity';
+import { KvElement } from '../../loaders/kvreader';
 
 const tempQuaternion = quat.create();
 const tempVec3 = vec3.create();
@@ -15,19 +16,20 @@ export class PropLightSpot extends MapEntity {
 	spotLight = new SpotLight();
 	//this.spotLight.visible = false;
 	_angles = vec3.fromValues(-90, 0, 0);
-	constructor(classname) {
-		super(classname);
+
+	constructor(params: MapEntityParameters) {
+		super(params);
 		this.quaternion = SPOTLIGHT_DEFAULT_QUATERNION;
 	}
 
-	setKeyValues(kvElement) {//TODOv3 fix me
+	setKeyValues(kvElement: KvElement) {//TODOv3 fix me
 		super.setKeyValues(kvElement);
 		this.map.addChild(this.spotLight);
 		this.spotLight.position = this._position;
 		this.spotLight.quaternion = this._quaternion;
 	}
 
-	setKeyValue(key, value) {
+	setKeyValue(key: string, value: MapEntityValue): void {
 		const spotLight = this.spotLight;
 		spotLight.range = 1000;
 		switch (key) {

@@ -1,21 +1,22 @@
 import { Camera } from '../../../../cameras/camera';
 import { PointLight } from '../../../../lights/pointlight';
 import { Scene } from '../../../../scenes/scene';
+import { KvElement } from '../../loaders/kvreader';
 import { MapEntities } from '../mapentities';
-import { MapEntity, parseLightColorIntensity } from '../mapentity';
+import { MapEntity, MapEntityValue, parseLightColorIntensity } from '../mapentity';
 
 //const colorIntensity = vec4.create();
 
 export class MapEntityLight extends MapEntity {
 	pointLight = new PointLight();
 
-	setKeyValues(kvElement) {//TODOv3 fix me
+	setKeyValues(kvElement: KvElement) {//TODOv3 fix me
 		super.setKeyValues(kvElement);
 		this.map.addChild(this.pointLight);
 		this.pointLight.position = this._position;
 	}
 
-	setKeyValue(key, value) {
+	setKeyValue(key: string, value: MapEntityValue): void {
 		const pointLight = this.pointLight;
 		pointLight.range = 1000;
 		switch (key) {
