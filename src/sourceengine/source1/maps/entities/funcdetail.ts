@@ -14,7 +14,7 @@ export class FuncDetail extends MapEntity {
 		if (result && result.length >= 2) {
 			const origin = vec3.create();
 			ParseVector(origin, (kvElement as any/*TODO: fix that*/).origin)
-			this.map.funcBrushesRemoveMe.push({ model: result[1]!, origin: origin });
+			this.map.funcBrushesRemoveMe.push({ model: Number(result[1]), origin: origin });
 		}
 	}
 }

@@ -490,7 +490,7 @@ export class Material {
 		return 'Material';
 	}
 
-	get shaderSource(): string {
+	get shaderSource(): string {//TODO: deprecate
 		// TODO: remove this
 		throw 'get shaderSource() must be overridden';
 	}

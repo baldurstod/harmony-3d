@@ -81,7 +81,7 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 		const startOffset = reader.tell();
 
 		for (let resIndex = 0; resIndex < vtf.resEntries.length; ++resIndex) {
-			this.#parseResEntry(reader, vtf, vtf.resEntries[resIndex]);
+			this.#parseResEntry(reader, vtf, vtf.resEntries[resIndex]!);
 		}
 	}
 
@@ -155,9 +155,9 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 				group.m_pSamples[i] = new SheetSequenceSample_t();
 			}
 
-			const Samples = [];
+			const samples = [];
 			for (let i = 0; i < SEQUENCE_SAMPLE_COUNT; i++) {
-				Samples[i] = new SheetSequenceSample_t();
+				samples[i] = new SheetSequenceSample_t();
 			}
 
 			//group.frames = [];
@@ -182,7 +182,10 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 				/*for (let i = 0; i < valuesCount; ++i) {
 					frame.values.push(reader.getFloat32());
 				}*/
-				const seq = Samples[frameIndex];
+				const seq = samples[frameIndex];
+				if (!seq) {
+					continue;
+				}
 				for (let nImage = 0; nImage < nNumCoordsPerFrame; nImage++) {
 					const s = seq.m_TextureCoordData[nImage];
 					const s2 = frameSample.m_TextureCoordData[nImage];
@@ -217,14 +220,21 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 					nIdx,
 					!group.clamp/*,
 									&flIdxA, &flIdxB, &flInterp */);
-				const sA = Samples[result.pValueA];
-				const sB = Samples[result.pValueB];
+				const sA = samples[result.pValueA];
+				const sB = samples[result.pValueB];
 				const oseq = group.m_pSamples[nIdx];
+				if (!sA || !sB) {
+					continue;
+				}
 
 				oseq.m_fBlendFactor = result.pInterpolationValue;
 				for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
 					const src0 = sA.m_TextureCoordData[nImage];
 					const src1 = sB.m_TextureCoordData[nImage];
+					if (!src0 || !src1) {
+						continue;
+					}
+
 					const o = oseq.m_TextureCoordData[nImage];
 					o.m_fLeft_U0 = src0.m_fLeft_U0;
 					o.m_fTop_V0 = src0.m_fTop_V0;
@@ -345,9 +355,9 @@ function str2abRGBA16F(str: string) {
 function float16(byte1: number, byte2: number) {
 	const b = new Uint8Array([byte1, byte2]);
 
-	const sign = b[1] >> 7;
-	const exponent = ((b[1] & 0x7C) >> 2);
-	const mantissa = ((b[1] & 0x03) << 8) | b[0];
+	const sign = b[1]! >> 7;
+	const exponent = ((b[1]! & 0x7C) >> 2);
+	const mantissa = ((b[1]! & 0x03) << 8) | b[0]!;
 
 
 	if (exponent == 0) {
@@ -416,13 +426,13 @@ function str2abABGR(reader, start, length) {
 
 function str2abABGR(reader: BinaryReader, start: number, length: number): Uint8Array<ArrayBuffer> {
 	const arr = new Uint8Array(reader.buffer.slice(start, start + length));
-	for (let i = 0; i < length; i += 4) {
-		let temp = arr[i];
-		arr[i] = arr[i + 3];
+	for (let i = 0, l = arr.length; i < l; i += 4) {
+		let temp = arr[i]!;
+		arr[i] = arr[i + 3]!;
 		arr[i + 3] = temp;
 
-		temp = arr[i + 1];
-		arr[i + 1] = arr[i + 2];
+		temp = arr[i + 1]!;
+		arr[i + 1] = arr[i + 2]!;
 		arr[i + 2] = temp;
 	}
 	return arr;

@@ -1,32 +1,32 @@
 import { ERROR } from '../../../buildoptions';
 
+type KvAttributeValue = any;
+
 // TODO can this be merged with kv3element ?
 class KvAttribute {
 	name: string;
-	value: any;
-	constructor(name, value) {
-		if (!name) {
-			return;
-		}
+	value: KvAttributeValue;
+
+	constructor(name: string, value: KvAttributeValue) {
 		this.name = name.toLowerCase();
 		this.value = value;
 	}
 }
 export class KvElement {
-	addElement(name, value) {
-		if (!name) {
-			return;
-		}
+	// TODO: create map to store values
+
+	addElement(name: string, value: KvAttributeValue) {
 		name = name.toLowerCase();
 		let newName = name;
 		let count = 1;
-		while (this[newName]) {
+		while ((this as any/*TODO: fix this*/)[newName]) {
 			newName = name + '#' + (++count);
 		}
-		this[newName] = value;
+		(this as any/*TODO: fix this*/)[newName] = value;
 	}
-	toString(linePrefix) {
-		linePrefix = linePrefix || '';
+
+	toString(linePrefix?: string) {
+		linePrefix = linePrefix ?? '';
 		const s = [linePrefix, '"'/*, this.type, '"\n'*/, linePrefix, '{\n'];
 
 		for (const i in this) {
@@ -43,29 +43,29 @@ export class KvReader {
 	rootElements: Record<string, any/*TODO: fix type*/> = {};//TODO: create map
 	rootId = 0;
 	carSize: number;
-	src: string;
-	offset: number;
+	src!: string;
+	offset!: number;
 	inQuote = false;
 	inComment = false;
-	currentAttribute;
-	currentElement;
-	currentArray;
-	name;
-	currentValue;
-	elementStack;
-	attributeStack;
-	valuesStack;
-	keyStack;
-	arrayStack;
-	rootElement;
-	rootName: string;
-	currentKey;
+	currentAttribute?: KvAttribute;
+	currentElement?: KvElement;
+	currentArray?: KvAttributeValue[];
+	//name!: never;
+	currentValue!: KvAttributeValue;
+	elementStack!: KvElement[];
+	attributeStack!: KvAttributeValue[];
+	valuesStack!: KvAttributeValue[];
+	keyStack!: string[];
+	arrayStack!: KvAttributeValue[][];
+	rootElement?: KvElement;
+	rootName!: string;
+	currentKey!: string;
 
 	constructor(carSize = 1) {
 		this.carSize = carSize;
 	}
 
-	readText(src) {
+	readText(src: string) {
 		if (!src) {
 			return;
 		}
@@ -84,7 +84,7 @@ export class KvReader {
 		this.currentAttribute = undefined;
 		this.currentElement = undefined;
 		this.currentArray = undefined;
-		this.name = undefined;
+		//this.name = undefined;
 		this.currentValue = '';
 
 		this.elementStack = [];
@@ -99,12 +99,15 @@ export class KvReader {
 		} while (!end);
 		this.endElement();
 	}
+
 	getRootElement() {
 		return this.rootElement;
 	}
+
 	getRootName() {
 		return this.rootName;
 	}
+
 	readChar() {
 		if (this.offset > this.src.length) {
 			return -1;
@@ -113,12 +116,14 @@ export class KvReader {
 		this.offset += this.carSize;
 		return this.src.charAt(offset);
 	}
+
 	pickChar() {
 		if (this.offset > this.src.length) {
 			return -1;
 		}
 		return this.src.charAt(this.offset);
 	}
+
 	pushElement() {
 		if (this.currentElement) {
 			this.elementStack.push(this.currentElement);
@@ -130,6 +135,7 @@ export class KvReader {
 		this.currentKey = this.popValue();
 		this.pushKey();
 	}
+
 	popElement() {
 		const a = this.currentElement;
 		this.currentElement = this.elementStack.pop();
@@ -146,19 +152,23 @@ export class KvReader {
 			}
 		}
 	}
+
 	pushAttribute() {
 		if (this.currentAttribute) {
 			this.attributeStack.push(this.currentAttribute);
 		}
 		//this.currentAttribute = new KvElement();
 	}
+
 	popAttribute() {
 		this.currentAttribute = this.attributeStack.pop();
 	}
+
 	pushValue() {
 		this.valuesStack.push(this.currentValue);
 		this.currentValue = '';
 	}
+
 	popValue() {
 		if (this.valuesStack.length == 0) {
 			if (ERROR) {
@@ -167,7 +177,6 @@ export class KvReader {
 		}
 		return this.valuesStack.pop();
 	}
-
 
 	pushKey() {
 		this.keyStack.push(this.currentKey);
@@ -184,7 +193,9 @@ export class KvReader {
 	}
 
 	pushArray() {
-		this.arrayStack.push(this.currentArray);
+		if (this.currentArray) {
+			this.arrayStack.push(this.currentArray);
+		}
 		this.currentArray = undefined;
 	}
 
@@ -286,7 +297,10 @@ export class KvReader {
 			const e = this.currentElement;
 			this.popElement();
 			if (this.currentElement) {
-				this.currentElement.addElement(this.popKey(), e);
+				const key = this.popKey();
+				if (key !== undefined) {
+					this.currentElement.addElement(key, e);
+				}
 			}
 		}
 	}
@@ -343,7 +357,8 @@ export class KvReader {
 			if (this.currentArray) {
 				this.currentArray.push(newAttribute);
 			} else if (this.currentElement) {
-				this.currentElement.addAttribute(newAttribute);
+				//TODO: fix this case
+				//this.currentElement.addAttribute(newAttribute);
 			}
 			this.currentAttribute = newAttribute;
 		}
