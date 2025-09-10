@@ -1,5 +1,6 @@
 import { Material } from './material'
 import { registerEntity } from '../entities/entities';
+import { JSONObject } from '../types';
 
 export class MeshBasicMaterial extends Material {
 	map = null;
@@ -40,13 +41,13 @@ export class MeshBasicMaterial extends Material {
 		return json;
 	}
 
-	static async constructFromJSON(json) {
+	static async constructFromJSON(json:JSONObject) {
 		return new MeshBasicMaterial();
 	}
 
-	fromJSON(json) {
+	fromJSON(json: JSONObject) {
 		super.fromJSON(json);
-		this.skinning = json.skinning;
+		this.skinning = json.skinning as boolean;
 	}
 
 	static getEntityName(): string {
