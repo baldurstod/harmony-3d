@@ -3,6 +3,7 @@ import { Entity, EntityParameters } from '../entities/entity';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { Material, UniformValue } from '../materials/material';
 import { MaterialManager } from '../materials/materialmanager';
+import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { BoundingBox } from '../math/boundingbox';
 import { getNormal, getUV } from '../math/triangle';
 import { Intersection } from '../raycasting/intersection';
@@ -33,7 +34,7 @@ export type MeshParameters = EntityParameters & {
 };
 
 const meshDefaultBufferGeometry = new BufferGeometry();
-const meshDefaultMaterial = new Material();
+const meshDefaultMaterial = new MeshBasicMaterial();
 
 export class Mesh extends Entity {
 	#geometry!: BufferGeometry;
@@ -49,6 +50,7 @@ export class Mesh extends Entity {
 		super(params);
 		this.setGeometry(params.geometry ?? meshDefaultBufferGeometry);
 		this.setMaterial(params.material ?? meshDefaultMaterial);
+		this.#desaturate(this.getAttribute('desaturate'));
 	}
 
 	/**
@@ -181,11 +183,6 @@ export class Mesh extends Entity {
 		boundingBox.reset();
 		boundingBox.setPoints(this.#geometry.getAttribute('aVertexPosition')?._array);
 		return boundingBox;
-	}
-
-	propagate() {
-		super.propagate();
-		this.#desaturate(this.getAttribute('desaturate'));
 	}
 
 	#desaturate(attributeValue: boolean) {
