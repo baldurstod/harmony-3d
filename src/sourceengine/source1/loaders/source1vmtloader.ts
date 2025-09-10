@@ -42,8 +42,8 @@ class Source1VmtLoaderClass {// TODO: improve singleton
 		if (shaderName === 'patch') {
 			//TODO: check patch
 
-			const include = vmt['include'];
-			const insert = vmt['insert'];
+			const include = (vmt as any/*TODO: fix that*/)['include'];
+			const insert = (vmt as any/*TODO: fix that*/)['insert'];
 
 			const material = await Source1MaterialManager.getMaterial(repository, include);
 			if (material) {
