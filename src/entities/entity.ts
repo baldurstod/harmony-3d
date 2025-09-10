@@ -412,7 +412,7 @@ export class Entity {
 		if (this._parent != parent) {
 			this._parent = parent;
 		}
-		this.propagate();
+		this.#propagate();
 		this.parentChanged(parent);
 	}
 
@@ -1044,7 +1044,7 @@ export class Entity {
 		this.#attributes.set(attributeName, attributeValue);
 
 		EntityObserver.attributeChanged(this, attributeName, oldValue, attributeValue);
-		this.propagate();
+		this.#propagate();
 	}
 
 	getAttribute(attributeName: string, inherited = true): any {
@@ -1057,10 +1057,14 @@ export class Entity {
 		}
 	}
 
-	propagate() {
+	#propagate(): void {
+		this.propagate();
 		for (const child of this.#children) {
-			child.propagate();
+			child.#propagate();
 		}
+	}
+
+	propagate(): void {
 	}
 
 	copy(source: Entity) {
