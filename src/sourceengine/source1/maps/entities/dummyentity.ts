@@ -14,7 +14,7 @@ export class DummyEntity extends MapEntity {
 
 		if (result && result.length >= 2) {
 			this.map.funcBrushesRemoveMe.push({
-				model: result[1]!,
+				model: Number(result[1]),
 				origin: ParseVector(vec3.create(), (kvElement as any/*TODO: fix that*/).origin) ?? vec3.create(),
 			});
 		}

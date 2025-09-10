@@ -2,12 +2,12 @@ import { vec3 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
 import { getLoader } from '../../../loaders/loaderfactory';
 import { RemapValClamped } from '../../../math/functions';
+import { Source1ModelInstance } from '../export';
 import { FlexController } from '../models/flexcontroller';
 import { MdlBone } from './mdlbone';
+import { MdlStudioAnim } from './mdlstudioanim';
 import { MdlStudioSeqDesc } from './mdlstudioseqdesc';
 import { MdlStudioFlexController, MdlStudioHitboxSet, ModelTest, Source1MdlLoader } from './source1mdlloader';
-import { Source1ModelInstance } from '../export';
-import { MdlStudioAnim } from './mdlstudioanim';
 
 /**
  * MDL Model
@@ -220,6 +220,7 @@ export class SourceMdl {
 	illumpositionattachmentindex = 0;
 	flMaxEyeDeflection = 0;
 	linearboneOffset = 0;
+	pLinearBones?: never;
 
 	constructor(repository: string) {
 		this.repository = repository;
@@ -754,8 +755,8 @@ export class SourceMdl {
 		return animList;
 	}
 
-	getAnimDescription(animIndex: number): MdlStudioAnimDesc | null {
-		return this.animDesc[animIndex] ?? null;
+	getAnimDescription(animIndex: number | null | undefined): MdlStudioAnimDesc | null {
+		return this.animDesc[animIndex ?? -1] ?? null;
 	}
 
 	getAnimFrame(dynamicProp: Source1ModelInstance, animDesc: MdlStudioAnimDesc, frameIndex: number) {

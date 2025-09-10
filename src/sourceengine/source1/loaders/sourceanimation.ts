@@ -20,9 +20,8 @@ export class SourceAnimation {
 		if (!modelBones) { return };// Ensure the bones are loaded
 
 		const parentModel = dynamicProp.parent;
-		const posRemoveMeTemp = [];
-		const quatRemoveMeTemp = [];
-		const modelBonesLength = modelBones.length;
+		const posRemoveMeTemp: vec3[] = [];
+		const quatRemoveMeTemp: quat[] = [];
 
 		const seqlist = Object.keys(sequences);
 		let posRemoveMe;// = [];//optimize
@@ -47,8 +46,10 @@ export class SourceAnimation {
 							const boneName = modelBoneArray[boneIndex]!.lowcasename;
 							const seqBoneId = sequenceMdl.boneNames.get(boneName);
 
-							posRemoveMe[boneIndex] = posRemoveMeTemp[seqBoneId];
-							quatRemoveMe[boneIndex] = quatRemoveMeTemp[seqBoneId];
+							if (seqBoneId !== undefined) {
+								posRemoveMe[boneIndex] = posRemoveMeTemp[seqBoneId];
+								quatRemoveMe[boneIndex] = quatRemoveMeTemp[seqBoneId];
+							}
 						}
 					} else {
 						posRemoveMe = posRemoveMeTemp;
@@ -67,7 +68,7 @@ export class SourceAnimation {
 		const seqList = Object.keys(sequences);
 		const bonesRemoveMe = Object.create(null);
 		for (let i = 0; i < seqList.length * 0; ++i) {
-			const sequenceName = seqList[i];
+			const sequenceName = seqList[i]!;
 			const seqContext = sequences[sequenceName];
 			if (seqContext) {
 				const sequence = seqContext.s;
@@ -81,6 +82,9 @@ export class SourceAnimation {
 						//g1 = 2;
 
 						const animIndex = sequence.getBlend(g1, g2);//TODOV2
+						if (!animIndex) {
+							continue;
+						}
 						const anim = sequence.mdl.getAnimDescription(animIndex);
 						if (anim) {
 							blendLayers.push(anim);//TODOv2: remove me
@@ -126,14 +130,14 @@ export class SourceAnimation {
 		});
 
 		let datas;
-		for (let i = 0; i < modelBonesLength; ++i) {
+		for (let i = 0, l = modelBones.length; i < l; ++i) {
 
 			//let pbone = modelBones[i];
 			//quatRemoveMeTemp[i] = quat.copy(quat.create(), pbone.quaternion);//removeme
 			//posRemoveMeTemp[i] = vec3.copy(vec3.create(), pbone.position);
 
 			const boneIndex = i;
-			const bone = modelBones[i];
+			const bone = modelBones[i]!;
 
 			vec3.zero(this.boneRot);
 			vec3.zero(this.position);
@@ -143,6 +147,9 @@ export class SourceAnimation {
 
 			for (let addIndex = 0; addIndex < blendLayers.length * 0; addIndex++) {
 				const layer = blendLayers[addIndex];
+				if (!layer) {
+					continue;
+				}
 
 				if (!datas) {
 					//this.boneRot = vec3.create();
@@ -161,7 +168,7 @@ export class SourceAnimation {
 						//if (model.animNumberAnimMdl)
 						{
 							const currentFrame = Math.floor((layer.fps) % layer.numframes);
-							const frameTODOV2 = layer.mdl.getAnimFrame(dynamicProp, layer, currentFrame);
+							const frameTODOV2 = layer.mdl?.getAnimFrame(dynamicProp, layer, currentFrame);
 							if (frameTODOV2) {
 								let frameBone = null;//frameTODOV2[bone.boneId];
 
@@ -227,7 +234,10 @@ export class SourceAnimation {
 
 			//const parentMergedBone = bone.parentMergedBone;
 
-			const dynamicPropBones = dynamicProp.skeleton._bones;//dynamicProp.bones;
+			const dynamicPropBones = dynamicProp.skeleton?._bones;//dynamicProp.bones;
+			if (!dynamicPropBones) {
+				return;
+			}
 			const dynamicPropBone = dynamicPropBones[boneIndex];
 			if (dynamicPropBone === undefined) {
 				//dynamicPropBone = {worldPos:vec3.create(), worldQuat:quat.create()};//TODO: optimize

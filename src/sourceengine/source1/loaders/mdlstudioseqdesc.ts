@@ -1,7 +1,9 @@
-import { Source1ParticleControler } from '../particles/source1particlecontroler';
-import { Source1SoundManager } from '../sounds/soundmanager';
+import { vec3 } from 'gl-matrix';
 import { DEBUG } from '../../../buildoptions';
 import { clamp } from '../../../math/functions';
+import { Source1ModelInstance } from '../export';
+import { Source1ParticleControler } from '../particles/source1particlecontroler';
+import { Source1SoundManager } from '../sounds/soundmanager';
 import { SourceMdl } from './sourcemdl';
 
 export const STUDIO_AL_POST = 0x0010;
@@ -18,63 +20,61 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 	paramend: number[] = [];
 	blend: number[][] = [];
 	weightlist: number[] = [];
-	groupsize: number[] = [];
-	mdl: SourceMdl;
-	previousTime: number;
-	currentTime: number;
-	posekeyindex: number;
+	groupsize: [number, number] = [0, 0];
+	mdl!: SourceMdl;
+	previousTime: number = -1;
+	currentTime: number = -1;
+	posekeyindex!: number;
 	autolayer: MdlStudioAutoLayer[] = [];
 	events: MdlStudioEvent[] = [];
-	name: string;
-	flags: number;
-	activity;
-	id;
-	startOffset;
-	actweight;
-	numevents;
-	eventindex;
-	bbmin;
-	bbmax;
-	numblends;
-	animindexindex;
-	movementindex;
+	name!: string;
+	flags!: number;
+	activity!: number;
+	id !: number;
+	startOffset!: number;
+	actweight !: number;
+	numevents !: number;
+	eventindex !: number;
+	bbmin = vec3.create();
+	bbmax = vec3.create();
+	numblends!: number;
+	animindexindex!: number;
+	movementindex!: number;
+	paramparent!: number;
+	fadeintime!: number;
+	fadeouttime!: number;
+	localentrynode!: number;
+	localexitnode!: number;
+	nodeflags!: number;
+	entryphase!: number;
+	exitphase!: number;
+	lastframe!: number;
+	nextseq!: number;
+	pose!: number;
+	numikrules!: number;
+	numautolayers!: number;
+	autolayerindex!: number;
+	weightlistindex !: number;
+	numiklocks !: number;
+	iklockindex !: number;
+	keyvalueindex !: number;
+	keyvaluesize !: number;
+	cycleposeindex !: number;
+	activityName!: string;
+	keyvalueText!: string;
 
-
-	paramparent;
-	fadeintime;
-	fadeouttime;
-	localentrynode;
-	localexitnode;
-	nodeflags;
-	entryphase;
-	exitphase;
-	lastframe;
-	nextseq;
-	pose;
-	numikrules;
-	numautolayers;
-	autolayerindex;
-	weightlistindex;
-	numiklocks;
-	iklockindex;
-	keyvalueindex;
-	keyvaluesize;
-	cycleposeindex;
-	activityName;
-	keyvalueText;
-
-	pBoneweight(boneIndex) {
+	pBoneweight(boneIndex: number) {
 		return this.weightlist[boneIndex];
 	}
 	//MdlStudioSeqDesc.prototype.weight = MdlStudioSeqDesc.prototype.pBoneweight;//TODOV2
 
-	getBlend(x, y) {
+	getBlend(x: number, y: number): number | null {
 		x = clamp(x, 0, this.groupsize[0] - 1);
 		y = clamp(y, 0, this.groupsize[1] - 1);
-		return this.blend[y][x];
+		return this.blend[y]?.[x] ?? null;
 	}
 
-	poseKey(iParam, iAnim) {
+	poseKey(iParam: number, iAnim: number) {
 		if (this.mdl && this.posekeyindex) {
 			const mdl = this.mdl;
 			const offset = this.posekeyindex + (iParam * this.groupsize[0] + iAnim) * 4;
@@ -85,12 +85,12 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 		return 0;
 	}
 
-	getAutoLayer(autoLayerIndex) {
-		return this.autolayer[autoLayerIndex];
+	getAutoLayer(autoLayerIndex: number): MdlStudioAutoLayer | null {
+		return this.autolayer[autoLayerIndex] ?? null;
 	}
 
 	get length() {
-		const anim = this.mdl.getAnimDescription(this.blend[0][0]);
+		const anim = this.mdl.getAnimDescription(this.blend[0]?.[0]);
 		if (!anim) {
 			return 0;
 		}
@@ -98,10 +98,10 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 		return (anim.numframes - 1) / anim.fps;
 	}
 
-	play(dynamicProp) {
-		const anim = this.mdl.getAnimDescription(this.blend[0][0]);
+	play(dynamicProp: Source1ModelInstance): void {
+		const anim = this.mdl.getAnimDescription(this.blend[0]?.[0]);
 		if (!anim) {
-			return null;
+			return;
 		}
 
 		this.currentTime = (this.currentTime !== undefined) ? dynamicProp.frame * anim.fps / (anim.numframes - 1) : 0;
@@ -117,15 +117,16 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 
 		const seqEvents = this.events;
 		for (let eventIndex = 0; eventIndex < seqEvents.length; ++eventIndex) {
-			const event = seqEvents[eventIndex];
+			const event = seqEvents[eventIndex]!;
 			if (event.cycle > previousTime && event.cycle <= currentTime) {
 				this.processEvent(event, dynamicProp);//TODOv3
 			}
 		}
 		this.previousTime = this.currentTime;
 	}
-	processEvent(event, dynamicProp) {
-		let options;
+
+	processEvent(event: MdlStudioEvent, dynamicProp: Source1ModelInstance): void {
+		let options: string[];
 		switch (true) {
 			case event.event == 5004 || (event.event === 0 && event.name == 'AE_CL_PLAYSOUND'):
 				Source1SoundManager.playSound(this.mdl?.repository, event.options);
@@ -133,7 +134,9 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 			case (event.event === 0 && event.name == 'AE_CL_BODYGROUP_SET_VALUE'):
 				options = event.options.split(' ');
 				//dynamicProp.bodyGroups[options[0]] = options[1];
-				dynamicProp.setBodyPartModel(options[0], options[1]);
+				if (options.length >= 2) {
+					dynamicProp.setBodyPartModel(options[0]!, Number(options[1]));
+				}
 				break;
 			case (event.event === 0 && event.name == 'AE_WPN_HIDE'):
 				//TODOV2
@@ -149,7 +152,7 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 				options = event.options.split(' ');
 				//TODOV2
 				const f = async () => {
-					const sys = await Source1ParticleControler.createSystem(dynamicProp.sourceModel.repository, options[0]);
+					const sys = await Source1ParticleControler.createSystem(dynamicProp.sourceModel.repository, options[0]!);
 					sys.autoKill = true;
 					sys.start();
 					//console.log(options[0], options[1], options[2]);
@@ -169,7 +172,9 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 							}
 					}
 				};
-				f();
+				if (options.length >= 1) {
+					f();
+				}
 				/*TODOv2
 						'start_at_origin',		// PATTACH_ABSORIGIN = 0,
 						'follow_origin',		// PATTACH_ABSORIGIN_FOLLOW,
@@ -183,8 +188,10 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 				options = event.options.split(' ');
 				switch (options[0]) {
 					case 'taunt_attr_player_invis_percent':
-						dynamicProp.visible = false;
-						setTimeout(function () { dynamicProp.visible = true }, options[2] * 1000);
+						dynamicProp.setVisible(false);
+						if (options.length >= 3) {
+							setTimeout(function () { dynamicProp.setVisible() }, Number(options[2]) * 1000);
+						}
 						break;
 				}
 
@@ -199,19 +206,19 @@ export class MdlStudioSeqDesc {//mstudioseqdesc_t
 }
 
 export class MdlStudioAutoLayer {
-	iSequence;
-	iPose;
-	flags;
-	start;
-	peak;
-	tail;
-	end;
+	iSequence!: number;
+	iPose!: number;
+	flags!: number;
+	start!: number;
+	peak!: number;
+	tail!: number;
+	end!: number;
 };
 
 export class MdlStudioEvent {
-	cycle: number;
-	event;
-	type;
-	options;
-	name;
+	cycle!: number;
+	event!: number;
+	type!: number;
+	options!: string;
+	name!: string;
 };

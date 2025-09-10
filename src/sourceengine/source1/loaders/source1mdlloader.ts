@@ -716,8 +716,8 @@ export class Source1MdlLoader extends SourceBinaryLoader {
 		sequence.eventindex = reader.getInt32();
 
 		// Bounding box
-		sequence.bbmin = reader.getVector3();
-		sequence.bbmax = reader.getVector3();
+		reader.getVector3(undefined, undefined, sequence.bbmin as Float32Array);
+		reader.getVector3(undefined, undefined, sequence.bbmax as Float32Array);
 
 		sequence.numblends = reader.getInt32();
 

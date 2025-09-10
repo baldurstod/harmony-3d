@@ -11,7 +11,7 @@ export class FuncBrush extends MapEntity {
 
 		if (result && result.length >= 2) {
 			if ((kvElement as any/*TODO: fix that*/).rendermode && (kvElement as any/*TODO: fix that*/).rendermode != 10) {
-				this.map.funcBrushesRemoveMe.push({ model: result[1]!, origin: ParseVector(vec3.create(), (kvElement as any/*TODO: fix that*/).origin) ?? vec3.create() });
+				this.map.funcBrushesRemoveMe.push({ model: Number(result[1]), origin: ParseVector(vec3.create(), (kvElement as any/*TODO: fix that*/).origin) ?? vec3.create() });
 				console.error((kvElement as any/*TODO: fix that*/).origin, kvElement);
 			}
 		}
