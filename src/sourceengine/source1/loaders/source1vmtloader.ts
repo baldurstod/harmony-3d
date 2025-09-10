@@ -67,7 +67,7 @@ class Source1VmtLoaderClass {// TODO: improve singleton
 		return material;
 	}
 
-	setMaterial(fileName: string, fileContent: string) {
+	setMaterial(/*TODO: add repository param*/fileName: string, fileContent: string) {
 		this.#extraMaterials.set(fileName, fileContent);
 	}
 

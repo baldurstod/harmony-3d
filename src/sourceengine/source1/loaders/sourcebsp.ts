@@ -7,11 +7,12 @@ import { Group } from '../../../objects/group';
 import { Mesh } from '../../../objects/mesh';
 import { World } from '../../../objects/world';
 import { MapEntities } from '../maps/mapentities';
-import { AngleQuaternion } from '../maps/mapentity';
+import { AngleQuaternion, MapEntity, MapEntityConnection } from '../maps/mapentity';
 import { Source1MaterialManager } from '../materials/source1materialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
-import { LUMP_DISP_VERTS, LUMP_DISPINFO, LUMP_EDGES, LUMP_ENTITIES, LUMP_FACES, LUMP_GAME_LUMP, LUMP_LEAFFACES, LUMP_LEAFS, LUMP_LIGHTING, LUMP_MODELS, LUMP_SURFEDGES, LUMP_TEXDATA, LUMP_TEXDATA_STRING_DATA, LUMP_TEXINFO, LUMP_VERTEXES } from './sourcebsplump';
+import { KvReader } from './kvreader';
 import { Source1BspTree } from './source1bsptree';
+import { LUMP_DISP_VERTS, LUMP_DISPINFO, LUMP_EDGES, LUMP_ENTITIES, LUMP_FACES, LUMP_GAME_LUMP, LUMP_LEAFFACES, LUMP_LEAFS, LUMP_LIGHTING, LUMP_MODELS, LUMP_SURFEDGES, LUMP_TEXDATA, LUMP_TEXDATA_STRING_DATA, LUMP_TEXINFO, LUMP_VERTEXES, LumpData, SourceBSPLump, SourceBSPLumpDispInfo, SourceBSPLumpDispVertex, SourceBSPLumpEdge, SourceBSPLumpEntity, SourceBSPLumpFace, SourceBSPLumpLeaf, SourceBSPLumpModel, SourceBSPLumpPropStaticDirectory, SourceBSPLumpTexData, SourceBSPLumpTexInfo } from './sourcebsplump';
 import { SELightMapNode } from './sourcelightmap';
 
 const DISPLACEMENT_DELTA = 1.0; // max distance from start position
@@ -19,17 +20,33 @@ const DISPLACEMENT_DELTA = 1.0; // max distance from start position
 const LIGTH_MAP_TEXTURE_SIZE = 1024;
 
 export type FuncBrush = {
-	model: string;
+	model: number;
 	origin: vec3;
 	position?: vec3;
 	dirty?: boolean;
 };
 
+type BspGeometry = {
+	lastIndice: number,
+	vertices: number[],
+	indices: number[],
+	coords: number[],
+	alphas: number[],
+	triangleArray: [],
+	alphaArray: [],
+	textureCoord: [],
+	lightMaps: [],
+	textureVecs: [vec4, vec4],
+	height: number,
+	width: number,
+};
+
+
 export class SourceBSP extends World {
-	repository: string;
-	bspFileVersion = null;
-	lumps = [];
-	mapRevision = null;
+	#repository: string;
+	bspFileVersion = 0;
+	lumps: SourceBSPLump[] = [];
+	mapRevision = 0;
 	loaded = false;
 	bufferInitialized = false;
 	staticGeometry = {};
@@ -38,10 +55,10 @@ export class SourceBSP extends World {
 	overlayVerticesByTexture = {};
 	mainLightMap = new SELightMapNode(0, 0, LIGTH_MAP_TEXTURE_SIZE, LIGTH_MAP_TEXTURE_SIZE);
 	lightMapTexture = null;
-	skyCamera = null;
+	skyCamera: MapEntity | null = null;
 	skyName = null;
-	entities = [];
-	connections = [];
+	entities: MapEntity[] = [];
+	#connections: MapEntityConnection[] = [];
 	mapSpawn = true;
 	lastLeaf = undefined;
 	bspTree: Source1BspTree;
@@ -53,13 +70,13 @@ export class SourceBSP extends World {
 	staticProps = new Group({ name: 'Static props' });
 	dynamicProps = new Group({ name: 'Dynamic props' });
 	mapFaces = new Group({ name: 'World geometry' });
-	characterSpawn;
-	#geometries;
-	loader;
+	#characterSpawn?: vec3;
+	#geometries: Record<string, BspGeometry> = {};//TODO: turn into map
+	//loader;
 
-	constructor(params?: any) {
+	constructor(params?: any/*TODO: fix type*/) {
 		super(params);
-		this.repository = params.repository;
+		this.#repository = params.repository;
 		//this.staticProps = [];
 		this.bspTree = new Source1BspTree(this);
 
@@ -73,15 +90,15 @@ export class SourceBSP extends World {
 	}
 
 	initMap() {
-		this.initGeometry();
-		this._createEntities();
-		this._createStaticProps();
+		this.#initGeometry();
+		this.#createEntities();
+		this.#createStaticProps();
 	}
 
-	_createEntities() {
-		const lumpEntities = this.getLumpData(LUMP_ENTITIES);
+	#createEntities() {
+		const lumpEntities = this.getLumpData(LUMP_ENTITIES) as SourceBSPLumpEntity;
 		if (lumpEntities) {
-			this.createDynamicEntities(lumpEntities.kv);
+			this.#createDynamicEntities(lumpEntities.kv);
 			/*new Promise((resolve) => {
 				this.createDynamicEntities(entities.kv);
 				this.eventTarget.dispatchEvent(new CustomEvent('entitiescreated'));//TODOv3
@@ -90,38 +107,44 @@ export class SourceBSP extends World {
 		}
 	}
 
-	_createStaticProps() {
-		const lumpGameDatas = this.getLumpData(LUMP_GAME_LUMP);
-		if (lumpGameDatas && lumpGameDatas.prps && lumpGameDatas.prps.lumpData) {
-			const propsStatic = lumpGameDatas.prps.lumpData;
+	#createStaticProps() {
+		const propsStatic = this.getLumpData(LUMP_GAME_LUMP) as SourceBSPLumpPropStaticDirectory;
+		if (propsStatic) {
+			//const propsStatic = lumpGameDatas.prps.lumpData;
 			const propNames = propsStatic.name;
 			const props = propsStatic.props;
 			const tempQuaternion = quat.create();
 
 			for (const prop of props) {
-				Source1ModelManager.createInstance(this.repository, propNames[prop.propType], true).then(
+				const propName = propNames[prop.propType];
+				if (!propName) {
+					continue;
+				}
+				Source1ModelManager.createInstance(this.#repository, propName, true).then(
 					(model) => {
-						this.staticProps.addChild(model);
-						model.position = prop.position;
-						model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
-						model.skin = prop.skin;
+						if (model) {
+							this.staticProps.addChild(model);
+							model.position = prop.position;
+							model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
+							model.skin = prop.skin;
+						}
 					}
 				);
 			}
 		}
 	}
 
-	createDynamicEntities(kv) {
+	#createDynamicEntities(kv: KvReader) {
 		const list = Object.keys(kv.rootElements);
 
-		for (let i = 0; i < list.length; ++i) {
-			const entity = kv.rootElements[list[i]];
+		for (const name of list) {
+			const entity = kv.rootElements[name];
 
 			if (entity.classname) {
 				const e = MapEntities.createEntity(this, entity.classname);
 				if (e) {
 					e.setKeyValues(entity);
-					this.addEntity(e);
+					this.#addEntity(e);
 				} else {
 					console.error('Unknown classname : %s', entity.classname);
 				}
@@ -136,21 +159,19 @@ export class SourceBSP extends World {
 					this.skyName = entity.skyname;
 				}
 				if (entity.classname == 'info_player_teamspawn') {
-					if (!this.characterSpawn) {
-						this.characterSpawn = vec3.scale(vec3.create(), entity.origin.split(' '), 1);
+					if (!this.#characterSpawn) {
+						this.#characterSpawn = vec3.scale(vec3.create(), entity.origin.split(' '), 1);
 					}
 				}
 			}
 		}
 	}
 
-
-
-	addLump(lump) {
+	addLump(lump: SourceBSPLump) {
 		this.lumps.push(lump)
 	}
 
-	getLumpData(lumpType) {
+	getLumpData(lumpType: number): LumpData | null {
 		const lump = this.lumps[lumpType];
 		if (lump) {
 			return lump.getLumpData();
@@ -158,31 +179,46 @@ export class SourceBSP extends World {
 		return null;
 	}
 
-	initFaceGeometry(face, position?) {
+	#initFaceGeometry(face: SourceBSPLumpFace, position?: vec3): void {
 		if (face.initialized) {//TODOv3
 			return;
 		}
 		face.initialized = true;
-		const lumpFaces = this.getLumpData(LUMP_FACES);
-		const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
-		const lumpTexData = this.getLumpData(LUMP_TEXDATA);
-		const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
-		const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
-		const lumpEdges = this.getLumpData(LUMP_EDGES);
-		const lumpVertices = this.getLumpData(LUMP_VERTEXES);
+		const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
+		const lumpTexInfo = this.getLumpData(LUMP_TEXINFO) as (SourceBSPLumpTexInfo[] | null);
+		const lumpTexData = this.getLumpData(LUMP_TEXDATA) as (SourceBSPLumpTexData[] | null);
+		const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA) as (string[] | null);
+		const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES) as (number[] | null);
+		const lumpEdges = this.getLumpData(LUMP_EDGES) as (SourceBSPLumpEdge[] | null);
+		const lumpVertices = this.getLumpData(LUMP_VERTEXES) as (vec3[] | null);
 
+		if (!lumpEdges || !lumpVertices || !lumpTexInfo || !lumpTexData || !lumpTexDataStringData || !lumpSurfEdges) {
+			return;
+		}
 
 		const texInfo = lumpTexInfo[face.texinfo];
+		if (!texInfo) {
+			return;
+		}
+
 		const texData = lumpTexData[texInfo.texdata];
+		if (!texData) {
+			return;
+		}
 
 		const texName = lumpTexDataStringData[texData.nameStringTableID];
+
+		if (!texName) {
+			return;
+		}
+
 		//console.log(face);
 		let buffer = this.#geometries[texName];
 		if (!buffer) {
 			buffer = {
 				lastIndice: 0,
 				vertices: [], indices: [], coords: [], alphas: [],
-				triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: lumpTexInfo.textureVecs, height: lumpTexData.height, width: lumpTexData.width
+				triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: texInfo.textureVecs, height: texData.height, width: texData.width
 			};//TODOv3
 			this.#geometries[texName] = buffer;
 		}
@@ -192,9 +228,13 @@ export class SourceBSP extends World {
 		const firstEdge = face.firstedge;
 		const lastEdge = firstEdge + face.numedges;
 		const firstIndice = buffer.lastIndice;
-		for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
-			const surfedge = lumpSurfEdges[surfEdgeIndex];
+		for (const surfedge of lumpSurfEdges) {
+			//			const surfedge = lumpSurfEdges[surfEdgeIndex];
 			const edge = lumpEdges[Math.abs(surfedge)];//TODOv3 ? why abs
+			if (edge === undefined) {
+				continue;
+			}
+
 			let vertice1, vertice2;
 			if (surfedge <= 0) {
 				vertice1 = lumpVertices[edge.f];
@@ -236,31 +276,46 @@ export class SourceBSP extends World {
 		}
 	}
 
-	initDispGeometry(dispInfo, face) {
+	#initDispGeometry(dispInfo: SourceBSPLumpDispInfo, face: SourceBSPLumpFace): void {
 		if (face.initialized) {//TODOv3
 			return;
 		}
 		face.initialized = true;
-		const lumpFaces = this.getLumpData(LUMP_FACES);
-		const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
-		const lumpTexData = this.getLumpData(LUMP_TEXDATA);
-		const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
-		const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
-		const lumpEdges = this.getLumpData(LUMP_EDGES);
-		const lumpVertices = this.getLumpData(LUMP_VERTEXES);
 
+		const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
+		const lumpTexInfo = this.getLumpData(LUMP_TEXINFO) as (SourceBSPLumpTexInfo[] | null);
+		const lumpTexData = this.getLumpData(LUMP_TEXDATA) as (SourceBSPLumpTexData[] | null);
+		const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA) as (string[] | null);
+		const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES) as (number[] | null);
+		const lumpEdges = this.getLumpData(LUMP_EDGES) as (SourceBSPLumpEdge[] | null);
+		const lumpVertices = this.getLumpData(LUMP_VERTEXES) as (vec3[] | null);
+		const lumpDispVerts = this.getLumpData(LUMP_DISP_VERTS) as (SourceBSPLumpDispVertex[] | null);
+
+		if (!lumpTexInfo || !lumpTexData || !lumpTexDataStringData || !lumpSurfEdges || !lumpEdges || !lumpVertices || !lumpDispVerts) {
+			return;
+		}
 
 		const texInfo = lumpTexInfo[face.texinfo];
+		if (!texInfo) {
+			return;
+		}
+
 		const texData = lumpTexData[texInfo.texdata];
+		if (!texData) {
+			return;
+		}
 
 		const texName = lumpTexDataStringData[texData.nameStringTableID];
+		if (!texName) {
+			return;
+		}
 		//console.log(face);
 		let buffer = this.#geometries[texName];
 		if (!buffer) {
 			buffer = {
 				lastIndice: 0,
 				vertices: [], indices: [], coords: [], alphas: [],
-				triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: lumpTexInfo.textureVecs, height: lumpTexData.height, width: lumpTexData.width
+				triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: texInfo.textureVecs, height: texData.height, width: texData.width
 			};//TODOv3
 			this.#geometries[texName] = buffer;
 		}
@@ -273,7 +328,15 @@ export class SourceBSP extends World {
 		const origVertices = [];
 		for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
 			const surfedge = lumpSurfEdges[surfEdgeIndex];
+			if (surfedge === undefined) {
+				continue;
+			}
+
 			const edge = lumpEdges[Math.abs(surfedge)];//TODOv3 ? why abs
+			if (edge === undefined) {
+				continue;
+			}
+
 			let vertice1, vertice2;
 			if (surfedge <= 0) {
 				vertice1 = lumpVertices[edge.f];
@@ -295,6 +358,10 @@ export class SourceBSP extends World {
 		let foundRemoveme = false;
 		for (let testremoveme = 0; testremoveme < 4; testremoveme++) {
 			const vvremoveme = origVertices[0];
+			if (!vvremoveme) {
+				continue;
+			}
+
 			if (Math.abs(vvremoveme[0] - dispInfo.startPosition[0]) < DISPLACEMENT_DELTA
 				&& Math.abs(vvremoveme[1] - dispInfo.startPosition[1]) < DISPLACEMENT_DELTA
 				&& Math.abs(vvremoveme[2] - dispInfo.startPosition[2]) < DISPLACEMENT_DELTA
@@ -305,25 +372,29 @@ export class SourceBSP extends World {
 			origVertices.push(origVertices.shift());
 		}
 
-		const verticesPerSide = Math.pow(2, dispInfo.power) + 1;
-		const tesselateVertices = [];
-		/* create tesslate array */
-		for (let i = 0; i < verticesPerSide; ++i) {
-			const row = [];
-			tesselateVertices.push(row);
-			for (let j = 0; j < verticesPerSide; ++j) {
-				row[j] = null;
-			}
+		if (origVertices.length < 4) {
+			return;
 		}
-		tesselateVertices[0][0] = vec4.clone(origVertices[0]);
-		tesselateVertices[0][verticesPerSide - 1] = vec4.clone(origVertices[3]);
-		tesselateVertices[verticesPerSide - 1][verticesPerSide - 1] = vec4.clone(origVertices[2]);
-		tesselateVertices[verticesPerSide - 1][0] = vec4.clone(origVertices[1]);
 
 		let subdiv = Math.pow(2, dispInfo.power);
+		const verticesPerSide = subdiv + 1;
+		const tesselateVertices: vec4[][] = [];// vec4 is used for position + alpha
+		/* create tesslate array */
+		for (let i = 0; i < verticesPerSide; ++i) {
+			const row: vec4[] = [];
+			tesselateVertices.push(row);
+			for (let j = 0; j < verticesPerSide; ++j) {
+				row[j] = vec4.create();
+			}
+		}
+		vec3.copy(tesselateVertices[0]![0]! as vec3, origVertices[0]!);
+		vec3.copy(tesselateVertices[0]![verticesPerSide - 1]! as vec3, origVertices[3]!);
+		vec3.copy(tesselateVertices[verticesPerSide - 1]![verticesPerSide - 1]! as vec3, origVertices[2]!);
+		vec3.copy(tesselateVertices[verticesPerSide - 1]![0]! as vec3, origVertices[1]!);
+
 		for (let level = 0; level < dispInfo.power; ++level) {
 			const squares = Math.pow(2, level);
-			const levelVerts2 = Math.pow(2, level) + 1;
+			//const levelVerts2 = Math.pow(2, level) + 1;
 			const subdiv2 = subdiv / 2;
 			for (let i = 0; i < squares; ++i) {
 				for (let j = 0; j < squares; ++j) {
@@ -331,26 +402,20 @@ export class SourceBSP extends World {
 					const iMax = iMin + subdiv;
 					const jMin = subdiv * j;
 					const jMax = jMin + subdiv;
-					const v1 = tesselateVertices[iMin][jMin];
-					const v2 = tesselateVertices[iMax][jMin];
-					const v3 = tesselateVertices[iMin][jMax];
-					const v4 = tesselateVertices[iMax][jMax];
+					const v1 = tesselateVertices[iMin]![jMin];
+					const v2 = tesselateVertices[iMax]![jMin];
+					const v3 = tesselateVertices[iMin]![jMax];
+					const v4 = tesselateVertices[iMax]![jMax];
 
 					const iMid = iMin + subdiv2;
 					const jMid = jMin + subdiv2;
 
 					if (v1 && v2 && v3 && v4) {
-						const s1 = Vec3Middle((vec4.create() as vec3), v1, v2);
-						const s2 = Vec3Middle((vec4.create() as vec3), v3, v4);
-						const s3 = Vec3Middle((vec4.create() as vec3), v1, v3);
-						const s4 = Vec3Middle((vec4.create() as vec3), v2, v4);
-						const s5 = Vec3Middle((vec4.create() as vec3), s3, s4);
-
-						tesselateVertices[iMid][jMin] = s1;
-						tesselateVertices[iMid][jMax] = s2;
-						tesselateVertices[iMin][jMid] = s3;
-						tesselateVertices[iMax][jMid] = s4;
-						tesselateVertices[iMid][jMid] = s5;
+						const s1 = Vec3Middle((tesselateVertices[iMid]![jMin] as vec3), v1 as vec3, v2 as vec3);
+						const s2 = Vec3Middle((tesselateVertices[iMid]![jMax] as vec3), v3 as vec3, v4 as vec3);
+						const s3 = Vec3Middle((tesselateVertices[iMin]![jMid] as vec3), v1 as vec3, v3 as vec3);
+						const s4 = Vec3Middle((tesselateVertices[iMax]![jMid] as vec3), v2 as vec3, v4 as vec3);
+						const s5 = Vec3Middle((tesselateVertices[iMid]![jMid] as vec3), s3, s4);
 					} else {
 						if (LOG) { console.log(v1, v2, v3, v4); }
 					}
@@ -360,15 +425,14 @@ export class SourceBSP extends World {
 		}
 
 		/* displace vertices */
-		const lumpDispVerts = this.lumps[LUMP_DISP_VERTS].getLumpData();
 		let vertexIndex = dispInfo.dispVertStart;
 		for (let i = 0; i < verticesPerSide; ++i) {
 			for (let j = 0; j < verticesPerSide; ++j) {
 				const dispVert = lumpDispVerts[vertexIndex];
 				if (dispVert) {
-					const v = tesselateVertices[i][j];
+					const v = tesselateVertices[i]![j]!;
 					if (dispVert.dist > 0) {
-						vec3.scaleAndAdd(v, v, dispVert.vec, dispVert.dist);
+						vec3.scaleAndAdd(v as vec3, v as vec3, dispVert.vec, dispVert.dist);
 					}
 					v[3] = dispVert.alpha;
 				}
@@ -381,10 +445,10 @@ export class SourceBSP extends World {
 		for (let i = 0; i < subdiv; ++i) {
 			for (let j = 0; j < subdiv; ++j) {
 				const firstIndice = buffer.lastIndice;
-				const v1 = tesselateVertices[i][j];
-				const v2 = tesselateVertices[i + 1][j];
-				const v3 = tesselateVertices[i + 1][j + 1];
-				const v4 = tesselateVertices[i][j + 1];
+				const v1 = tesselateVertices[i]![j];
+				const v2 = tesselateVertices[i + 1]![j];
+				const v3 = tesselateVertices[i + 1]![j + 1];
+				const v4 = tesselateVertices[i]![j + 1];
 
 				if (v1 && v2 && v3 && v4) {
 					buffer.vertices.push(v1[0], v1[1], v1[2]);//TODOv3: optimize
@@ -411,12 +475,14 @@ export class SourceBSP extends World {
 						buffer.indices.push(firstIndice + 2);
 						buffer.indices.push(firstIndice);
 					} else {
+						/*
 						buffer.indices.push(firstIndice);//TODOv3: optimize
 						buffer.indices.push(firstIndice + 1);
 						buffer.indices.push(firstIndice + 2);
 						buffer.indices.push(firstIndice + 2);
 						buffer.indices.push(firstIndice + 3);
 						buffer.indices.push(firstIndice);
+						*/
 					}
 					buffer.lastIndice += 4;
 				}
@@ -424,28 +490,26 @@ export class SourceBSP extends World {
 		}
 	}
 
-	initGeometry() {
+	#initGeometry() {
 		this.#geometries = {};
-		const lumpFaces = this.getLumpData(LUMP_FACES);
-		const lumpLeafs = this.getLumpData(LUMP_LEAFS);
-		const lumpLeafFaces = this.getLumpData(LUMP_LEAFFACES);
+		const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
+		const lumpLeafs = this.getLumpData(LUMP_LEAFS) as (SourceBSPLumpLeaf[] | null);
+		const lumpLeafFaces = this.getLumpData(LUMP_LEAFFACES) as (number[] | null);
 		//const lumpNodes = this.getLumpData(LUMP_NODES);
 		const lumpTexLighting = this.getLumpData(LUMP_LIGHTING);
-		const lumpTexInfo = this.getLumpData(LUMP_TEXINFO);
-		const lumpTexData = this.getLumpData(LUMP_TEXDATA);
-		const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA);
-		const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
-		const lumpEdges = this.getLumpData(LUMP_EDGES);
-		const lumpVertices = this.getLumpData(LUMP_VERTEXES);
-		const lumpModels = this.getLumpData(LUMP_MODELS);
-		const lumpDispInfos = this.getLumpData(LUMP_DISPINFO);
-
-
+		const lumpTexInfo = this.getLumpData(LUMP_TEXINFO) as (SourceBSPLumpTexInfo[] | null);
+		const lumpTexData = this.getLumpData(LUMP_TEXDATA) as (SourceBSPLumpTexData[] | null);
+		const lumpTexDataStringData = this.getLumpData(LUMP_TEXDATA_STRING_DATA) as (string[] | null);
+		const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES) as (number[] | null);
+		const lumpEdges = this.getLumpData(LUMP_EDGES) as (SourceBSPLumpEdge[] | null);
+		const lumpVertices = this.getLumpData(LUMP_VERTEXES) as (vec3[] | null);
+		const lumpModels = this.getLumpData(LUMP_MODELS) as (SourceBSPLumpModel[] | null);
+		const lumpDispInfos = this.getLumpData(LUMP_DISPINFO) as (SourceBSPLumpDispInfo[] | null);
 
 		if (lumpFaces && lumpLeafs && lumpLeafFaces && /*lumpNodes && */lumpTexLighting && lumpTexInfo && lumpTexData && lumpTexDataStringData && lumpSurfEdges && lumpEdges && lumpVertices) {
 			if (lumpModels) {
-				for (let i = 0; i < this.funcBrushesRemoveMe.length; ++i) {
-					const funcBrushesRemove = this.funcBrushesRemoveMe[i];
+				for (const funcBrushesRemove of this.funcBrushesRemoveMe) {
+					//const funcBrushesRemove = this.funcBrushesRemoveMe[i];
 					const modelIndex = funcBrushesRemove.model;
 
 					const model = lumpModels[modelIndex];
@@ -455,7 +519,9 @@ export class SourceBSP extends World {
 						for (let j = firstFace; j < lastFace; ++j) {
 							const face = lumpFaces[j];
 							//this.renderLeafFace(renderContext, face, funcBrushesRemove.position, 0/*leafId TODO*/);
-							this.initFaceGeometry(face, funcBrushesRemove.origin);
+							if (face) {
+								this.#initFaceGeometry(face, funcBrushesRemove.origin);
+							}
 						}
 					}
 				}
@@ -463,11 +529,10 @@ export class SourceBSP extends World {
 
 			/* Init displacement buffer */
 			if (lumpDispInfos) {
-				for (let i = 0; i < lumpDispInfos.length; ++i) {//TODO
-					const dispInfo = lumpDispInfos[i];
+				for (const dispInfo of lumpDispInfos) {
 					const face = lumpFaces[dispInfo.mapFace];
 					if (face) {
-						this.initDispGeometry(dispInfo, face);
+						this.#initDispGeometry(dispInfo, face);
 					}
 				}
 			}
@@ -475,31 +540,41 @@ export class SourceBSP extends World {
 
 			for (let leafIndex = 0, l = lumpLeafs.length; leafIndex < l; ++leafIndex) {
 				const leaf = lumpLeafs[leafIndex];
+				if (!leaf) {
+					continue;
+				}
 
 				const firstFace = leaf.firstleafface;
 				const lastFace = leaf.firstleafface + leaf.numleaffaces;
 
 				for (let faceIndex = firstFace; faceIndex < lastFace; ++faceIndex) {
-					const face = lumpFaces[lumpLeafFaces[faceIndex]];
-					this.initFaceGeometry(face);
+					const face = lumpFaces[lumpLeafFaces[faceIndex]!];
+					if (face) {
+						this.#initFaceGeometry(face);
+					}
 				}
 			}
 		}
 
 		for (const textureName in this.#geometries) {
 			const geometry = this.#geometries[textureName];
+			if (!geometry) {
+				continue;
+			}
 
 			if (textureName.toLowerCase().substring(0, 5) == 'tools') {//TODOV3
 				continue;
+				/*
 				if (
 				//((lumpTexInfo.flags & 4) == 4) // SURF_SKY
-				/*|| */((lumpTexInfo.flags & 40) == 40) // SURF_TRIGGER
+				/*|| * /((lumpTexInfo.flags & 40) == 40) // SURF_TRIGGER
 					|| ((lumpTexInfo.flags & 200) == 200) // SURF_SKIP
 					//((lumpTexInfo.flags & 400) == 400) // SURF_NOLIGHT
 					//|| true
 				) {
 					continue;
 				}
+				*/
 				//continue;
 			}
 
@@ -518,76 +593,94 @@ export class SourceBSP extends World {
 
 			const staticMesh = new Mesh({ geometry: bufferGeometry });
 			staticMesh.name = textureName;
-			Source1MaterialManager.getMaterial(this.repository, textureName).then(
-				(material) => staticMesh.setMaterial(material)
+			Source1MaterialManager.getMaterial(this.#repository, textureName).then(
+				(material) => {
+					if (material) {
+						staticMesh.setMaterial(material);
+					}
+				}
 			);
 
 			this.mapFaces.addChild(staticMesh);
 		}
 	}
 
-	addEntity(entity) {
+	#addEntity(entity: MapEntity) {
 		if (entity) {
 			this.entities.push(entity);
 		}
 	}
 
-	addConnection(connection) {
+	addConnection(connection: MapEntityConnection) {
 		if (connection) {
-			this.connections.push(connection);
+			this.#connections.push(connection);
 		}
 	}
 
-	getOBBSize(modelIndex) {
-		const lumpModels = this.getLumpData(LUMP_MODELS);
-		const lumpFaces = this.getLumpData(LUMP_FACES);
-		const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
-		const lumpEdges = this.getLumpData(LUMP_EDGES);
-		const lumpVertices = this.getLumpData(LUMP_VERTEXES);
+	getOBBSize(modelIndex: number): vec3 | null {
+		const lumpModels = this.getLumpData(LUMP_MODELS) as (SourceBSPLumpModel[] | null);
+		const lumpFaces = this.getLumpData(LUMP_FACES) as (SourceBSPLumpFace[] | null);
+		const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES) as (number[] | null);
+		const lumpEdges = this.getLumpData(LUMP_EDGES) as (SourceBSPLumpEdge[] | null);
+		const lumpVertices = this.getLumpData(LUMP_VERTEXES) as (vec3[] | null);
 
-		if (lumpModels && lumpFaces && lumpSurfEdges && lumpEdges && lumpVertices) {
-			const model = lumpModels[modelIndex];
-			if (model) {
-				if (model.numfaces == 0) {
-					return vec3.create();
+		if (!lumpModels || !lumpFaces || !lumpSurfEdges || !lumpEdges || !lumpVertices) {
+			return null;
+		}
+
+		const model = lumpModels[modelIndex];
+		if (!model) {
+			return null;
+		}
+		if (model.numfaces == 0) {
+			return vec3.create();
+		}
+		function compare(v: vec3) {
+			for (let i = 0; i < 3; i++) {
+				if (v[i]! < min[i]!) {
+					min[i] = v[i]!;
 				}
-				function compare(v) {
-					for (let i = 0; i < 3; i++) {
-						if (v[i] < min[i]) {
-							min[i] = v[i];
-						}
-						if (v[i] > max[i]) {
-							max[i] = v[i];
-						}
-					}
+				if (v[i]! > max[i]!) {
+					max[i] = v[i]!;
 				}
-				const min = vec3.fromValues(Infinity, Infinity, Infinity);
-				const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
-
-				const firstFace = model.firstface;
-				const lastFace = firstFace + model.numfaces;
-
-				for (let j = firstFace; j < lastFace; j++) {
-					const face = lumpFaces[j];
-					if (face) {
-						const firstEdge = face.firstedge;
-						const lastEdge = firstEdge + face.numedges;
-
-						for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; surfEdgeIndex++) {
-							const surfedge = lumpSurfEdges[surfEdgeIndex];
-							const edge = lumpEdges[Math.abs(surfedge)];
-							const vertice1 = lumpVertices[edge.f];
-							const vertice2 = lumpVertices[edge.s];
-
-							compare(vertice1);
-							compare(vertice2);
-						}
-					}
-				}
-				return vec3.sub(vec3.create(), max, min);
 			}
 		}
-		return null;
+		const min = vec3.fromValues(Infinity, Infinity, Infinity);
+		const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
+
+		const firstFace = model.firstface;
+		const lastFace = firstFace + model.numfaces;
+
+		for (let j = firstFace; j < lastFace; j++) {
+			const face = lumpFaces[j];
+			if (face) {
+				const firstEdge = face.firstedge;
+				const lastEdge = firstEdge + face.numedges;
+
+				for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; surfEdgeIndex++) {
+					const surfedge = lumpSurfEdges[surfEdgeIndex];
+					if (surfedge === undefined) {
+						continue;
+					}
+
+					const edge = lumpEdges[Math.abs(surfedge)];
+					if (edge === undefined) {
+						continue;
+					}
+
+					const vertice1 = lumpVertices[edge.f];
+					const vertice2 = lumpVertices[edge.s];
+
+					if (!vertice1 || !vertice2) {
+						continue;
+					}
+
+					compare(vertice1);
+					compare(vertice2);
+				}
+			}
+		}
+		return vec3.sub(vec3.create(), max, min);
 	}
 
 	static getEntityName() {

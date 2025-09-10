@@ -299,7 +299,7 @@ MapEntity.incrementalId = 0;
 /**
  * Entity connection
  */
-class MapEntityConnection {
+export class MapEntityConnection {
 	//'OnMapSpawn' 'tonemap_global,SetAutoExposureMax,.8,0,-1'
 	name: string;
 	parameters: string[] | null = null;

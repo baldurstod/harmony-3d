@@ -1,15 +1,16 @@
 import { vec3 } from 'gl-matrix';
-
-import { MapEntity } from '../mapentity';
-import { MapEntities } from '../mapentities';
 import { Camera } from '../../../../cameras/camera';
+import { KvElement } from '../../loaders/kvreader';
+import { MapEntities } from '../mapentities';
+import { MapEntity } from '../mapentity';
 
 export class SkyCamera extends MapEntity {
 	camera = new Camera();
 
-	setKeyValues(kvElement) {
+	setKeyValues(kvElement: KvElement) {
 		super.setKeyValues(kvElement);
-		this.camera.scale = vec3.fromValues(kvElement.scale, kvElement.scale, kvElement.scale);
+		const scale = (kvElement as any/*TODO: fix that*/).scale;
+		this.camera.scale = vec3.fromValues(scale, scale, scale);
 		this.camera.position = this._position;
 	}
 }

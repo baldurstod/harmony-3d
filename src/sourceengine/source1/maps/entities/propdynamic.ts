@@ -7,7 +7,7 @@ import { MapEntities } from '../mapentities';
 import { MapEntity } from '../mapentity';
 
 export class PropDynamic extends MapEntity {
-	#model: Source1ModelInstance;
+	#model: Source1ModelInstance | null = null;
 
 	setKeyValues(kvElement: KvElement) {//TODOv3 fix me
 		super.setKeyValues(kvElement);
@@ -33,7 +33,7 @@ export class PropDynamic extends MapEntity {
 					model.playDefaultAnim();
 				}//TODO: RandomAnimation, StartDisabled, SetBodyGroup
 				if ((kvElement as any/*TODO: fix that*/).startdisabled == 1) {
-					this.#model.visible = false;
+					model.setVisible(false);
 				}
 			}
 		}
@@ -65,7 +65,7 @@ export class PropDynamic extends MapEntity {
 	async setModel(modelName: string) {
 		modelName = modelName.replace(/\.mdl$/g, '');
 
-		const model = await Source1ModelManager.createInstance(this.map.repository, modelName, true);
+		const model = await Source1ModelManager.createInstance(this.map.#repository, modelName, true);
 		/*model.position = this.position;
 		model.quaternion = this._quaternion;*/
 		this.#model = model;
@@ -84,7 +84,7 @@ export class PropDynamic extends MapEntity {
 	setInput(inputName: string, parameters: any/*TODO: improve type*/) {
 		switch (inputName.toLowerCase()) {
 			case 'skin':
-				this.#model.setSkin(parameters);
+				this.#model?.setSkin(parameters);
 				break;
 		}
 	}

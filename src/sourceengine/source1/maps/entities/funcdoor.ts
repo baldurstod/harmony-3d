@@ -12,7 +12,7 @@ import { OutputEvent } from './outputevent';
 export class FuncDoor extends MapEntity {
 	onFullyOpen = new OutputEvent('OnFullyOpen');
 	onFullyClosed = new OutputEvent('OnFullyClosed');
-	model: null | { model: string, origin: vec3, position: vec3, dirty: boolean } = null;
+	model: null | { model: number, origin: vec3, position: vec3, dirty: boolean } = null;
 	speed = 0;
 	moveDir = vec3.create();
 	pos1 = vec3.create();

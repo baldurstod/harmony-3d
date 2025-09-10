@@ -4,7 +4,7 @@ export function stringStrip(s: string) {
 	return s.replace(/^[\s\0]+/, '').replace(/[\s\0]+$/, '')
 }
 
-export function DecompressLZMA(properties: Uint8Array, compressedDatas: Uint8Array, uncompressedSize: number) {
+export function DecompressLZMA(properties: Uint8Array, compressedDatas: Uint8Array, uncompressedSize: number): Uint8Array | null {
 	const inStream = {
 		data: compressedDatas,
 		offset: 0,

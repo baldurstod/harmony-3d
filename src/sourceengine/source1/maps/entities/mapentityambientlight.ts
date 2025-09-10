@@ -1,22 +1,20 @@
 import { Camera } from '../../../../cameras/camera';
 import { AmbientLight } from '../../../../lights/ambientlight';
 import { Scene } from '../../../../scenes/scene';
+import { KvElement } from '../../loaders/kvreader';
 import { MapEntities } from '../mapentities';
-import { MapEntity, parseLightColorIntensity } from '../mapentity';
+import { MapEntity, MapEntityValue, parseLightColorIntensity } from '../mapentity';
 
 export class MapEntityAmbientLight extends MapEntity {
 	#ambientLight = new AmbientLight();
-	constructor(classname) {
-		super(classname);
-	}
 
-	setKeyValues(kvElement) {//TODOv3 fix me
+	setKeyValues(kvElement: KvElement) {//TODOv3 fix me
 		super.setKeyValues(kvElement);
 		this.map.addChild(this.#ambientLight);
 		this.#ambientLight.position = this._position;
 	}
 
-	setKeyValue(key, value) {
+	setKeyValue(key: string, value: MapEntityValue): void {
 		const ambientLight = this.#ambientLight;
 		//pointLight.range = 1000;
 		switch (key) {

@@ -40,7 +40,7 @@ export class KvElement {
 
 export class KvReader {
 	root = undefined;
-	rootElements = {};
+	rootElements: Record<string, any/*TODO: fix type*/> = {};//TODO: create map
 	rootId = 0;
 	carSize: number;
 	src: string;

@@ -1,25 +1,42 @@
-import { vec3 } from 'gl-matrix';
+import { vec3, vec4 } from 'gl-matrix';
+import { BinaryReader } from 'harmony-binary-reader';
 import { SourceBSP } from './sourcebsp';
+import { KvReader } from './kvreader';
+
+export type LumpPakFile = {
+	cs: number;
+	fp: number;
+	cm: number;
+	us: number;
+}
+
+export type LumpData = vec3[] | number[] | string[] |
+	SourceBSPLumpPlane[] | SourceBSPLumpTexData[] |
+{ clusterCount: number, clusterVis: Uint8Array } | SourceBSPLumpNode[] | SourceBSPLumpTexInfo[] | SourceBSPLumpFace[] | SourceBSPLumpColorRGBExp32[] |
+	SourceBSPLumpLeaf[] | SourceBSPLumpEdge[] | SourceBSPLumpModel[] | SourceBSPLumpBrush[] | SourceBSPLumpBrushSide[] |
+	Map<string, SourceBSPLumpGameLump> | SourceBSPLumpPropStaticDirectory | Map<string, LumpPakFile> | SourceBSPLumpOverlay[] |
+	SourceBSPLumpDispInfo[] | SourceBSPLumpDispVertex[] | SourceBSPLumpEntity;
 
 /**
  * BSP lump
  * @param {Number} type The lump type
  */
-class SEBaseBspLump {
+export class SEBaseBspLump {
 	map: SourceBSP;
 	initialized = false;
-	mapOffset;
-	mapLength;
+	readonly mapOffset?: number;
+	readonly mapLength?: number;
 	lumpOffset;
-	lumpLen;
+	lumpLen: number;
 	lumpDataPromise = null;
-	reader;
-	lzmaReader;
-	mapLen;
-	lumpVersion;
-	lumpData;
-	lumpType;
-	constructor(map: SourceBSP, reader, offset?, length?) {//struct lump_t
+	//reader;
+	#lzmaReader?: BinaryReader;
+	//mapLen;
+	lumpVersion = 0;
+	lumpData: LumpData | null = null;
+	lumpType: number = 0;
+
+	constructor(map: SourceBSP, reader: BinaryReader, offset: number, length: number) {//struct lump_t
 		this.map = map;
 		//this.reader = reader;//TODOv3 remove reader
 		this.mapOffset = offset;
@@ -80,18 +97,21 @@ class SEBaseBspLump {
 	 * Get lump len
 	 * @return {Number} The lump len
 	 */
+
 	getLumpLen() {
 		return this.lumpLen;
 	}
+	/*
 	getMapLen() {
 		return this.mapLen;
 	}
+	*/
 
 	/**
 	 * Set lump Version
 	 * @param {Number} newLumpVersion The lump Version
 	 */
-	setLumpVersion(newLumpVersion) {
+	setLumpVersion(newLumpVersion: number) {
 		this.lumpVersion = newLumpVersion;
 	}
 
@@ -107,7 +127,7 @@ class SEBaseBspLump {
 	 * Set lump Data
 	 * @param {Object} newLumpData The lump data
 	 */
-	setLumpData(newLumpData) {
+	setLumpData(newLumpData: LumpData) {
 		this.lumpData = newLumpData;
 	}
 
@@ -115,7 +135,7 @@ class SEBaseBspLump {
 	 * Get lump data
 	 * @return {Object} The lump data
 	 */
-	getLumpData() {
+	getLumpData(): LumpData | null {
 		const datas = this.lumpData;
 		if (!datas) {
 			this.initDatas();
@@ -123,18 +143,20 @@ class SEBaseBspLump {
 		return this.lumpData;
 	}
 
+	/*
 	getReader() {
 		if (!this.initialized) {
 			this.init();
 		}
-		if (this.lzmaReader) {
-			this.lzmaReader.seek(0);
-			return this.lzmaReader;
+		if (this.#lzmaReader) {
+			this.#lzmaReader.seek(0);
+			return this.#lzmaReader;
 		} else {
 			this.reader.seek(this.lumpOffset);
 			return this.reader;
 		}
 	}
+	*/
 
 	initDatas() {
 	}
@@ -145,7 +167,7 @@ class SEBaseBspLump {
  * @param {Number} type The lump type
  */
 export class SourceBSPLump extends SEBaseBspLump {
-	constructor(map, type, reader, offset, length) {//struct lump_t
+	constructor(map: SourceBSP, type: number, reader: BinaryReader, offset: number, length: number) {//struct lump_t
 		super(map, reader, offset, length);
 		this.lumpType = type;
 	}
@@ -227,34 +249,43 @@ export const LUMP_FACES_HDR = 58;	// HDR maps may have different face data.
 export const LUMP_MAP_FLAGS = 59;	 // extended level-wide flags. not present in all levels
 export const LUMP_OVERLAY_FADES = 60;	// Fade distances for overlays
 
-export const SourceBSPLumpPlane = function () {
-	this.normal = null; // normal vector
-	this.dist = null; // distance from origin
-	this.type = null; // plane axis identifier
+export class SourceBSPLumpPlane {
+	normal: vec3;
+	dist: number;
+	type: number;
+
+	constructor(normal: vec3, dist: number, type: number) {
+		this.normal = vec3.clone(normal); // normal vector
+		this.dist = dist; // distance from origin
+		this.type = type; // plane axis identifier
+	}
 }
-export const SourceBSPLumpEdge = function () {
+
+export class SourceBSPLumpEdge {
 	// f: first index s: second index
-	this.f = null; // better than store as an array of 2 ?
-	this.s = null;
+	f = 0; // better than store as an array of 2 ?
+	s = 0;
 }
-export const SourceBSPLumpFace = function () {
-	this.planenum = null;
-	this.side = null;
-	this.onNode = null;
-	this.firstedge = null;
-	this.numedges = null;
-	this.texinfo = null;
-	this.dispinfo = null;
-	this.surfaceFogVolumeID = null;
-	this.styles = [];
-	this.lightofs = null;
-	this.area = null;
-	this.LightmapTextureMinsInLuxels = null;
-	this.LightmapTextureSizeInLuxels = null;
-	this.origFace = null;
-	this.numPrims = null;
-	this.firstPrimID = null;
-	this.smoothingGroups = null;
+
+export class SourceBSPLumpFace {
+	initialized = false;
+	planenum = 0;
+	side = 0;
+	onNode = 0;
+	firstedge = 0;
+	numedges = 0;
+	texinfo = 0;
+	dispinfo = 0;
+	surfaceFogVolumeID = 0;
+	readonly styles: number[] = [];
+	lightofs = 0;
+	area = 0;
+	readonly lightmapTextureMinsInLuxels: number[] = [];
+	readonly lightmapTextureSizeInLuxels: number[] = [];
+	origFace = 0;
+	numPrims = 0;
+	firstPrimID = 0;
+	smoothingGroups = 0;
 }
 /*
 unsigned short	planenum;		// the plane number
@@ -278,14 +309,13 @@ unsigned int	smoothingGroups;	// lightmap smoothing group
 
 
 
-export const SourceBSPLumpTexData = function () {
-	this.reflectivity = null;// RGB reflectivity
-	this.nameStringTableID = null;// index into TexdataStringTable
-	this.width = null;
-	this.height = null;		// source image
-	this.view_width = null;
-	this.view_height = null;
-
+export class SourceBSPLumpTexData {
+	reflectivity: vec3 = vec3.create();// RGB reflectivity
+	nameStringTableID = 0;// index into TexdataStringTable
+	width = 0;
+	height = 0;		// source image
+	view_width = 0;
+	view_height = 0;
 }
 /*
 const SourceBSPLumpGameLump = function() {
@@ -301,59 +331,60 @@ const SourceBSPLumpGameLump = function() {
  * @param {Number} type The lump type
  */
 export class SourceBSPLumpGameLump extends SEBaseBspLump {
-	id;
-	flags;
-	version;
-	constructor(map, reader) {//struct lump_t
-		super(map, reader);//TODOv3
-		/*this.lumpOffset = this.mapReader.getInt32();
-		this.lumpLen = this.mapReader.getInt32();
-		this.lumpVersion = this.mapReader.getInt32();
-		this.fourCC = this.mapReader.getInt32();
-		this.lumpData = null;*/
-		//lump.setLumpOffset(this.reader.getInt32());
-		//lump.setLumpLen(this.reader.getInt32());
-		//lump.setLumpVersion(this.reader.getInt32());
-		//this.reader.getInt32() // TODO: replace by lump fourCC
+	id = '';
+	flags = 0;
+	version = 0;
 
-		//this.init();
-	}
+	//constructor(map, reader) {//struct lump_t
+	//super(map, reader);//TODOv3
+	/*this.lumpOffset = this.mapReader.getInt32();
+	this.lumpLen = this.mapReader.getInt32();
+	this.lumpVersion = this.mapReader.getInt32();
+	this.fourCC = this.mapReader.getInt32();
+	this.lumpData = null;*/
+	//lump.setLumpOffset(this.reader.getInt32());
+	//lump.setLumpLen(this.reader.getInt32());
+	//lump.setLumpVersion(this.reader.getInt32());
+	//this.reader.getInt32() // TODO: replace by lump fourCC
+
+	//this.init();
+	//}
 }
 
 
-export const SourceBSPLumpPropStaticDirectory = function () {
-	this.name = [];
-	this.leaf = [];
-	this.props = [];
+export class SourceBSPLumpPropStaticDirectory {
+	readonly name: string[] = [];
+	readonly leaf: number[] = [];
+	readonly props: SourceBSPLumpPropStatic[] = [];
 }
 
-const SourceBSPLumpPropDetailDirectory = function () {
-	this.name = [];
-	this.leaf = [];
-	this.props = [];
+class SourceBSPLumpPropDetailDirectory {
+	name = [];
+	leaf = [];
+	props = [];
 }
 
-export const SourceBSPLumpPropStatic = function () {
-	this.position = null;
-	this.angles = vec3.create();
-	this.propType = null;
-	this.firstLeaf = null;
-	this.leafCount = null;
-	this.solid = null;
-	this.flags = null;
-	this.skin = null;
-	this.fadeMinDist = null;
-	this.fadeMaxDist = null;
-	this.lightingOrigin = null;
-	this.forcedFadeScale = null;
-	this.minDXLevel = null;
-	this.maxDXLevel = null;
-	this.minCPULevel = null;
-	this.maxCPULevel = null;
-	this.minGPULevel = null;
-	this.maxGPULevel = null;
-	this.diffuseModulation = null;
-	this.disableX360 = null;
+export class SourceBSPLumpPropStatic {
+	readonly position = vec3.create();
+	readonly angles = vec3.create();
+	propType = 0;
+	firstLeaf = 0;
+	leafCount = 0;
+	solid = 0;
+	flags = 0;
+	skin = 0;
+	fadeMinDist = 0;
+	fadeMaxDist = 0;
+	readonly lightingOrigin = vec3.create();
+	forcedFadeScale = 0;
+	minDXLevel = 0;
+	maxDXLevel = 0;
+	minCPULevel = 0;
+	maxCPULevel = 0;
+	minGPULevel = 0;
+	maxGPULevel = 0;
+	diffuseModulation = 0;
+	disableX360 = 0;
 
 	/*// v4
 	Vector		Origin;		 // origin
@@ -387,14 +418,26 @@ export const SourceBSPLumpPropStatic = function () {
 }
 
 
-export const SourceBSPLumpTexInfo = function () {
-	this.textureVecs = [];	// [s/t][xyz offset]
-	this.lightmapVecs = [];	// [s/t][xyz offset] - length is in units of texels/area
-	this.flags;			// miptex flags	overrides
-	this.texdata;
+export class SourceBSPLumpTexInfo {
+	textureVecs: [vec4, vec4] = [vec4.create(), vec4.create()];	// [s/t][xyz offset]
+	lightmapVecs: [vec4, vec4] = [vec4.create(), vec4.create()];		// [s/t][xyz offset] - length is in units of texels/area
+	flags = 0;			// miptex flags	overrides
+	texdata = 0;
 }
 
-export const SourceBSPLumpDispInfo = function () {
+export class SourceBSPLumpDispInfo {
+	readonly startPosition = vec3.create();
+	dispVertStart = 0;
+	dispTriStart = 0;
+	power = 0;
+	minTess = 0;
+	smoothingAngle = 0;
+	contents = 0;
+	mapFace = 0;
+	lightmapAlphaStart = 0;
+	lightmapSamplePositionStart = 0;
+	readonly allowedVerts: number[] = [];
+
 	/*Vector			startPosition;		// start position used for orientation
 	int			DispVertStart;		// Index into LUMP_DISP_VERTS.
 	int			DispTriStart;		// Index into LUMP_DISP_TRIS.
@@ -410,12 +453,18 @@ export const SourceBSPLumpDispInfo = function () {
 	unsigned int		AllowedVerts[10];	// active verticies*/
 }
 
-export const SourceBSPLumpDispNeighbor = function () {
+export class SourceBSPLumpDispNeighbor {
+	subNeighbors: SourceBSPLumpDispSubNeighbor[] = [];
+
 	//CDispSubNeighbor	m_SubNeighbors[2];
-	this.subNeighbors = [];
+	//this.subNeighbors = [];
 }
 
-export const SourceBSPLumpDispSubNeighbor = function () {
+export class SourceBSPLumpDispSubNeighbor {
+	iNeighbor = 0;
+	orientation = 0;
+	span = 0;
+	neighSpan = 0;
 	/*	unsigned short		m_iNeighbor;		// This indexes into ddispinfos.
 												// 0xFFFF if there is no neighbor here.
 
@@ -431,39 +480,44 @@ const SourceBSPLumpDispSubNeighbor
 {
 };*/
 
-export const SourceBSPLumpDispVertex = function () {
+export class SourceBSPLumpDispVertex {
+	readonly vec = vec3.create();
+	dist = 0;
+	alpha = 0;
+
 	/*	Vector	vec;	// Vector field defining displacement volume.
 		float	dist;	// Displacement distances.
 		float	alpha;	// 'per vertex' alpha values.*/
-};
+}
 
-export const SourceBSPLumpColorRGBExp32 = function () {
+export class SourceBSPLumpColorRGBExp32 {
+	readonly color = vec4.create();
 	/*	Vector	vec;	// Vector field defining displacement volume.
 		float	dist;	// Displacement distances.
 		float	alpha;	// 'per vertex' alpha values.*/
-};
-
-
-export const SourceBSPLumpBrush = function () {
-	this.firstside = null;
-	this.numsides = null;
-	this.contents = null;
 }
 
-export const SourceBSPLumpBrushSide = function () {
-	this.planenum = null;
-	this.texinfo = null;
-	this.dispinfo = null;
-	this.bevel = null;
+
+export class SourceBSPLumpBrush {
+	firstside = 0;
+	numsides = 0;
+	contents = 0;
 }
 
-export const SourceBSPLumpModel = function () {
-	this.mins = null;
-	this.maxs = null;
-	this.position = null;
-	this.headnode = null;
-	this.firstface = null;
-	this.numfaces = null;
+export class SourceBSPLumpBrushSide {
+	planenum = 0;
+	texinfo = 0;
+	dispinfo = 0;
+	bevel = 0;
+}
+
+export class SourceBSPLumpModel {
+	//readonly mins = vec3.create();
+	//readonly maxs = vec3.create();
+	readonly position = vec3.create();
+	headnode = 0;
+	firstface = 0;
+	numfaces = 0;
 }
 
 /*const SourceBSPLumpLeaf = function() {
@@ -502,18 +556,18 @@ export const SourceBSPLumpModel = function () {
 
 
 export class SourceBSPLumpLeaf {
-	contents = null;
-	cluster = null;
-	areaflags = null;
-	mins = null;
-	maxs = null;
-	firstleafface = null;
-	numleaffaces = null;
-	firstleafbrush = null;
-	numleafbrushes = null;
-	leafWaterDataID = null;
+	contents = 0;
+	cluster = -1;
+	areaflags = 0;
+	readonly mins = vec3.create();
+	readonly maxs = vec3.create();
+	firstleafface = 0;
+	numleaffaces = 0;
+	firstleafbrush = 0;
+	numleafbrushes = 0;
+	leafWaterDataID = 0;
 
-	contains(position) {
+	contains(position: vec3) {
 		const mins = this.mins;
 		const maxs = this.maxs;
 		if (
@@ -550,15 +604,15 @@ short			area;		// If all leaves below this node are in the same area, then
 }*/
 
 export class SourceBSPLumpNode {
-	planenum = null;
-	children = null;
-	mins = null;
-	maxs = null;
-	firstface = null;
-	numfaces = null;
-	area = null;
+	planenum = 0;
+	readonly children: [number, number] = [0, 0];
+	readonly mins = vec3.create();
+	readonly maxs = vec3.create();
+	firstface = -1;
+	numfaces = -1;
+	area = 0;
 
-	contains(position) {
+	contains(position: vec3) {
 		const mins = this.mins;
 		const maxs = this.maxs;
 		if (
@@ -576,24 +630,30 @@ export class SourceBSPLumpNode {
 }
 
 
+export const OVERLAY_BSP_FACE_COUNT = 64;
 export class SourceBSPLumpOverlay {
-	id;
-	texInfo;
-	FaceCountAndRenderOrder;
-	faces
-	U;
-	V;
-	UVPoint0;
-	UVPoint1;
-	UVPoint2;
-	UVPoint3;
-	Origin;
-	BasisNormal;
+	id = 0;
+	texInfo = 0;
+	FaceCountAndRenderOrder = 0;
+	readonly faces = new Int32Array(OVERLAY_BSP_FACE_COUNT);
+	readonly u: [number, number] = [0, 0];
+	readonly v: [number, number] = [0, 0];
+	readonly uvPoint0 = vec3.create();
+	readonly uvPoint1 = vec3.create();
+	readonly uvPoint2 = vec3.create();
+	readonly uvPoint3 = vec3.create();
+	readonly origin = vec3.create();
+	readonly basisNormal = vec3.create();
+}
+
+export class SourceBSPLumpEntity {
+	str = '';
+	kv!: KvReader;
 }
 
 
 //TODO: put somewhere else
-function parseVector(str) {
+function parseVector(str: string) {
 	const regex = / *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) *(-?\d*(\.\d*)?) */i;
 
 	const result = regex.exec(str);
@@ -604,7 +664,7 @@ function parseVector(str) {
 }
 
 //TODO: put somewhere else
-function parseAngles(str) {
+function parseAngles(str: string) {
 	const angles = parseVector(str)
 	if (angles) {
 		return vec3.scale(angles, angles, Math.PI / 180);
@@ -613,7 +673,7 @@ function parseAngles(str) {
 }
 
 //angles[PITCH, YAW, ROLL]
-function AngleVectors(angles, forward) {
+function AngleVectors(angles: vec3, forward: vec3) {
 	const sy = Math.sin(angles[1]);
 	const cy = Math.cos(angles[1]);
 	const sp = Math.sin(angles[0]);
