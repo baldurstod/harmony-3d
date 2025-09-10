@@ -12,7 +12,7 @@ import { Source1MaterialManager } from '../materials/source1materialmanager';
 import { Source1ModelManager } from '../models/source1modelmanager';
 import { KvReader } from './kvreader';
 import { Source1BspTree } from './source1bsptree';
-import { LUMP_DISP_VERTS, LUMP_DISPINFO, LUMP_EDGES, LUMP_ENTITIES, LUMP_FACES, LUMP_GAME_LUMP, LUMP_LEAFFACES, LUMP_LEAFS, LUMP_LIGHTING, LUMP_MODELS, LUMP_SURFEDGES, LUMP_TEXDATA, LUMP_TEXDATA_STRING_DATA, LUMP_TEXINFO, LUMP_VERTEXES, LumpData, SourceBSPLump, SourceBSPLumpDispInfo, SourceBSPLumpDispVertex, SourceBSPLumpEdge, SourceBSPLumpEntity, SourceBSPLumpFace, SourceBSPLumpLeaf, SourceBSPLumpModel, SourceBSPLumpPropStaticDirectory, SourceBSPLumpTexData, SourceBSPLumpTexInfo } from './sourcebsplump';
+import { LUMP_DISP_VERTS, LUMP_DISPINFO, LUMP_EDGES, LUMP_ENTITIES, LUMP_FACES, LUMP_GAME_LUMP, LUMP_LEAFFACES, LUMP_LEAFS, LUMP_LIGHTING, LUMP_MODELS, LUMP_SURFEDGES, LUMP_TEXDATA, LUMP_TEXDATA_STRING_DATA, LUMP_TEXINFO, LUMP_VERTEXES, LumpData, SourceBSPLump, SourceBSPLumpDispInfo, SourceBSPLumpDispVertex, SourceBSPLumpEdge, SourceBSPLumpEntity, SourceBSPLumpFace, SourceBSPLumpGameLump, SourceBSPLumpLeaf, SourceBSPLumpModel, SourceBSPLumpPropStaticDirectory, SourceBSPLumpTexData, SourceBSPLumpTexInfo } from './sourcebsplump';
 import { SELightMapNode } from './sourcelightmap';
 
 const DISPLACEMENT_DELTA = 1.0; // max distance from start position
@@ -43,7 +43,7 @@ type BspGeometry = {
 
 
 export class SourceBSP extends World {
-	#repository: string;
+	readonly repository: string;
 	bspFileVersion = 0;
 	lumps: SourceBSPLump[] = [];
 	mapRevision = 0;
@@ -76,7 +76,7 @@ export class SourceBSP extends World {
 
 	constructor(params?: any/*TODO: fix type*/) {
 		super(params);
-		this.#repository = params.repository;
+		this.repository = params.repository;
 		//this.staticProps = [];
 		this.bspTree = new Source1BspTree(this);
 
@@ -108,7 +108,10 @@ export class SourceBSP extends World {
 	}
 
 	#createStaticProps() {
-		const propsStatic = this.getLumpData(LUMP_GAME_LUMP) as SourceBSPLumpPropStaticDirectory;
+		const gameLump = this.getLumpData(LUMP_GAME_LUMP) as (Map<string, SourceBSPLumpGameLump> | null);
+		const staticLump = gameLump?.get('prps');
+		const propsStatic = staticLump?.getLumpData() as (SourceBSPLumpPropStaticDirectory | null);
+
 		if (propsStatic) {
 			//const propsStatic = lumpGameDatas.prps.lumpData;
 			const propNames = propsStatic.name;
@@ -120,7 +123,7 @@ export class SourceBSP extends World {
 				if (!propName) {
 					continue;
 				}
-				Source1ModelManager.createInstance(this.#repository, propName, true).then(
+				Source1ModelManager.createInstance(this.repository, propName, true).then(
 					(model) => {
 						if (model) {
 							this.staticProps.addChild(model);
@@ -228,7 +231,11 @@ export class SourceBSP extends World {
 		const firstEdge = face.firstedge;
 		const lastEdge = firstEdge + face.numedges;
 		const firstIndice = buffer.lastIndice;
-		for (const surfedge of lumpSurfEdges) {
+		for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
+			const surfedge = lumpSurfEdges[surfEdgeIndex];
+			if (!surfedge) {
+				continue;
+			}
 			//			const surfedge = lumpSurfEdges[surfEdgeIndex];
 			const edge = lumpEdges[Math.abs(surfedge)];//TODOv3 ? why abs
 			if (edge === undefined) {
@@ -593,7 +600,7 @@ export class SourceBSP extends World {
 
 			const staticMesh = new Mesh({ geometry: bufferGeometry });
 			staticMesh.name = textureName;
-			Source1MaterialManager.getMaterial(this.#repository, textureName).then(
+			Source1MaterialManager.getMaterial(this.repository, textureName).then(
 				(material) => {
 					if (material) {
 						staticMesh.setMaterial(material);

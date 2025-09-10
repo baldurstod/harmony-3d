@@ -24,7 +24,7 @@ export class FuncDoor extends MapEntity {
 
 		const result = /^\*(\d*)$/.exec((kvElement as any/*TODO: fix that*/).model);
 		if (result && result.length >= 2) {
-			this.model = { model: result[1]!, origin: ParseVector(vec3.create(), (kvElement as any/*TODO: fix that*/).origin) ?? vec3.create(), position: vec3.create(), dirty: true };
+			this.model = { model: Number(result[1]), origin: ParseVector(vec3.create(), (kvElement as any/*TODO: fix that*/).origin) ?? vec3.create(), position: vec3.create(), dirty: true };
 			//if (kvElement.rendermode && kvElement.rendermode != 10) {
 			this.map.funcBrushesRemoveMe.push(this.model);
 			//}

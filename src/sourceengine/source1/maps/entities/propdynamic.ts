@@ -65,7 +65,7 @@ export class PropDynamic extends MapEntity {
 	async setModel(modelName: string) {
 		modelName = modelName.replace(/\.mdl$/g, '');
 
-		const model = await Source1ModelManager.createInstance(this.map.#repository, modelName, true);
+		const model = await Source1ModelManager.createInstance(this.map.repository, modelName, true);
 		/*model.position = this.position;
 		model.quaternion = this._quaternion;*/
 		this.#model = model;
