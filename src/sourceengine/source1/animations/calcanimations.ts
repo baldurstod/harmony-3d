@@ -202,7 +202,6 @@ export function CalcPose(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMd
 		if (pIKContext) {
 			// TODO: reactivate
 			//pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
-
 		}
 
 		AddSequenceLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flWeight, flTime);
@@ -442,7 +441,7 @@ function CalcAnimation(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl,
 		for (let i = 0, boneCount = pStudioHdr.getBoneCount(); i < boneCount; ++i) {
 			const pbone = pStudioHdr.getBone(i);
 			const pweight = seqdesc.pBoneweight(i);
-			if (pweight && (pStudioHdr.boneFlags(i) & boneMask)) {
+			if (pweight && pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
 				if (animdesc.flags & STUDIO_DELTA) {
 					q[i] = quat.create();//TODOV2
 					pos[i] = vec3.create();//TODOV2
@@ -485,7 +484,7 @@ function CalcAnimation(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl,
 		if (panim && panim.bone == i) {
 			boneFlags[i] = panim.flags;
 			//if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask))
-			if (pweight)//TODOv2
+			if (pweight && pweight > 0)//TODOv2
 			{
 				if (animdesc.sectionframes != 0) {
 					iLocalFrame = iLocalFrame % animdesc.sectionframes;
@@ -502,7 +501,7 @@ function CalcAnimation(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl,
 			//panim = panim->pNext();//TODOv2
 			panim = panims[++animIndex];
 			//} else if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
-		} else if (pweight) {
+		} else if (pweight && pweight > 0) {
 			if (animdesc.flags & STUDIO_DELTA) {
 				boneFlags[i] = STUDIO_ANIM_DELTA;
 				q[i] = quat.create();//TODOV2
@@ -972,6 +971,7 @@ const AddSequenceLayers = function (dynamicProp: Source1ModelInstance, pStudioHd
 		}
 
 		if (pLayer.flags & STUDIO_AL_LOCAL) {
+			continue;
 		}
 
 		let layerCycle = cycle;
@@ -1625,6 +1625,9 @@ function ScaleBones(
 	const s1: number = 1.0 - s2;
 
 	for (i = 0; i < pStudioHdr.getBoneCount(); i++) {
+		if (!q1[i] || !pos1[i]) {
+			continue;
+		}
 
 
 		// skip unused bones
@@ -1639,7 +1642,7 @@ function ScaleBones(
 			j = i;
 		}
 
-		if (j >= 0 && (seqdesc.pBoneweight(j) ?? -1) > 0.0 && q1[i] && pos1[i]) {
+		if (j >= 0 && (seqdesc.pBoneweight(j) ?? -1) > 0.0) {
 			QuaternionIdentityBlend(q1[i]!, s1, q1[i]!);
 			//VectorScale(pos1[i], s2, pos1[i]);
 			vec3.scale(pos1[i]!, pos1[i]!, s2);

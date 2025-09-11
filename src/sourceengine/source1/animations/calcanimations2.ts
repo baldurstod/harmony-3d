@@ -1,12 +1,12 @@
-import { mat4, quat, vec3 } from 'gl-matrix';
-
-import { BONE_FIXED_ALIGNMENT, BONE_HAS_SAVEFRAME_POS, BONE_HAS_SAVEFRAME_ROT } from '../loaders/mdlbone';
-import { STUDIO_AL_SPLINE, STUDIO_AL_XFADE, STUDIO_AL_NOBLEND, STUDIO_AL_LOCAL, STUDIO_AL_POSE } from '../loaders/mdlstudioseqdesc';
-import { STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWROT2 } from '../loaders/mdlstudioanim'
+import { quat, vec3, vec4 } from 'gl-matrix';
 import { FLT_EPSILON } from '../../../math/constants';
-import { clamp, SimpleSpline, quatFromEulerRad } from '../../../math/functions';
-import { SourceMdl } from '../loaders/sourcemdl';
+import { clamp, quatFromEulerRad, SimpleSpline } from '../../../math/functions';
 import { QuaternionIdentityBlend } from '../../../math/quaternion';
+import { Source1ModelInstance } from '../export';
+import { BONE_FIXED_ALIGNMENT, MdlBone } from '../loaders/mdlbone';
+import { MdlStudioAnim, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_RAWROT2 } from '../loaders/mdlstudioanim';
+import { MdlStudioSeqDesc, STUDIO_AL_LOCAL, STUDIO_AL_NOBLEND, STUDIO_AL_POSE, STUDIO_AL_SPLINE, STUDIO_AL_XFADE } from '../loaders/mdlstudioseqdesc';
+import { MdlStudioAnimDesc, SourceMdl } from '../loaders/sourcemdl';
 
 /**
  * Update buffers vertice count.
@@ -18,7 +18,7 @@ const g2RemoveMe = 1;
 // Purpose: returns array of animations and weightings for a sequence based on current pose parameters
 //-----------------------------------------------------------------------------
 //void Studio_SeqAnims(const CStudioHdr *pStudioHdr, mstudioseqdesc_t &seqdesc, int iSequence, const float poseParameters[], mstudioanimdesc_t *panim[4], float *weight)
-function Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameters: Map<string, number>, panim, weight) {
+function Studio_SeqAnims2(pStudioHdr: SourceMdl, seqdesc: MdlStudioSeqDesc, iSequence: number, poseParameters: Map<string, number>, panim: [(MdlStudioAnimDesc | null), (MdlStudioAnimDesc | null), (MdlStudioAnimDesc | null), (MdlStudioAnimDesc | null)], weight: [number, number, number, number]) {
 	/*if (!pStudioHdr || iSequence >= pStudioHdr.GetNumSeq())
 	{
 		weight[0] = weight[1] = weight[2] = weight[3] = 0.0;
@@ -52,32 +52,33 @@ function Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameters: Map<st
 // Purpose: returns cycles per second of a sequence (cycles/second)
 //-----------------------------------------------------------------------------
 //float Studio_CPS(const CStudioHdr *pStudioHdr, mstudioseqdesc_t &seqdesc, int iSequence, const float poseParameters[])
-function Studio_CPS2(pStudioHdr, seqdesc, iSequence, poseParameters: Map<string, number>) {
-	const panim = [];
-	const weight = [];
+function Studio_CPS2(pStudioHdr: SourceMdl, seqdesc: MdlStudioSeqDesc, iSequence: number, poseParameters: Map<string, number>) {
+	const panim: [(MdlStudioAnimDesc | null), (MdlStudioAnimDesc | null), (MdlStudioAnimDesc | null), (MdlStudioAnimDesc | null)] = [null, null, null, null];
+	const weight: [number, number, number, number] = [0, 0, 0, 0];
 
 	Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameters, panim, weight);
 
 	let t = 0;
 	for (let i = 0; i < 4; ++i) {
-		if (panim[i] && weight[i] > 0 && panim[i].numframes > 1) {
-			t += (panim[i].fps / (panim[i].numframes - 1)) * weight[i];
-			//setAnimLength(panim[i].numframes);//TODOv3
+		const anim = panim[i];
+		if (anim && weight[i]! > 0 && anim.numframes > 1) {
+			t += (anim.fps / (anim.numframes - 1)) * weight[i]!;
+			//setAnimLength(anim.numframes);//TODOv3
 		}
 	}
 	return t;
 }
 
-function Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameters: Map<string, number>) {
-	const panim = [];
-	const weight = [];
+function Studio_Frames2(pStudioHdr: SourceMdl, seqdesc: MdlStudioSeqDesc, iSequence: number, poseParameters: Map<string, number>) {
+	const panim: [(MdlStudioAnimDesc | null), (MdlStudioAnimDesc | null), (MdlStudioAnimDesc | null), (MdlStudioAnimDesc | null)] = [null, null, null, null];
+	const weight: [number, number, number, number] = [0, 0, 0, 0];
 
 	Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameters, panim, weight);
 
 	let t = 0;
 	for (let i = 0; i < 4; ++i) {
-		if (panim[i] && weight[i] > 0) {
-			t = Math.max(t, panim[i].numframes);
+		if (panim[i] && weight[i]! > 0) {
+			t = Math.max(t, panim[i]!.numframes);
 		}
 	}
 	return t;
@@ -87,8 +88,11 @@ function Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameters: Map<stri
 // Purpose: returns length (in seconds) of a sequence (seconds/cycle)
 //-----------------------------------------------------------------------------
 //float Studio_Duration(const CStudioHdr *pStudioHdr, int iSequence, const float poseParameters[])
-export function Studio_Duration2(pStudioHdr, iSequence, poseParameters: Map<string, number>) {
+export function Studio_Duration2(pStudioHdr: SourceMdl, iSequence: number, poseParameters: Map<string, number>): number {
 	const seqdesc = pStudioHdr.getSequenceById(iSequence);//pStudioHdr.pSeqdesc(iSequence);
+	if (!seqdesc) {
+		return 0;
+	}
 	const cps = Studio_CPS2(pStudioHdr, seqdesc, iSequence, poseParameters);
 
 	if (cps == 0)
@@ -96,8 +100,11 @@ export function Studio_Duration2(pStudioHdr, iSequence, poseParameters: Map<stri
 
 	return 1.0 / cps;
 }
-export function StudioFrames2(pStudioHdr, iSequence, poseParameters: Map<string, number>) {
+export function StudioFrames2(pStudioHdr: SourceMdl, iSequence: number, poseParameters: Map<string, number>) {
 	const seqdesc = pStudioHdr.getSequenceById(iSequence);//pStudioHdr.pSeqdesc(iSequence);
+	if (!seqdesc) {
+		return 0;
+	}
 	return Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameters);
 }
 
@@ -107,15 +114,17 @@ const SOURCE_MODEL_MAX_BONES = 256;
 //-----------------------------------------------------------------------------
 // Purpose: calculate a pose for a single sequence
 //-----------------------------------------------------------------------------
-function InitPose2(dynamicProp, pStudioHdr, pos, q, boneMask) {
+function InitPose2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pos: vec3[], q: quat[], boneMask: number) {
 	if (pStudioHdr.pLinearBones === undefined) {
 		for (let i = 0, boneCount = pStudioHdr.getBoneCount(); i < boneCount; ++i) {
 			if (true || pStudioHdr.boneFlags(i) & boneMask) {
 				const pbone = pStudioHdr.getBone(i);
 				pos[i] = pos[i] || vec3.create();//removeme
 				q[i] = q[i] || quat.create();//removeme
-				vec3.copy(pos[i], pbone.position);
-				quat.copy(q[i], pbone.quaternion);
+				if (pbone) {
+					vec3.copy(pos[i]!, pbone.position);
+					quat.copy(q[i]!, pbone.quaternion);
+				}
 			}
 		}
 	} else {
@@ -137,7 +146,7 @@ function InitPose2(dynamicProp, pStudioHdr, pos, q, boneMask) {
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
 //function CalcPose(pStudioHdr, pIKContext, pos, q, sequence, cycle, poseParameters, boneMask, flWeight = 1.0, flTime = 0.0) {
-export function CalcPose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], sequence, cycle, poseParameters: Map<string, number>, boneMask, flWeight, flTime) {
+export function CalcPose2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pIKContext: undefined, pos: vec3[], q: quat[], boneFlags: number[], sequence: number, cycle: number, poseParameters: Map<string, number>, boneMask: number, flWeight: number, flTime: number) {
 	cycle = cycle % 1;//TODOv2
 	const seqdesc = pStudioHdr.getSequenceById(sequence);
 	if (seqdesc) {
@@ -158,7 +167,8 @@ export function CalcPose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags
 		CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flTime);
 
 		if (pIKContext) {
-			pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
+			// TODO: reactivate
+			//pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
 		}
 
 		AddSequenceLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flWeight, flTime);
@@ -203,7 +213,7 @@ for (let i = 0; i < SOURCE_MODEL_MAX_BONES; i++) {
 	CalcPoseSingle_pos3[i] = vec3.create();
 	CalcPoseSingle_q3[i] = quat.create();
 }
-function CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameters: Map<string, number>, boneMask, flTime) {
+function CalcPoseSingle2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pos: vec3[], q: quat[], boneFlags: number[], seqdesc: MdlStudioSeqDesc, sequence: number, cycle: number, poseParameters: Map<string, number>, boneMask: number, flTime: number): boolean {
 	let bResult = true;
 
 	const pos2 = CalcPoseSingle_pos2;//[];//vec3.create();//TODOv2: optimize (see source)
@@ -240,7 +250,7 @@ function CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], s
 		cycle = flTime * cps;
 		cycle = cycle - Math.floor(cycle);//TODOv2: rounding issues
 	} else if (seqdesc.flags & STUDIO_CYCLEPOSE) {
-		const iPose = pStudioHdr.GetSharedPoseParameter(sequence, seqdesc.cycleposeindex);
+		const iPose = -1;//pStudioHdr.GetSharedPoseParameter(sequence, seqdesc.cycleposeindex);//TODO: reactivate
 		if (iPose != -1) {
 			cycle = poseParameters[iPose];
 		} else {
@@ -328,8 +338,8 @@ function CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], s
 			BlendBones2(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, s1, boneMask);
 		}
 		else {
-			const iAnimIndices = [];
-			const weight = [];
+			const iAnimIndices: [number, number, number] = [0, 0, 0];
+			const weight: [number, number, number] = [0, 0, 0];
 
 			Calc3WayBlendIndices2(i0, i1, s0, s1, seqdesc, iAnimIndices, weight);
 
@@ -361,7 +371,7 @@ function CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], s
 //-----------------------------------------------------------------------------
 // Purpose: Find and decode a sub-frame of animation
 //-----------------------------------------------------------------------------
-function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], seqdesc, sequence, animation, cycle, boneMask) {
+function CalcAnimation2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pos: vec3[], q: quat[], boneFlags: number[], seqdesc: MdlStudioSeqDesc, sequence: number, animation: number | null, cycle: number, boneMask: number) {
 	/*virtualmodel_t *pVModel = pStudioHdr->GetVirtualModel();TODOV2
 	if (pVModel)
 	{
@@ -388,7 +398,7 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], se
 
 	let iLocalFrame = iFrame;
 	let flStall;
-	const panims = animdesc.pAnim(iLocalFrame, flStall);
+	const panims = animdesc.pAnim(iLocalFrame/*, flStall*/);
 	//animdesc.mdl.getAnimFrame(animdesc, 31);
 
 	//const pweight = seqdesc.pBoneweight(0);
@@ -398,7 +408,7 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], se
 		for (let i = 0, boneCount = pStudioHdr.getBoneCount(); i < boneCount; ++i) {
 			const pbone = pStudioHdr.getBone(i);
 			const pweight = seqdesc.pBoneweight(i);
-			if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
+			if (pweight && pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
 				if (animdesc.flags & STUDIO_DELTA) {
 					q[i] = quat.create();//TODOV2
 					pos[i] = vec3.create();//TODOV2
@@ -409,14 +419,19 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], se
 					q[i] = quat.create();
 					pos[i] = vec3.create();
 					//quat.fromMat3(q[i], mat3.fromEuler(SourceEngineTempMat3, pbone.rot));
-					quatFromEulerRad(q[i], pbone.rot[0], pbone.rot[1], pbone.rot[2]);
-					vec3.copy(pos[i], pbone.position);
+					if (pbone && q[i] && pos[i]) {
+						quatFromEulerRad(q[i]!, pbone.rot[0], pbone.rot[1], pbone.rot[2]);
+						vec3.copy(pos[i]!, pbone.position);
+					}
 				}
 			}
 		}
 
 		//CalcZeroframeData(pStudioHdr, pStudioHdr->GetRenderHdr(), NULL, pStudioHdr->pBone(0), animdesc, fFrame, pos, q, boneMask, 1.0);
-		CalcZeroframeData2(pStudioHdr, pStudioHdr, null, pStudioHdr.getBone(0), animdesc, fFrame, pos, q, boneMask, 1.0);
+		const bone = pStudioHdr.getBone(0);
+		if (bone) {
+			CalcZeroframeData2(pStudioHdr, pStudioHdr, null, bone, animdesc, fFrame, pos, q, boneMask, 1.0);
+		}
 
 		return;
 	}
@@ -436,14 +451,16 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], se
 		if (panim && panim.bone == i) {
 			boneFlags[i] = panim.flags;
 			//if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask))
-			if (pweight > 0)//TODOv2
+			if (pweight && pweight > 0)//TODOv2
 			{
 				if (animdesc.sectionframes != 0) {
 					iLocalFrame = iLocalFrame % animdesc.sectionframes;
 				}
 
-				CalcBoneQuaternion2(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, q[i]);
-				CalcBonePosition2(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, pos[i]);//TODOV2
+				if (pbone) {
+					CalcBoneQuaternion2(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, q[i]!);
+					CalcBonePosition2(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, pos[i]!);
+				}
 				//quat.copy(q[i], pbone.quaternion);
 				//vec3.copy(pos[i], pbone.position);
 
@@ -451,21 +468,24 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], se
 			//panim = panim->pNext();//TODOv2
 			panim = panims[++animIndex];
 			//} else if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
-		} else if (pweight > 0) {
+		} else if (pweight && pweight > 0) {
 			if (animdesc.flags & STUDIO_DELTA) {
 				boneFlags[i] = STUDIO_ANIM_DELTA;
 				q[i] = quat.create();//TODOV2
 				pos[i] = vec3.create();//TODOV2
 			} else {
 				boneFlags[i] = 0;
-				quat.copy(q[i], pbone.quaternion);
-				vec3.copy(pos[i], pbone.position);
+				if (pbone && q[i] && pos[i]) {
+					quat.copy(q[i]!, pbone.quaternion);
+					vec3.copy(pos[i]!, pbone.position);
+				}
 			}
 		} else {
 			boneFlags[i] = STUDIO_ANIM_DELTA;
 		}
 
 		if (false && testRemoveMe !== null) {
+			/*
 			const testRemoveMebones = testRemoveMe.bones[pbone.name];
 			//quat.fromMat3(q[i], mat3.fromEuler(SourceEngineTempMat3, testRemoveMe.bones[pbone.name].rot));
 			if (testRemoveMebones !== undefined && testRemoveMebones.valid) {
@@ -473,6 +493,7 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], se
 				//quat.fromEuler(q[i], testRemoveMebones.rot[0], testRemoveMebones.rot[1], testRemoveMebones.rot[2]);
 				testRemoveMebones.valid = false;
 			}
+			*/
 		} else {
 			/*if (testRemoveMe && testRemoveMe.bones[pbone.name]) {
 				//quat.fromMat3(q[i], mat3.fromEuler(SourceEngineTempMat3, testRemoveMe.bones[pbone.name].rot));
@@ -484,11 +505,14 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], se
 	}
 
 	// cross fade in previous zeroframe data
+	/*
 	if (flStall > 0.0) {
 		CalcZeroframeData2(pStudioHdr, pStudioHdr, null, pStudioHdr.getBone(0), animdesc, fFrame, pos, q, boneMask, flStall);
 	}
+	*/
 
 	//console.error(animdesc.numlocalhierarchy);
+	/*
 	if (false && animdesc.numlocalhierarchy) {//TODOv2
 		const boneToWorld = mat4.create();//TODOv2
 		let boneComputed;
@@ -506,12 +530,13 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], se
 					CalcLocalHierarchyAnimation(pStudioHdr, boneToWorld, boneComputed, pos, q, pbone, pHierarchy, pHierarchy.iBone, pHierarchy.iNewParent, cycle, iFrame, s, boneMask);
 				}
 			}
-				*/
+				* /
 
 		}
 
 		//g_MatrixPool.Free(boneToWorld);TODOv2
 	}
+	*/
 }
 
 //-----------------------------------------------------------------------------
@@ -521,7 +546,7 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags: number[], se
 						const Quaternion &baseQuat, const RadianEuler &baseRot, const Vector &baseRotScale,
 						int iBaseFlags, const Quaternion &baseAlignment,
 						const mstudioanim_t *panim, Quaternion &q)*/
-function _CalcBoneQuaternion2(pStudioHdr, frame, s, baseQuat, baseRot, baseRotScale, iBaseFlags, baseAlignment, panim, q) {
+function _CalcBoneQuaternion2(pStudioHdr: SourceMdl, frame: number, s: number, baseQuat: quat, baseRot: vec3, baseRotScale: vec3, iBaseFlags: number, baseAlignment: vec4, panim: MdlStudioAnim, q: quat) {
 	if (panim.flags & STUDIO_ANIM_RAWROT) {
 		//q = panim.pQuat48();
 		quat.copy(q, panim.rawrot);//TODOv2
@@ -557,8 +582,8 @@ function _CalcBoneQuaternion2(pStudioHdr, frame, s, baseQuat, baseRot, baseRotSc
 		for (let i = 0; i < 3; ++i) {
 			const offset = panim.animValuePtrRot.offset[i];
 			if (offset) {
-				angle1[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset, panim.bone, i) * baseRotScale[i];
-				angle2[i] = angle1[i];
+				angle1[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset/*, panim.bone, i*/) * baseRotScale[i]!;
+				angle2[i] = angle1[i]!;
 			}
 		}
 
@@ -588,7 +613,7 @@ function _CalcBoneQuaternion2(pStudioHdr, frame, s, baseQuat, baseRot, baseRotSc
 		for (let i = 0; i < 3; ++i) {
 			const offset = panim.animValuePtrRot.offset[i];
 			if (offset) {
-				angle[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset, panim.bone, i) * baseRotScale[i];
+				angle[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset/*, panim.bone, i*/) * baseRotScale[i]!;
 			}
 		}
 
@@ -610,7 +635,7 @@ function _CalcBoneQuaternion2(pStudioHdr, frame, s, baseQuat, baseRot, baseRotSc
 	}
 }
 
-function CalcBoneQuaternion2(pStudioHdr, frame, s, pBone, pLinearBones, panim, q) {
+function CalcBoneQuaternion2(pStudioHdr: SourceMdl, frame: number, s: number, pBone: MdlBone, pLinearBones: undefined, panim: MdlStudioAnim, q: quat) {
 	if (false && pLinearBones) {//TODOv2
 		//CalcBoneQuaternion(pStudioHdr,	frame, s, pLinearBones->quat(panim.bone), pLinearBones->rot(panim.bone), pLinearBones->rotscale(panim.bone), pLinearBones->flags(panim.bone), pLinearBones->qalignment(panim.bone), panim, q);
 	} else {
@@ -619,7 +644,7 @@ function CalcBoneQuaternion2(pStudioHdr, frame, s, pBone, pLinearBones, panim, q
 	}
 }
 
-function _CalcBonePosition2(pStudioHdr, frame, s, basePos, baseBoneScale, panim, pos) {
+function _CalcBonePosition2(pStudioHdr: SourceMdl, frame: number, s: number, basePos: vec3, baseBoneScale: vec3, panim: MdlStudioAnim, pos: vec3) {
 	if (panim.flags & STUDIO_ANIM_RAWPOS) {
 		vec3.copy(pos, panim.rawpos);
 		return;
@@ -643,7 +668,7 @@ function _CalcBonePosition2(pStudioHdr, frame, s, basePos, baseBoneScale, panim,
 			const offset = panim.animValuePtrPos.offset[i];
 			if (offset) {
 				//ExtractAnimValue(frame, pPosV->pAnimvalue(i), baseBoneScale[i], v1, v2);
-				v1 = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset, panim.bone, i) * baseBoneScale[i];
+				v1 = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset/*, panim.bone, i*/) * baseBoneScale[i]!;
 				v2 = v1;
 				pos[i] = v1 * (1.0 - s) + v2 * s;
 			}
@@ -654,7 +679,7 @@ function _CalcBonePosition2(pStudioHdr, frame, s, basePos, baseBoneScale, panim,
 			const offset = panim.animValuePtrPos.offset[i];
 			if (offset) {
 				//ExtractAnimValue(frame, pPosV->pAnimvalue(i), baseBoneScale[i], v1, v2);
-				pos[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset, panim.bone, i) * baseBoneScale[i];
+				pos[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset/*, panim.bone, i*/) * baseBoneScale[i]!;
 			}
 		}
 	}
@@ -666,9 +691,10 @@ function _CalcBonePosition2(pStudioHdr, frame, s, basePos, baseBoneScale, panim,
 	}
 }
 
-function CalcBonePosition2(pStudioHdr, frame, s, pBone, pLinearBones, panim, pos) {
-	if (false && pLinearBones) {//TODOv2
-		_CalcBonePosition2(pStudioHdr, frame, s, pLinearBones.pos(panim.bone), pLinearBones.posscale(panim.bone), panim, pos);
+function CalcBonePosition2(pStudioHdr: SourceMdl, frame: number, s: number, pBone: MdlBone, pLinearBones: undefined, panim: MdlStudioAnim, pos: vec3) {
+	if (pLinearBones) {
+		//TODO
+		//_CalcBonePosition2(pStudioHdr, frame, s, pLinearBones.pos(panim.bone), pLinearBones.posscale(panim.bone), panim, pos);
 	} else {
 		_CalcBonePosition2(pStudioHdr, frame, s, pBone.position, pBone.posscale, panim, pos);
 	}
@@ -679,20 +705,20 @@ function CalcBonePosition2(pStudioHdr, frame, s, pBone, pLinearBones, panim, pos
 // mathematical sense, but it's a cheap way to simulate a slerp.
 //-----------------------------------------------------------------------------
 //void QuaternionBlend(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
-function QuaternionBlend2(p, q, t, qt) {
+function QuaternionBlend2(p: quat, q: quat, t: number, qt: quat) {
 	// decide if one of the quaternions is backwards
-	const q2 = quat.create();
+	const q2 = quat.create();//TODO: optimize
 	QuaternionAlign2(p, q, q2);
 	QuaternionBlendNoAlign2(p, q2, t, qt);
 }
 
 //void QuaternionBlendNoAlign(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
-function QuaternionBlendNoAlign2(p, q, t, qt) {
+function QuaternionBlendNoAlign2(p: quat, q: quat, t: number, qt: quat) {
 	// 0.0 returns p, 1.0 return q.
 	const sclp = 1.0 - t;
 	const sclq = t;
 	for (let i = 0; i < 4; ++i) {
-		qt[i] = sclp * p[i] + sclq * q[i];
+		qt[i] = sclp * p[i]! + sclq * q[i]!;
 	}
 	quat.normalize(qt, qt);
 }
@@ -701,24 +727,24 @@ function QuaternionBlendNoAlign2(p, q, t, qt) {
 // make sure quaternions are within 180 degrees of one another, if not, reverse q
 //-----------------------------------------------------------------------------
 //void QuaternionAlign(const Quaternion &p, const Quaternion &q, Quaternion &qt)
-function QuaternionAlign2(p, q, qt) {
+function QuaternionAlign2(p: quat, q: quat, qt: quat) {
 	// FIXME: can this be done with a quat dot product?
 
 	// decide if one of the quaternions is backwards
 	let a = 0;
 	let b = 0;
 	for (let i = 0; i < 4; ++i) {
-		a += (p[i] - q[i]) * (p[i] - q[i]);
-		b += (p[i] + q[i]) * (p[i] + q[i]);
+		a += (p[i]! - q[i]!) * (p[i]! - q[i]!);
+		b += (p[i]! + q[i]!) * (p[i]! + q[i]!);
 	}
 	if (a > b) {
 		for (let i = 0; i < 4; ++i) {
-			qt[i] = -q[i];
+			qt[i] = -q[i]!;
 		}
 	}
 	else if (qt != q) {
 		for (let i = 0; i < 4; ++i) {
-			qt[i] = q[i];
+			qt[i] = q[i]!;
 		}
 	}
 }
@@ -729,7 +755,7 @@ function QuaternionAlign2(p, q, qt) {
 //-----------------------------------------------------------------------------
 // Purpose: Calc Zeroframe Data
 //-----------------------------------------------------------------------------
-function CalcZeroframeData2(pStudioHdr, pAnimStudioHdr, pAnimGroup, pAnimbone, animdesc, fFrame, pos, q, boneMask, flWeight) {
+function CalcZeroframeData2(pStudioHdr: SourceMdl, pAnimStudioHdr: SourceMdl, pAnimGroup: null, pAnimbone: MdlBone, animdesc: MdlStudioAnimDesc, fFrame: number, pos: vec3[], q: quat[], boneMask: number, flWeight: number) {
 	/* TODO
 		let pData = animdesc.pZeroFrameData();
 
@@ -819,7 +845,7 @@ function CalcZeroframeData2(pStudioHdr, pAnimStudioHdr, pAnimGroup, pAnimbone, a
 
 
 
-function PoseIsAllZeros2(pStudioHdr, sequence, seqdesc, i0, i1) {
+function PoseIsAllZeros2(pStudioHdr: SourceMdl, sequence: number, seqdesc: MdlStudioSeqDesc, i0: number, i1: number) {
 	// remove 'zero' positional blends
 	//const baseanim = pStudioHdr.iRelativeAnim(sequence, seqdesc.getBlend(i0 , i1));//TODOv2
 	const baseanim = seqdesc.getBlend(i0, i1);
@@ -836,7 +862,7 @@ function PoseIsAllZeros2(pStudioHdr, sequence, seqdesc, i0, i1) {
 //			the triangle is a right triangle, and the diagonal is between elements [0] and [2]
 //-----------------------------------------------------------------------------
 //void Calc3WayBlendIndices(int i0, int i1, float s0, float s1, const mstudioseqdesc_t &seqdesc, int *pAnimIndices, float *pWeight)
-function Calc3WayBlendIndices2(i0, i1, s0, s1, seqdesc, pAnimIndices, pWeight) {
+function Calc3WayBlendIndices2(i0: number, i1: number, s0: number, s1: number, seqdesc: MdlStudioSeqDesc, pAnimIndices: [number, number, number], pWeight: [number, number, number]) {
 	// Figure out which bi-section direction we are using to make triangles.
 	const bEven = (((i0 + i1) & 0x1) == 0);
 
@@ -885,9 +911,9 @@ function Calc3WayBlendIndices2(i0, i1, s0, s1, seqdesc, pAnimIndices, pWeight) {
 		}
 	}
 
-	pAnimIndices[0] = seqdesc.getBlend(i0 + x1, i1 + y1);
-	pAnimIndices[1] = seqdesc.getBlend(i0 + x2, i1 + y2);
-	pAnimIndices[2] = seqdesc.getBlend(i0 + x3, i1 + y3);
+	pAnimIndices[0] = seqdesc.getBlend(i0 + x1, i1 + y1) ?? 0;
+	pAnimIndices[1] = seqdesc.getBlend(i0 + x2, i1 + y2) ?? 0;
+	pAnimIndices[2] = seqdesc.getBlend(i0 + x3, i1 + y3) ?? 0;
 
 	// clamp the diagonal
 	if (pWeight[1] < 0.001)
@@ -903,10 +929,13 @@ function Calc3WayBlendIndices2(i0, i1, s0, s1, seqdesc, pAnimIndices, pWeight) {
 // Purpose: calculate a pose for a single sequence //TODOv2
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
-const AddSequenceLayers2 = function (dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameters: Map<string, number>, boneMask, flWeight, flTime) {
+const AddSequenceLayers2 = function (dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pIKContext: undefined, pos: vec3[], q: quat[], boneFlags: number[], seqdesc: MdlStudioSeqDesc, sequence: number, cycle: number, poseParameters: Map<string, number>, boneMask: number, flWeight: number, flTime: number) {
 	//return;
 	for (let i = 0; i < seqdesc.numautolayers; ++i) {
 		const pLayer = seqdesc.getAutoLayer(i);
+		if (!pLayer) {
+			continue;
+		}
 
 		if (pLayer.flags & STUDIO_AL_LOCAL) {
 			continue;
@@ -930,7 +959,7 @@ const AddSequenceLayers2 = function (dynamicProp, pStudioHdr, pIKContext, pos, q
 					//const Pose = pStudioHdr.pPoseParameter(iPose);
 					const Pose = pStudioHdr.getLocalPoseParameter(iPose);
 					if (Pose) {
-						index = poseParameters[iPose] * (Pose.end - Pose.start) + Pose.start;
+						index = (poseParameters.get(String(iPose)) ?? 1) * (Pose.end - Pose.start) + Pose.start;
 					} else {
 						index = 0;
 					}
@@ -979,13 +1008,13 @@ const AddSequenceLayers2 = function (dynamicProp, pStudioHdr, pIKContext, pos, q
 // Purpose: accumulate a pose for a single sequence on top of existing animation
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
-const AccumulatePose_pos2 = Array(SOURCE_MODEL_MAX_BONES);
-const AccumulatePose_q2 = Array(SOURCE_MODEL_MAX_BONES);
+const AccumulatePose_pos2: vec3[] = Array(SOURCE_MODEL_MAX_BONES);
+const AccumulatePose_q2: quat[] = Array(SOURCE_MODEL_MAX_BONES);
 for (let i = 0; i < SOURCE_MODEL_MAX_BONES; i++) {
 	AccumulatePose_pos2[i] = vec3.create();
 	AccumulatePose_q2[i] = quat.create();
 }
-function AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], sequence, cycle, poseParameters: Map<string, number>, boneMask, flWeight, flTime) {
+function AccumulatePose2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pIKContext: undefined, pos: vec3[], q: quat[], boneFlags: number[], sequence: number, cycle: number, poseParameters: Map<string, number>, boneMask: number, flWeight: number, flTime: number) {
 	//const pos2 = [];
 	//const q2 = [];
 	const pos2 = AccumulatePose_pos2;
@@ -999,11 +1028,15 @@ function AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags:
 	}
 
 	const seqdesc = pStudioHdr.getSequenceById(sequence);
+	if (!seqdesc) {
+		return;
+	}
 
 	// add any IK locks to prevent extremities from moving
 	let seq_ik;
-	if (false && seqdesc.numiklocks) {//TODOv2
+	if (seqdesc.numiklocks) {
 		/*
+		// TODO: activate
 		seq_ik.Init(pStudioHdr, vec3_angle, vec3_origin, 0.0, 0, boneMask);	// local space relative so absolute position doesn't mater
 		seq_ik.AddSequenceLocks(seqdesc, pos, q);
 		*/
@@ -1021,15 +1054,17 @@ function AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags:
 	}
 	*/
 
+	/*
 	if (pIKContext) {
 		pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
 	}
+	*/
 
 	AddSequenceLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flWeight, flTime);
 
-	if (false && seqdesc.numiklocks)//TODOv2
-	{
-		seq_ik.SolveSequenceLocks(seqdesc, pos, q);
+	if (seqdesc.numiklocks) {
+		// TODO: activate
+		//seq_ik.SolveSequenceLocks(seqdesc, pos, q);
 	}
 }
 
@@ -1037,16 +1072,17 @@ function AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags:
 // Purpose: calculate a pose for a single sequence
 //			adds autolayers, runs local ik rukes
 //-----------------------------------------------------------------------------
-function AddLocalLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags: number[], seqdesc, sequence, cycle, poseParameters: Map<string, number>, boneMask, flWeight, flTime) {
+function AddLocalLayers2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pIKContext: undefined, pos: vec3[], q: quat[], boneFlags: number[], seqdesc: MdlStudioSeqDesc, sequence: number, cycle: number, poseParameters: Map<string, number>, boneMask: number, flWeight: number, flTime: number) {
 	if (!(seqdesc.flags & STUDIO_LOCAL)) {
 		return;
 	}
 
 	for (let i = 0; i < seqdesc.numautolayers; ++i) {
-		const pLayer = seqdesc.pAutolayer(i);
+		const pLayer = seqdesc.autolayer[i];
 
-		if (!(pLayer.flags & STUDIO_AL_LOCAL))
+		if (!pLayer || !(pLayer.flags & STUDIO_AL_LOCAL)) {
 			continue;
+		}
 
 		let layerCycle = cycle;
 		let layerWeight = flWeight;
@@ -1093,9 +1129,10 @@ function AddLocalLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags:
 // Purpose: blend together q1,pos1 with q2,pos2.	Return result in q1,pos1.
 //			0 returns q1, pos1.	1 returns q2, pos2
 //-----------------------------------------------------------------------------
-function SlerpBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneMask) {
-	if (s <= 0.0)
+function SlerpBones2(pStudioHdr: SourceMdl, q1: quat[], pos1: vec3[], seqdesc: MdlStudioSeqDesc, sequence: number, q2: quat[], pos2: vec3[], s: number, boneMask: number) {
+	if (s <= 0.0) {
 		return;
+	}
 	if (s > 1.0) {
 		s = 1.0;
 	}
@@ -1116,7 +1153,7 @@ function SlerpBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneM
 	// Build weightlist for all bones
 	const nBoneCount = pStudioHdr.getBoneCount();
 	//const *pS2 = (float*)stackalloc(nBoneCount * sizeof(float));TODOv2
-	const pS2 = [];
+	const pS2: number[] = [];
 	for (let i = 0; i < nBoneCount; ++i) {
 
 
@@ -1133,13 +1170,13 @@ function SlerpBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneM
 		}
 
 		if (!pSeqGroup) {
-			pS2[i] = s * seqdesc.pBoneweight(i);	// blend in based on this bones weight
+			pS2[i] = s * (seqdesc.pBoneweight(i) ?? 1);	// blend in based on this bones weight
 			continue;
 		}
 
 		const j = i;//pSeqGroup.boneMap[i];TODOv2
 		if (j >= 0) {
-			pS2[i] = s * seqdesc.weight(j);	// blend in based on this bones weight
+			pS2[i] = s * (seqdesc.pBoneweight(j) ?? 1);	// blend in based on this bones weight
 		}
 		else {
 			pS2[i] = 0.0;
@@ -1149,25 +1186,29 @@ function SlerpBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneM
 	let s1, s2;
 	if (seqdesc.flags & STUDIO_DELTA) {
 		for (let i = 0; i < nBoneCount; ++i) {
-			s2 = pS2[i];
-			if (s2 <= 0.0)
+			s2 = pS2[i]!;
+			if (s2 <= 0.0) {
 				continue;
+			}
+
+			if (!pos1[i] || !pos2[i] || !q1[i] || !q2[i]) {
+				continue;
+			}
 
 			if (seqdesc.flags & STUDIO_POST) {
-				QuaternionMA2(q1[i], s2, q2[i], q1[i]);
+				QuaternionMA2(q1[i]!, s2, q2[i]!, q1[i]!);
 
 				// FIXME: are these correct?
-				pos1[i][0] = pos1[i][0] + pos2[i][0] * s2;
-				pos1[i][1] = pos1[i][1] + pos2[i][1] * s2;
-				pos1[i][2] = pos1[i][2] + pos2[i][2] * s2;
-			}
-			else {
-				QuaternionSM2(s2, q2[i], q1[i], q1[i]);
+				pos1[i]![0] = pos1[i]![0] + pos2[i]![0] * s2;
+				pos1[i]![1] = pos1[i]![1] + pos2[i]![1] * s2;
+				pos1[i]![2] = pos1[i]![2] + pos2[i]![2] * s2;
+			} else {
+				QuaternionSM2(s2, q2[i]!, q1[i]!, q1[i]!);
 
 				// FIXME: are these correct?
-				pos1[i][0] = pos1[i][0] + pos2[i][0] * s2;
-				pos1[i][1] = pos1[i][1] + pos2[i][1] * s2;
-				pos1[i][2] = pos1[i][2] + pos2[i][2] * s2;
+				pos1[i]![0] = pos1[i]![0] + pos2[i]![0] * s2;
+				pos1[i]![1] = pos1[i]![1] + pos2[i]![1] * s2;
+				pos1[i]![2] = pos1[i]![2] + pos2[i]![2] * s2;
 			}
 		}
 		return;
@@ -1175,26 +1216,27 @@ function SlerpBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneM
 
 	const q3 = quat.create();
 	for (let i = 0; i < nBoneCount; ++i) {
-		s2 = pS2[i];
-		if (s2 <= 0.0)
+		s2 = pS2[i]!;
+		if (s2 <= 0.0) {
 			continue;
+		}
 
 		s1 = 1.0 - s2;
 
 		if (pStudioHdr.boneFlags(i) & BONE_FIXED_ALIGNMENT) {
-			QuaternionSlerpNoAlign2(q2[i], q1[i], s1, q3);
+			QuaternionSlerpNoAlign2(q2[i]!, q1[i]!, s1, q3);
 		} else {
-			QuaternionSlerp2(q2[i], q1[i], s1, q3);
+			QuaternionSlerp2(q2[i]!, q1[i]!, s1, q3);
 		}
 
-		q1[i][0] = q3[0];
-		q1[i][1] = q3[1];
-		q1[i][2] = q3[2];
-		q1[i][3] = q3[3];
+		q1[i]![0] = q3[0];
+		q1[i]![1] = q3[1];
+		q1[i]![2] = q3[2];
+		q1[i]![3] = q3[3];
 
-		pos1[i][0] = pos1[i][0] * s1 + pos2[i][0] * s2;
-		pos1[i][1] = pos1[i][1] * s1 + pos2[i][1] * s2;
-		pos1[i][2] = pos1[i][2] * s1 + pos2[i][2] * s2;
+		pos1[i]![0] = pos1[i]![0] * s1 + pos2[i]![0] * s2;
+		pos1[i]![1] = pos1[i]![1] * s1 + pos2[i]![1] * s2;
+		pos1[i]![2] = pos1[i]![2] * s1 + pos2[i]![2] * s2;
 	}
 }
 
@@ -1202,7 +1244,7 @@ function SlerpBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneM
 // Purpose: qt = p * (s * q)
 //-----------------------------------------------------------------------------
 //void QuaternionMA(const Quaternion &p, float s, const Quaternion &q, Quaternion &qt)
-function QuaternionMA2(p, s, q, qt) {
+function QuaternionMA2(p: quat, s: number, q: quat, qt: quat) {
 	const p1 = quat.create();
 	const q1 = quat.create();
 
@@ -1218,7 +1260,7 @@ function QuaternionMA2(p, s, q, qt) {
 // Purpose: qt = (s * p) * q
 //-----------------------------------------------------------------------------
 //void QuaternionSM(float s, const Quaternion &p, const Quaternion &q, Quaternion &qt)
-function QuaternionSM2(s, p, q, qt) {
+function QuaternionSM2(s: number, p: quat, q: quat, qt: quat) {
 	const p1 = quat.create();
 	const q1 = quat.create();
 
@@ -1232,18 +1274,18 @@ function QuaternionSM2(s, p, q, qt) {
 }
 
 //void QuaternionScale(const Quaternion &p, float t, Quaternion &q);
-function QuaternionScale2(p, t, q) {
+function QuaternionScale2(p: quat, t: number, q: quat) {
 	let r;
 
 	// FIXME: nick, this isn't overly sensitive to accuracy, and it may be faster to
 	// use the cos part (w) of the quaternion (sin(omega)*N,cos(omega)) to figure the new scale.
-	let sinom = Math.sqrt(vec3.dot(p, p));
+	let sinom = Math.sqrt(vec4.dot(p, p));
 	sinom = Math.min(sinom, 1.0);
 
 	const sinsom = Math.sin(Math.asin(sinom) * t);
 
 	t = sinsom / (sinom + FLT_EPSILON);
-	vec3.scale(q, p, t);
+	vec3.scale(q as vec3, p as vec3, t);
 
 	// rescale rotation
 	r = 1.0 - sinsom * sinsom;
@@ -1255,10 +1297,10 @@ function QuaternionScale2(p, t, q) {
 	r = Math.sqrt(r);
 
 	// keep sign of rotation
-	if (p.w < 0) {
-		q.w = -r;
+	if (p[3] < 0) {
+		q[3] = -r;
 	} else {
-		q.w = r;
+		q[3] = r;
 	}
 
 	return;
@@ -1279,7 +1321,7 @@ function QuaternionScale2(p, t, q) {
 	const Vector pos2[MAXSTUDIOBONES],
 	float s,
 	int boneMask)*/
-function BlendBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneMask) {
+function BlendBones2(pStudioHdr: SourceMdl, q1: quat[], pos1: vec3[], seqdesc: MdlStudioSeqDesc, sequence: number, q2: quat[], pos2: vec3[], s: number, boneMask: number) {
 	const q3 = quat.create();
 
 	const pSeqGroup = null;
@@ -1302,16 +1344,18 @@ function BlendBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneM
 				continue;
 			}
 
+			/* TODO: activate
 			if (pSeqGroup) {
 				j = pSeqGroup.boneMap[i];
 			}
+			*/
 			else {
 				j = i;
 			}
 
-			if (j >= 0 && seqdesc.pBoneweight(j) > 0.0) {
-				q1[i] = q2[i];
-				pos1[i] = pos2[i];
+			if (j >= 0 && (seqdesc.pBoneweight(j) ?? 0) > 0.0 && q2[i] && pos2[i]) {
+				q1[i] = q2[i]!;
+				pos1[i] = pos2[i]!;
 			}
 		}
 		return;
@@ -1333,27 +1377,29 @@ function BlendBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneM
 			continue;
 		}
 
+		/* TODO: activate
 		if (pSeqGroup) {
 			j = pSeqGroup.boneMap[i];
 		}
+		*/
 		else {
 			j = i;
 		}
 
-		if (j >= 0 && seqdesc.pBoneweight(j) > 0.0) {
+		if (j >= 0 && (seqdesc.pBoneweight(j) ?? 0) > 0.0 && q2[i] && q1[i] && pos1[i] && pos2[i]) {
 			if (pStudioHdr.boneFlags(i) & BONE_FIXED_ALIGNMENT) {
-				QuaternionBlendNoAlign2(q2[i], q1[i], s1, q3);
+				QuaternionBlendNoAlign2(q2[i]!, q1[i]!, s1, q3);
 			}
 			else {
-				QuaternionBlend2(q2[i], q1[i], s1, q3);
+				QuaternionBlend2(q2[i]!, q1[i]!, s1, q3);
 			}
-			q1[i][0] = q3[0];
-			q1[i][1] = q3[1];
-			q1[i][2] = q3[2];
-			q1[i][3] = q3[3];
-			pos1[i][0] = pos1[i][0] * s1 + pos2[i][0] * s2;
-			pos1[i][1] = pos1[i][1] * s1 + pos2[i][1] * s2;
-			pos1[i][2] = pos1[i][2] * s1 + pos2[i][2] * s2;
+			q1[i]![0] = q3[0];
+			q1[i]![1] = q3[1];
+			q1[i]![2] = q3[2];
+			q1[i]![3] = q3[3];
+			pos1[i]![0] = pos1[i]![0] * s1 + pos2[i]![0] * s2;
+			pos1[i]![1] = pos1[i]![1] * s1 + pos2[i]![1] * s2;
+			pos1[i]![2] = pos1[i]![2] * s1 + pos2[i]![2] * s2;
 		}
 	}
 }
@@ -1362,7 +1408,7 @@ function BlendBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneM
 // Quaternion sphereical linear interpolation
 //-----------------------------------------------------------------------------
 //void QuaternionSlerp(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
-function QuaternionSlerp2(p, q, t, qt) {
+function QuaternionSlerp2(p: quat, q: quat, t: number, qt: quat) {
 	const q2 = quat.create();
 	// 0.0 returns p, 1.0 return q.
 
@@ -1373,7 +1419,7 @@ function QuaternionSlerp2(p, q, t, qt) {
 }
 
 //void QuaternionSlerpNoAlign(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
-function QuaternionSlerpNoAlign2(p, q, t, qt) {
+function QuaternionSlerpNoAlign2(p: quat, q: quat, t: number, qt: quat) {
 	//Assert(s_bMathlibInitialized);
 	let omega, cosom, sinom, sclp, sclq;
 
@@ -1394,7 +1440,7 @@ function QuaternionSlerpNoAlign2(p, q, t, qt) {
 			sclq = t;
 		}
 		for (let i = 0; i < 4; ++i) {
-			qt[i] = sclp * p[i] + sclq * q[i];
+			qt[i] = sclp * p[i]! + sclq * q[i]!;
 		}
 	}
 	else {
@@ -1407,7 +1453,7 @@ function QuaternionSlerpNoAlign2(p, q, t, qt) {
 		sclp = Math.sin((1.0 - t) * (0.5 * Math.PI));
 		sclq = Math.sin(t * (0.5 * Math.PI));
 		for (let i = 0; i < 3; i++) {
-			qt[i] = sclp * p[i] + sclq * qt[i];
+			qt[i] = sclp * p[i]! + sclq * qt[i]!;
 		}
 	}
 
@@ -1417,17 +1463,15 @@ function QuaternionSlerpNoAlign2(p, q, t, qt) {
 // Purpose: resolve a global pose parameter to the specific setting for this sequence
 //-----------------------------------------------------------------------------
 //void Studio_LocalPoseParameter(const CStudioHdr *pStudioHdr, const float poseParameters[], mstudioseqdesc_t &seqdesc, int iSequence, int iLocalIndex, float &flSetting, int &index)
-function Studio_LocalPoseParameter2(pStudioHdr, poseParameters: Map<string, number>, seqdesc, iSequence, iLocalIndex/*, flSetting, index*/) {
+function Studio_LocalPoseParameter2(pStudioHdr: SourceMdl, poseParameters: Map<string, number>, seqdesc: MdlStudioSeqDesc, iSequence: number, iLocalIndex: number/*, flSetting, index*/): { s: number, i: number } {
 	let flSetting = 0;
 	let index = 0;
 
 	//const iPose = pStudioHdr.GetSharedPoseParameter(iSequence, seqdesc.paramindex[iLocalIndex]);
-	const iPose = seqdesc.paramindex[iLocalIndex];//TODOV2
+	const iPose = seqdesc.paramindex[iLocalIndex] ?? -1;
 
 	if (iPose == -1) {
-		flSetting = 0;
-		index = 0;
-		return { s: flSetting, i: index };
+		return { s: 0, i: 0 };
 	}
 
 	const Pose = pStudioHdr.getLocalPoseParameter(iPose);
@@ -1438,7 +1482,7 @@ function Studio_LocalPoseParameter2(pStudioHdr, poseParameters: Map<string, numb
 		return { s: flSetting, i: index };
 	}
 
-	//const flValue = poseParameter[iPose];
+	//const flValue = poseParameters[iPose];
 	let flValue = Pose.midpoint;
 	const poseParameter = poseParameters.get(Pose.name);
 	if (poseParameter !== undefined) {
@@ -1454,9 +1498,17 @@ function Studio_LocalPoseParameter2(pStudioHdr, poseParameters: Map<string, numb
 		flValue = flValue - Pose.loop * Math.floor((flValue + shift) / Pose.loop);
 	}
 
+	const paramStart = seqdesc.paramstart[iLocalIndex];
+	const paramEnd = seqdesc.paramend[iLocalIndex];
+	const groupSize = seqdesc.groupsize[iLocalIndex];
+
+	if (paramStart === undefined || paramEnd === undefined || groupSize === undefined) {
+		return { s: 0, i: 0 };
+	}
+
 	if (seqdesc.posekeyindex == 0) {
-		const flLocalStart = (seqdesc.paramstart[iLocalIndex] - Pose.start) / (Pose.end - Pose.start);
-		const flLocalEnd = (seqdesc.paramend[iLocalIndex] - Pose.start) / (Pose.end - Pose.start);
+		const flLocalStart = (paramStart - Pose.start) / (Pose.end - Pose.start);
+		const flLocalEnd = (paramEnd - Pose.start) / (Pose.end - Pose.start);
 
 		// convert into local range
 		flSetting = (flValue - flLocalStart) / (flLocalEnd - flLocalStart);
@@ -1468,14 +1520,13 @@ function Studio_LocalPoseParameter2(pStudioHdr, poseParameters: Map<string, numb
 			flSetting = 1;
 
 		index = 0;
-		if (seqdesc.groupsize[iLocalIndex] > 2) {
+		if (groupSize > 2) {
 			// estimate index
-			index = Math.round(flSetting * (seqdesc.groupsize[iLocalIndex] - 1));
-			if (index == seqdesc.groupsize[iLocalIndex] - 1) index = seqdesc.groupsize[iLocalIndex] - 2;
-			flSetting = flSetting * (seqdesc.groupsize[iLocalIndex] - 1) - index;
+			index = Math.round(flSetting * (groupSize - 1));
+			if (index == groupSize - 1) index = groupSize - 2;
+			flSetting = flSetting * (groupSize - 1) - index;
 		}
-	}
-	else {
+	} else {
 		flValue = flValue * (Pose.end - Pose.start) + Pose.start;
 		index = 0;
 
@@ -1493,7 +1544,7 @@ function Studio_LocalPoseParameter2(pStudioHdr, poseParameters: Map<string, numb
 			}
 			else
 			*/
-			if (index < seqdesc.groupsize[iLocalIndex] - 2 && flSetting > 1.0) {
+			if (index < groupSize - 2 && flSetting > 1.0) {
 				index++;
 				continue;
 			}
@@ -1517,10 +1568,13 @@ function ScaleBones2(
 	s: number,//float s,
 	boneMask: number//int boneMask
 ): void {
-	let i: number, j: number;//int			i, j;
+	let i: number, j: number = -1;//int			i, j;
 	let q3: quat;//Quaternion		q3;
 
 	const seqdesc = pStudioHdr.getSequenceById(sequence)//mstudioseqdesc_t & seqdesc = ((CStudioHdr *)pStudioHdr) -> pSeqdesc(sequence);
+	if (!seqdesc) {
+		return;
+	}
 
 	const pSeqGroup = null;
 	/*
@@ -1535,6 +1589,9 @@ function ScaleBones2(
 	const s1: number = 1.0 - s2;
 
 	for (i = 0; i < pStudioHdr.getBoneCount(); i++) {
+		if (!q1[i] || !pos1[i]) {
+			continue;
+		}
 
 
 		// skip unused bones
@@ -1543,16 +1600,16 @@ function ScaleBones2(
 		}
 
 		if (pSeqGroup) {
-			j = pSeqGroup.boneMap[i];
-		}
-		else {
+			// TODO: activate
+			//j = pSeqGroup.boneMap[i];
+		} else {
 			j = i;
 		}
 
-		if (j >= 0 && seqdesc.pBoneweight(j) > 0.0) {
-			QuaternionIdentityBlend(q1[i], s1, q1[i]);
+		if (j >= 0 && (seqdesc.pBoneweight(j) ?? -1) > 0.0) {
+			QuaternionIdentityBlend(q1[i]!, s1, q1[i]!);
 			//VectorScale(pos1[i], s2, pos1[i]);
-			vec3.scale(pos1[i], pos1[i], s2);
+			vec3.scale(pos1[i]!, pos1[i]!, s2);
 		}
 	}
 }
