@@ -1,5 +1,5 @@
-import { mat4, vec3 } from 'gl-matrix';
-
+import { mat4, vec2, vec3 } from 'gl-matrix';
+import { Entity } from '../entities/entity';
 import { Intersection } from './intersection';
 
 const EPSILON = 1e-7;
@@ -94,7 +94,7 @@ export class Ray {
 		}
 	}
 
-	intersectSphere(position, radius, scale, intersectionPoint1, intersectionPoint2) {
+	intersectSphere(position: vec3, radius: number, scale: vec3, intersectionPoint1: vec3, intersectionPoint2: vec3) {
 		vec3.sub(h, this.origin, position);
 		vec3.div(h, h, scale);
 		vec3.div(h2, this.direction, scale);
@@ -124,7 +124,7 @@ export class Ray {
 	}
 
 
-	distanceSqToSegment(v0, v1, optionalPointOnRay, optionalPointOnSegment) {
+	distanceSqToSegment(v0: vec3, v1: vec3, optionalPointOnRay: vec3, optionalPointOnSegment: vec3) {
 
 		// from https://github.com/pmjoniak/GeometricTools/blob/master/GTEngine/Include/Mathematics/GteDistRaySegment.h
 		// It returns the min distance between the ray and the segment
@@ -255,7 +255,7 @@ export class Ray {
 
 	}
 
-	createIntersection(position, normal, uv, entity, distanceFromRay) {
+	createIntersection(position: vec3, normal: vec3 | null, uv: vec2 | null, entity: Entity, distanceFromRay: number) {
 		return new Intersection(position, normal, uv, vec3.distance(this.origin, position), entity, distanceFromRay);
 	}
 }

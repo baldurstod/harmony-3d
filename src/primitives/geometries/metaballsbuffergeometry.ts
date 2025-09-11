@@ -30,13 +30,13 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 			vertexIndex = triangleIndex * 3;
 			indices.push(vertexIndex, vertexIndex + 1, vertexIndex + 2);
 
-			vertices.push(...triangles[triangleIndex][0]);
-			vertices.push(...triangles[triangleIndex][1]);
-			vertices.push(...triangles[triangleIndex][2]);
+			vertices.push(...triangles[triangleIndex]![0]!);
+			vertices.push(...triangles[triangleIndex]![1]!);
+			vertices.push(...triangles[triangleIndex]![2]!);
 
 
-			vec3.sub(a, triangles[triangleIndex][1], triangles[triangleIndex][0]);
-			vec3.sub(b, triangles[triangleIndex][2], triangles[triangleIndex][0]);
+			vec3.sub(a, triangles[triangleIndex]![1]!, triangles[triangleIndex]![0]!);
+			vec3.sub(b, triangles[triangleIndex]![2]!, triangles[triangleIndex]![0]!);
 			vec3.cross(normal, a, b);
 			vec3.normalize(normal, normal);
 			normals.push(...normal);
@@ -52,7 +52,7 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 		this.count = indices.length;
 	}
 
-	static getBoundingBox(balls: Metaball[]) {
+	static getBoundingBox(balls: Metaball[]): [vec3, vec3] {
 		const min = vec3.fromValues(+Infinity, +Infinity, +Infinity);
 		const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
 		for (const ball of balls) {
@@ -158,10 +158,10 @@ export class MetaballsBufferGeometry extends BufferGeometry {
 		const tris = [];
 		for (let i = 0; i < triangles.length; ++i) {
 			const triangle = [];
-			if (triangles[i].p[0] && triangles[i].p[1] && triangles[i].p[2]) {
-				triangle.push(triangles[i].p[0]);
-				triangle.push(triangles[i].p[1]);
-				triangle.push(triangles[i].p[2]);
+			if (triangles[i]!.p[0] && triangles[i]!.p[1] && triangles[i]!.p[2]) {
+				triangle.push(triangles[i]!.p[0]);
+				triangle.push(triangles[i]!.p[1]);
+				triangle.push(triangles[i]!.p[2]);
 				tris.push(triangle);
 			} else {
 				console.error('error');

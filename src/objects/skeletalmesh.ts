@@ -2,8 +2,11 @@ import { mat4, vec2, vec3 } from 'gl-matrix';
 import { BoundingBox } from '../math/boundingbox';
 import { getNormal, getUV } from '../math/triangle';
 import { Ray } from '../raycasting/ray';
-import { Mesh, MeshParameters } from './mesh';
+import { Mesh, MeshParameters, ObjDatas } from './mesh';
 import { Skeleton } from './skeleton';
+import { Bone } from './bone';
+import { Raycaster } from '../raycasting/raycaster';
+import { Intersection } from '../raycasting/intersection';
 
 const IDENTITY_MAT4 = mat4.create();
 
@@ -29,8 +32,8 @@ export class SkeletalMesh extends Mesh {
 	isSkeletalMesh = true;
 	#bonesPerVertex = 3;
 	skeleton: Skeleton;
-	skinnedVertexPosition;
-	skinnedVertexNormal;
+	#skinnedVertexPosition?: Float32Array;
+	#skinnedVertexNormal?: Float32Array;
 
 	constructor(params: SkeletalMeshParameters) {
 		super(params);
@@ -49,19 +52,19 @@ export class SkeletalMesh extends Mesh {
 		return this.#bonesPerVertex;
 	}
 
-	exportObj() {
-		const ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
+	exportObj(): ObjDatas {
+		const ret: Record<string, Uint8Array | Uint32Array | Float32Array | []> = {};
 		const skeletonBones = this.skeleton._bones;
-		const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
-		const geometry = this.geometry;
-		const vertexCount = geometry.getAttribute('aVertexPosition').count;
+		const attributes: Record<'f' | 'v' | 'vn' | 'vt', string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
+		const geometry = this.getGeometry();
+		const vertexCount = geometry.getAttribute('aVertexPosition')!.count;
 		const skinnedVertexPosition = new Float32Array(vertexCount * 3);
 		const skinnedVertexNormal = new Float32Array(vertexCount * 3);
-		const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-		const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
-		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-		const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+		const vertexPosition = geometry.getAttribute('aVertexPosition')!._array;
+		const vertexNormal = geometry.getAttribute('aVertexNormal')!._array;
+		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')!._array;
+		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')!._array;
+		const boneCount = geometry.getAttribute('aBoneIndices')!.itemSize;
 
 		const tempVertex = vec3.create();
 		const tempVertexNormal = vec3.create();
@@ -128,42 +131,42 @@ export class SkeletalMesh extends Mesh {
 		}
 
 		for (const objAttribute in attributes) {
-			const geometryAttribute = attributes[objAttribute];
+			const geometryAttribute = attributes[objAttribute as ('f' | 'v' | 'vn' | 'vt')]!;
 			if (geometry.getAttribute(geometryAttribute)) {
 				if (geometryAttribute == 'aVertexPosition') {
-					ret[objAttribute] = skinnedVertexPosition;
+					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = skinnedVertexPosition;
 				} else if (geometryAttribute == 'aVertexNormal') {
-					ret[objAttribute] = skinnedVertexNormal;
+					ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = skinnedVertexNormal;
 				} else {
 					const webglAttrib = geometry.getAttribute(geometryAttribute);
 					if (webglAttrib) {
-						ret[objAttribute] = webglAttrib._array;
+						ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = webglAttrib._array;
 					}
 				}
 			} else {
-				ret[objAttribute] = [];
+				ret[objAttribute as ('f' | 'v' | 'vn' | 'vt')] = [];
 			}
 		}
-		return ret;
+		return ret as ObjDatas;
 	}
 
-	getRandomPointOnModel(vec, initialVec, bones) {//TODO: optimize this stuff
+	getRandomPointOnModel(vec: vec3, initialVec: vec3, bones: [Bone, number][]) {//TODO: optimize this stuff
 		const ret = {};
 		const skeletonBones = this.skeleton._bones;
 		//let attributes = {f:'index',v:'aVertexPosition',vn:'aVertexNormal',vt:'aTextureCoord'};
-		const geometry = this.geometry;
-		const vertexCount = geometry.getAttribute('aVertexPosition').count;
+		const geometry = this.getGeometry();
+		const vertexCount = geometry.getAttribute('aVertexPosition')!.count;
 		const skinnedVertexPosition = new Float32Array(vertexCount * 3);
-		const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-		const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+		const vertexPosition = geometry.getAttribute('aVertexPosition')!._array;
+		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')!._array;
+		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')!._array;
+		const boneCount = geometry.getAttribute('aBoneIndices')!.itemSize;
 
 		const tempVertex = vec3.create();
 		const accumulateMat = mat4.create();
 
 
-		function RandomInt(max) {
+		function RandomInt(max: number) {
 			return Math.floor(Math.random() * max)
 		}
 
@@ -192,7 +195,7 @@ export class SkeletalMesh extends Mesh {
 					const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
 					const boneMat = bone ? bone.boneMat : IDENTITY_MAT4;
 					const boneWeight = vertexBoneWeight[boneArrayIndex2];
-					if (bones) {
+					if (bones && bone) {
 						bones.push([bone, boneWeight]);
 					}
 
@@ -224,19 +227,19 @@ export class SkeletalMesh extends Mesh {
 		const ret = {};
 		const skeletonBones = this.skeleton._bones;
 		const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
-		const geometry = this.geometry;
+		const geometry = this.getGeometry();
 		const indexAttribute = geometry.getAttribute('index'/*TODO: create a constant*/);
 		const vertexAttribute = geometry.getAttribute('aVertexPosition');
-		const indexCount = indexAttribute.count;
-		const vertexCount = vertexAttribute.count;
+		const indexCount = indexAttribute!.count;
+		const vertexCount = vertexAttribute!.count;
 		const skinnedVertexPosition = new Float32Array(vertexCount * 3);
 		const skinnedVertexNormal = new Float32Array(vertexCount * 3);
-		const indexValue = indexAttribute._array;
-		const vertexPosition = vertexAttribute._array;
-		const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
-		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-		const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+		const indexValue = indexAttribute!._array;
+		const vertexPosition = vertexAttribute!._array;
+		const vertexNormal = geometry.getAttribute('aVertexNormal')!._array;
+		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')!._array;
+		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')!._array;
+		const boneCount = geometry.getAttribute('aBoneIndices')!.itemSize;
 
 		const tempVertex = vec3.create();
 		const accumulateMat = mat4.create();
@@ -300,15 +303,15 @@ export class SkeletalMesh extends Mesh {
 
 	prepareRayCasting() {
 		const skeletonBones = this.skeleton._bones;
-		const geometry = this.geometry;
-		const vertexCount = geometry.getAttribute('aVertexPosition').count;
+		const geometry = this.getGeometry();
+		const vertexCount = geometry.getAttribute('aVertexPosition')!.count;
 		const skinnedVertexPosition = new Float32Array(vertexCount * 3);
 		const skinnedVertexNormal = new Float32Array(vertexCount * 3);
-		const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-		const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
-		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
-		const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+		const vertexPosition = geometry.getAttribute('aVertexPosition')!._array;
+		const vertexNormal = geometry.getAttribute('aVertexNormal')!._array;
+		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')!._array;
+		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')!._array;
+		const boneCount = geometry.getAttribute('aBoneIndices')!.itemSize;
 
 		const tempVertex = vec3.create();
 		const tempVertexNormal = vec3.create();
@@ -372,32 +375,32 @@ export class SkeletalMesh extends Mesh {
 				skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
 			}
 		}
-		this.skinnedVertexPosition = skinnedVertexPosition;
-		this.skinnedVertexNormal = skinnedVertexNormal;
+		this.#skinnedVertexPosition = skinnedVertexPosition;
+		this.#skinnedVertexNormal = skinnedVertexNormal;
 
 	}
 
-	raycast(raycaster, intersections) {
+	raycast(raycaster: Raycaster, intersections: Intersection[]): void {
 		//TODO: case when normals are not provided
 		const skeletonBones = this.skeleton._bones;
-		const geometry = this.geometry;
-		const indices = geometry.getAttribute('index')._array;
+		const geometry = this.getGeometry();
+		const indices = geometry.getAttribute('index')!._array;
 		//let normals = geometry.getAttribute('aVertexNormal')._array;
 
-		const vertexCount = geometry.getAttribute('aVertexPosition').count;
+		const vertexCount = geometry.getAttribute('aVertexPosition')!.count;
 		const skinnedVertexPosition = new Float32Array(vertexCount * 3);
 		const skinnedVertexNormal = new Float32Array(vertexCount * 3);
-		const textureCoords = geometry.getAttribute('aTextureCoord')._array;
+		const textureCoords = geometry.getAttribute('aTextureCoord')!._array;
 
 		const worldMatrix = this.worldMatrix;
 		ray.copyTransform(raycaster.ray, worldMatrix);
 
-		const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
-		const vertexNormal = geometry.getAttribute('aVertexNormal')._array;
-		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
-		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')._array;
+		const vertexPosition = geometry.getAttribute('aVertexPosition')!._array;
+		const vertexNormal = geometry.getAttribute('aVertexNormal')!._array;
+		const vertexBoneIndice = geometry.getAttribute('aBoneIndices')!._array;
+		const vertexBoneWeight = geometry.getAttribute('aBoneWeight')!._array;
 
-		const boneCount = geometry.getAttribute('aBoneIndices').itemSize;
+		const boneCount = geometry.getAttribute('aBoneIndices')!.itemSize;
 		const tempVertex = vec3.create();
 		const tempVertexNormal = vec3.create();
 		const accumulateMat = mat4.create();
@@ -468,14 +471,14 @@ export class SkeletalMesh extends Mesh {
 			let i2 = 3 * indices[i + 1];
 			let i3 = 3 * indices[i + 2];
 
-			vec3.set(v1, skinnedVertexPosition[i1], skinnedVertexPosition[i1 + 1], skinnedVertexPosition[i1 + 2]);
-			vec3.set(v2, skinnedVertexPosition[i2], skinnedVertexPosition[i2 + 1], skinnedVertexPosition[i2 + 2]);
-			vec3.set(v3, skinnedVertexPosition[i3], skinnedVertexPosition[i3 + 1], skinnedVertexPosition[i3 + 2]);
+			vec3.set(v1, skinnedVertexPosition[i1] ?? 0, skinnedVertexPosition[i1 + 1] ?? 0, skinnedVertexPosition[i1 + 2] ?? 0);
+			vec3.set(v2, skinnedVertexPosition[i2] ?? 0, skinnedVertexPosition[i2 + 1] ?? 0, skinnedVertexPosition[i2 + 2] ?? 0);
+			vec3.set(v3, skinnedVertexPosition[i3] ?? 0, skinnedVertexPosition[i3 + 1] ?? 0, skinnedVertexPosition[i3 + 2] ?? 0);
 
 			if (ray.intersectTriangle(v1, v2, v3, intersectionPoint)) {
-				vec3.set(n1, skinnedVertexNormal[i1], skinnedVertexNormal[i1 + 1], skinnedVertexNormal[i1 + 2]);
-				vec3.set(n2, skinnedVertexNormal[i2], skinnedVertexNormal[i2 + 1], skinnedVertexNormal[i2 + 2]);
-				vec3.set(n3, skinnedVertexNormal[i3], skinnedVertexNormal[i3 + 1], skinnedVertexNormal[i3 + 2]);
+				vec3.set(n1, skinnedVertexNormal[i1] ?? 0, skinnedVertexNormal[i1 + 1] ?? 0, skinnedVertexNormal[i1 + 2] ?? 0);
+				vec3.set(n2, skinnedVertexNormal[i2] ?? 0, skinnedVertexNormal[i2 + 1] ?? 0, skinnedVertexNormal[i2 + 2] ?? 0);
+				vec3.set(n3, skinnedVertexNormal[i3] ?? 0, skinnedVertexNormal[i3 + 1] ?? 0, skinnedVertexNormal[i3 + 2] ?? 0);
 
 
 

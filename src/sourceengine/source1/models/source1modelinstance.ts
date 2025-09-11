@@ -5,6 +5,7 @@ import { Camera } from '../../../cameras/camera';
 import { registerEntity } from '../../../entities/entities';
 import { Entity } from '../../../entities/entity';
 import { Animated } from '../../../interfaces/animated';
+import { HasHitBoxes } from '../../../interfaces/hashitboxes';
 import { HasMaterials } from '../../../interfaces/hasmaterials';
 import { HasSkeleton } from '../../../interfaces/hasskeleton';
 import { RandomPointOnModel } from '../../../interfaces/randompointonmodel';
@@ -36,14 +37,14 @@ const defaultMaterial = new MeshBasicMaterial();
 export type Source1ModelSequences = Record<string, { frame?: number, startTime?: number, s?: MdlStudioSeqDesc }>/*TODO: improve type*/;
 export type Source1ModelAnimation = { name: string, weight: number }/*TODO: improve type*/;
 
-export class Source1ModelInstance extends Entity implements Animated, HasMaterials, HasSkeleton, RandomPointOnModel {
+export class Source1ModelInstance extends Entity implements Animated, HasMaterials, HasHitBoxes, HasSkeleton, RandomPointOnModel {
 	isSource1ModelInstance = true;
 	#poseParameters = new Map<string, number>();
 	#flexParameters = {};
 	#flexesWeight = new Float32Array(MAX_STUDIO_FLEX_DESC);
 	#materialOverride: Material | null = null;
 	#animations = new Animations();
-	#skeleton?: Skeleton;
+	#skeleton: Skeleton | null = null;
 	#skin = 0;
 	#attachments: Record<string, Bone> = {};
 	#materialsUsed = new Set<Material>();

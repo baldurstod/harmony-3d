@@ -88,7 +88,7 @@ export class ForwardRenderer extends Renderer {
 		++this.#frame;
 	}
 
-	set scissorTest(scissorTest) {
+	set scissorTest(scissorTest: boolean) {
 		if (scissorTest) {
 			WebGLRenderingState.enable(GL_SCISSOR_TEST);
 		} else {

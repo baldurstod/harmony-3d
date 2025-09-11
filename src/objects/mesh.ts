@@ -36,6 +36,8 @@ export type MeshParameters = EntityParameters & {
 const meshDefaultBufferGeometry = new BufferGeometry();
 const meshDefaultMaterial = new MeshBasicMaterial();
 
+export type ObjDatas = { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array };
+
 export class Mesh extends Entity {
 	#geometry!: BufferGeometry;
 	#material!: Material;
@@ -128,7 +130,7 @@ export class Mesh extends Entity {
 		delete this.defines[define];
 	}
 
-	exportObj() {
+	exportObj(): ObjDatas {
 		const ret: { f?: Uint8Array | Uint32Array, v?: Float32Array, vn?: Float32Array, vt?: Float32Array } = {};
 		const attributes: Record<string, string> = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
 		const geometry = this.#geometry;
@@ -147,7 +149,7 @@ export class Mesh extends Entity {
 				}
 			}
 		}
-		return ret;
+		return ret as ObjDatas;
 	}
 
 	dispose() {

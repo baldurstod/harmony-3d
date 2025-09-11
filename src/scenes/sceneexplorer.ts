@@ -432,19 +432,21 @@ export class SceneExplorer {
 		return htmlEntityElement;
 	}
 
-	selectEntity(entity: Entity, scrollIntoView = false) {
+	selectEntity(entity: Entity |  undefined, scrollIntoView = false) {
 		if (this.#selectedEntity == entity) {
 			return;
 		}
 		this.#selectedEntity = entity;
-		entity.addChild(this.#manipulator);
-		entity.addChild(this.#skeletonHelper);
+		entity?.addChild(this.#manipulator);
+		entity?.addChild(this.#skeletonHelper);
 		if (this.#isVisible) {
 			this.#updateEntityElement(entity);
-			SceneExplorerEntity.getEntityElement(entity)?.select();
+			if (entity) {
+				SceneExplorerEntity.getEntityElement(entity)?.select();
 
-			if (scrollIntoView) {
-				SceneExplorerEntity.getEntityElement(entity)?.display();
+				if (scrollIntoView) {
+					SceneExplorerEntity.getEntityElement(entity)?.display();
+				}
 			}
 		}
 	}

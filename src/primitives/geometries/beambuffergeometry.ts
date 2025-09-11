@@ -11,12 +11,13 @@ const UNIT_VEC3_X = vec3.fromValues(1, 0, 0);
 const UNIT_VEC3_MINUS_Y = vec3.fromValues(0, -1, 0);
 
 export class BeamSegment {
-	pos = vec3.create();
-	normal = vec3.create();
-	color = vec4.create();
+	readonly pos = vec3.create();
+	readonly normal = vec3.create();
+	readonly color = vec4.create();
 	texCoordY: number;
 	width: number;
-	constructor(pos, color = DEFAULT_SEGMENT_COLOR, texCoordY = 0.0, width = 1.0) {
+
+	constructor(pos: vec3, color = DEFAULT_SEGMENT_COLOR, texCoordY = 0.0, width = 1.0) {
 		vec3.copy(this.pos, pos);
 		vec3.copy(this.normal, UNIT_VEC3_MINUS_Y);
 		vec4.copy(this.color, color);
@@ -24,12 +25,13 @@ export class BeamSegment {
 		this.width = width;
 	}
 
-	distanceTo(other) {
+	distanceTo(other: BeamSegment) {
 		return vec3.distance(this.pos, other.pos);
 	}
 }
 
 export class BeamBufferGeometry extends BufferGeometry {
+	/*
 	constructor(segments?) {
 		super();
 
@@ -37,8 +39,9 @@ export class BeamBufferGeometry extends BufferGeometry {
 			this.segments = segments;
 		}
 	}
+	*/
 
-	set segments(segments) {
+	set segments(segments: BeamSegment[]) {
 		let previousSegment = null;
 
 		let indiceBase = 0;

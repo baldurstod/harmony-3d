@@ -1,9 +1,11 @@
 import { registerEntity } from '../entities/entities';
+import { Entity } from '../entities/entity';
 import { ExtrudeGeometry } from '../geometry/extrudegeometry';
 import { FontManager } from '../managers/fontmanager';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { DEG_TO_RAD } from '../math/constants';
+import { JSONObject } from '../types';
 import { Interaction } from '../utils/interaction';
 import { Mesh, MeshParameters } from './mesh';
 
@@ -29,7 +31,7 @@ export class Text3D extends Mesh {
 		params.geometry = new ExtrudeGeometry();
 		params.material = params.material ?? new MeshBasicMaterial();
 		super(params);
-		this.#text = params.text;
+		this.#text = params.text ?? '';
 		this.#size = params.size ?? 100;
 		this.#depth = params.depth ?? 10;
 		this.#font = params.font ?? Text3D.defaultFont;
@@ -85,23 +87,23 @@ export class Text3D extends Mesh {
 		return json;
 	}
 
-	static async constructFromJSON(json) {
-		return new Text3D(json.name);
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Text3D | null> {
+		return new Text3D({});// TODO: add params
 	}
 
-	fromJSON(json) {
+	fromJSON(json: JSONObject) {
 		super.fromJSON(json);
-		this.#text = json.text;
-		this.#size = json.size;
-		this.#depth = json.depth;
-		this.#font = json.font ?? Text3D.defaultFont;
-		this.#style = json.style ?? Text3D.defaultStyle;
+		this.#text = json.text as string;
+		this.#size = json.size as number;
+		this.#depth = json.depth as number;
+		this.#font = json.font as string ?? Text3D.defaultFont;
+		this.#style = json.style as string ?? Text3D.defaultStyle;
 	}
 
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
 			Text3D_1: null,
-			text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.text = text; } },
+			text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.text = text ?? ''; } },
 			font: {
 				i18n: '#font', f: async () => {
 					const fontList = await FontManager.getFontList();
@@ -113,8 +115,8 @@ export class Text3D extends Mesh {
 					}
 					const font = await new Interaction().getString(0, 0, fontList2);
 					if (font) {
-						this.#font = font[0];
-						this.#style = font[1];
+						this.#font = font[0]!;
+						this.#style = font[1]!;
 						this.#updateGeometry();
 					}
 				}

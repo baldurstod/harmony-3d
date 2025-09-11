@@ -234,7 +234,7 @@ export class SceneExplorerEntity extends HTMLElement {
 	}
 
 	#display() {
-		const parentEntity = this.#entity.parent;
+		const parentEntity = this.#entity?.parent;
 		if (parentEntity) {
 			const htmlParent = SceneExplorerEntity.getEntityElement(parentEntity);
 			if (htmlParent) {
@@ -253,7 +253,7 @@ export class SceneExplorerEntity extends HTMLElement {
 			return null;
 		}
 
-		let entityElement: SceneExplorerEntity = SceneExplorerEntity.#entitiesHTML.get(entity);
+		let entityElement: SceneExplorerEntity | undefined = SceneExplorerEntity.#entitiesHTML.get(entity);
 		if (!entityElement) {
 			entityElement = createElement('scene-explorer-entity') as SceneExplorerEntity;
 			entityElement.setEntity(entity);

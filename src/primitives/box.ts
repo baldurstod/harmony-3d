@@ -5,6 +5,8 @@ import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh, MeshParameters } from '../objects/mesh';
 import { BoxBufferGeometry } from './geometries/boxbuffergeometry';
+import { JSONObject } from '../types';
+import { Entity } from '../entities/entity';
 
 export type BoxParameters = MeshParameters & {
 	width?: number,
@@ -46,7 +48,7 @@ export class Box extends Mesh {
 			width: { i18n: '#width', f: () => { const width = prompt('Width', String(this.#size[0])); if (width) { this.#size[0] = Number(width); this.#updateGeometry(); } } },
 			height: { i18n: '#height', f: () => { const height = prompt('Height', String(this.#size[1])); if (height) { this.#size[1] = Number(height); this.#updateGeometry(); } } },
 			depth: { i18n: '#depth', f: () => { const depth = prompt('Depth', String(this.#size[2])); if (depth) { this.#size[2] = Number(depth); this.#updateGeometry(); } } },
-			cube: { i18n: '#cube', f: () => { let size: string | number = prompt('Cube size', '0'); if (size) { size = Number(size); this.#size[0] = size; this.#size[1] = size; this.#size[2] = size; this.#updateGeometry(); } } },
+			cube: { i18n: '#cube', f: () => { let size: string | number = prompt('Cube size', '0') ?? '0'; if (size) { size = Number(size); this.#size[0] = size; this.#size[1] = size; this.#size[2] = size; this.#updateGeometry(); } } },
 		});
 	}
 
@@ -62,9 +64,9 @@ export class Box extends Mesh {
 		return json;
 	}
 
-	static async constructFromJSON(json, entities, loadedPromise) {
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Box | null> {
 		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
-		return new Box({ width: json.width, height: json.height, depth: json.depth, material: (material as Material), widthSegments: json.widthSegments, heightSegments: json.heightSegments, depthSegments: json.depthSegments });
+		return new Box({ width: json.width as number, height: json.height as number, depth: json.depth as number, material: (material as Material), widthSegments: json.widthSegments as number, heightSegments: json.heightSegments as number, depthSegments: json.depthSegments as number });
 	}
 
 	/*dispose() {

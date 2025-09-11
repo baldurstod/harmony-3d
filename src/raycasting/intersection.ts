@@ -3,11 +3,12 @@ import { Entity } from '../entities/entity';
 
 export class Intersection {
 	position: vec3;
-	normal: vec3;
-	uv: vec2;
+	normal?: vec3;
+	uv?: vec2;
 	distance: number;
 	entity: Entity;
 	distanceFromRay: number;
+
 	constructor(position: vec3, normal: vec3 | null, uv: vec2 | null, distance: number, entity: Entity, distanceFromRay: number) {
 		this.position = vec3.clone(position);
 		if (normal) {

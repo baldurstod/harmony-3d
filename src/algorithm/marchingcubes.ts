@@ -7,14 +7,9 @@ export class TRIANGLE {
 }
 
 export class GRIDCELL {
-	p: vec3[] = [];
-	val: Float32Array;
-	constructor() {
-		for (let i = 0; i < 8; ++i) {
-			this.p.push(vec3.create());
-		}
-		this.val = new Float32Array(8);
-	}
+	p: [vec3, vec3, vec3, vec3, vec3, vec3, vec3, vec3] = [vec3.create(), vec3.create(), vec3.create(), vec3.create(), vec3.create(), vec3.create(), vec3.create(), vec3.create(),];
+	val: [number, number, number, number, number, number, number, number] = new Float32Array(8) as unknown as [number, number, number, number, number, number, number, number];
+
 }
 
 const edgeTable = new Uint16Array([
@@ -320,7 +315,7 @@ const triTable = new Int8Array([
 */
 export function polygonise(/*GRIDCELL */grid: GRIDCELL,/*double */isolevel: number,/*TRIANGLE **/triangles: TRIANGLE[]): number {
 	//XYZ vertlist[12];
-	const vertlist = [];
+	const vertlist:vec3[] = [];
 	for (let i = 0; i < 12; ++i) {
 		vertlist.push(vec3.create());
 	}
@@ -345,40 +340,40 @@ export function polygonise(/*GRIDCELL */grid: GRIDCELL,/*double */isolevel: numb
 		return (0);
 
 	/* Find the vertices where the surface intersects the cube */
-	if (edgeTable[cubeindex] & 1)
+	if (edgeTable[cubeindex]! & 1)
 		vertlist[0] =
 			vertexInterp(isolevel, grid.p[0], grid.p[1], grid.val[0], grid.val[1]);
-	if (edgeTable[cubeindex] & 2)
+	if (edgeTable[cubeindex]! & 2)
 		vertlist[1] =
 			vertexInterp(isolevel, grid.p[1], grid.p[2], grid.val[1], grid.val[2]);
-	if (edgeTable[cubeindex] & 4)
+	if (edgeTable[cubeindex]! & 4)
 		vertlist[2] =
 			vertexInterp(isolevel, grid.p[2], grid.p[3], grid.val[2], grid.val[3]);
-	if (edgeTable[cubeindex] & 8)
+	if (edgeTable[cubeindex]! & 8)
 		vertlist[3] =
 			vertexInterp(isolevel, grid.p[3], grid.p[0], grid.val[3], grid.val[0]);
-	if (edgeTable[cubeindex] & 16)
+	if (edgeTable[cubeindex]! & 16)
 		vertlist[4] =
 			vertexInterp(isolevel, grid.p[4], grid.p[5], grid.val[4], grid.val[5]);
-	if (edgeTable[cubeindex] & 32)
+	if (edgeTable[cubeindex]! & 32)
 		vertlist[5] =
 			vertexInterp(isolevel, grid.p[5], grid.p[6], grid.val[5], grid.val[6]);
-	if (edgeTable[cubeindex] & 64)
+	if (edgeTable[cubeindex]! & 64)
 		vertlist[6] =
 			vertexInterp(isolevel, grid.p[6], grid.p[7], grid.val[6], grid.val[7]);
-	if (edgeTable[cubeindex] & 128)
+	if (edgeTable[cubeindex]! & 128)
 		vertlist[7] =
 			vertexInterp(isolevel, grid.p[7], grid.p[4], grid.val[7], grid.val[4]);
-	if (edgeTable[cubeindex] & 256)
+	if (edgeTable[cubeindex]! & 256)
 		vertlist[8] =
 			vertexInterp(isolevel, grid.p[0], grid.p[4], grid.val[0], grid.val[4]);
-	if (edgeTable[cubeindex] & 512)
+	if (edgeTable[cubeindex]! & 512)
 		vertlist[9] =
 			vertexInterp(isolevel, grid.p[1], grid.p[5], grid.val[1], grid.val[5]);
-	if (edgeTable[cubeindex] & 1024)
+	if (edgeTable[cubeindex]! & 1024)
 		vertlist[10] =
 			vertexInterp(isolevel, grid.p[2], grid.p[6], grid.val[2], grid.val[6]);
-	if (edgeTable[cubeindex] & 2048)
+	if (edgeTable[cubeindex]! & 2048)
 		vertlist[11] =
 			vertexInterp(isolevel, grid.p[3], grid.p[7], grid.val[3], grid.val[7]);
 
@@ -389,9 +384,10 @@ export function polygonise(/*GRIDCELL */grid: GRIDCELL,/*double */isolevel: numb
 		const triangle = triangles[ntriang] ?? new TRIANGLE();
 		triangles[ntriang] = triangle;
 
-		triangle.p[0] = vertlist[triTable[cubeindex]];
-		triangle.p[1] = vertlist[triTable[cubeindex + 1]];
-		triangle.p[2] = vertlist[triTable[cubeindex + 2]];
+		// TODO: fix that
+		triangle.p[0] = vertlist[triTable[cubeindex]!]!;
+		triangle.p[1] = vertlist[triTable[cubeindex + 1]!]!;
+		triangle.p[2] = vertlist[triTable[cubeindex + 2]!]!;
 		ntriang++;
 		cubeindex += 3;
 	}

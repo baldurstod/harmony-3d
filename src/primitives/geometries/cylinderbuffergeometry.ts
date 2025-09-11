@@ -5,12 +5,12 @@ import { BufferGeometry } from '../../geometry/buffergeometry';
 import { TWO_PI } from '../../math/constants';
 
 export class CylinderBufferGeometry extends BufferGeometry {
-	#indices: number[];
-	#vertices: number[];
-	#normals: number[];
-	#uvs: number[];
+	#indices!: number[];
+	#vertices!: number[];
+	#normals!: number[];
+	#uvs!: number[];
 
-	updateGeometry(radius, height, segments, hasCap) {
+	updateGeometry(radius: number, height: number, segments: number, hasCap: boolean): void {
 		segments = Math.max(Math.floor(segments), 3);
 		// buffers
 
@@ -19,10 +19,10 @@ export class CylinderBufferGeometry extends BufferGeometry {
 		this.#normals = [];
 		this.#uvs = [];
 
-		this.generateCylinder(radius, height, segments);
+		this.#generateCylinder(radius, height, segments);
 		if (hasCap) {
-			this.generateCap(radius, -height / 2, segments);
-			this.generateCap(radius, +height / 2, segments);
+			this.#generateCap(radius, -height / 2, segments);
+			this.#generateCap(radius, +height / 2, segments);
 		}
 
 		// build geometry
@@ -33,7 +33,7 @@ export class CylinderBufferGeometry extends BufferGeometry {
 		this.count = this.#indices.length;
 	}
 
-	generateCylinder(radius, height, segments) {
+	#generateCylinder(radius: number, height: number, segments: number) {
 		const normal = vec3.create();
 		const vertex = vec3.create();
 
@@ -71,7 +71,7 @@ export class CylinderBufferGeometry extends BufferGeometry {
 		}
 	}
 
-	generateCap(radius, z, segments) {
+	#generateCap(radius: number, z: number, segments: number) {
 		const middlePointIndex = this.#vertices.length / 3;
 
 		const sign = Math.sign(z);

@@ -6,10 +6,10 @@ import { TWO_PI } from '../../math/constants';
 
 
 export class ConeBufferGeometry extends BufferGeometry {
-	#indices: number[];
-	#vertices: number[];
-	#normals: number[];
-	#uvs: number[];
+	#indices!: number[];
+	#vertices!: number[];
+	#normals!: number[];
+	#uvs!: number[];
 
 	updateGeometry(radius = 1, height = 1, segments = 24, hasCap = true) {
 		segments = Math.max(Math.floor(segments), 3);
@@ -34,7 +34,7 @@ export class ConeBufferGeometry extends BufferGeometry {
 		this.count = this.#indices.length;
 	}
 
-	#generateCone(radius, height, segments) {
+	#generateCone(radius: number, height: number, segments: number) {
 		const normal = vec3.create();
 		const vertex = vec3.create();
 
@@ -71,7 +71,7 @@ export class ConeBufferGeometry extends BufferGeometry {
 		}
 	}
 
-	#generateCap(radius, z, segments) {
+	#generateCap(radius: number, z: number, segments: number) {
 		const middlePointIndex = this.#vertices.length / 3;
 
 		// Push middle vertex

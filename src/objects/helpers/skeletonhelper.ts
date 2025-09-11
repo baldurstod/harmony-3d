@@ -1,6 +1,6 @@
 import { quat, vec3, vec4 } from 'gl-matrix';
-import { Entity } from '../../entities/entity';
-import { GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
+import { Entity, EntityParameters } from '../../entities/entity';
+import { GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
 import { LineMaterial } from '../../materials/linematerial';
 import { Line } from '../../primitives/line';
 import { Raycaster } from '../../raycasting/raycaster';
@@ -11,11 +11,17 @@ import { MeshBasicMaterial } from '../../materials/meshbasicmaterial';
 import { Scene } from '../../scenes/scene';
 import { Skeleton } from '../skeleton';
 import { Bone } from '../bone';
+import { HasSkeleton } from '../../interfaces/hasskeleton';
 
 const tempVec3 = vec3.create();
 
+export type SkeletonHelperParameters = EntityParameters & {
+	skeleton?: Skeleton,
+};
+
+
 export class SkeletonHelper extends Entity {
-	#skeleton?: Skeleton;
+	#skeleton: Skeleton | null = null;
 	#lines = new Map<Bone, Line>();
 	#lineMaterial;
 	#highlitLineMaterial;
@@ -27,7 +33,7 @@ export class SkeletonHelper extends Entity {
 	enumerable = false;
 	#displayJoints = true;
 
-	constructor(parameters) {
+	constructor(parameters: SkeletonHelperParameters) {
 		super(parameters);
 
 		this.#lineMaterial = new LineMaterial();
@@ -47,7 +53,7 @@ export class SkeletonHelper extends Entity {
 		this.#boneTipMaterial.setMeshColor([1, 0, 1, 1]);
 
 		this.hideInExplorer = true;
-		this.#skeleton = parameters?.skeleton;
+		this.#skeleton = parameters?.skeleton ?? null;
 		this.#raycaster = new Raycaster();
 		this.#boneStart = new Sphere({ radius: 1, material: this.#boneTipMaterial });
 		this.#boneEnd = new Sphere({ radius: 1, material: this.#boneTipMaterial });
@@ -56,16 +62,16 @@ export class SkeletonHelper extends Entity {
 		this.#initListeners();
 	}
 
-	parentChanged(parent) {
+	parentChanged(parent: Entity) {
 		if (!parent) {
 			return;
 		}
 
 		this.#clearSkeleton();
-		if (parent.isSkeleton) {
-			this.#skeleton = parent;
-		} else if (parent.skeleton) {
-			this.#skeleton = parent.skeleton;
+		if ((parent as Skeleton).isSkeleton) {
+			this.#skeleton = parent as Skeleton;
+		} else if ((parent as unknown as HasSkeleton).skeleton) {
+			this.#skeleton = (parent as unknown as HasSkeleton).skeleton;
 		} else {
 			this.#skeleton = null;
 		}
@@ -114,8 +120,8 @@ export class SkeletonHelper extends Entity {
 			boneLine.end = bone.worldPos;
 			const boneParent = bone.parent;
 			if ((boneParent as Bone)?.isBone) {
-				boneLine.start = boneParent.getWorldPosition(/*TODO: optimize*/);
-				boneLine.properties.setObject('boneParent', boneParent);
+				boneLine.start = (boneParent as Bone).getWorldPosition(/*TODO: optimize*/);
+				boneLine.properties.setObject('boneParent', (boneParent as Bone));
 			}
 		}
 	}
@@ -135,23 +141,26 @@ export class SkeletonHelper extends Entity {
 		});
 
 		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event) => {
-			this.#mouseMoved(event);
+			this.#mouseMoved(event as CustomEvent<GraphicMouseEventData>);
 		});
 		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event) => {
-			this.#mouseUp(event);
+			this.#mouseUp(event as CustomEvent<GraphicMouseEventData>);
 		});
 	}
 
-	#mouseMoved(event) {
-		this.#highlit(this.#pickBone(event));
+	#mouseMoved(event: CustomEvent<GraphicMouseEventData>) {
+		const picked = this.#pickBone(event);
+		if (picked) {
+			this.#highlit(picked as Line);
+		}
 	}
 
-	#mouseUp(event) {
-		const closest: Line = this.#pickBone(event);
-		this.#highlit(closest);
+	#mouseUp(event: CustomEvent<GraphicMouseEventData>) {
+		const closest: Entity | null = this.#pickBone(event);
 		if (closest) {
 			let bone: Bone = closest.properties.getObject('bone') as Bone;
-			if (closest.isLine) {
+			if ((closest as Line).isLine) {
+				this.#highlit(closest as Line);
 				bone = (bone?.parent as Bone/*TODO case where parent is not Bone*/) ?? bone;
 			}
 			SceneExplorerEvents.dispatchEvent(new CustomEvent('bonepicked', { detail: { bone: bone } }));
@@ -169,33 +178,32 @@ export class SkeletonHelper extends Entity {
 		this.#boneEnd.setRadius(radius);
 	}
 
-	#pickBone(event) {
+	#pickBone(event: CustomEvent<GraphicMouseEventData>): Entity | null {
 		if (!this.isVisible()) {
-			return;
+			return null;
 		}
 
 		const normalizedX = (event.detail.x / Graphics.getWidth()) * 2 - 1;
 		const normalizedY = 1 - (event.detail.y / Graphics.getHeight()) * 2;
 
-		const scene = this.root;
-		if (!scene.is('Scene')) {
-			return;
+		const scene = this.root as Scene;// TODO: imbricated scenes
+		if (!scene.is('Scene') || !scene.activeCamera) {
+			return null;
 		}
 
-
-		const intersections = this.#raycaster.castCameraRay((scene as Scene).activeCamera, normalizedX, normalizedY, [this], true);
+		const intersections = this.#raycaster.castCameraRay(scene.activeCamera, normalizedX, normalizedY, [this], true);
 		if (intersections.length) {
 
 			let closest = null;
 			let closestDist = Infinity;
 			for (const intersection of intersections) {
 				const entity = intersection.entity;
-				if (entity.isLine) {
+				if ((entity as Line).isLine) {
 					if (intersection.distanceFromRay < closestDist) {
 						closest = entity;
 						closestDist = intersection.distanceFromRay;
 					}
-				} else if (entity.isSphere) {
+				} else if ((entity as Sphere).isSphere) {
 					if (intersection.distanceFromRay < closestDist) {
 
 						if (entity == this.#boneStart || entity == this.#boneEnd) {
@@ -207,6 +215,7 @@ export class SkeletonHelper extends Entity {
 			}
 			return closest;
 		}
+		return null;
 	}
 
 	#highlit(line: Line) {
@@ -218,14 +227,14 @@ export class SkeletonHelper extends Entity {
 		}
 
 		if (line) {
-			line.material = this.#highlitLineMaterial;
-			this.#boneStart.position = line.getStart(tempVec3);
-			this.#boneEnd.position = line.getEnd(tempVec3);
+			line.setMaterial(this.#highlitLineMaterial);
+			this.#boneStart.setPosition(line.getStart(tempVec3));
+			this.#boneEnd.setPosition(line.getEnd(tempVec3));
 			this.#boneStart.setVisible(this.#displayJoints);
 			this.#boneEnd.setVisible(this.#displayJoints);
 
-			this.#boneStart.properties.set('bone', line.properties.get('boneParent'));
-			this.#boneEnd.properties.set('bone', line.properties.get('bone'));
+			this.#boneStart.properties.set('bone', line.properties.get('boneParent')!);
+			this.#boneEnd.properties.set('bone', line.properties.get('bone')!);
 		}
 		this.#highlitLine = line;
 	}

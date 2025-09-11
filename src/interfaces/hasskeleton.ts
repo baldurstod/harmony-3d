@@ -1,5 +1,5 @@
 import { Skeleton } from '../objects/skeleton';
 
 export interface HasSkeleton {
-	skeleton: Skeleton | null | undefined;//TODO: remove null |undefined
+	skeleton: Skeleton | null;//TODO: remove null |undefined
 }

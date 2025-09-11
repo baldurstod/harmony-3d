@@ -1,8 +1,10 @@
 import { registerEntity } from '../entities/entities';
+import { Entity } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh, MeshParameters } from '../objects/mesh';
+import { JSONObject } from '../types';
 import { CylinderBufferGeometry } from './geometries/cylinderbuffergeometry';
 
 export type CylinderParameters = MeshParameters & {
@@ -55,9 +57,9 @@ export class Cylinder extends Mesh {
 		return json;
 	}
 
-	static async constructFromJSON(json, entities, loadedPromise) {
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Cylinder | null> {
 		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise) as Material;
-		return new Cylinder({ radius: json.radius, height: json.height, material: material, segments: json.segments, hasCap: json.hasCap });
+		return new Cylinder({ radius: json.radius as number, height: json.height as number, material: material, segments: json.segments as number, hasCap: json.hasCap as boolean });
 	}
 
 	static getEntityName() {

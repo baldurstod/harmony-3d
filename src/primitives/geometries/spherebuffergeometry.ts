@@ -1,10 +1,9 @@
 import { vec3 } from 'gl-matrix';
-
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 
 export class SphereBufferGeometry extends BufferGeometry {
-	updateGeometry(radius, segments, rings, phiStart, phiLength, thetaStart, thetaLength) {
+	updateGeometry(radius: number, segments: number, rings: number, phiStart: number, phiLength: number, thetaStart: number, thetaLength: number) {
 		segments = Math.max(3, Math.floor(segments));
 		rings = Math.max(2, Math.floor(rings));
 
@@ -33,7 +32,7 @@ export class SphereBufferGeometry extends BufferGeometry {
 
 		// generate vertices, normals and uvs
 
-		for (iy = 0; iy <= rings; iy ++) {
+		for (iy = 0; iy <= rings; iy++) {
 
 			const verticesRow = [];
 
@@ -53,7 +52,7 @@ export class SphereBufferGeometry extends BufferGeometry {
 
 			}
 
-			for (ix = 0; ix <= segments; ix ++) {
+			for (ix = 0; ix <= segments; ix++) {
 
 				const u = ix / segments;
 
@@ -73,7 +72,7 @@ export class SphereBufferGeometry extends BufferGeometry {
 
 				uvs.push(u + uOffset, 1 - v);
 
-				verticesRow.push(index ++);
+				verticesRow.push(index++);
 
 			}
 
@@ -83,20 +82,16 @@ export class SphereBufferGeometry extends BufferGeometry {
 
 		// indices
 
-		for (iy = 0; iy < rings; iy ++) {
-
-			for (ix = 0; ix < segments; ix ++) {
-
-				const a = grid[ iy ][ ix + 1 ];
-				const b = grid[ iy ][ ix ];
-				const c = grid[ iy + 1 ][ ix ];
-				const d = grid[ iy + 1 ][ ix + 1 ];
+		for (iy = 0; iy < rings; iy++) {
+			for (ix = 0; ix < segments; ix++) {
+				const a: number = grid[iy]![ix + 1]!;
+				const b: number = grid[iy]![ix]!;
+				const c: number = grid[iy + 1]![ix]!;
+				const d: number = grid[iy + 1]![ix + 1]!;
 
 				if (iy !== 0 || thetaStart > 0) indices.push(a, b, d);
 				if (iy !== rings - 1 || thetaEnd < Math.PI) indices.push(b, c, d);
-
 			}
-
 		}
 
 		// build geometry

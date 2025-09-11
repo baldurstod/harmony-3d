@@ -119,7 +119,7 @@ export class CreationNoise extends Operator {//Remap noise to scalar
 			//fvNoise.DuplicateVector( Coord );
 			//flNoise128 = NoiseSIMD( fvNoise , 0);
 			//float flNoise = SubFloat( flNoise128, 0 );
-			let flNoise = NoiseSIMD(Coord, 0, 0);
+			let flNoise = NoiseSIMD(Coord[0], Coord[1], Coord[2]);
 
 			//*( (int *) &flNoise)  &= nAbsVal;
 			if (this.#absVal) {

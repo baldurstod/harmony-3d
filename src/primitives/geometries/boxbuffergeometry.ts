@@ -1,16 +1,16 @@
 import { vec3 } from 'gl-matrix';
 
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 
 export class BoxBufferGeometry extends BufferGeometry {
-	#indices: number[];
-	#vertices: number[];
-	#normals: number[];
-	#uvs: number[];
-	#numberOfVertices: number;
+	#indices!: number[];
+	#vertices!: number[];
+	#normals!: number[];
+	#uvs!: number[];
+	#numberOfVertices: number = 0;
 
-	updateGeometry(width?: number, height?: number, depth?: number, widthSegments?: number, heightSegments?: number, depthSegments?: number) {
+	updateGeometry(width: number, height: number, depth: number, widthSegments: number, heightSegments: number, depthSegments: number) {
 		widthSegments = Math.floor(widthSegments);
 		heightSegments = Math.floor(heightSegments);
 		depthSegments = Math.floor(depthSegments);
@@ -40,7 +40,7 @@ export class BoxBufferGeometry extends BufferGeometry {
 		this.count = this.#indices.length;
 	}
 
-	#buildPlane(u, v, w, udir, vdir, width, height, depth, gridX, gridY) {
+	#buildPlane(u: number, v: number, w: number, udir: number, vdir: number, width: number, height: number, depth: number, gridX: number, gridY: number) {
 		const segmentWidth = width / gridX;
 		const segmentHeight = height / gridY;
 

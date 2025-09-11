@@ -80,7 +80,7 @@ export class Noise extends Operator {//Noise scalar
 	doOperate(particle: Source2Particle, elapsedTime: number, strength: number): void {
 		// TODO: use other params #additive, noiseAnimationTimeScale
 		vec3.scale(Coord, particle.position, this.#noiseScale);
-		const noise = NoiseSIMD(Coord, 0, 0) * this.#valueScale + this.#valueBase;
+		const noise = NoiseSIMD(Coord[0], Coord[1], Coord[2]) * this.#valueScale + this.#valueBase;
 
 		particle.setField(this.#fieldOutput, noise);
 

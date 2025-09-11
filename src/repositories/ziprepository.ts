@@ -54,7 +54,7 @@ export class ZipRepository implements Repository {
 		if (response.error) {
 			return { error: response.error };
 		}
-		return { buffer: await response.file.arrayBuffer() };
+		return { buffer: await response.file!.arrayBuffer() };
 	}
 
 	async getFileAsText(filename: string): Promise<RepositoryTextResponse> {
@@ -62,7 +62,7 @@ export class ZipRepository implements Repository {
 		if (response.error) {
 			return { error: response.error };
 		}
-		return { text: await response.file.text() };
+		return { text: await response.file!.text() };
 	}
 
 	async getFileAsBlob(filename: string): Promise<RepositoryBlobResponse> {
@@ -78,7 +78,7 @@ export class ZipRepository implements Repository {
 		if (response.error) {
 			return { error: response.error };
 		}
-		return { json: JSON.parse(await response.file.text()) };
+		return { json: JSON.parse(await response.file!.text()) };
 	}
 
 	async getFileList(): Promise<RepositoryFileListResponse> {

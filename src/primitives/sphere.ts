@@ -1,12 +1,15 @@
 import { vec3 } from 'gl-matrix';
-
-import { SphereBufferGeometry } from './geometries/spherebuffergeometry';
-import { JSONLoader } from '../importers/jsonloader';
-import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
-import { Mesh, MeshParameters } from '../objects/mesh';
-import { PI, TAU } from '../math/constants';
 import { registerEntity } from '../entities/entities';
+import { Entity } from '../entities/entity';
+import { JSONLoader } from '../importers/jsonloader';
 import { Material } from '../materials/material';
+import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
+import { PI, TAU } from '../math/constants';
+import { Mesh, MeshParameters } from '../objects/mesh';
+import { Intersection } from '../raycasting/intersection';
+import { Raycaster } from '../raycasting/raycaster';
+import { JSONObject } from '../types';
+import { SphereBufferGeometry } from './geometries/spherebuffergeometry';
 
 const intersectionPoint1 = vec3.create();
 const intersectionPoint2 = vec3.create();
@@ -51,7 +54,7 @@ export class Sphere extends Mesh {
 		super.setParameters(arguments[0]);
 	}
 
-	setRadius(radius:number) {
+	setRadius(radius: number) {
 		this.radius = radius;
 		this.updateGeometry();
 	}
@@ -69,7 +72,7 @@ export class Sphere extends Mesh {
 		});
 	}
 
-	raycast(raycaster, intersections) {
+	raycast(raycaster: Raycaster, intersections: Intersection[]) {
 		const ray = raycaster.ray;
 		const worldPosition = this.getWorldPosition(v);
 		const inverseRadius = 1 / this.radius;
@@ -98,9 +101,9 @@ export class Sphere extends Mesh {
 		return json;
 	}
 
-	static async constructFromJSON(json, entities, loadedPromise) {
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Sphere> {
 		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise) as Material;
-		return new Sphere({ radius: json.radius, material: material, segments: json.segments, rings: json.rings, phiStart: json.phistart, phiLength: json.philength, thetaStart: json.thetastart, thetaLength: json.thetalength });
+		return new Sphere({ radius: json.radius as number, material: material, segments: json.segments as number, rings: json.rings as number, phiStart: json.phistart as number, phiLength: json.philength as number, thetaStart: json.thetastart as number, thetaLength: json.thetalength as number });
 	}
 
 	static getEntityName() {

@@ -52,22 +52,22 @@ export class Wireframe extends Entity {
 
 			const m = (mesh as unknown as Mesh).exportObj();
 
-			const vertexIndices = m.f;
-			const vertexPos = m.v;
+			const vertexIndices = m.f!;
+			const vertexPos = m.v!;
 
 			for (let i = 0, l = vertexIndices.length; i < l; i += 3) {
-				const vertexIndex1 = vertexIndices[i + 0] * 3;
-				const vertexIndex2 = vertexIndices[i + 1] * 3;
-				const vertexIndex3 = vertexIndices[i + 2] * 3;
+				const vertexIndex1 = vertexIndices[i + 0]! * 3;
+				const vertexIndex2 = vertexIndices[i + 1]! * 3;
+				const vertexIndex3 = vertexIndices[i + 2]! * 3;
 
-				segments.push(vertexPos[vertexIndex1], vertexPos[vertexIndex1 + 1], vertexPos[vertexIndex1 + 2]);
-				segments.push(vertexPos[vertexIndex2], vertexPos[vertexIndex2 + 1], vertexPos[vertexIndex2 + 2]);
+				segments.push(vertexPos[vertexIndex1] ?? 0, vertexPos[vertexIndex1 + 1] ?? 0, vertexPos[vertexIndex1 + 2] ?? 0);
+				segments.push(vertexPos[vertexIndex2] ?? 0, vertexPos[vertexIndex2 + 1] ?? 0, vertexPos[vertexIndex2 + 2] ?? 0);
 
-				segments.push(vertexPos[vertexIndex2], vertexPos[vertexIndex2 + 1], vertexPos[vertexIndex2 + 2]);
-				segments.push(vertexPos[vertexIndex3], vertexPos[vertexIndex3 + 1], vertexPos[vertexIndex3 + 2]);
+				segments.push(vertexPos[vertexIndex2] ?? 0, vertexPos[vertexIndex2 + 1] ?? 0, vertexPos[vertexIndex2 + 2] ?? 0);
+				segments.push(vertexPos[vertexIndex3] ?? 0, vertexPos[vertexIndex3 + 1] ?? 0, vertexPos[vertexIndex3 + 2] ?? 0);
 
-				segments.push(vertexPos[vertexIndex3], vertexPos[vertexIndex3 + 1], vertexPos[vertexIndex3 + 2]);
-				segments.push(vertexPos[vertexIndex1], vertexPos[vertexIndex1 + 1], vertexPos[vertexIndex1 + 2]);
+				segments.push(vertexPos[vertexIndex3] ?? 0, vertexPos[vertexIndex3 + 1] ?? 0, vertexPos[vertexIndex3 + 2] ?? 0);
+				segments.push(vertexPos[vertexIndex1] ?? 0, vertexPos[vertexIndex1 + 1] ?? 0, vertexPos[vertexIndex1 + 2] ?? 0);
 			}
 			line.setSegments(segments);
 		}

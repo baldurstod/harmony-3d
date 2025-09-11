@@ -2,6 +2,9 @@ import { JSONLoader } from '../importers/jsonloader';
 import { LineSegments } from './linesegments';
 import { TWO_PI } from '../math/constants';
 import { registerEntity } from '../entities/entities';
+import { JSONObject } from '../types';
+import { Entity } from '../entities/entity';
+import { Material } from '../materials/material';
 
 export class Circle extends LineSegments {
 	#radius: number;
@@ -43,7 +46,7 @@ export class Circle extends LineSegments {
 		return json;
 	}
 
-	static async constructFromJSON(json, entities, loadedPromise) {
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Circle | null> {
 		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
 		return new Circle({ radius: json.radius, segments: json.segments, material: material, startAngle: json.startAngle, endAngle: json.endAngle });
 	}

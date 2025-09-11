@@ -95,7 +95,7 @@ export class RepositoryEntry {
 
 	getAllChilds(filter?: RepositoryFilter): Set<RepositoryEntry> {
 		const childs = new Set<RepositoryEntry>();
-		let current: RepositoryEntry | undefined;
+		let current: RepositoryEntry | null;
 		const stack: Queue<RepositoryEntry> = new Queue([this]);
 		do {
 			current = stack.dequeue();

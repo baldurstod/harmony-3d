@@ -2,11 +2,8 @@ import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bu
 import { BufferGeometry } from '../../geometry/buffergeometry';
 
 export class PlaneBufferGeometry extends BufferGeometry {
-	constructor() {
-		super();
-	}
 
-	updateGeometry(width, height, widthSegments, heightSegments) {
+	updateGeometry(width: number, height: number, widthSegments: number, heightSegments: number) {
 
 		///width = width || 1;
 		//height = height || 1;
@@ -34,11 +31,11 @@ export class PlaneBufferGeometry extends BufferGeometry {
 
 		// generate vertices, normals and uvs
 
-		for (iy = 0; iy < gridY1; iy ++) {
+		for (iy = 0; iy < gridY1; iy++) {
 
 			const y = iy * segment_height - height_half;
 
-			for (ix = 0; ix < gridX1; ix ++) {
+			for (ix = 0; ix < gridX1; ix++) {
 
 				const x = ix * segment_width - width_half;
 
@@ -55,9 +52,9 @@ export class PlaneBufferGeometry extends BufferGeometry {
 
 		// indices
 
-		for (iy = 0; iy < gridY; iy ++) {
+		for (iy = 0; iy < gridY; iy++) {
 
-			for (ix = 0; ix < gridX; ix ++) {
+			for (ix = 0; ix < gridX; ix++) {
 
 				const a = ix + gridX1 * iy;
 				const b = ix + gridX1 * (iy + 1);

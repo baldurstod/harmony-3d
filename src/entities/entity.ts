@@ -959,7 +959,7 @@ export class Entity {
 		return menu;
 	}
 
-	raycast(raycaster: Raycaster, intersections: Intersection[]) {
+	raycast(raycaster: Raycaster, intersections: Intersection[]) :void{
 	}
 
 	setWireframe(wireframe: number, recursive = true) {

@@ -23,13 +23,12 @@ export class TrianglesBufferGeometry extends BufferGeometry {
 			vertexIndex = triangleIndex * 3;
 			indices.push(vertexIndex, vertexIndex + 1, vertexIndex + 2);
 
-			vertices.push(...triangles[triangleIndex][0]);
-			vertices.push(...triangles[triangleIndex][1]);
-			vertices.push(...triangles[triangleIndex][2]);
+			vertices.push(...triangles[triangleIndex]![0]!);
+			vertices.push(...triangles[triangleIndex]![1]!);
+			vertices.push(...triangles[triangleIndex]![2]!);
 
-
-			vec3.sub(a, triangles[triangleIndex][1], triangles[triangleIndex][0]);
-			vec3.sub(b, triangles[triangleIndex][2], triangles[triangleIndex][0]);
+			vec3.sub(a, triangles[triangleIndex]![1]!, triangles[triangleIndex]![0]!);
+			vec3.sub(b, triangles[triangleIndex]![2]!, triangles[triangleIndex]![0]!);
 			vec3.cross(normal, a, b);
 			vec3.normalize(normal, normal);
 			normals.push(...normal);

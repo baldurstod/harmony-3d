@@ -100,7 +100,7 @@ export class SnapshotRigidSkinToBones extends Operator {
 				if (bone) {
 					boneMat = bone ? bone.boneMat : IDENTITY_MAT4;
 
-					vec3.transformMat4(particle.position, particleInitialPosition, boneMat);
+					//vec3.transformMat4(particle.position, particleInitialPosition, boneMat);
 					mat3.normalFromMat4(nmat, boneMat);
 					vec3.transformMat3(particle.normal, particleInitialNormal, nmat);
 					vec3.copy(particle.prevPosition, particle.position);

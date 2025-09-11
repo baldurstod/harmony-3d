@@ -11,7 +11,7 @@ export class Kv3Array {
 		this.values.push(value);
 	}
 
-	getValue(index: string/*yes it's a string*/): Kv3Element | Kv3Value {
+	getValue(index: string/*yes it's a string*/): Kv3Element | Kv3Value | undefined {
 		return this.values[Number(index)];
 	}
 

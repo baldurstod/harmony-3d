@@ -1,10 +1,13 @@
 import { vec3 } from 'gl-matrix';
-
 import { registerEntity } from '../entities/entities';
+import { Entity } from '../entities/entity';
 import { JSONLoader } from '../importers/jsonloader';
 import { LineMaterial } from '../materials/linematerial';
 import { Material } from '../materials/material';
 import { Mesh, MeshParameters } from '../objects/mesh';
+import { Intersection } from '../raycasting/intersection';
+import { Raycaster } from '../raycasting/raycaster';
+import { JSONObject } from '../types';
 import { LineSegmentsGeometry } from './geometries/linesegmentsgeometry';
 
 const DEFAULT_VEC3 = vec3.create();
@@ -54,7 +57,7 @@ export class Line extends Mesh {
 		(this.geometry as LineSegmentsGeometry).setSegments([...this.#start, ...this.#end], [], false);
 	}
 
-	raycast(raycaster, intersections) {
+	raycast(raycaster: Raycaster, intersections: Intersection[]) {
 		const interSegment = vec3.create();
 		const interRay = vec3.create();
 		const ray = raycaster.ray;
@@ -68,13 +71,13 @@ export class Line extends Mesh {
 		const json = super.toJSON();
 		json.start = vec3.clone(this.start);
 		json.end = vec3.clone(this.end);
-		json.material = this.material.toJSON();
+		json.material = this.getMaterial().toJSON();
 		return json;
 	}
 
-	static async constructFromJSON(json, entities, loadedPromise) {
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Line> {
 		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise) as Material;
-		return new Line({ start: json.start, end: json.end, material: material });
+		return new Line({ start: json.start as vec3, end: json.end as vec3, material: material });
 	}
 
 	static getEntityName() {

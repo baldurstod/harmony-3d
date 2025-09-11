@@ -1,4 +1,5 @@
-import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute'
+import { vec3 } from 'gl-matrix';
+import { Float32BufferAttribute, Uint16BufferAttribute } from '../../geometry/bufferattribute';
 import { InstancedBufferGeometry } from '../../geometry/instancedbuffergeometry';
 
 export class LineSegmentsGeometry extends InstancedBufferGeometry {
@@ -19,7 +20,7 @@ export class LineSegmentsGeometry extends InstancedBufferGeometry {
 		this.count = indices.length;
 	}
 
-	setSegments(positions, colors?, lineStrip?: boolean) {
+	setSegments(positions: number[], colors?: []/*TODO: use colors*/, lineStrip?: boolean) {
 		const start = [];
 		const end = [];
 		let instanceCount = 0;
