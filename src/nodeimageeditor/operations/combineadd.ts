@@ -1,12 +1,12 @@
+import { DEBUG } from '../../buildoptions';
+import { Graphics } from '../../graphics/graphics';
+import { RenderTarget } from '../../textures/rendertarget';
+import { GL_RGBA, GL_UNSIGNED_BYTE } from '../../webgl/constants';
 import { IO_TYPE_TEXTURE_2D } from '../inputoutput';
 import { Node } from '../node';
-import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
-import { DEBUG } from '../../buildoptions';
-import { RenderTarget } from '../../textures/rendertarget';
-import { GL_UNSIGNED_BYTE, GL_RGBA } from '../../webgl/constants';
-import { registerOperation } from '../operations';
-import { Graphics } from '../../graphics/graphics';
 import { NodeImageEditor } from '../nodeimageeditor';
+import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
+import { registerOperation } from '../operations';
 
 export class CombineAdd extends Node {
 	#renderTarget?: RenderTarget;
@@ -20,7 +20,7 @@ export class CombineAdd extends Node {
 		}
 		//this.addInput('input', IO_TYPE_TEXTURE_2D, 8);
 		this.addOutput('output', IO_TYPE_TEXTURE_2D);
-		this.material = new NodeImageEditorMaterial({shaderName:'combine_add'});
+		this.material = new NodeImageEditorMaterial({ shaderName: 'combine_add' });
 		this.material.addUser(this);
 		this.#textureSize = params.textureSize;
 	}
@@ -52,7 +52,7 @@ export class CombineAdd extends Node {
 		this.material.setTextureArray('uInput[0]', textureArray);
 
 		if (!this.#renderTarget) {
-			this.#renderTarget = new RenderTarget({width: this.#textureSize, height: this.#textureSize,depthBuffer:false, stencilBuffer:false});
+			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
 		}
 		Graphics.pushRenderTarget(this.#renderTarget);
 		this.editor.render(this.material);
