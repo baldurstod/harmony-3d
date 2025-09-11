@@ -154,7 +154,7 @@ export class NodeImageEditorGui {
 			const column = createElement('div', { class: 'node-image-editor-nodes-column' });
 			this.#htmlNodes.prepend(column);
 			for (let i = 0; i < n.length; ++i) {
-				const nodeGui = n[i];
+				const nodeGui = n[i]!;
 				//nodeGui.html.style.top = i * HEIGHT + 'px';
 				const rect = nodeGui.html.getBoundingClientRect();
 				//maxHeight = Math.max(maxHeight, rect.bottom);
@@ -223,9 +223,13 @@ export class NodeImageEditorGui {
 						const nodeGui2 = this.#nodesGui.get(predecessorNode);
 						if (nodeGui && nodeGui2) {
 							const inputGui = nodeGui._ioGui.get(input);
-							const outputGui = nodeGui2._ioGui.get(input.getPredecessor());
-
-							this.#drawLink(outputGui, inputGui);
+							const predecessor = input.getPredecessor()
+							if (predecessor) {
+								const outputGui = nodeGui2._ioGui.get(predecessor);
+								if (outputGui && inputGui) {
+									this.#drawLink(outputGui, inputGui);
+								}
+							}
 						}
 					}
 				}

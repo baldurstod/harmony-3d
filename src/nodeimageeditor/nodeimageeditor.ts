@@ -1,5 +1,3 @@
-import { Node } from './node';
-import { getOperation } from './operations';
 import { vec3 } from 'gl-matrix';
 import { MyEventTarget } from 'harmony-utils';
 import { Camera } from '../cameras/camera';
@@ -7,6 +5,8 @@ import { Graphics } from '../graphics/graphics';
 import { Material } from '../materials/material';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Scene } from '../scenes/scene';
+import { Node } from './node';
+import { getOperation } from './operations';
 
 export const DEFAULT_TEXTURE_SIZE = 512;
 
@@ -31,7 +31,7 @@ export class NodeImageEditor extends MyEventTarget {
 
 	}
 
-	addNode(operationName: string, params: any = {}): Node {
+	addNode(operationName: string, params: any = {}): Node | null {
 		params.textureSize = params.textureSize ?? this.textureSize;
 		if (!operationName) {
 			return null;
@@ -39,9 +39,9 @@ export class NodeImageEditor extends MyEventTarget {
 		const node = getOperation(operationName, this, params);
 		if (node) {
 			this.textureSize = params.textureSize;
+			this.#nodes.add(node);
+			this.#dispatchEvent('nodeadded', node);
 		}
-		this.#nodes.add(node);
-		this.#dispatchEvent('nodeadded', node);
 		return node;
 	}
 
@@ -51,7 +51,7 @@ export class NodeImageEditor extends MyEventTarget {
 		return node;
 	}*/
 
-	#dispatchEvent(eventName, eventDetail) {
+	#dispatchEvent(eventName: string, eventDetail: Node | null) {
 		this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
 		this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
 	}
@@ -63,8 +63,8 @@ export class NodeImageEditor extends MyEventTarget {
 		}
 	}*/
 
-	removeNode(node) {
-		if (node instanceof Node && node.editor == this) {
+	removeNode(node: Node) {
+		if (node.editor == this) {
 			this.#nodes.delete(node);
 			//TODO :remove all inputs / output
 			this.#dispatchEvent('noderemoved', node);
@@ -74,19 +74,19 @@ export class NodeImageEditor extends MyEventTarget {
 	removeAllNodes() {
 		this.#nodes.forEach((node) => node.dispose());
 		this.#nodes.clear();
-		this.#dispatchEvent('allnodesremoved', this);
+		this.#dispatchEvent('allnodesremoved', null);
 		//TODO :remove all inputs / output
 	}
 
-	getVariable(name) {
+	getVariable(name: string) {
 		return this.#variables.get(name);
 	}
 
-	setVariable(name, value) {
+	setVariable(name: string, value: number) {
 		return this.#variables.set(name, value);
 	}
 
-	deleteVariable(name) {
+	deleteVariable(name: string) {
 		return this.#variables.delete(name);
 	}
 

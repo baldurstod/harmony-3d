@@ -8,7 +8,7 @@ import { TextureManager } from '../../textures/texturemanager';
 import { GL_CLAMP_TO_EDGE, GL_LINEAR, GL_TEXTURE_2D } from '../../webgl/constants';
 import { Input } from '../input';
 import { Node } from '../node';
-import { NodeParam, NodeParamType } from '../nodeparam';
+import { NodeParam, NodeParamArray, NodeParamType } from '../nodeparam';
 import { ApplySticker } from '../operations/applysticker';
 import { TextureLookup } from '../operations/texturelookup';
 import { Output } from '../output';
@@ -17,8 +17,11 @@ import { NodeImageEditorGui } from './nodeimageeditorgui';
 export const DELAY_BEFORE_REFRESH = 100;
 const FLOAT_VALUE_DECIMALS = 3;
 
-function dropFiles(evt, node) {
-	const files = evt.target.files; // FileList object
+function dropFiles(evt: DragEvent, node: Node): void {
+	const files = (evt.target as HTMLInputElement).files; // FileList object
+	if (!files) {
+		return;
+	}
 
 	// Loop through the FileList and render image files as thumbnails.
 	for (let i = 0, f; f = files[i]; i++) {
@@ -43,11 +46,11 @@ function dropFiles(evt, node) {
 				const image = new Image();
 				image.onload = () => {
 					TextureManager.fillTextureWithImage(texture, image);
-					node.inputTexture = texture;
+					(node as ApplySticker | TextureLookup).inputTexture = texture;
 					node.invalidate();
 					node.validate();
 				};
-				image.src = e.target.result.toString();
+				image.src = (e.target as FileReader).result?.toString() ?? '';
 			};
 		})(f);
 
@@ -56,8 +59,11 @@ function dropFiles(evt, node) {
 	}
 }
 
-function dropFilesSpecular(evt, node) {
-	const files = evt.target.files; // FileList object
+function dropFilesSpecular(evt: DragEvent, node: Node): void {
+	const files = (evt.target as HTMLInputElement).files; // FileList object
+	if (!files) {
+		return;
+	}
 
 	// Loop through the FileList and render image files as thumbnails.
 	for (let i = 0, f; f = files[i]; i++) {
@@ -82,11 +88,14 @@ function dropFilesSpecular(evt, node) {
 				const image = new Image();
 				image.onload = () => {
 					TextureManager.fillTextureWithImage(texture, image);
-					node.getInput('specular').value = texture;
+					const specular = node.getInput('specular');
+					if (specular) {
+						specular.value = texture;
+					}
 					//node.invalidate();
 					node.validate();
 				};
-				image.src = e.target.result.toString();
+				image.src = (e.target as FileReader).result?.toString() ?? '';
 			};
 		})(f);
 
@@ -106,18 +115,18 @@ export enum FlipDirection {
 
 export class NodeGui {
 	#expanded = true;
-	#html: HTMLElement;
-	#htmlPreview: HTMLElement;
-	#htmlRectSelector: HTMLHarmony2dManipulatorElement;
-	#drag: string;
-	#htmlParamsContainer: HTMLElement;
+	#html!: HTMLElement;
+	#htmlPreview!: HTMLElement;
+	#htmlRectSelector!: HTMLHarmony2dManipulatorElement;
+	#drag: string = '';
+	#htmlParamsContainer!: HTMLElement;
 	_ioGui = new Map<Input | Output, HTMLElement>();// TODO: set private
-	#refreshTimeout: number;
+	#refreshTimeout: number = 0;
 	#nodeChanged: () => void;
 	#node: Node;
 	#nodeImageEditorGui: NodeImageEditorGui;
-	#dragStartClientX: number;
-	#dragStartClientY: number;
+	#dragStartClientX: number = 0;
+	#dragStartClientY: number = 0;
 	#htmlParams = new Map<string, HTMLElement | HTMLElement[]>();
 	#htmlParamsValue = new Map<HTMLElement, HTMLInputElement>();
 
@@ -153,7 +162,7 @@ export class NodeGui {
 		this.#nodeImageEditorGui = nodeImageEditorGui;
 	}
 
-	#handlePreviewDragOver(event) {
+	#handlePreviewDragOver(event: DragEvent) {
 		event.preventDefault();
 		console.log(event);
 		switch (this.#drag) {
@@ -227,7 +236,7 @@ export class NodeGui {
 			class: 'node-image-editor-node-preview',
 			child: this.#node.previewPic,
 			events: {
-				dragover: event => this.#handlePreviewDragOver(event),
+				dragover: (event: DragEvent) => this.#handlePreviewDragOver(event),
 			}
 		});
 
@@ -254,7 +263,7 @@ export class NodeGui {
 
 		if ((this.#node instanceof TextureLookup) || this.#node instanceof ApplySticker) {
 			const inputImage = createElement('input', { type: 'file', accept: 'image/*' });
-			inputImage.addEventListener('input', (event) => dropFiles(event, this.#node));
+			inputImage.addEventListener('input', (event) => dropFiles(event as DragEvent, this.#node));
 
 			this.#htmlPreview.addEventListener('click', (event) => { if (event.target == this.#node.previewPic) { inputImage.click() } });
 		}
@@ -263,7 +272,7 @@ export class NodeGui {
 			this.#html.append(htmlLoadStickerSpecular);
 
 			const inputImage = createElement('input', { type: 'file', accept: 'image/*' });
-			inputImage.addEventListener('input', (event) => dropFilesSpecular(event, this.#node));
+			inputImage.addEventListener('input', (event) => dropFilesSpecular(event as DragEvent, this.#node));
 
 			htmlLoadStickerSpecular.addEventListener('click', () => inputImage.click());
 		}
@@ -300,16 +309,16 @@ export class NodeGui {
 		if (index === undefined) {
 			paramHtml = this.#htmlParams.get(param.name) ?? this.#createParamHTML(param, index);
 		} else {
-			paramHtml = this.#htmlParams.get(param.name)?.[index] ?? this.#createParamHTML(param, index);
+			paramHtml = (this.#htmlParams.get(param.name) as HTMLElement[])?.[index] ?? this.#createParamHTML(param, index);
 		}
 
 		if (Array.isArray(paramHtml)) {
-			paramHtml = paramHtml[index];
+			paramHtml = paramHtml[index!]!;
 		}
 
 		let value: any;
-		if (index != undefined) {
-			value = param.value[index];
+		if (index !== undefined) {
+			value = (param.value as NodeParamArray)[index];
 		} else {
 			value = param.value;
 		}
@@ -349,7 +358,7 @@ export class NodeGui {
 			valueHtml = createElement('input', {
 				parent: paramHtml,
 				events: {
-					change: (event) => this.#setParamValue(param, event.target.value, index)
+					change: (event: Event) => this.#setParamValue(param, (event.target as HTMLInputElement).value, index)
 				}
 			}) as HTMLInputElement;
 			createElement('span', {
@@ -365,10 +374,10 @@ export class NodeGui {
 					},
 				}
 			});
+			this.#htmlParamsValue.set(paramHtml, valueHtml);
 		}
 
 		nameHtml.innerText = param.name;
-		this.#htmlParamsValue.set(paramHtml, valueHtml);
 
 		if (param.type == NodeParamType.StickerAdjust) {
 			defineHarmony2dManipulator();
@@ -428,7 +437,7 @@ export class NodeGui {
 									}),
 								],
 								events: {
-									change: (event) => this.#htmlRectSelector.setMode({ translation: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+									change: (event: Event) => this.#htmlRectSelector.setMode({ translation: (event.target as HTMLHarmonyToggleButtonElement).state ? ManipulatorDirection.All : ManipulatorDirection.None }),
 								}
 							}) as HTMLHarmonyToggleButtonElement,
 
@@ -447,7 +456,10 @@ export class NodeGui {
 									}),
 								],
 								events: {
-									change: (event) => this.#htmlRectSelector.setMode({ resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None, scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+									change: (event: Event) => this.#htmlRectSelector.setMode({
+										resize: (event.target as HTMLHarmonyToggleButtonElement).state ? ManipulatorDirection.All : ManipulatorDirection.None,
+										scale: (event.target as HTMLHarmonyToggleButtonElement).state ? ManipulatorDirection.All : ManipulatorDirection.None,
+									}),
 								}
 							}) as HTMLHarmonyToggleButtonElement,
 
@@ -466,7 +478,7 @@ export class NodeGui {
 									}),
 								],
 								events: {
-									change: (event) => this.#htmlRectSelector.setMode({ rotation: event.target.state }),
+									change: (event: Event) => this.#htmlRectSelector.setMode({ rotation: (event.target as HTMLHarmonyToggleButtonElement).state }),
 								}
 							}) as HTMLHarmonyToggleButtonElement,
 						],
@@ -479,13 +491,13 @@ export class NodeGui {
 				parent: this.#htmlPreview,
 				events: {
 					updateend: (event: CustomEvent) => {
-						const parameters = { 'top left': 0, 'bottom left': 2, 'top right': 1 };
+						const parameters: Record<string, number> = { 'top left': 0, 'bottom left': 2, 'top right': 1 };
 						const manipulator = event.target as HTMLHarmony2dManipulatorElement;
 						for (const name in parameters) {
 							const param = this.#node.getParam(name);
 							if (param) {
 								const rect = this.#htmlPreview.getBoundingClientRect();
-								const corner = manipulator.getCorner(parameters[name]);
+								const corner = manipulator.getCorner(parameters[name]!);
 								this.#setParamValue(param, `${corner.x / rect.width} ${corner.y / rect.width}`, undefined, false);
 							}
 						}
@@ -505,7 +517,7 @@ export class NodeGui {
 			if (!this.#htmlParams.has(param.name)) {
 				this.#htmlParams.set(param.name, []);
 			}
-			this.#htmlParams.get(param.name)[index] = paramHtml;
+			(this.#htmlParams.get(param.name) as HTMLElement[])[index] = paramHtml;
 		}
 
 		return paramHtml;

@@ -32,9 +32,12 @@ export class CombineLerp extends Node {
 		if (false && DEBUG) {
 			console.log('CombineLerp operate');
 		}
-		this.material.setTexture('uInput0', await this.getInput('input0').value);
-		this.material.setTexture('uInput1', await this.getInput('input1').value);
-		this.material.setTexture('uInputWeight', await this.getInput('weight').value);
+		if (!this.material) {
+			return;
+		}
+		this.material.setTexture('uInput0', await this.getInput('input0')?.value);
+		this.material.setTexture('uInput1', await this.getInput('input1')?.value);
+		this.material.setTexture('uInputWeight', await this.getInput('weight')?.value);
 
 		if (!this.#renderTarget) {
 			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
@@ -49,8 +52,11 @@ export class CombineLerp extends Node {
 
 		this.updatePreview(context);
 
-		this.getOutput('output')._value = this.#renderTarget.getTexture();
-		this.getOutput('output')._pixelArray = pixelArray;
+		const output = this.getOutput('output');
+		if (output) {
+			output._value = this.#renderTarget.getTexture();
+			output._pixelArray = pixelArray;
+		}
 		if (false && DEBUG) {
 			console.log('CombineLerp end operate');
 		}

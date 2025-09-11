@@ -1,11 +1,12 @@
+import { DEBUG } from '../../buildoptions';
+import { Graphics } from '../../graphics/graphics';
+import { RenderTarget } from '../../textures/rendertarget';
+import { Texture } from '../../textures/texture';
 import { IO_TYPE_TEXTURE_2D, } from '../inputoutput';
 import { Node } from '../node';
-import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
-import { DEBUG } from '../../buildoptions';
-import { RenderTarget } from '../../textures/rendertarget';
-import { registerOperation } from '../operations';
-import { Graphics } from '../../graphics/graphics';
 import { NodeImageEditor } from '../nodeimageeditor';
+import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
+import { registerOperation } from '../operations';
 
 export class Multiply extends Node {
 	#renderTarget?: RenderTarget;
@@ -26,15 +27,18 @@ export class Multiply extends Node {
 	}
 
 	async operate(context: any = {}) {
+		if (!this.material) {
+			return;
+		}
 		if (false && DEBUG) {
 			console.log('Multiply operate');
 		}
-		const textureArray = [];
+		const textureArray: Texture[] = [];
 		const usedArray = [];
 		for (let i = 0; i < 8; ++i) {
 			//let inputName = 'uInput' + i;
 			//this.material.uniforms['uInput' + i] = await this.getInput('input' + i).value;
-			const texture = await this.getInput('input' + i).value;
+			const texture = await this.getInput('input' + i)?.value;
 			textureArray.push(texture);
 			usedArray.push(texture != undefined);
 		}
@@ -45,7 +49,7 @@ export class Multiply extends Node {
 		//this.material.uniforms['uInput1'] = await this.getInput('input1').value;
 
 		if (!this.#renderTarget) {
-			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')._value });
+			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')?._value });
 		}
 
 		Graphics.pushRenderTarget(this.#renderTarget);
@@ -58,8 +62,10 @@ export class Multiply extends Node {
 		this.updatePreview(context);
 
 
-
-		this.getOutput('output')._value = this.#renderTarget.getTexture();
+		const output = this.getOutput('output');
+		if (output) {
+			output._value = this.#renderTarget.getTexture();
+		}
 		//this.getOutput('output')._pixelArray = pixelArray;
 		if (false && DEBUG) {
 			console.log('Multiply end operate');

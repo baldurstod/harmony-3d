@@ -1,12 +1,14 @@
-import { ParametersNode } from './parametersnode';
 import { IO_TYPE_ARRAY_INT } from '../inputoutput';
-import { registerOperation } from '../operations';
+import { NodeImageEditor } from '../nodeimageeditor';
 import { NodeParam, NodeParamType } from '../nodeparam';
+import { registerOperation } from '../operations';
+import { ParametersNode } from './parametersnode';
 
 export class IntArrayNode extends ParametersNode {
-	#length;
-	#array = [];
-	constructor(editor, params) {
+	#length: number;
+	#array: number[] = [];
+
+	constructor(editor: NodeImageEditor, params?: any) {
 		super(editor, params);
 		this.#length = params.length ?? 0;
 		this.addOutput('output', IO_TYPE_ARRAY_INT);
@@ -18,14 +20,17 @@ export class IntArrayNode extends ParametersNode {
 	}
 
 	async operate(context: any = {}) {
-		this.getOutput('output')._value = this.#array;
+		const output = this.getOutput('output');
+		if (output) {
+			output._value = this.#array;
+		}
 	}
 
 	get title() {
 		return 'int array';
 	}
 
-	setValue(index, value) {
+	setValue(index: number, value: number) {
 		if (index >= this.#length) {
 			throw 'wrong index';
 		}

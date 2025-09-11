@@ -1,13 +1,13 @@
 import { mat3, vec2, vec4 } from 'gl-matrix';
+import { Graphics } from '../../graphics/graphics';
+import { RenderTarget } from '../../textures/rendertarget';
+import { Texture } from '../../textures/texture';
 import { IO_TYPE_TEXTURE_2D, } from '../inputoutput';
 import { Node } from '../node';
-import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
-import { RenderTarget } from '../../textures/rendertarget';
-import { registerOperation } from '../operations';
-import { Graphics } from '../../graphics/graphics';
-import { Texture } from '../../textures/texture';
 import { NodeImageEditor } from '../nodeimageeditor';
+import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
 import { NodeParam, NodeParamType } from '../nodeparam';
+import { registerOperation } from '../operations';
 
 const tempVec2 = vec2.create();
 const texTransform = mat3.create();
@@ -15,7 +15,8 @@ const texTransform = mat3.create();
 export class ApplySticker extends Node {
 	#renderTarget?: RenderTarget;
 	#textureSize: number;
-	inputTexture?: Texture;
+	inputTexture: Texture | null = null;
+
 	constructor(editor: NodeImageEditor, params?: any) {
 		super(editor, params);
 		this.hasPreview = true;
@@ -44,14 +45,17 @@ export class ApplySticker extends Node {
 	}
 
 	async operate(context: any = {}) {
+		if (!this.material) {
+			return;
+		}
 		const params = this.params;
 		this.material.setTexture('uSticker', this.inputTexture);
-		this.material.setTexture('uStickerSpecular', await this.getInput('specular').value);
-		this.material.setTexture('uInput', await this.getInput('input').value);
-		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
+		this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.value);
+		this.material.setTexture('uInput', await this.getInput('input')?.value);
+		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0);
 
 		const texTransform = mat3.create();
-		ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left'), this.getValue('top left'), this.getValue('top right'));
+		ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left') as vec2, this.getValue('top left') as vec2, this.getValue('top right') as vec2);
 		this.material.uniforms['uTransformTexCoord0'] = texTransform;
 
 		/*texTransform = mat3.identity(texTransform);
@@ -77,7 +81,7 @@ export class ApplySticker extends Node {
 		//this.material.uniforms['uInput'] = this.inputTexture;
 
 		if (!this.#renderTarget) {
-			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')._value });
+			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')?._value });
 		}
 		Graphics.pushRenderTarget(this.#renderTarget);
 		this.editor.render(this.material);
@@ -89,7 +93,10 @@ export class ApplySticker extends Node {
 		Graphics.popRenderTarget();
 
 		this.updatePreview(context);
-		this.getOutput('output')._value = this.#renderTarget.getTexture();
+		const output = this.getOutput('output');
+		if (output) {
+			output._value = this.#renderTarget.getTexture();
+		}
 		//this.getOutput('output')._pixelArray = pixelArray;
 	}
 
@@ -123,7 +130,7 @@ registerOperation('apply_sticker', ApplySticker);
 
 
 //void ComputeTextureMatrixFromRectangle( VMatrix* pOutMat, const Vector2D& bl, const Vector2D& tl, const Vector2D& tr )
-function ComputeTextureMatrixFromRectangle(out, bl, tl, tr) {
+function ComputeTextureMatrixFromRectangle(out: mat3, bl: vec2, tl: vec2, tr: vec2) {
 	const tempVec2 = vec2.create();
 	const leftEdge = vec2.sub(vec2.create(), bl, tl);
 	const topEdge = vec2.sub(vec2.create(), tr, tl);

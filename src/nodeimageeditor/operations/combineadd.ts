@@ -27,8 +27,8 @@ export class CombineAdd extends Node {
 
 
 	async operate(context: any = {}) {
-		if (DEBUG) {
-			console.error('CombineAdd operate');
+		if (!this.material) {
+			return;
 		}
 		/*let input1 = this.getInput('input1').value;
 		let input2 = this.getInput('input2').value;
@@ -47,7 +47,7 @@ export class CombineAdd extends Node {
 
 		const textureArray = [];
 		for (let i = 0; i < 8; ++i) {
-			textureArray.push(await this.getInput('input' + i).value);
+			textureArray.push(await this.getInput('input' + i)?.value);
 		}
 		this.material.setTextureArray('uInput[0]', textureArray);
 
@@ -64,8 +64,11 @@ export class CombineAdd extends Node {
 
 		this.updatePreview(context);
 
-		this.getOutput('output')._value = this.#renderTarget.getTexture();
-		this.getOutput('output')._pixelArray = pixelArray;
+		const output = this.getOutput('output');
+		if (output) {
+			output._value = this.#renderTarget.getTexture();
+			output._pixelArray = pixelArray;
+		}
 		if (DEBUG) {
 			console.error('CombineAdd end operate');
 		}

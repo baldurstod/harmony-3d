@@ -1,21 +1,22 @@
 import { mat3, vec2, vec4 } from 'gl-matrix';
+import { Graphics } from '../../graphics/graphics';
+import { RenderTarget } from '../../textures/rendertarget';
+import { Texture } from '../../textures/texture';
+import { GL_RGBA, GL_UNSIGNED_BYTE } from '../../webgl/constants';
 import { IO_TYPE_TEXTURE_2D } from '../inputoutput';
 import { Node } from '../node';
-import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
-import { RenderTarget } from '../../textures/rendertarget';
-import { GL_UNSIGNED_BYTE, GL_RGBA } from '../../webgl/constants';
-import { registerOperation } from '../operations';
-import { Graphics } from '../../graphics/graphics';
 import { NodeImageEditor } from '../nodeimageeditor';
-import { Texture } from '../../textures/texture';
+import { NodeImageEditorMaterial } from '../nodeimageeditormaterial';
 import { NodeParam, NodeParamType } from '../nodeparam';
+import { registerOperation } from '../operations';
 
 const tempVec2 = vec2.create();
 
 export class TextureLookup extends Node {
 	#renderTarget?: RenderTarget;
 	#textureSize: number;
-	inputTexture?: Texture;
+	inputTexture: Texture | null = null;
+
 	constructor(editor: NodeImageEditor, params?: any) {
 		super(editor, params);
 		this.hasPreview = true;
@@ -46,13 +47,16 @@ export class TextureLookup extends Node {
 	}
 
 	async operate(context: any = {}) {
+		if (!this.material) {
+			return;
+		}
 		this.material.setTexture('uInput', this.inputTexture);
-		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
+		this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black') as number, this.getValue('adjust white') as number, this.getValue('adjust gamma') as number, 0.0);
 
 		const texTransform = mat3.create();
-		mat3.rotate(texTransform, texTransform, this.getValue('rotation'));
-		mat3.scale(texTransform, texTransform, vec2.set(tempVec2, this.getValue('scale u'), this.getValue('scale v')));
-		mat3.translate(texTransform, texTransform, vec2.set(tempVec2, this.getValue('translate u'), this.getValue('translate v')));
+		mat3.rotate(texTransform, texTransform, this.getValue('rotation') as number);
+		mat3.scale(texTransform, texTransform, vec2.set(tempVec2, this.getValue('scale u') as number, this.getValue('scale v') as number));
+		mat3.translate(texTransform, texTransform, vec2.set(tempVec2, this.getValue('translate u') as number, this.getValue('translate v') as number));
 		this.material.uniforms['uTransformTexCoord0'] = texTransform;
 
 		//console.error(this.params, this.testing);
@@ -69,8 +73,11 @@ export class TextureLookup extends Node {
 
 		this.updatePreview(context);
 
-		this.getOutput('output')._value = this.#renderTarget.getTexture();
-		this.getOutput('output')._pixelArray = pixelArray;
+		const output = this.getOutput('output');
+		if (output) {
+			output._value = this.#renderTarget.getTexture();
+			output._pixelArray = pixelArray;
+		}
 	}
 
 	get title() {

@@ -29,8 +29,11 @@ export class Select extends Node {
 		if (false && DEBUG) {
 			console.log('Select operate');
 		}
-		this.material.setTexture('uInputTexture', await this.getInput('input').value);
-		this.material.uniforms['uSelect[0]'] = await this.getInput('selectvalues').value;
+		if (!this.material) {
+			return;
+		}
+		this.material.setTexture('uInputTexture', await this.getInput('input')?.value);
+		this.material.uniforms['uSelect[0]'] = await this.getInput('selectvalues')?.value;
 
 		if (!this.#renderTarget) {
 			this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
@@ -44,8 +47,11 @@ export class Select extends Node {
 
 		this.updatePreview(context);
 
-		this.getOutput('output')._value = this.#renderTarget.getTexture();
-		this.getOutput('output')._pixelArray = pixelArray;
+		const output = this.getOutput('output');
+		if (output) {
+			output._value = this.#renderTarget.getTexture();
+			output._pixelArray = pixelArray;
+		}
 		if (false && DEBUG) {
 			console.log('Select end operate');
 		}
@@ -66,7 +72,7 @@ export class Select extends Node {
 			}
 		}
 
-		const selectvalues = await this.getInput('selectvalues').value;
+		const selectvalues = await this.getInput('selectvalues')?.value;
 		const a = [];
 		for (const v of selectvalues) {
 			if (v) {

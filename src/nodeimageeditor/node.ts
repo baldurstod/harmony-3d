@@ -1,5 +1,6 @@
 import { saveFile } from 'harmony-browser-utils';
 import { createElement } from 'harmony-ui';
+import { MyEventTarget } from 'harmony-utils';
 import { Graphics } from '../graphics/graphics';
 import { Material } from '../materials/material';
 import { generateRandomUUID } from '../math/functions';
@@ -10,9 +11,8 @@ import { imageDataToImage } from '../utils/imagedata';
 import { GL_RGBA, GL_UNSIGNED_BYTE } from '../webgl/constants';
 import { Input } from './input';
 import { NodeImageEditor } from './nodeimageeditor';
-import { NodeParam } from './nodeparam';
+import { NodeParam, NodeParamArray, NodeParamScalar, NodeParamValue } from './nodeparam';
 import { Output } from './output';
-import { MyEventTarget } from 'harmony-utils';
 
 enum DrawState {
 	Invalid = 0,
@@ -32,18 +32,18 @@ export const PREVIEW_PICTURE_SIZE = 256;
 
 export class Node extends MyEventTarget {
 	#hasPreview = false;
-	id = generateRandomUUID();
-	editor: NodeImageEditor;
-	inputs = new Map<string, Input>();
-	outputs = new Map<string, Output>();
-	params = new Map<string, NodeParam>();
-	previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
+	readonly id = generateRandomUUID();
+	readonly editor: NodeImageEditor;
+	readonly inputs = new Map<string, Input>();
+	readonly outputs = new Map<string, Output>();
+	readonly params = new Map<string, NodeParam>();
+	readonly previewPic = new Image(PREVIEW_PICTURE_SIZE, PREVIEW_PICTURE_SIZE);
 	previewSize: number = PREVIEW_PICTURE_SIZE;
 	#previewRenderTarget?: RenderTarget;
 	autoRedraw = false;
 	#redrawState: DrawState = DrawState.Invalid;
-	#operation;
-	protected material: Material;
+	//#operation;
+	protected material?: Material;
 	#pixelArray?: Uint8ClampedArray;
 
 	constructor(editor: NodeImageEditor, params?: any) {
@@ -52,25 +52,25 @@ export class Node extends MyEventTarget {
 		this.setParams(params);
 	}
 
-	addInput(inputId, inputType, size = 1) {
+	addInput(inputId: string, inputType: number/*TODO: create enum*/, size = 1) {
 		const input = new Input(this, inputId, inputType, size);
 		this.inputs.set(inputId, input);
 		this.invalidate();
 		return input;
 	}
 
-	addOutput(outputId, outputType) {
+	addOutput(outputId: string, outputType: number/*TODO: create enum*/) {
 		const output = new Output(this, outputId, outputType);
 		this.outputs.set(outputId, output);
 		this.invalidate();
 		return output;
 	}
 
-	getInput(inputId) {
+	getInput(inputId: string) {
 		return this.inputs.get(inputId);
 	}
 
-	getOutput(outputId) {
+	getOutput(outputId: string) {
 		return this.outputs.get(outputId);
 	}
 
@@ -108,11 +108,11 @@ export class Node extends MyEventTarget {
 		}
 	}
 
-	setParam(paramName, paramValue, paramIndex?) {
+	setParam(paramName: string, paramValue: NodeParamValue, paramIndex?: number) {
 		const p = this.params.get(paramName);
 		if (p) {
-			if (paramIndex != undefined) {
-				p.value[paramIndex] = paramValue;
+			if (paramIndex !== undefined) {
+				(p.value as NodeParamArray)[paramIndex] = paramValue as NodeParamScalar;
 			} else {
 				p.value = paramValue;
 			}
@@ -120,7 +120,7 @@ export class Node extends MyEventTarget {
 		}
 	}
 
-	setPredecessor(inputId, predecessor, predecessorOutputId) {
+	setPredecessor(inputId: string, predecessor: Node, predecessorOutputId: string) {
 		const input = this.inputs.get(inputId);
 		const output = predecessor.outputs.get(predecessorOutputId);
 
@@ -176,7 +176,7 @@ export class Node extends MyEventTarget {
 
 	ready() {
 		const node = this;
-		const promiseFunction = resolve => {
+		const promiseFunction = (resolve: (arg0: boolean) => void) => {
 			const callback = function () {
 				if (node.isValid()) {
 					resolve(true);
@@ -195,17 +195,18 @@ export class Node extends MyEventTarget {
 		}
 		startingPoint = startingPoint || this;
 		if (this.#redrawState == DrawState.Valid) {
+			/*
 			if (this.#operation && this.#operation.isValid) {
 				return this.#operation.isValid(startingPoint);
 			} else {
-				const inputs = this.inputs;
-				for (const i of inputs.values()) {
-					if (!i.isValid(startingPoint)) {
-						return false;
-					}
+			*/
+			const inputs = this.inputs;
+			for (const i of inputs.values()) {
+				if (!i.isValid(startingPoint)) {
+					return false;
 				}
 			}
-
+			//}
 		}
 		return this.#redrawState == DrawState.Valid;
 	}
@@ -234,7 +235,7 @@ export class Node extends MyEventTarget {
 		throw 'This function must be overriden';
 	}
 
-	#dispatchEvent(eventName, eventDetail) {
+	#dispatchEvent(eventName: string, eventDetail: NodeParam) {
 		this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
 		this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
 	}
@@ -247,7 +248,9 @@ export class Node extends MyEventTarget {
 		}
 		this.#previewRenderTarget = renderTarget2;
 		Graphics.pushRenderTarget(renderTarget2);
-		this.editor.render(this.material);
+		if (this.material) {
+			this.editor.render(this.material);
+		}
 
 		const pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
 		Graphics.glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
@@ -268,15 +271,22 @@ export class Node extends MyEventTarget {
 		Graphics.popRenderTarget();
 	}
 
-	async savePicture(filename: string = 'texture.png') {
+	async savePicture(filename: string = 'texture.png'): Promise<void> {
 		await this.redraw({ previewSize: 2048 });
 
 		const image = this.previewPic;
 
 		const canvas = createElement('canvas', { width: image.width, height: image.height }) as HTMLCanvasElement;
 		const ctx = canvas.getContext('2d');
+		if (!ctx) {
+			return;
+		}
 		ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-		canvas.toBlob((blob) => saveFile(new File([blob], filename)));//toDataURL
+		canvas.toBlob((blob) => {
+			if (blob) {
+				saveFile(new File([blob], filename));
+			}
+		});//toDataURL
 		//		saveFile(new File([blob], 'texture.png'));
 		this.previewPic.width = PREVIEW_PICTURE_SIZE;
 		this.previewPic.height = PREVIEW_PICTURE_SIZE;
