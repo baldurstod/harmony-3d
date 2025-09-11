@@ -1,5 +1,4 @@
 import { vec3 } from 'gl-matrix';
-import { Entity } from '../entities/entity';
 import { Bone } from '../objects/bone';
 
 export class Hitbox {

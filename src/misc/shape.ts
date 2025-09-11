@@ -1,5 +1,5 @@
 import { Path } from '../math/curves/path';
-import { generateRandomUUID } from '../math/functions'
+import { generateRandomUUID } from '../math/functions';
 
 export class Shape extends Path {
 	uuid = generateRandomUUID();
@@ -32,62 +32,62 @@ export class Shape extends Path {
 		};
 
 	}
-/*
-	copy(source) {
+	/*
+		copy(source) {
 
-		super.copy(source);
+			super.copy(source);
 
-		this.holes = [];
+			this.holes = [];
 
-		for (let i = 0, l = source.holes.length; i < l; i++) {
+			for (let i = 0, l = source.holes.length; i < l; i++) {
 
-			const hole = source.holes[i];
+				const hole = source.holes[i];
 
-			this.holes.push(hole.clone());
+				this.holes.push(hole.clone());
 
-		}
+			}
 
-		return this;
-
-	}
-		*/
-/*
-	toJSON() {
-
-		const data = super.toJSON();
-
-		data.uuid = this.uuid;
-		data.holes = [];
-
-		for (let i = 0, l = this.holes.length; i < l; i++) {
-
-			const hole = this.holes[i];
-			data.holes.push(hole.toJSON());
+			return this;
 
 		}
+			*/
+	/*
+		toJSON() {
 
-		return data;
+			const data = super.toJSON();
 
-	}
-		*/
-/*
-	fromJSON(json) {
+			data.uuid = this.uuid;
+			data.holes = [];
 
-		super.fromJSON(json);
+			for (let i = 0, l = this.holes.length; i < l; i++) {
 
-		this.uuid = json.uuid;
-		this.holes = [];
+				const hole = this.holes[i];
+				data.holes.push(hole.toJSON());
 
-		for (let i = 0, l = json.holes.length; i < l; i++) {
+			}
 
-			const hole = json.holes[i];
-			this.holes.push(new Path().fromJSON(hole));
+			return data;
 
 		}
+			*/
+	/*
+		fromJSON(json) {
 
-		return this;
+			super.fromJSON(json);
 
-	}
-*/
+			this.uuid = json.uuid;
+			this.holes = [];
+
+			for (let i = 0, l = json.holes.length; i < l; i++) {
+
+				const hole = json.holes[i];
+				this.holes.push(new Path().fromJSON(hole));
+
+			}
+
+			return this;
+
+		}
+	*/
 
 }
