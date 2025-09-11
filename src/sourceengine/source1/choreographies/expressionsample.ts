@@ -4,7 +4,8 @@ export class ExpressionSample {
 	s = 0;
 	c = 0;
 	selected = false;
-	setCurveType(curveType) {
+
+	setCurveType(curveType: number) {
 		this.c = curveType;
 	}
 

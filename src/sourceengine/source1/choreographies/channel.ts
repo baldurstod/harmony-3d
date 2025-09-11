@@ -2,13 +2,14 @@ import { TimelineChannel } from '../../../timeline/channel';
 import { TimelineElement } from '../../../timeline/element';
 import { TimelineGroup } from '../../../timeline/group';
 import { Actor } from './actor';
-import { Event } from './event';
+import { ChoreographyEvent } from './event';
 
 export class Channel {
 	active = false;
-	events: Event[] = [];
+	events: ChoreographyEvent[] = [];
 	name: string;
-	actor: Actor;
+	actor?: Actor;
+
 	constructor(name: string) {
 		this.name = name;
 	}
@@ -17,7 +18,7 @@ export class Channel {
 	 * Add an event
 	 * @param {Object ChoreographyEvent} event The event to add
 	 */
-	addEvent(event: Event) {
+	addEvent(event: ChoreographyEvent) {
 		this.events.push(event);
 		event.setChannel(this);
 	}
@@ -47,12 +48,12 @@ export class Channel {
 	/**
 	 * toString
 	 */
-	toString(indent) {
-		indent = indent || '';
+	toString(indent?: string) {
+		indent = indent ?? '';
 		const subindent = indent + '\t';
 		const arr = [indent + 'Channel ' + this.name];
 		for (let i = 0; i < this.events.length; ++i) {
-			arr.push(this.events[i].toString(subindent));
+			arr.push(this.events[i]!.toString(subindent));
 		}
 		if (!this.active) {
 			arr.push(indent + 'active 0')
@@ -63,10 +64,10 @@ export class Channel {
 	/**
 	 * Step
 	 */
-	step(previousTime, currentTime) {
+	step(previousTime: number, currentTime: number) {
 		//TODOv2
 		for (let i = 0; i < this.events.length; ++i) {
-			this.events[i].step(previousTime, currentTime);
+			this.events[i]!.step(previousTime, currentTime);
 		}
 	}
 

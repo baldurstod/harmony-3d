@@ -1,15 +1,15 @@
-import { Event } from './event';
+import { ChoreographyEvent } from './event';
 import { ExpressionSample } from './expressionsample';
 
 export class FlexAnimationTrack {
-	event: Event;
+	event: ChoreographyEvent;
 	flags = 0;
 	samples: [ExpressionSample[], ExpressionSample[]] = [[], []];
 	controllerName: string = '';
 	min = 0;
 	max = 0;
 
-	constructor(event: Event) {
+	constructor(event: ChoreographyEvent) {
 		this.event = event;
 	}
 

@@ -6,10 +6,11 @@ import { Choreography } from './choreography';
 export class Actor {
 	name: string;
 	channels: Channel[] = [];
-	choreography: Choreography;
+	#choreography: Choreography;
 	active = false;
 
-	constructor(name: string) {
+	constructor(choreography: Choreography, name: string) {
+		this.#choreography = choreography;
 		this.name = name;
 	}
 
@@ -18,12 +19,8 @@ export class Actor {
 		channel.setActor(this);
 	}
 
-	setChoreography(choreography: Choreography) {
-		this.choreography = choreography;
-	}
-
 	getCharacter() {
-		return this.choreography.actors2[0];//fixme: variable
+		return this.#choreography.actors2[0];//fixme: variable
 	}
 
 	setActive(active: boolean) {
@@ -35,7 +32,7 @@ export class Actor {
 		const subindent = indent + '\t';
 		const arr = [indent + 'Actor ' + this.name];
 		for (let i = 0; i < this.channels.length; ++i) {
-			arr.push(this.channels[i].toString(subindent));
+			arr.push(this.channels[i]!.toString(subindent));
 		}
 		return arr.join('\n');
 	}
@@ -43,7 +40,7 @@ export class Actor {
 	step(previousTime: number, currentTime: number) {
 		//TODOv2
 		for (let i = 0; i < this.channels.length; ++i) {
-			this.channels[i].step(previousTime, currentTime);
+			this.channels[i]!.step(previousTime, currentTime);
 		}
 	}
 

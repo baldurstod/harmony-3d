@@ -6,29 +6,32 @@ import { TimelineElement } from '../../../timeline/element';
 import { Timeline } from '../../../timeline/timeline';
 import { TimelineGroup } from '../../../timeline/group';
 import { TimelineClip } from '../../../timeline/clip';
+import { CurveData } from './curvedata';
 
+type ChoreographyEventParam = any/*TODO: improve type*/;
 
-export class Event {
-	#repository;
-	type;
-	name;
-	startTime;
-	endTime;
-	param1;
-	param2;
-	param3;
+export class ChoreographyEvent {
+	#repository: string;
+	type: number;
+	name: string;
+	startTime: number;
+	endTime: number;
+	param1: ChoreographyEventParam;
+	param2: ChoreographyEventParam;
+	param3: ChoreographyEventParam;
 	flags;
 	distanceToTarget = 0;
 	flexAnimTracks: any = {};
-	ramp;
-	ccType;
-	ccToken;
-	choreography: Choreography;
-	channel: Channel;
-	m_nNumLoops;
+	#ramp?: CurveData;
+	#ccType: number = -1;// TODO: create enum
+	#ccToken: string = '';
+	#choreography: Choreography;
+	#channel?: Channel;
+	m_nNumLoops = 0;
 
-	constructor(repository, eventType, name, startTime, endTime, param1, param2, param3, flags, distanceToTarget) {
+	constructor(choreography: Choreography, repository: string, eventType: number, name: string, startTime: number, endTime: number, param1: ChoreographyEventParam, param2: ChoreographyEventParam, param3: ChoreographyEventParam, flags: number, distanceToTarget: number) {
 		this.#repository = repository;
+		this.#choreography = choreography;
 		this.type = eventType;
 		this.name = name;
 		this.startTime = startTime;
@@ -73,36 +76,29 @@ export class Event {
 	 * Set the ramp
 	 * @param {Object CurveData} ramp The ramp to set
 	 */
-	setRamp(ramp) {
-		this.ramp = ramp;
+	setRamp(ramp: CurveData) {
+		this.#ramp = ramp;
 	}
 
 	/**
 	 * TODO
 	 */
-	setCloseCaptionType(ccType) {
-		this.ccType = ccType;
+	setCloseCaptionType(ccType: number) {
+		this.#ccType = ccType;
 	}
 
 	/**
 	 * TODO
 	 */
-	setCloseCaptionToken(token) {
-		this.ccToken = token;
+	setCloseCaptionToken(token: string) {
+		this.#ccToken = token;
 	}
 
 	/**
 	 * TODO
 	 */
-	setChoreography(choreography: Choreography) {
-		this.choreography = choreography;
-	}
-
-	/**
-	 * TODO
-	 */
-	setChannel(channel) {
-		this.channel = channel;
+	setChannel(channel: Channel) {
+		this.#channel = channel;
 	}
 
 	//TODO
@@ -164,7 +160,7 @@ export class Event {
 	 * TODO
 	 * Add a flex animation track
 	 */
-	addTrack(controllerName) {
+	addTrack(controllerName: string) {
 		const track = new FlexAnimationTrack(this);
 		track.setFlexControllerName(controllerName);
 		this.flexAnimTracks[controllerName] = track;
@@ -174,8 +170,8 @@ export class Event {
 	/**
 	 * toString
 	 */
-	toString(indent) {
-		indent = indent || '';
+	toString(indent:string) {
+		indent = indent ?? '';
 		const subindent = indent + '\t';
 		const arr = [];
 		arr.push(indent + 'Event ' + EventType[this.type] + ' ' + this.name);
@@ -189,8 +185,8 @@ export class Event {
 		if (this.param3) {
 			arr.push(subindent + 'param3 ' + this.param3);
 		}
-		if (this.ramp) {
-			arr.push(this.ramp.toString(subindent));
+		if (this.#ramp) {
+			arr.push(this.#ramp.toString(subindent));
 		}
 
 		if (this.getType() == EventType.Flexanimation) {
@@ -202,8 +198,8 @@ export class Event {
 		}
 
 		if (this.getType() == EventType.Speak) {
-			arr.push(subindent + 'cctype ' + CloseCaptionType[this.ccType]);
-			arr.push(subindent + 'cctoken ' + this.ccToken);
+			arr.push(subindent + 'cctype ' + CloseCaptionType[this.#ccType]);
+			arr.push(subindent + 'cctoken ' + this.#ccToken);
 		}
 		return arr.join('\n');
 	}
@@ -211,7 +207,7 @@ export class Event {
 	/**
 	 * Step
 	 */
-	step(previousTime, currentTime) {
+	step(previousTime:number, currentTime:number) {
 		const actor = this.getActor();
 		if (actor) {
 			actor.frame = currentTime;
@@ -239,8 +235,8 @@ export class Event {
 					break;
 				case EventType.Loop:
 					//TODO: loop count
-					if (this.choreography) {
-						this.choreography.loop(this.param1 * 1.0);
+					if (this.#choreography) {
+						this.#choreography.loop(this.param1 * 1.0);
 						//frame2 = this.param1 * 1.0;
 					}
 					break;
@@ -255,8 +251,8 @@ export class Event {
 				case EventType.Sequence:
 					const actor = this.getActor();
 					if (actor) {
-						if (actor.characterModel) {
-							actor.characterModel.playSequence('stand_secondary');//TODOv2
+						if (actor) {
+							actor.playSequence('stand_secondary');//TODOv2
 						}
 					}
 					//frame2 = currentTime;
@@ -282,7 +278,7 @@ export class Event {
 	 * TODO
 	 */
 	getActor() {
-		const channel = this.channel;
+		const channel = this.#channel;
 		if (channel) {
 			const actor = channel.getActor();
 			if (actor) {

@@ -1,23 +1,26 @@
+import { MyEventTarget } from 'harmony-utils';
 import { EPSILON } from '../../../math/constants';
 import { TimelineElement } from '../../../timeline/element';
 import { TimelineGroup } from '../../../timeline/group';
 import { Timeline } from '../../../timeline/timeline';
 import { Actor } from './actor';
-import { Event } from './event';
+import { ChoreographyEvent } from './event';
+import { Source1ModelInstance } from '../export';
 
-export class Choreography {
+export class Choreography extends MyEventTarget {
 	#repository;
-	actors2 = [];
-	#events: Event[] = [];
+	actors2: Source1ModelInstance[] = [];
+	#events: ChoreographyEvent[] = [];
 	#actors: Actor[] = [];
 	previousTime = -1;
 	currentTime = 0;
 	animsSpeed = 1;
 	shouldLoop = false;
-	sceneLength: number;
-	onStop: () => void;
+	sceneLength: number = 0;
+	//onStop: () => void;
 
-	constructor(repository: string, name?: string) {
+	constructor(repository: string) {
+		super()
 		this.#repository = repository;
 	}
 
@@ -29,18 +32,16 @@ export class Choreography {
 	 * Add an event
 	 * @param {Object ChoreographyEvent} event The event to add
 	 */
-	addEvent(event) {
+	addEvent(event: ChoreographyEvent) {
 		this.#events.push(event);
-		event.setChoreography(this);
 	}
 
 	/**
 	 * Add an actor
 	 * @param {Object ChoreographyActor} actor The actor to add
 	 */
-	addActor(actor) {
+	addActor(actor: Actor) {
 		this.#actors.push(actor);
-		actor.setChoreography(this);
 	}
 
 	/**
@@ -49,10 +50,10 @@ export class Choreography {
 	toString(indent = '') {
 		const arr = [];
 		for (let i = 0; i < this.#events.length; ++i) {
-			arr.push(this.#events[i].toString(indent));
+			arr.push(this.#events[i]!.toString(indent));
 		}
 		for (let i = 0; i < this.#actors.length; ++i) {
-			arr.push(this.#actors[i].toString(indent));
+			arr.push(this.#actors[i]!.toString(indent));
 		}
 		return arr.join('\n');
 	}
@@ -60,7 +61,7 @@ export class Choreography {
 	/**
 	 * Step
 	 */
-	step(delta) {
+	step(delta: number) {
 		if (this.animsSpeed > 0) {
 			const currentTime = this.previousTime == -1 ? 0 : this.previousTime + delta * this.animsSpeed;
 			if (this.previousTime != -0.5) {
@@ -68,10 +69,10 @@ export class Choreography {
 			}
 
 			for (let i = 0; i < this.#events.length; ++i) {
-				this.#events[i].step(this.previousTime, this.currentTime);
+				this.#events[i]!.step(this.previousTime, this.currentTime);
 			}
 			for (let i = 0; i < this.#actors.length; ++i) {
-				this.#actors[i].step(this.previousTime, this.currentTime);
+				this.#actors[i]!.step(this.previousTime, this.currentTime);
 			}
 			if (this.shouldLoop) {
 				this.shouldLoop = false;
@@ -98,15 +99,13 @@ export class Choreography {
 	 * Stop
 	 */
 	stop() {
-		if (this.onStop) {
-			this.onStop();
-		}
+		this.dispatchEvent(new Event('stop'));
 	}
 
 	/**
 	 * Step
 	 */
-	loop(startTime) {
+	loop(startTime: number) {
 		this.previousTime = startTime - EPSILON;
 		this.currentTime = startTime;
 		this.shouldLoop = true;
@@ -115,7 +114,7 @@ export class Choreography {
 	/**
 	 * Step
 	 */
-	setActors(actors) {
+	setActors(actors: Source1ModelInstance[]) {
 		this.actors2 = actors;
 	}
 
