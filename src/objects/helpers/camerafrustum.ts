@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { Camera } from '../../cameras/camera';
 import { Float32BufferAttribute, Uint16BufferAttribute, Uint8BufferAttribute } from '../../geometry/bufferattribute';
 import { BufferGeometry } from '../../geometry/buffergeometry';
 import { GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
@@ -6,6 +7,7 @@ import { LineBasicMaterial } from '../../materials/linebasicmaterial';
 import { MaterialColorMode } from '../../materials/material';
 import { GL_LINES } from '../../webgl/constants';
 import { Mesh, MeshParameters } from '../mesh';
+import { Entity } from '../../entities/entity';
 
 const BASE_COLOR = [1, 1, 1, 1];
 const FRUSTRUM_COLOR = [1, 0, 0, 1];
@@ -93,8 +95,8 @@ const Lines = [
 ]
 
 export class CameraFrustum extends Mesh {
-	#camera;
-	#vertexPositionAttribute;
+	#camera: Camera | null = null;
+	#vertexPositionAttribute!: Float32BufferAttribute;
 
 	constructor(params: MeshParameters = {}) {
 		params.geometry = new BufferGeometry();
@@ -102,7 +104,7 @@ export class CameraFrustum extends Mesh {
 		super(params);
 		this.renderMode = GL_LINES;
 		this.#createVertices();
-		this.material.setColorMode(MaterialColorMode.PerVertex);
+		this.getMaterial().setColorMode(MaterialColorMode.PerVertex);
 		this.castShadow = false;
 
 		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.update());
@@ -143,9 +145,9 @@ export class CameraFrustum extends Mesh {
 		}
 	}
 
-	parentChanged(parent) {
+	parentChanged(parent: Entity) {
 		if (parent?.is('Camera')) {
-			this.#camera = parent;
+			this.#camera = parent as Camera;
 		} else {
 			this.#camera = null;
 		}

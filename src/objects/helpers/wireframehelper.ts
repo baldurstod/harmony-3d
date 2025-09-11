@@ -1,5 +1,6 @@
 import { Entity } from '../../entities/entity';
 import { Uint16BufferAttribute, Uint32BufferAttribute } from '../../geometry/bufferattribute';
+import { BufferGeometry } from '../../geometry/buffergeometry';
 import { GL_ELEMENT_ARRAY_BUFFER, GL_LINES, GL_UNSIGNED_INT } from '../../webgl/constants';
 import { Mesh } from '../mesh';
 
@@ -7,33 +8,31 @@ export class WireframeHelper extends Entity {
 	#meshToWireframe = new Map<Entity, Mesh>();
 	#wireframeToMesh = new Map<Mesh, Entity>();
 
-	parentChanged(parent) {
-		if (parent instanceof Entity) {
-			const meshes = parent.getChildList('Mesh');
-			for (const mesh of meshes) {
-				if ((mesh as Mesh).renderMode !== GL_LINES) {//TODO: improve wireframe detection
-					const wireframeGeometry = (mesh as Mesh).getGeometry().clone();
-					const wireframeMesh = new Mesh({ geometry: wireframeGeometry, material: (mesh as Mesh).getMaterial() });
-					wireframeMesh.renderMode = GL_LINES;
-					this.#meshToWireframe.set(mesh, wireframeMesh)
-					this.#wireframeToMesh.set(wireframeMesh, mesh);
+	parentChanged(parent: Entity) {
+		const meshes = parent.getChildList('Mesh');
+		for (const mesh of meshes) {
+			if ((mesh as Mesh).renderMode !== GL_LINES) {//TODO: improve wireframe detection
+				const wireframeGeometry = (mesh as Mesh).getGeometry().clone();
+				const wireframeMesh = new Mesh({ geometry: wireframeGeometry, material: (mesh as Mesh).getMaterial() });
+				wireframeMesh.renderMode = GL_LINES;
+				this.#meshToWireframe.set(mesh, wireframeMesh)
+				this.#wireframeToMesh.set(wireframeMesh, mesh);
 
-					WireframeHelper.updateWireframeIndex(wireframeGeometry);
+				WireframeHelper.#updateWireframeIndex(wireframeGeometry);
 
-					mesh.addChild(wireframeMesh);
-				}
+				mesh.addChild(wireframeMesh);
 			}
 		}
 	}
 
-	setVisible(visible) {
+	setVisible(visible: boolean) {
 		super.setVisible(visible);
 		for (const [w, m] of this.#wireframeToMesh) {
 			w.setVisible(visible);
 		}
 	}
 
-	static updateWireframeIndex(geometry) {
+	static #updateWireframeIndex(geometry: BufferGeometry) {
 		const attribute = geometry.attributes.get('index');
 		if (attribute) {
 			const indexArray = attribute._array;

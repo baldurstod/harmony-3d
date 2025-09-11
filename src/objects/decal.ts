@@ -5,6 +5,10 @@ import { BufferGeometry } from '../geometry/buffergeometry';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { stringToVec3 } from '../utils/utils';
 import { Mesh, MeshParameters } from './mesh';
+import { JSONObject } from '../types';
+import { Entity } from '../entities/entity';
+import { Material } from '../materials/material';
+import { SkeletalMesh } from './skeletalmesh';
 
 const DEFAULT_SIZE = vec3.fromValues(1, 1, 1);
 
@@ -31,7 +35,7 @@ export class Decal extends Mesh {
 		return super.position;
 	}
 
-	parentChanged(parent) {
+	parentChanged() {
 		this.refreshGeometry();
 	}
 
@@ -45,8 +49,8 @@ export class Decal extends Mesh {
 	}
 
 	refreshGeometry() {
-		if (this.parent) {
-			(this.geometry as DecalGeometry).applyTo(this.parent, this.worldMatrix, this.#size);
+		if (this.parent && this.parent.is('Mesh')) {
+			(this.getGeometry() as DecalGeometry).applyTo(this.parent as Mesh, this.worldMatrix, this.#size);
 		}
 	}
 
@@ -58,8 +62,8 @@ export class Decal extends Mesh {
 		});
 	}
 
-	static async constructFromJSON(json) {
-		return new Decal(json.name);
+	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Decal | null> {
+		return new Decal(json);
 	}
 
 	static getEntityName() {
@@ -69,11 +73,11 @@ export class Decal extends Mesh {
 registerEntity(Decal);
 
 class DecalGeometry extends BufferGeometry {
-	applyTo(mesh, projectorMatrix, size) {
-		const indices = [];
-		const vertices = [];
-		const normals = [];
-		const uvs = [];
+	applyTo(mesh: Mesh, projectorMatrix: mat4, size: vec3) {
+		const indices: number[] = [];
+		const vertices: number[] = [];
+		const normals: number[] = [];
+		const uvs: number[] = [];
 
 		this.#generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs);
 		//console.log(uvs);
@@ -85,30 +89,28 @@ class DecalGeometry extends BufferGeometry {
 		this.count = indices.length;
 	}
 
-	#generate(mesh, projectorMatrix, size, indices, vertices, normals, uvs) {
-		let decalVertices = [];
+	#generate(mesh: Mesh, projectorMatrix: mat4, size: vec3, indices: number[], vertices: number[], normals: number[], uvs: number[]) {
+		let decalVertices: [vec3, vec3][] = [];
 
 		const projectorMatrixInverse = mat4.invert(mat4.create(), projectorMatrix);
 
 		const vertex = vec3.create();
 		const normal = vec3.create();
 
-		const geometry = mesh.geometry;
+		const geometry = mesh.getGeometry();
 		if (!geometry) {
 			return;
 		}
 
-		const indexAttribute = geometry.attributes.get('index');
+		const indexAttribute = geometry.attributes.get('index')!;
 		const indexArray = indexAttribute._array;
 		let posArray;
 		let normalArray;
-		if (!mesh.isSkeletalMesh) {
-			posArray = geometry.attributes.get('aVertexPosition')._array;
-			normalArray = geometry.attributes.get('aVertexNormal')._array;
+		if (!(mesh as SkeletalMesh).isSkeletalMesh) {
+			posArray = geometry.attributes.get('aVertexPosition')!._array;
+			normalArray = geometry.attributes.get('aVertexNormal')!._array;
 		} else {
-			mesh.prepareRayCasting();
-			posArray = mesh.skinnedVertexPosition;
-			normalArray = mesh.skinnedVertexNormal;
+			[posArray, normalArray] = (mesh as SkeletalMesh).getSkinnedVertex();
 		}
 
 		for (let i = 0, l = indexAttribute.count; i < l; ++i) {
@@ -135,29 +137,29 @@ class DecalGeometry extends BufferGeometry {
 		decalVertices = this.#clipGeometry(decalVertices, size, [0, 0, - 1]);
 
 		for (let i = 0; i < decalVertices.length; i++) {
-			const decalVertex = decalVertices[i];
+			const decalVertex = decalVertices[i]!;
 
 			// create texture coordinates (we are still in projector space)
 
 			uvs.push(
-				0.5 + (decalVertex[0][0] / size[0]),
-				0.5 + (decalVertex[0][1] / size[1])
+				0.5 + (decalVertex[0]![0] / size[0]),
+				0.5 + (decalVertex[0]![1] / size[1])
 			);
 
 			// transform the vertex back to world space
 			const v = decalVertex[0];
 			//vec3.transformMat4(v, v, projectorMatrix);
 
-			vertices.push(...decalVertex[0]);
-			normals.push(...decalVertex[1]);
+			vertices.push(...decalVertex[0]!);
+			normals.push(...decalVertex[1]!);
 
 			indices.push(i);
 		}
 	}
 
 
-	#clipGeometry(inVertices, size, plane) {
-		const outVertices = [];
+	#clipGeometry(inVertices: [vec3, vec3][], size: vec3, plane: vec3): [vec3, vec3][] {
+		const outVertices: [vec3, vec3][] = [];
 
 		const s = 0.5 * Math.abs(vec3.dot(size, plane));
 
@@ -167,14 +169,14 @@ class DecalGeometry extends BufferGeometry {
 		for (let i = 0; i < inVertices.length; i += 3) {
 
 			let total = 0;
-			let nV1;
-			let nV2;
-			let nV3;
-			let nV4;
+			let nV1: [vec3, vec3];
+			let nV2: [vec3, vec3];
+			let nV3: [vec3, vec3];
+			let nV4: [vec3, vec3];
 
-			const d1 = vec3.dot(inVertices[i + 0][0], plane) - s;
-			const d2 = vec3.dot(inVertices[i + 1][0], plane) - s;
-			const d3 = vec3.dot(inVertices[i + 2][0], plane) - s;
+			const d1 = vec3.dot(inVertices[i + 0]![0]!, plane) - s;
+			const d2 = vec3.dot(inVertices[i + 1]![0]!, plane) - s;
+			const d3 = vec3.dot(inVertices[i + 2]![0]!, plane) - s;
 
 			const v1Out = d1 > 0;
 			const v2Out = d2 > 0;
@@ -190,9 +192,9 @@ class DecalGeometry extends BufferGeometry {
 
 					// the entire face lies inside of the plane, no clipping needed
 
-					outVertices.push(inVertices[i]);
-					outVertices.push(inVertices[i + 1]);
-					outVertices.push(inVertices[i + 2]);
+					outVertices.push(inVertices[i]!);
+					outVertices.push(inVertices[i + 1]!);
+					outVertices.push(inVertices[i + 2]!);
 					break;
 
 				}
@@ -203,26 +205,26 @@ class DecalGeometry extends BufferGeometry {
 
 					if (v1Out) {
 
-						nV1 = inVertices[i + 1];
-						nV2 = inVertices[i + 2];
-						nV3 = this.#clip(inVertices[i], nV1, plane, s);
-						nV4 = this.#clip(inVertices[i], nV2, plane, s);
+						nV1 = inVertices[i + 1]!;
+						nV2 = inVertices[i + 2]!;
+						nV3 = this.#clip(inVertices[i]!, nV1, plane, s);
+						nV4 = this.#clip(inVertices[i]!, nV2, plane, s);
 
 					}
 
 					if (v2Out) {
 
-						nV1 = inVertices[i];
-						nV2 = inVertices[i + 2];
-						nV3 = this.#clip(inVertices[i + 1], nV1, plane, s);
-						nV4 = this.#clip(inVertices[i + 1], nV2, plane, s);
+						nV1 = inVertices[i]!;
+						nV2 = inVertices[i + 2]!;
+						nV3 = this.#clip(inVertices[i + 1]!, nV1, plane, s);
+						nV4 = this.#clip(inVertices[i + 1]!, nV2, plane, s);
 
 						outVertices.push(nV3);
-						outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]);//outVertices.push( nV2.clone() );
-						outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]);//outVertices.push( nV1.clone() );
+						outVertices.push([vec3.clone(nV2[0]!), vec3.clone(nV2[1])]);//outVertices.push( nV2.clone() );
+						outVertices.push([vec3.clone(nV1[0]!), vec3.clone(nV1[1])]);//outVertices.push( nV1.clone() );
 
-						outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]);//outVertices.push( nV2.clone() );
-						outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]);//outVertices.push( nV3.clone() );
+						outVertices.push([vec3.clone(nV2[0]!), vec3.clone(nV2[1])]);//outVertices.push( nV2.clone() );
+						outVertices.push([vec3.clone(nV3[0]!), vec3.clone(nV3[1])]);//outVertices.push( nV3.clone() );
 						outVertices.push(nV4);
 						break;
 
@@ -230,20 +232,20 @@ class DecalGeometry extends BufferGeometry {
 
 					if (v3Out) {
 
-						nV1 = inVertices[i];
-						nV2 = inVertices[i + 1];
-						nV3 = this.#clip(inVertices[i + 2], nV1, plane, s);
-						nV4 = this.#clip(inVertices[i + 2], nV2, plane, s);
+						nV1 = inVertices[i]!;
+						nV2 = inVertices[i + 1]!;
+						nV3 = this.#clip(inVertices[i + 2]!, nV1, plane, s);
+						nV4 = this.#clip(inVertices[i + 2]!, nV2, plane, s);
 
 					}
 
-					outVertices.push([vec3.clone(nV1[0]), vec3.clone(nV1[1])]);//outVertices.push( nV1.clone() );
-					outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]);//outVertices.push( nV2.clone() );
-					outVertices.push(nV3);
+					outVertices.push([vec3.clone(nV1![0]), vec3.clone(nV1![1])]);//outVertices.push( nV1.clone() );
+					outVertices.push([vec3.clone(nV2![0]), vec3.clone(nV2![1])]);//outVertices.push( nV2.clone() );
+					outVertices.push(nV3!);
 
-					outVertices.push(nV4);
-					outVertices.push([vec3.clone(nV3[0]), vec3.clone(nV3[1])]);//outVertices.push( nV3.clone() );
-					outVertices.push([vec3.clone(nV2[0]), vec3.clone(nV2[1])]);//outVertices.push( nV2.clone() );
+					outVertices.push(nV4!);
+					outVertices.push([vec3.clone(nV3![0]), vec3.clone(nV3![1])]);//outVertices.push( nV3.clone() );
+					outVertices.push([vec3.clone(nV2![0]), vec3.clone(nV2![1])]);//outVertices.push( nV2.clone() );
 
 					break;
 
@@ -254,36 +256,30 @@ class DecalGeometry extends BufferGeometry {
 					// two vertices lies outside of the plane, perform clipping
 
 					if (!v1Out) {
-
-						nV1 = [vec3.clone(inVertices[i][0]), vec3.clone(inVertices[i][1])];//inVertices[ i ].clone();
-						nV2 = this.#clip(nV1, inVertices[i + 1], plane, s);
-						nV3 = this.#clip(nV1, inVertices[i + 2], plane, s);
+						nV1 = [vec3.clone(inVertices[i]![0]), vec3.clone(inVertices[i]![1])];//inVertices[ i ].clone();
+						nV2 = this.#clip(nV1, inVertices[i + 1]!, plane, s);
+						nV3 = this.#clip(nV1, inVertices[i + 2]!, plane, s);
 						outVertices.push(nV1);
 						outVertices.push(nV2);
 						outVertices.push(nV3);
-
 					}
 
 					if (!v2Out) {
-
-						nV1 = [vec3.clone(inVertices[i + 1][0]), vec3.clone(inVertices[i + 1][1])];//inVertices[ i + 1 ].clone();
-						nV2 = this.#clip(nV1, inVertices[i + 2], plane, s);
-						nV3 = this.#clip(nV1, inVertices[i], plane, s);
+						nV1 = [vec3.clone(inVertices[i + 1]![0]), vec3.clone(inVertices[i + 1]![1])];//inVertices[ i + 1 ].clone();
+						nV2 = this.#clip(nV1, inVertices[i + 2]!, plane, s);
+						nV3 = this.#clip(nV1, inVertices[i]!, plane, s);
 						outVertices.push(nV1);
 						outVertices.push(nV2);
 						outVertices.push(nV3);
-
 					}
 
 					if (!v3Out) {
-
-						nV1 = [vec3.clone(inVertices[i + 2][0]), vec3.clone(inVertices[i + 2][1])];//inVertices[ i + 2 ].clone();
-						nV2 = this.#clip(nV1, inVertices[i], plane, s);
-						nV3 = this.#clip(nV1, inVertices[i + 1], plane, s);
+						nV1 = [vec3.clone(inVertices[i + 2]![0]), vec3.clone(inVertices[i + 2]![1])];//inVertices[ i + 2 ].clone();
+						nV2 = this.#clip(nV1, inVertices[i]!, plane, s);
+						nV3 = this.#clip(nV1, inVertices[i + 1]!, plane, s);
 						outVertices.push(nV1);
 						outVertices.push(nV2);
 						outVertices.push(nV3);
-
 					}
 
 					break;
@@ -307,13 +303,13 @@ class DecalGeometry extends BufferGeometry {
 	}
 
 
-	#clip(v0, v1, p, s) {
-		const v0Pos = v0[0];
-		const v1Pos = v1[0];
-		const v0Norm = v0[1];
-		const v1Norm = v1[1];
-		const d0 = vec3.dot(v0Pos, p) - s;
-		const d1 = vec3.dot(v1Pos, p) - s;
+	#clip(v0: vec3[], v1: vec3[], plane: vec3, s: number): [vec3, vec3] {
+		const v0Pos = v0[0]!;
+		const v1Pos = v1[0]!;
+		const v0Norm = v0[1]!;
+		const v1Norm = v1[1]!;
+		const d0 = vec3.dot(v0Pos, plane) - s;
+		const d1 = vec3.dot(v1Pos, plane) - s;
 
 		const s0 = d0 / (d0 - d1);
 

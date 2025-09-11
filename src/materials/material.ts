@@ -30,7 +30,7 @@ export enum MaterialColorMode {
 export const DEFAULT_COLOR = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
 export const DEFAULT_CULLING_MODE = MATERIAL_CULLING_BACK;
 
-export type UniformValue = boolean | number | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;
+export type UniformValue = boolean | number | boolean[] | number[] | vec2 | vec3 | vec4 | Texture | Texture[] | null;
 //export type BlendFuncSeparateFactor = typeof GL_ZERO | typeof GL_ONE | typeof GL_SRC_COLOR | typeof GL_ONE_MINUS_SRC_COLOR | typeof GL_DST_COLOR | typeof GL_ONE_MINUS_DST_COLOR | typeof GL_SRC_ALPHA | typeof GL_ONE_MINUS_SRC_ALPHA | typeof GL_DST_ALPHA | typeof GL_ONE_MINUS_DST_ALPHA | typeof GL_CONSTANT_COLOR | typeof GL_ONE_MINUS_CONSTANT_COLOR | typeof GL_CONSTANT_ALPHA | typeof GL_ONE_MINUS_CONSTANT_ALPHA | typeof GL_SRC_ALPHA_SATURATE;
 
 export type MaterialParams = {

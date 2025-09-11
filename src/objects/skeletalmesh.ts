@@ -507,6 +507,11 @@ export class SkeletalMesh extends Mesh {
 		}
 	}
 
+	getSkinnedVertex(): [Float32Array, Float32Array] {
+		this.prepareRayCasting();
+		return [this.#skinnedVertexPosition!, this.#skinnedVertexNormal!];
+	}
+
 	static getEntityName() {
 		return 'Skeletal mesh';
 	}
