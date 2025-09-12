@@ -38,7 +38,7 @@ export class FontManager {
 					const response = await customFetch(this.#fontsPath + s);
 					const fontFile = await response.json();
 					const font = new Font(fontFile);
-					this.#fontList.get(name).set(style, font);
+					this.#fontList.get(name)!.set(style, font);
 					return font;
 				}
 			}

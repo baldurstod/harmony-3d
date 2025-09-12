@@ -1,12 +1,30 @@
 import { vec2, vec3 } from 'gl-matrix';
-
-import { BufferGeometry } from '../geometry/buffergeometry';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../geometry/bufferattribute';
+import { BufferGeometry } from '../geometry/buffergeometry';
+import { Curve } from '../math/curves/curve';
+import { Shape } from '../misc/shape';
 import { ShapeUtils } from '../misc/shapeutils';
 
+type ExtrudeGeometryParameters = {
+	depth?: number;
+	bevelThickness?: number;
+	bevelSize?: number;
+	bevelOffset?: number;
+	bevelSegments?: number;
+	curveSegments?: number;
+	bevelEnabled?: boolean;
+	steps?: number;
+	uvGenerator?: any/*TODO: fix type*/;
+	extrudePath?: Curve;
+};
+
 class ExtrudeGeometry extends BufferGeometry {
-	parameters: object;
-	createGeometry(shapes, options) {
+	parameters?: {
+		shapes: Shape[],
+		options: ExtrudeGeometryParameters
+	};
+
+	createGeometry(shapes: Shape[], options: ExtrudeGeometryParameters) {
 
 		this.parameters = {
 			shapes: shapes,
@@ -17,15 +35,12 @@ class ExtrudeGeometry extends BufferGeometry {
 
 		const scope = this;
 
-		const indicesArray = [];
-		const verticesArray = [];
-		const uvArray = [];
+		const indicesArray: number[] = [];
+		const verticesArray: number[] = [];
+		const uvArray: number[] = [];
 
 		for (let i = 0, l = shapes.length; i < l; i++) {
-
-			const shape = shapes[i];
-			addShape(shape);
-
+			addShape(shapes[i]!);
 		}
 
 		// build geometry
@@ -38,41 +53,34 @@ class ExtrudeGeometry extends BufferGeometry {
 
 		// functions
 
-		function addShape(shape) {
+		function addShape(shape: Shape) {
 
-			const placeholder = [];
+			const placeholder: number[] = [];
 			const startIndex = verticesArray.length / 3;
 
 			// options
 
-			const curveSegments = options.curveSegments !== undefined ? options.curveSegments : 12;
-			const steps = options.steps !== undefined ? options.steps : 1;
-			let depth = options.depth !== undefined ? options.depth : 100;
+			const curveSegments = options.curveSegments ?? 12;
+			const steps = options.steps ?? 1;
+			const depth = options.depth ?? 100;
 
-			let bevelEnabled = options.bevelEnabled !== undefined ? options.bevelEnabled : true;
-			let bevelThickness = options.bevelThickness !== undefined ? options.bevelThickness : 6;
-			let bevelSize = options.bevelSize !== undefined ? options.bevelSize : bevelThickness - 2;
-			let bevelOffset = options.bevelOffset !== undefined ? options.bevelOffset : 0;
-			let bevelSegments = options.bevelSegments !== undefined ? options.bevelSegments : 3;
+			let bevelEnabled = options.bevelEnabled ?? true;
+			let bevelThickness = options.bevelThickness ?? 6;
+			let bevelSize = options.bevelSize ?? bevelThickness - 2;
+			let bevelOffset = options.bevelOffset ?? 0;
+			let bevelSegments = options.bevelSegments ?? 3;
 
 			const extrudePath = options.extrudePath;
 
-			const uvgen = options.UVGenerator !== undefined ? options.UVGenerator : WorldUVGenerator;
-
-			// deprecated options
-
-			if (options.amount !== undefined) {
-
-				console.warn('THREE.ExtrudeBufferGeometry: amount has been renamed to depth.');
-				depth = options.amount;
-
-			}
+			const uvgen = options.uvGenerator ?? WorldUVGenerator;
 
 			//
 
 			let extrudePts, extrudeByPath = false;
 			let splineTube, binormal, normal, position2;
 
+			// TODO
+			/*
 			if (extrudePath) {
 
 				extrudePts = extrudePath.getSpacedPoints(steps);
@@ -93,6 +101,7 @@ class ExtrudeGeometry extends BufferGeometry {
 				position2 = vec3.create();
 
 			}
+			*/
 
 			// Safeguards if bevels are not enabled
 
@@ -122,7 +131,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 				for (let h = 0, hl = holes.length; h < hl; h++) {
 
-					const ahole = holes[h];
+					const ahole = holes[h]!;
 
 					if (ShapeUtils.isClockWise(ahole)) {
 
@@ -143,20 +152,15 @@ class ExtrudeGeometry extends BufferGeometry {
 
 			for (let h = 0, hl = holes.length; h < hl; h++) {
 
-				const ahole = holes[h];
+				const ahole = holes[h]!;
 
 				vertices = vertices.concat(ahole);
 
 			}
 
 
-			function scalePt2(pt, vec, size) {
-
-				if (!vec) console.error('THREE.ExtrudeGeometry: vec does not exist');
-
-				//return vec.clone().multiplyScalar( size ).add( pt );;
+			function scalePt2(pt: vec2, vec: vec2, size: number): vec2 {
 				return vec2.scaleAndAdd(vec2.create(), pt, vec, size);
-
 			}
 
 			const vlen = vertices.length, flen = faces.length;
@@ -165,7 +169,7 @@ class ExtrudeGeometry extends BufferGeometry {
 			// Find directions for point movement
 
 
-			function getBevelVec(inPt, inPrev, inNext) {
+			function getBevelVec(inPt: vec3, inPrev: vec3, inNext: vec3) {
 
 				// computes for inPt the corresponding point inPt' on a new contour
 				//   shifted by 1 unit (length of normalized vector) to the left
@@ -299,16 +303,15 @@ class ExtrudeGeometry extends BufferGeometry {
 				//  (j)---(i)---(k)
 				// console.log('i,j,k', i, j , k)
 
-				contourMovements[i] = getBevelVec(contour[i], contour[j], contour[k]);
-
+				contourMovements[i] = getBevelVec(contour[i]!, contour[j]!, contour[k]!);
 			}
 
 			const holesMovements = [];
-			let oneHoleMovements, verticesMovements = contourMovements.concat();
+			let oneHoleMovements: vec2[], verticesMovements: vec2[] = contourMovements.concat();
 
 			for (let h = 0, hl = holes.length; h < hl; h++) {
 
-				const ahole = holes[h];
+				const ahole = holes[h]!;
 
 				oneHoleMovements = [];
 
@@ -318,7 +321,7 @@ class ExtrudeGeometry extends BufferGeometry {
 					if (k === il) k = 0;
 
 					//  (j)---(i)---(k)
-					oneHoleMovements[i] = getBevelVec(ahole[i], ahole[j], ahole[k]);
+					oneHoleMovements[i] = getBevelVec(ahole[i]!, ahole[j]!, ahole[k]!);
 
 				}
 
@@ -342,7 +345,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 				for (let i = 0, il = contour.length; i < il; i++) {
 
-					const vert = scalePt2(contour[i], contourMovements[i], bs);
+					const vert = scalePt2(contour[i] as vec2, contourMovements[i]!, bs);
 
 					v(vert[0], vert[1], - z);
 
@@ -352,12 +355,12 @@ class ExtrudeGeometry extends BufferGeometry {
 
 				for (let h = 0, hl = holes.length; h < hl; h++) {
 
-					const ahole = holes[h];
-					oneHoleMovements = holesMovements[h];
+					const ahole = holes[h]!;
+					oneHoleMovements = holesMovements[h]!;
 
 					for (let i = 0, il = ahole.length; i < il; i++) {
 
-						const vert = scalePt2(ahole[i], oneHoleMovements[i], bs);
+						const vert = scalePt2(ahole[i] as vec2, oneHoleMovements[i]!, bs);
 
 						v(vert[0], vert[1], - z);
 
@@ -373,7 +376,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 			for (let i = 0; i < vlen; i++) {
 
-				const vert = bevelEnabled ? scalePt2(vertices[i], verticesMovements[i], bs) : vertices[i];
+				const vert = bevelEnabled ? scalePt2(vertices[i] as vec2, verticesMovements[i]!, bs) : vertices[i] as vec2;
 
 				if (!extrudeByPath) {
 
@@ -381,6 +384,8 @@ class ExtrudeGeometry extends BufferGeometry {
 
 				} else {
 
+					// TODO
+					/*
 					// v( vert[0], vert[1] + extrudePts[ 0 ][1], extrudePts[ 0 ][2] );
 
 					normal.copy(splineTube.normals[0]).multiplyScalar(vert[0]);
@@ -389,7 +394,7 @@ class ExtrudeGeometry extends BufferGeometry {
 					position2.copy(extrudePts[0]).add(normal).add(binormal);
 
 					v(position2[0], position2[1], position2[2]);
-
+					*/
 				}
 
 			}
@@ -401,27 +406,23 @@ class ExtrudeGeometry extends BufferGeometry {
 
 				for (let i = 0; i < vlen; i++) {
 
-					const vert = bevelEnabled ? scalePt2(vertices[i], verticesMovements[i], bs) : vertices[i];
+					const vert = bevelEnabled ? scalePt2(vertices[i] as vec2, verticesMovements[i]!, bs) : vertices[i] as vec2;
 
 					if (!extrudeByPath) {
-
 						v(vert[0], vert[1], depth / steps * s);
-
 					} else {
-
 						// v( vert[0], vert[1] + extrudePts[ s - 1 ][1], extrudePts[ s - 1 ][2] );
-
+						// TODO
+						/*
 						normal.copy(splineTube.normals[s]).multiplyScalar(vert[0]);
 						binormal.copy(splineTube.binormals[s]).multiplyScalar(vert[1]);
 
 						position2.copy(extrudePts[s]).add(normal).add(binormal);
 
 						v(position2[0], position2[1], position2[2]);
-
+						*/
 					}
-
 				}
-
 			}
 
 
@@ -438,7 +439,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 				for (let i = 0, il = contour.length; i < il; i++) {
 
-					const vert = scalePt2(contour[i], contourMovements[i], bs);
+					const vert = scalePt2(contour[i] as vec2, contourMovements[i]!, bs);
 					v(vert[0], vert[1], depth + z);
 
 				}
@@ -447,21 +448,20 @@ class ExtrudeGeometry extends BufferGeometry {
 
 				for (let h = 0, hl = holes.length; h < hl; h++) {
 
-					const ahole = holes[h];
-					oneHoleMovements = holesMovements[h];
+					const ahole = holes[h]!;
+					oneHoleMovements = holesMovements[h]!;
 
 					for (let i = 0, il = ahole.length; i < il; i++) {
 
-						const vert = scalePt2(ahole[i], oneHoleMovements[i], bs);
+						const vert = scalePt2(ahole[i] as vec2, oneHoleMovements[i]!, bs);
 
 						if (!extrudeByPath) {
 
 							v(vert[0], vert[1], depth + z);
 
 						} else {
-
-							v(vert[0], vert[1] + extrudePts[steps - 1][1], extrudePts[steps - 1][2] + z);
-
+							// TODO
+							//v(vert[0], vert[1] + extrudePts[steps - 1][1], extrudePts[steps - 1][2] + z);
 						}
 
 					}
@@ -496,7 +496,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 					for (let i = 0; i < flen; i++) {
 
-						const face = faces[i];
+						const face = faces[i]!;
 						f3(face[2] + offset, face[1] + offset, face[0] + offset);
 
 					}
@@ -508,7 +508,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 					for (let i = 0; i < flen; i++) {
 
-						const face = faces[i];
+						const face = faces[i]!;
 						f3(face[0] + offset, face[1] + offset, face[2] + offset);
 
 					}
@@ -519,7 +519,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 					for (let i = 0; i < flen; i++) {
 
-						const face = faces[i];
+						const face = faces[i]!;
 						f3(face[2], face[1], face[0]);
 
 					}
@@ -528,7 +528,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 					for (let i = 0; i < flen; i++) {
 
-						const face = faces[i];
+						const face = faces[i]!;
 						f3(face[0] + vlen * steps, face[1] + vlen * steps, face[2] + vlen * steps);
 
 					}
@@ -550,7 +550,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 				for (let h = 0, hl = holes.length; h < hl; h++) {
 
-					const ahole = holes[h];
+					const ahole = holes[h]!;
 					sidewalls(ahole, layeroffset);
 
 					//, true
@@ -564,7 +564,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 			}
 
-			function sidewalls(contour, layeroffset) {
+			function sidewalls(contour: vec3[], layeroffset: number) {
 
 				let i = contour.length;
 
@@ -594,7 +594,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 			}
 
-			function v(x, y, z) {
+			function v(x: number, y: number, z: number) {
 
 				placeholder.push(x);
 				placeholder.push(y);
@@ -603,7 +603,7 @@ class ExtrudeGeometry extends BufferGeometry {
 			}
 
 
-			function f3(a, b, c) {
+			function f3(a: number, b: number, c: number) {
 				addIndex(a + startIndex);
 				addIndex(b + startIndex);
 				addIndex(c + startIndex);
@@ -621,7 +621,7 @@ class ExtrudeGeometry extends BufferGeometry {
 
 			}
 
-			function f4(a, b, c, d) {
+			function f4(a: number, b: number, c: number, d: number) {
 				addIndex(a + startIndex);
 				addIndex(b + startIndex);
 				addIndex(d + startIndex);
@@ -652,76 +652,70 @@ class ExtrudeGeometry extends BufferGeometry {
 
 			}
 
-			function addIndex(index) {
+			function addIndex(index: number) {
 				indicesArray.push(indicesArray.length);
 			}
 
-			function addVertex(index) {
-
-				verticesArray.push(placeholder[index * 3 + 0]);
-				verticesArray.push(placeholder[index * 3 + 1]);
-				verticesArray.push(placeholder[index * 3 + 2]);
-
+			function addVertex(index: number) {
+				verticesArray.push(placeholder[index * 3 + 0]!);
+				verticesArray.push(placeholder[index * 3 + 1]!);
+				verticesArray.push(placeholder[index * 3 + 2]!);
 			}
 
 
-			function addUV(vector2) {
-
+			function addUV(vector2: vec2) {
 				uvArray.push(vector2[0]);
 				uvArray.push(vector2[1]);
-
 			}
 
 		}
 
 	}
-/*
-	toJSON() {
+	/*
+		toJSON() {
 
-		const data = BufferGeometry.prototype.toJSON.call(this);
+			const data = BufferGeometry.prototype.toJSON.call(this);
 
-		const shapes = this.parameters.shapes;
-		const options = this.parameters.options;
+			const shapes = this.parameters.shapes;
+			const options = this.parameters.options;
 
-		return toJSON(shapes, options, data);
+			return toJSON(shapes, options, data);
 
-	}
-*/
+		}
+	*/
 }
 
 const WorldUVGenerator = {
 
-	generateTopUV: function (geometry, vertices, indexA, indexB, indexC) {
-
-		const a_x = vertices[indexA * 3];
-		const a_y = vertices[indexA * 3 + 1];
-		const b_x = vertices[indexB * 3];
-		const b_y = vertices[indexB * 3 + 1];
-		const c_x = vertices[indexC * 3];
-		const c_y = vertices[indexC * 3 + 1];
+	generateTopUV: function (geometry: BufferGeometry, vertices: number[], indexA: number, indexB: number, indexC: number) {
+		const a_x: number = vertices[indexA * 3]!;
+		const a_y: number = vertices[indexA * 3 + 1]!;
+		const b_x: number = vertices[indexB * 3]!;
+		const b_y: number = vertices[indexB * 3 + 1]!;
+		const c_x: number = vertices[indexC * 3]!;
+		const c_y: number = vertices[indexC * 3 + 1]!;
 
 		return [
 			vec2.fromValues(a_x, a_y),
 			vec2.fromValues(b_x, b_y),
 			vec2.fromValues(c_x, c_y)
-		];
-
+		]!;
 	},
 
-	generateSideWallUV: function (geometry, vertices, indexA, indexB, indexC, indexD) {
+	generateSideWallUV: function (geometry: BufferGeometry, vertices: number[], indexA: number, indexB: number, indexC: number, indexD: number) {
 
-		const a_x = vertices[indexA * 3];
-		const a_y = vertices[indexA * 3 + 1];
-		const a_z = vertices[indexA * 3 + 2];
-		const b_x = vertices[indexB * 3];
-		const b_y = vertices[indexB * 3 + 1];
-		const b_z = vertices[indexB * 3 + 2];
-		const c_x = vertices[indexC * 3];
-		const c_y = vertices[indexC * 3 + 1];
-		const c_z = vertices[indexC * 3 + 2];
-		const d_x = vertices[indexD * 3];
-		const d_y = vertices[indexD * 3 + 1];
-		const d_z = vertices[indexD * 3 + 2];
+		const a_x: number = vertices[indexA * 3]!;
+		const a_y: number = vertices[indexA * 3 + 1]!;
+		const a_z: number = vertices[indexA * 3 + 2]!;
+		const b_x: number = vertices[indexB * 3]!;
+		const b_y: number = vertices[indexB * 3 + 1]!;
+		const b_z: number = vertices[indexB * 3 + 2]!;
+		const c_x: number = vertices[indexC * 3]!;
+		const c_y: number = vertices[indexC * 3 + 1]!;
+		const c_z: number = vertices[indexC * 3 + 2]!;
+		const d_x: number = vertices[indexD * 3]!;
+		const d_y: number = vertices[indexD * 3 + 1]!;
+		const d_z: number = vertices[indexD * 3 + 2]!;
 
 		if (Math.abs(a_y - b_y) < Math.abs(a_x - b_x)) {
 
@@ -747,6 +741,7 @@ const WorldUVGenerator = {
 
 };
 
+/*
 function toJSON(shapes, options, data) {
 
 	data.shapes = [];
@@ -772,6 +767,7 @@ function toJSON(shapes, options, data) {
 	return data;
 
 }
+*/
 
 
-export { ExtrudeGeometry, ExtrudeGeometry as ExtrudeBufferGeometry };
+export { ExtrudeGeometry as ExtrudeBufferGeometry, ExtrudeGeometry };

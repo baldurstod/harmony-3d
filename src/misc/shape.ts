@@ -4,33 +4,22 @@ import { generateRandomUUID } from '../math/functions';
 export class Shape extends Path {
 	uuid = generateRandomUUID();
 	type = 'Shape';
-	holes = [];
+	holes: Path[] = [];
 
-	getPointsHoles(divisions) {
-
+	getPointsHoles(divisions: number) {
 		const holesPts = [];
-
 		for (let i = 0, l = this.holes.length; i < l; i++) {
-
-			holesPts[i] = this.holes[i].getPoints(divisions);
-
+			holesPts[i] = this.holes[i]!.getPoints(divisions);
 		}
-
 		return holesPts;
-
 	}
 
 	// get points of shape and holes (keypoints based on segments parameter)
-
-	extractPoints(divisions) {
-
+	extractPoints(divisions: number) {
 		return {
-
 			shape: this.getPoints(divisions),
 			holes: this.getPointsHoles(divisions)
-
 		};
-
 	}
 	/*
 		copy(source) {

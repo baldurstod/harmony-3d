@@ -1,12 +1,14 @@
+import { JSONObject } from '../types';
 import { ShapePath } from './shapepath';
 
 export class Font {
-	json: any;
-	constructor(json) {
-		this.json = json;
+	#json: any;
+
+	constructor(json: JSONObject) {
+		this.#json = json;
 	}
 
-	generateShapes(text, size = 100) {
+	generateShapes(text: string, size = 100) {
 		const shapes = [];
 		const paths = this.createPaths(text, size);
 
@@ -17,7 +19,7 @@ export class Font {
 	}
 
 	createPaths(text = '', size = 1) {
-		const data = this.json;
+		const data = this.#json;
 		const chars = Array.from(text);
 		const scale = size / data.resolution;
 		const line_height = (data.boundingBox.yMax - data.boundingBox.yMin + data.underlineThickness) * scale;
@@ -39,8 +41,8 @@ export class Font {
 		return paths;
 	}
 
-	createPath(char, scale, offsetX, offsetY) {
-		const data = this.json;
+	createPath(char: string, scale: number, offsetX: number, offsetY: number) {
+		const data = this.#json;
 
 		const glyph = data.glyphs[char] ?? data.glyphs['?'];
 

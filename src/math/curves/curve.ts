@@ -6,7 +6,7 @@ export class Curve {
 	controlPoints = [];
 	arcLength = 0;
 
-	getPosition(t, out = vec3.create()) {
+	getPosition(t: number, out = vec3.create()) {
 		return out;
 	}
 
@@ -30,7 +30,7 @@ export class Curve {
 		return length;
 	}
 
-	getPoints(divisions = 5) {
+	getPoints(divisions = 5): vec3[] {
 		const points = [];
 
 		for (let i = 0; i <= divisions; i++) {
@@ -39,7 +39,7 @@ export class Curve {
 		return points;
 	}
 
-	getAppropriateDivision(division) {
+	getAppropriateDivision(division: number): number {
 		return division;
 	}
 }
