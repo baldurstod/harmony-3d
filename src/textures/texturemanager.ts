@@ -1,3 +1,4 @@
+import { Color } from '../core/color';
 import { createTexture, deleteTexture, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage } from '../textures/texturefactory';
 import { Texture, TextureParams } from './texture';
 
@@ -20,13 +21,13 @@ export class TextureManager {
 		deleteTexture(texture.texture);
 	}
 
-	static createFlatTexture(color = [255, 0, 255], needCubeMap = false) {
+	static createFlatTexture(color: Color, needCubeMap = false) {
 		const texture = this.createTexture();
 		fillFlatTexture(texture, color, needCubeMap);
 		return texture;
 	}
 
-	static createCheckerTexture(color = [255, 0, 255], width = 64, height = 64, needCubeMap = false) {
+	static createCheckerTexture(color: Color, width = 64, height = 64, needCubeMap = false) {
 		const texture = this.createTexture();
 		fillCheckerTexture(texture, color, width, height, needCubeMap);
 		return texture;

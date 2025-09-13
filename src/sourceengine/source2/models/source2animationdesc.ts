@@ -6,8 +6,8 @@ import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { decodeCCompressedDeltaVector3 } from '../animations/decoders/compresseddeltavector3';
 import { Source2SeqGroup } from '../animations/source2seqgroup';
 import { Source2Animation } from './source2animation';
-import { Source2Model } from './source2model';
 import { Source2AnimeDecoder } from './source2animgroup';
+import { Source2Model } from './source2model';
 
 const Warning: Record<string, boolean> = {};
 export class Source2AnimationDesc {
@@ -45,8 +45,8 @@ export class Source2AnimationDesc {
 		if (fetch) {
 			const localReferenceArray = fetch.getValueAsNumberArray('m_localReferenceArray');
 			//TODO: mix multiple anims
-			if (localReferenceArray && localReferenceArray[0] !== undefined) {
-				const animName = (this.#animationResource as Source2SeqGroup).localSequenceNameArray[localReferenceArray[0]];
+			if (localReferenceArray && localReferenceArray[0] !== undefined && (this.#animationResource as Source2SeqGroup).localSequenceNameArray) {
+				const animName = (this.#animationResource as Source2SeqGroup).localSequenceNameArray![localReferenceArray[0]];
 				if (animName) {
 					const animDesc = this.#source2Model.getAnimationByName(animName);
 					if (animDesc) {
@@ -376,7 +376,7 @@ function getFloat16(b: number[], offset: number) {//TODOv3: optimize this functi
 	return (sign ? -1 : 1) * Math.pow(2, exponent - 15) * (1 + (mantissa / Math.pow(2, 10)));
 }
 
-function getFloat32(b:number[], offset:number) {//TODOv3: remove these functions or something
+function getFloat32(b: number[], offset: number) {//TODOv3: remove these functions or something
 	const sign = 1 - (2 * (b[3 + offset]! >> 7)),
 		exponent = (((b[3 + offset]! << 1) & 0xff) | (b[2 + offset]! >> 7)) - 127,
 		mantissa = ((b[2 + offset]! & 0x7f) << 16) | (b[1 + offset]! << 8) | b[0 + offset]!;

@@ -91,7 +91,7 @@ export class ObjExporter {
 				let normals: Float32Array | undefined;
 				let uvs: Float32Array | undefined;
 				if (subdivisions > 0) {
-					const result = await loopSubdivision.subdivide(m.f, m.v, subdivisions, mergeTolerance);
+					const result = await loopSubdivision.subdivide(m.f!, m.v!, subdivisions, mergeTolerance);
 					faces = result.indices;
 					vertices = result.vertices;
 				} else {

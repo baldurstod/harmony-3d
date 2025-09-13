@@ -66,15 +66,15 @@ export class Color {
 		return Math.round(this.a * 255.0);
 	}
 
-	setRed = function (r: number) {
+	setRed(r: number) {
 		this.r = r / 255.0;
 	}
 
-	setGreen = function (g: number) {
+	setGreen(g: number) {
 		this.g = g / 255.0;
 	}
 
-	setBlue = function (b: number) {
+	setBlue(b: number) {
 		this.b = b / 255.0;
 	}
 

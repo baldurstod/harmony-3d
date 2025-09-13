@@ -1,11 +1,12 @@
 import { TESTING } from '../buildoptions';
 import loopSubdivision from './loop_subdivision.wasm';
 
-export class LoopSubdivision {
-	static #instance;
-	#webAssembly;
-	#heap;
-	#heapBuffer;
+export class LoopSubdivision {// TODO: turn into a static class
+	static #instance: LoopSubdivision;
+	#webAssembly: any/*TODO: improve type*/;
+	#heap!: Uint8Array;
+	#heapBuffer!: ArrayBuffer;
+
 	constructor() {
 		if (LoopSubdivision.#instance) {
 			return LoopSubdivision.#instance;
@@ -13,7 +14,7 @@ export class LoopSubdivision {
 		LoopSubdivision.#instance = this;
 	}
 
-	async subdivide(indices, vertices, subdivideCount = 1, tolerance = 0.001) {
+	async subdivide(indices: Uint8Array | Uint32Array, vertices: Float32Array, subdivideCount = 1, tolerance = 0.001) {
 		await this.#initWebAssembly();
 		const api = this.#webAssembly.instance.exports;
 
@@ -71,18 +72,18 @@ export class LoopSubdivision {
 		}
 
 		const env = {
-			'abortStackOverflow': _ => { throw new Error('overflow'); },
-			'emscripten_notify_memory_growth': _ => {
+			'abortStackOverflow': () => { throw new Error('overflow'); },
+			'emscripten_notify_memory_growth': () => {
 				if (TESTING) {
 					console.error('growth ', this.#webAssembly.instance.exports.memory.buffer.byteLength);
 				}
 				this.#initHeap();
 			},
-			'table': new WebAssembly.Table({initial: 0, maximum: 0, element: 'anyfunc'}),
+			'table': new WebAssembly.Table({ initial: 0, maximum: 0, element: 'anyfunc' }),
 			'tableBase': 0,
 			'memoryBase': 1024,
 			'STACKTOP': 0,
-			console_log: (ptr, size) => {
+			console_log: (ptr: number, size: number) => {
 				const stringContent = new Uint8Array(this.#heapBuffer, ptr, size);
 				console.log(new TextDecoder().decode(stringContent));
 			},
@@ -92,15 +93,15 @@ export class LoopSubdivision {
 		const imports = {
 			env: env,
 			wasi_snapshot_preview1: {
-				fd_write: (fd, iovsPtr, iovsLength, bytesWrittenPtr) => {
+				fd_write: (fd: number, iovsPtr: number, iovsLength: number, bytesWrittenPtr: number) => {
 					const iovs = new Uint32Array(this.#heapBuffer, iovsPtr, iovsLength * 2);
-					if(fd === 1 || fd === 2) { //stdout
+					if (fd === 1 || fd === 2) { //stdout
 						let text = '';
 						let totalBytesWritten = 0;
 						const decoder = new TextDecoder();
-						for(let i =0; i < iovsLength * 2; i += 2){
-							const offset = iovs[i];
-							const length = iovs[i+1];
+						for (let i = 0; i < iovsLength * 2; i += 2) {
+							const offset = iovs[i]!;
+							const length = iovs[i + 1]!;
 							const textChunk = decoder.decode(new Int8Array(this.#heapBuffer, offset, length));
 							text += textChunk;
 							totalBytesWritten += length;
@@ -111,28 +112,28 @@ export class LoopSubdivision {
 					}
 					return 0;
 				},
-				fd_seek: (p1, p2, p3, p4) => {
+				fd_seek: (p1: never, p2: never, p3: never, p4: never) => {
 					if (TESTING) {
 						console.log(p1, p2, p3, p4);
 					}
 				},
-				fd_read: (p1, p2, p3, p4) => {
+				fd_read: (p1: never, p2: never, p3: never, p4: never) => {
 					if (TESTING) {
 						console.log(p1, p2, p3, p4);
 					}
 				},
-				fd_close: (p1, p2, p3, p4) => {
+				fd_close: (p1: never, p2: never, p3: never, p4: never) => {
 					if (TESTING) {
 						console.log(p1, p2, p3, p4);
 					}
 				},
-				proc_exit: (p1) => { console.log('Exit code:', p1) },
+				proc_exit: (p1: number) => { console.log('Exit code:', p1) },
 			},
 		}
 
 
 		//this.#webAssembly = await WebAssembly.instantiateStreaming(fetch('loop_subdivision.wasm'), imports);
-		this.#webAssembly = await (loopSubdivision as unknown as (any) => any)(imports);
+		this.#webAssembly = await (loopSubdivision as unknown as (_: any) => any)(imports);
 		this.#initHeap();
 
 		if (TESTING) {

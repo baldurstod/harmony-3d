@@ -1,22 +1,33 @@
-import {
-	GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_FLOAT, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FLOAT_MAT2, GL_FLOAT_MAT3, GL_FLOAT_MAT4,
-	GL_INT, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_SAMPLER_2D, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_2D_ARRAY,
-	GL_SAMPLER_2D_SHADOW, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLER_2D_ARRAY_SHADOW,
-	GL_INT_SAMPLER_2D, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_SAMPLER_2D_ARRAY,
-	GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY,
-	GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP
-} from './constants';
 import { DEBUG } from '../buildoptions';
-import { WebGLAnyRenderingContext } from '../types';
-import { Texture } from '../textures/texture';
 import { CubeTexture } from '../textures/cubetexture';
+import { Texture } from '../textures/texture';
+import { WebGLAnyRenderingContext } from '../types';
+import {
+	GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_FLOAT,
+	GL_FLOAT_MAT2, GL_FLOAT_MAT3, GL_FLOAT_MAT4,
+	GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4,
+	GL_INT,
+	GL_INT_SAMPLER_2D,
+	GL_INT_SAMPLER_2D_ARRAY,
+	GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE,
+	GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_SAMPLER_2D,
+	GL_SAMPLER_2D_ARRAY,
+	GL_SAMPLER_2D_ARRAY_SHADOW,
+	GL_SAMPLER_2D_SHADOW,
+	GL_SAMPLER_3D, GL_SAMPLER_CUBE,
+	GL_SAMPLER_CUBE_SHADOW,
+	GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP,
+	GL_UNSIGNED_INT_SAMPLER_2D,
+	GL_UNSIGNED_INT_SAMPLER_2D_ARRAY,
+	GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE
+} from './constants';
 
 function flattenArray(array: Float32List[], arrayCount: number, arraySize: number) {
 	const out = new Float32Array(arrayCount * arraySize);//TODO: cache this
 	let offset = 0;
 	for (let i = 0; i < arrayCount; i++) {
 		for (let j = 0; j < arraySize; j++) {
-			out[offset] = array[i][j];
+			out[offset] = array[i]![j]!;
 			++offset;
 		}
 	}
@@ -201,9 +212,9 @@ export class Uniform {
 
 		for (let i = 0; i < this.#size; ++i) {
 			const texture = textures[i];
-			glContext.activeTexture(GL_TEXTURE0 + (this.#textureUnit as number[])[i]);
+			glContext.activeTexture(GL_TEXTURE0 + (this.#textureUnit as number[])[i]!);
 			if (texture) {
-				glContext.bindTexture(GL_TEXTURE_2D, textures[i].texture);
+				glContext.bindTexture(GL_TEXTURE_2D, texture.texture);
 			} else {
 				glContext.bindTexture(GL_TEXTURE_2D, null);
 			}

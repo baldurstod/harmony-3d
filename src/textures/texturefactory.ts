@@ -1,4 +1,5 @@
 import { vec3 } from 'gl-matrix';
+import { Color } from '../core/color';
 import { WebGLAnyRenderingContext } from '../types';
 import { GL_NEAREST, GL_RGB, GL_RGBA, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../webgl/constants';
 import { Texture } from './texture';
@@ -27,7 +28,7 @@ export function deleteTexture(texture: WebGLTexture | null) {
 	}
 }
 
-export function fillFlatTexture(texture: Texture, color = [255, 255, 255], needCubeMap: boolean) {//TODOv3: mutualize with fillCheckerTexture
+export function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boolean) {//TODOv3: mutualize with fillCheckerTexture
 	const width = 64;
 	const height = 64;
 	if (texture) {
@@ -36,9 +37,9 @@ export function fillFlatTexture(texture: Texture, color = [255, 255, 255], needC
 		for (let i = 0; i < width; i++) {
 			for (let j = 0; j < height; j++) {
 				//if ((i + j) % 2 == 0) {
-				byteArray[pixelIndex] = color[0];
-				byteArray[pixelIndex + 1] = color[1];
-				byteArray[pixelIndex + 2] = color[2];
+				byteArray[pixelIndex] = color.r;
+				byteArray[pixelIndex + 1] = color.g;
+				byteArray[pixelIndex + 2] = color.b;
 				//}
 				pixelIndex += 3;
 			}
@@ -67,16 +68,16 @@ export function fillFlatTexture(texture: Texture, color = [255, 255, 255], needC
 	return texture;
 }
 
-export function fillCheckerTexture(texture: Texture, color = [255, 0, 255], width = 64, height = 64, needCubeMap: boolean) {
+export function fillCheckerTexture(texture: Texture, color: Color, width = 64, height = 64, needCubeMap: boolean) {
 	if (texture) {
 		const byteArray = new Uint8Array(width * height * 3);
 		let pixelIndex = 0;
 		for (let i = 0; i < width; i++) {
 			for (let j = 0; j < height; j++) {
 				if ((i + j) % 2 == 0) {
-					byteArray[pixelIndex] = color[0];
-					byteArray[pixelIndex + 1] = color[1];
-					byteArray[pixelIndex + 2] = color[2];
+					byteArray[pixelIndex] = color.r;
+					byteArray[pixelIndex + 1] = color.g;
+					byteArray[pixelIndex + 2] = color.b;
 				}
 				pixelIndex += 3;
 			}

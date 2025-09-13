@@ -14,7 +14,7 @@ export class QuadraticBezierCurve extends Curve {
 		this.arcLength = this.getArcLength();
 	}
 
-	getPosition(t, out = vec3.create()) {
+	getPosition(t: number, out = vec3.create()) {
 		//P = (1 - t)² * P0 + 2 * (1 - t) * t * P1 + t² * P2
 		const oneMinusT = 1 - t;
 		vec3.scale(out, this.p0, oneMinusT * oneMinusT);
