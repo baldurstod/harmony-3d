@@ -7490,7 +7490,6 @@ declare class Channel {
                           playSequence(sequenceName: string): void;
                           addAnimation(id: number, animationName: string, weight?: number): Promise<void>;
                           update(scene: Scene, camera: Camera, delta: number): void;
-                          _playSequences(delta: number): void;
                           setMaterialOverride(materialOverride: Material | null): Promise<void>;
                           getSkins(): Promise<Set<string>>;
                           getMaterialsName(skin: string): Promise<[string, Set<string>]>;

@@ -447,8 +447,8 @@ function CalcAnimation(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl,
 					pos[i] = vec3.create();//TODOV2
 				} else {
 					//q[i] = pbone.rot;TODOv2
-					q[i] = q[i] || quat.create();
-					pos[i] = pos[i] || vec3.create();
+					//q[i] = q[i] || quat.create();
+					//pos[i] = pos[i] || vec3.create();
 					q[i] = quat.create();
 					pos[i] = vec3.create();
 					//quat.fromMat3(q[i], mat3.fromEuler(SourceEngineTempMat3, pbone.rot));
@@ -476,8 +476,8 @@ function CalcAnimation(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl,
 		const pbone = pStudioHdr.getBone(i);
 		const pweight = seqdesc.pBoneweight(i);
 
-		q[i] = q[i] || quat.create();//TODOV2
-		pos[i] = pos[i] || vec3.create();//TODOV2
+		//q[i] = q[i] || quat.create();//TODOV2
+		//pos[i] = pos[i] || vec3.create();//TODOV2
 		q[i] = quat.create();
 		pos[i] = vec3.create();
 
@@ -1315,7 +1315,7 @@ function QuaternionScale(p: quat, t: number, q: quat) {
 
 	// FIXME: nick, this isn't overly sensitive to accuracy, and it may be faster to
 	// use the cos part (w) of the quaternion (sin(omega)*N,cos(omega)) to figure the new scale.
-	let sinom = Math.sqrt(vec4.dot(p, p));
+	let sinom = Math.sqrt(vec3.dot(p as vec3, p as vec3));
 	sinom = Math.min(sinom, 1.0);
 
 	const sinsom = Math.sin(Math.asin(sinom) * t);

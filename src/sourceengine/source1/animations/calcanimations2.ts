@@ -415,8 +415,8 @@ function CalcAnimation2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl
 					pos[i] = vec3.create();//TODOV2
 				} else {
 					//q[i] = pbone.rot;TODOv2
-					q[i] = q[i] || quat.create();
-					pos[i] = pos[i] || vec3.create();
+					//q[i] = q[i] || quat.create();
+					//pos[i] = pos[i] || vec3.create();
 					q[i] = quat.create();
 					pos[i] = vec3.create();
 					//quat.fromMat3(q[i], mat3.fromEuler(SourceEngineTempMat3, pbone.rot));
@@ -1385,9 +1385,7 @@ function Studio_LocalPoseParameter2(pStudioHdr: SourceMdl, poseParameters: Map<s
 	const Pose = pStudioHdr.getLocalPoseParameter(iPose);
 
 	if (!Pose) {
-		flSetting = 0;
-		index = 0;
-		return { s: flSetting, i: index };
+		return { s: 0, i: 0 };
 	}
 
 	//const flValue = poseParameters[iPose];
