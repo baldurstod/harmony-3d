@@ -716,7 +716,7 @@ export class OrbitControl extends CameraControl {
 			return;
 		}
 
-		if (event.detail.entity?.getLayer() ?? 1 > 0) {
+		if (event.detail.entity?.getLayer() ?? 0 > 0) {
 			return;
 		}
 

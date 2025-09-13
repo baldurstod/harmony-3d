@@ -9644,7 +9644,7 @@ class OrbitControl extends CameraControl {
         if (this.enabled === false) {
             return;
         }
-        if (event.detail.entity?.getLayer() ?? 1 > 0) {
+        if (event.detail.entity?.getLayer() ?? 0 > 0) {
             return;
         }
         // Prevent the browser from scrolling.
