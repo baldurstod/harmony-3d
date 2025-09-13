@@ -5711,13 +5711,307 @@ class Camera extends Entity {
 }
 registerEntity(Camera);
 
-const RECORDER_MIME_TYPE = 'video/webm';
-const RECORDER_DEFAULT_FILENAME = 'Harmony3D recording.webm';
-// Note : you can provide your own url when calling ShaderEditor.initEditor.
-const ACE_EDITOR_URI = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js';
-const MAX_HARDWARE_BONES = 256;
-const TEXTURE_CLEANUP_DELAY = 100000;
-const SMD_HEADER = '// Created by harmony-3d';
+let Graphics$1;
+function setGraphics(graphics) {
+    Graphics$1 = graphics;
+}
+
+class Pass {
+    camera;
+    quad;
+    scene;
+    enabled = true;
+    swapBuffers = true;
+    renderToScreen = false;
+    setSize(width, height) {
+    }
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
+        throw 'Can\'t render default pass';
+    }
+}
+
+class ClearPass extends Pass {
+    swapBuffers = false;
+    #clearColor = vec4.create(); //TODO change to Color
+    #clearDepth = 0;
+    #clearStencil = 0;
+    constructor(clearColor, clearDepth, clearStencil) {
+        super();
+        this.clearColor = clearColor;
+        this.clearDepth = clearDepth;
+        this.clearStencil = clearStencil;
+    }
+    set clearColor(clearColor) {
+        vec4.copy(this.#clearColor, clearColor);
+    }
+    set clearDepth(clearDepth) {
+        this.#clearDepth = clearDepth ?? null;
+    }
+    set clearStencil(clearStencil) {
+        this.#clearStencil = clearStencil ?? null;
+    }
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
+        const clearColor = this.#clearColor != null;
+        const clearDepth = this.#clearDepth != null;
+        const clearStencil = this.#clearStencil != null;
+        if (clearColor) {
+            Graphics$1.clearColor(this.#clearColor);
+        }
+        if (clearDepth) {
+            Graphics$1.clearDepth(this.#clearDepth);
+        }
+        if (clearStencil) {
+            Graphics$1.clearStencil(this.#clearStencil);
+        }
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.clear(clearColor, clearDepth, clearStencil);
+        Graphics$1.popRenderTarget();
+    }
+}
+
+class FullScreenQuadGeometry extends BufferGeometry {
+    constructor() {
+        super();
+        const indices = [0, 2, 1, 2, 3, 1];
+        const vertices = [-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0];
+        const uvs = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0];
+        this.setIndex(new Uint16BufferAttribute(indices, 1));
+        this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3));
+        this.setAttribute('aVertexNormal', new Float32BufferAttribute(vertices, 3)); //TODOv3: fix this
+        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2));
+        this.count = indices.length;
+    }
+}
+class FullScreenQuad extends Mesh {
+    constructor(params = {}) {
+        params.geometry = new FullScreenQuadGeometry();
+        params.material = params.material ?? new MeshBasicMaterial();
+        super(params);
+        this.setDefine('SKIP_PROJECTION');
+        super.setParameters(arguments[0]);
+    }
+}
+
+class CopyPass extends Pass {
+    constructor(camera) {
+        super();
+        const material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false });
+        material.addUser(this);
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+        this.camera = camera;
+    }
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
+    }
+}
+
+class CrosshatchPass extends Pass {
+    constructor(camera) {
+        super();
+        const material = new ShaderMaterial({ shaderSource: 'crosshatch' });
+        material.addUser(this);
+        material.depthTest = false;
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+        this.camera = camera;
+    }
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
+    }
+}
+
+class GrainPass extends Pass {
+    #intensity;
+    //#density;
+    //#size;
+    constructor(camera) {
+        super();
+        const material = new ShaderMaterial({ shaderSource: 'grain' });
+        material.addUser(this);
+        material.uniforms['uGrainParams'] = vec4.create();
+        material.depthTest = false;
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+        this.camera = camera;
+        this.intensity = 0.2;
+        //this.density = 0.2;
+        //this.size = 1.0;
+    }
+    set intensity(intensity) {
+        this.#intensity = intensity;
+        this.quad.getMaterial().uniforms['uGrainIntensity'] = this.#intensity;
+    }
+    /*set density(density) {
+        this.#density = density;
+        this.quad.material.uniforms['uGrainParams'][1] = this.#density;
+    }
+
+    set size(size) {
+        this.#size = size;
+        this.quad.material.uniforms['uGrainParams'][2] = this.#size;
+    }*/
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
+    }
+}
+
+class OldMoviePass extends Pass {
+    constructor(camera) {
+        super();
+        const material = new ShaderMaterial({ shaderSource: 'oldmovie' });
+        material.addUser(this);
+        material.depthTest = false;
+        this.scene = new Scene();
+        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
+        this.camera = camera;
+    }
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
+    }
+}
+
+const ATTACHMENT_TYPE_RENDER_BUFFER = 0;
+const ATTACHMENT_TYPE_TEXTURE2D = 1;
+class Framebuffer {
+    #target;
+    #frameBuffer;
+    #width = 1;
+    #height = 1;
+    #attachments = new Map();
+    #dirty = true;
+    constructor(target) {
+        this.#target = target;
+        this.#frameBuffer = Graphics$1.createFramebuffer();
+    }
+    /*
+    createRenderTarget(colorFormat, colorType, depth, stencil) {
+        this.#frameBuffer.addTexture2D(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this._createTexture());
+        this.frameBufferTexture = TextureManager.createTexture();
+
+        this.bind();
+    }
+
+    _createTexture(internalFormat, width, height, format, type) {
+        let texture = TextureManager.createTexture();
+
+        Graphics.glContext.bindTexture(GL_TEXTURE_2D, texture);
+        Graphics.glContext.texImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
+        Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        return texture;
+    }
+*/
+    addRenderbuffer(attachmentPoint, renderbuffer) {
+        this.#attachments.set(attachmentPoint, { renderbuffer: renderbuffer, type: ATTACHMENT_TYPE_RENDER_BUFFER });
+        this.#dirty = true;
+    }
+    addTexture2D(attachmentPoint, textureTarget, texture) {
+        this.#attachments.set(attachmentPoint, { target: textureTarget, texture: texture, type: ATTACHMENT_TYPE_TEXTURE2D });
+        this.#dirty = true;
+    }
+    #setupAttachments() {
+        for (const [attachmentPoint, attachmentParams] of this.#attachments) {
+            switch (attachmentParams.type) {
+                case ATTACHMENT_TYPE_RENDER_BUFFER:
+                    //Graphics.glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
+                    //Graphics.renderbufferStorage(GL_RENDERBUFFER, GL_RGBA4, 256, 256);
+                    Graphics$1.glContext.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
+                    //Graphics.bindRenderbuffer(GL_RENDERBUFFER, null);
+                    break;
+                case ATTACHMENT_TYPE_TEXTURE2D:
+                    //console.error(Graphics.getError());
+                    const webGLTexture = attachmentParams.texture.texture;
+                    Graphics$1.glContext.bindTexture(attachmentParams.target, null);
+                    Graphics$1.glContext.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
+                    break;
+            }
+        }
+        this.#dirty = false;
+        //console.error(Graphics.checkFramebufferStatus(this.#target));
+        //TODO: checkFramebufferStatus
+    }
+    bind() {
+        Graphics$1.glContext.bindFramebuffer(this.#target, this.#frameBuffer);
+        /*console.error(Graphics.getError());
+        this.#setupAttachments();//TODOv3
+        console.error(Graphics.getError());
+        return;*/
+        if (this.#dirty) {
+            this.#setupAttachments();
+        }
+    }
+    dispose() {
+        Graphics$1.deleteFramebuffer(this.#frameBuffer);
+        for (const [attachmentPoint, attachment] of this.#attachments) {
+            switch (attachment.type) {
+                case ATTACHMENT_TYPE_RENDER_BUFFER:
+                    attachment.renderbuffer.dispose();
+                    break;
+                case ATTACHMENT_TYPE_TEXTURE2D:
+                    attachment.texture.removeUser(this);
+                    break;
+            }
+        }
+    }
+}
+
+function renderbufferStorage(renderbuffer, internalFormat, width, height, samples) {
+    const glContext = Graphics$1.glContext;
+    glContext.bindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
+    if (Graphics$1.isWebGL2 && samples > 0) {
+        glContext.renderbufferStorageMultisample(GL_RENDERBUFFER, samples, internalFormat, width, height);
+    }
+    else {
+        glContext.renderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height);
+    }
+    glContext.bindRenderbuffer(GL_RENDERBUFFER, null);
+}
+class Renderbuffer {
+    #renderbuffer;
+    #internalFormat;
+    #samples;
+    constructor(internalFormat, width, height, samples) {
+        this.#renderbuffer = Graphics$1.createRenderbuffer();
+        this.#internalFormat = internalFormat;
+        renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
+    }
+    resize(width, height) {
+        renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
+    }
+    getRenderbuffer() {
+        return this.#renderbuffer;
+    }
+    dispose() {
+        Graphics$1.deleteRenderbuffer(this.#renderbuffer);
+    }
+}
+
+let Color$1 = class Color {
+    r = 1;
+    g = 1;
+    b = 1;
+    a = 1;
+    constructor(r, g, b, a) {
+        this.r = r ?? 1;
+        this.g = g ?? 1;
+        this.b = b ?? 1;
+        this.a = a ?? 1;
+    }
+};
 
 const textures$1 = new Set();
 let context$1;
@@ -5871,2064 +6165,6 @@ function fillTextureWithImage(texture, image) {
     texture.height = image.height;
     context$1.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 }
-
-class WebGLStats {
-    static #frames = 0;
-    static #totalFrames = 0;
-    static #fps = 0;
-    static #drawElements = 0;
-    static #renderTime = 0;
-    static #renderTimeMean = 0;
-    static #textures = 0;
-    static #startTime = 0;
-    static #endTime = 0;
-    static #startRender = 0;
-    static #primitivePerMode = new Map();
-    static #htmlElement;
-    static {
-        this.#initHtml();
-        this.#reset();
-    }
-    static start() {
-        this.#startTime = performance.now();
-    }
-    static beginRender() {
-        this.#startRender = performance.now();
-    }
-    static endRender() {
-        this.#renderTime += performance.now() - this.#startRender;
-    }
-    static #reset() {
-        this.#drawElements = 0;
-        this.#primitivePerMode.set(GL_POINTS, 0);
-        this.#primitivePerMode.set(GL_LINE_STRIP, 0);
-        this.#primitivePerMode.set(GL_LINE_LOOP, 0);
-        this.#primitivePerMode.set(GL_LINES, 0);
-        this.#primitivePerMode.set(GL_TRIANGLE_STRIP, 0);
-        this.#primitivePerMode.set(GL_TRIANGLE_FAN, 0);
-        this.#primitivePerMode.set(GL_TRIANGLES, 0);
-    }
-    static tick() {
-        this.#endTime = performance.now();
-        ++this.#frames;
-        const timeSinceReset = this.#endTime - this.#startTime;
-        this.#updateHtml();
-        if (timeSinceReset > 1000) {
-            this.#fps = Math.round(this.#frames / timeSinceReset * 1000);
-            this.#renderTimeMean = this.#renderTime / this.#frames;
-            this.#frames = 0;
-            this.#startTime = this.#endTime;
-            this.#renderTime = 0;
-        }
-        this.#reset();
-    }
-    static drawElements(mode, count) {
-        this.#primitivePerMode.set(mode, count + (this.#primitivePerMode.get(mode) ?? 0));
-        ++this.#drawElements;
-    }
-    static #initHtml() {
-        this.#htmlElement = createElement('div');
-    }
-    static #updateHtml() {
-        this.#htmlElement.innerText = '';
-        this.#htmlElement.append(String(this.#fps));
-        this.#htmlElement.append(createElement('br'), `drawElements : ${this.#drawElements}`);
-        this.#htmlElement.append(createElement('br'), `renderTime : ${this.#renderTimeMean.toPrecision(3)}`);
-        this.#htmlElement.append(createElement('br'), `textures : ${this.#textures}`);
-        for (const [mode, count] of this.#primitivePerMode) {
-            //let count = this.primitivePerMode[mode];
-            if (count > 0) {
-                this.#htmlElement.append(createElement('br'), `${mode} : ${count}`);
-            }
-        }
-    }
-    static get htmlElement() {
-        return this.#htmlElement;
-    }
-    static getFps() {
-        return this.#fps;
-    }
-}
-
-function flattenArray(array, arrayCount, arraySize) {
-    const out = new Float32Array(arrayCount * arraySize); //TODO: cache this
-    let offset = 0;
-    for (let i = 0; i < arrayCount; i++) {
-        for (let j = 0; j < arraySize; j++) {
-            out[offset] = array[i][j];
-            ++offset;
-        }
-    }
-    return out;
-}
-const SAMPLERS = new Set([
-    GL_SAMPLER_2D, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_2D_ARRAY,
-    GL_SAMPLER_2D_SHADOW, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLER_2D_ARRAY_SHADOW,
-    GL_INT_SAMPLER_2D, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_SAMPLER_2D_ARRAY,
-    GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY
-]);
-class Uniform {
-    #activeInfo;
-    #size;
-    #uniformLocation;
-    #isTextureSampler;
-    #textureUnit;
-    setValue;
-    constructor(activeInfo, uniformLocation) {
-        this.#activeInfo = activeInfo;
-        this.#size = activeInfo.size;
-        this.#uniformLocation = uniformLocation;
-        this.setValue = this.#getSetter(activeInfo.type);
-        this.#isTextureSampler = SAMPLERS.has(activeInfo.type);
-    }
-    #getSetter(type) {
-        const name = this.#activeInfo.name;
-        if (name.endsWith('[0]')) {
-            // Array
-            switch (type) {
-                case GL_BOOL:
-                case GL_INT:
-                    return this.#uniform1iv;
-                case GL_FLOAT:
-                    return this.#uniform1fv;
-                case GL_FLOAT_VEC2:
-                    return this.#uniform2fv;
-                case GL_FLOAT_VEC3:
-                    return this.#uniform3fv;
-                case GL_FLOAT_VEC4:
-                    return this.#uniform4fv;
-                case GL_SAMPLER_2D:
-                    return this.#uniformSampler2DArray;
-                case GL_FLOAT_MAT4:
-                    return this.#uniformMatrix4fvArray;
-                default:
-                    throw 'Unknown uniform array type : ' + type;
-            }
-        }
-        else {
-            // Scalar value
-            switch (type) {
-                case GL_BOOL:
-                case GL_INT:
-                    return this.#uniform1i;
-                case GL_FLOAT:
-                    return this.#uniform1f;
-                case GL_BOOL_VEC2:
-                case GL_INT_VEC2:
-                    return this.#uniform2iv;
-                case GL_BOOL_VEC3:
-                case GL_INT_VEC3:
-                    return this.#uniform3iv;
-                case GL_BOOL_VEC4:
-                case GL_INT_VEC4:
-                    return this.#uniform4iv;
-                case GL_FLOAT_VEC2:
-                    return this.#uniform2fv;
-                case GL_FLOAT_VEC3:
-                    return this.#uniform3fv;
-                case GL_FLOAT_VEC4:
-                    return this.#uniform4fv;
-                case GL_FLOAT_MAT2:
-                    return this.#uniformMatrix2fv;
-                case GL_FLOAT_MAT3:
-                    return this.#uniformMatrix3fv;
-                case GL_FLOAT_MAT4:
-                    return this.#uniformMatrix4fv;
-                case GL_SAMPLER_2D:
-                    return this.#uniformSampler2D;
-                case GL_SAMPLER_CUBE:
-                    return this.#uniformSamplerCube;
-                default:
-                    throw 'Unknown uniform type : ' + type;
-            }
-        }
-    }
-    setTextureUnit(textureUnit) {
-        if (this.#activeInfo.name.endsWith('[0]')) {
-            this.#textureUnit = [];
-            for (let i = 0; i < this.#size; ++i) {
-                this.#textureUnit.push(textureUnit + i);
-            }
-        }
-        else {
-            this.#textureUnit = textureUnit;
-        }
-    }
-    isTextureSampler() {
-        return this.#isTextureSampler;
-    }
-    getSize() {
-        return this.#size;
-    }
-    #uniform1i(glContext, value) {
-        glContext.uniform1i(this.#uniformLocation, value);
-    }
-    #uniform1iv(glContext, value) {
-        glContext.uniform1iv(this.#uniformLocation, value);
-    }
-    #uniform2iv(glContext, value) {
-        glContext.uniform2iv(this.#uniformLocation, value);
-    }
-    #uniform3iv(glContext, value) {
-        glContext.uniform3iv(this.#uniformLocation, value);
-    }
-    #uniform4iv(glContext, value) {
-        glContext.uniform4iv(this.#uniformLocation, value);
-    }
-    #uniform1f(glContext, value) {
-        glContext.uniform1f(this.#uniformLocation, value);
-    }
-    #uniform1fv(glContext, value) {
-        glContext.uniform1fv(this.#uniformLocation, value);
-    }
-    #uniform2fv(glContext, value) {
-        glContext.uniform2fv(this.#uniformLocation, value);
-    }
-    #uniform3fv(glContext, value) {
-        glContext.uniform3fv(this.#uniformLocation, value);
-    }
-    #uniform4fv(glContext, value) {
-        glContext.uniform4fv(this.#uniformLocation, value);
-    }
-    #uniformMatrix2fv(glContext, value) {
-        glContext.uniformMatrix2fv(this.#uniformLocation, false, value);
-    }
-    #uniformMatrix3fv(glContext, value) {
-        glContext.uniformMatrix3fv(this.#uniformLocation, false, value);
-    }
-    #uniformMatrix4fv(glContext, value) {
-        glContext.uniformMatrix4fv(this.#uniformLocation, false, value);
-    }
-    #uniformMatrix4fvArray(glContext, value) {
-        glContext.uniformMatrix4fv(this.#uniformLocation, false, flattenArray(value, this.#size, 16));
-    }
-    #uniformSampler2D(glContext, texture) {
-        glContext.uniform1i(this.#uniformLocation, this.#textureUnit);
-        glContext.activeTexture(GL_TEXTURE0 + this.#textureUnit);
-        if (texture) {
-            glContext.bindTexture(GL_TEXTURE_2D, texture.texture);
-        }
-        else {
-            glContext.bindTexture(GL_TEXTURE_2D, null);
-        }
-    }
-    #uniformSampler2DArray(glContext, textures) {
-        glContext.uniform1iv(this.#uniformLocation, this.#textureUnit);
-        for (let i = 0; i < this.#size; ++i) {
-            const texture = textures[i];
-            glContext.activeTexture(GL_TEXTURE0 + this.#textureUnit[i]);
-            if (texture) {
-                glContext.bindTexture(GL_TEXTURE_2D, texture.texture);
-            }
-            else {
-                glContext.bindTexture(GL_TEXTURE_2D, null);
-            }
-        }
-    }
-    #uniformSamplerCube(glContext, texture) {
-        glContext.uniform1i(this.#uniformLocation, this.#textureUnit);
-        glContext.activeTexture(GL_TEXTURE0 + this.#textureUnit);
-        if (texture) {
-            glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture.texture);
-        }
-        else {
-            glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
-        }
-    }
-}
-
-class Program {
-    #glContext;
-    #program;
-    #vs;
-    #fs;
-    #vertexShaderName;
-    #fragmentShaderName;
-    #valid = false;
-    attributes = new Map();
-    uniforms = new Map();
-    #linkError = '';
-    constructor(glContext, vertexShaderName, fragmentShaderName) {
-        this.#glContext = glContext;
-        this.#program = glContext.createProgram();
-        this.#vs = glContext.createShader(GL_VERTEX_SHADER);
-        this.#fs = glContext.createShader(GL_FRAGMENT_SHADER);
-        this.#vertexShaderName = vertexShaderName;
-        this.#fragmentShaderName = fragmentShaderName;
-        glContext.attachShader(this.#program, this.#vs);
-        glContext.attachShader(this.#program, this.#fs);
-    }
-    get program() {
-        throw 'error';
-    }
-    get vs() {
-        throw 'error';
-    }
-    get fs() {
-        throw 'error';
-    }
-    setUniformValue(name, value) {
-        const uniform = this.uniforms.get(name);
-        if (uniform !== undefined) {
-            uniform.setValue(this.#glContext, value);
-        }
-    }
-    validate(includeCode) {
-        const vertexShaderScript = ShaderManager.getShaderSource(GL_VERTEX_SHADER, this.#vertexShaderName);
-        const fragmentShaderScript = ShaderManager.getShaderSource(GL_FRAGMENT_SHADER, this.#fragmentShaderName);
-        if (vertexShaderScript && fragmentShaderScript && vertexShaderScript.isValid() && fragmentShaderScript.isValid()) {
-            const vsOk = this.#compileShader(this.#vs, this.#vertexShaderName, vertexShaderScript, includeCode);
-            const fsOk = vsOk && this.#compileShader(this.#fs, this.#fragmentShaderName, fragmentShaderScript, includeCode);
-            if (fsOk) {
-                this.#glContext.linkProgram(this.#program);
-                if (!this.#glContext.getProgramParameter(this.#program, this.#glContext.LINK_STATUS)) {
-                    const linkError = this.#glContext.getProgramInfoLog(this.#program);
-                    if (this.#linkError != linkError) {
-                        console.error(`Failed linking program for ${this.#vertexShaderName} and ${this.#fragmentShaderName}`);
-                        console.error('Reason : ' + linkError);
-                        this.#linkError = linkError;
-                    }
-                    return false;
-                }
-                else {
-                    this.#linkError = '';
-                }
-                this.#initProgram();
-                this.#valid = true;
-            }
-        }
-    }
-    invalidate() {
-        this.#valid = false;
-    }
-    isValid() {
-        return this.#valid;
-    }
-    getProgram() {
-        return this.#program;
-    }
-    #initProgram() {
-        this.attributes.clear();
-        this.uniforms.clear();
-        const activeAttributes = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_ATTRIBUTES);
-        for (let i = 0; i < activeAttributes; i++) {
-            const attribInfo = this.#glContext.getActiveAttrib(this.#program, i);
-            if (attribInfo) {
-                this.#setProgramAttribute(attribInfo.name);
-            }
-        }
-        const activeUniforms = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_UNIFORMS);
-        for (let i = 0; i < activeUniforms; i++) {
-            const uniformInfo = this.#glContext.getActiveUniform(this.#program, i);
-            if (uniformInfo) {
-                this.#setProgramUniform(uniformInfo);
-            }
-        }
-        let samplerId = 0;
-        for (const [uniformName, uniform] of this.uniforms) {
-            if (uniform.isTextureSampler()) {
-                uniform.setTextureUnit(samplerId); //setValue(this.#glContext, samplerId);
-                samplerId += uniform.getSize();
-            }
-        }
-    }
-    #setProgramAttribute(attributeName) {
-        const attributeLocation = this.#glContext.getAttribLocation(this.#program, attributeName);
-        this.attributes.set(attributeName, attributeLocation); //TODO: set in attributes ?
-    }
-    #setProgramUniform(uniformInfo) {
-        const uniformLocation = this.#glContext.getUniformLocation(this.#program, uniformInfo.name);
-        if (uniformLocation) {
-            this.uniforms.set(uniformInfo.name, new Uniform(uniformInfo, uniformLocation));
-        }
-    }
-    #compileShader(shader, shaderName, shaderSource, includeCode) {
-        if (!shaderSource || !shaderSource.isValid()) {
-            return null;
-        }
-        const compileSource = shaderSource.getCompileSource(includeCode);
-        this.#glContext.shaderSource(shader, compileSource);
-        this.#glContext.compileShader(shader);
-        if (!this.#glContext.getShaderParameter(shader, this.#glContext.COMPILE_STATUS)) {
-            const shaderInfoLog = this.#glContext.getShaderInfoLog(shader);
-            const m = 'Compile error in ' + shaderName + '. Reason : ' + shaderInfoLog;
-            console.warn(m, shaderSource.getCompileSourceLineNumber(includeCode), m);
-            ShaderManager.setCompileError(shaderName, shaderInfoLog);
-            shaderSource.setCompileError(this.#glContext.getShaderInfoLog(shader), includeCode);
-            return false;
-        }
-        return true;
-    }
-}
-
-class WebGLRenderingState {
-    static #viewport = vec4.create();
-    static #scissor = vec4.create();
-    static #enabledCapabilities = [];
-    // clear values
-    static #clearColor = vec4.create();
-    static #clearDepth = 1.0;
-    static #clearStencil = 0;
-    // Masking
-    static #colorMask = vec4.create();
-    static #depthMask = true;
-    static #stencilMask;
-    // Depth
-    static #depthFunc = GL_LESS;
-    // Blend
-    static #sourceFactor = GL_ONE;
-    static #destinationFactor = GL_ZERO;
-    static #srcRGB = GL_ONE;
-    static #dstRGB = GL_ZERO;
-    static #srcAlpha = GL_ONE;
-    static #dstAlpha = GL_ZERO;
-    static #modeRGB = GL_FUNC_ADD;
-    static #modeAlpha = GL_FUNC_ADD;
-    // Cull
-    static #cullFace = GL_BACK;
-    static #frontFace = GL_CCW;
-    //polygonOffset
-    static #polygonOffsetFactor = 0;
-    static #polygonOffsetUnits = 0;
-    static #lineWidth = 1;
-    static #program;
-    static #graphics;
-    static #glContext;
-    static #enabledVertexAttribArray;
-    static #usedVertexAttribArray;
-    static #vertexAttribDivisor;
-    static setGraphics() {
-        this.#glContext = Graphics.glContext;
-        const maxVertexAttribs = this.#glContext.getParameter(GL_MAX_VERTEX_ATTRIBS);
-        this.#enabledVertexAttribArray = new Uint8Array(maxVertexAttribs);
-        this.#usedVertexAttribArray = new Uint8Array(maxVertexAttribs);
-        this.#vertexAttribDivisor = new Uint8Array(maxVertexAttribs);
-    }
-    static clearColor(clearColor) {
-        if (!vec4.exactEquals(clearColor, this.#clearColor)) {
-            this.#glContext.clearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
-            vec4.copy(this.#clearColor, clearColor);
-        }
-    }
-    static getClearColor(out = vec4.create()) {
-        return vec4.copy(out, this.#clearColor);
-    }
-    static clearDepth(clearDepth) {
-        if (clearDepth !== this.#clearDepth) {
-            this.#glContext.clearDepth(clearDepth);
-            this.#clearDepth = clearDepth;
-        }
-    }
-    static clearStencil(clearStencil) {
-        if (clearStencil !== this.#clearStencil) {
-            this.#glContext.clearStencil(clearStencil);
-            this.#clearStencil = clearStencil;
-        }
-    }
-    static clear(color, depth, stencil) {
-        let bits = 0;
-        if (color)
-            bits |= GL_COLOR_BUFFER_BIT;
-        if (depth)
-            bits |= GL_DEPTH_BUFFER_BIT;
-        if (stencil)
-            bits |= GL_STENCIL_BUFFER_BIT;
-        this.#glContext.clear(bits);
-    }
-    static colorMask(colorMask) {
-        if (!vec4.exactEquals(colorMask, this.#colorMask)) {
-            this.#glContext.colorMask(Boolean(colorMask[0]), Boolean(colorMask[1]), Boolean(colorMask[2]), Boolean(colorMask[3]));
-            vec4.copy(this.#colorMask, colorMask);
-        }
-    }
-    static depthMask(flag) {
-        if (flag !== this.#depthMask) {
-            this.#glContext.depthMask(flag);
-            this.#depthMask = flag;
-        }
-    }
-    static stencilMask(stencilMask) {
-        if (stencilMask !== this.#stencilMask) {
-            this.#glContext.stencilMask(stencilMask);
-            this.#stencilMask = stencilMask;
-        }
-    }
-    static lineWidth(width) {
-        if (width !== this.#lineWidth) {
-            this.#glContext.lineWidth(width);
-            this.#lineWidth = width;
-        }
-    }
-    static viewport(viewport) {
-        if (!vec4.exactEquals(viewport, this.#viewport)) {
-            this.#glContext.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
-            vec4.copy(this.#viewport, viewport);
-        }
-    }
-    static scissor(scissor) {
-        if (!vec4.exactEquals(scissor, this.#scissor)) {
-            this.#glContext.scissor(scissor[0], scissor[1], scissor[2], scissor[3]);
-            vec4.copy(this.#scissor, scissor);
-        }
-    }
-    static enable(cap) {
-        if (this.#enabledCapabilities[cap] !== true) {
-            this.#glContext.enable(cap);
-            this.#enabledCapabilities[cap] = true;
-        }
-    }
-    static disable(cap) {
-        if (this.#enabledCapabilities[cap] !== false) {
-            this.#glContext.disable(cap);
-            this.#enabledCapabilities[cap] = false;
-        }
-    }
-    static isEnabled(cap) {
-        return this.#enabledCapabilities[cap] ?? this.#glContext.isEnabled(cap);
-    }
-    static useProgram(program) {
-        if (this.#program !== program) {
-            this.#glContext.useProgram(program);
-            this.#program = program;
-        }
-    }
-    static enableVertexAttribArray(index, divisor = 0) {
-        if (this.#enabledVertexAttribArray[index] === 0) {
-            this.#glContext.enableVertexAttribArray(index);
-            this.#enabledVertexAttribArray[index] = 1;
-        }
-        this.#usedVertexAttribArray[index] = 1;
-        if (this.#vertexAttribDivisor[index] !== divisor) {
-            this.#vertexAttribDivisor[index] = divisor;
-            if (Graphics.isWebGL2) {
-                this.#glContext.vertexAttribDivisor(index, divisor);
-            }
-            else {
-                Graphics.ANGLE_instanced_arrays?.vertexAttribDivisorANGLE(index, divisor);
-            }
-        }
-    }
-    static initUsedAttributes() {
-        const usedAttributes = this.#usedVertexAttribArray;
-        for (let i = 0, l = usedAttributes.length; i < l; i++) {
-            usedAttributes[i] = 0;
-        }
-    }
-    static disableUnusedAttributes() {
-        const usedAttributes = this.#usedVertexAttribArray;
-        const enabledAttributes = this.#enabledVertexAttribArray;
-        for (let i = 0, l = usedAttributes.length; i < l; i++) {
-            if (usedAttributes[i] !== enabledAttributes[i]) {
-                this.#glContext.disableVertexAttribArray(i);
-                enabledAttributes[i] = 0;
-            }
-        }
-    }
-    static depthFunc(func) {
-        if (this.#depthFunc !== func) {
-            this.#glContext.depthFunc(func);
-            this.#depthFunc = func;
-        }
-    }
-    static blendFunc(sourceFactor, destinationFactor) {
-        if ((this.#sourceFactor !== sourceFactor) || (this.#destinationFactor !== destinationFactor)) {
-            this.#glContext.blendFunc(sourceFactor, destinationFactor);
-            this.#sourceFactor = sourceFactor;
-            this.#destinationFactor = destinationFactor;
-        }
-    }
-    static blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha) {
-        if ((this.#srcRGB !== srcRGB) || (this.#dstRGB !== dstRGB) || (this.#srcAlpha !== srcAlpha) || (this.#dstAlpha !== dstAlpha)) {
-            this.#glContext.blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
-            this.#srcRGB = srcRGB;
-            this.#dstRGB = dstRGB;
-            this.#srcAlpha = srcAlpha;
-            this.#dstAlpha = dstAlpha;
-        }
-    }
-    static blendEquationSeparate(modeRGB, modeAlpha) {
-        if ((this.#modeRGB !== modeRGB) || (this.#modeAlpha !== modeAlpha)) {
-            this.#glContext.blendEquationSeparate(modeRGB, modeAlpha);
-            this.#modeRGB = modeRGB;
-            this.#modeAlpha = modeAlpha;
-        }
-    }
-    static cullFace(mode) {
-        if (this.#cullFace !== mode) {
-            this.#glContext.cullFace(mode);
-            this.#cullFace = mode;
-        }
-    }
-    static frontFace(mode) {
-        if (this.#frontFace !== mode) {
-            this.#glContext.frontFace(mode);
-            this.#frontFace = mode;
-        }
-    }
-    static polygonOffset(enable, factor, units) {
-        if (enable) {
-            this.enable(GL_POLYGON_OFFSET_FILL);
-            if (this.#polygonOffsetFactor !== factor && this.#polygonOffsetUnits !== units) {
-                this.#glContext.polygonOffset(factor, units);
-                this.#polygonOffsetFactor = factor;
-                this.#polygonOffsetUnits = units;
-            }
-        }
-        else {
-            this.disable(GL_POLYGON_OFFSET_FILL);
-        }
-    }
-}
-
-const tempViewProjectionMatrix = mat4.create();
-const lightDirection = vec3.create();
-function getDefinesAsString(meshOrMaterial) {
-    const defines = [];
-    for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
-        if (value === false) {
-            defines.push('#undef ' + name);
-        }
-        else {
-            defines.push('#define ' + name + ' ' + value);
-        }
-    }
-    return defines.join('\n') + '\n';
-}
-class Renderer {
-    #toneMapping = ToneMapping.None;
-    #toneMappingExposure = 1.;
-    #glContext;
-    #materialsProgram = new Map();
-    #globalIncludeCode = '';
-    constructor() {
-        this.#glContext = Graphics.glContext;
-    }
-    getProgram(mesh, material) {
-        let includeCode = Graphics.getIncludeCode();
-        includeCode += this.#globalIncludeCode;
-        includeCode += getDefinesAsString(mesh);
-        includeCode += getDefinesAsString(material);
-        includeCode += material.getShaderSource();
-        let program = this.#materialsProgram.get(includeCode);
-        if (!program) {
-            const shaderSource = material.getShaderSource();
-            program = new Program(this.#glContext, shaderSource + '.vs', shaderSource + '.fs');
-            this.#materialsProgram.set(includeCode, program);
-        }
-        if (!program.isValid()) {
-            let includeCode = Graphics.getIncludeCode();
-            includeCode += this.#globalIncludeCode;
-            includeCode += getDefinesAsString(mesh);
-            includeCode += getDefinesAsString(material);
-            program.validate(includeCode);
-            material._dirtyProgram = false;
-        }
-        return program;
-    }
-    #setupVertexAttributes(program, geometry, wireframe) {
-        WebGLRenderingState.initUsedAttributes();
-        const geometryAttributes = geometry.attributes;
-        const programAttributes = program.attributes;
-        for (const [attributeName, attribute] of geometryAttributes) {
-            const attributeLocation = programAttributes.get(attributeName);
-            if (attributeName == 'index') {
-                if (wireframe == 1) {
-                    attribute.updateWireframe(this.#glContext); //TODO: put somewhere else
-                }
-                else {
-                    attribute.update(this.#glContext); //TODO: put somewhere else
-                }
-                this.#glContext.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, attribute._buffer);
-            }
-            else if (attributeLocation !== undefined) {
-                attribute.update(this.#glContext); //TODO: put somewhere else
-                WebGLRenderingState.enableVertexAttribArray(attributeLocation, attribute.divisor);
-                this.#glContext.bindBuffer(GL_ARRAY_BUFFER, attribute._buffer);
-                this.#glContext.vertexAttribPointer(attributeLocation, attribute.itemSize, attribute.type, false, 0, 0);
-            }
-        }
-        WebGLRenderingState.disableUnusedAttributes();
-    }
-    #setupVertexUniforms(program, mesh) {
-        for (const uniform in mesh.uniforms) {
-            program.setUniformValue(uniform, mesh.uniforms[uniform]);
-        }
-    }
-    applyMaterial(program, material) {
-    }
-    setupLights(renderList, camera, program, viewMatrix) {
-        const lightPositionCameraSpace = vec3.create(); //TODO: do not create a vec3
-        const lightPositionWorldSpace = vec3.create(); //TODO: do not create a vec3
-        const colorIntensity = vec3.create(); //TODO: do not create a vec3
-        const pointLights = renderList.pointLights; //scene.getChildList(PointLight);
-        const spotLights = renderList.spotLights;
-        let shadow;
-        let pointLightId = 0;
-        const pointShadowMap = [];
-        const pointShadowMatrix = [];
-        for (const pointLight of pointLights) {
-            if (pointLight.isVisible()) {
-                pointLight.getWorldPosition(lightPositionWorldSpace);
-                vec3.transformMat4(lightPositionCameraSpace, lightPositionWorldSpace, viewMatrix);
-                program.setUniformValue('uPointLights[' + pointLightId + '].position', lightPositionCameraSpace);
-                program.setUniformValue('uPointLights[' + pointLightId + '].color', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
-                program.setUniformValue('uPointLights[' + pointLightId + '].range', pointLight.range);
-                //program.setUniformValue('uPointLightsuPointLights[' + pointLightId + '].direction', pointLight.getDirection(tempVec3));
-                //program.setUniformValue('uPointLights[' + pointLightId + '].direction', [0, 0, -1]);
-                program.setUniformValue('uPbrLights[' + pointLightId + '].position', lightPositionWorldSpace);
-                program.setUniformValue('uPbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
-                shadow = pointLight.shadow;
-                if (shadow && pointLight.castShadow) {
-                    pointShadowMap.push(shadow.renderTarget.getTexture());
-                    pointShadowMatrix.push(shadow.shadowMatrix);
-                    program.setUniformValue('uPointLightShadows[' + pointLightId + '].mapSize', shadow.textureSize);
-                    program.setUniformValue('uPointLightShadows[' + pointLightId + '].near', shadow.camera.nearPlane);
-                    program.setUniformValue('uPointLightShadows[' + pointLightId + '].far', shadow.camera.farPlane);
-                    program.setUniformValue('uPointLightShadows[' + pointLightId + '].enabled', true);
-                }
-                ++pointLightId;
-            }
-        }
-        program.setUniformValue('uPointShadowMap[0]', pointShadowMap);
-        program.setUniformValue('uPointShadowMatrix[0]', pointShadowMatrix);
-        let spotLightId = 0;
-        const spotShadowMap = [];
-        const spotShadowMatrix = [];
-        for (const spotLight of spotLights) {
-            if (spotLight.visible) {
-                spotLight.getWorldPosition(lightPositionCameraSpace);
-                vec3.transformMat4(lightPositionCameraSpace, lightPositionCameraSpace, viewMatrix);
-                program.setUniformValue('uSpotLights[' + spotLightId + '].position', lightPositionCameraSpace);
-                program.setUniformValue('uSpotLights[' + spotLightId + '].color', vec3.scale(colorIntensity, spotLight.color, spotLight.intensity));
-                program.setUniformValue('uSpotLights[' + spotLightId + '].range', spotLight.range);
-                program.setUniformValue('uSpotLights[' + spotLightId + '].innerAngleCos', spotLight.innerAngleCos);
-                program.setUniformValue('uSpotLights[' + spotLightId + '].outerAngleCos', spotLight.outerAngleCos);
-                //program.setUniformValue('uSpotLights[' + spotLightId + '].direction', spotLight.getDirection(tempVec3));
-                //program.setUniformValue('uSpotLights[' + spotLightId + '].direction', [0, 0, -1]);
-                spotLight.getDirection(lightDirection);
-                const m = viewMatrix;
-                const x = lightDirection[0];
-                const y = lightDirection[1];
-                const z = lightDirection[2];
-                lightDirection[0] = m[0] * x + m[4] * y + m[8] * z;
-                lightDirection[1] = m[1] * x + m[5] * y + m[9] * z;
-                lightDirection[2] = m[2] * x + m[6] * y + m[10] * z;
-                program.setUniformValue('uSpotLights[' + spotLightId + '].direction', lightDirection);
-                shadow = spotLight.shadow;
-                if (shadow && spotLight.castShadow) {
-                    spotShadowMap.push(shadow.renderTarget.getTexture());
-                    spotShadowMatrix.push(shadow.shadowMatrix);
-                    program.setUniformValue('uSpotLightShadows[' + spotLightId + '].mapSize', shadow.textureSize);
-                    program.setUniformValue('uSpotLightShadows[' + spotLightId + '].enabled', true);
-                }
-                ++spotLightId;
-            }
-        }
-        program.setUniformValue('uSpotShadowMap[0]', spotShadowMap);
-        program.setUniformValue('uSpotShadowMatrix[0]', spotShadowMatrix);
-        const ambientLights = renderList.ambientLights; //scene.getChildList(AmbientLight);
-        const ambientAccumulator = vec3.create(); //TODO: do not create a vec3
-        for (const ambientLight of ambientLights) {
-            if (ambientLight.isVisible()) {
-                vec3.scaleAndAdd(ambientAccumulator, ambientAccumulator, ambientLight.color, ambientLight.intensity);
-            }
-        }
-        program.setUniformValue('uAmbientLight', ambientAccumulator);
-    }
-    #setLights(pointLights, spotLights, pointLightShadows, spotLightShadows) {
-        Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#define USE_SHADOW_MAPPING');
-        Graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS ' + pointLights);
-        Graphics.setIncludeCode('NUM_PBR_LIGHTS', '#define NUM_PBR_LIGHTS ' + pointLights);
-        Graphics.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS ' + spotLights);
-        Graphics.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHT_SHADOWS ' + pointLightShadows);
-        Graphics.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHT_SHADOWS ' + spotLightShadows);
-        //TODO: other lights of disable lighting all together
-    }
-    #unsetLights() {
-        Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
-        Graphics.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS 0');
-        Graphics.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS 0');
-        Graphics.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHTS 0');
-        Graphics.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHTS 0');
-        //TODO: other lights of disable lighting all together
-    }
-    renderObject(context, renderList, object, camera, geometry, material, renderLights = true, lightPos) {
-        if (!object.isRenderable) {
-            return;
-        }
-        if (object.isVisible() === false) {
-            return;
-        }
-        if (geometry.count === 0) {
-            return;
-        }
-        if (!renderLights) {
-            if (!object.castShadow) {
-                return;
-            }
-        }
-        renderLights &&= material.renderLights;
-        material.updateMaterial(Graphics.getTime(), object); //TODO: frame delta
-        const cameraMatrix = camera.cameraMatrix;
-        const projectionMatrix = camera.projectionMatrix;
-        mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
-        //object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
-        mat3.normalFromMat4(object._normalMatrix, cameraMatrix); //TODO: fixme
-        //let viewProjectionMatrix = mat4.create();//TODOv3 don't recreate the matrix
-        mat4.mul(tempViewProjectionMatrix, projectionMatrix, cameraMatrix); //TODO: compute this in camera
-        if (renderLights) {
-            this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
-            if (!object.receiveShadow) {
-                Graphics.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
-            }
-        }
-        else {
-            this.#unsetLights();
-        }
-        if (camera.projection == CameraProjection.Perspective) {
-            Graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_PERSPECTIVE_CAMERA');
-        }
-        else {
-            Graphics.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
-        }
-        const program = this.getProgram(object, material);
-        if (program.isValid()) {
-            WebGLRenderingState.useProgram(program.getProgram());
-            if (renderLights) {
-                material.beforeRender(camera);
-            }
-            this.applyMaterial(program, material);
-            program.setUniformValue('uModelMatrix', object.worldMatrix);
-            program.setUniformValue('uModelViewMatrix', object._mvMatrix);
-            program.setUniformValue('uViewMatrix', cameraMatrix);
-            program.setUniformValue('uProjectionMatrix', projectionMatrix);
-            program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2)); //TODO: perf: compute that once we set camera farplane
-            program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
-            program.setUniformValue('uNormalMatrix', object._normalMatrix);
-            program.setUniformValue('uCameraPosition', camera.position);
-            const pickingColor = object.pickingColor;
-            if (pickingColor) {
-                program.setUniformValue('uPickingColor', pickingColor);
-            }
-            //TODO: set this on resolution change
-            program.setUniformValue('uResolution', [Graphics.getWidth(), Graphics.getHeight(), camera.aspectRatio, 0]);
-            //TODO: set this at start of the frame
-            program.setUniformValue('uTime', [Graphics.getTime(), Graphics.currentTick, 0, 0]);
-            if (renderLights) {
-                this.setupLights(renderList, camera, program, cameraMatrix);
-            }
-            else {
-                program.setUniformValue('uLightPosition', lightPos);
-                program.setUniformValue('uLightNear', camera.nearPlane);
-                program.setUniformValue('uLightFar', camera.farPlane);
-            }
-            const wireframe = object.wireframe;
-            this.#setupVertexAttributes(program, geometry, wireframe);
-            this.#setupVertexUniforms(program, object);
-            if (geometry.instanceCount === undefined) {
-                if (wireframe == 1) {
-                    //TODO: case where original geometry is GL_LINES
-                    this.#glContext.drawElements(GL_LINES, geometry.count * 2, GL_UNSIGNED_INT, 0);
-                }
-                else {
-                    this.#glContext.drawElements(object.renderMode, geometry.count, geometry.elementArrayType, 0);
-                }
-            }
-            else {
-                if (Graphics.isWebGL2) {
-                    this.#glContext.drawElementsInstanced(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
-                }
-                else {
-                    Graphics.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
-                }
-            }
-        }
-    }
-    _prepareRenderList(renderList, scene, camera, delta, context) {
-        renderList.reset();
-        let currentObject = scene;
-        const objectStack = [];
-        //scene.pointLights = scene.getChildList(PointLight);
-        //scene.ambientLights = scene.getChildList(AmbientLight);
-        while (currentObject) {
-            if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.DisableToolRendering) {
-                currentObject = objectStack.shift();
-                continue;
-            }
-            //objectStack.push(currentObject);
-            for (const child of currentObject.children) {
-                {
-                    objectStack.push(child);
-                }
-            }
-            if (currentObject.isRenderable) {
-                renderList.addObject(currentObject);
-            }
-            else {
-                currentObject.update(scene, camera, delta);
-            }
-            currentObject = objectStack.shift();
-        }
-        renderList.finish();
-    }
-    _renderRenderList(renderList, camera, renderLights, context, lightPos) {
-        for (const child of renderList.opaqueList) {
-            this.renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
-        }
-        if (renderLights) {
-            for (const child of renderList.transparentList) {
-                this.renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
-            }
-        }
-    }
-    render(scene, camera, delta, context) {
-    }
-    clear(color, depth, stencil) {
-        WebGLRenderingState.clear(color, depth, stencil);
-    }
-    /*
-        get vpMatrix() {
-            return mat4.mul(mat4.create(), this.currentCamera.projectionMatrix, this.viewMatrix);
-        }
-            */
-    /**
-     * Invalidate all shader (force recompile)
-     */
-    invalidateShaders() {
-        for (const shader of this.#materialsProgram.values()) {
-            shader.invalidate();
-        }
-    }
-    clearColor(clearColor) {
-        WebGLRenderingState.clearColor(clearColor);
-    }
-    clearDepth(clearDepth) {
-        WebGLRenderingState.clearDepth(clearDepth);
-    }
-    clearStencil(clearStencil) {
-        WebGLRenderingState.clearStencil(clearStencil);
-    }
-    setToneMapping(toneMapping) {
-        this.#toneMapping = toneMapping;
-        Graphics.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
-    }
-    getToneMapping() {
-        return this.#toneMapping;
-    }
-    setToneMappingExposure(exposure) {
-        this.#toneMappingExposure = exposure;
-        Graphics.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
-    }
-    getToneMappingExposure() {
-        return this.#toneMappingExposure;
-    }
-}
-
-const CLEAR_COLOR$1 = vec4.fromValues(1, 0, 1, 1);
-const a$8 = vec4.create();
-const mapSize = vec2.create();
-const lightPos = vec3.create();
-const viewPort = vec4.create();
-class ShadowMap {
-    #glContext;
-    constructor() {
-        this.#glContext = Graphics.glContext;
-    }
-    render(renderer, renderList, camera, context) {
-        const lights = renderList.lights;
-        const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
-        const scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
-        const depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
-        WebGLRenderingState.getClearColor(a$8);
-        WebGLRenderingState.disable(GL_BLEND);
-        WebGLRenderingState.disable(GL_SCISSOR_TEST);
-        WebGLRenderingState.enable(GL_DEPTH_TEST);
-        WebGLRenderingState.clearColor(CLEAR_COLOR$1);
-        Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
-        let renderTarget;
-        let shadowViewport;
-        for (const light of lights) {
-            if (light.castShadow) {
-                const shadow = light.shadow;
-                if (shadow) {
-                    light.getWorldPosition(lightPos);
-                    renderTarget = shadow.renderTarget;
-                    vec2.copy(mapSize, shadow.textureSize);
-                    Graphics.pushRenderTarget(renderTarget);
-                    WebGLRenderingState.clear(true, true, true);
-                    Graphics.setIncludeCode('IS_POINT_LIGHT', light.isPointLight ? '#define IS_POINT_LIGHT' : '');
-                    for (let viewPortIndex = 0; viewPortIndex < shadow.viewPortsLength; ++viewPortIndex) {
-                        shadowViewport = shadow.viewPorts[viewPortIndex];
-                        vec4.set(viewPort, mapSize[0] * shadowViewport[0], mapSize[1] * shadowViewport[1], mapSize[0] * shadowViewport[2], mapSize[1] * shadowViewport[3]);
-                        shadow.computeShadowMatrix(viewPortIndex);
-                        Graphics.viewport = viewPort;
-                        renderer._renderRenderList(renderList, shadow.camera, false, context, lightPos);
-                    }
-                    Graphics.popRenderTarget();
-                }
-            }
-        }
-        blendCapability ? WebGLRenderingState.enable(GL_BLEND) : WebGLRenderingState.disable(GL_BLEND);
-        scissorCapability ? WebGLRenderingState.enable(GL_SCISSOR_TEST) : WebGLRenderingState.disable(GL_SCISSOR_TEST);
-        depthCapability ? WebGLRenderingState.enable(GL_DEPTH_TEST) : WebGLRenderingState.disable(GL_DEPTH_TEST);
-        WebGLRenderingState.clearColor(a$8);
-        Graphics.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
-    }
-}
-
-function sortLights(first, second) {
-    if (first.castShadow) {
-        return -1;
-    }
-    return 1;
-}
-class RenderList {
-    lights = [];
-    pointLights = [];
-    spotLights = [];
-    ambientLights = [];
-    transparentList = [];
-    opaqueList = [];
-    pointLightShadows = 0;
-    spotLightShadows = 0;
-    reset() {
-        this.lights = [];
-        this.pointLights = [];
-        this.spotLights = [];
-        this.ambientLights = [];
-        this.transparentList = [];
-        this.opaqueList = [];
-        this.pointLightShadows = 0;
-        this.spotLightShadows = 0;
-    }
-    finish() {
-        this.pointLights.sort(sortLights);
-        this.spotLights.sort(sortLights);
-    }
-    addObject(entity) {
-        if (entity.isVisible() !== false) {
-            if (entity.isLight) {
-                this.lights.push(entity);
-                if (entity.isAmbientLight) {
-                    this.ambientLights.push(entity);
-                }
-                else if (entity.isPointLight) {
-                    this.pointLights.push(entity);
-                    if (entity.castShadow) {
-                        ++this.pointLightShadows;
-                    }
-                }
-                else if (entity.isSpotLight) {
-                    this.spotLights.push(entity);
-                    if (entity.castShadow) {
-                        ++this.spotLightShadows;
-                    }
-                }
-            }
-            else {
-                const material = entity.material;
-                if (material) {
-                    if (material.blend) { //TODOv3 changeblend
-                        this.transparentList.push(entity);
-                    }
-                    else {
-                        this.opaqueList.push(entity);
-                    }
-                }
-            }
-        }
-    }
-}
-
-class ForwardRenderer extends Renderer {
-    #shadowMap;
-    #frame = 0;
-    constructor() {
-        super();
-        this.#shadowMap = new ShadowMap();
-    }
-    applyMaterial(program, material) {
-        if (material.depthTest) {
-            WebGLRenderingState.enable(GL_DEPTH_TEST);
-            WebGLRenderingState.depthFunc(material.depthFunc);
-        }
-        else {
-            WebGLRenderingState.disable(GL_DEPTH_TEST);
-        }
-        WebGLRenderingState.depthMask(material.depthMask);
-        WebGLRenderingState.colorMask(material.colorMask);
-        if (material.blend) {
-            WebGLRenderingState.enable(GL_BLEND);
-            WebGLRenderingState.blendFuncSeparate(material.srcRGB, material.dstRGB, material.srcAlpha, material.dstAlpha);
-            WebGLRenderingState.blendEquationSeparate(material.modeRGB, material.modeAlpha);
-        }
-        else {
-            WebGLRenderingState.disable(GL_BLEND);
-        }
-        /*
-        if (material.disableCulling === true) {
-            WebGLRenderingState.disable(GL_CULL_FACE);
-        } else {
-            WebGLRenderingState.enable(GL_CULL_FACE);
-            WebGLRenderingState.cullFace(material.cullMode);
-        }
-            */
-        const renderFace = material.getRenderFace();
-        switch (renderFace) {
-            case RenderFace.Front:
-                WebGLRenderingState.enable(GL_CULL_FACE);
-                WebGLRenderingState.cullFace(GL_BACK);
-                break;
-            case RenderFace.Back:
-                WebGLRenderingState.enable(GL_CULL_FACE);
-                WebGLRenderingState.cullFace(GL_FRONT);
-                break;
-            case RenderFace.Both:
-                WebGLRenderingState.disable(GL_CULL_FACE);
-                break;
-            case RenderFace.None:
-                WebGLRenderingState.enable(GL_CULL_FACE);
-                WebGLRenderingState.cullFace(GL_FRONT_AND_BACK);
-                break;
-        }
-        WebGLRenderingState.polygonOffset(material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits);
-        for (const uniform in material.uniforms) {
-            program.setUniformValue(uniform, material.uniforms[uniform]);
-        }
-    }
-    render(scene, camera, delta, context) {
-        const renderList = new RenderList(); //TODO: optimize
-        camera.dirty(); //Force matrices to recompute
-        this._prepareRenderList(renderList, scene, camera, delta, context);
-        this.#shadowMap.render(this, renderList, camera, context);
-        if (scene.background) {
-            scene.background.render(this, camera);
-        }
-        this._renderRenderList(renderList, camera, true, context);
-        WebGLRenderingState.depthMask(true); //TODOv3 check why we have to do this
-        ++this.#frame;
-    }
-    set scissorTest(scissorTest) {
-        if (scissorTest) {
-            WebGLRenderingState.enable(GL_SCISSOR_TEST);
-        }
-        else {
-            WebGLRenderingState.disable(GL_SCISSOR_TEST);
-        }
-    }
-}
-
-var GraphicsEvent;
-(function (GraphicsEvent) {
-    GraphicsEvent["MouseMove"] = "mousemove";
-    GraphicsEvent["MouseDown"] = "mousedown";
-    GraphicsEvent["MouseUp"] = "mouseup";
-    GraphicsEvent["Wheel"] = "wheel";
-    GraphicsEvent["Resize"] = "resize";
-    GraphicsEvent["Tick"] = "tick";
-    GraphicsEvent["KeyDown"] = "keydown";
-    GraphicsEvent["KeyUp"] = "keyup";
-    GraphicsEvent["TouchStart"] = "touchstart";
-    GraphicsEvent["TouchMove"] = "touchmove";
-    GraphicsEvent["TouchCancel"] = "touchcancel";
-})(GraphicsEvent || (GraphicsEvent = {}));
-class GraphicsEvents extends StaticEventTarget {
-    static isGraphicsEvents = true;
-    static tick(delta, time, speed) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
-    }
-    static resize(width, height) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
-    }
-    static mouseMove(x, y, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-    }
-    static mouseDown(x, y, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-    }
-    static mouseUp(x, y, pickedEntity, mouseEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
-    }
-    static wheel(x, y, pickedEntity, wheelEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
-    }
-    static keyDown(keyboardEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
-    }
-    static keyUp(keyboardEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
-    }
-    static touchStart(pickedEntity, touchEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-    }
-    static touchMove(pickedEntity, touchEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-    }
-    static touchCancel(pickedEntity, touchEvent) {
-        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
-    }
-}
-
-const VEC4_ALL_1 = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
-var ShaderPrecision;
-(function (ShaderPrecision) {
-    ShaderPrecision[ShaderPrecision["Low"] = 0] = "Low";
-    ShaderPrecision[ShaderPrecision["Medium"] = 1] = "Medium";
-    ShaderPrecision[ShaderPrecision["High"] = 2] = "High";
-})(ShaderPrecision || (ShaderPrecision = {}));
-var ShaderQuality;
-(function (ShaderQuality) {
-    ShaderQuality[ShaderQuality["Low"] = 0] = "Low";
-    ShaderQuality[ShaderQuality["Medium"] = 1] = "Medium";
-    ShaderQuality[ShaderQuality["High"] = 2] = "High";
-})(ShaderQuality || (ShaderQuality = {}));
-var ShaderDebugMode;
-(function (ShaderDebugMode) {
-    ShaderDebugMode[ShaderDebugMode["None"] = 0] = "None";
-})(ShaderDebugMode || (ShaderDebugMode = {}));
-class Graphics {
-    static #pixelRatio = /*window.devicePixelRatio ?? */ 1.0;
-    static #viewport = vec4.create();
-    static #scissor = vec4.create();
-    static #extensions = new Map();
-    static #autoResize = false;
-    static isWebGL = false;
-    static isWebGL2 = false;
-    static autoClear = true;
-    static autoClearColor = false;
-    static autoClearDepth = true;
-    static autoClearStencil = true;
-    static #includeCode = new Map();
-    static #globalIncludeCode = '';
-    static speed = 1.0;
-    static #timeOrigin = performance.now();
-    static #time = 0;
-    static #running = false;
-    static #lastTick = performance.now();
-    static currentTick = 0;
-    static #renderBuffers = new Set();
-    static #renderTargetStack = [];
-    static #readyPromiseResolve;
-    static #readyPromise = new Promise((resolve) => this.#readyPromiseResolve = resolve);
-    static #canvas;
-    static #canvases = new Map();
-    static #width = 300;
-    static #height = 150;
-    static #offscreenCanvas;
-    static #forwardRenderer;
-    static glContext;
-    static #bipmapContext;
-    static #pickedEntity = null;
-    static #animationFrame = 0;
-    static ANGLE_instanced_arrays;
-    static OES_texture_float_linear;
-    static #mediaRecorder;
-    static dragging = false;
-    static #mouseDownFunc = (event) => this.#mouseDown(event);
-    static #mouseMoveFunc = (event) => this.#mouseMove(event);
-    static #mouseUpFunc = (event) => this.#mouseUp(event);
-    static #keyDownFunc = (event) => GraphicsEvents.keyDown(event);
-    static #keyUpFunc = (event) => GraphicsEvents.keyUp(event);
-    static #wheelFunc = (event) => this.#wheel(event);
-    static #touchStartFunc = (event) => GraphicsEvents.touchStart(this.#pickedEntity, event);
-    static #touchMoveFunc = (event) => GraphicsEvents.touchMove(this.#pickedEntity, event);
-    static #touchCancelFunc = (event) => GraphicsEvents.touchCancel(this.#pickedEntity, event);
-    static {
-        this.setShaderPrecision(ShaderPrecision.Medium);
-        this.setShaderQuality(ShaderQuality.Medium);
-        this.setShaderDebugMode(ShaderDebugMode.None);
-        this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
-    }
-    static initCanvas(contextAttributes = {}) {
-        if (contextAttributes.useOffscreenCanvas) {
-            this.#offscreenCanvas = new OffscreenCanvas(0, 0);
-        }
-        else {
-            this.#canvas = contextAttributes.canvas ?? createElement('canvas');
-            ShortcutHandler.addContext('3dview', this.#canvas);
-            this.#width = this.#canvas.width;
-            this.#height = this.#canvas.height;
-            this.listenCanvas(this.#canvas);
-        }
-        /*
-        if (!this.#canvas.hasAttribute('tabindex')) {
-            this.#canvas.setAttribute('tabindex', "1");
-        }
-        */
-        this.#initContext(contextAttributes);
-        this.#initObserver();
-        WebGLRenderingState.setGraphics();
-        // init state
-        WebGLRenderingState.enable(GL_CULL_FACE);
-        // init state end
-        //this.clearColor = vec4.fromValues(0, 0, 0, 255);
-        this.#forwardRenderer = new ForwardRenderer();
-        const autoResize = contextAttributes.autoResize;
-        if (autoResize !== undefined) {
-            this.autoResize = autoResize;
-        }
-        this.#readyPromiseResolve(true);
-        return this;
-    }
-    static addCanvas(canvas, options) {
-        canvas = canvas ?? createElement('canvas');
-        if (this.#canvases.has(canvas)) {
-            return canvas;
-        }
-        this.listenCanvas(canvas);
-        try {
-            const bipmapContext = canvas.getContext('bitmaprenderer');
-            if (!bipmapContext) {
-                return canvas;
-            }
-            let scenes;
-            if (options.scenes) {
-                scenes = options.scenes;
-            }
-            else {
-                if (options.scene) {
-                    scenes = [{ scene: options.scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }];
-                }
-                else {
-                    scenes = [];
-                }
-            }
-            this.#canvases.set(canvas, {
-                enabled: true,
-                canvas: canvas,
-                context: bipmapContext,
-                scenes: scenes,
-                autoResize: options.autoResize ?? false,
-            });
-        }
-        catch (e) { }
-        return canvas;
-    }
-    static listenCanvas(canvas) {
-        canvas.addEventListener('mousedown', this.#mouseDownFunc);
-        canvas.addEventListener('mousemove', this.#mouseMoveFunc);
-        canvas.addEventListener('mouseup', this.#mouseUpFunc);
-        canvas.addEventListener('keydown', this.#keyDownFunc);
-        canvas.addEventListener('keyup', this.#keyUpFunc);
-        canvas.addEventListener('wheel', this.#wheelFunc);
-        canvas.addEventListener('touchstart', this.#touchStartFunc);
-        canvas.addEventListener('touchmove', this.#touchMoveFunc);
-        canvas.addEventListener('touchcancel', this.#touchCancelFunc);
-        if (!canvas.hasAttribute('tabindex')) {
-            canvas.setAttribute('tabindex', "1");
-        }
-    }
-    static unlistenCanvas(canvas) {
-        canvas.removeEventListener('mousedown', this.#mouseDownFunc);
-        canvas.removeEventListener('mousemove', this.#mouseMoveFunc);
-        canvas.removeEventListener('mouseup', this.#mouseUpFunc);
-        canvas.removeEventListener('keydown', this.#keyDownFunc);
-        canvas.removeEventListener('keyup', this.#keyUpFunc);
-        canvas.removeEventListener('wheel', this.#wheelFunc);
-        canvas.removeEventListener('touchstart', this.#touchStartFunc);
-        canvas.removeEventListener('touchmove', this.#touchMoveFunc);
-        canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
-    }
-    static pickEntity(x, y) {
-        if (!this.#canvas) {
-            return null;
-        }
-        this.setIncludeCode('pickingMode', '#define PICKING_MODE');
-        GraphicsEvents.tick(0, performance.now(), 0);
-        this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
-        this.glContext;
-        const pixels = new Uint8Array(4);
-        this.glContext?.readPixels(x, this.#canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
-        const pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
-        return pickList.get(pickedEntityIndex) ?? null;
-    }
-    static #mouseDown(event) {
-        event.target.focus?.();
-        const x = event.offsetX;
-        const y = event.offsetY;
-        this.#pickedEntity = this.pickEntity(x, y);
-        GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
-    }
-    static #mouseMove(event) {
-        const x = event.offsetX;
-        const y = event.offsetY;
-        GraphicsEvents.mouseMove(x, y, this.#pickedEntity, event);
-    }
-    static #mouseUp(event) {
-        const x = event.offsetX;
-        const y = event.offsetY;
-        GraphicsEvents.mouseUp(x, y, this.#pickedEntity, event);
-        this.#pickedEntity = null;
-    }
-    static #wheel(event) {
-        const x = event.offsetX;
-        const y = event.offsetY;
-        GraphicsEvents.wheel(x, y, this.#pickedEntity, event);
-        this.#pickedEntity = null;
-        event.preventDefault();
-    }
-    static getDefinesAsString(material) {
-        const defines = [];
-        for (const [name, value] of Object.entries(material.defines)) {
-            if (value === false) {
-                defines.push('#undef ' + name + ' ' + value);
-            }
-            else {
-                defines.push('#define ' + name + ' ' + value);
-            }
-        }
-        return defines.join('\n') + '\n';
-    }
-    static render(scene, camera, delta, context) {
-        if (this.#offscreenCanvas && context.imageBitmap) {
-            this.#offscreenCanvas.width = context.imageBitmap.width;
-            this.#offscreenCanvas.height = context.imageBitmap.height;
-            this.setViewport(vec4.fromValues(0, 0, context.imageBitmap.width, context.imageBitmap.height));
-        }
-        this.renderBackground(); //TODOv3 put in rendering pipeline
-        this.#forwardRenderer.render(scene, camera, delta, context);
-        if (this.#offscreenCanvas) {
-            const bitmap = this.#offscreenCanvas.transferToImageBitmap();
-            (context.imageBitmap?.context ?? this.#bipmapContext)?.transferFromImageBitmap(bitmap);
-        }
-    }
-    static renderMultiCanvas(delta, context = {}) {
-        // TODO: mutualize with the method render()
-        for (const [_, canvas] of this.#canvases) {
-            if (canvas.enabled) {
-                this.#renderMultiCanvas(canvas, delta, context);
-            }
-        }
-    }
-    static #renderMultiCanvas(canvas, delta, context) {
-        if (this.#offscreenCanvas) {
-            const parentElement = canvas.canvas.parentElement;
-            if (canvas.autoResize && parentElement) {
-                const width = parentElement.clientWidth;
-                const height = parentElement.clientHeight;
-                this.#offscreenCanvas.width = width;
-                this.#offscreenCanvas.height = height;
-                canvas.canvas.width = width * this.#pixelRatio;
-                canvas.canvas.height = height * this.#pixelRatio;
-            }
-            else {
-                this.#offscreenCanvas.width = canvas.canvas.width;
-                this.#offscreenCanvas.height = canvas.canvas.height;
-            }
-            this.setViewport(vec4.fromValues(0, 0, canvas.canvas.width, canvas.canvas.height));
-        }
-        this.renderBackground(); //TODOv3 put in rendering pipeline
-        for (const canvasScene of canvas.scenes) {
-            if (canvasScene.scene.activeCamera) {
-                this.#forwardRenderer.render(canvasScene.scene, canvasScene.scene.activeCamera, delta, context);
-            }
-        }
-        const bitmap = this.#offscreenCanvas.transferToImageBitmap();
-        canvas.context.transferFromImageBitmap(bitmap);
-    }
-    static renderBackground() {
-        if (this.autoClear) {
-            this.clear(this.autoClearColor, this.autoClearDepth, this.autoClearStencil);
-        }
-    }
-    static clear(color, depth, stencil) {
-        let bits = 0;
-        if (color)
-            bits |= GL_COLOR_BUFFER_BIT;
-        if (depth)
-            bits |= GL_DEPTH_BUFFER_BIT;
-        if (stencil)
-            bits |= GL_STENCIL_BUFFER_BIT;
-        //TODO check if doing a complete state reinitilisation is better ?
-        WebGLRenderingState.colorMask(VEC4_ALL_1);
-        WebGLRenderingState.depthMask(true);
-        WebGLRenderingState.stencilMask(Number.MAX_SAFE_INTEGER);
-        this.glContext?.clear(bits);
-    }
-    static _tick() {
-        cancelAnimationFrame(this.#animationFrame);
-        {
-            this.#animationFrame = requestAnimationFrame(() => this._tick());
-        }
-        const tick = performance.now();
-        this.#time = (tick - this.#timeOrigin) * 0.001;
-        const delta = (tick - this.#lastTick) * this.speed * 0.001;
-        if (this.#running) {
-            ++this.currentTick;
-            GraphicsEvents.tick(delta, tick, this.speed);
-        }
-        this.#lastTick = tick;
-    }
-    static #initContext(contextAttributes) {
-        const canvas = this.#offscreenCanvas ?? this.#canvas;
-        if (this.#offscreenCanvas) ;
-        if (!canvas) {
-            return;
-        }
-        // we may want to cleanup the contextAttributes here
-        try {
-            try { // first try to create a webgl2 context
-                if (DISABLE_WEBGL2) ;
-                this.glContext = canvas.getContext('webgl2', contextAttributes);
-                if (this.glContext instanceof WebGL2RenderingContext) {
-                    this.isWebGL2 = true;
-                    WebGLShaderSource.isWebGL2 = true;
-                    this.setIncludeCode('WEBGL2', '#define WEBGL2');
-                }
-                else {
-                    throw 'no webgl2';
-                }
-            }
-            catch (e) {
-                this.glContext = canvas.getContext('webgl', contextAttributes);
-                if (this.glContext instanceof WebGLRenderingContext) {
-                    this.isWebGL = true;
-                    this.setIncludeCode('WEBGL1', '#define WEBGL1');
-                    //TODO: put this in a separate function and alert the user in case of failure
-                    //these extensions are important
-                    // activate UNSIGNED_INT indices in drawElements
-                    this.getExtension('OES_element_index_uint');
-                    // activate floating point textures
-                    this.getExtension('OES_texture_float');
-                    // activate derivatives functions
-                    this.getExtension('OES_standard_derivatives');
-                    //activate writing in gl_FragDepth
-                    this.getExtension('EXT_frag_depth');
-                    // get access to drawElementsInstancedANGLE
-                    this.ANGLE_instanced_arrays = this.getExtension('ANGLE_instanced_arrays');
-                    // add MIN_EXT and MAX_EXT for blendEquation in webgl1 context. MIN_EXT and MAX_EXT have the same value as MIN and MAX
-                    this.getExtension('EXT_blend_minmax');
-                    //Depth texture https://developer.mozilla.org/en-US/docs/Web/API/WEBGL_depth_texture
-                    this.getExtension('WEBGL_depth_texture');
-                    //https://developer.mozilla.org/en-US/docs/Web/API/EXT_sRGB
-                    this.getExtension('EXT_sRGB');
-                    //TODO: see https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/getExtension
-                }
-            }
-            // WEBGL1 / WEBGL2 extensions
-            // https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_float_linear
-            this.OES_texture_float_linear = this.getExtension('OES_texture_float_linear');
-        }
-        catch (error) {
-            console.error(error);
-            throw error;
-        }
-        if (this.glContext) {
-            setTextureFactoryContext(this.glContext);
-        }
-    }
-    /**
-     * @deprecated Please use `setShaderPrecision` instead.
-     */
-    static set shaderPrecision(shaderPrecision) {
-        this.setShaderPrecision(shaderPrecision);
-    }
-    static setShaderPrecision(shaderPrecision) {
-        switch (shaderPrecision) {
-            case ShaderPrecision.Low:
-                this.setIncludeCode('SHADER_PRECISION', '#define LOW_PRECISION');
-                break;
-            case ShaderPrecision.Medium:
-                this.setIncludeCode('SHADER_PRECISION', '#define MEDIUM_PRECISION');
-                break;
-            case ShaderPrecision.High:
-                this.setIncludeCode('SHADER_PRECISION', '#define HIGH_PRECISION');
-                break;
-        }
-    }
-    static setShaderQuality(shaderQuality) {
-        this.setIncludeCode('SHADER_QUALITY', `#define SHADER_QUALITY ${shaderQuality}`);
-    }
-    static setShaderDebugMode(shaderDebugMode) {
-        this.setIncludeCode('SHADER_DEBUG_MODE', `#define SHADER_DEBUG_MODE ${shaderDebugMode}`);
-    }
-    static setIncludeCode(key, code) {
-        this.#includeCode.set(key, code);
-        this.#refreshIncludeCode();
-    }
-    static removeIncludeCode(key) {
-        this.#includeCode.delete(key);
-        this.#refreshIncludeCode();
-    }
-    static #refreshIncludeCode() {
-        this.#globalIncludeCode = '';
-        for (const code of this.#includeCode.values()) {
-            this.#globalIncludeCode += code + '\n';
-        }
-    }
-    static getIncludeCode() {
-        return this.#globalIncludeCode;
-    }
-    /**
-     * Invalidate all shader (force recompile)
-     */
-    static invalidateShaders() {
-        if (this.#forwardRenderer) {
-            this.#forwardRenderer.invalidateShaders();
-        }
-        /*for (let shader of this._materialsProgram) {
-            shader.invalidate();
-        }*/
-    }
-    static clearColor(clearColor) {
-        WebGLRenderingState.clearColor(clearColor);
-    }
-    static getClearColor(clearColor) {
-        return WebGLRenderingState.getClearColor(clearColor);
-    }
-    static clearDepth(clearDepth) {
-        WebGLRenderingState.clearDepth(clearDepth);
-    }
-    static clearStencil(clearStencil) {
-        WebGLRenderingState.clearStencil(clearStencil);
-    }
-    static setColorMask(mask) {
-        WebGLRenderingState.colorMask(mask);
-    }
-    static set autoResize(autoResize) {
-        this.#autoResize = autoResize;
-        if (autoResize) {
-            this.checkCanvasSize();
-        }
-    }
-    static get autoResize() {
-        return this.#autoResize;
-    }
-    static getExtension(name) {
-        if (this.glContext) {
-            if (this.#extensions.has(name)) {
-                return this.#extensions.get(name);
-            }
-            else {
-                const extension = this.glContext.getExtension(name);
-                this.#extensions.set(name, extension);
-                return extension;
-            }
-        }
-        return null;
-    }
-    static set pixelRatio(pixelRatio) {
-        this.#pixelRatio = pixelRatio;
-        this.#updateSize();
-    }
-    static get pixelRatio() {
-        return this.#pixelRatio;
-    }
-    static setSize(width, height) {
-        width = Math.max(width, 1);
-        height = Math.max(height, 1);
-        const previousWidth = this.#width;
-        const previousHeight = this.#height;
-        if (isNumeric(width)) {
-            this.#width = width;
-        }
-        if (isNumeric(height)) {
-            this.#height = height;
-        }
-        this.#updateSize();
-        GraphicsEvents.resize(width, height);
-        return [previousWidth, previousHeight];
-    }
-    static getSize(ret = vec2.create()) {
-        ret[0] = this.#width;
-        ret[1] = this.#height;
-        return ret;
-    }
-    static #updateSize() {
-        if (!this.#canvas) {
-            return;
-        }
-        this.#canvas.width = this.#width * this.#pixelRatio;
-        this.#canvas.height = this.#height * this.#pixelRatio;
-        if (this.#offscreenCanvas) {
-            this.#offscreenCanvas.width = this.#canvas.width;
-            this.#offscreenCanvas.height = this.#canvas.height;
-        }
-        this.setViewport(vec4.fromValues(0, 0, this.#width, this.#height)); ///ODO: optimize
-    }
-    static setViewport(viewport) {
-        vec4.copy(this.#viewport, viewport);
-        WebGLRenderingState.viewport(viewport);
-    }
-    /**
-     * @deprecated Please use `setViewport` instead.
-     */
-    static set viewport(viewport) {
-        this.setViewport(viewport);
-    }
-    static getViewport(out) {
-        return vec4.copy(out, this.#viewport);
-    }
-    /**
-     * @deprecated Please use `getViewport` instead.
-     */
-    static get viewport() {
-        return this.getViewport(vec4.create());
-    }
-    static set scissor(scissor) {
-        vec4.copy(this.#scissor, scissor);
-        WebGLRenderingState.scissor(scissor);
-    }
-    static set scissorTest(scissorTest) {
-        if (scissorTest) {
-            WebGLRenderingState.enable(GL_SCISSOR_TEST);
-        }
-        else {
-            WebGLRenderingState.disable(GL_SCISSOR_TEST);
-        }
-    }
-    static checkCanvasSize() {
-        if (!this.#autoResize) {
-            return;
-        }
-        const canvas = this.#canvas;
-        if (!canvas?.parentElement) {
-            return;
-        }
-        const width = canvas.parentElement.clientWidth;
-        const height = canvas.parentElement.clientHeight;
-        if (width !== this.#width
-            || height !== this.#height) {
-            this.setSize(width, height);
-        }
-    }
-    static #initObserver() {
-        const callback = (entries, observer) => {
-            entries.forEach(entry => {
-                this.checkCanvasSize();
-            });
-        };
-        const resizeObserver = new ResizeObserver(callback);
-        if (this.#canvas?.parentElement) {
-            resizeObserver.observe(this.#canvas.parentElement);
-        }
-    }
-    static play() {
-        this.#running = true;
-        this._tick();
-    }
-    static pause() {
-        this.#running = false;
-    }
-    static isRunning() {
-        return this.#running;
-    }
-    static createFramebuffer() {
-        const frameBuffer = this.glContext.createFramebuffer();
-        //this.frameBuffers.add(frameBuffer);
-        return frameBuffer;
-    }
-    static deleteFramebuffer(frameBuffer) {
-        this.glContext.deleteFramebuffer(frameBuffer);
-    }
-    static createRenderbuffer() {
-        const renderBuffer = this.glContext.createRenderbuffer();
-        if (renderBuffer) {
-            this.#renderBuffers.add(renderBuffer);
-        }
-        return renderBuffer;
-    }
-    static deleteRenderbuffer(renderBuffer) {
-        this.glContext.deleteRenderbuffer(renderBuffer);
-    }
-    /*
-    setFramebuffer(framebuffer: WebGLFramebuffer) {
-        framebuffer.bind();
-        //this.glContext.bindFramebuffer(_gl.FRAMEBUFFER, framebuffer);
-    }
-    */
-    static pushRenderTarget(renderTarget) {
-        this.#renderTargetStack.push(renderTarget);
-        this.#setRenderTarget(renderTarget);
-    }
-    static popRenderTarget() {
-        this.#renderTargetStack.pop();
-        const renderTarget = this.#renderTargetStack[this.#renderTargetStack.length - 1];
-        this.#setRenderTarget(renderTarget);
-        return renderTarget ?? null;
-    }
-    static #setRenderTarget(renderTarget) {
-        if (!renderTarget) {
-            this.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
-            this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
-        }
-        else {
-            renderTarget.bind();
-        }
-    }
-    static savePicture(scene, camera, filename, width, height, type, quality) {
-        const previousWidth = this.#width;
-        const previousHeight = this.#height;
-        const previousAutoResize = this.autoResize;
-        try {
-            this.autoResize = false;
-            this.setSize(width, height);
-            this.render(scene, camera, 0, { DisableToolRendering: true });
-            this._savePicture(filename, type, quality);
-        }
-        finally {
-            this.autoResize = previousAutoResize;
-            this.setSize(previousWidth, previousHeight);
-        }
-    }
-    static async savePictureAsFile(filename, type, quality) {
-        return new File([await this.toBlob(type, quality) ?? new Blob()], filename);
-    }
-    static async toBlob(type, quality) {
-        let promiseResolve;
-        const promise = new Promise((resolve) => {
-            promiseResolve = resolve;
-        });
-        const callback = function (blob) {
-            promiseResolve(blob);
-        };
-        this.#canvas?.toBlob(callback, type, quality);
-        return promise;
-    }
-    static async _savePicture(filename, type, quality) {
-        /*
-        const callback = function (blob) {
-            //saveFile(filename, blob);
-        };
-        this.#canvas.toBlob(callback);*/
-        saveFile(await this.savePictureAsFile(filename, type, quality));
-    }
-    static startRecording(frameRate = 60, bitsPerSecond) {
-        if (this.#canvas) {
-            const stream = this.#canvas.captureStream(frameRate);
-            this.#mediaRecorder = new MediaRecorder(stream, { mimeType: RECORDER_MIME_TYPE, bitsPerSecond: bitsPerSecond });
-            this.#mediaRecorder.start();
-        }
-    }
-    static stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
-        if (!this.#mediaRecorder) {
-            return;
-        }
-        this.#mediaRecorder.ondataavailable = (event) => {
-            const blob = new Blob([event.data], { 'type': RECORDER_MIME_TYPE });
-            saveFile(new File([blob], fileName));
-        };
-        this.#mediaRecorder.stop();
-        //Stop the canvas stream
-        this.#mediaRecorder?.stream.getVideoTracks()?.[0]?.stop();
-    }
-    static get ready() {
-        return this.#readyPromise;
-    }
-    static async isReady() {
-        await this.#readyPromise;
-    }
-    static getParameter(param) {
-        return this.glContext?.getParameter(param);
-    }
-    static cleanupGLError() {
-        this.glContext?.getError(); //empty the error
-    }
-    static getGLError(context) {
-        const glError = this.glContext?.getError() ?? 0;
-        if (glError) {
-            console.error(`GL Error in ${context} : `, glError);
-        }
-    }
-    static useLogDepth(use) {
-        this.setIncludeCode('LOG_DEPTH', use ? '#define USE_LOG_DEPTH' : '');
-    }
-    static getTime() {
-        return this.#time;
-    }
-    static getWidth() {
-        return this.#width;
-    }
-    static getHeight() {
-        return this.#height;
-    }
-    static getCanvas() {
-        return this.#canvas;
-    }
-    static getForwardRenderer() {
-        return this.#forwardRenderer;
-    }
-}
-
-class Pass {
-    camera;
-    quad;
-    scene;
-    enabled = true;
-    swapBuffers = true;
-    renderToScreen = false;
-    setSize(width, height) {
-    }
-    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        throw 'Can\'t render default pass';
-    }
-}
-
-class ClearPass extends Pass {
-    swapBuffers = false;
-    #clearColor = vec4.create(); //TODO change to Color
-    #clearDepth = 0;
-    #clearStencil = 0;
-    constructor(clearColor, clearDepth, clearStencil) {
-        super();
-        this.clearColor = clearColor;
-        this.clearDepth = clearDepth;
-        this.clearStencil = clearStencil;
-    }
-    set clearColor(clearColor) {
-        vec4.copy(this.#clearColor, clearColor);
-    }
-    set clearDepth(clearDepth) {
-        this.#clearDepth = clearDepth ?? null;
-    }
-    set clearStencil(clearStencil) {
-        this.#clearStencil = clearStencil ?? null;
-    }
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        const clearColor = this.#clearColor != null;
-        const clearDepth = this.#clearDepth != null;
-        const clearStencil = this.#clearStencil != null;
-        if (clearColor) {
-            Graphics.clearColor(this.#clearColor);
-        }
-        if (clearDepth) {
-            Graphics.clearDepth(this.#clearDepth);
-        }
-        if (clearStencil) {
-            Graphics.clearStencil(this.#clearStencil);
-        }
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.clear(clearColor, clearDepth, clearStencil);
-        Graphics.popRenderTarget();
-    }
-}
-
-class FullScreenQuadGeometry extends BufferGeometry {
-    constructor() {
-        super();
-        const indices = [0, 2, 1, 2, 3, 1];
-        const vertices = [-1.0, 1.0, 0.0, 1.0, 1.0, 0.0, -1.0, -1.0, 0.0, 1.0, -1.0, 0.0];
-        const uvs = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 0.0];
-        this.setIndex(new Uint16BufferAttribute(indices, 1));
-        this.setAttribute('aVertexPosition', new Float32BufferAttribute(vertices, 3));
-        this.setAttribute('aVertexNormal', new Float32BufferAttribute(vertices, 3)); //TODOv3: fix this
-        this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2));
-        this.count = indices.length;
-    }
-}
-class FullScreenQuad extends Mesh {
-    constructor(params = {}) {
-        params.geometry = new FullScreenQuadGeometry();
-        params.material = params.material ?? new MeshBasicMaterial();
-        super(params);
-        this.setDefine('SKIP_PROJECTION');
-        super.setParameters(arguments[0]);
-    }
-}
-
-class CopyPass extends Pass {
-    constructor(camera) {
-        super();
-        const material = new ShaderMaterial({ shaderSource: 'copy', depthTest: false });
-        material.addUser(this);
-        this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
-        this.camera = camera;
-    }
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
-    }
-}
-
-class CrosshatchPass extends Pass {
-    constructor(camera) {
-        super();
-        const material = new ShaderMaterial({ shaderSource: 'crosshatch' });
-        material.addUser(this);
-        material.depthTest = false;
-        this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
-        this.camera = camera;
-    }
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
-    }
-}
-
-class GrainPass extends Pass {
-    #intensity;
-    //#density;
-    //#size;
-    constructor(camera) {
-        super();
-        const material = new ShaderMaterial({ shaderSource: 'grain' });
-        material.addUser(this);
-        material.uniforms['uGrainParams'] = vec4.create();
-        material.depthTest = false;
-        this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
-        this.camera = camera;
-        this.intensity = 0.2;
-        //this.density = 0.2;
-        //this.size = 1.0;
-    }
-    set intensity(intensity) {
-        this.#intensity = intensity;
-        this.quad.getMaterial().uniforms['uGrainIntensity'] = this.#intensity;
-    }
-    /*set density(density) {
-        this.#density = density;
-        this.quad.material.uniforms['uGrainParams'][1] = this.#density;
-    }
-
-    set size(size) {
-        this.#size = size;
-        this.quad.material.uniforms['uGrainParams'][2] = this.#size;
-    }*/
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
-    }
-}
-
-class OldMoviePass extends Pass {
-    constructor(camera) {
-        super();
-        const material = new ShaderMaterial({ shaderSource: 'oldmovie' });
-        material.addUser(this);
-        material.depthTest = false;
-        this.scene = new Scene();
-        this.quad = new FullScreenQuad({ material: material, parent: this.scene });
-        this.camera = camera;
-    }
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
-    }
-}
-
-let Color$1 = class Color {
-    r = 1;
-    g = 1;
-    b = 1;
-    a = 1;
-    constructor(r, g, b, a) {
-        this.r = r ?? 1;
-        this.g = g ?? 1;
-        this.b = b ?? 1;
-        this.a = a ?? 1;
-    }
-};
 
 class Texture {
     mapping = TextureMapping.UvMapping;
@@ -8096,123 +6332,6 @@ class TextureManager {
     }
 }
 
-const ATTACHMENT_TYPE_RENDER_BUFFER = 0;
-const ATTACHMENT_TYPE_TEXTURE2D = 1;
-class Framebuffer {
-    #target;
-    #frameBuffer;
-    #width = 1;
-    #height = 1;
-    #attachments = new Map();
-    #dirty = true;
-    constructor(target) {
-        this.#target = target;
-        this.#frameBuffer = Graphics.createFramebuffer();
-    }
-    /*
-    createRenderTarget(colorFormat, colorType, depth, stencil) {
-        this.#frameBuffer.addTexture2D(GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, this._createTexture());
-        this.frameBufferTexture = TextureManager.createTexture();
-
-        this.bind();
-    }
-
-    _createTexture(internalFormat, width, height, format, type) {
-        let texture = TextureManager.createTexture();
-
-        Graphics.glContext.bindTexture(GL_TEXTURE_2D, texture);
-        Graphics.glContext.texImage2D(GL_TEXTURE_2D, 0, internalFormat, width, height, 0, format, type, null);
-        Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        Graphics.glContext.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        return texture;
-    }
-*/
-    addRenderbuffer(attachmentPoint, renderbuffer) {
-        this.#attachments.set(attachmentPoint, { renderbuffer: renderbuffer, type: ATTACHMENT_TYPE_RENDER_BUFFER });
-        this.#dirty = true;
-    }
-    addTexture2D(attachmentPoint, textureTarget, texture) {
-        this.#attachments.set(attachmentPoint, { target: textureTarget, texture: texture, type: ATTACHMENT_TYPE_TEXTURE2D });
-        this.#dirty = true;
-    }
-    #setupAttachments() {
-        for (const [attachmentPoint, attachmentParams] of this.#attachments) {
-            switch (attachmentParams.type) {
-                case ATTACHMENT_TYPE_RENDER_BUFFER:
-                    //Graphics.glContext.bindRenderbuffer(GL_RENDERBUFFER, attachmentParams.renderbuffer);
-                    //Graphics.renderbufferStorage(GL_RENDERBUFFER, GL_RGBA4, 256, 256);
-                    Graphics.glContext.framebufferRenderbuffer(this.#target, attachmentPoint, GL_RENDERBUFFER, attachmentParams.renderbuffer.getRenderbuffer());
-                    //Graphics.bindRenderbuffer(GL_RENDERBUFFER, null);
-                    break;
-                case ATTACHMENT_TYPE_TEXTURE2D:
-                    //console.error(Graphics.getError());
-                    const webGLTexture = attachmentParams.texture.texture;
-                    Graphics.glContext.bindTexture(attachmentParams.target, null);
-                    Graphics.glContext.framebufferTexture2D(this.#target, attachmentPoint, attachmentParams.target, webGLTexture, 0);
-                    break;
-            }
-        }
-        this.#dirty = false;
-        //console.error(Graphics.checkFramebufferStatus(this.#target));
-        //TODO: checkFramebufferStatus
-    }
-    bind() {
-        Graphics.glContext.bindFramebuffer(this.#target, this.#frameBuffer);
-        /*console.error(Graphics.getError());
-        this.#setupAttachments();//TODOv3
-        console.error(Graphics.getError());
-        return;*/
-        if (this.#dirty) {
-            this.#setupAttachments();
-        }
-    }
-    dispose() {
-        Graphics.deleteFramebuffer(this.#frameBuffer);
-        for (const [attachmentPoint, attachment] of this.#attachments) {
-            switch (attachment.type) {
-                case ATTACHMENT_TYPE_RENDER_BUFFER:
-                    attachment.renderbuffer.dispose();
-                    break;
-                case ATTACHMENT_TYPE_TEXTURE2D:
-                    attachment.texture.removeUser(this);
-                    break;
-            }
-        }
-    }
-}
-
-function renderbufferStorage(renderbuffer, internalFormat, width, height, samples) {
-    const glContext = Graphics.glContext;
-    glContext.bindRenderbuffer(GL_RENDERBUFFER, renderbuffer);
-    if (Graphics.isWebGL2 && samples > 0) {
-        glContext.renderbufferStorageMultisample(GL_RENDERBUFFER, samples, internalFormat, width, height);
-    }
-    else {
-        glContext.renderbufferStorage(GL_RENDERBUFFER, internalFormat, width, height);
-    }
-    glContext.bindRenderbuffer(GL_RENDERBUFFER, null);
-}
-class Renderbuffer {
-    #renderbuffer;
-    #internalFormat;
-    #samples;
-    constructor(internalFormat, width, height, samples) {
-        this.#renderbuffer = Graphics.createRenderbuffer();
-        this.#internalFormat = internalFormat;
-        renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
-    }
-    resize(width, height) {
-        renderbufferStorage(this.#renderbuffer, this.#internalFormat, width, height, this.#samples ?? 0);
-    }
-    getRenderbuffer() {
-        return this.#renderbuffer;
-    }
-    dispose() {
-        Graphics.deleteRenderbuffer(this.#renderbuffer);
-    }
-}
-
 class RenderTarget {
     #width = 0;
     #height = 0;
@@ -8239,7 +6358,7 @@ class RenderTarget {
         this.#texture.minFilter = GL_LINEAR;
         this.#texture.wrapS = GL_CLAMP_TO_EDGE;
         this.#texture.wrapT = GL_CLAMP_TO_EDGE;
-        this.#texture.setParameters(Graphics.glContext, GL_TEXTURE_2D); //TODOv3: remove
+        this.#texture.setParameters(Graphics$1.glContext, GL_TEXTURE_2D); //TODOv3: remove
         this.setViewport(0, 0, width, height);
         this.#depthBuffer = params.depthBuffer ?? true;
         this.#stencilBuffer = params.stencilBuffer ?? false;
@@ -8282,15 +6401,15 @@ class RenderTarget {
     }
     bind() {
         this.#frameBuffer.bind();
-        Graphics.viewport = this.#viewport;
+        Graphics$1.viewport = this.#viewport;
     }
     unbind() {
-        Graphics.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
+        Graphics$1.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
     }
     resize(width, height) {
         this.#width = width;
         this.#height = height;
-        this.#texture.texImage2D(Graphics.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
+        this.#texture.texImage2D(Graphics$1.glContext, GL_TEXTURE_2D, width, height, TextureFormat.Rgba, TextureType.UnsignedByte);
         //TODOv3: stencil / depth buffer
         if (this.#depthRenderbuffer) {
             this.#depthRenderbuffer.resize(width, height);
@@ -8312,7 +6431,7 @@ class RenderTarget {
     }
 }
 
-const CLEAR_COLOR = vec4.fromValues(0, 0, 0, 0);
+const CLEAR_COLOR$1 = vec4.fromValues(0, 0, 0, 0);
 const tempVec2$4 = vec2.create();
 class OutlinePass extends Pass {
     #edgedetectionMaterial;
@@ -8394,50 +6513,50 @@ class OutlinePass extends Pass {
             }
         });
     }
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        Graphics.getSize(tempVec2$4);
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
+        Graphics$1.getSize(tempVec2$4);
         tempVec2$4[0];
         tempVec2$4[1];
-        Graphics.clearColor(CLEAR_COLOR);
-        Graphics.pushRenderTarget(this.#renderTargetDepthBuffer);
-        Graphics.clear(true, true, false);
+        Graphics$1.clearColor(CLEAR_COLOR$1);
+        Graphics$1.pushRenderTarget(this.#renderTargetDepthBuffer);
+        Graphics$1.clear(true, true, false);
         //renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
         this.changeVisibilityOfSelectedObjects(false);
-        Graphics.setColorMask([0, 0, 0, 0]);
-        Graphics.render(this.outlineScene, this.camera, 0, context);
-        Graphics.setColorMask([1, 1, 1, 1]);
+        Graphics$1.setColorMask([0, 0, 0, 0]);
+        Graphics$1.render(this.outlineScene, this.camera, 0, context);
+        Graphics$1.setColorMask([1, 1, 1, 1]);
         this.changeVisibilityOfSelectedObjects(true);
         //renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
         this.changeVisibilityOfNonSelectedObjects(false);
-        Graphics.setIncludeCode('outline_pass_silhouette_mode', '#define SILHOUETTE_MODE');
-        Graphics.setIncludeCode('silhouetteColor', '#define SILHOUETTE_COLOR vec4(1.0)');
-        Graphics.render(this.outlineScene, this.camera, 0, context);
-        Graphics.setIncludeCode('outline_pass_silhouette_mode', '#undef SILHOUETTE_MODE');
+        Graphics$1.setIncludeCode('outline_pass_silhouette_mode', '#define SILHOUETTE_MODE');
+        Graphics$1.setIncludeCode('silhouetteColor', '#define SILHOUETTE_COLOR vec4(1.0)');
+        Graphics$1.render(this.outlineScene, this.camera, 0, context);
+        Graphics$1.setIncludeCode('outline_pass_silhouette_mode', '#undef SILHOUETTE_MODE');
         this.changeVisibilityOfNonSelectedObjects(true);
-        Graphics.popRenderTarget();
+        Graphics$1.popRenderTarget();
         /**************/
         this.#edgedetectionMaterial.uniforms['colorMap'] = this.#renderTargetDepthBuffer.getTexture(); //TODO: optiùmize this
         this.#edgedetectionMaterial.uniforms['uTexSize'] = [this.width, this.height];
         this.#edgedetectionMaterial.uniforms['uVisibleEdgeColor'] = [1, 1, 1];
         this.#edgedetectionMaterial.uniforms['uHiddenEdgeColor'] = [0, 1, 0];
         this.quad.setMaterial(this.#edgedetectionMaterial);
-        Graphics.pushRenderTarget(this.#renderTargetEdgeBuffer1);
-        Graphics.clear(true, true, false);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
+        Graphics$1.pushRenderTarget(this.#renderTargetEdgeBuffer1);
+        Graphics$1.clear(true, true, false);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
         /**************/
         this.#copyMaterial.uniforms['colorMap'] = readBuffer.getTexture();
         this.quad.setMaterial(this.#copyMaterial);
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.clear(true, true, false);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.clear(true, true, false);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
         /***************/
         this.#copyMaterial.uniforms['colorMap'] = this.#renderTargetEdgeBuffer1.getTexture();
         this.quad.setMaterial(this.#copyMaterial);
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
     }
 }
 
@@ -8451,11 +6570,11 @@ class PalettePass extends Pass {
         this.quad = new FullScreenQuad({ material: material, parent: this.scene });
         this.camera = camera;
     }
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
     }
 }
 
@@ -8481,11 +6600,11 @@ class PixelatePass extends Pass {
         this.#pixelStyle = pixelStyle;
         this.#material.setDefine('PIXEL_STYLE', String(pixelStyle));
     }
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.uniforms['colorMap'] = readBuffer.getTexture();
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
     }
 }
 
@@ -8496,10 +6615,10 @@ class RenderPass extends Pass {
         this.scene = scene;
         this.camera = camera;
     }
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.render(this.scene, this.camera, delta, context);
-        Graphics.popRenderTarget();
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.render(this.scene, this.camera, delta, context);
+        Graphics$1.popRenderTarget();
     }
 }
 
@@ -8519,11 +6638,11 @@ class SaturatePass extends Pass {
         this.#saturation = saturation;
         this.quad.getMaterial().uniforms['uSaturation'] = this.#saturation;
     }
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
     }
 }
 
@@ -8537,11 +6656,11 @@ class SketchPass extends Pass {
         this.quad = new FullScreenQuad({ material: material, parent: this.scene });
         this.camera = camera;
     }
-    render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
+    render(readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
-        Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-        Graphics.render(this.scene, this.camera, 0, context);
-        Graphics.popRenderTarget();
+        Graphics$1.pushRenderTarget(renderToScreen ? null : writeBuffer);
+        Graphics$1.render(this.scene, this.camera, 0, context);
+        Graphics$1.popRenderTarget();
     }
 }
 
@@ -8557,7 +6676,7 @@ class Composer {
     #writeBuffer;
     constructor(renderTarget) {
         if (!renderTarget) {
-            const rendererSize = Graphics.getSize();
+            const rendererSize = Graphics$1.getSize();
             renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
         }
         this.#setRenderTarget(renderTarget);
@@ -8565,7 +6684,7 @@ class Composer {
     render(delta, context) {
         let pass;
         let swapBuffer;
-        Graphics.getSize(tempVec2$3);
+        Graphics$1.getSize(tempVec2$3);
         this.setSize(tempVec2$3[0], tempVec2$3[1]);
         let lastPass = -1;
         for (let i = this.#passes.length - 1; i > 0; --i) {
@@ -8584,17 +6703,17 @@ class Composer {
                 this.#readBuffer = this.#writeBuffer;
                 this.#writeBuffer = swapBuffer;
             }
-            pass.render(Graphics, this.#readBuffer, this.#writeBuffer, i == lastPass, delta, context);
+            pass.render(this.#readBuffer, this.#writeBuffer, i == lastPass, delta, context);
         }
     }
     savePicture(filename, width, height) {
         this.setSize(width, height);
         this.render(0, { DisableToolRendering: true });
-        Graphics._savePicture(filename);
+        Graphics$1._savePicture(filename);
     }
     addPass(pass) {
         this.#passes.push(pass);
-        Graphics.getSize(tempVec2$3);
+        Graphics$1.getSize(tempVec2$3);
         pass.setSize(tempVec2$3[0], tempVec2$3[1]);
     }
     #setRenderTarget(renderTarget) {
@@ -8627,7 +6746,7 @@ class CameraControl {
         this.handleEnabled();
     }
     get enabled() {
-        return this.#enabled && !Graphics.dragging;
+        return this.#enabled && !Graphics$1.dragging;
     }
     set camera(camera) {
         this.#camera = camera;
@@ -8687,6 +6806,57 @@ class Spherical {
         v[0] = sinPhiRadius * Math.cos(this.theta);
         v[1] = sinPhiRadius * Math.sin(this.theta);
         v[2] = Math.cos(this.phi) * this.radius;
+    }
+}
+
+var GraphicsEvent;
+(function (GraphicsEvent) {
+    GraphicsEvent["MouseMove"] = "mousemove";
+    GraphicsEvent["MouseDown"] = "mousedown";
+    GraphicsEvent["MouseUp"] = "mouseup";
+    GraphicsEvent["Wheel"] = "wheel";
+    GraphicsEvent["Resize"] = "resize";
+    GraphicsEvent["Tick"] = "tick";
+    GraphicsEvent["KeyDown"] = "keydown";
+    GraphicsEvent["KeyUp"] = "keyup";
+    GraphicsEvent["TouchStart"] = "touchstart";
+    GraphicsEvent["TouchMove"] = "touchmove";
+    GraphicsEvent["TouchCancel"] = "touchcancel";
+})(GraphicsEvent || (GraphicsEvent = {}));
+class GraphicsEvents extends StaticEventTarget {
+    static isGraphicsEvents = true;
+    static tick(delta, time, speed) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Tick, { detail: { delta: delta, time: time, speed: speed } }));
+    }
+    static resize(width, height) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
+    }
+    static mouseMove(x, y, pickedEntity, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    }
+    static mouseDown(x, y, pickedEntity, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    }
+    static mouseUp(x, y, pickedEntity, mouseEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+    }
+    static wheel(x, y, pickedEntity, wheelEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.Wheel, { detail: { x: x, y: y, entity: pickedEntity, wheelEvent: wheelEvent } }));
+    }
+    static keyDown(keyboardEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyDown, { detail: { keyboardEvent: keyboardEvent } }));
+    }
+    static keyUp(keyboardEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.KeyUp, { detail: { keyboardEvent: keyboardEvent } }));
+    }
+    static touchStart(pickedEntity, touchEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchStart, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+    }
+    static touchMove(pickedEntity, touchEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchMove, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
+    }
+    static touchCancel(pickedEntity, touchEvent) {
+        this.dispatchEvent(new CustomEvent(GraphicsEvent.TouchCancel, { detail: { entity: pickedEntity, touchEvent: touchEvent } }));
     }
 }
 
@@ -10808,7 +8978,7 @@ class Manipulator extends Entity {
                         this.startScale(detail.x, detail.y);
                         break;
                 }
-                Graphics.dragging = true;
+                Graphics$1.dragging = true;
                 this.#setAxisSelected(true);
             }
         });
@@ -10833,7 +9003,7 @@ class Manipulator extends Entity {
         });
         GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event) => {
             if (this.#entityAxis.has(event.detail.entity)) {
-                Graphics.dragging = false;
+                Graphics$1.dragging = false;
                 this.#setAxisSelected(false);
             }
         });
@@ -11177,8 +9347,8 @@ class Manipulator extends Entity {
             const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
             const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
             // transform the screen coordinates to normalized coordinates
-            this.#cursorPos[0] = (x / Graphics.getWidth()) * 2.0 - 1.0;
-            this.#cursorPos[1] = 1.0 - (y / Graphics.getHeight()) * 2.0;
+            this.#cursorPos[0] = (x / Graphics$1.getWidth()) * 2.0 - 1.0;
+            this.#cursorPos[1] = 1.0 - (y / Graphics$1.getHeight()) * 2.0;
             this.#near[0] = this.#far[0] = this.#cursorPos[0];
             this.#near[1] = this.#far[1] = this.#cursorPos[1];
             this.#near[2] = -1.0;
@@ -11244,8 +9414,8 @@ class Manipulator extends Entity {
             return 0;
         }
         // transform the screen coordinates to normalized coordinates
-        const normalizedX = (x / Graphics.getWidth()) * 2.0 - 1.0;
-        const normalizedY = 1.0 - (y / Graphics.getHeight()) * 2.0;
+        const normalizedX = (x / Graphics$1.getWidth()) * 2.0 - 1.0;
+        const normalizedY = 1.0 - (y / Graphics$1.getHeight()) * 2.0;
         this.getWorldPosition(tempVec3$p);
         vec3.transformMat4(tempVec3$p, tempVec3$p, camera.cameraMatrix);
         vec3.transformMat4(tempVec3$p, tempVec3$p, camera.projectionMatrix);
@@ -11261,8 +9431,8 @@ class Manipulator extends Entity {
             camera.aspectRatio;
             const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
             const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
-            this.#cursorPos[0] = (x / Graphics.getWidth()) * 2.0 - 1.0;
-            this.#cursorPos[1] = 1.0 - (y / Graphics.getHeight()) * 2.0;
+            this.#cursorPos[0] = (x / Graphics$1.getWidth()) * 2.0 - 1.0;
+            this.#cursorPos[1] = 1.0 - (y / Graphics$1.getHeight()) * 2.0;
             this.#near[0] = this.#far[0] = this.#cursorPos[0];
             this.#near[1] = this.#far[1] = this.#cursorPos[1];
             this.#near[2] = -1.0;
@@ -11340,7 +9510,7 @@ class Manipulator extends Entity {
         this.#rotationManipulator.setVisible(false);
         this.#scaleManipulator.setVisible(false);
         this.#setAxisSelected(false);
-        Graphics.dragging = false;
+        Graphics$1.dragging = false;
         this.#mode = mode;
         switch (mode) {
             case ManipulatorMode.Translation:
@@ -11517,11 +9687,11 @@ async function exportToBinaryFBX(entity) {
 }
 async function entityToFBXScene(fbxManager, entity) {
     const fbxScene = fbxManager.createObject('FBXScene', 'Scene');
-    const playing = Graphics.isRunning();
-    Graphics.pause();
+    const playing = Graphics$1.isRunning();
+    Graphics$1.pause();
     await createFBXSceneEntity(fbxScene, entity);
     if (playing) {
-        Graphics.play();
+        Graphics$1.play();
     }
     return fbxScene;
 }
@@ -11924,33 +10094,1868 @@ async function renderMaterial(material, materialsParams, renderMode) {
         fullScreenQuadMesh = new FullScreenQuad();
         scene$1.addChild(fullScreenQuadMesh);
     }
-    const [previousWidth, previousHeight] = Graphics.setSize(1024, 1024); //TODOv3: constant
-    const previousClearColor = Graphics.getClearColor();
-    Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
-    Graphics.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-    Graphics.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-    Graphics.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+    const [previousWidth, previousHeight] = Graphics$1.setSize(1024, 1024); //TODOv3: constant
+    const previousClearColor = Graphics$1.getClearColor();
+    Graphics$1.clearColor(vec4.fromValues(0, 0, 0, 0));
+    Graphics$1.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
+    Graphics$1.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
+    Graphics$1.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
     switch (renderMode) {
         case RenderMode$1.Normal:
-            Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE 12');
+            Graphics$1.setIncludeCode('RENDER_MODE', '#define RENDER_MODE 12');
             break;
     }
     fullScreenQuadMesh.material = material;
     fullScreenQuadMesh.materialsParams = materialsParams;
-    Graphics.render(scene$1, camera$1, 0, { DisableToolRendering: true });
-    const imgContent = await Graphics.toBlob();
-    Graphics.setIncludeCode('EXPORT_TEXTURES', '');
-    Graphics.setIncludeCode('SKIP_PROJECTION', '');
-    Graphics.setIncludeCode('SKIP_LIGHTING', '');
-    Graphics.removeIncludeCode('RENDER_MODE');
-    Graphics.setSize(previousWidth, previousHeight);
-    Graphics.clearColor(previousClearColor);
+    Graphics$1.render(scene$1, camera$1, 0, { DisableToolRendering: true });
+    const imgContent = await Graphics$1.toBlob();
+    Graphics$1.setIncludeCode('EXPORT_TEXTURES', '');
+    Graphics$1.setIncludeCode('SKIP_PROJECTION', '');
+    Graphics$1.setIncludeCode('SKIP_LIGHTING', '');
+    Graphics$1.removeIncludeCode('RENDER_MODE');
+    Graphics$1.setSize(previousWidth, previousHeight);
+    Graphics$1.clearColor(previousClearColor);
     return imgContent?.arrayBuffer() ?? null;
 }
 
-function resizeCamera(context, camera) {
-    const w = Graphics.getWidth() / 2.0;
-    const h = Graphics.getHeight() / 2.0;
+const RECORDER_MIME_TYPE = 'video/webm';
+const RECORDER_DEFAULT_FILENAME = 'Harmony3D recording.webm';
+// Note : you can provide your own url when calling ShaderEditor.initEditor.
+const ACE_EDITOR_URI = 'https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js';
+const MAX_HARDWARE_BONES = 256;
+const TEXTURE_CLEANUP_DELAY = 100000;
+const SMD_HEADER = '// Created by harmony-3d';
+
+class WebGLRenderingState {
+    static #viewport = vec4.create();
+    static #scissor = vec4.create();
+    static #enabledCapabilities = [];
+    // clear values
+    static #clearColor = vec4.create();
+    static #clearDepth = 1.0;
+    static #clearStencil = 0;
+    // Masking
+    static #colorMask = vec4.create();
+    static #depthMask = true;
+    static #stencilMask;
+    // Depth
+    static #depthFunc = GL_LESS;
+    // Blend
+    static #sourceFactor = GL_ONE;
+    static #destinationFactor = GL_ZERO;
+    static #srcRGB = GL_ONE;
+    static #dstRGB = GL_ZERO;
+    static #srcAlpha = GL_ONE;
+    static #dstAlpha = GL_ZERO;
+    static #modeRGB = GL_FUNC_ADD;
+    static #modeAlpha = GL_FUNC_ADD;
+    // Cull
+    static #cullFace = GL_BACK;
+    static #frontFace = GL_CCW;
+    //polygonOffset
+    static #polygonOffsetFactor = 0;
+    static #polygonOffsetUnits = 0;
+    static #lineWidth = 1;
+    static #program;
+    static #glContext;
+    static #enabledVertexAttribArray;
+    static #usedVertexAttribArray;
+    static #vertexAttribDivisor;
+    static setGraphics() {
+        this.#glContext = Graphics$1.glContext;
+        const maxVertexAttribs = this.#glContext.getParameter(GL_MAX_VERTEX_ATTRIBS);
+        this.#enabledVertexAttribArray = new Uint8Array(maxVertexAttribs);
+        this.#usedVertexAttribArray = new Uint8Array(maxVertexAttribs);
+        this.#vertexAttribDivisor = new Uint8Array(maxVertexAttribs);
+    }
+    static clearColor(clearColor) {
+        if (!vec4.exactEquals(clearColor, this.#clearColor)) {
+            this.#glContext.clearColor(clearColor[0], clearColor[1], clearColor[2], clearColor[3]);
+            vec4.copy(this.#clearColor, clearColor);
+        }
+    }
+    static getClearColor(out = vec4.create()) {
+        return vec4.copy(out, this.#clearColor);
+    }
+    static clearDepth(clearDepth) {
+        if (clearDepth !== this.#clearDepth) {
+            this.#glContext.clearDepth(clearDepth);
+            this.#clearDepth = clearDepth;
+        }
+    }
+    static clearStencil(clearStencil) {
+        if (clearStencil !== this.#clearStencil) {
+            this.#glContext.clearStencil(clearStencil);
+            this.#clearStencil = clearStencil;
+        }
+    }
+    static clear(color, depth, stencil) {
+        let bits = 0;
+        if (color)
+            bits |= GL_COLOR_BUFFER_BIT;
+        if (depth)
+            bits |= GL_DEPTH_BUFFER_BIT;
+        if (stencil)
+            bits |= GL_STENCIL_BUFFER_BIT;
+        this.#glContext.clear(bits);
+    }
+    static colorMask(colorMask) {
+        if (!vec4.exactEquals(colorMask, this.#colorMask)) {
+            this.#glContext.colorMask(Boolean(colorMask[0]), Boolean(colorMask[1]), Boolean(colorMask[2]), Boolean(colorMask[3]));
+            vec4.copy(this.#colorMask, colorMask);
+        }
+    }
+    static depthMask(flag) {
+        if (flag !== this.#depthMask) {
+            this.#glContext.depthMask(flag);
+            this.#depthMask = flag;
+        }
+    }
+    static stencilMask(stencilMask) {
+        if (stencilMask !== this.#stencilMask) {
+            this.#glContext.stencilMask(stencilMask);
+            this.#stencilMask = stencilMask;
+        }
+    }
+    static lineWidth(width) {
+        if (width !== this.#lineWidth) {
+            this.#glContext.lineWidth(width);
+            this.#lineWidth = width;
+        }
+    }
+    static viewport(viewport) {
+        if (!vec4.exactEquals(viewport, this.#viewport)) {
+            this.#glContext.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
+            vec4.copy(this.#viewport, viewport);
+        }
+    }
+    static scissor(scissor) {
+        if (!vec4.exactEquals(scissor, this.#scissor)) {
+            this.#glContext.scissor(scissor[0], scissor[1], scissor[2], scissor[3]);
+            vec4.copy(this.#scissor, scissor);
+        }
+    }
+    static enable(cap) {
+        if (this.#enabledCapabilities[cap] !== true) {
+            this.#glContext.enable(cap);
+            this.#enabledCapabilities[cap] = true;
+        }
+    }
+    static disable(cap) {
+        if (this.#enabledCapabilities[cap] !== false) {
+            this.#glContext.disable(cap);
+            this.#enabledCapabilities[cap] = false;
+        }
+    }
+    static isEnabled(cap) {
+        return this.#enabledCapabilities[cap] ?? this.#glContext.isEnabled(cap);
+    }
+    static useProgram(program) {
+        if (this.#program !== program) {
+            this.#glContext.useProgram(program);
+            this.#program = program;
+        }
+    }
+    static enableVertexAttribArray(index, divisor = 0) {
+        if (this.#enabledVertexAttribArray[index] === 0) {
+            this.#glContext.enableVertexAttribArray(index);
+            this.#enabledVertexAttribArray[index] = 1;
+        }
+        this.#usedVertexAttribArray[index] = 1;
+        if (this.#vertexAttribDivisor[index] !== divisor) {
+            this.#vertexAttribDivisor[index] = divisor;
+            if (Graphics$1.isWebGL2) {
+                this.#glContext.vertexAttribDivisor(index, divisor);
+            }
+            else {
+                Graphics$1.ANGLE_instanced_arrays?.vertexAttribDivisorANGLE(index, divisor);
+            }
+        }
+    }
+    static initUsedAttributes() {
+        const usedAttributes = this.#usedVertexAttribArray;
+        for (let i = 0, l = usedAttributes.length; i < l; i++) {
+            usedAttributes[i] = 0;
+        }
+    }
+    static disableUnusedAttributes() {
+        const usedAttributes = this.#usedVertexAttribArray;
+        const enabledAttributes = this.#enabledVertexAttribArray;
+        for (let i = 0, l = usedAttributes.length; i < l; i++) {
+            if (usedAttributes[i] !== enabledAttributes[i]) {
+                this.#glContext.disableVertexAttribArray(i);
+                enabledAttributes[i] = 0;
+            }
+        }
+    }
+    static depthFunc(func) {
+        if (this.#depthFunc !== func) {
+            this.#glContext.depthFunc(func);
+            this.#depthFunc = func;
+        }
+    }
+    static blendFunc(sourceFactor, destinationFactor) {
+        if ((this.#sourceFactor !== sourceFactor) || (this.#destinationFactor !== destinationFactor)) {
+            this.#glContext.blendFunc(sourceFactor, destinationFactor);
+            this.#sourceFactor = sourceFactor;
+            this.#destinationFactor = destinationFactor;
+        }
+    }
+    static blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha) {
+        if ((this.#srcRGB !== srcRGB) || (this.#dstRGB !== dstRGB) || (this.#srcAlpha !== srcAlpha) || (this.#dstAlpha !== dstAlpha)) {
+            this.#glContext.blendFuncSeparate(srcRGB, dstRGB, srcAlpha, dstAlpha);
+            this.#srcRGB = srcRGB;
+            this.#dstRGB = dstRGB;
+            this.#srcAlpha = srcAlpha;
+            this.#dstAlpha = dstAlpha;
+        }
+    }
+    static blendEquationSeparate(modeRGB, modeAlpha) {
+        if ((this.#modeRGB !== modeRGB) || (this.#modeAlpha !== modeAlpha)) {
+            this.#glContext.blendEquationSeparate(modeRGB, modeAlpha);
+            this.#modeRGB = modeRGB;
+            this.#modeAlpha = modeAlpha;
+        }
+    }
+    static cullFace(mode) {
+        if (this.#cullFace !== mode) {
+            this.#glContext.cullFace(mode);
+            this.#cullFace = mode;
+        }
+    }
+    static frontFace(mode) {
+        if (this.#frontFace !== mode) {
+            this.#glContext.frontFace(mode);
+            this.#frontFace = mode;
+        }
+    }
+    static polygonOffset(enable, factor, units) {
+        if (enable) {
+            this.enable(GL_POLYGON_OFFSET_FILL);
+            if (this.#polygonOffsetFactor !== factor && this.#polygonOffsetUnits !== units) {
+                this.#glContext.polygonOffset(factor, units);
+                this.#polygonOffsetFactor = factor;
+                this.#polygonOffsetUnits = units;
+            }
+        }
+        else {
+            this.disable(GL_POLYGON_OFFSET_FILL);
+        }
+    }
+}
+
+const CLEAR_COLOR = vec4.fromValues(1, 0, 1, 1);
+const a$8 = vec4.create();
+const mapSize = vec2.create();
+const lightPos = vec3.create();
+const viewPort = vec4.create();
+class ShadowMap {
+    #glContext;
+    constructor() {
+        this.#glContext = Graphics$1.glContext;
+    }
+    render(renderer, renderList, camera, context) {
+        const lights = renderList.lights;
+        const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
+        const scissorCapability = WebGLRenderingState.isEnabled(GL_SCISSOR_TEST);
+        const depthCapability = WebGLRenderingState.isEnabled(GL_DEPTH_TEST);
+        WebGLRenderingState.getClearColor(a$8);
+        WebGLRenderingState.disable(GL_BLEND);
+        WebGLRenderingState.disable(GL_SCISSOR_TEST);
+        WebGLRenderingState.enable(GL_DEPTH_TEST);
+        WebGLRenderingState.clearColor(CLEAR_COLOR);
+        Graphics$1.setIncludeCode('WRITE_DEPTH_TO_COLOR', '#define WRITE_DEPTH_TO_COLOR');
+        let renderTarget;
+        let shadowViewport;
+        for (const light of lights) {
+            if (light.castShadow) {
+                const shadow = light.shadow;
+                if (shadow) {
+                    light.getWorldPosition(lightPos);
+                    renderTarget = shadow.renderTarget;
+                    vec2.copy(mapSize, shadow.textureSize);
+                    Graphics$1.pushRenderTarget(renderTarget);
+                    WebGLRenderingState.clear(true, true, true);
+                    Graphics$1.setIncludeCode('IS_POINT_LIGHT', light.isPointLight ? '#define IS_POINT_LIGHT' : '');
+                    for (let viewPortIndex = 0; viewPortIndex < shadow.viewPortsLength; ++viewPortIndex) {
+                        shadowViewport = shadow.viewPorts[viewPortIndex];
+                        vec4.set(viewPort, mapSize[0] * shadowViewport[0], mapSize[1] * shadowViewport[1], mapSize[0] * shadowViewport[2], mapSize[1] * shadowViewport[3]);
+                        shadow.computeShadowMatrix(viewPortIndex);
+                        Graphics$1.viewport = viewPort;
+                        renderer._renderRenderList(renderList, shadow.camera, false, context, lightPos);
+                    }
+                    Graphics$1.popRenderTarget();
+                }
+            }
+        }
+        blendCapability ? WebGLRenderingState.enable(GL_BLEND) : WebGLRenderingState.disable(GL_BLEND);
+        scissorCapability ? WebGLRenderingState.enable(GL_SCISSOR_TEST) : WebGLRenderingState.disable(GL_SCISSOR_TEST);
+        depthCapability ? WebGLRenderingState.enable(GL_DEPTH_TEST) : WebGLRenderingState.disable(GL_DEPTH_TEST);
+        WebGLRenderingState.clearColor(a$8);
+        Graphics$1.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
+    }
+}
+
+class WebGLStats {
+    static #frames = 0;
+    static #totalFrames = 0;
+    static #fps = 0;
+    static #drawElements = 0;
+    static #renderTime = 0;
+    static #renderTimeMean = 0;
+    static #textures = 0;
+    static #startTime = 0;
+    static #endTime = 0;
+    static #startRender = 0;
+    static #primitivePerMode = new Map();
+    static #htmlElement;
+    static {
+        this.#initHtml();
+        this.#reset();
+    }
+    static start() {
+        this.#startTime = performance.now();
+    }
+    static beginRender() {
+        this.#startRender = performance.now();
+    }
+    static endRender() {
+        this.#renderTime += performance.now() - this.#startRender;
+    }
+    static #reset() {
+        this.#drawElements = 0;
+        this.#primitivePerMode.set(GL_POINTS, 0);
+        this.#primitivePerMode.set(GL_LINE_STRIP, 0);
+        this.#primitivePerMode.set(GL_LINE_LOOP, 0);
+        this.#primitivePerMode.set(GL_LINES, 0);
+        this.#primitivePerMode.set(GL_TRIANGLE_STRIP, 0);
+        this.#primitivePerMode.set(GL_TRIANGLE_FAN, 0);
+        this.#primitivePerMode.set(GL_TRIANGLES, 0);
+    }
+    static tick() {
+        this.#endTime = performance.now();
+        ++this.#frames;
+        const timeSinceReset = this.#endTime - this.#startTime;
+        this.#updateHtml();
+        if (timeSinceReset > 1000) {
+            this.#fps = Math.round(this.#frames / timeSinceReset * 1000);
+            this.#renderTimeMean = this.#renderTime / this.#frames;
+            this.#frames = 0;
+            this.#startTime = this.#endTime;
+            this.#renderTime = 0;
+        }
+        this.#reset();
+    }
+    static drawElements(mode, count) {
+        this.#primitivePerMode.set(mode, count + (this.#primitivePerMode.get(mode) ?? 0));
+        ++this.#drawElements;
+    }
+    static #initHtml() {
+        this.#htmlElement = createElement('div');
+    }
+    static #updateHtml() {
+        this.#htmlElement.innerText = '';
+        this.#htmlElement.append(String(this.#fps));
+        this.#htmlElement.append(createElement('br'), `drawElements : ${this.#drawElements}`);
+        this.#htmlElement.append(createElement('br'), `renderTime : ${this.#renderTimeMean.toPrecision(3)}`);
+        this.#htmlElement.append(createElement('br'), `textures : ${this.#textures}`);
+        for (const [mode, count] of this.#primitivePerMode) {
+            //let count = this.primitivePerMode[mode];
+            if (count > 0) {
+                this.#htmlElement.append(createElement('br'), `${mode} : ${count}`);
+            }
+        }
+    }
+    static get htmlElement() {
+        return this.#htmlElement;
+    }
+    static getFps() {
+        return this.#fps;
+    }
+}
+
+function flattenArray(array, arrayCount, arraySize) {
+    const out = new Float32Array(arrayCount * arraySize); //TODO: cache this
+    let offset = 0;
+    for (let i = 0; i < arrayCount; i++) {
+        for (let j = 0; j < arraySize; j++) {
+            out[offset] = array[i][j];
+            ++offset;
+        }
+    }
+    return out;
+}
+const SAMPLERS = new Set([
+    GL_SAMPLER_2D, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_2D_ARRAY,
+    GL_SAMPLER_2D_SHADOW, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLER_2D_ARRAY_SHADOW,
+    GL_INT_SAMPLER_2D, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_SAMPLER_2D_ARRAY,
+    GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY
+]);
+class Uniform {
+    #activeInfo;
+    #size;
+    #uniformLocation;
+    #isTextureSampler;
+    #textureUnit;
+    setValue;
+    constructor(activeInfo, uniformLocation) {
+        this.#activeInfo = activeInfo;
+        this.#size = activeInfo.size;
+        this.#uniformLocation = uniformLocation;
+        this.setValue = this.#getSetter(activeInfo.type);
+        this.#isTextureSampler = SAMPLERS.has(activeInfo.type);
+    }
+    #getSetter(type) {
+        const name = this.#activeInfo.name;
+        if (name.endsWith('[0]')) {
+            // Array
+            switch (type) {
+                case GL_BOOL:
+                case GL_INT:
+                    return this.#uniform1iv;
+                case GL_FLOAT:
+                    return this.#uniform1fv;
+                case GL_FLOAT_VEC2:
+                    return this.#uniform2fv;
+                case GL_FLOAT_VEC3:
+                    return this.#uniform3fv;
+                case GL_FLOAT_VEC4:
+                    return this.#uniform4fv;
+                case GL_SAMPLER_2D:
+                    return this.#uniformSampler2DArray;
+                case GL_FLOAT_MAT4:
+                    return this.#uniformMatrix4fvArray;
+                default:
+                    throw 'Unknown uniform array type : ' + type;
+            }
+        }
+        else {
+            // Scalar value
+            switch (type) {
+                case GL_BOOL:
+                case GL_INT:
+                    return this.#uniform1i;
+                case GL_FLOAT:
+                    return this.#uniform1f;
+                case GL_BOOL_VEC2:
+                case GL_INT_VEC2:
+                    return this.#uniform2iv;
+                case GL_BOOL_VEC3:
+                case GL_INT_VEC3:
+                    return this.#uniform3iv;
+                case GL_BOOL_VEC4:
+                case GL_INT_VEC4:
+                    return this.#uniform4iv;
+                case GL_FLOAT_VEC2:
+                    return this.#uniform2fv;
+                case GL_FLOAT_VEC3:
+                    return this.#uniform3fv;
+                case GL_FLOAT_VEC4:
+                    return this.#uniform4fv;
+                case GL_FLOAT_MAT2:
+                    return this.#uniformMatrix2fv;
+                case GL_FLOAT_MAT3:
+                    return this.#uniformMatrix3fv;
+                case GL_FLOAT_MAT4:
+                    return this.#uniformMatrix4fv;
+                case GL_SAMPLER_2D:
+                    return this.#uniformSampler2D;
+                case GL_SAMPLER_CUBE:
+                    return this.#uniformSamplerCube;
+                default:
+                    throw 'Unknown uniform type : ' + type;
+            }
+        }
+    }
+    setTextureUnit(textureUnit) {
+        if (this.#activeInfo.name.endsWith('[0]')) {
+            this.#textureUnit = [];
+            for (let i = 0; i < this.#size; ++i) {
+                this.#textureUnit.push(textureUnit + i);
+            }
+        }
+        else {
+            this.#textureUnit = textureUnit;
+        }
+    }
+    isTextureSampler() {
+        return this.#isTextureSampler;
+    }
+    getSize() {
+        return this.#size;
+    }
+    #uniform1i(glContext, value) {
+        glContext.uniform1i(this.#uniformLocation, value);
+    }
+    #uniform1iv(glContext, value) {
+        glContext.uniform1iv(this.#uniformLocation, value);
+    }
+    #uniform2iv(glContext, value) {
+        glContext.uniform2iv(this.#uniformLocation, value);
+    }
+    #uniform3iv(glContext, value) {
+        glContext.uniform3iv(this.#uniformLocation, value);
+    }
+    #uniform4iv(glContext, value) {
+        glContext.uniform4iv(this.#uniformLocation, value);
+    }
+    #uniform1f(glContext, value) {
+        glContext.uniform1f(this.#uniformLocation, value);
+    }
+    #uniform1fv(glContext, value) {
+        glContext.uniform1fv(this.#uniformLocation, value);
+    }
+    #uniform2fv(glContext, value) {
+        glContext.uniform2fv(this.#uniformLocation, value);
+    }
+    #uniform3fv(glContext, value) {
+        glContext.uniform3fv(this.#uniformLocation, value);
+    }
+    #uniform4fv(glContext, value) {
+        glContext.uniform4fv(this.#uniformLocation, value);
+    }
+    #uniformMatrix2fv(glContext, value) {
+        glContext.uniformMatrix2fv(this.#uniformLocation, false, value);
+    }
+    #uniformMatrix3fv(glContext, value) {
+        glContext.uniformMatrix3fv(this.#uniformLocation, false, value);
+    }
+    #uniformMatrix4fv(glContext, value) {
+        glContext.uniformMatrix4fv(this.#uniformLocation, false, value);
+    }
+    #uniformMatrix4fvArray(glContext, value) {
+        glContext.uniformMatrix4fv(this.#uniformLocation, false, flattenArray(value, this.#size, 16));
+    }
+    #uniformSampler2D(glContext, texture) {
+        glContext.uniform1i(this.#uniformLocation, this.#textureUnit);
+        glContext.activeTexture(GL_TEXTURE0 + this.#textureUnit);
+        if (texture) {
+            glContext.bindTexture(GL_TEXTURE_2D, texture.texture);
+        }
+        else {
+            glContext.bindTexture(GL_TEXTURE_2D, null);
+        }
+    }
+    #uniformSampler2DArray(glContext, textures) {
+        glContext.uniform1iv(this.#uniformLocation, this.#textureUnit);
+        for (let i = 0; i < this.#size; ++i) {
+            const texture = textures[i];
+            glContext.activeTexture(GL_TEXTURE0 + this.#textureUnit[i]);
+            if (texture) {
+                glContext.bindTexture(GL_TEXTURE_2D, texture.texture);
+            }
+            else {
+                glContext.bindTexture(GL_TEXTURE_2D, null);
+            }
+        }
+    }
+    #uniformSamplerCube(glContext, texture) {
+        glContext.uniform1i(this.#uniformLocation, this.#textureUnit);
+        glContext.activeTexture(GL_TEXTURE0 + this.#textureUnit);
+        if (texture) {
+            glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture.texture);
+        }
+        else {
+            glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
+        }
+    }
+}
+
+class Program {
+    #glContext;
+    #program;
+    #vs;
+    #fs;
+    #vertexShaderName;
+    #fragmentShaderName;
+    #valid = false;
+    attributes = new Map();
+    uniforms = new Map();
+    #linkError = '';
+    constructor(glContext, vertexShaderName, fragmentShaderName) {
+        this.#glContext = glContext;
+        this.#program = glContext.createProgram();
+        this.#vs = glContext.createShader(GL_VERTEX_SHADER);
+        this.#fs = glContext.createShader(GL_FRAGMENT_SHADER);
+        this.#vertexShaderName = vertexShaderName;
+        this.#fragmentShaderName = fragmentShaderName;
+        glContext.attachShader(this.#program, this.#vs);
+        glContext.attachShader(this.#program, this.#fs);
+    }
+    get program() {
+        throw 'error';
+    }
+    get vs() {
+        throw 'error';
+    }
+    get fs() {
+        throw 'error';
+    }
+    setUniformValue(name, value) {
+        const uniform = this.uniforms.get(name);
+        if (uniform !== undefined) {
+            uniform.setValue(this.#glContext, value);
+        }
+    }
+    validate(includeCode) {
+        const vertexShaderScript = ShaderManager.getShaderSource(GL_VERTEX_SHADER, this.#vertexShaderName);
+        const fragmentShaderScript = ShaderManager.getShaderSource(GL_FRAGMENT_SHADER, this.#fragmentShaderName);
+        if (vertexShaderScript && fragmentShaderScript && vertexShaderScript.isValid() && fragmentShaderScript.isValid()) {
+            const vsOk = this.#compileShader(this.#vs, this.#vertexShaderName, vertexShaderScript, includeCode);
+            const fsOk = vsOk && this.#compileShader(this.#fs, this.#fragmentShaderName, fragmentShaderScript, includeCode);
+            if (fsOk) {
+                this.#glContext.linkProgram(this.#program);
+                if (!this.#glContext.getProgramParameter(this.#program, this.#glContext.LINK_STATUS)) {
+                    const linkError = this.#glContext.getProgramInfoLog(this.#program);
+                    if (this.#linkError != linkError) {
+                        console.error(`Failed linking program for ${this.#vertexShaderName} and ${this.#fragmentShaderName}`);
+                        console.error('Reason : ' + linkError);
+                        this.#linkError = linkError;
+                    }
+                    return false;
+                }
+                else {
+                    this.#linkError = '';
+                }
+                this.#initProgram();
+                this.#valid = true;
+            }
+        }
+    }
+    invalidate() {
+        this.#valid = false;
+    }
+    isValid() {
+        return this.#valid;
+    }
+    getProgram() {
+        return this.#program;
+    }
+    #initProgram() {
+        this.attributes.clear();
+        this.uniforms.clear();
+        const activeAttributes = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_ATTRIBUTES);
+        for (let i = 0; i < activeAttributes; i++) {
+            const attribInfo = this.#glContext.getActiveAttrib(this.#program, i);
+            if (attribInfo) {
+                this.#setProgramAttribute(attribInfo.name);
+            }
+        }
+        const activeUniforms = this.#glContext.getProgramParameter(this.#program, this.#glContext.ACTIVE_UNIFORMS);
+        for (let i = 0; i < activeUniforms; i++) {
+            const uniformInfo = this.#glContext.getActiveUniform(this.#program, i);
+            if (uniformInfo) {
+                this.#setProgramUniform(uniformInfo);
+            }
+        }
+        let samplerId = 0;
+        for (const [uniformName, uniform] of this.uniforms) {
+            if (uniform.isTextureSampler()) {
+                uniform.setTextureUnit(samplerId); //setValue(this.#glContext, samplerId);
+                samplerId += uniform.getSize();
+            }
+        }
+    }
+    #setProgramAttribute(attributeName) {
+        const attributeLocation = this.#glContext.getAttribLocation(this.#program, attributeName);
+        this.attributes.set(attributeName, attributeLocation); //TODO: set in attributes ?
+    }
+    #setProgramUniform(uniformInfo) {
+        const uniformLocation = this.#glContext.getUniformLocation(this.#program, uniformInfo.name);
+        if (uniformLocation) {
+            this.uniforms.set(uniformInfo.name, new Uniform(uniformInfo, uniformLocation));
+        }
+    }
+    #compileShader(shader, shaderName, shaderSource, includeCode) {
+        if (!shaderSource || !shaderSource.isValid()) {
+            return null;
+        }
+        const compileSource = shaderSource.getCompileSource(includeCode);
+        this.#glContext.shaderSource(shader, compileSource);
+        this.#glContext.compileShader(shader);
+        if (!this.#glContext.getShaderParameter(shader, this.#glContext.COMPILE_STATUS)) {
+            const shaderInfoLog = this.#glContext.getShaderInfoLog(shader);
+            const m = 'Compile error in ' + shaderName + '. Reason : ' + shaderInfoLog;
+            console.warn(m, shaderSource.getCompileSourceLineNumber(includeCode), m);
+            ShaderManager.setCompileError(shaderName, shaderInfoLog);
+            shaderSource.setCompileError(this.#glContext.getShaderInfoLog(shader), includeCode);
+            return false;
+        }
+        return true;
+    }
+}
+
+const tempViewProjectionMatrix = mat4.create();
+const lightDirection = vec3.create();
+function getDefinesAsString(meshOrMaterial) {
+    const defines = [];
+    for (const [name, value] of Object.entries(meshOrMaterial.defines)) {
+        if (value === false) {
+            defines.push('#undef ' + name);
+        }
+        else {
+            defines.push('#define ' + name + ' ' + value);
+        }
+    }
+    return defines.join('\n') + '\n';
+}
+class Renderer {
+    #toneMapping = ToneMapping.None;
+    #toneMappingExposure = 1.;
+    #glContext;
+    #materialsProgram = new Map();
+    #globalIncludeCode = '';
+    constructor() {
+        this.#glContext = Graphics$1.glContext;
+    }
+    getProgram(mesh, material) {
+        let includeCode = Graphics$1.getIncludeCode();
+        includeCode += this.#globalIncludeCode;
+        includeCode += getDefinesAsString(mesh);
+        includeCode += getDefinesAsString(material);
+        includeCode += material.getShaderSource();
+        let program = this.#materialsProgram.get(includeCode);
+        if (!program) {
+            const shaderSource = material.getShaderSource();
+            program = new Program(this.#glContext, shaderSource + '.vs', shaderSource + '.fs');
+            this.#materialsProgram.set(includeCode, program);
+        }
+        if (!program.isValid()) {
+            let includeCode = Graphics$1.getIncludeCode();
+            includeCode += this.#globalIncludeCode;
+            includeCode += getDefinesAsString(mesh);
+            includeCode += getDefinesAsString(material);
+            program.validate(includeCode);
+            material._dirtyProgram = false;
+        }
+        return program;
+    }
+    #setupVertexAttributes(program, geometry, wireframe) {
+        WebGLRenderingState.initUsedAttributes();
+        const geometryAttributes = geometry.attributes;
+        const programAttributes = program.attributes;
+        for (const [attributeName, attribute] of geometryAttributes) {
+            const attributeLocation = programAttributes.get(attributeName);
+            if (attributeName == 'index') {
+                if (wireframe == 1) {
+                    attribute.updateWireframe(this.#glContext); //TODO: put somewhere else
+                }
+                else {
+                    attribute.update(this.#glContext); //TODO: put somewhere else
+                }
+                this.#glContext.bindBuffer(GL_ELEMENT_ARRAY_BUFFER, attribute._buffer);
+            }
+            else if (attributeLocation !== undefined) {
+                attribute.update(this.#glContext); //TODO: put somewhere else
+                WebGLRenderingState.enableVertexAttribArray(attributeLocation, attribute.divisor);
+                this.#glContext.bindBuffer(GL_ARRAY_BUFFER, attribute._buffer);
+                this.#glContext.vertexAttribPointer(attributeLocation, attribute.itemSize, attribute.type, false, 0, 0);
+            }
+        }
+        WebGLRenderingState.disableUnusedAttributes();
+    }
+    #setupVertexUniforms(program, mesh) {
+        for (const uniform in mesh.uniforms) {
+            program.setUniformValue(uniform, mesh.uniforms[uniform]);
+        }
+    }
+    applyMaterial(program, material) {
+    }
+    setupLights(renderList, camera, program, viewMatrix) {
+        const lightPositionCameraSpace = vec3.create(); //TODO: do not create a vec3
+        const lightPositionWorldSpace = vec3.create(); //TODO: do not create a vec3
+        const colorIntensity = vec3.create(); //TODO: do not create a vec3
+        const pointLights = renderList.pointLights; //scene.getChildList(PointLight);
+        const spotLights = renderList.spotLights;
+        let shadow;
+        let pointLightId = 0;
+        const pointShadowMap = [];
+        const pointShadowMatrix = [];
+        for (const pointLight of pointLights) {
+            if (pointLight.isVisible()) {
+                pointLight.getWorldPosition(lightPositionWorldSpace);
+                vec3.transformMat4(lightPositionCameraSpace, lightPositionWorldSpace, viewMatrix);
+                program.setUniformValue('uPointLights[' + pointLightId + '].position', lightPositionCameraSpace);
+                program.setUniformValue('uPointLights[' + pointLightId + '].color', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
+                program.setUniformValue('uPointLights[' + pointLightId + '].range', pointLight.range);
+                //program.setUniformValue('uPointLightsuPointLights[' + pointLightId + '].direction', pointLight.getDirection(tempVec3));
+                //program.setUniformValue('uPointLights[' + pointLightId + '].direction', [0, 0, -1]);
+                program.setUniformValue('uPbrLights[' + pointLightId + '].position', lightPositionWorldSpace);
+                program.setUniformValue('uPbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
+                shadow = pointLight.shadow;
+                if (shadow && pointLight.castShadow) {
+                    pointShadowMap.push(shadow.renderTarget.getTexture());
+                    pointShadowMatrix.push(shadow.shadowMatrix);
+                    program.setUniformValue('uPointLightShadows[' + pointLightId + '].mapSize', shadow.textureSize);
+                    program.setUniformValue('uPointLightShadows[' + pointLightId + '].near', shadow.camera.nearPlane);
+                    program.setUniformValue('uPointLightShadows[' + pointLightId + '].far', shadow.camera.farPlane);
+                    program.setUniformValue('uPointLightShadows[' + pointLightId + '].enabled', true);
+                }
+                ++pointLightId;
+            }
+        }
+        program.setUniformValue('uPointShadowMap[0]', pointShadowMap);
+        program.setUniformValue('uPointShadowMatrix[0]', pointShadowMatrix);
+        let spotLightId = 0;
+        const spotShadowMap = [];
+        const spotShadowMatrix = [];
+        for (const spotLight of spotLights) {
+            if (spotLight.visible) {
+                spotLight.getWorldPosition(lightPositionCameraSpace);
+                vec3.transformMat4(lightPositionCameraSpace, lightPositionCameraSpace, viewMatrix);
+                program.setUniformValue('uSpotLights[' + spotLightId + '].position', lightPositionCameraSpace);
+                program.setUniformValue('uSpotLights[' + spotLightId + '].color', vec3.scale(colorIntensity, spotLight.color, spotLight.intensity));
+                program.setUniformValue('uSpotLights[' + spotLightId + '].range', spotLight.range);
+                program.setUniformValue('uSpotLights[' + spotLightId + '].innerAngleCos', spotLight.innerAngleCos);
+                program.setUniformValue('uSpotLights[' + spotLightId + '].outerAngleCos', spotLight.outerAngleCos);
+                //program.setUniformValue('uSpotLights[' + spotLightId + '].direction', spotLight.getDirection(tempVec3));
+                //program.setUniformValue('uSpotLights[' + spotLightId + '].direction', [0, 0, -1]);
+                spotLight.getDirection(lightDirection);
+                const m = viewMatrix;
+                const x = lightDirection[0];
+                const y = lightDirection[1];
+                const z = lightDirection[2];
+                lightDirection[0] = m[0] * x + m[4] * y + m[8] * z;
+                lightDirection[1] = m[1] * x + m[5] * y + m[9] * z;
+                lightDirection[2] = m[2] * x + m[6] * y + m[10] * z;
+                program.setUniformValue('uSpotLights[' + spotLightId + '].direction', lightDirection);
+                shadow = spotLight.shadow;
+                if (shadow && spotLight.castShadow) {
+                    spotShadowMap.push(shadow.renderTarget.getTexture());
+                    spotShadowMatrix.push(shadow.shadowMatrix);
+                    program.setUniformValue('uSpotLightShadows[' + spotLightId + '].mapSize', shadow.textureSize);
+                    program.setUniformValue('uSpotLightShadows[' + spotLightId + '].enabled', true);
+                }
+                ++spotLightId;
+            }
+        }
+        program.setUniformValue('uSpotShadowMap[0]', spotShadowMap);
+        program.setUniformValue('uSpotShadowMatrix[0]', spotShadowMatrix);
+        const ambientLights = renderList.ambientLights; //scene.getChildList(AmbientLight);
+        const ambientAccumulator = vec3.create(); //TODO: do not create a vec3
+        for (const ambientLight of ambientLights) {
+            if (ambientLight.isVisible()) {
+                vec3.scaleAndAdd(ambientAccumulator, ambientAccumulator, ambientLight.color, ambientLight.intensity);
+            }
+        }
+        program.setUniformValue('uAmbientLight', ambientAccumulator);
+    }
+    #setLights(pointLights, spotLights, pointLightShadows, spotLightShadows) {
+        Graphics$1.setIncludeCode('USE_SHADOW_MAPPING', '#define USE_SHADOW_MAPPING');
+        Graphics$1.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS ' + pointLights);
+        Graphics$1.setIncludeCode('NUM_PBR_LIGHTS', '#define NUM_PBR_LIGHTS ' + pointLights);
+        Graphics$1.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS ' + spotLights);
+        Graphics$1.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHT_SHADOWS ' + pointLightShadows);
+        Graphics$1.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHT_SHADOWS ' + spotLightShadows);
+        //TODO: other lights of disable lighting all together
+    }
+    #unsetLights() {
+        Graphics$1.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
+        Graphics$1.setIncludeCode('NUM_POINT_LIGHTS', '#define NUM_POINT_LIGHTS 0');
+        Graphics$1.setIncludeCode('NUM_SPOT_LIGHTS', '#define NUM_SPOT_LIGHTS 0');
+        Graphics$1.setIncludeCode('NUM_POINT_LIGHT_SHADOWS', '#define NUM_POINT_LIGHTS 0');
+        Graphics$1.setIncludeCode('NUM_SPOT_LIGHT_SHADOWS', '#define NUM_SPOT_LIGHTS 0');
+        //TODO: other lights of disable lighting all together
+    }
+    renderObject(context, renderList, object, camera, geometry, material, renderLights = true, lightPos) {
+        if (!object.isRenderable) {
+            return;
+        }
+        if (object.isVisible() === false) {
+            return;
+        }
+        if (geometry.count === 0) {
+            return;
+        }
+        if (!renderLights) {
+            if (!object.castShadow) {
+                return;
+            }
+        }
+        renderLights &&= material.renderLights;
+        material.updateMaterial(Graphics$1.getTime(), object); //TODO: frame delta
+        const cameraMatrix = camera.cameraMatrix;
+        const projectionMatrix = camera.projectionMatrix;
+        mat4.mul(object._mvMatrix, cameraMatrix, object.worldMatrix);
+        //object.normalMatrix.getNormalMatrix(object.modelViewMatrix);
+        mat3.normalFromMat4(object._normalMatrix, cameraMatrix); //TODO: fixme
+        //let viewProjectionMatrix = mat4.create();//TODOv3 don't recreate the matrix
+        mat4.mul(tempViewProjectionMatrix, projectionMatrix, cameraMatrix); //TODO: compute this in camera
+        if (renderLights) {
+            this.#setLights(renderList.pointLights.length, renderList.spotLights.length, renderList.pointLightShadows, renderList.spotLightShadows);
+            if (!object.receiveShadow) {
+                Graphics$1.setIncludeCode('USE_SHADOW_MAPPING', '#undef USE_SHADOW_MAPPING');
+            }
+        }
+        else {
+            this.#unsetLights();
+        }
+        if (camera.projection == CameraProjection.Perspective) {
+            Graphics$1.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_PERSPECTIVE_CAMERA');
+        }
+        else {
+            Graphics$1.setIncludeCode('CAMERA_PROJECTION_TYPE', '#define IS_ORTHOGRAPHIC_CAMERA');
+        }
+        const program = this.getProgram(object, material);
+        if (program.isValid()) {
+            WebGLRenderingState.useProgram(program.getProgram());
+            if (renderLights) {
+                material.beforeRender(camera);
+            }
+            this.applyMaterial(program, material);
+            program.setUniformValue('uModelMatrix', object.worldMatrix);
+            program.setUniformValue('uModelViewMatrix', object._mvMatrix);
+            program.setUniformValue('uViewMatrix', cameraMatrix);
+            program.setUniformValue('uProjectionMatrix', projectionMatrix);
+            program.setUniformValue('uProjectionLogDepth', 2.0 / (Math.log(camera.farPlane + 1.0) / Math.LN2)); //TODO: perf: compute that once we set camera farplane
+            program.setUniformValue('uViewProjectionMatrix', tempViewProjectionMatrix);
+            program.setUniformValue('uNormalMatrix', object._normalMatrix);
+            program.setUniformValue('uCameraPosition', camera.position);
+            const pickingColor = object.pickingColor;
+            if (pickingColor) {
+                program.setUniformValue('uPickingColor', pickingColor);
+            }
+            //TODO: set this on resolution change
+            program.setUniformValue('uResolution', [Graphics$1.getWidth(), Graphics$1.getHeight(), camera.aspectRatio, 0]);
+            //TODO: set this at start of the frame
+            program.setUniformValue('uTime', [Graphics$1.getTime(), Graphics$1.currentTick, 0, 0]);
+            if (renderLights) {
+                this.setupLights(renderList, camera, program, cameraMatrix);
+            }
+            else {
+                program.setUniformValue('uLightPosition', lightPos);
+                program.setUniformValue('uLightNear', camera.nearPlane);
+                program.setUniformValue('uLightFar', camera.farPlane);
+            }
+            const wireframe = object.wireframe;
+            this.#setupVertexAttributes(program, geometry, wireframe);
+            this.#setupVertexUniforms(program, object);
+            if (geometry.instanceCount === undefined) {
+                if (wireframe == 1) {
+                    //TODO: case where original geometry is GL_LINES
+                    this.#glContext.drawElements(GL_LINES, geometry.count * 2, GL_UNSIGNED_INT, 0);
+                }
+                else {
+                    this.#glContext.drawElements(object.renderMode, geometry.count, geometry.elementArrayType, 0);
+                }
+            }
+            else {
+                if (Graphics$1.isWebGL2) {
+                    this.#glContext.drawElementsInstanced(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
+                }
+                else {
+                    Graphics$1.ANGLE_instanced_arrays?.drawElementsInstancedANGLE(object.renderMode, geometry.count, geometry.elementArrayType, 0, geometry.instanceCount);
+                }
+            }
+        }
+    }
+    _prepareRenderList(renderList, scene, camera, delta, context) {
+        renderList.reset();
+        let currentObject = scene;
+        const objectStack = [];
+        //scene.pointLights = scene.getChildList(PointLight);
+        //scene.ambientLights = scene.getChildList(AmbientLight);
+        while (currentObject) {
+            if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.DisableToolRendering) {
+                currentObject = objectStack.shift();
+                continue;
+            }
+            //objectStack.push(currentObject);
+            for (const child of currentObject.children) {
+                {
+                    objectStack.push(child);
+                }
+            }
+            if (currentObject.isRenderable) {
+                renderList.addObject(currentObject);
+            }
+            else {
+                currentObject.update(scene, camera, delta);
+            }
+            currentObject = objectStack.shift();
+        }
+        renderList.finish();
+    }
+    _renderRenderList(renderList, camera, renderLights, context, lightPos) {
+        for (const child of renderList.opaqueList) {
+            this.renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+        }
+        if (renderLights) {
+            for (const child of renderList.transparentList) {
+                this.renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
+            }
+        }
+    }
+    render(scene, camera, delta, context) {
+    }
+    clear(color, depth, stencil) {
+        WebGLRenderingState.clear(color, depth, stencil);
+    }
+    /*
+        get vpMatrix() {
+            return mat4.mul(mat4.create(), this.currentCamera.projectionMatrix, this.viewMatrix);
+        }
+            */
+    /**
+     * Invalidate all shader (force recompile)
+     */
+    invalidateShaders() {
+        for (const shader of this.#materialsProgram.values()) {
+            shader.invalidate();
+        }
+    }
+    clearColor(clearColor) {
+        WebGLRenderingState.clearColor(clearColor);
+    }
+    clearDepth(clearDepth) {
+        WebGLRenderingState.clearDepth(clearDepth);
+    }
+    clearStencil(clearStencil) {
+        WebGLRenderingState.clearStencil(clearStencil);
+    }
+    setToneMapping(toneMapping) {
+        this.#toneMapping = toneMapping;
+        Graphics$1.setIncludeCode('TONE_MAPPING', `#define TONE_MAPPING ${toneMapping}`);
+    }
+    getToneMapping() {
+        return this.#toneMapping;
+    }
+    setToneMappingExposure(exposure) {
+        this.#toneMappingExposure = exposure;
+        Graphics$1.setIncludeCode('TONE_MAPPING_EXPOSURE', `#define TONE_MAPPING_EXPOSURE ${exposure.toFixed(2)}`);
+    }
+    getToneMappingExposure() {
+        return this.#toneMappingExposure;
+    }
+}
+
+function sortLights(first, second) {
+    if (first.castShadow) {
+        return -1;
+    }
+    return 1;
+}
+class RenderList {
+    lights = [];
+    pointLights = [];
+    spotLights = [];
+    ambientLights = [];
+    transparentList = [];
+    opaqueList = [];
+    pointLightShadows = 0;
+    spotLightShadows = 0;
+    reset() {
+        this.lights = [];
+        this.pointLights = [];
+        this.spotLights = [];
+        this.ambientLights = [];
+        this.transparentList = [];
+        this.opaqueList = [];
+        this.pointLightShadows = 0;
+        this.spotLightShadows = 0;
+    }
+    finish() {
+        this.pointLights.sort(sortLights);
+        this.spotLights.sort(sortLights);
+    }
+    addObject(entity) {
+        if (entity.isVisible() !== false) {
+            if (entity.isLight) {
+                this.lights.push(entity);
+                if (entity.isAmbientLight) {
+                    this.ambientLights.push(entity);
+                }
+                else if (entity.isPointLight) {
+                    this.pointLights.push(entity);
+                    if (entity.castShadow) {
+                        ++this.pointLightShadows;
+                    }
+                }
+                else if (entity.isSpotLight) {
+                    this.spotLights.push(entity);
+                    if (entity.castShadow) {
+                        ++this.spotLightShadows;
+                    }
+                }
+            }
+            else {
+                const material = entity.material;
+                if (material) {
+                    if (material.blend) { //TODOv3 changeblend
+                        this.transparentList.push(entity);
+                    }
+                    else {
+                        this.opaqueList.push(entity);
+                    }
+                }
+            }
+        }
+    }
+}
+
+class ForwardRenderer extends Renderer {
+    #shadowMap;
+    #frame = 0;
+    constructor() {
+        super();
+        this.#shadowMap = new ShadowMap();
+    }
+    applyMaterial(program, material) {
+        if (material.depthTest) {
+            WebGLRenderingState.enable(GL_DEPTH_TEST);
+            WebGLRenderingState.depthFunc(material.depthFunc);
+        }
+        else {
+            WebGLRenderingState.disable(GL_DEPTH_TEST);
+        }
+        WebGLRenderingState.depthMask(material.depthMask);
+        WebGLRenderingState.colorMask(material.colorMask);
+        if (material.blend) {
+            WebGLRenderingState.enable(GL_BLEND);
+            WebGLRenderingState.blendFuncSeparate(material.srcRGB, material.dstRGB, material.srcAlpha, material.dstAlpha);
+            WebGLRenderingState.blendEquationSeparate(material.modeRGB, material.modeAlpha);
+        }
+        else {
+            WebGLRenderingState.disable(GL_BLEND);
+        }
+        /*
+        if (material.disableCulling === true) {
+            WebGLRenderingState.disable(GL_CULL_FACE);
+        } else {
+            WebGLRenderingState.enable(GL_CULL_FACE);
+            WebGLRenderingState.cullFace(material.cullMode);
+        }
+            */
+        const renderFace = material.getRenderFace();
+        switch (renderFace) {
+            case RenderFace.Front:
+                WebGLRenderingState.enable(GL_CULL_FACE);
+                WebGLRenderingState.cullFace(GL_BACK);
+                break;
+            case RenderFace.Back:
+                WebGLRenderingState.enable(GL_CULL_FACE);
+                WebGLRenderingState.cullFace(GL_FRONT);
+                break;
+            case RenderFace.Both:
+                WebGLRenderingState.disable(GL_CULL_FACE);
+                break;
+            case RenderFace.None:
+                WebGLRenderingState.enable(GL_CULL_FACE);
+                WebGLRenderingState.cullFace(GL_FRONT_AND_BACK);
+                break;
+        }
+        WebGLRenderingState.polygonOffset(material.polygonOffset, material.polygonOffsetFactor, material.polygonOffsetUnits);
+        for (const uniform in material.uniforms) {
+            program.setUniformValue(uniform, material.uniforms[uniform]);
+        }
+    }
+    render(scene, camera, delta, context) {
+        const renderList = new RenderList(); //TODO: optimize
+        camera.dirty(); //Force matrices to recompute
+        this._prepareRenderList(renderList, scene, camera, delta, context);
+        this.#shadowMap.render(this, renderList, camera, context);
+        if (scene.background) {
+            scene.background.render(this, camera);
+        }
+        this._renderRenderList(renderList, camera, true, context);
+        WebGLRenderingState.depthMask(true); //TODOv3 check why we have to do this
+        ++this.#frame;
+    }
+    set scissorTest(scissorTest) {
+        if (scissorTest) {
+            WebGLRenderingState.enable(GL_SCISSOR_TEST);
+        }
+        else {
+            WebGLRenderingState.disable(GL_SCISSOR_TEST);
+        }
+    }
+}
+
+const VEC4_ALL_1 = vec4.fromValues(1.0, 1.0, 1.0, 1.0);
+var ShaderPrecision;
+(function (ShaderPrecision) {
+    ShaderPrecision[ShaderPrecision["Low"] = 0] = "Low";
+    ShaderPrecision[ShaderPrecision["Medium"] = 1] = "Medium";
+    ShaderPrecision[ShaderPrecision["High"] = 2] = "High";
+})(ShaderPrecision || (ShaderPrecision = {}));
+var ShaderQuality;
+(function (ShaderQuality) {
+    ShaderQuality[ShaderQuality["Low"] = 0] = "Low";
+    ShaderQuality[ShaderQuality["Medium"] = 1] = "Medium";
+    ShaderQuality[ShaderQuality["High"] = 2] = "High";
+})(ShaderQuality || (ShaderQuality = {}));
+var ShaderDebugMode;
+(function (ShaderDebugMode) {
+    ShaderDebugMode[ShaderDebugMode["None"] = 0] = "None";
+})(ShaderDebugMode || (ShaderDebugMode = {}));
+class Graphics {
+    static #pixelRatio = /*window.devicePixelRatio ?? */ 1.0;
+    static #viewport = vec4.create();
+    static #scissor = vec4.create();
+    static #extensions = new Map();
+    static #autoResize = false;
+    static isWebGL = false;
+    static isWebGL2 = false;
+    static autoClear = true;
+    static autoClearColor = false;
+    static autoClearDepth = true;
+    static autoClearStencil = true;
+    static #includeCode = new Map();
+    static #globalIncludeCode = '';
+    static speed = 1.0;
+    static #timeOrigin = performance.now();
+    static #time = 0;
+    static #running = false;
+    static #lastTick = performance.now();
+    static currentTick = 0;
+    static #renderBuffers = new Set();
+    static #renderTargetStack = [];
+    static #readyPromiseResolve;
+    static #readyPromise = new Promise((resolve) => this.#readyPromiseResolve = resolve);
+    static #canvas;
+    static #canvases = new Map();
+    static #width = 300;
+    static #height = 150;
+    static #offscreenCanvas;
+    static #forwardRenderer;
+    static glContext;
+    static #bipmapContext;
+    static #pickedEntity = null;
+    static #animationFrame = 0;
+    static ANGLE_instanced_arrays;
+    static OES_texture_float_linear;
+    static #mediaRecorder;
+    static dragging = false;
+    static #mouseDownFunc = (event) => this.#mouseDown(event);
+    static #mouseMoveFunc = (event) => this.#mouseMove(event);
+    static #mouseUpFunc = (event) => this.#mouseUp(event);
+    static #keyDownFunc = (event) => GraphicsEvents.keyDown(event);
+    static #keyUpFunc = (event) => GraphicsEvents.keyUp(event);
+    static #wheelFunc = (event) => this.#wheel(event);
+    static #touchStartFunc = (event) => GraphicsEvents.touchStart(this.#pickedEntity, event);
+    static #touchMoveFunc = (event) => GraphicsEvents.touchMove(this.#pickedEntity, event);
+    static #touchCancelFunc = (event) => GraphicsEvents.touchCancel(this.#pickedEntity, event);
+    static {
+        this.setShaderPrecision(ShaderPrecision.Medium);
+        this.setShaderQuality(ShaderQuality.Medium);
+        this.setShaderDebugMode(ShaderDebugMode.None);
+        this.setIncludeCode('MAX_HARDWARE_BONES', '#define MAX_HARDWARE_BONES ' + MAX_HARDWARE_BONES);
+    }
+    static initCanvas(contextAttributes = {}) {
+        if (contextAttributes.useOffscreenCanvas) {
+            this.#offscreenCanvas = new OffscreenCanvas(0, 0);
+        }
+        else {
+            this.#canvas = contextAttributes.canvas ?? createElement('canvas');
+            ShortcutHandler.addContext('3dview', this.#canvas);
+            this.#width = this.#canvas.width;
+            this.#height = this.#canvas.height;
+            this.listenCanvas(this.#canvas);
+        }
+        /*
+        if (!this.#canvas.hasAttribute('tabindex')) {
+            this.#canvas.setAttribute('tabindex', "1");
+        }
+        */
+        this.#initContext(contextAttributes);
+        this.#initObserver();
+        WebGLRenderingState.setGraphics();
+        // init state
+        WebGLRenderingState.enable(GL_CULL_FACE);
+        // init state end
+        //this.clearColor = vec4.fromValues(0, 0, 0, 255);
+        this.#forwardRenderer = new ForwardRenderer();
+        const autoResize = contextAttributes.autoResize;
+        if (autoResize !== undefined) {
+            this.autoResize = autoResize;
+        }
+        this.#readyPromiseResolve(true);
+        return this;
+    }
+    static addCanvas(canvas, options) {
+        canvas = canvas ?? createElement('canvas');
+        if (this.#canvases.has(canvas)) {
+            return canvas;
+        }
+        this.listenCanvas(canvas);
+        try {
+            const bipmapContext = canvas.getContext('bitmaprenderer');
+            if (!bipmapContext) {
+                return canvas;
+            }
+            let scenes;
+            if (options.scenes) {
+                scenes = options.scenes;
+            }
+            else {
+                if (options.scene) {
+                    scenes = [{ scene: options.scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }];
+                }
+                else {
+                    scenes = [];
+                }
+            }
+            this.#canvases.set(canvas, {
+                enabled: true,
+                canvas: canvas,
+                context: bipmapContext,
+                scenes: scenes,
+                autoResize: options.autoResize ?? false,
+            });
+        }
+        catch (e) { }
+        return canvas;
+    }
+    static listenCanvas(canvas) {
+        canvas.addEventListener('mousedown', this.#mouseDownFunc);
+        canvas.addEventListener('mousemove', this.#mouseMoveFunc);
+        canvas.addEventListener('mouseup', this.#mouseUpFunc);
+        canvas.addEventListener('keydown', this.#keyDownFunc);
+        canvas.addEventListener('keyup', this.#keyUpFunc);
+        canvas.addEventListener('wheel', this.#wheelFunc);
+        canvas.addEventListener('touchstart', this.#touchStartFunc);
+        canvas.addEventListener('touchmove', this.#touchMoveFunc);
+        canvas.addEventListener('touchcancel', this.#touchCancelFunc);
+        if (!canvas.hasAttribute('tabindex')) {
+            canvas.setAttribute('tabindex', "1");
+        }
+    }
+    static unlistenCanvas(canvas) {
+        canvas.removeEventListener('mousedown', this.#mouseDownFunc);
+        canvas.removeEventListener('mousemove', this.#mouseMoveFunc);
+        canvas.removeEventListener('mouseup', this.#mouseUpFunc);
+        canvas.removeEventListener('keydown', this.#keyDownFunc);
+        canvas.removeEventListener('keyup', this.#keyUpFunc);
+        canvas.removeEventListener('wheel', this.#wheelFunc);
+        canvas.removeEventListener('touchstart', this.#touchStartFunc);
+        canvas.removeEventListener('touchmove', this.#touchMoveFunc);
+        canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
+    }
+    static pickEntity(x, y) {
+        if (!this.#canvas) {
+            return null;
+        }
+        this.setIncludeCode('pickingMode', '#define PICKING_MODE');
+        GraphicsEvents.tick(0, performance.now(), 0);
+        this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
+        this.glContext;
+        const pixels = new Uint8Array(4);
+        this.glContext?.readPixels(x, this.#canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+        const pickedEntityIndex = (pixels[0] << 16) + (pixels[1] << 8) + (pixels[2]);
+        return pickList.get(pickedEntityIndex) ?? null;
+    }
+    static #mouseDown(event) {
+        event.target.focus?.();
+        const x = event.offsetX;
+        const y = event.offsetY;
+        this.#pickedEntity = this.pickEntity(x, y);
+        GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
+    }
+    static #mouseMove(event) {
+        const x = event.offsetX;
+        const y = event.offsetY;
+        GraphicsEvents.mouseMove(x, y, this.#pickedEntity, event);
+    }
+    static #mouseUp(event) {
+        const x = event.offsetX;
+        const y = event.offsetY;
+        GraphicsEvents.mouseUp(x, y, this.#pickedEntity, event);
+        this.#pickedEntity = null;
+    }
+    static #wheel(event) {
+        const x = event.offsetX;
+        const y = event.offsetY;
+        GraphicsEvents.wheel(x, y, this.#pickedEntity, event);
+        this.#pickedEntity = null;
+        event.preventDefault();
+    }
+    static getDefinesAsString(material) {
+        const defines = [];
+        for (const [name, value] of Object.entries(material.defines)) {
+            if (value === false) {
+                defines.push('#undef ' + name + ' ' + value);
+            }
+            else {
+                defines.push('#define ' + name + ' ' + value);
+            }
+        }
+        return defines.join('\n') + '\n';
+    }
+    static render(scene, camera, delta, context) {
+        if (this.#offscreenCanvas && context.imageBitmap) {
+            this.#offscreenCanvas.width = context.imageBitmap.width;
+            this.#offscreenCanvas.height = context.imageBitmap.height;
+            this.setViewport(vec4.fromValues(0, 0, context.imageBitmap.width, context.imageBitmap.height));
+        }
+        this.renderBackground(); //TODOv3 put in rendering pipeline
+        this.#forwardRenderer.render(scene, camera, delta, context);
+        if (this.#offscreenCanvas) {
+            const bitmap = this.#offscreenCanvas.transferToImageBitmap();
+            (context.imageBitmap?.context ?? this.#bipmapContext)?.transferFromImageBitmap(bitmap);
+        }
+    }
+    static renderMultiCanvas(delta, context = {}) {
+        // TODO: mutualize with the method render()
+        for (const [_, canvas] of this.#canvases) {
+            if (canvas.enabled) {
+                this.#renderMultiCanvas(canvas, delta, context);
+            }
+        }
+    }
+    static #renderMultiCanvas(canvas, delta, context) {
+        if (this.#offscreenCanvas) {
+            const parentElement = canvas.canvas.parentElement;
+            if (canvas.autoResize && parentElement) {
+                const width = parentElement.clientWidth;
+                const height = parentElement.clientHeight;
+                this.#offscreenCanvas.width = width;
+                this.#offscreenCanvas.height = height;
+                canvas.canvas.width = width * this.#pixelRatio;
+                canvas.canvas.height = height * this.#pixelRatio;
+            }
+            else {
+                this.#offscreenCanvas.width = canvas.canvas.width;
+                this.#offscreenCanvas.height = canvas.canvas.height;
+            }
+            this.setViewport(vec4.fromValues(0, 0, canvas.canvas.width, canvas.canvas.height));
+        }
+        this.renderBackground(); //TODOv3 put in rendering pipeline
+        for (const canvasScene of canvas.scenes) {
+            if (canvasScene.scene.activeCamera) {
+                this.#forwardRenderer.render(canvasScene.scene, canvasScene.scene.activeCamera, delta, context);
+            }
+        }
+        const bitmap = this.#offscreenCanvas.transferToImageBitmap();
+        canvas.context.transferFromImageBitmap(bitmap);
+    }
+    static renderBackground() {
+        if (this.autoClear) {
+            this.clear(this.autoClearColor, this.autoClearDepth, this.autoClearStencil);
+        }
+    }
+    static clear(color, depth, stencil) {
+        let bits = 0;
+        if (color)
+            bits |= GL_COLOR_BUFFER_BIT;
+        if (depth)
+            bits |= GL_DEPTH_BUFFER_BIT;
+        if (stencil)
+            bits |= GL_STENCIL_BUFFER_BIT;
+        //TODO check if doing a complete state reinitilisation is better ?
+        WebGLRenderingState.colorMask(VEC4_ALL_1);
+        WebGLRenderingState.depthMask(true);
+        WebGLRenderingState.stencilMask(Number.MAX_SAFE_INTEGER);
+        this.glContext?.clear(bits);
+    }
+    static _tick() {
+        cancelAnimationFrame(this.#animationFrame);
+        {
+            this.#animationFrame = requestAnimationFrame(() => this._tick());
+        }
+        const tick = performance.now();
+        this.#time = (tick - this.#timeOrigin) * 0.001;
+        const delta = (tick - this.#lastTick) * this.speed * 0.001;
+        if (this.#running) {
+            ++this.currentTick;
+            GraphicsEvents.tick(delta, tick, this.speed);
+        }
+        this.#lastTick = tick;
+    }
+    static #initContext(contextAttributes) {
+        const canvas = this.#offscreenCanvas ?? this.#canvas;
+        if (this.#offscreenCanvas) ;
+        if (!canvas) {
+            return;
+        }
+        // we may want to cleanup the contextAttributes here
+        try {
+            try { // first try to create a webgl2 context
+                if (DISABLE_WEBGL2) ;
+                this.glContext = canvas.getContext('webgl2', contextAttributes);
+                if (this.glContext instanceof WebGL2RenderingContext) {
+                    this.isWebGL2 = true;
+                    WebGLShaderSource.isWebGL2 = true;
+                    this.setIncludeCode('WEBGL2', '#define WEBGL2');
+                }
+                else {
+                    throw 'no webgl2';
+                }
+            }
+            catch (e) {
+                this.glContext = canvas.getContext('webgl', contextAttributes);
+                if (this.glContext instanceof WebGLRenderingContext) {
+                    this.isWebGL = true;
+                    this.setIncludeCode('WEBGL1', '#define WEBGL1');
+                    //TODO: put this in a separate function and alert the user in case of failure
+                    //these extensions are important
+                    // activate UNSIGNED_INT indices in drawElements
+                    this.getExtension('OES_element_index_uint');
+                    // activate floating point textures
+                    this.getExtension('OES_texture_float');
+                    // activate derivatives functions
+                    this.getExtension('OES_standard_derivatives');
+                    //activate writing in gl_FragDepth
+                    this.getExtension('EXT_frag_depth');
+                    // get access to drawElementsInstancedANGLE
+                    this.ANGLE_instanced_arrays = this.getExtension('ANGLE_instanced_arrays');
+                    // add MIN_EXT and MAX_EXT for blendEquation in webgl1 context. MIN_EXT and MAX_EXT have the same value as MIN and MAX
+                    this.getExtension('EXT_blend_minmax');
+                    //Depth texture https://developer.mozilla.org/en-US/docs/Web/API/WEBGL_depth_texture
+                    this.getExtension('WEBGL_depth_texture');
+                    //https://developer.mozilla.org/en-US/docs/Web/API/EXT_sRGB
+                    this.getExtension('EXT_sRGB');
+                    //TODO: see https://developer.mozilla.org/en-US/docs/Web/API/WebGLRenderingContext/getExtension
+                }
+            }
+            // WEBGL1 / WEBGL2 extensions
+            // https://developer.mozilla.org/en-US/docs/Web/API/OES_texture_float_linear
+            this.OES_texture_float_linear = this.getExtension('OES_texture_float_linear');
+        }
+        catch (error) {
+            console.error(error);
+            throw error;
+        }
+        if (this.glContext) {
+            setTextureFactoryContext(this.glContext);
+        }
+    }
+    /**
+     * @deprecated Please use `setShaderPrecision` instead.
+     */
+    static set shaderPrecision(shaderPrecision) {
+        this.setShaderPrecision(shaderPrecision);
+    }
+    static setShaderPrecision(shaderPrecision) {
+        switch (shaderPrecision) {
+            case ShaderPrecision.Low:
+                this.setIncludeCode('SHADER_PRECISION', '#define LOW_PRECISION');
+                break;
+            case ShaderPrecision.Medium:
+                this.setIncludeCode('SHADER_PRECISION', '#define MEDIUM_PRECISION');
+                break;
+            case ShaderPrecision.High:
+                this.setIncludeCode('SHADER_PRECISION', '#define HIGH_PRECISION');
+                break;
+        }
+    }
+    static setShaderQuality(shaderQuality) {
+        this.setIncludeCode('SHADER_QUALITY', `#define SHADER_QUALITY ${shaderQuality}`);
+    }
+    static setShaderDebugMode(shaderDebugMode) {
+        this.setIncludeCode('SHADER_DEBUG_MODE', `#define SHADER_DEBUG_MODE ${shaderDebugMode}`);
+    }
+    static setIncludeCode(key, code) {
+        this.#includeCode.set(key, code);
+        this.#refreshIncludeCode();
+    }
+    static removeIncludeCode(key) {
+        this.#includeCode.delete(key);
+        this.#refreshIncludeCode();
+    }
+    static #refreshIncludeCode() {
+        this.#globalIncludeCode = '';
+        for (const code of this.#includeCode.values()) {
+            this.#globalIncludeCode += code + '\n';
+        }
+    }
+    static getIncludeCode() {
+        return this.#globalIncludeCode;
+    }
+    /**
+     * Invalidate all shader (force recompile)
+     */
+    static invalidateShaders() {
+        if (this.#forwardRenderer) {
+            this.#forwardRenderer.invalidateShaders();
+        }
+        /*for (let shader of this._materialsProgram) {
+            shader.invalidate();
+        }*/
+    }
+    static clearColor(clearColor) {
+        WebGLRenderingState.clearColor(clearColor);
+    }
+    static getClearColor(clearColor) {
+        return WebGLRenderingState.getClearColor(clearColor);
+    }
+    static clearDepth(clearDepth) {
+        WebGLRenderingState.clearDepth(clearDepth);
+    }
+    static clearStencil(clearStencil) {
+        WebGLRenderingState.clearStencil(clearStencil);
+    }
+    static setColorMask(mask) {
+        WebGLRenderingState.colorMask(mask);
+    }
+    static set autoResize(autoResize) {
+        this.#autoResize = autoResize;
+        if (autoResize) {
+            this.checkCanvasSize();
+        }
+    }
+    static get autoResize() {
+        return this.#autoResize;
+    }
+    static getExtension(name) {
+        if (this.glContext) {
+            if (this.#extensions.has(name)) {
+                return this.#extensions.get(name);
+            }
+            else {
+                const extension = this.glContext.getExtension(name);
+                this.#extensions.set(name, extension);
+                return extension;
+            }
+        }
+        return null;
+    }
+    static set pixelRatio(pixelRatio) {
+        this.#pixelRatio = pixelRatio;
+        this.#updateSize();
+    }
+    static get pixelRatio() {
+        return this.#pixelRatio;
+    }
+    static setSize(width, height) {
+        width = Math.max(width, 1);
+        height = Math.max(height, 1);
+        const previousWidth = this.#width;
+        const previousHeight = this.#height;
+        if (isNumeric(width)) {
+            this.#width = width;
+        }
+        if (isNumeric(height)) {
+            this.#height = height;
+        }
+        this.#updateSize();
+        GraphicsEvents.resize(width, height);
+        return [previousWidth, previousHeight];
+    }
+    static getSize(ret = vec2.create()) {
+        ret[0] = this.#width;
+        ret[1] = this.#height;
+        return ret;
+    }
+    static #updateSize() {
+        if (!this.#canvas) {
+            return;
+        }
+        this.#canvas.width = this.#width * this.#pixelRatio;
+        this.#canvas.height = this.#height * this.#pixelRatio;
+        if (this.#offscreenCanvas) {
+            this.#offscreenCanvas.width = this.#canvas.width;
+            this.#offscreenCanvas.height = this.#canvas.height;
+        }
+        this.setViewport(vec4.fromValues(0, 0, this.#width, this.#height)); ///ODO: optimize
+    }
+    static setViewport(viewport) {
+        vec4.copy(this.#viewport, viewport);
+        WebGLRenderingState.viewport(viewport);
+    }
+    /**
+     * @deprecated Please use `setViewport` instead.
+     */
+    static set viewport(viewport) {
+        this.setViewport(viewport);
+    }
+    static getViewport(out) {
+        return vec4.copy(out, this.#viewport);
+    }
+    /**
+     * @deprecated Please use `getViewport` instead.
+     */
+    static get viewport() {
+        return this.getViewport(vec4.create());
+    }
+    static set scissor(scissor) {
+        vec4.copy(this.#scissor, scissor);
+        WebGLRenderingState.scissor(scissor);
+    }
+    static set scissorTest(scissorTest) {
+        if (scissorTest) {
+            WebGLRenderingState.enable(GL_SCISSOR_TEST);
+        }
+        else {
+            WebGLRenderingState.disable(GL_SCISSOR_TEST);
+        }
+    }
+    static checkCanvasSize() {
+        if (!this.#autoResize) {
+            return;
+        }
+        const canvas = this.#canvas;
+        if (!canvas?.parentElement) {
+            return;
+        }
+        const width = canvas.parentElement.clientWidth;
+        const height = canvas.parentElement.clientHeight;
+        if (width !== this.#width
+            || height !== this.#height) {
+            this.setSize(width, height);
+        }
+    }
+    static #initObserver() {
+        const callback = (entries, observer) => {
+            entries.forEach(entry => {
+                this.checkCanvasSize();
+            });
+        };
+        const resizeObserver = new ResizeObserver(callback);
+        if (this.#canvas?.parentElement) {
+            resizeObserver.observe(this.#canvas.parentElement);
+        }
+    }
+    static play() {
+        this.#running = true;
+        this._tick();
+    }
+    static pause() {
+        this.#running = false;
+    }
+    static isRunning() {
+        return this.#running;
+    }
+    static createFramebuffer() {
+        const frameBuffer = this.glContext.createFramebuffer();
+        //this.frameBuffers.add(frameBuffer);
+        return frameBuffer;
+    }
+    static deleteFramebuffer(frameBuffer) {
+        this.glContext.deleteFramebuffer(frameBuffer);
+    }
+    static createRenderbuffer() {
+        const renderBuffer = this.glContext.createRenderbuffer();
+        if (renderBuffer) {
+            this.#renderBuffers.add(renderBuffer);
+        }
+        return renderBuffer;
+    }
+    static deleteRenderbuffer(renderBuffer) {
+        this.glContext.deleteRenderbuffer(renderBuffer);
+    }
+    /*
+    setFramebuffer(framebuffer: WebGLFramebuffer) {
+        framebuffer.bind();
+        //this.glContext.bindFramebuffer(_gl.FRAMEBUFFER, framebuffer);
+    }
+    */
+    static pushRenderTarget(renderTarget) {
+        this.#renderTargetStack.push(renderTarget);
+        this.#setRenderTarget(renderTarget);
+    }
+    static popRenderTarget() {
+        this.#renderTargetStack.pop();
+        const renderTarget = this.#renderTargetStack[this.#renderTargetStack.length - 1];
+        this.#setRenderTarget(renderTarget);
+        return renderTarget ?? null;
+    }
+    static #setRenderTarget(renderTarget) {
+        if (!renderTarget) {
+            this.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
+            this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
+        }
+        else {
+            renderTarget.bind();
+        }
+    }
+    static savePicture(scene, camera, filename, width, height, type, quality) {
+        const previousWidth = this.#width;
+        const previousHeight = this.#height;
+        const previousAutoResize = this.autoResize;
+        try {
+            this.autoResize = false;
+            this.setSize(width, height);
+            this.render(scene, camera, 0, { DisableToolRendering: true });
+            this._savePicture(filename, type, quality);
+        }
+        finally {
+            this.autoResize = previousAutoResize;
+            this.setSize(previousWidth, previousHeight);
+        }
+    }
+    static async savePictureAsFile(filename, type, quality) {
+        return new File([await this.toBlob(type, quality) ?? new Blob()], filename);
+    }
+    static async toBlob(type, quality) {
+        let promiseResolve;
+        const promise = new Promise((resolve) => {
+            promiseResolve = resolve;
+        });
+        const callback = function (blob) {
+            promiseResolve(blob);
+        };
+        this.#canvas?.toBlob(callback, type, quality);
+        return promise;
+    }
+    static async _savePicture(filename, type, quality) {
+        /*
+        const callback = function (blob) {
+            //saveFile(filename, blob);
+        };
+        this.#canvas.toBlob(callback);*/
+        saveFile(await this.savePictureAsFile(filename, type, quality));
+    }
+    static startRecording(frameRate = 60, bitsPerSecond) {
+        if (this.#canvas) {
+            const stream = this.#canvas.captureStream(frameRate);
+            this.#mediaRecorder = new MediaRecorder(stream, { mimeType: RECORDER_MIME_TYPE, bitsPerSecond: bitsPerSecond });
+            this.#mediaRecorder.start();
+        }
+    }
+    static stopRecording(fileName = RECORDER_DEFAULT_FILENAME) {
+        if (!this.#mediaRecorder) {
+            return;
+        }
+        this.#mediaRecorder.ondataavailable = (event) => {
+            const blob = new Blob([event.data], { 'type': RECORDER_MIME_TYPE });
+            saveFile(new File([blob], fileName));
+        };
+        this.#mediaRecorder.stop();
+        //Stop the canvas stream
+        this.#mediaRecorder?.stream.getVideoTracks()?.[0]?.stop();
+    }
+    static get ready() {
+        return this.#readyPromise;
+    }
+    static async isReady() {
+        await this.#readyPromise;
+    }
+    static getParameter(param) {
+        return this.glContext?.getParameter(param);
+    }
+    static cleanupGLError() {
+        this.glContext?.getError(); //empty the error
+    }
+    static getGLError(context) {
+        const glError = this.glContext?.getError() ?? 0;
+        if (glError) {
+            console.error(`GL Error in ${context} : `, glError);
+        }
+    }
+    static useLogDepth(use) {
+        this.setIncludeCode('LOG_DEPTH', use ? '#define USE_LOG_DEPTH' : '');
+    }
+    static getTime() {
+        return this.#time;
+    }
+    static getWidth() {
+        return this.#width;
+    }
+    static getHeight() {
+        return this.#height;
+    }
+    static getCanvas() {
+        return this.#canvas;
+    }
+    static getForwardRenderer() {
+        return this.#forwardRenderer;
+    }
+}
+setGraphics(Graphics);
+
+function resizeCamera(camera) {
+    const w = Graphics$1.getWidth() / 2.0;
+    const h = Graphics$1.getHeight() / 2.0;
     camera.left = -w;
     camera.right = w;
     camera.bottom = -h;
@@ -11981,7 +11986,7 @@ class ContextObserverClass {
     static #processEvent(subject, dependent, event) {
         switch (true) {
             case dependent.is('Camera'):
-                resizeCamera(Graphics, dependent);
+                resizeCamera(dependent);
                 break;
             case dependent instanceof FirstPersonControl: //TODO do it for any CameraControl?
             case dependent instanceof OrbitControl:
@@ -12053,7 +12058,7 @@ class ContextObserverClass {
         this.#addObserver(subject, dependent);
         switch (true) {
             case dependent.is('Camera'):
-                resizeCamera(Graphics, dependent);
+                resizeCamera(dependent);
                 break;
         }
     }
@@ -12104,7 +12109,7 @@ class RgbeImporter {
             internalFormat: TextureFormat.Rgb_32F,
             flipY: true,
         };
-        if (Graphics.OES_texture_float_linear) {
+        if (Graphics$1.OES_texture_float_linear) {
             params.magFilter = GL_LINEAR;
             params.minFilter = GL_LINEAR;
         }
@@ -14891,12 +14896,12 @@ class Node extends MyEventTarget {
             renderTarget2.resize(previewSize, previewSize);
         }
         this.#previewRenderTarget = renderTarget2;
-        Graphics.pushRenderTarget(renderTarget2);
+        Graphics$1.pushRenderTarget(renderTarget2);
         if (this.material) {
             this.editor.render(this.material);
         }
         const pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
-        Graphics.glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        Graphics$1.glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         this.#pixelArray = new Uint8ClampedArray(pixelArray);
         //set alpha to 1
         for (let i = 3; i < pixelArray.length; i += 4) {
@@ -14909,7 +14914,7 @@ class Node extends MyEventTarget {
         catch (e) { }
         this.previewPic.width = previewSize;
         this.previewPic.height = previewSize;
-        Graphics.popRenderTarget();
+        Graphics$1.popRenderTarget();
     }
     async savePicture(filename = 'texture.png') {
         await this.redraw({ previewSize: 2048 });
@@ -15052,12 +15057,12 @@ class ApplySticker extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')?._value });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         /*let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics.popRenderTarget();*/
-        Graphics.popRenderTarget();
+        Graphics$1.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -15157,11 +15162,11 @@ class TextureLookup extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        Graphics$1.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -15215,7 +15220,7 @@ function dropFiles(evt, node) {
                     texture.wrapS = GL_CLAMP_TO_EDGE;
                     texture.wrapT = GL_CLAMP_TO_EDGE;
                 }
-                texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
+                texture.setParameters(Graphics$1.glContext, GL_TEXTURE_2D);
                 const image = new Image();
                 image.onload = () => {
                     TextureManager.fillTextureWithImage(texture, image);
@@ -15250,7 +15255,7 @@ function dropFilesSpecular(evt, node) {
                     texture.wrapS = GL_CLAMP_TO_EDGE;
                     texture.wrapT = GL_CLAMP_TO_EDGE;
                 }
-                texture.setParameters(Graphics.glContext, GL_TEXTURE_2D);
+                texture.setParameters(Graphics$1.glContext, GL_TEXTURE_2D);
                 const image = new Image();
                 image.onload = () => {
                     TextureManager.fillTextureWithImage(texture, image);
@@ -16242,11 +16247,11 @@ class DrawCircle extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        Graphics$1.popRenderTarget();
         const output = this.getOutput('output');
         if (output) {
             output._value = this.#renderTarget.getTexture();
@@ -16306,11 +16311,11 @@ class CombineAdd extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        Graphics$1.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -16360,11 +16365,11 @@ class CombineLerp extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        Graphics$1.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -16422,11 +16427,11 @@ let Multiply$1 = class Multiply extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')?._value });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         //let pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         //Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        Graphics$1.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -16472,11 +16477,11 @@ class Select extends Node {
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
-        Graphics.pushRenderTarget(this.#renderTarget);
+        Graphics$1.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
-        Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
-        Graphics.popRenderTarget();
+        Graphics$1.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
+        Graphics$1.popRenderTarget();
         this.updatePreview(context);
         const output = this.getOutput('output');
         if (output) {
@@ -16778,7 +16783,7 @@ class NodeImageEditor extends MyEventTarget {
     }
     render(material) {
         this.#fullScreenQuadMesh.setMaterial(material);
-        Graphics.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
+        Graphics$1.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
     }
     addNode(operationName, params = {}) {
         params.textureSize = params.textureSize ?? this.textureSize;
@@ -17324,8 +17329,8 @@ class SkeletonHelper extends Entity {
         if (!this.isVisible()) {
             return null;
         }
-        const normalizedX = (event.detail.x / Graphics.getWidth()) * 2 - 1;
-        const normalizedY = 1 - (event.detail.y / Graphics.getHeight()) * 2;
+        const normalizedX = (event.detail.x / Graphics$1.getWidth()) * 2 - 1;
+        const normalizedY = 1 - (event.detail.y / Graphics$1.getHeight()) * 2;
         const scene = this.root; // TODO: imbricated scenes
         if (!scene.is('Scene') || !scene.activeCamera) {
             return null;
@@ -17607,7 +17612,7 @@ class Bone extends Entity {
             }
         }
         this.dirty = false;
-        this.lastComputed = Graphics.currentTick;
+        this.lastComputed = Graphics$1.currentTick;
     }
     set boneId(boneId) {
         this.#boneId = boneId;
@@ -18389,16 +18394,16 @@ class Skeleton extends Entity {
     }
     #createBoneMatrixTexture() {
         this.#texture = TextureManager.createTexture();
-        const gl = Graphics.glContext; //TODO
+        const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture); //TODOv3: pass param to texture and remove this
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     #updateBoneMatrixTexture() {
-        const gl = Graphics.glContext; //TODO
+        const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics.isWebGL2) {
+        if (Graphics$1.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, 4, MAX_HARDWARE_BONES, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
@@ -21348,15 +21353,15 @@ class Source1Vtf {
         return entry.mipMaps[mipmapLvl];
     }
     */
-    fillTexture(graphics, glContext, texture, mipmapLvl, frame1 = 0, srgb = true) {
+    fillTexture(glContext, texture, mipmapLvl, frame1 = 0, srgb = true) {
         if (this.flags & TEXTUREFLAGS_ENVMAP) {
-            this.#fillCubeMapTexture(graphics, glContext, texture.texture, mipmapLvl, srgb);
+            this.#fillCubeMapTexture(glContext, texture.texture, mipmapLvl, srgb);
         }
         else {
-            this.#fillTexture(graphics, glContext, texture, mipmapLvl, frame1, srgb);
+            this.#fillTexture(glContext, texture, mipmapLvl, frame1, srgb);
         }
     }
-    #fillTexture(graphics, glContext, texture, mipmapLvl, frame1 = 0, srgb) {
+    #fillTexture(glContext, texture, mipmapLvl, frame1 = 0, srgb) {
         /*
         if (this.filled && (this.frames == 1)) {
             return;
@@ -21393,7 +21398,7 @@ class Source1Vtf {
         const data = mipmap.frames[frame]?.[face];
         if (data) {
             if (this.isDxtCompressed()) {
-                fillTextureDxt(graphics, glContext, webGLTexture, GL_TEXTURE_2D, mipmap.width, mipmap.height, vtfToImageFormat(this.highResImageFormat), data, clampS, clampT, srgb && this.isSRGB());
+                fillTextureDxt(glContext, webGLTexture, GL_TEXTURE_2D, mipmap.width, mipmap.height, vtfToImageFormat(this.highResImageFormat), data, clampS, clampT, srgb && this.isSRGB());
             }
             else {
                 glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
@@ -21411,7 +21416,7 @@ class Source1Vtf {
     /**
      * TODO
      */
-    #fillCubeMapTexture(graphics, glContext, texture, mipmapLvl, srgb) {
+    #fillCubeMapTexture(glContext, texture, mipmapLvl, srgb) {
         if (mipmapLvl == undefined) {
             mipmapLvl = this.mipmapCount - 1;
         }
@@ -21451,12 +21456,12 @@ class Source1Vtf {
             if (this.isDxtCompressed()) {
                 const isSRGB = srgb && this.isSRGB();
                 const st3cFormat = vtfToImageFormat(this.highResImageFormat);
-                fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mipmap.width, mipmap.height, st3cFormat, data0, clampS, clampT, isSRGB);
-                fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, mipmap.width, mipmap.height, st3cFormat, data1, clampS, clampT, isSRGB);
-                fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, mipmap.width, mipmap.height, st3cFormat, data2, clampS, clampT, isSRGB);
-                fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mipmap.width, mipmap.height, st3cFormat, data3, clampS, clampT, isSRGB);
-                fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, mipmap.width, mipmap.height, st3cFormat, data4, clampS, clampT, isSRGB);
-                fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, mipmap.width, mipmap.height, st3cFormat, data5, clampS, clampT, isSRGB);
+                fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mipmap.width, mipmap.height, st3cFormat, data0, clampS, clampT, isSRGB);
+                fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, mipmap.width, mipmap.height, st3cFormat, data1, clampS, clampT, isSRGB);
+                fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, mipmap.width, mipmap.height, st3cFormat, data2, clampS, clampT, isSRGB);
+                fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mipmap.width, mipmap.height, st3cFormat, data3, clampS, clampT, isSRGB);
+                fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, mipmap.width, mipmap.height, st3cFormat, data4, clampS, clampT, isSRGB);
+                fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, mipmap.width, mipmap.height, st3cFormat, data5, clampS, clampT, isSRGB);
             }
             else {
                 glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
@@ -21592,9 +21597,9 @@ async function decompressDxt(format, width, height, datas) {
     await Detex.decode(format, width, height, datas, uncompressedData);
     return uncompressedData;
 }
-function fillTextureDxt(graphics /*TODO: remove*/, glContext, texture, target, width, height, dxtLevel, datas, clampS, clampT, srgb) {
-    const s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
-    const s3tcSRGB = Graphics.getExtension('WEBGL_compressed_texture_s3tc_srgb');
+function fillTextureDxt(glContext, texture, target, width, height, dxtLevel, datas, clampS, clampT, srgb) {
+    const s3tc = Graphics$1.getExtension('WEBGL_compressed_texture_s3tc');
+    const s3tcSRGB = Graphics$1.getExtension('WEBGL_compressed_texture_s3tc_srgb');
     glContext.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
     //glContext.bindTexture(target, texture);
     if (s3tc) {
@@ -32231,10 +32236,10 @@ class ShaderEditor extends HTMLElement {
         this.#htmlShaderRenderMode.addEventListener('input', (event) => {
             const n = Number(event.target.value);
             if (Number.isNaN(n)) {
-                Graphics.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE');
+                Graphics$1.setIncludeCode('RENDER_MODE', '#undef RENDER_MODE');
             }
             else {
-                Graphics.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
+                Graphics$1.setIncludeCode('RENDER_MODE', '#define RENDER_MODE ' + n);
             }
         });
         const htmlCustomShaderButtons = createElement('div');
@@ -32361,7 +32366,7 @@ class ShaderEditor extends HTMLElement {
         else {
             setCustomIncludeSource(this.#editorIncludeName, customSource);
             ShaderManager.resetShadersSource();
-            Graphics.invalidateShaders();
+            Graphics$1.invalidateShaders();
         }
         if (customSource == '') {
             if (this.#editMode == EDIT_MODE_SHADER) {
@@ -32373,7 +32378,7 @@ class ShaderEditor extends HTMLElement {
         }
         else {
             if (this.#editMode == EDIT_MODE_SHADER) {
-                Graphics.invalidateShaders();
+                Graphics$1.invalidateShaders();
                 setTimeout(() => this.setAnnotations(this.#editorShaderName), this.#annotationsDelay);
             }
             else {
@@ -32491,8 +32496,8 @@ class ControlPoint extends Entity {
         return this.#parentControlPoint;
     }
     step() {
-        if (this.lastComputed < Graphics.currentTick) {
-            this.lastComputed = Graphics.currentTick;
+        if (this.lastComputed < Graphics$1.currentTick) {
+            this.lastComputed = Graphics$1.currentTick;
             vec3.copy(this.prevWorldPosition, this.currentWorldPosition);
             quat.copy(this.prevWorldQuaternion, this.currentWorldQuaternion);
             mat4.copy(this.prevWorldTransformation, this.currentWorldTransformation);
@@ -46850,7 +46855,7 @@ class Source1TextureManagerClass {
     #defaultTextureCube = new AnimatedTexture();
     fallbackRepository = '';
     constructor() {
-        Graphics.ready.then(() => {
+        Graphics$1.ready.then(() => {
             this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture(new Color$1(0.5, 0.75, 1)));
             this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture(new Color$1(0.5, 0.75, 1), undefined, undefined, true));
             this.#defaultTexture.addUser(this);
@@ -46959,13 +46964,13 @@ function vtfToTexture(vtf, animatedTexture, srgb) {
     const alphaBits = vtf.getAlphaBits();
     //animatedTexture.vtf = vtf;
     animatedTexture.setAlphaBits(alphaBits);
-    const glContext = Graphics.glContext;
+    const glContext = Graphics$1.glContext;
     for (let frameIndex = 0; frameIndex < vtf.frames; frameIndex++) {
         const texture = TextureManager.createTexture(); //TODOv3: add params
         texture.properties.set('vtf', vtf);
         texture.setAlphaBits(alphaBits);
         const currentMipMap = vtf.mipmapCount; //TODOv3: choose mipmap
-        vtf.fillTexture(Graphics, glContext, texture, currentMipMap, frameIndex, srgb);
+        vtf.fillTexture(glContext, texture, currentMipMap, frameIndex, srgb);
         animatedTexture.addFrame(frameIndex, texture);
     }
 }
@@ -53038,7 +53043,7 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
         this.geometry.attributes.get('aTextureCoord').dirty = true;
     }
     set maxParticles(maxParticles) {
-        this.#maxParticles = Graphics.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+        this.#maxParticles = Graphics$1.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
         this.#createParticlesArray();
         this.#initBuffers();
     }
@@ -53107,16 +53112,16 @@ class RenderAnimatedSprites extends Source1ParticleOperator {
     #createParticlesTexture() {
         this.#texture = TextureManager.createTexture();
         this.#texture.addUser(this);
-        const gl = Graphics.glContext; //TODO
+        const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     #updateParticlesTexture() {
-        const gl = Graphics.glContext;
+        const gl = Graphics$1.glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics.isWebGL2) {
+        if (Graphics$1.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
@@ -53257,16 +53262,16 @@ class RenderRope extends Source1ParticleOperator {
     #createParticlesTexture() {
         this.texture = TextureManager.createTexture();
         this.texture.addUser(this);
-        const gl = Graphics.glContext; //TODO
+        const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     #updateParticlesTexture() {
-        const gl = Graphics.glContext;
+        const gl = Graphics$1.glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
-        if (Graphics.isWebGL2) {
+        if (Graphics$1.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
         else {
@@ -53369,7 +53374,7 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         }
         const rate = this.getParameter('animation rate') ?? 30;
         this.geometry.count = particleList.length * 6;
-        const maxParticles = Graphics.isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
+        const maxParticles = Graphics$1.isWebGL2 ? particleSystem.maxParticles : ceilPowerOfTwo(particleSystem.maxParticles);
         this.#setupParticlesTexture(particleList, maxParticles, elapsedTime);
         this.mesh.setUniform('uMaxParticles', maxParticles); //TODOv3:optimize
         this.mesh.setVisible(Source1ParticleControler.visible);
@@ -53399,7 +53404,7 @@ class RenderSpriteTrail extends Source1ParticleOperator {
         this.geometry.attributes.get('aTextureCoord').dirty = true;
     }
     initRenderer() {
-        const maxParticles = Graphics.isWebGL2 ? this.particleSystem.maxParticles : ceilPowerOfTwo(this.particleSystem.maxParticles);
+        const maxParticles = Graphics$1.isWebGL2 ? this.particleSystem.maxParticles : ceilPowerOfTwo(this.particleSystem.maxParticles);
         this.createParticlesArray(maxParticles);
         this.#createParticlesTexture();
         const vertices = [];
@@ -53440,16 +53445,16 @@ class RenderSpriteTrail extends Source1ParticleOperator {
     #createParticlesTexture() {
         this.texture = TextureManager.createTexture();
         this.texture.addUser(this);
-        const gl = Graphics.glContext; //TODO
+        const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     #updateParticlesTexture(maxParticles, pixels) {
-        const gl = Graphics.glContext;
+        const gl = Graphics$1.glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
-        if (Graphics.isWebGL2) {
+        if (Graphics$1.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, maxParticles, 0, GL_RGBA, GL_FLOAT, pixels);
         }
         else {
@@ -59314,13 +59319,13 @@ class Source2TextureManagerClass {
     EXT_texture_compression_bptc;
     EXT_texture_compression_rgtc;
     constructor() {
-        Graphics.ready.then(() => {
+        Graphics$1.ready.then(() => {
             this.#defaultTexture = TextureManager.createCheckerTexture(new Color$1(0.5, 0.75, 1));
             this.#defaultTexture.addUser(this);
             //this._missingTexture = TextureManager.createCheckerTexture();
-            this.WEBGL_compressed_texture_s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
-            this.EXT_texture_compression_bptc = Graphics.getExtension('EXT_texture_compression_bptc');
-            this.EXT_texture_compression_rgtc = Graphics.getExtension('EXT_texture_compression_rgtc');
+            this.WEBGL_compressed_texture_s3tc = Graphics$1.getExtension('WEBGL_compressed_texture_s3tc');
+            this.EXT_texture_compression_bptc = Graphics$1.getExtension('EXT_texture_compression_bptc');
+            this.EXT_texture_compression_rgtc = Graphics$1.getExtension('EXT_texture_compression_rgtc');
         });
         setInterval(() => this.#cleanup(), TEXTURE_CLEANUP_DELAY);
     }
@@ -59397,7 +59402,7 @@ class Source2TextureManagerClass {
         }
     }
     #initCubeTexture(texture, imageFormat, width, height, imageData) {
-        const glContext = Graphics.glContext;
+        const glContext = Graphics$1.glContext;
         glContext.bindTexture(GL_TEXTURE_CUBE_MAP, texture);
         switch (formatCompression(imageFormat)) {
             case TextureCompressionMethod.Uncompressed:
@@ -59428,7 +59433,7 @@ class Source2TextureManagerClass {
         glContext.bindTexture(GL_TEXTURE_CUBE_MAP, null);
     }
     #initFlatTexture(texture, imageFormat, width, height, imageData) {
-        const glContext = Graphics.glContext;
+        const glContext = Graphics$1.glContext;
         glContext.bindTexture(GL_TEXTURE_2D, texture);
         switch (formatCompression(imageFormat)) {
             case TextureCompressionMethod.Uncompressed:
@@ -59450,7 +59455,7 @@ class Source2TextureManagerClass {
         glContext.bindTexture(GL_TEXTURE_2D, null);
     }
     fillTexture(imageFormat, width, height, datas, target) {
-        const gl = Graphics.glContext;
+        const gl = Graphics$1.glContext;
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
         switch (imageFormat) {
             case ImageFormat.RGBA:
@@ -59464,7 +59469,7 @@ class Source2TextureManagerClass {
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     fillTextureDxt(texture, imageFormat, width, height, datas, target) {
-        const gl = Graphics.glContext;
+        const gl = Graphics$1.glContext;
         const s3tc = this.WEBGL_compressed_texture_s3tc; //gl.getExtension("WEBGL_compressed_texture_s3tc");//TODO: store it
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         if (s3tc) {
@@ -59501,7 +59506,7 @@ class Source2TextureManagerClass {
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     #fillTextureBptc(texture, width, height, datas) {
-        const gl = Graphics.glContext;
+        const gl = Graphics$1.glContext;
         const bptc = this.EXT_texture_compression_bptc;
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         gl.bindTexture(GL_TEXTURE_2D, texture);
@@ -59520,16 +59525,16 @@ class Source2TextureManagerClass {
             });
         }
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        Graphics.getGLError('texParameteri');
+        Graphics$1.getGLError('texParameteri');
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        Graphics.getGLError('texParameteri');
+        Graphics$1.getGLError('texParameteri');
         //gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
         //gl.texParameteri(GL_TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
         //gl.bindTexture(GL_TEXTURE_2D, null);
         gl.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
     }
     #fillTextureRgtc(texture, width, height, datas) {
-        const gl = Graphics.glContext;
+        const gl = Graphics$1.glContext;
         const rgtc = this.EXT_texture_compression_rgtc;
         gl.pixelStorei(GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, false);
         gl.bindTexture(GL_TEXTURE_2D, texture);
@@ -68017,19 +68022,19 @@ class RenderRopes extends RenderBase {
     }
     #createParticlesTexture() {
         this.#texture = TextureManager.createTexture();
-        const gl = Graphics.glContext; //TODO
+        const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics.glContext;
+        const gl = Graphics$1.glContext;
         if (!this.#imgData || !this.#texture) {
             return;
         }
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics.isWebGL2) {
+        if (Graphics$1.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
@@ -68274,7 +68279,7 @@ class RenderSprites extends RenderBase {
         this.geometry.attributes.get('aTextureCoord2').dirty = true;
     }
     setMaxParticles(maxParticles) {
-        this.#maxParticles = Graphics.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+        this.#maxParticles = Graphics$1.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
         this.#createParticlesArray();
         this.#initBuffers();
     }
@@ -68320,16 +68325,16 @@ class RenderSprites extends RenderBase {
         this.imgData = new Float32Array(this.#maxParticles * 4 * TEXTURE_WIDTH);
     }
     #initParticlesTexture() {
-        const gl = Graphics.glContext; //TODO
+        const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics.glContext;
+        const gl = Graphics$1.glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.texture.texture);
-        if (Graphics.isWebGL2) {
+        if (Graphics$1.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.imgData);
         }
         else {
@@ -68513,7 +68518,7 @@ class RenderTrails extends RenderBase {
         }
     }
     set maxParticles(maxParticles) {
-        this.#maxParticles = Graphics.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
+        this.#maxParticles = Graphics$1.isWebGL2 ? maxParticles : ceilPowerOfTwo(maxParticles);
         this.#createParticlesArray();
         this.#initBuffers();
     }
@@ -68554,16 +68559,16 @@ class RenderTrails extends RenderBase {
     }
     #createParticlesTexture() {
         this.#texture = TextureManager.createTexture();
-        const gl = Graphics.glContext; //TODO
+        const gl = Graphics$1.glContext; //TODO
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         gl.texParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         gl.bindTexture(GL_TEXTURE_2D, null);
     }
     updateParticlesTexture() {
-        const gl = Graphics.glContext;
+        const gl = Graphics$1.glContext;
         gl.bindTexture(GL_TEXTURE_2D, this.#texture.texture);
-        if (Graphics.isWebGL2) {
+        if (Graphics$1.isWebGL2) {
             gl.texImage2D(GL_TEXTURE_2D, 0, GL_RGBA32F, TEXTURE_WIDTH, this.#maxParticles, 0, GL_RGBA, GL_FLOAT, this.#imgData);
         }
         else {
@@ -71197,11 +71202,11 @@ class RemGenerator {
         const upSign = [1, -1, 1, 1, 1, 1];
         const forwardSign = [1, 1, 1, -1, -1, -1];
         const renderer = this.#renderer;
-        const originalAutoClear = Graphics.autoClear;
+        const originalAutoClear = Graphics$1.autoClear;
         const toneMapping = renderer.getToneMapping();
-        Graphics.getClearColor(clearColor);
+        Graphics$1.getClearColor(clearColor);
         renderer.setToneMapping(ToneMapping.None);
-        Graphics.autoClear = false;
+        Graphics$1.autoClear = false;
         const backgroundMaterial = new MeshBasicMaterial({
             name: 'PMREM.Background',
             //side: BackSide,
@@ -71246,14 +71251,14 @@ class RemGenerator {
             }
             const size = this.#cubeSize;
             cubeUVRenderTarget.setViewport(col * size, i > 2 ? size : 0, size, size);
-            Graphics.pushRenderTarget(cubeUVRenderTarget);
+            Graphics$1.pushRenderTarget(cubeUVRenderTarget);
             renderer.render(scene, cubeCamera, 0, { DisableToolRendering: true });
-            Graphics.popRenderTarget();
+            Graphics$1.popRenderTarget();
         }
         backgroundBox.dispose();
         //renderer.toneMapping = toneMapping;
         renderer.setToneMapping(toneMapping);
-        Graphics.autoClear = originalAutoClear;
+        Graphics$1.autoClear = originalAutoClear;
         scene.background = background;
     }
     #textureToCubeUV(texture, cubeUVRenderTarget) {
@@ -71280,20 +71285,20 @@ class RemGenerator {
         uniforms['envMap'] = texture;
         const size = this.#cubeSize;
         cubeUVRenderTarget.setViewport(0, 0, 3 * size, 2 * size);
-        Graphics.pushRenderTarget(cubeUVRenderTarget);
+        Graphics$1.pushRenderTarget(cubeUVRenderTarget);
         renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
-        Graphics.popRenderTarget();
+        Graphics$1.popRenderTarget();
     }
     #applyPMREM(cubeUVRenderTarget) {
         this.#renderer;
-        const autoClear = Graphics.autoClear;
-        Graphics.autoClear = false;
+        const autoClear = Graphics$1.autoClear;
+        Graphics$1.autoClear = false;
         for (let i = 1; i < this.#lodPlanes.length; i++) {
             const sigma = Math.sqrt(this.#sigmas[i] * this.#sigmas[i] - this.#sigmas[i - 1] * this.#sigmas[i - 1]);
             const poleAxis = axisDirections[(i - 1) % axisDirections.length];
             this.#blur(cubeUVRenderTarget, i - 1, i, sigma, poleAxis);
         }
-        Graphics.autoClear = autoClear;
+        Graphics$1.autoClear = autoClear;
     }
     /**
      * This is a two-pass Gaussian blur for a cubemap. Normally this is done
@@ -71359,9 +71364,9 @@ class RemGenerator {
         const x = 3 * outputSize * (lodOut > this.#lodMax - LOD_MIN ? lodOut - this.#lodMax + LOD_MIN : 0);
         const y = 4 * (this.#cubeSize - outputSize);
         targetOut.setViewport(x, y, 3 * outputSize, 2 * outputSize);
-        Graphics.pushRenderTarget(targetOut);
+        Graphics$1.pushRenderTarget(targetOut);
         renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
-        Graphics.popRenderTarget();
+        Graphics$1.popRenderTarget();
     }
 }
 function createPlanes(lodMax) {
@@ -71786,12 +71791,12 @@ class ObjExporter {
         this.scene.addChild(this.#fullScreenQuadMesh);
     }
     async #renderMeshes(files, meshes) {
-        const [previousWidth, previousHeight] = Graphics.setSize(1024, 1024); //TODOv3: constant
-        Graphics.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
-        Graphics.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
-        Graphics.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
-        const previousClearColor = Graphics.getClearColor();
-        Graphics.clearColor(vec4.fromValues(0, 0, 0, 0));
+        const [previousWidth, previousHeight] = Graphics$1.setSize(1024, 1024); //TODOv3: constant
+        Graphics$1.setIncludeCode('EXPORT_TEXTURES', '#define EXPORT_TEXTURES');
+        Graphics$1.setIncludeCode('SKIP_PROJECTION', '#define SKIP_PROJECTION');
+        Graphics$1.setIncludeCode('SKIP_LIGHTING', '#define SKIP_LIGHTING');
+        const previousClearColor = Graphics$1.getClearColor();
+        Graphics$1.clearColor(vec4.fromValues(0, 0, 0, 0));
         let meshId = 0;
         const promises = [];
         for (const mesh of meshes) {
@@ -71803,20 +71808,20 @@ class ObjExporter {
             }
             this.#fullScreenQuadMesh.material = mesh.material;
             this.#fullScreenQuadMesh.materialsParams = mesh.materialsParams;
-            Graphics.render(this.scene, this.camera, 0, { DisableToolRendering: true });
+            Graphics$1.render(this.scene, this.camera, 0, { DisableToolRendering: true });
             //let file = await Graphics.savePictureAsFile(`mat_${meshId}.png`);
             /*				let file = await Graphics.savePictureAsFile(`mat_${meshId}.png`);
                         files.add(file);*/
-            const promise = Graphics.savePictureAsFile(`mat_${meshId}.png`);
+            const promise = Graphics$1.savePictureAsFile(`mat_${meshId}.png`);
             promise.then((file) => files.add(file));
             promises.push(promise);
             ++meshId;
         }
-        Graphics.setIncludeCode('EXPORT_TEXTURES', '');
-        Graphics.setIncludeCode('SKIP_PROJECTION', '');
-        Graphics.setIncludeCode('SKIP_LIGHTING', '');
-        Graphics.setSize(previousWidth, previousHeight);
-        Graphics.clearColor(previousClearColor);
+        Graphics$1.setIncludeCode('EXPORT_TEXTURES', '');
+        Graphics$1.setIncludeCode('SKIP_PROJECTION', '');
+        Graphics$1.setIncludeCode('SKIP_LIGHTING', '');
+        Graphics$1.setSize(previousWidth, previousHeight);
+        Graphics$1.clearColor(previousClearColor);
         await Promise.all(promises);
     }
     #addLine(line) {
@@ -71977,7 +71982,7 @@ class RenderTargetViewer {
         this.refreshPlane();
     }
     refreshPlane() {
-        vec3.set(this.#plane._position, (this.#size[0] - Graphics.getWidth()) * 0.5 + this.#position[0], (Graphics.getHeight() - this.#size[1]) * 0.5 - this.#position[1], 0);
+        vec3.set(this.#plane._position, (this.#size[0] - Graphics$1.getWidth()) * 0.5 + this.#position[0], (Graphics$1.getHeight() - this.#size[1]) * 0.5 - this.#position[1], 0);
         this.#plane.setSize(this.#size[0], this.#size[1]);
     }
     render(renderer) {
@@ -71988,4 +71993,4 @@ class RenderTargetViewer {
     }
 }
 
-export { ATTRIBUTE_CHANGED, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { ATTRIBUTE_CHANGED, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };

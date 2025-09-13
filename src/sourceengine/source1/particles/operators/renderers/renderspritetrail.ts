@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 import { TESTING } from '../../../../../buildoptions';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
-import { Graphics } from '../../../../../graphics/graphics';
+import { Graphics } from '../../../../../graphics/graphics2';
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { ceilPowerOfTwo, clamp } from '../../../../../math/functions';
 import { Mesh } from '../../../../../objects/mesh';

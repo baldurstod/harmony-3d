@@ -1,11 +1,11 @@
 import { Camera } from '../cameras/camera';
 import { FirstPersonControl } from '../controls/firstpersoncontrol';
 import { OrbitControl } from '../controls/orbitcontrol';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
 import { GraphicsEvents } from '../graphics/graphicsevents';
 import { RenderTargetViewer } from '../utils/rendertargetviewer';
 
-function resizeCamera(context: Graphics, camera: Camera) {
+function resizeCamera(camera: Camera) {
 	const w = Graphics.getWidth() / 2.0;
 	const h = Graphics.getHeight() / 2.0;
 
@@ -47,7 +47,7 @@ class ContextObserverClass {//TODO: create static class
 	static #processEvent(subject: ContextObserverSubject, dependent: ContextObserverTarget, event: Event) {
 		switch (true) {
 			case (dependent as Camera).is('Camera'):
-				resizeCamera(Graphics, dependent as Camera);
+				resizeCamera(dependent as Camera);
 				break;
 			case dependent instanceof FirstPersonControl://TODO do it for any CameraControl?
 			case dependent instanceof OrbitControl:
@@ -135,7 +135,7 @@ class ContextObserverClass {//TODO: create static class
 
 		switch (true) {
 			case (dependent as Camera).is('Camera'):
-				resizeCamera(Graphics, (dependent as Camera));
+				resizeCamera(dependent as Camera);
 				break;
 		}
 	}

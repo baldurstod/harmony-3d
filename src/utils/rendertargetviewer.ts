@@ -1,14 +1,13 @@
 import { vec2, vec3 } from 'gl-matrix';
-
-import { Camera, CameraProjection } from '../cameras/camera'
-import { Graphics } from '../graphics/graphics';
+import { Camera, CameraProjection } from '../cameras/camera';
+import { Graphics } from '../graphics/graphics2';
 import { GraphicsEvents } from '../graphics/graphicsevents';
 import { ContextObserver } from '../helpers/contextobserver';
+import { Material } from '../materials/material';
 import { Plane } from '../primitives/plane';
+import { Renderer } from '../renderers/renderer';
 import { Scene } from '../scenes/scene';
 import { RenderTarget } from '../textures/rendertarget';
-import { Material } from '../materials/material';
-import { Renderer } from '../renderers/renderer';
 
 const DEFAULT_SIZE = 256;
 

@@ -1,6 +1,7 @@
 import { vec2, vec4 } from 'gl-matrix';
 import { Camera } from '../../cameras/camera';
-import { Graphics, RenderContext } from '../../graphics/graphics';
+import { Graphics, } from '../../graphics/graphics2';
+import { RenderContext } from '../../interfaces/rendercontext';
 import { MATERIAL_BLENDING_ADDITIVE } from '../../materials/material';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
@@ -105,7 +106,7 @@ export class OutlinePass extends Pass {
 		});
 	}
 
-	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
+	render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		Graphics.getSize(tempVec2);
 		const width = tempVec2[0];
 		const height = tempVec2[1];

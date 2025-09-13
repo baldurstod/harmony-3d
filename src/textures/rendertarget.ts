@@ -1,12 +1,11 @@
 import { vec4 } from 'gl-matrix';
-
-import { GL_FRAMEBUFFER, GL_LINEAR, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_DEPTH_COMPONENT16, GL_DEPTH_ATTACHMENT } from '../webgl/constants';
-import { TextureManager } from './texturemanager';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
+import { AnyTexture } from '../types';
+import { GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT16, GL_FRAMEBUFFER, GL_LINEAR, GL_TEXTURE_2D } from '../webgl/constants';
 import { Framebuffer } from '../webgl/framebuffer';
 import { Renderbuffer } from '../webgl/renderbuffer';
 import { FrameBufferTarget, TextureFormat, TextureType } from './constants';
-import { AnyTexture } from '../types';
+import { TextureManager } from './texturemanager';
 
 export class RenderTarget {
 	#width = 0;

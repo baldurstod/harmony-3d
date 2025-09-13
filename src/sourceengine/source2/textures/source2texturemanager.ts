@@ -2,7 +2,7 @@ import { Map2 } from 'harmony-utils';
 import { DEBUG, ENABLE_S3TC, TESTING } from '../../../buildoptions';
 import { TEXTURE_CLEANUP_DELAY } from '../../../constants';
 import { Color } from '../../../core/color';
-import { Graphics } from '../../../graphics/graphics';
+import { Graphics } from '../../../graphics/graphics2';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Detex } from '../../../textures/detex';
 import { formatCompression, ImageFormat, TextureCompressionMethod } from '../../../textures/enums';

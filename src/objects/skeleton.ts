@@ -2,7 +2,7 @@ import { mat4, quat, vec3 } from 'gl-matrix';
 import { MAX_HARDWARE_BONES } from '../constants';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
 import { Material } from '../materials/material';
 import { BoundingBox } from '../math/boundingbox';
 import { Texture } from '../textures/texture';

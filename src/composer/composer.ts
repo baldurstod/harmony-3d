@@ -1,8 +1,8 @@
 import { vec2 } from 'gl-matrix';
-
+import { Graphics } from '../graphics/graphics2';
+import { RenderContext } from '../interfaces/rendercontext';
 import { RenderTarget } from '../textures/rendertarget';
 import { Pass } from './pass';
-import { Graphics, RenderContext } from '../graphics/graphics';
 
 const tempVec2 = vec2.create();
 
@@ -51,7 +51,7 @@ export class Composer {
 				this.#writeBuffer = swapBuffer;
 			}
 
-			pass.render(Graphics, this.#readBuffer, this.#writeBuffer, i == lastPass, delta, context);
+			pass.render(this.#readBuffer, this.#writeBuffer, i == lastPass, delta, context);
 
 		}
 	}

@@ -1,7 +1,7 @@
 import { createElement, hide, I18n } from 'harmony-ui';
 import { TESTING } from '../buildoptions';
 import { ACE_EDITOR_URI } from '../constants';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
 import { ShaderManager } from '../managers/shadermanager';
 import { ShaderType } from '../webgl/shadersource';
 import { getIncludeList, getIncludeSource, setCustomIncludeSource } from './includemanager';

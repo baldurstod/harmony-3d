@@ -1,7 +1,7 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
 import { Entity } from '../entities/entity';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
 import { LoopSubdivision } from '../meshes/loopsubdivision';
 import { Mesh } from '../objects/mesh';
 import { FullScreenQuad } from '../primitives/fullscreenquad';

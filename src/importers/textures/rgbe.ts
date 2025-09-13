@@ -1,11 +1,11 @@
 import { decodeRGBE } from '@derschmale/io-rgbe';
 import { BinaryReader } from 'harmony-binary-reader';
-import { customFetch } from '../../utils/customfetch';
+import { Graphics } from '../../graphics/graphics2';
+import { TextureFormat, TextureTarget, TextureType } from '../../textures/constants';
 import { TextureManager } from '../../textures/texturemanager';
 import { WebGLAnyRenderingContext } from '../../types';
-import { TextureFormat, TextureTarget, TextureType } from '../../textures/constants';
+import { customFetch } from '../../utils/customfetch';
 import { GL_LINEAR, GL_NEAREST } from '../../webgl/constants';
-import { Graphics } from '../../graphics/graphics';
 
 export class RgbeImporter {
 	#context: WebGLAnyRenderingContext;

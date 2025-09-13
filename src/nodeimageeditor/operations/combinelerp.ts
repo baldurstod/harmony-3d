@@ -5,7 +5,7 @@ import { DEBUG } from '../../buildoptions';
 import { RenderTarget } from '../../textures/rendertarget';
 import { GL_UNSIGNED_BYTE, GL_RGBA } from '../../webgl/constants';
 import { registerOperation } from '../operations';
-import { Graphics } from '../../graphics/graphics';
+import { Graphics } from '../../graphics/graphics2';
 import { NodeImageEditor } from '../nodeimageeditor';
 import { NodeParam, NodeParamType } from '../nodeparam';
 

@@ -1193,7 +1193,7 @@ declare class Channel {
                  set clearColor(clearColor: vec4);
                  set clearDepth(clearDepth: GLclampf);
                  set clearStencil(clearStencil: GLint);
-                 render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                 render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
              }
 
              export declare const COLLISION_GROUP_DEBRIS = 1;
@@ -1501,7 +1501,7 @@ declare class Channel {
 
              export declare class CopyPass extends Pass {
                  constructor(camera: Camera);
-                 render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                 render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
              }
 
              export declare const CParticleSystemDefinition = "CParticleSystemDefinition";
@@ -1557,7 +1557,7 @@ declare class Channel {
 
              export declare class CrosshatchPass extends Pass {
                  constructor(camera: Camera);
-                 render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                 render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
              }
 
              export declare class CubeBackground extends BackGround {
@@ -3079,7 +3079,7 @@ declare class Channel {
                           #private;
                           constructor(camera: Camera);
                           set intensity(intensity: number);
-                          render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
                       export declare interface GraphicKeyboardEventData {
@@ -3093,7 +3093,9 @@ declare class Channel {
                           mouseEvent: MouseEvent;
                       }
 
-                      export declare class Graphics {
+                      export declare let Graphics: GraphicsType;
+
+                      declare class Graphics_2 {
                           #private;
                           static isWebGL: boolean;
                           static isWebGL2: boolean;
@@ -3107,7 +3109,7 @@ declare class Channel {
                           static ANGLE_instanced_arrays: any;
                           static OES_texture_float_linear: any;
                           static dragging: boolean;
-                          static initCanvas(contextAttributes?: GraphicsInitOptions): typeof Graphics;
+                          static initCanvas(contextAttributes?: GraphicsInitOptions): typeof Graphics_2;
                           static addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): HTMLCanvasElement;
                           static listenCanvas(canvas: HTMLCanvasElement): void;
                           static unlistenCanvas(canvas: HTMLCanvasElement): void;
@@ -3228,6 +3230,8 @@ declare class Channel {
                           /** WebGL attributes passed to getContext() */
                           webGL?: WebGLContextAttributes;
                       }
+
+                      declare type GraphicsType = typeof Graphics_2;
 
                       export declare interface GraphicTickEvent {
                           delta: number;
@@ -5357,7 +5361,7 @@ declare class Channel {
 
                       export declare class OldMoviePass extends Pass {
                           constructor(camera: Camera);
-                          render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
                       export declare const ONE_EPS = 1.0000001;
@@ -5507,7 +5511,7 @@ declare class Channel {
                           setSize(width: number, height: number): void;
                           changeVisibilityOfSelectedObjects(visible: boolean): void;
                           changeVisibilityOfNonSelectedObjects(visible: boolean): void;
-                          render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
                       declare class Output extends InputOutput {
@@ -5543,7 +5547,7 @@ declare class Channel {
 
                       export declare class PalettePass extends Pass {
                           constructor(camera: Camera);
-                          render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
                       declare type ParameterChanged = (newValue: any, oldValue?: any) => void;
@@ -5578,7 +5582,7 @@ declare class Channel {
                           swapBuffers: boolean;
                           renderToScreen: boolean;
                           setSize(width: number, height: number): void;
-                          render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
                       export declare class Path extends Curve {
@@ -5633,7 +5637,7 @@ declare class Channel {
                           constructor(camera: Camera);
                           set horizontalTiles(horizontalTiles: number);
                           set pixelStyle(pixelStyle: number);
-                          render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
                       export declare class Plane extends Mesh {
@@ -6412,7 +6416,7 @@ declare class Channel {
                           DEPTH32F_STENCIL8 = 36013
                       }
 
-                      declare interface RenderContext {
+                      export declare interface RenderContext {
                           DisableToolRendering?: boolean;
                           width?: number;
                           height?: number;
@@ -6485,7 +6489,7 @@ declare class Channel {
 
                       export declare class RenderPass extends Pass {
                           constructor(scene: Scene, camera: Camera);
-                          render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
                       export declare class RenderRope extends Source1ParticleOperator {
@@ -6896,7 +6900,7 @@ declare class Channel {
                           #private;
                           constructor(camera: Camera);
                           set saturation(saturation: number);
-                          render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
                       export declare class Scene extends Entity {
@@ -7368,7 +7372,7 @@ declare class Channel {
 
                       export declare class SketchPass extends Pass {
                           constructor(camera: Camera);
-                          render(renderer: Graphics, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
+                          render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext): void;
                       }
 
                       export declare function smartRound(input: number, precision?: number): number;
@@ -8182,7 +8186,7 @@ declare class Channel {
                            * TODO
                            */
                           getResource(type: number): VTFResourceEntry | null;
-                          fillTexture(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1?: number, srgb?: boolean): void;
+                          fillTexture(glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1?: number, srgb?: boolean): void;
                           getFormat(): number;
                           getType(): number;
                           /**

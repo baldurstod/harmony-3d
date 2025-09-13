@@ -1,17 +1,17 @@
-import { quat, vec3, vec4 } from 'gl-matrix';
+import { quat, vec3 } from 'gl-matrix';
 import { Entity, EntityParameters } from '../../entities/entity';
+import { Graphics } from '../../graphics/graphics2';
 import { GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
-import { LineMaterial } from '../../materials/linematerial';
-import { Line } from '../../primitives/line';
-import { Raycaster } from '../../raycasting/raycaster';
-import { Graphics } from '../../graphics/graphics';
-import { SceneExplorerEvents } from '../../scenes/sceneexplorerevents';
-import { Sphere } from '../../primitives/sphere';
-import { MeshBasicMaterial } from '../../materials/meshbasicmaterial';
-import { Scene } from '../../scenes/scene';
-import { Skeleton } from '../skeleton';
-import { Bone } from '../bone';
 import { HasSkeleton } from '../../interfaces/hasskeleton';
+import { LineMaterial } from '../../materials/linematerial';
+import { MeshBasicMaterial } from '../../materials/meshbasicmaterial';
+import { Line } from '../../primitives/line';
+import { Sphere } from '../../primitives/sphere';
+import { Raycaster } from '../../raycasting/raycaster';
+import { Scene } from '../../scenes/scene';
+import { SceneExplorerEvents } from '../../scenes/sceneexplorerevents';
+import { Bone } from '../bone';
+import { Skeleton } from '../skeleton';
 
 const tempVec3 = vec3.create();
 

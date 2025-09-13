@@ -2,7 +2,7 @@ import { Map2 } from 'harmony-utils';
 import { TESTING } from '../../../buildoptions';
 import { TEXTURE_CLEANUP_DELAY } from '../../../constants';
 import { Color } from '../../../core/color';
-import { Graphics } from '../../../graphics/graphics';
+import { Graphics } from '../../../graphics/graphics2';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Texture } from '../../../textures/texture';
 import { TextureManager } from '../../../textures/texturemanager';
@@ -156,7 +156,7 @@ export function vtfToTexture(vtf: Source1Vtf, animatedTexture: AnimatedTexture, 
 		texture.properties.set('vtf', vtf);
 		texture.setAlphaBits(alphaBits);
 		const currentMipMap = vtf.mipmapCount;//TODOv3: choose mipmap
-		vtf.fillTexture(Graphics, glContext, texture, currentMipMap, frameIndex, srgb);
+		vtf.fillTexture(glContext, texture, currentMipMap, frameIndex, srgb);
 		animatedTexture.addFrame(frameIndex, texture);
 	}
 }

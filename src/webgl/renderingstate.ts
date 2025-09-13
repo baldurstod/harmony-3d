@@ -1,5 +1,5 @@
 import { vec4 } from 'gl-matrix';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
 import { WebGLAnyRenderingContext } from '../types';
 import { GL_BACK, GL_CCW, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_FUNC_ADD, GL_LESS, GL_MAX_VERTEX_ATTRIBS, GL_ONE, GL_POLYGON_OFFSET_FILL, GL_STENCIL_BUFFER_BIT, GL_ZERO } from './constants';
 
@@ -39,7 +39,6 @@ export class WebGLRenderingState {
 	static #lineWidth: GLfloat = 1;
 
 	static #program: WebGLProgram;
-	static #graphics: Graphics;
 	static #glContext: WebGLAnyRenderingContext;
 
 	static #enabledVertexAttribArray: Uint8Array;

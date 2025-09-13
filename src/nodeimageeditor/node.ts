@@ -1,7 +1,7 @@
 import { saveFile } from 'harmony-browser-utils';
 import { createElement } from 'harmony-ui';
 import { MyEventTarget } from 'harmony-utils';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
 import { Material } from '../materials/material';
 import { generateRandomUUID } from '../math/functions';
 import { TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_NOMIP } from '../sourceengine/source1/textures/vtfconstants';

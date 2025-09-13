@@ -1,10 +1,9 @@
-import { GL_RENDERBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE } from './constants';
-import { Graphics } from '../graphics/graphics';
-import { TextureManager } from '../textures/texturemanager';
 import { DEBUG, ENABLE_GET_ERROR } from '../buildoptions';
+import { Graphics } from '../graphics/graphics2';
 import { FrameBufferTarget } from '../textures/constants';
-import { Renderbuffer } from './renderbuffer';
 import { Texture } from '../textures/texture';
+import { GL_RENDERBUFFER } from './constants';
+import { Renderbuffer } from './renderbuffer';
 
 const ATTACHMENT_TYPE_RENDER_BUFFER = 0;
 const ATTACHMENT_TYPE_TEXTURE2D = 1;

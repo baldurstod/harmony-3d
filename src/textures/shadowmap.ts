@@ -1,6 +1,7 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
-import { Graphics, RenderContext } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
+import { RenderContext } from '../interfaces/rendercontext';
 import { PointLight } from '../lights/pointlight';
 import { Renderer } from '../renderers/renderer';
 import { RenderList } from '../renderers/renderlist';

@@ -1,5 +1,5 @@
 import { DEBUG } from '../../buildoptions';
-import { Graphics } from '../../graphics/graphics';
+import { Graphics } from '../../graphics/graphics2';
 import { RenderTarget } from '../../textures/rendertarget';
 import { GL_RGBA, GL_UNSIGNED_BYTE } from '../../webgl/constants';
 import { IO_TYPE_TEXTURE_2D } from '../inputoutput';

@@ -1,6 +1,6 @@
 import { vec2 } from 'gl-matrix';
 
-import { Graphics } from '../../../../../graphics/graphics';
+import { Graphics } from '../../../../../graphics/graphics2';
 import { RenderFace } from '../../../../../materials/constants';
 import { DEG_TO_RAD } from '../../../../../math/constants';
 import { Mesh } from '../../../../../objects/mesh';

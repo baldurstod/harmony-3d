@@ -4,3 +4,4 @@ export { HasSkeleton } from './hasskeleton';
 export { Lockable } from './lockable';
 export { Loopable } from './loopable';
 export { RandomPointOnModel } from './randompointonmodel';
+export { RenderContext } from './rendercontext';

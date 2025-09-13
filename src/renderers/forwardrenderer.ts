@@ -1,18 +1,19 @@
-import { Renderer } from './renderer';
-import { GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST, GL_SCISSOR_TEST, GL_COLOR_ATTACHMENT0, GL_BACK, GL_FRONT, GL_FRONT_AND_BACK } from '../webgl/constants';
-import { ShadowMap } from '../textures/shadowmap';
+import { Camera } from '../cameras/camera';
+import { RenderContext } from '../interfaces/rendercontext';
 import { RenderFace } from '../materials/constants';
-import { RenderList } from './renderlist';
-import { WebGLRenderingState } from '../webgl/renderingstate';
-import { Graphics, RenderContext } from '../graphics/graphics';
 import { Material } from '../materials/material';
 import { Scene } from '../scenes/scene';
-import { Camera } from '../cameras/camera';
+import { ShadowMap } from '../textures/shadowmap';
+import { GL_BACK, GL_BLEND, GL_CULL_FACE, GL_DEPTH_TEST, GL_FRONT, GL_FRONT_AND_BACK, GL_SCISSOR_TEST } from '../webgl/constants';
 import { Program } from '../webgl/program';
+import { WebGLRenderingState } from '../webgl/renderingstate';
+import { Renderer } from './renderer';
+import { RenderList } from './renderlist';
 
 export class ForwardRenderer extends Renderer {
 	#shadowMap: ShadowMap;
 	#frame = 0;
+
 	constructor() {
 		super();
 		this.#shadowMap = new ShadowMap();

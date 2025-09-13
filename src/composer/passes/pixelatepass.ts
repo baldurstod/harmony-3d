@@ -1,5 +1,6 @@
 import { Camera } from '../../cameras/camera';
-import { Graphics, RenderContext } from '../../graphics/graphics';
+import { Graphics } from '../../graphics/graphics2';
+import { RenderContext } from '../../interfaces/rendercontext';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
 import { Scene } from '../../scenes/scene';
@@ -32,7 +33,7 @@ export class PixelatePass extends Pass {
 		this.#material.setDefine('PIXEL_STYLE', String(pixelStyle));
 	}
 
-	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
+	render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		this.#material.uniforms['colorMap'] = readBuffer.getTexture();
 
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);

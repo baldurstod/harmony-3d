@@ -1,5 +1,5 @@
 import { Camera } from '../cameras/camera';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
 
 export class CameraControl {
 	#camera?: Camera;

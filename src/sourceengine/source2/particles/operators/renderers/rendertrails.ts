@@ -1,7 +1,7 @@
 import { vec2, vec3 } from 'gl-matrix';
 import { Float32BufferAttribute, Uint32BufferAttribute } from '../../../../../geometry/bufferattribute';
 import { BufferGeometry } from '../../../../../geometry/buffergeometry';
-import { Graphics } from '../../../../../graphics/graphics';
+import { Graphics } from '../../../../../graphics/graphics2';
 import { ceilPowerOfTwo, clamp } from '../../../../../math/functions';
 import { Mesh } from '../../../../../objects/mesh';
 import { Texture } from '../../../../../textures/texture';

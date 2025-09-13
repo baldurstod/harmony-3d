@@ -1,5 +1,5 @@
 import { DEBUG, ENABLE_GET_ERROR } from '../buildoptions';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
 import { RenderBufferInternalFormat } from '../textures/constants';
 import { WebGLAnyRenderingContext } from '../types';
 import { GL_RENDERBUFFER } from './constants';

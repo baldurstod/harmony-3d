@@ -1,20 +1,20 @@
 import { vec3, vec4 } from 'gl-matrix';
 import { Camera, CameraProjection } from '../cameras/camera';
-import { Renderer } from '../renderers/renderer';
-import { RenderTarget } from './rendertarget';
+import { BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
+import { BufferGeometry } from '../geometry/buffergeometry';
+import { Graphics } from '../graphics/graphics2';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
-import { BufferGeometry } from '../geometry/buffergeometry';
-import { Graphics } from '../graphics/graphics';
-import { Scene } from '../scenes/scene';
+import { ShaderMaterial } from '../materials/shadermaterial';
 import { Mesh } from '../objects/mesh';
 import { Box } from '../primitives/box';
-import { BufferAttribute, Uint16BufferAttribute } from '../geometry/bufferattribute';
-import { ShaderMaterial } from '../materials/shadermaterial';
-import { Texture } from './texture';
-import { CubeTexture } from './cubetexture';
+import { Renderer } from '../renderers/renderer';
+import { Scene } from '../scenes/scene';
 import { AnyTexture } from '../types';
 import { TextureMapping, ToneMapping } from './constants';
+import { CubeTexture } from './cubetexture';
+import { RenderTarget } from './rendertarget';
+import { Texture } from './texture';
 
 const LOD_MIN = 4;
 

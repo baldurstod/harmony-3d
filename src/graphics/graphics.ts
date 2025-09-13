@@ -6,6 +6,7 @@ import { Camera } from '../cameras/camera';
 import { MAX_HARDWARE_BONES, RECORDER_DEFAULT_FILENAME, RECORDER_MIME_TYPE } from '../constants';
 import { Entity } from '../entities/entity';
 import { pickList } from '../entities/picklist';
+import { RenderContext } from '../interfaces/rendercontext';
 import { Material } from '../materials/material';
 import { isNumeric } from '../math/functions';
 import { ForwardRenderer } from '../renderers/forwardrenderer';
@@ -17,6 +18,7 @@ import { WebGLStats } from '../utils/webglstats';
 import { GL_COLOR_BUFFER_BIT, GL_CULL_FACE, GL_DEPTH_BUFFER_BIT, GL_FRAMEBUFFER, GL_RGBA, GL_SCISSOR_TEST, GL_STENCIL_BUFFER_BIT, GL_UNSIGNED_BYTE } from '../webgl/constants';
 import { WebGLRenderingState } from '../webgl/renderingstate';
 import { WebGLShaderSource } from '../webgl/shadersource';
+import { setGraphics } from './graphics2';
 import { GraphicsEvents } from './graphicsevents';
 import { Viewport } from './viewport';
 
@@ -38,17 +40,6 @@ export enum ShaderQuality {
 
 export enum ShaderDebugMode {
 	None = 0,
-}
-
-export interface RenderContext {
-	DisableToolRendering?: boolean;
-	width?: number;
-	height?: number;
-	imageBitmap?: { // TODO: remove
-		context: ImageBitmapRenderingContext;
-		width: number;
-		height: number;
-	};
 }
 
 interface GraphicsInitOptions {
@@ -91,7 +82,7 @@ export type MultiCanvas = {
 	autoResize: boolean;
 }
 
-export class Graphics {
+class Graphics {
 	static #pixelRatio = /*window.devicePixelRatio ?? */1.0;
 	static #viewport = vec4.create();
 	static #scissor = vec4.create();
@@ -361,7 +352,7 @@ export class Graphics {
 		}
 
 		if (this.#offscreenCanvas) {
-			const parentElement =  canvas.canvas.parentElement;
+			const parentElement = canvas.canvas.parentElement;
 			if (canvas.autoResize && parentElement) {
 				const width = parentElement.clientWidth;
 				const height = parentElement.clientHeight;
@@ -917,3 +908,7 @@ export class Graphics {
 		return this.#forwardRenderer;
 	}
 }
+
+setGraphics(Graphics);
+
+export type GraphicsType = typeof Graphics;

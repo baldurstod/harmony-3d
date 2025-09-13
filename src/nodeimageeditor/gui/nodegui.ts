@@ -2,7 +2,7 @@ import { vec2, vec3 } from 'gl-matrix';
 import { contentCopySVG, dragPanSVG, panZoomSVG, rotateSVG, zoomInSVG, zoomOutSVG } from 'harmony-svg';
 import { createElement, defineHarmony2dManipulator, defineHarmonyToggleButton, HTMLHarmony2dManipulatorElement, HTMLHarmonyToggleButtonElement, ManipulatorDirection } from 'harmony-ui';
 import { setTimeoutPromise } from 'harmony-utils';
-import { Graphics } from '../../graphics/graphics';
+import { Graphics } from '../../graphics/graphics2';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
 import { TextureManager } from '../../textures/texturemanager';
 import { GL_CLAMP_TO_EDGE, GL_LINEAR, GL_TEXTURE_2D } from '../../webgl/constants';

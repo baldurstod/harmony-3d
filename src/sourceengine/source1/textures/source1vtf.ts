@@ -1,6 +1,6 @@
 import { vec3 } from 'gl-matrix';
 import { ENABLE_S3TC } from '../../../buildoptions';
-import { Graphics } from '../../../graphics/graphics';
+import { Graphics } from '../../../graphics/graphics2';
 import { Detex } from '../../../textures/detex';
 import { ImageFormat, ImageFormatBptc, ImageFormatRgtc, ImageFormatS3tc } from '../../../textures/enums';
 import { Texture } from '../../../textures/texture';
@@ -160,15 +160,15 @@ export class Source1Vtf {
 	}
 	*/
 
-	fillTexture(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1 = 0, srgb = true): void {
+	fillTexture(glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1 = 0, srgb = true): void {
 		if (this.flags & TEXTUREFLAGS_ENVMAP) {
-			this.#fillCubeMapTexture(graphics, glContext, texture.texture, mipmapLvl, srgb);
+			this.#fillCubeMapTexture(glContext, texture.texture, mipmapLvl, srgb);
 		} else {
-			this.#fillTexture(graphics, glContext, texture, mipmapLvl, frame1, srgb);
+			this.#fillTexture(glContext, texture, mipmapLvl, frame1, srgb);
 		}
 	}
 
-	#fillTexture(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1 = 0, srgb: boolean): void {
+	#fillTexture(glContext: WebGLAnyRenderingContext, texture: Texture, mipmapLvl: number, frame1 = 0, srgb: boolean): void {
 		/*
 		if (this.filled && (this.frames == 1)) {
 			return;
@@ -214,7 +214,7 @@ export class Source1Vtf {
 
 		if (data) {
 			if (this.isDxtCompressed()) {
-				fillTextureDxt(graphics, glContext, webGLTexture, GL_TEXTURE_2D, mipmap.width, mipmap.height, vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc, data, clampS, clampT, srgb && this.isSRGB());
+				fillTextureDxt(glContext, webGLTexture, GL_TEXTURE_2D, mipmap.width, mipmap.height, vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc, data, clampS, clampT, srgb && this.isSRGB());
 			} else {
 				glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 				glContext.texImage2D(GL_TEXTURE_2D, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), data);
@@ -235,7 +235,7 @@ export class Source1Vtf {
 	/**
 	 * TODO
 	 */
-	#fillCubeMapTexture(graphics: Graphics, glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, mipmapLvl: number, srgb: boolean): void {
+	#fillCubeMapTexture(glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, mipmapLvl: number, srgb: boolean): void {
 		if (mipmapLvl == undefined) {
 			mipmapLvl = this.mipmapCount - 1;
 		} else {
@@ -282,12 +282,12 @@ export class Source1Vtf {
 			if (this.isDxtCompressed()) {
 				const isSRGB = srgb && this.isSRGB();
 				const st3cFormat = vtfToImageFormat(this.highResImageFormat) as ImageFormatS3tc;
-				fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mipmap.width, mipmap.height, st3cFormat, data0, clampS, clampT, isSRGB);
-				fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, mipmap.width, mipmap.height, st3cFormat, data1, clampS, clampT, isSRGB);
-				fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, mipmap.width, mipmap.height, st3cFormat, data2, clampS, clampT, isSRGB);
-				fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mipmap.width, mipmap.height, st3cFormat, data3, clampS, clampT, isSRGB);
-				fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, mipmap.width, mipmap.height, st3cFormat, data4, clampS, clampT, isSRGB);
-				fillTextureDxt(graphics, glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, mipmap.width, mipmap.height, st3cFormat, data5, clampS, clampT, isSRGB);
+				fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_X, mipmap.width, mipmap.height, st3cFormat, data0, clampS, clampT, isSRGB);
+				fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, mipmap.width, mipmap.height, st3cFormat, data1, clampS, clampT, isSRGB);
+				fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, mipmap.width, mipmap.height, st3cFormat, data2, clampS, clampT, isSRGB);
+				fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, mipmap.width, mipmap.height, st3cFormat, data3, clampS, clampT, isSRGB);
+				fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, mipmap.width, mipmap.height, st3cFormat, data4, clampS, clampT, isSRGB);
+				fillTextureDxt(glContext, texture, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, mipmap.width, mipmap.height, st3cFormat, data5, clampS, clampT, isSRGB);
 			} else {
 				glContext.pixelStorei(GL_UNPACK_FLIP_Y_WEBGL, false);
 				glContext.texImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, this.#getInternalFormat(srgb), mipmap.width, mipmap.height, 0, this.getFormat(), this.getType(), data0);
@@ -460,7 +460,7 @@ export async function decompressDxt(format: ImageFormatS3tc | ImageFormatRgtc | 
 	return uncompressedData;
 }
 
-function fillTextureDxt(graphics: Graphics/*TODO: remove*/, glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, target: GLenum, width: number, height: number, dxtLevel: ImageFormatS3tc, datas: Uint8Array | Float32Array, clampS: boolean, clampT: boolean, srgb: boolean): void {//removeme
+function fillTextureDxt(glContext: WebGLAnyRenderingContext, texture: WebGLTexture | null, target: GLenum, width: number, height: number, dxtLevel: ImageFormatS3tc, datas: Uint8Array | Float32Array, clampS: boolean, clampT: boolean, srgb: boolean): void {//removeme
 	const s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
 	const s3tcSRGB = Graphics.getExtension('WEBGL_compressed_texture_s3tc_srgb');
 

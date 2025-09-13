@@ -1,5 +1,5 @@
 import { DEBUG } from '../../buildoptions';
-import { Graphics } from '../../graphics/graphics';
+import { Graphics } from '../../graphics/graphics2';
 import { RenderTarget } from '../../textures/rendertarget';
 import { Texture } from '../../textures/texture';
 import { IO_TYPE_TEXTURE_2D, } from '../inputoutput';

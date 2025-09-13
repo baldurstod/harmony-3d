@@ -1,21 +1,21 @@
 import { mat4, quat, vec2, vec3, vec4 } from 'gl-matrix';
 import { ShortcutHandler } from 'harmony-browser-utils';
 
+import { Camera } from '../../cameras/camera';
 import { EngineEntityAttributes, Entity, LAYER_MAX } from '../../entities/entity';
-import { Graphics } from '../../graphics/graphics';
-import { GraphicsEvents, GraphicsEvent, GraphicMouseEventData } from '../../graphics/graphicsevents';
+import { Graphics } from '../../graphics/graphics2';
+import { GraphicMouseEventData, GraphicsEvent, GraphicsEvents } from '../../graphics/graphicsevents';
+import { RenderFace } from '../../materials/constants';
 import { LineMaterial } from '../../materials/linematerial';
 import { MATERIAL_BLENDING_NORMAL } from '../../materials/material';
 import { MeshBasicMaterial } from '../../materials/meshbasicmaterial';
+import { DEG_TO_RAD, HALF_PI, PI } from '../../math/constants';
 import { Box } from '../../primitives/box';
 import { Circle } from '../../primitives/circle';
 import { Cone } from '../../primitives/cone';
 import { Cylinder } from '../../primitives/cylinder';
 import { Plane } from '../../primitives/plane';
 import { Sphere } from '../../primitives/sphere';
-import { HALF_PI, PI, DEG_TO_RAD } from '../../math/constants';
-import { RenderFace } from '../../materials/constants';
-import { Camera } from '../../cameras/camera';
 import { Scene } from '../../scenes/scene';
 
 const ARROW_RADIUS = 0.1;

@@ -1,7 +1,7 @@
 import { vec3 } from 'gl-matrix';
 import { MyEventTarget } from 'harmony-utils';
 import { Camera } from '../cameras/camera';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
 import { Material } from '../materials/material';
 import { FullScreenQuad } from '../primitives/fullscreenquad';
 import { Scene } from '../scenes/scene';

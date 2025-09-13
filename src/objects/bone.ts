@@ -2,7 +2,7 @@ import { mat4, quat, vec3 } from 'gl-matrix';
 import { DEBUG } from '../buildoptions';
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
-import { Graphics } from '../graphics/graphics';
+import { Graphics } from '../graphics/graphics2';
 import { Lockable } from '../interfaces/lockable';
 import { JSONObject } from '../types';
 import { Skeleton } from './skeleton';

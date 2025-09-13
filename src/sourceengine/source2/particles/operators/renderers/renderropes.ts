@@ -1,5 +1,5 @@
 import { vec3, vec4 } from 'gl-matrix';
-import { Graphics } from '../../../../../graphics/graphics';
+import { Graphics } from '../../../../../graphics/graphics2';
 import { Mesh } from '../../../../../objects/mesh';
 import { BeamBufferGeometry, BeamSegment } from '../../../../../primitives/geometries/beambuffergeometry';
 import { Texture } from '../../../../../textures/texture';
