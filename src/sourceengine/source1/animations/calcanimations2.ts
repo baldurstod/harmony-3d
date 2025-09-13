@@ -7,6 +7,7 @@ import { BONE_FIXED_ALIGNMENT, MdlBone } from '../loaders/mdlbone';
 import { MdlStudioAnim, STUDIO_ANIM_ANIMPOS, STUDIO_ANIM_ANIMROT, STUDIO_ANIM_DELTA, STUDIO_ANIM_RAWPOS, STUDIO_ANIM_RAWROT, STUDIO_ANIM_RAWROT2 } from '../loaders/mdlstudioanim';
 import { MdlStudioSeqDesc, STUDIO_AL_LOCAL, STUDIO_AL_NOBLEND, STUDIO_AL_POSE, STUDIO_AL_SPLINE, STUDIO_AL_XFADE } from '../loaders/mdlstudioseqdesc';
 import { MdlStudioAnimDesc, SourceMdl } from '../loaders/sourcemdl';
+import { QuaternionAlign, QuaternionBlend, QuaternionBlendNoAlign, QuaternionSlerpNoAlign } from './calcanimations';
 
 /**
  * Update buffers vertice count.
@@ -100,7 +101,7 @@ export function Studio_Duration2(pStudioHdr: SourceMdl, iSequence: number, poseP
 
 	return 1.0 / cps;
 }
-export function StudioFrames2(pStudioHdr: SourceMdl, iSequence: number, poseParameters: Map<string, number>) {
+export function StudioFrames2(pStudioHdr: SourceMdl, iSequence: number, poseParameters: Map<string, number>): number {
 	const seqdesc = pStudioHdr.getSequenceById(iSequence);//pStudioHdr.pSeqdesc(iSequence);
 	if (!seqdesc) {
 		return 0;
@@ -114,7 +115,7 @@ const SOURCE_MODEL_MAX_BONES = 256;
 //-----------------------------------------------------------------------------
 // Purpose: calculate a pose for a single sequence
 //-----------------------------------------------------------------------------
-function InitPose2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pos: vec3[], q: quat[], boneMask: number) {
+function InitPose2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pos: vec3[], q: quat[], boneMask: number): void {
 	if (pStudioHdr.pLinearBones === undefined) {
 		for (let i = 0, boneCount = pStudioHdr.getBoneCount(); i < boneCount; ++i) {
 			if (true || pStudioHdr.boneFlags(i) & boneMask) {
@@ -602,7 +603,7 @@ function _CalcBoneQuaternion2(pStudioHdr: SourceMdl, frame: number, s: number, b
 			quatFromEulerRad(q1, angle1[0], angle1[1], angle1[2]);
 			quatFromEulerRad(q2, angle2[0], angle2[1], angle2[2]);
 
-			QuaternionBlend2(q1, q2, s, q);
+			QuaternionBlend(q1, q2, s, q);
 		} else {
 			//_AngleQuaternion(angle1, q);//TODOv2
 			//quat.fromMat3(q, mat3.fromEuler(SourceEngineTempMat3, angle1));
@@ -631,7 +632,7 @@ function _CalcBoneQuaternion2(pStudioHdr: SourceMdl, frame: number, s: number, b
 
 	// align to unified bone
 	if (!(panim.flags & STUDIO_ANIM_DELTA) && (iBaseFlags & BONE_FIXED_ALIGNMENT)) {
-		QuaternionAlign2(baseAlignment, q, q);
+		QuaternionAlign(baseAlignment, q, q);
 	}
 }
 
@@ -699,58 +700,6 @@ function CalcBonePosition2(pStudioHdr: SourceMdl, frame: number, s: number, pBon
 		_CalcBonePosition2(pStudioHdr, frame, s, pBone.position, pBone.posscale, panim, pos);
 	}
 }
-
-//-----------------------------------------------------------------------------
-// Do a piecewise addition of the quaternion elements. This actually makes little
-// mathematical sense, but it's a cheap way to simulate a slerp.
-//-----------------------------------------------------------------------------
-//void QuaternionBlend(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
-function QuaternionBlend2(p: quat, q: quat, t: number, qt: quat) {
-	// decide if one of the quaternions is backwards
-	const q2 = quat.create();//TODO: optimize
-	QuaternionAlign2(p, q, q2);
-	QuaternionBlendNoAlign2(p, q2, t, qt);
-}
-
-//void QuaternionBlendNoAlign(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
-function QuaternionBlendNoAlign2(p: quat, q: quat, t: number, qt: quat) {
-	// 0.0 returns p, 1.0 return q.
-	const sclp = 1.0 - t;
-	const sclq = t;
-	for (let i = 0; i < 4; ++i) {
-		qt[i] = sclp * p[i]! + sclq * q[i]!;
-	}
-	quat.normalize(qt, qt);
-}
-
-//-----------------------------------------------------------------------------
-// make sure quaternions are within 180 degrees of one another, if not, reverse q
-//-----------------------------------------------------------------------------
-//void QuaternionAlign(const Quaternion &p, const Quaternion &q, Quaternion &qt)
-function QuaternionAlign2(p: quat, q: quat, qt: quat) {
-	// FIXME: can this be done with a quat dot product?
-
-	// decide if one of the quaternions is backwards
-	let a = 0;
-	let b = 0;
-	for (let i = 0; i < 4; ++i) {
-		a += (p[i]! - q[i]!) * (p[i]! - q[i]!);
-		b += (p[i]! + q[i]!) * (p[i]! + q[i]!);
-	}
-	if (a > b) {
-		for (let i = 0; i < 4; ++i) {
-			qt[i] = -q[i]!;
-		}
-	}
-	else if (qt != q) {
-		for (let i = 0; i < 4; ++i) {
-			qt[i] = q[i]!;
-		}
-	}
-}
-
-
-
 
 //-----------------------------------------------------------------------------
 // Purpose: Calc Zeroframe Data
@@ -1014,7 +963,7 @@ for (let i = 0; i < SOURCE_MODEL_MAX_BONES; i++) {
 	AccumulatePose_pos2[i] = vec3.create();
 	AccumulatePose_q2[i] = quat.create();
 }
-function AccumulatePose2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pIKContext: undefined, pos: vec3[], q: quat[], boneFlags: number[], sequence: number, cycle: number, poseParameters: Map<string, number>, boneMask: number, flWeight: number, flTime: number) {
+function AccumulatePose2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMdl, pIKContext: undefined, pos: vec3[], q: quat[], boneFlags: number[], sequence: number, cycle: number, poseParameters: Map<string, number>, boneMask: number, flWeight: number, flTime: number): void {
 	//const pos2 = [];
 	//const q2 = [];
 	const pos2 = AccumulatePose_pos2;
@@ -1056,6 +1005,7 @@ function AccumulatePose2(dynamicProp: Source1ModelInstance, pStudioHdr: SourceMd
 
 	/*
 	if (pIKContext) {
+		// TODO: activate
 		pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
 	}
 	*/
@@ -1224,7 +1174,7 @@ function SlerpBones2(pStudioHdr: SourceMdl, q1: quat[], pos1: vec3[], seqdesc: M
 		s1 = 1.0 - s2;
 
 		if (pStudioHdr.boneFlags(i) & BONE_FIXED_ALIGNMENT) {
-			QuaternionSlerpNoAlign2(q2[i]!, q1[i]!, s1, q3);
+			QuaternionSlerpNoAlign(q2[i]!, q1[i]!, s1, q3);
 		} else {
 			QuaternionSlerp2(q2[i]!, q1[i]!, s1, q3);
 		}
@@ -1388,10 +1338,10 @@ function BlendBones2(pStudioHdr: SourceMdl, q1: quat[], pos1: vec3[], seqdesc: M
 
 		if (j >= 0 && (seqdesc.pBoneweight(j) ?? 0) > 0.0 && q2[i] && q1[i] && pos1[i] && pos2[i]) {
 			if (pStudioHdr.boneFlags(i) & BONE_FIXED_ALIGNMENT) {
-				QuaternionBlendNoAlign2(q2[i]!, q1[i]!, s1, q3);
+				QuaternionBlendNoAlign(q2[i]!, q1[i]!, s1, q3);
 			}
 			else {
-				QuaternionBlend2(q2[i]!, q1[i]!, s1, q3);
+				QuaternionBlend(q2[i]!, q1[i]!, s1, q3);
 			}
 			q1[i]![0] = q3[0];
 			q1[i]![1] = q3[1];
@@ -1413,51 +1363,9 @@ function QuaternionSlerp2(p: quat, q: quat, t: number, qt: quat) {
 	// 0.0 returns p, 1.0 return q.
 
 	// decide if one of the quaternions is backwards
-	QuaternionAlign2(p, q, q2);
+	QuaternionAlign(p, q, q2);
 
-	QuaternionSlerpNoAlign2(p, q2, t, qt);
-}
-
-//void QuaternionSlerpNoAlign(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
-function QuaternionSlerpNoAlign2(p: quat, q: quat, t: number, qt: quat) {
-	//Assert(s_bMathlibInitialized);
-	let omega, cosom, sinom, sclp, sclq;
-
-	// 0.0 returns p, 1.0 return q.
-
-	cosom = p[0] * q[0] + p[1] * q[1] + p[2] * q[2] + p[3] * q[3];
-
-	if ((1.0 + cosom) > 0.000001) {
-		if ((1.0 - cosom) > 0.000001) {
-			omega = Math.acos(cosom);
-			sinom = Math.sin(omega);
-			sclp = Math.sin((1.0 - t) * omega) / sinom;
-			sclq = Math.sin(t * omega) / sinom;
-		}
-		else {
-			// TODO: add short circuit for cosom == 1.0?
-			sclp = 1.0 - t;
-			sclq = t;
-		}
-		for (let i = 0; i < 4; ++i) {
-			qt[i] = sclp * p[i]! + sclq * q[i]!;
-		}
-	}
-	else {
-		//Assert(&qt != &q);
-
-		qt[0] = -q[1];
-		qt[1] = q[0];
-		qt[2] = -q[3];
-		qt[3] = q[2];
-		sclp = Math.sin((1.0 - t) * (0.5 * Math.PI));
-		sclq = Math.sin(t * (0.5 * Math.PI));
-		for (let i = 0; i < 3; i++) {
-			qt[i] = sclp * p[i]! + sclq * qt[i]!;
-		}
-	}
-
-	//Assert(qt.IsValid());
+	QuaternionSlerpNoAlign(p, q2, t, qt);
 }
 //-----------------------------------------------------------------------------
 // Purpose: resolve a global pose parameter to the specific setting for this sequence

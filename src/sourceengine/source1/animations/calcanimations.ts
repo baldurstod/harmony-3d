@@ -738,7 +738,7 @@ function CalcBonePosition(pStudioHdr: SourceMdl, frame: number, s: number, pBone
 // mathematical sense, but it's a cheap way to simulate a slerp.
 //-----------------------------------------------------------------------------
 //void QuaternionBlend(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
-function QuaternionBlend(p: quat, q: quat, t: number, qt: quat) {
+export function QuaternionBlend(p: quat, q: quat, t: number, qt: quat) {
 	// decide if one of the quaternions is backwards
 	const q2 = quat.create();//TODO: optimize
 	QuaternionAlign(p, q, q2);
@@ -746,7 +746,7 @@ function QuaternionBlend(p: quat, q: quat, t: number, qt: quat) {
 }
 
 //void QuaternionBlendNoAlign(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
-function QuaternionBlendNoAlign(p: quat, q: quat, t: number, qt: quat) {
+export function QuaternionBlendNoAlign(p: quat, q: quat, t: number, qt: quat) {
 	// 0.0 returns p, 1.0 return q.
 	const sclp = 1.0 - t;
 	const sclq = t;
@@ -760,7 +760,7 @@ function QuaternionBlendNoAlign(p: quat, q: quat, t: number, qt: quat) {
 // make sure quaternions are within 180 degrees of one another, if not, reverse q
 //-----------------------------------------------------------------------------
 //void QuaternionAlign(const Quaternion &p, const Quaternion &q, Quaternion &qt)
-function QuaternionAlign(p: quat, q: quat, qt: quat) {
+export function QuaternionAlign(p: quat, q: quat, qt: quat) {
 	// FIXME: can this be done with a quat dot product?
 
 	// decide if one of the quaternions is backwards
@@ -1455,7 +1455,7 @@ function QuaternionSlerp(p: quat, q: quat, t: number, qt: quat) {
 }
 
 //void QuaternionSlerpNoAlign(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
-function QuaternionSlerpNoAlign(p: quat, q: quat, t: number, qt: quat) {
+export function QuaternionSlerpNoAlign(p: quat, q: quat, t: number, qt: quat) {
 	//Assert(s_bMathlibInitialized);
 	let omega, cosom, sinom, sclp, sclq;
 
