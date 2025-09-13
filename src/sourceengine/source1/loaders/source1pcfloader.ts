@@ -2,7 +2,7 @@ import { vec2, vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
 import { registerLoader } from '../../../loaders/loaderfactory';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
-import { Color } from '../particles/color';
+import { ParticleColor } from '../particles/color';
 import { DmeParticleSystemDefinition, SourcePCF } from './sourcepcf';
 import { saveFile } from 'harmony-browser-utils';
 
@@ -157,7 +157,7 @@ export class Source1PcfLoader extends SourceBinaryLoader {
 				break;
 			case 8: // Color
 				//value = {r:reader.getUint8(), g:reader.getUint8(), b:reader.getUint8(), a:reader.getUint8()};
-				value = new Color(reader.getUint8(), reader.getUint8(), reader.getUint8(), reader.getUint8());
+				value = new ParticleColor(reader.getUint8(), reader.getUint8(), reader.getUint8(), reader.getUint8());
 				//value = [reader.getUint8(), reader.getUint8(), reader.getUint8(), reader.getUint8()];
 				break;
 			case 9: // vec2
@@ -299,7 +299,7 @@ export enum CDmxAttributeType {
 	VMatrixArray,
 }
 
-export type CDmxAttributeValue = null | undefined | boolean | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
+export type CDmxAttributeValue = null | undefined | boolean | number | CDmxElement | ParticleColor | vec2 | vec3 | vec4 | string;
 
 type DmxElementsToSTringContext = {
 	tabs: number;
@@ -409,7 +409,7 @@ function cDmxAttributeToSTring(attribute: CDmxAttribute, context: DmxElementsToS
 			line += ` "string" "${attribute.value}"`;
 			break;
 		case CDmxAttributeType.Color:
-			line += ` "color" "${(attribute.value as Color).r * 255} ${(attribute.value as Color).g * 255} ${(attribute.value as Color).b * 255} ${(attribute.value as Color).a * 255}"`;
+			line += ` "color" "${(attribute.value as ParticleColor).r * 255} ${(attribute.value as ParticleColor).g * 255} ${(attribute.value as ParticleColor).b * 255} ${(attribute.value as ParticleColor).a * 255}"`;
 			break;
 		case CDmxAttributeType.Vec2:
 			line += ` "vector2" "${(attribute.value as vec4)[0]} ${(attribute.value as vec4)[1]}"`;

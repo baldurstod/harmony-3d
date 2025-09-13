@@ -1,6 +1,6 @@
 import { vec3, vec4 } from 'gl-matrix';
 
-export class Color {
+export class ParticleColor {
 	r: number;
 	g: number;
 	b: number;
@@ -13,21 +13,21 @@ export class Color {
 		this.a = a / 255.0;
 	}
 
-	randomize(color1: Color, color2: Color) {
+	randomize(color1: ParticleColor, color2: ParticleColor) {
 		const f = Math.random();
 		this.r = (color2.r - color1.r) * f + color1.r;
 		this.g = (color2.g - color1.g) * f + color1.g;
 		this.b = (color2.b - color1.b) * f + color1.b;
 	}
 
-	setColor(color: Color) {
+	setColor(color: ParticleColor) {
 		this.r = color.r;
 		this.g = color.g;
 		this.b = color.b;
 		return this;
 	}
 
-	setColorAlpha(color: Color) {
+	setColorAlpha(color: ParticleColor) {
 		this.r = color.r;
 		this.g = color.g;
 		this.b = color.b;
@@ -91,5 +91,5 @@ export class Color {
 
 }
 
-export const BLACK = new Color();
-export const WHITE = new Color(255, 255, 255, 255);
+export const BLACK = new ParticleColor();
+export const WHITE = new ParticleColor(255, 255, 255, 255);

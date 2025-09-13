@@ -11,7 +11,7 @@ import { CDmxAttribute } from '../loaders/source1pcfloader';
 import { SourcePCF } from '../loaders/sourcepcf';
 import { Source1Material } from '../materials/source1material';
 import { Source1MaterialManager } from '../materials/source1materialmanager';
-import { Color, WHITE } from './color';
+import { ParticleColor, WHITE } from './color';
 import { PARAM_TYPE_COLOR, PARAM_TYPE_FLOAT, PARAM_TYPE_ID, PARAM_TYPE_INT, PARAM_TYPE_STRING } from './constants';
 import { Source1ParticleOperator } from './operators/operator';
 import { Source1Particle } from './particle';
@@ -99,7 +99,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 		this.addParam('initial_particles', PARAM_TYPE_INT, 0);
 		this.addParam('material', PARAM_TYPE_STRING, '');
 		this.addParam('snapshot', PARAM_TYPE_STRING, '');
-		this.addParam('color', PARAM_TYPE_COLOR, new Color(255, 255, 255, 255));
+		this.addParam('color', PARAM_TYPE_COLOR, new ParticleColor(255, 255, 255, 255));
 		this.addParam('radius', PARAM_TYPE_FLOAT, 1);
 		this.addParam('name', PARAM_TYPE_STRING, params.name);
 		this.addParam('id', PARAM_TYPE_ID, params.id);
@@ -445,7 +445,7 @@ export class Source1ParticleSystem extends Entity implements Loopable {
 
 	#preInitParticle(particle: Source1Particle) {
 		const radius = this.getParameter('radius') || 1;
-		const color = this.getParameter('color') as Color ?? WHITE;
+		const color = this.getParameter('color') as ParticleColor ?? WHITE;
 
 		particle.setInitialRadius(radius);
 		particle.setInitialSequence(this.#sequenceNumber);

@@ -3,7 +3,7 @@ import { WARN } from '../../../buildoptions';
 import { clamp } from '../../../math/functions';
 import { Bone } from '../../../objects/bone';
 import { SourceParticleFieldValue } from '../../common/particles/types';
-import { Color } from './color';
+import { ParticleColor } from './color';
 import { Source1ParticleSystem } from './source1particlesystem';
 
 /**
@@ -21,8 +21,8 @@ export class Source1Particle {
 	readonly cpOrientation = quat.create();//TODO: rename this var
 	readonly cpOrientationInvert = quat.create();
 	velocity = vec3.create();
-	color = new Color(255, 255, 255);
-	initialColor = new Color(255, 255, 255);
+	color = new ParticleColor(255, 255, 255);
+	initialColor = new ParticleColor(255, 255, 255);
 	uMin = 0;
 	uMax = 1;
 	vMin = 0;
@@ -336,7 +336,7 @@ export class Source1Particle {
 	/**
 	* TODO
 	*/
-	setInitialColor(color: Color): void {
+	setInitialColor(color: ParticleColor): void {
 		this.color = color;
 		this.initialColor = color;
 	}

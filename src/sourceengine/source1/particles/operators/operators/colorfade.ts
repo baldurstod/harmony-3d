@@ -1,5 +1,5 @@
 import { clamp, SimpleSpline } from '../../../../../math/functions';
-import { Color, WHITE } from '../../color';
+import { ParticleColor, WHITE } from '../../color';
 import { PARAM_TYPE_BOOL, PARAM_TYPE_COLOR, PARAM_TYPE_FLOAT } from '../../constants';
 import { Source1Particle } from '../../particle';
 import { Source1ParticleOperators } from '../../source1particleoperators';
@@ -34,7 +34,7 @@ export class ColorFade extends Source1ParticleOperator {
 
 		const ooInRange = 1 / (fade_end_time - fade_start_time);
 
-		const color = new Color().setColor(particle.initialColor);
+		const color = new ParticleColor().setColor(particle.initialColor);
 
 		const flLifeTime = particle.currentTime / particle.timeToLive;
 		//if (proportionOfLife>1)proportionOfLife=1;
