@@ -65,7 +65,7 @@ export class Box extends Mesh {
 	}
 
 	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Box | null> {
-		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise);
+		const material = await JSONLoader.loadEntity(json.material as JSONObject, entities, loadedPromise);
 		return new Box({ width: json.width as number, height: json.height as number, depth: json.depth as number, material: (material as Material), widthSegments: json.widthSegments as number, heightSegments: json.heightSegments as number, depthSegments: json.depthSegments as number });
 	}
 

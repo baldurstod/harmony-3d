@@ -5,9 +5,9 @@ import { Graphics } from '../graphics/graphics';
 import { GraphicsEvents } from '../graphics/graphicsevents';
 import { RenderTargetViewer } from '../utils/rendertargetviewer';
 
-function resizeCamera(context, camera) {
-	const w = context.getWidth() / 2.0;
-	const h = context.getHeight() / 2.0;
+function resizeCamera(context: Graphics, camera: Camera) {
+	const w = Graphics.getWidth() / 2.0;
+	const h = Graphics.getHeight() / 2.0;
 
 	camera.left = -w;
 	camera.right = w;
@@ -20,7 +20,7 @@ export type ContextObserverTarget = Camera | FirstPersonControl | OrbitControl |
 
 export type ContextObserverSubject = EventTarget | typeof GraphicsEvents;
 
-class ContextObserverClass {
+class ContextObserverClass {//TODO: create static class
 	#observed = new Map<ContextObserverSubject, Set<ContextObserverTarget>>();
 	#listeners = new Map<ContextObserverSubject, Set<string>>();
 	static #instance: ContextObserverClass;
@@ -31,8 +31,11 @@ class ContextObserverClass {
 		}
 	}
 
-	handleEvent(event) {
+	handleEvent(event: Event): void {
 		const subject = event.target;
+		if (!subject) {
+			return;
+		}
 		const dependents = this.#observed.get(subject);
 		if (dependents) {
 			for (const dependent of dependents) {
@@ -41,17 +44,17 @@ class ContextObserverClass {
 		}
 	}
 
-	static #processEvent(subject, dependent, event) {
+	static #processEvent(subject: ContextObserverSubject, dependent: ContextObserverTarget, event: Event) {
 		switch (true) {
-			case dependent.is('Camera'):
-				resizeCamera(Graphics, dependent);
+			case (dependent as Camera).is('Camera'):
+				resizeCamera(Graphics, dependent as Camera);
 				break;
 			case dependent instanceof FirstPersonControl://TODO do it for any CameraControl?
 			case dependent instanceof OrbitControl:
 				dependent.update();
 				break;
-			case dependent.isRenderTargetViewer:
-				dependent.refreshPlane();
+			case (dependent as RenderTargetViewer).isRenderTargetViewer:
+				(dependent as RenderTargetViewer).refreshPlane();
 				break;
 			default:
 		}
@@ -67,23 +70,23 @@ class ContextObserverClass {
 		}
 
 		this.#createListeners(subject, dependent);
-		this.#observed.get(subject).add(dependent);
+		this.#observed.get(subject)?.add(dependent);
 	}
 
-	#removeObserver(subject, dependent) {
+	#removeObserver(subject: ContextObserverSubject, dependent: ContextObserverTarget) {
 		if (this.#observed.has(subject)) {
-			this.#observed.get(subject).delete(dependent);
+			this.#observed.get(subject)?.delete(dependent);
 			this.#removeListeners(subject, dependent);
 		}
 
 	}
 
-	#createListeners(subject: ContextObserverSubject, dependent) {
+	#createListeners(subject: ContextObserverSubject, dependent: ContextObserverTarget) {
 		switch (true) {
-			case dependent.is('Camera'):
+			case (dependent as Camera).is('Camera'):
 			case dependent instanceof FirstPersonControl://TODO do it for any CameraControl?
 			case dependent instanceof OrbitControl:
-			case dependent.isRenderTargetViewer:
+			case (dependent as RenderTargetViewer).isRenderTargetViewer:
 				//subject.addEventListener('resize', this);
 				this.#addListener(subject, 'resize');
 				break;
@@ -91,10 +94,13 @@ class ContextObserverClass {
 		}
 	}
 
-	#removeListeners(subject, dependent) {
-		const size = this.#observed.get(subject).size;
+	#removeListeners(subject: ContextObserverSubject, dependent: ContextObserverTarget): void {
+		const size = this.#observed.get(subject)?.size ?? 0;
 		if (size == 0) {
 			const types = this.#listeners.get(subject);
+			if (!types) {
+				return;
+			}
 			for (const type of types) {
 				//console.log(listener);
 				this.#removeListener(subject, type);
@@ -109,13 +115,13 @@ class ContextObserverClass {
 
 		const targetSet = this.#listeners.get(target);
 
-		if (!targetSet.has(type)) {
+		if (targetSet && !targetSet.has(type)) {
 			targetSet.add(type);
 			target.addEventListener(type, this);
 		}
 	}
 
-	#removeListener(target, type) {
+	#removeListener(target: ContextObserverSubject, type: string) {
 		const targetSet = this.#listeners.get(target);
 
 		if (targetSet && targetSet.has(type)) {
@@ -124,17 +130,17 @@ class ContextObserverClass {
 		}
 	}
 
-	observe(subject: ContextObserverSubject, dependent) {
+	observe(subject: ContextObserverSubject, dependent: ContextObserverTarget) {
 		this.#addObserver(subject, dependent);
 
 		switch (true) {
-			case dependent.is('Camera'):
-				resizeCamera(Graphics, dependent);
+			case (dependent as Camera).is('Camera'):
+				resizeCamera(Graphics, (dependent as Camera));
 				break;
 		}
 	}
 
-	unobserve(subject, dependent) {
+	unobserve(subject: ContextObserverSubject, dependent: ContextObserverTarget) {
 		this.#removeObserver(subject, dependent);
 	}
 }

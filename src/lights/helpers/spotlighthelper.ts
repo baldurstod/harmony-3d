@@ -14,11 +14,11 @@ const DIVISIONS = 32;
 const tempVec4: vec4 = vec4.create();
 
 export class SpotLightHelper extends Mesh {
-	#color = vec3.create();
-	#angle;
-	#range;
-	#spotLight: SpotLight;
-	#vertexPositionAttribute;
+	#color = vec3.create();// TODO: use Color instead
+	#angle = 0;
+	#range = 0;
+	#spotLight: SpotLight | null = null;
+	#vertexPositionAttribute!: Float32BufferAttribute;
 
 	constructor(params: MeshParameters = {}) {
 		params.geometry = new BufferGeometry();

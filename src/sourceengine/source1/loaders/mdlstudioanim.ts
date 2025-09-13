@@ -22,7 +22,7 @@ export class MdlStudioAnimValuePtr { // mstudioanim_valueptr_t
 	base = 0;
 
 	getAnimValue2(i: number) {
-		return this.base + this.offset[i];
+		return this.base + this.offset[i]!;
 	}
 }
 
@@ -119,25 +119,25 @@ export class MdlStudioAnim {//mstudioanim_t
 			const ea = tempvec3;
 
 			if (repeat == 'yes') {
-				const sy = Math.sqrt(M[i * 4 + j] * M[i * 4 + j] + M[i * 4 + k] * M[i * 4 + k])
+				const sy = Math.sqrt(M[i * 4 + j]! * M[i * 4 + j]! + M[i * 4 + k]! * M[i * 4 + k]!)
 				if (sy > 16 * FLT_EPSILON) {
-					ea[0] = Math.atan2(M[i * 4 + j], M[i * 4 + k])
-					ea[1] = Math.atan2(sy, M[i * 4 + i])
-					ea[2] = Math.atan2(M[j * 4 + i], -M[k * 4 + i])
+					ea[0] = Math.atan2(M[i * 4 + j]!, M[i * 4 + k]!)
+					ea[1] = Math.atan2(sy, M[i * 4 + i]!)
+					ea[2] = Math.atan2(M[j * 4 + i]!, -M[k * 4 + i]!)
 				} else {
-					ea[0] = Math.atan2(-M[j * 4 + k], M[j * 4 + j])
-					ea[1] = Math.atan2(sy, M[i * 4 + i])
+					ea[0] = Math.atan2(-M[j * 4 + k]!, M[j * 4 + j]!)
+					ea[1] = Math.atan2(sy, M[i * 4 + i]!)
 					ea[2] = 0
 				}
 			} else {
-				const cy = Math.sqrt(M[i * 4 + i] * M[i * 4 + i] + M[j * 4 + i] * M[j * 4 + i])
+				const cy = Math.sqrt(M[i * 4 + i]! * M[i * 4 + i]! + M[j * 4 + i]! * M[j * 4 + i]!)
 				if (cy > 16 * FLT_EPSILON) {
-					ea[0] = Math.atan2(M[k * 4 + j], M[k * 4 + k])
-					ea[1] = Math.atan2(-M[k * 4 + i], cy)
-					ea[2] = Math.atan2(M[j * 4 + i], M[i * 4 + i])
+					ea[0] = Math.atan2(M[k * 4 + j]!, M[k * 4 + k]!)
+					ea[1] = Math.atan2(-M[k * 4 + i]!, cy)
+					ea[2] = Math.atan2(M[j * 4 + i]!, M[i * 4 + i]!)
 				} else {
-					ea[0] = Math.atan2(-M[j * 4 + k], M[j * 4 + j])
-					ea[1] = Math.atan2(-M[k * 4 + i], cy)
+					ea[0] = Math.atan2(-M[j * 4 + k]!, M[j * 4 + j]!)
+					ea[1] = Math.atan2(-M[k * 4 + i]!, cy)
 					ea[2] = 0
 				}
 			}
@@ -175,7 +175,7 @@ export class MdlStudioAnim {//mstudioanim_t
 			for (let i = 0; i < 3; ++i) {
 				offset = this.animValuePtrRot.offset[i];
 				if (offset) {
-					rot[i] = this.readValue(mdl, frame, this.animValuePtrRot.base + offset/*, bone.boneId, i*/) * bone.rotscale[i];
+					rot[i] = this.readValue(mdl, frame, this.animValuePtrRot.base + offset/*, bone.boneId, i*/) * bone.rotscale[i]!;
 				}
 			}
 		}
@@ -212,7 +212,7 @@ export class MdlStudioAnim {//mstudioanim_t
 			for (let i = 0; i < 3; ++i) {
 				offset = this.animValuePtrPos.offset[i];
 				if (offset) {
-					pos[i] = this.readValue(mdl, frame, this.animValuePtrPos.base + offset/*, bone.boneId, i*/) * bone.posscale[i];
+					pos[i] = this.readValue(mdl, frame, this.animValuePtrPos.base + offset/*, bone.boneId, i*/) * bone.posscale[i]!;
 				}
 			}
 		}

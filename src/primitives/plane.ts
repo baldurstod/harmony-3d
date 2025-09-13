@@ -71,7 +71,7 @@ export class Plane extends Mesh {
 	}
 
 	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>) {
-		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise) as Material;
+		const material = await JSONLoader.loadEntity(json.material as JSONObject, entities, loadedPromise) as Material;
 		return new Plane({ width: json.width as number, height: json.height as number, material: material, widthSegments: json.widthSegments as number, heightSegments: json.heightSegments as number });
 	}
 

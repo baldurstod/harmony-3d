@@ -1,10 +1,11 @@
-import { CameraFrustum } from './camerafrustum';
-import { Grid } from './grid';
+import { Camera } from '../../cameras/camera';
+import { Entity } from '../../entities/entity';
 import { PointLightHelper } from '../../lights/helpers/pointlighthelper';
 import { SpotLightHelper } from '../../lights/helpers/spotlighthelper';
-import { Camera } from '../../cameras/camera';
+import { CameraFrustum } from './camerafrustum';
+import { Grid } from './grid';
 
-export function getHelper(type) {
+export function getHelper(type: Entity) {
 	switch (type.constructor.name) {
 		case 'PointLight':
 			return new PointLightHelper();

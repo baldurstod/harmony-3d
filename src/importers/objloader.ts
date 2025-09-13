@@ -1,28 +1,27 @@
 import { vec2, vec3 } from 'gl-matrix';
-
-import { Float32BufferAttribute, Uint32BufferAttribute } from '../geometry/bufferattribute'
+import { Float32BufferAttribute, Uint32BufferAttribute } from '../geometry/bufferattribute';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh } from '../objects/mesh';
 import { Obj, ObjFace } from './obj';
 
-function readVertex(line) {
+function readVertex(line: string) {
 	const arr = line.split(' ');
-	return vec3.fromValues(arr[1] ?? 0.0, arr[2] ?? 0.0, arr[3] ?? 0.0/*, arr[4] ?? 1.0*/);
+	return vec3.fromValues(Number(arr[1] ?? 0.0), Number(arr[2] ?? 0.0), Number(arr[3] ?? 0.0)/*, arr[4] ?? 1.0*/);
 }
 
-function readVertexCoord(line) {
+function readVertexCoord(line: string) {
 	const arr = line.split(' ');
-	return vec2.fromValues(arr[1] ?? 0.0, arr[2] ?? 0);
+	return vec2.fromValues(Number(arr[1] ?? 0.0), Number(arr[2] ?? 0));
 }
 
-function readVertexNormal(line) {
+function readVertexNormal(line: string) {
 	const arr = line.split(' ');
-	const v = vec3.fromValues(arr[1] ?? 1.0, arr[2] ?? 1, arr[3] ?? 1);
+	const v = vec3.fromValues(Number(arr[1] ?? 1.0), Number(arr[2] ?? 1), Number(arr[3] ?? 1));
 	return vec3.normalize(v, v);
 }
 
-function readFace(line) {
+function readFace(line: string) {
 	const arr = line.split(' ');
 	const face = new ObjFace();
 	for (let i = 1; i < arr.length; i++) {
@@ -31,9 +30,9 @@ function readFace(line) {
 		if (v) {
 			const v2 = v.split('/');
 			//faceVertex.push(v2[0] ?? 0, v2[1] ?? 0, v2[2] ?? 0);
-			face.v.push((v2[0] ?? 1) - 1);
-			face.t.push((v2[1] ?? 1) - 1);
-			face.n.push((v2[2] ?? 1) - 1);
+			face.v.push(Number(v2[0] ?? 1) - 1);
+			face.t.push(Number(v2[1] ?? 1) - 1);
+			face.n.push(Number(v2[2] ?? 1) - 1);
 		} else {
 			//			faceVertex.push(0, 0, 0);
 			face.v.push(0);
@@ -45,7 +44,7 @@ function readFace(line) {
 	return face;
 }
 
-function buildMesh(obj) {
+function buildMesh(obj: Obj) {
 	const geometry = new BufferGeometry();
 	const material = new MeshBasicMaterial();
 
@@ -62,7 +61,7 @@ function buildMesh(obj) {
 }
 
 export class OBJImporter {
-	static load(txt) {
+	static load(txt: string) {
 		const lines = txt.split('\n');
 		const vertices = [];
 		const verticesNormals = [];

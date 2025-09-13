@@ -76,7 +76,7 @@ export class Line extends Mesh {
 	}
 
 	static async constructFromJSON(json: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Line> {
-		const material = await JSONLoader.loadEntity(json.material, entities, loadedPromise) as Material;
+		const material = await JSONLoader.loadEntity(json.material as JSONObject, entities, loadedPromise) as Material;
 		return new Line({ start: json.start as vec3, end: json.end as vec3, material: material });
 	}
 

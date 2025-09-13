@@ -236,7 +236,7 @@ export class Source1ParticleControler {
 			const repo = this.#systemNameToPcf[repoName];
 
 			for (const systemName in repo) {
-				const pcfName = repo[systemName];
+				const pcfName = repo[systemName]!;
 				if (!pcfs[pcfName]) {
 					pcfs[pcfName] = [];
 				}

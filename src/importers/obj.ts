@@ -42,20 +42,20 @@ export class Obj {
 			indices.push(i, i + 1, i + 2);
 			i += 3;
 
-			vertices.push(...this.#vertices[f.v[0]])
-			vertices.push(...this.#vertices[f.v[1]])
-			vertices.push(...this.#vertices[f.v[2]])
+			vertices.push(...this.#vertices[f.v[0]!]!)
+			vertices.push(...this.#vertices[f.v[1]!]!)
+			vertices.push(...this.#vertices[f.v[2]!]!)
 
 			if (hasNormals) {
-				normals.push(...this.#normals[f.n[0]])
-				normals.push(...this.#normals[f.n[1]])
-				normals.push(...this.#normals[f.n[2]])
+				normals.push(...this.#normals[f.n[0]!]!)
+				normals.push(...this.#normals[f.n[1]!]!)
+				normals.push(...this.#normals[f.n[2]!]!)
 			}
 
 			if (hasUv) {
-				uvs.push(...this.#uvs[f.t[0]])
-				uvs.push(...this.#uvs[f.t[1]])
-				uvs.push(...this.#uvs[f.t[2]])
+				uvs.push(...this.#uvs[f.t[0]!]!)
+				uvs.push(...this.#uvs[f.t[1]!]!)
+				uvs.push(...this.#uvs[f.t[2]!]!)
 			}
 		}
 		return {i: indices, v: vertices, n: normals, t: uvs};
