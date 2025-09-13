@@ -17,10 +17,10 @@ export class CopyPass extends Pass {
 	}
 
 	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
-		this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
+		this.quad!.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
 
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.render(this.scene!, this.camera!, 0, context);
 		Graphics.popRenderTarget();
 	}
 }

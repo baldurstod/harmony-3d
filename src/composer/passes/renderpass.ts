@@ -14,7 +14,7 @@ export class RenderPass extends Pass {
 
 	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		Graphics.render(this.scene, this.camera, delta, context);
+		Graphics.render(this.scene!, this.camera!, delta, context);
 		Graphics.popRenderTarget();
 	}
 }

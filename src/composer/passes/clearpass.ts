@@ -1,15 +1,15 @@
 import { vec4 } from 'gl-matrix';
-import { Pass } from '../pass';
 import { Graphics, RenderContext } from '../../graphics/graphics';
 import { RenderTarget } from '../../textures/rendertarget';
+import { Pass } from '../pass';
 
 export class ClearPass extends Pass {
 	swapBuffers = false;
-	#clearColor = vec4.create();
+	#clearColor = vec4.create();//TODO change to Color
 	#clearDepth: GLclampf = 0;
-	#clearStencil: GLclampf = 0;
+	#clearStencil: GLint = 0;
 
-	constructor(clearColor, clearDepth, clearStencil) {
+	constructor(clearColor: vec4, clearDepth: GLclampf, clearStencil: GLint) {
 		super();
 		this.clearColor = clearColor;
 		this.clearDepth = clearDepth;
@@ -20,11 +20,11 @@ export class ClearPass extends Pass {
 		vec4.copy(this.#clearColor, clearColor);
 	}
 
-	set clearDepth(clearDepth) {
+	set clearDepth(clearDepth: GLclampf) {
 		this.#clearDepth = clearDepth ?? null;
 	}
 
-	set clearStencil(clearStencil) {
+	set clearStencil(clearStencil: GLint) {
 		this.#clearStencil = clearStencil ?? null;
 	}
 

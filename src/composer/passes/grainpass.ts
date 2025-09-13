@@ -1,4 +1,5 @@
 import { vec4 } from 'gl-matrix';
+import { Camera } from '../../cameras/camera';
 import { Graphics, RenderContext } from '../../graphics/graphics';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
@@ -7,10 +8,10 @@ import { RenderTarget } from '../../textures/rendertarget';
 import { Pass } from '../pass';
 
 export class GrainPass extends Pass {
-	#intensity;
+	#intensity!: number;
 	//#density;
 	//#size;
-	constructor(camera) {//TODO: camera is not really needed
+	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
 		const material = new ShaderMaterial({ shaderSource: 'grain' });
 		material.addUser(this);
@@ -24,9 +25,9 @@ export class GrainPass extends Pass {
 		//this.size = 1.0;
 	}
 
-	set intensity(intensity) {
+	set intensity(intensity: number) {
 		this.#intensity = intensity;
-		this.quad.material.uniforms['uGrainIntensity'] = this.#intensity;
+		this.quad!.getMaterial().uniforms['uGrainIntensity'] = this.#intensity;
 	}
 
 	/*set density(density) {
@@ -40,10 +41,10 @@ export class GrainPass extends Pass {
 	}*/
 
 	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
-		this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
+		this.quad!.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
 
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.render(this.scene!, this.camera!, 0, context);
 		Graphics.popRenderTarget();
 	}
 }

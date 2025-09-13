@@ -1,15 +1,17 @@
-import { Pass } from '../pass';
+import { Camera } from '../../cameras/camera';
+import { Graphics, RenderContext } from '../../graphics/graphics';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
-import { Graphics, RenderContext } from '../../graphics/graphics';
-import { RenderTarget } from '../../textures/rendertarget';
 import { Scene } from '../../scenes/scene';
+import { RenderTarget } from '../../textures/rendertarget';
+import { Pass } from '../pass';
 
 export class PixelatePass extends Pass {
-	#horizontalTiles;
-	#pixelStyle;
+	#horizontalTiles = 0;
+	#pixelStyle = 0;
 	#material;
-	constructor(camera) {//TODO: camera is not really needed
+
+	constructor(camera: Camera) {//TODO: camera is not really needed
 		super();
 		this.#material = new ShaderMaterial({ shaderSource: 'pixelate' });
 		this.#material.addUser(this);
@@ -20,21 +22,21 @@ export class PixelatePass extends Pass {
 		this.horizontalTiles = 10;
 	}
 
-	set horizontalTiles(horizontalTiles) {
+	set horizontalTiles(horizontalTiles: number) {
 		this.#horizontalTiles = horizontalTiles;
 		this.#material.uniforms['uHorizontalTiles'] = this.#horizontalTiles;
 	}
 
-	set pixelStyle(pixelStyle) {
+	set pixelStyle(pixelStyle: number/*TODO: creacte enum*/) {
 		this.#pixelStyle = pixelStyle;
-		this.#material.setDefine('PIXEL_STYLE', pixelStyle);
+		this.#material.setDefine('PIXEL_STYLE', String(pixelStyle));
 	}
 
 	render(renderer: Graphics/*TODO: remove*/, readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
 		this.#material.uniforms['colorMap'] = readBuffer.getTexture();
 
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.render(this.scene!, this.camera!, 0, context);
 		Graphics.popRenderTarget();
 	}
 }

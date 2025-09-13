@@ -16,12 +16,12 @@ export class OutlinePass extends Pass {
 	#edgedetectionMaterial;
 	#copyMaterial;
 	outlineScene: Scene;
-	#renderTargetDepthBuffer: RenderTarget;
-	#renderTargetMaskDownSampleBuffer: RenderTarget;
-	#renderTargetBlurBuffer1: RenderTarget;
-	#renderTargetBlurBuffer2: RenderTarget;
-	#renderTargetEdgeBuffer1: RenderTarget;
-	#renderTargetEdgeBuffer2: RenderTarget;
+	#renderTargetDepthBuffer!: RenderTarget;
+	#renderTargetMaskDownSampleBuffer!: RenderTarget;
+	#renderTargetBlurBuffer1!: RenderTarget;
+	#renderTargetBlurBuffer2!: RenderTarget;
+	#renderTargetEdgeBuffer1!: RenderTarget;
+	#renderTargetEdgeBuffer2!: RenderTarget;
 	width = 1;
 	height = 1;
 
@@ -59,7 +59,7 @@ export class OutlinePass extends Pass {
 		this.#renderTargetEdgeBuffer2 = new RenderTarget({ width: 1, height: 1, });
 	}
 
-	setSize(width, height) {
+	setSize(width: number, height: number): void {
 		this.width = width;
 		this.height = height;
 		this.#renderTargetDepthBuffer.resize(width, height);
@@ -71,28 +71,34 @@ export class OutlinePass extends Pass {
 
 	}
 
-	changeVisibilityOfSelectedObjects(visible) {
+	changeVisibilityOfSelectedObjects(visible: boolean): void {
 		this.outlineScene.forEach((entity) => {
 			if (entity.properties.get('selected') && entity.isRenderable) {
 				if (visible) {
 					entity.setVisible(entity.properties.getBoolean('oldVisible'));
 					entity.properties.delete('oldVisible');
 				} else {
-					entity.properties.setBoolean('oldVisible', entity.isVisibleSelf());
+					const isVisibleSelf = entity.isVisibleSelf();
+					if (isVisibleSelf !== undefined) {
+						entity.properties.setBoolean('oldVisible', isVisibleSelf);
+					}
 					entity.setVisible(visible);
 				}
 			}
 		});
 	}
 
-	changeVisibilityOfNonSelectedObjects(visible) {
+	changeVisibilityOfNonSelectedObjects(visible: boolean) {
 		this.outlineScene.forEach((entity) => {
 			if (!entity.properties.get('selected') && entity.isRenderable) {
 				if (visible) {
 					entity.setVisible(entity.properties.getBoolean('oldVisible'));
 					entity.properties.delete('oldVisible');
 				} else {
-					entity.properties.setBoolean('oldVisible', entity.isVisibleSelf());
+					const isVisibleSelf = entity.isVisibleSelf();
+					if (isVisibleSelf !== undefined) {
+						entity.properties.setBoolean('oldVisible', isVisibleSelf);
+					}
 					entity.setVisible(visible);
 				}
 			}
@@ -115,7 +121,7 @@ export class OutlinePass extends Pass {
 
 		this.changeVisibilityOfSelectedObjects(false);
 		Graphics.setColorMask([0, 0, 0, 0]);
-		Graphics.render(this.outlineScene, this.camera, 0, context);
+		Graphics.render(this.outlineScene, this.camera!, 0, context);
 		Graphics.setColorMask([1, 1, 1, 1]);
 		this.changeVisibilityOfSelectedObjects(true);
 		//renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
@@ -123,7 +129,7 @@ export class OutlinePass extends Pass {
 		this.changeVisibilityOfNonSelectedObjects(false);
 		Graphics.setIncludeCode('outline_pass_silhouette_mode', '#define SILHOUETTE_MODE');
 		Graphics.setIncludeCode('silhouetteColor', '#define SILHOUETTE_COLOR vec4(1.0)');
-		Graphics.render(this.outlineScene, this.camera, 0, context);
+		Graphics.render(this.outlineScene, this.camera!, 0, context);
 		Graphics.setIncludeCode('outline_pass_silhouette_mode', '#undef SILHOUETTE_MODE');
 		this.changeVisibilityOfNonSelectedObjects(true);
 		Graphics.popRenderTarget();
@@ -133,29 +139,29 @@ export class OutlinePass extends Pass {
 		this.#edgedetectionMaterial.uniforms['uTexSize'] = [this.width, this.height];
 		this.#edgedetectionMaterial.uniforms['uVisibleEdgeColor'] = [1, 1, 1];
 		this.#edgedetectionMaterial.uniforms['uHiddenEdgeColor'] = [0, 1, 0];
-		this.quad.setMaterial(this.#edgedetectionMaterial);
+		this.quad!.setMaterial(this.#edgedetectionMaterial);
 		Graphics.pushRenderTarget(this.#renderTargetEdgeBuffer1);
 		Graphics.clear(true, true, false);
-		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.render(this.scene!, this.camera!, 0, context);
 		Graphics.popRenderTarget();
 
 		/**************/
 
 
 		this.#copyMaterial.uniforms['colorMap'] = readBuffer.getTexture();
-		this.quad.setMaterial(this.#copyMaterial);
+		this.quad!.setMaterial(this.#copyMaterial);
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
 		Graphics.clear(true, true, false);
-		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.render(this.scene!, this.camera!, 0, context);
 		Graphics.popRenderTarget();
 
 
 		/***************/
 
 		this.#copyMaterial.uniforms['colorMap'] = this.#renderTargetEdgeBuffer1.getTexture();
-		this.quad.setMaterial(this.#copyMaterial);
+		this.quad!.setMaterial(this.#copyMaterial);
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		Graphics.render(this.scene, this.camera, 0, context);
+		Graphics.render(this.scene!, this.camera!, 0, context);
 		Graphics.popRenderTarget();
 
 	}
