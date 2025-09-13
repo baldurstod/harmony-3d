@@ -6,7 +6,7 @@
     "moduleResolution": "Bundler",
     "esModuleInterop": false,
     "forceConsistentCasingInFileNames": true,
-    "strict": false,
+    "strict": true,
     "skipLibCheck": true,
     "declaration": true,
     "declarationMap": true,
@@ -14,6 +14,5 @@
     "declarationDir": "dist/dts",
     //"noImplicitAny": true,
     "noUncheckedIndexedAccess": true,
-    "strictNullChecks": true,
   }
 }

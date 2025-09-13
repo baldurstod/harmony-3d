@@ -17,14 +17,8 @@ class TRIANGLE {
     p = [vec3.create(), vec3.create(), vec3.create()];
 }
 class GRIDCELL {
-    p = [];
-    val;
-    constructor() {
-        for (let i = 0; i < 8; ++i) {
-            this.p.push(vec3.create());
-        }
-        this.val = new Float32Array(8);
-    }
+    p = [vec3.create(), vec3.create(), vec3.create(), vec3.create(), vec3.create(), vec3.create(), vec3.create(), vec3.create(),];
+    val = new Float32Array(8);
 }
 const edgeTable = new Uint16Array([
     0x0, 0x109, 0x203, 0x30a, 0x406, 0x50f, 0x605, 0x70c,
@@ -399,6 +393,7 @@ function polygonise(/*GRIDCELL */ grid, /*double */ isolevel, /*TRIANGLE **/ tri
     for (let i = 0; triTable[cubeindex] != -1; i += 3) {
         const triangle = triangles[ntriang] ?? new TRIANGLE();
         triangles[ntriang] = triangle;
+        // TODO: fix that
         triangle.p[0] = vertlist[triTable[cubeindex]];
         triangle.p[1] = vertlist[triTable[cubeindex + 1]];
         triangle.p[2] = vertlist[triTable[cubeindex + 2]];
@@ -454,6 +449,7 @@ class AudioGroup {
             }
             return group.getGroup(groupPath.slice(1));
         }
+        return null;
     }
     createSubGroup(name) {
         console.log('Creating group ' + name);
@@ -477,7 +473,7 @@ class AudioGroup {
 class AudioMixer {
     static master = new AudioGroup('master');
     static muteGroup(groupName, mute = true) {
-        this.getGroup(groupName).mute(mute);
+        this.getGroup(groupName)?.mute(mute);
     }
     static mute(mute = true) {
         this.master.mute(mute);
@@ -486,7 +482,7 @@ class AudioMixer {
         return this.master.getGroup(groupName.split('.'));
     }
     static async playAudio(groupName, audio) {
-        await this.getGroup(groupName).playAudio(audio);
+        await this.getGroup(groupName)?.playAudio(audio);
     }
 }
 
@@ -555,9 +551,12 @@ class JSONLoader {
     }
     static async loadEntity(jsonEntity, entities, loadedPromise) {
         if (jsonEntity) {
-            const constructor = getEntity(jsonEntity.constructor);
+            const constructor = getEntity(jsonEntity['constructor']);
             if (constructor) {
                 const entity = await constructor.constructFromJSON(jsonEntity, entities, loadedPromise);
+                if (!entity) {
+                    return null;
+                }
                 entity.fromJSON(jsonEntity);
                 entities.set(entity.id, entity);
                 if (jsonEntity.children) {
@@ -574,6 +573,7 @@ class JSONLoader {
                 console.error('Unknown constructor', jsonEntity.constructor);
             }
         }
+        return null;
     }
     static registerEntity(ent) {
         registerEntity(ent);
@@ -2197,7 +2197,7 @@ class Entity {
         if (this._parent != parent) {
             this._parent = parent;
         }
-        this.propagate();
+        this.#propagate();
         this.parentChanged(parent);
     }
     parentChanged(parent) { }
@@ -2380,7 +2380,7 @@ class Entity {
      *
      * @return {void}.
      */
-    lookAt(target, upVector = undefined) {
+    lookAt(target, upVector) {
         const parent = this._parent;
         mat4.lookAt(tempMat4$4, this._position, target, upVector ?? _upVector);
         mat4.getRotation(tempQuat$c, tempMat4$4);
@@ -2784,7 +2784,7 @@ class Entity {
         const oldValue = this.#attributes.get(attributeName);
         this.#attributes.set(attributeName, attributeValue);
         EntityObserver.attributeChanged(this, attributeName, oldValue, attributeValue);
-        this.propagate();
+        this.#propagate();
     }
     getAttribute(attributeName, inherited = true) {
         if (this.#attributes.has(attributeName)) {
@@ -2794,10 +2794,13 @@ class Entity {
             return this._parent.getAttribute(attributeName, inherited);
         }
     }
-    propagate() {
+    #propagate() {
+        this.propagate();
         for (const child of this.#children) {
-            child.propagate();
+            child.#propagate();
         }
+    }
+    propagate() {
     }
     copy(source) {
         //TODO: should we copy world pos / quat ?
@@ -3611,7 +3614,7 @@ class HTMLFileSelectorFileElement extends HTMLElement {
         }
     }
     refreshFilter() {
-        if (!this.#selector || !this.#file) {
+        if (!this.#selector || !this.#file || !this.#file.path) {
             return false;
         }
         const filterName = this.#selector.filter.name;
@@ -3946,8 +3949,8 @@ class FileSelector extends HTMLElement {
         this.#content.replaceChildren();
         this.#htmlTiles = [];
         this.#htmlDirectories = [];
-        if (this.#tileView) {
-            if (this.#fileList) {
+        if (this.#fileList?.files) {
+            if (this.#tileView) {
                 for (const rootFile of this.#fileList.files) {
                     const fileList = this.#getFileList(rootFile);
                     for (const file of fileList) {
@@ -3959,9 +3962,7 @@ class FileSelector extends HTMLElement {
                     }
                 }
             }
-        }
-        else {
-            if (this.#fileList) {
+            else {
                 const expandDirectory = this.#fileList.files.length == 1;
                 for (const rootFile of this.#fileList.files) {
                     this.#getFileList(rootFile); //Just add path
@@ -4215,7 +4216,7 @@ const intersectionNormal$2 = vec3.create();
 const ray$2 = new Ray();
 const uv$2 = vec2.create();
 const meshDefaultBufferGeometry = new BufferGeometry();
-const meshDefaultMaterial = new Material();
+const meshDefaultMaterial = new MeshBasicMaterial();
 class Mesh extends Entity {
     #geometry;
     #material;
@@ -4229,6 +4230,7 @@ class Mesh extends Entity {
         super(params);
         this.setGeometry(params.geometry ?? meshDefaultBufferGeometry);
         this.setMaterial(params.material ?? meshDefaultMaterial);
+        this.#desaturate(this.getAttribute('desaturate'));
     }
     /**
      * @deprecated Please use `setMaterial` instead.
@@ -4344,10 +4346,6 @@ class Mesh extends Entity {
         boundingBox.reset();
         boundingBox.setPoints(this.#geometry.getAttribute('aVertexPosition')?._array);
         return boundingBox;
-    }
-    propagate() {
-        super.propagate();
-        this.#desaturate(this.getAttribute('desaturate'));
     }
     #desaturate(attributeValue) {
         if (attributeValue) {
@@ -4466,7 +4464,7 @@ class BoxBufferGeometry extends BufferGeometry {
     #vertices;
     #normals;
     #uvs;
-    #numberOfVertices;
+    #numberOfVertices = 0;
     updateGeometry(width, height, depth, widthSegments, heightSegments, depthSegments) {
         widthSegments = Math.floor(widthSegments);
         heightSegments = Math.floor(heightSegments);
@@ -4585,7 +4583,7 @@ class Box extends Mesh {
                     this.#size[2] = Number(depth);
                     this.#updateGeometry();
                 } } },
-            cube: { i18n: '#cube', f: () => { let size = prompt('Cube size', '0'); if (size) {
+            cube: { i18n: '#cube', f: () => { let size = prompt('Cube size', '0') ?? '0'; if (size) {
                     size = Number(size);
                     this.#size[0] = size;
                     this.#size[1] = size;
@@ -5062,7 +5060,7 @@ class ShaderManager {
 
 let id$1 = 0;
 class ShaderMaterial extends Material {
-    #shaderSource;
+    #shaderSource = '';
     constructor(params = {}) {
         super(params);
         this.shaderSource = params.shaderSource;
@@ -5713,20 +5711,6 @@ class Camera extends Entity {
 }
 registerEntity(Camera);
 
-class Pass {
-    camera;
-    quad;
-    scene;
-    enabled = true;
-    swapBuffers = true;
-    renderToScreen = false;
-    setSize(width, height) {
-    }
-    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        throw 'Can\'t render default pass';
-    }
-}
-
 const RECORDER_MIME_TYPE = 'video/webm';
 const RECORDER_DEFAULT_FILENAME = 'Harmony3D recording.webm';
 // Note : you can provide your own url when calling ShaderEditor.initEditor.
@@ -5754,18 +5738,21 @@ function deleteTexture(texture) {
         TextureFactoryEventTarget.dispatchEvent(new CustomEvent('textureDeleted', { detail: { texture: texture, count: textures$1.size } }));
     }
 }
-function fillFlatTexture(texture, color = [255, 255, 255], needCubeMap) {
+function fillFlatTexture(texture, color, needCubeMap) {
     const width = 64;
     const height = 64;
     if (texture) {
         const byteArray = new Uint8Array(width * height * 3);
         let pixelIndex = 0;
+        const r = color.r * 255;
+        const g = color.g * 255;
+        const b = color.b * 255;
         for (let i = 0; i < width; i++) {
             for (let j = 0; j < height; j++) {
                 //if ((i + j) % 2 == 0) {
-                byteArray[pixelIndex] = color[0];
-                byteArray[pixelIndex + 1] = color[1];
-                byteArray[pixelIndex + 2] = color[2];
+                byteArray[pixelIndex] = r;
+                byteArray[pixelIndex + 1] = g;
+                byteArray[pixelIndex + 2] = b;
                 //}
                 pixelIndex += 3;
             }
@@ -5794,16 +5781,19 @@ function fillFlatTexture(texture, color = [255, 255, 255], needCubeMap) {
     }
     return texture;
 }
-function fillCheckerTexture(texture, color = [255, 0, 255], width = 64, height = 64, needCubeMap) {
+function fillCheckerTexture(texture, color, width = 64, height = 64, needCubeMap) {
     if (texture) {
         const byteArray = new Uint8Array(width * height * 3);
         let pixelIndex = 0;
+        const r = color.r * 255;
+        const g = color.g * 255;
+        const b = color.b * 255;
         for (let i = 0; i < width; i++) {
             for (let j = 0; j < height; j++) {
                 if ((i + j) % 2 == 0) {
-                    byteArray[pixelIndex] = color[0];
-                    byteArray[pixelIndex + 1] = color[1];
-                    byteArray[pixelIndex + 2] = color[2];
+                    byteArray[pixelIndex] = r;
+                    byteArray[pixelIndex + 1] = g;
+                    byteArray[pixelIndex + 2] = b;
                 }
                 pixelIndex += 3;
             }
@@ -6128,7 +6118,7 @@ class Uniform {
             const texture = textures[i];
             glContext.activeTexture(GL_TEXTURE0 + this.#textureUnit[i]);
             if (texture) {
-                glContext.bindTexture(GL_TEXTURE_2D, textures[i].texture);
+                glContext.bindTexture(GL_TEXTURE_2D, texture.texture);
             }
             else {
                 glContext.bindTexture(GL_TEXTURE_2D, null);
@@ -6587,8 +6577,8 @@ class Renderer {
                 //program.setUniformValue('uPointLights[' + pointLightId + '].direction', [0, 0, -1]);
                 program.setUniformValue('uPbrLights[' + pointLightId + '].position', lightPositionWorldSpace);
                 program.setUniformValue('uPbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
-                if (pointLight.castShadow) {
-                    shadow = pointLight.shadow;
+                shadow = pointLight.shadow;
+                if (shadow && pointLight.castShadow) {
                     pointShadowMap.push(shadow.renderTarget.getTexture());
                     pointShadowMatrix.push(shadow.shadowMatrix);
                     program.setUniformValue('uPointLightShadows[' + pointLightId + '].mapSize', shadow.textureSize);
@@ -6624,8 +6614,8 @@ class Renderer {
                 lightDirection[1] = m[1] * x + m[5] * y + m[9] * z;
                 lightDirection[2] = m[2] * x + m[6] * y + m[10] * z;
                 program.setUniformValue('uSpotLights[' + spotLightId + '].direction', lightDirection);
-                if (spotLight.castShadow) {
-                    shadow = spotLight.shadow;
+                shadow = spotLight.shadow;
+                if (shadow && spotLight.castShadow) {
                     spotShadowMap.push(shadow.renderTarget.getTexture());
                     spotShadowMatrix.push(shadow.shadowMatrix);
                     program.setUniformValue('uSpotLightShadows[' + spotLightId + '].mapSize', shadow.textureSize);
@@ -7208,7 +7198,7 @@ class Graphics {
                 canvas: canvas,
                 context: bipmapContext,
                 scenes: scenes,
-                autoresize: options.autoResize ?? false,
+                autoResize: options.autoResize ?? false,
             });
         }
         catch (e) { }
@@ -7312,8 +7302,19 @@ class Graphics {
     }
     static #renderMultiCanvas(canvas, delta, context) {
         if (this.#offscreenCanvas) {
-            this.#offscreenCanvas.width = canvas.canvas.width;
-            this.#offscreenCanvas.height = canvas.canvas.height;
+            const parentElement = canvas.canvas.parentElement;
+            if (canvas.autoResize && parentElement) {
+                const width = parentElement.clientWidth;
+                const height = parentElement.clientHeight;
+                this.#offscreenCanvas.width = width;
+                this.#offscreenCanvas.height = height;
+                canvas.canvas.width = width * this.#pixelRatio;
+                canvas.canvas.height = height * this.#pixelRatio;
+            }
+            else {
+                this.#offscreenCanvas.width = canvas.canvas.width;
+                this.#offscreenCanvas.height = canvas.canvas.height;
+            }
             this.setViewport(vec4.fromValues(0, 0, canvas.canvas.width, canvas.canvas.height));
         }
         this.renderBackground(); //TODOv3 put in rendering pipeline
@@ -7647,7 +7648,7 @@ class Graphics {
         return renderTarget ?? null;
     }
     static #setRenderTarget(renderTarget) {
-        if (renderTarget == undefined) {
+        if (!renderTarget) {
             this.glContext.bindFramebuffer(GL_FRAMEBUFFER, null);
             this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
         }
@@ -7749,9 +7750,23 @@ class Graphics {
     }
 }
 
+class Pass {
+    camera;
+    quad;
+    scene;
+    enabled = true;
+    swapBuffers = true;
+    renderToScreen = false;
+    setSize(width, height) {
+    }
+    render(renderer, readBuffer, writeBuffer, renderToScreen, delta, context) {
+        throw 'Can\'t render default pass';
+    }
+}
+
 class ClearPass extends Pass {
     swapBuffers = false;
-    #clearColor = vec4.create();
+    #clearColor = vec4.create(); //TODO change to Color
     #clearDepth = 0;
     #clearStencil = 0;
     constructor(clearColor, clearDepth, clearStencil) {
@@ -7821,7 +7836,7 @@ class CopyPass extends Pass {
         this.camera = camera;
     }
     render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
         Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
         Graphics.render(this.scene, this.camera, 0, context);
         Graphics.popRenderTarget();
@@ -7839,7 +7854,7 @@ class CrosshatchPass extends Pass {
         this.camera = camera;
     }
     render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
         Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
         Graphics.render(this.scene, this.camera, 0, context);
         Graphics.popRenderTarget();
@@ -7865,7 +7880,7 @@ class GrainPass extends Pass {
     }
     set intensity(intensity) {
         this.#intensity = intensity;
-        this.quad.material.uniforms['uGrainIntensity'] = this.#intensity;
+        this.quad.getMaterial().uniforms['uGrainIntensity'] = this.#intensity;
     }
     /*set density(density) {
         this.#density = density;
@@ -7877,7 +7892,7 @@ class GrainPass extends Pass {
         this.quad.material.uniforms['uGrainParams'][2] = this.#size;
     }*/
     render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
         Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
         Graphics.render(this.scene, this.camera, 0, context);
         Graphics.popRenderTarget();
@@ -7895,12 +7910,25 @@ class OldMoviePass extends Pass {
         this.camera = camera;
     }
     render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
         Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
         Graphics.render(this.scene, this.camera, 0, context);
         Graphics.popRenderTarget();
     }
 }
+
+let Color$1 = class Color {
+    r = 1;
+    g = 1;
+    b = 1;
+    a = 1;
+    constructor(r, g, b, a) {
+        this.r = r ?? 1;
+        this.g = g ?? 1;
+        this.b = b ?? 1;
+        this.a = a ?? 1;
+    }
+};
 
 class Texture {
     mapping = TextureMapping.UvMapping;
@@ -8043,12 +8071,12 @@ class TextureManager {
     static deleteTexture(texture) {
         deleteTexture(texture.texture);
     }
-    static createFlatTexture(color = [255, 0, 255], needCubeMap = false) {
+    static createFlatTexture(color = new Color$1(1, 0, 1), needCubeMap = false) {
         const texture = this.createTexture();
         fillFlatTexture(texture, color, needCubeMap);
         return texture;
     }
-    static createCheckerTexture(color = [255, 0, 255], width = 64, height = 64, needCubeMap = false) {
+    static createCheckerTexture(color = new Color$1(1, 0, 1), width = 64, height = 64, needCubeMap = false) {
         const texture = this.createTexture();
         fillCheckerTexture(texture, color, width, height, needCubeMap);
         return texture;
@@ -8340,7 +8368,10 @@ class OutlinePass extends Pass {
                     entity.properties.delete('oldVisible');
                 }
                 else {
-                    entity.properties.setBoolean('oldVisible', entity.isVisibleSelf());
+                    const isVisibleSelf = entity.isVisibleSelf();
+                    if (isVisibleSelf !== undefined) {
+                        entity.properties.setBoolean('oldVisible', isVisibleSelf);
+                    }
                     entity.setVisible(visible);
                 }
             }
@@ -8354,7 +8385,10 @@ class OutlinePass extends Pass {
                     entity.properties.delete('oldVisible');
                 }
                 else {
-                    entity.properties.setBoolean('oldVisible', entity.isVisibleSelf());
+                    const isVisibleSelf = entity.isVisibleSelf();
+                    if (isVisibleSelf !== undefined) {
+                        entity.properties.setBoolean('oldVisible', isVisibleSelf);
+                    }
                     entity.setVisible(visible);
                 }
             }
@@ -8418,7 +8452,7 @@ class PalettePass extends Pass {
         this.camera = camera;
     }
     render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
         Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
         Graphics.render(this.scene, this.camera, 0, context);
         Graphics.popRenderTarget();
@@ -8426,8 +8460,8 @@ class PalettePass extends Pass {
 }
 
 class PixelatePass extends Pass {
-    #horizontalTiles;
-    #pixelStyle;
+    #horizontalTiles = 0;
+    #pixelStyle = 0;
     #material;
     constructor(camera) {
         super();
@@ -8443,9 +8477,9 @@ class PixelatePass extends Pass {
         this.#horizontalTiles = horizontalTiles;
         this.#material.uniforms['uHorizontalTiles'] = this.#horizontalTiles;
     }
-    set pixelStyle(pixelStyle) {
+    set pixelStyle(pixelStyle /*TODO: creacte enum*/) {
         this.#pixelStyle = pixelStyle;
-        this.#material.setDefine('PIXEL_STYLE', pixelStyle);
+        this.#material.setDefine('PIXEL_STYLE', String(pixelStyle));
     }
     render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
         this.#material.uniforms['colorMap'] = readBuffer.getTexture();
@@ -8470,7 +8504,7 @@ class RenderPass extends Pass {
 }
 
 class SaturatePass extends Pass {
-    #saturation;
+    #saturation = 0;
     constructor(camera) {
         super();
         const material = new ShaderMaterial({ shaderSource: 'saturate' });
@@ -8483,10 +8517,10 @@ class SaturatePass extends Pass {
     }
     set saturation(saturation) {
         this.#saturation = saturation;
-        this.quad.material.uniforms['uSaturation'] = this.#saturation;
+        this.quad.getMaterial().uniforms['uSaturation'] = this.#saturation;
     }
     render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
         Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
         Graphics.render(this.scene, this.camera, 0, context);
         Graphics.popRenderTarget();
@@ -8504,7 +8538,7 @@ class SketchPass extends Pass {
         this.camera = camera;
     }
     render(renderer /*TODO: remove*/, readBuffer, writeBuffer, renderToScreen, delta, context) {
-        this.quad.material.uniforms['colorMap'] = readBuffer.getTexture();
+        this.quad.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
         Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
         Graphics.render(this.scene, this.camera, 0, context);
         Graphics.popRenderTarget();
@@ -8516,11 +8550,11 @@ class Composer {
     #width = 0;
     #height = 0;
     enabled = true;
-    passes = [];
-    renderTarget1;
-    renderTarget2;
-    readBuffer;
-    writeBuffer;
+    #passes = [];
+    #renderTarget1;
+    #renderTarget2;
+    #readBuffer;
+    #writeBuffer;
     constructor(renderTarget) {
         if (!renderTarget) {
             const rendererSize = Graphics.getSize();
@@ -8534,23 +8568,23 @@ class Composer {
         Graphics.getSize(tempVec2$3);
         this.setSize(tempVec2$3[0], tempVec2$3[1]);
         let lastPass = -1;
-        for (let i = this.passes.length - 1; i > 0; --i) {
-            if (this.passes[i].enabled) {
+        for (let i = this.#passes.length - 1; i > 0; --i) {
+            if (this.#passes[i].enabled) {
                 lastPass = i;
                 break;
             }
         }
-        for (let i = 0, l = this.passes.length; i < l; ++i) {
-            pass = this.passes[i];
+        for (let i = 0, l = this.#passes.length; i < l; ++i) {
+            pass = this.#passes[i];
             if (!pass.enabled) {
                 continue;
             }
             if (pass.swapBuffers) {
-                swapBuffer = this.readBuffer;
-                this.readBuffer = this.writeBuffer;
-                this.writeBuffer = swapBuffer;
+                swapBuffer = this.#readBuffer;
+                this.#readBuffer = this.#writeBuffer;
+                this.#writeBuffer = swapBuffer;
             }
-            pass.render(Graphics, this.readBuffer, this.writeBuffer, i == lastPass, delta, context);
+            pass.render(Graphics, this.#readBuffer, this.#writeBuffer, i == lastPass, delta, context);
         }
     }
     savePicture(filename, width, height) {
@@ -8559,24 +8593,24 @@ class Composer {
         Graphics._savePicture(filename);
     }
     addPass(pass) {
-        this.passes.push(pass);
+        this.#passes.push(pass);
         Graphics.getSize(tempVec2$3);
         pass.setSize(tempVec2$3[0], tempVec2$3[1]);
     }
     #setRenderTarget(renderTarget) {
-        this.renderTarget1 = renderTarget;
-        this.renderTarget2 = renderTarget.clone();
-        this.writeBuffer = this.renderTarget1;
-        this.readBuffer = this.renderTarget2;
+        this.#renderTarget1 = renderTarget;
+        this.#renderTarget2 = renderTarget.clone();
+        this.#writeBuffer = this.#renderTarget1;
+        this.#readBuffer = this.#renderTarget2;
     }
     setSize(width, height) {
         if (this.#width != width || this.#height != height) {
             this.#width = width;
             this.#height = height;
-            this.renderTarget1.resize(width, height);
-            this.renderTarget2.resize(width, height);
-            for (let i = 0, l = this.passes.length; i < l; ++i) {
-                this.passes[i].setSize(width, height);
+            this.#renderTarget1.resize(width, height);
+            this.#renderTarget2.resize(width, height);
+            for (let i = 0, l = this.#passes.length; i < l; ++i) {
+                this.#passes[i].setSize(width, height);
             }
         }
     }
@@ -9200,7 +9234,7 @@ class OrbitControl extends CameraControl {
         }
     }
     update(delta = 1) {
-        if (this.enabled === false) {
+        if (this.enabled === false || !this.camera) {
             return;
         }
         const position = this.camera._position;
@@ -9302,6 +9336,9 @@ class OrbitControl extends CameraControl {
         vec3.add(this.#panOffset, this.#panOffset, tempVec3$r);
     }
     #pan(deltaX, deltaY, element) {
+        if (!this.camera) {
+            return;
+        }
         if (this.camera.isPerspective) {
             // perspective
             const position = this.camera.position;
@@ -9324,6 +9361,9 @@ class OrbitControl extends CameraControl {
         }
     }
     #dollyIn(dollyScale) {
+        if (!this.camera) {
+            return;
+        }
         if (this.camera.isPerspective) {
             this.#scale /= dollyScale;
         }
@@ -9336,6 +9376,9 @@ class OrbitControl extends CameraControl {
         }
     }
     #dollyOut(dollyScale) {
+        if (!this.camera) {
+            return;
+        }
         if (this.camera.isPerspective) {
             this.#scale *= dollyScale;
         }
@@ -9502,7 +9545,7 @@ class OrbitControl extends CameraControl {
         if (event.touches.length == 1) {
             vec2.set(this.#rotateStart, event.touches[0].pageX, event.touches[0].pageY);
         }
-        else {
+        else if (event.touches.length == 2) {
             const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
             const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
             vec2.set(this.#rotateStart, x, y);
@@ -9512,13 +9555,16 @@ class OrbitControl extends CameraControl {
         if (event.touches.length == 1) {
             vec2.set(this.#panStart, event.touches[0].pageX, event.touches[0].pageY);
         }
-        else {
+        else if (event.touches.length == 2) {
             const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
             const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
             vec2.set(this.#panStart, x, y);
         }
     }
     #handleTouchStartDolly(event) {
+        if (event.touches.length != 2) {
+            return;
+        }
         const dx = event.touches[0].pageX - event.touches[1].pageX;
         const dy = event.touches[0].pageY - event.touches[1].pageY;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -9540,7 +9586,7 @@ class OrbitControl extends CameraControl {
         if (event.touches.length == 1) {
             vec2.set(this.#rotateEnd, event.touches[0].pageX, event.touches[0].pageY);
         }
-        else {
+        else if (event.touches.length == 2) {
             const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
             const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
             vec2.set(this.#rotateEnd, x, y);
@@ -9557,7 +9603,7 @@ class OrbitControl extends CameraControl {
             //panEnd.set(event.touches[ 0 ].pageX, event.touches[ 0 ].pageY);
             vec2.set(this.#panEnd, event.touches[0].pageX, event.touches[0].pageY);
         }
-        else {
+        else if (event.touches.length == 2) {
             const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
             const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
             //panEnd.set(x, y);
@@ -9569,6 +9615,9 @@ class OrbitControl extends CameraControl {
         vec2.copy(this.#panStart, this.#panEnd);
     }
     #handleTouchMoveDolly(event) {
+        if (event.touches.length != 2) {
+            return;
+        }
         const dx = event.touches[0].pageX - event.touches[1].pageX;
         const dy = event.touches[0].pageY - event.touches[1].pageY;
         const distance = Math.sqrt(dx * dx + dy * dy);
@@ -9595,7 +9644,7 @@ class OrbitControl extends CameraControl {
         if (this.enabled === false) {
             return;
         }
-        if (event.detail.entity?.getLayer() > 0) {
+        if (event.detail.entity?.getLayer() ?? 1 > 0) {
             return;
         }
         // Prevent the browser from scrolling.
@@ -9609,21 +9658,21 @@ class OrbitControl extends CameraControl {
         switch (action) {
             case MOUSE.ROTATE:
                 if (this.#enableRotate) {
-                    this.#handleMouseDownRotate(event);
+                    this.#handleMouseDownRotate(event.detail.mouseEvent);
                     this.#state = STATE.ROTATE;
                     mouseEvent.target.requestPointerLock();
                 }
                 break;
             case MOUSE.DOLLY:
                 if (this.#enableDolly) {
-                    this.#handleMouseDownDolly(event);
+                    this.#handleMouseDownDolly(event.detail.mouseEvent);
                     this.#state = STATE.DOLLY;
                     mouseEvent.target.requestPointerLock();
                 }
                 break;
             case MOUSE.PAN:
                 if (this.#enablePan) {
-                    this.#handleMouseDownPan(event);
+                    this.#handleMouseDownPan(event.detail.mouseEvent);
                     this.#state = STATE.PAN;
                     mouseEvent.target.requestPointerLock();
                 }
@@ -9644,7 +9693,7 @@ class OrbitControl extends CameraControl {
             case STATE.DOLLY:
                 if (this.#enableDolly === false)
                     return;
-                this.#handleMouseMoveDolly(event);
+                this.#handleMouseMoveDolly(event.detail.mouseEvent);
                 break;
             case STATE.PAN:
                 if (this.#enablePan === false)
@@ -9866,6 +9915,13 @@ class RotationControl extends Entity {
         const quaternion = parent._quaternion;
         quat.mul(quaternion, quaternion, tempQuat$a);
     }
+    reset() {
+        const parent = this._parent;
+        if (!parent) {
+            return;
+        }
+        quat.identity(parent._quaternion);
+    }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             RotationControl_1: null,
@@ -9988,7 +10044,7 @@ class LineSegmentsGeometry extends InstancedBufferGeometry {
         this.setAttribute('aTextureCoord', new Float32BufferAttribute(uvs, 2));
         this.count = indices.length;
     }
-    setSegments(positions, colors, lineStrip) {
+    setSegments(positions, colors /*TODO: use colors*/, lineStrip) {
         const start = [];
         const end = [];
         let instanceCount = 0;
@@ -10216,10 +10272,10 @@ class CylinderBufferGeometry extends BufferGeometry {
         this.#vertices = [];
         this.#normals = [];
         this.#uvs = [];
-        this.generateCylinder(radius, height, segments);
+        this.#generateCylinder(radius, height, segments);
         if (hasCap) {
-            this.generateCap(radius, -height / 2, segments);
-            this.generateCap(radius, +height / 2, segments);
+            this.#generateCap(radius, -height / 2, segments);
+            this.#generateCap(radius, +height / 2, segments);
         }
         // build geometry
         this.setIndex(new Uint16BufferAttribute(this.#indices, 1));
@@ -10228,7 +10284,7 @@ class CylinderBufferGeometry extends BufferGeometry {
         this.setAttribute('aTextureCoord', new Float32BufferAttribute(this.#uvs, 2));
         this.count = this.#indices.length;
     }
-    generateCylinder(radius, height, segments) {
+    #generateCylinder(radius, height, segments) {
         const normal = vec3.create();
         const vertex = vec3.create();
         const thetaPerSegment = TWO_PI / segments;
@@ -10258,7 +10314,7 @@ class CylinderBufferGeometry extends BufferGeometry {
             this.#indices.push(indexStart + 1, indexStart + 2, indexStart + 3);
         }
     }
-    generateCap(radius, z, segments) {
+    #generateCap(radius, z, segments) {
         const middlePointIndex = this.#vertices.length / 3;
         const sign = Math.sign(z);
         // Push middle vertex
@@ -10340,9 +10396,6 @@ class Cylinder extends Mesh {
 registerEntity(Cylinder);
 
 class PlaneBufferGeometry extends BufferGeometry {
-    constructor() {
-        super();
-    }
     updateGeometry(width, height, widthSegments, heightSegments) {
         ///width = width || 1;
         //height = height || 1;
@@ -11045,6 +11098,9 @@ class Manipulator extends Entity {
         }
     }
     #rotationMoveHandler(x, y) {
+        if (!this.camera) {
+            return;
+        }
         const v3 = this.#computeQuaternion(x, y);
         quat.rotationTo(translationManipulatorTempQuat, this.#startDragVector, v3);
         quat.mul(translationManipulatorTempQuat, this.#startLocalQuaternion, translationManipulatorTempQuat);
@@ -11893,8 +11949,8 @@ async function renderMaterial(material, materialsParams, renderMode) {
 }
 
 function resizeCamera(context, camera) {
-    const w = context.getWidth() / 2.0;
-    const h = context.getHeight() / 2.0;
+    const w = Graphics.getWidth() / 2.0;
+    const h = Graphics.getHeight() / 2.0;
     camera.left = -w;
     camera.right = w;
     camera.bottom = -h;
@@ -11912,6 +11968,9 @@ class ContextObserverClass {
     }
     handleEvent(event) {
         const subject = event.target;
+        if (!subject) {
+            return;
+        }
         const dependents = this.#observed.get(subject);
         if (dependents) {
             for (const dependent of dependents) {
@@ -11941,11 +12000,11 @@ class ContextObserverClass {
             this.#observed.set(subject, new Set());
         }
         this.#createListeners(subject, dependent);
-        this.#observed.get(subject).add(dependent);
+        this.#observed.get(subject)?.add(dependent);
     }
     #removeObserver(subject, dependent) {
         if (this.#observed.has(subject)) {
-            this.#observed.get(subject).delete(dependent);
+            this.#observed.get(subject)?.delete(dependent);
             this.#removeListeners(subject, dependent);
         }
     }
@@ -11961,9 +12020,12 @@ class ContextObserverClass {
         }
     }
     #removeListeners(subject, dependent) {
-        const size = this.#observed.get(subject).size;
+        const size = this.#observed.get(subject)?.size ?? 0;
         if (size == 0) {
             const types = this.#listeners.get(subject);
+            if (!types) {
+                return;
+            }
             for (const type of types) {
                 //console.log(listener);
                 this.#removeListener(subject, type);
@@ -11975,7 +12037,7 @@ class ContextObserverClass {
             this.#listeners.set(target, new Set());
         }
         const targetSet = this.#listeners.get(target);
-        if (!targetSet.has(type)) {
+        if (targetSet && !targetSet.has(type)) {
             targetSet.add(type);
             target.addEventListener(type, this);
         }
@@ -12111,15 +12173,15 @@ class Obj {
 
 function readVertex(line) {
     const arr = line.split(' ');
-    return vec3.fromValues(arr[1] ?? 0.0, arr[2] ?? 0.0, arr[3] ?? 0.0 /*, arr[4] ?? 1.0*/);
+    return vec3.fromValues(Number(arr[1] ?? 0.0), Number(arr[2] ?? 0.0), Number(arr[3] ?? 0.0) /*, arr[4] ?? 1.0*/);
 }
 function readVertexCoord(line) {
     const arr = line.split(' ');
-    return vec2.fromValues(arr[1] ?? 0.0, arr[2] ?? 0);
+    return vec2.fromValues(Number(arr[1] ?? 0.0), Number(arr[2] ?? 0));
 }
 function readVertexNormal(line) {
     const arr = line.split(' ');
-    const v = vec3.fromValues(arr[1] ?? 1.0, arr[2] ?? 1, arr[3] ?? 1);
+    const v = vec3.fromValues(Number(arr[1] ?? 1.0), Number(arr[2] ?? 1), Number(arr[3] ?? 1));
     return vec3.normalize(v, v);
 }
 function readFace(line) {
@@ -12131,9 +12193,9 @@ function readFace(line) {
         if (v) {
             const v2 = v.split('/');
             //faceVertex.push(v2[0] ?? 0, v2[1] ?? 0, v2[2] ?? 0);
-            face.v.push((v2[0] ?? 1) - 1);
-            face.t.push((v2[1] ?? 1) - 1);
-            face.n.push((v2[2] ?? 1) - 1);
+            face.v.push(Number(v2[0] ?? 1) - 1);
+            face.t.push(Number(v2[1] ?? 1) - 1);
+            face.n.push(Number(v2[2] ?? 1) - 1);
         }
         else {
             //			faceVertex.push(0, 0, 0);
@@ -12238,10 +12300,10 @@ const DEFAULT_LIGHT_COLOR = vec3.fromValues(1, 1, 1);
 let defaultTextureSize = 1024;
 class Light extends Entity {
     #intensity;
-    #color;
-    #range;
+    #color; // TODO: use Color instead
+    #range = 1000;
     shadow;
-    #shadowTextureSize;
+    #shadowTextureSize = defaultTextureSize;
     isLight = true;
     constructor(parameters = {}) {
         super(parameters);
@@ -12249,7 +12311,6 @@ class Light extends Entity {
         this.#intensity = parameters.intensity ?? 1.0;
         this.castShadow = false;
         this.isRenderable = true;
-        this.shadowTextureSize = defaultTextureSize;
     }
     set color(color) {
         vec3.copy(this.#color, color);
@@ -12291,7 +12352,7 @@ class Light extends Entity {
                     this.intensity = Number(intensity);
                 } } },
         }, this.shadow ? {
-            texture_size: { i18n: '#texture_size', f: () => { const textureSize = prompt('Texture size', String(this.shadow.textureSize[0])); if (textureSize !== null) {
+            texture_size: { i18n: '#texture_size', f: () => { const textureSize = prompt('Texture size', String(this.shadow?.textureSize[0] ?? defaultTextureSize)); if (textureSize !== null) {
                     this.shadowTextureSize = Number.parseFloat(textureSize);
                 } } }
         } : null);
@@ -12377,7 +12438,7 @@ class SpotLightShadow extends LightShadow {
         this.camera.verticalFov = RAD_TO_DEG * 2.0 * angle;
     }
     set range(range) {
-        this.camera.farPlane = range || 1000.0;
+        this.camera.farPlane = range;
     }
     set aspect(aspect) {
         this.camera.aspectRatio = aspect;
@@ -12438,8 +12499,8 @@ class SpotLight extends Light {
             inner_angle: { i18n: '#inner_angle', f: () => { const innerAngle = prompt('Inner angle', String(this.#innerAngle)); if (innerAngle !== null) {
                     this.innerAngle = Number(innerAngle);
                 } } },
-            range: { i18n: '#range', f: () => { const range = prompt('Range', this.range); if (range !== null) {
-                    this.range = range;
+            range: { i18n: '#range', f: () => { const range = prompt('Range', String(this.range)); if (range !== null) {
+                    this.range = Number(range);
                 } } },
         });
     }
@@ -12452,10 +12513,10 @@ registerEntity(SpotLight);
 const DIVISIONS = 32;
 const tempVec4$1 = vec4.create();
 class SpotLightHelper extends Mesh {
-    #color = vec3.create();
-    #angle;
-    #range;
-    #spotLight;
+    #color = vec3.create(); // TODO: use Color instead
+    #angle = 0;
+    #range = 0;
+    #spotLight = null;
     #vertexPositionAttribute;
     constructor(params = {}) {
         params.geometry = new BufferGeometry();
@@ -12626,8 +12687,8 @@ class PointLight extends Light {
     }
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
-            range: { i18n: '#range', f: () => { const range = prompt('Range', this.range); if (range !== null) {
-                    this.range = range;
+            range: { i18n: '#range', f: () => { const range = prompt('Range', String(this.range)); if (range !== null) {
+                    this.range = Number(range);
                 } } },
         });
     }
@@ -12778,7 +12839,7 @@ class Path extends Curve {
         this.looping = looping;
     }
     set curves(curves) {
-        this._curves.splice(undefined, undefined, ...curves);
+        this._curves.splice(0, Infinity, ...curves);
         this.arcLength = this.getArcLength();
     }
     get curves() {
@@ -12820,6 +12881,12 @@ class Path extends Curve {
         this.addCurve(new QuadraticBezierCurve(this.cursor, p1, p2));
         vec3.copy(this.cursor, p2);
     }
+    bezierCurveTo(p1, p2, p3) {
+        const curve = new CubicBezierCurve(this.cursor, p1, p2, p3);
+        this.curves.push(curve);
+        vec3.copy(this.cursor, p3);
+        return this;
+    }
     cubicCurveTo(p1, p2, p3) {
         this.addCurve(new CubicBezierCurve(this.cursor, p1, p2, p3));
         vec3.copy(this.cursor, p3);
@@ -12846,26 +12913,26 @@ class Path extends Curve {
         return points;
     }
     fromSvgPath(path) {
-        path = path.split(' ');
-        for (let i = 0, l = path.length; i < l;) {
-            switch (path[i++]) {
+        const pathArray = path.split(' ');
+        for (let i = 0, l = pathArray.length; i < l;) {
+            switch (pathArray[i++]) {
                 case 'm':
-                    vec3.set(p0$1, path[i++], path[i++], 0);
+                    vec3.set(p0$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
                     this.moveTo(p0$1);
                     break;
                 case 'l':
-                    vec3.set(p1$1, path[i++], path[i++], 0);
+                    vec3.set(p1$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
                     this.lineTo(p1$1);
                     break;
                 case 'q':
-                    vec3.set(p2$1, path[i++], path[i++], 0);
-                    vec3.set(p1$1, path[i++], path[i++], 0);
+                    vec3.set(p2$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
+                    vec3.set(p1$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
                     this.quadraticCurveTo(p1$1, p2$1);
                     break;
                 case 'c':
-                    vec3.set(p3$1, path[i++], path[i++], 0);
-                    vec3.set(p1$1, path[i++], path[i++], 0);
-                    vec3.set(p2$1, path[i++], path[i++], 0);
+                    vec3.set(p3$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
+                    vec3.set(p1$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
+                    vec3.set(p2$1, Number(pathArray[i++]), Number(pathArray[i++]), 0);
                     this.cubicCurveTo(p1$1, p2$1, p3$1);
                     break;
             }
@@ -12897,15 +12964,14 @@ class Shape extends Path {
  * Port from https://github.com/mapbox/earcut (v2.2.2)
  */
 const Earcut = {
-    triangulate: function (data, holeIndices, dim) {
-        dim = dim || 2;
-        const hasHoles = holeIndices && holeIndices.length;
+    triangulate: function (data, holeIndices, dim = 2) {
+        const hasHoles = holeIndices.length > 0;
         const outerLen = hasHoles ? holeIndices[0] * dim : data.length;
         let outerNode = linkedList(data, 0, outerLen, dim, true);
         const triangles = [];
         if (!outerNode || outerNode.next === outerNode.prev)
             return triangles;
-        let minX, minY, maxX, maxY, x, y, invSize;
+        let minX = 0, minY = 0, maxX, maxY, x, y, invSize = 0;
         if (hasHoles)
             outerNode = eliminateHoles(data, holeIndices, outerNode, dim);
         // if the shape is not too simple, we'll use z-order curve hash later; calculate polygon bbox
@@ -12936,12 +13002,14 @@ const Earcut = {
 function linkedList(data, start, end, dim, clockwise) {
     let i, last;
     if (clockwise === (signedArea(data, start, end, dim) > 0)) {
-        for (i = start; i < end; i += dim)
+        for (i = start; i < end; i += dim) {
             last = insertNode(i, data[i], data[i + 1], last);
+        }
     }
     else {
-        for (i = end - dim; i >= start; i -= dim)
+        for (i = end - dim; i >= start; i -= dim) {
             last = insertNode(i, data[i], data[i + 1], last);
+        }
     }
     if (last && equals(last, last.next)) {
         removeNode(last);
@@ -12951,10 +13019,12 @@ function linkedList(data, start, end, dim, clockwise) {
 }
 // eliminate colinear or duplicate points
 function filterPoints(start, end) {
-    if (!start)
+    if (!start) {
         return start;
-    if (!end)
+    }
+    if (!end) {
         end = start;
+    }
     let p = start, again;
     do {
         again = false;
@@ -12969,12 +13039,13 @@ function filterPoints(start, end) {
             p = p.next;
         }
     } while (again || p !== end);
-    return end;
+    return end ?? null;
 }
 // main ear slicing loop which triangulates a polygon (given as a linked list)
 function earcutLinked(ear, triangles, dim, minX, minY, invSize, pass) {
-    if (!ear)
+    if (!ear) {
         return;
+    }
     // interlink polygon nodes in z-order
     if (!pass && invSize)
         indexCurve(ear, minX, minY, invSize);
@@ -13135,11 +13206,11 @@ function compareX(a, b) {
 }
 // find a bridge between vertices that connects hole with an outer ring and and link it
 function eliminateHole(hole, outerNode) {
-    outerNode = findHoleBridge(hole, outerNode);
-    if (outerNode) {
-        const b = splitPolygon(outerNode, hole);
+    const node = findHoleBridge(hole, outerNode);
+    if (node) {
+        const b = splitPolygon(node, hole);
         // filter collinear points around the cuts
-        filterPoints(outerNode, outerNode.next);
+        filterPoints(node, node.next);
         filterPoints(b, b.next);
     }
 }
@@ -13198,23 +13269,25 @@ function sectorContainsSector(m, p) {
 function indexCurve(start, minX, minY, invSize) {
     let p = start;
     do {
-        if (p.z === null)
+        if (p.z === null) {
             p.z = zOrder(p.x, p.y, minX, minY, invSize);
+        }
         p.prevZ = p.prev;
         p.nextZ = p.next;
         p = p.next;
     } while (p !== start);
-    p.prevZ.nextZ = null;
-    p.prevZ = null;
+    if (p.prevZ) {
+        p.prevZ.nextZ = null;
+        p.prevZ = null;
+    }
     sortLinked(p);
 }
 // Simon Tatham's linked list merge sort algorithm
 // http://www.chiark.greenend.org.uk/~sgtatham/algorithms/listsort.html
-function sortLinked(list) {
+function sortLinked(unSortedList) {
     let i, p, q, e, tail, numMerges, pSize, qSize, inSize = 1;
     do {
-        p = list;
-        list = null;
+        p = unSortedList;
         tail = null;
         numMerges = 0;
         while (p) {
@@ -13241,8 +13314,6 @@ function sortLinked(list) {
                 }
                 if (tail)
                     tail.nextZ = e;
-                else
-                    list = e;
                 e.prevZ = tail;
                 tail = e;
             }
@@ -13251,7 +13322,7 @@ function sortLinked(list) {
         tail.nextZ = null;
         inSize *= 2;
     } while (numMerges > 1);
-    return list;
+    return unSortedList;
 }
 // z-order of a point given coords and inverse of the longer side of data bbox
 function zOrder(x, y, minX, minY, invSize) {
@@ -13288,7 +13359,7 @@ function pointInTriangle(ax, ay, bx, by, cx, cy, px, py) {
 function isValidDiagonal(a, b) {
     return a.next.i !== b.i && a.prev.i !== b.i && !intersectsPolygon(a, b) && // dones't intersect other edges
         (locallyInside(a, b) && locallyInside(b, a) && middleInside(a, b) && // locally visible
-            (area$1(a.prev, a, b.prev) || area$1(a, b.prev, b)) || // does not create opposite-facing sectors
+            (area$1(a.prev, a, b.prev) !== 0 || area$1(a, b.prev, b)) !== 0 || // does not create opposite-facing sectors
             equals(a, b) && area$1(a.prev, a, a.next) > 0 && area$1(b.prev, b, b.next) > 0); // special zero-length case
 }
 // signed area of a triangle
@@ -13390,23 +13461,30 @@ function removeNode(p) {
     if (p.nextZ)
         p.nextZ.prevZ = p.prevZ;
 }
-function Node$1(i, x, y) {
+let Node$1 = class Node {
     // vertex index in coordinates array
-    this.i = i;
+    i;
     // vertex coordinates
-    this.x = x;
-    this.y = y;
+    x;
+    y;
     // previous and next vertex nodes in a polygon ring
-    this.prev = null;
-    this.next = null;
-    // z-order curve value
-    this.z = null;
+    prev;
+    next;
     // previous and next nodes in z-order
-    this.prevZ = null;
-    this.nextZ = null;
+    prevZ = null;
+    nextZ = null;
+    // z-order curve value
+    z = null;
     // indicates whether this is a steiner point
-    this.steiner = false;
-}
+    steiner = false;
+    constructor(i, x, y) {
+        // vertex index in coordinates array
+        this.i = i;
+        // vertex coordinates
+        this.x = x;
+        this.y = y;
+    }
+};
 function signedArea(data, start, end, dim) {
     let sum = 0;
     for (let i = start, j = end - dim; i < end; i += dim) {
@@ -13487,11 +13565,13 @@ class ShapePath {
         this.currentPath.bezierCurveTo([aCP1x, aCP1y, 0], [aCP2x, aCP2y, 0], [aX, aY, 0]);
         return this;
     }
+    /*
     splineThru(pts) {
         this.currentPath.splineThru(pts);
         return this;
     }
-    toShapes(isCCW, noHoles) {
+    */
+    toShapes(isCCW, noHoles = false) {
         function toShapesNoHoles(inSubpaths) {
             const shapes = [];
             for (let i = 0, l = inSubpaths.length; i < l; i++) {
@@ -13513,7 +13593,7 @@ class ShapePath {
                 let edgeLowPt = inPolygon[p];
                 let edgeHighPt = inPolygon[q];
                 let edgeDx = edgeHighPt[0] - edgeLowPt[0];
-                let edgeDy = edgeHighPt.y - edgeLowPt.y;
+                let edgeDy = edgeHighPt[1] - edgeLowPt[1];
                 if (Math.abs(edgeDy) > Number.EPSILON) {
                     // not parallel
                     if (edgeDy < 0) {
@@ -13522,15 +13602,15 @@ class ShapePath {
                         edgeHighPt = inPolygon[p];
                         edgeDy = -edgeDy;
                     }
-                    if ((inPt.y < edgeLowPt.y) || (inPt.y > edgeHighPt.y))
+                    if ((inPt[1] < edgeLowPt[1]) || (inPt[1] > edgeHighPt[1]))
                         continue;
-                    if (inPt.y === edgeLowPt.y) {
+                    if (inPt[1] === edgeLowPt[1]) {
                         if (inPt[0] === edgeLowPt[0])
                             return true; // inPt is on contour ?
                         // continue;				// no intersection or edgeLowPt => doesn't count !!!
                     }
                     else {
-                        const perpEdge = edgeDy * (inPt[0] - edgeLowPt[0]) - edgeDx * (inPt.y - edgeLowPt.y);
+                        const perpEdge = edgeDy * (inPt[0] - edgeLowPt[0]) - edgeDx * (inPt[1] - edgeLowPt[1]);
                         if (perpEdge === 0)
                             return true; // inPt is on contour ?
                         if (perpEdge < 0)
@@ -13540,7 +13620,7 @@ class ShapePath {
                 }
                 else {
                     // parallel or collinear
-                    if (inPt.y !== edgeLowPt.y)
+                    if (inPt[1] !== edgeLowPt[1])
                         continue; // parallel
                     // edge lies on the same horizontal line as inPt
                     if (((edgeHighPt[0] <= inPt[0]) && (inPt[0] <= edgeLowPt[0])) ||
@@ -13650,9 +13730,9 @@ class ShapePath {
 }
 
 class Font {
-    json;
+    #json;
     constructor(json) {
-        this.json = json;
+        this.#json = json;
     }
     generateShapes(text, size = 100) {
         const shapes = [];
@@ -13663,7 +13743,7 @@ class Font {
         return shapes;
     }
     createPaths(text = '', size = 1) {
-        const data = this.json;
+        const data = this.#json;
         const chars = Array.from(text);
         const scale = size / data.resolution;
         const line_height = (data.boundingBox.yMax - data.boundingBox.yMin + data.underlineThickness) * scale;
@@ -13683,7 +13763,7 @@ class Font {
         return paths;
     }
     createPath(char, scale, offsetX, offsetY) {
-        const data = this.json;
+        const data = this.#json;
         const glyph = data.glyphs[char] ?? data.glyphs['?'];
         const path = new ShapePath();
         let x, y, cpx, cpy, cpx1, cpy1, cpx2, cpy2;
@@ -13816,40 +13896,26 @@ class MeshBasicPbrMaterial extends Material {
         this.setMetalnessTexture(params.metalnessTexture);
         this.setRoughnessTexture(params.roughnessTexture);
     }
-    setColor(color) {
-        if (color !== undefined) {
-            this.setParameterValue('color', color);
-        }
+    setColor(color /*TODO: change to Color*/) {
+        this.setParameterValue('color', color);
     }
     setMetalness(metalness) {
-        if (metalness !== undefined) {
-            this.setParameterValue('metalness', metalness);
-        }
+        this.setParameterValue('metalness', metalness);
     }
     setRoughness(roughness) {
-        if (roughness !== undefined) {
-            this.setParameterValue('roughness', roughness);
-        }
+        this.setParameterValue('roughness', roughness);
     }
     setColorTexture(colorTexture) {
-        if (colorTexture !== undefined) {
-            this.setParameterValue('color_texture', colorTexture);
-        }
+        this.setParameterValue('color_texture', colorTexture);
     }
     setNormalTexture(normalTexture) {
-        if (normalTexture !== undefined) {
-            this.setParameterValue('normal_texture', normalTexture);
-        }
+        this.setParameterValue('normal_texture', normalTexture);
     }
     setMetalnessTexture(metalnessTexture) {
-        if (metalnessTexture !== undefined) {
-            this.setParameterValue('metalness_texture', metalnessTexture);
-        }
+        this.setParameterValue('metalness_texture', metalnessTexture);
     }
     setRoughnessTexture(roughnessTexture) {
-        if (roughnessTexture !== undefined) {
-            this.setParameterValue('roughness_texture', roughnessTexture);
-        }
+        this.setParameterValue('roughness_texture', roughnessTexture);
     }
     get shaderSource() {
         return 'meshbasicpbr';
@@ -14055,8 +14121,8 @@ class LoopSubdivision {
             return this.#webAssembly;
         }
         const env = {
-            'abortStackOverflow': _ => { throw new Error('overflow'); },
-            'emscripten_notify_memory_growth': _ => {
+            'abortStackOverflow': () => { throw new Error('overflow'); },
+            'emscripten_notify_memory_growth': () => {
                 this.#initHeap();
             },
             'table': new WebAssembly.Table({ initial: 0, maximum: 0, element: 'anyfunc' }),
@@ -14644,7 +14710,7 @@ class Node extends MyEventTarget {
     #previewRenderTarget;
     autoRedraw = false;
     #redrawState = DrawState.Invalid;
-    #operation;
+    //#operation;
     material;
     #pixelArray;
     constructor(editor, params) {
@@ -14652,13 +14718,13 @@ class Node extends MyEventTarget {
         this.editor = editor;
         this.setParams(params);
     }
-    addInput(inputId, inputType, size = 1) {
+    addInput(inputId, inputType /*TODO: create enum*/, size = 1) {
         const input = new Input(this, inputId, inputType, size);
         this.inputs.set(inputId, input);
         this.invalidate();
         return input;
     }
-    addOutput(outputId, outputType) {
+    addOutput(outputId, outputType /*TODO: create enum*/) {
         const output = new Output(this, outputId, outputType);
         this.outputs.set(outputId, output);
         this.invalidate();
@@ -14702,7 +14768,7 @@ class Node extends MyEventTarget {
     setParam(paramName, paramValue, paramIndex) {
         const p = this.params.get(paramName);
         if (p) {
-            if (paramIndex != undefined) {
+            if (paramIndex !== undefined) {
                 p.value[paramIndex] = paramValue;
             }
             else {
@@ -14759,7 +14825,7 @@ class Node extends MyEventTarget {
     }
     ready() {
         const node = this;
-        const promiseFunction = resolve => {
+        const promiseFunction = (resolve) => {
             const callback = function () {
                 if (node.isValid()) {
                     resolve(true);
@@ -14778,17 +14844,18 @@ class Node extends MyEventTarget {
         }
         startingPoint = startingPoint || this;
         if (this.#redrawState == DrawState.Valid) {
+            /*
             if (this.#operation && this.#operation.isValid) {
                 return this.#operation.isValid(startingPoint);
-            }
-            else {
-                const inputs = this.inputs;
-                for (const i of inputs.values()) {
-                    if (!i.isValid(startingPoint)) {
-                        return false;
-                    }
+            } else {
+            */
+            const inputs = this.inputs;
+            for (const i of inputs.values()) {
+                if (!i.isValid(startingPoint)) {
+                    return false;
                 }
             }
+            //}
         }
         return this.#redrawState == DrawState.Valid;
     }
@@ -14825,7 +14892,9 @@ class Node extends MyEventTarget {
         }
         this.#previewRenderTarget = renderTarget2;
         Graphics.pushRenderTarget(renderTarget2);
-        this.editor.render(this.material);
+        if (this.material) {
+            this.editor.render(this.material);
+        }
         const pixelArray = new Uint8ClampedArray(previewSize * previewSize * 4);
         Graphics.glContext.readPixels(0, 0, previewSize, previewSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         this.#pixelArray = new Uint8ClampedArray(pixelArray);
@@ -14847,8 +14916,15 @@ class Node extends MyEventTarget {
         const image = this.previewPic;
         const canvas = createElement('canvas', { width: image.width, height: image.height });
         const ctx = canvas.getContext('2d');
+        if (!ctx) {
+            return;
+        }
         ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob((blob) => saveFile(new File([blob], filename))); //toDataURL
+        canvas.toBlob((blob) => {
+            if (blob) {
+                saveFile(new File([blob], filename));
+            }
+        }); //toDataURL
         //		saveFile(new File([blob], 'texture.png'));
         this.previewPic.width = PREVIEW_PICTURE_SIZE;
         this.previewPic.height = PREVIEW_PICTURE_SIZE;
@@ -14907,11 +14983,12 @@ function registerOperation(name, ope) {
     operations$1.set(name, ope);
 }
 function getOperation(name, editor, params) {
-    if (!operations$1.has(name)) {
+    const ope = operations$1.get(name);
+    if (!ope) {
         console.warn('Unknown operation : ' + name);
         return null;
     }
-    return new (operations$1.get(name))(editor, params);
+    return new (ope)(editor, params);
 }
 
 vec2.create();
@@ -14919,7 +14996,7 @@ mat3.create();
 class ApplySticker extends Node {
     #renderTarget;
     #textureSize;
-    inputTexture;
+    inputTexture = null;
     constructor(editor, params) {
         super(editor, params);
         this.hasPreview = true;
@@ -14942,10 +15019,13 @@ class ApplySticker extends Node {
         this.addParam(new NodeParam('sticker', NodeParamType.StickerAdjust, vec2.create()));
     }
     async operate(context = {}) {
+        if (!this.material) {
+            return;
+        }
         this.params;
         this.material.setTexture('uSticker', this.inputTexture);
-        this.material.setTexture('uStickerSpecular', await this.getInput('specular').value);
-        this.material.setTexture('uInput', await this.getInput('input').value);
+        this.material.setTexture('uStickerSpecular', await this.getInput('specular')?.value);
+        this.material.setTexture('uInput', await this.getInput('input')?.value);
         this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
         const texTransform = mat3.create();
         ComputeTextureMatrixFromRectangle(texTransform, this.getValue('bottom left'), this.getValue('top left'), this.getValue('top right'));
@@ -14970,7 +15050,7 @@ class ApplySticker extends Node {
         this.material.uniforms['uUsed[0]'] = usedArray;*/
         //this.material.uniforms['uInput'] = this.inputTexture;
         if (!this.#renderTarget) {
-            this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')._value });
+            this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')?._value });
         }
         Graphics.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
@@ -14979,7 +15059,10 @@ class ApplySticker extends Node {
         Graphics.popRenderTarget();*/
         Graphics.popRenderTarget();
         this.updatePreview(context);
-        this.getOutput('output')._value = this.#renderTarget.getTexture();
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#renderTarget.getTexture();
+        }
         //this.getOutput('output')._pixelArray = pixelArray;
     }
     get title() {
@@ -15032,7 +15115,7 @@ const tempVec2$2 = vec2.create();
 class TextureLookup extends Node {
     #renderTarget;
     #textureSize;
-    inputTexture;
+    inputTexture = null;
     constructor(editor, params) {
         super(editor, params);
         this.hasPreview = true;
@@ -15060,6 +15143,9 @@ class TextureLookup extends Node {
         this.addParam(new NodeParam('path', NodeParamType.String, ''));
     }
     async operate(context = {}) {
+        if (!this.material) {
+            return;
+        }
         this.material.setTexture('uInput', this.inputTexture);
         this.material.uniforms['uAdjustLevels'] = vec4.fromValues(this.getValue('adjust black'), this.getValue('adjust white'), this.getValue('adjust gamma'), 0.0);
         const texTransform = mat3.create();
@@ -15077,8 +15163,11 @@ class TextureLookup extends Node {
         Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics.popRenderTarget();
         this.updatePreview(context);
-        this.getOutput('output')._value = this.#renderTarget.getTexture();
-        this.getOutput('output')._pixelArray = pixelArray;
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#renderTarget.getTexture();
+            output._pixelArray = pixelArray;
+        }
     }
     get title() {
         return 'texture lookup';
@@ -15108,6 +15197,9 @@ const DELAY_BEFORE_REFRESH = 100;
 const FLOAT_VALUE_DECIMALS = 3;
 function dropFiles(evt, node) {
     const files = evt.target.files; // FileList object
+    if (!files) {
+        return;
+    }
     // Loop through the FileList and render image files as thumbnails.
     for (let i = 0, f; f = files[i]; i++) {
         // Only process image files.
@@ -15131,7 +15223,7 @@ function dropFiles(evt, node) {
                     node.invalidate();
                     node.validate();
                 };
-                image.src = e.target.result.toString();
+                image.src = e.target.result?.toString() ?? '';
             };
         })();
         // Read in the image file as a data URL.
@@ -15140,6 +15232,9 @@ function dropFiles(evt, node) {
 }
 function dropFilesSpecular(evt, node) {
     const files = evt.target.files; // FileList object
+    if (!files) {
+        return;
+    }
     // Loop through the FileList and render image files as thumbnails.
     for (let i = 0, f; f = files[i]; i++) {
         // Only process image files.
@@ -15159,11 +15254,14 @@ function dropFilesSpecular(evt, node) {
                 const image = new Image();
                 image.onload = () => {
                     TextureManager.fillTextureWithImage(texture, image);
-                    node.getInput('specular').value = texture;
+                    const specular = node.getInput('specular');
+                    if (specular) {
+                        specular.value = texture;
+                    }
                     //node.invalidate();
                     node.validate();
                 };
-                image.src = e.target.result.toString();
+                image.src = e.target.result?.toString() ?? '';
             };
         })();
         // Read in the image file as a data URL.
@@ -15184,15 +15282,15 @@ class NodeGui {
     #html;
     #htmlPreview;
     #htmlRectSelector;
-    #drag;
+    #drag = '';
     #htmlParamsContainer;
     _ioGui = new Map(); // TODO: set private
-    #refreshTimeout;
+    #refreshTimeout = 0;
     #nodeChanged;
     #node;
     #nodeImageEditorGui;
-    #dragStartClientX;
-    #dragStartClientY;
+    #dragStartClientX = 0;
+    #dragStartClientY = 0;
     #htmlParams = new Map();
     #htmlParamsValue = new Map();
     constructor(nodeImageEditorGui, node) {
@@ -15288,7 +15386,7 @@ class NodeGui {
             class: 'node-image-editor-node-preview',
             child: this.#node.previewPic,
             events: {
-                dragover: event => this.#handlePreviewDragOver(event),
+                dragover: (event) => this.#handlePreviewDragOver(event),
             }
         });
         if (this.#node.hasPreview) {
@@ -15359,7 +15457,7 @@ class NodeGui {
             paramHtml = paramHtml[index];
         }
         let value;
-        if (index != undefined) {
+        if (index !== undefined) {
             value = param.value[index];
         }
         else {
@@ -15410,9 +15508,9 @@ class NodeGui {
                     },
                 }
             });
+            this.#htmlParamsValue.set(paramHtml, valueHtml);
         }
         nameHtml.innerText = param.name;
-        this.#htmlParamsValue.set(paramHtml, valueHtml);
         if (param.type == NodeParamType.StickerAdjust) {
             defineHarmony2dManipulator();
             defineHarmonyToggleButton();
@@ -15486,7 +15584,10 @@ class NodeGui {
                                     }),
                                 ],
                                 events: {
-                                    change: (event) => this.#htmlRectSelector.setMode({ resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None, scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None }),
+                                    change: (event) => this.#htmlRectSelector.setMode({
+                                        resize: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None,
+                                        scale: event.target.state ? ManipulatorDirection.All : ManipulatorDirection.None,
+                                    }),
                                 }
                             }),
                             createElement('harmony-toggle-button', {
@@ -15863,8 +15964,13 @@ class NodeImageEditorGui {
                         const nodeGui2 = this.#nodesGui.get(predecessorNode);
                         if (nodeGui && nodeGui2) {
                             const inputGui = nodeGui._ioGui.get(input);
-                            const outputGui = nodeGui2._ioGui.get(input.getPredecessor());
-                            this.#drawLink(outputGui, inputGui);
+                            const predecessor = input.getPredecessor();
+                            if (predecessor) {
+                                const outputGui = nodeGui2._ioGui.get(predecessor);
+                                if (outputGui && inputGui) {
+                                    this.#drawLink(outputGui, inputGui);
+                                }
+                            }
                         }
                     }
                 }
@@ -16044,7 +16150,10 @@ class FloatArrayNode extends ParametersNode {
         this.addParam(new NodeParam('value', NodeParamType.Float, this.#array, this.#length));
     }
     async operate(context = {}) {
-        this.getOutput('output')._value = this.#array;
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#array;
+        }
     }
     get title() {
         return 'float array';
@@ -16072,7 +16181,10 @@ class IntArrayNode extends ParametersNode {
         this.addParam(new NodeParam('value', NodeParamType.Int, this.#array, this.#length));
     }
     async operate(context = {}) {
-        this.getOutput('output')._value = this.#array;
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#array;
+        }
     }
     get title() {
         return 'int array';
@@ -16106,13 +16218,22 @@ class DrawCircle extends Node {
         this.#textureSize = params.textureSize;
     }
     async operate(context = {}) {
-        const center = await this.getInput('center').value;
-        const radius = await this.getInput('radius').value;
-        const borderColor = await this.getInput('bordercolor').value;
-        const fillColor = await this.getInput('fillcolor').value;
-        const border = await this.getInput('border').value;
-        this.getOutput('perimeter')._value = Math.PI * radius * 2;
-        this.getOutput('area')._value = Math.PI * radius ** 2;
+        if (!this.material) {
+            return;
+        }
+        const center = await this.getInput('center')?.value;
+        const radius = await this.getInput('radius')?.value;
+        const borderColor = await this.getInput('bordercolor')?.value;
+        const fillColor = await this.getInput('fillcolor')?.value;
+        const border = await this.getInput('border')?.value;
+        const perimeter = this.getOutput('perimeter');
+        if (perimeter) {
+            perimeter._value = Math.PI * radius * 2;
+        }
+        const area = this.getOutput('area');
+        if (area) {
+            area._value = Math.PI * radius ** 2;
+        }
         this.material.uniforms['uRadius'] = radius;
         this.material.uniforms['uCenter'] = center;
         this.material.uniforms['uBorderColor'] = borderColor;
@@ -16126,8 +16247,11 @@ class DrawCircle extends Node {
         const pixelArray = new Uint8Array(this.#textureSize * this.#textureSize * 4);
         Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics.popRenderTarget();
-        this.getOutput('output')._value = this.#renderTarget.getTexture();
-        this.getOutput('output')._pixelArray = pixelArray;
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#renderTarget.getTexture();
+            output._pixelArray = pixelArray;
+        }
     }
     get title() {
         return 'draw circle';
@@ -16160,6 +16284,9 @@ class CombineAdd extends Node {
         this.#textureSize = params.textureSize;
     }
     async operate(context = {}) {
+        if (!this.material) {
+            return;
+        }
         /*let input1 = this.getInput('input1').value;
         let input2 = this.getInput('input2').value;
         let input3 = this.getInput('input3').value;
@@ -16173,7 +16300,7 @@ class CombineAdd extends Node {
         //this.material.uniforms['uInput[0]'] = await this.getInput('input').value;
         const textureArray = [];
         for (let i = 0; i < 8; ++i) {
-            textureArray.push(await this.getInput('input' + i).value);
+            textureArray.push(await this.getInput('input' + i)?.value);
         }
         this.material.setTextureArray('uInput[0]', textureArray);
         if (!this.#renderTarget) {
@@ -16185,8 +16312,11 @@ class CombineAdd extends Node {
         Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics.popRenderTarget();
         this.updatePreview(context);
-        this.getOutput('output')._value = this.#renderTarget.getTexture();
-        this.getOutput('output')._pixelArray = pixelArray;
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#renderTarget.getTexture();
+            output._pixelArray = pixelArray;
+        }
     }
     get title() {
         return 'combine add';
@@ -16221,9 +16351,12 @@ class CombineLerp extends Node {
         this.addParam(new NodeParam('adjust gamma', NodeParamType.Float, 1.0));
     }
     async operate(context = {}) {
-        this.material.setTexture('uInput0', await this.getInput('input0').value);
-        this.material.setTexture('uInput1', await this.getInput('input1').value);
-        this.material.setTexture('uInputWeight', await this.getInput('weight').value);
+        if (!this.material) {
+            return;
+        }
+        this.material.setTexture('uInput0', await this.getInput('input0')?.value);
+        this.material.setTexture('uInput1', await this.getInput('input1')?.value);
+        this.material.setTexture('uInputWeight', await this.getInput('weight')?.value);
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
@@ -16233,8 +16366,11 @@ class CombineLerp extends Node {
         Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics.popRenderTarget();
         this.updatePreview(context);
-        this.getOutput('output')._value = this.#renderTarget.getTexture();
-        this.getOutput('output')._pixelArray = pixelArray;
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#renderTarget.getTexture();
+            output._pixelArray = pixelArray;
+        }
     }
     get title() {
         return 'combine lerp';
@@ -16267,12 +16403,15 @@ let Multiply$1 = class Multiply extends Node {
         this.#textureSize = params.textureSize;
     }
     async operate(context = {}) {
+        if (!this.material) {
+            return;
+        }
         const textureArray = [];
         const usedArray = [];
         for (let i = 0; i < 8; ++i) {
             //let inputName = 'uInput' + i;
             //this.material.uniforms['uInput' + i] = await this.getInput('input' + i).value;
-            const texture = await this.getInput('input' + i).value;
+            const texture = await this.getInput('input' + i)?.value;
             textureArray.push(texture);
             usedArray.push(texture != undefined);
         }
@@ -16281,7 +16420,7 @@ let Multiply$1 = class Multiply extends Node {
         this.material.uniforms['uUsed[0]'] = usedArray;
         //this.material.uniforms['uInput1'] = await this.getInput('input1').value;
         if (!this.#renderTarget) {
-            this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')._value });
+            this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false, texture: this.getOutput('output')?._value });
         }
         Graphics.pushRenderTarget(this.#renderTarget);
         this.editor.render(this.material);
@@ -16289,7 +16428,10 @@ let Multiply$1 = class Multiply extends Node {
         //Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics.popRenderTarget();
         this.updatePreview(context);
-        this.getOutput('output')._value = this.#renderTarget.getTexture();
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#renderTarget.getTexture();
+        }
     }
     get title() {
         return 'multiply';
@@ -16322,8 +16464,11 @@ class Select extends Node {
         this.#textureSize = params.textureSize;
     }
     async operate(context = {}) {
-        this.material.setTexture('uInputTexture', await this.getInput('input').value);
-        this.material.uniforms['uSelect[0]'] = await this.getInput('selectvalues').value;
+        if (!this.material) {
+            return;
+        }
+        this.material.setTexture('uInputTexture', await this.getInput('input')?.value);
+        this.material.uniforms['uSelect[0]'] = await this.getInput('selectvalues')?.value;
         if (!this.#renderTarget) {
             this.#renderTarget = new RenderTarget({ width: this.#textureSize, height: this.#textureSize, depthBuffer: false, stencilBuffer: false });
         }
@@ -16333,8 +16478,11 @@ class Select extends Node {
         Graphics.glContext.readPixels(0, 0, this.#textureSize, this.#textureSize, GL_RGBA, GL_UNSIGNED_BYTE, pixelArray);
         Graphics.popRenderTarget();
         this.updatePreview(context);
-        this.getOutput('output')._value = this.#renderTarget.getTexture();
-        this.getOutput('output')._pixelArray = pixelArray;
+        const output = this.getOutput('output');
+        if (output) {
+            output._value = this.#renderTarget.getTexture();
+            output._pixelArray = pixelArray;
+        }
     }
     get title() {
         return 'select';
@@ -16348,7 +16496,7 @@ class Select extends Node {
                 ret.push(await input.toString(tabs1));
             }
         }
-        const selectvalues = await this.getInput('selectvalues').value;
+        const selectvalues = await this.getInput('selectvalues')?.value;
         const a = [];
         for (const v of selectvalues) {
             if (v) {
@@ -16640,9 +16788,9 @@ class NodeImageEditor extends MyEventTarget {
         const node = getOperation(operationName, this, params);
         if (node) {
             this.textureSize = params.textureSize;
+            this.#nodes.add(node);
+            this.#dispatchEvent('nodeadded', node);
         }
-        this.#nodes.add(node);
-        this.#dispatchEvent('nodeadded', node);
         return node;
     }
     /*addNewNode(operationName, params = Object.create(null)) {
@@ -16661,7 +16809,7 @@ class NodeImageEditor extends MyEventTarget {
         }
     }*/
     removeNode(node) {
-        if (node instanceof Node && node.editor == this) {
+        if (node.editor == this) {
             this.#nodes.delete(node);
             //TODO :remove all inputs / output
             this.#dispatchEvent('noderemoved', node);
@@ -16670,7 +16818,7 @@ class NodeImageEditor extends MyEventTarget {
     removeAllNodes() {
         this.#nodes.forEach((node) => node.dispose());
         this.#nodes.clear();
-        this.#dispatchEvent('allnodesremoved', this);
+        this.#dispatchEvent('allnodesremoved', null);
         //TODO :remove all inputs / output
     }
     getVariable(name) {
@@ -16787,7 +16935,7 @@ const Lines = [
     18, 22,*/
 ];
 class CameraFrustum extends Mesh {
-    #camera;
+    #camera = null;
     #vertexPositionAttribute;
     constructor(params = {}) {
         params.geometry = new BufferGeometry();
@@ -16795,7 +16943,7 @@ class CameraFrustum extends Mesh {
         super(params);
         this.renderMode = GL_LINES;
         this.#createVertices();
-        this.material.setColorMode(MaterialColorMode.PerVertex);
+        this.getMaterial().setColorMode(MaterialColorMode.PerVertex);
         this.castShadow = false;
         GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.update());
     }
@@ -16977,7 +17125,7 @@ class Line extends Mesh {
         const json = super.toJSON();
         json.start = vec3.clone(this.start);
         json.end = vec3.clone(this.end);
-        json.material = this.material.toJSON();
+        json.material = this.getMaterial().toJSON();
         return json;
     }
     static async constructFromJSON(json, entities, loadedPromise) {
@@ -17038,7 +17186,7 @@ const SceneExplorerEvents = new EventTarget();
 
 const tempVec3$l = vec3.create();
 class SkeletonHelper extends Entity {
-    #skeleton;
+    #skeleton = null;
     #lines = new Map();
     #lineMaterial;
     #highlitLineMaterial;
@@ -17065,7 +17213,7 @@ class SkeletonHelper extends Entity {
         this.#boneTipMaterial.setDefine('ALWAYS_ON_TOP');
         this.#boneTipMaterial.setMeshColor([1, 0, 1, 1]);
         this.hideInExplorer = true;
-        this.#skeleton = parameters?.skeleton;
+        this.#skeleton = parameters?.skeleton ?? null;
         this.#raycaster = new Raycaster();
         this.#boneStart = new Sphere({ radius: 1, material: this.#boneTipMaterial });
         this.#boneEnd = new Sphere({ radius: 1, material: this.#boneTipMaterial });
@@ -17147,14 +17295,17 @@ class SkeletonHelper extends Entity {
         });
     }
     #mouseMoved(event) {
-        this.#highlit(this.#pickBone(event));
+        const picked = this.#pickBone(event);
+        if (picked) {
+            this.#highlit(picked);
+        }
     }
     #mouseUp(event) {
         const closest = this.#pickBone(event);
-        this.#highlit(closest);
         if (closest) {
             let bone = closest.properties.getObject('bone');
             if (closest.isLine) {
+                this.#highlit(closest);
                 bone = bone?.parent /*TODO case where parent is not Bone*/ ?? bone;
             }
             SceneExplorerEvents.dispatchEvent(new CustomEvent('bonepicked', { detail: { bone: bone } }));
@@ -17171,13 +17322,13 @@ class SkeletonHelper extends Entity {
     }
     #pickBone(event) {
         if (!this.isVisible()) {
-            return;
+            return null;
         }
         const normalizedX = (event.detail.x / Graphics.getWidth()) * 2 - 1;
         const normalizedY = 1 - (event.detail.y / Graphics.getHeight()) * 2;
-        const scene = this.root;
-        if (!scene.is('Scene')) {
-            return;
+        const scene = this.root; // TODO: imbricated scenes
+        if (!scene.is('Scene') || !scene.activeCamera) {
+            return null;
         }
         const intersections = this.#raycaster.castCameraRay(scene.activeCamera, normalizedX, normalizedY, [this], true);
         if (intersections.length) {
@@ -17202,6 +17353,7 @@ class SkeletonHelper extends Entity {
             }
             return closest;
         }
+        return null;
     }
     #highlit(line) {
         if (!line?.isLine) {
@@ -17211,9 +17363,9 @@ class SkeletonHelper extends Entity {
             this.#highlitLine.material = this.#lineMaterial;
         }
         if (line) {
-            line.material = this.#highlitLineMaterial;
-            this.#boneStart.position = line.getStart(tempVec3$l);
-            this.#boneEnd.position = line.getEnd(tempVec3$l);
+            line.setMaterial(this.#highlitLineMaterial);
+            this.#boneStart.setPosition(line.getStart(tempVec3$l));
+            this.#boneEnd.setPosition(line.getEnd(tempVec3$l));
             this.#boneStart.setVisible(this.#displayJoints);
             this.#boneEnd.setVisible(this.#displayJoints);
             this.#boneStart.properties.set('bone', line.properties.get('boneParent'));
@@ -17525,7 +17677,7 @@ class Decal extends Mesh {
     get position() {
         return super.position;
     }
-    parentChanged(parent) {
+    parentChanged() {
         this.refreshGeometry();
     }
     setSize(size) {
@@ -17536,8 +17688,8 @@ class Decal extends Mesh {
         return this.#size;
     }
     refreshGeometry() {
-        if (this.parent) {
-            this.geometry.applyTo(this.parent, this.worldMatrix, this.#size);
+        if (this.parent && this.parent.is('Mesh')) {
+            this.getGeometry().applyTo(this.parent, this.worldMatrix, this.#size);
         }
     }
     buildContextMenu() {
@@ -17549,8 +17701,8 @@ class Decal extends Mesh {
             refresh: { i18n: '#refresh', f: () => this.refreshGeometry() },
         });
     }
-    static async constructFromJSON(json) {
-        return new Decal(json.name);
+    static async constructFromJSON(json, entities, loadedPromise) {
+        return new Decal(json);
     }
     static getEntityName() {
         return 'Decal';
@@ -17576,7 +17728,7 @@ class DecalGeometry extends BufferGeometry {
         const projectorMatrixInverse = mat4.invert(mat4.create(), projectorMatrix);
         const vertex = vec3.create();
         const normal = vec3.create();
-        const geometry = mesh.geometry;
+        const geometry = mesh.getGeometry();
         if (!geometry) {
             return;
         }
@@ -17589,9 +17741,7 @@ class DecalGeometry extends BufferGeometry {
             normalArray = geometry.attributes.get('aVertexNormal')._array;
         }
         else {
-            mesh.prepareRayCasting();
-            posArray = mesh.skinnedVertexPosition;
-            normalArray = mesh.skinnedVertexNormal;
+            [posArray, normalArray] = mesh.getSkinnedVertex();
         }
         for (let i = 0, l = indexAttribute.count; i < l; ++i) {
             const index = indexArray[i];
@@ -17717,13 +17867,13 @@ class DecalGeometry extends BufferGeometry {
         }
         return outVertices;
     }
-    #clip(v0, v1, p, s) {
+    #clip(v0, v1, plane, s) {
         const v0Pos = v0[0];
         const v1Pos = v1[0];
         const v0Norm = v0[1];
         const v1Norm = v1[1];
-        const d0 = vec3.dot(v0Pos, p) - s;
-        const d1 = vec3.dot(v1Pos, p) - s;
+        const d0 = vec3.dot(v0Pos, plane) - s;
+        const d1 = vec3.dot(v1Pos, plane) - s;
         const s0 = d0 / (d0 - d1);
         // need to clip more values (texture coordinates)? do it this way:
         // intersectpoint.value = a.value + s * ( b.value - a.value );
@@ -17771,8 +17921,8 @@ class SkeletalMesh extends Mesh {
     isSkeletalMesh = true;
     #bonesPerVertex = 3;
     skeleton;
-    skinnedVertexPosition;
-    skinnedVertexNormal;
+    #skinnedVertexPosition;
+    #skinnedVertexNormal;
     constructor(params) {
         super(params);
         this.skeleton = params.skeleton;
@@ -17790,7 +17940,7 @@ class SkeletalMesh extends Mesh {
         const ret = {};
         const skeletonBones = this.skeleton._bones;
         const attributes = { f: 'index', v: 'aVertexPosition', vn: 'aVertexNormal', vt: 'aTextureCoord' };
-        const geometry = this.geometry;
+        const geometry = this.getGeometry();
         const vertexCount = geometry.getAttribute('aVertexPosition').count;
         const skinnedVertexPosition = new Float32Array(vertexCount * 3);
         const skinnedVertexNormal = new Float32Array(vertexCount * 3);
@@ -17883,7 +18033,7 @@ class SkeletalMesh extends Mesh {
         const ret = {};
         const skeletonBones = this.skeleton._bones;
         //let attributes = {f:'index',v:'aVertexPosition',vn:'aVertexNormal',vt:'aTextureCoord'};
-        const geometry = this.geometry;
+        const geometry = this.getGeometry();
         const vertexCount = geometry.getAttribute('aVertexPosition').count;
         const vertexPosition = geometry.getAttribute('aVertexPosition')._array;
         const vertexBoneIndice = geometry.getAttribute('aBoneIndices')._array;
@@ -17924,7 +18074,7 @@ class SkeletalMesh extends Mesh {
                     const bone = skeletonBones[vertexBoneIndice[boneArrayIndex2]];
                     const boneMat = bone ? bone.boneMat : IDENTITY_MAT4$4;
                     const boneWeight = vertexBoneWeight[boneArrayIndex2];
-                    if (bones) {
+                    if (bones && bone) {
                         bones.push([bone, boneWeight]);
                     }
                     if (boneWeight && boneMat) {
@@ -17949,7 +18099,7 @@ class SkeletalMesh extends Mesh {
     }
     getBoundingBox(boundingBox = new BoundingBox()) {
         const skeletonBones = this.skeleton._bones;
-        const geometry = this.geometry;
+        const geometry = this.getGeometry();
         const indexAttribute = geometry.getAttribute('index' /*TODO: create a constant*/);
         const vertexAttribute = geometry.getAttribute('aVertexPosition');
         const indexCount = indexAttribute.count;
@@ -18017,7 +18167,7 @@ class SkeletalMesh extends Mesh {
     }
     prepareRayCasting() {
         const skeletonBones = this.skeleton._bones;
-        const geometry = this.geometry;
+        const geometry = this.getGeometry();
         const vertexCount = geometry.getAttribute('aVertexPosition').count;
         const skinnedVertexPosition = new Float32Array(vertexCount * 3);
         const skinnedVertexNormal = new Float32Array(vertexCount * 3);
@@ -18083,13 +18233,13 @@ class SkeletalMesh extends Mesh {
                 skinnedVertexNormal[vertexArrayIndex + 2] = tempVertexNormal[2];
             }
         }
-        this.skinnedVertexPosition = skinnedVertexPosition;
-        this.skinnedVertexNormal = skinnedVertexNormal;
+        this.#skinnedVertexPosition = skinnedVertexPosition;
+        this.#skinnedVertexNormal = skinnedVertexNormal;
     }
     raycast(raycaster, intersections) {
         //TODO: case when normals are not provided
         const skeletonBones = this.skeleton._bones;
-        const geometry = this.geometry;
+        const geometry = this.getGeometry();
         const indices = geometry.getAttribute('index')._array;
         //let normals = geometry.getAttribute('aVertexNormal')._array;
         const vertexCount = geometry.getAttribute('aVertexPosition').count;
@@ -18165,13 +18315,13 @@ class SkeletalMesh extends Mesh {
             let i1 = 3 * indices[i];
             let i2 = 3 * indices[i + 1];
             let i3 = 3 * indices[i + 2];
-            vec3.set(v1$1, skinnedVertexPosition[i1], skinnedVertexPosition[i1 + 1], skinnedVertexPosition[i1 + 2]);
-            vec3.set(v2, skinnedVertexPosition[i2], skinnedVertexPosition[i2 + 1], skinnedVertexPosition[i2 + 2]);
-            vec3.set(v3, skinnedVertexPosition[i3], skinnedVertexPosition[i3 + 1], skinnedVertexPosition[i3 + 2]);
+            vec3.set(v1$1, skinnedVertexPosition[i1] ?? 0, skinnedVertexPosition[i1 + 1] ?? 0, skinnedVertexPosition[i1 + 2] ?? 0);
+            vec3.set(v2, skinnedVertexPosition[i2] ?? 0, skinnedVertexPosition[i2 + 1] ?? 0, skinnedVertexPosition[i2 + 2] ?? 0);
+            vec3.set(v3, skinnedVertexPosition[i3] ?? 0, skinnedVertexPosition[i3 + 1] ?? 0, skinnedVertexPosition[i3 + 2] ?? 0);
             if (ray$1.intersectTriangle(v1$1, v2, v3, intersectionPoint)) {
-                vec3.set(n1, skinnedVertexNormal[i1], skinnedVertexNormal[i1 + 1], skinnedVertexNormal[i1 + 2]);
-                vec3.set(n2, skinnedVertexNormal[i2], skinnedVertexNormal[i2 + 1], skinnedVertexNormal[i2 + 2]);
-                vec3.set(n3, skinnedVertexNormal[i3], skinnedVertexNormal[i3 + 1], skinnedVertexNormal[i3 + 2]);
+                vec3.set(n1, skinnedVertexNormal[i1] ?? 0, skinnedVertexNormal[i1 + 1] ?? 0, skinnedVertexNormal[i1 + 2] ?? 0);
+                vec3.set(n2, skinnedVertexNormal[i2] ?? 0, skinnedVertexNormal[i2 + 1] ?? 0, skinnedVertexNormal[i2 + 2] ?? 0);
+                vec3.set(n3, skinnedVertexNormal[i3] ?? 0, skinnedVertexNormal[i3 + 1] ?? 0, skinnedVertexNormal[i3 + 2] ?? 0);
                 i1 = 2 * indices[i];
                 i2 = 2 * indices[i + 1];
                 i3 = 2 * indices[i + 2];
@@ -18191,6 +18341,10 @@ class SkeletalMesh extends Mesh {
                 intersections.push(ray$1.createIntersection(intersectionPoint, intersectionNormal, uv$1, this, 0));
             }
         }
+    }
+    getSkinnedVertex() {
+        this.prepareRayCasting();
+        return [this.#skinnedVertexPosition, this.#skinnedVertexNormal];
     }
     static getEntityName() {
         return 'Skeletal mesh';
@@ -18392,8 +18546,7 @@ class ExtrudeGeometry extends BufferGeometry {
         const verticesArray = [];
         const uvArray = [];
         for (let i = 0, l = shapes.length; i < l; i++) {
-            const shape = shapes[i];
-            addShape(shape);
+            addShape(shapes[i]);
         }
         // build geometry
         this.setIndex(new Uint32BufferAttribute(indicesArray, 1));
@@ -18406,36 +18559,39 @@ class ExtrudeGeometry extends BufferGeometry {
             const placeholder = [];
             verticesArray.length / 3;
             // options
-            const curveSegments = options.curveSegments !== undefined ? options.curveSegments : 12;
-            const steps = options.steps !== undefined ? options.steps : 1;
-            let depth = options.depth !== undefined ? options.depth : 100;
-            let bevelEnabled = options.bevelEnabled !== undefined ? options.bevelEnabled : true;
-            let bevelThickness = options.bevelThickness !== undefined ? options.bevelThickness : 6;
-            let bevelSize = options.bevelSize !== undefined ? options.bevelSize : bevelThickness - 2;
-            let bevelOffset = options.bevelOffset !== undefined ? options.bevelOffset : 0;
-            let bevelSegments = options.bevelSegments !== undefined ? options.bevelSegments : 3;
-            const extrudePath = options.extrudePath;
-            const uvgen = options.UVGenerator !== undefined ? options.UVGenerator : WorldUVGenerator;
-            // deprecated options
-            if (options.amount !== undefined) {
-                console.warn('THREE.ExtrudeBufferGeometry: amount has been renamed to depth.');
-                depth = options.amount;
-            }
-            //
-            let extrudePts, extrudeByPath = false;
-            let splineTube, binormal, normal, position2;
+            const curveSegments = options.curveSegments ?? 12;
+            const steps = options.steps ?? 1;
+            const depth = options.depth ?? 100;
+            let bevelEnabled = options.bevelEnabled ?? true;
+            let bevelThickness = options.bevelThickness ?? 6;
+            let bevelSize = options.bevelSize ?? bevelThickness - 2;
+            let bevelOffset = options.bevelOffset ?? 0;
+            let bevelSegments = options.bevelSegments ?? 3;
+            options.extrudePath;
+            const uvgen = options.uvGenerator ?? WorldUVGenerator;
+            // TODO
+            /*
             if (extrudePath) {
+
                 extrudePts = extrudePath.getSpacedPoints(steps);
+
                 extrudeByPath = true;
                 bevelEnabled = false; // bevels not supported for path extrusion
+
                 // SETUP TNB variables
+
                 // TODO1 - have a .isClosed in spline?
+
                 splineTube = extrudePath.computeFrenetFrames(steps, false);
+
                 // console.log(splineTube, 'splineTube', splineTube.normals.length, 'steps', steps, 'extrudePts', extrudePts.length);
+
                 binormal = vec3.create();
                 normal = vec3.create();
                 position2 = vec3.create();
+
             }
+            */
             // Safeguards if bevels are not enabled
             if (!bevelEnabled) {
                 bevelSegments = 0;
@@ -18466,9 +18622,6 @@ class ExtrudeGeometry extends BufferGeometry {
                 vertices = vertices.concat(ahole);
             }
             function scalePt2(pt, vec, size) {
-                if (!vec)
-                    console.error('THREE.ExtrudeGeometry: vec does not exist');
-                //return vec.clone().multiplyScalar( size ).add( pt );;
                 return vec2.scaleAndAdd(vec2.create(), pt, vec, size);
             }
             const vlen = vertices.length, flen = faces.length;
@@ -18601,15 +18754,8 @@ class ExtrudeGeometry extends BufferGeometry {
             // Back facing vertices
             for (let i = 0; i < vlen; i++) {
                 const vert = bevelEnabled ? scalePt2(vertices[i], verticesMovements[i], bs) : vertices[i];
-                if (!extrudeByPath) {
+                {
                     v(vert[0], vert[1], 0);
-                }
-                else {
-                    // v( vert[0], vert[1] + extrudePts[ 0 ][1], extrudePts[ 0 ][2] );
-                    normal.copy(splineTube.normals[0]).multiplyScalar(vert[0]);
-                    binormal.copy(splineTube.binormals[0]).multiplyScalar(vert[1]);
-                    position2.copy(extrudePts[0]).add(normal).add(binormal);
-                    v(position2[0], position2[1], position2[2]);
                 }
             }
             // Add stepped vertices...
@@ -18617,15 +18763,8 @@ class ExtrudeGeometry extends BufferGeometry {
             for (let s = 1; s <= steps; s++) {
                 for (let i = 0; i < vlen; i++) {
                     const vert = bevelEnabled ? scalePt2(vertices[i], verticesMovements[i], bs) : vertices[i];
-                    if (!extrudeByPath) {
+                    {
                         v(vert[0], vert[1], depth / steps * s);
-                    }
-                    else {
-                        // v( vert[0], vert[1] + extrudePts[ s - 1 ][1], extrudePts[ s - 1 ][2] );
-                        normal.copy(splineTube.normals[s]).multiplyScalar(vert[0]);
-                        binormal.copy(splineTube.binormals[s]).multiplyScalar(vert[1]);
-                        position2.copy(extrudePts[s]).add(normal).add(binormal);
-                        v(position2[0], position2[1], position2[2]);
                     }
                 }
             }
@@ -18646,11 +18785,8 @@ class ExtrudeGeometry extends BufferGeometry {
                     oneHoleMovements = holesMovements[h];
                     for (let i = 0, il = ahole.length; i < il; i++) {
                         const vert = scalePt2(ahole[i], oneHoleMovements[i], bs);
-                        if (!extrudeByPath) {
+                        {
                             v(vert[0], vert[1], depth + z);
-                        }
-                        else {
-                            v(vert[0], vert[1] + extrudePts[steps - 1][1], extrudePts[steps - 1][2] + z);
                         }
                     }
                 }
@@ -18837,7 +18973,7 @@ class Text3D extends Mesh {
         params.geometry = new ExtrudeGeometry();
         params.material = params.material ?? new MeshBasicMaterial();
         super(params);
-        this.#text = params.text;
+        this.#text = params.text ?? '';
         this.#size = params.size ?? 100;
         this.#depth = params.depth ?? 10;
         this.#font = params.font ?? Text3D.defaultFont;
@@ -18882,8 +19018,8 @@ class Text3D extends Mesh {
         json.style = this.#style;
         return json;
     }
-    static async constructFromJSON(json) {
-        return new Text3D(json.name);
+    static async constructFromJSON(json, entities, loadedPromise) {
+        return new Text3D({}); // TODO: add params
     }
     fromJSON(json) {
         super.fromJSON(json);
@@ -18896,7 +19032,7 @@ class Text3D extends Mesh {
     buildContextMenu() {
         return Object.assign(super.buildContextMenu(), {
             Text3D_1: null,
-            text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.text = text; } },
+            text: { i18n: '#text', f: () => { const text = prompt('Text', this.#text); this.text = text ?? ''; } },
             font: {
                 i18n: '#font', f: async () => {
                     const fontList = await FontManager.getFontList();
@@ -18967,12 +19103,12 @@ class Wireframe extends Entity {
                 const vertexIndex1 = vertexIndices[i + 0] * 3;
                 const vertexIndex2 = vertexIndices[i + 1] * 3;
                 const vertexIndex3 = vertexIndices[i + 2] * 3;
-                segments.push(vertexPos[vertexIndex1], vertexPos[vertexIndex1 + 1], vertexPos[vertexIndex1 + 2]);
-                segments.push(vertexPos[vertexIndex2], vertexPos[vertexIndex2 + 1], vertexPos[vertexIndex2 + 2]);
-                segments.push(vertexPos[vertexIndex2], vertexPos[vertexIndex2 + 1], vertexPos[vertexIndex2 + 2]);
-                segments.push(vertexPos[vertexIndex3], vertexPos[vertexIndex3 + 1], vertexPos[vertexIndex3 + 2]);
-                segments.push(vertexPos[vertexIndex3], vertexPos[vertexIndex3 + 1], vertexPos[vertexIndex3 + 2]);
-                segments.push(vertexPos[vertexIndex1], vertexPos[vertexIndex1 + 1], vertexPos[vertexIndex1 + 2]);
+                segments.push(vertexPos[vertexIndex1] ?? 0, vertexPos[vertexIndex1 + 1] ?? 0, vertexPos[vertexIndex1 + 2] ?? 0);
+                segments.push(vertexPos[vertexIndex2] ?? 0, vertexPos[vertexIndex2 + 1] ?? 0, vertexPos[vertexIndex2 + 2] ?? 0);
+                segments.push(vertexPos[vertexIndex2] ?? 0, vertexPos[vertexIndex2 + 1] ?? 0, vertexPos[vertexIndex2 + 2] ?? 0);
+                segments.push(vertexPos[vertexIndex3] ?? 0, vertexPos[vertexIndex3 + 1] ?? 0, vertexPos[vertexIndex3 + 2] ?? 0);
+                segments.push(vertexPos[vertexIndex3] ?? 0, vertexPos[vertexIndex3 + 1] ?? 0, vertexPos[vertexIndex3 + 2] ?? 0);
+                segments.push(vertexPos[vertexIndex1] ?? 0, vertexPos[vertexIndex1 + 1] ?? 0, vertexPos[vertexIndex1 + 2] ?? 0);
             }
             line.setSegments(segments);
         }
@@ -19044,12 +19180,15 @@ class BeamSegment {
     }
 }
 class BeamBufferGeometry extends BufferGeometry {
-    constructor(segments) {
+    /*
+    constructor(segments?) {
         super();
+
         if (segments) {
             this.segments = segments;
         }
     }
+    */
     set segments(segments) {
         let previousSegment = null;
         let indiceBase = 0;
@@ -20458,11 +20597,11 @@ class MaterialEditor {
             this.#htmlParams.append(addHtmlParameter('filename', fileName));
         }
         this.#htmlShader.append(addHtmlParameter('shader', material.getShaderSource()));
-        this.#htmlBlendSelects[0].value = BlendingFactor[this.#material.srcRGB];
-        this.#htmlBlendSelects[1].value = BlendingFactor[this.#material.srcAlpha];
-        this.#htmlBlendSelects[2].value = BlendingFactor[this.#material.dstRGB];
-        this.#htmlBlendSelects[3].value = BlendingFactor[this.#material.dstAlpha];
-        this.#htmlHasBlending.checked = this.#material.blend;
+        this.#htmlBlendSelects[0].value = BlendingFactor[material.srcRGB];
+        this.#htmlBlendSelects[1].value = BlendingFactor[material.srcAlpha];
+        this.#htmlBlendSelects[2].value = BlendingFactor[material.dstRGB];
+        this.#htmlBlendSelects[3].value = BlendingFactor[material.dstAlpha];
+        this.#htmlHasBlending.checked = material.blend;
         if (material.blend) {
             show(this.#htmlBlendFactors);
         }
@@ -20520,18 +20659,16 @@ class WireframeHelper extends Entity {
     #meshToWireframe = new Map();
     #wireframeToMesh = new Map();
     parentChanged(parent) {
-        if (parent instanceof Entity) {
-            const meshes = parent.getChildList('Mesh');
-            for (const mesh of meshes) {
-                if (mesh.renderMode !== GL_LINES) { //TODO: improve wireframe detection
-                    const wireframeGeometry = mesh.getGeometry().clone();
-                    const wireframeMesh = new Mesh({ geometry: wireframeGeometry, material: mesh.getMaterial() });
-                    wireframeMesh.renderMode = GL_LINES;
-                    this.#meshToWireframe.set(mesh, wireframeMesh);
-                    this.#wireframeToMesh.set(wireframeMesh, mesh);
-                    WireframeHelper.updateWireframeIndex(wireframeGeometry);
-                    mesh.addChild(wireframeMesh);
-                }
+        const meshes = parent.getChildList('Mesh');
+        for (const mesh of meshes) {
+            if (mesh.renderMode !== GL_LINES) { //TODO: improve wireframe detection
+                const wireframeGeometry = mesh.getGeometry().clone();
+                const wireframeMesh = new Mesh({ geometry: wireframeGeometry, material: mesh.getMaterial() });
+                wireframeMesh.renderMode = GL_LINES;
+                this.#meshToWireframe.set(mesh, wireframeMesh);
+                this.#wireframeToMesh.set(wireframeMesh, mesh);
+                WireframeHelper.#updateWireframeIndex(wireframeGeometry);
+                mesh.addChild(wireframeMesh);
             }
         }
     }
@@ -20541,7 +20678,7 @@ class WireframeHelper extends Entity {
             w.setVisible(visible);
         }
     }
-    static updateWireframeIndex(geometry) {
+    static #updateWireframeIndex(geometry) {
         const attribute = geometry.attributes.get('index');
         if (attribute) {
             const indexArray = attribute._array;
@@ -20573,24 +20710,19 @@ class WireframeHelper extends Entity {
 
 class Source1ModelManager {
     static #modelListPerRepository = new Map();
-    static #modelsPerRepository = new Map();
+    static #modelsPerRepository = new Map2();
     static async #createModel(repositoryName, fileName) {
-        let model = this.#getModel(repositoryName, fileName);
-        if (model) {
-            return model;
+        let promise = this.#modelsPerRepository.get(repositoryName, fileName);
+        if (promise) {
+            return promise;
         }
+        let loadedResolve;
+        promise = new Promise(resolve => loadedResolve = resolve);
+        this.#modelsPerRepository.set(repositoryName, fileName, promise);
         const modelLoader = getLoader('ModelLoader');
-        model = await new modelLoader().load(repositoryName, fileName);
-        if (model) {
-            this.#modelsPerRepository.get(repositoryName)?.set(fileName, model);
-        }
+        let model = await new modelLoader().load(repositoryName, fileName);
+        loadedResolve /*assigned during promise creation*/(model);
         return model;
-    }
-    static #getModel(repositoryName, fileName) {
-        if (!this.#modelsPerRepository.has(repositoryName)) {
-            this.#modelsPerRepository.set(repositoryName, new Map());
-        }
-        return this.#modelsPerRepository.get(repositoryName)?.get(fileName) ?? null;
     }
     static async createInstance(repository, fileName, dynamic, preventInit = false) {
         if (!repository) {
@@ -25400,7 +25532,7 @@ class Source2AnimationDesc {
         if (fetch) {
             const localReferenceArray = fetch.getValueAsNumberArray('m_localReferenceArray');
             //TODO: mix multiple anims
-            if (localReferenceArray && localReferenceArray[0] !== undefined) {
+            if (localReferenceArray && localReferenceArray[0] !== undefined && this.#animationResource.localSequenceNameArray) {
                 const animName = this.#animationResource.localSequenceNameArray[localReferenceArray[0]];
                 if (animName) {
                     const animDesc = this.#source2Model.getAnimationByName(animName);
@@ -26605,7 +26737,7 @@ class Source2ModelInstance extends Entity {
     }
     #playSequences(delta) {
         if (this.#skeleton === null) {
-            return null;
+            return;
         }
         let animDesc;
         if (this.#animName) {
@@ -28036,7 +28168,7 @@ class SceneExplorerEntity extends HTMLElement {
         this.scrollIntoView();
     }
     #display() {
-        const parentEntity = this.#entity.parent;
+        const parentEntity = this.#entity?.parent;
         if (parentEntity) {
             const htmlParent = _a$1.getEntityElement(parentEntity);
             if (htmlParent) {
@@ -28590,13 +28722,15 @@ class SceneExplorer {
             return;
         }
         this.#selectedEntity = entity;
-        entity.addChild(this.#manipulator);
-        entity.addChild(this.#skeletonHelper);
+        entity?.addChild(this.#manipulator);
+        entity?.addChild(this.#skeletonHelper);
         if (this.#isVisible) {
             this.#updateEntityElement(entity);
-            SceneExplorerEntity.getEntityElement(entity)?.select();
-            if (scrollIntoView) {
-                SceneExplorerEntity.getEntityElement(entity)?.display();
+            if (entity) {
+                SceneExplorerEntity.getEntityElement(entity)?.select();
+                if (scrollIntoView) {
+                    SceneExplorerEntity.getEntityElement(entity)?.display();
+                }
             }
         }
     }
@@ -32476,1323 +32610,6 @@ var source_declare_particle = `
 
 Includes['source_declare_particle'] = source_declare_particle;
 
-const PROPERTY_ADDED = 'propertyadded';
-const PROPERTY_CHANGED = 'propertychanged';
-class TimelineObserver extends StaticEventTarget {
-    /*
-        parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null) {
-            this.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
-        }
-
-        childAdded(parent: Entity, child: Entity) {
-            this.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
-        }
-
-        childRemoved(parent: Entity, child: Entity) {
-            this.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
-        }
-
-        entityDeleted(entity: Entity) {
-            this.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
-        }
-    */
-    static propertyAdded(element, propertyName, type, value) {
-        this.dispatchEvent(new CustomEvent(PROPERTY_ADDED, { detail: { element: element, name: propertyName, type: type, value: value } }));
-    }
-    static propertyChanged(element, propertyName, oldValue, newValue) {
-        this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { element: element, name: propertyName, value: newValue, oldValue: oldValue } }));
-    }
-}
-
-var TimelinePropertyType;
-(function (TimelinePropertyType) {
-    TimelinePropertyType[TimelinePropertyType["Unknown"] = 0] = "Unknown";
-    TimelinePropertyType[TimelinePropertyType["Int"] = 1] = "Int";
-    TimelinePropertyType[TimelinePropertyType["Float"] = 2] = "Float";
-    TimelinePropertyType[TimelinePropertyType["Time"] = 3] = "Time";
-    TimelinePropertyType[TimelinePropertyType["String"] = 4] = "String";
-    TimelinePropertyType[TimelinePropertyType["Bool"] = 5] = "Bool";
-    TimelinePropertyType[TimelinePropertyType["Color"] = 6] = "Color";
-})(TimelinePropertyType || (TimelinePropertyType = {}));
-class TimelineProperty {
-    #name;
-    #type;
-    #value;
-    constructor(name, type, value) {
-        this.#name = name;
-        this.#type = type;
-        this.#value = value;
-    }
-    setValue(value) {
-        this.#value = value;
-    }
-    getValue() {
-        return this.#value;
-    }
-}
-
-/*
-export interface TimelineElement {
-    name: string;
-    setParent(element: TimelineElement): void;
-    getParent(element: TimelineElement): TimelineElement | null;
-}
-*/
-var TimelineElementType;
-(function (TimelineElementType) {
-    TimelineElementType[TimelineElementType["None"] = 0] = "None";
-    TimelineElementType[TimelineElementType["Timeline"] = 1] = "Timeline";
-    TimelineElementType[TimelineElementType["Group"] = 2] = "Group";
-    TimelineElementType[TimelineElementType["Channel"] = 3] = "Channel";
-    TimelineElementType[TimelineElementType["Clip"] = 4] = "Clip";
-    TimelineElementType[TimelineElementType["Marker"] = 5] = "Marker";
-})(TimelineElementType || (TimelineElementType = {}));
-class TimelineElement {
-    #parent;
-    #properties = new Map();
-    type = TimelineElementType.None;
-    /*#name: string;
-    startTime: number = 0;
-    endTime: number = Infinity;*/
-    constructor(name) {
-        this.addProperty('name', TimelinePropertyType.String, name);
-    }
-    setName(name) {
-        this.setPropertyValue('name', name);
-    }
-    getName() {
-        return this.getPropertyValue('name');
-    }
-    addProperty(name, type, value) {
-        const property = new TimelineProperty(name, type, value);
-        this.#properties.set(name, property);
-        return property;
-    }
-    setPropertyValue(name, value) {
-        const property = this.#properties.get(name);
-        if (property) {
-            const oldValue = property.getValue();
-            property.setValue(value);
-            TimelineObserver.propertyChanged(this, name, oldValue, value);
-        }
-    }
-    getPropertyValue(name) {
-        return this.#properties.get(name)?.getValue();
-    }
-}
-
-class TimelineGroup extends TimelineElement {
-    type = TimelineElementType.Group;
-    #childs = [];
-    addChild(child) {
-        this.#childs.push(child);
-        return child;
-    }
-    getChilds() {
-        return [...this.#childs];
-    }
-}
-
-class Actor {
-    name;
-    channels = [];
-    choreography;
-    active = false;
-    constructor(name) {
-        this.name = name;
-    }
-    addChannel(channel) {
-        this.channels.push(channel);
-        channel.setActor(this);
-    }
-    setChoreography(choreography) {
-        this.choreography = choreography;
-    }
-    getCharacter() {
-        return this.choreography.actors2[0]; //fixme: variable
-    }
-    setActive(active) {
-        this.active = active;
-    }
-    toString(indent) {
-        indent = indent || '';
-        const subindent = indent + '\t';
-        const arr = [indent + 'Actor ' + this.name];
-        for (let i = 0; i < this.channels.length; ++i) {
-            arr.push(this.channels[i].toString(subindent));
-        }
-        return arr.join('\n');
-    }
-    step(previousTime, currentTime) {
-        //TODOv2
-        for (let i = 0; i < this.channels.length; ++i) {
-            this.channels[i].step(previousTime, currentTime);
-        }
-    }
-    toTimelineElement() {
-        const actor = new TimelineGroup(this.name);
-        for (const channel of this.channels) {
-            actor.addChild(channel.toTimelineElement());
-        }
-        return actor;
-    }
-}
-
-class TimelineChannel extends TimelineElement {
-    type = TimelineElementType.Channel;
-    #clips = new Set;
-    constructor(name = 'Channel') {
-        super(name);
-    }
-    addClip(clip) {
-        this.#clips.add(clip);
-        return clip;
-    }
-    getClips() {
-        return [...this.#clips];
-    }
-}
-
-class Channel {
-    active = false;
-    events = [];
-    name;
-    actor;
-    constructor(name) {
-        this.name = name;
-    }
-    /**
-     * Add an event
-     * @param {Object ChoreographyEvent} event The event to add
-     */
-    addEvent(event) {
-        this.events.push(event);
-        event.setChannel(this);
-    }
-    /**
-     * TODO
-     */
-    setActor(actor) {
-        this.actor = actor;
-    }
-    /**
-     * TODO
-     */
-    getActor() {
-        return this.actor;
-    }
-    /**
-     * Set active
-     * @param {Bool} active active
-     */
-    setActive(active) {
-        this.active = active;
-    }
-    /**
-     * toString
-     */
-    toString(indent) {
-        indent = indent || '';
-        const subindent = indent + '\t';
-        const arr = [indent + 'Channel ' + this.name];
-        for (let i = 0; i < this.events.length; ++i) {
-            arr.push(this.events[i].toString(subindent));
-        }
-        if (!this.active) {
-            arr.push(indent + 'active 0');
-        }
-        return arr.join('\n');
-    }
-    /**
-     * Step
-     */
-    step(previousTime, currentTime) {
-        //TODOv2
-        for (let i = 0; i < this.events.length; ++i) {
-            this.events[i].step(previousTime, currentTime);
-        }
-    }
-    toTimelineElement() {
-        const channel = new TimelineChannel(this.name);
-        for (const event of this.events) {
-            channel.addClip(event.toTimelineElement());
-        }
-        return channel;
-    }
-}
-
-class Timeline extends TimelineElement {
-    type = TimelineElementType.Timeline;
-    name = '';
-    #root = new TimelineGroup('');
-    constructor(name = 'Timeline') {
-        super(name);
-    }
-    setParent(element) {
-        return;
-    }
-    getRoot() {
-        return this.#root;
-    }
-    addChild(child) {
-        return this.#root.addChild(child);
-    }
-    getChilds() {
-        return this.#root.getChilds();
-    }
-}
-
-class Choreography {
-    #repository;
-    actors2 = [];
-    #events = [];
-    #actors = [];
-    previousTime = -1;
-    currentTime = 0;
-    animsSpeed = 1;
-    shouldLoop = false;
-    sceneLength;
-    onStop;
-    constructor(repository, name) {
-        this.#repository = repository;
-    }
-    getRepository() {
-        return this.#repository;
-    }
-    /**
-     * Add an event
-     * @param {Object ChoreographyEvent} event The event to add
-     */
-    addEvent(event) {
-        this.#events.push(event);
-        event.setChoreography(this);
-    }
-    /**
-     * Add an actor
-     * @param {Object ChoreographyActor} actor The actor to add
-     */
-    addActor(actor) {
-        this.#actors.push(actor);
-        actor.setChoreography(this);
-    }
-    /**
-     * toString
-     */
-    toString(indent = '') {
-        const arr = [];
-        for (let i = 0; i < this.#events.length; ++i) {
-            arr.push(this.#events[i].toString(indent));
-        }
-        for (let i = 0; i < this.#actors.length; ++i) {
-            arr.push(this.#actors[i].toString(indent));
-        }
-        return arr.join('\n');
-    }
-    /**
-     * Step
-     */
-    step(delta) {
-        if (this.animsSpeed > 0) {
-            const currentTime = this.previousTime == -1 ? 0 : this.previousTime + delta * this.animsSpeed;
-            if (this.previousTime != -0.5) {
-                this.currentTime = currentTime;
-            }
-            for (let i = 0; i < this.#events.length; ++i) {
-                this.#events[i].step(this.previousTime, this.currentTime);
-            }
-            for (let i = 0; i < this.#actors.length; ++i) {
-                this.#actors[i].step(this.previousTime, this.currentTime);
-            }
-            if (this.shouldLoop) {
-                this.shouldLoop = false;
-                return true;
-            }
-            this.previousTime = this.currentTime;
-            if (currentTime > this.sceneLength) {
-                this.stop();
-                return false;
-            }
-        }
-        return true;
-    }
-    /**
-     * Reset
-     */
-    reset() {
-        this.previousTime = -1;
-        this.currentTime = 0;
-    }
-    /**
-     * Stop
-     */
-    stop() {
-        if (this.onStop) {
-            this.onStop();
-        }
-    }
-    /**
-     * Step
-     */
-    loop(startTime) {
-        this.previousTime = startTime - EPSILON$2;
-        this.currentTime = startTime;
-        this.shouldLoop = true;
-    }
-    /**
-     * Step
-     */
-    setActors(actors) {
-        this.actors2 = actors;
-    }
-    toTimelineElement() {
-        const timeline = new Timeline();
-        const events = timeline.addChild(new TimelineGroup('Events'));
-        timeline.addChild(new TimelineGroup('Actors'));
-        for (const event of this.#events) {
-            events.addChild(event.toTimelineElement());
-        }
-        for (const actor of this.#actors) {
-            events.addChild(actor.toTimelineElement());
-        }
-        /*
-        for (let i = 0; i < this.#actors.length; ++i) {
-            arr.push(this.#actors[i].toString(indent));
-        }
-            */
-        return timeline;
-    }
-}
-
-class CurveData {
-    ramp = [];
-    /**
-     * Add a sample TODO
-     * @param {Object ChoreographyEvent} event The event to add
-     * @return {Object Choreography} The requested choreography or null
-     */
-    add(time, value, selected) {
-        this.ramp.push({ time: time, value: value, selected: selected });
-    }
-    getValue(time) {
-        let previous = null;
-        for (const current of this.ramp) {
-            if (time <= current.time) {
-                if (previous) {
-                    return RemapValClamped(time, previous.time, current.time, previous.value, current.value);
-                }
-                else {
-                    return current.value;
-                }
-            }
-            previous = current;
-        }
-    }
-    /**
-     * toString
-     */
-    toString(indent) {
-        if (!this.ramp.length) {
-            return '';
-        }
-        indent = indent || '';
-        const subindent = indent + '\t';
-        const arr = [indent + 'event_ramp'];
-        for (let i = 0; i < this.ramp.length; ++i) {
-            const rampData = this.ramp[i];
-            arr.push(subindent + rampData.time + ' ' + rampData.value);
-        }
-        return arr.join('\n');
-    }
-}
-
-class ExpressionSample {
-    v = 0.0;
-    t = 0.0;
-    s = 0;
-    c = 0;
-    selected = false;
-    setCurveType(curveType) {
-        this.c = curveType;
-    }
-    /**
-     * toString
-     */
-    toString(indent = '') {
-        return indent + this.t + ' ' + this.v;
-    }
-}
-
-class FlexAnimationTrack {
-    event;
-    flags = 0;
-    samples = [[], []];
-    controllerName;
-    min = 0;
-    max = 0;
-    constructor(event) {
-        this.event = event;
-    }
-    setFlexControllerName(controllerName) {
-        this.controllerName = controllerName;
-    }
-    setFlags(flags) {
-        this.flags = flags;
-    }
-    setMin(min) {
-        this.min = min;
-    }
-    setMax(max) {
-        this.max = max;
-    }
-    isTrackActive() {
-        return (this.flags & (1 << 0)) ? true : false;
-    }
-    isComboType() {
-        return (this.flags & (1 << 1)) ? true : false;
-    }
-    addSample(time, value, type) {
-        const sample = new ExpressionSample();
-        sample.t = time;
-        sample.v = value;
-        sample.selected = false;
-        this.samples[type].push(sample);
-        return sample;
-    }
-    toString(indent) {
-        indent = indent || '';
-        const subindent = indent + '\t';
-        const arr = [indent + this.controllerName];
-        for (let sampleType = 0; sampleType < 2; ++sampleType) {
-            const samples = this.samples[sampleType];
-            for (let i = 0; i < samples.length; ++i) {
-                const sample = samples[i];
-                arr.push(subindent + sample.toString());
-            }
-        }
-        return arr.join('\n');
-    }
-}
-
-// TODO can this be merged with kv3element ?
-class KvAttribute {
-    name;
-    value;
-    constructor(name, value) {
-        if (!name) {
-            return;
-        }
-        this.name = name.toLowerCase();
-        this.value = value;
-    }
-}
-class KvElement {
-    addElement(name, value) {
-        if (!name) {
-            return;
-        }
-        name = name.toLowerCase();
-        let newName = name;
-        let count = 1;
-        while (this[newName]) {
-            newName = name + '#' + (++count);
-        }
-        this[newName] = value;
-    }
-    toString(linePrefix) {
-        linePrefix = linePrefix || '';
-        const s = [linePrefix, '"' /*, this.type, '"\n'*/, linePrefix, '{\n'];
-        for (const i in this) {
-            s.push(this.toString(linePrefix + '\t'));
-        }
-        s.push(linePrefix);
-        s.push('}\n');
-        return s.join('');
-    }
-}
-class KvReader {
-    root = undefined;
-    rootElements = {};
-    rootId = 0;
-    carSize;
-    src;
-    offset;
-    inQuote = false;
-    inComment = false;
-    currentAttribute;
-    currentElement;
-    currentArray;
-    name;
-    currentValue;
-    elementStack;
-    attributeStack;
-    valuesStack;
-    keyStack;
-    arrayStack;
-    rootElement;
-    rootName;
-    currentKey;
-    constructor(carSize = 1) {
-        this.carSize = carSize;
-    }
-    readText(src) {
-        if (!src) {
-            return;
-        }
-        this.src = src;
-        let start = src.indexOf('-->');
-        if (start > 0) {
-            start += 5; //-->/nx
-        }
-        else {
-            start = 0;
-        }
-        this.offset = start;
-        this.inQuote = false;
-        this.inComment = false;
-        this.currentAttribute = undefined;
-        this.currentElement = undefined;
-        this.currentArray = undefined;
-        this.name = undefined;
-        this.currentValue = '';
-        this.elementStack = [];
-        this.attributeStack = [];
-        this.valuesStack = [];
-        this.keyStack = [];
-        this.arrayStack = [];
-        let end = false;
-        do {
-            end = this.parse();
-        } while (!end);
-        this.endElement();
-    }
-    getRootElement() {
-        return this.rootElement;
-    }
-    getRootName() {
-        return this.rootName;
-    }
-    readChar() {
-        if (this.offset > this.src.length) {
-            return -1;
-        }
-        const offset = this.offset;
-        this.offset += this.carSize;
-        return this.src.charAt(offset);
-    }
-    pickChar() {
-        if (this.offset > this.src.length) {
-            return -1;
-        }
-        return this.src.charAt(this.offset);
-    }
-    pushElement() {
-        if (this.currentElement) {
-            this.elementStack.push(this.currentElement);
-        }
-        if (!this.rootElement) ;
-        this.currentElement = new KvElement( /*this.popValue()*/);
-        this.currentKey = this.popValue();
-        this.pushKey();
-    }
-    popElement() {
-        const a = this.currentElement;
-        this.currentElement = this.elementStack.pop();
-        if (!this.currentElement) {
-            //this.rootElements.push(a);
-            let rootName = this.popKey();
-            if (rootName == undefined) {
-                rootName = 'undefined' + (this.rootId++);
-            }
-            this.rootElements[rootName] = a;
-            if (!this.rootElement) {
-                this.rootName = rootName;
-                this.rootElement = a;
-            }
-        }
-    }
-    pushAttribute() {
-        if (this.currentAttribute) {
-            this.attributeStack.push(this.currentAttribute);
-        }
-        //this.currentAttribute = new KvElement();
-    }
-    popAttribute() {
-        this.currentAttribute = this.attributeStack.pop();
-    }
-    pushValue() {
-        this.valuesStack.push(this.currentValue);
-        this.currentValue = '';
-    }
-    popValue() {
-        if (this.valuesStack.length == 0) ;
-        return this.valuesStack.pop();
-    }
-    pushKey() {
-        this.keyStack.push(this.currentKey);
-        this.currentKey = '';
-    }
-    popKey() {
-        if (this.keyStack.length == 0) ;
-        return this.keyStack.pop();
-    }
-    pushArray() {
-        this.arrayStack.push(this.currentArray);
-        this.currentArray = undefined;
-    }
-    popArray() {
-        this.currentArray = this.arrayStack.pop();
-    }
-    parse() {
-        const car = this.readChar();
-        if (car == -1)
-            return true;
-        if (this.inComment && (car != '\r' && car != '\n')) {
-            return false;
-        }
-        this.inComment = false;
-        if (this.inQuote && car != '"' && car != '\r' && car != '\n') {
-            this.currentValue += car;
-        }
-        else {
-            switch (car) {
-                case '\\':
-                    if (this.inQuote) {
-                        const car2 = this.pickChar();
-                        if (car2 == '\"') {
-                            this.currentValue += car2;
-                        }
-                        else {
-                            this.currentValue += car;
-                        }
-                    }
-                    else {
-                        this.currentValue += car;
-                    }
-                    break;
-                case '/':
-                    const car2 = this.pickChar();
-                    if (car2 == '/') {
-                        this.inComment = true;
-                    }
-                    else {
-                        this.currentValue += car;
-                    }
-                    break;
-                case ' ':
-                case '\t':
-                    if (this.currentValue != '') {
-                        this.setValue();
-                    }
-                    if (this.valuesStack.length >= 2) {
-                        this.newLine();
-                        //if (!this.multipleValuesOnSameLine) {//TODOV2
-                        this.inComment = true;
-                        //}
-                    }
-                    break;
-                case '\r':
-                case '\n':
-                    if (!this.inQuote && this.currentValue != '')
-                        this.setValue();
-                    this.newLine();
-                    break;
-                case '"':
-                    if (this.inQuote)
-                        this.setValue();
-                    this.inQuote = !this.inQuote;
-                    break;
-                case '{':
-                    if (this.currentValue != '') {
-                        this.setValue();
-                    }
-                    this.startElement();
-                    break;
-                case '}':
-                    this.endElement();
-                    break;
-                case '[':
-                    this.startArray();
-                    break;
-                case ']':
-                    this.endArray();
-                    break;
-                case ',':
-                    this.comma();
-                    //this.nextArrayValue()
-                    break;
-                default:
-                    this.currentValue += car;
-                    break;
-            }
-        }
-        return false;
-    }
-    startElement() {
-        this.pushElement();
-        this.newLine();
-        this.pushAttribute();
-    }
-    endElement() {
-        if (this.currentElement) {
-            const e = this.currentElement;
-            this.popElement();
-            if (this.currentElement) {
-                this.currentElement.addElement(this.popKey(), e);
-            }
-        }
-    }
-    startArray() {
-        this.pushArray();
-        this.currentValue = [];
-        this.currentArray = this.currentValue;
-        this.pushValue();
-        this.newLine();
-        this.pushAttribute();
-    }
-    endArray() {
-        this.popAttribute();
-        //this.currentAttribute.value.push(this.currentElement);
-        this.popArray();
-    }
-    nextArrayValue() {
-        //TODO
-    }
-    setValue() {
-        this.pushValue();
-    }
-    newLine() {
-        if (this.valuesStack.length >= 2) {
-            // order matters
-            const value = this.popValue();
-            const name = this.popValue();
-            const newAttribute = new KvAttribute(name, value);
-            if (this.currentElement) {
-                this.currentElement.addElement(name, value);
-            }
-            else if (this.currentArray) {
-                this.currentArray.push(newAttribute);
-            }
-            this.currentAttribute = newAttribute;
-        }
-    }
-    comma() {
-        if (this.valuesStack.length >= 1) {
-            // order matters
-            const value = this.popValue();
-            const name = this.popValue();
-            const newAttribute = new KvAttribute(name, value);
-            if (this.currentArray) {
-                this.currentArray.push(newAttribute);
-            }
-            else if (this.currentElement) {
-                this.currentElement.addAttribute(newAttribute);
-            }
-            this.currentAttribute = newAttribute;
-        }
-    }
-}
-
-class Sound {
-    #repository;
-    #wave;
-    #channel;
-    constructor(repository, wave, channel) {
-        this.#repository = repository;
-        this.#wave = wave;
-        this.#channel = channel;
-    }
-    getRepository() {
-        return this.#repository;
-    }
-    getWave() {
-        if (Array.isArray(this.#wave)) {
-            const index = Math.floor(Math.random() * this.#wave.length);
-            return this.#wave[index];
-        }
-        else {
-            return this.#wave;
-        }
-    }
-    getChannel() {
-        return this.#channel;
-    }
-}
-
-class Source1SoundManager {
-    static #mute = false;
-    static #audioList = new Map();
-    static #soundList = {};
-    static #soundsPerRepository = new Map();
-    static #soundListPerRepository = {};
-    static #manifestsPerRepository = new Map();
-    static #promisePerRepository = new Map();
-    /**
-     * Play a sound
-     * @param {String} soundName soundName
-     */
-    static async playSound(repositoryName, soundName) {
-        if (this.#mute) {
-            return null;
-        }
-        const sound = await this.#getSound(repositoryName, soundName);
-        //const sound = this.#soundList[soundName];
-        if (sound) {
-            let wave = sound.getWave();
-            // Remove #, *, ( and ) from paths
-            wave = wave.replace(/[\(\)\#\*]/g, '').toLowerCase();
-            let audio = this.#audioList.get(wave);
-            //audio = null;//removeme
-            if (!audio) {
-                const response = await Repositories.getFileAsBlob(sound.getRepository(), '/sound/' + wave);
-                if (!response.error) {
-                    audio = new Audio(URL.createObjectURL(response.blob) /*new URL('/sound/' + wave, repository.base).toString()*/);
-                    this.#audioList.set(wave, audio);
-                    audio.volume = 0.1;
-                    //audio.play();
-                    AudioMixer.playAudio('master', audio); //TODO: change master per actual channel
-                }
-                else {
-                    return null;
-                }
-            }
-            else {
-                AudioMixer.playAudio('master', audio);
-            }
-            return audio;
-        }
-        return null;
-    }
-    static async #getSound(repositoryName, soundName) {
-        await this.#fetchManifests(repositoryName);
-        /*const repo = this.#soundsPerRepository[repositoryName];
-        if (repo) {
-            return repo[soundName];
-        }*/
-        return this.#soundsPerRepository.get(repositoryName)?.get(soundName) ?? null;
-    }
-    static async #fetchManifests(repositoryName) {
-        if (this.#promisePerRepository.has(repositoryName)) {
-            await this.#promisePerRepository.get(repositoryName);
-        }
-        if (!this.#soundsPerRepository.has(repositoryName)) {
-            this.#soundsPerRepository.set(repositoryName, new Map());
-        }
-        let promiseResolve;
-        this.#promisePerRepository.set(repositoryName, new Promise(resolve => promiseResolve = resolve));
-        const manifests = this.#manifestsPerRepository.get(repositoryName);
-        if (manifests) {
-            this.#manifestsPerRepository.delete(repositoryName);
-            for (const manifest of manifests) {
-                await this.#fetchManifest(repositoryName, manifest);
-            }
-        }
-        promiseResolve(true);
-    }
-    static async #fetchManifest(repositoryName, manifestPath) {
-        const response = await Repositories.getFileAsText(repositoryName, manifestPath);
-        if (!response.error) {
-            this.#loadManifest(repositoryName, response.text);
-        }
-    }
-    static #loadManifest(repositoryName, manifestTxt) {
-        const sounds = this.#soundsPerRepository.get(repositoryName);
-        const kv = new KvReader();
-        kv.readText(manifestTxt);
-        const list = kv.rootElements;
-        const keyArray = Object.keys(list);
-        for (let i = 0; i < keyArray.length; ++i) {
-            const soundKey = keyArray[i];
-            const sound = list[soundKey] /*TODO: improve type*/;
-            let wave;
-            if (sound.rndwave) {
-                wave = [];
-                Object.keys(sound.rndwave).forEach(function (element) {
-                    wave.push(sound.rndwave[element]);
-                });
-            }
-            else {
-                wave = sound.wave;
-            }
-            //const wave = sound.rndwave ? sound.rndwave : sound.wave;
-            const s = new Sound(repositoryName, wave, sound.channel);
-            sounds?.set(soundKey, s);
-        }
-    }
-    static loadManifest(repositoryName, fileName) {
-        let manifests = this.#manifestsPerRepository.get(repositoryName);
-        if (!manifests) {
-            manifests = [];
-            this.#manifestsPerRepository.set(repositoryName, manifests);
-        }
-        manifests.push(fileName);
-    }
-    static mute() {
-        this.#mute = true;
-    }
-    static unmute() {
-        this.#mute = false;
-    }
-}
-
-class TimelineClip extends TimelineElement {
-    type = TimelineElementType.Clip;
-    constructor(name = 'Clip', startTime = 0, endTime = Infinity) {
-        super(name);
-        this.addProperty('start', TimelinePropertyType.Time, startTime);
-        this.addProperty('end', TimelinePropertyType.Time, endTime);
-    }
-    setStartTime(start) {
-        this.setPropertyValue('start', start);
-    }
-    getStartTime() {
-        return this.getPropertyValue('start');
-    }
-    setEndTime(end) {
-        this.setPropertyValue('end', end);
-    }
-    getEndTime() {
-        return this.getPropertyValue('end');
-    }
-    getLength() {
-        return this.getPropertyValue('end') - this.getPropertyValue('start');
-    }
-}
-
-class Event {
-    #repository;
-    type;
-    name;
-    startTime;
-    endTime;
-    param1;
-    param2;
-    param3;
-    flags;
-    distanceToTarget = 0;
-    flexAnimTracks = {};
-    ramp;
-    ccType;
-    ccToken;
-    choreography;
-    channel;
-    m_nNumLoops;
-    constructor(repository, eventType, name, startTime, endTime, param1, param2, param3, flags, distanceToTarget) {
-        this.#repository = repository;
-        this.type = eventType;
-        this.name = name;
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.param1 = param1;
-        this.param2 = param2;
-        this.param3 = param3;
-        this.flags = flags;
-        this.distanceToTarget = distanceToTarget;
-    }
-    getRepository() {
-        return this.#repository;
-    }
-    /**
-     * Get the startTime
-     * @return {Number} startTime
-     */
-    getStartTime() {
-        return this.startTime;
-    }
-    /**
-     * Get the endTime
-     * @return {Number} endTime
-     */
-    getEndTime() {
-        return this.endTime;
-    }
-    /**
-     * Get the type
-     * @return {Number} The loaded file
-     */
-    getType() {
-        return this.type;
-    }
-    /**
-     * Set the ramp
-     * @param {Object CurveData} ramp The ramp to set
-     */
-    setRamp(ramp) {
-        this.ramp = ramp;
-    }
-    /**
-     * TODO
-     */
-    setCloseCaptionType(ccType) {
-        this.ccType = ccType;
-    }
-    /**
-     * TODO
-     */
-    setCloseCaptionToken(token) {
-        this.ccToken = token;
-    }
-    /**
-     * TODO
-     */
-    setChoreography(choreography) {
-        this.choreography = choreography;
-    }
-    /**
-     * TODO
-     */
-    setChannel(channel) {
-        this.channel = channel;
-    }
-    //TODO
-    AddRelativeTag() {
-        console.error('TODO');
-    }
-    //TODO
-    addRelativeTag() {
-        console.error('TODO');
-    }
-    //TODO
-    addTimingTag() {
-        console.error('TODO');
-    }
-    //TODO
-    addAbsoluteTag() {
-        console.error('TODO');
-    }
-    /**
-     * TODO
-     */
-    isResumeCondition() {
-        return (this.flags & (1 << 0)) ? true : false;
-    }
-    /**
-     * TODO
-     */
-    isLockBodyFacing() {
-        return (this.flags & (1 << 1)) ? true : false;
-    }
-    /**
-     * TODO
-     */
-    isFixedLength() {
-        return (this.flags & (1 << 2)) ? true : false;
-    }
-    /**
-     * TODO
-     */
-    isActive() {
-        return (this.flags & (1 << 3)) ? true : false;
-    }
-    /**
-     * TODO
-     */
-    getForceShortMovement() {
-        return (this.flags & (1 << 4)) ? true : false;
-    }
-    /**
-     * TODO
-     */
-    getPlayOverScript() {
-        return (this.flags & (1 << 5)) ? true : false;
-    }
-    /**
-     * TODO
-     * Add a flex animation track
-     */
-    addTrack(controllerName) {
-        const track = new FlexAnimationTrack(this);
-        track.setFlexControllerName(controllerName);
-        this.flexAnimTracks[controllerName] = track;
-        return track;
-    }
-    /**
-     * toString
-     */
-    toString(indent) {
-        indent = indent || '';
-        const subindent = indent + '\t';
-        const arr = [];
-        arr.push(indent + 'Event ' + EventType[this.type] + ' ' + this.name);
-        arr.push(subindent + 'time ' + this.startTime + ' ' + this.endTime);
-        if (this.param1) {
-            arr.push(subindent + 'param1 ' + this.param1);
-        }
-        if (this.param2) {
-            arr.push(subindent + 'param2 ' + this.param2);
-        }
-        if (this.param3) {
-            arr.push(subindent + 'param3 ' + this.param3);
-        }
-        if (this.ramp) {
-            arr.push(this.ramp.toString(subindent));
-        }
-        if (this.getType() == EventType.Flexanimation) {
-            arr.push(subindent + 'flexanimations');
-        }
-        for (const i in this.flexAnimTracks) {
-            arr.push(this.flexAnimTracks[i].toString(subindent + '\t'));
-        }
-        if (this.getType() == EventType.Speak) {
-            arr.push(subindent + 'cctype ' + CloseCaptionType[this.ccType]);
-            arr.push(subindent + 'cctoken ' + this.ccToken);
-        }
-        return arr.join('\n');
-    }
-    /**
-     * Step
-     */
-    step(previousTime, currentTime) {
-        const actor = this.getActor();
-        if (actor) {
-            actor.frame = currentTime;
-        }
-        //TODOv2
-        if (previousTime < this.startTime && currentTime >= this.startTime) {
-            //console.info(frame2, currentTime, this.type, this.param1, this.param2, this.param3);
-            switch (this.type) {
-                case EventType.Speak:
-                    Source1SoundManager.playSound(this.#repository, this.param1);
-                    break;
-                case EventType.Sequence:
-                    //mainCharacter.characterModel.playSequence(this.param1);//TODOv2
-                    if (actor) {
-                        actor.playSequence(this.param1); //TODOv2
-                        //actor.frame = currentTime;
-                        /*if (actor.characterModel) {
-                            actor.playSequence(this.param1);//TODOv2
-                        }
-                        if (actor.sourceModel) {
-                            actor.playSequence(this.param1);//TODOv2
-                        }*/
-                    }
-                    //frame2 = currentTime;
-                    break;
-                case EventType.Loop:
-                    //TODO: loop count
-                    if (this.choreography) {
-                        this.choreography.loop(this.param1 * 1.0);
-                        //frame2 = this.param1 * 1.0;
-                    }
-                    break;
-            }
-            return;
-        }
-        if (previousTime < this.endTime && currentTime >= this.endTime) {
-            //console.info(frame2, currentTime, this.type, this.param1, this.param2, this.param3);
-            switch (this.type) {
-                case EventType.Sequence:
-                    const actor = this.getActor();
-                    if (actor) {
-                        if (actor.characterModel) {
-                            actor.characterModel.playSequence('stand_secondary'); //TODOv2
-                        }
-                    }
-                    //frame2 = currentTime;
-                    break;
-            }
-        }
-        if (currentTime >= this.startTime && currentTime <= this.endTime) {
-            switch (this.type) {
-                /*case EventType.Expression:
-                    let actor = this.getActor();
-                    if (actor) {
-                        let flexParameters = {};
-                        flexParameters[this.param2.toLowerCase()] = this.ramp.getValue(currentTime);
-                        actor.setFlexes(flexParameters);
-                    }
-                    break;*/
-            }
-        }
-    }
-    /**
-     * TODO
-     */
-    getActor() {
-        const channel = this.channel;
-        if (channel) {
-            const actor = channel.getActor();
-            if (actor) {
-                return actor.getCharacter();
-            }
-        }
-    }
-    toTimelineElement() {
-        const clip = new TimelineClip(this.name, this.startTime, this.endTime);
-        return clip;
-    }
-}
-var EventType;
-(function (EventType) {
-    EventType[EventType["Unspecified"] = 0] = "Unspecified";
-    EventType[EventType["Section"] = 1] = "Section";
-    EventType[EventType["Expression"] = 2] = "Expression";
-    EventType[EventType["LookAt"] = 3] = "LookAt";
-    EventType[EventType["MoveTo"] = 4] = "MoveTo";
-    EventType[EventType["Speak"] = 5] = "Speak";
-    EventType[EventType["Gesture"] = 6] = "Gesture";
-    EventType[EventType["Sequence"] = 7] = "Sequence";
-    EventType[EventType["Face"] = 8] = "Face";
-    EventType[EventType["FireTrigger"] = 9] = "FireTrigger";
-    EventType[EventType["Flexanimation"] = 10] = "Flexanimation";
-    EventType[EventType["SubScene"] = 11] = "SubScene";
-    EventType[EventType["Loop"] = 12] = "Loop";
-    EventType[EventType["Interrupt"] = 13] = "Interrupt";
-    EventType[EventType["StopPoint"] = 14] = "StopPoint";
-    EventType[EventType["PermitResponses"] = 15] = "PermitResponses";
-    EventType[EventType["Generic"] = 16] = "Generic";
-})(EventType || (EventType = {}));
-//TODO: setup const
-/*
-Event.EventType = {
-    UNSPECIFIED: 0,
-    SECTION: 1,
-    EXPRESSION: 2,
-    LOOKAT: 3,
-    MOVETO: 4,
-    SPEAK: 5,
-    GESTURE: 6,
-    SEQUENCE: 7,
-    FACE: 8,
-    FIRETRIGGER: 9,
-    FLEXANIMATION: 10,
-    SUBSCENE: 11,
-    LOOP: 12,
-    INTERRUPT: 13,
-    STOPPOINT: 14,
-    PERMIT_RESPONSES: 15,
-    GENERIC: 16
-}
-Event.EventTypeString = ['UNSPECIFIED', 'SECTION', 'EXPRESSION', 'LOOKAT', 'MOVETO', 'SPEAK', 'GESTURE', 'SEQUENCE', 'FACE', 'FIRETRIGGER', 'FLEXANIMATION', 'SUBSCENE', 'LOOP', 'INTERRUPT', 'STOPPOINT', 'PERMIT_RESPONSES', 'GENERIC']
-*/
-var TimeType;
-(function (TimeType) {
-    TimeType[TimeType["Default"] = 0] = "Default";
-    TimeType[TimeType["Simulation"] = 1] = "Simulation";
-    TimeType[TimeType["Display"] = 2] = "Display";
-})(TimeType || (TimeType = {}));
-/*
-Event.TimeType = {
-    DEFAULT: 0,
-    SIMULATION: 1,
-    DISPLAY: 2
-}
-Event.TimeTypeString = ['DEFAULT', 'SIMULATION', 'DISPLAY'];
-*/
-var CloseCaptionType;
-(function (CloseCaptionType) {
-    CloseCaptionType[CloseCaptionType["Master"] = 0] = "Master";
-    CloseCaptionType[CloseCaptionType["Slave"] = 1] = "Slave";
-    CloseCaptionType[CloseCaptionType["Disabled"] = 2] = "Disabled";
-})(CloseCaptionType || (CloseCaptionType = {}));
-/*
-Event.CloseCaptionType = {
-    CC_MASTER: 0,
-    CC_SLAVE: 1,
-    CC_DISABLED: 2
-}
-Event.CloseCaptionTypeString = ['CC_MASTER', 'CC_SLAVE', 'CC_DISABLED'];
-*/
-
 /*
 Copyright (c) 2011 Juan Mellado
 
@@ -34354,9 +33171,1315 @@ function DecompressLZMA(properties, compressedDatas, uncompressedSize) {
     return null;
 }
 
-class Choreographies {
+const PROPERTY_ADDED = 'propertyadded';
+const PROPERTY_CHANGED = 'propertychanged';
+class TimelineObserver extends StaticEventTarget {
+    /*
+        parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null) {
+            this.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
+        }
+
+        childAdded(parent: Entity, child: Entity) {
+            this.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
+        }
+
+        childRemoved(parent: Entity, child: Entity) {
+            this.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
+        }
+
+        entityDeleted(entity: Entity) {
+            this.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
+        }
+    */
+    static propertyAdded(element, propertyName, type, value) {
+        this.dispatchEvent(new CustomEvent(PROPERTY_ADDED, { detail: { element: element, name: propertyName, type: type, value: value } }));
+    }
+    static propertyChanged(element, propertyName, oldValue, newValue) {
+        this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED, { detail: { element: element, name: propertyName, value: newValue, oldValue: oldValue } }));
+    }
+}
+
+var TimelinePropertyType;
+(function (TimelinePropertyType) {
+    TimelinePropertyType[TimelinePropertyType["Unknown"] = 0] = "Unknown";
+    TimelinePropertyType[TimelinePropertyType["Int"] = 1] = "Int";
+    TimelinePropertyType[TimelinePropertyType["Float"] = 2] = "Float";
+    TimelinePropertyType[TimelinePropertyType["Time"] = 3] = "Time";
+    TimelinePropertyType[TimelinePropertyType["String"] = 4] = "String";
+    TimelinePropertyType[TimelinePropertyType["Bool"] = 5] = "Bool";
+    TimelinePropertyType[TimelinePropertyType["Color"] = 6] = "Color";
+})(TimelinePropertyType || (TimelinePropertyType = {}));
+class TimelineProperty {
+    #name;
+    #type;
+    #value;
+    constructor(name, type, value) {
+        this.#name = name;
+        this.#type = type;
+        this.#value = value;
+    }
+    setValue(value) {
+        this.#value = value;
+    }
+    getValue() {
+        return this.#value;
+    }
+}
+
+/*
+export interface TimelineElement {
+    name: string;
+    setParent(element: TimelineElement): void;
+    getParent(element: TimelineElement): TimelineElement | null;
+}
+*/
+var TimelineElementType;
+(function (TimelineElementType) {
+    TimelineElementType[TimelineElementType["None"] = 0] = "None";
+    TimelineElementType[TimelineElementType["Timeline"] = 1] = "Timeline";
+    TimelineElementType[TimelineElementType["Group"] = 2] = "Group";
+    TimelineElementType[TimelineElementType["Channel"] = 3] = "Channel";
+    TimelineElementType[TimelineElementType["Clip"] = 4] = "Clip";
+    TimelineElementType[TimelineElementType["Marker"] = 5] = "Marker";
+})(TimelineElementType || (TimelineElementType = {}));
+class TimelineElement {
+    #parent;
+    #properties = new Map();
+    type = TimelineElementType.None;
+    /*#name: string;
+    startTime: number = 0;
+    endTime: number = Infinity;*/
+    constructor(name) {
+        this.addProperty('name', TimelinePropertyType.String, name);
+    }
+    setName(name) {
+        this.setPropertyValue('name', name);
+    }
+    getName() {
+        return this.getPropertyValue('name');
+    }
+    addProperty(name, type, value) {
+        const property = new TimelineProperty(name, type, value);
+        this.#properties.set(name, property);
+        return property;
+    }
+    setPropertyValue(name, value) {
+        const property = this.#properties.get(name);
+        if (property) {
+            const oldValue = property.getValue();
+            property.setValue(value);
+            TimelineObserver.propertyChanged(this, name, oldValue, value);
+        }
+    }
+    getPropertyValue(name) {
+        return this.#properties.get(name)?.getValue();
+    }
+}
+
+class TimelineGroup extends TimelineElement {
+    type = TimelineElementType.Group;
+    #childs = [];
+    addChild(child) {
+        this.#childs.push(child);
+        return child;
+    }
+    getChilds() {
+        return [...this.#childs];
+    }
+}
+
+class Actor {
+    name;
+    channels = [];
+    #choreography;
+    active = false;
+    constructor(choreography, name) {
+        this.#choreography = choreography;
+        this.name = name;
+    }
+    addChannel(channel) {
+        this.channels.push(channel);
+        channel.setActor(this);
+    }
+    getCharacter() {
+        return this.#choreography.actors2[0]; //fixme: variable
+    }
+    setActive(active) {
+        this.active = active;
+    }
+    toString(indent) {
+        indent = indent || '';
+        const subindent = indent + '\t';
+        const arr = [indent + 'Actor ' + this.name];
+        for (let i = 0; i < this.channels.length; ++i) {
+            arr.push(this.channels[i].toString(subindent));
+        }
+        return arr.join('\n');
+    }
+    step(previousTime, currentTime) {
+        //TODOv2
+        for (let i = 0; i < this.channels.length; ++i) {
+            this.channels[i].step(previousTime, currentTime);
+        }
+    }
+    toTimelineElement() {
+        const actor = new TimelineGroup(this.name);
+        for (const channel of this.channels) {
+            actor.addChild(channel.toTimelineElement());
+        }
+        return actor;
+    }
+}
+
+class TimelineChannel extends TimelineElement {
+    type = TimelineElementType.Channel;
+    #clips = new Set;
+    constructor(name = 'Channel') {
+        super(name);
+    }
+    addClip(clip) {
+        this.#clips.add(clip);
+        return clip;
+    }
+    getClips() {
+        return [...this.#clips];
+    }
+}
+
+class Channel {
+    active = false;
+    events = [];
+    name;
+    actor;
+    constructor(name) {
+        this.name = name;
+    }
+    /**
+     * Add an event
+     * @param {Object ChoreographyEvent} event The event to add
+     */
+    addEvent(event) {
+        this.events.push(event);
+        event.setChannel(this);
+    }
+    /**
+     * TODO
+     */
+    setActor(actor) {
+        this.actor = actor;
+    }
+    /**
+     * TODO
+     */
+    getActor() {
+        return this.actor;
+    }
+    /**
+     * Set active
+     * @param {Bool} active active
+     */
+    setActive(active) {
+        this.active = active;
+    }
+    /**
+     * toString
+     */
+    toString(indent) {
+        indent = indent ?? '';
+        const subindent = indent + '\t';
+        const arr = [indent + 'Channel ' + this.name];
+        for (let i = 0; i < this.events.length; ++i) {
+            arr.push(this.events[i].toString(subindent));
+        }
+        if (!this.active) {
+            arr.push(indent + 'active 0');
+        }
+        return arr.join('\n');
+    }
+    /**
+     * Step
+     */
+    step(previousTime, currentTime) {
+        //TODOv2
+        for (let i = 0; i < this.events.length; ++i) {
+            this.events[i].step(previousTime, currentTime);
+        }
+    }
+    toTimelineElement() {
+        const channel = new TimelineChannel(this.name);
+        for (const event of this.events) {
+            channel.addClip(event.toTimelineElement());
+        }
+        return channel;
+    }
+}
+
+class Timeline extends TimelineElement {
+    type = TimelineElementType.Timeline;
+    name = '';
+    #root = new TimelineGroup('');
+    constructor(name = 'Timeline') {
+        super(name);
+    }
+    setParent(element) {
+        return;
+    }
+    getRoot() {
+        return this.#root;
+    }
+    addChild(child) {
+        return this.#root.addChild(child);
+    }
+    getChilds() {
+        return this.#root.getChilds();
+    }
+}
+
+class Choreography extends MyEventTarget {
     #repository;
-    choreographies = {};
+    actors2 = [];
+    #events = [];
+    #actors = [];
+    previousTime = -1;
+    currentTime = 0;
+    animsSpeed = 1;
+    shouldLoop = false;
+    sceneLength = 0;
+    //onStop: () => void;
+    constructor(repository) {
+        super();
+        this.#repository = repository;
+    }
+    getRepository() {
+        return this.#repository;
+    }
+    /**
+     * Add an event
+     * @param {Object ChoreographyEvent} event The event to add
+     */
+    addEvent(event) {
+        this.#events.push(event);
+    }
+    /**
+     * Add an actor
+     * @param {Object ChoreographyActor} actor The actor to add
+     */
+    addActor(actor) {
+        this.#actors.push(actor);
+    }
+    /**
+     * toString
+     */
+    toString(indent = '') {
+        const arr = [];
+        for (let i = 0; i < this.#events.length; ++i) {
+            arr.push(this.#events[i].toString(indent));
+        }
+        for (let i = 0; i < this.#actors.length; ++i) {
+            arr.push(this.#actors[i].toString(indent));
+        }
+        return arr.join('\n');
+    }
+    /**
+     * Step
+     */
+    step(delta) {
+        if (this.animsSpeed > 0) {
+            const currentTime = this.previousTime == -1 ? 0 : this.previousTime + delta * this.animsSpeed;
+            if (this.previousTime != -0.5) {
+                this.currentTime = currentTime;
+            }
+            for (let i = 0; i < this.#events.length; ++i) {
+                this.#events[i].step(this.previousTime, this.currentTime);
+            }
+            for (let i = 0; i < this.#actors.length; ++i) {
+                this.#actors[i].step(this.previousTime, this.currentTime);
+            }
+            if (this.shouldLoop) {
+                this.shouldLoop = false;
+                return true;
+            }
+            this.previousTime = this.currentTime;
+            if (currentTime > this.sceneLength) {
+                this.stop();
+                return false;
+            }
+        }
+        return true;
+    }
+    /**
+     * Reset
+     */
+    reset() {
+        this.previousTime = -1;
+        this.currentTime = 0;
+    }
+    /**
+     * Stop
+     */
+    stop() {
+        this.dispatchEvent(new Event('stop'));
+    }
+    /**
+     * Step
+     */
+    loop(startTime) {
+        this.previousTime = startTime - EPSILON$2;
+        this.currentTime = startTime;
+        this.shouldLoop = true;
+    }
+    /**
+     * Step
+     */
+    setActors(actors) {
+        this.actors2 = actors;
+    }
+    toTimelineElement() {
+        const timeline = new Timeline();
+        const events = timeline.addChild(new TimelineGroup('Events'));
+        timeline.addChild(new TimelineGroup('Actors'));
+        for (const event of this.#events) {
+            events.addChild(event.toTimelineElement());
+        }
+        for (const actor of this.#actors) {
+            events.addChild(actor.toTimelineElement());
+        }
+        /*
+        for (let i = 0; i < this.#actors.length; ++i) {
+            arr.push(this.#actors[i].toString(indent));
+        }
+            */
+        return timeline;
+    }
+}
+
+class CurveData {
+    #ramp = [];
+    /**
+     * Add a sample TODO
+     * @param {Object ChoreographyEvent} event The event to add
+     * @return {Object Choreography} The requested choreography or null
+     */
+    add(time, value, selected) {
+        this.#ramp.push({ time: time, value: value, selected: selected });
+    }
+    getValue(time) {
+        let previous = null;
+        for (const current of this.#ramp) {
+            if (time <= current.time) {
+                if (previous) {
+                    return RemapValClamped(time, previous.time, current.time, previous.value, current.value);
+                }
+                else {
+                    return current.value;
+                }
+            }
+            previous = current;
+        }
+        return null;
+    }
+    /**
+     * toString
+     */
+    toString(indent) {
+        if (!this.#ramp.length) {
+            return '';
+        }
+        indent = indent ?? '';
+        const subindent = indent + '\t';
+        const arr = [indent + 'event_ramp'];
+        for (let i = 0; i < this.#ramp.length; ++i) {
+            const rampData = this.#ramp[i];
+            arr.push(subindent + rampData.time + ' ' + rampData.value);
+        }
+        return arr.join('\n');
+    }
+}
+
+class ExpressionSample {
+    v = 0.0;
+    t = 0.0;
+    s = 0;
+    c = 0;
+    selected = false;
+    setCurveType(curveType) {
+        this.c = curveType;
+    }
+    /**
+     * toString
+     */
+    toString(indent = '') {
+        return indent + this.t + ' ' + this.v;
+    }
+}
+
+class FlexAnimationTrack {
+    event;
+    flags = 0;
+    samples = [[], []];
+    controllerName = '';
+    min = 0;
+    max = 0;
+    constructor(event) {
+        this.event = event;
+    }
+    setFlexControllerName(controllerName) {
+        this.controllerName = controllerName;
+    }
+    setFlags(flags) {
+        this.flags = flags;
+    }
+    setMin(min) {
+        this.min = min;
+    }
+    setMax(max) {
+        this.max = max;
+    }
+    isTrackActive() {
+        return (this.flags & (1 << 0)) ? true : false;
+    }
+    isComboType() {
+        return (this.flags & (1 << 1)) ? true : false;
+    }
+    addSample(time, value, type) {
+        const sample = new ExpressionSample();
+        sample.t = time;
+        sample.v = value;
+        sample.selected = false;
+        this.samples[type]?.push(sample);
+        return sample;
+    }
+    toString(indent) {
+        indent = indent ?? '';
+        const subindent = indent + '\t';
+        const arr = [indent + this.controllerName];
+        for (let sampleType = 0; sampleType < 2; ++sampleType) {
+            const samples = this.samples[sampleType];
+            for (const sample of samples) {
+                arr.push(subindent + sample.toString());
+            }
+        }
+        return arr.join('\n');
+    }
+}
+
+// TODO can this be merged with kv3element ?
+class KvAttribute {
+    name;
+    value;
+    constructor(name, value) {
+        this.name = name.toLowerCase();
+        this.value = value;
+    }
+}
+class KvElement {
+    // TODO: create map to store values
+    addElement(name, value) {
+        name = name.toLowerCase();
+        let newName = name;
+        let count = 1;
+        while (this /*TODO: fix this*/[newName]) {
+            newName = name + '#' + (++count);
+        }
+        this /*TODO: fix this*/[newName] = value;
+    }
+    toString(linePrefix) {
+        linePrefix = linePrefix ?? '';
+        const s = [linePrefix, '"' /*, this.type, '"\n'*/, linePrefix, '{\n'];
+        for (const i in this) {
+            s.push(this.toString(linePrefix + '\t'));
+        }
+        s.push(linePrefix);
+        s.push('}\n');
+        return s.join('');
+    }
+}
+class KvReader {
+    root = undefined;
+    rootElements = {}; //TODO: create map
+    rootId = 0;
+    carSize;
+    src;
+    offset;
+    inQuote = false;
+    inComment = false;
+    currentAttribute;
+    currentElement;
+    currentArray;
+    //name!: never;
+    currentValue;
+    elementStack;
+    attributeStack;
+    valuesStack;
+    keyStack;
+    arrayStack;
+    rootElement;
+    rootName;
+    currentKey;
+    constructor(carSize = 1) {
+        this.carSize = carSize;
+    }
+    readText(src) {
+        if (!src) {
+            return;
+        }
+        this.src = src;
+        let start = src.indexOf('-->');
+        if (start > 0) {
+            start += 5; //-->/nx
+        }
+        else {
+            start = 0;
+        }
+        this.offset = start;
+        this.inQuote = false;
+        this.inComment = false;
+        this.currentAttribute = undefined;
+        this.currentElement = undefined;
+        this.currentArray = undefined;
+        //this.name = undefined;
+        this.currentValue = '';
+        this.elementStack = [];
+        this.attributeStack = [];
+        this.valuesStack = [];
+        this.keyStack = [];
+        this.arrayStack = [];
+        let end = false;
+        do {
+            end = this.parse();
+        } while (!end);
+        this.endElement();
+    }
+    getRootElement() {
+        return this.rootElement;
+    }
+    getRootName() {
+        return this.rootName;
+    }
+    readChar() {
+        if (this.offset > this.src.length) {
+            return -1;
+        }
+        const offset = this.offset;
+        this.offset += this.carSize;
+        return this.src.charAt(offset);
+    }
+    pickChar() {
+        if (this.offset > this.src.length) {
+            return -1;
+        }
+        return this.src.charAt(this.offset);
+    }
+    pushElement() {
+        if (this.currentElement) {
+            this.elementStack.push(this.currentElement);
+        }
+        if (!this.rootElement) ;
+        this.currentElement = new KvElement( /*this.popValue()*/);
+        this.currentKey = this.popValue();
+        this.pushKey();
+    }
+    popElement() {
+        const a = this.currentElement;
+        this.currentElement = this.elementStack.pop();
+        if (!this.currentElement) {
+            //this.rootElements.push(a);
+            let rootName = this.popKey();
+            if (rootName == undefined) {
+                rootName = 'undefined' + (this.rootId++);
+            }
+            this.rootElements[rootName] = a;
+            if (!this.rootElement) {
+                this.rootName = rootName;
+                this.rootElement = a;
+            }
+        }
+    }
+    pushAttribute() {
+        if (this.currentAttribute) {
+            this.attributeStack.push(this.currentAttribute);
+        }
+        //this.currentAttribute = new KvElement();
+    }
+    popAttribute() {
+        this.currentAttribute = this.attributeStack.pop();
+    }
+    pushValue() {
+        this.valuesStack.push(this.currentValue);
+        this.currentValue = '';
+    }
+    popValue() {
+        if (this.valuesStack.length == 0) ;
+        return this.valuesStack.pop();
+    }
+    pushKey() {
+        this.keyStack.push(this.currentKey);
+        this.currentKey = '';
+    }
+    popKey() {
+        if (this.keyStack.length == 0) ;
+        return this.keyStack.pop();
+    }
+    pushArray() {
+        if (this.currentArray) {
+            this.arrayStack.push(this.currentArray);
+        }
+        this.currentArray = undefined;
+    }
+    popArray() {
+        this.currentArray = this.arrayStack.pop();
+    }
+    parse() {
+        const car = this.readChar();
+        if (car == -1)
+            return true;
+        if (this.inComment && (car != '\r' && car != '\n')) {
+            return false;
+        }
+        this.inComment = false;
+        if (this.inQuote && car != '"' && car != '\r' && car != '\n') {
+            this.currentValue += car;
+        }
+        else {
+            switch (car) {
+                case '\\':
+                    if (this.inQuote) {
+                        const car2 = this.pickChar();
+                        if (car2 == '\"') {
+                            this.currentValue += car2;
+                        }
+                        else {
+                            this.currentValue += car;
+                        }
+                    }
+                    else {
+                        this.currentValue += car;
+                    }
+                    break;
+                case '/':
+                    const car2 = this.pickChar();
+                    if (car2 == '/') {
+                        this.inComment = true;
+                    }
+                    else {
+                        this.currentValue += car;
+                    }
+                    break;
+                case ' ':
+                case '\t':
+                    if (this.currentValue != '') {
+                        this.setValue();
+                    }
+                    if (this.valuesStack.length >= 2) {
+                        this.newLine();
+                        //if (!this.multipleValuesOnSameLine) {//TODOV2
+                        this.inComment = true;
+                        //}
+                    }
+                    break;
+                case '\r':
+                case '\n':
+                    if (!this.inQuote && this.currentValue != '')
+                        this.setValue();
+                    this.newLine();
+                    break;
+                case '"':
+                    if (this.inQuote)
+                        this.setValue();
+                    this.inQuote = !this.inQuote;
+                    break;
+                case '{':
+                    if (this.currentValue != '') {
+                        this.setValue();
+                    }
+                    this.startElement();
+                    break;
+                case '}':
+                    this.endElement();
+                    break;
+                case '[':
+                    this.startArray();
+                    break;
+                case ']':
+                    this.endArray();
+                    break;
+                case ',':
+                    this.comma();
+                    //this.nextArrayValue()
+                    break;
+                default:
+                    this.currentValue += car;
+                    break;
+            }
+        }
+        return false;
+    }
+    startElement() {
+        this.pushElement();
+        this.newLine();
+        this.pushAttribute();
+    }
+    endElement() {
+        if (this.currentElement) {
+            const e = this.currentElement;
+            this.popElement();
+            if (this.currentElement) {
+                const key = this.popKey();
+                if (key !== undefined) {
+                    this.currentElement.addElement(key, e);
+                }
+            }
+        }
+    }
+    startArray() {
+        this.pushArray();
+        this.currentValue = [];
+        this.currentArray = this.currentValue;
+        this.pushValue();
+        this.newLine();
+        this.pushAttribute();
+    }
+    endArray() {
+        this.popAttribute();
+        //this.currentAttribute.value.push(this.currentElement);
+        this.popArray();
+    }
+    nextArrayValue() {
+        //TODO
+    }
+    setValue() {
+        this.pushValue();
+    }
+    newLine() {
+        if (this.valuesStack.length >= 2) {
+            // order matters
+            const value = this.popValue();
+            const name = this.popValue();
+            const newAttribute = new KvAttribute(name, value);
+            if (this.currentElement) {
+                this.currentElement.addElement(name, value);
+            }
+            else if (this.currentArray) {
+                this.currentArray.push(newAttribute);
+            }
+            this.currentAttribute = newAttribute;
+        }
+    }
+    comma() {
+        if (this.valuesStack.length >= 1) {
+            // order matters
+            const value = this.popValue();
+            const name = this.popValue();
+            const newAttribute = new KvAttribute(name, value);
+            if (this.currentArray) {
+                this.currentArray.push(newAttribute);
+            }
+            else if (this.currentElement) ;
+            this.currentAttribute = newAttribute;
+        }
+    }
+}
+
+class Sound {
+    #repository;
+    #wave;
+    #channel;
+    constructor(repository, wave, channel) {
+        this.#repository = repository;
+        this.#wave = wave;
+        this.#channel = channel;
+    }
+    getRepository() {
+        return this.#repository;
+    }
+    getWave() {
+        if (Array.isArray(this.#wave)) {
+            const index = Math.floor(Math.random() * this.#wave.length);
+            return this.#wave[index];
+        }
+        else {
+            return this.#wave;
+        }
+    }
+    getChannel() {
+        return this.#channel;
+    }
+}
+
+class Source1SoundManager {
+    static #mute = false;
+    static #audioList = new Map();
+    static #soundList = {};
+    static #soundsPerRepository = new Map();
+    static #soundListPerRepository = {};
+    static #manifestsPerRepository = new Map();
+    static #promisePerRepository = new Map();
+    /**
+     * Play a sound
+     * @param {String} soundName soundName
+     */
+    static async playSound(repositoryName, soundName) {
+        if (this.#mute) {
+            return null;
+        }
+        const sound = await this.#getSound(repositoryName, soundName);
+        //const sound = this.#soundList[soundName];
+        if (sound) {
+            let wave = sound.getWave();
+            // Remove #, *, ( and ) from paths
+            wave = wave.replace(/[\(\)\#\*]/g, '').toLowerCase();
+            let audio = this.#audioList.get(wave);
+            //audio = null;//removeme
+            if (!audio) {
+                const response = await Repositories.getFileAsBlob(sound.getRepository(), '/sound/' + wave);
+                if (!response.error) {
+                    audio = new Audio(URL.createObjectURL(response.blob) /*new URL('/sound/' + wave, repository.base).toString()*/);
+                    this.#audioList.set(wave, audio);
+                    audio.volume = 0.1;
+                    //audio.play();
+                    AudioMixer.playAudio('master', audio); //TODO: change master per actual channel
+                }
+                else {
+                    return null;
+                }
+            }
+            else {
+                AudioMixer.playAudio('master', audio);
+            }
+            return audio;
+        }
+        return null;
+    }
+    static async #getSound(repositoryName, soundName) {
+        await this.#fetchManifests(repositoryName);
+        /*const repo = this.#soundsPerRepository[repositoryName];
+        if (repo) {
+            return repo[soundName];
+        }*/
+        return this.#soundsPerRepository.get(repositoryName)?.get(soundName) ?? null;
+    }
+    static async #fetchManifests(repositoryName) {
+        if (this.#promisePerRepository.has(repositoryName)) {
+            await this.#promisePerRepository.get(repositoryName);
+        }
+        if (!this.#soundsPerRepository.has(repositoryName)) {
+            this.#soundsPerRepository.set(repositoryName, new Map());
+        }
+        let promiseResolve;
+        this.#promisePerRepository.set(repositoryName, new Promise(resolve => promiseResolve = resolve));
+        const manifests = this.#manifestsPerRepository.get(repositoryName);
+        if (manifests) {
+            this.#manifestsPerRepository.delete(repositoryName);
+            for (const manifest of manifests) {
+                await this.#fetchManifest(repositoryName, manifest);
+            }
+        }
+        promiseResolve(true);
+    }
+    static async #fetchManifest(repositoryName, manifestPath) {
+        const response = await Repositories.getFileAsText(repositoryName, manifestPath);
+        if (!response.error) {
+            this.#loadManifest(repositoryName, response.text);
+        }
+    }
+    static #loadManifest(repositoryName, manifestTxt) {
+        const sounds = this.#soundsPerRepository.get(repositoryName);
+        const kv = new KvReader();
+        kv.readText(manifestTxt);
+        const list = kv.rootElements;
+        const keyArray = Object.keys(list);
+        for (let i = 0; i < keyArray.length; ++i) {
+            const soundKey = keyArray[i];
+            const sound = list[soundKey] /*TODO: improve type*/;
+            let wave;
+            if (sound.rndwave) {
+                wave = [];
+                Object.keys(sound.rndwave).forEach(function (element) {
+                    wave.push(sound.rndwave[element]);
+                });
+            }
+            else {
+                wave = sound.wave;
+            }
+            //const wave = sound.rndwave ? sound.rndwave : sound.wave;
+            const s = new Sound(repositoryName, wave, sound.channel);
+            sounds?.set(soundKey, s);
+        }
+    }
+    static loadManifest(repositoryName, fileName) {
+        let manifests = this.#manifestsPerRepository.get(repositoryName);
+        if (!manifests) {
+            manifests = [];
+            this.#manifestsPerRepository.set(repositoryName, manifests);
+        }
+        manifests.push(fileName);
+    }
+    static mute() {
+        this.#mute = true;
+    }
+    static unmute() {
+        this.#mute = false;
+    }
+}
+
+class TimelineClip extends TimelineElement {
+    type = TimelineElementType.Clip;
+    constructor(name = 'Clip', startTime = 0, endTime = Infinity) {
+        super(name);
+        this.addProperty('start', TimelinePropertyType.Time, startTime);
+        this.addProperty('end', TimelinePropertyType.Time, endTime);
+    }
+    setStartTime(start) {
+        this.setPropertyValue('start', start);
+    }
+    getStartTime() {
+        return this.getPropertyValue('start');
+    }
+    setEndTime(end) {
+        this.setPropertyValue('end', end);
+    }
+    getEndTime() {
+        return this.getPropertyValue('end');
+    }
+    getLength() {
+        return this.getPropertyValue('end') - this.getPropertyValue('start');
+    }
+}
+
+class ChoreographyEvent {
+    #repository;
+    type;
+    name;
+    startTime;
+    endTime;
+    param1;
+    param2;
+    param3;
+    flags;
+    distanceToTarget = 0;
+    flexAnimTracks = {};
+    #ramp;
+    #ccType = -1; // TODO: create enum
+    #ccToken = '';
+    #choreography;
+    #channel;
+    m_nNumLoops = 0;
+    constructor(choreography, repository, eventType, name, startTime, endTime, param1, param2, param3, flags, distanceToTarget) {
+        this.#repository = repository;
+        this.#choreography = choreography;
+        this.type = eventType;
+        this.name = name;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.param1 = param1;
+        this.param2 = param2;
+        this.param3 = param3;
+        this.flags = flags;
+        this.distanceToTarget = distanceToTarget;
+    }
+    getRepository() {
+        return this.#repository;
+    }
+    /**
+     * Get the startTime
+     * @return {Number} startTime
+     */
+    getStartTime() {
+        return this.startTime;
+    }
+    /**
+     * Get the endTime
+     * @return {Number} endTime
+     */
+    getEndTime() {
+        return this.endTime;
+    }
+    /**
+     * Get the type
+     * @return {Number} The loaded file
+     */
+    getType() {
+        return this.type;
+    }
+    /**
+     * Set the ramp
+     * @param {Object CurveData} ramp The ramp to set
+     */
+    setRamp(ramp) {
+        this.#ramp = ramp;
+    }
+    /**
+     * TODO
+     */
+    setCloseCaptionType(ccType) {
+        this.#ccType = ccType;
+    }
+    /**
+     * TODO
+     */
+    setCloseCaptionToken(token) {
+        this.#ccToken = token;
+    }
+    /**
+     * TODO
+     */
+    setChannel(channel) {
+        this.#channel = channel;
+    }
+    //TODO
+    AddRelativeTag() {
+        console.error('TODO');
+    }
+    //TODO
+    addRelativeTag() {
+        console.error('TODO');
+    }
+    //TODO
+    addTimingTag() {
+        console.error('TODO');
+    }
+    //TODO
+    addAbsoluteTag() {
+        console.error('TODO');
+    }
+    /**
+     * TODO
+     */
+    isResumeCondition() {
+        return (this.flags & (1 << 0)) ? true : false;
+    }
+    /**
+     * TODO
+     */
+    isLockBodyFacing() {
+        return (this.flags & (1 << 1)) ? true : false;
+    }
+    /**
+     * TODO
+     */
+    isFixedLength() {
+        return (this.flags & (1 << 2)) ? true : false;
+    }
+    /**
+     * TODO
+     */
+    isActive() {
+        return (this.flags & (1 << 3)) ? true : false;
+    }
+    /**
+     * TODO
+     */
+    getForceShortMovement() {
+        return (this.flags & (1 << 4)) ? true : false;
+    }
+    /**
+     * TODO
+     */
+    getPlayOverScript() {
+        return (this.flags & (1 << 5)) ? true : false;
+    }
+    /**
+     * TODO
+     * Add a flex animation track
+     */
+    addTrack(controllerName) {
+        const track = new FlexAnimationTrack(this);
+        track.setFlexControllerName(controllerName);
+        this.flexAnimTracks[controllerName] = track;
+        return track;
+    }
+    /**
+     * toString
+     */
+    toString(indent) {
+        indent = indent ?? '';
+        const subindent = indent + '\t';
+        const arr = [];
+        arr.push(indent + 'Event ' + EventType[this.type] + ' ' + this.name);
+        arr.push(subindent + 'time ' + this.startTime + ' ' + this.endTime);
+        if (this.param1) {
+            arr.push(subindent + 'param1 ' + this.param1);
+        }
+        if (this.param2) {
+            arr.push(subindent + 'param2 ' + this.param2);
+        }
+        if (this.param3) {
+            arr.push(subindent + 'param3 ' + this.param3);
+        }
+        if (this.#ramp) {
+            arr.push(this.#ramp.toString(subindent));
+        }
+        if (this.getType() == EventType.Flexanimation) {
+            arr.push(subindent + 'flexanimations');
+        }
+        for (const i in this.flexAnimTracks) {
+            arr.push(this.flexAnimTracks[i].toString(subindent + '\t'));
+        }
+        if (this.getType() == EventType.Speak) {
+            arr.push(subindent + 'cctype ' + CloseCaptionType[this.#ccType]);
+            arr.push(subindent + 'cctoken ' + this.#ccToken);
+        }
+        return arr.join('\n');
+    }
+    /**
+     * Step
+     */
+    step(previousTime, currentTime) {
+        const actor = this.getActor();
+        if (actor) {
+            actor.frame = currentTime;
+        }
+        //TODOv2
+        if (previousTime < this.startTime && currentTime >= this.startTime) {
+            //console.info(frame2, currentTime, this.type, this.param1, this.param2, this.param3);
+            switch (this.type) {
+                case EventType.Speak:
+                    Source1SoundManager.playSound(this.#repository, this.param1);
+                    break;
+                case EventType.Sequence:
+                    //mainCharacter.characterModel.playSequence(this.param1);//TODOv2
+                    if (actor) {
+                        actor.playSequence(this.param1); //TODOv2
+                        //actor.frame = currentTime;
+                        /*if (actor.characterModel) {
+                            actor.playSequence(this.param1);//TODOv2
+                        }
+                        if (actor.sourceModel) {
+                            actor.playSequence(this.param1);//TODOv2
+                        }*/
+                    }
+                    //frame2 = currentTime;
+                    break;
+                case EventType.Loop:
+                    //TODO: loop count
+                    if (this.#choreography) {
+                        this.#choreography.loop(this.param1 * 1.0);
+                        //frame2 = this.param1 * 1.0;
+                    }
+                    break;
+            }
+            return;
+        }
+        if (previousTime < this.endTime && currentTime >= this.endTime) {
+            //console.info(frame2, currentTime, this.type, this.param1, this.param2, this.param3);
+            switch (this.type) {
+                case EventType.Sequence:
+                    const actor = this.getActor();
+                    if (actor) {
+                        if (actor) {
+                            actor.playSequence('stand_secondary'); //TODOv2
+                        }
+                    }
+                    //frame2 = currentTime;
+                    break;
+            }
+        }
+        if (currentTime >= this.startTime && currentTime <= this.endTime) {
+            switch (this.type) {
+                /*case EventType.Expression:
+                    let actor = this.getActor();
+                    if (actor) {
+                        let flexParameters = {};
+                        flexParameters[this.param2.toLowerCase()] = this.ramp.getValue(currentTime);
+                        actor.setFlexes(flexParameters);
+                    }
+                    break;*/
+            }
+        }
+    }
+    /**
+     * TODO
+     */
+    getActor() {
+        const channel = this.#channel;
+        if (channel) {
+            const actor = channel.getActor();
+            if (actor) {
+                return actor.getCharacter();
+            }
+        }
+    }
+    toTimelineElement() {
+        const clip = new TimelineClip(this.name, this.startTime, this.endTime);
+        return clip;
+    }
+}
+var EventType;
+(function (EventType) {
+    EventType[EventType["Unspecified"] = 0] = "Unspecified";
+    EventType[EventType["Section"] = 1] = "Section";
+    EventType[EventType["Expression"] = 2] = "Expression";
+    EventType[EventType["LookAt"] = 3] = "LookAt";
+    EventType[EventType["MoveTo"] = 4] = "MoveTo";
+    EventType[EventType["Speak"] = 5] = "Speak";
+    EventType[EventType["Gesture"] = 6] = "Gesture";
+    EventType[EventType["Sequence"] = 7] = "Sequence";
+    EventType[EventType["Face"] = 8] = "Face";
+    EventType[EventType["FireTrigger"] = 9] = "FireTrigger";
+    EventType[EventType["Flexanimation"] = 10] = "Flexanimation";
+    EventType[EventType["SubScene"] = 11] = "SubScene";
+    EventType[EventType["Loop"] = 12] = "Loop";
+    EventType[EventType["Interrupt"] = 13] = "Interrupt";
+    EventType[EventType["StopPoint"] = 14] = "StopPoint";
+    EventType[EventType["PermitResponses"] = 15] = "PermitResponses";
+    EventType[EventType["Generic"] = 16] = "Generic";
+})(EventType || (EventType = {}));
+//TODO: setup const
+/*
+Event.EventType = {
+    UNSPECIFIED: 0,
+    SECTION: 1,
+    EXPRESSION: 2,
+    LOOKAT: 3,
+    MOVETO: 4,
+    SPEAK: 5,
+    GESTURE: 6,
+    SEQUENCE: 7,
+    FACE: 8,
+    FIRETRIGGER: 9,
+    FLEXANIMATION: 10,
+    SUBSCENE: 11,
+    LOOP: 12,
+    INTERRUPT: 13,
+    STOPPOINT: 14,
+    PERMIT_RESPONSES: 15,
+    GENERIC: 16
+}
+Event.EventTypeString = ['UNSPECIFIED', 'SECTION', 'EXPRESSION', 'LOOKAT', 'MOVETO', 'SPEAK', 'GESTURE', 'SEQUENCE', 'FACE', 'FIRETRIGGER', 'FLEXANIMATION', 'SUBSCENE', 'LOOP', 'INTERRUPT', 'STOPPOINT', 'PERMIT_RESPONSES', 'GENERIC']
+*/
+var TimeType;
+(function (TimeType) {
+    TimeType[TimeType["Default"] = 0] = "Default";
+    TimeType[TimeType["Simulation"] = 1] = "Simulation";
+    TimeType[TimeType["Display"] = 2] = "Display";
+})(TimeType || (TimeType = {}));
+/*
+Event.TimeType = {
+    DEFAULT: 0,
+    SIMULATION: 1,
+    DISPLAY: 2
+}
+Event.TimeTypeString = ['DEFAULT', 'SIMULATION', 'DISPLAY'];
+*/
+var CloseCaptionType;
+(function (CloseCaptionType) {
+    CloseCaptionType[CloseCaptionType["Master"] = 0] = "Master";
+    CloseCaptionType[CloseCaptionType["Slave"] = 1] = "Slave";
+    CloseCaptionType[CloseCaptionType["Disabled"] = 2] = "Disabled";
+})(CloseCaptionType || (CloseCaptionType = {}));
+/*
+Event.CloseCaptionType = {
+    CC_MASTER: 0,
+    CC_SLAVE: 1,
+    CC_DISABLED: 2
+}
+Event.CloseCaptionTypeString = ['CC_MASTER', 'CC_SLAVE', 'CC_DISABLED'];
+*/
+
+class Choreographies {
+    // TODO: multiple repos
+    #repository = '';
+    choreographies = {}; //TODO: use map instead ?
     stringPool = {}; //TODO: use map instead ?
     #reader;
     fileId;
@@ -34464,7 +34587,9 @@ class Choreographies {
                     else {
                         decompressedDatas = this.#reader.getString(sceneEntry['dl'], sceneEntry['do']);
                     }
-                    choreography = await this.#loadChoreography(repository, decompressedDatas);
+                    if (decompressedDatas) {
+                        choreography = await this.#loadChoreography(repository, decompressedDatas);
+                    }
                 }
                 catch (e) {
                     //fixme: add error code
@@ -34498,7 +34623,7 @@ class Choreographies {
         const repository = choreography.getRepository();
         const eventCount = await reader.getUint8();
         for (let eventIndex = 0; eventIndex < eventCount; ++eventIndex) {
-            choreography.addEvent(await this.#loadChoreoEvent(reader, repository));
+            choreography.addEvent(await this.#loadChoreoEvent(reader, repository, choreography));
         }
     }
     /**
@@ -34508,42 +34633,42 @@ class Choreographies {
     async #loadChoreoActors(reader, choreography) {
         const actorCount = await reader.getUint8();
         for (let actorIndex = 0; actorIndex < actorCount; ++actorIndex) {
-            choreography.addActor(await this.#loadChoreoActor(reader, choreography.getRepository()));
+            choreography.addActor(await this.#loadChoreoActor(reader, choreography.getRepository(), choreography));
         }
     }
     /**
     * load an actor
     * @param {Object jDataView} reader File reader
     */
-    async #loadChoreoActor(reader, repository) {
+    async #loadChoreoActor(reader, repository, choreography) {
         const actorName = await this.readString(reader);
-        const actor = new Actor(actorName);
+        const actor = new Actor(choreography, actorName);
         const channelCount = await reader.getUint8();
         for (let channelIndex = 0; channelIndex < channelCount; ++channelIndex) {
-            actor.addChannel(await this.#loadChoreoChannel(reader, repository));
+            actor.addChannel(await this.#loadChoreoChannel(reader, repository, choreography));
         }
-        actor.setActive(await reader.getInt8());
+        actor.setActive(reader.getInt8() != 0);
         return actor;
     }
     /**
     * load an channel
     * @param {Object jDataView} reader File reader
     */
-    async #loadChoreoChannel(reader, repository) {
+    async #loadChoreoChannel(reader, repository, choreography) {
         const channelName = await this.readString(reader);
         const channel = new Channel(channelName);
         const eventCount = await reader.getUint8();
         for (let eventIndex = 0; eventIndex < eventCount; ++eventIndex) {
-            channel.addEvent(await this.#loadChoreoEvent(reader, repository));
+            channel.addEvent(await this.#loadChoreoEvent(reader, repository, choreography));
         }
-        channel.setActive(await reader.getInt8());
+        channel.setActive(reader.getInt8() != 0);
         return channel;
     }
     /**
     * load an event
     * @param {Object jDataView} reader File reader
     */
-    async #loadChoreoEvent(reader, repository) {
+    async #loadChoreoEvent(reader, repository, choreography) {
         const eventType = await reader.getInt8();
         const eventName = await this.readString(reader);
         const startTime = await reader.getFloat32();
@@ -34554,7 +34679,7 @@ class Choreographies {
         const ramp = await this.#loadCurveData(reader);
         const flags = await reader.getUint8();
         const distToTarget = await reader.getFloat32();
-        const event = new Event(repository, eventType, eventName, startTime, endTime, param1, param2, param3, flags, distToTarget);
+        const event = new ChoreographyEvent(choreography, repository, eventType, eventName, startTime, endTime, param1, param2, param3, flags, distToTarget);
         event.setRamp(ramp);
         // Relative & timing tags
         for (let tagtype = 0; tagtype < 2; ++tagtype) {
@@ -34604,21 +34729,21 @@ class Choreographies {
     * load flex animations
     * @param {Object jDataView} reader File reader
     */
-    async #loadFlexAnimations(reader, event) {
-        const numTracks = await reader.getUint8();
+    #loadFlexAnimations(reader, event) {
+        const numTracks = reader.getUint8();
         for (let i = 0; i < numTracks; ++i) {
             console.error('TODO');
             // Controller name
-            const track = event.addTrack(await this.readString(reader));
-            track.setFlags(await reader.getUint8());
-            track.setMin(await reader.getFloat32());
-            track.setMax(await reader.getFloat32());
+            const track = event.addTrack(this.readString(reader));
+            track.setFlags(reader.getUint8());
+            track.setMin(reader.getFloat32());
+            track.setMax(reader.getFloat32());
             const sampleTypeCount = track.isComboType() ? 2 : 1;
             for (let sampleType = 0; sampleType < sampleTypeCount; ++sampleType) { //TODO: improve condition
-                const sampleCount = await reader.getUint16();
+                const sampleCount = reader.getUint16();
                 for (let j = 0; j < sampleCount; ++j) {
-                    const sample = track.addSample(await reader.getFloat32(), await reader.getUint8() / 255.0, sampleType);
-                    sample.setCurveType(await reader.getUint16());
+                    const sample = track.addSample(reader.getFloat32(), reader.getUint8() / 255.0, sampleType);
+                    sample.setCurveType(reader.getUint16());
                     /*t = await reader.getFloat32();
                     v = await reader.getUint8() / 255.0;*/
                     //TODO: add sample
@@ -34631,17 +34756,17 @@ class Choreographies {
     * load curve data
     * @param {Object jDataView} reader File reader
     */
-    async #loadCurveData(reader) {
+    #loadCurveData(reader) {
         const curveData = new CurveData();
-        const count = await reader.getUint8();
+        const count = reader.getUint8();
         /*if (count == 3) {
             //	TODO: there is an issue with choreo 'scenes/workshop/player/engineer/low/taunt_jackhammer_rodeo.vcd'
             count is stored as an unsigned char but actual count is 259
             count += 256;
         }*/
         for (let i = 0; i < count; ++i) {
-            const t = await reader.getFloat32();
-            const v = await reader.getUint8() / 255.0;
+            const t = reader.getFloat32();
+            const v = reader.getUint8() / 255.0;
             curveData.add(t, v, false);
         }
         return curveData;
@@ -34650,15 +34775,15 @@ class Choreographies {
     * Read string index, return the string
     * @return {String} The read string or null
     */
-    async readString(reader) {
-        return await this.getString(await reader.getInt16());
+    readString(reader) {
+        return this.getString(reader.getInt16());
     }
     /**
     * Get a string
     * @param {Number} stringIndex stringIndex
     * @return {String} The read string or error string
     */
-    async getString(stringIndex) {
+    getString(stringIndex) {
         const s = this.stringPool[stringIndex];
         if (s === undefined) {
             const stringOffsetOffset = 20 + stringIndex * 4;
@@ -34668,7 +34793,7 @@ class Choreographies {
         throw new Error(`String not found ${stringIndex}`);
     }
 }
-const makeCRCTable = function () {
+function makeCRCTable() {
     let c;
     const crcTable = [];
     for (let n = 0; n < 256; n++) {
@@ -34679,16 +34804,16 @@ const makeCRCTable = function () {
         crcTable[n] = c;
     }
     return crcTable;
-};
+}
 let CacheCrcTable;
-const crc32 = function (str) {
+function crc32(str) {
     const crcTable = CacheCrcTable ?? (CacheCrcTable = makeCRCTable());
     let crc = 0 ^ (-1);
     for (let i = 0; i < str.length; i++) {
         crc = (crc >>> 8) ^ crcTable[(crc ^ str.charCodeAt(i)) & 0xFF];
     }
     return (crc ^ (-1)) >>> 0;
-};
+}
 
 class ChoreographiesManager {
     static #instance;
@@ -34713,22 +34838,21 @@ class ChoreographiesManager {
             });
         }
     }
-    async playChoreography(choreoName, actors, onStop) {
+    async playChoreography(choreoName, actors) {
         if (this.#sceneImage) {
             const choreography = await this.#sceneImage.getChoreography(choreoName);
             if (choreography) {
                 //choreography.play();
                 this.#choreographies.add(choreography);
                 choreography.setActors(actors);
-                choreography.onStop = onStop;
-            }
-            else {
-                onStop && onStop();
+                //choreography.onStop = onStop;
+                return choreography;
             }
             /* else {
                 setTimeout(function() {playChoreo(choreoName, actors, onStop)}, 100);
             }*/
         }
+        return null;
     }
     async getChoreography(choreoName) {
         if (this.#sceneImage) {
@@ -34764,8 +34888,14 @@ class ChoreographiesManager {
     pause() {
         this.#playing = false;
     }
-    set playbackSpeed(playbackSpeed) {
+    setPlaybackSpeed(playbackSpeed) {
         this.#playbackSpeed = playbackSpeed;
+    }
+    /**
+     * @deprecated Please use `setPlaybackSpeed` instead.
+     */
+    set playbackSpeed(playbackSpeed) {
+        this.setPlaybackSpeed(playbackSpeed);
     }
 }
 
@@ -35111,7 +35241,7 @@ class Source1VvdLoader extends SourceBinaryLoader {
         vvd.tangentDataStart = reader.getInt32();
     }
     #parseVertices(reader, vvd) {
-        if (vvd.numLODVertexes) {
+        if (vvd.numLODVertexes.length) {
             if (vvd.numLODVertexes[0] === 0) { //TODO ????
                 return;
             }
@@ -35439,190 +35569,6 @@ class MdlBone {
     }
 }
 
-const STUDIO_AL_SPLINE = 0x0040;
-const STUDIO_AL_XFADE = 0x0080;
-const STUDIO_AL_NOBLEND = 0x0200;
-const STUDIO_AL_LOCAL = 0x1000;
-const STUDIO_AL_POSE = 0x4000;
-class MdlStudioSeqDesc {
-    paramindex = [];
-    paramstart = [];
-    paramend = [];
-    blend = [];
-    weightlist = [];
-    groupsize = [];
-    mdl;
-    previousTime;
-    currentTime;
-    posekeyindex;
-    autolayer = [];
-    events = [];
-    name;
-    flags;
-    activity;
-    id;
-    startOffset;
-    actweight;
-    numevents;
-    eventindex;
-    bbmin;
-    bbmax;
-    numblends;
-    animindexindex;
-    movementindex;
-    paramparent;
-    fadeintime;
-    fadeouttime;
-    localentrynode;
-    localexitnode;
-    nodeflags;
-    entryphase;
-    exitphase;
-    lastframe;
-    nextseq;
-    pose;
-    numikrules;
-    numautolayers;
-    autolayerindex;
-    weightlistindex;
-    numiklocks;
-    iklockindex;
-    keyvalueindex;
-    keyvaluesize;
-    cycleposeindex;
-    activityName;
-    keyvalueText;
-    pBoneweight(boneIndex) {
-        return this.weightlist[boneIndex];
-    }
-    //MdlStudioSeqDesc.prototype.weight = MdlStudioSeqDesc.prototype.pBoneweight;//TODOV2
-    getBlend(x, y) {
-        x = clamp(x, 0, this.groupsize[0] - 1);
-        y = clamp(y, 0, this.groupsize[1] - 1);
-        return this.blend[y][x];
-    }
-    poseKey(iParam, iAnim) {
-        if (this.mdl && this.posekeyindex) {
-            const mdl = this.mdl;
-            const offset = this.posekeyindex + (iParam * this.groupsize[0] + iAnim) * 4;
-            return mdl.reader.getFloat32(offset); //TODOv3
-        }
-        //float				*pPoseKey(int iParam, int iAnim) const { return (float *)(((byte *)this) + posekeyindex) + iParam * groupsize[0] + iAnim; }
-        return 0;
-    }
-    getAutoLayer(autoLayerIndex) {
-        return this.autolayer[autoLayerIndex];
-    }
-    get length() {
-        const anim = this.mdl.getAnimDescription(this.blend[0][0]);
-        if (!anim) {
-            return 0;
-        }
-        return (anim.numframes - 1) / anim.fps;
-    }
-    play(dynamicProp) {
-        const anim = this.mdl.getAnimDescription(this.blend[0][0]);
-        if (!anim) {
-            return null;
-        }
-        this.currentTime = (this.currentTime !== undefined) ? dynamicProp.frame * anim.fps / (anim.numframes - 1) : 0;
-        this.currentTime = this.currentTime % 1;
-        this.previousTime = (this.previousTime !== undefined) ? this.previousTime : -1;
-        if (this.previousTime > this.currentTime) {
-            this.previousTime = this.currentTime;
-        }
-        const previousTime = this.previousTime;
-        const currentTime = this.currentTime;
-        const seqEvents = this.events;
-        for (let eventIndex = 0; eventIndex < seqEvents.length; ++eventIndex) {
-            const event = seqEvents[eventIndex];
-            if (event.cycle > previousTime && event.cycle <= currentTime) {
-                this.processEvent(event, dynamicProp); //TODOv3
-            }
-        }
-        this.previousTime = this.currentTime;
-    }
-    processEvent(event, dynamicProp) {
-        let options;
-        switch (true) {
-            case event.event == 5004 || (event.event === 0 && event.name == 'AE_CL_PLAYSOUND'):
-                Source1SoundManager.playSound(this.mdl?.repository, event.options);
-                break;
-            case (event.event === 0 && event.name == 'AE_CL_BODYGROUP_SET_VALUE'):
-                options = event.options.split(' ');
-                //dynamicProp.bodyGroups[options[0]] = options[1];
-                dynamicProp.setBodyPartModel(options[0], options[1]);
-                break;
-            case (event.event === 0 && event.name == 'AE_WPN_HIDE'):
-                //TODOV2
-                //dynamicProp.setVisibility(false);
-                //console.error('AE_WPN_HIDE' + dynamicProp.name);
-                break;
-            case (event.event === 0 && event.name == 'AE_WPN_UNHIDE'):
-                //TODOV2
-                //dynamicProp.setVisibility(true);
-                //console.error('AE_WPN_UNHIDE' + dynamicProp.name);
-                break;
-            case (event.event === 0 && event.name == 'AE_CL_CREATE_PARTICLE_EFFECT'):
-                options = event.options.split(' ');
-                //TODOV2
-                const f = async () => {
-                    const sys = await Source1ParticleControler.createSystem(dynamicProp.sourceModel.repository, options[0]);
-                    sys.autoKill = true;
-                    sys.start();
-                    //console.log(options[0], options[1], options[2]);
-                    switch (options[1]) {
-                        case 'follow_attachment':
-                            dynamicProp.attachSystem(sys, options[2]);
-                            break;
-                        case 'start_at_attachment':
-                            dynamicProp.attachSystem(sys, options[2]);
-                            break;
-                        case 'start_at_origin':
-                            dynamicProp.attachSystem(sys, options[2]);
-                            break;
-                    }
-                };
-                f();
-                /*TODOv2
-                        'start_at_origin',		// PATTACH_ABSORIGIN = 0,
-                        'follow_origin',		// PATTACH_ABSORIGIN_FOLLOW,
-                        'start_at_customorigin',// PATTACH_CUSTOMORIGIN,
-                        'start_at_attachment',	// PATTACH_POINT,
-                        'follow_attachment',	// PATTACH_POINT_FOLLOW,
-                */
-                break;
-            case (event.event === 0 && event.name == 'AE_TAUNT_ADD_ATTRIBUTE'):
-                //{ event AE_TAUNT_ADD_ATTRIBUTE 1 'taunt_attr_player_invis_percent 1 5.215' }
-                options = event.options.split(' ');
-                switch (options[0]) {
-                    case 'taunt_attr_player_invis_percent':
-                        dynamicProp.visible = false;
-                        setTimeout(function () { dynamicProp.visible = true; }, options[2] * 1000);
-                        break;
-                }
-                break;
-        }
-        //'AE_CL_BODYGROUP_SET_VALUE'
-    }
-}
-class MdlStudioAutoLayer {
-    iSequence;
-    iPose;
-    flags;
-    start;
-    peak;
-    tail;
-    end;
-}
-class MdlStudioEvent {
-    cycle;
-    event;
-    type;
-    options;
-    name;
-}
-
 const STUDIO_ANIM_RAWPOS = 0x01; // Vector48
 const STUDIO_ANIM_RAWROT = 0x02; // Quaternion48
 const STUDIO_ANIM_ANIMPOS = 0x04; // mstudioanim_valueptr_t
@@ -35850,6 +35796,196 @@ class MdlStudioAnim {
     }
 }
 
+const STUDIO_AL_SPLINE = 0x0040;
+const STUDIO_AL_XFADE = 0x0080;
+const STUDIO_AL_NOBLEND = 0x0200;
+const STUDIO_AL_LOCAL = 0x1000;
+const STUDIO_AL_POSE = 0x4000;
+class MdlStudioSeqDesc {
+    paramindex = [];
+    paramstart = [];
+    paramend = [];
+    blend = [];
+    weightlist = [];
+    groupsize = [0, 0];
+    mdl;
+    previousTime = -1;
+    currentTime = -1;
+    posekeyindex;
+    autolayer = [];
+    events = [];
+    name;
+    flags;
+    activity;
+    id;
+    startOffset;
+    actweight;
+    numevents;
+    eventindex;
+    bbmin = vec3.create();
+    bbmax = vec3.create();
+    numblends;
+    animindexindex;
+    movementindex;
+    paramparent;
+    fadeintime;
+    fadeouttime;
+    localentrynode;
+    localexitnode;
+    nodeflags;
+    entryphase;
+    exitphase;
+    lastframe;
+    nextseq;
+    pose;
+    numikrules;
+    numautolayers;
+    autolayerindex;
+    weightlistindex;
+    numiklocks;
+    iklockindex;
+    keyvalueindex;
+    keyvaluesize;
+    cycleposeindex;
+    activityName;
+    keyvalueText;
+    pBoneweight(boneIndex) {
+        return this.weightlist[boneIndex];
+    }
+    //MdlStudioSeqDesc.prototype.weight = MdlStudioSeqDesc.prototype.pBoneweight;//TODOV2
+    getBlend(x, y) {
+        x = clamp(x, 0, this.groupsize[0] - 1);
+        y = clamp(y, 0, this.groupsize[1] - 1);
+        return this.blend[y]?.[x] ?? null;
+    }
+    poseKey(iParam, iAnim) {
+        if (this.mdl && this.posekeyindex) {
+            const mdl = this.mdl;
+            const offset = this.posekeyindex + (iParam * this.groupsize[0] + iAnim) * 4;
+            return mdl.reader.getFloat32(offset); //TODOv3
+        }
+        //float				*pPoseKey(int iParam, int iAnim) const { return (float *)(((byte *)this) + posekeyindex) + iParam * groupsize[0] + iAnim; }
+        return 0;
+    }
+    getAutoLayer(autoLayerIndex) {
+        return this.autolayer[autoLayerIndex] ?? null;
+    }
+    get length() {
+        const anim = this.mdl.getAnimDescription(this.blend[0]?.[0]);
+        if (!anim) {
+            return 0;
+        }
+        return (anim.numframes - 1) / anim.fps;
+    }
+    play(dynamicProp) {
+        const anim = this.mdl.getAnimDescription(this.blend[0]?.[0]);
+        if (!anim) {
+            return;
+        }
+        this.currentTime = (this.currentTime !== undefined) ? dynamicProp.frame * anim.fps / (anim.numframes - 1) : 0;
+        this.currentTime = this.currentTime % 1;
+        this.previousTime = (this.previousTime !== undefined) ? this.previousTime : -1;
+        if (this.previousTime > this.currentTime) {
+            this.previousTime = this.currentTime;
+        }
+        const previousTime = this.previousTime;
+        const currentTime = this.currentTime;
+        const seqEvents = this.events;
+        for (let eventIndex = 0; eventIndex < seqEvents.length; ++eventIndex) {
+            const event = seqEvents[eventIndex];
+            if (event.cycle > previousTime && event.cycle <= currentTime) {
+                this.processEvent(event, dynamicProp); //TODOv3
+            }
+        }
+        this.previousTime = this.currentTime;
+    }
+    processEvent(event, dynamicProp) {
+        let options;
+        switch (true) {
+            case event.event == 5004 || (event.event === 0 && event.name == 'AE_CL_PLAYSOUND'):
+                Source1SoundManager.playSound(this.mdl?.repository, event.options);
+                break;
+            case (event.event === 0 && event.name == 'AE_CL_BODYGROUP_SET_VALUE'):
+                options = event.options.split(' ');
+                //dynamicProp.bodyGroups[options[0]] = options[1];
+                if (options.length >= 2) {
+                    dynamicProp.setBodyPartModel(options[0], Number(options[1]));
+                }
+                break;
+            case (event.event === 0 && event.name == 'AE_WPN_HIDE'):
+                //TODOV2
+                //dynamicProp.setVisibility(false);
+                //console.error('AE_WPN_HIDE' + dynamicProp.name);
+                break;
+            case (event.event === 0 && event.name == 'AE_WPN_UNHIDE'):
+                //TODOV2
+                //dynamicProp.setVisibility(true);
+                //console.error('AE_WPN_UNHIDE' + dynamicProp.name);
+                break;
+            case (event.event === 0 && event.name == 'AE_CL_CREATE_PARTICLE_EFFECT'):
+                options = event.options.split(' ');
+                //TODOV2
+                const f = async () => {
+                    const sys = await Source1ParticleControler.createSystem(dynamicProp.sourceModel.repository, options[0]);
+                    sys.autoKill = true;
+                    sys.start();
+                    //console.log(options[0], options[1], options[2]);
+                    switch (options[1]) {
+                        case 'follow_attachment':
+                            dynamicProp.attachSystem(sys, options[2]);
+                            break;
+                        case 'start_at_attachment':
+                            dynamicProp.attachSystem(sys, options[2]);
+                            break;
+                        case 'start_at_origin':
+                            dynamicProp.attachSystem(sys, options[2]);
+                            break;
+                    }
+                };
+                if (options.length >= 1) {
+                    f();
+                }
+                /*TODOv2
+                        'start_at_origin',		// PATTACH_ABSORIGIN = 0,
+                        'follow_origin',		// PATTACH_ABSORIGIN_FOLLOW,
+                        'start_at_customorigin',// PATTACH_CUSTOMORIGIN,
+                        'start_at_attachment',	// PATTACH_POINT,
+                        'follow_attachment',	// PATTACH_POINT_FOLLOW,
+                */
+                break;
+            case (event.event === 0 && event.name == 'AE_TAUNT_ADD_ATTRIBUTE'):
+                //{ event AE_TAUNT_ADD_ATTRIBUTE 1 'taunt_attr_player_invis_percent 1 5.215' }
+                options = event.options.split(' ');
+                switch (options[0]) {
+                    case 'taunt_attr_player_invis_percent':
+                        dynamicProp.setVisible(false);
+                        if (options.length >= 3) {
+                            setTimeout(function () { dynamicProp.setVisible(); }, Number(options[2]) * 1000);
+                        }
+                        break;
+                }
+                break;
+        }
+        //'AE_CL_BODYGROUP_SET_VALUE'
+    }
+}
+class MdlStudioAutoLayer {
+    iSequence;
+    iPose;
+    flags;
+    start;
+    peak;
+    tail;
+    end;
+}
+class MdlStudioEvent {
+    cycle;
+    event;
+    type;
+    options;
+    name;
+}
+
 //-----------------------------------------------------------------------------
 // Purpose: returns array of animations and weightings for a sequence based on current pose parameters
 //-----------------------------------------------------------------------------
@@ -35882,21 +36018,22 @@ function Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameters, panim,
 //-----------------------------------------------------------------------------
 //float Studio_CPS(const CStudioHdr *pStudioHdr, mstudioseqdesc_t &seqdesc, int iSequence, const float poseParameters[])
 function Studio_CPS2(pStudioHdr, seqdesc, iSequence, poseParameters) {
-    const panim = [];
-    const weight = [];
+    const panim = [null, null, null, null];
+    const weight = [0, 0, 0, 0];
     Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameters, panim, weight);
     let t = 0;
     for (let i = 0; i < 4; ++i) {
-        if (panim[i] && weight[i] > 0 && panim[i].numframes > 1) {
-            t += (panim[i].fps / (panim[i].numframes - 1)) * weight[i];
-            //setAnimLength(panim[i].numframes);//TODOv3
+        const anim = panim[i];
+        if (anim && weight[i] > 0 && anim.numframes > 1) {
+            t += (anim.fps / (anim.numframes - 1)) * weight[i];
+            //setAnimLength(anim.numframes);//TODOv3
         }
     }
     return t;
 }
 function Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameters) {
-    const panim = [];
-    const weight = [];
+    const panim = [null, null, null, null];
+    const weight = [0, 0, 0, 0];
     Studio_SeqAnims2(pStudioHdr, seqdesc, iSequence, poseParameters, panim, weight);
     let t = 0;
     for (let i = 0; i < 4; ++i) {
@@ -35908,6 +36045,9 @@ function Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameters) {
 }
 function StudioFrames2(pStudioHdr, iSequence, poseParameters) {
     const seqdesc = pStudioHdr.getSequenceById(iSequence); //pStudioHdr.pSeqdesc(iSequence);
+    if (!seqdesc) {
+        return 0;
+    }
     return Studio_Frames2(pStudioHdr, seqdesc, iSequence, poseParameters);
 }
 const SOURCE_MODEL_MAX_BONES$1 = 256;
@@ -35921,8 +36061,10 @@ function InitPose2(dynamicProp, pStudioHdr, pos, q, boneMask) {
                 const pbone = pStudioHdr.getBone(i);
                 pos[i] = pos[i] || vec3.create(); //removeme
                 q[i] = q[i] || quat.create(); //removeme
-                vec3.copy(pos[i], pbone.position);
-                quat.copy(q[i], pbone.quaternion);
+                if (pbone) {
+                    vec3.copy(pos[i], pbone.position);
+                    quat.copy(q[i], pbone.quaternion);
+                }
             }
         }
     }
@@ -35936,9 +36078,6 @@ function CalcPose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seque
     cycle = cycle % 1; //TODOv2
     const seqdesc = pStudioHdr.getSequenceById(sequence);
     if (seqdesc) {
-        //Assert(flWeight >= 0.0f && flWeight <= 1.0f);
-        // This shouldn't be necessary, but the Assert should help us catch whoever is screwing this up
-        flWeight = clamp(flWeight, 0.0, 1.0);
         // add any IK locks to prevent numautolayers from moving extremities
         //CIKContext seq_ik;TODOv2
         /*
@@ -35948,10 +36087,7 @@ function CalcPose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seque
         }
             */
         CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flTime);
-        if (pIKContext) {
-            pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
-        }
-        AddSequenceLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flWeight);
+        AddSequenceLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters);
         /*
                 if (false && seqdesc.numiklocks) {//TODOV2
                     seq_ik.SolveSequenceLocks(seqdesc, pos, q);
@@ -36011,11 +36147,7 @@ function CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, se
         cycle = cycle - Math.floor(cycle); //TODOv2: rounding issues
     }
     else if (seqdesc.flags & STUDIO_CYCLEPOSE$1) {
-        const iPose = pStudioHdr.GetSharedPoseParameter(sequence, seqdesc.cycleposeindex);
-        if (iPose != -1) {
-            cycle = poseParameters[iPose];
-        }
-        else {
+        {
             cycle = 0.0;
         }
     }
@@ -36089,8 +36221,8 @@ function CalcPoseSingle2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, se
         }
         //else if (!anim_3wayblend.GetBool())
         else {
-            const iAnimIndices = [];
-            const weight = [];
+            const iAnimIndices = [0, 0, 0];
+            const weight = [0, 0, 0];
             Calc3WayBlendIndices2(i0, i1, s0, s1, seqdesc, iAnimIndices, weight);
             if (weight[1] < 0.001) {
                 // on diagonal
@@ -36138,8 +36270,7 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, seq
     pStudioHdr.getAnimFrame(dynamicProp, animdesc, iFrame);
     //console.log(iFrame);
     let iLocalFrame = iFrame;
-    let flStall;
-    const panims = animdesc.pAnim(iLocalFrame, flStall);
+    const panims = animdesc.pAnim(iLocalFrame /*, flStall*/);
     //animdesc.mdl.getAnimFrame(animdesc, 31);
     //const pweight = seqdesc.pBoneweight(0);
     // if the animation isn't available, look for the zero frame cache
@@ -36147,7 +36278,7 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, seq
         for (let i = 0, boneCount = pStudioHdr.getBoneCount(); i < boneCount; ++i) {
             const pbone = pStudioHdr.getBone(i);
             const pweight = seqdesc.pBoneweight(i);
-            if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
+            if (pweight && pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
                 if (animdesc.flags & STUDIO_DELTA$1) {
                     q[i] = quat.create(); //TODOV2
                     pos[i] = vec3.create(); //TODOV2
@@ -36159,13 +36290,15 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, seq
                     q[i] = quat.create();
                     pos[i] = vec3.create();
                     //quat.fromMat3(q[i], mat3.fromEuler(SourceEngineTempMat3, pbone.rot));
-                    quatFromEulerRad(q[i], pbone.rot[0], pbone.rot[1], pbone.rot[2]);
-                    vec3.copy(pos[i], pbone.position);
+                    if (pbone && q[i] && pos[i]) {
+                        quatFromEulerRad(q[i], pbone.rot[0], pbone.rot[1], pbone.rot[2]);
+                        vec3.copy(pos[i], pbone.position);
+                    }
                 }
             }
         }
         //CalcZeroframeData(pStudioHdr, pStudioHdr->GetRenderHdr(), NULL, pStudioHdr->pBone(0), animdesc, fFrame, pos, q, boneMask, 1.0);
-        CalcZeroframeData2(pStudioHdr, pStudioHdr, null, pStudioHdr.getBone(0));
+        pStudioHdr.getBone(0);
         return;
     }
     // BUGBUG: the sequence, the anim, and the model can have all different bone mappings.
@@ -36181,13 +36314,15 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, seq
         if (panim && panim.bone == i) {
             boneFlags[i] = panim.flags;
             //if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask))
-            if (pweight > 0) //TODOv2
+            if (pweight && pweight > 0) //TODOv2
              {
                 if (animdesc.sectionframes != 0) {
                     iLocalFrame = iLocalFrame % animdesc.sectionframes;
                 }
-                CalcBoneQuaternion2(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, q[i]);
-                CalcBonePosition2(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, pos[i]); //TODOV2
+                if (pbone) {
+                    CalcBoneQuaternion2(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, q[i]);
+                    CalcBonePosition2(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, pos[i]);
+                }
                 //quat.copy(q[i], pbone.quaternion);
                 //vec3.copy(pos[i], pbone.position);
             }
@@ -36195,7 +36330,7 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, seq
             panim = panims[++animIndex];
             //} else if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
         }
-        else if (pweight > 0) {
+        else if (pweight && pweight > 0) {
             if (animdesc.flags & STUDIO_DELTA$1) {
                 boneFlags[i] = STUDIO_ANIM_DELTA;
                 q[i] = quat.create(); //TODOV2
@@ -36203,14 +36338,48 @@ function CalcAnimation2(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, seq
             }
             else {
                 boneFlags[i] = 0;
-                quat.copy(q[i], pbone.quaternion);
-                vec3.copy(pos[i], pbone.position);
+                if (pbone && q[i] && pos[i]) {
+                    quat.copy(q[i], pbone.quaternion);
+                    vec3.copy(pos[i], pbone.position);
+                }
             }
         }
         else {
             boneFlags[i] = STUDIO_ANIM_DELTA;
         }
     }
+    // cross fade in previous zeroframe data
+    /*
+    if (flStall > 0.0) {
+        CalcZeroframeData2(pStudioHdr, pStudioHdr, null, pStudioHdr.getBone(0), animdesc, fFrame, pos, q, boneMask, flStall);
+    }
+    */
+    //console.error(animdesc.numlocalhierarchy);
+    /*
+    if (false && animdesc.numlocalhierarchy) {//TODOv2
+        const boneToWorld = mat4.create();//TODOv2
+        let boneComputed;
+
+        for (let i = 0; i < animdesc.numlocalhierarchy; ++i) {
+            const pHierarchy = animdesc.pHierarchy(i);
+
+            if (!pHierarchy) {
+                break;
+            }
+            /*
+
+            if (pStudioHdr.boneFlags(pHierarchy.iBone) & boneMask) {
+                if (pStudioHdr.boneFlags(pHierarchy.iNewParent) & boneMask) {
+                    CalcLocalHierarchyAnimation(pStudioHdr, boneToWorld, boneComputed, pos, q, pbone, pHierarchy, pHierarchy.iBone, pHierarchy.iNewParent, cycle, iFrame, s, boneMask);
+                }
+            }
+                * /
+
+        }
+
+        //g_MatrixPool.Free(boneToWorld);TODOv2
+    }
+    */
 }
 //-----------------------------------------------------------------------------
 // Purpose: return a sub frame rotation for a single bone
@@ -36251,7 +36420,7 @@ function _CalcBoneQuaternion2(pStudioHdr, frame, s, baseQuat, baseRot, baseRotSc
         for (let i = 0; i < 3; ++i) {
             const offset = panim.animValuePtrRot.offset[i];
             if (offset) {
-                angle1[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset, panim.bone, i) * baseRotScale[i];
+                angle1[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset /*, panim.bone, i*/) * baseRotScale[i];
                 angle2[i] = angle1[i];
             }
         }
@@ -36281,7 +36450,7 @@ function _CalcBoneQuaternion2(pStudioHdr, frame, s, baseQuat, baseRot, baseRotSc
         for (let i = 0; i < 3; ++i) {
             const offset = panim.animValuePtrRot.offset[i];
             if (offset) {
-                angle[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset, panim.bone, i) * baseRotScale[i];
+                angle[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset /*, panim.bone, i*/) * baseRotScale[i];
             }
         }
         if (!(panim.flags & STUDIO_ANIM_DELTA)) {
@@ -36329,7 +36498,7 @@ function _CalcBonePosition2(pStudioHdr, frame, s, basePos, baseBoneScale, panim,
             const offset = panim.animValuePtrPos.offset[i];
             if (offset) {
                 //ExtractAnimValue(frame, pPosV->pAnimvalue(i), baseBoneScale[i], v1, v2);
-                v1 = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset, panim.bone, i) * baseBoneScale[i];
+                v1 = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset /*, panim.bone, i*/) * baseBoneScale[i];
                 v2 = v1;
                 pos[i] = v1 * (1.0 - s) + v2 * s;
             }
@@ -36341,7 +36510,7 @@ function _CalcBonePosition2(pStudioHdr, frame, s, basePos, baseBoneScale, panim,
             const offset = panim.animValuePtrPos.offset[i];
             if (offset) {
                 //ExtractAnimValue(frame, pPosV->pAnimvalue(i), baseBoneScale[i], v1, v2);
-                pos[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset, panim.bone, i) * baseBoneScale[i];
+                pos[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset /*, panim.bone, i*/) * baseBoneScale[i];
             }
         }
     }
@@ -36352,7 +36521,8 @@ function _CalcBonePosition2(pStudioHdr, frame, s, basePos, baseBoneScale, panim,
     }
 }
 function CalcBonePosition2(pStudioHdr, frame, s, pBone, pLinearBones, panim, pos) {
-    {
+    if (pLinearBones) ;
+    else {
         _CalcBonePosition2(pStudioHdr, frame, s, pBone.position, pBone.posscale, panim, pos);
     }
 }
@@ -36363,7 +36533,7 @@ function CalcBonePosition2(pStudioHdr, frame, s, pBone, pLinearBones, panim, pos
 //void QuaternionBlend(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
 function QuaternionBlend2(p, q, t, qt) {
     // decide if one of the quaternions is backwards
-    const q2 = quat.create();
+    const q2 = quat.create(); //TODO: optimize
     QuaternionAlign2(p, q, q2);
     QuaternionBlendNoAlign2(p, q2, t, qt);
 }
@@ -36400,96 +36570,6 @@ function QuaternionAlign2(p, q, qt) {
             qt[i] = q[i];
         }
     }
-}
-//-----------------------------------------------------------------------------
-// Purpose: Calc Zeroframe Data
-//-----------------------------------------------------------------------------
-function CalcZeroframeData2(pStudioHdr, pAnimStudioHdr, pAnimGroup, pAnimbone, animdesc, fFrame, pos, q, boneMask, flWeight) {
-    /* TODO
-        let pData = animdesc.pZeroFrameData();
-
-        if (!pData) {
-            return;
-        }
-
-        // Msg('zeroframe %s\n', animdesc.pszName());
-        let i;
-        if (animdesc.zeroframecount == 1) {
-            for (let j = 0, boneCount = pStudioHdr.getBoneCount(); j < boneCount; ++j) {
-                if (pAnimGroup)
-                    i = pAnimGroup.masterBone[j];
-                else
-                    i = j;
-
-                if (pAnimbone[j].flags & BONE_HAS_SAVEFRAME_POS) {
-                    if ((i >= 0) && (pStudioHdr.boneFlags(i) & boneMask)) {
-                        const p = vec3.create();//TODOv2
-                        console.error('const p = *(Vector48 *)pData;//TODOv2');
-                        pos[i] = pos[i] * (1.0 - flWeight) + p * flWeight;
-                    }
-                    pData += 6;//sizeof(Vector48);//TODOv2
-                }
-                if (pAnimbone[j].flags & BONE_HAS_SAVEFRAME_ROT) {
-                    if ((i >= 0) && (pStudioHdr.boneFlags(i) & boneMask)) {
-                        const q0 = quat.create();//*(Quaternion64 *)pData;
-                        console.error('const q0 = quat.create();//*(Quaternion64 *)pData;');
-                        QuaternionBlend(q[i], q0, flWeight, q[i]);
-                        //Assert(q[i].IsValid());
-                    }
-                    pData += 8;//sizeof(Quaternion64);
-                }
-            }
-        }
-        else {
-            let s1;
-            let index = fFrame / animdesc.zeroframespan;
-            if (index >= animdesc.zeroframecount - 1) {
-                index = animdesc.zeroframecount - 2;
-                s1 = 1.0;
-            } else {
-                s1 = clamp((fFrame - index * animdesc.zeroframespan) / animdesc.zeroframespan, 0.0, 1.0);
-            }
-            let i0 = Math.max(index - 1, 0);
-            let i1 = index;
-            let i2 = Math.min(index + 1, animdesc.zeroframecount - 1);
-            for (let j = 0, boneCount = pStudioHdr.getBoneCount(); j < boneCount; ++j) {
-                if (pAnimGroup)
-                    i = pAnimGroup.masterBone[j];
-                else
-                    i = j;
-
-                if (pAnimbone[j].flags & BONE_HAS_SAVEFRAME_POS) {
-                    if ((i >= 0) && (pStudioHdr.boneFlags(i) & boneMask)) {
-                        const p0 = vec3.create();//*(((Vector48 *)pData) + i0);//optimize
-                        const p1 = vec3.create();//*(((Vector48 *)pData) + i1);
-                        const p2 = vec3.create();//*(((Vector48 *)pData) + i2);
-                        console.error('Vector p2 = *(((Vector48 *)pData) + i2);');
-                        let p3;
-                        Hermite_Spline(p0, p1, p2, s1, p3);
-                        pos[i] = pos[i] * (1.0 - flWeight) + p3 * flWeight;
-                    }
-                    pData += sizeof(Vector48) * animdesc.zeroframecount;
-                }
-                if (pAnimbone[j].flags & BONE_HAS_SAVEFRAME_ROT) {
-                    if ((i >= 0) && (pStudioHdr.boneFlags(i) & boneMask)) {
-                        const q0 = quat.create();//*(((Quaternion64 *)pData) + i0);
-                        const q1 = quat.create();//*(((Quaternion64 *)pData) + i1);
-                        const q2 = quat.create();//*(((Quaternion64 *)pData) + i2);
-                        console.error('Quaternion q0 = *(((Quaternion64 *)pData) + i0);');
-                        if (flWeight == 1.0) {
-                            Hermite_Spline(q0, q1, q2, s1, q[i]);
-                        }
-                        else {
-                            let q3;
-                            Hermite_Spline(q0, q1, q2, s1, q3);
-                            QuaternionBlend(q[i], q3, flWeight, q[i]);
-                        }
-                    }
-                    pData += sizeof(Quaternion64) * animdesc.zeroframecount;
-                }
-            }
-        }
-    */
 }
 function PoseIsAllZeros2(pStudioHdr, sequence, seqdesc, i0, i1) {
     // remove 'zero' positional blends
@@ -36565,9 +36645,9 @@ function Calc3WayBlendIndices2(i0, i1, s0, s1, seqdesc, pAnimIndices, pWeight) {
             pWeight[1] = 1.0 - s0 - s1;
         }
     }
-    pAnimIndices[0] = seqdesc.getBlend(i0 + x1, i1 + y1);
-    pAnimIndices[1] = seqdesc.getBlend(i0 + x2, i1 + y2);
-    pAnimIndices[2] = seqdesc.getBlend(i0 + x3, i1 + y3);
+    pAnimIndices[0] = seqdesc.getBlend(i0 + x1, i1 + y1) ?? 0;
+    pAnimIndices[1] = seqdesc.getBlend(i0 + x2, i1 + y2) ?? 0;
+    pAnimIndices[2] = seqdesc.getBlend(i0 + x3, i1 + y3) ?? 0;
     // clamp the diagonal
     if (pWeight[1] < 0.001)
         pWeight[1] = 0.0;
@@ -36584,13 +36664,14 @@ const AddSequenceLayers2 = function (dynamicProp, pStudioHdr, pIKContext, pos, q
     //return;
     for (let i = 0; i < seqdesc.numautolayers; ++i) {
         const pLayer = seqdesc.getAutoLayer(i);
+        if (!pLayer) {
+            continue;
+        }
         if (pLayer.flags & STUDIO_AL_LOCAL) {
             continue;
         }
         let layerCycle = cycle;
-        let layerWeight = flWeight;
         if (pLayer.start != pLayer.end) {
-            let s = 1.0;
             let index;
             if (!(pLayer.flags & STUDIO_AL_POSE)) {
                 index = cycle;
@@ -36604,7 +36685,7 @@ const AddSequenceLayers2 = function (dynamicProp, pStudioHdr, pIKContext, pos, q
                     //const Pose = pStudioHdr.pPoseParameter(iPose);
                     const Pose = pStudioHdr.getLocalPoseParameter(iPose);
                     if (Pose) {
-                        index = poseParameters[iPose] * (Pose.end - Pose.start) + Pose.start;
+                        index = (poseParameters.get(String(iPose)) ?? 1) * (Pose.end - Pose.start) + Pose.start;
                     }
                     else {
                         index = 0;
@@ -36621,30 +36702,22 @@ const AddSequenceLayers2 = function (dynamicProp, pStudioHdr, pIKContext, pos, q
                 continue;
             }
             if (index < pLayer.peak && pLayer.start != pLayer.peak) {
-                s = (index - pLayer.start) / (pLayer.peak - pLayer.start);
+                (index - pLayer.start) / (pLayer.peak - pLayer.start);
             }
             else if (index > pLayer.tail && pLayer.end != pLayer.tail) {
-                s = (pLayer.end - index) / (pLayer.end - pLayer.tail);
+                (pLayer.end - index) / (pLayer.end - pLayer.tail);
             }
-            if (pLayer.flags & STUDIO_AL_SPLINE) {
-                s = SimpleSpline(s);
-            }
-            if ((pLayer.flags & STUDIO_AL_XFADE) && (index > pLayer.tail)) {
-                layerWeight = (s * flWeight) / (1 - flWeight + s * flWeight);
-            }
-            else if (pLayer.flags & STUDIO_AL_NOBLEND) {
-                layerWeight = s;
-            }
-            else {
-                layerWeight = flWeight * s;
-            }
+            if (pLayer.flags & STUDIO_AL_SPLINE) ;
+            if ((pLayer.flags & STUDIO_AL_XFADE) && (index > pLayer.tail)) ;
+            else if (pLayer.flags & STUDIO_AL_NOBLEND) ;
+            else ;
             if (!(pLayer.flags & STUDIO_AL_POSE)) {
                 layerCycle = (cycle - pLayer.start) / (pLayer.end - pLayer.start);
             }
         }
         //const iSequence = pStudioHdr.iRelativeSeq(sequence, pLayer.iSequence);//TODOV2
         const iSequence = pLayer.iSequence; //pStudioHdr.getSequenceById(pLayer.iSequence);
-        AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, iSequence, layerCycle, poseParameters, boneMask, layerWeight);
+        AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, iSequence, layerCycle, poseParameters);
     }
 };
 //-----------------------------------------------------------------------------
@@ -36662,12 +36735,14 @@ function AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags,
     //const q2 = [];
     const pos2 = AccumulatePose_pos2$1;
     const q2 = AccumulatePose_q2$1;
-    // This shouldn't be necessary, but the Assert should help us catch whoever is screwing this up
-    flWeight = clamp(flWeight, 0.0, 1.0);
     if (sequence < 0) {
         return;
     }
     const seqdesc = pStudioHdr.getSequenceById(sequence);
+    if (!seqdesc) {
+        return;
+    }
+    if (seqdesc.numiklocks) ;
     if (seqdesc.flags & STUDIO_LOCAL$1) {
         InitPose2(dynamicProp, pStudioHdr, pos2, q2);
     }
@@ -36678,10 +36753,13 @@ function AccumulatePose2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags,
         SlerpBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, flWeight, boneMask);
     }
     */
+    /*
     if (pIKContext) {
         pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
     }
-    AddSequenceLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flWeight);
+    */
+    AddSequenceLayers2(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters);
+    if (seqdesc.numiklocks) ;
 }
 //-----------------------------------------------------------------------------
 // Purpose: Inter-animation blend.	Assumes both types are identical.
@@ -36718,10 +36796,15 @@ function BlendBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneM
             if (!(pStudioHdr.boneFlags(i) & boneMask)) {
                 continue;
             }
-            {
+            /* TODO: activate
+            if (pSeqGroup) {
+                j = pSeqGroup.boneMap[i];
+            }
+            */
+            else {
                 j = i;
             }
-            if (j >= 0 && seqdesc.pBoneweight(j) > 0.0) {
+            if (j >= 0 && (seqdesc.pBoneweight(j) ?? 0) > 0.0 && q2[i] && pos2[i]) {
                 q1[i] = q2[i];
                 pos1[i] = pos2[i];
             }
@@ -36740,10 +36823,15 @@ function BlendBones2(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneM
         if (!(pStudioHdr.boneFlags(i) & boneMask)) {
             continue;
         }
-        {
+        /* TODO: activate
+        if (pSeqGroup) {
+            j = pSeqGroup.boneMap[i];
+        }
+        */
+        else {
             j = i;
         }
-        if (j >= 0 && seqdesc.pBoneweight(j) > 0.0) {
+        if (j >= 0 && (seqdesc.pBoneweight(j) ?? 0) > 0.0 && q2[i] && q1[i] && pos1[i] && pos2[i]) {
             if (pStudioHdr.boneFlags(i) & BONE_FIXED_ALIGNMENT) {
                 QuaternionBlendNoAlign2(q2[i], q1[i], s1, q3);
             }
@@ -36768,11 +36856,9 @@ function Studio_LocalPoseParameter2(pStudioHdr, poseParameters, seqdesc, iSequen
     let flSetting = 0;
     let index = 0;
     //const iPose = pStudioHdr.GetSharedPoseParameter(iSequence, seqdesc.paramindex[iLocalIndex]);
-    const iPose = seqdesc.paramindex[iLocalIndex]; //TODOV2
+    const iPose = seqdesc.paramindex[iLocalIndex] ?? -1;
     if (iPose == -1) {
-        flSetting = 0;
-        index = 0;
-        return { s: flSetting, i: index };
+        return { s: 0, i: 0 };
     }
     const Pose = pStudioHdr.getLocalPoseParameter(iPose);
     if (!Pose) {
@@ -36780,7 +36866,7 @@ function Studio_LocalPoseParameter2(pStudioHdr, poseParameters, seqdesc, iSequen
         index = 0;
         return { s: flSetting, i: index };
     }
-    //const flValue = poseParameter[iPose];
+    //const flValue = poseParameters[iPose];
     let flValue = Pose.midpoint;
     const poseParameter = poseParameters.get(Pose.name);
     if (poseParameter !== undefined) {
@@ -36791,9 +36877,15 @@ function Studio_LocalPoseParameter2(pStudioHdr, poseParameters, seqdesc, iSequen
         const shift = Pose.loop - wrap;
         flValue = flValue - Pose.loop * Math.floor((flValue + shift) / Pose.loop);
     }
+    const paramStart = seqdesc.paramstart[iLocalIndex];
+    const paramEnd = seqdesc.paramend[iLocalIndex];
+    const groupSize = seqdesc.groupsize[iLocalIndex];
+    if (paramStart === undefined || paramEnd === undefined || groupSize === undefined) {
+        return { s: 0, i: 0 };
+    }
     if (seqdesc.posekeyindex == 0) {
-        const flLocalStart = (seqdesc.paramstart[iLocalIndex] - Pose.start) / (Pose.end - Pose.start);
-        const flLocalEnd = (seqdesc.paramend[iLocalIndex] - Pose.start) / (Pose.end - Pose.start);
+        const flLocalStart = (paramStart - Pose.start) / (Pose.end - Pose.start);
+        const flLocalEnd = (paramEnd - Pose.start) / (Pose.end - Pose.start);
         // convert into local range
         flSetting = (flValue - flLocalStart) / (flLocalEnd - flLocalStart);
         // clamp.	This shouldn't ever need to happen if it's looping.
@@ -36802,12 +36894,12 @@ function Studio_LocalPoseParameter2(pStudioHdr, poseParameters, seqdesc, iSequen
         if (flSetting > 1)
             flSetting = 1;
         index = 0;
-        if (seqdesc.groupsize[iLocalIndex] > 2) {
+        if (groupSize > 2) {
             // estimate index
-            index = Math.round(flSetting * (seqdesc.groupsize[iLocalIndex] - 1));
-            if (index == seqdesc.groupsize[iLocalIndex] - 1)
-                index = seqdesc.groupsize[iLocalIndex] - 2;
-            flSetting = flSetting * (seqdesc.groupsize[iLocalIndex] - 1) - index;
+            index = Math.round(flSetting * (groupSize - 1));
+            if (index == groupSize - 1)
+                index = groupSize - 2;
+            flSetting = flSetting * (groupSize - 1) - index;
         }
     }
     else {
@@ -36826,7 +36918,7 @@ function Studio_LocalPoseParameter2(pStudioHdr, poseParameters, seqdesc, iSequen
             }
             else
             */
-            if (index < seqdesc.groupsize[iLocalIndex] - 2 && flSetting > 1.0) {
+            if (index < groupSize - 2 && flSetting > 1.0) {
                 index++;
                 continue;
             }
@@ -36847,8 +36939,11 @@ sequence, //int sequence,
 s, //float s,
 boneMask //int boneMask
 ) {
-    let i, j; //int			i, j;
+    let i, j = -1; //int			i, j;
     const seqdesc = pStudioHdr.getSequenceById(sequence); //mstudioseqdesc_t & seqdesc = ((CStudioHdr *)pStudioHdr) -> pSeqdesc(sequence);
+    if (!seqdesc) {
+        return;
+    }
     /*
     virtualmodel_t * pVModel = pStudioHdr -> GetVirtualModel();
     const virtualgroup_t * pSeqGroup = NULL;
@@ -36859,6 +36954,9 @@ boneMask //int boneMask
     const s2 = s;
     const s1 = 1.0 - s2;
     for (i = 0; i < pStudioHdr.getBoneCount(); i++) {
+        if (!q1[i] || !pos1[i]) {
+            continue;
+        }
         // skip unused bones
         if (!(pStudioHdr.boneFlags(i) & boneMask)) {
             continue;
@@ -36866,7 +36964,7 @@ boneMask //int boneMask
         {
             j = i;
         }
-        if (j >= 0 && seqdesc.pBoneweight(j) > 0.0) {
+        if (j >= 0 && (seqdesc.pBoneweight(j) ?? -1) > 0.0) {
             QuaternionIdentityBlend(q1[i], s1, q1[i]);
             //VectorScale(pos1[i], s2, pos1[i]);
             vec3.scale(pos1[i], pos1[i], s2);
@@ -37119,29 +37217,31 @@ class AnimationDescription {
 }
 
 class Animations {
-    #animations = [];
+    #animations = new Map();
     [Symbol.iterator] = () => {
         return this.#animations.entries();
     };
     clear() {
-        this.#animations.length = 0;
+        this.#animations.clear();
     }
     set(id, animation) {
-        this.#animations[id] = animation;
+        this.#animations.set(id, animation);
         this.#computeWeights();
     }
     remove(id) {
-        this.#animations[id] = undefined;
+        this.#animations.delete(id);
         this.#computeWeights();
     }
-    get animations() {
+    /*
+    get animations(): AnimationDescription[] {
         return this.#animations;
     }
+    */
     get(id) {
-        return this.#animations[id];
+        return this.#animations.get(id) ?? null;
     }
     setWeight(id, weight) {
-        const animation = this.#animations[id];
+        const animation = this.#animations.get(id);
         if (!animation) {
             return false;
         }
@@ -37203,14 +37303,15 @@ function Studio_SeqAnims(pStudioHdr, seqdesc, iSequence, poseParameters, panim, 
 //-----------------------------------------------------------------------------
 //float Studio_CPS(const CStudioHdr *pStudioHdr, mstudioseqdesc_t &seqdesc, int iSequence, const float poseParameters[])
 function Studio_CPS(pStudioHdr, seqdesc, iSequence, poseParameters) {
-    const panim = [];
-    const weight = [];
+    const panim = [null, null, null, null];
+    const weight = [0, 0, 0, 0];
     Studio_SeqAnims(pStudioHdr, seqdesc, iSequence, poseParameters, panim, weight);
     let t = 0;
     for (let i = 0; i < 4; ++i) {
-        if (panim[i] && weight[i] > 0 && panim[i].numframes > 1) {
-            t += (panim[i].fps / (panim[i].numframes - 1)) * weight[i];
-            //setAnimLength(panim[i].numframes);//TODOv3
+        const anim = panim[i];
+        if (anim && weight[i] > 0 && anim.numframes > 1) {
+            t += (anim.fps / (anim.numframes - 1)) * weight[i];
+            //setAnimLength(anim.numframes);//TODOv3
         }
     }
     return t;
@@ -37221,6 +37322,9 @@ function Studio_CPS(pStudioHdr, seqdesc, iSequence, poseParameters) {
 //float Studio_Duration(const CStudioHdr *pStudioHdr, int iSequence, const float poseParameters[])
 function Studio_Duration(pStudioHdr, iSequence, poseParameters) {
     const seqdesc = pStudioHdr.getSequenceById(iSequence); //pStudioHdr.pSeqdesc(iSequence);
+    if (!seqdesc) {
+        return 0;
+    }
     const cps = Studio_CPS(pStudioHdr, seqdesc, iSequence, poseParameters);
     if (cps == 0)
         return 0.0;
@@ -37237,8 +37341,10 @@ function InitPose(dynamicProp, pStudioHdr, pos, q, boneMask) {
                 const pbone = pStudioHdr.getBone(i);
                 pos[i] = pos[i] || vec3.create(); //removeme
                 q[i] = q[i] || quat.create(); //removeme
-                vec3.copy(pos[i], pbone.position);
-                quat.copy(q[i], pbone.quaternion);
+                if (pbone) {
+                    vec3.copy(pos[i], pbone.position);
+                    quat.copy(q[i], pbone.quaternion);
+                }
             }
         }
     }
@@ -37264,9 +37370,6 @@ function CalcPose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, sequen
         }
             */
         CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flTime);
-        if (pIKContext) {
-            pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
-        }
         AddSequenceLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flWeight, flTime);
         /*
                 if (false && seqdesc.numiklocks) {//TODOV2
@@ -37329,11 +37432,7 @@ function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, seq
         cycle = cycle - Math.floor(cycle); //TODOv2: rounding issues
     }
     else if (seqdesc.flags & STUDIO_CYCLEPOSE) {
-        const iPose = pStudioHdr.GetSharedPoseParameter(sequence, seqdesc.cycleposeindex);
-        if (iPose != -1) {
-            cycle = poseParameters[iPose];
-        }
-        else {
+        {
             cycle = 0.0;
         }
     }
@@ -37407,8 +37506,8 @@ function CalcPoseSingle(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, seq
         }
         //else if (!anim_3wayblend.GetBool())
         else {
-            const iAnimIndices = [];
-            const weight = [];
+            const iAnimIndices = [0, 0, 0];
+            const weight = [0, 0, 0];
             Calc3WayBlendIndices(i0, i1, s0, s1, seqdesc, iAnimIndices, weight);
             if (weight[1] < 0.001) {
                 // on diagonal
@@ -37456,8 +37555,7 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequ
     pStudioHdr.getAnimFrame(dynamicProp, animdesc, iFrame);
     //console.log(iFrame);
     let iLocalFrame = iFrame;
-    let flStall;
-    const panims = animdesc.pAnim(iLocalFrame, flStall);
+    const panims = animdesc.pAnim(iLocalFrame /*, flStall*/);
     //animdesc.mdl.getAnimFrame(animdesc, 31);
     //const pweight = seqdesc.pBoneweight(0);
     // if the animation isn't available, look for the zero frame cache
@@ -37465,7 +37563,7 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequ
         for (let i = 0, boneCount = pStudioHdr.getBoneCount(); i < boneCount; ++i) {
             const pbone = pStudioHdr.getBone(i);
             const pweight = seqdesc.pBoneweight(i);
-            if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
+            if (pweight && pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
                 if (animdesc.flags & STUDIO_DELTA) {
                     q[i] = quat.create(); //TODOV2
                     pos[i] = vec3.create(); //TODOV2
@@ -37477,13 +37575,15 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequ
                     q[i] = quat.create();
                     pos[i] = vec3.create();
                     //quat.fromMat3(q[i], mat3.fromEuler(SourceEngineTempMat3, pbone.rot));
-                    quatFromEulerRad(q[i], pbone.rot[0], pbone.rot[1], pbone.rot[2]);
-                    vec3.copy(pos[i], pbone.position);
+                    if (pbone && q[i] && pos[i]) {
+                        quatFromEulerRad(q[i], pbone.rot[0], pbone.rot[1], pbone.rot[2]);
+                        vec3.copy(pos[i], pbone.position);
+                    }
                 }
             }
         }
         //CalcZeroframeData(pStudioHdr, pStudioHdr->GetRenderHdr(), NULL, pStudioHdr->pBone(0), animdesc, fFrame, pos, q, boneMask, 1.0);
-        CalcZeroframeData(pStudioHdr, pStudioHdr, null, pStudioHdr.getBone(0));
+        pStudioHdr.getBone(0);
         return;
     }
     // BUGBUG: the sequence, the anim, and the model can have all different bone mappings.
@@ -37499,13 +37599,15 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequ
         if (panim && panim.bone == i) {
             boneFlags[i] = panim.flags;
             //if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask))
-            if (pweight > 0) //TODOv2
+            if (pweight && pweight > 0) //TODOv2
              {
                 if (animdesc.sectionframes != 0) {
                     iLocalFrame = iLocalFrame % animdesc.sectionframes;
                 }
-                CalcBoneQuaternion(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, q[i]);
-                CalcBonePosition(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, pos[i]); //TODOV2
+                if (pbone) {
+                    CalcBoneQuaternion(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, q[i]);
+                    CalcBonePosition(pStudioHdr, iLocalFrame, s, pbone, pLinearBones, panim, pos[i]);
+                }
                 //quat.copy(q[i], pbone.quaternion);
                 //vec3.copy(pos[i], pbone.position);
             }
@@ -37513,7 +37615,7 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequ
             panim = panims[++animIndex];
             //} else if (pweight > 0 && (pStudioHdr.boneFlags(i) & boneMask)) {
         }
-        else if (pweight > 0) {
+        else if (pweight && pweight > 0) {
             if (animdesc.flags & STUDIO_DELTA) {
                 boneFlags[i] = STUDIO_ANIM_DELTA;
                 q[i] = quat.create(); //TODOV2
@@ -37521,14 +37623,48 @@ function CalcAnimation(dynamicProp, pStudioHdr, pos, q, boneFlags, seqdesc, sequ
             }
             else {
                 boneFlags[i] = 0;
-                quat.copy(q[i], pbone.quaternion);
-                vec3.copy(pos[i], pbone.position);
+                if (pbone && q[i] && pos[i]) {
+                    quat.copy(q[i], pbone.quaternion);
+                    vec3.copy(pos[i], pbone.position);
+                }
             }
         }
         else {
             boneFlags[i] = STUDIO_ANIM_DELTA;
         }
     }
+    // cross fade in previous zeroframe data
+    /*
+    if (flStall > 0.0) {
+        CalcZeroframeData(pStudioHdr, pStudioHdr, null, pStudioHdr.getBone(0), animdesc, fFrame, pos, q, boneMask, flStall);
+    }
+    */
+    //console.error(animdesc.numlocalhierarchy);
+    /*
+    if (false && animdesc.numlocalhierarchy) {//TODOv2
+        const boneToWorld = mat4.create();//TODOv2
+        let boneComputed;
+
+        for (let i = 0; i < animdesc.numlocalhierarchy; ++i) {
+            const pHierarchy = animdesc.pHierarchy(i);
+
+            if (!pHierarchy) {
+                break;
+            }
+            /*
+
+            if (pStudioHdr.boneFlags(pHierarchy.iBone) & boneMask) {
+                if (pStudioHdr.boneFlags(pHierarchy.iNewParent) & boneMask) {
+                    CalcLocalHierarchyAnimation(pStudioHdr, boneToWorld, boneComputed, pos, q, pbone, pHierarchy, pHierarchy.iBone, pHierarchy.iNewParent, cycle, iFrame, s, boneMask);
+                }
+            }
+                * /
+
+        }
+
+        //g_MatrixPool.Free(boneToWorld);TODOv2
+    }
+    */
 }
 //-----------------------------------------------------------------------------
 // Purpose: return a sub frame rotation for a single bone
@@ -37569,7 +37705,7 @@ function _CalcBoneQuaternion(pStudioHdr, frame, s, baseQuat, baseRot, baseRotSca
         for (let i = 0; i < 3; ++i) {
             const offset = panim.animValuePtrRot.offset[i];
             if (offset) {
-                angle1[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset, panim.bone, i) * baseRotScale[i];
+                angle1[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset /*, panim.bone, i*/) * baseRotScale[i];
                 angle2[i] = angle1[i];
             }
         }
@@ -37599,7 +37735,7 @@ function _CalcBoneQuaternion(pStudioHdr, frame, s, baseQuat, baseRot, baseRotSca
         for (let i = 0; i < 3; ++i) {
             const offset = panim.animValuePtrRot.offset[i];
             if (offset) {
-                angle[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset, panim.bone, i) * baseRotScale[i];
+                angle[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrRot.base + offset /*, panim.bone, i*/) * baseRotScale[i];
             }
         }
         if (!(panim.flags & STUDIO_ANIM_DELTA)) {
@@ -37647,7 +37783,7 @@ function _CalcBonePosition(pStudioHdr, frame, s, basePos, baseBoneScale, panim, 
             const offset = panim.animValuePtrPos.offset[i];
             if (offset) {
                 //ExtractAnimValue(frame, pPosV->pAnimvalue(i), baseBoneScale[i], v1, v2);
-                v1 = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset, panim.bone, i) * baseBoneScale[i];
+                v1 = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset /*, panim.bone, i*/) * baseBoneScale[i];
                 v2 = v1;
                 pos[i] = v1 * (1.0 - s) + v2 * s;
             }
@@ -37659,7 +37795,7 @@ function _CalcBonePosition(pStudioHdr, frame, s, basePos, baseBoneScale, panim, 
             const offset = panim.animValuePtrPos.offset[i];
             if (offset) {
                 //ExtractAnimValue(frame, pPosV->pAnimvalue(i), baseBoneScale[i], v1, v2);
-                pos[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset, panim.bone, i) * baseBoneScale[i];
+                pos[i] = panim.readValue(pStudioHdr, frame, panim.animValuePtrPos.base + offset /*, panim.bone, i*/) * baseBoneScale[i];
             }
         }
     }
@@ -37670,7 +37806,8 @@ function _CalcBonePosition(pStudioHdr, frame, s, basePos, baseBoneScale, panim, 
     }
 }
 function CalcBonePosition(pStudioHdr, frame, s, pBone, pLinearBones, panim, pos) {
-    {
+    if (pLinearBones) ;
+    else {
         _CalcBonePosition(pStudioHdr, frame, s, pBone.position, pBone.posscale, panim, pos);
     }
 }
@@ -37681,7 +37818,7 @@ function CalcBonePosition(pStudioHdr, frame, s, pBone, pLinearBones, panim, pos)
 //void QuaternionBlend(const Quaternion &p, const Quaternion &q, float t, Quaternion &qt)
 function QuaternionBlend(p, q, t, qt) {
     // decide if one of the quaternions is backwards
-    const q2 = quat.create();
+    const q2 = quat.create(); //TODO: optimize
     QuaternionAlign(p, q, q2);
     QuaternionBlendNoAlign(p, q2, t, qt);
 }
@@ -37718,96 +37855,6 @@ function QuaternionAlign(p, q, qt) {
             qt[i] = q[i];
         }
     }
-}
-//-----------------------------------------------------------------------------
-// Purpose: Calc Zeroframe Data
-//-----------------------------------------------------------------------------
-function CalcZeroframeData(pStudioHdr, pAnimStudioHdr, pAnimGroup, pAnimbone, animdesc, fFrame, pos, q, boneMask, flWeight) {
-    /* TODO
-        let pData = animdesc.pZeroFrameData();
-
-        if (!pData) {
-            return;
-        }
-
-        // Msg('zeroframe %s\n', animdesc.pszName());
-        let i;
-        if (animdesc.zeroframecount == 1) {
-            for (let j = 0, boneCount = pStudioHdr.getBoneCount(); j < boneCount; ++j) {
-                if (pAnimGroup)
-                    i = pAnimGroup.masterBone[j];
-                else
-                    i = j;
-
-                if (pAnimbone[j].flags & BONE_HAS_SAVEFRAME_POS) {
-                    if ((i >= 0) && (pStudioHdr.boneFlags(i) & boneMask)) {
-                        const p = vec3.create();//TODOv2
-                        console.error('const p = *(Vector48 *)pData;//TODOv2');
-                        pos[i] = pos[i] * (1.0 - flWeight) + p * flWeight;
-                    }
-                    pData += 6;//sizeof(Vector48);//TODOv2
-                }
-                if (pAnimbone[j].flags & BONE_HAS_SAVEFRAME_ROT) {
-                    if ((i >= 0) && (pStudioHdr.boneFlags(i) & boneMask)) {
-                        const q0 = quat.create();//*(Quaternion64 *)pData;
-                        console.error('const q0 = quat.create();//*(Quaternion64 *)pData;');
-                        QuaternionBlend(q[i], q0, flWeight, q[i]);
-                        //Assert(q[i].IsValid());
-                    }
-                    pData += 8;//sizeof(Quaternion64);
-                }
-            }
-        }
-        else {
-            let s1;
-            let index = fFrame / animdesc.zeroframespan;
-            if (index >= animdesc.zeroframecount - 1) {
-                index = animdesc.zeroframecount - 2;
-                s1 = 1.0;
-            } else {
-                s1 = clamp((fFrame - index * animdesc.zeroframespan) / animdesc.zeroframespan, 0.0, 1.0);
-            }
-            let i0 = Math.max(index - 1, 0);
-            let i1 = index;
-            let i2 = Math.min(index + 1, animdesc.zeroframecount - 1);
-            for (let j = 0, boneCount = pStudioHdr.getBoneCount(); j < boneCount; ++j) {
-                if (pAnimGroup)
-                    i = pAnimGroup.masterBone[j];
-                else
-                    i = j;
-
-                if (pAnimbone[j].flags & BONE_HAS_SAVEFRAME_POS) {
-                    if ((i >= 0) && (pStudioHdr.boneFlags(i) & boneMask)) {
-                        const p0 = vec3.create();//*(((Vector48 *)pData) + i0);//optimize
-                        const p1 = vec3.create();//*(((Vector48 *)pData) + i1);
-                        const p2 = vec3.create();//*(((Vector48 *)pData) + i2);
-                        console.error('Vector p2 = *(((Vector48 *)pData) + i2);');
-                        let p3;
-                        Hermite_Spline(p0, p1, p2, s1, p3);
-                        pos[i] = pos[i] * (1.0 - flWeight) + p3 * flWeight;
-                    }
-                    pData += sizeof(Vector48) * animdesc.zeroframecount;
-                }
-                if (pAnimbone[j].flags & BONE_HAS_SAVEFRAME_ROT) {
-                    if ((i >= 0) && (pStudioHdr.boneFlags(i) & boneMask)) {
-                        const q0 = quat.create();//*(((Quaternion64 *)pData) + i0);
-                        const q1 = quat.create();//*(((Quaternion64 *)pData) + i1);
-                        const q2 = quat.create();//*(((Quaternion64 *)pData) + i2);
-                        console.error('Quaternion q0 = *(((Quaternion64 *)pData) + i0);');
-                        if (flWeight == 1.0) {
-                            Hermite_Spline(q0, q1, q2, s1, q[i]);
-                        }
-                        else {
-                            let q3;
-                            Hermite_Spline(q0, q1, q2, s1, q3);
-                            QuaternionBlend(q[i], q3, flWeight, q[i]);
-                        }
-                    }
-                    pData += sizeof(Quaternion64) * animdesc.zeroframecount;
-                }
-            }
-        }
-    */
 }
 function PoseIsAllZeros(pStudioHdr, sequence, seqdesc, i0, i1) {
     // remove 'zero' positional blends
@@ -37883,9 +37930,9 @@ function Calc3WayBlendIndices(i0, i1, s0, s1, seqdesc, pAnimIndices, pWeight) {
             pWeight[1] = 1.0 - s0 - s1;
         }
     }
-    pAnimIndices[0] = seqdesc.getBlend(i0 + x1, i1 + y1);
-    pAnimIndices[1] = seqdesc.getBlend(i0 + x2, i1 + y2);
-    pAnimIndices[2] = seqdesc.getBlend(i0 + x3, i1 + y3);
+    pAnimIndices[0] = seqdesc.getBlend(i0 + x1, i1 + y1) ?? 0;
+    pAnimIndices[1] = seqdesc.getBlend(i0 + x2, i1 + y2) ?? 0;
+    pAnimIndices[2] = seqdesc.getBlend(i0 + x3, i1 + y3) ?? 0;
     // clamp the diagonal
     if (pWeight[1] < 0.001)
         pWeight[1] = 0.0;
@@ -37902,6 +37949,9 @@ const AddSequenceLayers = function (dynamicProp, pStudioHdr, pIKContext, pos, q,
     //return;
     for (let i = 0; i < seqdesc.numautolayers; ++i) {
         const pLayer = seqdesc.getAutoLayer(i);
+        if (!pLayer) {
+            continue;
+        }
         if (pLayer.flags & STUDIO_AL_LOCAL) {
             continue;
         }
@@ -37922,7 +37972,7 @@ const AddSequenceLayers = function (dynamicProp, pStudioHdr, pIKContext, pos, q,
                     //const Pose = pStudioHdr.pPoseParameter(iPose);
                     const Pose = pStudioHdr.getLocalPoseParameter(iPose);
                     if (Pose) {
-                        index = poseParameters[iPose] * (Pose.end - Pose.start) + Pose.start;
+                        index = (poseParameters.get(String(iPose)) ?? 1) * (Pose.end - Pose.start) + Pose.start;
                     }
                     else {
                         index = 0;
@@ -37986,6 +38036,10 @@ function AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, 
         return;
     }
     const seqdesc = pStudioHdr.getSequenceById(sequence);
+    if (!seqdesc) {
+        return;
+    }
+    if (seqdesc.numiklocks) ;
     if (seqdesc.flags & STUDIO_LOCAL) {
         InitPose(dynamicProp, pStudioHdr, pos2, q2);
     }
@@ -37994,10 +38048,14 @@ function AccumulatePose(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, 
         AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos2, q2, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, 1.0, flTime);
         SlerpBones(pStudioHdr, q, pos, seqdesc, sequence, q2, pos2, flWeight);
     }
+    /*
     if (pIKContext) {
+        // TODO: activate
         pIKContext.AddDependencies(seqdesc, sequence, cycle, poseParameters, flWeight);
     }
+    */
     AddSequenceLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, seqdesc, sequence, cycle, poseParameters, boneMask, flWeight, flTime);
+    if (seqdesc.numiklocks) ;
 }
 //-----------------------------------------------------------------------------
 // Purpose: calculate a pose for a single sequence
@@ -38008,9 +38066,10 @@ function AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, 
         return;
     }
     for (let i = 0; i < seqdesc.numautolayers; ++i) {
-        const pLayer = seqdesc.pAutolayer(i);
-        if (!(pLayer.flags & STUDIO_AL_LOCAL))
+        const pLayer = seqdesc.autolayer[i];
+        if (!pLayer || !(pLayer.flags & STUDIO_AL_LOCAL)) {
             continue;
+        }
         let layerCycle = cycle;
         let layerWeight = flWeight;
         if (pLayer.start != pLayer.end) {
@@ -38048,8 +38107,9 @@ function AddLocalLayers(dynamicProp, pStudioHdr, pIKContext, pos, q, boneFlags, 
 //			0 returns q1, pos1.	1 returns q2, pos2
 //-----------------------------------------------------------------------------
 function SlerpBones(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneMask) {
-    if (s <= 0.0)
+    if (s <= 0.0) {
         return;
+    }
     if (s > 1.0) {
         s = 1.0;
     }
@@ -38067,7 +38127,7 @@ function SlerpBones(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneMa
         q2[i] = q2[i] || quat.create(); //TODOV2
         pos2[i] = pos2[i] || vec3.create();
         {
-            pS2[i] = s * seqdesc.pBoneweight(i); // blend in based on this bones weight
+            pS2[i] = s * (seqdesc.pBoneweight(i) ?? 1); // blend in based on this bones weight
             continue;
         }
     }
@@ -38075,8 +38135,12 @@ function SlerpBones(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneMa
     if (seqdesc.flags & STUDIO_DELTA) {
         for (let i = 0; i < nBoneCount; ++i) {
             s2 = pS2[i];
-            if (s2 <= 0.0)
+            if (s2 <= 0.0) {
                 continue;
+            }
+            if (!pos1[i] || !pos2[i] || !q1[i] || !q2[i]) {
+                continue;
+            }
             if (seqdesc.flags & STUDIO_POST) {
                 QuaternionMA(q1[i], s2, q2[i], q1[i]);
                 // FIXME: are these correct?
@@ -38097,8 +38161,12 @@ function SlerpBones(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneMa
     const q3 = quat.create();
     for (let i = 0; i < nBoneCount; ++i) {
         s2 = pS2[i];
-        if (s2 <= 0.0)
+        if (s2 <= 0.0) {
             continue;
+        }
+        if (!q1[i] || !q2[i] || !pos1[i] || !pos2[i]) {
+            continue;
+        }
         s1 = 1.0 - s2;
         if (pStudioHdr.boneFlags(i) & BONE_FIXED_ALIGNMENT) {
             QuaternionSlerpNoAlign(q2[i], q1[i], s1, q3);
@@ -38150,7 +38218,7 @@ function QuaternionScale(p, t, q) {
     let r;
     // FIXME: nick, this isn't overly sensitive to accuracy, and it may be faster to
     // use the cos part (w) of the quaternion (sin(omega)*N,cos(omega)) to figure the new scale.
-    let sinom = Math.sqrt(vec3.dot(p, p));
+    let sinom = Math.sqrt(vec4.dot(p, p));
     sinom = Math.min(sinom, 1.0);
     const sinsom = Math.sin(Math.asin(sinom) * t);
     t = sinsom / (sinom + FLT_EPSILON);
@@ -38163,11 +38231,11 @@ function QuaternionScale(p, t, q) {
     }
     r = Math.sqrt(r);
     // keep sign of rotation
-    if (p.w < 0) {
-        q.w = -r;
+    if (p[3] < 0) {
+        q[3] = -r;
     }
     else {
-        q.w = r;
+        q[3] = r;
     }
     return;
 }
@@ -38206,10 +38274,15 @@ function BlendBones(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneMa
             if (!(pStudioHdr.boneFlags(i) & boneMask)) {
                 continue;
             }
-            {
+            /* TODO: activate
+            if (pSeqGroup) {
+                j = pSeqGroup.boneMap[i];
+            }
+            */
+            else {
                 j = i;
             }
-            if (j >= 0 && seqdesc.pBoneweight(j) > 0.0) {
+            if (j >= 0 && (seqdesc.pBoneweight(j) ?? 0) > 0.0 && q2[i] && pos2[i]) {
                 q1[i] = q2[i];
                 pos1[i] = pos2[i];
             }
@@ -38228,10 +38301,15 @@ function BlendBones(pStudioHdr, q1, pos1, seqdesc, sequence, q2, pos2, s, boneMa
         if (!(pStudioHdr.boneFlags(i) & boneMask)) {
             continue;
         }
-        {
+        /* TODO: activate
+        if (pSeqGroup) {
+            j = pSeqGroup.boneMap[i];
+        }
+        */
+        else {
             j = i;
         }
-        if (j >= 0 && seqdesc.pBoneweight(j) > 0.0) {
+        if (j >= 0 && (seqdesc.pBoneweight(j) ?? 0) > 0.0 && q2[i] && q1[i] && pos1[i] && pos2[i]) {
             if (pStudioHdr.boneFlags(i) & BONE_FIXED_ALIGNMENT) {
                 QuaternionBlendNoAlign(q2[i], q1[i], s1, q3);
             }
@@ -38303,11 +38381,9 @@ function Studio_LocalPoseParameter(pStudioHdr, poseParameters, seqdesc, iSequenc
     let flSetting = 0;
     let index = 0;
     //const iPose = pStudioHdr.GetSharedPoseParameter(iSequence, seqdesc.paramindex[iLocalIndex]);
-    const iPose = seqdesc.paramindex[iLocalIndex]; //TODOV2
+    const iPose = seqdesc.paramindex[iLocalIndex] ?? -1;
     if (iPose == -1) {
-        flSetting = 0;
-        index = 0;
-        return { s: flSetting, i: index };
+        return { s: 0, i: 0 };
     }
     const Pose = pStudioHdr.getLocalPoseParameter(iPose);
     if (!Pose) {
@@ -38326,9 +38402,15 @@ function Studio_LocalPoseParameter(pStudioHdr, poseParameters, seqdesc, iSequenc
         const shift = Pose.loop - wrap;
         flValue = flValue - Pose.loop * Math.floor((flValue + shift) / Pose.loop);
     }
+    const paramStart = seqdesc.paramstart[iLocalIndex];
+    const paramEnd = seqdesc.paramend[iLocalIndex];
+    const groupSize = seqdesc.groupsize[iLocalIndex];
+    if (paramStart === undefined || paramEnd === undefined || groupSize === undefined) {
+        return { s: 0, i: 0 };
+    }
     if (seqdesc.posekeyindex == 0) {
-        const flLocalStart = (seqdesc.paramstart[iLocalIndex] - Pose.start) / (Pose.end - Pose.start);
-        const flLocalEnd = (seqdesc.paramend[iLocalIndex] - Pose.start) / (Pose.end - Pose.start);
+        const flLocalStart = (paramStart - Pose.start) / (Pose.end - Pose.start);
+        const flLocalEnd = (paramEnd - Pose.start) / (Pose.end - Pose.start);
         // convert into local range
         flSetting = (flValue - flLocalStart) / (flLocalEnd - flLocalStart);
         // clamp.	This shouldn't ever need to happen if it's looping.
@@ -38337,12 +38419,12 @@ function Studio_LocalPoseParameter(pStudioHdr, poseParameters, seqdesc, iSequenc
         if (flSetting > 1)
             flSetting = 1;
         index = 0;
-        if (seqdesc.groupsize[iLocalIndex] > 2) {
+        if (groupSize > 2) {
             // estimate index
-            index = Math.round(flSetting * (seqdesc.groupsize[iLocalIndex] - 1));
-            if (index == seqdesc.groupsize[iLocalIndex] - 1)
-                index = seqdesc.groupsize[iLocalIndex] - 2;
-            flSetting = flSetting * (seqdesc.groupsize[iLocalIndex] - 1) - index;
+            index = Math.round(flSetting * (groupSize - 1));
+            if (index == groupSize - 1)
+                index = groupSize - 2;
+            flSetting = flSetting * (groupSize - 1) - index;
         }
     }
     else {
@@ -38361,7 +38443,7 @@ function Studio_LocalPoseParameter(pStudioHdr, poseParameters, seqdesc, iSequenc
             }
             else
             */
-            if (index < seqdesc.groupsize[iLocalIndex] - 2 && flSetting > 1.0) {
+            if (index < groupSize - 2 && flSetting > 1.0) {
                 index++;
                 continue;
             }
@@ -38382,8 +38464,11 @@ sequence, //int sequence,
 s, //float s,
 boneMask //int boneMask
 ) {
-    let i, j; //int			i, j;
+    let i, j = -1; //int			i, j;
     const seqdesc = pStudioHdr.getSequenceById(sequence); //mstudioseqdesc_t & seqdesc = ((CStudioHdr *)pStudioHdr) -> pSeqdesc(sequence);
+    if (!seqdesc) {
+        return;
+    }
     /*
     virtualmodel_t * pVModel = pStudioHdr -> GetVirtualModel();
     const virtualgroup_t * pSeqGroup = NULL;
@@ -38394,6 +38479,9 @@ boneMask //int boneMask
     const s2 = s;
     const s1 = 1.0 - s2;
     for (i = 0; i < pStudioHdr.getBoneCount(); i++) {
+        if (!q1[i] || !pos1[i]) {
+            continue;
+        }
         // skip unused bones
         if (!(pStudioHdr.boneFlags(i) & boneMask)) {
             continue;
@@ -38401,7 +38489,7 @@ boneMask //int boneMask
         {
             j = i;
         }
-        if (j >= 0 && seqdesc.pBoneweight(j) > 0.0) {
+        if (j >= 0 && (seqdesc.pBoneweight(j) ?? -1) > 0.0) {
             QuaternionIdentityBlend(q1[i], s1, q1[i]);
             //VectorScale(pos1[i], s2, pos1[i]);
             vec3.scale(pos1[i], pos1[i], s2);
@@ -38643,7 +38731,6 @@ class SourceAnimation {
         dynamicProp.parent;
         const posRemoveMeTemp = [];
         const quatRemoveMeTemp = [];
-        const modelBonesLength = modelBones.length;
         const seqlist = Object.keys(sequences);
         let posRemoveMe; // = [];//optimize
         let quatRemoveMe; // = [];//optimize
@@ -38663,8 +38750,10 @@ class SourceAnimation {
                         for (let boneIndex = 0, l = modelBoneArray.length; boneIndex < l; ++boneIndex) {
                             const boneName = modelBoneArray[boneIndex].lowcasename;
                             const seqBoneId = sequenceMdl.boneNames.get(boneName);
-                            posRemoveMe[boneIndex] = posRemoveMeTemp[seqBoneId];
-                            quatRemoveMe[boneIndex] = quatRemoveMeTemp[seqBoneId];
+                            if (seqBoneId !== undefined) {
+                                posRemoveMe[boneIndex] = posRemoveMeTemp[seqBoneId];
+                                quatRemoveMe[boneIndex] = quatRemoveMeTemp[seqBoneId];
+                            }
                         }
                     }
                     else {
@@ -38693,6 +38782,9 @@ class SourceAnimation {
                         //g2 = g2RemoveMe;
                         //g1 = 2;
                         const animIndex = sequence.getBlend(g1, g2); //TODOV2
+                        if (!animIndex) {
+                            continue;
+                        }
                         sequence.mdl.getAnimDescription(animIndex);
                     }
                 }
@@ -38704,7 +38796,7 @@ class SourceAnimation {
             //vec3.scale(bonesRemoveMe[boneName].quat, bonesRemoveMe[boneName].quat, 1 / bonesRemoveMe[boneName].count);
             quat.normalize(bonesRemoveMe[boneName].quat, bonesRemoveMe[boneName].quat);
         });
-        for (let i = 0; i < modelBonesLength; ++i) {
+        for (let i = 0, l = modelBones.length; i < l; ++i) {
             //let pbone = modelBones[i];
             //quatRemoveMeTemp[i] = quat.copy(quat.create(), pbone.quaternion);//removeme
             //posRemoveMeTemp[i] = vec3.copy(vec3.create(), pbone.position);
@@ -38729,7 +38821,10 @@ class SourceAnimation {
             bone.parent;
             bone.lowcasename;
             //const parentMergedBone = bone.parentMergedBone;
-            const dynamicPropBones = dynamicProp.skeleton._bones; //dynamicProp.bones;
+            const dynamicPropBones = dynamicProp.skeleton?._bones; //dynamicProp.bones;
+            if (!dynamicPropBones) {
+                return;
+            }
             const dynamicPropBone = dynamicPropBones[boneIndex];
             if (dynamicPropBone === undefined) {
                 //dynamicPropBone = {worldPos:vec3.create(), worldQuat:quat.create()};//TODO: optimize
@@ -38775,13 +38870,13 @@ class SourceAnimation {
 }
 
 class FlexController {
-    controllers = {};
-    controllers2 = {};
-    controllerIndex = 0;
+    #controllers = {}; //TODO: turn into map
+    #controllers2 = {}; //TODO: turn into map
+    #controllerIndex = 0;
     getController(name, min, max) {
-        if (!this.controllers[name]) {
-            this.controllers2[this.controllerIndex] = 0;
-            this.controllers[name] = { i: this.controllerIndex++, min: min, max: max };
+        if (!this.#controllers[name]) {
+            this.#controllers2[this.#controllerIndex] = 0;
+            this.#controllers[name] = { i: this.#controllerIndex++, min: min, max: max };
             /*
             if (typeof AddController !== 'undefined') {
                 AddController(name, min, max);
@@ -38789,42 +38884,42 @@ class FlexController {
                 */
             this.setControllerValue(name, 0);
         }
-        return this.controllers[name].i;
+        return this.#controllers[name].i;
     }
     getControllers() {
-        return this.controllers;
+        return this.#controllers;
     }
     getControllerValue(name) {
-        const index = this.controllers[name].i;
+        const index = this.#controllers[name]?.i;
         if (index !== undefined) {
-            return this.controllers2[index];
+            return this.#controllers2[index];
         }
         return 0;
     }
     getControllerRealValue(name) {
-        const controller = this.controllers[name];
-        if (controller !== undefined) {
-            const index = this.controllers[name].i;
-            return RemapValClamped(this.controllers2[index], 0.0, 1.0, controller.min, controller.max);
+        const controller = this.#controllers[name];
+        if (controller) {
+            const index = controller.i;
+            return RemapValClamped(this.#controllers2[index], 0.0, 1.0, controller.min, controller.max);
         }
         return 0;
     }
     setControllerValue(name, value) {
-        const controller = this.controllers[name];
+        const controller = this.#controllers[name];
         if (controller !== undefined) {
             value = RemapValClamped(value, controller.min, controller.max, 0.0, 1.0);
-            this.controllers2[controller.i] = value;
+            this.#controllers2[controller.i] = value;
         }
     }
     setAllValues(value) {
-        for (const i in this.controllers) {
+        for (const i in this.#controllers) {
             this.setControllerValue(i, value);
         }
     }
     removeAllControllers() {
-        this.controllers = {};
-        this.controllers2 = {};
-        this.controllerIndex = 0;
+        this.#controllers = {};
+        this.#controllers2 = {};
+        this.#controllerIndex = 0;
     }
 }
 
@@ -38984,6 +39079,7 @@ class SourceMdl {
     illumpositionattachmentindex = 0;
     flMaxEyeDeflection = 0;
     linearboneOffset = 0;
+    pLinearBones;
     constructor(repository) {
         this.repository = repository;
     }
@@ -39338,7 +39434,7 @@ class SourceMdl {
         return animList;
     }
     getAnimDescription(animIndex) {
-        return this.animDesc[animIndex] ?? null;
+        return this.animDesc[animIndex ?? -1] ?? null;
     }
     getAnimFrame(dynamicProp, animDesc, frameIndex) {
         //console.info(frameIndex);
@@ -39581,7 +39677,7 @@ class Source1ModelInstance extends Entity {
     #flexesWeight = new Float32Array(MAX_STUDIO_FLEX_DESC);
     #materialOverride = null;
     #animations = new Animations();
-    #skeleton;
+    #skeleton = null;
     #skin = 0;
     #attachments = {};
     #materialsUsed = new Set();
@@ -40710,6 +40806,68 @@ class ModelLoader {
 }
 registerLoader('ModelLoader', ModelLoader);
 
+class Source1VmtLoaderClass {
+    #materials = new Map();
+    #extraMaterials = new Map(); //TODO: this is used for maps create a map repo instead
+    async load(repository, path) {
+        const response = await Repositories.getFileAsText(repository, path);
+        if (!response.error) {
+            return this.parse(repository, path, response.text);
+        }
+        else {
+            const fileContent = this.#extraMaterials.get(path);
+            if (fileContent) {
+                return this.parse(repository, path, fileContent);
+            }
+        }
+        return null;
+    }
+    async parse(repository, path, content) {
+        path = path.replace(/(\/)+/g, '/').replace(/(\\)+/g, '/').toLowerCase();
+        const kv = new KvReader();
+        kv.readText(content);
+        const vmt = kv.getRootElement();
+        if (!vmt) {
+            return null;
+        }
+        const shaderName = kv.getRootName().toLowerCase();
+        let material = null;
+        if (shaderName === 'patch') {
+            //TODO: check patch
+            const include = vmt /*TODO: fix that*/['include'];
+            const insert = vmt /*TODO: fix that*/['insert'];
+            const material = await Source1MaterialManager.getMaterial(repository, include);
+            if (material) {
+                for (const insertIndex in insert) {
+                    material.variables.set(insertIndex, insert[insertIndex]);
+                    throw 'material.parameters[insertIndex] = insert[insertIndex];';
+                }
+            }
+            //materialList[fileNameRemoveMe] = material;removeme
+            return (material);
+            //promise.then(patchResolve);
+        }
+        else {
+            const materialClass = this.#materials.get(shaderName);
+            if (materialClass) {
+                material = new materialClass(repository, path, vmt);
+            }
+            else {
+                console.error('Unknown material : ' + shaderName);
+            }
+        }
+        return material;
+    }
+    setMaterial(/*TODO: add repository param*/ fileName, fileContent) {
+        this.#extraMaterials.set(fileName, fileContent);
+    }
+    registerMaterial(materialName, materialClass) {
+        this.#materials.set(materialName.toLowerCase(), materialClass);
+    }
+}
+const Source1VmtLoader = new Source1VmtLoaderClass();
+registerLoader('Source1VmtLoader', Source1VmtLoader);
+
 /**
  * Map entities
  */
@@ -41036,12 +41194,12 @@ class SEBaseBspLump {
     lumpOffset;
     lumpLen;
     lumpDataPromise = null;
-    reader;
-    lzmaReader;
-    mapLen;
-    lumpVersion;
-    lumpData;
-    lumpType;
+    //reader;
+    #lzmaReader;
+    //mapLen;
+    lumpVersion = 0;
+    lumpData = null;
+    lumpType = 0;
     constructor(map, reader, offset, length) {
         this.map = map;
         //this.reader = reader;//TODOv3 remove reader
@@ -41100,9 +41258,11 @@ class SEBaseBspLump {
     getLumpLen() {
         return this.lumpLen;
     }
+    /*
     getMapLen() {
         return this.mapLen;
     }
+    */
     /**
      * Set lump Version
      * @param {Number} newLumpVersion The lump Version
@@ -41135,19 +41295,20 @@ class SEBaseBspLump {
         }
         return this.lumpData;
     }
+    /*
     getReader() {
         if (!this.initialized) {
             this.init();
         }
-        if (this.lzmaReader) {
-            this.lzmaReader.seek(0);
-            return this.lzmaReader;
-        }
-        else {
+        if (this.#lzmaReader) {
+            this.#lzmaReader.seek(0);
+            return this.#lzmaReader;
+        } else {
             this.reader.seek(this.lumpOffset);
             return this.reader;
         }
     }
+    */
     initDatas() {
     }
 }
@@ -41199,35 +41360,41 @@ const LUMP_DISP_TRIS = 48;
 // optional lumps for HDR
 const LUMP_LIGHTING_HDR = 53;
 const LUMP_FACES_HDR = 58; // HDR maps may have different face data.
-const SourceBSPLumpPlane = function () {
-    this.normal = null; // normal vector
-    this.dist = null; // distance from origin
-    this.type = null; // plane axis identifier
-};
-const SourceBSPLumpEdge = function () {
+class SourceBSPLumpPlane {
+    normal;
+    dist;
+    type;
+    constructor(normal, dist, type) {
+        this.normal = vec3.clone(normal); // normal vector
+        this.dist = dist; // distance from origin
+        this.type = type; // plane axis identifier
+    }
+}
+class SourceBSPLumpEdge {
     // f: first index s: second index
-    this.f = null; // better than store as an array of 2 ?
-    this.s = null;
-};
-const SourceBSPLumpFace = function () {
-    this.planenum = null;
-    this.side = null;
-    this.onNode = null;
-    this.firstedge = null;
-    this.numedges = null;
-    this.texinfo = null;
-    this.dispinfo = null;
-    this.surfaceFogVolumeID = null;
-    this.styles = [];
-    this.lightofs = null;
-    this.area = null;
-    this.LightmapTextureMinsInLuxels = null;
-    this.LightmapTextureSizeInLuxels = null;
-    this.origFace = null;
-    this.numPrims = null;
-    this.firstPrimID = null;
-    this.smoothingGroups = null;
-};
+    f = 0; // better than store as an array of 2 ?
+    s = 0;
+}
+class SourceBSPLumpFace {
+    initialized = false;
+    planenum = 0;
+    side = 0;
+    onNode = 0;
+    firstedge = 0;
+    numedges = 0;
+    texinfo = 0;
+    dispinfo = 0;
+    surfaceFogVolumeID = 0;
+    styles = [];
+    lightofs = 0;
+    area = 0;
+    lightmapTextureMinsInLuxels = [];
+    lightmapTextureSizeInLuxels = [];
+    origFace = 0;
+    numPrims = 0;
+    firstPrimID = 0;
+    smoothingGroups = 0;
+}
 /*
 unsigned short	planenum;		// the plane number
 byte		side;			// faces opposite to the node's plane direction
@@ -41247,14 +41414,14 @@ unsigned short	numPrims;		// primitives
 unsigned short	firstPrimID;
 unsigned int	smoothingGroups;	// lightmap smoothing group
 */
-const SourceBSPLumpTexData = function () {
-    this.reflectivity = null; // RGB reflectivity
-    this.nameStringTableID = null; // index into TexdataStringTable
-    this.width = null;
-    this.height = null; // source image
-    this.view_width = null;
-    this.view_height = null;
-};
+class SourceBSPLumpTexData {
+    reflectivity = vec3.create(); // RGB reflectivity
+    nameStringTableID = 0; // index into TexdataStringTable
+    width = 0;
+    height = 0; // source image
+    view_width = 0;
+    view_height = 0;
+}
 /*
 const SourceBSPLumpGameLump = function() {
     this.id = null;		// gamelump ID
@@ -41268,147 +41435,101 @@ const SourceBSPLumpGameLump = function() {
  * @param {Number} type The lump type
  */
 class SourceBSPLumpGameLump extends SEBaseBspLump {
-    id;
-    flags;
-    version;
-    constructor(map, reader) {
-        super(map, reader); //TODOv3
-        /*this.lumpOffset = this.mapReader.getInt32();
-        this.lumpLen = this.mapReader.getInt32();
-        this.lumpVersion = this.mapReader.getInt32();
-        this.fourCC = this.mapReader.getInt32();
-        this.lumpData = null;*/
-        //lump.setLumpOffset(this.reader.getInt32());
-        //lump.setLumpLen(this.reader.getInt32());
-        //lump.setLumpVersion(this.reader.getInt32());
-        //this.reader.getInt32() // TODO: replace by lump fourCC
-        //this.init();
-    }
+    id = '';
+    flags = 0;
+    version = 0;
 }
-const SourceBSPLumpPropStaticDirectory = function () {
-    this.name = [];
-    this.leaf = [];
-    this.props = [];
-};
-const SourceBSPLumpPropStatic = function () {
-    this.position = null;
-    this.angles = vec3.create();
-    this.propType = null;
-    this.firstLeaf = null;
-    this.leafCount = null;
-    this.solid = null;
-    this.flags = null;
-    this.skin = null;
-    this.fadeMinDist = null;
-    this.fadeMaxDist = null;
-    this.lightingOrigin = null;
-    this.forcedFadeScale = null;
-    this.minDXLevel = null;
-    this.maxDXLevel = null;
-    this.minCPULevel = null;
-    this.maxCPULevel = null;
-    this.minGPULevel = null;
-    this.maxGPULevel = null;
-    this.diffuseModulation = null;
-    this.disableX360 = null;
-    /*// v4
-    Vector		Origin;		 // origin
-    QAngle		Angles;		 // orientation (pitch roll yaw)
-    unsigned short	PropType;	 // index into model name dictionary
-    unsigned short	FirstLeaf;	 // index into leaf array
-    unsigned short	LeafCount;
-    unsigned char	Solid;		 // solidity type
-    unsigned char	Flags;
-    int		Skin;		 // model skin numbers
-    float		FadeMinDist;
-    float		FadeMaxDist;
-    Vector		LightingOrigin;	// for lighting
-    // since v5
-    float		ForcedFadeScale; // fade distance scale
-    // v6 and v7 only
-    unsigned short	MinDXLevel;			// minimum DirectX version to be visible
-    unsigned short	MaxDXLevel;			// maximum DirectX version to be visible
-    // since v8
-    unsigned char	 MinCPULevel;
-    unsigned char	 MaxCPULevel;
-    unsigned char	 MinGPULevel;
-    unsigned char	 MaxGPULevel;
-    // since v7
-    color32				 DiffuseModulation; // per instance color and alpha modulation
-    // since v10
-    float					 unknown;
-    // since v9
-    bool						DisableX360;		 // if true, don't show on XBox 360
-    */
-};
-const SourceBSPLumpTexInfo = function () {
-    this.textureVecs = []; // [s/t][xyz offset]
-    this.lightmapVecs = []; // [s/t][xyz offset] - length is in units of texels/area
-    this.flags; // miptex flags	overrides
-    this.texdata;
-};
-const SourceBSPLumpDispInfo = function () {
-    /*Vector			startPosition;		// start position used for orientation
-    int			DispVertStart;		// Index into LUMP_DISP_VERTS.
-    int			DispTriStart;		// Index into LUMP_DISP_TRIS.
-    int			power;			// power - indicates size of surface (2^power	1)
-    int			minTess;		// minimum tesselation allowed
-    float			smoothingAngle;		// lighting smoothing angle
-    int			contents;		// surface contents
-    unsigned short		MapFace;		// Which map face this displacement comes from.
-    int			LightmapAlphaStart;	// Index into ddisplightmapalpha.
-    int			LightmapSamplePositionStart;	// Index into LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS.
-    CDispNeighbor		EdgeNeighbors[4];	// Indexed by NEIGHBOREDGE_ defines.
-    CDispCornerNeighbors	CornerNeighbors[4];	// Indexed by CORNER_ defines.
-    unsigned int		AllowedVerts[10];	// active verticies*/
-};
-const SourceBSPLumpDispNeighbor = function () {
-    //CDispSubNeighbor	m_SubNeighbors[2];
-    this.subNeighbors = [];
-};
-const SourceBSPLumpDispSubNeighbor = function () {
-    /*	unsigned short		m_iNeighbor;		// This indexes into ddispinfos.
-                                                // 0xFFFF if there is no neighbor here.
-
-        unsigned char		m_NeighborOrientation;		// (CCW) rotation of the neighbor wrt this displacement.
-
-        // These use the NeighborSpan type.
-        unsigned char		m_Span;						// Where the neighbor fits onto this side of our displacement.
-        unsigned char		m_NeighborSpan;				// Where we fit onto our neighbor.								 */
-};
+class SourceBSPLumpPropStaticDirectory {
+    name = [];
+    leaf = [];
+    props = [];
+}
+class SourceBSPLumpPropDetailDirectory {
+    name = [];
+    leaf = [];
+    props = [];
+}
+class SourceBSPLumpPropStatic {
+    position = vec3.create();
+    angles = vec3.create();
+    propType = 0;
+    firstLeaf = 0;
+    leafCount = 0;
+    solid = 0;
+    flags = 0;
+    skin = 0;
+    fadeMinDist = 0;
+    fadeMaxDist = 0;
+    lightingOrigin = vec3.create();
+    forcedFadeScale = 0;
+    minDXLevel = 0;
+    maxDXLevel = 0;
+    minCPULevel = 0;
+    maxCPULevel = 0;
+    minGPULevel = 0;
+    maxGPULevel = 0;
+    diffuseModulation = 0;
+    disableX360 = 0;
+}
+class SourceBSPLumpTexInfo {
+    textureVecs = [vec4.create(), vec4.create()]; // [s/t][xyz offset]
+    lightmapVecs = [vec4.create(), vec4.create()]; // [s/t][xyz offset] - length is in units of texels/area
+    flags = 0; // miptex flags	overrides
+    texdata = 0;
+}
+class SourceBSPLumpDispInfo {
+    startPosition = vec3.create();
+    dispVertStart = 0;
+    dispTriStart = 0;
+    power = 0;
+    minTess = 0;
+    smoothingAngle = 0;
+    contents = 0;
+    mapFace = 0;
+    lightmapAlphaStart = 0;
+    lightmapSamplePositionStart = 0;
+    allowedVerts = [];
+}
+class SourceBSPLumpDispNeighbor {
+    subNeighbors = [];
+}
+class SourceBSPLumpDispSubNeighbor {
+    iNeighbor = 0;
+    orientation = 0;
+    span = 0;
+    neighSpan = 0;
+}
 /*TODO
 const SourceBSPLumpDispSubNeighbor
 {
 };*/
-const SourceBSPLumpDispVertex = function () {
-    /*	Vector	vec;	// Vector field defining displacement volume.
-        float	dist;	// Displacement distances.
-        float	alpha;	// 'per vertex' alpha values.*/
-};
-const SourceBSPLumpColorRGBExp32 = function () {
-    /*	Vector	vec;	// Vector field defining displacement volume.
-        float	dist;	// Displacement distances.
-        float	alpha;	// 'per vertex' alpha values.*/
-};
-const SourceBSPLumpBrush = function () {
-    this.firstside = null;
-    this.numsides = null;
-    this.contents = null;
-};
-const SourceBSPLumpBrushSide = function () {
-    this.planenum = null;
-    this.texinfo = null;
-    this.dispinfo = null;
-    this.bevel = null;
-};
-const SourceBSPLumpModel = function () {
-    this.mins = null;
-    this.maxs = null;
-    this.position = null;
-    this.headnode = null;
-    this.firstface = null;
-    this.numfaces = null;
-};
+class SourceBSPLumpDispVertex {
+    vec = vec3.create();
+    dist = 0;
+    alpha = 0;
+}
+class SourceBSPLumpColorRGBExp32 {
+    color = vec4.create();
+}
+class SourceBSPLumpBrush {
+    firstside = 0;
+    numsides = 0;
+    contents = 0;
+}
+class SourceBSPLumpBrushSide {
+    planenum = 0;
+    texinfo = 0;
+    dispinfo = 0;
+    bevel = 0;
+}
+class SourceBSPLumpModel {
+    //readonly mins = vec3.create();
+    //readonly maxs = vec3.create();
+    position = vec3.create();
+    headnode = 0;
+    firstface = 0;
+    numfaces = 0;
+}
 /*const SourceBSPLumpLeaf = function() {
 /*
 
@@ -41443,16 +41564,16 @@ const SourceBSPLumpModel = function () {
     this.leafWaterDataID = null;
 }*/
 class SourceBSPLumpLeaf {
-    contents = null;
-    cluster = null;
-    areaflags = null;
-    mins = null;
-    maxs = null;
-    firstleafface = null;
-    numleaffaces = null;
-    firstleafbrush = null;
-    numleafbrushes = null;
-    leafWaterDataID = null;
+    contents = 0;
+    cluster = -1;
+    areaflags = 0;
+    mins = vec3.create();
+    maxs = vec3.create();
+    firstleafface = 0;
+    numleaffaces = 0;
+    firstleafbrush = 0;
+    numleafbrushes = 0;
+    leafWaterDataID = 0;
     contains(position) {
         const mins = this.mins;
         const maxs = this.maxs;
@@ -41487,13 +41608,13 @@ short			area;		// If all leaves below this node are in the same area, then
     this.area = null;
 }*/
 class SourceBSPLumpNode {
-    planenum = null;
-    children = null;
-    mins = null;
-    maxs = null;
-    firstface = null;
-    numfaces = null;
-    area = null;
+    planenum = 0;
+    children = [0, 0];
+    mins = vec3.create();
+    maxs = vec3.create();
+    firstface = -1;
+    numfaces = -1;
+    area = 0;
     contains(position) {
         const mins = this.mins;
         const maxs = this.maxs;
@@ -41508,37 +41629,44 @@ class SourceBSPLumpNode {
         return false;
     }
 }
+const OVERLAY_BSP_FACE_COUNT = 64;
 class SourceBSPLumpOverlay {
-    id;
-    texInfo;
-    FaceCountAndRenderOrder;
-    faces;
-    U;
-    V;
-    UVPoint0;
-    UVPoint1;
-    UVPoint2;
-    UVPoint3;
-    Origin;
-    BasisNormal;
+    id = 0;
+    texInfo = 0;
+    FaceCountAndRenderOrder = 0;
+    faces = new Int32Array(OVERLAY_BSP_FACE_COUNT);
+    u = [0, 0];
+    v = [0, 0];
+    uvPoint0 = vec3.create();
+    uvPoint1 = vec3.create();
+    uvPoint2 = vec3.create();
+    uvPoint3 = vec3.create();
+    origin = vec3.create();
+    basisNormal = vec3.create();
+}
+class SourceBSPLumpEntity {
+    str = '';
+    kv;
 }
 
 /**
  * BSP Tree
  */
 class Source1BspTree {
-    map;
+    #map;
     visibilityClusters = undefined;
     clustersCount = 0;
     countRemoveMe = 0;
-    leavesRemoveme = [];
+    #leavesRemoveme = [];
     constructor(map) {
-        this.map = map;
+        this.#map = map;
     }
+    /*
     set clusters(clusters) {
         if (clusters) {
             this.visibilityClusters = clusters.clusterVis;
             this.clustersCount = clusters.clusterCount;
+
             this.countRemoveMe++;
             if (this.countRemoveMe > 5000) {
                 this.countRemoveMe = 0;
@@ -41546,16 +41674,17 @@ class Source1BspTree {
             }
         }
     }
+    */
     getLeafId(pos) {
         //TODO: optimize
-        const map = this.map;
+        const map = this.#map;
         const lumpModels = map.getLumpData(LUMP_MODELS);
         const lumpPlanes = map.getLumpData(LUMP_PLANES);
         const lumpNodes = map.getLumpData(LUMP_NODES);
         const lumpLeafs = map.getLumpData(LUMP_LEAFS);
         const lumpLeafFaces = map.getLumpData(LUMP_LEAFFACES);
         const lumpVisibility = map.getLumpData(LUMP_VISIBILITY);
-        if (lumpModels && lumpPlanes && lumpNodes && lumpLeafs && lumpLeafFaces && lumpVisibility) {
+        if (lumpModels && lumpPlanes && lumpNodes && lumpLeafs && lumpLeafFaces && lumpVisibility && lumpModels.length > 0) {
             const model = lumpModels[0];
             let index = model.headnode;
             let node = null;
@@ -41564,7 +41693,13 @@ class Source1BspTree {
             let dist = 0;
             while (index >= 0) {
                 node = lumpNodes[index];
+                if (!node) {
+                    break;
+                }
                 plane = lumpPlanes[node.planenum];
+                if (!plane) {
+                    break;
+                }
                 //normal[0] = plane.normal.x; normal[1] = plane.normal.y; normal[2] = plane.normal.z; // TODO: Not this.
                 //dist = vec3.dot(normal, pos) - plane.dist;
                 dist = vec3.dot(plane.normal, pos) - plane.dist;
@@ -41585,10 +41720,13 @@ class Source1BspTree {
         if (fromLeafId == toLeafId) {
             return true;
         } // Leaves are always visible from themselves
-        const lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
+        const lumpLeafs = this.#map.getLumpData(LUMP_LEAFS);
         if (lumpLeafs && this.visibilityClusters) {
             const fromLeaf = lumpLeafs[fromLeafId];
             const toLeaf = lumpLeafs[toLeafId];
+            if (!fromLeaf || !toLeaf) {
+                return false;
+            }
             if (fromLeaf.cluster == -1 || toLeaf.cluster != -1) {
                 return false;
             }
@@ -41597,7 +41735,7 @@ class Source1BspTree {
         return false;
     }
     isVisLeaf(leafId) {
-        const lumpLeafs = this.map.getLumpData(LUMP_LEAFS);
+        const lumpLeafs = this.#map.getLumpData(LUMP_LEAFS);
         if (lumpLeafs) {
             const lumpLeaf = lumpLeafs[leafId];
             if (lumpLeaf) {
@@ -41607,8 +41745,8 @@ class Source1BspTree {
         return true;
     }
     addPropToLeaf(leafId, propId) {
-        const leaf = this.leavesRemoveme[leafId] || [];
-        this.leavesRemoveme[leafId] = leaf;
+        const leaf = this.#leavesRemoveme[leafId] || [];
+        this.#leavesRemoveme[leafId] = leaf;
         leaf.push(propId);
     }
 }
@@ -41620,142 +41758,132 @@ let lightMapNodeId = 0;
 /**
  * TODO
  */
-const SELightMapNode = function (x, y, width, height) {
-    this.y = y;
-    this.x = x;
-    this.height = height;
-    this.width = width;
-    this.content = null;
-    this.filled = false;
-    this.id = ++lightMapNodeId;
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.setContent = function (content) {
-    if (this.sub1)
-        return false;
-    this.content = content;
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.split = function (x, y) {
-    if (this.content)
-        return false;
-    if (this.filled)
-        return false;
-    if (y >= this.height)
-        return false;
-    if (x >= this.width)
-        return false;
-    if (y != 0 && x != 0)
-        return false;
-    if (y == 0) { /* splitting vertically */
-        this.sub1 = new SELightMapNode(this.x, this.y, x, this.height);
-        this.sub2 = new SELightMapNode(this.x + x, this.y, this.width - x, this.height);
+class SELightMapNode {
+    x;
+    y;
+    width;
+    height;
+    content = null;
+    filled = false;
+    id = ++lightMapNodeId;
+    sub1;
+    sub2;
+    constructor(x, y, width, height) {
+        this.y = y;
+        this.x = x;
+        this.height = height;
+        this.width = width;
     }
-    else { /* splitting horizontally */
-        this.sub1 = new SELightMapNode(this.x, this.y, this.width, y);
-        this.sub2 = new SELightMapNode(this.x, this.y + y, this.width, this.height - y);
+    setContent(content) {
+        if (this.sub1) {
+            return false;
+        }
+        this.content = content;
     }
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.allocate = function (width, height) {
-    if (this.filled)
-        return false;
-    if (this.content)
-        return false;
-    if (height == 0)
-        return false;
-    if (width == 0)
-        return false;
-    if (height > this.height)
-        return false;
-    if (width > this.width)
-        return false;
-    let node;
-    if (this.sub1) {
-        node = this.sub1.allocate(width, height);
-        if (node) {
-            this.checkFull();
-            return node;
+    split(x, y) {
+        if (this.content)
+            return false;
+        if (this.filled)
+            return false;
+        if (y >= this.height)
+            return false;
+        if (x >= this.width)
+            return false;
+        if (y != 0 && x != 0)
+            return false;
+        if (y == 0) { /* splitting vertically */
+            this.sub1 = new SELightMapNode(this.x, this.y, x, this.height);
+            this.sub2 = new SELightMapNode(this.x + x, this.y, this.width - x, this.height);
+        }
+        else { /* splitting horizontally */
+            this.sub1 = new SELightMapNode(this.x, this.y, this.width, y);
+            this.sub2 = new SELightMapNode(this.x, this.y + y, this.width, this.height - y);
         }
     }
-    if (this.sub2) {
-        node = this.sub2.allocate(width, height);
-        if (node) {
-            this.checkFull();
-            return node;
+    allocate(width, height) {
+        if (this.filled)
+            return null;
+        if (this.content)
+            return null;
+        if (height == 0)
+            return null;
+        if (width == 0)
+            return null;
+        if (height > this.height)
+            return null;
+        if (width > this.width)
+            return null;
+        let node;
+        if (this.sub1) {
+            node = this.sub1.allocate(width, height);
+            if (node) {
+                this.checkFull();
+                return node;
+            }
         }
-        return false;
-    }
-    if (height == this.height && width == this.width) {
-        this.filled = true;
-        return this;
-    }
-    if ((height / this.height) > (width / this.width)) {
-        this.split(width, 0);
-    }
-    else {
-        this.split(0, height);
-    }
-    if (this.sub1) {
-        node = this.sub1.allocate(width, height);
-        if (node) {
+        if (this.sub2) {
+            node = this.sub2.allocate(width, height);
+            if (node) {
+                this.checkFull();
+                return node;
+            }
+        }
+        if (height == this.height && width == this.width) {
+            this.filled = true;
+            return this;
+        }
+        if ((height / this.height) > (width / this.width)) {
+            this.split(width, 0);
+        }
+        else {
+            this.split(0, height);
+        }
+        if (this.sub1) {
+            node = this.sub1.allocate(width, height);
+            if (node) {
+                this.checkFull();
+                return node;
+            }
+        }
+        if (this.sub2) {
+            node = this.sub2.allocate(width, height);
             this.checkFull();
-            return node;
+            if (node) {
+                this.checkFull();
+                return node;
+            }
+        }
+        return null;
+    }
+    toString() {
+        return this.id;
+    }
+    checkFull() {
+        if (this.sub1?.filled && this.sub2?.filled) {
+            this.filled = true;
         }
     }
-    if (this.sub2) {
-        node = this.sub2.allocate(width, height);
-        this.checkFull();
-        if (node) {
-            this.checkFull();
-            return node;
+    getAllocatedSize() {
+        let total = 0;
+        if (this.sub1) {
+            total += this.sub1?.getAllocatedSize() ?? 0;
+            total += this.sub2?.getAllocatedSize() ?? 0;
+            return total;
         }
+        if (this.filled) {
+            return this.height * this.width;
+        }
+        return 0;
     }
-    return null;
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.toString = function () {
-    return this.id;
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.checkFull = function () {
-    if (this.sub1.filled && this.sub2.filled) {
-        this.filled = true;
-    }
-};
-/**
- * TODO
- */
-SELightMapNode.prototype.getAllocatedSize = function () {
-    let total = 0;
-    if (this.sub1) {
-        total += this.sub1.getAllocatedSize();
-        total += this.sub2.getAllocatedSize();
-        return total;
-    }
-    if (this.filled) {
-        return this.height * this.width;
-    }
-    return 0;
-};
+}
 
 const DISPLACEMENT_DELTA = 1.0; // max distance from start position
 const LIGTH_MAP_TEXTURE_SIZE = 1024;
 class SourceBSP extends World {
     repository;
-    bspFileVersion = null;
+    bspFileVersion = 0;
     lumps = [];
-    mapRevision = null;
+    mapRevision = 0;
     loaded = false;
     bufferInitialized = false;
     staticGeometry = {};
@@ -41767,7 +41895,7 @@ class SourceBSP extends World {
     skyCamera = null;
     skyName = null;
     entities = [];
-    connections = [];
+    #connections = [];
     mapSpawn = true;
     lastLeaf = undefined;
     bspTree;
@@ -41779,10 +41907,10 @@ class SourceBSP extends World {
     staticProps = new Group({ name: 'Static props' });
     dynamicProps = new Group({ name: 'Dynamic props' });
     mapFaces = new Group({ name: 'World geometry' });
-    characterSpawn;
-    #geometries;
-    loader;
-    constructor(params) {
+    #characterSpawn;
+    #geometries = {}; //TODO: turn into map
+    //loader;
+    constructor(params /*TODO: fix type*/) {
         super(params);
         this.repository = params.repository;
         //this.staticProps = [];
@@ -41794,14 +41922,14 @@ class SourceBSP extends World {
         this.addChild(this.mapFaces);
     }
     initMap() {
-        this.initGeometry();
-        this._createEntities();
-        this._createStaticProps();
+        this.#initGeometry();
+        this.#createEntities();
+        this.#createStaticProps();
     }
-    _createEntities() {
+    #createEntities() {
         const lumpEntities = this.getLumpData(LUMP_ENTITIES);
         if (lumpEntities) {
-            this.createDynamicEntities(lumpEntities.kv);
+            this.#createDynamicEntities(lumpEntities.kv);
             /*new Promise((resolve) => {
                 this.createDynamicEntities(entities.kv);
                 this.eventTarget.dispatchEvent(new CustomEvent('entitiescreated'));//TODOv3
@@ -41809,32 +41937,40 @@ class SourceBSP extends World {
             });*/
         }
     }
-    _createStaticProps() {
-        const lumpGameDatas = this.getLumpData(LUMP_GAME_LUMP);
-        if (lumpGameDatas && lumpGameDatas.prps && lumpGameDatas.prps.lumpData) {
-            const propsStatic = lumpGameDatas.prps.lumpData;
+    #createStaticProps() {
+        const gameLump = this.getLumpData(LUMP_GAME_LUMP);
+        const staticLump = gameLump?.get('prps');
+        const propsStatic = staticLump?.getLumpData();
+        if (propsStatic) {
+            //const propsStatic = lumpGameDatas.prps.lumpData;
             const propNames = propsStatic.name;
             const props = propsStatic.props;
             const tempQuaternion = quat.create();
             for (const prop of props) {
-                Source1ModelManager.createInstance(this.repository, propNames[prop.propType], true).then((model) => {
-                    this.staticProps.addChild(model);
-                    model.position = prop.position;
-                    model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
-                    model.skin = prop.skin;
+                const propName = propNames[prop.propType];
+                if (!propName) {
+                    continue;
+                }
+                Source1ModelManager.createInstance(this.repository, propName, true).then((model) => {
+                    if (model) {
+                        this.staticProps.addChild(model);
+                        model.position = prop.position;
+                        model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
+                        model.skin = prop.skin;
+                    }
                 });
             }
         }
     }
-    createDynamicEntities(kv) {
+    #createDynamicEntities(kv) {
         const list = Object.keys(kv.rootElements);
-        for (let i = 0; i < list.length; ++i) {
-            const entity = kv.rootElements[list[i]];
+        for (const name of list) {
+            const entity = kv.rootElements[name];
             if (entity.classname) {
                 const e = MapEntities.createEntity(this, entity.classname);
                 if (e) {
                     e.setKeyValues(entity);
-                    this.addEntity(e);
+                    this.#addEntity(e);
                 }
                 else {
                     console.error('Unknown classname : %s', entity.classname);
@@ -41848,8 +41984,8 @@ class SourceBSP extends World {
                     this.skyName = entity.skyname;
                 }
                 if (entity.classname == 'info_player_teamspawn') {
-                    if (!this.characterSpawn) {
-                        this.characterSpawn = vec3.scale(vec3.create(), entity.origin.split(' '), 1);
+                    if (!this.#characterSpawn) {
+                        this.#characterSpawn = vec3.scale(vec3.create(), entity.origin.split(' '), 1);
                     }
                 }
             }
@@ -41865,7 +42001,7 @@ class SourceBSP extends World {
         }
         return null;
     }
-    initFaceGeometry(face, position) {
+    #initFaceGeometry(face, position) {
         if (face.initialized) { //TODOv3
             return;
         }
@@ -41877,16 +42013,28 @@ class SourceBSP extends World {
         const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
         const lumpEdges = this.getLumpData(LUMP_EDGES);
         const lumpVertices = this.getLumpData(LUMP_VERTEXES);
+        if (!lumpEdges || !lumpVertices || !lumpTexInfo || !lumpTexData || !lumpTexDataStringData || !lumpSurfEdges) {
+            return;
+        }
         const texInfo = lumpTexInfo[face.texinfo];
+        if (!texInfo) {
+            return;
+        }
         const texData = lumpTexData[texInfo.texdata];
+        if (!texData) {
+            return;
+        }
         const texName = lumpTexDataStringData[texData.nameStringTableID];
+        if (!texName) {
+            return;
+        }
         //console.log(face);
         let buffer = this.#geometries[texName];
         if (!buffer) {
             buffer = {
                 lastIndice: 0,
                 vertices: [], indices: [], coords: [], alphas: [],
-                triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: lumpTexInfo.textureVecs, height: lumpTexData.height, width: lumpTexData.width
+                triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: texInfo.textureVecs, height: texData.height, width: texData.width
             }; //TODOv3
             this.#geometries[texName] = buffer;
         }
@@ -41897,7 +42045,14 @@ class SourceBSP extends World {
         const firstIndice = buffer.lastIndice;
         for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
             const surfedge = lumpSurfEdges[surfEdgeIndex];
+            if (!surfedge) {
+                continue;
+            }
+            //			const surfedge = lumpSurfEdges[surfEdgeIndex];
             const edge = lumpEdges[Math.abs(surfedge)]; //TODOv3 ? why abs
+            if (edge === undefined) {
+                continue;
+            }
             let vertice1, vertice2;
             if (surfedge <= 0) {
                 vertice1 = lumpVertices[edge.f];
@@ -41934,7 +42089,7 @@ class SourceBSP extends World {
             }
         }
     }
-    initDispGeometry(dispInfo, face) {
+    #initDispGeometry(dispInfo, face) {
         if (face.initialized) { //TODOv3
             return;
         }
@@ -41946,16 +42101,29 @@ class SourceBSP extends World {
         const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
         const lumpEdges = this.getLumpData(LUMP_EDGES);
         const lumpVertices = this.getLumpData(LUMP_VERTEXES);
+        const lumpDispVerts = this.getLumpData(LUMP_DISP_VERTS);
+        if (!lumpTexInfo || !lumpTexData || !lumpTexDataStringData || !lumpSurfEdges || !lumpEdges || !lumpVertices || !lumpDispVerts) {
+            return;
+        }
         const texInfo = lumpTexInfo[face.texinfo];
+        if (!texInfo) {
+            return;
+        }
         const texData = lumpTexData[texInfo.texdata];
+        if (!texData) {
+            return;
+        }
         const texName = lumpTexDataStringData[texData.nameStringTableID];
+        if (!texName) {
+            return;
+        }
         //console.log(face);
         let buffer = this.#geometries[texName];
         if (!buffer) {
             buffer = {
                 lastIndice: 0,
                 vertices: [], indices: [], coords: [], alphas: [],
-                triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: lumpTexInfo.textureVecs, height: lumpTexData.height, width: lumpTexData.width
+                triangleArray: [], alphaArray: [], textureCoord: [], lightMaps: [], textureVecs: texInfo.textureVecs, height: texData.height, width: texData.width
             }; //TODOv3
             this.#geometries[texName] = buffer;
         }
@@ -41966,7 +42134,13 @@ class SourceBSP extends World {
         const origVertices = [];
         for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; ++surfEdgeIndex) {
             const surfedge = lumpSurfEdges[surfEdgeIndex];
+            if (surfedge === undefined) {
+                continue;
+            }
             const edge = lumpEdges[Math.abs(surfedge)]; //TODOv3 ? why abs
+            if (edge === undefined) {
+                continue;
+            }
             let vertice1;
             if (surfedge <= 0) {
                 vertice1 = lumpVertices[edge.f];
@@ -41982,6 +42156,9 @@ class SourceBSP extends World {
         }
         for (let testremoveme = 0; testremoveme < 4; testremoveme++) {
             const vvremoveme = origVertices[0];
+            if (!vvremoveme) {
+                continue;
+            }
             if (Math.abs(vvremoveme[0] - dispInfo.startPosition[0]) < DISPLACEMENT_DELTA
                 && Math.abs(vvremoveme[1] - dispInfo.startPosition[1]) < DISPLACEMENT_DELTA
                 && Math.abs(vvremoveme[2] - dispInfo.startPosition[2]) < DISPLACEMENT_DELTA) {
@@ -41989,23 +42166,27 @@ class SourceBSP extends World {
             }
             origVertices.push(origVertices.shift());
         }
-        const verticesPerSide = Math.pow(2, dispInfo.power) + 1;
-        const tesselateVertices = [];
+        if (origVertices.length < 4) {
+            return;
+        }
+        let subdiv = Math.pow(2, dispInfo.power);
+        const verticesPerSide = subdiv + 1;
+        const tesselateVertices = []; // vec4 is used for position + alpha
         /* create tesslate array */
         for (let i = 0; i < verticesPerSide; ++i) {
             const row = [];
             tesselateVertices.push(row);
             for (let j = 0; j < verticesPerSide; ++j) {
-                row[j] = null;
+                row[j] = vec4.create();
             }
         }
-        tesselateVertices[0][0] = vec4.clone(origVertices[0]);
-        tesselateVertices[0][verticesPerSide - 1] = vec4.clone(origVertices[3]);
-        tesselateVertices[verticesPerSide - 1][verticesPerSide - 1] = vec4.clone(origVertices[2]);
-        tesselateVertices[verticesPerSide - 1][0] = vec4.clone(origVertices[1]);
-        let subdiv = Math.pow(2, dispInfo.power);
+        vec3.copy(tesselateVertices[0][0], origVertices[0]);
+        vec3.copy(tesselateVertices[0][verticesPerSide - 1], origVertices[3]);
+        vec3.copy(tesselateVertices[verticesPerSide - 1][verticesPerSide - 1], origVertices[2]);
+        vec3.copy(tesselateVertices[verticesPerSide - 1][0], origVertices[1]);
         for (let level = 0; level < dispInfo.power; ++level) {
             const squares = Math.pow(2, level);
+            //const levelVerts2 = Math.pow(2, level) + 1;
             const subdiv2 = subdiv / 2;
             for (let i = 0; i < squares; ++i) {
                 for (let j = 0; j < squares; ++j) {
@@ -42020,23 +42201,17 @@ class SourceBSP extends World {
                     const iMid = iMin + subdiv2;
                     const jMid = jMin + subdiv2;
                     if (v1 && v2 && v3 && v4) {
-                        const s1 = Vec3Middle(vec4.create(), v1, v2);
-                        const s2 = Vec3Middle(vec4.create(), v3, v4);
-                        const s3 = Vec3Middle(vec4.create(), v1, v3);
-                        const s4 = Vec3Middle(vec4.create(), v2, v4);
-                        const s5 = Vec3Middle(vec4.create(), s3, s4);
-                        tesselateVertices[iMid][jMin] = s1;
-                        tesselateVertices[iMid][jMax] = s2;
-                        tesselateVertices[iMin][jMid] = s3;
-                        tesselateVertices[iMax][jMid] = s4;
-                        tesselateVertices[iMid][jMid] = s5;
+                        Vec3Middle(tesselateVertices[iMid][jMin], v1, v2);
+                        Vec3Middle(tesselateVertices[iMid][jMax], v3, v4);
+                        const s3 = Vec3Middle(tesselateVertices[iMin][jMid], v1, v3);
+                        const s4 = Vec3Middle(tesselateVertices[iMax][jMid], v2, v4);
+                        Vec3Middle(tesselateVertices[iMid][jMid], s3, s4);
                     }
                 }
             }
             subdiv = subdiv2;
         }
         /* displace vertices */
-        const lumpDispVerts = this.lumps[LUMP_DISP_VERTS].getLumpData();
         let vertexIndex = dispInfo.dispVertStart;
         for (let i = 0; i < verticesPerSide; ++i) {
             for (let j = 0; j < verticesPerSide; ++j) {
@@ -42086,7 +42261,7 @@ class SourceBSP extends World {
             }
         }
     }
-    initGeometry() {
+    #initGeometry() {
         this.#geometries = {};
         const lumpFaces = this.getLumpData(LUMP_FACES);
         const lumpLeafs = this.getLumpData(LUMP_LEAFS);
@@ -42103,8 +42278,8 @@ class SourceBSP extends World {
         const lumpDispInfos = this.getLumpData(LUMP_DISPINFO);
         if (lumpFaces && lumpLeafs && lumpLeafFaces && /*lumpNodes && */ lumpTexLighting && lumpTexInfo && lumpTexData && lumpTexDataStringData && lumpSurfEdges && lumpEdges && lumpVertices) {
             if (lumpModels) {
-                for (let i = 0; i < this.funcBrushesRemoveMe.length; ++i) {
-                    const funcBrushesRemove = this.funcBrushesRemoveMe[i];
+                for (const funcBrushesRemove of this.funcBrushesRemoveMe) {
+                    //const funcBrushesRemove = this.funcBrushesRemoveMe[i];
                     const modelIndex = funcBrushesRemove.model;
                     const model = lumpModels[modelIndex];
                     if (model) {
@@ -42113,35 +42288,55 @@ class SourceBSP extends World {
                         for (let j = firstFace; j < lastFace; ++j) {
                             const face = lumpFaces[j];
                             //this.renderLeafFace(renderContext, face, funcBrushesRemove.position, 0/*leafId TODO*/);
-                            this.initFaceGeometry(face, funcBrushesRemove.origin);
+                            if (face) {
+                                this.#initFaceGeometry(face, funcBrushesRemove.origin);
+                            }
                         }
                     }
                 }
             }
             /* Init displacement buffer */
             if (lumpDispInfos) {
-                for (let i = 0; i < lumpDispInfos.length; ++i) { //TODO
-                    const dispInfo = lumpDispInfos[i];
+                for (const dispInfo of lumpDispInfos) {
                     const face = lumpFaces[dispInfo.mapFace];
                     if (face) {
-                        this.initDispGeometry(dispInfo, face);
+                        this.#initDispGeometry(dispInfo, face);
                     }
                 }
             }
             for (let leafIndex = 0, l = lumpLeafs.length; leafIndex < l; ++leafIndex) {
                 const leaf = lumpLeafs[leafIndex];
+                if (!leaf) {
+                    continue;
+                }
                 const firstFace = leaf.firstleafface;
                 const lastFace = leaf.firstleafface + leaf.numleaffaces;
                 for (let faceIndex = firstFace; faceIndex < lastFace; ++faceIndex) {
                     const face = lumpFaces[lumpLeafFaces[faceIndex]];
-                    this.initFaceGeometry(face);
+                    if (face) {
+                        this.#initFaceGeometry(face);
+                    }
                 }
             }
         }
         for (const textureName in this.#geometries) {
             const geometry = this.#geometries[textureName];
+            if (!geometry) {
+                continue;
+            }
             if (textureName.toLowerCase().substring(0, 5) == 'tools') { //TODOV3
                 continue;
+                /*
+                if (
+                //((lumpTexInfo.flags & 4) == 4) // SURF_SKY
+                /*|| * /((lumpTexInfo.flags & 40) == 40) // SURF_TRIGGER
+                    || ((lumpTexInfo.flags & 200) == 200) // SURF_SKIP
+                    //((lumpTexInfo.flags & 400) == 400) // SURF_NOLIGHT
+                    //|| true
+                ) {
+                    continue;
+                }
+                */
                 //continue;
             }
             const bufferGeometry = new BufferGeometry();
@@ -42155,18 +42350,22 @@ class SourceBSP extends World {
             bufferGeometry.count = geometry.indices.length;
             const staticMesh = new Mesh({ geometry: bufferGeometry });
             staticMesh.name = textureName;
-            Source1MaterialManager.getMaterial(this.repository, textureName).then((material) => staticMesh.setMaterial(material));
+            Source1MaterialManager.getMaterial(this.repository, textureName).then((material) => {
+                if (material) {
+                    staticMesh.setMaterial(material);
+                }
+            });
             this.mapFaces.addChild(staticMesh);
         }
     }
-    addEntity(entity) {
+    #addEntity(entity) {
         if (entity) {
             this.entities.push(entity);
         }
     }
     addConnection(connection) {
         if (connection) {
-            this.connections.push(connection);
+            this.#connections.push(connection);
         }
     }
     getOBBSize(modelIndex) {
@@ -42175,121 +42374,72 @@ class SourceBSP extends World {
         const lumpSurfEdges = this.getLumpData(LUMP_SURFEDGES);
         const lumpEdges = this.getLumpData(LUMP_EDGES);
         const lumpVertices = this.getLumpData(LUMP_VERTEXES);
-        if (lumpModels && lumpFaces && lumpSurfEdges && lumpEdges && lumpVertices) {
-            const model = lumpModels[modelIndex];
-            if (model) {
-                if (model.numfaces == 0) {
-                    return vec3.create();
+        if (!lumpModels || !lumpFaces || !lumpSurfEdges || !lumpEdges || !lumpVertices) {
+            return null;
+        }
+        const model = lumpModels[modelIndex];
+        if (!model) {
+            return null;
+        }
+        if (model.numfaces == 0) {
+            return vec3.create();
+        }
+        function compare(v) {
+            for (let i = 0; i < 3; i++) {
+                if (v[i] < min[i]) {
+                    min[i] = v[i];
                 }
-                function compare(v) {
-                    for (let i = 0; i < 3; i++) {
-                        if (v[i] < min[i]) {
-                            min[i] = v[i];
-                        }
-                        if (v[i] > max[i]) {
-                            max[i] = v[i];
-                        }
-                    }
+                if (v[i] > max[i]) {
+                    max[i] = v[i];
                 }
-                const min = vec3.fromValues(Infinity, Infinity, Infinity);
-                const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
-                const firstFace = model.firstface;
-                const lastFace = firstFace + model.numfaces;
-                for (let j = firstFace; j < lastFace; j++) {
-                    const face = lumpFaces[j];
-                    if (face) {
-                        const firstEdge = face.firstedge;
-                        const lastEdge = firstEdge + face.numedges;
-                        for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; surfEdgeIndex++) {
-                            const surfedge = lumpSurfEdges[surfEdgeIndex];
-                            const edge = lumpEdges[Math.abs(surfedge)];
-                            const vertice1 = lumpVertices[edge.f];
-                            const vertice2 = lumpVertices[edge.s];
-                            compare(vertice1);
-                            compare(vertice2);
-                        }
-                    }
-                }
-                return vec3.sub(vec3.create(), max, min);
             }
         }
-        return null;
+        const min = vec3.fromValues(Infinity, Infinity, Infinity);
+        const max = vec3.fromValues(-Infinity, -Infinity, -Infinity);
+        const firstFace = model.firstface;
+        const lastFace = firstFace + model.numfaces;
+        for (let j = firstFace; j < lastFace; j++) {
+            const face = lumpFaces[j];
+            if (face) {
+                const firstEdge = face.firstedge;
+                const lastEdge = firstEdge + face.numedges;
+                for (let surfEdgeIndex = firstEdge; surfEdgeIndex < lastEdge; surfEdgeIndex++) {
+                    const surfedge = lumpSurfEdges[surfEdgeIndex];
+                    if (surfedge === undefined) {
+                        continue;
+                    }
+                    const edge = lumpEdges[Math.abs(surfedge)];
+                    if (edge === undefined) {
+                        continue;
+                    }
+                    const vertice1 = lumpVertices[edge.f];
+                    const vertice2 = lumpVertices[edge.s];
+                    if (!vertice1 || !vertice2) {
+                        continue;
+                    }
+                    compare(vertice1);
+                    compare(vertice2);
+                }
+            }
+        }
+        return vec3.sub(vec3.create(), max, min);
     }
     static getEntityName() {
         return 'BSP Map';
     }
 }
 
-class Source1VmtLoaderClass {
-    #materials = new Map();
-    #extraMaterials = new Map(); //TODO: this is used for maps create a map repo instead
-    async load(repository, path) {
-        const response = await Repositories.getFileAsText(repository, path);
-        if (!response.error) {
-            return this.parse(repository, path, response.text);
-        }
-        else {
-            const fileContent = this.#extraMaterials.get(path);
-            if (fileContent) {
-                return this.parse(repository, path, fileContent);
-            }
-        }
-        return null;
-    }
-    async parse(repository, path, content) {
-        path = path.replace(/(\/)+/g, '/').replace(/(\\)+/g, '/').toLowerCase();
-        const kv = new KvReader();
-        kv.readText(content);
-        const vmt = kv.getRootElement();
-        if (!vmt) {
-            return null;
-        }
-        const shaderName = kv.getRootName().toLowerCase();
-        let material = null;
-        if (shaderName === 'patch') {
-            //TODO: check patch
-            const include = vmt['include'];
-            const insert = vmt['insert'];
-            const material = await Source1MaterialManager.getMaterial(repository, include);
-            if (material) {
-                for (const insertIndex in insert) {
-                    material.variables.set(insertIndex, insert[insertIndex]);
-                    throw 'material.parameters[insertIndex] = insert[insertIndex];';
-                }
-            }
-            //materialList[fileNameRemoveMe] = material;removeme
-            return (material);
-            //promise.then(patchResolve);
-        }
-        else {
-            const materialClass = this.#materials.get(shaderName);
-            if (materialClass) {
-                material = new materialClass(repository, path, vmt);
-            }
-            else {
-                console.error('Unknown material : ' + shaderName);
-            }
-        }
-        return material;
-    }
-    setMaterial(fileName, fileContent) {
-        this.#extraMaterials.set(fileName, fileContent);
-    }
-    registerMaterial(materialName, materialClass) {
-        this.#materials.set(materialName.toLowerCase(), materialClass);
-    }
-}
-const Source1VmtLoader = new Source1VmtLoaderClass();
-registerLoader('Source1VmtLoader', Source1VmtLoader);
-
 const BSP_HEADER_LUMPS_COUNT = 64;
-function InitLZMALump(reader, lump) {
+function initLZMALump(reader, lump) {
     if (reader.getString(4, lump.lumpOffset) === 'LZMA') {
         const uncompressedSize = reader.getUint32();
         const compressedSize = reader.getUint32();
         const properties = reader.getBytes(5);
         const compressedDatas = reader.getBytes(compressedSize); // 4 + 4 + 4 + 5
-        reader = new BinaryReader(DecompressLZMA(properties, compressedDatas, uncompressedSize));
+        const result = DecompressLZMA(properties, compressedDatas, uncompressedSize);
+        if (result) {
+            reader = new BinaryReader(result);
+        }
         lump.lumpOffset = 0;
         lump.lumpLen = uncompressedSize;
     }
@@ -42298,7 +42448,7 @@ function InitLZMALump(reader, lump) {
 class Source1BspLoader extends SourceBinaryLoader {
     parse(repository, fileName, arrayBuffer) {
         const bsp = new SourceBSP({ repository: repository, name: fileName });
-        bsp.loader = this;
+        //bsp.loader = this;
         const reader = new BinaryReader(arrayBuffer);
         this.#parseHeader(reader, bsp);
         this.#parseLumps(reader, bsp);
@@ -42307,10 +42457,10 @@ class Source1BspLoader extends SourceBinaryLoader {
     #parseHeader(reader, bsp) {
         reader.seek(4); //skip first 4 char TODO: check == 'VBSP' ?
         bsp.bspFileVersion = reader.getInt32();
-        this._parseLumpDirectory(reader, bsp);
+        this.#parseLumpDirectory(reader, bsp);
         bsp.mapRevision = reader.getInt32();
     }
-    _parseLumpDirectory(reader, bsp) {
+    #parseLumpDirectory(reader, bsp) {
         const startOffset = reader.tell();
         for (let lumpIndex = 0; lumpIndex < BSP_HEADER_LUMPS_COUNT; ++lumpIndex) {
             reader.seek(startOffset + lumpIndex * 16);
@@ -42326,9 +42476,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         }
     }
     #parseLumps(reader, bsp) {
-        const lumps = bsp.lumps;
-        for (let i = 0, l = lumps.length; i < l; i++) {
-            const lump = bsp.lumps[i];
+        for (const lump of bsp.lumps) {
             this.#parseLump(reader, lump, bsp); //TODOv3: lzma
             //console.error(lump);
         }
@@ -42349,7 +42497,7 @@ class Source1BspLoader extends SourceBinaryLoader {
                 lump.lumpOffset = 0;
                 lump.lumpLen = uncompressedSize;
             }*/
-            reader = InitLZMALump(reader, lump);
+            reader = initLZMALump(reader, lump);
             switch (lump.lumpType) {
                 case LUMP_ENTITIES:
                     this.#parseLumpEntities(reader, lump);
@@ -42433,7 +42581,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         }
     }
     #parseLumpEntities(reader, lump) {
-        const lumpData = Object.create(null); //TODOv3
+        const lumpData = new SourceBSPLumpEntity();
         lumpData.str = reader.getString(lump.getLumpLen(), lump.lumpOffset);
         const kv = new KvReader();
         kv.readText(lumpData.str);
@@ -42446,10 +42594,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         const planesCount = lump.getLumpLen() / BYTES_PER_PLANE;
         const lumpData = [];
         for (let planeIndex = 0; planeIndex < planesCount; planeIndex++) {
-            const plane = new SourceBSPLumpPlane();
-            plane.normal = reader.getVector3();
-            plane.dist = reader.getFloat32();
-            plane.type = reader.getInt32();
+            const plane = new SourceBSPLumpPlane(reader.getVector3() /*TODO: optimize*/, reader.getFloat32(), reader.getInt32());
             lumpData.push(plane);
         }
         lump.setLumpData(lumpData);
@@ -42461,7 +42606,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         const lumpData = [];
         for (let texdataIndex = 0; texdataIndex < texdataCount; ++texdataIndex) {
             const texdata = new SourceBSPLumpTexData();
-            texdata.reflectivity = reader.getVector3();
+            reader.getVector3(undefined, undefined, texdata.reflectivity);
             texdata.nameStringTableID = reader.getInt32();
             texdata.width = reader.getInt32();
             texdata.height = reader.getInt32();
@@ -42498,13 +42643,13 @@ class Source1BspLoader extends SourceBinaryLoader {
             // Unpack the RLE visibility bitfield
             // See code at: http://www.flipcode.com/archives/Quake_2_BSP_File_Format.shtml
             for (let c = 0; c < clusterCount; v++) {
-                if (rleVis[v] == 0) {
+                if (rleVis[v] === 0) {
                     v++;
-                    c += 8 * rleVis[v];
+                    c += 8 * rleVis[v] /*TODO: actually check*/;
                 }
                 else {
                     for (let bit = 1; bit < 256; bit *= 2, c++) {
-                        if (rleVis[v] & bit) {
+                        if (rleVis[v] /*TODO: actually check*/ & bit) {
                             clusterVis[clusterOfs + c] = 1;
                         }
                     }
@@ -42522,9 +42667,10 @@ class Source1BspLoader extends SourceBinaryLoader {
         for (let nodeIndex = 0; nodeIndex < nodeCount; ++nodeIndex) {
             const node = new SourceBSPLumpNode();
             node.planenum = reader.getInt32();
-            node.children = [reader.getInt32(), reader.getInt32()];
-            node.mins = [reader.getInt16(), reader.getInt16(), reader.getInt16()];
-            node.maxs = [reader.getInt16(), reader.getInt16(), reader.getInt16()];
+            node.children[0] = reader.getInt32();
+            node.children[1] = reader.getInt32();
+            vec3.set(node.mins, reader.getInt16(), reader.getInt16(), reader.getInt16());
+            vec3.set(node.maxs, reader.getInt16(), reader.getInt16(), reader.getInt16());
             node.firstface = reader.getUint16();
             node.numfaces = reader.getUint16();
             node.area = reader.getInt16();
@@ -42541,10 +42687,10 @@ class Source1BspLoader extends SourceBinaryLoader {
         const lumpData = [];
         for (let texinfoIndex = 0; texinfoIndex < texInfoCount; ++texinfoIndex) {
             const texinfo = new SourceBSPLumpTexInfo();
-            texinfo.textureVecs.push(reader.getVector4());
-            texinfo.textureVecs.push(reader.getVector4());
-            texinfo.lightmapVecs.push(reader.getVector4());
-            texinfo.lightmapVecs.push(reader.getVector4());
+            reader.getVector4(undefined, undefined, texinfo.textureVecs[0]);
+            reader.getVector4(undefined, undefined, texinfo.textureVecs[1]);
+            reader.getVector4(undefined, undefined, texinfo.lightmapVecs[0]);
+            reader.getVector4(undefined, undefined, texinfo.lightmapVecs[1]);
             texinfo.flags = reader.getInt32();
             texinfo.texdata = reader.getInt32();
             lumpData.push(texinfo);
@@ -42569,14 +42715,16 @@ class Source1BspLoader extends SourceBinaryLoader {
             for (let styleIndex = 0; styleIndex < 4; ++styleIndex) {
                 const style = reader.getUint8();
                 face.styles.push(style);
+                /*
                 if (style != 255) {
                     face.styleCount = styleIndex + 1;
                 }
+                */
             }
             face.lightofs = reader.getInt32() / 4;
             face.area = reader.getFloat32();
-            face.LightmapTextureMinsInLuxels = [reader.getInt32(), reader.getInt32()];
-            face.LightmapTextureSizeInLuxels = [reader.getInt32(), reader.getInt32()];
+            face.lightmapTextureMinsInLuxels.push(reader.getInt32(), reader.getInt32());
+            face.lightmapTextureSizeInLuxels.push(reader.getInt32(), reader.getInt32());
             //face.LightmapTextureSizeInLuxels = (face.LightmapTextureSizeInLuxels[0] + 1) * (face.LightmapTextureSizeInLuxels[1] + 1);
             face.origFace = reader.getInt32();
             face.numPrims = reader.getUint16();
@@ -42593,10 +42741,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         const lumpData = [];
         for (let lightingIndex = 0; lightingIndex < lightingCount; ++lightingIndex) {
             const lighting = new SourceBSPLumpColorRGBExp32();
-            lighting.r = reader.getUint8();
-            lighting.g = reader.getUint8();
-            lighting.b = reader.getUint8();
-            lighting.exp = reader.getInt8();
+            vec4.set(lighting.color, reader.getUint8(), reader.getUint8(), reader.getUint8(), reader.getUint8());
             lumpData.push(lighting);
         }
         lump.setLumpData(lumpData);
@@ -42611,8 +42756,8 @@ class Source1BspLoader extends SourceBinaryLoader {
             brushSide.contents = reader.getInt32();
             brushSide.cluster = reader.getInt16();
             brushSide.areaflags = reader.getInt16();
-            brushSide.mins = [reader.getInt16(), reader.getInt16(), reader.getInt16()];
-            brushSide.maxs = [reader.getInt16(), reader.getInt16(), reader.getInt16()];
+            vec3.set(brushSide.mins, reader.getInt16(), reader.getInt16(), reader.getInt16());
+            vec3.set(brushSide.maxs, reader.getInt16(), reader.getInt16(), reader.getInt16());
             brushSide.firstleafface = reader.getUint16();
             brushSide.numleaffaces = reader.getUint16();
             brushSide.firstleafbrush = reader.getUint16();
@@ -42621,8 +42766,8 @@ class Source1BspLoader extends SourceBinaryLoader {
             reader.getInt16();
             lumpData.push(brushSide);
         }
-        for (let brushSideIndex = 0; brushSideIndex < brushSidesCount; ++brushSideIndex) {
-            const leaf = lumpData[brushSideIndex];
+        for (const leaf of lumpData) {
+            //const leaf = lumpData[brushSideIndex];
             if (leaf.numleaffaces) ;
         }
         lump.setLumpData(lumpData);
@@ -42661,7 +42806,7 @@ class Source1BspLoader extends SourceBinaryLoader {
             //brushSide.texinfo = reader.getInt16();
             //brushSide.dispinfo = reader.getInt16();
             reader.skip(24);
-            brushSide.position = reader.getVector3();
+            reader.getVector3(undefined, undefined, brushSide.position);
             brushSide.headnode = reader.getInt32();
             brushSide.firstface = reader.getInt32();
             brushSide.numfaces = reader.getInt32();
@@ -42721,19 +42866,19 @@ class Source1BspLoader extends SourceBinaryLoader {
     #parseLumpGameDirectory(reader, lump, bsp) {
         reader.seek(lump.lumpOffset);
         const gameCount = reader.getInt32();
-        const lumpData = Object.create(null);
+        const lumpData = new Map(); //Object.create(null);
         for (let gameIndex = 0; gameIndex < gameCount; ++gameIndex) {
-            const gamelump = new SourceBSPLumpGameLump(bsp, reader);
+            const gamelump = new SourceBSPLumpGameLump(bsp, reader, 0, 0);
             gamelump.id = reader.getString(4); //Four CC
             gamelump.flags = reader.getUint16();
             gamelump.version = reader.getUint16();
             gamelump.lumpOffset = reader.getInt32();
             gamelump.lumpLen = reader.getInt32();
-            lumpData[gamelump.id] = gamelump;
+            lumpData.set(gamelump.id, gamelump);
         }
-        for (const gameIndex in lumpData) {
-            const lump = lumpData[gameIndex];
-            const lumpReader = InitLZMALump(reader, lump);
+        for (const [_, lump] of lumpData) {
+            //const lump = lumpData[gameIndex];
+            const lumpReader = initLZMALump(reader, lump);
             this.#parseLumpGame(lumpReader, lump);
         }
         lump.setLumpData(lumpData);
@@ -42769,7 +42914,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         for (let propIndex = 0; propIndex < propCount; ++propIndex) {
             reader.seek(propsStartOffset + propIndex * byteSizePerProp);
             const prop = new SourceBSPLumpPropStatic();
-            prop.position = reader.getVector3();
+            reader.getVector3(undefined, undefined, prop.position);
             const angles = reader.getVector3(); //TODO: memory
             prop.propType = reader.getUint16();
             if (angles[0] != 0) ;
@@ -42783,7 +42928,7 @@ class Source1BspLoader extends SourceBinaryLoader {
             prop.skin = reader.getInt32();
             prop.fadeMinDist = reader.getFloat32();
             prop.fadeMaxDist = reader.getFloat32();
-            prop.lightingOrigin = reader.getVector3();
+            reader.getVector3(undefined, undefined, prop.lightingOrigin);
             if (lumpVersion >= 5) {
                 prop.forcedFadeScale = reader.getFloat32();
             }
@@ -42857,7 +43002,9 @@ class Source1BspLoader extends SourceBinaryLoader {
         for (const [fileName, file] of lumpData) {
             if (fileName.match(/^materials\/.*\.vmt$/)) {
                 const fileContent = this.#getFileData(reader, file);
-                Source1VmtLoader.setMaterial(fileName, fileContent);
+                if (fileContent) {
+                    Source1VmtLoader.setMaterial(fileName, fileContent);
+                }
             }
         }
         lump.setLumpData(lumpData);
@@ -42867,8 +43014,11 @@ class Source1BspLoader extends SourceBinaryLoader {
             if (file.cm == 14) { //LZMA
                 const lzmaProperties = reader.getBytes(5, file.fp + 4);
                 const compressedDatas = reader.getBytes(file.cs, file.fp + 9);
-                const lzmaReader = new BinaryReader(DecompressLZMA(lzmaProperties, compressedDatas, file.us));
-                return lzmaReader.getString(file.us);
+                const uncompressedDatas = DecompressLZMA(lzmaProperties, compressedDatas, file.us);
+                if (uncompressedDatas) {
+                    const lzmaReader = new BinaryReader(uncompressedDatas);
+                    return lzmaReader.getString(file.us);
+                }
             }
             return reader.getString(file.cs, file.fp);
         }
@@ -42902,20 +43052,21 @@ class Source1BspLoader extends SourceBinaryLoader {
             overlay.id = reader.getInt32();
             overlay.texInfo = reader.getInt16();
             overlay.FaceCountAndRenderOrder = reader.getUint16();
-            const OVERLAY_BSP_FACE_COUNT = 64;
-            overlay.faces = new Int32Array(OVERLAY_BSP_FACE_COUNT);
+            //overlay.faces = new Int32Array(OVERLAY_BSP_FACE_COUNT);
             for (let i = 0; i < OVERLAY_BSP_FACE_COUNT; ++i) {
                 overlay.faces[i] = reader.getInt32();
             }
-            overlay.U = [reader.getFloat32(), reader.getFloat32()];
-            overlay.V = [reader.getFloat32(), reader.getFloat32()];
-            overlay.UVPoint0 = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32()];
-            overlay.UVPoint1 = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32()];
-            overlay.UVPoint2 = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32()];
-            overlay.UVPoint3 = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32()];
-            overlay.Origin = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32()];
-            overlay.BasisNormal = [reader.getFloat32(), reader.getFloat32(), reader.getFloat32()];
-            vec3.normalize(overlay.BasisNormal, overlay.BasisNormal);
+            overlay.u[0] = reader.getFloat32();
+            overlay.u[1] = reader.getFloat32();
+            overlay.v[0] = reader.getFloat32();
+            overlay.v[1] = reader.getFloat32();
+            vec3.set(overlay.uvPoint0, reader.getFloat32(), reader.getFloat32(), reader.getFloat32());
+            vec3.set(overlay.uvPoint1, reader.getFloat32(), reader.getFloat32(), reader.getFloat32());
+            vec3.set(overlay.uvPoint2, reader.getFloat32(), reader.getFloat32(), reader.getFloat32());
+            vec3.set(overlay.uvPoint3, reader.getFloat32(), reader.getFloat32(), reader.getFloat32());
+            vec3.set(overlay.origin, reader.getFloat32(), reader.getFloat32(), reader.getFloat32());
+            vec3.set(overlay.basisNormal, reader.getFloat32(), reader.getFloat32(), reader.getFloat32());
+            vec3.normalize(overlay.basisNormal, overlay.basisNormal);
             lumpData.push(overlay);
         }
         lump.setLumpData(lumpData);
@@ -42927,7 +43078,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         const lumpData = [];
         for (let dispinfoIndex = 0; dispinfoIndex < dispInfoCount; ++dispinfoIndex) {
             const dispinfo = new SourceBSPLumpDispInfo();
-            dispinfo.startPosition = reader.getVector3();
+            reader.getVector3(undefined, undefined, dispinfo.startPosition);
             dispinfo.dispVertStart = reader.getInt32();
             dispinfo.dispTriStart = reader.getInt32();
             dispinfo.power = reader.getInt32();
@@ -42935,14 +43086,14 @@ class Source1BspLoader extends SourceBinaryLoader {
             dispinfo.smoothingAngle = reader.getFloat32();
             dispinfo.contents = reader.getInt32();
             dispinfo.mapFace = reader.getUint16();
-            dispinfo.LightmapAlphaStart = reader.getInt32();
-            dispinfo.LightmapSamplePositionStart = reader.getInt32();
+            dispinfo.lightmapAlphaStart = reader.getInt32();
+            dispinfo.lightmapSamplePositionStart = reader.getInt32();
             reader.getUint16(); // Spare bytes
             this.#parseEdgeNeighbors(reader);
             reader.skip(40); //skip CornerNeighbors
-            dispinfo.AllowedVerts = [];
+            //dispinfo.allowedVerts = [];
             for (let i = 0; i < 10; ++i) { //TODO : variable
-                dispinfo.AllowedVerts.push(reader.getInt32());
+                dispinfo.allowedVerts.push(reader.getInt32());
             }
             lumpData.push(dispinfo);
         }
@@ -42969,7 +43120,7 @@ class Source1BspLoader extends SourceBinaryLoader {
         const lumpData = [];
         for (let dispvertIndex = 0; dispvertIndex < dispVertCount; ++dispvertIndex) {
             const dispvert = new SourceBSPLumpDispVertex();
-            dispvert.vec = reader.getVector3();
+            reader.getVector3(undefined, undefined, dispvert.vec);
             dispvert.dist = reader.getFloat32();
             dispvert.alpha = reader.getFloat32();
             lumpData.push(dispvert);
@@ -43518,8 +43669,8 @@ class Source1MdlLoader extends SourceBinaryLoader {
         sequence.numevents = reader.getInt32();
         sequence.eventindex = reader.getInt32();
         // Bounding box
-        sequence.bbmin = reader.getVector3();
-        sequence.bbmax = reader.getVector3();
+        reader.getVector3(undefined, undefined, sequence.bbmin);
+        reader.getVector3(undefined, undefined, sequence.bbmax);
         sequence.numblends = reader.getInt32();
         sequence.animindexindex = reader.getInt32() + startOffset;
         sequence.movementindex = reader.getInt32();
@@ -43941,15 +44092,15 @@ class Color {
     getAlpha() {
         return Math.round(this.a * 255.0);
     }
-    setRed = function (r) {
+    setRed(r) {
         this.r = r / 255.0;
-    };
-    setGreen = function (g) {
+    }
+    setGreen(g) {
         this.g = g / 255.0;
-    };
-    setBlue = function (b) {
+    }
+    setBlue(b) {
         this.b = b / 255.0;
-    };
+    }
     toString() {
         return '' + this.getRed() + ' ' + this.getGreen() + ' ' + this.getBlue() + ' ' + this.getAlpha();
     }
@@ -44483,7 +44634,7 @@ class Source1ParticleSystem extends Entity {
     speed = 1;
     isRunning = false;
     radius = 1;
-    attachmentBone = null;
+    //attachmentBone = null;
     // List of living particles
     #livingParticles = []; // TODO: turn into queue ?
     // List of dead but reusable particles
@@ -45777,7 +45928,7 @@ class DummyEntity extends MapEntity {
         const result = /^\*(\d*)$/.exec(kvElement /*TODO: fix that*/.model);
         if (result && result.length >= 2) {
             this.map.funcBrushesRemoveMe.push({
-                model: result[1],
+                model: Number(result[1]),
                 origin: ParseVector(vec3.create(), kvElement /*TODO: fix that*/.origin) ?? vec3.create(),
             });
         }
@@ -45834,7 +45985,7 @@ class FuncBrush extends MapEntity {
         const result = /^\*(\d*)$/.exec(kvElement /*TODO: fix that*/.model);
         if (result && result.length >= 2) {
             if (kvElement /*TODO: fix that*/.rendermode && kvElement /*TODO: fix that*/.rendermode != 10) {
-                this.map.funcBrushesRemoveMe.push({ model: result[1], origin: ParseVector(vec3.create(), kvElement /*TODO: fix that*/.origin) ?? vec3.create() });
+                this.map.funcBrushesRemoveMe.push({ model: Number(result[1]), origin: ParseVector(vec3.create(), kvElement /*TODO: fix that*/.origin) ?? vec3.create() });
                 console.error(kvElement /*TODO: fix that*/.origin, kvElement);
             }
         }
@@ -45846,14 +45997,13 @@ MapEntities.registerEntity('func_brush', FuncBrush);
  * func_detail
  */
 class FuncDetail extends MapEntity {
-    constructor(classname) {
-        super(classname);
-    }
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
-        const result = /^\*(\d*)$/.exec(kvElement.model);
-        if (result) {
-            this.map.funcBrushesRemoveMe.push({ model: result[1], origin: ParseVector(vec3.create(), kvElement.origin) });
+        const result = /^\*(\d*)$/.exec(kvElement /*TODO: fix that*/.model);
+        if (result && result.length >= 2) {
+            const origin = vec3.create();
+            ParseVector(origin, kvElement /*TODO: fix that*/.origin);
+            this.map.funcBrushesRemoveMe.push({ model: Number(result[1]), origin: origin });
         }
     }
 }
@@ -45890,7 +46040,7 @@ class FuncDoor extends MapEntity {
         super.setKeyValues(kvElement);
         const result = /^\*(\d*)$/.exec(kvElement /*TODO: fix that*/.model);
         if (result && result.length >= 2) {
-            this.model = { model: result[1], origin: ParseVector(vec3.create(), kvElement /*TODO: fix that*/.origin) ?? vec3.create(), position: vec3.create(), dirty: true };
+            this.model = { model: Number(result[1]), origin: ParseVector(vec3.create(), kvElement /*TODO: fix that*/.origin) ?? vec3.create(), position: vec3.create(), dirty: true };
             //if (kvElement.rendermode && kvElement.rendermode != 10) {
             this.map.funcBrushesRemoveMe.push(this.model);
             //}
@@ -45991,9 +46141,6 @@ MapEntities.registerEntity('func_door', FuncDoor);
 
 class MapEntityAmbientLight extends MapEntity {
     #ambientLight = new AmbientLight();
-    constructor(classname) {
-        super(classname);
-    }
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
         this.map.addChild(this.#ambientLight);
@@ -46065,30 +46212,30 @@ class MapEntityLight extends MapEntity {
 MapEntities.registerEntity('light', MapEntityLight);
 
 class PropDynamic extends MapEntity {
-    model;
+    #model = null;
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
         this.setupModel(kvElement);
     }
     async setupModel(kvElement) {
         const entity = kvElement;
-        if (entity && entity.model) {
-            const model = await this.setModel(entity.model);
-            const skin = entity.skin || 0;
+        if (entity && kvElement /*TODO: fix that*/.model) {
+            const model = await this.setModel(kvElement /*TODO: fix that*/.model);
+            const skin = kvElement /*TODO: fix that*/.skin ?? 0;
             if (model) {
                 model.skin = skin;
                 if (model) {
                     model.position = this._position;
                     model.quaternion = this._quaternion;
                 }
-                if (entity.defaultanim) {
-                    model.playSequence(entity.defaultanim);
+                if (kvElement /*TODO: fix that*/.defaultanim) {
+                    model.playSequence(kvElement /*TODO: fix that*/.defaultanim);
                 }
                 else {
                     model.playDefaultAnim();
                 } //TODO: RandomAnimation, StartDisabled, SetBodyGroup
-                if (entity.startdisabled == 1) {
-                    this.model.visible = false;
+                if (kvElement /*TODO: fix that*/.startdisabled == 1) {
+                    model.setVisible(false);
                 }
             }
         }
@@ -46120,7 +46267,7 @@ class PropDynamic extends MapEntity {
         const model = await Source1ModelManager.createInstance(this.map.repository, modelName, true);
         /*model.position = this.position;
         model.quaternion = this._quaternion;*/
-        this.model = model;
+        this.#model = model;
         this.map.dynamicProps.addChild(model);
         /*.then(
             (model) => {
@@ -46132,16 +46279,16 @@ class PropDynamic extends MapEntity {
         );*/
         return model;
     }
-    setInput(inputName, parameter) {
+    setInput(inputName, parameters /*TODO: improve type*/) {
         switch (inputName.toLowerCase()) {
             case 'skin':
-                this.model.setSkin(parameter);
+                this.#model?.setSkin(parameters);
                 break;
         }
     }
     update(scene, camera, delta) {
         super.update(scene, camera, delta);
-        const model = this.model; //fixme this
+        const model = this.#model; //fixme this
         if (model) {
             model.position = this._position;
             model.quaternion = this._quaternion;
@@ -46161,8 +46308,8 @@ class PropLightSpot extends MapEntity {
     spotLight = new SpotLight();
     //this.spotLight.visible = false;
     _angles = vec3.fromValues(-90, 0, 0);
-    constructor(classname) {
-        super(classname);
+    constructor(params) {
+        super(params);
         this.quaternion = SPOTLIGHT_DEFAULT_QUATERNION;
     }
     setKeyValues(kvElement) {
@@ -46240,7 +46387,8 @@ class SkyCamera extends MapEntity {
     camera = new Camera();
     setKeyValues(kvElement) {
         super.setKeyValues(kvElement);
-        this.camera.scale = vec3.fromValues(kvElement.scale, kvElement.scale, kvElement.scale);
+        const scale = kvElement /*TODO: fix that*/.scale;
+        this.camera.scale = vec3.fromValues(scale, scale, scale);
         this.camera.position = this._position;
     }
 }
@@ -46269,6 +46417,9 @@ class SheetSequenceSample_t {
     }
 }
 function GetInterpolationData(pKnotPositions, pKnotValues, nNumValuesinList, nInterpolationRange, flPositionToInterpolateAt, bWrap) {
+    if (nNumValuesinList > SEQUENCE_SAMPLE_COUNT) {
+        return { pValueA: 0, pValueB: 0, pInterpolationValue: 0 };
+    }
     // first, find the bracketting knots by looking for the first knot >= our index
     const result = Object.create(null);
     let idx;
@@ -46488,9 +46639,9 @@ class Source1VtfLoader extends SourceBinaryLoader {
             for (let i = 0; i < nTimeSamples; i++) {
                 group.m_pSamples[i] = new SheetSequenceSample_t();
             }
-            const Samples = [];
+            const samples = [];
             for (let i = 0; i < SEQUENCE_SAMPLE_COUNT; i++) {
-                Samples[i] = new SheetSequenceSample_t();
+                samples[i] = new SheetSequenceSample_t();
             }
             //group.frames = [];
             const fTotalSequenceTime = reader.getFloat32();
@@ -46512,7 +46663,10 @@ class Source1VtfLoader extends SourceBinaryLoader {
                 /*for (let i = 0; i < valuesCount; ++i) {
                     frame.values.push(reader.getFloat32());
                 }*/
-                const seq = Samples[frameIndex];
+                const seq = samples[frameIndex];
+                if (!seq) {
+                    continue;
+                }
                 for (let nImage = 0; nImage < nNumCoordsPerFrame; nImage++) {
                     const s = seq.m_TextureCoordData[nImage];
                     const s2 = frameSample.m_TextureCoordData[nImage];
@@ -46543,13 +46697,19 @@ class Source1VtfLoader extends SourceBinaryLoader {
                 //float flIdxA, flIdxB, flInterp;
                 const result = GetInterpolationData(InterpKnot, InterpValue, group.frameCount, SEQUENCE_SAMPLE_COUNT, nIdx, !group.clamp /*,
                                 &flIdxA, &flIdxB, &flInterp */);
-                const sA = Samples[result.pValueA];
-                const sB = Samples[result.pValueB];
+                const sA = samples[result.pValueA];
+                const sB = samples[result.pValueB];
                 const oseq = group.m_pSamples[nIdx];
+                if (!sA || !sB) {
+                    continue;
+                }
                 oseq.m_fBlendFactor = result.pInterpolationValue;
                 for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
                     const src0 = sA.m_TextureCoordData[nImage];
                     const src1 = sB.m_TextureCoordData[nImage];
+                    if (!src0 || !src1) {
+                        continue;
+                    }
                     const o = oseq.m_TextureCoordData[nImage];
                     o.m_fLeft_U0 = src0.m_fLeft_U0;
                     o.m_fTop_V0 = src0.m_fTop_V0;
@@ -46715,7 +46875,7 @@ function str2abABGR(reader, start, length) {
 }*/
 function str2abABGR(reader, start, length) {
     const arr = new Uint8Array(reader.buffer.slice(start, start + length));
-    for (let i = 0; i < length; i += 4) {
+    for (let i = 0, l = arr.length; i < l; i += 4) {
         let temp = arr[i];
         arr[i] = arr[i + 3];
         arr[i + 3] = temp;
@@ -46735,8 +46895,8 @@ class Source1TextureManagerClass {
     fallbackRepository = '';
     constructor() {
         Graphics.ready.then(() => {
-            this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255]));
-            this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255], undefined, undefined, true));
+            this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture(new Color$1(0.5, 0.75, 1)));
+            this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture(new Color$1(0.5, 0.75, 1), undefined, undefined, true));
             this.#defaultTexture.addUser(this);
             this.#defaultTextureCube.addUser(this);
         });
@@ -47158,7 +47318,7 @@ function initDefaultParameters(defaultParameters, parameters, variables) {
 let defaultTexture;
 function getDefaultTexture() {
     if (!defaultTexture) {
-        defaultTexture = TextureManager.createFlatTexture([255, 255, 255]);
+        defaultTexture = TextureManager.createFlatTexture(new Color$1(1, 1, 1));
         defaultTexture.addUser(Source1Material);
     }
     return defaultTexture;
@@ -58542,7 +58702,7 @@ class Emitter extends Operator {
 
 const DEFAULT_CONTROL_POINT_SCALE = vec3.fromValues(1, 1, 1);
 const SOURCE2_DEFAULT_RADIUS = 5; // TODO: check default value
-const vec$7 = vec3.create();
+const vec$8 = vec3.create();
 const DEFAULT_MAX_PARTICLES$1 = 1000;
 const DEFAULT_GROUP_ID = 0;
 class Source2ParticleSystem extends Entity {
@@ -58875,7 +59035,7 @@ class Source2ParticleSystem extends Entity {
     getControlPointPosition(cpId) {
         const cp = this.getControlPoint(cpId);
         if (cp) {
-            return cp.getWorldPosition(vec$7);
+            return cp.getWorldPosition(vec$8);
         }
         return vec3.create();
     }
@@ -59199,7 +59359,7 @@ class Source2TextureManagerClass {
     EXT_texture_compression_rgtc;
     constructor() {
         Graphics.ready.then(() => {
-            this.#defaultTexture = TextureManager.createCheckerTexture([127, 190, 255]);
+            this.#defaultTexture = TextureManager.createCheckerTexture(new Color$1(0.5, 0.75, 1));
             this.#defaultTexture.addUser(this);
             //this._missingTexture = TextureManager.createCheckerTexture();
             this.WEBGL_compressed_texture_s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');
@@ -61897,7 +62057,7 @@ class Source2Unlit extends Source2Material {
 }
 Source2MaterialLoader.registerMaterial('unlit.vfx', Source2Unlit);
 
-const vec$6 = vec3.create();
+const vec$7 = vec3.create();
 const DEFAULT_MIN_DISTANCE = 0;
 const DEFAULT_MAX_DISTANCE$1 = 1000;
 const DEFAULT_GLOBAL_CENTER = false;
@@ -61927,19 +62087,19 @@ class ConstrainDistance extends Operator {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         const v = vec3.clone(particle.position);
         if (cp) {
-            vec3.sub(v, v, cp.getWorldPosition(vec$6));
+            vec3.sub(v, v, cp.getWorldPosition(vec$7));
         }
         const distance = vec3.length(v);
         if (distance > 0) {
             vec3.scale(v, v, 1 / distance);
             if (distance < minDistance) {
                 vec3.scale(v, v, minDistance);
-                vec3.add(particle.position, cp.getWorldPosition(vec$6), v);
+                vec3.add(particle.position, cp.getWorldPosition(vec$7), v);
             }
             else {
                 if (distance > maxDistance) {
                     vec3.scale(v, v, maxDistance);
-                    vec3.add(particle.position, cp.getWorldPosition(vec$6), v);
+                    vec3.add(particle.position, cp.getWorldPosition(vec$7), v);
                 }
             }
         }
@@ -62179,7 +62339,7 @@ class NoiseEmitter extends Emitter {
 RegisterSource2ParticleOperator('C_OP_NoiseEmitter', NoiseEmitter);
 
 const vecCenter = vec3.create();
-const vec$5 = vec3.create();
+const vec$6 = vec3.create();
 const DEFAULT_APPLY_MIN_FORCE = false; // TODO: check default value
 class AttractToControlPoint extends Operator {
     #componentScale = vec3.fromValues(1, 1, 1);
@@ -62218,7 +62378,7 @@ class AttractToControlPoint extends Operator {
         if (!cp) {
             return;
         }
-        vec3.subtract(vecCenter, particle.position, cp.getWorldPosition(vec$5)); //TODO: add particle base cp
+        vec3.subtract(vecCenter, particle.position, cp.getWorldPosition(vec$6)); //TODO: add particle base cp
         let len = vec3.length(vecCenter);
         if (len === 0) {
             len = FLT_EPSILON;
@@ -62385,7 +62545,7 @@ class Source2ParticleTransformInput {
     }
 }
 
-const vec$4 = vec3.create();
+const vec$5 = vec3.create();
 const DEFAULT_FORCE_IN_MODEL = 0;
 const DEFAULT_SCALE_TO_VOLUME = false;
 const DEFAULT_HITBOX_VALUE_FROM_CONTROL_POINT_INDEX = -1;
@@ -62461,7 +62621,7 @@ class CreateOnModel extends Operator {
             }
             else {
                 if (controlPoint) {
-                    vec3.copy(particle.position, controlPoint.getWorldPosition(vec$4));
+                    vec3.copy(particle.position, controlPoint.getWorldPosition(vec$5));
                     vec3.copy(particle.prevPosition, particle.position);
                 }
             }
@@ -62596,7 +62756,7 @@ class Source2ParticlePathParams {
     }
 }
 
-const vec$3 = vec3.create();
+const vec$4 = vec3.create();
 const DEFAULT_LOOP$1 = true;
 const DEFAULT_CP_PAIR = false;
 const DEFAULT_SAVE_OFFSET$1 = false;
@@ -62636,7 +62796,7 @@ class CreateSequentialPath extends Operator {
         const startControlPoint = this.system.getControlPoint(startControlPointNumber);
         const endControlPoint = this.system.getControlPoint(endControlPointNumber);
         if (startControlPoint && endControlPoint) {
-            const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$3);
+            const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$4);
             vec3.scale(delta, delta, this.#t);
             vec3.add(particle.position, startControlPoint.currentWorldPosition, delta);
             vec3.copy(particle.prevPosition, particle.position);
@@ -62942,7 +63102,7 @@ class CreationNoise extends Operator {
             //fvNoise.DuplicateVector( Coord );
             //flNoise128 = NoiseSIMD( fvNoise , 0);
             //float flNoise = SubFloat( flNoise128, 0 );
-            let flNoise = NoiseSIMD(Coord, 0, 0);
+            let flNoise = NoiseSIMD(Coord[0], Coord[1], Coord[2]);
             //*( (int *) &flNoise)  &= nAbsVal;
             if (this.#absVal) {
                 flNoise = Math.abs(flNoise);
@@ -64481,7 +64641,7 @@ class DampenToCP extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_DampenToCP', DampenToCP);
 
-const vec$2 = vec3.create();
+const vec$3 = vec3.create();
 const DEFAULT_DISTANCE = 0; // TODO: check default value
 const DEFAULT_CULL_INSIDE = false; // TODO: check default value
 class DistanceCull extends Operator {
@@ -64509,7 +64669,7 @@ class DistanceCull extends Operator {
     doOperate(particle, elapsedTime, strength) {
         const cp = this.system.getControlPoint(this.controlPointNumber);
         if (cp) {
-            const origin = cp.getWorldPosition(vec$2);
+            const origin = cp.getWorldPosition(vec$3);
             vec3.add(origin, origin, this.#pointOffset);
             if (this.#cullInside) { //TODO: improve this
                 if (vec3.distance(particle.position, origin) < this.#distance) {
@@ -65135,7 +65295,7 @@ class LockToBone extends Operator {
 RegisterSource2ParticleOperator('C_OP_LockToBone', LockToBone);
 const error = once$1(() => console.error('TODO C_OP_LockToBone'));
 
-const vec$1 = vec3.create();
+const vec$2 = vec3.create();
 const DEFAULT_NUM_TO_ASSIGN = 100; // TODO: check default value
 const DEFAULT_LOOP = true; // TODO: check default value
 const DEFAULT_MAX_DISTANCE = 0; // TODO: check default value
@@ -65204,7 +65364,7 @@ class MaintainSequentialPath extends Operator {
         if (startControlPoint && endControlPoint) {
             const numToAssign = this.#numToAssign;
             let assignedSoFar = this.assignedSoFar;
-            const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$1);
+            const delta = startControlPoint.deltaPosFrom(endControlPoint, vec$2);
             for (const particle of particles) {
                 vec3.scale(t, delta, assignedSoFar * this.#step);
                 vec3.add(particle.position, startControlPoint.currentWorldPosition, t);
@@ -65423,7 +65583,7 @@ class Noise extends Operator {
     doOperate(particle, elapsedTime, strength) {
         // TODO: use other params #additive, noiseAnimationTimeScale
         vec3.scale(Coord$1, particle.position, this.#noiseScale);
-        const noise = NoiseSIMD(Coord$1, 0, 0) * this.#valueScale + this.#valueBase;
+        const noise = NoiseSIMD(Coord$1[0], Coord$1[1], Coord$1[2]) * this.#valueScale + this.#valueBase;
         particle.setField(this.#fieldOutput, noise);
         //TODO: use m_fl4NoiseScale m_bAdditive m_flNoiseAnimationTimeScale
     }
@@ -65876,7 +66036,7 @@ class PinParticleToCP extends Operator {
 }
 RegisterSource2ParticleOperator('C_OP_PinParticleToCP', PinParticleToCP);
 
-const vec = vec3.create();
+const vec$1 = vec3.create();
 const DEFAULT_PLANE_OFFSET = 0; // TODO: check default value
 const DEFAULT_LOCAL_SPACE = false;
 const DEFAULT_PLANE_CONTROL_POINT = 0; // TODO: check default value
@@ -65918,7 +66078,7 @@ class PlaneCull extends Operator {
         // TODO: use m_bLocalSpace
         const cp = this.system.getControlPoint(this.#planeControlPoint);
         if (cp) {
-            const origin = cp.getWorldPosition(vec);
+            const origin = cp.getWorldPosition(vec$1);
             vec3.sub(origin, origin, this.#planeDirectionOffset);
             vec3.sub(origin, particle.position, origin);
             if (vec3.dot(this.#planeDirection, origin) < 0) {
@@ -67211,7 +67371,7 @@ class SnapshotRigidSkinToBones extends Operator {
                 bone = skeleton.getBoneByName(particleHitbox);
                 if (bone) {
                     boneMat = bone ? bone.boneMat : IDENTITY_MAT4;
-                    vec3.transformMat4(particle.position, particleInitialPosition, boneMat);
+                    //vec3.transformMat4(particle.position, particleInitialPosition, boneMat);
                     mat3.normalFromMat4(nmat, boneMat);
                     vec3.transformMat3(particle.normal, particleInitialNormal, nmat);
                     vec3.copy(particle.prevPosition, particle.position);
