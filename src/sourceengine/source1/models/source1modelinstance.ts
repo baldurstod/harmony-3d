@@ -253,7 +253,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 	update(scene: Scene, camera: Camera, delta: number) {
 		if (this.#skeleton && this.isPlaying()) {
-			this._playSequences(delta * Source1ModelInstance.#animSpeed * this.animationSpeed);
+			this.#playSequences(delta * Source1ModelInstance.#animSpeed * this.animationSpeed);
 			this.#skeleton.setBonesMatrix();
 		}
 		for (const mesh of this.#meshes) {
@@ -263,7 +263,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	_playSequences(delta: number) {//TODO
+	#playSequences(delta: number) {//TODO
 		if (Source1ModelInstance.useNewAnimSystem || this.useNewAnimSystem) {
 			this.frame += delta;
 			this.#animate();
