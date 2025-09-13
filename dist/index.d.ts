@@ -935,7 +935,7 @@ export declare enum CDmxAttributeType {
     VMatrixArray = 28
 }
 
-export declare type CDmxAttributeValue = null | undefined | boolean | number | CDmxElement | Color | vec2 | vec3 | vec4 | string;
+export declare type CDmxAttributeValue = null | undefined | boolean | number | CDmxElement | ParticleColor | vec2 | vec3 | vec4 | string;
 
 export declare class CDmxElement {
     type: string;
@@ -1208,29 +1208,7 @@ declare class Channel {
                  applyConstraint(particle: Source1Particle): void;
              }
 
-             declare class Color {
-                 r: number;
-                 g: number;
-                 b: number;
-                 a: number;
-                 constructor(r?: number, g?: number, b?: number, a?: number);
-                 randomize(color1: Color, color2: Color): void;
-                 setColor(color: Color): this;
-                 setColorAlpha(color: Color): this;
-                 fromVec3(v: vec3): this;
-                 fromVec4(v: vec4): this;
-                 getRed(): number;
-                 getGreen(): number;
-                 getBlue(): number;
-                 getAlpha(): number;
-                 setRed(r: number): void;
-                 setGreen(g: number): void;
-                 setBlue(b: number): void;
-                 toString(): string;
-                 setWhite(): void;
-             }
-
-             declare class Color_2 {
+             export declare class Color {
                  r: number;
                  g: number;
                  b: number;
@@ -2372,9 +2350,9 @@ declare class Channel {
                           files?: FileSelectorFile[];
                       }
 
-                      export declare function fillCheckerTexture(texture: Texture, color: Color_2, width: number | undefined, height: number | undefined, needCubeMap: boolean): Texture;
+                      export declare function fillCheckerTexture(texture: Texture, color: Color, width: number | undefined, height: number | undefined, needCubeMap: boolean): Texture;
 
-                      export declare function fillFlatTexture(texture: Texture, color: Color_2, needCubeMap: boolean): Texture;
+                      export declare function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boolean): Texture;
 
                       export declare function fillNoiseTexture(texture: Texture, width?: number, height?: number, needCubeMap?: boolean): Texture;
 
@@ -5570,6 +5548,28 @@ declare class Channel {
                           newParent: Entity | null;
                       }
 
+                      declare class ParticleColor {
+                          r: number;
+                          g: number;
+                          b: number;
+                          a: number;
+                          constructor(r?: number, g?: number, b?: number, a?: number);
+                          randomize(color1: ParticleColor, color2: ParticleColor): void;
+                          setColor(color: ParticleColor): this;
+                          setColorAlpha(color: ParticleColor): this;
+                          fromVec3(v: vec3): this;
+                          fromVec4(v: vec4): this;
+                          getRed(): number;
+                          getGreen(): number;
+                          getBlue(): number;
+                          getAlpha(): number;
+                          setRed(r: number): void;
+                          setGreen(g: number): void;
+                          setBlue(b: number): void;
+                          toString(): string;
+                          setWhite(): void;
+                      }
+
                       export declare function ParticleRandomFloat(id: number, offset: number): number;
 
                       export declare function ParticleRandomVec3(vec: vec3, id: number, offset1: number, offset2: number, offset3: number): vec3;
@@ -7695,8 +7695,8 @@ declare class Channel {
                           readonly cpOrientation: quat;
                           readonly cpOrientationInvert: quat;
                           velocity: vec3;
-                          color: Color;
-                          initialColor: Color;
+                          color: ParticleColor;
+                          initialColor: ParticleColor;
                           uMin: number;
                           uMax: number;
                           vMin: number;
@@ -7759,7 +7759,7 @@ declare class Channel {
                           /**
                            * TODO
                            */
-                          setInitialColor(color: Color): void;
+                          setInitialColor(color: ParticleColor): void;
                           /**
                            * Set particle initial rotation roll.
                            * @param {Number} roll Initial rotation roll.
@@ -10392,8 +10392,8 @@ declare class Channel {
                           static setTexture(path: string, texture: Texture): void;
                           static createTexture(textureParams?: TextureParams): Texture;
                           static deleteTexture(texture: Texture): void;
-                          static createFlatTexture(color?: Color_2, needCubeMap?: boolean): Texture;
-                          static createCheckerTexture(color?: Color_2, width?: number, height?: number, needCubeMap?: boolean): Texture;
+                          static createFlatTexture(color?: Color, needCubeMap?: boolean): Texture;
+                          static createCheckerTexture(color?: Color, width?: number, height?: number, needCubeMap?: boolean): Texture;
                           static createNoiseTexture(width: number, height: number, needCubeMap?: boolean): Texture;
                           static createTextureFromImage(image: HTMLImageElement, textureParams?: TextureParams): Texture;
                           static fillTextureWithImage(texture: Texture, image: HTMLImageElement): void;

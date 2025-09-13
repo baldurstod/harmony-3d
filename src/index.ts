@@ -4,6 +4,7 @@ export * from './backgrounds/export';
 export * from './cameras/export';
 export * from './composer/export';
 export * from './controls/export';
+export * from './core/export';
 export * from './entities/export';
 export * from './enums/export';
 export * from './exporters/export';
