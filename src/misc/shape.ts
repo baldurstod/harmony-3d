@@ -60,7 +60,7 @@ export class Shape extends Path {
 		}
 			*/
 	/*
-		fromJSON(json) {
+		fromJSON(json: JSONObject) {
 
 			super.fromJSON(json);
 

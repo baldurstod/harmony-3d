@@ -1,9 +1,10 @@
 import { vec3 } from 'gl-matrix';
 
+import { registerEntity } from '../entities/entities';
 import { Entity, EntityParameters } from '../entities/entity';
+import { JSONObject } from '../types';
 import { stringToVec3 } from '../utils/utils';
 import { LightShadow } from './lightshadow';
-import { registerEntity } from '../entities/entities';
 
 const DEFAULT_LIGHT_COLOR = vec3.fromValues(1, 1, 1);
 let defaultTextureSize = 1024;
@@ -15,10 +16,10 @@ export type LightParameters = EntityParameters & {
 
 export class Light extends Entity {
 	#intensity: number;
-	#color: vec3;
-	#range;
-	shadow: LightShadow;
-	#shadowTextureSize: number;
+	#color: vec3;// TODO: use Color instead
+	#range: number = 1000;
+	shadow?: LightShadow;
+	#shadowTextureSize: number = defaultTextureSize;
 	isLight = true;
 
 	constructor(parameters: LightParameters = {}) {
@@ -27,7 +28,6 @@ export class Light extends Entity {
 		this.#intensity = parameters.intensity ?? 1.0;
 		this.castShadow = false;
 		this.isRenderable = true;
-		this.shadowTextureSize = defaultTextureSize;
 	}
 
 	set color(color) {
@@ -74,7 +74,7 @@ export class Light extends Entity {
 			color: { i18n: '#color', f: () => { const color = prompt('Color', this.color.join(' ')); if (color !== null) { this.color = stringToVec3(color); } } },
 			intensity: { i18n: '#intensity', f: () => { const intensity = prompt('Intensity', String(this.intensity)); if (intensity !== null) { this.intensity = Number(intensity); } } },
 		}, this.shadow ? {
-			texture_size: { i18n: '#texture_size', f: () => { const textureSize = prompt('Texture size', String(this.shadow.textureSize[0])); if (textureSize !== null) { this.shadowTextureSize = Number.parseFloat(textureSize); } } }
+			texture_size: { i18n: '#texture_size', f: () => { const textureSize = prompt('Texture size', String(this.shadow?.textureSize[0] ?? defaultTextureSize)); if (textureSize !== null) { this.shadowTextureSize = Number.parseFloat(textureSize); } } }
 		} : null);
 	}
 
@@ -86,18 +86,18 @@ export class Light extends Entity {
 		return json;
 	}
 
-	static async constructFromJSON(json) {
+	static async constructFromJSON(json: JSONObject) {
 		return new Light(json);
 	}
 
-	fromJSON(json) {
+	fromJSON(json: JSONObject) {
 		super.fromJSON(json);
-		this.color = json.color ?? DEFAULT_LIGHT_COLOR;
-		this.intensity = json.intensity ?? 1;
-		this.shadowTextureSize = json.shadowtexturesize ?? defaultTextureSize;
+		this.color = json.color as vec3 ?? DEFAULT_LIGHT_COLOR;
+		this.intensity = json.intensity as number ?? 1;
+		this.shadowTextureSize = json.shadowtexturesize as number ?? defaultTextureSize;
 	}
 
-	static set defaultTextureSize(textureSize) {
+	static set defaultTextureSize(textureSize: number) {
 		defaultTextureSize = textureSize;
 	}
 

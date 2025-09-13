@@ -19,9 +19,9 @@ export class BoundingBox {
 		vec3.set(tempMax, -Infinity, -Infinity, -Infinity);
 
 		for (let i = 0; i < pointArray.length; i += 3) {
-			tempVec3[0] = pointArray[i + 0];
-			tempVec3[1] = pointArray[i + 1];
-			tempVec3[2] = pointArray[i + 2];
+			tempVec3[0] = pointArray[i + 0]!;
+			tempVec3[1] = pointArray[i + 1]!;
+			tempVec3[2] = pointArray[i + 2]!;
 			vec3.min(tempMin, tempMin, tempVec3);
 			vec3.max(tempMax, tempMax, tempVec3);
 		}

@@ -1,6 +1,7 @@
 import { Map2 } from 'harmony-utils';
 import { TESTING } from '../../../buildoptions';
 import { TEXTURE_CLEANUP_DELAY } from '../../../constants';
+import { Color } from '../../../core/color';
 import { Graphics } from '../../../graphics/graphics';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Texture } from '../../../textures/texture';
@@ -18,8 +19,8 @@ class Source1TextureManagerClass {
 
 	constructor() {
 		Graphics.ready.then(() => {
-			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255]));
-			this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture([127, 190, 255], undefined, undefined, true));
+			this.#defaultTexture.addFrame(0, TextureManager.createCheckerTexture(new Color(0.5, 0.75, 1)));
+			this.#defaultTextureCube.addFrame(0, TextureManager.createCheckerTexture(new Color(0.5, 0.75, 1), undefined, undefined, true));
 			this.#defaultTexture.addUser(this);
 			this.#defaultTextureCube.addUser(this);
 		});

@@ -5,7 +5,8 @@ import { Material } from './material';
 let id = 0;
 
 export class ShaderMaterial extends Material {
-	#shaderSource: string;
+	#shaderSource: string = '';
+
 	constructor(params: any = {}) {
 		super(params);
 
@@ -37,7 +38,7 @@ export class ShaderMaterial extends Material {
 		return this.#shaderSource;
 	}
 
-	set shaderSource(shaderSource) {
+	set shaderSource(shaderSource: string) {
 		this.#shaderSource = shaderSource;
 	}
 }

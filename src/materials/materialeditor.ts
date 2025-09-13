@@ -36,16 +36,16 @@ export function getMaterialEditor() {
 	return materialEditor;
 }
 
-export class MaterialEditor {
+export class MaterialEditor {//TODO: turn into static class
 	static #instance: MaterialEditor;
-	#shadowRoot: ShadowRoot;
-	#htmlHeader: HTMLElement;
-	#htmlShader: HTMLElement;
-	#htmlBlending: HTMLElement;
-	#htmlHasBlending: HTMLInputElement;
+	#shadowRoot!: ShadowRoot;
+	#htmlHeader!: HTMLElement;
+	#htmlShader!: HTMLElement;
+	#htmlBlending!: HTMLElement;
+	#htmlHasBlending!: HTMLInputElement;
 	#htmlBlendFactors = new Array<HTMLElement>(4);
 	#htmlBlendSelects = new Array<HTMLSelectElement>(6);
-	#htmlParams: HTMLElement;
+	#htmlParams!: HTMLElement;
 	#material?: Material;
 
 	constructor() {
@@ -158,11 +158,11 @@ export class MaterialEditor {
 
 		this.#htmlShader.append(addHtmlParameter('shader', material.getShaderSource()));
 
-		this.#htmlBlendSelects[0].value = BlendingFactor[this.#material.srcRGB];
-		this.#htmlBlendSelects[1].value = BlendingFactor[this.#material.srcAlpha];
-		this.#htmlBlendSelects[2].value = BlendingFactor[this.#material.dstRGB];
-		this.#htmlBlendSelects[3].value = BlendingFactor[this.#material.dstAlpha];
-		this.#htmlHasBlending.checked = this.#material.blend;
+		this.#htmlBlendSelects[0]!.value = BlendingFactor[material.srcRGB];
+		this.#htmlBlendSelects[1]!.value = BlendingFactor[material.srcAlpha];
+		this.#htmlBlendSelects[2]!.value = BlendingFactor[material.dstRGB];
+		this.#htmlBlendSelects[3]!.value = BlendingFactor[material.dstAlpha];
+		this.#htmlHasBlending.checked = material.blend;
 
 
 		if (material.blend) {
@@ -195,9 +195,9 @@ export class MaterialEditor {
 		}
 		let value: GLenum;
 		if (i < 4) {
-			value = BlendingFactor[blending];
+			value = BlendingFactor[blending as keyof typeof BlendingFactor]!;
 		} else {
-			value = BlendingEquation[blending];
+			value = BlendingEquation[blending as keyof typeof BlendingEquation]!;
 		}
 		switch (i) {
 			case 0:// src color

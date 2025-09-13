@@ -1,18 +1,18 @@
 import { Map2 } from 'harmony-utils';
 import { DEBUG, ENABLE_S3TC, TESTING } from '../../../buildoptions';
 import { TEXTURE_CLEANUP_DELAY } from '../../../constants';
+import { Color } from '../../../core/color';
 import { Graphics } from '../../../graphics/graphics';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Detex } from '../../../textures/detex';
+import { formatCompression, ImageFormat, TextureCompressionMethod } from '../../../textures/enums';
 import { Texture } from '../../../textures/texture';
-import { TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGBA } from '../../../textures/textureconstants';
 import { TextureManager } from '../../../textures/texturemanager';
 import { GL_LINEAR, GL_R8, GL_RED, GL_RGBA, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
-import { Source2FileBlock, Source2TextureBlock, Source2VtexBlock } from '../loaders/source2fileblock';
+import { Source2TextureBlock, Source2VtexBlock } from '../loaders/source2fileblock';
 import { Source2TextureLoader } from '../loaders/source2textureloader';
 import { Source2SpriteSheet } from './source2spritesheet';
 import { Source2Texture } from './source2texture';
-import { formatCompression, ImageFormat, TextureCompressionMethod } from '../../../textures/enums';
 
 class Source2TextureManagerClass {//TODO: keep event target ?
 	#vtexList = new Map2<string, string, Source2Texture>();
@@ -25,7 +25,7 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 
 	constructor() {
 		Graphics.ready.then(() => {
-			this.#defaultTexture = TextureManager.createCheckerTexture([127, 190, 255]);
+			this.#defaultTexture = TextureManager.createCheckerTexture(new Color(0.5, 0.75, 1));
 			this.#defaultTexture.addUser(this);
 			//this._missingTexture = TextureManager.createCheckerTexture();
 			this.WEBGL_compressed_texture_s3tc = Graphics.getExtension('WEBGL_compressed_texture_s3tc');

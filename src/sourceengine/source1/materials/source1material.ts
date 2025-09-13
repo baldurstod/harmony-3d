@@ -15,6 +15,7 @@ import { Source1TextureManager } from '../textures/source1texturemanager';
 import { Proxy } from './proxies/proxy';
 import { ProxyManager } from './proxies/proxymanager';
 import { MatrixBuildScale, MatrixBuildTranslation } from './proxies/texturetransform';
+import { Color } from '../../../core/color';
 
 const IDENTITY_MAT4 = mat4.create();
 
@@ -116,7 +117,7 @@ function initDefaultParameters(defaultParameters: VmtParameters, parameters: Vmt
 let defaultTexture: Texture;
 function getDefaultTexture(): Texture {
 	if (!defaultTexture) {
-		defaultTexture = TextureManager.createFlatTexture([255, 255, 255]);
+		defaultTexture = TextureManager.createFlatTexture(new Color(1, 1, 1));
 		defaultTexture.addUser(Source1Material);
 	}
 	return defaultTexture;

@@ -21,13 +21,13 @@ export class TextureManager {
 		deleteTexture(texture.texture);
 	}
 
-	static createFlatTexture(color: Color, needCubeMap = false) {
+	static createFlatTexture(color: Color = new Color(1, 0, 1), needCubeMap = false) {
 		const texture = this.createTexture();
 		fillFlatTexture(texture, color, needCubeMap);
 		return texture;
 	}
 
-	static createCheckerTexture(color: Color, width = 64, height = 64, needCubeMap = false) {
+	static createCheckerTexture(color: Color = new Color(1, 0, 1), width = 64, height = 64, needCubeMap = false) {
 		const texture = this.createTexture();
 		fillCheckerTexture(texture, color, width, height, needCubeMap);
 		return texture;

@@ -34,12 +34,17 @@ export function fillFlatTexture(texture: Texture, color: Color, needCubeMap: boo
 	if (texture) {
 		const byteArray = new Uint8Array(width * height * 3);
 		let pixelIndex = 0;
+
+		const r = color.r * 255;
+		const g = color.g * 255;
+		const b = color.b * 255;
+
 		for (let i = 0; i < width; i++) {
 			for (let j = 0; j < height; j++) {
 				//if ((i + j) % 2 == 0) {
-				byteArray[pixelIndex] = color.r;
-				byteArray[pixelIndex + 1] = color.g;
-				byteArray[pixelIndex + 2] = color.b;
+				byteArray[pixelIndex] = r;
+				byteArray[pixelIndex + 1] = g;
+				byteArray[pixelIndex + 2] = b;
 				//}
 				pixelIndex += 3;
 			}
@@ -72,12 +77,17 @@ export function fillCheckerTexture(texture: Texture, color: Color, width = 64, h
 	if (texture) {
 		const byteArray = new Uint8Array(width * height * 3);
 		let pixelIndex = 0;
+
+		const r = color.r * 255;
+		const g = color.g * 255;
+		const b = color.b * 255;
+
 		for (let i = 0; i < width; i++) {
 			for (let j = 0; j < height; j++) {
 				if ((i + j) % 2 == 0) {
-					byteArray[pixelIndex] = color.r;
-					byteArray[pixelIndex + 1] = color.g;
-					byteArray[pixelIndex + 2] = color.b;
+					byteArray[pixelIndex] = r;
+					byteArray[pixelIndex + 1] = g;
+					byteArray[pixelIndex + 2] = b;
 				}
 				pixelIndex += 3;
 			}

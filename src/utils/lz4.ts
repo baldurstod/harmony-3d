@@ -55,7 +55,7 @@ export function decodeLz4(reader: BinaryReader, decompressBlobArray: Uint8Array,
 			} while (a == 0xFF)
 		}
 		for (let k = 0; k < decodeLen + 4; k++) {
-			decompressBlobArray[outputIndex] = decompressBlobArray[outputIndex - decodeOffset];
+			decompressBlobArray[outputIndex] = decompressBlobArray[outputIndex - decodeOffset]!;
 			++decodedeBytes;
 			if (decodedeBytes >= uncompressedSize) {
 				break decodeLoop;

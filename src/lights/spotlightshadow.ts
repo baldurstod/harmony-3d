@@ -12,15 +12,15 @@ export class SpotLightShadow extends LightShadow {
 		this.range = this.light.range;
 	}
 
-	set angle(angle) {
+	set angle(angle: number) {
 		this.camera.verticalFov = RAD_TO_DEG * 2.0 * angle;
 	}
 
-	set range(range) {
-		this.camera.farPlane = range || 1000.0;
+	set range(range: number) {
+		this.camera.farPlane = range;
 	}
 
-	set aspect(aspect) {
+	set aspect(aspect: number) {
 		this.camera.aspectRatio = aspect;
 	}
 }

@@ -124,8 +124,8 @@ export class Renderer {
 				program.setUniformValue('uPbrLights[' + pointLightId + '].position', lightPositionWorldSpace);
 				program.setUniformValue('uPbrLights[' + pointLightId + '].radiance', vec3.scale(colorIntensity, pointLight.color, pointLight.intensity));
 
-				if (pointLight.castShadow) {
-					shadow = pointLight.shadow;
+				shadow = pointLight.shadow;
+				if (shadow && pointLight.castShadow) {
 					pointShadowMap.push(shadow.renderTarget.getTexture());
 					pointShadowMatrix.push(shadow.shadowMatrix);
 					program.setUniformValue('uPointLightShadows[' + pointLightId + '].mapSize', shadow.textureSize);
@@ -165,8 +165,8 @@ export class Renderer {
 				lightDirection[2] = m[2] * x + m[6] * y + m[10] * z;
 				program.setUniformValue('uSpotLights[' + spotLightId + '].direction', lightDirection);
 
-				if (spotLight.castShadow) {
-					shadow = spotLight.shadow;
+				shadow = spotLight.shadow;
+				if (shadow && spotLight.castShadow) {
 					spotShadowMap.push(shadow.renderTarget.getTexture());
 					spotShadowMatrix.push(shadow.shadowMatrix);
 					program.setUniformValue('uSpotLightShadows[' + spotLightId + '].mapSize', shadow.textureSize);

@@ -1,6 +1,7 @@
+import { registerEntity } from '../entities/entities';
+import { JSONObject } from '../types';
 import { Light, LightParameters } from './light';
 import { PointLightShadow } from './pointlightshadow';
-import { registerEntity } from '../entities/entities';
 
 export type PointLightParameters = LightParameters & {
 	range?: number,
@@ -34,18 +35,18 @@ export class PointLight extends Light {
 		return json;
 	}
 
-	static async constructFromJSON(json) {
+	static async constructFromJSON(json: JSONObject) {
 		return new PointLight(json);
 	}
 
-	fromJSON(json) {
+	fromJSON(json: JSONObject) {
 		super.fromJSON(json);
-		this.range = json.range ?? this.range;
+		this.range = json.range as number ?? this.range;
 	}
 
 	buildContextMenu() {
 		return Object.assign(super.buildContextMenu(), {
-			range: { i18n: '#range', f: () => { const range = prompt('Range', this.range); if (range !== null) { this.range = range; } } },
+			range: { i18n: '#range', f: () => { const range = prompt('Range', String(this.range)); if (range !== null) { this.range = Number(range); } } },
 		});
 	}
 
