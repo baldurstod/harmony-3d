@@ -222,21 +222,21 @@ async function createFBXMesh(fbxScene: FBXScene, mesh: Mesh, context: FbxContext
 		const vIndex = index * 3;
 		const uvIndex = index * 2;
 		if (meshDatas.v) {
-			remappedVertices.push(meshDatas.v[vIndex], meshDatas.v[vIndex + 1], meshDatas.v[vIndex + 2]);
+			remappedVertices.push(meshDatas.v[vIndex]!, meshDatas.v[vIndex + 1]!, meshDatas.v[vIndex + 2]!);
 		}
 		if (meshDatas.vn) {
-			remappedNormals.push(meshDatas.vn[vIndex], meshDatas.vn[vIndex + 1], meshDatas.vn[vIndex + 2]);
+			remappedNormals.push(meshDatas.vn[vIndex]!, meshDatas.vn[vIndex + 1]!, meshDatas.vn[vIndex + 2]!);
 		}
 		if (meshDatas.vt) {
-			remappedUV.push(meshDatas.vt[uvIndex], meshDatas.vt[uvIndex + 1]);
+			remappedUV.push(meshDatas.vt[uvIndex]!, meshDatas.vt[uvIndex + 1]!);
 		}
 
 		if (EXPORT_SKELETON) {
 			const boneIndex = index * bonesPerVertex;
 			if (meshDatas.bi) {
 				for (let j = 0; j < bonesPerVertex; ++j) {
-					remappedBoneIndices.push(meshDatas.bi[boneIndex + j]);
-					remappedBoneWeight.push(meshDatas.bw[boneIndex + j]);
+					remappedBoneIndices.push(meshDatas.bi[boneIndex + j]!);
+					remappedBoneWeight.push(meshDatas.bw[boneIndex + j]!);
 				}
 			}
 		}
@@ -245,9 +245,9 @@ async function createFBXMesh(fbxScene: FBXScene, mesh: Mesh, context: FbxContext
 	}
 
 	for (let i = 0, j = 0, l = vertexIndices.length; i < l; i += 3, j += 2) {
-		vertexIndex1 = remapIndex(vertexIndices[i]) ?? 0;
-		vertexIndex2 = remapIndex(vertexIndices[i + 1]) ?? 0;
-		vertexIndex3 = remapIndex(vertexIndices[i + 2]) ?? 0;
+		vertexIndex1 = remapIndex(vertexIndices[i]!) ?? 0;
+		vertexIndex2 = remapIndex(vertexIndices[i + 1]!) ?? 0;
+		vertexIndex3 = remapIndex(vertexIndices[i + 2]!) ?? 0;
 		polygons.push(vertexIndex1, vertexIndex2, ~vertexIndex3);
 		uvIndex.push(vertexIndex1, vertexIndex2, vertexIndex3);
 		edges.push(vertexIndex1, vertexIndex2, vertexIndex3);
@@ -257,8 +257,8 @@ async function createFBXMesh(fbxScene: FBXScene, mesh: Mesh, context: FbxContext
 		for (let vertexIndex = 0, l = remappedBoneIndices.length / bonesPerVertex; vertexIndex < l; ++vertexIndex) {
 			for (let j = 0; j < bonesPerVertex; ++j) {
 				const k = vertexIndex * bonesPerVertex + j;
-				const boneIndex = remappedBoneIndices[k];
-				const boneWeight = remappedBoneWeight[k];
+				const boneIndex = remappedBoneIndices[k]!;
+				const boneWeight = remappedBoneWeight[k]!;
 				if (boneWeight != 0) {
 					if (!boneIndexes.has(boneIndex)) {
 						boneIndexes.set(boneIndex, []);
@@ -402,7 +402,7 @@ function exportBone(fbxScene: FBXScene, bone: Bone, context: FbxContext, exporte
 		const boneWeights = boneDatas.bw.get(bone.boneId);
 		if (boneIndices && boneWeights) {
 			for (let i = 0; i < boneIndices.length; ++i) {
-				fbxCluster.addVertexIndex(boneIndices[i], boneWeights[i]);
+				fbxCluster.addVertexIndex(boneIndices[i]!, boneWeights[i]!);
 			}
 		}
 

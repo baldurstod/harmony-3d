@@ -112,7 +112,7 @@ export class Graphics {
 	static #lastTick = performance.now();
 	static currentTick = 0;
 	static #renderBuffers = new Set<WebGLRenderbuffer>();
-	static #renderTargetStack: RenderTarget[] = [];
+	static #renderTargetStack: (RenderTarget | null)[] = [];
 	static #readyPromiseResolve: (value: boolean) => void;
 	static #readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
 	static #canvas?: HTMLCanvasElement;
@@ -782,7 +782,7 @@ export class Graphics {
 	}
 	*/
 
-	static pushRenderTarget(renderTarget: RenderTarget) {
+	static pushRenderTarget(renderTarget: RenderTarget | null) {
 		this.#renderTargetStack.push(renderTarget);
 		this.#setRenderTarget(renderTarget);
 	}
@@ -794,8 +794,8 @@ export class Graphics {
 		return renderTarget ?? null;
 	}
 
-	static #setRenderTarget(renderTarget?: RenderTarget) {
-		if (renderTarget == undefined) {
+	static #setRenderTarget(renderTarget: RenderTarget | null | undefined) {
+		if (!renderTarget) {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.cleanupGLError();
 			}
