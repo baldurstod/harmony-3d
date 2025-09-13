@@ -43,12 +43,12 @@ export class Source1VvdLoader extends SourceBinaryLoader {
 	}
 
 	#parseVertices(reader: BinaryReader, vvd: SourceVvd): void {
-		if (vvd.numLODVertexes) {
+		if (vvd.numLODVertexes.length) {
 			if (vvd.numLODVertexes[0] === 0) {//TODO ????
 				return;
 			}
 
-			for (let i = 0; i < vvd.numLODVertexes[0]; ++i) {
+			for (let i = 0; i < vvd.numLODVertexes[0]!; ++i) {
 				// seek the start of body part
 				reader.seek(vvd.vertexDataStart + i * VERTEX_SIZE);
 				const vertex = this.#parseVertex(reader, vvd);

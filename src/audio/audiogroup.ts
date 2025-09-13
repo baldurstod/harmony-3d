@@ -19,18 +19,19 @@ export class AudioGroup {
 		return this.#muted;
 	}
 
-	getGroup(groupPath: string[]): AudioGroup {
+	getGroup(groupPath: string[]): AudioGroup | null {
 		if (groupPath[0] == this.name) {
 			if (groupPath.length == 1) {
 				return this;
 			}
 
-			let group = this.groups.get(groupPath[1]);
+			let group = this.groups.get(groupPath[1]!);
 			if (!group) {
-				group = this.createSubGroup(groupPath[1]);
+				group = this.createSubGroup(groupPath[1]!);
 			}
 			return group.getGroup(groupPath.slice(1));
 		}
+		return null;
 	}
 
 	createSubGroup(name: string): AudioGroup {

@@ -10,11 +10,11 @@ export class Composer {
 	#width = 0;
 	#height = 0;
 	enabled = true;
-	passes: Pass[] = [];
-	renderTarget1: RenderTarget;
-	renderTarget2: RenderTarget;
-	readBuffer: RenderTarget;
-	writeBuffer: RenderTarget;
+	#passes: Pass[] = [];
+	#renderTarget1!: RenderTarget;
+	#renderTarget2!: RenderTarget;
+	#readBuffer!: RenderTarget;
+	#writeBuffer!: RenderTarget;
 
 	constructor(renderTarget?: RenderTarget) {
 		if (!renderTarget) {
@@ -32,28 +32,26 @@ export class Composer {
 		this.setSize(tempVec2[0], tempVec2[1]);
 
 		let lastPass = -1;
-		for (let i = this.passes.length - 1; i > 0; --i) {
-			if (this.passes[i].enabled) {
+		for (let i = this.#passes.length - 1; i > 0; --i) {
+			if (this.#passes[i]!.enabled) {
 				lastPass = i;
 				break;
 			}
 		}
 
-
-
-		for (let i = 0, l = this.passes.length; i < l; ++i) {
-			pass = this.passes[i];
+		for (let i = 0, l = this.#passes.length; i < l; ++i) {
+			pass = this.#passes[i]!;
 			if (!pass.enabled) {
 				continue;
 			}
 
 			if (pass.swapBuffers) {
-				swapBuffer = this.readBuffer;
-				this.readBuffer = this.writeBuffer;
-				this.writeBuffer = swapBuffer;
+				swapBuffer = this.#readBuffer;
+				this.#readBuffer = this.#writeBuffer;
+				this.#writeBuffer = swapBuffer;
 			}
 
-			pass.render(Graphics, this.readBuffer, this.writeBuffer, i == lastPass, delta, context);
+			pass.render(Graphics, this.#readBuffer, this.#writeBuffer, i == lastPass, delta, context);
 
 		}
 	}
@@ -64,29 +62,29 @@ export class Composer {
 		Graphics._savePicture(filename);
 	}
 
-	addPass(pass) {
-		this.passes.push(pass);
+	addPass(pass: Pass) {
+		this.#passes.push(pass);
 		Graphics.getSize(tempVec2);
 		pass.setSize(tempVec2[0], tempVec2[1]);
 	}
 
-	#setRenderTarget(renderTarget) {
-		this.renderTarget1 = renderTarget;
-		this.renderTarget2 = renderTarget.clone();
+	#setRenderTarget(renderTarget: RenderTarget) {
+		this.#renderTarget1 = renderTarget;
+		this.#renderTarget2 = renderTarget.clone();
 
-		this.writeBuffer = this.renderTarget1;
-		this.readBuffer = this.renderTarget2;
+		this.#writeBuffer = this.#renderTarget1;
+		this.#readBuffer = this.#renderTarget2;
 	}
 
-	setSize(width, height) {
+	setSize(width: number, height: number) {
 		if (this.#width != width || this.#height != height) {
 			this.#width = width;
 			this.#height = height;
-			this.renderTarget1.resize(width, height);
-			this.renderTarget2.resize(width, height);
+			this.#renderTarget1.resize(width, height);
+			this.#renderTarget2.resize(width, height);
 
-			for (let i = 0, l = this.passes.length; i < l; ++i) {
-				this.passes[i].setSize(width, height);
+			for (let i = 0, l = this.#passes.length; i < l; ++i) {
+				this.#passes[i]!.setSize(width, height);
 			}
 		}
 	}

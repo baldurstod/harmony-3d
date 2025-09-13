@@ -155,8 +155,9 @@ export class FileSelector extends HTMLElement {
 		this.#content.replaceChildren();
 		this.#htmlTiles = [];
 		this.#htmlDirectories = [];
-		if (this.#tileView) {
-			if (this.#fileList) {
+
+		if (this.#fileList?.files) {
+			if (this.#tileView) {
 				for (const rootFile of this.#fileList.files) {
 					const fileList = this.#getFileList(rootFile);
 					for (const file of fileList) {
@@ -167,9 +168,7 @@ export class FileSelector extends HTMLElement {
 						tile.visible = this.#matchFilter(file);
 					}
 				}
-			}
-		} else {
-			if (this.#fileList) {
+			} else {
 				const expandDirectory = this.#fileList.files.length == 1;
 				for (const rootFile of this.#fileList.files) {
 					this.#getFileList(rootFile);//Just add path
@@ -181,8 +180,10 @@ export class FileSelector extends HTMLElement {
 						root.expand();
 					}
 				}
+
 			}
 		}
+
 		this.#sortItems();
 		this.#initialized = true;
 	}

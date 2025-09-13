@@ -28,12 +28,17 @@ export function GetInterpolationData(pKnotPositions: Float32Array, pKnotValues: 
 	nNumValuesinList: number,
 	nInterpolationRange: number,
 	flPositionToInterpolateAt: number,
-	bWrap: boolean) {
+	bWrap: boolean): { pValueA: number, pValueB: number, pInterpolationValue: number } {
+
+	if (nNumValuesinList > SEQUENCE_SAMPLE_COUNT) {
+		return { pValueA: 0, pValueB: 0, pInterpolationValue: 0 };
+	}
+
 	// first, find the bracketting knots by looking for the first knot >= our index
 	const result = Object.create(null);
 	let idx;
 	for (idx = 0; idx < nNumValuesinList; idx++) {
-		if (pKnotPositions[idx] >= flPositionToInterpolateAt) {
+		if (pKnotPositions[idx]! >= flPositionToInterpolateAt) {
 			break;
 		}
 	}
@@ -44,9 +49,9 @@ export function GetInterpolationData(pKnotPositions: Float32Array, pKnotValues: 
 			nKnot1 = Math.max(nNumValuesinList - 1, 0);
 			nKnot2 = 0;
 			flSizeOfGap =
-				(pKnotPositions[nKnot2] + (nInterpolationRange - pKnotPositions[nKnot1]));
+				(pKnotPositions[nKnot2]! + (nInterpolationRange - pKnotPositions[nKnot1]!));
 			flOffsetFromStartOfGap =
-				flPositionToInterpolateAt + (nInterpolationRange - pKnotPositions[nKnot1]);
+				flPositionToInterpolateAt + (nInterpolationRange - pKnotPositions[nKnot1]!);
 		} else {
 			result.pValueA = result.pValueB = pKnotValues[0];
 			result.pInterpolationValue = 1.0;
@@ -56,9 +61,9 @@ export function GetInterpolationData(pKnotPositions: Float32Array, pKnotValues: 
 		if (bWrap) {
 			nKnot1 = nNumValuesinList - 1;
 			nKnot2 = 0;
-			flSizeOfGap = (pKnotPositions[nKnot2] +
-				(nInterpolationRange - pKnotPositions[nKnot1]));
-			flOffsetFromStartOfGap = flPositionToInterpolateAt - pKnotPositions[nKnot1];
+			flSizeOfGap = (pKnotPositions[nKnot2]! +
+				(nInterpolationRange - pKnotPositions[nKnot1]!));
+			flOffsetFromStartOfGap = flPositionToInterpolateAt - pKnotPositions[nKnot1]!;
 		} else {
 			result.pValueA = result.pValueB = pKnotValues[nNumValuesinList - 1];
 			result.pInterpolationValue = 1.0;
@@ -67,8 +72,8 @@ export function GetInterpolationData(pKnotPositions: Float32Array, pKnotValues: 
 	} else {
 		nKnot1 = idx - 1;
 		nKnot2 = idx;
-		flSizeOfGap = pKnotPositions[nKnot2] - pKnotPositions[nKnot1];
-		flOffsetFromStartOfGap = flPositionToInterpolateAt - pKnotPositions[nKnot1];
+		flSizeOfGap = pKnotPositions[nKnot2]! - pKnotPositions[nKnot1]!;
+		flOffsetFromStartOfGap = flPositionToInterpolateAt - pKnotPositions[nKnot1]!;
 	}
 
 	function FLerp(f1: number, f2: number, i1: number, i2: number, x: number) {

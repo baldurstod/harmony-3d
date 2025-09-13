@@ -8,9 +8,10 @@ export function registerOperation(name: string, ope: typeof Node) {
 }
 
 export function getOperation(name: string, editor: NodeImageEditor, params?: any) {
-	if (!operations.has(name)) {
+	const ope = operations.get(name);
+	if (!ope) {
 		console.warn('Unknown operation : ' + name);
 		return null;
 	}
-	return new (operations.get(name))(editor, params);
+	return new (ope)(editor, params);
 }

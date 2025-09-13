@@ -1,10 +1,11 @@
 import { display } from 'harmony-ui';
-import { FileSelector } from './fileselector';
 import { FileSelectorFile } from './file';
+import { FileSelector } from './fileselector';
 
 export class HTMLFileSelectorFileElement extends HTMLElement {
 	#selector?: FileSelector;
 	#file?: FileSelectorFile;
+
 	constructor() {
 		super();
 		this.addEventListener('click', (event) => {
@@ -40,8 +41,8 @@ export class HTMLFileSelectorFileElement extends HTMLElement {
 		}
 	}
 
-	refreshFilter() {
-		if (!this.#selector || !this.#file) {
+	refreshFilter(): boolean {
+		if (!this.#selector || !this.#file || !this.#file.path) {
 			return false;
 		}
 

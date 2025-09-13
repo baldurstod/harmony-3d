@@ -494,7 +494,11 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#rotationMoveHandler(x: number, y: number) {//TODO: rename this func
+	#rotationMoveHandler(x: number, y: number): void {//TODO: rename this func
+		if (!this.camera) {
+			return;
+		}
+
 		const v3 = this.#computeQuaternion(x, y);
 		quat.rotationTo(translationManipulatorTempQuat, this.#startDragVector, v3);
 		quat.mul(translationManipulatorTempQuat, this.#startLocalQuaternion, translationManipulatorTempQuat);
