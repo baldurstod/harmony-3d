@@ -4,6 +4,7 @@ import { Graphics } from '../graphics/graphics';
 export class CameraControl {
 	#camera?: Camera;
 	#enabled = true;
+
 	constructor(camera?: Camera) {
 		this.#camera = camera;
 	}

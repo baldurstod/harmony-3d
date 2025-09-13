@@ -1,7 +1,6 @@
 import { vec3 } from 'gl-matrix';
-
 import { Entity } from '../entities/entity';
-import { GraphicsEvents, GraphicsEvent } from '../graphics/graphicsevents';
+import { GraphicsEvent, GraphicsEvents, GraphicTickEvent } from '../graphics/graphicsevents';
 import { stringToVec3 } from '../utils/utils';
 
 export enum TranslationMode {
@@ -14,12 +13,12 @@ export class TranslationControl extends Entity {
 	#speed = 1;
 	#startPoint = vec3.create();
 	#endPoint = vec3.fromValues(10, 0, 0);
-	#mode:TranslationMode = TranslationMode.Bounce;
+	#mode: TranslationMode = TranslationMode.Bounce;
 	#percent = 0;
 	#bounceDirection = 1;
 	constructor(params?: any) {
 		super(params);
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: CustomEvent) => this.#update(event.detail.delta));
+		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => this.#update((event as CustomEvent<GraphicTickEvent>).detail.delta));
 	}
 
 	#update(delta: number) {

@@ -642,7 +642,7 @@ export class Entity {
 	 *
 	 * @return {void}.
 	 */
-	lookAt(target: vec3, upVector = undefined): void {
+	lookAt(target: vec3, upVector?: vec3): void {
 		const parent = this._parent;
 		mat4.lookAt(tempMat4, this._position, target, upVector ?? _upVector);
 		mat4.getRotation(tempQuat, tempMat4);
@@ -959,7 +959,7 @@ export class Entity {
 		return menu;
 	}
 
-	raycast(raycaster: Raycaster, intersections: Intersection[]) :void{
+	raycast(raycaster: Raycaster, intersections: Intersection[]): void {
 	}
 
 	setWireframe(wireframe: number, recursive = true) {

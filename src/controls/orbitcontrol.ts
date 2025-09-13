@@ -1,11 +1,10 @@
 import { quat, vec2, vec3 } from 'gl-matrix';
-
+import { TESTING } from '../buildoptions';
+import { Camera } from '../cameras/camera';
+import { GraphicKeyboardEventData, GraphicMouseEventData, GraphicsEvent, GraphicsEvents, GraphicTickEvent, GraphicTouchEventData, GraphicWheelEventData } from '../graphics/graphicsevents';
+import { Target } from '../objects/target';
 import { CameraControl } from './cameracontrol';
 import { Spherical } from './spherical';
-import { Target } from '../objects/target';
-import { TESTING } from '../buildoptions';
-import { GraphicKeyboardEventData, GraphicMouseEventData, GraphicsEvent, GraphicsEvents, GraphicTouchEventData, GraphicWheelEventData } from '../graphics/graphicsevents';
-import { Camera } from '../cameras/camera';
 
 // This set of controls performs orbiting, dollying(zooming), and panning.
 // Unlike TrackballControls, it maintains the 'up' direction object.up(+Y by default).
@@ -126,7 +125,7 @@ export class OrbitControl extends CameraControl {
 		return this.#target;
 	}
 
-	setTargetPosition(position) {
+	setTargetPosition(position: vec3) {
 		this.#target.position = position;
 		this.update();
 	}
@@ -172,7 +171,7 @@ export class OrbitControl extends CameraControl {
 	}
 
 	update(delta = 1) {
-		if (this.enabled === false) {
+		if (this.enabled === false || !this.camera) {
 			return;
 		}
 		const position = this.camera._position;
@@ -277,7 +276,7 @@ export class OrbitControl extends CameraControl {
 		return false;
 	}
 
-	set autoRotateSpeed(speed) {
+	set autoRotateSpeed(speed: number) {
 		this.#autoRotateSpeed = 2 * Math.PI / 60 / 60 * speed;
 	}
 
@@ -285,27 +284,31 @@ export class OrbitControl extends CameraControl {
 		return Math.pow(0.95, this.#dollySpeed);
 	}
 
-	#rotateLeft(angle) {
+	#rotateLeft(angle: number) {
 		this.#sphericalDelta.theta -= angle;
 	}
 
-	#rotateUp(angle) {
+	#rotateUp(angle: number) {
 		this.#sphericalDelta.phi -= angle;
 	}
 
-	#panLeft(distance, rotation) {
+	#panLeft(distance: number, rotation: quat) {
 		vec3.transformQuat(tempVec3, [1, 0, 0], rotation);
 		vec3.scale(tempVec3, tempVec3, -distance);
 		vec3.add(this.#panOffset, this.#panOffset, tempVec3);
 	}
 
-	#panUp(distance, rotation) {
+	#panUp(distance: number, rotation: quat) {
 		vec3.transformQuat(tempVec3, [0, 1, 0], rotation);
 		vec3.scale(tempVec3, tempVec3, distance);
 		vec3.add(this.#panOffset, this.#panOffset, tempVec3);
 	}
 
-	#pan(deltaX: number, deltaY: number, element: Element) {
+	#pan(deltaX: number, deltaY: number, element: Element): void {
+		if (!this.camera) {
+			return;
+		}
+
 		if (this.camera.isPerspective) {
 
 			// perspective
@@ -336,7 +339,11 @@ export class OrbitControl extends CameraControl {
 		}
 	}
 
-	#dollyIn(dollyScale) {
+	#dollyIn(dollyScale: number): void {
+		if (!this.camera) {
+			return;
+		}
+
 		if (this.camera.isPerspective) {
 			this.#scale /= dollyScale;
 		} else if (this.camera.isOrthographic) {
@@ -352,7 +359,11 @@ export class OrbitControl extends CameraControl {
 		}
 	}
 
-	#dollyOut(dollyScale) {
+	#dollyOut(dollyScale: number): void {
+		if (!this.camera) {
+			return;
+		}
+
 		if (this.camera.isPerspective) {
 			this.#scale *= dollyScale;
 		} else if (this.camera.isOrthographic) {
@@ -367,15 +378,15 @@ export class OrbitControl extends CameraControl {
 		}
 	}
 
-	#handleMouseDownRotate(event) {
+	#handleMouseDownRotate(event: MouseEvent) {
 		vec2.set(this.#rotateStart, event.clientX, event.clientY);
 	}
 
-	#handleMouseDownDolly(event) {
+	#handleMouseDownDolly(event: MouseEvent) {
 		vec2.set(this.#dollyStart, event.clientX, event.clientY);
 	}
 
-	#handleMouseDownPan(event) {
+	#handleMouseDownPan(event: MouseEvent) {
 		vec2.set(this.#panStart, event.clientX, event.clientY);
 	}
 
@@ -396,7 +407,7 @@ export class OrbitControl extends CameraControl {
 		this.update();
 	}
 
-	#handleMouseMoveDolly(event) {
+	#handleMouseMoveDolly(event: MouseEvent) {
 		//console.error(event.movementX, event.movementY, ...this.#dollyDelta);
 		//dollyEnd.set(event.clientX, event.clientY);
 		vec2.set(this.#dollyEnd, event.movementX, event.movementY)
@@ -558,12 +569,12 @@ export class OrbitControl extends CameraControl {
 	#handleTouchStartRotate(event: TouchEvent) {
 
 		if (event.touches.length == 1) {
-			vec2.set(this.#rotateStart, event.touches[0].pageX, event.touches[0].pageY);
+			vec2.set(this.#rotateStart, event.touches[0]!.pageX, event.touches[0]!.pageY);
 
-		} else {
+		} else if (event.touches.length == 2) {
 
-			const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-			const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+			const x = 0.5 * (event.touches[0]!.pageX + event.touches[1]!.pageX);
+			const y = 0.5 * (event.touches[0]!.pageY + event.touches[1]!.pageY);
 
 			vec2.set(this.#rotateStart, x, y);
 
@@ -575,12 +586,12 @@ export class OrbitControl extends CameraControl {
 
 		if (event.touches.length == 1) {
 
-			vec2.set(this.#panStart, event.touches[0].pageX, event.touches[0].pageY);
+			vec2.set(this.#panStart, event.touches[0]!.pageX, event.touches[0]!.pageY);
 
-		} else {
+		} else if (event.touches.length == 2) {
 
-			const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-			const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+			const x = 0.5 * (event.touches[0]!.pageX + event.touches[1]!.pageX);
+			const y = 0.5 * (event.touches[0]!.pageY + event.touches[1]!.pageY);
 
 			vec2.set(this.#panStart, x, y);
 
@@ -588,10 +599,13 @@ export class OrbitControl extends CameraControl {
 
 	}
 
-	#handleTouchStartDolly(event: TouchEvent) {
+	#handleTouchStartDolly(event: TouchEvent): void {
+		if (event.touches.length != 2) {
+			return;
+		}
 
-		const dx = event.touches[0].pageX - event.touches[1].pageX;
-		const dy = event.touches[0].pageY - event.touches[1].pageY;
+		const dx = event.touches[0]!.pageX - event.touches[1]!.pageX;
+		const dy = event.touches[0]!.pageY - event.touches[1]!.pageY;
 
 		const distance = Math.sqrt(dx * dx + dy * dy);
 
@@ -616,18 +630,13 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#handleTouchMoveRotate(event: TouchEvent) {
-
 		if (event.touches.length == 1) {
-
-			vec2.set(this.#rotateEnd, event.touches[0].pageX, event.touches[0].pageY);
-
-		} else {
-
-			const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-			const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+			vec2.set(this.#rotateEnd, event.touches[0]!.pageX, event.touches[0]!.pageY);
+		} else if (event.touches.length == 2) {
+			const x = 0.5 * (event.touches[0]!.pageX + event.touches[1]!.pageX);
+			const y = 0.5 * (event.touches[0]!.pageY + event.touches[1]!.pageY);
 
 			vec2.set(this.#rotateEnd, x, y);
-
 		}
 
 		vec2.sub(this.#rotateDelta, this.#rotateEnd, this.#rotateStart);
@@ -644,16 +653,12 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#handleTouchMovePan(event: TouchEvent) {
-
 		if (event.touches.length == 1) {
-
 			//panEnd.set(event.touches[ 0 ].pageX, event.touches[ 0 ].pageY);
-			vec2.set(this.#panEnd, event.touches[0].pageX, event.touches[0].pageY);
-
-		} else {
-
-			const x = 0.5 * (event.touches[0].pageX + event.touches[1].pageX);
-			const y = 0.5 * (event.touches[0].pageY + event.touches[1].pageY);
+			vec2.set(this.#panEnd, event.touches[0]!.pageX, event.touches[0]!.pageY);
+		} else if (event.touches.length == 2) {
+			const x = 0.5 * (event.touches[0]!.pageX + event.touches[1]!.pageX);
+			const y = 0.5 * (event.touches[0]!.pageY + event.touches[1]!.pageY);
 
 			//panEnd.set(x, y);
 			vec2.set(this.#panEnd, x, y);
@@ -669,9 +674,12 @@ export class OrbitControl extends CameraControl {
 	}
 
 	#handleTouchMoveDolly(event: TouchEvent) {
+		if (event.touches.length != 2) {
+			return;
+		}
 
-		const dx = event.touches[0].pageX - event.touches[1].pageX;
-		const dy = event.touches[0].pageY - event.touches[1].pageY;
+		const dx = event.touches[0]!.pageX - event.touches[1]!.pageX;
+		const dy = event.touches[0]!.pageY - event.touches[1]!.pageY;
 
 		const distance = Math.sqrt(dx * dx + dy * dy);
 
@@ -708,7 +716,7 @@ export class OrbitControl extends CameraControl {
 			return;
 		}
 
-		if (event.detail.entity?.getLayer() > 0) {
+		if (event.detail.entity?.getLayer() ?? 1 > 0) {
 			return;
 		}
 
@@ -729,21 +737,21 @@ export class OrbitControl extends CameraControl {
 		switch (action) {
 			case MOUSE.ROTATE:
 				if (this.#enableRotate) {
-					this.#handleMouseDownRotate(event);
+					this.#handleMouseDownRotate(event.detail.mouseEvent);
 					this.#state = STATE.ROTATE;
 					(mouseEvent.target as Element).requestPointerLock();
 				}
 				break;
 			case MOUSE.DOLLY:
 				if (this.#enableDolly) {
-					this.#handleMouseDownDolly(event);
+					this.#handleMouseDownDolly(event.detail.mouseEvent);
 					this.#state = STATE.DOLLY;
 					(mouseEvent.target as Element).requestPointerLock();
 				}
 				break;
 			case MOUSE.PAN:
 				if (this.#enablePan) {
-					this.#handleMouseDownPan(event);
+					this.#handleMouseDownPan(event.detail.mouseEvent);
 					this.#state = STATE.PAN;
 					(mouseEvent.target as Element).requestPointerLock();
 				}
@@ -764,7 +772,7 @@ export class OrbitControl extends CameraControl {
 				break;
 			case STATE.DOLLY:
 				if (this.#enableDolly === false) return;
-				this.#handleMouseMoveDolly(event);
+				this.#handleMouseMoveDolly(event.detail.mouseEvent);
 				break;
 			case STATE.PAN:
 				if (this.#enablePan === false) return;
@@ -921,26 +929,26 @@ export class OrbitControl extends CameraControl {
 		this.#state = STATE.NONE;
 	}
 
-	#onContextMenu(event) {
+	#onContextMenu(event: Event) {
 		if (this.enabled === false) return;
 		event.preventDefault();
 	}
 
 	#setupEventsListeners() {
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseDown(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseMove(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: CustomEvent<GraphicMouseEventData>) => this.#onMouseUp(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: Event) => this.#onMouseDown(event as CustomEvent<GraphicMouseEventData>));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseMove, (event: Event) => this.#onMouseMove(event as CustomEvent<GraphicMouseEventData>));
+		GraphicsEvents.addEventListener(GraphicsEvent.MouseUp, (event: Event) => this.#onMouseUp(event as CustomEvent<GraphicMouseEventData>));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Wheel, (event: CustomEvent<GraphicWheelEventData>) => this.#onMouseWheel(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.Wheel, (event: Event) => this.#onMouseWheel(event as CustomEvent<GraphicWheelEventData>));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.TouchStart, (event: CustomEvent<GraphicTouchEventData>) => this.#onTouchStart(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.TouchMove, (event: CustomEvent<GraphicTouchEventData>) => this.#onTouchMove(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.TouchCancel, (event: CustomEvent<GraphicTouchEventData>) => this.#onTouchCancel(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.TouchStart, (event: Event) => this.#onTouchStart(event as CustomEvent<GraphicTouchEventData>));
+		GraphicsEvents.addEventListener(GraphicsEvent.TouchMove, (event: Event) => this.#onTouchMove(event as CustomEvent<GraphicTouchEventData>));
+		GraphicsEvents.addEventListener(GraphicsEvent.TouchCancel, (event: Event) => this.#onTouchCancel(event as CustomEvent<GraphicTouchEventData>));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.KeyDown, (event: CustomEvent<GraphicKeyboardEventData>) => this.#handleKeyDown(event));
-		GraphicsEvents.addEventListener(GraphicsEvent.KeyUp, (event: CustomEvent<GraphicKeyboardEventData>) => this.#handleKeyUp(event));
+		GraphicsEvents.addEventListener(GraphicsEvent.KeyDown, (event: Event) => this.#handleKeyDown(event as CustomEvent<GraphicKeyboardEventData>));
+		GraphicsEvents.addEventListener(GraphicsEvent.KeyUp, (event: Event) => this.#handleKeyUp(event as CustomEvent<GraphicKeyboardEventData>));
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: CustomEvent) => this.update(event.detail.delta));
+		GraphicsEvents.addEventListener(GraphicsEvent.Tick, (event: Event) => this.update((event as CustomEvent<GraphicTickEvent>).detail.delta));
 		// make sure element can receive keys.
 
 		/*if(this.htmlElement.tabIndex === - 1) {
