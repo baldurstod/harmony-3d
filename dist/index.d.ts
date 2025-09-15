@@ -682,6 +682,7 @@ export declare class Camera extends Entity {
     #private;
     isPerspective: boolean;
     isOrthographic: boolean;
+    autoResize: boolean;
     constructor(params?: CameraParameters);
     computeCameraMatrix(): void;
     reset(): void;
@@ -884,6 +885,7 @@ declare type CameraParameters = EntityParameters & {
     right?: number;
     top?: number;
     bottom?: number;
+    autoResize?: boolean;
 };
 
 export declare enum CameraProjection {

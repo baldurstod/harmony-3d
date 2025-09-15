@@ -5334,6 +5334,7 @@ const DEFAULT_LEFT = -1;
 const DEFAULT_RIGHT = 1;
 const DEFAULT_TOP = 1;
 const DEFAULT_BOTTOM = -1;
+const DEFAULT_AUTO_RESIZE = false;
 const FrontVector = vec3.fromValues(0, 0, -1);
 const LAMBDA = 10;
 const LAMBDA_DIVIDOR = 1 - Math.exp(-LAMBDA);
@@ -5359,6 +5360,7 @@ class Camera extends Entity {
     isPerspective;
     isOrthographic;
     #tanHalfVerticalFov;
+    autoResize;
     constructor(params = {}) {
         super();
         super.setParameters(params);
@@ -5374,6 +5376,7 @@ class Camera extends Entity {
         this.right = params.right ?? DEFAULT_RIGHT;
         this.top = params.top ?? DEFAULT_TOP;
         this.bottom = params.bottom ?? DEFAULT_BOTTOM;
+        this.autoResize = params.autoResize ?? DEFAULT_AUTO_RESIZE;
         this.dirty();
         //this._renderMode = 2;
     }
@@ -5652,6 +5655,7 @@ class Camera extends Entity {
         this.right = source.right;
         this.top = source.top;
         this.bottom = source.bottom;
+        this.autoResize = source.autoResize;
         this.dirty();
     }
     toJSON() {
@@ -5691,6 +5695,9 @@ class Camera extends Entity {
         }
         if (this.bottom != DEFAULT_BOTTOM) {
             json.bottom = this.bottom;
+        }
+        if (this.autoResize != DEFAULT_AUTO_RESIZE) {
+            json.autoResize = this.autoResize;
         }
         return json;
     }
@@ -11521,8 +11528,18 @@ class Graphics {
         }
         this.renderBackground(); //TODOv3 put in rendering pipeline
         for (const canvasScene of canvas.scenes) {
-            if (canvasScene.scene.activeCamera) {
-                this.#forwardRenderer.render(canvasScene.scene, canvasScene.scene.activeCamera, delta, context);
+            const camera = canvasScene.scene.activeCamera;
+            if (camera) {
+                if (camera.autoResize) {
+                    const w = canvas.canvas.width;
+                    const h = canvas.canvas.height;
+                    camera.left = -w;
+                    camera.right = w;
+                    camera.bottom = -h;
+                    camera.top = h;
+                    camera.aspectRatio = w / h;
+                }
+                this.#forwardRenderer.render(canvasScene.scene, camera, delta, context);
             }
         }
         const bitmap = this.#offscreenCanvas.transferToImageBitmap();

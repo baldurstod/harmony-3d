@@ -371,8 +371,19 @@ class Graphics {
 		this.renderBackground();//TODOv3 put in rendering pipeline
 
 		for (const canvasScene of canvas.scenes) {
-			if (canvasScene.scene.activeCamera) {
-				this.#forwardRenderer!.render(canvasScene.scene, canvasScene.scene.activeCamera, delta, context);
+			const camera = canvasScene.scene.activeCamera;
+			if (camera) {
+				if (camera.autoResize) {
+					const w = canvas.canvas.width;
+					const h = canvas.canvas.height;
+
+					camera.left = -w;
+					camera.right = w;
+					camera.bottom = -h;
+					camera.top = h;
+					camera.aspectRatio = w / h;
+				}
+				this.#forwardRenderer!.render(canvasScene.scene, camera, delta, context);
 			}
 
 		}

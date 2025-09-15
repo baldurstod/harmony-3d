@@ -31,6 +31,7 @@ const DEFAULT_LEFT = -1;
 const DEFAULT_RIGHT = 1;
 const DEFAULT_TOP = 1;
 const DEFAULT_BOTTOM = -1;
+const DEFAULT_AUTO_RESIZE = false;
 
 const FrontVector = vec3.fromValues(0, 0, -1);
 
@@ -50,6 +51,7 @@ export type CameraParameters = EntityParameters & {
 	right?: number,
 	top?: number,
 	bottom?: number,
+	autoResize?: boolean,
 };
 
 export class Camera extends Entity {
@@ -74,6 +76,7 @@ export class Camera extends Entity {
 	isPerspective!: boolean;
 	isOrthographic!: boolean;
 	#tanHalfVerticalFov!: number
+	autoResize: boolean;
 
 	constructor(params: CameraParameters = {}) {
 		super();
@@ -91,6 +94,8 @@ export class Camera extends Entity {
 		this.right = params.right ?? DEFAULT_RIGHT;
 		this.top = params.top ?? DEFAULT_TOP;
 		this.bottom = params.bottom ?? DEFAULT_BOTTOM;
+
+		this.autoResize = params.autoResize ?? DEFAULT_AUTO_RESIZE;
 
 		this.dirty();
 		//this._renderMode = 2;
@@ -410,6 +415,7 @@ export class Camera extends Entity {
 		this.right = source.right;
 		this.top = source.top;
 		this.bottom = source.bottom;
+		this.autoResize = source.autoResize;
 		this.dirty();
 	}
 
@@ -450,6 +456,9 @@ export class Camera extends Entity {
 		}
 		if (this.bottom != DEFAULT_BOTTOM) {
 			json.bottom = this.bottom;
+		}
+		if (this.autoResize != DEFAULT_AUTO_RESIZE) {
+			json.autoResize = this.autoResize;
 		}
 		return json;
 	}
