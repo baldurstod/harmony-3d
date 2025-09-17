@@ -140,7 +140,7 @@ export class Source2ModelLoader {
 		vmdl.indices.set(meshIndex, []);
 		this.#loadBuffer('m_vertexBuffers', vmdl, meshIndex, embeddedMesh, true);
 		this.#loadBuffer('m_indexBuffers', vmdl, meshIndex, embeddedMesh, false);
-		this.#loadMesh(repository, embeddedMesh.getValueAsString('name') ?? '', model, group, dataBlock, new Source2FileBlock(vmdl, -1/*TODO: fix that*/, 'VBIB', new BinaryReader(''), 0, 0)/*TODO: remove*/, lodGroupMask, vmdl, meshIndex, meshGroupMask);
+		this.#loadMesh(repository, embeddedMesh.getValueAsString('m_Name') ?? '', model, group, dataBlock, new Source2FileBlock(vmdl, -1/*TODO: fix that*/, 'VBIB', new BinaryReader(''), 0, 0)/*TODO: remove*/, lodGroupMask, vmdl, meshIndex, meshGroupMask);
 
 		//console.error(vertexBuffers);
 	}
