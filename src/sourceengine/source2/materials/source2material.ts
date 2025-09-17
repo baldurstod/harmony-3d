@@ -157,8 +157,8 @@ export class Source2Material extends Material {
 
 
 
-		this.uniforms['g_vDetailTexCoordOffset'] = this.getVectorParam('g_vDetailTexCoordOffset', this.#detailTexCoordOffset);
-		this.uniforms['g_vDetailTexCoordScale'] = this.getVectorParam('g_vDetailTexCoordScale', this.#detailTexCoordScale);
+		this.uniforms['g_vDetailTexCoordOffset'] = this.getVectorParam('g_vDetailTexCoordOffset', this.#detailTexCoordOffset) ?? this.#detailTexCoordOffset;
+		this.uniforms['g_vDetailTexCoordScale'] = this.getVectorParam('g_vDetailTexCoordScale', this.#detailTexCoordScale) ?? this.#detailTexCoordScale;
 		this.uniforms['g_vDetail1ColorTint'] = vec4.fromValues(1, 1, 1, 1);
 		this.uniforms['g_vDetail2ColorTint'] = vec4.fromValues(1, 1, 1, 1);
 		this.uniforms['g_vColorTint'] = vec4.fromValues(1, 1, 1, 0);
