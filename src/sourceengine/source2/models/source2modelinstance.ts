@@ -20,6 +20,8 @@ import { Source2Model } from './source2model';
 import { Source2ModelAttachmentInstance } from './source2modelattachment';
 
 
+export const SOURCE2_DEFAULT_BODY_GROUP = 'autodefault';
+
 const identityVec3 = vec3.create();
 const identityQuat = quat.create();
 
@@ -74,7 +76,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 	}
 
 	#initDefaultBodyGroups() {
-		this.#bodyGroups.set('autodefault', undefined);
+		this.#bodyGroups.set(SOURCE2_DEFAULT_BODY_GROUP, undefined);
 
 		for (const bodyGroup of this.sourceModel.bodyGroups) {
 			this.#bodyGroups.set(bodyGroup, 0);
@@ -89,12 +91,17 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		this.#refreshMeshesVisibility();
 	}
 
+	resetBodyGroups(): void {
+		this.#bodyGroups.clear();
+		this.#refreshMeshesVisibility();
+	}
+
 	#refreshMeshesVisibility() {
 		let mask = 0n;
 
 		for (const bodyGroupsChoice of this.sourceModel.bodyGroupsChoices) {
 			const choice = this.#bodyGroups.get(bodyGroupsChoice.bodyGroup);
-			if ((choice === undefined) || (bodyGroupsChoice.choice == `${bodyGroupsChoice.bodyGroup}_@${choice}`)) {
+			if (bodyGroupsChoice.bodyGroup == SOURCE2_DEFAULT_BODY_GROUP || (choice === undefined) || (bodyGroupsChoice.choice.startsWith(`${bodyGroupsChoice.bodyGroup}_@${choice}`))) {
 				mask += BigInt(Math.pow(2, bodyGroupsChoice.bodyGroupId));
 			}
 		}

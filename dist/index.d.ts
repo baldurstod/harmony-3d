@@ -8213,6 +8213,8 @@ declare class Channel {
                           parse(repository: string, fileName: string, arrayBuffer: ArrayBuffer): SourceVvd;
                       }
 
+                      export declare const SOURCE2_DEFAULT_BODY_GROUP = "autodefault";
+
                       export declare const SOURCE2_DEFAULT_RADIUS = 5;
 
                       declare class Source2Animation {
@@ -8579,6 +8581,7 @@ declare class Channel {
                           hasAnimations: true;
                           constructor(sourceModel: Source2Model, isDynamic: boolean);
                           setBodyGroup(name: string, choice: number): void;
+                          resetBodyGroups(): void;
                           get skeleton(): Skeleton | null;
                           setPosition(position: vec3): void;
                           addChild(child: Entity): Entity | undefined;

@@ -9,7 +9,7 @@ import { Source2Animation } from './source2animation';
 import { Source2AnimationDesc } from './source2animationdesc';
 import { Source2AnimGroup } from './source2animgroup';
 import { Source2ModelAttachment } from './source2modelattachment';
-import { Source2ModelInstance } from './source2modelinstance';
+import { SOURCE2_DEFAULT_BODY_GROUP, Source2ModelInstance } from './source2modelinstance';
 
 const _SOURCE_MODEL_DEBUG_ = false; // removeme
 
@@ -66,10 +66,10 @@ export class Source2Model {
 			let bodyGroupId = 0;
 			let bodyGroup: string | undefined;
 			for (const choice of meshGroups) {
-				if (choice == 'autodefault') {
+				if (choice == SOURCE2_DEFAULT_BODY_GROUP) {
 					bodyGroup = choice;
 				} else {
-					const result = /(.*)_@\d$/.exec(choice);
+					const result = /(.*)_@\d(_#&(.*))?$/.exec(choice);
 					bodyGroup = result?.[1];
 				}
 				if (bodyGroup) {
