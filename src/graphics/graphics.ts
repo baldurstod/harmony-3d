@@ -225,6 +225,21 @@ class Graphics {
 		return canvas;
 	}
 
+
+	static removeCanvas(canvas: HTMLCanvasElement): void {
+		if (this.#canvases.has(canvas)) {
+			this.unlistenCanvas(canvas);
+			this.#canvases.delete(canvas);
+		}
+	}
+
+	static enableCanvas(canvas: HTMLCanvasElement, enable: boolean): void {
+		const c = this.#canvases.get(canvas)
+		if (c) {
+			c.enabled = enable;
+		}
+	}
+
 	static listenCanvas(canvas: HTMLCanvasElement): void {
 		canvas.addEventListener('mousedown', this.#mouseDownFunc);
 		canvas.addEventListener('mousemove', this.#mouseMoveFunc);

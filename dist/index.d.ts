@@ -3091,6 +3091,8 @@ declare class Channel {
                           static dragging: boolean;
                           static initCanvas(contextAttributes?: GraphicsInitOptions): typeof Graphics_2;
                           static addCanvas(canvas: HTMLCanvasElement | undefined, options: AddCanvasOptions): HTMLCanvasElement;
+                          static removeCanvas(canvas: HTMLCanvasElement): void;
+                          static enableCanvas(canvas: HTMLCanvasElement, enable: boolean): void;
                           static listenCanvas(canvas: HTMLCanvasElement): void;
                           static unlistenCanvas(canvas: HTMLCanvasElement): void;
                           static pickEntity(x: number, y: number): Entity | null;

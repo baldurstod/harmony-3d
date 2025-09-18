@@ -11413,6 +11413,18 @@ class Graphics {
         catch (e) { }
         return canvas;
     }
+    static removeCanvas(canvas) {
+        if (this.#canvases.has(canvas)) {
+            this.unlistenCanvas(canvas);
+            this.#canvases.delete(canvas);
+        }
+    }
+    static enableCanvas(canvas, enable) {
+        const c = this.#canvases.get(canvas);
+        if (c) {
+            c.enabled = enable;
+        }
+    }
     static listenCanvas(canvas) {
         canvas.addEventListener('mousedown', this.#mouseDownFunc);
         canvas.addEventListener('mousemove', this.#mouseMoveFunc);
