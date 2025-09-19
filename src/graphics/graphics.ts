@@ -370,6 +370,10 @@ class Graphics {
 			WebGLStats.beginRender();
 		}
 
+		if (!canvas.canvas.checkVisibility()) {
+			return;
+		}
+
 		if (this.#offscreenCanvas) {
 			const parentElement = canvas.canvas.parentElement;
 			if (canvas.autoResize && parentElement) {
