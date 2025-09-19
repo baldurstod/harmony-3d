@@ -59,6 +59,8 @@ interface GraphicsInitOptions {
 }
 
 interface AddCanvasOptions {
+	/** Canvas name. Default to an empty string. */
+	name?: string;
 	/** Set the canvas state to enabled. A disabled canvas will not render. Default to true. */
 	enabled?: boolean;
 	/** Auto resize the canvas to fit its parent. Default to false. */
@@ -75,6 +77,7 @@ export type CanvasScene = {
 }
 
 export type MultiCanvas = {
+	name: string;
 	enabled: boolean;
 	canvas: HTMLCanvasElement;
 	context: ImageBitmapRenderingContext;
@@ -214,6 +217,7 @@ class Graphics {
 			}
 
 			this.#canvases.set(canvas, {
+				name: options.name ?? ' ',
 				enabled: true,
 				canvas: canvas,
 				context: bipmapContext,
