@@ -2,7 +2,7 @@ import { lockOpenRightSVG, lockSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, r
 import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, show, toggle } from 'harmony-ui';
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
-import { CHILD_ADDED, CHILD_REMOVED, ENTITY_DELETED, EntityObserver, PROPERTY_CHANGED } from '../entities/entityobserver';
+import { CHILD_REMOVED, ENTITY_DELETED, EntityObserver, EntityObserverChildAddedEvent, EntityObserverEvent, EntityObserverEventType, PROPERTY_CHANGED } from '../entities/entityobserver';
 import { Animated } from '../interfaces/animated';
 import { Lockable } from '../interfaces/lockable';
 import { Loopable } from '../interfaces/loopable';
@@ -37,10 +37,10 @@ export class SceneExplorerEntity extends HTMLElement {
 	static #draggedEntity?: Entity;
 
 	static {
-		EntityObserver.addEventListener(CHILD_ADDED, (event: Event) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent).detail.parent));
-		EntityObserver.addEventListener(CHILD_REMOVED, (event: Event) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent).detail.parent));
-		EntityObserver.addEventListener(PROPERTY_CHANGED, (event: Event) => SceneExplorerEntity.#handlePropertyChanged((event as CustomEvent).detail));
-		EntityObserver.addEventListener(ENTITY_DELETED, (event: Event) => SceneExplorerEntity.#handleEntityDeleted((event as CustomEvent).detail));
+		EntityObserver.addEventListener(EntityObserverEventType.ChildAdded, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent<EntityObserverChildAddedEvent>).detail.parent));
+		EntityObserver.addEventListener(EntityObserverEventType.ChildRemoved, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent).detail.parent));
+		EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#handlePropertyChanged((event as CustomEvent).detail));
+		EntityObserver.addEventListener(EntityObserverEventType.EntityDeleted, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#handleEntityDeleted((event as CustomEvent).detail));
 	}
 
 	constructor() {

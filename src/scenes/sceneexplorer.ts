@@ -7,7 +7,7 @@ import { RotationControl } from '../controls/rotationcontrol';
 import { TranslationControl } from '../controls/translationcontrol';
 import sceneExplorerCSS from '../css/sceneexplorer.css';
 import { Entity } from '../entities/entity';
-import { EntityObserver, PROPERTY_CHANGED } from '../entities/entityobserver';
+import { EntityObserver, EntityObserverEventType } from '../entities/entityobserver';
 import { KeepOnlyLastChild } from '../entities/keeponlylastchild';
 import { GraphicsEvents } from '../graphics/graphicsevents';
 import { ContextObserver } from '../helpers/contextobserver';
@@ -126,7 +126,7 @@ export class SceneExplorer {
 		}).observe(this.#shadowRoot.host);
 
 
-		EntityObserver.addEventListener(PROPERTY_CHANGED, (event: Event) => this.#handlePropertyChanged((event as CustomEvent).detail));
+		EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event: Event) => this.#handlePropertyChanged((event as CustomEvent).detail));
 		SceneExplorerEvents.addEventListener('bonepicked', (event: Event) => this.selectEntity((event as CustomEvent).detail.bone, true));
 	}
 
