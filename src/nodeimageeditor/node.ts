@@ -30,7 +30,18 @@ export const NODE_PARAM_TYPE_STICKER_ADJUST = 8;
 
 export const PREVIEW_PICTURE_SIZE = 256;
 
-export class Node extends MyEventTarget {
+export enum NodeEventType {
+	Any = '*',
+	ParamAdded = 'paramadded',
+	ParamChanged = 'paramchanged',
+}
+
+export type NodeEvent = {
+	eventName?: string;
+	value?: NodeParam;
+}
+
+export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 	#hasPreview = false;
 	readonly id = generateRandomUUID();
 	readonly editor: NodeImageEditor;
@@ -236,8 +247,8 @@ export class Node extends MyEventTarget {
 	}
 
 	#dispatchEvent(eventName: string, eventDetail: NodeParam) {
-		this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-		this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+		this.dispatchEvent(new CustomEvent<NodeEvent>(eventName, { detail: { value: eventDetail } }));
+		this.dispatchEvent(new CustomEvent<NodeEvent>('*', { detail: { eventName: eventName } }));
 	}
 
 	updatePreview(context: any = {}) {

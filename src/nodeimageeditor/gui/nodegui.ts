@@ -7,7 +7,7 @@ import { DEG_TO_RAD, RAD_TO_DEG } from '../../math/constants';
 import { TextureManager } from '../../textures/texturemanager';
 import { GL_CLAMP_TO_EDGE, GL_LINEAR, GL_TEXTURE_2D } from '../../webgl/constants';
 import { Input } from '../input';
-import { Node } from '../node';
+import { Node, NodeEventType } from '../node';
 import { NodeParam, NodeParamArray, NodeParamType } from '../nodeparam';
 import { ApplySticker } from '../operations/applysticker';
 import { TextureLookup } from '../operations/texturelookup';
@@ -138,7 +138,7 @@ export class NodeGui {
 		this.#nodeImageEditorGui = nodeImageEditorGui;
 		this.#node = node;
 		this.#initHtml();
-		this.#node.addEventListener('*', this.#nodeChanged);
+		this.#node.addEventListener(NodeEventType.Any, this.#nodeChanged);
 	}
 
 	set expanded(expanded) {

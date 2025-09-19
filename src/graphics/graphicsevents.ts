@@ -1,4 +1,4 @@
-import { MyEventTarget, StaticEventTarget } from 'harmony-utils';
+import { StaticEventTarget } from 'harmony-utils';
 import { Entity } from '../entities/entity';
 
 export enum GraphicsEvent {
