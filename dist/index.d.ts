@@ -41,6 +41,8 @@ export declare class Add extends Proxy_2 {
 }
 
 declare interface AddCanvasOptions {
+    /** Canvas name. Default to an empty string. */
+    name?: string;
     /** Set the canvas state to enabled. A disabled canvas will not render. Default to true. */
     enabled?: boolean;
     /** Auto resize the canvas to fit its parent. Default to false. */
@@ -191,8 +193,6 @@ export declare class AttractToControlPoint extends Operator {
     _paramChanged(paramName: string, param: OperatorParam): void;
     doForce(particle: Source2Particle, elapsedTime: number, accumulatedForces: vec3, strength: number): void;
 }
-
-export declare const ATTRIBUTE_CHANGED = "attributechanged";
 
 export declare type AttributeChangedEventData = PropertyChangedEventData;
 
@@ -993,10 +993,6 @@ declare class Channel {
         get shaderSource(): string;
     }
 
-    export declare const CHILD_ADDED = "childadded";
-
-    export declare const CHILD_REMOVED = "childremoved";
-
     export declare interface ChildAddedEventData {
         child: Entity;
         parent: Entity | null;
@@ -1022,7 +1018,7 @@ declare class Channel {
         set playbackSpeed(playbackSpeed: number);
     }
 
-    declare class Choreography extends MyEventTarget {
+    declare class Choreography extends MyEventTarget<ChoreographyEventType> {
         #private;
         actors2: Source1ModelInstance[];
         previousTime: number;
@@ -1165,6 +1161,10 @@ declare class Channel {
              }
 
              declare type ChoreographyEventParam = any;
+
+             declare enum ChoreographyEventType {
+                 Stop = "stop"
+             }
 
              export declare class Circle extends LineSegments {
                  #private;
@@ -2230,7 +2230,7 @@ declare class Channel {
                        is(s: string): boolean;
                       }
 
-                      export declare const ENTITY_DELETED = "entitydeleted";
+                      declare type EntityAttributeValue = any;
 
                       export declare interface EntityDeletedEventData {
                           entity: Entity;
@@ -2238,7 +2238,24 @@ declare class Channel {
 
                       export declare const EntityObserver: EntityObserverClass;
 
-                      declare class EntityObserverClass extends MyEventTarget {
+                      export declare type EntityObserverAttributeChangedEvent = {
+                          entity: Entity;
+                          attributeName: string;
+                          newAttributeValue: EntityAttributeValue;
+                          oldAttributeValue: EntityAttributeValue;
+                      };
+
+                      export declare type EntityObserverChildAddedEvent = {
+                          child: Entity;
+                          parent: Entity;
+                      };
+
+                      export declare type EntityObserverChildRemovedEvent = {
+                          child: Entity;
+                          parent: Entity;
+                      };
+
+                      declare class EntityObserverClass extends MyEventTarget<EntityObserverEventType, CustomEvent<EntityObserverEvent>> {
                           parentChanged(child: Entity, oldParent: Entity | null, newParent: Entity | null): void;
                           childAdded(parent: Entity, child: Entity): void;
                           childRemoved(parent: Entity, child: Entity): void;
@@ -2247,7 +2264,35 @@ declare class Channel {
                           attributeChanged(entity: Entity, attributeName: string, oldValue: any, newValue: any): void;
                       }
 
+                      export declare type EntityObserverEntityDeletedEvent = {
+                          entity: Entity;
+                      };
+
+                      export declare type EntityObserverEvent = EntityObserverParentChangedEvent | EntityObserverChildAddedEvent | EntityObserverChildRemovedEvent | EntityObserverEntityDeletedEvent | EntityObserverPropertyChangedEvent | EntityObserverAttributeChangedEvent;
+
                       export declare type EntityObserverEventsData = ParentChangedEventData | ChildAddedEventData | ChildRemovedEventData | EntityDeletedEventData | PropertyChangedEventData | AttributeChangedEventData;
+
+                      export declare enum EntityObserverEventType {
+                          ParentChanged = "parentchanged",
+                          ChildAdded = "childadded",
+                          ChildRemoved = "childremoved",
+                          EntityDeleted = "entitydeleted",
+                          PropertyChanged = "propertychanged",
+                          AttributeChanged = "attributechanged"
+                      }
+
+                      export declare type EntityObserverParentChangedEvent = {
+                          child: Entity;
+                          oldParent: Entity | null;
+                          newParent: Entity | null;
+                      };
+
+                      export declare type EntityObserverPropertyChangedEvent = {
+                          entity: Entity;
+                          propertyName: string;
+                          newPropertyValue: EntityPropertyValue;
+                          oldPropertyValue: EntityPropertyValue;
+                      };
 
                       declare interface EntityParameters {
                           name?: string;
@@ -2261,6 +2306,8 @@ declare class Channel {
                           receiveShadow?: boolean;
                           visible?: boolean;
                       }
+
+                      declare type EntityPropertyValue = any;
 
                       export declare class Environment {
                           constructor();
@@ -5174,7 +5221,7 @@ declare class Channel {
                           dispose(): void;
                       }
 
-                      declare class Node_2 extends MyEventTarget {
+                      declare class Node_2 extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
                           #private;
                           readonly id: string;
                           readonly editor: NodeImageEditor;
@@ -5219,7 +5266,18 @@ declare class Channel {
                       }
                       export { Node_2 as Node }
 
-                      export declare class NodeImageEditor extends MyEventTarget {
+                      declare type NodeEvent = {
+                          eventName?: string;
+                          value?: NodeParam;
+                      };
+
+                      declare enum NodeEventType {
+                          Any = "*",
+                          ParamAdded = "paramadded",
+                          ParamChanged = "paramchanged"
+                      }
+
+                      export declare class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, CustomEvent<NodeImageEditorEvent>> {
                           #private;
                           textureSize: number;
                           constructor();
@@ -5232,6 +5290,18 @@ declare class Channel {
                           deleteVariable(name: string): boolean;
                           clearVariables(): void;
                           getNodes(): Set<Node_2>;
+                      }
+
+                      declare type NodeImageEditorEvent = {
+                          node?: Node_2 | null;
+                          eventName?: string;
+                      };
+
+                      declare enum NodeImageEditorEventType {
+                          Any = "*",
+                          NodeAdded = "nodeadded",
+                          NodeRemoved = "noderemoved",
+                          AllNodesRemoved = "allnodesremoved"
                       }
 
                       export declare class NodeImageEditorGui {
@@ -5543,8 +5613,6 @@ declare class Channel {
                           type: string;
                           constructor(param: string, type: string);
                       }
-
-                      export declare const PARENT_CHANGED = "parentchanged";
 
                       export declare interface ParentChangedEventData {
                           child: Entity;
@@ -6013,8 +6081,6 @@ declare class Channel {
                           value: PropertyValues;
                           constructor(type: string, value: PropertyValues);
                       }
-
-                      export declare const PROPERTY_CHANGED = "propertychanged";
 
                       export declare interface PropertyChangedEventData {
                           entity: Entity;

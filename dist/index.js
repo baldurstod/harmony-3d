@@ -1821,30 +1821,33 @@ function stringToQuat(s, q = quat.create()) {
     return q;
 }
 
-const PARENT_CHANGED = 'parentchanged';
-const CHILD_ADDED = 'childadded';
-const CHILD_REMOVED = 'childremoved';
-const ENTITY_DELETED = 'entitydeleted';
-const PROPERTY_CHANGED$1 = 'propertychanged';
-const ATTRIBUTE_CHANGED = 'attributechanged';
+var EntityObserverEventType;
+(function (EntityObserverEventType) {
+    EntityObserverEventType["ParentChanged"] = "parentchanged";
+    EntityObserverEventType["ChildAdded"] = "childadded";
+    EntityObserverEventType["ChildRemoved"] = "childremoved";
+    EntityObserverEventType["EntityDeleted"] = "entitydeleted";
+    EntityObserverEventType["PropertyChanged"] = "propertychanged";
+    EntityObserverEventType["AttributeChanged"] = "attributechanged";
+})(EntityObserverEventType || (EntityObserverEventType = {}));
 class EntityObserverClass extends MyEventTarget {
     parentChanged(child, oldParent, newParent) {
-        this.dispatchEvent(new CustomEvent(PARENT_CHANGED, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
+        this.dispatchEvent(new CustomEvent(EntityObserverEventType.ParentChanged, { detail: { child: child, oldParent: oldParent, newParent: newParent } }));
     }
     childAdded(parent, child) {
-        this.dispatchEvent(new CustomEvent(CHILD_ADDED, { detail: { child: child, parent: parent } }));
+        this.dispatchEvent(new CustomEvent(EntityObserverEventType.ChildAdded, { detail: { child: child, parent: parent } }));
     }
     childRemoved(parent, child) {
-        this.dispatchEvent(new CustomEvent(CHILD_REMOVED, { detail: { child: child, parent: parent } }));
+        this.dispatchEvent(new CustomEvent(EntityObserverEventType.ChildRemoved, { detail: { child: child, parent: parent } }));
     }
     entityDeleted(entity) {
-        this.dispatchEvent(new CustomEvent(ENTITY_DELETED, { detail: { entity: entity } }));
+        this.dispatchEvent(new CustomEvent(EntityObserverEventType.EntityDeleted, { detail: { entity: entity } }));
     }
     propertyChanged(entity, propertyName, oldValue, newValue) {
-        this.dispatchEvent(new CustomEvent(PROPERTY_CHANGED$1, { detail: { entity: entity, name: propertyName, value: newValue, oldValue: oldValue } }));
+        this.dispatchEvent(new CustomEvent(EntityObserverEventType.PropertyChanged, { detail: { entity: entity, propertyName: propertyName, newPropertyValue: newValue, oldPropertyValue: oldValue } }));
     }
     attributeChanged(entity, attributeName, oldValue, newValue) {
-        this.dispatchEvent(new CustomEvent(ATTRIBUTE_CHANGED, { detail: { entity: entity, name: attributeName, value: newValue, oldValue: oldValue } }));
+        this.dispatchEvent(new CustomEvent(EntityObserverEventType.AttributeChanged, { detail: { entity: entity, attributeName: attributeName, newAttributeValue: newValue, oldAttributeValue: oldValue } }));
     }
 }
 const EntityObserver = new EntityObserverClass();
@@ -10700,7 +10703,7 @@ class Program {
     }
     setUniformValue(name, value) {
         const uniform = this.uniforms.get(name);
-        if (uniform !== undefined) {
+        if (uniform) {
             uniform.setValue(this.#glContext, value);
         }
     }
@@ -11403,6 +11406,7 @@ class Graphics {
                 }
             }
             this.#canvases.set(canvas, {
+                name: options.name ?? ' ',
                 enabled: true,
                 canvas: canvas,
                 context: bipmapContext,
@@ -11522,6 +11526,9 @@ class Graphics {
         }
     }
     static #renderMultiCanvas(canvas, delta, context) {
+        if (!canvas.canvas.checkVisibility()) {
+            return;
+        }
         if (this.#offscreenCanvas) {
             const parentElement = canvas.canvas.parentElement;
             if (canvas.autoResize && parentElement) {
@@ -14212,78 +14219,99 @@ class LoopSubdivision {
     }
 }
 
-var NodeParamType;
-(function (NodeParamType) {
-    NodeParamType[NodeParamType["Unknown"] = 0] = "Unknown";
-    NodeParamType[NodeParamType["Int"] = 1] = "Int";
-    NodeParamType[NodeParamType["Bool"] = 2] = "Bool";
-    NodeParamType[NodeParamType["Float"] = 3] = "Float";
-    NodeParamType[NodeParamType["Radian"] = 4] = "Radian";
-    NodeParamType[NodeParamType["Degree"] = 5] = "Degree";
-    NodeParamType[NodeParamType["String"] = 6] = "String";
-    NodeParamType[NodeParamType["Vec2"] = 7] = "Vec2";
-    NodeParamType[NodeParamType["StickerAdjust"] = 8] = "StickerAdjust";
-})(NodeParamType || (NodeParamType = {}));
-class NodeParam {
-    name;
-    type;
-    value;
-    length;
-    constructor(name, type, value, length) {
-        this.name = name;
-        this.type = type;
-        this.value = value;
-        this.length = length;
+var nodeImageEditorCSS = ":host {\n\tbackground-color: #000000FF;\n\twidth: 100%;\n\theight: 100%;\n\tdisplay: flex;\n\tflex-direction: column;\n\tuser-select: none;\n}\n\n.node-image-editor-nodes {\n\toverflow: auto;\n\tposition: relative;\n\tdisplay: flex;\n\toverflow: auto;\n\tflex: 1;\n}\n\n.node-image-editor-nodes-column {\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-left: 50px;\n\tmargin-right: 50px;\n}\n\n.node-image-editor-canvas {\n\tpointer-events: none;\n}\n\n.node-image-editor-node {\n\tbackground-color: var(--main-bg-color-bright);\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-top: 50px;\n\tmargin-bottom: 50px;\n\tpadding: 5px;\n}\n\n.node-image-editor-node.collapsed {\n\twidth: auto;\n\tmargin-top: 1rem;\n\tmargin-bottom: 1rem;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-content {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-preview {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed button {\n\tdisplay: none;\n}\n\n.node-image-editor-node-header {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-title {\n\tflex: 1;\n}\n\n.node-image-editor-node-buttons {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-buttons>div {\n\tcursor: pointer;\n}\n\n.node-image-editor-node-preview {\n\tposition: relative;\n\t/*height: 32px;\n\twidth: 32px;*/\n\tbackground-color: #000000FF;\n\tdisplay: inline-block;\n\twidth: min-content;\n\tdisplay: flex;\n}\n\n.node-image-editor-sticker-selector {\n\tposition: absolute;\n\tpointer-events: none;\n\ttop: 0;\n\twidth: 100%;\n\theight: 100%;\n\t--harmony-2d-manipulator-bg-color: rgba(0, 0, 0, 0);\n\t--harmony-2d-manipulator-border: 1px dashed white;\n}\n\n.node-image-editor-sticker-selector>div {\n\tposition: absolute;\n\twidth: 0.4rem;\n\theight: 0.4rem;\n\tbackground-color: black;\n\tpointer-events: all;\n}\n\n.node-image-editor-sticker-selector>.handle-move {\n\tcursor: move;\n\ttop: calc(50% - 0.2rem);\n\tleft: calc(50% - 0.2rem);\n}\n\n.node-image-editor-sticker-selector>.handle-resize {\n\tcursor: nesw-resize;\n\ttop: -0.2rem;\n\tright: 0.2rem;\n}\n\n.node-image-editor-sticker-selector>.handle-rotate {\n\tcursor: grab;\n\ttop: -0.2rem;\n\tleft: -0.2rem;\n}\n\n.node-image-editor-node-content {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-ios {\n\theight: 100%;\n\tflex: 0;\n}\n\n.node-image-editor-node-io {\n\twidth: 10px;\n\theight: 10px;\n\tbackground-color: green;\n}\n\n.node-image-editor-node-params {\n\tflex: 1;\n\toverflow: hidden;\n\tpadding: 5px;\n}\n\n.node-image-editor-node-param {\n\tdisplay: flex;\n\ttext-wrap: nowrap;\n}\n\n.node-image-editor-node-param>div {\n\tflex: 1;\n\t/*overflow: auto;*/\n}\n\n.node-image-editor-node-param>input {\n\theight: 1.5rem;\n\tbox-sizing: border-box;\n\tvertical-align: middle;\n}\n\n.node-image-editor-node-change-image {\n\topacity: 0%;\n\tposition: absolute;\n\ttop: 0px;\n\tleft: 0px;\n\theight: 100%;\n\twidth: 100%;\n\t/*background-image: url('./img/icons/image_search.svg');*/\n\toverflow: hidden;\n\tbackground-size: 100%;\n\tbackground-repeat: no-repeat;\n\tbackground-position: center;\n\tbackground-color: white;\n\tborder-radius: 4px;\n\tcursor: pointer;\n}\n\n.node-image-editor-node input[type=\"file\"] {\n\topacity: 0;\n\twidth: 100%;\n\theight: 100%;\n}\n\n.copy-button {\n\twidth: 2rem;\n\theight: 2rem;\n\tdisplay: inline-block;\n\tcursor: pointer;\n}\n\ninput {\n\t/*transition: background-color 1s;*/\n\tbackground-color: #FFF;\n\n\t/* only animation-duration here is required, rest are optional (also animation-name but it will be set on hover)*/\n\tanimation-duration: 1.5s;\n\t/* same as transition duration */\n\tanimation-timing-function: linear;\n\t/* kind of same as transition timing */\n\tanimation-delay: 0ms;\n\t/* same as transition delay */\n\tanimation-iteration-count: 1;\n\t/* set to 2 to make it run twice, or Infinite to run forever!*/\n\tanimation-direction: normal;\n\t/* can be set to \"alternate\" to run animation, then run it backwards.*/\n\tanimation-fill-mode: none;\n\t/* can be used to retain keyframe styling after animation, with \"forwards\" */\n\tanimation-play-state: running;\n\t/* can be set dynamically to pause mid animation*/\n\n}\n\n.flash {\n\tanimation-name: copyAnimation;\n}\n\n@keyframes copyAnimation {\n\t0% {\n\t\tbackground-color: #ffdf5d;\n\t}\n\n\t100% {\n\t\tbackground-color: #FFF;\n\t}\n}\n\nharmony-toggle-button.sticker {\n\tmargin: 0.5rem;\n\tpadding: 0.2rem;\n\tborder-radius: 0.5rem;\n}\n\nharmony-toggle-button.sticker.on {\n\tbackground-color: green;\n}\n\nharmony-toggle-button.sticker.off {\n\tbackground-color: red;\n}\n";
+
+const operations$1 = new Map();
+function registerOperation(name, ope) {
+    operations$1.set(name, ope);
+}
+function getOperation(name, editor, params) {
+    const ope = operations$1.get(name);
+    if (!ope) {
+        console.warn('Unknown operation : ' + name);
+        return null;
     }
+    return new (ope)(editor, params);
 }
 
-const IO_TYPE_FLOAT = 2;
-const IO_TYPE_VEC2 = 3;
-const IO_TYPE_COLOR = 7;
-const IO_TYPE_TEXTURE_2D = 8;
-const IO_TYPE_ARRAY_INT = 101;
-const IO_TYPE_ARRAY_FLOAT = 102;
-/*const ARRAY_START = 1000;
-export const IO_TYPE_INT_ARRAY = ARRAY_START + 1;
-export const IO_TYPE_FLOAT_ARRAY = ARRAY_START + 2;
-export const IO_TYPE_VEC2_ARRAY = ARRAY_START + 3;
-export const IO_TYPE_VEC3_ARRAY = ARRAY_START + 4;
-export const IO_TYPE_VEC4_ARRAY = ARRAY_START + 5;
-export const IO_TYPE_QUAT_ARRAY = ARRAY_START + 6;
-export const IO_TYPE_COLOR_ARRAY = ARRAY_START + 7;
-export const IO_TYPE_TEXTURE_2D_ARRAY = ARRAY_START + 8;*/
-var InputOutputType;
-(function (InputOutputType) {
-    InputOutputType[InputOutputType["Unknown"] = 0] = "Unknown";
-    InputOutputType[InputOutputType["Int"] = 1] = "Int";
-    InputOutputType[InputOutputType["Float"] = 2] = "Float";
-    InputOutputType[InputOutputType["Vec2"] = 3] = "Vec2";
-    InputOutputType[InputOutputType["Vec3"] = 4] = "Vec3";
-    InputOutputType[InputOutputType["Vec4"] = 5] = "Vec4";
-    InputOutputType[InputOutputType["Quat"] = 6] = "Quat";
-    InputOutputType[InputOutputType["Color"] = 7] = "Color";
-    InputOutputType[InputOutputType["Texture2D"] = 8] = "Texture2D";
-    InputOutputType[InputOutputType["IntArray"] = 1000] = "IntArray";
-    InputOutputType[InputOutputType["FloatArray"] = 1001] = "FloatArray";
-})(InputOutputType || (InputOutputType = {}));
-class InputOutput {
-    node;
-    id;
-    type;
-    size;
-    _value;
-    _pixelArray;
-    constructor(node, id, type, size = 1) {
-        this.node = node;
-        this.id = id;
-        this.type = type;
-        this.size = size;
-        if (size == 1) {
-            this._value = undefined;
+const DEFAULT_TEXTURE_SIZE = 512;
+var NodeImageEditorEventType;
+(function (NodeImageEditorEventType) {
+    NodeImageEditorEventType["Any"] = "*";
+    NodeImageEditorEventType["NodeAdded"] = "nodeadded";
+    NodeImageEditorEventType["NodeRemoved"] = "noderemoved";
+    NodeImageEditorEventType["AllNodesRemoved"] = "allnodesremoved";
+})(NodeImageEditorEventType || (NodeImageEditorEventType = {}));
+class NodeImageEditor extends MyEventTarget {
+    #variables = new Map();
+    #scene = new Scene();
+    #nodes = new Set();
+    #camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
+    #fullScreenQuadMesh = new FullScreenQuad();
+    textureSize = DEFAULT_TEXTURE_SIZE;
+    constructor() {
+        super();
+        this.#scene.addChild(this.#fullScreenQuadMesh);
+    }
+    render(material) {
+        this.#fullScreenQuadMesh.setMaterial(material);
+        Graphics$1.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
+    }
+    addNode(operationName, params = {}) {
+        params.textureSize = params.textureSize ?? this.textureSize;
+        if (!operationName) {
+            return null;
         }
-        else {
-            this._value = new Array(size);
+        const node = getOperation(operationName, this, params);
+        if (node) {
+            this.textureSize = params.textureSize;
+            this.#nodes.add(node);
+            this.#dispatchEvent(NodeImageEditorEventType.NodeAdded, node);
         }
+        return node;
+    }
+    /*addNewNode(operationName, params = Object.create(null)) {
+        let node = this._createNode(operationName, params);
+        this.addNode(node);
+        return node;
+    }*/
+    #dispatchEvent(eventName, eventDetail) {
+        this.dispatchEvent(new CustomEvent(eventName, { detail: { node: eventDetail } }));
+        this.dispatchEvent(new CustomEvent(NodeImageEditorEventType.Any, { detail: { eventName: eventName } }));
+    }
+    /*addNode(node) {
+        if (node instanceof Node && node.editor == this) {
+            this.#nodes.add(node);
+            this.#dispatchEvent('nodeadded', node);
+        }
+    }*/
+    removeNode(node) {
+        if (node.editor == this) {
+            this.#nodes.delete(node);
+            //TODO :remove all inputs / output
+            this.#dispatchEvent(NodeImageEditorEventType.NodeRemoved, node);
+        }
+    }
+    removeAllNodes() {
+        this.#nodes.forEach((node) => node.dispose());
+        this.#nodes.clear();
+        this.#dispatchEvent(NodeImageEditorEventType.AllNodesRemoved, null);
+        //TODO :remove all inputs / output
+    }
+    getVariable(name) {
+        return this.#variables.get(name);
+    }
+    setVariable(name, value) {
+        return this.#variables.set(name, value);
+    }
+    deleteVariable(name) {
+        return this.#variables.delete(name);
+    }
+    clearVariables() {
+        return this.#variables.clear();
+    }
+    getNodes() {
+        return new Set(this.#nodes);
     }
 }
 
@@ -14550,6 +14578,56 @@ function flipPixelArray(pixelArray, width, height) {
     }
 }
 
+const IO_TYPE_FLOAT = 2;
+const IO_TYPE_VEC2 = 3;
+const IO_TYPE_COLOR = 7;
+const IO_TYPE_TEXTURE_2D = 8;
+const IO_TYPE_ARRAY_INT = 101;
+const IO_TYPE_ARRAY_FLOAT = 102;
+/*const ARRAY_START = 1000;
+export const IO_TYPE_INT_ARRAY = ARRAY_START + 1;
+export const IO_TYPE_FLOAT_ARRAY = ARRAY_START + 2;
+export const IO_TYPE_VEC2_ARRAY = ARRAY_START + 3;
+export const IO_TYPE_VEC3_ARRAY = ARRAY_START + 4;
+export const IO_TYPE_VEC4_ARRAY = ARRAY_START + 5;
+export const IO_TYPE_QUAT_ARRAY = ARRAY_START + 6;
+export const IO_TYPE_COLOR_ARRAY = ARRAY_START + 7;
+export const IO_TYPE_TEXTURE_2D_ARRAY = ARRAY_START + 8;*/
+var InputOutputType;
+(function (InputOutputType) {
+    InputOutputType[InputOutputType["Unknown"] = 0] = "Unknown";
+    InputOutputType[InputOutputType["Int"] = 1] = "Int";
+    InputOutputType[InputOutputType["Float"] = 2] = "Float";
+    InputOutputType[InputOutputType["Vec2"] = 3] = "Vec2";
+    InputOutputType[InputOutputType["Vec3"] = 4] = "Vec3";
+    InputOutputType[InputOutputType["Vec4"] = 5] = "Vec4";
+    InputOutputType[InputOutputType["Quat"] = 6] = "Quat";
+    InputOutputType[InputOutputType["Color"] = 7] = "Color";
+    InputOutputType[InputOutputType["Texture2D"] = 8] = "Texture2D";
+    InputOutputType[InputOutputType["IntArray"] = 1000] = "IntArray";
+    InputOutputType[InputOutputType["FloatArray"] = 1001] = "FloatArray";
+})(InputOutputType || (InputOutputType = {}));
+class InputOutput {
+    node;
+    id;
+    type;
+    size;
+    _value;
+    _pixelArray;
+    constructor(node, id, type, size = 1) {
+        this.node = node;
+        this.id = id;
+        this.type = type;
+        this.size = size;
+        if (size == 1) {
+            this._value = undefined;
+        }
+        else {
+            this._value = new Array(size);
+        }
+    }
+}
+
 //const isUndefined = (element) => element == undefined;
 class Input extends InputOutput {
     #predecessor;
@@ -14732,6 +14810,12 @@ var DrawState;
     DrawState[DrawState["Valid"] = 1] = "Valid";
 })(DrawState || (DrawState = {}));
 const PREVIEW_PICTURE_SIZE = 256;
+var NodeEventType;
+(function (NodeEventType) {
+    NodeEventType["Any"] = "*";
+    NodeEventType["ParamAdded"] = "paramadded";
+    NodeEventType["ParamChanged"] = "paramchanged";
+})(NodeEventType || (NodeEventType = {}));
 class Node extends MyEventTarget {
     #hasPreview = false;
     id = generateRandomUUID();
@@ -14775,7 +14859,7 @@ class Node extends MyEventTarget {
     }
     addParam(param) {
         this.params.set(param.name, param);
-        this.#dispatchEvent('paramadded', param);
+        this.#dispatchEvent(NodeEventType.ParamAdded, param);
     }
     getParam(paramName) {
         return this.params.get(paramName);
@@ -14808,7 +14892,7 @@ class Node extends MyEventTarget {
             else {
                 p.value = paramValue;
             }
-            this.#dispatchEvent('paramchanged', p);
+            this.#dispatchEvent(NodeEventType.ParamChanged, p);
         }
     }
     setPredecessor(inputId, predecessor, predecessorOutputId) {
@@ -14916,7 +15000,7 @@ class Node extends MyEventTarget {
     }
     #dispatchEvent(eventName, eventDetail) {
         this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-        this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+        this.dispatchEvent(new CustomEvent(NodeEventType.Any, { detail: { eventName: eventName } }));
     }
     updatePreview(context = {}) {
         const previewSize = context.previewSize ?? this.previewSize;
@@ -15001,6 +15085,31 @@ class Node extends MyEventTarget {
     }
 }
 
+var NodeParamType;
+(function (NodeParamType) {
+    NodeParamType[NodeParamType["Unknown"] = 0] = "Unknown";
+    NodeParamType[NodeParamType["Int"] = 1] = "Int";
+    NodeParamType[NodeParamType["Bool"] = 2] = "Bool";
+    NodeParamType[NodeParamType["Float"] = 3] = "Float";
+    NodeParamType[NodeParamType["Radian"] = 4] = "Radian";
+    NodeParamType[NodeParamType["Degree"] = 5] = "Degree";
+    NodeParamType[NodeParamType["String"] = 6] = "String";
+    NodeParamType[NodeParamType["Vec2"] = 7] = "Vec2";
+    NodeParamType[NodeParamType["StickerAdjust"] = 8] = "StickerAdjust";
+})(NodeParamType || (NodeParamType = {}));
+class NodeParam {
+    name;
+    type;
+    value;
+    length;
+    constructor(name, type, value, length) {
+        this.name = name;
+        this.type = type;
+        this.value = value;
+        this.length = length;
+    }
+}
+
 class NodeImageEditorMaterial extends Material {
     shaderName = '';
     constructor(params) {
@@ -15010,19 +15119,6 @@ class NodeImageEditorMaterial extends Material {
     getShaderSource() {
         return this.shaderName;
     }
-}
-
-const operations$1 = new Map();
-function registerOperation(name, ope) {
-    operations$1.set(name, ope);
-}
-function getOperation(name, editor, params) {
-    const ope = operations$1.get(name);
-    if (!ope) {
-        console.warn('Unknown operation : ' + name);
-        return null;
-    }
-    return new (ope)(editor, params);
 }
 
 vec2.create();
@@ -15335,7 +15431,7 @@ class NodeGui {
         this.#nodeImageEditorGui = nodeImageEditorGui;
         this.#node = node;
         this.#initHtml();
-        this.#node.addEventListener('*', this.#nodeChanged);
+        this.#node.addEventListener(NodeEventType.Any, this.#nodeChanged);
     }
     set expanded(expanded) {
         this.#expanded = expanded;
@@ -15808,8 +15904,6 @@ class NodeGui {
     }
 }
 
-var nodeImageEditorCSS = ":host {\n\tbackground-color: #000000FF;\n\twidth: 100%;\n\theight: 100%;\n\tdisplay: flex;\n\tflex-direction: column;\n\tuser-select: none;\n}\n\n.node-image-editor-nodes {\n\toverflow: auto;\n\tposition: relative;\n\tdisplay: flex;\n\toverflow: auto;\n\tflex: 1;\n}\n\n.node-image-editor-nodes-column {\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-left: 50px;\n\tmargin-right: 50px;\n}\n\n.node-image-editor-canvas {\n\tpointer-events: none;\n}\n\n.node-image-editor-node {\n\tbackground-color: var(--main-bg-color-bright);\n\tdisplay: flex;\n\tflex-direction: column;\n\tmargin-top: 50px;\n\tmargin-bottom: 50px;\n\tpadding: 5px;\n}\n\n.node-image-editor-node.collapsed {\n\twidth: auto;\n\tmargin-top: 1rem;\n\tmargin-bottom: 1rem;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-content {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed .node-image-editor-node-preview {\n\tdisplay: none;\n}\n\n.node-image-editor-node.collapsed button {\n\tdisplay: none;\n}\n\n.node-image-editor-node-header {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-title {\n\tflex: 1;\n}\n\n.node-image-editor-node-buttons {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-buttons>div {\n\tcursor: pointer;\n}\n\n.node-image-editor-node-preview {\n\tposition: relative;\n\t/*height: 32px;\n\twidth: 32px;*/\n\tbackground-color: #000000FF;\n\tdisplay: inline-block;\n\twidth: min-content;\n\tdisplay: flex;\n}\n\n.node-image-editor-sticker-selector {\n\tposition: absolute;\n\tpointer-events: none;\n\ttop: 0;\n\twidth: 100%;\n\theight: 100%;\n\t--harmony-2d-manipulator-bg-color: rgba(0, 0, 0, 0);\n\t--harmony-2d-manipulator-border: 1px dashed white;\n}\n\n.node-image-editor-sticker-selector>div {\n\tposition: absolute;\n\twidth: 0.4rem;\n\theight: 0.4rem;\n\tbackground-color: black;\n\tpointer-events: all;\n}\n\n.node-image-editor-sticker-selector>.handle-move {\n\tcursor: move;\n\ttop: calc(50% - 0.2rem);\n\tleft: calc(50% - 0.2rem);\n}\n\n.node-image-editor-sticker-selector>.handle-resize {\n\tcursor: nesw-resize;\n\ttop: -0.2rem;\n\tright: 0.2rem;\n}\n\n.node-image-editor-sticker-selector>.handle-rotate {\n\tcursor: grab;\n\ttop: -0.2rem;\n\tleft: -0.2rem;\n}\n\n.node-image-editor-node-content {\n\tdisplay: flex;\n}\n\n.node-image-editor-node-ios {\n\theight: 100%;\n\tflex: 0;\n}\n\n.node-image-editor-node-io {\n\twidth: 10px;\n\theight: 10px;\n\tbackground-color: green;\n}\n\n.node-image-editor-node-params {\n\tflex: 1;\n\toverflow: hidden;\n\tpadding: 5px;\n}\n\n.node-image-editor-node-param {\n\tdisplay: flex;\n\ttext-wrap: nowrap;\n}\n\n.node-image-editor-node-param>div {\n\tflex: 1;\n\t/*overflow: auto;*/\n}\n\n.node-image-editor-node-param>input {\n\theight: 1.5rem;\n\tbox-sizing: border-box;\n\tvertical-align: middle;\n}\n\n.node-image-editor-node-change-image {\n\topacity: 0%;\n\tposition: absolute;\n\ttop: 0px;\n\tleft: 0px;\n\theight: 100%;\n\twidth: 100%;\n\t/*background-image: url('./img/icons/image_search.svg');*/\n\toverflow: hidden;\n\tbackground-size: 100%;\n\tbackground-repeat: no-repeat;\n\tbackground-position: center;\n\tbackground-color: white;\n\tborder-radius: 4px;\n\tcursor: pointer;\n}\n\n.node-image-editor-node input[type=\"file\"] {\n\topacity: 0;\n\twidth: 100%;\n\theight: 100%;\n}\n\n.copy-button {\n\twidth: 2rem;\n\theight: 2rem;\n\tdisplay: inline-block;\n\tcursor: pointer;\n}\n\ninput {\n\t/*transition: background-color 1s;*/\n\tbackground-color: #FFF;\n\n\t/* only animation-duration here is required, rest are optional (also animation-name but it will be set on hover)*/\n\tanimation-duration: 1.5s;\n\t/* same as transition duration */\n\tanimation-timing-function: linear;\n\t/* kind of same as transition timing */\n\tanimation-delay: 0ms;\n\t/* same as transition delay */\n\tanimation-iteration-count: 1;\n\t/* set to 2 to make it run twice, or Infinite to run forever!*/\n\tanimation-direction: normal;\n\t/* can be set to \"alternate\" to run animation, then run it backwards.*/\n\tanimation-fill-mode: none;\n\t/* can be used to retain keyframe styling after animation, with \"forwards\" */\n\tanimation-play-state: running;\n\t/* can be set dynamically to pause mid animation*/\n\n}\n\n.flash {\n\tanimation-name: copyAnimation;\n}\n\n@keyframes copyAnimation {\n\t0% {\n\t\tbackground-color: #ffdf5d;\n\t}\n\n\t100% {\n\t\tbackground-color: #FFF;\n\t}\n}\n\nharmony-toggle-button.sticker {\n\tmargin: 0.5rem;\n\tpadding: 0.2rem;\n\tborder-radius: 0.5rem;\n}\n\nharmony-toggle-button.sticker.on {\n\tbackground-color: green;\n}\n\nharmony-toggle-button.sticker.off {\n\tbackground-color: red;\n}\n";
-
 class NodeImageEditorGui {
     #filter = {};
     #shadowRoot;
@@ -15868,10 +15962,10 @@ class NodeImageEditorGui {
             return;
         }
         if (this.#nodeImageEditor) {
-            this.#nodeImageEditor.removeEventListener('*', this.#imageEditorChanged);
+            this.#nodeImageEditor.removeEventListener(NodeImageEditorEventType.Any, this.#imageEditorChanged);
         }
         this.#nodeImageEditor = nodeImageEditor;
-        this.#nodeImageEditor?.addEventListener('*', this.#imageEditorChanged);
+        this.#nodeImageEditor?.addEventListener(NodeImageEditorEventType.Any, this.#imageEditorChanged);
     }
     get htmlElement() {
         return this.#shadowRoot.host;
@@ -16797,80 +16891,6 @@ var imageeditor_vs = `
 
 Shaders['imageeditor.fs'] = imageeditor_fs;
 Shaders['imageeditor.vs'] = imageeditor_vs;
-
-const DEFAULT_TEXTURE_SIZE = 512;
-class NodeImageEditor extends MyEventTarget {
-    #variables = new Map();
-    #scene = new Scene();
-    #nodes = new Set();
-    #camera = new Camera({ position: vec3.fromValues(0, 0, 100) });
-    #fullScreenQuadMesh = new FullScreenQuad();
-    textureSize = DEFAULT_TEXTURE_SIZE;
-    constructor() {
-        super();
-        this.#scene.addChild(this.#fullScreenQuadMesh);
-    }
-    render(material) {
-        this.#fullScreenQuadMesh.setMaterial(material);
-        Graphics$1.render(this.#scene, this.#camera, 0, { DisableToolRendering: true });
-    }
-    addNode(operationName, params = {}) {
-        params.textureSize = params.textureSize ?? this.textureSize;
-        if (!operationName) {
-            return null;
-        }
-        const node = getOperation(operationName, this, params);
-        if (node) {
-            this.textureSize = params.textureSize;
-            this.#nodes.add(node);
-            this.#dispatchEvent('nodeadded', node);
-        }
-        return node;
-    }
-    /*addNewNode(operationName, params = Object.create(null)) {
-        let node = this._createNode(operationName, params);
-        this.addNode(node);
-        return node;
-    }*/
-    #dispatchEvent(eventName, eventDetail) {
-        this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-        this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
-    }
-    /*addNode(node) {
-        if (node instanceof Node && node.editor == this) {
-            this.#nodes.add(node);
-            this.#dispatchEvent('nodeadded', node);
-        }
-    }*/
-    removeNode(node) {
-        if (node.editor == this) {
-            this.#nodes.delete(node);
-            //TODO :remove all inputs / output
-            this.#dispatchEvent('noderemoved', node);
-        }
-    }
-    removeAllNodes() {
-        this.#nodes.forEach((node) => node.dispose());
-        this.#nodes.clear();
-        this.#dispatchEvent('allnodesremoved', null);
-        //TODO :remove all inputs / output
-    }
-    getVariable(name) {
-        return this.#variables.get(name);
-    }
-    setVariable(name, value) {
-        return this.#variables.set(name, value);
-    }
-    deleteVariable(name) {
-        return this.#variables.delete(name);
-    }
-    clearVariables() {
-        return this.#variables.clear();
-    }
-    getNodes() {
-        return new Set(this.#nodes);
-    }
-}
 
 const tempVec3$o = vec3.create();
 class BoundingBoxHelper extends Box {
@@ -28022,10 +28042,10 @@ class SceneExplorerEntity extends HTMLElement {
     static #explorer;
     static #draggedEntity;
     static {
-        EntityObserver.addEventListener(CHILD_ADDED, (event) => _a$2.#expandEntityChilds(event.detail.parent));
-        EntityObserver.addEventListener(CHILD_REMOVED, (event) => _a$2.#expandEntityChilds(event.detail.parent));
-        EntityObserver.addEventListener(PROPERTY_CHANGED$1, (event) => _a$2.#handlePropertyChanged(event.detail));
-        EntityObserver.addEventListener(ENTITY_DELETED, (event) => _a$2.#handleEntityDeleted(event.detail));
+        EntityObserver.addEventListener(EntityObserverEventType.ChildAdded, (event) => _a$2.#expandEntityChilds(event.detail.parent));
+        EntityObserver.addEventListener(EntityObserverEventType.ChildRemoved, (event) => _a$2.#expandEntityChilds(event.detail.parent));
+        EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event) => _a$2.#handlePropertyChanged(event.detail));
+        EntityObserver.addEventListener(EntityObserverEventType.EntityDeleted, (event) => _a$2.#handleEntityDeleted(event.detail));
     }
     constructor() {
         super();
@@ -28472,7 +28492,7 @@ class SceneExplorer {
                 }
             }
         }).observe(this.#shadowRoot.host);
-        EntityObserver.addEventListener(PROPERTY_CHANGED$1, (event) => this.#handlePropertyChanged(event.detail));
+        EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event) => this.#handlePropertyChanged(event.detail));
         SceneExplorerEvents.addEventListener('bonepicked', (event) => this.selectEntity(event.detail.bone, true));
     }
     /**
@@ -33474,6 +33494,10 @@ class Timeline extends TimelineElement {
     }
 }
 
+var ChoreographyEventType;
+(function (ChoreographyEventType) {
+    ChoreographyEventType["Stop"] = "stop";
+})(ChoreographyEventType || (ChoreographyEventType = {}));
 class Choreography extends MyEventTarget {
     #repository;
     actors2 = [];
@@ -33557,7 +33581,7 @@ class Choreography extends MyEventTarget {
      * Stop
      */
     stop() {
-        this.dispatchEvent(new Event('stop'));
+        this.dispatchEvent(new Event(ChoreographyEventType.Stop));
     }
     /**
      * Step
@@ -72027,4 +72051,4 @@ class RenderTargetViewer {
     }
 }
 
-export { ATTRIBUTE_CHANGED, Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, CHILD_ADDED, CHILD_REMOVED, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, ENTITY_DELETED, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PARENT_CHANGED, PI, PROPERTY_CHANGED$1 as PROPERTY_CHANGED, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
+export { Add, AgeNoise, AlphaFadeAndDecay, AlphaFadeInRandom, AlphaFadeOutRandom, AlphaRandom, AmbientLight, AnimatedTextureProxy, AnimatedWeaponSheen, ApplySticker, AttractToControlPoint, AudioGroup, AudioMixer, BackGround, BasicMovement, BeamBufferGeometry, BeamSegment, BenefactorLevel, Bias, BlendingEquation, BlendingFactor, BlendingMode, Bone, BoundingBox, BoundingBoxHelper, Box, BufferAttribute, BufferGeometry, BuildingInvis, BuildingRescueLevel, BurnLevel, CDmxAttributeType, CDmxElement, COLLISION_GROUP_DEBRIS, COLLISION_GROUP_NONE, CPVelocityForce, CParticleSystemDefinition, Camera, CameraControl, CameraFrustum, CameraProjection, CharacterMaterial, ChoreographiesManager, Circle, Clamp, ClampScalar, ClearPass, CollisionViaTraces, Color, ColorBackground, ColorFade, ColorInterpolate, ColorRandom, ColorSpace, CombineAdd, CombineLerp, CommunityWeapon, Composer, Cone, ConstrainDistance, ConstrainDistanceToControlPoint, ConstrainDistanceToPathBetweenTwoControlPoints, ContextObserver, ContinuousEmitter, ControlPoint, CopyPass, CreateFromParentParticles, CreateOnModel, CreateOnModelAtHeight, CreateSequentialPath, CreateWithinBox, CreateWithinSphere, CreationNoise, CrosshatchPass, CubeBackground, CubeEnvironment, CubeTexture, CubicBezierCurve, CustomSteamImageOnModel, CustomWeaponMaterial, Cylinder, DEFAULT_GROUP_ID, DEFAULT_MAX_PARTICLES$1 as DEFAULT_MAX_PARTICLES, DEFAULT_TEXTURE_SIZE, DEG_TO_RAD, DampenToCP, Decal, Detex, DistanceCull, DistanceToCP, Divide, DmeElement, DmeParticleSystemDefinition, DrawCircle, DummyEntity, EPSILON$2 as EPSILON, EmitContinuously, EmitInstantaneously, EmitNoise, Entity, EntityObserver, EntityObserverEventType, Environment, Equals, ExponentialDecay, EyeRefractMaterial, FLT_EPSILON, FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING, FadeAndKill, FadeIn, FadeInSimple, FadeOut, FadeOutSimple, FileNameFromPath, FirstPersonControl, Float32BufferAttribute, FloatArrayNode, FontManager, FrameBufferTarget, Framebuffer, FullScreenQuad, GL_ALPHA, GL_ALWAYS, GL_ARRAY_BUFFER, GL_BACK, GL_BLEND, GL_BLUE, GL_BOOL, GL_BOOL_VEC2, GL_BOOL_VEC3, GL_BOOL_VEC4, GL_BYTE, GL_CCW, GL_CLAMP_TO_EDGE, GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT10, GL_COLOR_ATTACHMENT11, GL_COLOR_ATTACHMENT12, GL_COLOR_ATTACHMENT13, GL_COLOR_ATTACHMENT14, GL_COLOR_ATTACHMENT15, GL_COLOR_ATTACHMENT16, GL_COLOR_ATTACHMENT17, GL_COLOR_ATTACHMENT18, GL_COLOR_ATTACHMENT19, GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT20, GL_COLOR_ATTACHMENT21, GL_COLOR_ATTACHMENT22, GL_COLOR_ATTACHMENT23, GL_COLOR_ATTACHMENT24, GL_COLOR_ATTACHMENT25, GL_COLOR_ATTACHMENT26, GL_COLOR_ATTACHMENT27, GL_COLOR_ATTACHMENT28, GL_COLOR_ATTACHMENT29, GL_COLOR_ATTACHMENT3, GL_COLOR_ATTACHMENT30, GL_COLOR_ATTACHMENT31, GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5, GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7, GL_COLOR_ATTACHMENT8, GL_COLOR_ATTACHMENT9, GL_COLOR_BUFFER_BIT, GL_CONSTANT_ALPHA, GL_CONSTANT_COLOR, GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, GL_CULL_FACE, GL_CW, GL_DEPTH24_STENCIL8, GL_DEPTH32F_STENCIL8, GL_DEPTH_ATTACHMENT, GL_DEPTH_BUFFER_BIT, GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32, GL_DEPTH_COMPONENT32F, GL_DEPTH_STENCIL, GL_DEPTH_TEST, GL_DITHER, GL_DRAW_FRAMEBUFFER, GL_DST_ALPHA, GL_DST_COLOR, GL_DYNAMIC_COPY, GL_DYNAMIC_DRAW, GL_DYNAMIC_READ, GL_ELEMENT_ARRAY_BUFFER, GL_EQUAL, GL_FALSE, GL_FLOAT, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, GL_FLOAT_MAT2, GL_FLOAT_MAT2x3, GL_FLOAT_MAT2x4, GL_FLOAT_MAT3, GL_FLOAT_MAT3x2, GL_FLOAT_MAT3x4, GL_FLOAT_MAT4, GL_FLOAT_MAT4x2, GL_FLOAT_MAT4x3, GL_FLOAT_VEC2, GL_FLOAT_VEC3, GL_FLOAT_VEC4, GL_FRAGMENT_SHADER, GL_FRAMEBUFFER, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_FUNC_REVERSE_SUBTRACT, GL_FUNC_SUBTRACT, GL_GEQUAL, GL_GREATER, GL_GREEN, GL_HALF_FLOAT, GL_HALF_FLOAT_OES, GL_INT, GL_INT_SAMPLER_2D, GL_INT_SAMPLER_2D_ARRAY, GL_INT_SAMPLER_3D, GL_INT_SAMPLER_CUBE, GL_INT_VEC2, GL_INT_VEC3, GL_INT_VEC4, GL_INVALID_ENUM, GL_INVALID_OPERATION, GL_INVALID_VALUE, GL_LEQUAL, GL_LESS, GL_LINEAR, GL_LINEAR_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP, GL_LUMINANCE, GL_LUMINANCE_ALPHA, GL_MAX, GL_MAX_COLOR_ATTACHMENTS, GL_MAX_EXT, GL_MAX_RENDERBUFFER_SIZE, GL_MAX_VERTEX_ATTRIBS, GL_MIN, GL_MIN_EXT, GL_MIRRORED_REPEAT, GL_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_NEAREST_MIPMAP_NEAREST, GL_NEVER, GL_NONE, GL_NOTEQUAL, GL_NO_ERROR, GL_ONE, GL_ONE_MINUS_CONSTANT_ALPHA, GL_ONE_MINUS_CONSTANT_COLOR, GL_ONE_MINUS_DST_ALPHA, GL_ONE_MINUS_DST_COLOR, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_OUT_OF_MEMORY, GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER, GL_POINTS, GL_POLYGON_OFFSET_FILL, GL_R16I, GL_R16UI, GL_R32I, GL_R32UI, GL_R8, GL_R8I, GL_R8UI, GL_R8_SNORM, GL_RASTERIZER_DISCARD, GL_READ_FRAMEBUFFER, GL_RED, GL_RENDERBUFFER, GL_REPEAT, GL_RG16I, GL_RG16UI, GL_RG32I, GL_RG32UI, GL_RG8, GL_RG8I, GL_RG8UI, GL_RGB, GL_RGB10, GL_RGB10_A2, GL_RGB10_A2UI, GL_RGB12, GL_RGB16, GL_RGB16I, GL_RGB16UI, GL_RGB32F, GL_RGB32I, GL_RGB4, GL_RGB5, GL_RGB565, GL_RGB5_A1, GL_RGB8, GL_RGBA, GL_RGBA12, GL_RGBA16, GL_RGBA16F, GL_RGBA16I, GL_RGBA16UI, GL_RGBA2, GL_RGBA32F, GL_RGBA32I, GL_RGBA32UI, GL_RGBA4, GL_RGBA8, GL_RGBA8I, GL_RGBA8UI, GL_SAMPLER_2D, GL_SAMPLER_2D_ARRAY, GL_SAMPLER_2D_ARRAY_SHADOW, GL_SAMPLER_2D_SHADOW, GL_SAMPLER_3D, GL_SAMPLER_CUBE, GL_SAMPLER_CUBE_SHADOW, GL_SAMPLE_ALPHA_TO_COVERAGE, GL_SAMPLE_COVERAGE, GL_SCISSOR_TEST, GL_SHORT, GL_SRC_ALPHA, GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR, GL_SRGB, GL_SRGB8, GL_SRGB8_ALPHA8, GL_SRGB_ALPHA, GL_STACK_OVERFLOW, GL_STACK_UNDERFLOW, GL_STATIC_COPY, GL_STATIC_DRAW, GL_STATIC_READ, GL_STENCIL_ATTACHMENT, GL_STENCIL_BUFFER_BIT, GL_STENCIL_INDEX8, GL_STENCIL_TEST, GL_STREAM_COPY, GL_STREAM_DRAW, GL_STREAM_READ, GL_TEXTURE0, GL_TEXTURE_2D, GL_TEXTURE_2D_ARRAY, GL_TEXTURE_3D, GL_TEXTURE_BASE_LEVEL, GL_TEXTURE_COMPARE_FUNC, GL_TEXTURE_COMPARE_MODE, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MAX_LEVEL, GL_TEXTURE_MAX_LOD, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_MIN_LOD, GL_TEXTURE_WRAP_R, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TRANSFORM_FEEDBACK_BUFFER, GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP, GL_TRUE, GL_UNIFORM_BUFFER, GL_UNPACK_COLORSPACE_CONVERSION_WEBGL, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE, GL_UNSIGNED_INT, GL_UNSIGNED_INT_10F_11F_11F_REV, GL_UNSIGNED_INT_24_8, GL_UNSIGNED_INT_2_10_10_10_REV, GL_UNSIGNED_INT_5_9_9_9_REV, GL_UNSIGNED_INT_SAMPLER_2D, GL_UNSIGNED_INT_SAMPLER_2D_ARRAY, GL_UNSIGNED_INT_SAMPLER_3D, GL_UNSIGNED_INT_SAMPLER_CUBE, GL_UNSIGNED_INT_VEC2, GL_UNSIGNED_INT_VEC3, GL_UNSIGNED_INT_VEC4, GL_UNSIGNED_SHORT, GL_UNSIGNED_SHORT_4_4_4_4, GL_UNSIGNED_SHORT_5_5_5_1, GL_UNSIGNED_SHORT_5_6_5, GL_VERTEX_ARRAY, GL_VERTEX_SHADER, GL_ZERO, GRIDCELL, GrainPass, Graphics$1 as Graphics, GraphicsEvent, GraphicsEvents, Grid, GridMaterial, Group, HALF_PI, HeartbeatScale, HitboxHelper, Includes, InheritFromParentParticles, InitFloat, InitFromCPSnapshot, InitSkinnedPositionFromCPSnapshot, InitVec, InitialVelocityNoise, InstantaneousEmitter, IntArrayNode, IntProxy, InterpolateRadius, Intersection, Invis, ItemTintColor, JSONLoader, KeepOnlyLastChild, LerpEndCapScalar, LessOrEqualProxy, LifespanDecay$1 as LifespanDecay, LifetimeFromSequence, LifetimeRandom, Light, LightMappedGenericMaterial, LightShadow, Line, LineMaterial, LineSegments, LinearBezierCurve, LinearRamp, LockToBone$1 as LockToBone, LoopSubdivision, MATERIAL_BLENDING_NONE, MATERIAL_BLENDING_NORMAL, MATERIAL_CULLING_BACK, MATERIAL_CULLING_FRONT, MATERIAL_CULLING_FRONT_AND_BACK, MATERIAL_CULLING_NONE, MAX_FLOATS, MOUSE, MaintainEmitter, MaintainSequentialPath, ManifestRepository, Manipulator, MapEntities, MateriaParameter, MateriaParameterType, Material, MemoryCacheRepository, MemoryRepository, MergeRepository, Mesh, MeshBasicMaterial, MeshBasicPbrMaterial, MeshFlatMaterial, MeshPhongMaterial, Metaball, Metaballs, ModelGlowColor, ModelLoader, MovementBasic, MovementLocktoControlPoint, MovementMaxVelocity, MovementRigidAttachToCP$1 as MovementRigidAttachToCP, MovementRotateParticleAroundAxis$1 as MovementRotateParticleAroundAxis, Multiply$1 as Multiply, Node, NodeImageEditor, NodeImageEditorGui, NodeImageEditorMaterial, Noise, NoiseEmitter, NormalAlignToCP, NormalLock, NormalOffset, NormalizeVector, OBJImporter, ONE_EPS, ObjExporter, OldMoviePass, OrbitControl, OrientTo2dDirection, OscillateScalar$1 as OscillateScalar, OscillateScalarSimple, OscillateVector$1 as OscillateVector, OutlinePass, OverrideRepository, PI, PalettePass, ParametersNode, ParticleRandomFloat, ParticleRandomVec3, Pass, Path, PathPrefixRepository, PinParticleToCP, PixelatePass, Plane, PlaneCull, PointLight, PointLightHelper, PositionAlongPathRandom, PositionAlongPathSequential, PositionFromParentParticles$1 as PositionFromParentParticles, PositionLock, PositionModifyOffsetRandom, PositionOffset, PositionOnModelRandom, PositionWarp, PositionWithinBoxRandom, PositionWithinSphereRandom, Program, Properties, Property, PropertyType, ProxyManager, AttractToControlPoint$1 as PullTowardsControlPoint, QuadraticBezierCurve, RAD_TO_DEG, RadiusFromCPObject, RadiusRandom, RadiusScale, RampScalarLinear, RampScalarLinearSimple, RampScalarSpline, RandomColor, RandomFloat, RandomFloatExp, RandomForce$1 as RandomForce, RandomSecondSequence, RandomSequence, RandomVectorInUnitSphere, RandomYawFlip, Ray, Raycaster, RefractMaterial, RemGenerator, RemapCPOrientationToRotations, RemapCPSpeedToCP, RemapCPtoScalar, RemapCPtoVector, RemapControlPointDirectionToVector, RemapControlPointToScalar, RemapControlPointToVector, RemapDistanceToControlPointToScalar, RemapDistanceToControlPointToVector, RemapInitialScalar, RemapNoiseToScalar, RemapParticleCountToScalar, RemapScalar, RemapScalarToVector, RemapSpeed, RemapSpeedtoCP, RemapValClamped, RemapValClampedBias, RenderAnimatedSprites, RenderBlobs, RenderBufferInternalFormat, RenderDeferredLight, RenderFace, RenderModels, RenderPass, RenderRope, RenderRopes, RenderScreenVelocityRotate, RenderSpriteTrail, RenderSprites, RenderTarget, RenderTargetViewer, RenderTrails, Renderbuffer, RepeatedTriggerChildGroup, Repositories, RepositoryEntry, RepositoryError, RgbeImporter, RingWave, RotationBasic, RotationControl, RotationRandom, RotationSpeedRandom, RotationSpinRoll, RotationSpinYaw, RotationYawFlipRandom, RotationYawRandom, SOURCE2_DEFAULT_BODY_GROUP, SOURCE2_DEFAULT_RADIUS, SaturatePass, Scene, SceneExplorer, Select, SelectFirstIfNonZero, SequenceLifeTime, SequenceRandom, SetCPOrientationToGroundNormal, SetChildControlPointsFromParticlePositions, SetControlPointFromObjectScale, SetControlPointOrientation, SetControlPointPositions$1 as SetControlPointPositions, SetControlPointToCenter, SetControlPointToParticlesCenter, SetControlPointsToModelParticles, SetFloat, SetParentControlPointsToChildCP, SetPerChildControlPoint, SetRandomControlPointPosition, SetRigidAttachment, SetSingleControlPointPosition, SetToCP, SetVec, ShaderDebugMode, ShaderEditor, ShaderManager, ShaderMaterial, ShaderPrecision, ShaderQuality, ShaderToyMaterial, Shaders, ShadowMap, SimpleSpline, Sine, SkeletalMesh, Skeleton, SkeletonHelper, SketchPass, SnapshotRigidSkinToBones, Source1BspLoader, Source1Material, Source1MaterialManager, Source1MdlLoader, Source1ModelInstance, Source1ModelManager, Multiply as Source1Multiply, Source1ParticleControler, Source1ParticleOperators, Source1ParticleSystem, Source1PcfLoader, Source1SoundManager, Source1TextureManager, Source1VmtLoader, Source1Vtf, Source1VtxLoader, Source1VvdLoader, Source2CablesMaterial, Source2ColorCorrection, Source2Crystal, Source2CsgoCharacter, Source2CsgoComplex, Source2CsgoEffects, Source2CsgoEnvironment, Source2CsgoEnvironmentBlend, Source2CsgoFoliage, Source2CsgoGlass, Source2CsgoSimple, Source2CsgoStaticOverlay, Source2CsgoUnlitGeneric, Source2CsgoVertexLitGeneric, Source2CsgoWeapon, Source2CsgoWeaponStattrak, Source2EnvironmentBlend, Source2Error, Source2FileLoader, Source2Generic, Source2GlobalLitSimple, Source2GrassTile, Source2Hero, Source2HeroFluid, Source2IceSurfaceDotaMaterial, LifespanDecay as Source2LifespanDecay, Source2LiquidFx, LockToBone as Source2LockToBone, Source2Material, Source2MaterialManager, Source2ModelInstance, Source2ModelLoader, Source2ModelManager, MovementRotateParticleAroundAxis as Source2MovementRotateParticleAroundAxis, OscillateScalar as Source2OscillateScalar, OscillateVector as Source2OscillateVector, Source2Panorama, Source2PanoramaFancyQuad, Source2ParticleLoader, Source2ParticleManager, Source2ParticlePathParams, Source2ParticleSystem, Source2Pbr, Source2PhyscisWireframe, Source2ProjectedDotaMaterial, RandomForce as Source2RandomForce, Source2RefractMaterial, SetControlPointPositions as Source2SetControlPointPositions, Source2Sky, Source2SnapshotLoader, Source2SpringMeteor, Source2SpriteCard, Source2StickersMaterial, Source2TextureManager, TwistAroundAxis as Source2TwistAroundAxis, Source2UI, Source2Unlit, VelocityRandom as Source2VelocityRandom, Source2VrBlackUnlit, Source2VrComplex, Source2VrEyeball, Source2VrGlass, Source2VrMonitor, Source2VrSimple, Source2VrSimple2WayBlend, Source2VrSimple3LayerParallax, Source2VrSkin, Source2VrXenFoliage, SourceBSP, SourceModel, SourcePCF, Sphere, Spin, SpinUpdate, SpotLight, SpotLightHelper, SpriteCardMaterial, SpriteMaterial, SpyInvis, StatTrakDigit, StatTrakIllum, StickybombGlowColor, TAU, TEXTUREFLAGS_ALL_MIPS, TEXTUREFLAGS_ANISOTROPIC, TEXTUREFLAGS_BORDER, TEXTUREFLAGS_CLAMPS, TEXTUREFLAGS_CLAMPT, TEXTUREFLAGS_CLAMPU, TEXTUREFLAGS_DEPTHRENDERTARGET, TEXTUREFLAGS_EIGHTBITALPHA, TEXTUREFLAGS_ENVMAP, TEXTUREFLAGS_HINT_DXT5, TEXTUREFLAGS_NODEBUGOVERRIDE, TEXTUREFLAGS_NODEPTHBUFFER, TEXTUREFLAGS_NOLOD, TEXTUREFLAGS_NOMIP, TEXTUREFLAGS_NORMAL, TEXTUREFLAGS_ONEBITALPHA, TEXTUREFLAGS_POINTSAMPLE, TEXTUREFLAGS_PROCEDURAL, TEXTUREFLAGS_RENDERTARGET, TEXTUREFLAGS_SINGLECOPY, TEXTUREFLAGS_SRGB, TEXTUREFLAGS_SSBUMP, TEXTUREFLAGS_TRILINEAR, TEXTUREFLAGS_UNUSED_01000000, TEXTUREFLAGS_UNUSED_40000000, TEXTUREFLAGS_UNUSED_80000000, TEXTUREFLAGS_VERTEXTEXTURE, TEXTURE_FORMAT_COMPRESSED_BPTC, TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT3, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_COMPRESSED_RGB_DXT1, TEXTURE_FORMAT_COMPRESSED_RGTC, TEXTURE_FORMAT_COMPRESSED_S3TC, TEXTURE_FORMAT_UNCOMPRESSED, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGB, TEXTURE_FORMAT_UNCOMPRESSED_RGBA, TEXTURE_FORMAT_UNKNOWN, TRIANGLE, TWO_PI, Target, Text3D, Texture, TextureFactoryEventTarget, TextureFormat, TextureLookup, TextureManager, TextureMapping, TextureScroll, TextureTarget, TextureTransform, TextureType, Timeline, TimelineChannel, TimelineClip, TimelineElement, TimelineElementType, TimelineGroup, ToneMapping, TrailLengthRandom, TranslationControl, Triangles, TwistAroundAxis$1 as TwistAroundAxis, Uint16BufferAttribute, Uint32BufferAttribute, Uint8BufferAttribute, UniformNoiseProxy, UnlitGenericMaterial, UnlitTwoTextureMaterial, Vec3Middle, VectorNoise, VelocityNoise, VelocityRandom$1 as VelocityRandom, VertexLitGenericMaterial, VpkRepository, WaterLod, WaterMaterial, WeaponDecalMaterial, WeaponInvis, WeaponLabelText, WeaponSkin, WebGLRenderingState, WebGLShaderSource, WebGLStats, WebRepository, Wireframe, World, WorldVertexTransitionMaterial, YellowLevel, ZipRepository, Zstd, addIncludeSource, ceilPowerOfTwo, clamp, createTexture, customFetch, decodeLz4, degToRad, deleteTexture, exportToBinaryFBX, fillCheckerTexture, fillFlatTexture, fillNoiseTexture, fillTextureWithImage, flipPixelArray, generateRandomUUID, getHelper, getIncludeList, getIncludeSource, getLoader, getRandomInt, getSceneExplorer, imageDataToImage, initRandomFloats, isNumeric, lerp, loadAnimGroup, pcfToSTring, polygonise, pow2, quatFromEulerRad, quatToEuler, quatToEulerDeg, radToDeg, registerLoader, setCustomIncludeSource, setFetchFunction, setTextureFactoryContext, smartRound, stringToQuat, stringToVec3, vec3ClampScalar, vec3RandomBox };
