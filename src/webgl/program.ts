@@ -40,7 +40,7 @@ export class Program {
 
 	setUniformValue(name: string, value: any) {
 		const uniform = this.uniforms.get(name);
-		if (uniform !== undefined) {
+		if (uniform) {
 			uniform.setValue(this.#glContext, value);
 			if (ENABLE_GET_ERROR && DEBUG) {
 				const error = this.#glContext.getError();
