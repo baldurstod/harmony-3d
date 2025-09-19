@@ -2,11 +2,11 @@ import { MyEventTarget } from 'harmony-utils';
 import { Entity } from './entity';
 
 //export const PARENT_CHANGED = 'parentchanged';
-export const CHILD_ADDED = 'childadded';
-export const CHILD_REMOVED = 'childremoved';
-export const ENTITY_DELETED = 'entitydeleted';
-export const PROPERTY_CHANGED = 'propertychanged';
-export const ATTRIBUTE_CHANGED = 'attributechanged';
+//export const CHILD_ADDED = 'childadded';
+//export const CHILD_REMOVED = 'childremoved';
+//export const ENTITY_DELETED = 'entitydeleted';
+//export const PROPERTY_CHANGED = 'propertychanged';
+//export const ATTRIBUTE_CHANGED = 'attributechanged';
 
 export interface ParentChangedEventData { child: Entity, oldParent: Entity | null, newParent: Entity | null }
 export interface ChildAddedEventData { child: Entity, parent: Entity | null }

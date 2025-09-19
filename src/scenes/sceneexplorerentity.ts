@@ -2,7 +2,7 @@ import { lockOpenRightSVG, lockSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, r
 import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, show, toggle } from 'harmony-ui';
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
-import { CHILD_REMOVED, ENTITY_DELETED, EntityObserver, EntityObserverChildAddedEvent, EntityObserverEvent, EntityObserverEventType, PROPERTY_CHANGED } from '../entities/entityobserver';
+import { EntityObserver, EntityObserverChildAddedEvent, EntityObserverEvent, EntityObserverEventType } from '../entities/entityobserver';
 import { Animated } from '../interfaces/animated';
 import { Lockable } from '../interfaces/lockable';
 import { Loopable } from '../interfaces/loopable';
