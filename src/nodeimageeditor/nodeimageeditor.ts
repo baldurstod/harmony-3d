@@ -12,7 +12,19 @@ export const DEFAULT_TEXTURE_SIZE = 512;
 
 export type NodeImageVariableType = number;
 
-export class NodeImageEditor extends MyEventTarget {
+export enum NodeImageEditorEventType {
+	Any = '*',
+	NodeAdded = 'nodeadded',
+	NodeRemoved = 'noderemoved',
+	AllNodesRemoved = 'allnodesremoved',
+}
+
+export type NodeImageEditorEvent = {
+	node?: Node | null;
+	eventName?: string;
+}
+
+export class NodeImageEditor extends MyEventTarget<NodeImageEditorEventType, CustomEvent<NodeImageEditorEvent>> {
 	#variables = new Map<string, NodeImageVariableType>();
 	#scene = new Scene();
 	#nodes = new Set<Node>();
@@ -40,7 +52,7 @@ export class NodeImageEditor extends MyEventTarget {
 		if (node) {
 			this.textureSize = params.textureSize;
 			this.#nodes.add(node);
-			this.#dispatchEvent('nodeadded', node);
+			this.#dispatchEvent(NodeImageEditorEventType.NodeAdded, node);
 		}
 		return node;
 	}
@@ -51,9 +63,9 @@ export class NodeImageEditor extends MyEventTarget {
 		return node;
 	}*/
 
-	#dispatchEvent(eventName: string, eventDetail: Node | null) {
-		this.dispatchEvent(new CustomEvent(eventName, { detail: { value: eventDetail } }));
-		this.dispatchEvent(new CustomEvent('*', { detail: { eventName: eventName } }));
+	#dispatchEvent(eventName: NodeImageEditorEventType, eventDetail: Node | null) {
+		this.dispatchEvent(new CustomEvent<NodeImageEditorEvent>(eventName, { detail: { node: eventDetail } }));
+		this.dispatchEvent(new CustomEvent<NodeImageEditorEvent>(NodeImageEditorEventType.Any, { detail: { eventName: eventName } }));
 	}
 
 	/*addNode(node) {
@@ -67,14 +79,14 @@ export class NodeImageEditor extends MyEventTarget {
 		if (node.editor == this) {
 			this.#nodes.delete(node);
 			//TODO :remove all inputs / output
-			this.#dispatchEvent('noderemoved', node);
+			this.#dispatchEvent(NodeImageEditorEventType.NodeRemoved, node);
 		}
 	}
 
 	removeAllNodes() {
 		this.#nodes.forEach((node) => node.dispose());
 		this.#nodes.clear();
-		this.#dispatchEvent('allnodesremoved', null);
+		this.#dispatchEvent(NodeImageEditorEventType.AllNodesRemoved, null);
 		//TODO :remove all inputs / output
 	}
 
