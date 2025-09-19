@@ -3,11 +3,15 @@ import { EPSILON } from '../../../math/constants';
 import { TimelineElement } from '../../../timeline/element';
 import { TimelineGroup } from '../../../timeline/group';
 import { Timeline } from '../../../timeline/timeline';
+import { Source1ModelInstance } from '../export';
 import { Actor } from './actor';
 import { ChoreographyEvent } from './event';
-import { Source1ModelInstance } from '../export';
 
-export class Choreography extends MyEventTarget {
+export enum ChoreographyEventType {
+	Stop = 'stop',
+}
+
+export class Choreography extends MyEventTarget<ChoreographyEventType> {
 	#repository;
 	actors2: Source1ModelInstance[] = [];
 	#events: ChoreographyEvent[] = [];
@@ -99,7 +103,7 @@ export class Choreography extends MyEventTarget {
 	 * Stop
 	 */
 	stop() {
-		this.dispatchEvent(new Event('stop'));
+		this.dispatchEvent(new Event(ChoreographyEventType.Stop));
 	}
 
 	/**
