@@ -91,7 +91,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 
 	addParam(param: NodeParam) {
 		this.params.set(param.name, param);
-		this.#dispatchEvent('paramadded', param);
+		this.#dispatchEvent(NodeEventType.ParamAdded, param);
 	}
 
 	getParam(paramName: string) {
@@ -127,7 +127,7 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 			} else {
 				p.value = paramValue;
 			}
-			this.#dispatchEvent('paramchanged', p);
+			this.#dispatchEvent(NodeEventType.ParamChanged, p);
 		}
 	}
 
@@ -246,9 +246,9 @@ export class Node extends MyEventTarget<NodeEventType, CustomEvent<NodeEvent>> {
 		throw 'This function must be overriden';
 	}
 
-	#dispatchEvent(eventName: string, eventDetail: NodeParam) {
+	#dispatchEvent(eventName: NodeEventType, eventDetail: NodeParam) {
 		this.dispatchEvent(new CustomEvent<NodeEvent>(eventName, { detail: { value: eventDetail } }));
-		this.dispatchEvent(new CustomEvent<NodeEvent>('*', { detail: { eventName: eventName } }));
+		this.dispatchEvent(new CustomEvent<NodeEvent>(NodeEventType.Any, { detail: { eventName: eventName } }));
 	}
 
 	updatePreview(context: any = {}) {
