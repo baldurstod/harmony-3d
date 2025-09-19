@@ -1,9 +1,8 @@
-import { createElement, shadowRootStyle, I18n, createShadowRoot } from 'harmony-ui';
-import { NodeGui, DELAY_BEFORE_REFRESH } from './nodegui';
-import { NodeImageEditor } from '../nodeimageeditor';
-
+import { I18n, createElement, createShadowRoot } from 'harmony-ui';
 import nodeImageEditorCSS from '../../css/nodeimageeditor.css';
 import { Node } from '../node';
+import { NodeImageEditor, NodeImageEditorEventType } from '../nodeimageeditor';
+import { DELAY_BEFORE_REFRESH, NodeGui } from './nodegui';
 
 const WIDTH = 300;
 const HEIGHT = 300;
@@ -73,11 +72,11 @@ export class NodeImageEditorGui {
 			return;
 		}
 		if (this.#nodeImageEditor) {
-			this.#nodeImageEditor.removeEventListener('*', this.#imageEditorChanged);
+			this.#nodeImageEditor.removeEventListener(NodeImageEditorEventType.Any, this.#imageEditorChanged);
 		}
 
 		this.#nodeImageEditor = nodeImageEditor;
-		this.#nodeImageEditor?.addEventListener('*', this.#imageEditorChanged);
+		this.#nodeImageEditor?.addEventListener(NodeImageEditorEventType.Any, this.#imageEditorChanged);
 	}
 
 	get htmlElement() {
