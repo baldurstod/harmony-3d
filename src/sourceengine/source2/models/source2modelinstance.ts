@@ -316,7 +316,17 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 	}
 
 	async getMaterialsName(skin: string): Promise<[string, Set<string>]> {
-		return [this.sourceModel.repository, new Set(this.sourceModel.getSkinMaterials(Number(skin)))];
+		const materials = this.sourceModel.getSkinMaterials(Number(skin));
+
+		const s = new Set<string>();
+
+		if (materials) {
+			for (const material of materials) {
+				s.add(material.replace(/\.vmat_c$/, '').replace(/\.vmat$/, '') + '.vmat_c');
+			}
+		}
+
+		return [this.sourceModel.repository, s];
 	}
 
 	#init() {
