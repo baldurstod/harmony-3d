@@ -164,13 +164,18 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	set skin(skin) {
+	set skin(skin) {// TODO: deprecate
 		this.#skin = skin;
 		this.#updateMaterials();
 	}
 
 	get skin() {
 		return this.#skin;
+	}
+
+	async setSkin(skin: string) {
+		this.#skin = Number(skin);
+		await this.#updateMaterials();
 	}
 
 	setLOD(lod: number) {
@@ -257,7 +262,7 @@ export class Source2ModelInstance extends Entity implements Animated, HasMateria
 		}
 	}
 
-	#updateMaterials() {
+	#updateMaterials() {//TODO: turn to async, remove then
 		//console.error(this);
 		const materials0 = this.sourceModel.getSkinMaterials(0);
 		const materials = this.sourceModel.getSkinMaterials(this.#skin);

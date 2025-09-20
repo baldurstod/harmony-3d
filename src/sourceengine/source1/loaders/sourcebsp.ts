@@ -129,7 +129,7 @@ export class SourceBSP extends World {
 							this.staticProps.addChild(model);
 							model.position = prop.position;
 							model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
-							model.skin = prop.skin;
+							model.skin = String(prop.skin);
 						}
 					}
 				);

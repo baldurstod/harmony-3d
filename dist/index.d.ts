@@ -3414,6 +3414,7 @@ declare class Channel {
                       export declare interface HasMaterials {
                           getSkins: () => Promise<Set<string>>;
                           getMaterialsName: (skin: string) => Promise<[string, Set<string>]>;
+                          setSkin(skin: string): Promise<void>;
                       }
 
                       export declare interface HasSkeleton {
@@ -7552,9 +7553,9 @@ declare class Channel {
                           set skeleton(skeleton: Skeleton | null);
                           addChild(child?: Entity | null): Entity | undefined;
                           removeChild(child: Entity): void;
-                          set skin(skin: number);
-                          get skin(): number;
-                          setSkin(skin: number): Promise<void>;
+                          set skin(skin: string);
+                          get skin(): string;
+                          setSkin(skin: string): Promise<void>;
                           set sheen(sheen: vec3);
                           set tint(tint: vec3 | null);
                           getTint(out?: vec4): vec4 | undefined;
@@ -8656,6 +8657,7 @@ declare class Channel {
                           removeChild(child: Entity): void;
                           set skin(skin: number);
                           get skin(): number;
+                          setSkin(skin: string): Promise<void>;
                           setLOD(lod: number): void;
                           setPoseParameter(paramName: string, paramValue: number): void;
                           playSequence(activity: string, activityModifiers?: string[]): void;

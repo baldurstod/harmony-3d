@@ -114,16 +114,16 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		(child as unknown as HasSkeleton).skeleton?.setParentSkeleton(null);
 	}
 
-	set skin(skin) {
+	set skin(skin: string) {// TODO: deprecate
 		this.setSkin(skin);
 	}
 
 	get skin() {
-		return this.#skin;
+		return String(this.#skin);
 	}
 
-	async setSkin(skin: number) {
-		this.#skin = skin;
+	async setSkin(skin: string) {
+		this.#skin = Number(skin);
 		await this.#updateMaterials();
 	}
 
@@ -737,7 +737,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 		for (const skin of skins) {
 			const item = Object.create(null);
 			item.name = skin;
-			item.f = () => this.skin = skin;
+			item.f = () => this.skin = String(skin);
 			skinMenu.push(item);
 		}
 
@@ -958,7 +958,7 @@ export class Source1ModelInstance extends Entity implements Animated, HasMateria
 
 	fromJSON(json: JSONObject) {
 		super.fromJSON(json);
-		this.skin = (json.skin as (number | undefined)) ?? 0;
+		this.skin = (json.skin as (string | undefined)) ?? '0';
 		//TODO
 	}
 

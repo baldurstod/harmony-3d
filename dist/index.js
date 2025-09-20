@@ -26755,6 +26755,10 @@ class Source2ModelInstance extends Entity {
     get skin() {
         return this.#skin;
     }
+    async setSkin(skin) {
+        this.#skin = Number(skin);
+        await this.#updateMaterials();
+    }
     setLOD(lod) {
         this.#lod = BigInt(lod);
         this.#refreshMeshesVisibility();
@@ -39760,10 +39764,10 @@ class Source1ModelInstance extends Entity {
         this.setSkin(skin);
     }
     get skin() {
-        return this.#skin;
+        return String(this.#skin);
     }
     async setSkin(skin) {
-        this.#skin = skin;
+        this.#skin = Number(skin);
         await this.#updateMaterials();
     }
     set sheen(sheen) {
@@ -40307,7 +40311,7 @@ class Source1ModelInstance extends Entity {
         for (const skin of skins) {
             const item = Object.create(null);
             item.name = skin;
-            item.f = () => this.skin = skin;
+            item.f = () => this.skin = String(skin);
             skinMenu.push(item);
         }
         return Object.assign(super.buildContextMenu(), {
@@ -40508,7 +40512,7 @@ class Source1ModelInstance extends Entity {
     }
     fromJSON(json) {
         super.fromJSON(json);
-        this.skin = json.skin ?? 0;
+        this.skin = json.skin ?? '0';
         //TODO
     }
     dispose() {
@@ -41975,7 +41979,7 @@ class SourceBSP extends World {
                         this.staticProps.addChild(model);
                         model.position = prop.position;
                         model.quaternion = AngleQuaternion(prop.angles, tempQuaternion);
-                        model.skin = prop.skin;
+                        model.skin = String(prop.skin);
                     }
                 });
             }
