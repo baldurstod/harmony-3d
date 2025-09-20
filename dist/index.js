@@ -26883,14 +26883,7 @@ class Source2ModelInstance extends Entity {
         return new Set(skins);
     }
     async getMaterialsName(skin) {
-        const materials = new Set();
-        for (const mesh of this.meshes) {
-            const path = mesh.geometry?.properties.getString('materialPath');
-            if (path) {
-                materials.add(cleanSource2MaterialName(path));
-            }
-        }
-        return [this.sourceModel.repository, materials];
+        return [this.sourceModel.repository, new Set(this.sourceModel.getSkinMaterials(Number(skin)))];
     }
     #init() {
         const sourceModel = this.sourceModel;
