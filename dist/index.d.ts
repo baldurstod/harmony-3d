@@ -1162,7 +1162,7 @@ declare class Channel {
 
              declare type ChoreographyEventParam = any;
 
-             declare enum ChoreographyEventType {
+             export declare enum ChoreographyEventType {
                  Stop = "stop"
              }
 
