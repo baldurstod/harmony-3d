@@ -2,10 +2,10 @@ import { vec2, vec3, vec4 } from 'gl-matrix';
 import { BinaryReader } from 'harmony-binary-reader';
 import { TWO_PI } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
+import { SpriteSheet } from '../../../textures/spritesheet';
 import { Kv3Element } from '../../common/keyvalue/kv3element';
 import { Kv3File } from '../../common/keyvalue/kv3file';
 import { Kv3Value } from '../../common/keyvalue/kv3value';
-import { Source2SpriteSheet } from '../textures/source2spritesheet';
 import { ArgumentDependency } from './files/blocks/argumentdependency';
 import { InputDependency } from './files/blocks/inputdependency';
 import { SpecialDependency } from './files/blocks/specialdependency';
@@ -222,7 +222,7 @@ export class Source2FileBlock {
 }
 
 export type Source2TextureBlock = Source2FileBlock & {
-	spriteSheet: Source2SpriteSheet | null;
+	spriteSheet: SpriteSheet | null;
 }
 
 export type Source2SnapBlock = Source2FileBlock & {
@@ -265,7 +265,7 @@ export type Source2VtexBlock = Source2FileBlock & {
 	numMipLevels: number;
 	picmip0Res: number;
 	imageData: any/*TODO: improve type*/;
-	spriteSheet: Source2SpriteSheet;
+	spriteSheet: SpriteSheet;
 	cubemapRadiance: number[];
 }
 

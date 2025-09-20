@@ -6426,7 +6426,7 @@ declare class Channel {
                           #private;
                           protected material: Source2SpriteCard;
                           protected setDefaultTexture: boolean;
-                          protected spriteSheet: Source2SpriteSheet | null;
+                          protected spriteSheet: SpriteSheet | null;
                           constructor(system: Source2ParticleSystem);
                           setMaterial(material: Source2SpriteCard): void;
                           _paramChanged(paramName: string, param: OperatorParam): void;
@@ -9230,23 +9230,6 @@ declare class Channel {
                           getShaderSource(): string;
                       }
 
-                      declare class Source2SpriteSheet {
-                          sequences: Source2SpriteSheetSequence[];
-                          addSequence(): Source2SpriteSheetSequence;
-                          getFrame(sequenceId: number, frame: number): Source2SpriteSheetFrame | null;
-                      }
-
-                      declare class Source2SpriteSheetFrame {
-                          coords: vec4;
-                          duration: number;
-                      }
-
-                      declare class Source2SpriteSheetSequence {
-                          duration: number;
-                          frames: Source2SpriteSheetFrame[];
-                          addFrame(): Source2SpriteSheetFrame;
-                      }
-
                       export declare class Source2StickersMaterial extends Source2Material {
                           get shaderSource(): string;
                       }
@@ -9280,7 +9263,7 @@ declare class Channel {
                           constructor();
                           getTexture(repository: string, path: string, frame: number): Promise<Texture | null>;
                           getVtex(repository: string, path: string): Promise<Source2Texture | null>;
-                          getTextureSheet(repository: string, path: string): Promise<Source2SpriteSheet | null>;
+                          getTextureSheet(repository: string, path: string): Promise<SpriteSheet | null>;
                           setTexture(path: string, texture: AnimatedTexture): void;
                           fillTexture(imageFormat: ImageFormat, width: number, height: number, datas: ArrayBufferView | null, target: GLenum): void;
                           fillTextureDxt(texture: WebGLTexture, imageFormat: ImageFormat, width: number, height: number, datas: Uint8Array, target: GLenum): void;
@@ -10130,6 +10113,31 @@ declare class Channel {
                           init(): void;
                           clone(): SpriteMaterial;
                           get shaderSource(): string;
+                      }
+
+                      export declare class SpriteSheet {
+                          readonly sequences: SpriteSheetSequence[];
+                          addSequence(): SpriteSheetSequence;
+                          getFrame(sequenceId: number, frame: number, channel?: number): SpriteSheetCoord | null;
+                      }
+
+                      declare class SpriteSheetCoord {
+                          uMin: number;
+                          vMin: number;
+                          uMax: number;
+                          vMax: number;
+                      }
+
+                      declare class SpriteSheetFrame {
+                          readonly coords: SpriteSheetCoord[];
+                          duration: number;
+                          addCoord(): SpriteSheetCoord;
+                      }
+
+                      declare class SpriteSheetSequence {
+                          readonly frames: SpriteSheetFrame[];
+                          duration: number;
+                          addFrame(): SpriteSheetFrame;
                       }
 
                       /**

@@ -4,6 +4,7 @@ export { Detex } from './detex';
 export { RemGenerator } from './remgenerator';
 export { RenderTarget } from './rendertarget';
 export { ShadowMap } from './shadowmap';
+export * from './spritesheet';
 export { Texture } from './texture';
 export * from './textureconstants';
 export * from './texturefactory';

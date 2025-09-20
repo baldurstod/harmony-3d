@@ -6,15 +6,15 @@ import { Graphics } from '../../../graphics/graphics2';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
 import { Detex } from '../../../textures/detex';
 import { formatCompression, ImageFormat, TextureCompressionMethod } from '../../../textures/enums';
+import { SpriteSheet } from '../../../textures/spritesheet';
 import { Texture } from '../../../textures/texture';
 import { TextureManager } from '../../../textures/texturemanager';
 import { GL_LINEAR, GL_R8, GL_RED, GL_RGBA, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
 import { Source2TextureBlock, Source2VtexBlock } from '../loaders/source2fileblock';
 import { Source2TextureLoader } from '../loaders/source2textureloader';
-import { Source2SpriteSheet } from './source2spritesheet';
 import { Source2Texture } from './source2texture';
 
-class Source2TextureManagerClass {//TODO: keep event target ?
+class Source2TextureManagerClass {
 	#vtexList = new Map2<string, string, Source2Texture>();
 	#texturesList = new Map<string, AnimatedTexture>();
 	#loadingTexturesList = new Map<string, Promise<AnimatedTexture>>();
@@ -56,9 +56,9 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 		return vtex;
 	}
 
-	async getTextureSheet(repository: string, path: string): Promise<Source2SpriteSheet | null> {
+	async getTextureSheet(repository: string, path: string): Promise<SpriteSheet | null> {
 		const texture = await this.#getTexture(repository, path);
-		return ((texture?.properties.get('vtex') as Source2Texture | undefined)?.getBlockByType('DATA') as Source2TextureBlock | undefined)?.spriteSheet ?? null;
+		return texture.properties.get('sprite_sheet') ?? null;
 	}
 
 	async #getTexture(repository: string, path: string): Promise<AnimatedTexture> {
@@ -79,6 +79,12 @@ class Source2TextureManagerClass {//TODO: keep event target ?
 				const texture = TextureManager.createTexture();//TODOv3: add params
 				if (vtex) {
 					this.#initTexture(texture, vtex);
+
+					const spriteSheet = (vtex.getBlockByType('DATA') as Source2TextureBlock | undefined)?.spriteSheet ?? null;
+					if (spriteSheet) {
+						animatedTexture.properties.set('sprite_sheet', spriteSheet);
+					}
+
 				}
 				animatedTexture.addFrame(0, texture);
 				resolve(animatedTexture);

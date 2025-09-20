@@ -191,38 +191,30 @@ export class RenderSprites extends RenderBase {
 			particle.frame += elapsedTime;
 
 			if (this.spriteSheet) {
-				let coords = this.spriteSheet.getFrame(particle.sequence, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
+				let coords = this.spriteSheet.getFrame(particle.sequence, particle.frame * 10.0);//?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
 				if (coords) {
-					const uMin = coords[0];
-					const vMin = coords[1];
-					const uMax = coords[2];
-					const vMax = coords[3];
-					uvs[index++] = uMin;
-					uvs[index++] = vMin;
-					uvs[index++] = uMax;
-					uvs[index++] = vMin;
-					uvs[index++] = uMin;
-					uvs[index++] = vMax;
-					uvs[index++] = uMax;
-					uvs[index++] = vMax;
+					uvs[index++] = coords.uMin;
+					uvs[index++] = coords.vMin;
+					uvs[index++] = coords.uMax;
+					uvs[index++] = coords.vMin;
+					uvs[index++] = coords.uMin;
+					uvs[index++] = coords.vMax;
+					uvs[index++] = coords.uMax;
+					uvs[index++] = coords.vMax;
 				}
 
-				coords = this.spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0)?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
+				coords = this.spriteSheet.getFrame(particle.sequence2, particle.frame * 10.0);//?.coords;//sequences[particle.sequence].frames[particle.frame].coords;
 				//coords = coords.m_TextureCoordData[0];
 				if (coords) {
-					const uMin = coords[0];
-					const vMin = coords[1];
-					const uMax = coords[2];
-					const vMax = coords[3];
-					uvs2[index2++] = uMin;
-					uvs2[index2++] = vMin;
-					uvs2[index2++] = uMax;
-					uvs2[index2++] = vMin;
-					uvs2[index2++] = uMin;
-					uvs2[index2++] = vMax;
-					uvs2[index2++] = uMax;
-					uvs2[index2++] = vMax;
+					uvs2[index2++] = coords.uMin;
+					uvs2[index2++] = coords.vMin;
+					uvs2[index2++] = coords.uMax;
+					uvs2[index2++] = coords.vMin;
+					uvs2[index2++] = coords.uMin;
+					uvs2[index2++] = coords.vMax;
+					uvs2[index2++] = coords.uMax;
+					uvs2[index2++] = coords.vMax;
 				}
 			} else {
 				index += 8;

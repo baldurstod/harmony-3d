@@ -1,18 +1,17 @@
-import { vec3 } from 'gl-matrix';
 import { TESTING } from '../../../../../buildoptions';
+import { SpriteSheet } from '../../../../../textures/spritesheet';
 import { Source2SpriteCard } from '../../../materials/source2spritecard';
-import { Source2SpriteSheet } from '../../../textures/source2spritesheet';
 import { Source2TextureManager } from '../../../textures/source2texturemanager';
 import { DEFAULT_PARTICLE_TEXTURE } from '../../particleconstants';
 import { Source2ParticleSystem } from '../../source2particlesystem';
-import { COLOR_SCALE, Operator } from '../operator';
+import { Operator } from '../operator';
 import { OperatorParam } from '../operatorparam';
 
 // Base renderer for common attributes like textures
 export class RenderBase extends Operator {
 	protected material = new Source2SpriteCard('');
 	protected setDefaultTexture = true;//TODO: remove this property
-	protected spriteSheet: Source2SpriteSheet | null = null;
+	protected spriteSheet: SpriteSheet | null = null;
 
 	constructor(system: Source2ParticleSystem) {
 		super(system);
@@ -40,15 +39,15 @@ export class RenderBase extends Operator {
 					}
 				}
 				break;
-				/*
-			case 'm_ColorScale':
-				const colorScale = vec3.create();
-				colorScale[0] = Number(param[0]) * COLOR_SCALE;
-				colorScale[1] = Number(param[1]) * COLOR_SCALE;
-				colorScale[2] = Number(param[2]) * COLOR_SCALE;
-				this.material?.setUniform('uColorScale', colorScale);
-				break;
-				*/
+			/*
+		case 'm_ColorScale':
+			const colorScale = vec3.create();
+			colorScale[0] = Number(param[0]) * COLOR_SCALE;
+			colorScale[1] = Number(param[1]) * COLOR_SCALE;
+			colorScale[2] = Number(param[2]) * COLOR_SCALE;
+			this.material?.setUniform('uColorScale', colorScale);
+			break;
+			*/
 			// Renderer parameters
 			case 'm_nOutputBlendMode':
 				const blendMode = param.getValueAsString();

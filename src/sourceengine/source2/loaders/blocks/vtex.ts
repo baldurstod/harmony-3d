@@ -1,9 +1,9 @@
 import { BinaryReader } from 'harmony-binary-reader';
 import { decodeLz4 } from '../../../../utils/lz4';
 import { VTEX_FLAG_CUBE_TEXTURE, VTEX_FORMAT_BGRA8888 } from '../../constants';
-import { Source2SpriteSheet } from '../../textures/source2spritesheet';
 import { Source2Texture, VtexImageFormat } from '../../textures/source2texture';
 import { Source2VtexBlock } from '../source2fileblock';
+import { SpriteSheet } from '../../../../textures/spritesheet';
 
 export function loadDataVtex(reader: BinaryReader, block: Source2VtexBlock, file: Source2Texture) {
 	const DATA_UNKNOWN = 0;
@@ -204,7 +204,7 @@ function loadVtexSpriteSheet(reader: BinaryReader, block: Source2VtexBlock, offs
 	let sequenceCount = reader.getUint32();
 
 	let headerOffset = reader.tell();
-	const spriteSheet = new Source2SpriteSheet();
+	const spriteSheet = new SpriteSheet();
 	block.spriteSheet = spriteSheet;
 
 	while (sequenceCount--) {
@@ -234,10 +234,11 @@ function loadVtexSpriteSheet(reader: BinaryReader, block: Source2VtexBlock, offs
 			reader.seek(frameOffset);
 			//while (frameCoords--) we should use all coords but they are identical ? probably one per channel
 			{
-				spriteSheetFrame.coords[0] = reader.getFloat32();
-				spriteSheetFrame.coords[1] = reader.getFloat32();
-				spriteSheetFrame.coords[2] = reader.getFloat32();
-				spriteSheetFrame.coords[3] = reader.getFloat32();
+				const coords = spriteSheetFrame.addCoord();
+				coords.uMin = reader.getFloat32();
+				coords.vMin = reader.getFloat32();
+				coords.uMax = reader.getFloat32();
+				coords.vMax = reader.getFloat32();
 			}
 		}
 
