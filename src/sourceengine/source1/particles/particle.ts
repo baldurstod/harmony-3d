@@ -47,8 +47,8 @@ export class Source1Particle {
 	initialSequence = 0;
 	frame = 0;
 	PositionFromParentParticles = false;
-	posLockedToCP = -1;
-	rotLockedToCP = -1;
+	posLockedToCP = -2;// TODO: turn into boolean
+	rotLockedToCP = -2;// TODO: turn into boolean
 	trailLength = 0.1;
 	initialCPPosition: vec3 | null = null;
 	initialVecOffset: vec3 | null = null;
@@ -131,8 +131,8 @@ export class Source1Particle {
 		this.sequence = 0;
 		this.frame = 0;
 		this.PositionFromParentParticles = false;
-		this.posLockedToCP = -1;
-		this.rotLockedToCP = -1;
+		this.posLockedToCP = -2;
+		this.rotLockedToCP = -2;
 		this.trailLength = 0.1;
 		this.initialCPPosition = null;
 		this.initialCPQuaternion = null;

@@ -7486,7 +7486,7 @@ declare class Channel {
                           constructor(repository: string, path: string, vmt: Source1MaterialVmt, params?: Source1MaterialParams);
                           init(): void;
                           getTexture(role: TextureRole, repository: string, path: string, frame: number, needCubeMap?: boolean, srgb?: boolean): Texture | null;
-                          getTexCoords(flCreationTime: number, flCurTime: number, flAgeScale: number, nSequence: number): any;
+                          getTexCoords(flCreationTime: number, flCurTime: number, flAgeScale: number, nSequence: number): SpriteSheetCoord | null;
                           getFrameSpan(sequence: number): any;
                           updateMaterial(time: number, mesh: Mesh): void;
                           _afterProcessProxies(proxyParams?: {}): void;
@@ -8224,7 +8224,7 @@ declare class Channel {
                           currentFrame: number;
                           numResources: number;
                           headerSize: number;
-                          sheet?: any;
+                          sheet: SpriteSheet | null;
                           constructor(repository: string, fileName: string);
                           setVerionMin(value: number): void;
                           /**
@@ -10121,23 +10121,25 @@ declare class Channel {
                           getFrame(sequenceId: number, frame: number, channel?: number): SpriteSheetCoord | null;
                       }
 
-                      declare class SpriteSheetCoord {
+                      export declare class SpriteSheetCoord {
                           uMin: number;
                           vMin: number;
                           uMax: number;
                           vMax: number;
                       }
 
-                      declare class SpriteSheetFrame {
+                      export declare class SpriteSheetFrame {
                           readonly coords: SpriteSheetCoord[];
                           duration: number;
                           addCoord(): SpriteSheetCoord;
                       }
 
-                      declare class SpriteSheetSequence {
+                      export declare class SpriteSheetSequence {
                           readonly frames: SpriteSheetFrame[];
                           duration: number;
+                          clamp: boolean;
                           addFrame(): SpriteSheetFrame;
+                          getFrame(frame: number, channel?: number): SpriteSheetCoord | null;
                       }
 
                       /**
