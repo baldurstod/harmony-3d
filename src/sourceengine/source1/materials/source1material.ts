@@ -1,5 +1,6 @@
 import { mat4, vec2, vec3, vec4 } from 'gl-matrix';
 import { DEBUG, TESTING, WARN } from '../../../buildoptions';
+import { Color } from '../../../core/color';
 import { DynamicParams } from '../../../entities/entity';
 import { RenderFace } from '../../../materials/constants';
 import { Material, MATERIAL_BLENDING_ADDITIVE, MATERIAL_BLENDING_NORMAL, MaterialParams } from '../../../materials/material';
@@ -7,15 +8,15 @@ import { DEG_TO_RAD } from '../../../math/constants';
 import { clamp } from '../../../math/functions';
 import { Mesh } from '../../../objects/mesh';
 import { AnimatedTexture } from '../../../textures/animatedtexture';
+import { SpriteSheetCoord } from '../../../textures/spritesheet';
 import { Texture } from '../../../textures/texture';
 import { TextureManager } from '../../../textures/texturemanager';
 import { GL_ONE_MINUS_SRC_ALPHA, GL_SRC_ALPHA } from '../../../webgl/constants';
-import { SEQUENCE_SAMPLE_COUNT } from '../loaders/sheet';
+import { Source1Vtf } from '../export';
 import { Source1TextureManager } from '../textures/source1texturemanager';
 import { Proxy } from './proxies/proxy';
 import { ProxyManager } from './proxies/proxymanager';
 import { MatrixBuildScale, MatrixBuildTranslation } from './proxies/texturetransform';
-import { Color } from '../../../core/color';
 
 const IDENTITY_MAT4 = mat4.create();
 
@@ -443,13 +444,13 @@ export class Source1Material extends Material {
 		this.uniforms['uDetailTextureTransform'] = this.#detailTextureTransform;
 	}
 
-	getTexCoords(flCreationTime: number, flCurTime: number, flAgeScale: number, nSequence: number) {
+	getTexCoords(flCreationTime: number, flCurTime: number, flAgeScale: number, nSequence: number): SpriteSheetCoord | null {
 		const texture = this.uniforms['colorMap'] as Texture;
 		if (!texture) {
-			return;
+			return null;
 		}
 
-		const vtf = texture.properties.get('vtf');
+		const vtf = texture.properties.get('vtf') as Source1Vtf | null;
 		const sheet = vtf?.sheet;
 
 		if (sheet) {
@@ -461,7 +462,23 @@ export class Source1Material extends Material {
 				}
 
 				if (group) {
-					if (group.frameCount == 1) {
+					if (group.frames.length == 1) {
+						return group.getFrame(0);
+					}
+
+					let flAge = flCurTime - flCreationTime;
+					flAge *= flAgeScale;
+					let nFrame = Math.abs(Math.round(flAge));
+					return group.getFrame((nFrame * group.frames.length / 1024) << 0);
+				}
+				/*
+				let group = sheet.sequences[nSequence]
+				if (!group) { // In case sequence # is outside VTF range
+					group = sheet.sequences[0];
+				}
+
+				if (group) {
+					if (group.frames.length == 1) {
 						return group.m_pSamples[0];
 					}
 
@@ -476,6 +493,7 @@ export class Source1Material extends Material {
 					}
 					return group.m_pSamples[nFrame];
 				}
+				*/
 			}
 		}
 		return null;

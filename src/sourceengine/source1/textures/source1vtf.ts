@@ -3,6 +3,7 @@ import { ENABLE_S3TC } from '../../../buildoptions';
 import { Graphics } from '../../../graphics/graphics2';
 import { Detex } from '../../../textures/detex';
 import { ImageFormat, ImageFormatBptc, ImageFormatRgtc, ImageFormatS3tc } from '../../../textures/enums';
+import { SpriteSheet } from '../../../textures/spritesheet';
 import { Texture } from '../../../textures/texture';
 import { WebGLAnyRenderingContext } from '../../../types';
 import { GL_CLAMP_TO_EDGE, GL_FLOAT, GL_LINEAR, GL_REPEAT, GL_RGB, GL_RGBA, GL_RGBA16F, GL_SRGB8, GL_SRGB8_ALPHA8, GL_TEXTURE_2D, GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z, GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_UNPACK_FLIP_Y_WEBGL, GL_UNPACK_PREMULTIPLY_ALPHA_WEBGL, GL_UNSIGNED_BYTE } from '../../../webgl/constants';
@@ -46,7 +47,7 @@ export class Source1Vtf {
 	//filled = false;
 	numResources = 0;
 	headerSize = 0;
-	sheet?: any;//TODO: create proper type for sheet
+	sheet: SpriteSheet | null = null;
 
 	constructor(repository: string, fileName: string) {
 		this.repository = repository;

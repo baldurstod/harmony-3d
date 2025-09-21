@@ -1,8 +1,9 @@
 import { BinaryReader, TWO_POW_10, TWO_POW_MINUS_14 } from 'harmony-binary-reader';
 import { DEBUG } from '../../../buildoptions';
+import { SpriteSheet } from '../../../textures/spritesheet';
 import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
 import { IMAGE_FORMAT_ABGR8888, IMAGE_FORMAT_BGR888, IMAGE_FORMAT_BGR888_BLUESCREEN, IMAGE_FORMAT_BGRA8888, IMAGE_FORMAT_DXT1, IMAGE_FORMAT_DXT3, IMAGE_FORMAT_DXT5, IMAGE_FORMAT_RGB888, IMAGE_FORMAT_RGB888_BLUESCREEN, IMAGE_FORMAT_RGBA16161616F, IMAGE_FORMAT_RGBA8888, Source1Vtf, VTF_ENTRY_IMAGE_DATAS, VTFMipMap, VTFResourceEntry } from '../textures/source1vtf';
-import { GetInterpolationData, MAX_IMAGES_PER_FRAME_IN_MEMORY, MAX_IMAGES_PER_FRAME_ON_DISK, SEQUENCE_SAMPLE_COUNT, SheetSequenceSample_t } from './sheet';
+import { MAX_IMAGES_PER_FRAME_ON_DISK, SEQUENCE_SAMPLE_COUNT, SheetSequenceSample_t } from './sheet';
 
 export class Source1VtfLoader extends SourceBinaryLoader {
 
@@ -121,39 +122,43 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 
 	#parseSheet(reader: BinaryReader, vtf: Source1Vtf, entry: VTFResourceEntry) {
 		reader.seek(entry.resData);
-		const sheet = Object.create(null);
+		const sheet = new SpriteSheet();
 		vtf.sheet = sheet;
 
-		sheet.length = reader.getUint32();
+		const length = reader.getUint32();// TODO: use length ?
 		const nVersion = reader.getUint32();
 		const nNumCoordsPerFrame = (nVersion) ? MAX_IMAGES_PER_FRAME_ON_DISK : 1;
 
 		let nNumSequences = reader.getUint32();
-		sheet.sequences = [];
+		//sheet.sequences = [];
 		let valuesCount = 16;
+		/*
 		if (sheet.format == 0) {//TODOv3 : where comes sheet.format ?
 			valuesCount = 4;
 		}
+		*/
 
 		//for (let groupIndex=0; groupIndex < sheet.groupsCount; ++groupIndex) {
 		while (nNumSequences--) {
-			const group = Object.create(null);// TODO: create proper type
+			const group = sheet.addSequence();
 			group.duration = 0;
-			group.m_pSamples = [];
-			group.m_pSamples2 = [];
-			sheet.sequences.push(group);
+			//group.m_pSamples = [];
+			//group.m_pSamples2 = [];
+			//sheet.sequences.push(group);
 			const nSequenceNumber = reader.getUint32();
 			group.clamp = reader.getUint32() != 0;
-			group.frameCount = reader.getUint32();
+			const frameCount = reader.getUint32();
 
-			const bSingleFrameSequence = (group.frameCount == 1);
+			const bSingleFrameSequence = (frameCount == 1);
 			const nTimeSamples = bSingleFrameSequence ? 1 : SEQUENCE_SAMPLE_COUNT;
 
 			//let m_pSample = [];
 			//sheet.m_pSamples[nSequenceNumber] = m_pSample;
+			/*
 			for (let i = 0; i < nTimeSamples; i++) {
 				group.m_pSamples[i] = new SheetSequenceSample_t();
 			}
+			*/
 
 			const samples = [];
 			for (let i = 0; i < SEQUENCE_SAMPLE_COUNT; i++) {
@@ -166,9 +171,9 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 			const InterpValue = new Float32Array(SEQUENCE_SAMPLE_COUNT);
 
 			let fCurTime = 0.;
-			for (let frameIndex = 0; frameIndex < group.frameCount; ++frameIndex) {
-				const frameSample = new SheetSequenceSample_t();
-				group.m_pSamples2.push(frameSample);
+			for (let frameIndex = 0; frameIndex < frameCount; ++frameIndex) {
+				const frame = group.addFrame();//new SheetSequenceSample_t();
+				//group.m_pSamples2.push(frameSample);
 				//const frame = Object.create(null);
 				//group.frames.push(frame);
 				//frame.values = [];
@@ -178,6 +183,7 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 				InterpKnot[frameIndex] = SEQUENCE_SAMPLE_COUNT * (fCurTime / fTotalSequenceTime);
 				fCurTime += fThisDuration;
 				group.duration += fThisDuration//frame.duration;
+				frame.duration = fThisDuration;
 
 				/*for (let i = 0; i < valuesCount; ++i) {
 					frame.values.push(reader.getFloat32());
@@ -187,8 +193,14 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 					continue;
 				}
 				for (let nImage = 0; nImage < nNumCoordsPerFrame; nImage++) {
-					const s = seq.m_TextureCoordData[nImage];
-					const s2 = frameSample.m_TextureCoordData[nImage];
+					const coord = frame.addCoord();//.m_TextureCoordData[nImage];
+					//const s2 = frame.m_TextureCoordData[nImage];
+					coord.uMin = reader.getFloat32();
+					coord.vMin = reader.getFloat32();
+					coord.uMax = reader.getFloat32();
+					coord.vMax = reader.getFloat32();
+
+					/*
 					if (s) {
 						s.m_fLeft_U0 = reader.getFloat32();
 						s.m_fTop_V0 = reader.getFloat32();
@@ -208,44 +220,49 @@ export class Source1VtfLoader extends SourceBinaryLoader {
 						reader.getFloat32();
 						reader.getFloat32();
 					}
+					*/
 				}
 			}
 			group.duration += fCurTime;
 
 			// now, fill in the whole table
+			/*
 			for (let nIdx = 0; nIdx < nTimeSamples; ++nIdx) {
 				//float flIdxA, flIdxB, flInterp;
-				const result = GetInterpolationData(InterpKnot, InterpValue, group.frameCount,
+				const result = GetInterpolationData(InterpKnot, InterpValue, frameCount,
 					SEQUENCE_SAMPLE_COUNT,
 					nIdx,
-					!group.clamp/*,
-									&flIdxA, &flIdxB, &flInterp */);
-				const sA = samples[result.pValueA];
-				const sB = samples[result.pValueB];
-				const oseq = group.m_pSamples[nIdx];
-				if (!sA || !sB) {
-					continue;
-				}
+					/*TODO* /false/*!group.clamp*//*,
+							&flIdxA, &flIdxB, &flInterp * /);
+		const sA = samples[result.pValueA];
+		const sB = samples[result.pValueB];
+		const oseq = group.frames[nIdx];
+		if (!sA || !sB) {
+			continue;
+		}
 
-				oseq.m_fBlendFactor = result.pInterpolationValue;
-				for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
-					const src0 = sA.m_TextureCoordData[nImage];
-					const src1 = sB.m_TextureCoordData[nImage];
-					if (!src0 || !src1) {
-						continue;
-					}
-
-					const o = oseq.m_TextureCoordData[nImage];
-					o.m_fLeft_U0 = src0.m_fLeft_U0;
-					o.m_fTop_V0 = src0.m_fTop_V0;
-					o.m_fRight_U0 = src0.m_fRight_U0;
-					o.m_fBottom_V0 = src0.m_fBottom_V0;
-					o.m_fLeft_U1 = src1.m_fLeft_U0;
-					o.m_fTop_V1 = src1.m_fTop_V0;
-					o.m_fRight_U1 = src1.m_fRight_U0;
-					o.m_fBottom_V1 = src1.m_fBottom_V0;
-				}
+		//oseq.m_fBlendFactor = result.pInterpolationValue;
+		/*
+		for (let nImage = 0; nImage < MAX_IMAGES_PER_FRAME_IN_MEMORY; nImage++) {
+			const src0 = sA.m_TextureCoordData[nImage];
+			const src1 = sB.m_TextureCoordData[nImage];
+			if (!src0 || !src1) {
+				continue;
 			}
+
+			const o = oseq.m_TextureCoordData[nImage];
+			o.m_fLeft_U0 = src0.m_fLeft_U0;
+			o.m_fTop_V0 = src0.m_fTop_V0;
+			o.m_fRight_U0 = src0.m_fRight_U0;
+			o.m_fBottom_V0 = src0.m_fBottom_V0;
+			o.m_fLeft_U1 = src1.m_fLeft_U0;
+			o.m_fTop_V1 = src1.m_fTop_V0;
+			o.m_fRight_U1 = src1.m_fRight_U0;
+			o.m_fBottom_V1 = src1.m_fBottom_V0;
+		}
+		* /
+	}
+	*/
 		}
 	}
 

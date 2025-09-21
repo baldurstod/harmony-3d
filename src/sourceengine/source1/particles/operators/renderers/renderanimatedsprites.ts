@@ -92,19 +92,15 @@ export class RenderAnimatedSprites extends Source1ParticleOperator {
 			}
 			let coords = this.particleSystem.material.getTexCoords(0, particle.currentTime, flAgeScale, sequence);
 			if (coords) {
-				coords = coords.m_TextureCoordData[0];
-				const uMin = coords.m_fLeft_U0;
-				const vMin = coords.m_fTop_V0;
-				const uMax = coords.m_fRight_U0;
-				const vMax = coords.m_fBottom_V0;
-				uvs[index++] = uMin;
-				uvs[index++] = vMin;
-				uvs[index++] = uMax;
-				uvs[index++] = vMin;
-				uvs[index++] = uMin;
-				uvs[index++] = vMax;
-				uvs[index++] = uMax;
-				uvs[index++] = vMax;
+				//coords = coords.m_TextureCoordData[0];
+				uvs[index++] = coords.uMin;
+				uvs[index++] = coords.vMin;
+				uvs[index++] = coords.uMax;
+				uvs[index++] = coords.vMin;
+				uvs[index++] = coords.uMin;
+				uvs[index++] = coords.vMax;
+				uvs[index++] = coords.uMax;
+				uvs[index++] = coords.vMax;
 				//uvs.push(0.0, 0.0, 1.0, 0.0, 0.0, 1.0, 1.0, 1.0);
 			} else {
 				index += 8;
