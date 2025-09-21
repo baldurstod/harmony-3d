@@ -7,7 +7,7 @@ import { RotationControl } from '../controls/rotationcontrol';
 import { TranslationControl } from '../controls/translationcontrol';
 import sceneExplorerCSS from '../css/sceneexplorer.css';
 import { Entity } from '../entities/entity';
-import { EntityObserver, EntityObserverEventType } from '../entities/entityobserver';
+import { EntityObserver, EntityObserverEventType, EntityObserverPropertyChangedEvent } from '../entities/entityobserver';
 import { KeepOnlyLastChild } from '../entities/keeponlylastchild';
 import { GraphicsEvents } from '../graphics/graphicsevents';
 import { ContextObserver } from '../helpers/contextobserver';
@@ -126,7 +126,7 @@ export class SceneExplorer {
 		}).observe(this.#shadowRoot.host);
 
 
-		EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event: Event) => this.#handlePropertyChanged((event as CustomEvent).detail));
+		EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event: Event) => this.#handlePropertyChanged((event as CustomEvent<EntityObserverPropertyChangedEvent>).detail));
 		SceneExplorerEvents.addEventListener('bonepicked', (event: Event) => this.selectEntity((event as CustomEvent).detail.bone, true));
 	}
 
@@ -432,7 +432,7 @@ export class SceneExplorer {
 		return htmlEntityElement;
 	}
 
-	selectEntity(entity: Entity |  undefined, scrollIntoView = false) {
+	selectEntity(entity: Entity | undefined, scrollIntoView = false) {
 		if (this.#selectedEntity == entity) {
 			return;
 		}
@@ -482,7 +482,7 @@ export class SceneExplorer {
 		//return this._entitiesHtml.get(entity);
 	}
 
-	#handlePropertyChanged(detail: any/*TODO: create a proper type*/) {
+	#handlePropertyChanged(detail: EntityObserverPropertyChangedEvent) {
 		if (this.#isVisible && detail.entity == this.#selectedEntity) {
 			this.#updateEntityElement(this.#selectedEntity);
 		}

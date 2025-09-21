@@ -2,7 +2,7 @@ import { lockOpenRightSVG, lockSVG, pauseSVG, playSVG, repeatOnSVG, repeatSVG, r
 import { createElement, defineHarmonyToggleButton, display, hide, HTMLHarmonyToggleButtonElement, show, toggle } from 'harmony-ui';
 import '../css/sceneexplorerentity.css';
 import { Entity } from '../entities/entity';
-import { EntityObserver, EntityObserverChildAddedEvent, EntityObserverEvent, EntityObserverEventType } from '../entities/entityobserver';
+import { EntityObserver, EntityObserverChildAddedEvent, EntityObserverChildRemovedEvent, EntityObserverEvent, EntityObserverEventType, EntityObserverPropertyChangedEvent } from '../entities/entityobserver';
 import { Animated } from '../interfaces/animated';
 import { Lockable } from '../interfaces/lockable';
 import { Loopable } from '../interfaces/loopable';
@@ -38,7 +38,7 @@ export class SceneExplorerEntity extends HTMLElement {
 
 	static {
 		EntityObserver.addEventListener(EntityObserverEventType.ChildAdded, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent<EntityObserverChildAddedEvent>).detail.parent));
-		EntityObserver.addEventListener(EntityObserverEventType.ChildRemoved, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent).detail.parent));
+		EntityObserver.addEventListener(EntityObserverEventType.ChildRemoved, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#expandEntityChilds((event as CustomEvent<EntityObserverChildRemovedEvent>).detail.parent));
 		EntityObserver.addEventListener(EntityObserverEventType.PropertyChanged, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#handlePropertyChanged((event as CustomEvent).detail));
 		EntityObserver.addEventListener(EntityObserverEventType.EntityDeleted, (event: CustomEvent<EntityObserverEvent>) => SceneExplorerEntity.#handleEntityDeleted((event as CustomEvent).detail));
 	}
@@ -263,11 +263,11 @@ export class SceneExplorerEntity extends HTMLElement {
 		return entityElement;
 	}
 
-	static #handlePropertyChanged(detail: any) {
+	static #handlePropertyChanged(detail: EntityObserverPropertyChangedEvent) {
 		const entity = detail.entity;
 		SceneExplorerEntity.#updateEntity(entity);
 		let entityElement;
-		switch (detail.name) {
+		switch (detail.propertyName) {
 			case 'visible':
 				this.#updateEntityVisibility(entity);
 				for (const child of entity.children) {
