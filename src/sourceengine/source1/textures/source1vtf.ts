@@ -47,7 +47,7 @@ export class Source1Vtf {
 	//filled = false;
 	numResources = 0;
 	headerSize = 0;
-	sheet: SpriteSheet | null = null;
+	sheet: SpriteSheet | null = null;//TODO: rename to spritesheet
 
 	constructor(repository: string, fileName: string) {
 		this.repository = repository;

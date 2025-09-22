@@ -73,16 +73,15 @@ class Source2TextureManagerClass {
 		if (!this.#texturesList.has(fullPath)) {
 			const animatedTexture = new AnimatedTexture();
 			const promise = new Promise<AnimatedTexture>(async resolve => {
-				//const vtex = await Source2TextureLoader.load(repository, path);
 				const vtex = await this.getVtex(repository, path);
 				animatedTexture.properties.set('vtex', vtex);
 				const texture = TextureManager.createTexture();//TODOv3: add params
 				if (vtex) {
 					this.#initTexture(texture, vtex);
 
-					const spriteSheet = (vtex.getBlockByType('DATA') as Source2TextureBlock | undefined)?.spriteSheet ?? null;
-					if (spriteSheet) {
-						animatedTexture.properties.set('sprite_sheet', spriteSheet);
+					vtex.spriteSheet = (vtex.getBlockByType('DATA') as Source2TextureBlock | undefined)?.spriteSheet ?? null;
+					if (vtex.spriteSheet) {
+						animatedTexture.properties.set('sprite_sheet', vtex.spriteSheet);
 					}
 
 				}

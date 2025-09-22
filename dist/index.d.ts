@@ -9236,6 +9236,7 @@ declare class Channel {
 
                       declare class Source2Texture extends Source2File {
                           #private;
+                          spriteSheet: SpriteSheet | null;
                           constructor(repository: string, path: string);
                           getAlphaBits(): number;
                           getWidth(): number;

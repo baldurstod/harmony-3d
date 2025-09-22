@@ -1,6 +1,7 @@
 import { decode } from 'fast-png';
 import { vec2 } from 'gl-matrix';
 import { formatCompression, ImageFormat, ImageFormatS3tc, TextureCompressionMethod } from '../../../textures/enums';
+import { SpriteSheet } from '../../../textures/spritesheet';
 import { decompressDxt } from '../../source1/textures/source1vtf';
 import { VTEX_FLAG_CUBE_TEXTURE } from '../constants';
 import { Source2File } from '../loaders/source2file';
@@ -34,6 +35,7 @@ export class Source2Texture extends Source2File {
 	#compressionMethod = TextureCompressionMethod.Uncompressed;// TODO: remove
 	#imageFormat = ImageFormat.Unknown;
 	#codecs: number = 0;
+	spriteSheet: SpriteSheet | null = null;
 
 	constructor(repository: string, path: string) {
 		super(repository, path);
@@ -198,11 +200,11 @@ export class Source2Texture extends Source2File {
 		this.#codecs |= codec;
 	}
 
-	decodeYCoCg():boolean {
+	decodeYCoCg(): boolean {
 		return (this.#codecs & TextureCodec.YCoCg) == TextureCodec.YCoCg;
 	}
 
-	decodeNormalizeNormals():boolean {
+	decodeNormalizeNormals(): boolean {
 		return (this.#codecs & TextureCodec.NormalizeNormals) == TextureCodec.NormalizeNormals;
 	}
 

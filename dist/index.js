@@ -21300,7 +21300,7 @@ class Source1Vtf {
     //filled = false;
     numResources = 0;
     headerSize = 0;
-    sheet = null;
+    sheet = null; //TODO: rename to spritesheet
     constructor(repository, fileName) {
         this.repository = repository;
         this.fileName = fileName;
@@ -22433,6 +22433,7 @@ class Source2Texture extends Source2File {
     #compressionMethod = TextureCompressionMethod.Uncompressed; // TODO: remove
     #imageFormat = ImageFormat.Unknown;
     #codecs = 0;
+    spriteSheet = null;
     constructor(repository, path) {
         super(repository, path);
     }
@@ -59425,15 +59426,14 @@ class Source2TextureManagerClass {
         if (!this.#texturesList.has(fullPath)) {
             const animatedTexture = new AnimatedTexture();
             const promise = new Promise(async (resolve) => {
-                //const vtex = await Source2TextureLoader.load(repository, path);
                 const vtex = await this.getVtex(repository, path);
                 animatedTexture.properties.set('vtex', vtex);
                 const texture = TextureManager.createTexture(); //TODOv3: add params
                 if (vtex) {
                     this.#initTexture(texture, vtex);
-                    const spriteSheet = vtex.getBlockByType('DATA')?.spriteSheet ?? null;
-                    if (spriteSheet) {
-                        animatedTexture.properties.set('sprite_sheet', spriteSheet);
+                    vtex.spriteSheet = vtex.getBlockByType('DATA')?.spriteSheet ?? null;
+                    if (vtex.spriteSheet) {
+                        animatedTexture.properties.set('sprite_sheet', vtex.spriteSheet);
                     }
                 }
                 animatedTexture.addFrame(0, texture);
