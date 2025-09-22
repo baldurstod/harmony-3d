@@ -26919,6 +26919,15 @@ class Source2ModelInstance extends Entity {
                 s.add(material.replace(/\.vmat_c$/, '').replace(/\.vmat$/, '') + '.vmat_c');
             }
         }
+        else {
+            // No material groups
+            for (const mesh of this.meshes) {
+                const material = mesh.getGeometry()?.properties.getString('materialPath');
+                if (material) {
+                    s.add(material);
+                }
+            }
+        }
         return [this.sourceModel.repository, s];
     }
     #init() {
