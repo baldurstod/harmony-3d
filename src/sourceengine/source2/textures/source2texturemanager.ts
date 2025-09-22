@@ -78,12 +78,9 @@ class Source2TextureManagerClass {
 				const texture = TextureManager.createTexture();//TODOv3: add params
 				if (vtex) {
 					this.#initTexture(texture, vtex);
-
-					vtex.spriteSheet = (vtex.getBlockByType('DATA') as Source2TextureBlock | undefined)?.spriteSheet ?? null;
 					if (vtex.spriteSheet) {
 						animatedTexture.properties.set('sprite_sheet', vtex.spriteSheet);
 					}
-
 				}
 				animatedTexture.addFrame(0, texture);
 				resolve(animatedTexture);

@@ -25359,6 +25359,7 @@ class Source2FileLoader extends SourceBinaryLoader {
         }
         await this.#parseHeader(reader, file, this.vtex);
         if (this.vtex) {
+            file.spriteSheet = file.getBlockByType('DATA')?.spriteSheet ?? null;
             // TODO: improve detection
             const specialDependencies = file.getBlockStructAsElementArray('RED2', 'm_SpecialDependencies');
             if (specialDependencies) {
@@ -59431,7 +59432,6 @@ class Source2TextureManagerClass {
                 const texture = TextureManager.createTexture(); //TODOv3: add params
                 if (vtex) {
                     this.#initTexture(texture, vtex);
-                    vtex.spriteSheet = vtex.getBlockByType('DATA')?.spriteSheet ?? null;
                     if (vtex.spriteSheet) {
                         animatedTexture.properties.set('sprite_sheet', vtex.spriteSheet);
                     }

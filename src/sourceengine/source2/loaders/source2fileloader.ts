@@ -4,7 +4,7 @@ import { SourceBinaryLoader } from '../../common/loaders/sourcebinaryloader';
 import { Source2Texture } from '../textures/source2texture';
 import { Source2BlockLoader, Source2BlockLoaderContext } from './source2blockloader';
 import { Source2File } from './source2file';
-import { Source2FileBlock, Source2ResEditInfoBlock } from './source2fileblock';
+import { Source2FileBlock, Source2ResEditInfoBlock, Source2TextureBlock } from './source2fileblock';
 
 export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make singleton ???
 	vtex: boolean;
@@ -27,6 +27,8 @@ export class Source2FileLoader extends SourceBinaryLoader {//TODOv3: make single
 		await this.#parseHeader(reader, file, this.vtex);
 
 		if (this.vtex) {
+			(file as Source2Texture).spriteSheet = (file.getBlockByType('DATA') as Source2TextureBlock | undefined)?.spriteSheet ?? null;
+
 			// TODO: improve detection
 			const specialDependencies = file.getBlockStructAsElementArray('RED2', 'm_SpecialDependencies');
 
