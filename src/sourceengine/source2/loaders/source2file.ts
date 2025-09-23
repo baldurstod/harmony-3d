@@ -1,6 +1,7 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { TEXTURE_FORMAT_COMPRESSED_RGBA_BC4, TEXTURE_FORMAT_COMPRESSED_RGBA_BC5, TEXTURE_FORMAT_COMPRESSED_RGBA_BC7, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1, TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5, TEXTURE_FORMAT_UNCOMPRESSED_BGRA8888, TEXTURE_FORMAT_UNCOMPRESSED_R8, TEXTURE_FORMAT_UNCOMPRESSED_RGBA } from '../../../textures/textureconstants';
 import { Kv3Element } from '../../common/keyvalue/kv3element';
+import { Kv3File } from '../../common/keyvalue/kv3file';
 import { Kv3Type, Kv3Value, Kv3ValueType } from '../../common/keyvalue/kv3value';
 import { VTEX_FORMAT_BC4, VTEX_FORMAT_BC5, VTEX_FORMAT_BC7, VTEX_FORMAT_BGRA8888, VTEX_FORMAT_DXT1, VTEX_FORMAT_DXT5, VTEX_FORMAT_R8, VTEX_FORMAT_R8G8B8A8_UINT } from '../constants';
 import { Source2FileBlock, Source2RerlBlock, Source2VtexBlock } from './source2fileblock';
@@ -539,6 +540,14 @@ getBoneWeight(bufferId: number): number[] | null {
 			if (keyValue) {
 				return keyValue.getValue(path);
 			}
+		}
+		return null;
+	}
+
+	getKeyValueRoot(): Kv3File | null {
+		const dataBlock = this.blocks['DATA'] as Source2VtexBlock;
+		if (dataBlock) {
+			return dataBlock.keyValue;
 		}
 		return null;
 	}

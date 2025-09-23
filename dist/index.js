@@ -21952,7 +21952,7 @@ class Source2File {
                 return 0;
             }
             * /
-    
+
             return this.indices?.[bufferId].indices.length;
         }
         */
@@ -21964,9 +21964,9 @@ class Source2File {
                 return null;
             }
             * /
-    
+
             const indexBuffer = this.indices?.[bufferId];
-    
+
             return indexBuffer ? indexBuffer.indices : [];
         }
             */
@@ -22373,6 +22373,13 @@ getBoneWeight(bufferId: number): number[] | null {
             if (keyValue) {
                 return keyValue.getValue(path);
             }
+        }
+        return null;
+    }
+    getKeyValueRoot() {
+        const dataBlock = this.blocks['DATA'];
+        if (dataBlock) {
+            return dataBlock.keyValue;
         }
         return null;
     }
@@ -25215,7 +25222,7 @@ class Source2FileBlock {
     length;
     //indices?: any/*TODO: create struct*/[];
     //vertices?: any/*TODO: create struct*/[];
-    keyValue;
+    keyValue = null;
     //structs?: never;//TODO: remove me
     constructor(file, id, type /*TODO: create enum*/, reader, offset, length) {
         //this.id = id;

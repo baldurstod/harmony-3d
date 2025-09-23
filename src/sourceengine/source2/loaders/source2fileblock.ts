@@ -23,7 +23,7 @@ export class Source2FileBlock {
 	readonly length: number;
 	//indices?: any/*TODO: create struct*/[];
 	//vertices?: any/*TODO: create struct*/[];
-	keyValue?: Kv3File;
+	keyValue: Kv3File | null = null;
 	//structs?: never;//TODO: remove me
 
 	constructor(file: Source2File, id: number, type: string/*TODO: create enum*/, reader: BinaryReader, offset: number, length: number) {

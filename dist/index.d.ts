@@ -8459,6 +8459,7 @@ declare class Channel {
                           getExternalFiles(): string[] | null;
                           getExternalFile(fileIndex: number): string | null;
                           getKeyValue(path: string): any;
+                          getKeyValueRoot(): Kv3File | null;
                           /**
                            * @deprecated use getDisplayName() instead
                            */
@@ -8477,7 +8478,7 @@ declare class Channel {
                           readonly reader: BinaryReader;
                           readonly offset: number;
                           readonly length: number;
-                          keyValue?: Kv3File;
+                          keyValue: Kv3File | null;
                           constructor(file: Source2File, id: number, type: string, reader: BinaryReader, offset: number, length: number);
                           getKeyValue(path: string): Kv3Element | Kv3Value | undefined | null;
                           getKeyValueAsNumber(path: string): number | null;
