@@ -503,7 +503,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 					objectElements2.setProperty(name, element);
 				}
 			}
-			return objectElements2;
+			return new Kv3Value(elementType, objectElements2);
 		default:
 			console.error('Unknown element type : ', elementType);
 	}

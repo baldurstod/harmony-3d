@@ -21875,11 +21875,32 @@ class Kv3Value {
         linePrefix = linePrefix ?? '';
         switch (this.#type) {
             case 6:
-                return linePrefix + '"' + this.#value + '"';
+                return '"' + this.#value + '"';
+            case Kv3Type.TypedArray:
+            case Kv3Type.TypedArray2:
+            case Kv3Type.TypedArray3:
+                let typedArrayString = '';
+                const linePrefix2 = linePrefix + '\t';
+                for (const value of this.#value) {
+                    switch (this.#subType) {
+                        case Kv3Type.Resource:
+                            typedArrayString += linePrefix2 + 'resource_name:"' + value + '",\n';
+                            break;
+                        case Kv3Type.Subclass:
+                            typedArrayString += linePrefix2 + 'subclass:"' + value + '",\n';
+                            break;
+                        default:
+                            typedArrayString += linePrefix2 + value + ',\n';
+                            break;
+                    }
+                }
+                return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]\n`;
             case Kv3Type.Resource:
-                return linePrefix + 'resource:"' + this.#value + '"';
+                return 'resource_name:"' + this.#value + '"';
+            case Kv3Type.Subclass:
+                return 'subclass:' + this.#value.exportAsText(linePrefix) + '';
         }
-        return linePrefix + this.#value;
+        return String(this.#value);
     }
 }
 
@@ -22902,8 +22923,8 @@ class Kv3Element {
         const out = [];
         //const keys = Object.keys(this);
         const linePrefix2 = linePrefix + '\t';
-        out.push(linePrefix);
-        out.push('{\r\n');
+        //out.push(linePrefix);
+        out.push(`\n${linePrefix}{\r\n`);
         for (const [key, val] of this.#properties) {
             out.push(linePrefix2);
             out.push(key);
@@ -23575,7 +23596,7 @@ function readBinaryKv3Element(context, version, byteReader, doubleReader, quadRe
                     objectElements2.setProperty(name, element);
                 }
             }
-            return objectElements2;
+            return new Kv3Value(elementType, objectElements2);
         default:
             console.error('Unknown element type : ', elementType);
     }
