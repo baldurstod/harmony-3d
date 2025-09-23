@@ -8428,7 +8428,7 @@ declare class Channel {
                       /**
                        * Source2 common file
                        */
-                      declare class Source2File {
+                      export declare class Source2File {
                           repository: string;
                           fileName: string;
                           blocks: Record<string, Source2FileBlock>;
@@ -10908,6 +10908,8 @@ declare class Channel {
                           getFileAsJson(filename: string): Promise<RepositoryJsonResponse>;
                           getFileList(): Promise<RepositoryFileListResponse>;
                       }
+
+                      export declare const VTEX_TO_INTERNAL_IMAGE_FORMAT: Record<number, number>;
 
                       declare enum VtexImageFormat {
                           Unknown = 0,
