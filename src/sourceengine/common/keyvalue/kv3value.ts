@@ -25,6 +25,7 @@ export enum Kv3Type {
 	TypedArray2 = 24,
 	TypedArray3 = 25,
 	Resource = 134,
+	Subclass = 137,// First seen in deadlock/citadel/pak01_dir.vpk:scripts/abilities.vdata_c
 }
 
 export type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;

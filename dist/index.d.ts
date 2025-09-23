@@ -3695,7 +3695,8 @@ declare class Channel {
                           Byte = 23,
                           TypedArray2 = 24,
                           TypedArray3 = 25,
-                          Resource = 134
+                          Resource = 134,
+                          Subclass = 137
                       }
 
                       declare class Kv3Value {

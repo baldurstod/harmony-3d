@@ -21778,6 +21778,7 @@ var Kv3Type;
     Kv3Type[Kv3Type["TypedArray2"] = 24] = "TypedArray2";
     Kv3Type[Kv3Type["TypedArray3"] = 25] = "TypedArray3";
     Kv3Type[Kv3Type["Resource"] = 134] = "Resource";
+    Kv3Type[Kv3Type["Subclass"] = 137] = "Subclass";
 })(Kv3Type || (Kv3Type = {}));
 class Kv3Value {
     isKv3Value = true;
@@ -21882,7 +21883,7 @@ class Kv3Value {
     }
 }
 
-const VTEX_TO_INTERNAL_IMAGE_FORMAT = {};
+const VTEX_TO_INTERNAL_IMAGE_FORMAT = {}; //TODO: create an enum
 VTEX_TO_INTERNAL_IMAGE_FORMAT[VTEX_FORMAT_DXT1] = TEXTURE_FORMAT_COMPRESSED_RGBA_DXT1;
 VTEX_TO_INTERNAL_IMAGE_FORMAT[VTEX_FORMAT_DXT5] = TEXTURE_FORMAT_COMPRESSED_RGBA_DXT5;
 VTEX_TO_INTERNAL_IMAGE_FORMAT[VTEX_FORMAT_R8] = TEXTURE_FORMAT_UNCOMPRESSED_R8;
@@ -23309,6 +23310,11 @@ function readBinaryKv3Element(context, version, byteReader, doubleReader, quadRe
     function shiftArray() {
         const elementType = typeArray.shift();
         if (elementType == Kv3Type.Resource) {
+            // Why do we do that ?
+            typeArray.shift();
+        }
+        if (elementType == Kv3Type.Subclass) {
+            // Why do we do that ?
             typeArray.shift();
         }
         return elementType;
@@ -23550,6 +23556,19 @@ function readBinaryKv3Element(context, version, byteReader, doubleReader, quadRe
         case Kv3Type.Resource:
             //return new SourceKv3String(quadReader.getInt32());
             return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()] ?? '');
+        case Kv3Type.Subclass:
+            const objectCount2 = objectsSizeReader.getUint32();
+            const objectElements2 = new Kv3Element();
+            const stringDictionary2 = context.dictionary;
+            for (let i = 0; i < objectCount2; i++) {
+                const nameId = quadReader.getUint32();
+                const element = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
+                const name = stringDictionary2[nameId];
+                if (name !== undefined) {
+                    objectElements2.setProperty(name, element);
+                }
+            }
+            return objectElements2;
         default:
             console.error('Unknown element type : ', elementType);
     }

@@ -3,7 +3,7 @@ import { TESTING } from '../../../buildoptions';
 import { decodeLz4 } from '../../../utils/lz4';
 import { Kv3Element, Source2Kv3Value, SourceKv3String } from '../../common/keyvalue/kv3element';
 import { Kv3File } from '../../common/keyvalue/kv3file';
-import { Kv3Type, Kv3Value, Kv3ValueType, Kv3ValueTypeAll, Kv3ValueTypePrimitives } from '../../common/keyvalue/kv3value';
+import { Kv3Type, Kv3Value, Kv3ValueTypeAll, Kv3ValueTypePrimitives } from '../../common/keyvalue/kv3value';
 
 const DATA_TYPE_NULL = 0x01;
 const DATA_TYPE_BOOL = 0x02;
@@ -237,6 +237,11 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 	function shiftArray() {
 		const elementType = typeArray.shift();
 		if (elementType == Kv3Type.Resource) {
+			// Why do we do that ?
+			typeArray.shift();
+		}
+		if (elementType == Kv3Type.Subclass) {
+			// Why do we do that ?
 			typeArray.shift();
 		}
 		return elementType;
@@ -486,6 +491,19 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 		case Kv3Type.Resource:
 			//return new SourceKv3String(quadReader.getInt32());
 			return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()] ?? '');
+		case Kv3Type.Subclass:
+			const objectCount2 = objectsSizeReader.getUint32();
+			const objectElements2 = new Kv3Element();
+			const stringDictionary2 = context.dictionary;
+			for (let i = 0; i < objectCount2; i++) {
+				const nameId = quadReader.getUint32();
+				const element = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
+				const name = stringDictionary2[nameId];
+				if (name !== undefined) {
+					objectElements2.setProperty(name, element);
+				}
+			}
+			return objectElements2;
 		default:
 			console.error('Unknown element type : ', elementType);
 	}
