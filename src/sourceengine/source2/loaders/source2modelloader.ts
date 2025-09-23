@@ -422,9 +422,7 @@ export class Source2ModelLoader {
 				//const drawCall = drawCalls[drawCallIndex];
 				const useCompressedNormalTangent = drawCall.getValueAsBool('m_bUseCompressedNormalTangent') //drawCall.m_nFlags?.includes('MESH_DRAW_FLAGS_USE_COMPRESSED_NORMAL_TANGENT');
 
-				console.assert(useCompressedNormalTangent !== null, 'missing m_bUseCompressedNormalTangent', drawCall);
-
-
+				//console.assert(useCompressedNormalTangent !== null, 'missing m_bUseCompressedNormalTangent', drawCall);
 				const vertexBuffers = drawCall.getValueAsElementArray('m_vertexBuffers')?.[0]//TODOv3 why 0 ?
 				if (!vertexBuffers) {
 					continue;
