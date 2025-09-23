@@ -5,7 +5,7 @@ import { Scene } from '../scenes/scene';
 import { DEG_TO_RAD, RAD_TO_DEG } from '../math/constants';
 import { EntityObserver } from '../entities/entityobserver';
 import { registerEntity } from '../entities/entities';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 
 export enum CameraProjection {
 	Perspective = 0,

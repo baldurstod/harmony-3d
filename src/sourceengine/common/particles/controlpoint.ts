@@ -1,8 +1,8 @@
 import { mat4, quat, vec3 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
 import { registerEntity } from '../../../entities/entities';
 import { Entity } from '../../../entities/entity';
 import { Graphics } from '../../../graphics/graphics2';
-import { JSONObject } from '../../../types';
 import { Source2ModelInstance } from '../../export';
 import { Source2Snapshot } from '../../source2/particles/source2snapshot';
 

@@ -4,7 +4,7 @@ import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
 import { Graphics } from '../graphics/graphics2';
 import { Lockable } from '../interfaces/lockable';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { Skeleton } from './skeleton';
 
 const tempWorldMat = mat4.create();

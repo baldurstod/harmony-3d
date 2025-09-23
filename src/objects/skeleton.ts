@@ -7,7 +7,7 @@ import { Material } from '../materials/material';
 import { BoundingBox } from '../math/boundingbox';
 import { Texture } from '../textures/texture';
 import { TextureManager } from '../textures/texturemanager';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { GL_FLOAT, GL_NEAREST, GL_RGBA, GL_RGBA32F, GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, } from '../webgl/constants';
 import { Bone } from './bone';
 

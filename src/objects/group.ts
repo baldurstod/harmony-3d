@@ -1,6 +1,6 @@
 import { registerEntity } from '../entities/entities';
 import { Entity } from '../entities/entity';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 
 // It is just a basic entity
 export class Group extends Entity {

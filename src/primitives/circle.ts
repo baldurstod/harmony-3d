@@ -2,7 +2,7 @@ import { JSONLoader } from '../importers/jsonloader';
 import { LineSegments } from './linesegments';
 import { TWO_PI } from '../math/constants';
 import { registerEntity } from '../entities/entities';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { Entity } from '../entities/entity';
 import { Material } from '../materials/material';
 

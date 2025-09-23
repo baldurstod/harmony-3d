@@ -5,7 +5,7 @@ import { FontManager } from '../managers/fontmanager';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { DEG_TO_RAD } from '../math/constants';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { Interaction } from '../utils/interaction';
 import { Mesh, MeshParameters } from './mesh';
 

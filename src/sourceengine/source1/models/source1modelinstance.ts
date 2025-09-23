@@ -1,4 +1,5 @@
 import { mat3, mat4, quat, vec3, vec4 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
 import { AnimationDescription } from '../../../animations/animationdescription';
 import { Animations } from '../../../animations/animations';
 import { Camera } from '../../../cameras/camera';
@@ -18,7 +19,6 @@ import { Mesh } from '../../../objects/mesh';
 import { SkeletalMesh } from '../../../objects/skeletalmesh';
 import { Skeleton } from '../../../objects/skeleton';
 import { Scene } from '../../../scenes/scene';
-import { JSONObject } from '../../../types';
 import { Interaction } from '../../../utils/interaction';
 import { getRandomInt } from '../../../utils/random';
 import { STUDIO_ANIM_DELTA } from '../loaders/mdlstudioanim';

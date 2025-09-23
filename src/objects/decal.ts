@@ -5,7 +5,7 @@ import { BufferGeometry } from '../geometry/buffergeometry';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { stringToVec3 } from '../utils/utils';
 import { Mesh, MeshParameters } from './mesh';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { Entity } from '../entities/entity';
 import { Material } from '../materials/material';
 import { SkeletalMesh } from './skeletalmesh';

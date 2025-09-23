@@ -9,7 +9,7 @@ import { clamp, generateRandomUUID } from '../math/functions';
 import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
 import { Scene } from '../scenes/scene';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { Properties, Property } from '../utils/properties';
 import { stringToQuat, stringToVec3 } from '../utils/utils';
 import { registerEntity } from './entities';

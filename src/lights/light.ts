@@ -2,7 +2,7 @@ import { vec3 } from 'gl-matrix';
 
 import { registerEntity } from '../entities/entities';
 import { Entity, EntityParameters } from '../entities/entity';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { stringToVec3 } from '../utils/utils';
 import { LightShadow } from './lightshadow';
 

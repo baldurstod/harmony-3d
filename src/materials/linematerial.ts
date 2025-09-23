@@ -1,6 +1,6 @@
 import { Material } from './material'
 import { registerEntity } from '../entities/entities';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 
 export class LineMaterial extends Material {
 	#lineWidth = 1;

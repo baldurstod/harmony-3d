@@ -3,7 +3,7 @@ import { Camera } from '../cameras/camera';
 import { registerEntity } from '../entities/entities';
 import { Entity, EntityParameters } from '../entities/entity';
 import { World } from '../objects/world';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { Environment } from './environments/environment';
 
 export type SceneParameters = EntityParameters & {

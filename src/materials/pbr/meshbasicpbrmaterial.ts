@@ -1,7 +1,7 @@
 import { vec4 } from 'gl-matrix';
+import { JSONObject } from 'harmony-types';
 import { registerEntity } from '../../entities/entities';
 import { Texture } from '../../textures/texture';
-import { JSONObject } from '../../types';
 import { DEFAULT_COLOR, Material } from '../material';
 import { MateriaParameterType } from '../materialparameter';
 

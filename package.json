@@ -1,6 +1,6 @@
 {
 	"name": "harmony-3d",
-	"version": "0.23.2",
+	"version": "0.23.3",
 	"description": "3D viewer",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -14,6 +14,7 @@
 		"harmony-browser-utils": "github:baldurstod/harmony-browser-utils",
 		"harmony-fbx": "github:baldurstod/harmony-fbx",
 		"harmony-svg": "github:baldurstod/harmony-svg",
+		"harmony-types": "github:baldurstod/harmony-types",
 		"harmony-ui": "github:baldurstod/harmony-ui",
 		"harmony-utils": "github:baldurstod/harmony-utils",
 		"harmony-vpk": "github:baldurstod/harmony-vpk",

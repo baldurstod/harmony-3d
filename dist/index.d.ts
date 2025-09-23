@@ -1,5 +1,6 @@
 import { BinaryReader } from 'harmony-binary-reader';
 import { HarmonyMenuItems } from 'harmony-ui';
+import { JSONObject } from 'harmony-types';
 import { mat2 } from 'gl-matrix';
 import { mat3 } from 'gl-matrix';
 import { mat4 } from 'gl-matrix';
@@ -3613,12 +3614,6 @@ declare class Channel {
                           static loadEntity(jsonEntity: JSONObject, entities: Map<string, Entity | Material>, loadedPromise: Promise<void>): Promise<Entity | Material | null>;
                           static registerEntity(ent: typeof Entity | typeof Material): void;
                       }
-
-                      declare interface JSONObject {
-                          [k: string]: JSONValue;
-                      }
-
-                      declare type JSONValue = string | number | boolean | null | undefined | JSONValue[] | JSONObject;
 
                       export declare class KeepOnlyLastChild extends Entity {
                           addChild(child: Entity): Entity | undefined;

@@ -5,7 +5,7 @@ import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh, MeshParameters } from '../objects/mesh';
 import { BoxBufferGeometry } from './geometries/boxbuffergeometry';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { Entity } from '../entities/entity';
 
 export type BoxParameters = MeshParameters & {

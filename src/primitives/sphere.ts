@@ -8,7 +8,7 @@ import { PI, TAU } from '../math/constants';
 import { Mesh, MeshParameters } from '../objects/mesh';
 import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { SphereBufferGeometry } from './geometries/spherebuffergeometry';
 
 const intersectionPoint1 = vec3.create();

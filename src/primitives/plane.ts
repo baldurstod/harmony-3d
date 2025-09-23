@@ -3,7 +3,7 @@ import { JSONLoader } from '../importers/jsonloader';
 import { Material } from '../materials/material';
 import { MeshBasicMaterial } from '../materials/meshbasicmaterial';
 import { Mesh, MeshParameters } from '../objects/mesh';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { PlaneBufferGeometry } from './geometries/planebuffergeometry';
 
 export type PlaneParameters = MeshParameters & {

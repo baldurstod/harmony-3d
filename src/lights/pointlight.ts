@@ -1,5 +1,5 @@
 import { registerEntity } from '../entities/entities';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { Light, LightParameters } from './light';
 import { PointLightShadow } from './pointlightshadow';
 

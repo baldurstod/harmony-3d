@@ -1,6 +1,6 @@
+import { JSONObject } from 'harmony-types';
 import { Map2 } from 'harmony-utils';
 import { getLoader } from '../../../loaders/loaderfactory';
-import { JSONObject } from '../../../types';
 import { customFetch } from '../../../utils/customfetch';
 import { Source1VmtLoader } from '../export';
 import { Source1Material } from './source1material';

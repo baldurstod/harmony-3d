@@ -1,4 +1,4 @@
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { ShapePath } from './shapepath';
 
 export class Font {

@@ -5,7 +5,7 @@ import { registerEntity } from '../entities/entities';
 import { BlendingFactor } from '../enums/blending';
 import { Mesh } from '../objects/mesh';
 import { Texture } from '../textures/texture';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { GL_BACK, GL_FRONT, GL_FRONT_AND_BACK, GL_FUNC_ADD, GL_LESS, GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, GL_SRC_ALPHA, GL_SRC_COLOR, GL_ZERO } from '../webgl/constants';
 import { BlendingMode, RenderFace } from './constants';
 import { MateriaParameter, MateriaParameterType, MateriaParameterValue, ParameterChanged } from './materialparameter';

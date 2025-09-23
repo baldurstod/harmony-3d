@@ -7,7 +7,7 @@ import { Material } from '../materials/material';
 import { Mesh, MeshParameters } from '../objects/mesh';
 import { Intersection } from '../raycasting/intersection';
 import { Raycaster } from '../raycasting/raycaster';
-import { JSONObject } from '../types';
+import { JSONObject } from 'harmony-types';
 import { LineSegmentsGeometry } from './geometries/linesegmentsgeometry';
 
 const DEFAULT_VEC3 = vec3.create();
