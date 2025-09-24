@@ -203,7 +203,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				reader.seek(fieldOffset);
 				var handle = readHandle(reader);
 				//return reference ? reference.externalFiles[handle] : null;
-				return new Kv3Value(Kv3Type.String, reference.externalFiles[handle] ?? '', Kv3Flag.Resource);
+				return new Kv3Value(Kv3Type.String, reference.externalFiles[handle] ?? '', Kv3Flag.ResourceName);
 			case DATA_TYPE_BYTE://10
 				return new Kv3Value(Kv3Type.Int32/*TODO: check if there is a better type*/, reader.getInt8(fieldOffset));
 			case DATA_TYPE_UBYTE://11

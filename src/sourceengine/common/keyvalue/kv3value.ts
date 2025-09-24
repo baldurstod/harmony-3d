@@ -28,9 +28,19 @@ export enum Kv3Type {
 
 export enum Kv3Flag {
 	None = 0,
-	Resource = 1,
-	Subclass = 2,
+	ResourceName = 2,
+	SoundEvent = 4,
+	Subclass = 5,
+
+	//resource_name:
+	//panorama:
 }
+
+const Kv3FlagString = new Map([
+	[Kv3Flag.ResourceName, 'resource_name'],
+	[Kv3Flag.SoundEvent, 'soundevent'],
+	[Kv3Flag.Subclass, 'subclass'],
+]);
 
 export type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
 export type Kv3ValueTypeArrays = number[];
@@ -144,9 +154,23 @@ export class Kv3Value {
 
 	exportAsText(linePrefix?: string): string {
 		linePrefix = linePrefix ?? '';
+
+		let flagString = '';
+
+		if (this.#flag != Kv3Flag.None) {
+			const flagValue = Kv3FlagString.get(this.#flag);
+			if (flagValue) {
+				flagString = flagValue + ':';
+			} else {
+				flagString = '<unknown flag ' + this.#flag + '>';
+			}
+		}
+
 		switch (this.#type) {
-			case 6:
-				return '"' + this.#value + '"';
+			case Kv3Type.String:
+				return flagString + '"' + this.#value + '"';
+			case Kv3Type.Element:
+				return flagString + (this.#value as Kv3Element).exportAsText(linePrefix);
 			case Kv3Type.TypedArray:
 			case Kv3Type.TypedArray2:
 			case Kv3Type.TypedArray3:
@@ -154,21 +178,21 @@ export class Kv3Value {
 				const linePrefix2 = linePrefix + '\t';
 				for (const value of this.#value as Kv3ValueTypeAll[]) {
 					switch (this.#subType) {
-						/*
-						case Kv3Type.Resource:
-							typedArrayString += linePrefix2 + 'resource_name:"' + value + '",\n';
+						case Kv3Type.String:
+							typedArrayString += linePrefix2 + flagString + '"' + value + '"' + ',\n';
 							break;
+						/*
 						case Kv3Type.Subclass:
 							typedArrayString += linePrefix2 + 'subclass:"' + value + '",\n';
 							break;
 						*/
 						default:
-							typedArrayString += linePrefix2 + value + ',\n';
+							typedArrayString += linePrefix2 + flagString + value + ',\n';
 							break;
 					}
 				}
 				return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]\n`;
-				/*
+			/*
 			case Kv3Type.Resource:
 				return 'resource_name:"' + this.#value + '"';
 			case Kv3Type.Subclass:
@@ -176,6 +200,6 @@ export class Kv3Value {
 				*/
 
 		}
-		return String(this.#value);
+		return flagString + String(this.#value);
 	}
 }
