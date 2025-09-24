@@ -185,62 +185,66 @@ export class Kv3Value {
 			case Kv3Type.TypedArray:
 			case Kv3Type.TypedArray2:
 			case Kv3Type.TypedArray3:
-				let typedArrayString = '';
-				//for (const value of this.#value as Kv3ValueTypeAll[]) {
-				for (let i = 0, l = (this.#value as Kv3ValueTypeAll[]).length, m = l - 1; i < l; i++) {
-					const value = (this.#value as Kv3ValueTypeAll[])[i]!;
-					switch (this.#subType) {
-						case Kv3Type.Double:
-						case Kv3Type.DoubleZero:
-						case Kv3Type.DoubleOne:
-						case Kv3Type.Float:
-							//typedArrayString += flagString + value + ', ';
-							typedArrayString += flagString + value;
-							if (i == m) {
-								typedArrayString += ' ';
-							} else {
-								typedArrayString += ', ';
-							}
-							break;
-						case Kv3Type.String:
-							typedArrayString += linePrefix2 + flagString + '"' + value + '"' + ',\n';
-							break;
-						case Kv3Type.Element:
-							if (flagString) {
-								typedArrayString += '\n' + linePrefix2 + flagString;
-							}
-							typedArrayString += '\n' + (value as Kv3Element).exportAsText(linePrefix2) + ',';
-							break;
-						/*
-						case Kv3Type.Subclass:
-							typedArrayString += linePrefix2 + 'subclass:"' + value + '",\n';
-							break;
-						*/
-						default:
-							typedArrayString += linePrefix2 + flagString + value + ',\n';
-							break;
-					}
-				}
-				switch (this.#subType) {
-					case Kv3Type.Double:
-					case Kv3Type.DoubleZero:
-					case Kv3Type.DoubleOne:
-					case Kv3Type.Float:
-						return `[ ${typedArrayString}]`;
-					case Kv3Type.Element:
-						return `\n${linePrefix}[${typedArrayString}\n${linePrefix}]`;
-					default:
-						return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]`;
-				}
-
-			/*
-			case Kv3Type.Resource:
-				return 'resource_name:"' + this.#value + '"';
-			case Kv3Type.Subclass:
-				return 'subclass:' + (this.#value as Kv3Value).exportAsText(linePrefix) + '';
-				*/
+				return formatTypedArray(this.#type, this.#subType, flagString, this.#value as  Kv3ValueTypeAll[], linePrefix);
 
 		}
 		return flagString + String(this.#value);
 	}
+}
+
+function formatTypedArray(type: Kv3Type, subType: Kv3Type, flagString: string, arr: Kv3ValueTypeAll[], linePrefix: string): string {
+	const linePrefix2 = linePrefix + '\t';
+	let typedArrayString = '';
+	for (let i = 0, l = (arr as Kv3ValueTypeAll[]).length, m = l - 1; i < l; i++) {
+		const value = (arr as Kv3ValueTypeAll[])[i]!;
+		switch (subType) {
+			case Kv3Type.Double:
+			case Kv3Type.DoubleZero:
+			case Kv3Type.DoubleOne:
+			case Kv3Type.Float:
+				//typedArrayString += flagString + value + ', ';
+				typedArrayString += flagString + value;
+				if (i == m) {
+					typedArrayString += ' ';
+				} else {
+					typedArrayString += ', ';
+				}
+				break;
+			case Kv3Type.Array:
+			case Kv3Type.TypedArray:
+			case Kv3Type.TypedArray2:
+			case Kv3Type.TypedArray3:
+				typedArrayString += linePrefix2 + formatTypedArray(subType, Kv3Type.Double/*TODO: fix subtype*/, flagString, value as Kv3ValueTypeAll[], linePrefix2) + ',\n';
+				break;
+			case Kv3Type.String:
+				typedArrayString += linePrefix2 + flagString + '"' + value + '"' + ',\n';
+				break;
+			case Kv3Type.Element:
+				if (flagString) {
+					typedArrayString += '\n' + linePrefix2 + flagString;
+				}
+				typedArrayString += '\n' + (value as Kv3Element).exportAsText(linePrefix2) + ',';
+				break;
+			/*
+			case Kv3Type.Subclass:
+				typedArrayString += linePrefix2 + 'subclass:"' + value + '",\n';
+				break;
+			*/
+			default:
+				typedArrayString += linePrefix2 + flagString + value + ',\n';
+				break;
+		}
+	}
+	switch (subType) {
+		case Kv3Type.Double:
+		case Kv3Type.DoubleZero:
+		case Kv3Type.DoubleOne:
+		case Kv3Type.Float:
+			return `[ ${typedArrayString}]`;
+		case Kv3Type.Element:
+			return `\n${linePrefix}[${typedArrayString}\n${linePrefix}]`;
+		default:
+			return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]`;
+	}
+
 }
