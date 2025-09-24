@@ -170,6 +170,8 @@ export class Kv3Value {
 
 		const linePrefix2 = linePrefix + '\t';
 		switch (this.#type) {
+			case Kv3Type.Null:
+				return flagString + 'null';
 			case Kv3Type.String:
 				return flagString + '"' + this.#value + '"';
 			case Kv3Type.Element:
