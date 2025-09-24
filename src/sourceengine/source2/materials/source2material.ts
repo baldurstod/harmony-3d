@@ -60,7 +60,11 @@ const TEXTURE_UNIFORMS = new Map<string, [string, string]>([
 
 	['g_tNormalRoughness', ['normalMap', 'USE_NORMAL_MAP']],
 	['g_tTintMaskEdgeMask', ['tintMaskEdgeMaskMap', 'USE_TINT_MASK_EDGE_MASK_MAP']],
+	['g_tTintMaskRimLightMask', ['tintMaskRimLightMask', 'USE_TINT_MASK_RIM_LIGHT_MASK']],
 	['g_tSelfIllumMask', ['selfIllumMaskMap', 'USE_SELF_ILLUM_MASK_MAP']],
+
+	['g_tNprOutlineMask', ['nprOutlineMask', 'USE_NPR_OUTLINE_MASK']],
+	['g_tNprTransmissiveColor', ['nprTransmissiveColor', 'USE_NPR_TRANSMISSIVE_COLOR']],
 
 	//g_tAnimationTexture
 ]);

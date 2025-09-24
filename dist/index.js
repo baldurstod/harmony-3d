@@ -60923,7 +60923,10 @@ const TEXTURE_UNIFORMS = new Map([
     ['g_tCubeMap', ['cubeMap', 'USE_CUBE_MAP']],
     ['g_tNormalRoughness', ['normalMap', 'USE_NORMAL_MAP']],
     ['g_tTintMaskEdgeMask', ['tintMaskEdgeMaskMap', 'USE_TINT_MASK_EDGE_MASK_MAP']],
+    ['g_tTintMaskRimLightMask', ['tintMaskRimLightMask', 'USE_TINT_MASK_RIM_LIGHT_MASK']],
     ['g_tSelfIllumMask', ['selfIllumMaskMap', 'USE_SELF_ILLUM_MASK_MAP']],
+    ['g_tNprOutlineMask', ['nprOutlineMask', 'USE_NPR_OUTLINE_MASK']],
+    ['g_tNprTransmissiveColor', ['nprTransmissiveColor', 'USE_NPR_TRANSMISSIVE_COLOR']],
     //g_tAnimationTexture
 ]);
 const DEFAULT_ALPHA_TEST_REFERENCE = 0.7;
@@ -70821,6 +70824,7 @@ void main(void) {
 	color = pow(color, vec3(1.0/2.2));
 	gl_FragColor.rgb = color;
 #endif
+	gl_FragColor.rgb = texelColor.rgb;
 }
 `;
 

@@ -85,5 +85,6 @@ void main(void) {
 	color = pow(color, vec3(1.0/2.2));
 	gl_FragColor.rgb = color;
 #endif
+	gl_FragColor.rgb = texelColor.rgb;
 }
 `;
