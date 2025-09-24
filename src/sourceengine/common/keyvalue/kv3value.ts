@@ -24,8 +24,12 @@ export enum Kv3Type {
 	Byte = 23,
 	TypedArray2 = 24,
 	TypedArray3 = 25,
-	Resource = 134,
-	Subclass = 137,// First seen in deadlock/citadel/pak01_dir.vpk:scripts/abilities.vdata_c
+}
+
+export enum Kv3Flag {
+	None = 0,
+	Resource = 1,
+	Subclass = 2,
 }
 
 export type Kv3ValueTypePrimitives = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3Element | Kv3Value;
@@ -38,11 +42,13 @@ export class Kv3Value {
 	#type: Kv3Type;
 	#subType: Kv3Type;
 	#value: Kv3ValueType;
+	#flag: Kv3Flag;
 
-	constructor(type: Kv3Type, value: Kv3ValueType, subType?: Kv3Type) {
+	constructor(type: Kv3Type, value: Kv3ValueType, flag = Kv3Flag.None, subType?: Kv3Type) {
 		this.#type = type;
 		this.#value = value;
 		this.#subType = subType ?? Kv3Type.Unknown;
+		this.#flag = flag;
 	}
 
 	getType(): Kv3Type {
@@ -148,22 +154,26 @@ export class Kv3Value {
 				const linePrefix2 = linePrefix + '\t';
 				for (const value of this.#value as Kv3ValueTypeAll[]) {
 					switch (this.#subType) {
+						/*
 						case Kv3Type.Resource:
 							typedArrayString += linePrefix2 + 'resource_name:"' + value + '",\n';
 							break;
 						case Kv3Type.Subclass:
 							typedArrayString += linePrefix2 + 'subclass:"' + value + '",\n';
 							break;
+						*/
 						default:
 							typedArrayString += linePrefix2 + value + ',\n';
 							break;
 					}
 				}
 				return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]\n`;
+				/*
 			case Kv3Type.Resource:
 				return 'resource_name:"' + this.#value + '"';
 			case Kv3Type.Subclass:
 				return 'subclass:' + (this.#value as Kv3Value).exportAsText(linePrefix) + '';
+				*/
 
 		}
 		return String(this.#value);

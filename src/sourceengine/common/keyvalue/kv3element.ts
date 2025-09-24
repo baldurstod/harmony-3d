@@ -49,7 +49,7 @@ export class Kv3Element {
 
 	getValueAsResource(name: string): string | null {
 		const prop = this.#properties.get(name);
-		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.Resource) {
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.String) {// TODO: also check flag
 			return (prop as Kv3Value).getValue() as string;
 		}
 		return null;
@@ -57,7 +57,7 @@ export class Kv3Element {
 
 	getValueAsResourceArray(name: string): string[] | null {
 		const prop = this.#properties.get(name);
-		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getSubType() == Kv3Type.Resource) {
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getSubType() == Kv3Type.String) {// TODO: also check flag
 			return (prop as Kv3Value).getValue() as string[];
 		}
 		return null;
@@ -149,35 +149,6 @@ export class Kv3Element {
 		}
 		return null;
 	}
-
-	/*
-		Unknown = 0,
-		Null = 1,
-		Bool = 2,
-		Int64 = 3,
-		UnsignedInt64 = 4,
-		Double = 5,
-		String = 6,
-		Blob = 7,
-		Array = 8,
-		Object = 9,
-		TypedArray = 10,
-		Int32 = 11,
-		UnsignedInt32 = 12,
-		True = 13,
-		False = 14,
-		IntZero = 15,
-		IntOne = 16,
-		DoubleZero = 17,
-		DoubleOne = 18,
-		Float = 19,
-		Byte = 23,
-		TypedArray2 = 24,
-		TypedArray3 = 25,
-		Resource = 134,
-		*/
-
-
 
 	getSubValue(path: string): Kv3Element | Kv3Value | null {
 		const arr = path.split('.');
@@ -281,7 +252,7 @@ export class Kv3Element {
 
 	getSubValueAsResource(path: string): string | null {
 		const prop = this.getSubValue(path);
-		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.Resource) {
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.String) {// TODO: also check flag
 			return (prop as Kv3Value).getValue() as string;
 		}
 		return null;

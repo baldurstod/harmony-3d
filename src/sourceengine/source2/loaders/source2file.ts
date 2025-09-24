@@ -483,7 +483,7 @@ getBoneWeight(bufferId: number): number[] | null {
 
 	getBlockStructAsResourceArray(block: string, path: string): string[] | null {
 		const prop = this.getBlockStruct(block, path);
-		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isArray() && (prop as Kv3Value).getSubType() == Kv3Type.Resource) {
+		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isArray() && (prop as Kv3Value).getSubType() == Kv3Type.String) {// TODO: also check flag
 			return (prop as Kv3Value).getValue() as string[];
 		}
 		return null;

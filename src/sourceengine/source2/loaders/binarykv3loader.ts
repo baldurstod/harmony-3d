@@ -3,7 +3,7 @@ import { TESTING } from '../../../buildoptions';
 import { decodeLz4 } from '../../../utils/lz4';
 import { Kv3Element, Source2Kv3Value, SourceKv3String } from '../../common/keyvalue/kv3element';
 import { Kv3File } from '../../common/keyvalue/kv3file';
-import { Kv3Type, Kv3Value, Kv3ValueTypeAll, Kv3ValueTypePrimitives } from '../../common/keyvalue/kv3value';
+import { Kv3Flag, Kv3Type, Kv3Value, Kv3ValueTypeAll, Kv3ValueTypePrimitives } from '../../common/keyvalue/kv3value';
 
 const DATA_TYPE_NULL = 0x01;
 const DATA_TYPE_BOOL = 0x02;
@@ -234,31 +234,28 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 	typeArray: number[], valueArray: Source2Kv3Value[]/*TODO: remove me ?*/, elementType: number/*TODO: create enum*/ | undefined, isArray: boolean, compressionFrameSize: number, readers0: Readers)
 	: Kv3Element | Kv3Value | null {
 
+	let flag = Kv3Flag.None;
 	function shiftArray() {
 		const elementType = typeArray.shift();
-		if (elementType == Kv3Type.Resource) {
-			// Why do we do that ?
-			typeArray.shift();
-		}
-		if (elementType == Kv3Type.Subclass) {
-			// Why do we do that ?
-			typeArray.shift();
+
+		if (elementType && elementType > 0x7f) {
+			flag = typeArray.shift() ?? 0;
 		}
 		return elementType;
 	}
 
-	elementType = elementType || shiftArray()/*typeArray.shift()*/;
+	elementType = elementType ?? shiftArray();
 	if (elementType == undefined) {
 		return null;
 	}
 
 	//let count;
 	//let elements: SourceKv3Value[];
-	switch (elementType) {
+	switch (elementType & 0x7f) {
 		case DATA_TYPE_NULL:
 			return null;
 		case DATA_TYPE_BOOL:
-			return new Kv3Value(elementType, byteReader.getUint8() ? true : false);
+			return new Kv3Value(elementType, byteReader.getUint8() ? true : false, flag);
 		/*
 			if (isArray) {
 				//return byteReader.getUint8() ? true : false;
@@ -271,7 +268,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 			}
 		*/
 		case DATA_TYPE_INT64:
-			return new Kv3Value(elementType, eightReader.getBigInt64());
+			return new Kv3Value(elementType, eightReader.getBigInt64(), flag);
 		/*
 			if (isArray) {
 				return eightReader.getBigInt64();
@@ -283,7 +280,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 			}
 		*/
 		case DATA_TYPE_UINT64:
-			return new Kv3Value(elementType, eightReader.getBigUint64());
+			return new Kv3Value(elementType, eightReader.getBigUint64(), flag);
 		/*
 			if (isArray) {
 				return eightReader.getBigUint64();
@@ -295,7 +292,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 			}
 		*/
 		case DATA_TYPE_DOUBLE:
-			return new Kv3Value(elementType, eightReader.getFloat64());
+			return new Kv3Value(elementType, eightReader.getFloat64(), flag);
 		/*
 			if (isArray) {
 				return eightReader.getFloat64();
@@ -307,7 +304,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 			}
 		*/
 		case DATA_TYPE_BYTE:
-			return new Kv3Value(elementType, byteReader.getInt8());
+			return new Kv3Value(elementType, byteReader.getInt8(), flag);
 		/*
 			if (isArray) {
 				return byteReader.getInt8();
@@ -319,7 +316,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 			}
 		*/
 		case DATA_TYPE_STRING:
-			return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()] ?? '');
+			return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()] ?? '', flag);
 		//return new SourceKv3String(quadReader.getInt32());
 		case Kv3Type.Blob:
 			if (blobCount == 0) {
@@ -329,7 +326,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 					blobArray[i] = byteReader.getUint8();
 				}
 
-				return new Kv3Value(elementType, blobArray);
+				return new Kv3Value(elementType, blobArray, flag);
 			} else {
 				if (compressedBlobReader && uncompressedBlobSizeReader && compressedBlobSizeReader && decompressBlobBuffer && decompressBlob) {//if we have a decompress buffer, that means we have to decompress the blobs
 					let uncompressedBlobSize = uncompressedBlobSizeReader.getUint32();
@@ -371,12 +368,12 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 						decompressBlobArray.decompressOffset += uncompressedBlobSize;
 					}*/
 					//return decompressArray;
-					return new Kv3Value(elementType, decompressArray);
+					return new Kv3Value(elementType, decompressArray, flag);
 				} else {
 					if (uncompressedBlobReader && uncompressedBlobSizeReader) {//blobs have already been uncompressed
 						const uncompressedBlobSize = uncompressedBlobSizeReader.getUint32();
 						//return uncompressedBlobReader.getBytes(uncompressedBlobSize);
-						return new Kv3Value(elementType, uncompressedBlobReader.getBytes(uncompressedBlobSize));
+						return new Kv3Value(elementType, uncompressedBlobReader.getBytes(uncompressedBlobSize), flag);
 					} else {
 						//should not happend
 						throw 'Missing reader';
@@ -390,7 +387,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 				arrayElements[i] = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, true, compressionFrameSize, readers0);
 			}
 			//return arrayElements;
-			return new Kv3Value(elementType, arrayElements);
+			return new Kv3Value(elementType, arrayElements, flag);
 		case DATA_TYPE_OBJECT:
 			const objectCount = objectsSizeReader.getUint32();
 			//elements = new Kv3Element();
@@ -426,24 +423,24 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 					}
 				}
 				//return typesArrayElements;
-				return new Kv3Value(elementType, typesArrayElements, subType);
+				return new Kv3Value(elementType, typesArrayElements, flag, subType);
 			}
 		case DATA_TYPE_INT32:
-			return new Kv3Value(elementType, quadReader.getInt32());
+			return new Kv3Value(elementType, quadReader.getInt32(), flag);
 		case DATA_TYPE_UINT32:
-			return new Kv3Value(elementType, quadReader.getUint32());
+			return new Kv3Value(elementType, quadReader.getUint32(), flag);
 		case DATA_TYPE_TRUE:
-			return new Kv3Value(elementType, true);
+			return new Kv3Value(elementType, true, flag);
 		case DATA_TYPE_FALSE:
-			return new Kv3Value(elementType, false);
+			return new Kv3Value(elementType, false, flag);
 		case DATA_TYPE_INT_ZERO:
 		case DATA_TYPE_DOUBLE_ZERO:
-			return new Kv3Value(elementType, 0);
+			return new Kv3Value(elementType, 0, flag);
 		case DATA_TYPE_INT_ONE:
 		case DATA_TYPE_DOUBLE_ONE:
-			return new Kv3Value(elementType, 1);
+			return new Kv3Value(elementType, 1, flag);
 		case DATA_TYPE_FLOAT:
-			return new Kv3Value(elementType, quadReader.getFloat32());
+			return new Kv3Value(elementType, quadReader.getFloat32(), flag);
 		/*
 			if (isArray) {
 				return quadReader.getFloat32();
@@ -469,7 +466,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 					}
 				}
 				//return typesArray2Elements;
-				return new Kv3Value(elementType, typesArray2Elements, subType2);
+				return new Kv3Value(elementType, typesArray2Elements, flag, subType2);
 			}
 		case Kv3Type.TypedArray3:
 			{
@@ -486,24 +483,26 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 					}
 				}
 				//return typesArray3Elements;
-				return new Kv3Value(elementType, typesArray3Elements, subType3);
+				return new Kv3Value(elementType, typesArray3Elements, flag, subType3);
 			}
-		case Kv3Type.Resource:
-			//return new SourceKv3String(quadReader.getInt32());
-			return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()] ?? '');
-		case Kv3Type.Subclass:
-			const objectCount2 = objectsSizeReader.getUint32();
-			const objectElements2 = new Kv3Element();
-			const stringDictionary2 = context.dictionary;
-			for (let i = 0; i < objectCount2; i++) {
-				const nameId = quadReader.getUint32();
-				const element = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
-				const name = stringDictionary2[nameId];
-				if (name !== undefined) {
-					objectElements2.setProperty(name, element);
-				}
+		/*
+	case Kv3Type.Resource:
+		//return new SourceKv3String(quadReader.getInt32());
+		return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()] ?? '');
+	case Kv3Type.Subclass:
+		const objectCount2 = objectsSizeReader.getUint32();
+		const objectElements2 = new Kv3Element();
+		const stringDictionary2 = context.dictionary;
+		for (let i = 0; i < objectCount2; i++) {
+			const nameId = quadReader.getUint32();
+			const element = readBinaryKv3Element(context, version, byteReader, doubleReader, quadReader, eightReader, objectsSizeReader, uncompressedBlobSizeReader, compressedBlobSizeReader, blobCount, decompressBlobBuffer, decompressBlob, compressedBlobReader, uncompressedBlobReader, typeArray, valueArray, undefined, false, compressionFrameSize, readers0);
+			const name = stringDictionary2[nameId];
+			if (name !== undefined) {
+				objectElements2.setProperty(name, element);
 			}
-			return new Kv3Value(elementType, objectElements2);
+		}
+		return new Kv3Value(elementType, objectElements2);
+		*/
 		default:
 			console.error('Unknown element type : ', elementType);
 	}
@@ -792,6 +791,7 @@ function readElement(reader: BinaryReader, stringDictionary: string[], occurence
 				return new Kv3Value(type, false);
 			}
 			break;
+		/*
 		case Kv3Type.Resource:
 			if (occurences) {
 				const arr: string[] = [];
@@ -812,6 +812,7 @@ function readElement(reader: BinaryReader, stringDictionary: string[], occurence
 				return new Kv3Value(type, propertyName ?? '');
 			}
 			break;
+			*/
 		default:
 			console.error('Unknown value type : ' + type);
 

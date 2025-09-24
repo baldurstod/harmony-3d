@@ -1,8 +1,8 @@
 import { BinaryReader } from 'harmony-binary-reader';
-import { Source2DataBlock, Source2FileStruct, Source2NtroBlock, Source2RerlBlock, Source2StructField } from '../source2fileblock';
-import { Kv3Element } from '../../../common/keyvalue/kv3element';
-import { Kv3Type, Kv3Value } from '../../../common/keyvalue/kv3value';
 import { INFO } from '../../../../buildoptions';
+import { Kv3Element } from '../../../common/keyvalue/kv3element';
+import { Kv3Flag, Kv3Type, Kv3Value } from '../../../common/keyvalue/kv3value';
+import { Source2DataBlock, Source2FileStruct, Source2NtroBlock, Source2RerlBlock, Source2StructField } from '../source2fileblock';
 import { readHandle } from './handle';
 
 const FIELD_SIZE = [0, 0/*STRUCT*/, 0/*ENUM*/, 8/*HANDLE*/, 0, 0, 0, 0, 0, 0,
@@ -57,7 +57,7 @@ export function loadStruct(reader: BinaryReader, reference: Source2RerlBlock, st
 			for (let i = 0; i < field.count; i++) {
 				data.push(255);//TODOv3 dafuck ?
 			}
-			element.setProperty(field.name, new Kv3Value(Kv3Type.TypedArray, data, Kv3Type.UnsignedInt32));
+			element.setProperty(field.name, new Kv3Value(Kv3Type.TypedArray, data, Kv3Flag.None, Kv3Type.UnsignedInt32));
 		} else {
 			const f = loadField(reader, reference, field, block, startOffset, introspection, field.offset, field.indirectionByte, field.level, depth);
 			if (f) {
@@ -117,7 +117,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 								//values[name] = this.loadStruct(reader, struct, null, pos, introspection);
 								values.push(loadStruct(reader, reference, struct, block, pos, introspection, depth + 1));
 							}
-							return new Kv3Value(Kv3Type.TypedArray, values, Kv3Type.Element);
+							return new Kv3Value(Kv3Type.TypedArray, values, Kv3Flag.None, Kv3Type.Element);
 						} else {
 							console.log('Unknown struct ' + field.type, fieldOffset);
 						}
@@ -132,7 +132,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 						//reader.seek(fieldOffset);
 						//var handle = readHandle(reader);
 						//return values;//this.reference.externalFiles[handle];
-						return new Kv3Value(Kv3Type.TypedArray, values, Kv3Type.String);
+						return new Kv3Value(Kv3Type.TypedArray, values, Kv3Flag.None, Kv3Type.String);
 					} else {
 						console.log('Unknown struct type for array ' + field, fieldOffset);
 					}
@@ -163,7 +163,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 							arr[i] = reader.getNullString(pos + strOffset);
 						}
 
-						return new Kv3Value(Kv3Type.TypedArray, arr, Kv3Type.String);
+						return new Kv3Value(Kv3Type.TypedArray, arr, Kv3Flag.None, Kv3Type.String);
 					}
 					for (var i = 0; i < arrayCount; i++) {
 						var pos = arrayOffset + fieldSize * i;
@@ -203,7 +203,7 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 				reader.seek(fieldOffset);
 				var handle = readHandle(reader);
 				//return reference ? reference.externalFiles[handle] : null;
-				return new Kv3Value(Kv3Type.Resource, reference.externalFiles[handle] ?? '');
+				return new Kv3Value(Kv3Type.String, reference.externalFiles[handle] ?? '', Kv3Flag.Resource);
 			case DATA_TYPE_BYTE://10
 				return new Kv3Value(Kv3Type.Int32/*TODO: check if there is a better type*/, reader.getInt8(fieldOffset));
 			case DATA_TYPE_UBYTE://11
@@ -239,10 +239,10 @@ function loadField(reader: BinaryReader, reference: Source2RerlBlock, field: Sou
 			//return reader.getVector3(fieldOffset);
 			case DATA_TYPE_VECTOR4://23
 				//return reader.getVector4(fieldOffset);
-				return new Kv3Value(Kv3Type.TypedArray2, reader.getVector4(fieldOffset), Kv3Type.Float);
+				return new Kv3Value(Kv3Type.TypedArray2, reader.getVector4(fieldOffset), Kv3Flag.None, Kv3Type.Float);
 			case DATA_TYPE_QUATERNION://25
 				//return reader.getVector4(fieldOffset);
-				return new Kv3Value(Kv3Type.TypedArray2, reader.getVector4(fieldOffset), Kv3Type.Float);
+				return new Kv3Value(Kv3Type.TypedArray2, reader.getVector4(fieldOffset), Kv3Flag.None, Kv3Type.Float);
 			case DATA_TYPE_BOOLEAN://30
 				throw 'fix me';
 			//return (reader.getInt8(fieldOffset)) ? true : false;

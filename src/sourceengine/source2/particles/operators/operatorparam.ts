@@ -195,7 +195,7 @@ export class OperatorParam {
 			//export type Kv3ValueType = null | boolean | bigint | number | string | Uint8Array | Float32Array | Kv3ValueType[] | Kv3Element | Kv3Value;
 		} else {
 			switch (kv3.getType()) {
-				case Kv3Type.Resource:
+				//case Kv3Type.Resource:
 				case Kv3Type.String:
 					type = OperatorParamType.String;
 					value = kv3.getValue() as string;
