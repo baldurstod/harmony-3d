@@ -32,7 +32,7 @@ export class Source2Model {
 	currentSkin = 0;
 	currentSheen = null;
 	animLayers = [];
-	animGroups = new Set<Source2AnimGroup>();
+	#animGroups = new Set<Source2AnimGroup>();
 	materialRepository = null;
 	dirty = true;
 	geometries = new Set<BufferGeometry>();
@@ -201,7 +201,7 @@ export class Source2Model {
 				for (const meshName of m_refAnimGroups) {
 					// TODO: not tested: find a test case
 					const animGroup = await AnimManager.getAnimGroup(this, this.repository, meshName);
-					this.animGroups.add(animGroup);
+					this.#animGroups.add(animGroup);
 				}
 			}
 		}
@@ -226,7 +226,7 @@ export class Source2Model {
 					animGroup._changemyname = animGroup._changemyname || [];
 					animGroup._changemyname.push(loadedAnim);
 				}
-				this.animGroups.add(animGroup);
+				this.#animGroups.add(animGroup);
 			}
 		}
 	}
@@ -286,7 +286,7 @@ export class Source2Model {
 			return animation;
 		}
 
-		for (const animGroup of this.animGroups) {
+		for (const animGroup of this.#animGroups) {
 			animation = animGroup?.getAnimDesc(name);
 			if (animation) {
 				return animation;
@@ -301,7 +301,7 @@ export class Source2Model {
 			anims.push(...this.#seqGroup.getAnimationsByActivity(activityName));
 		}
 
-		for (const animGroup of this.animGroups) {
+		for (const animGroup of this.#animGroups) {
 			anims.push(...animGroup.getAnimationsByActivity(activityName));
 		}
 
@@ -311,7 +311,7 @@ export class Source2Model {
 
 	async getAnimations() {
 		const animations = new Set<string>();
-		for (const animGroup of this.animGroups) {
+		for (const animGroup of this.#animGroups) {
 			if (animGroup.localAnimArray) {
 				for (let localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {
 					const animRemoveMe = await animGroup.getAnim(localAnimIndex);
@@ -373,7 +373,7 @@ export class Source2Model {
 
 	getAnimationByName(animName: string) {
 		//return this.#internalAnimGroup?.getAnimationByName(animName);
-		for (const animGroup of this.animGroups) {
+		for (const animGroup of this.#animGroups) {
 			const anim = animGroup.getAnimationByName(animName);
 			if (anim) {
 				return anim;
