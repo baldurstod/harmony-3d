@@ -22396,7 +22396,7 @@ getBoneWeight(bufferId: number): number[] | null {
         return ret;
     }
     */
-    getBlockStruct(block, path) {
+    #getBlockStruct(block, path) {
         console.assert(path != null, 'path is null', block, path);
         console.assert(path != '', 'path is empty, use getBlockKeyValues', block, path);
         //const arr = path.split('.');
@@ -22414,14 +22414,14 @@ getBoneWeight(bufferId: number): number[] | null {
         return value;
     }
     getBlockStructAsArray(block, path) {
-        const prop = this.getBlockStruct(block, path);
+        const prop = this.#getBlockStruct(block, path);
         if (prop?.isKv3Value && prop.isArray()) {
             return prop.getValue();
         }
         return null;
     }
     getBlockStructAsElement(block, path) {
-        const prop = this.getBlockStruct(block, path);
+        const prop = this.#getBlockStruct(block, path);
         if (prop?.isKv3Element) {
             return prop;
         }
@@ -22431,42 +22431,42 @@ getBoneWeight(bufferId: number): number[] | null {
         return null;
     }
     getBlockStructAsElementArray(block, path) {
-        const prop = this.getBlockStruct(block, path);
+        const prop = this.#getBlockStruct(block, path);
         if (prop?.isKv3Value && prop.getSubType() == Kv3Type.Element) {
             return prop.getValue();
         }
         return null;
     }
     getBlockStructAsString(block, path) {
-        const prop = this.getBlockStruct(block, path);
+        const prop = this.#getBlockStruct(block, path);
         if (prop?.isKv3Value && prop.getType() == Kv3Type.String) {
             return prop.getValue();
         }
         return null;
     }
     getBlockStructAsStringArray(block, path) {
-        const prop = this.getBlockStruct(block, path);
+        const prop = this.#getBlockStruct(block, path);
         if (prop?.isKv3Value && prop.getSubType() == Kv3Type.String) {
             return prop.getValue();
         }
         return null;
     }
     getBlockStructAsResourceArray(block, path) {
-        const prop = this.getBlockStruct(block, path);
+        const prop = this.#getBlockStruct(block, path);
         if (prop?.isKv3Value && prop.isArray() && prop.getSubType() == Kv3Type.String) { // TODO: also check flag
             return prop.getValue();
         }
         return null;
     }
     getBlockStructAsBigintArray(block, path) {
-        const prop = this.getBlockStruct(block, path);
+        const prop = this.#getBlockStruct(block, path);
         if (prop?.isKv3Value && prop.isBigintArray()) {
             return prop.getValue();
         }
         return null;
     }
     getBlockStructAsNumberArray(block, path) {
-        const prop = this.getBlockStruct(block, path);
+        const prop = this.#getBlockStruct(block, path);
         if (prop?.isKv3Value && prop.isNumberArray()) {
             return prop.getValue();
         }
@@ -22481,7 +22481,7 @@ getBoneWeight(bufferId: number): number[] | null {
     }
     getPermModelData(path) {
         //return this.getBlockStruct('DATA.structs.PermModelData_t.' + path) || this.getBlockStruct('DATA.keyValue.root.' + path);
-        return this.getBlockStruct('DATA', 'PermModelData_t.' + path) ?? this.getBlockStruct('DATA', path);
+        return this.#getBlockStruct('DATA', 'PermModelData_t.' + path) ?? this.#getBlockStruct('DATA', path);
     }
     getMaterialResourceData(path) {
         return this.getBlockStructAsElementArray('DATA', 'MaterialResourceData_t' + path) ?? this.getBlockStructAsElementArray('DATA', path); // ?? this.getBlockStruct('DATA', path);
@@ -26319,7 +26319,7 @@ class Source2SeqGroup {
     }
     setFile(sourceFile) {
         this.file = sourceFile;
-        const sequenceGroupResourceData_t = sourceFile.getBlockStruct('DATA', 'structs.SequenceGroupResourceData_t' /*TODO: check that*/);
+        const sequenceGroupResourceData_t = sourceFile.getBlockStructAsElement('DATA', 'structs.SequenceGroupResourceData_t' /*TODO: check that*/);
         let localSequenceNameArray;
         if (sequenceGroupResourceData_t) {
             // TODO: this part is not tested find a test case
@@ -26433,18 +26433,18 @@ class Source2AnimGroup {
         this.file = sourceFile;
         let localAnimArray;
         let decodeKey;
-        const animationGroupData = sourceFile.getBlockStruct('DATA', 'AnimationGroupResourceData_t');
+        const animationGroupData = sourceFile.getBlockStructAsElement('DATA', 'AnimationGroupResourceData_t');
         let directHSeqGroup;
         if (animationGroupData) {
             // TODO: this part is not tested find a test case
             localAnimArray = animationGroupData.getValueAsResourceArray('m_localHAnimArray');
             decodeKey = animationGroupData.getSubValueAsElement('m_decodeKey');
-            directHSeqGroup = animationGroupData.getSubValueAsElement('m_directHSeqGroup');
+            directHSeqGroup = animationGroupData.getSubValueAsString('m_directHSeqGroup');
         }
         else {
             localAnimArray = sourceFile.getBlockStructAsResourceArray('DATA', 'm_localHAnimArray');
-            decodeKey = sourceFile.getBlockStruct('DATA', 'm_decodeKey') /*TODO: check type*/;
-            directHSeqGroup = sourceFile.getBlockStruct('DATA', 'm_directHSeqGroup');
+            decodeKey = sourceFile.getBlockStructAsElement('DATA', 'm_decodeKey');
+            directHSeqGroup = sourceFile.getBlockStructAsString('DATA', 'm_directHSeqGroup');
         }
         this.decoderArray = kv3ElementToDecoderArray(sourceFile.getBlockStructAsElementArray('ANIM', 'm_decoderArray'));
         if (directHSeqGroup) {
@@ -27226,7 +27226,7 @@ class Source2Model {
     currentSkin = 0;
     currentSheen = null;
     animLayers = [];
-    animGroups = new Set();
+    #animGroups = new Set();
     materialRepository = null;
     dirty = true;
     geometries = new Set();
@@ -27384,7 +27384,7 @@ class Source2Model {
                 for (const meshName of m_refAnimGroups) {
                     // TODO: not tested: find a test case
                     const animGroup = await AnimManager.getAnimGroup(this, this.repository, meshName);
-                    this.animGroups.add(animGroup);
+                    this.#animGroups.add(animGroup);
                 }
             }
         }
@@ -27394,7 +27394,7 @@ class Source2Model {
         if (this.vmdl) {
             const sourceFile = this.vmdl;
             const localAnimArray = sourceFile.getBlockStructAsResourceArray('AGRP', 'm_localHAnimArray');
-            const decodeKey = sourceFile.getBlockStruct('AGRP', 'm_decodeKey');
+            const decodeKey = sourceFile.getBlockStructAsElement('AGRP', 'm_decodeKey');
             if (localAnimArray && decodeKey?.isKv3Element) {
                 const animGroup = new Source2AnimGroup(this, this.repository);
                 animGroup.setFile(this.vmdl);
@@ -27407,7 +27407,7 @@ class Source2Model {
                     animGroup._changemyname = animGroup._changemyname || [];
                     animGroup._changemyname.push(loadedAnim);
                 }
-                this.animGroups.add(animGroup);
+                this.#animGroups.add(animGroup);
             }
         }
     }
@@ -27459,7 +27459,7 @@ class Source2Model {
         if (animation) {
             return animation;
         }
-        for (const animGroup of this.animGroups) {
+        for (const animGroup of this.#animGroups) {
             animation = animGroup?.getAnimDesc(name);
             if (animation) {
                 return animation;
@@ -27472,7 +27472,7 @@ class Source2Model {
         if (this.#seqGroup) {
             anims.push(...this.#seqGroup.getAnimationsByActivity(activityName));
         }
-        for (const animGroup of this.animGroups) {
+        for (const animGroup of this.#animGroups) {
             anims.push(...animGroup.getAnimationsByActivity(activityName));
         }
         animations.addAnimations(anims);
@@ -27480,7 +27480,7 @@ class Source2Model {
     }
     async getAnimations() {
         const animations = new Set();
-        for (const animGroup of this.animGroups) {
+        for (const animGroup of this.#animGroups) {
             if (animGroup.localAnimArray) {
                 for (let localAnimIndex = 0; localAnimIndex < animGroup.localAnimArray.length; localAnimIndex++) {
                     const animRemoveMe = await animGroup.getAnim(localAnimIndex);
@@ -27538,7 +27538,7 @@ class Source2Model {
     }
     getAnimationByName(animName) {
         //return this.#internalAnimGroup?.getAnimationByName(animName);
-        for (const animGroup of this.animGroups) {
+        for (const animGroup of this.#animGroups) {
             const anim = animGroup.getAnimationByName(animName);
             if (anim) {
                 return anim;

@@ -212,7 +212,7 @@ export class Source2Model {
 		if (this.vmdl) {
 			const sourceFile = this.vmdl;
 			const localAnimArray = sourceFile.getBlockStructAsResourceArray('AGRP', 'm_localHAnimArray');
-			const decodeKey = sourceFile.getBlockStruct('AGRP', 'm_decodeKey');
+			const decodeKey = sourceFile.getBlockStructAsElement('AGRP', 'm_decodeKey');
 			if (localAnimArray && (decodeKey as Kv3Element | undefined)?.isKv3Element) {
 				const animGroup = new Source2AnimGroup(this, this.repository);
 				animGroup.setFile(this.vmdl);

@@ -8436,6 +8436,7 @@ declare class Channel {
                        * Source2 common file
                        */
                       export declare class Source2File {
+                          #private;
                           repository: string;
                           fileName: string;
                           blocks: Record<string, Source2FileBlock>;
@@ -8450,7 +8451,6 @@ declare class Channel {
                           addBlock(block: Source2FileBlock): void;
                           getBlockByType(type: string): Source2FileBlock | null;
                           getBlockById(id: number): Source2FileBlock | null;
-                          getBlockStruct(block: string, path: string): Kv3ValueType | undefined;
                           getBlockStructAsArray(block: string, path: string): any[] | null;
                           getBlockStructAsElement(block: string, path: string): Kv3Element | null;
                           getBlockStructAsElementArray(block: string, path: string): Kv3Element[] | null;
@@ -8591,7 +8591,6 @@ declare class Channel {
                           currentSkin: number;
                           currentSheen: null;
                           animLayers: never[];
-                          animGroups: Set<Source2AnimGroup>;
                           materialRepository: null;
                           dirty: boolean;
                           geometries: Set<BufferGeometry>;
@@ -9216,7 +9215,7 @@ declare class Channel {
 
                       export declare const Source2SnapshotLoader: {
                           load(repository: string, filename: string): Promise<Source2Snapshot | null>;
-                          "__#267@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
+                          "__#268@#loadSnapshot"(snapFile: Source2File): Source2Snapshot;
                       };
 
                       export declare class Source2SpringMeteor extends Source2Material {
@@ -11142,12 +11141,12 @@ declare class Channel {
                       }
 
                       export declare const Zstd: {
-                          "__#236@#webAssembly"?: any;
-                          "__#236@#HEAPU8"?: Uint8Array;
+                          "__#237@#webAssembly"?: any;
+                          "__#237@#HEAPU8"?: Uint8Array;
                           decompress(compressedDatas: Uint8Array): Promise<Uint8Array<ArrayBuffer> | null>;
                           decompress_ZSTD(compressedDatas: Uint8Array, uncompressedDatas: Uint8Array): Promise<any>;
                           getWebAssembly(): Promise<any>;
-                          "__#236@#initHeap"(): void;
+                          "__#237@#initHeap"(): void;
                       };
 
                       export { }

@@ -402,7 +402,7 @@ getBoneWeight(bufferId: number): number[] | null {
 	}
 	*/
 
-	getBlockStruct(block: string, path: string): Kv3ValueType | undefined {
+	#getBlockStruct(block: string, path: string): Kv3ValueType | undefined {
 		console.assert(path != null, 'path is null', block, path);
 		console.assert(path != '', 'path is empty, use getBlockKeyValues', block, path);
 
@@ -439,7 +439,7 @@ getBoneWeight(bufferId: number): number[] | null {
 	}
 
 	getBlockStructAsArray(block: string, path: string): any[] | null {
-		const prop = this.getBlockStruct(block, path);
+		const prop = this.#getBlockStruct(block, path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isArray()) {
 			return (prop as Kv3Value).getValue() as any[];
 		}
@@ -447,7 +447,7 @@ getBoneWeight(bufferId: number): number[] | null {
 	}
 
 	getBlockStructAsElement(block: string, path: string): Kv3Element | null {
-		const prop = this.getBlockStruct(block, path);
+		const prop = this.#getBlockStruct(block, path);
 		if ((prop as Kv3Element)?.isKv3Element) {
 			return (prop as Kv3Element);
 		}
@@ -458,7 +458,7 @@ getBoneWeight(bufferId: number): number[] | null {
 	}
 
 	getBlockStructAsElementArray(block: string, path: string): Kv3Element[] | null {
-		const prop = this.getBlockStruct(block, path);
+		const prop = this.#getBlockStruct(block, path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getSubType() == Kv3Type.Element) {
 			return (prop as Kv3Value).getValue() as Kv3Element[];
 		}
@@ -466,7 +466,7 @@ getBoneWeight(bufferId: number): number[] | null {
 	}
 
 	getBlockStructAsString(block: string, path: string): string | null {
-		const prop = this.getBlockStruct(block, path);
+		const prop = this.#getBlockStruct(block, path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getType() == Kv3Type.String) {
 			return (prop as Kv3Value).getValue() as string;
 		}
@@ -474,7 +474,7 @@ getBoneWeight(bufferId: number): number[] | null {
 	}
 
 	getBlockStructAsStringArray(block: string, path: string): string[] | null {
-		const prop = this.getBlockStruct(block, path);
+		const prop = this.#getBlockStruct(block, path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).getSubType() == Kv3Type.String) {
 			return (prop as Kv3Value).getValue() as string[];
 		}
@@ -482,7 +482,7 @@ getBoneWeight(bufferId: number): number[] | null {
 	}
 
 	getBlockStructAsResourceArray(block: string, path: string): string[] | null {
-		const prop = this.getBlockStruct(block, path);
+		const prop = this.#getBlockStruct(block, path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isArray() && (prop as Kv3Value).getSubType() == Kv3Type.String) {// TODO: also check flag
 			return (prop as Kv3Value).getValue() as string[];
 		}
@@ -490,7 +490,7 @@ getBoneWeight(bufferId: number): number[] | null {
 	}
 
 	getBlockStructAsBigintArray(block: string, path: string): bigint[] | null {
-		const prop = this.getBlockStruct(block, path);
+		const prop = this.#getBlockStruct(block, path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isBigintArray()) {
 			return (prop as Kv3Value).getValue() as bigint[];
 		}
@@ -498,7 +498,7 @@ getBoneWeight(bufferId: number): number[] | null {
 	}
 
 	getBlockStructAsNumberArray(block: string, path: string): number[] | null {
-		const prop = this.getBlockStruct(block, path);
+		const prop = this.#getBlockStruct(block, path);
 		if ((prop as Kv3Value)?.isKv3Value && (prop as Kv3Value).isNumberArray()) {
 			return (prop as Kv3Value).getValue() as number[];
 		}
@@ -516,7 +516,7 @@ getBoneWeight(bufferId: number): number[] | null {
 
 	getPermModelData(path: string): Kv3ValueType | undefined {
 		//return this.getBlockStruct('DATA.structs.PermModelData_t.' + path) || this.getBlockStruct('DATA.keyValue.root.' + path);
-		return this.getBlockStruct('DATA', 'PermModelData_t.' + path) ?? this.getBlockStruct('DATA', path);
+		return this.#getBlockStruct('DATA', 'PermModelData_t.' + path) ?? this.#getBlockStruct('DATA', path);
 	}
 
 	getMaterialResourceData(path: string): Kv3Element[] | null {

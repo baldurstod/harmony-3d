@@ -23,7 +23,7 @@ export class Source2SeqGroup {
 	setFile(sourceFile: Source2File) {
 		this.file = sourceFile;
 
-		const sequenceGroupResourceData_t = sourceFile.getBlockStruct('DATA', 'structs.SequenceGroupResourceData_t'/*TODO: check that*/) as Kv3Element;
+		const sequenceGroupResourceData_t = sourceFile.getBlockStructAsElement('DATA', 'structs.SequenceGroupResourceData_t'/*TODO: check that*/);
 		let localSequenceNameArray: string[] | null;
 		if (sequenceGroupResourceData_t) {
 			// TODO: this part is not tested find a test case

@@ -35,18 +35,18 @@ export class Source2AnimGroup {
 
 		let localAnimArray: string[] | null;
 		let decodeKey: Kv3Element | null;
-		const animationGroupData = sourceFile.getBlockStruct('DATA', 'AnimationGroupResourceData_t') as Kv3Element;
+		const animationGroupData = sourceFile.getBlockStructAsElement('DATA', 'AnimationGroupResourceData_t');
 
 		let directHSeqGroup;
 		if (animationGroupData) {
 			// TODO: this part is not tested find a test case
 			localAnimArray = animationGroupData.getValueAsResourceArray('m_localHAnimArray');
 			decodeKey = animationGroupData.getSubValueAsElement('m_decodeKey');
-			directHSeqGroup = animationGroupData.getSubValueAsElement('m_directHSeqGroup');
+			directHSeqGroup = animationGroupData.getSubValueAsString('m_directHSeqGroup');
 		} else {
 			localAnimArray = sourceFile.getBlockStructAsResourceArray('DATA', 'm_localHAnimArray');
-			decodeKey = sourceFile.getBlockStruct('DATA', 'm_decodeKey') as Kv3Element/*TODO: check type*/;
-			directHSeqGroup = sourceFile.getBlockStruct('DATA', 'm_directHSeqGroup');
+			decodeKey = sourceFile.getBlockStructAsElement('DATA', 'm_decodeKey');
+			directHSeqGroup = sourceFile.getBlockStructAsString('DATA', 'm_directHSeqGroup');
 		}
 
 		this.decoderArray = kv3ElementToDecoderArray(sourceFile.getBlockStructAsElementArray('ANIM', 'm_decoderArray'));
