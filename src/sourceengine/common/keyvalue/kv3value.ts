@@ -209,7 +209,7 @@ export class Kv3Value {
 							if (flagString) {
 								typedArrayString += '\n' + linePrefix2 + flagString;
 							}
-							typedArrayString += '\n' + (value as Kv3Element).exportAsText(linePrefix2) + ',\n';
+							typedArrayString += '\n' + (value as Kv3Element).exportAsText(linePrefix2) + ',';
 							break;
 						/*
 						case Kv3Type.Subclass:
@@ -228,7 +228,7 @@ export class Kv3Value {
 					case Kv3Type.Float:
 						return `[ ${typedArrayString}]`;
 					case Kv3Type.Element:
-						return `\n${linePrefix}[${typedArrayString}${linePrefix}]`;
+						return `\n${linePrefix}[${typedArrayString}\n${linePrefix}]`;
 					default:
 						return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]`;
 				}
