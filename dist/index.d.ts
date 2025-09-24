@@ -3671,6 +3671,14 @@ declare class Channel {
                           getValueAsElementArray(path: string): Kv3Element[] | null;
                       }
 
+                      declare enum Kv3Flag {
+                          None = 0,
+                          ResourceName = 2,
+                          Panorama = 3,
+                          SoundEvent = 4,
+                          Subclass = 5
+                      }
+
                       declare enum Kv3Type {
                           Unknown = 0,
                           Null = 1,
@@ -3694,15 +3702,13 @@ declare class Channel {
                           Float = 19,
                           Byte = 23,
                           TypedArray2 = 24,
-                          TypedArray3 = 25,
-                          Resource = 134,
-                          Subclass = 137
+                          TypedArray3 = 25
                       }
 
                       declare class Kv3Value {
                           #private;
                           isKv3Value: true;
-                          constructor(type: Kv3Type, value: Kv3ValueType, subType?: Kv3Type);
+                          constructor(type: Kv3Type, value: Kv3ValueType, flag?: Kv3Flag, subType?: Kv3Type);
                           getType(): Kv3Type;
                           getSubType(): Kv3Type;
                           isBoolean(): boolean;

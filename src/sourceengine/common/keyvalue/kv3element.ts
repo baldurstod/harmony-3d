@@ -267,7 +267,7 @@ export class Kv3Element {
 		out.push(`${linePrefix}{\n`);
 		for (const [key, val] of this.#properties) {
 			out.push(linePrefix2);
-			out.push(key);
+			out.push(sanitizeKey(key));
 			out.push(' = ');
 
 			if (val) {
@@ -280,6 +280,14 @@ export class Kv3Element {
 		out.push('}');
 		return out.join('');
 	}
+}
+
+const sanitizeKeyRegex = /[^a-zA-Z0-9_]/;
+function sanitizeKey(key: string): string {
+	if (sanitizeKeyRegex.test(key)) {
+		return '"' + key + '"';
+	}
+	return key;
 }
 
 export class SourceKv3String {
