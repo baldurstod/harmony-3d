@@ -233,7 +233,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 	//let elements: SourceKv3Value[];
 	switch (elementType) {
 		case Kv3Type.Null:
-			return null;
+			return new Kv3Value(elementType, null, flag);
 		case Kv3Type.Bool:
 			return new Kv3Value(elementType, byteReader.getUint8() ? true : false, flag);
 		/*
