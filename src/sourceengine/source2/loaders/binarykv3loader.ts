@@ -5,30 +5,6 @@ import { Kv3Element, Source2Kv3Value, SourceKv3String } from '../../common/keyva
 import { Kv3File } from '../../common/keyvalue/kv3file';
 import { Kv3Flag, Kv3Type, Kv3Value, Kv3ValueTypeAll, Kv3ValueTypePrimitives } from '../../common/keyvalue/kv3value';
 
-const DATA_TYPE_NULL = 0x01;
-const DATA_TYPE_BOOL = 0x02;
-const DATA_TYPE_INT64 = 0x03;
-const DATA_TYPE_UINT64 = 0x04;
-const DATA_TYPE_DOUBLE = 0x05;
-const DATA_TYPE_STRING = 0x06;
-const DATA_TYPE_BLOB = 0x07;
-const DATA_TYPE_ARRAY = 0x08;
-const DATA_TYPE_OBJECT = 0x09;
-//const DATA_TYPE_TYPED_ARRAY = 0x0A;
-const DATA_TYPE_INT32 = 0x0B;
-const DATA_TYPE_UINT32 = 0x0C;
-const DATA_TYPE_TRUE = 0x0D;
-const DATA_TYPE_FALSE = 0x0E;
-const DATA_TYPE_INT_ZERO = 0x0F;
-const DATA_TYPE_INT_ONE = 0x10;
-const DATA_TYPE_DOUBLE_ZERO = 0x11;
-const DATA_TYPE_DOUBLE_ONE = 0x12;
-const DATA_TYPE_FLOAT = 0x13;
-const DATA_TYPE_BYTE = 0x17;
-//const DATA_TYPE_TYPED_ARRAY2 = 0x18;
-//const DATA_TYPE_TYPED_ARRAY3 = 0x19;
-//const DATA_TYPE_RESOURCE = 0x86;
-
 interface Readers {
 	reader1: BinaryReader;
 	reader2: BinaryReader;
@@ -256,9 +232,9 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 	//let count;
 	//let elements: SourceKv3Value[];
 	switch (elementType) {
-		case DATA_TYPE_NULL:
+		case Kv3Type.Null:
 			return null;
-		case DATA_TYPE_BOOL:
+		case Kv3Type.Bool:
 			return new Kv3Value(elementType, byteReader.getUint8() ? true : false, flag);
 		/*
 			if (isArray) {
@@ -271,7 +247,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 				return value;
 			}
 		*/
-		case DATA_TYPE_INT64:
+		case Kv3Type.Int64:
 			return new Kv3Value(elementType, eightReader.getBigInt64(), flag);
 		/*
 			if (isArray) {
@@ -283,7 +259,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 				return value;
 			}
 		*/
-		case DATA_TYPE_UINT64:
+		case Kv3Type.UnsignedInt64:
 			return new Kv3Value(elementType, eightReader.getBigUint64(), flag);
 		/*
 			if (isArray) {
@@ -295,7 +271,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 				return value;
 			}
 		*/
-		case DATA_TYPE_DOUBLE:
+		case Kv3Type.Double:
 			return new Kv3Value(elementType, eightReader.getFloat64(), flag);
 		/*
 			if (isArray) {
@@ -307,7 +283,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 				return value;
 			}
 		*/
-		case DATA_TYPE_BYTE:
+		case Kv3Type.Byte:
 			return new Kv3Value(elementType, byteReader.getInt8(), flag);
 		/*
 			if (isArray) {
@@ -319,7 +295,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 				return value;
 			}
 		*/
-		case DATA_TYPE_STRING:
+		case Kv3Type.String:
 			return new Kv3Value(elementType, context.dictionary[quadReader.getInt32()] ?? '', flag);
 		//return new SourceKv3String(quadReader.getInt32());
 		case Kv3Type.Blob:
@@ -384,7 +360,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 					}
 				}
 			}
-		case DATA_TYPE_ARRAY:
+		case Kv3Type.Array:
 			const arrayCount = quadReader.getUint32();
 			const arrayElements: (Kv3Element | Kv3Value | null)[] = new Array(arrayCount);
 			for (let i = 0; i < arrayCount; i++) {
@@ -392,7 +368,7 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 			}
 			//return arrayElements;
 			return new Kv3Value(elementType, arrayElements, flag);
-		case DATA_TYPE_OBJECT:
+		case Kv3Type.Element:
 			const objectCount = objectsSizeReader.getUint32();
 			//elements = new Kv3Element();
 			const objectElements = new Kv3Element();//new Map<number, Source2Kv3Value>();
@@ -430,21 +406,21 @@ function readBinaryKv3Element(context: Kv3Context, version: number, byteReader: 
 				//return typesArrayElements;
 				return new Kv3Value(elementType, typesArrayElements, flag, subType);
 			}
-		case DATA_TYPE_INT32:
+		case Kv3Type.Int32:
 			return new Kv3Value(elementType, quadReader.getInt32(), flag);
-		case DATA_TYPE_UINT32:
+		case Kv3Type.UnsignedInt32:
 			return new Kv3Value(elementType, quadReader.getUint32(), flag);
-		case DATA_TYPE_TRUE:
+		case Kv3Type.True:
 			return new Kv3Value(elementType, true, flag);
-		case DATA_TYPE_FALSE:
+		case Kv3Type.False:
 			return new Kv3Value(elementType, false, flag);
-		case DATA_TYPE_INT_ZERO:
-		case DATA_TYPE_DOUBLE_ZERO:
+		case Kv3Type.IntZero:
+		case Kv3Type.DoubleZero:
 			return new Kv3Value(elementType, 0, flag);
-		case DATA_TYPE_INT_ONE:
-		case DATA_TYPE_DOUBLE_ONE:
+		case Kv3Type.IntOne:
+		case Kv3Type.DoubleOne:
 			return new Kv3Value(elementType, 1, flag);
-		case DATA_TYPE_FLOAT:
+		case Kv3Type.Float:
 			return new Kv3Value(elementType, quadReader.getFloat32(), flag);
 		/*
 			if (isArray) {
