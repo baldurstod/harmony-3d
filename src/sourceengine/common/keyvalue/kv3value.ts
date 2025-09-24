@@ -268,10 +268,15 @@ function formatArray(arr: Kv3ValueTypeAll[], linePrefix: string): string {
 	for (let i = 0, l = (arr as Kv3ValueTypeAll[]).length, m = l - 1; i < l; i++) {
 		const value = (arr as Kv3ValueTypeAll[])[i]!;
 		//typedArrayString += flagString + value + ', ';
-		typedArrayString += value;
-		if (i != m) {
-			typedArrayString += ', ';
+
+		if ((value as Kv3Value).isKv3Value) {
+			typedArrayString += (value as Kv3Value).getValue();
+		} else {
+			typedArrayString += value;
 		}
+			if (i != m) {
+				typedArrayString += ', ';
+			}
 	}
 	return `[ ${typedArrayString} ]`;
 	//return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]`;
