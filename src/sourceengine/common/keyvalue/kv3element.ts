@@ -264,7 +264,7 @@ export class Kv3Element {
 		const linePrefix2 = linePrefix + '\t';
 
 		//out.push(linePrefix);
-		out.push(`\n${linePrefix}{\r\n`);
+		out.push(`${linePrefix}{\n`);
 		for (const [key, val] of this.#properties) {
 			out.push(linePrefix2);
 			out.push(key);
@@ -274,7 +274,7 @@ export class Kv3Element {
 				out.push(val.exportAsText(linePrefix2));
 			}
 
-			out.push('\r\n');
+			out.push('\n');
 		}
 		out.push(linePrefix);
 		out.push('}');

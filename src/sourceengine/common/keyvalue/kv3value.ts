@@ -29,6 +29,7 @@ export enum Kv3Type {
 export enum Kv3Flag {
 	None = 0,
 	ResourceName = 2,
+	Panorama = 3,
 	SoundEvent = 4,
 	Subclass = 5,
 
@@ -38,6 +39,7 @@ export enum Kv3Flag {
 
 const Kv3FlagString = new Map([
 	[Kv3Flag.ResourceName, 'resource_name'],
+	[Kv3Flag.Panorama, 'panorama'],
 	[Kv3Flag.SoundEvent, 'soundevent'],
 	[Kv3Flag.Subclass, 'subclass'],
 ]);
@@ -166,20 +168,48 @@ export class Kv3Value {
 			}
 		}
 
+		const linePrefix2 = linePrefix + '\t';
 		switch (this.#type) {
 			case Kv3Type.String:
 				return flagString + '"' + this.#value + '"';
 			case Kv3Type.Element:
-				return flagString + (this.#value as Kv3Element).exportAsText(linePrefix);
+				return flagString + '\n' + (this.#value as Kv3Element).exportAsText(linePrefix);
+			/*
+		case Kv3Type.Array:
+			let arrayString = '';
+			for (const value of this.#value as Kv3ValueTypeAll[]) {
+				arrayString += linePrefix2 + flagString + value + ',\n';
+			}
+			return `\n${linePrefix}[\n${arrayString}${linePrefix}]`;
+			*/
 			case Kv3Type.TypedArray:
 			case Kv3Type.TypedArray2:
 			case Kv3Type.TypedArray3:
 				let typedArrayString = '';
-				const linePrefix2 = linePrefix + '\t';
-				for (const value of this.#value as Kv3ValueTypeAll[]) {
+				//for (const value of this.#value as Kv3ValueTypeAll[]) {
+				for (let i = 0, l = (this.#value as Kv3ValueTypeAll[]).length, m = l - 1; i < l; i++) {
+					const value = (this.#value as Kv3ValueTypeAll[])[i]!;
 					switch (this.#subType) {
+						case Kv3Type.Double:
+						case Kv3Type.DoubleZero:
+						case Kv3Type.DoubleOne:
+						case Kv3Type.Float:
+							//typedArrayString += flagString + value + ', ';
+							typedArrayString += flagString + value;
+							if (i == m) {
+								typedArrayString += ' ';
+							} else {
+								typedArrayString += ', ';
+							}
+							break;
 						case Kv3Type.String:
 							typedArrayString += linePrefix2 + flagString + '"' + value + '"' + ',\n';
+							break;
+						case Kv3Type.Element:
+							if (flagString) {
+								typedArrayString += '\n' + linePrefix2 + flagString;
+							}
+							typedArrayString += '\n' + (value as Kv3Element).exportAsText(linePrefix2) + ',\n';
 							break;
 						/*
 						case Kv3Type.Subclass:
@@ -191,7 +221,18 @@ export class Kv3Value {
 							break;
 					}
 				}
-				return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]\n`;
+				switch (this.#subType) {
+					case Kv3Type.Double:
+					case Kv3Type.DoubleZero:
+					case Kv3Type.DoubleOne:
+					case Kv3Type.Float:
+						return `[ ${typedArrayString}]`;
+					case Kv3Type.Element:
+						return `\n${linePrefix}[${typedArrayString}${linePrefix}]`;
+					default:
+						return `\n${linePrefix}[\n${typedArrayString}${linePrefix}]`;
+				}
+
 			/*
 			case Kv3Type.Resource:
 				return 'resource_name:"' + this.#value + '"';
