@@ -11,25 +11,33 @@ export class Composer {
 	#height = 0;
 	enabled = true;
 	#passes: Pass[] = [];
-	#renderTarget1!: RenderTarget;
-	#renderTarget2!: RenderTarget;
-	#readBuffer!: RenderTarget;
-	#writeBuffer!: RenderTarget;
+	#renderTarget1?: RenderTarget;
+	#renderTarget2?: RenderTarget;
+	#readBuffer?: RenderTarget;
+	#writeBuffer?: RenderTarget;
 
 	constructor(renderTarget?: RenderTarget) {
-		if (!renderTarget) {
-			const rendererSize = Graphics.getSize();
-			renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
+		if (renderTarget) {
+			this.#setRenderTarget(renderTarget);
+			return;
 		}
-		this.#setRenderTarget(renderTarget);
+
+		(async () => {
+			await Graphics.isReady();
+			if (!renderTarget) {
+				const rendererSize = Graphics.getSize();
+				renderTarget = new RenderTarget({ width: rendererSize[0], height: rendererSize[1], depthBuffer: true, stencilBuffer: true });
+				this.#setRenderTarget(renderTarget);
+			}
+		})();
 	}
 
 	render(delta: number, context: RenderContext) {
 		let pass: Pass;
 		let swapBuffer;
 
-		Graphics.getSize(tempVec2);
-		this.setSize(tempVec2[0], tempVec2[1]);
+		//Graphics.getSize(tempVec2);
+		//this.setSize(tempVec2[0], tempVec2[1]);
 
 		let lastPass = -1;
 		for (let i = this.#passes.length - 1; i > 0; --i) {
@@ -51,8 +59,9 @@ export class Composer {
 				this.#writeBuffer = swapBuffer;
 			}
 
-			pass.render(this.#readBuffer, this.#writeBuffer, i == lastPass, delta, context);
-
+			if (this.#readBuffer && this.#writeBuffer) {
+				pass.render(this.#readBuffer, this.#writeBuffer, i == lastPass, delta, context);
+			}
 		}
 	}
 
@@ -80,8 +89,8 @@ export class Composer {
 		if (this.#width != width || this.#height != height) {
 			this.#width = width;
 			this.#height = height;
-			this.#renderTarget1.resize(width, height);
-			this.#renderTarget2.resize(width, height);
+			this.#renderTarget1?.resize(width, height);
+			this.#renderTarget2?.resize(width, height);
 
 			for (let i = 0, l = this.#passes.length; i < l; ++i) {
 				this.#passes[i]!.setSize(width, height);
