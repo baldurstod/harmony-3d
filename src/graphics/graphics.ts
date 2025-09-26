@@ -3,6 +3,7 @@ import { saveFile, ShortcutHandler } from 'harmony-browser-utils';
 import { createElement } from 'harmony-ui';
 import { DEBUG, DISABLE_WEBGL2, ENABLE_GET_ERROR, MEASURE_PERFORMANCE, TESTING, USE_STATS, VERBOSE } from '../buildoptions';
 import { Camera } from '../cameras/camera';
+import { Composer } from '../composer/composer';
 import { MAX_HARDWARE_BONES, RECORDER_DEFAULT_FILENAME, RECORDER_MIME_TYPE } from '../constants';
 import { Entity } from '../entities/entity';
 import { pickList } from '../entities/picklist';
@@ -76,11 +77,14 @@ interface AddCanvasOptions {
  * initCanvas must be called with useOffscreenCanvas = true to take effect
  */
 export type CanvasScene = {
-	/** Rendered Scene. */
-	scene: Scene,
-	/** Camera. If none provided, scene activeCamera will be used  */
+	/** Rendered scene. Ignored if composer exist and is enabled */
+	scene?: Scene,
+	/** Camera. If none provided, scene activeCamera will be used. */
 	camera?: Camera,
+	/** Viewport. If none provided, The whole canvas will be used. */
 	viewport?: Viewport,
+	/** Render a composer instead of a scene. */
+	composer?: Composer,
 }
 
 /**
@@ -415,8 +419,17 @@ class Graphics {
 		this.renderBackground();//TODOv3 put in rendering pipeline
 
 		for (const canvasScene of canvas.scenes) {
-			const camera = canvasScene.camera ?? canvasScene.scene.activeCamera;
-			if (camera) {
+			// TODO: setup viewport
+			const composer = canvasScene.composer;
+			if (composer?.enabled) {
+				composer.setSize(canvas.canvas.width, canvas.canvas.height);
+				composer.render(delta, {});
+				break;
+			}
+
+			const scene = canvasScene.scene;
+			const camera = canvasScene.camera ?? scene?.activeCamera;
+			if (scene && camera) {
 				if (camera.autoResize) {
 					const w = canvas.canvas.width;
 					const h = canvas.canvas.height;
@@ -427,9 +440,8 @@ class Graphics {
 					camera.top = h;
 					camera.aspectRatio = w / h;
 				}
-				this.#forwardRenderer!.render(canvasScene.scene, camera, delta, context);
+				this.#forwardRenderer!.render(scene, camera, delta, context);
 			}
-
 		}
 
 		const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
@@ -849,7 +861,7 @@ class Graphics {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.getGLError('bindFramebuffer');
 			}
-			this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
+			//this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
 		} else {
 			renderTarget.bind();
 		}
