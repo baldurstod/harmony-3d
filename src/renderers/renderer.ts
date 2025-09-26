@@ -102,7 +102,7 @@ export class Renderer {
 	applyMaterial(program: Program, material: Material) {
 	}
 
-	setupLights(renderList: RenderList, camera: Camera, program: Program, viewMatrix: mat4) {
+	#setupLights(renderList: RenderList, camera: Camera, program: Program, viewMatrix: mat4) {
 		const lightPositionCameraSpace = vec3.create();//TODO: do not create a vec3
 		const lightPositionWorldSpace = vec3.create();//TODO: do not create a vec3
 		const colorIntensity = vec3.create();//TODO: do not create a vec3
@@ -145,7 +145,7 @@ export class Renderer {
 		const spotShadowMap = [];
 		const spotShadowMatrix = [];
 		for (const spotLight of spotLights) {
-			if (spotLight.visible) {
+			if (spotLight.isVisible()) {
 				spotLight.getWorldPosition(lightPositionCameraSpace);
 				vec3.transformMat4(lightPositionCameraSpace, lightPositionCameraSpace, viewMatrix);
 				program.setUniformValue('uSpotLights[' + spotLightId + '].position', lightPositionCameraSpace);
@@ -280,7 +280,7 @@ export class Renderer {
 			program.setUniformValue('uTime', [Graphics.getTime(), Graphics.currentTick, 0, 0]);
 
 			if (renderLights) {
-				this.setupLights(renderList, camera, program, cameraMatrix);
+				this.#setupLights(renderList, camera, program, cameraMatrix);
 			} else {
 				program.setUniformValue('uLightPosition', lightPos);
 				program.setUniformValue('uLightNear', camera.nearPlane);
