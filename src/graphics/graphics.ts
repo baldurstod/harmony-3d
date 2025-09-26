@@ -1,4 +1,4 @@
-import { vec2, vec4 } from 'gl-matrix';
+import { ReadonlyVec4, vec2, vec4 } from 'gl-matrix';
 import { saveFile, ShortcutHandler } from 'harmony-browser-utils';
 import { createElement } from 'harmony-ui';
 import { DEBUG, DISABLE_WEBGL2, ENABLE_GET_ERROR, MEASURE_PERFORMANCE, TESTING, USE_STATS, VERBOSE } from '../buildoptions';
@@ -718,7 +718,7 @@ class Graphics {
 		this.setViewport(vec4.fromValues(0, 0, this.#width, this.#height));///ODO: optimize
 	}
 
-	static setViewport(viewport: vec4): void {
+	static setViewport(viewport: ReadonlyVec4): void {
 		vec4.copy(this.#viewport, viewport);
 		WebGLRenderingState.viewport(viewport);
 	}
@@ -726,7 +726,7 @@ class Graphics {
 	/**
 	 * @deprecated Please use `setViewport` instead.
 	 */
-	static set viewport(viewport: vec4) {
+	static set viewport(viewport: ReadonlyVec4) {
 		this.setViewport(viewport);
 	}
 
@@ -741,7 +741,7 @@ class Graphics {
 		return this.getViewport(vec4.create());
 	}
 
-	static set scissor(scissor: vec4) {
+	static set scissor(scissor: ReadonlyVec4) {
 		vec4.copy(this.#scissor, scissor);
 		WebGLRenderingState.scissor(scissor);
 	}

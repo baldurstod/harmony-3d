@@ -1,4 +1,4 @@
-import { vec4 } from 'gl-matrix';
+import { ReadonlyVec4, vec4 } from 'gl-matrix';
 import { Graphics } from '../graphics/graphics2';
 import { WebGLAnyRenderingContext } from '../types';
 import { GL_BACK, GL_CCW, GL_COLOR_BUFFER_BIT, GL_DEPTH_BUFFER_BIT, GL_FUNC_ADD, GL_LESS, GL_MAX_VERTEX_ATTRIBS, GL_ONE, GL_POLYGON_OFFSET_FILL, GL_STENCIL_BUFFER_BIT, GL_ZERO } from './constants';
@@ -115,14 +115,14 @@ export class WebGLRenderingState {
 		}
 	}
 
-	static viewport(viewport: vec4) {
+	static viewport(viewport: ReadonlyVec4) {
 		if (!vec4.exactEquals(viewport, this.#viewport)) {
 			this.#glContext.viewport(viewport[0], viewport[1], viewport[2], viewport[3]);
 			vec4.copy(this.#viewport, viewport);
 		}
 	}
 
-	static scissor(scissor: vec4) {
+	static scissor(scissor: ReadonlyVec4) {
 		if (!vec4.exactEquals(scissor, this.#scissor)) {
 			this.#glContext.scissor(scissor[0], scissor[1], scissor[2], scissor[3]);
 			vec4.copy(this.#scissor, scissor);

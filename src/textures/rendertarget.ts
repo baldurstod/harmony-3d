@@ -11,15 +11,16 @@ export class RenderTarget {
 	#width = 0;
 	#height = 0;
 	#target: FrameBufferTarget = GL_FRAMEBUFFER;
-	#frameBuffer = new Framebuffer(this.#target);
+	readonly #frameBuffer = new Framebuffer(this.#target);
 	#depthRenderbuffer?: Renderbuffer;
 	#texture: AnyTexture;
-	#scissor = vec4.create();
-	#viewport = vec4.create();
+	readonly #scissor = vec4.create();
+	readonly #viewport = vec4.create();
 	#scissorTest = false;
 	#depthBuffer: boolean;
 	#stencilBuffer: boolean;
 	#depthTexture: boolean;
+
 	constructor(params: any = {}/*width, height, options = {}/*depth, stencil, texture*/) {
 		const width = params.width ?? 1;
 		const height = params.height ?? 1;
@@ -90,7 +91,7 @@ export class RenderTarget {
 
 	bind() {
 		this.#frameBuffer.bind();
-		Graphics.viewport = this.#viewport;
+		Graphics.setViewport(this.#viewport);
 	}
 
 	unbind() {
