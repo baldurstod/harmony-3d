@@ -66,22 +66,39 @@ interface AddCanvasOptions {
 	/** Auto resize the canvas to fit its parent. Default to false. */
 	autoResize?: boolean;
 	/** Add a single scene to the canvas. A scene can be part of several canvases. If scenes is provided, this property will be ignored. */
-	scene?: Scene;
+	scene?: Scene | CanvasScene;
 	/** Add several scenes to the canvas. */
 	scenes?: CanvasScene[];
 }
 
+/**
+ * Definition of a single scene rendered into a Canvas.
+ * initCanvas must be called with useOffscreenCanvas = true to take effect
+ */
 export type CanvasScene = {
+	/** Rendered Scene. */
 	scene: Scene,
-	viewport: Viewport,
+	/** Camera. If none provided, scene activeCamera will be used  */
+	camera?: Camera,
+	viewport?: Viewport,
 }
 
-export type MultiCanvas = {
+/**
+ * Definition of a single canvas on the page.
+ * initCanvas must be called with useOffscreenCanvas = true to take effect
+ */
+export type Canvas = {
+	/** Canvas name. Default to an empty string. */
 	name: string;
+	/** Enable rendering. */
 	enabled: boolean;
+	/** Html canvas. */
 	canvas: HTMLCanvasElement;
+	/** Rendering context associated with the canvas. */
 	context: ImageBitmapRenderingContext;
+	/** List of scenes rendered to this canvas. Several scenes can be rendered to a single Canvas using Viewports */
 	scenes: CanvasScene[];
+	/** Auto resize this canvas to fit it's container */
 	autoResize: boolean;
 }
 
@@ -110,7 +127,7 @@ class Graphics {
 	static #readyPromiseResolve: (value: boolean) => void;
 	static #readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
 	static #canvas?: HTMLCanvasElement;
-	static #canvases = new Map<HTMLCanvasElement, MultiCanvas>();
+	static #canvases = new Map<HTMLCanvasElement, Canvas>();
 	static #width = 300;
 	static #height = 150;
 	static #offscreenCanvas?: OffscreenCanvas;
@@ -208,9 +225,13 @@ class Graphics {
 			if (options.scenes) {
 				scenes = options.scenes;
 			} else {
-				if (options.scene) {
-					scenes = [{ scene: options.scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }];
-
+				const scene = options.scene;
+				if (scene) {
+					if (scene instanceof Scene) {
+						scenes = [{ scene: scene, viewport: { x: 0, y: 0, width: 1, height: 1 } }];
+					} else {
+						scenes = [scene];
+					}
 				} else {
 					scenes = [];
 				}
@@ -364,7 +385,7 @@ class Graphics {
 		}
 	}
 
-	static #renderMultiCanvas(canvas: MultiCanvas, delta: number, context: RenderContext) {
+	static #renderMultiCanvas(canvas: Canvas, delta: number, context: RenderContext) {
 		// TODO: mutualize with the method render()
 		if (MEASURE_PERFORMANCE) {
 			WebGLStats.beginRender();
@@ -394,7 +415,7 @@ class Graphics {
 		this.renderBackground();//TODOv3 put in rendering pipeline
 
 		for (const canvasScene of canvas.scenes) {
-			const camera = canvasScene.scene.activeCamera;
+			const camera = canvasScene.camera ?? canvasScene.scene.activeCamera;
 			if (camera) {
 				if (camera.autoResize) {
 					const w = canvas.canvas.width;
