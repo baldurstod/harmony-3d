@@ -106,6 +106,11 @@ export type Canvas = {
 	autoResize: boolean;
 }
 
+type RenderTargetEntry = {
+	renderTarget: RenderTarget | null;
+	viewport: ReadonlyVec4;
+}
+
 class Graphics {
 	static #pixelRatio = /*window.devicePixelRatio ?? */1.0;
 	static #viewport = vec4.create();
@@ -127,7 +132,7 @@ class Graphics {
 	static #lastTick = performance.now();
 	static currentTick = 0;
 	static #renderBuffers = new Set<WebGLRenderbuffer>();
-	static #renderTargetStack: (RenderTarget | null)[] = [];
+	static #renderTargetStack: RenderTargetEntry[] = [];
 	static #readyPromiseResolve: (value: boolean) => void;
 	static #readyPromise = new Promise<boolean>((resolve) => this.#readyPromiseResolve = resolve);
 	static #canvas?: HTMLCanvasElement;
@@ -841,18 +846,24 @@ class Graphics {
 	*/
 
 	static pushRenderTarget(renderTarget: RenderTarget | null) {
-		this.#renderTargetStack.push(renderTarget);
-		this.#setRenderTarget(renderTarget);
+		const viewport = this.getViewport(vec4.create());
+		this.#renderTargetStack.push({ renderTarget: renderTarget, viewport: viewport });
+		this.#setRenderTarget(renderTarget, viewport);
 	}
 
-	static popRenderTarget(): RenderTarget | null {
-		this.#renderTargetStack.pop();
-		const renderTarget = this.#renderTargetStack[this.#renderTargetStack.length - 1];
-		this.#setRenderTarget(renderTarget);
-		return renderTarget ?? null;
+	static popRenderTarget(): void {
+		const popResult = this.#renderTargetStack.pop();
+		const target = this.#renderTargetStack[this.#renderTargetStack.length - 1];
+		if (target) {
+			this.#setRenderTarget(target.renderTarget, target.viewport);
+		} else {
+			if (popResult) {
+				this.#setRenderTarget(null, popResult?.viewport);
+			}
+		}
 	}
 
-	static #setRenderTarget(renderTarget: RenderTarget | null | undefined) {
+	static #setRenderTarget(renderTarget: RenderTarget | null, viewport: ReadonlyVec4) {
 		if (!renderTarget) {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.cleanupGLError();
@@ -861,7 +872,7 @@ class Graphics {
 			if (ENABLE_GET_ERROR && DEBUG) {
 				this.getGLError('bindFramebuffer');
 			}
-			//this.viewport = vec4.fromValues(0, 0, this.#width, this.#height);
+			this.setViewport(viewport);
 		} else {
 			renderTarget.bind();
 		}
