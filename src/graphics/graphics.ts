@@ -149,6 +149,7 @@ class Graphics {
 	static OES_texture_float_linear: any;
 	static #mediaRecorder?: MediaRecorder;
 	static dragging = false;
+	static #allowTransfertBitmap = true;// TODO: find a way to do that better
 	static #mouseDownFunc = (event: MouseEvent) => this.#mouseDown(event);
 	static #mouseMoveFunc = (event: MouseEvent) => this.#mouseMove(event);
 	static #mouseUpFunc = (event: MouseEvent) => this.#mouseUp(event);
@@ -301,40 +302,42 @@ class Graphics {
 		canvas.removeEventListener('touchcancel', this.#touchCancelFunc);
 	}
 
-	static pickEntity(x: number, y: number) {
-		if (!this.#canvas) {
-			return null;
-		}
+	static pickEntity(htmlCanvas: HTMLCanvasElement, x: number, y: number) {
 		this.setIncludeCode('pickingMode', '#define PICKING_MODE');
+		this.#allowTransfertBitmap = false;
 		GraphicsEvents.tick(0, performance.now(), 0);
+		this.#allowTransfertBitmap = true;
 		this.setIncludeCode('pickingMode', '#undef PICKING_MODE');
 
 		const gl = this.glContext;
 		const pixels = new Uint8Array(4);
-		this.glContext?.readPixels(x, this.#canvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+		this.glContext?.readPixels(x, htmlCanvas.height - y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, pixels);
 
 		const pickedEntityIndex = (pixels[0]! << 16) + (pixels[1]! << 8) + (pixels[2]!);
 		return pickList.get(pickedEntityIndex) ?? null;
 	}
 
 	static #mouseDown(event: MouseEvent) {
-		(event.target as HTMLCanvasElement).focus?.();
+		const htmlCanvas = event.target as HTMLCanvasElement;
+		htmlCanvas.focus();
 		const x = event.offsetX;
 		const y = event.offsetY;
-		this.#pickedEntity = this.pickEntity(x, y);
-		GraphicsEvents.mouseDown(x, y, this.#pickedEntity, event);
+		this.#pickedEntity = this.pickEntity(htmlCanvas, x, y);
+		GraphicsEvents.mouseDown(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
 	}
 
 	static #mouseMove(event: MouseEvent) {
+		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.mouseMove(x, y, this.#pickedEntity, event);
+		GraphicsEvents.mouseMove(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
 	}
 
 	static #mouseUp(event: MouseEvent) {
+		const htmlCanvas = event.target as HTMLCanvasElement;
 		const x = event.offsetX;
 		const y = event.offsetY;
-		GraphicsEvents.mouseUp(x, y, this.#pickedEntity, event);
+		GraphicsEvents.mouseUp(x, y, htmlCanvas.width, htmlCanvas.height, this.#pickedEntity, event);
 		this.#pickedEntity = null;
 	}
 
@@ -373,7 +376,7 @@ class Graphics {
 		this.#forwardRenderer!.render(scene, camera, delta, context);
 
 		const bipmapContext = context.imageBitmap?.context ?? this.#bipmapContext;
-		if (this.#offscreenCanvas && bipmapContext) {
+		if (this.#offscreenCanvas && bipmapContext && this.#allowTransfertBitmap) {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
 			bipmapContext.transferFromImageBitmap(bitmap);
 		}
@@ -450,9 +453,11 @@ class Graphics {
 			}
 		}
 
-		const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
-		canvas.context.transferFromImageBitmap(bitmap);
-		bitmap.close();
+		if (this.#allowTransfertBitmap) {
+			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
+			canvas.context.transferFromImageBitmap(bitmap);
+			bitmap.close();
+		}
 
 		if (MEASURE_PERFORMANCE) {
 			const t1 = performance.now();

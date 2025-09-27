@@ -24,6 +24,8 @@ export interface GraphicTickEvent {
 export interface GraphicMouseEventData {
 	x: number,
 	y: number,
+	width: number,
+	height: number,
 	entity: Entity | null,
 	mouseEvent: MouseEvent,
 }
@@ -55,16 +57,16 @@ export class GraphicsEvents extends StaticEventTarget {
 		this.dispatchEvent(new CustomEvent(GraphicsEvent.Resize, { detail: { width: width, height: height } }));
 	}
 
-	static mouseMove(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseMove, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	static mouseMove(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseMove, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
 	}
 
-	static mouseDown(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDown, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	static mouseDown(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseDown, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
 	}
 
-	static mouseUp(x: number, y: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
-		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseUp, { detail: { x: x, y: y, entity: pickedEntity, mouseEvent: mouseEvent } }));
+	static mouseUp(x: number, y: number, width: number, height: number, pickedEntity: Entity | null, mouseEvent: MouseEvent) {
+		this.dispatchEvent(new CustomEvent<GraphicMouseEventData>(GraphicsEvent.MouseUp, { detail: { x: x, y: y, width: width, height: height, entity: pickedEntity, mouseEvent: mouseEvent } }));
 	}
 
 	static wheel(x: number, y: number, pickedEntity: Entity | null, wheelEvent: WheelEvent) {
