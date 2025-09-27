@@ -367,13 +367,32 @@ class Graphics {
 		}
 
 		if (this.#offscreenCanvas && context.imageBitmap) {
-			this.#offscreenCanvas.width = context.imageBitmap.width;
-			this.#offscreenCanvas.height = context.imageBitmap.height;
-			this.setViewport(vec4.fromValues(0, 0, context.imageBitmap.width, context.imageBitmap.height));
+			let width = context.imageBitmap.width;
+			let height = context.imageBitmap.height;
+			this.#offscreenCanvas.width = width;
+			this.#offscreenCanvas.height = height;
+			this.setViewport(vec4.fromValues(0, 0, width, height));
 		}
 
 		this.renderBackground();//TODOv3 put in rendering pipeline
-		this.#forwardRenderer!.render(scene, camera, delta, context);
+
+
+		const width = this.#canvas?.width ?? this.#offscreenCanvas?.width ?? 0;
+		const height = this.#canvas?.height ?? this.#offscreenCanvas?.height ?? 0;
+
+		if (camera.autoResize) {
+			camera.left = -width;
+			camera.right = width;
+			camera.bottom = -height;
+			camera.top = height;
+			camera.aspectRatio = width / height;
+		}
+
+		this.#forwardRenderer!.render(scene, camera, delta, {
+			renderContext: context,
+			width: width,
+			height: height,
+		});
 
 		const bipmapContext = context.imageBitmap?.context ?? this.#bipmapContext;
 		if (this.#offscreenCanvas && bipmapContext && this.#allowTransfertBitmap) {
@@ -432,24 +451,23 @@ class Graphics {
 			const composer = canvasScene.composer;
 			if (composer?.enabled) {
 				composer.setSize(canvas.canvas.width, canvas.canvas.height);
-				composer.render(delta, context);
+				composer.render(delta, { renderContext: context, width: canvas.canvas.width, height: canvas.canvas.height });
 				break;
 			}
 
 			const scene = canvasScene.scene;
 			const camera = canvasScene.camera ?? scene?.activeCamera;
 			if (scene && camera) {
+				const w = canvas.canvas.width;
+				const h = canvas.canvas.height;
 				if (camera.autoResize) {
-					const w = canvas.canvas.width;
-					const h = canvas.canvas.height;
-
 					camera.left = -w;
 					camera.right = w;
 					camera.bottom = -h;
 					camera.top = h;
 					camera.aspectRatio = w / h;
 				}
-				this.#forwardRenderer!.render(scene, camera, delta, context);
+				this.#forwardRenderer!.render(scene, camera, delta, { renderContext: context, width: w, height: h });
 			}
 		}
 
@@ -976,7 +994,7 @@ class Graphics {
 	static getTime() {
 		return this.#time;
 	}
-
+	/*
 	static getWidth() {
 		return this.#width;
 	}
@@ -984,6 +1002,7 @@ class Graphics {
 	static getHeight() {
 		return this.#height;
 	}
+	*/
 
 	static getCanvas() {
 		return this.#canvas;

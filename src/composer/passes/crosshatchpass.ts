@@ -1,6 +1,6 @@
 import { Camera } from '../../cameras/camera';
 import { Graphics, } from '../../graphics/graphics2';
-import { RenderContext } from '../../interfaces/rendercontext';
+import { InternalRenderContext } from '../../interfaces/rendercontext';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
 import { Scene } from '../../scenes/scene';
@@ -18,11 +18,11 @@ export class CrosshatchPass extends Pass {
 		this.camera = camera;
 	}
 
-	render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
+	render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: InternalRenderContext) {
 		this.quad!.getMaterial().uniforms['colorMap'] = readBuffer.getTexture();
 
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		Graphics.render(this.scene!, this.camera!, 0, context);
+		Graphics.render(this.scene!, this.camera!, 0, context.renderContext);
 		Graphics.popRenderTarget();
 	}
 }

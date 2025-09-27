@@ -1,7 +1,7 @@
 import { vec2, vec4 } from 'gl-matrix';
 import { Camera } from '../../cameras/camera';
 import { Graphics, } from '../../graphics/graphics2';
-import { RenderContext } from '../../interfaces/rendercontext';
+import { InternalRenderContext } from '../../interfaces/rendercontext';
 import { MATERIAL_BLENDING_ADDITIVE } from '../../materials/material';
 import { ShaderMaterial } from '../../materials/shadermaterial';
 import { FullScreenQuad } from '../../primitives/fullscreenquad';
@@ -106,7 +106,7 @@ export class OutlinePass extends Pass {
 		});
 	}
 
-	render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: RenderContext) {
+	render(readBuffer: RenderTarget, writeBuffer: RenderTarget, renderToScreen: boolean, delta: number, context: InternalRenderContext) {
 		Graphics.getSize(tempVec2);
 		const width = tempVec2[0];
 		const height = tempVec2[1];
@@ -122,7 +122,7 @@ export class OutlinePass extends Pass {
 
 		this.changeVisibilityOfSelectedObjects(false);
 		Graphics.setColorMask([0, 0, 0, 0]);
-		Graphics.render(this.outlineScene, this.camera!, 0, context);
+		Graphics.render(this.outlineScene, this.camera!, 0, context.renderContext);
 		Graphics.setColorMask([1, 1, 1, 1]);
 		this.changeVisibilityOfSelectedObjects(true);
 		//renderer.setIncludeCode('WRITE_DEPTH_TO_COLOR', '');
@@ -130,7 +130,7 @@ export class OutlinePass extends Pass {
 		this.changeVisibilityOfNonSelectedObjects(false);
 		Graphics.setIncludeCode('outline_pass_silhouette_mode', '#define SILHOUETTE_MODE');
 		Graphics.setIncludeCode('silhouetteColor', '#define SILHOUETTE_COLOR vec4(1.0)');
-		Graphics.render(this.outlineScene, this.camera!, 0, context);
+		Graphics.render(this.outlineScene, this.camera!, 0, context.renderContext);
 		Graphics.setIncludeCode('outline_pass_silhouette_mode', '#undef SILHOUETTE_MODE');
 		this.changeVisibilityOfNonSelectedObjects(true);
 		Graphics.popRenderTarget();
@@ -143,7 +143,7 @@ export class OutlinePass extends Pass {
 		this.quad!.setMaterial(this.#edgedetectionMaterial);
 		Graphics.pushRenderTarget(this.#renderTargetEdgeBuffer1);
 		Graphics.clear(true, true, false);
-		Graphics.render(this.scene!, this.camera!, 0, context);
+		Graphics.render(this.scene!, this.camera!, 0, context.renderContext);
 		Graphics.popRenderTarget();
 
 		/**************/
@@ -153,7 +153,7 @@ export class OutlinePass extends Pass {
 		this.quad!.setMaterial(this.#copyMaterial);
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
 		Graphics.clear(true, true, false);
-		Graphics.render(this.scene!, this.camera!, 0, context);
+		Graphics.render(this.scene!, this.camera!, 0, context.renderContext);
 		Graphics.popRenderTarget();
 
 
@@ -162,7 +162,7 @@ export class OutlinePass extends Pass {
 		this.#copyMaterial.uniforms['colorMap'] = this.#renderTargetEdgeBuffer1.getTexture();
 		this.quad!.setMaterial(this.#copyMaterial);
 		Graphics.pushRenderTarget(renderToScreen ? null : writeBuffer);
-		Graphics.render(this.scene!, this.camera!, 0, context);
+		Graphics.render(this.scene!, this.camera!, 0, context.renderContext);
 		Graphics.popRenderTarget();
 
 	}

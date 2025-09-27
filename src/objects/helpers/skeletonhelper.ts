@@ -183,8 +183,8 @@ export class SkeletonHelper extends Entity {
 			return null;
 		}
 
-		const normalizedX = (event.detail.x / Graphics.getWidth()) * 2 - 1;
-		const normalizedY = 1 - (event.detail.y / Graphics.getHeight()) * 2;
+		const normalizedX = (event.detail.x / event.detail.width) * 2 - 1;
+		const normalizedY = 1 - (event.detail.y / event.detail.height) * 2;
 
 		const scene = this.root as Scene;// TODO: imbricated scenes
 		if (!scene.is('Scene') || !scene.activeCamera) {

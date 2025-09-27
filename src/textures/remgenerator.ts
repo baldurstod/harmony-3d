@@ -356,9 +356,9 @@ export class RemGenerator {
 
 			Graphics.pushRenderTarget(cubeUVRenderTarget);
 			if (useSolidColor) {
-				renderer.render(scene2, cubeCamera, 0, { DisableToolRendering: true });
+				renderer.render(scene2, cubeCamera, 0, { renderContext: { DisableToolRendering: true }, width: cubeUVRenderTarget.getWidth(), height: cubeUVRenderTarget.getHeight() });//TODO: optimize cubeUVRenderTarget.getHeight()
 			}
-			renderer.render(scene, cubeCamera, 0, { DisableToolRendering: true });
+			renderer.render(scene, cubeCamera, 0, { renderContext: { DisableToolRendering: true }, width: cubeUVRenderTarget.getWidth(), height: cubeUVRenderTarget.getHeight() });
 			Graphics.popRenderTarget();
 		}
 
@@ -405,7 +405,7 @@ export class RemGenerator {
 		cubeUVRenderTarget.setViewport(0, 0, 3 * size, 2 * size);
 
 		Graphics.pushRenderTarget(cubeUVRenderTarget);
-		renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
+		renderer.render(scene, flatCamera, 0, { renderContext: { DisableToolRendering: true }, width: cubeUVRenderTarget.getWidth(), height: cubeUVRenderTarget.getHeight() });
 		Graphics.popRenderTarget();
 
 	}
@@ -541,7 +541,7 @@ export class RemGenerator {
 
 		targetOut.setViewport(x, y, 3 * outputSize, 2 * outputSize);
 		Graphics.pushRenderTarget(targetOut);
-		renderer.render(scene, flatCamera, 0, { DisableToolRendering: true });
+		renderer.render(scene, flatCamera, 0, { renderContext: { DisableToolRendering: true }, width: targetOut.getWidth(), height: targetOut.getHeight() });
 		Graphics.popRenderTarget();
 
 	}

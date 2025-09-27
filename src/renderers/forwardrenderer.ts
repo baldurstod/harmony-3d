@@ -1,5 +1,5 @@
 import { Camera } from '../cameras/camera';
-import { RenderContext } from '../interfaces/rendercontext';
+import { InternalRenderContext } from '../interfaces/rendercontext';
 import { RenderFace } from '../materials/constants';
 import { Material } from '../materials/material';
 import { Scene } from '../scenes/scene';
@@ -74,7 +74,7 @@ export class ForwardRenderer extends Renderer {
 		}
 	}
 
-	render(scene: Scene, camera: Camera, delta: number, context: RenderContext) {
+	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) {
 		const renderList = new RenderList();//TODO: optimize
 		camera.dirty();//Force matrices to recompute
 		this._prepareRenderList(renderList, scene, camera, delta, context);

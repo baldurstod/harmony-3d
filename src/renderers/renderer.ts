@@ -5,7 +5,7 @@ import { EngineEntityAttributes, Entity } from '../entities/entity';
 import { BufferGeometry } from '../geometry/buffergeometry';
 import { InstancedBufferGeometry } from '../geometry/instancedbuffergeometry';
 import { Graphics } from '../graphics/graphics2';
-import { RenderContext } from '../interfaces/rendercontext';
+import { InternalRenderContext, RenderContext } from '../interfaces/rendercontext';
 import { Material } from '../materials/material';
 import { Mesh } from '../objects/mesh';
 import { Scene } from '../scenes/scene';
@@ -208,7 +208,7 @@ export class Renderer {
 		//TODO: other lights of disable lighting all together
 	}
 
-	renderObject(context: RenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights = true, lightPos?: vec3) {
+	renderObject(context: InternalRenderContext, renderList: RenderList, object: Mesh, camera: Camera, geometry: BufferGeometry | InstancedBufferGeometry, material: Material, renderLights = true, lightPos?: vec3) {
 		if (!object.isRenderable) {
 			return;
 		}
@@ -275,7 +275,7 @@ export class Renderer {
 
 
 			//TODO: set this on resolution change
-			program.setUniformValue('uResolution', [Graphics.getWidth(), Graphics.getHeight(), camera.aspectRatio, 0]);
+			program.setUniformValue('uResolution', [context.width, context.height, camera.aspectRatio, 0]);
 			//TODO: set this at start of the frame
 			program.setUniformValue('uTime', [Graphics.getTime(), Graphics.currentTick, 0, 0]);
 
@@ -321,7 +321,7 @@ export class Renderer {
 		}
 	}
 
-	_prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: RenderContext) {
+	_prepareRenderList(renderList: RenderList, scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) {
 		renderList.reset();
 		let currentObject: Entity | undefined = scene;
 		const objectStack = [];
@@ -329,7 +329,7 @@ export class Renderer {
 		//scene.ambientLights = scene.getChildList(AmbientLight);
 
 		while (currentObject) {
-			if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.DisableToolRendering) {
+			if (currentObject.getAttribute(EngineEntityAttributes.IsTool, false) && context.renderContext.DisableToolRendering) {
 				currentObject = objectStack.shift();
 				continue;
 			}
@@ -350,7 +350,7 @@ export class Renderer {
 		renderList.finish();
 	}
 
-	_renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: RenderContext, lightPos?: vec3) {
+	_renderRenderList(renderList: RenderList, camera: Camera, renderLights: boolean, context: InternalRenderContext, lightPos?: vec3) {
 		for (const child of renderList.opaqueList) {
 			this.renderObject(context, renderList, child, camera, child.geometry, child.material, renderLights, lightPos);
 		}
@@ -362,7 +362,7 @@ export class Renderer {
 		}
 	}
 
-	render(scene: Scene, camera: Camera, delta: number, context: RenderContext) {
+	render(scene: Scene, camera: Camera, delta: number, context: InternalRenderContext) {
 	}
 
 	clear(color: boolean, depth: boolean, stencil: boolean) {

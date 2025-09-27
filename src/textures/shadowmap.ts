@@ -1,11 +1,10 @@
 import { vec2, vec3, vec4 } from 'gl-matrix';
 import { Camera } from '../cameras/camera';
 import { Graphics } from '../graphics/graphics2';
-import { RenderContext } from '../interfaces/rendercontext';
+import { InternalRenderContext } from '../interfaces/rendercontext';
 import { PointLight } from '../lights/pointlight';
 import { Renderer } from '../renderers/renderer';
 import { RenderList } from '../renderers/renderlist';
-import { WebGLAnyRenderingContext } from '../types';
 import { GL_BLEND, GL_DEPTH_TEST, GL_SCISSOR_TEST } from '../webgl/constants';
 import { WebGLRenderingState } from '../webgl/renderingstate';
 
@@ -17,13 +16,8 @@ const lightPos = vec3.create();
 const viewPort = vec4.create();
 
 export class ShadowMap {
-	#glContext: WebGLAnyRenderingContext;
 
-	constructor() {
-		this.#glContext = Graphics.glContext;
-	}
-
-	render(renderer: Renderer, renderList: RenderList, camera: Camera, context: RenderContext) {
+	render(renderer: Renderer, renderList: RenderList, camera: Camera, context: InternalRenderContext) {
 		const lights = renderList.lights;
 
 		const blendCapability = WebGLRenderingState.isEnabled(GL_BLEND);
