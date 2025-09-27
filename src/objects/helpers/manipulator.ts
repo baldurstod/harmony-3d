@@ -114,7 +114,7 @@ export class Manipulator extends Entity {
 	#yScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#yMaterial });
 	#zScale = new Cylinder({ radius: ARROW_RADIUS, height: ARROW_LENGTH, material: this.#zMaterial });
 	#cursorPos = vec2.create();
-	#axisOrientation = ORIENTATION_WORLD;
+	#axisOrientation = ORIENTATION_WORLD;// TODO: create enum
 	#near = vec3.create();
 	#far = vec3.create();
 	#startDragPosition = vec3.create();
@@ -158,7 +158,7 @@ export class Manipulator extends Entity {
 
 		this.forEach((entity) => entity.setupPickingId());
 
-		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.resize((this.root as Scene)?.activeCamera));
+		GraphicsEvents.addEventListener(GraphicsEvent.Tick, () => this.#resize((this.root as Scene)?.activeCamera));
 
 		GraphicsEvents.addEventListener(GraphicsEvent.MouseDown, (event: Event) => {
 			const detail = (event as CustomEvent<GraphicMouseEventData>).detail;
@@ -166,13 +166,13 @@ export class Manipulator extends Entity {
 				this.#axis = this.#entityAxis.get(detail.entity!)!;
 				switch (this.#mode) {
 					case ManipulatorMode.Translation:
-						this.startTranslate(detail.x, detail.y);
+						this.#startTranslate(detail.x, detail.y);
 						break;
 					case ManipulatorMode.Rotation:
-						this.startRotate(detail.x, detail.y);
+						this.#startRotate(detail.x, detail.y);
 						break;
 					case ManipulatorMode.Scale:
-						this.startScale(detail.x, detail.y);
+						this.#startScale(detail.x, detail.y);
 						break;
 				}
 				Graphics.dragging = true;
@@ -216,7 +216,7 @@ export class Manipulator extends Entity {
 		ShortcutHandler.addEventListener(MANIPULATOR_SHORTCUT_TOGGLE_Z, () => this.enableZ = !this.enableZ);
 	}
 
-	resize(camera?: Camera) {
+	#resize(camera?: Camera) {
 		if (!this.isVisible()) {
 			return;
 		}
@@ -415,7 +415,7 @@ export class Manipulator extends Entity {
 		this.#entityAxis.set(zScaleTip, ManipulatorAxis.Z);
 	}
 
-	startTranslate(x: number, y: number) {
+	#startTranslate(x: number, y: number) {
 		if (this._parent) {
 			this._parent.getWorldPosition(this.#startPosition);
 		} else {
@@ -424,7 +424,7 @@ export class Manipulator extends Entity {
 		this.#computeTranslationPosition(this.#startDragPosition, x, y);
 	}
 
-	startRotate(x: number, y: number) {
+	#startRotate(x: number, y: number) {
 		if (this._parent) {
 			this._parent.getWorldQuaternion(this.#startQuaternion);
 			this._parent.getQuaternion(this.#startLocalQuaternion);
@@ -435,7 +435,7 @@ export class Manipulator extends Entity {
 		this.#startDragVector = this.#computeQuaternion(x, y);
 	}
 
-	startScale(x: number, y: number) {
+	#startScale(x: number, y: number) {
 		const startScalePosition = this.#startScalePosition;
 		if (this._parent) {
 			this._parent.getWorldPosition(this.#startPosition);
@@ -677,92 +677,6 @@ export class Manipulator extends Entity {
 		vec3.transformMat4(tempVec3, tempVec3, camera.projectionMatrix);
 
 		return Math.atan2(normalizedY - tempVec3[1], normalizedX - tempVec3[0]);
-	}
-
-	#computeQuaternion_removeme(x: number, y: number) {
-		const camera = this.camera;
-		if (camera) {
-			const projectionMatrix = camera.projectionMatrix;
-			const viewMatrix = camera.cameraMatrix;
-			const nearPlane = camera.nearPlane;
-			const farPlane = camera.farPlane;
-			const aspectRatio = camera.aspectRatio;
-
-			const invProjectionMatrix = mat4.invert(mat4.create(), projectionMatrix);
-			const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
-
-			this.#cursorPos[0] = (x / Graphics.getWidth()) * 2.0 - 1.0;
-			this.#cursorPos[1] = 1.0 - (y / Graphics.getHeight()) * 2.0;
-
-			this.#near[0] = this.#far[0] = this.#cursorPos[0];
-			this.#near[1] = this.#far[1] = this.#cursorPos[1];
-			this.#near[2] = -1.0;
-			this.#far[2] = 1.0;
-
-			vec3.transformMat4(this.#near, this.#near, invProjectionMatrix);
-			vec3.transformMat4(this.#far, this.#far, invProjectionMatrix);
-
-			vec3.transformMat4(this.#near, this.#near, invViewMatrix);
-			vec3.transformMat4(this.#far, this.#far, invViewMatrix);
-
-			function lineIntersection(planePoint: vec3, planeNormal: vec3, linePoint: vec3, lineDirection: vec3) {
-				if (vec3.dot(planeNormal, lineDirection) == 0) {
-					return vec3.create();//TODO: optimize
-				}
-
-				const t = (vec3.dot(planeNormal, planePoint) - vec3.dot(planeNormal, linePoint)) / vec3.dot(planeNormal, lineDirection);
-				return vec3.scaleAndAdd(vec3.create(), linePoint, lineDirection, t);//TODO: optimize pass vec3 as param
-			}
-
-			let angle;
-			let v4;
-			let planeNormal = vec3.create();
-
-			if (this.#axisOrientation == ORIENTATION_WORLD) {
-				switch (this.#axis) {
-					case ManipulatorAxis.X:
-						planeNormal = vec3.copy(planeNormal, xUnitVec3);
-						break;
-					case ManipulatorAxis.Y:
-						planeNormal = vec3.copy(planeNormal, yUnitVec3);
-						break;
-					case ManipulatorAxis.Z:
-						planeNormal = vec3.copy(planeNormal, zUnitVec3);
-						break;
-					default:
-						this.getPositionFrom(camera, planeNormal);
-						planeNormal = vec3.normalize(planeNormal, planeNormal);
-						break;
-				}
-			} else {
-				switch (this.#axis) {
-					case ManipulatorAxis.X:
-						planeNormal = vec3.transformQuat(planeNormal, xUnitVec3, this.#startQuaternion);
-						break;
-					case ManipulatorAxis.Y:
-						planeNormal = vec3.transformQuat(planeNormal, yUnitVec3, this.#startQuaternion);
-						break;
-					case ManipulatorAxis.Z:
-						planeNormal = vec3.transformQuat(planeNormal, zUnitVec3, this.#startQuaternion);
-						break;
-					default:
-						planeNormal = vec3.sub(vec3.create()/*TODO: optimize*/, this.#far, this.#near);
-						break;
-				}
-			}
-
-			const worldPos = this._parent ? this._parent.getWorldPosition() : this.getWorldPosition();
-			v4 = lineIntersection(worldPos, planeNormal, this.#near, vec3.sub(vec3.create(), this.#far, this.#near));
-			if (!v4) {
-				return vec3.create();//TODO: optimize
-			}
-
-			vec3.sub(v4, v4, worldPos);
-			quat.invert(translationManipulatorTempQuat, this.#startQuaternion);
-			vec3.transformQuat(v4, v4, translationManipulatorTempQuat);
-			vec3.normalize(v4, v4);
-			return v4;
-		}
 	}
 
 	setCamera(camera: Camera) {
