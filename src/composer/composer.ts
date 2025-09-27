@@ -40,7 +40,7 @@ export class Composer {
 		//this.setSize(tempVec2[0], tempVec2[1]);
 
 		let lastPass = -1;
-		for (let i = this.#passes.length - 1; i > 0; --i) {
+		for (let i = this.#passes.length - 1; i >= 0; --i) {
 			if (this.#passes[i]!.enabled) {
 				lastPass = i;
 				break;
