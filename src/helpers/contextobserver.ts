@@ -5,6 +5,7 @@ import { Graphics } from '../graphics/graphics2';
 import { GraphicsEvents } from '../graphics/graphicsevents';
 import { RenderTargetViewer } from '../utils/rendertargetviewer';
 
+/*
 function resizeCamera(camera: Camera) {
 	const w = Graphics.getWidth() / 2.0;
 	const h = Graphics.getHeight() / 2.0;
@@ -15,8 +16,9 @@ function resizeCamera(camera: Camera) {
 	camera.top = h;
 	camera.aspectRatio = w / h;
 }
+*/
 
-export type ContextObserverTarget = Camera | FirstPersonControl | OrbitControl | RenderTargetViewer;
+export type ContextObserverTarget = /*Camera | FirstPersonControl | */OrbitControl | RenderTargetViewer;
 
 export type ContextObserverSubject = EventTarget | typeof GraphicsEvents;
 
@@ -46,9 +48,11 @@ class ContextObserverClass {//TODO: create static class
 
 	static #processEvent(subject: ContextObserverSubject, dependent: ContextObserverTarget, event: Event) {
 		switch (true) {
+			/*
 			case (dependent as Camera).is('Camera'):
 				resizeCamera(dependent as Camera);
 				break;
+			*/
 			case dependent instanceof FirstPersonControl://TODO do it for any CameraControl?
 			case dependent instanceof OrbitControl:
 				dependent.update();
@@ -83,7 +87,7 @@ class ContextObserverClass {//TODO: create static class
 
 	#createListeners(subject: ContextObserverSubject, dependent: ContextObserverTarget) {
 		switch (true) {
-			case (dependent as Camera).is('Camera'):
+			//case (dependent as Camera).is('Camera'):
 			case dependent instanceof FirstPersonControl://TODO do it for any CameraControl?
 			case dependent instanceof OrbitControl:
 			case (dependent as RenderTargetViewer).isRenderTargetViewer:
@@ -134,9 +138,11 @@ class ContextObserverClass {//TODO: create static class
 		this.#addObserver(subject, dependent);
 
 		switch (true) {
+			/*
 			case (dependent as Camera).is('Camera'):
 				resizeCamera(dependent as Camera);
 				break;
+			*/
 		}
 	}
 

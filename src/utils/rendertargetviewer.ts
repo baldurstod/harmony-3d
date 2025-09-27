@@ -22,7 +22,7 @@ export class RenderTargetViewer {
 	#material?: Material;
 
 	constructor(renderTarget: RenderTarget) {
-		ContextObserver.observe(GraphicsEvents, this.#camera);
+		//ContextObserver.observe(GraphicsEvents, this.#camera);
 		ContextObserver.observe(GraphicsEvents, this);
 		this.#scene.addChild(this.#plane);
 

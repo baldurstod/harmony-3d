@@ -546,7 +546,7 @@ function initEntitySubmenu() {
 					{ i18n: '#spot_light', f: (entity: Entity) => entity.addChild(new SpotLight()) },
 				]
 		},
-		{ i18n: '#camera', f: (entity: Entity) => ContextObserver.observe(GraphicsEvents, entity.addChild(new Camera()) as Camera) },
+		{ i18n: '#camera', f: (entity: Entity) => entity.addChild(new Camera()) },
 		{
 			i18n: '#control', submenu:
 				[
