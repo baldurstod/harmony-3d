@@ -372,9 +372,10 @@ class Graphics {
 		this.renderBackground();//TODOv3 put in rendering pipeline
 		this.#forwardRenderer!.render(scene, camera, delta, context);
 
-		if (this.#offscreenCanvas) {
+		const bipmapContext = context.imageBitmap?.context ?? this.#bipmapContext;
+		if (this.#offscreenCanvas && bipmapContext) {
 			const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
-			(context.imageBitmap?.context ?? this.#bipmapContext)?.transferFromImageBitmap(bitmap);
+			bipmapContext.transferFromImageBitmap(bitmap);
 		}
 
 		if (MEASURE_PERFORMANCE) {
@@ -428,7 +429,7 @@ class Graphics {
 			const composer = canvasScene.composer;
 			if (composer?.enabled) {
 				composer.setSize(canvas.canvas.width, canvas.canvas.height);
-				composer.render(delta, {});
+				composer.render(delta, context);
 				break;
 			}
 
@@ -451,6 +452,7 @@ class Graphics {
 
 		const bitmap = this.#offscreenCanvas!.transferToImageBitmap();
 		canvas.context.transferFromImageBitmap(bitmap);
+		bitmap.close();
 
 		if (MEASURE_PERFORMANCE) {
 			const t1 = performance.now();
