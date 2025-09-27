@@ -166,13 +166,13 @@ export class Manipulator extends Entity {
 				this.#axis = this.#entityAxis.get(detail.entity!)!;
 				switch (this.#mode) {
 					case ManipulatorMode.Translation:
-						this.#startTranslate(detail.x, detail.y);
+						this.#startTranslate(detail.x, detail.y, detail.width, detail.height);
 						break;
 					case ManipulatorMode.Rotation:
-						this.#startRotate(detail.x, detail.y);
+						this.#startRotate(detail.x, detail.y, detail.width, detail.height);
 						break;
 					case ManipulatorMode.Scale:
-						this.#startScale(detail.x, detail.y);
+						this.#startScale(detail.x, detail.y, detail.width, detail.height);
 						break;
 				}
 				Graphics.dragging = true;
@@ -187,13 +187,13 @@ export class Manipulator extends Entity {
 			if (this.#entityAxis.has(detail.entity)) {
 				switch (this.#mode) {
 					case ManipulatorMode.Translation:
-						this.#translationMoveHandler(detail.x, detail.y);
+						this.#translationMoveHandler(detail.x, detail.y, detail.width, detail.height);
 						break;
 					case ManipulatorMode.Rotation:
-						this.#rotationMoveHandler(detail.x, detail.y);
+						this.#rotationMoveHandler(detail.x, detail.y, detail.width, detail.height);
 						break;
 					case ManipulatorMode.Scale:
-						this.#scaleMoveHandler(detail.x, detail.y);
+						this.#scaleMoveHandler(detail.x, detail.y, detail.width, detail.height);
 						break;
 				}
 			}
@@ -415,16 +415,16 @@ export class Manipulator extends Entity {
 		this.#entityAxis.set(zScaleTip, ManipulatorAxis.Z);
 	}
 
-	#startTranslate(x: number, y: number) {
+	#startTranslate(x: number, y: number, width: number, height: number) {
 		if (this._parent) {
 			this._parent.getWorldPosition(this.#startPosition);
 		} else {
 			this.getWorldPosition(this.#startPosition);
 		}
-		this.#computeTranslationPosition(this.#startDragPosition, x, y);
+		this.#computeTranslationPosition(this.#startDragPosition, x, y, width, height);
 	}
 
-	#startRotate(x: number, y: number) {
+	#startRotate(x: number, y: number, width: number, height: number) {
 		if (this._parent) {
 			this._parent.getWorldQuaternion(this.#startQuaternion);
 			this._parent.getQuaternion(this.#startLocalQuaternion);
@@ -432,17 +432,17 @@ export class Manipulator extends Entity {
 			this.getWorldQuaternion(this.#startQuaternion);
 			this.getQuaternion(this.#startLocalQuaternion);
 		}
-		this.#startDragVector = this.#computeQuaternion(x, y);
+		this.#startDragVector = this.#computeQuaternion(x, y, width, height);
 	}
 
-	#startScale(x: number, y: number) {
+	#startScale(x: number, y: number, width: number, height: number) {
 		const startScalePosition = this.#startScalePosition;
 		if (this._parent) {
 			this._parent.getWorldPosition(this.#startPosition);
 		} else {
 			this.getWorldPosition(this.#startPosition);
 		}
-		this.#computeTranslationPosition(this.#startScalePosition, x, y);
+		this.#computeTranslationPosition(this.#startScalePosition, x, y, width, height);
 		vec3.div(startScalePosition, startScalePosition, this.scale);
 		vec3.scale(startScalePosition, startScalePosition, 2 / ARROW_LENGTH);
 		if (this._parent) {
@@ -450,8 +450,8 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#translationMoveHandler(x: number, y: number) {
-		this.#computeTranslationPosition(tempVec3, x, y);
+	#translationMoveHandler(x: number, y: number, width: number, height: number) {
+		this.#computeTranslationPosition(tempVec3, x, y, width, height);
 
 		vec3.sub(tempVec3, tempVec3, this.#startDragPosition);
 		switch (this.#axis) {
@@ -494,12 +494,12 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#rotationMoveHandler(x: number, y: number): void {//TODO: rename this func
+	#rotationMoveHandler(x: number, y: number, width: number, height: number): void {//TODO: rename this func
 		if (!this.camera) {
 			return;
 		}
 
-		const v3 = this.#computeQuaternion(x, y);
+		const v3 = this.#computeQuaternion(x, y, width, height);
 		quat.rotationTo(translationManipulatorTempQuat, this.#startDragVector, v3);
 		quat.mul(translationManipulatorTempQuat, this.#startLocalQuaternion, translationManipulatorTempQuat);
 
@@ -535,8 +535,8 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#scaleMoveHandler(x: number, y: number) {
-		const v3 = this.#computeTranslationPosition(tempVec3, x, y);
+	#scaleMoveHandler(x: number, y: number, width: number, height: number) {
+		const v3 = this.#computeTranslationPosition(tempVec3, x, y, width, height);
 		if (!v3) {
 			return;
 		}
@@ -573,7 +573,7 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#computeTranslationPosition(out: vec3, x: number, y: number) {
+	#computeTranslationPosition(out: vec3, x: number, y: number, width: number, height: number) {
 		const camera = this.camera;
 		if (camera) {
 			const projectionMatrix = camera.projectionMatrix;
@@ -586,8 +586,8 @@ export class Manipulator extends Entity {
 			const invViewMatrix = mat4.invert(mat4.create(), viewMatrix);
 
 			// transform the screen coordinates to normalized coordinates
-			this.#cursorPos[0] = (x / Graphics.getWidth()) * 2.0 - 1.0;
-			this.#cursorPos[1] = 1.0 - (y / Graphics.getHeight()) * 2.0;
+			this.#cursorPos[0] = (x / width) * 2.0 - 1.0;
+			this.#cursorPos[1] = 1.0 - (y / height) * 2.0;
 
 			this.#near[0] = this.#far[0] = this.#cursorPos[0];
 			this.#near[1] = this.#far[1] = this.#cursorPos[1];
@@ -662,15 +662,15 @@ export class Manipulator extends Entity {
 		}
 	}
 
-	#computeQuaternion(x: number, y: number) {
+	#computeQuaternion(x: number, y: number, width: number, height: number) {
 		const camera = this.camera;
 		if (!camera) {
 			return 0;
 		}
 
 		// transform the screen coordinates to normalized coordinates
-		const normalizedX = (x / Graphics.getWidth()) * 2.0 - 1.0;
-		const normalizedY = 1.0 - (y / Graphics.getHeight()) * 2.0;
+		const normalizedX = (x / width) * 2.0 - 1.0;
+		const normalizedY = 1.0 - (y / height) * 2.0;
 
 		this.getWorldPosition(tempVec3);
 		vec3.transformMat4(tempVec3, tempVec3, camera.cameraMatrix);
